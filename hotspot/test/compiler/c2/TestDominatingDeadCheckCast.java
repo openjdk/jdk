@@ -26,9 +26,14 @@
  * @test
  * @bug 8149797
  * @summary node replaced by dominating dead cast during parsing
- * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:TypeProfileLevel=200 -XX:CompileCommand=dontinline,TestDominatingDeadCheckCast::not_inlined TestDominatingDeadCheckCast
  *
+ * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
+ *      -XX:TypeProfileLevel=200
+ *      -XX:CompileCommand=dontinline,compiler.c2.TestDominatingDeadCheckCast::not_inlined
+ *      compiler.c2.TestDominatingDeadCheckCast
  */
+
+package compiler.c2;
 
 public class TestDominatingDeadCheckCast {
 

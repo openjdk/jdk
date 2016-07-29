@@ -25,8 +25,16 @@
  * @test
  * @bug 8142303
  * @summary Tests handling of invalid array indices in C2 intrinsic if explicit range check in Java code is not inlined.
- * @run main/othervm -XX:CompileCommand=inline,java.lang.String::* -XX:CompileCommand=inline,java.lang.StringUTF16::* -XX:CompileCommand=exclude,java.lang.String::checkBoundsOffCount TestStringConstruction
+ *
+ * @run main/othervm
+ *      -XX:CompileCommand=inline,java.lang.String::*
+ *      -XX:CompileCommand=inline,java.lang.StringUTF16::*
+ *      -XX:CompileCommand=exclude,java.lang.String::checkBoundsOffCount
+ *      compiler.intrinsics.string.TestStringConstruction
  */
+
+package compiler.intrinsics.string;
+
 public class TestStringConstruction {
 
     public static void main(String[] args) {

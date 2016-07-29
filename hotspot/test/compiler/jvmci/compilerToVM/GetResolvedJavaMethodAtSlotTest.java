@@ -42,9 +42,10 @@
 
 package compiler.jvmci.compilerToVM;
 
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+
 import java.util.HashMap;
 import java.util.Map;
 

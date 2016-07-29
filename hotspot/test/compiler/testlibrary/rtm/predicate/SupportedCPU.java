@@ -24,11 +24,10 @@
 
 package compiler.testlibrary.rtm.predicate;
 
+import jdk.test.lib.Platform;
 import sun.hotspot.cpuinfo.CPUInfo;
 
 import java.util.function.BooleanSupplier;
-
-import jdk.test.lib.Platform;
 
 public class SupportedCPU implements BooleanSupplier {
     @Override

@@ -23,24 +23,26 @@
 
 /**
  * @test TieredLevelsTest
+ * @summary Verify that all levels &lt; 'TieredStopAtLevel' can be used
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build TieredLevelsTest
+ *          java.management
+ *
+ * @build compiler.tiered.TieredLevelsTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+TieredCompilation
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCounterDecay
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
- *                   TieredLevelsTest
- * @summary Verify that all levels &lt; 'TieredStopAtLevel' can be used
- * @author igor.ignatyev@oracle.com
+ *                   compiler.tiered.TieredLevelsTest
  */
+
+package compiler.tiered;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
 
 public class TieredLevelsTest extends CompLevelsTest {
-    public static void main(String[] args) throws Exception, Throwable {
+    public static void main(String[] args) throws Throwable {
         if (CompilerWhiteBoxTest.skipOnTieredCompilation(false)) {
             return;
         }

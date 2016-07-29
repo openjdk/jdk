@@ -25,9 +25,15 @@
  * @test
  * @bug 8028308
  * @summary rbp not restored when stack overflow is thrown from deopt/uncommon trap blobs
- * @run main/othervm -XX:-BackgroundCompilation -XX:CompileCommand=dontinline,TestStackBangRbp::m1 -XX:CompileCommand=exclude,TestStackBangRbp::m2 -Xss512K -XX:-UseOnStackReplacement TestStackBangRbp
  *
+ * @run main/othervm -XX:-BackgroundCompilation -Xss512K -XX:-UseOnStackReplacement
+ *      -XX:CompileCommand=dontinline,compiler.uncommontrap.TestStackBangRbp::m1
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestStackBangRbp::m2
+ *      compiler.uncommontrap.TestStackBangRbp
  */
+
+package compiler.uncommontrap;
+
 public class TestStackBangRbp {
 
     static class UnloadedClass1 {

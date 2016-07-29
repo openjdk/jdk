@@ -30,13 +30,16 @@
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestRTMTotalCountIncrRateOptionOnSupportedConfig
+ *
+ * @build compiler.rtm.cli.TestRTMTotalCountIncrRateOptionOnSupportedConfig
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
- *                   TestRTMTotalCountIncrRateOptionOnSupportedConfig
+ *                   compiler.rtm.cli.TestRTMTotalCountIncrRateOptionOnSupportedConfig
  */
+
+package compiler.rtm.cli;
 
 public class TestRTMTotalCountIncrRateOptionOnSupportedConfig
         extends RTMLockingAwareTest {

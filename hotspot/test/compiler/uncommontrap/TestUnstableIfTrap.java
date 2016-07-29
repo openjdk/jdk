@@ -30,34 +30,48 @@
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build TestUnstableIfTrap jdk.test.lib.* compiler.testlibrary.uncommontrap.Verifier
+ *
+ * @build compiler.uncommontrap.TestUnstableIfTrap
+ *        jdk.test.lib.*
+ *        compiler.testlibrary.uncommontrap.Verifier
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+LogCompilation
  *                   -XX:CompileCommand=compileonly,UnstableIfExecutable.test
  *                   -XX:LogFile=always_taken_not_fired.xml
- *                   TestUnstableIfTrap ALWAYS_TAKEN false
+ *                   compiler.uncommontrap.TestUnstableIfTrap ALWAYS_TAKEN false
  * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+LogCompilation
  *                   -XX:CompileCommand=compileonly,UnstableIfExecutable.test
  *                   -XX:LogFile=always_taken_fired.xml
- *                   TestUnstableIfTrap ALWAYS_TAKEN true
+ *                   compiler.uncommontrap.TestUnstableIfTrap ALWAYS_TAKEN true
  * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+LogCompilation
  *                   -XX:CompileCommand=compileonly,UnstableIfExecutable.test
  *                   -XX:LogFile=never_taken_not_fired.xml
- *                   TestUnstableIfTrap NEVER_TAKEN false
+ *                   compiler.uncommontrap.TestUnstableIfTrap NEVER_TAKEN false
  * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+LogCompilation
  *                   -XX:CompileCommand=compileonly,UnstableIfExecutable.test
  *                   -XX:LogFile=never_taken_fired.xml
- *                   TestUnstableIfTrap NEVER_TAKEN true
+ *                   compiler.uncommontrap.TestUnstableIfTrap NEVER_TAKEN true
  * @run driver compiler.testlibrary.uncommontrap.Verifier always_taken_not_fired.xml
  *                                                        always_taken_fired.xml
  *                                                        never_taken_not_fired.xml
  *                                                        never_taken_fired.xml
  */
+
+package compiler.uncommontrap;
+
+import compiler.testlibrary.uncommontrap.Verifier;
+import jdk.internal.org.objectweb.asm.ClassVisitor;
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.Label;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.test.lib.ByteCodeLoader;
+import jdk.test.lib.Platform;
+import sun.hotspot.WhiteBox;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -65,16 +79,18 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Properties;
 
-import jdk.test.lib.ByteCodeLoader;
-import jdk.test.lib.Platform;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Label;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
-
-import sun.hotspot.WhiteBox;
-import compiler.testlibrary.uncommontrap.Verifier;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_ABSTRACT;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_STATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_VOLATILE;
+import static jdk.internal.org.objectweb.asm.Opcodes.GETSTATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.GOTO;
+import static jdk.internal.org.objectweb.asm.Opcodes.IADD;
+import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_1;
+import static jdk.internal.org.objectweb.asm.Opcodes.IFEQ;
+import static jdk.internal.org.objectweb.asm.Opcodes.ILOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.ISUB;
+import static jdk.internal.org.objectweb.asm.Opcodes.RETURN;
 
 public class TestUnstableIfTrap {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();

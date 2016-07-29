@@ -22,14 +22,14 @@
  */
 package jdk.vm.ci.runtime.test;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
-
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Signature;
 import jdk.vm.ci.runtime.JVMCI;
+
+import java.lang.reflect.Method;
+import java.util.Arrays;
 
 class NameAndSignature {
 

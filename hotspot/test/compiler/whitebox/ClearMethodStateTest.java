@@ -21,23 +21,23 @@
  * questions.
  */
 
-import java.util.function.Function;
-
-import compiler.whitebox.CompilerWhiteBoxTest;
-
 /*
  * @test ClearMethodStateTest
  * @bug 8006683 8007288 8022832
+ * @summary testing of WB::clearMethodState()
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build ClearMethodStateTest
+ *          java.management
+ * @build compiler.whitebox.ClearMethodStateTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+PrintCompilation -XX:-UseCounterDecay ClearMethodStateTest
- * @summary testing of WB::clearMethodState()
- * @author igor.ignatyev@oracle.com
+ * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:+PrintCompilation -XX:-UseCounterDecay
+ *                   compiler.whitebox.ClearMethodStateTest
  */
+
+package compiler.whitebox;
+
 public class ClearMethodStateTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {

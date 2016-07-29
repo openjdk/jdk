@@ -25,9 +25,12 @@
  * @test
  * @bug 7173584
  * @summary arraycopy as macro node
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestArrayCopyMacro
  *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   compiler.arraycopy.TestArrayCopyMacro
  */
+
+package compiler.arraycopy;
 
 public class TestArrayCopyMacro {
     static class A {

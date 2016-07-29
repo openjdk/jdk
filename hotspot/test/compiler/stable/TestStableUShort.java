@@ -57,8 +57,8 @@
  *                                 -XX:-FoldStableValues
  *                                 -XX:CompileOnly=::get,::get1
  *                                 compiler.stable.TestStableUShort
- *
  */
+
 package compiler.stable;
 
 import jdk.internal.vm.annotation.Stable;

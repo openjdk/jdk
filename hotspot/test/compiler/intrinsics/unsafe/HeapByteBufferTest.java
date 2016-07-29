@@ -25,11 +25,14 @@
 /**
  * @test
  * @bug 8026049 8151163
+ * @summary Verify that byte buffers are correctly accessed.
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseUnalignedAccesses -Djdk.test.lib.random.seed=0 HeapByteBufferTest
- * @run main/othervm -Djdk.test.lib.random.seed=0 HeapByteBufferTest
- * @summary Verify that heap byte buffers are correctly accessed.
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseUnalignedAccesses -Djdk.test.lib.random.seed=0
+ *      HeapByteBufferTest
+ * @run main/othervm -Djdk.test.lib.random.seed=0
+ *      HeapByteBufferTest
  */
 
 public class HeapByteBufferTest extends ByteBufferTest {

@@ -21,10 +21,10 @@
  * questions.
  */
 
-package scenarios;
+package compiler.types.correctness.scenarios;
 
+import compiler.types.correctness.hierarchies.TypeHierarchy;
 import jdk.test.lib.Asserts;
-import hierarchies.TypeHierarchy;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;

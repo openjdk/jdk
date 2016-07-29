@@ -25,9 +25,13 @@
  * @test
  * @bug 8048170
  * @summary Following range check smearing, range check cannot be replaced by dominating identical test.
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestRangeCheckSmearingLoopOpts
  *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   compiler.rangechecks.TestRangeCheckSmearingLoopOpts
  */
+
+package compiler.rangechecks;
+
 public class TestRangeCheckSmearingLoopOpts {
 
     static int dummy;

@@ -23,10 +23,6 @@
 
 package jdk.vm.ci.hotspot.test;
 
-import java.lang.reflect.Field;
-
-import org.testng.annotations.DataProvider;
-
 import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
@@ -36,6 +32,9 @@ import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.runtime.JVMCI;
+import org.testng.annotations.DataProvider;
+
+import java.lang.reflect.Field;
 
 public class MemoryAccessProviderData {
     private static final Unsafe UNSAFE = getUnsafe();

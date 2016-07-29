@@ -437,6 +437,21 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   __ restore_locals();
   __ restore_constant_pool_cache();
   __ get_method(rmethod);
+  __ get_dispatch();
+
+  // Calculate stack limit
+  __ ldr(rscratch1, Address(rmethod, Method::const_offset()));
+  __ ldrh(rscratch1, Address(rscratch1, ConstMethod::max_stack_offset()));
+  __ add(rscratch1, rscratch1, frame::interpreter_frame_monitor_size() + 2);
+  __ ldr(rscratch2,
+         Address(rfp, frame::interpreter_frame_initial_sp_offset * wordSize));
+  __ sub(rscratch1, rscratch2, rscratch1, ext::uxtx, 3);
+  __ andr(sp, rscratch1, -16);
+
+  // Restore expression stack pointer
+  __ ldr(esp, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+  // NULL last_sp until next java call
+  __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
 
 #if INCLUDE_JVMCI
   // Check if we need to take lock at entry of synchronized method.
@@ -462,22 +477,6 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
     __ should_not_reach_here();
     __ bind(L);
   }
-
-  __ get_dispatch();
-
-  // Calculate stack limit
-  __ ldr(rscratch1, Address(rmethod, Method::const_offset()));
-  __ ldrh(rscratch1, Address(rscratch1, ConstMethod::max_stack_offset()));
-  __ add(rscratch1, rscratch1, frame::interpreter_frame_monitor_size() + 2);
-  __ ldr(rscratch2,
-         Address(rfp, frame::interpreter_frame_initial_sp_offset * wordSize));
-  __ sub(rscratch1, rscratch2, rscratch1, ext::uxtx, 3);
-  __ andr(sp, rscratch1, -16);
-
-  // Restore expression stack pointer
-  __ ldr(esp, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
-  // NULL last_sp until next java call
-  __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
 
   __ dispatch_next(state, step);
   return entry;

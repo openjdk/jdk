@@ -77,8 +77,7 @@ int CompiledStaticCall::to_interp_stub_size() {
   // This doesn't need to be accurate but it must be larger or equal to
   // the real size of the stub.
   return (NativeMovConstReg::instruction_size +  // sethi/setlo;
-          NativeJump::instruction_size + // sethi; jmp; nop
-          (TraceJumps ? 20 * BytesPerInstWord : 0) );
+          NativeJump::instruction_size); // sethi; jmp; nop
 }
 
 // Relocation entries for call stub, compiled java to interpreter.

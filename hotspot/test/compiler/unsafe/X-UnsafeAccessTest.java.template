@@ -25,12 +25,15 @@
  * @test
  * @bug 8143628
  * @summary Test unsafe access for $type$
+ *
  * @modules $module$/$package$
- * @run testng/othervm -Diters=100   -Xint                   $Qualifier$UnsafeAccessTest$Type$
- * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 $Qualifier$UnsafeAccessTest$Type$
- * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  $Qualifier$UnsafeAccessTest$Type$
- * @run testng/othervm -Diters=20000                         $Qualifier$UnsafeAccessTest$Type$
+ * @run testng/othervm -Diters=100   -Xint                   compiler.unsafe.$Qualifier$UnsafeAccessTest$Type$
+ * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 compiler.unsafe.$Qualifier$UnsafeAccessTest$Type$
+ * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  compiler.unsafe.$Qualifier$UnsafeAccessTest$Type$
+ * @run testng/othervm -Diters=20000                         compiler.unsafe.$Qualifier$UnsafeAccessTest$Type$
  */
+
+package compiler.unsafe;
 
 import org.testng.annotations.Test;
 
