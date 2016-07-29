@@ -28,12 +28,11 @@ import jdk.internal.misc.Unsafe;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Abstract handler for path.
@@ -152,7 +151,10 @@ public abstract class PathHandler {
         if (id >= Utils.COMPILE_THE_WORLD_START_AT) {
             try {
                 Class<?> aClass = loader.loadClass(name);
-                UNSAFE.ensureClassInitialized(aClass);
+                if (name != "sun.reflect.misc.Trampoline"
+                        && name != "sun.tools.jconsole.OutputViewer") { // workaround for JDK-8159155
+                    UNSAFE.ensureClassInitialized(aClass);
+                }
                 CompileTheWorld.OUT.printf("[%d]\t%s%n", id, name);
                 Compiler.compileClass(aClass, id, executor);
             } catch (ClassNotFoundException e) {

@@ -35,8 +35,8 @@ import java.util.concurrent.*;
 public class CompileTheWorld {
     // in case when a static constructor changes System::out and System::err
     // we hold these values of output streams
-    public static final PrintStream OUT = System.out;
-    public static final PrintStream ERR = System.err;
+    static PrintStream OUT = System.out;
+    static final PrintStream ERR = System.err;
     /**
      * Entry point. Compiles classes in {@code paths}
      *
@@ -56,7 +56,7 @@ public class CompileTheWorld {
             }
         }
         if (os != null) {
-            System.setOut(os);
+            OUT = os;
         }
 
         try {
@@ -89,9 +89,6 @@ public class CompileTheWorld {
                 os.close();
             }
         }
-        // in case when a static constructor creates and runs a new thread
-        // we force it to exit
-        System.exit(0);
     }
 
     private static ExecutorService createExecutor() {
