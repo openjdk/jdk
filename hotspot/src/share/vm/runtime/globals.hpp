@@ -1438,6 +1438,10 @@ public:
           "Dynamically choose the number of parallel threads "              \
           "parallel gc will use")                                           \
                                                                             \
+  diagnostic(bool, InjectGCWorkerCreationFailure, false,                    \
+             "Inject thread creation failures for "                         \
+             "UseDynamicNumberOfGCThreads")                                 \
+                                                                            \
   diagnostic(bool, ForceDynamicNumberOfGCThreads, false,                    \
           "Force dynamic selection of the number of "                       \
           "parallel threads parallel gc will use to aid debugging")         \

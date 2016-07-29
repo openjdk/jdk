@@ -1331,7 +1331,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
         AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
                                                 workers()->active_workers(),
                                                 Threads::number_of_non_daemon_threads());
-      workers()->set_active_workers(n_workers);
+      workers()->update_active_workers(n_workers);
 
       ParRebuildRSTask rebuild_rs_task(this);
       workers()->run_task(&rebuild_rs_task);
@@ -3067,7 +3067,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     uint active_workers = AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
                                                                   workers()->active_workers(),
                                                                   Threads::number_of_non_daemon_threads());
-    workers()->set_active_workers(active_workers);
+    workers()->update_active_workers(active_workers);
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
     TraceMemoryManagerStats tms(false /* fullGC */, gc_cause());
