@@ -43,6 +43,7 @@ import java.util.stream.Stream;
 import java.util.zip.*;
 
 import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.Utils;
 
 import static java.lang.String.format;
 import static java.lang.System.out;
@@ -199,6 +200,262 @@ public class Basic {
     }
 
     /*
+     * The following tests exercise the jar validator
+     */
+
+    @Test
+    // META-INF/versions/9 class has different api than base class
+    public void test04() throws IOException {
+        String jarfile = "test.jar";
+
+        compile("test01");  //use same data as test01
+
+        Path classes = Paths.get("classes");
+
+        // replace the v9 class
+        Path source = Paths.get(src, "data", "test04", "v9", "version");
+        javac(classes.resolve("v9"), source.resolve("Version.java"));
+
+        jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+                "--release", "9", "-C", classes.resolve("v9").toString(), ".")
+                .assertFailure()
+                .resultChecker(r ->
+                    assertTrue(r.output.contains("different api from earlier"), r.output)
+                );
+
+        delete(jarfile);
+        deleteDir(Paths.get(usr, "classes"));
+    }
+
+    @Test
+    // META-INF/versions/9 contains an extra public class
+    public void test05() throws IOException {
+        String jarfile = "test.jar";
+
+        compile("test01");  //use same data as test01
+
+        Path classes = Paths.get("classes");
+
+        // add the new v9 class
+        Path source = Paths.get(src, "data", "test05", "v9", "version");
+        javac(classes.resolve("v9"), source.resolve("Extra.java"));
+
+        jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+                "--release", "9", "-C", classes.resolve("v9").toString(), ".")
+                .assertFailure()
+                .resultChecker(r ->
+                        assertTrue(r.output.contains("contains a new public class"), r.output)
+                );
+
+        delete(jarfile);
+        deleteDir(Paths.get(usr, "classes"));
+    }
+
+    @Test
+    // META-INF/versions/9 contains an extra package private class -- this is okay
+    public void test06() throws IOException {
+        String jarfile = "test.jar";
+
+        compile("test01");  //use same data as test01
+
+        Path classes = Paths.get("classes");
+
+        // add the new v9 class
+        Path source = Paths.get(src, "data", "test06", "v9", "version");
+        javac(classes.resolve("v9"), source.resolve("Extra.java"));
+
+        jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+                "--release", "9", "-C", classes.resolve("v9").toString(), ".")
+                .assertSuccess();
+
+        delete(jarfile);
+        deleteDir(Paths.get(usr, "classes"));
+    }
+
+    @Test
+    // META-INF/versions/9 contains an identical class to base entry class
+    // this is okay but produces warning
+    public void test07() throws IOException {
+        String jarfile = "test.jar";
+
+        compile("test01");  //use same data as test01
+
+        Path classes = Paths.get("classes");
+
+        // add the new v9 class
+        Path source = Paths.get(src, "data", "test01", "base", "version");
+        javac(classes.resolve("v9"), source.resolve("Version.java"));
+
+        jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+                "--release", "9", "-C", classes.resolve("v9").toString(), ".")
+                .assertSuccess()
+                .resultChecker(r ->
+                        assertTrue(r.output.contains("contains a class that is identical"), r.output)
+                );
+
+        delete(jarfile);
+        deleteDir(Paths.get(usr, "classes"));
+    }
+
+    @Test
+    // resources with same name in different versions
+    // this is okay but produces warning
+    public void test08() throws IOException {
+        String jarfile = "test.jar";
+
+        compile("test01");  //use same data as test01
+
+        Path classes = Paths.get("classes");
+
+        // add a resource to the base
+        Path source = Paths.get(src, "data", "test01", "base", "version");
+        Files.copy(source.resolve("Version.java"), classes.resolve("base")
+                .resolve("version").resolve("Version.java"));
+
+        jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+                "--release", "9", "-C", classes.resolve("v9").toString(), ".")
+                .assertSuccess()
+                .resultChecker(r ->
+                        assertTrue(r.output.isEmpty(), r.output)
+                );
+
+        // now add a different resource with same name to META-INF/version/9
+        Files.copy(source.resolve("Main.java"), classes.resolve("v9")
+                .resolve("version").resolve("Version.java"));
+
+        jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+                "--release", "9", "-C", classes.resolve("v9").toString(), ".")
+                .assertSuccess()
+                .resultChecker(r ->
+                        assertTrue(r.output.contains("multiple resources with same name"), r.output)
+                );
+
+        delete(jarfile);
+        deleteDir(Paths.get(usr, "classes"));
+    }
+
+    @Test
+    // a class with an internal name different from the external name
+    public void test09() throws IOException {
+        String jarfile = "test.jar";
+
+        compile("test01");  //use same data as test01
+
+        Path classes = Paths.get("classes");
+
+        Path base = classes.resolve("base").resolve("version");
+
+        Files.copy(base.resolve("Main.class"), base.resolve("Foo.class"));
+
+        jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+                "--release", "9", "-C", classes.resolve("v9").toString(), ".")
+                .assertFailure()
+                .resultChecker(r ->
+                        assertTrue(r.output.contains("names do not match"), r.output)
+                );
+
+        delete(jarfile);
+        deleteDir(Paths.get(usr, "classes"));
+    }
+
+    @Test
+    // assure that basic nested classes are acceptable
+    public void test10() throws IOException {
+        String jarfile = "test.jar";
+
+        compile("test01");  //use same data as test01
+
+        Path classes = Paths.get("classes");
+
+        // add a base class with a nested class
+        Path source = Paths.get(src, "data", "test10", "base", "version");
+        javac(classes.resolve("base"), source.resolve("Nested.java"));
+
+        // add a versioned class with a nested class
+        source = Paths.get(src, "data", "test10", "v9", "version");
+        javac(classes.resolve("v9"), source.resolve("Nested.java"));
+
+        jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+                "--release", "9", "-C", classes.resolve("v9").toString(), ".")
+                .assertSuccess();
+
+        delete(jarfile);
+        deleteDir(Paths.get(usr, "classes"));
+    }
+
+    @Test
+    // a base entry contains a nested class that doesn't have a matching top level class
+    public void test11() throws IOException {
+        String jarfile = "test.jar";
+
+        compile("test01");  //use same data as test01
+
+        Path classes = Paths.get("classes");
+
+        // add a base class with a nested class
+        Path source = Paths.get(src, "data", "test10", "base", "version");
+        javac(classes.resolve("base"), source.resolve("Nested.java"));
+
+        // remove the top level class, thus isolating the nested class
+        Files.delete(classes.resolve("base").resolve("version").resolve("Nested.class"));
+
+        // add a versioned class with a nested class
+        source = Paths.get(src, "data", "test10", "v9", "version");
+        javac(classes.resolve("v9"), source.resolve("Nested.java"));
+
+        jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+                "--release", "9", "-C", classes.resolve("v9").toString(), ".")
+                .assertFailure()
+                .resultChecker(r -> {
+                    String[] msg = r.output.split("\\R");
+                    // There should be 3 error messages, cascading from the first.  Once we
+                    // remove the base top level class, the base nested class becomes isolated,
+                    // also the versioned top level class becomes a new public class, thus ignored
+                    // for subsequent checks, leading to the associated versioned nested class
+                    // becoming an isolated nested class
+                    assertTrue(msg.length == 4);
+                    assertTrue(msg[0].contains("an isolated nested class"), msg[0]);
+                    assertTrue(msg[1].contains("contains a new public class"), msg[1]);
+                    assertTrue(msg[2].contains("an isolated nested class"), msg[2]);
+                    assertTrue(msg[3].contains("invalid multi-release jar file"), msg[3]);
+                });
+
+        delete(jarfile);
+        deleteDir(Paths.get(usr, "classes"));
+    }
+
+    @Test
+    // a versioned entry contains a nested class that doesn't have a matching top level class
+    public void test12() throws IOException {
+        String jarfile = "test.jar";
+
+        compile("test01");  //use same data as test01
+
+        Path classes = Paths.get("classes");
+
+        // add a base class with a nested class
+        Path source = Paths.get(src, "data", "test10", "base", "version");
+        javac(classes.resolve("base"), source.resolve("Nested.java"));
+
+        // add a versioned class with a nested class
+        source = Paths.get(src, "data", "test10", "v9", "version");
+        javac(classes.resolve("v9"), source.resolve("Nested.java"));
+
+        // remove the top level class, thus isolating the nested class
+        Files.delete(classes.resolve("v9").resolve("version").resolve("Nested.class"));
+
+        jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+                "--release", "9", "-C", classes.resolve("v9").toString(), ".")
+                .assertFailure()
+                .resultChecker(r ->
+                        assertTrue(r.output.contains("an isolated nested class"), r.output)
+                );
+
+        delete(jarfile);
+        deleteDir(Paths.get(usr, "classes"));
+    }
+
+    /*
      *  Test Infrastructure
      */
     private void compile(String test) throws IOException {
@@ -243,7 +500,7 @@ public class Basic {
     }
 
     private void delete(String name) throws IOException {
-        Files.delete(Paths.get(usr, name));
+        Files.deleteIfExists(Paths.get(usr, name));
     }
 
     private void deleteDir(Path dir) throws IOException {
@@ -271,6 +528,10 @@ public class Basic {
 
         List<String> commands = new ArrayList<>();
         commands.add(javac);
+        String opts = System.getProperty("test.compiler.opts");
+        if (!opts.isEmpty()) {
+            commands.addAll(Arrays.asList(opts.split(" +")));
+        }
         commands.add("-d");
         commands.add(dest.toString());
         Stream.of(sourceFiles).map(Object::toString).forEach(x -> commands.add(x));
@@ -282,6 +543,7 @@ public class Basic {
         String jar = JDKToolFinder.getJDKTool("jar");
         List<String> commands = new ArrayList<>();
         commands.add(jar);
+        commands.addAll(Utils.getForwardVmOptions());
         Stream.of(args).forEach(x -> commands.add(x));
         ProcessBuilder p = new ProcessBuilder(commands);
         if (stdinSource != null)
