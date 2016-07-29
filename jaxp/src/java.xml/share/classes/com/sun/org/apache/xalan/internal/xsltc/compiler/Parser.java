@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,6 +37,7 @@ import com.sun.org.apache.xml.internal.serializer.utils.SystemIDResolver;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -44,17 +45,20 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Stack;
 import java.util.StringTokenizer;
-import java.util.Vector;
 import javax.xml.XMLConstants;
+import javax.xml.catalog.CatalogFeatures;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import jdk.xml.internal.JdkXmlFeatures;
+import jdk.xml.internal.JdkXmlUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.AttributesImpl;
@@ -75,8 +79,8 @@ public class Parser implements Constants, ContentHandler {
 
     private XSLTC _xsltc;             // Reference to the compiler object.
     private XPathParser _xpathParser; // Reference to the XPath parser.
-    private Vector _errors;           // Contains all compilation errors
-    private Vector _warnings;         // Contains all compilation errors
+    private ArrayList<ErrorMsg> _errors;           // Contains all compilation errors
+    private ArrayList<ErrorMsg> _warnings;         // Contains all compilation errors
 
     private Map<String, String>   _instructionClasses; // Maps instructions to classes
     private Map<String, String[]> _instructionAttrs;  // reqd and opt attrs
@@ -113,8 +117,8 @@ public class Parser implements Constants, ContentHandler {
         _instructionAttrs    = new HashMap<>();
         _variableScope       = new HashMap<>();
         _template            = null;
-        _errors              = new Vector();
-        _warnings            = new Vector();
+        _errors              = new ArrayList<>();
+        _warnings            = new ArrayList<>();
         _symbolTable         = new SymbolTable();
         _xpathParser         = new XPathParser(this);
         _currentStylesheet   = null;
@@ -475,9 +479,10 @@ public class Parser implements Constants, ContentHandler {
             try {
                 factory.setFeature(Constants.NAMESPACE_FEATURE,true);
             }
-            catch (Exception e) {
+            catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
                 factory.setNamespaceAware(true);
             }
+
             final SAXParser parser = factory.newSAXParser();
             try {
                 parser.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD,
@@ -486,6 +491,28 @@ public class Parser implements Constants, ContentHandler {
                 ErrorMsg err = new ErrorMsg(ErrorMsg.WARNING_MSG,
                         parser.getClass().getName() + ": " + e.getMessage());
                 reportError(WARNING, err);
+            }
+
+            boolean supportCatalog = true;
+            boolean useCatalog = _xsltc.getFeature(JdkXmlFeatures.XmlFeature.USE_CATALOG);
+            try {
+                factory.setFeature(JdkXmlUtils.USE_CATALOG,useCatalog);
+            }
+            catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
+                supportCatalog = false;
+            }
+
+            if (supportCatalog && useCatalog) {
+                try {
+                    CatalogFeatures cf = (CatalogFeatures)_xsltc.getProperty(JdkXmlFeatures.CATALOG_FEATURES);
+                    if (cf != null) {
+                        for (CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
+                            parser.setProperty(f.getPropertyName(), cf.get(f));
+                        }
+                    }
+                } catch (SAXNotRecognizedException e) {
+                    //shall not happen for internal settings
+                }
             }
 
             final XMLReader reader = parser.getXMLReader();
@@ -1191,7 +1218,7 @@ public class Parser implements Constants, ContentHandler {
         if (size > 0) {
             System.err.println(new ErrorMsg(ErrorMsg.COMPILER_ERROR_KEY));
             for (int i = 0; i < size; i++) {
-                System.err.println("  " + _errors.elementAt(i));
+                System.err.println("  " + _errors.get(i));
             }
         }
     }
@@ -1204,7 +1231,7 @@ public class Parser implements Constants, ContentHandler {
         if (size > 0) {
             System.err.println(new ErrorMsg(ErrorMsg.COMPILER_WARNING_KEY));
             for (int i = 0; i < size; i++) {
-                System.err.println("  " + _warnings.elementAt(i));
+                System.err.println("  " + _warnings.get(i));
             }
         }
     }
@@ -1217,36 +1244,36 @@ public class Parser implements Constants, ContentHandler {
         case Constants.INTERNAL:
             // Unexpected internal errors, such as null-ptr exceptions, etc.
             // Immediately terminates compilation, no translet produced
-            _errors.addElement(error);
+            _errors.add(error);
             break;
         case Constants.UNSUPPORTED:
             // XSLT elements that are not implemented and unsupported ext.
             // Immediately terminates compilation, no translet produced
-            _errors.addElement(error);
+            _errors.add(error);
             break;
         case Constants.FATAL:
             // Fatal error in the stylesheet input (parsing or content)
             // Immediately terminates compilation, no translet produced
-            _errors.addElement(error);
+            _errors.add(error);
             break;
         case Constants.ERROR:
             // Other error in the stylesheet input (parsing or content)
             // Does not terminate compilation, no translet produced
-            _errors.addElement(error);
+            _errors.add(error);
             break;
         case Constants.WARNING:
             // Other error in the stylesheet input (content errors only)
             // Does not terminate compilation, a translet is produced
-            _warnings.addElement(error);
+            _warnings.add(error);
             break;
         }
     }
 
-    public Vector getErrors() {
+    public ArrayList<ErrorMsg> getErrors() {
         return _errors;
     }
 
-    public Vector getWarnings() {
+    public ArrayList<ErrorMsg> getWarnings() {
         return _warnings;
     }
 
