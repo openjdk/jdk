@@ -49,6 +49,7 @@ public class TestMutuallyExclusivePlatformPredicates {
         BITNESS("is32bit", "is64bit"),
         OS("isAix", "isLinux", "isOSX", "isSolaris", "isWindows"),
         VM_TYPE("isClient", "isServer", "isGraal", "isMinimal", "isZero"),
+        MODE("isInt", "isMixed", "isComp"),
         IGNORED("isDebugBuild", "shouldSAAttach",
                 "canPtraceAttachLinux", "canAttachOSX", "isTieredSupported");
 

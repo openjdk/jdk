@@ -26,19 +26,24 @@
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build AddExactLongTest
+ *
+ * @build compiler.intrinsics.mathexact.sanity.AddExactLongTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+WhiteBoxAPI -XX:+LogCompilation
- *                   -XX:CompileCommand=compileonly,MathIntrinsic*::execMathMethod
- *                   -XX:LogFile=hs_neg.log -XX:-UseMathExactIntrinsics AddExactLongTest
+ *                   -XX:CompileCommand=compileonly,compiler.intrinsics.mathexact.sanity.MathIntrinsic*::execMathMethod
+ *                   -XX:LogFile=hs_neg.log -XX:-UseMathExactIntrinsics
+ *                   compiler.intrinsics.mathexact.sanity.AddExactLongTest
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+WhiteBoxAPI -XX:+LogCompilation
- *                   -XX:CompileCommand=compileonly,MathIntrinsic*::execMathMethod
- *                   -XX:LogFile=hs.log -XX:+UseMathExactIntrinsics AddExactLongTest
+ *                   -XX:CompileCommand=compileonly,compiler.intrinsics.mathexact.sanity.MathIntrinsic*::execMathMethod
+ *                   -XX:LogFile=hs.log -XX:+UseMathExactIntrinsics
+ *                   compiler.intrinsics.mathexact.sanity.AddExactLongTest
  * @run driver compiler.testlibrary.intrinsics.Verifier hs_neg.log hs.log
  */
+
+package compiler.intrinsics.mathexact.sanity;
 
 public class AddExactLongTest {
 

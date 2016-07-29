@@ -25,13 +25,14 @@
  * @test
  * @bug 8026844
  * @summary Test constant negExact
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @compile NegExactLConstantTest.java Verify.java
- * @run main NegExactLConstantTest
  *
+ * @run main compiler.intrinsics.mathexact.NegExactLConstantTest
  */
+
+package compiler.intrinsics.mathexact;
 
 public class NegExactLConstantTest {
     public static void main(String[] args) {

@@ -1560,13 +1560,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ bind(ok);
   }
 #endif
-  if (TraceJumps) {
-    // Move target to register that is recordable
-    __ mov(Lscratch, G3_scratch);
-    __ JMP(G3_scratch, 0);
-  } else {
-    __ jmp(Lscratch, 0);
-  }
+  __ jmp(Lscratch, 0);
   __ delayed()->nop();
 
 

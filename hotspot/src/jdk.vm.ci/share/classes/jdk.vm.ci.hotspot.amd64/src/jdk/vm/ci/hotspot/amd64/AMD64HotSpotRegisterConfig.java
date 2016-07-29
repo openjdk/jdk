@@ -105,7 +105,9 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
 
     private final RegisterArray javaGeneralParameterRegisters;
     private final RegisterArray nativeGeneralParameterRegisters;
-    private final RegisterArray xmmParameterRegisters = new RegisterArray(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7);
+    private final RegisterArray javaXMMParameterRegisters;
+    private final RegisterArray nativeXMMParameterRegisters;
+    private final boolean windowsOS;
 
     /*
      * Some ABIs (e.g. Windows) require a so-called "home space", that is a save area on the stack
@@ -143,23 +145,27 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
         assert callerSaved.size() >= allocatable.size();
     }
 
-    public AMD64HotSpotRegisterConfig(TargetDescription target, RegisterArray allocatable, boolean windowsOs) {
+    public AMD64HotSpotRegisterConfig(TargetDescription target, RegisterArray allocatable, boolean windowsOS) {
         this.target = target;
+        this.windowsOS = windowsOS;
 
-        if (windowsOs) {
+        if (windowsOS) {
             javaGeneralParameterRegisters = new RegisterArray(rdx, r8, r9, rdi, rsi, rcx);
             nativeGeneralParameterRegisters = new RegisterArray(rcx, rdx, r8, r9);
+            nativeXMMParameterRegisters = new RegisterArray(xmm0, xmm1, xmm2, xmm3);
             this.needsNativeStackHomeSpace = true;
         } else {
             javaGeneralParameterRegisters = new RegisterArray(rsi, rdx, rcx, r8, r9, rdi);
             nativeGeneralParameterRegisters = new RegisterArray(rdi, rsi, rdx, rcx, r8, r9);
+            nativeXMMParameterRegisters = new RegisterArray(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7);
             this.needsNativeStackHomeSpace = false;
         }
+        javaXMMParameterRegisters = new RegisterArray(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7);
 
         this.allocatable = allocatable;
         Set<Register> callerSaveSet = new HashSet<>();
         allocatable.addTo(callerSaveSet);
-        xmmParameterRegisters.addTo(callerSaveSet);
+        javaXMMParameterRegisters.addTo(callerSaveSet);
         callerSaveSet.addAll(javaGeneralParameterRegisters.asList());
         nativeGeneralParameterRegisters.addTo(callerSaveSet);
         callerSaved = new RegisterArray(callerSaveSet);
@@ -187,11 +193,11 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
     public CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, ValueKindFactory<?> valueKindFactory) {
         HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
         if (type == HotSpotCallingConventionType.NativeCall) {
-            return callingConvention(nativeGeneralParameterRegisters, returnType, parameterTypes, hotspotType, valueKindFactory);
+            return callingConvention(nativeGeneralParameterRegisters, nativeXMMParameterRegisters, windowsOS, returnType, parameterTypes, hotspotType, valueKindFactory);
         }
         // On x64, parameter locations are the same whether viewed
         // from the caller or callee perspective
-        return callingConvention(javaGeneralParameterRegisters, returnType, parameterTypes, hotspotType, valueKindFactory);
+        return callingConvention(javaGeneralParameterRegisters, javaXMMParameterRegisters, false, returnType, parameterTypes, hotspotType, valueKindFactory);
     }
 
     @Override
@@ -208,14 +214,33 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
                 return hotspotType == HotSpotCallingConventionType.NativeCall ? nativeGeneralParameterRegisters : javaGeneralParameterRegisters;
             case Float:
             case Double:
-                return xmmParameterRegisters;
+                return hotspotType == HotSpotCallingConventionType.NativeCall ? nativeXMMParameterRegisters : javaXMMParameterRegisters;
             default:
                 throw JVMCIError.shouldNotReachHere();
         }
     }
 
-    private CallingConvention callingConvention(RegisterArray generalParameterRegisters, JavaType returnType, JavaType[] parameterTypes, HotSpotCallingConventionType type,
+    /**
+     * Hand out registers matching the calling convention from the {@code generalParameterRegisters}
+     * and {@code xmmParameterRegisters} sets. Normally registers are handed out from each set
+     * individually based on the type of the argument. If the {@code unified} flag is true then hand
+     * out registers in a single sequence, selecting between the sets based on the type. This is to
+     * support the Windows calling convention which only ever passes 4 arguments in registers, no
+     * matter their types.
+     *
+     * @param generalParameterRegisters
+     * @param xmmParameterRegisters
+     * @param unified
+     * @param returnType
+     * @param parameterTypes
+     * @param type
+     * @param valueKindFactory
+     * @return the resulting calling convention
+     */
+    private CallingConvention callingConvention(RegisterArray generalParameterRegisters, RegisterArray xmmParameterRegisters, boolean unified, JavaType returnType, JavaType[] parameterTypes,
+                    HotSpotCallingConventionType type,
                     ValueKindFactory<?> valueKindFactory) {
+        assert !unified || generalParameterRegisters.size() == xmmParameterRegisters.size() : "must be same size in unified mode";
         AllocatableValue[] locations = new AllocatableValue[parameterTypes.length];
 
         int currentGeneral = 0;
@@ -240,8 +265,8 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
                     break;
                 case Float:
                 case Double:
-                    if (currentXMM < xmmParameterRegisters.size()) {
-                        Register register = xmmParameterRegisters.get(currentXMM++);
+                    if ((unified ? currentGeneral : currentXMM) < xmmParameterRegisters.size()) {
+                        Register register = xmmParameterRegisters.get(unified ? currentGeneral++ : currentXMM++);
                         locations[i] = register.asValue(valueKindFactory.getValueKind(kind));
                     }
                     break;
@@ -255,6 +280,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
                 currentStackOffset += Math.max(valueKind.getPlatformKind().getSizeInBytes(), target.wordSize);
             }
         }
+        assert !unified || currentXMM == 0 : "shouldn't be used in unified mode";
 
         JavaKind returnKind = returnType == null ? JavaKind.Void : returnType.getJavaKind();
         AllocatableValue returnLocation = returnKind == JavaKind.Void ? Value.ILLEGAL : getReturnRegister(returnKind).asValue(valueKindFactory.getValueKind(returnKind.getStackKind()));

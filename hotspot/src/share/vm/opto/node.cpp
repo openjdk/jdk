@@ -295,9 +295,6 @@ inline int Node::Init(int req) {
   if (req > 0) {
     // Allocate space for _in array to have double alignment.
     _in = (Node **) ((char *) (C->node_arena()->Amalloc_D(req * sizeof(void*))));
-#ifdef ASSERT
-    _in[req-1] = this; // magic cookie for assertion check
-#endif
   }
   // If there are default notes floating around, capture them:
   Node_Notes* nn = C->default_node_notes();
@@ -326,10 +323,8 @@ Node::Node(uint req)
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   if (req == 0) {
-    assert( _in == (Node**)this, "Must not pass arg count to 'new'" );
     _in = NULL;
   } else {
-    assert( _in[req-1] == this, "Must pass arg count to 'new'" );
     Node** to = _in;
     for(uint i = 0; i < req; i++) {
       to[i] = NULL;
@@ -346,8 +341,6 @@ Node::Node(Node *n0)
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
-  // Assert we allocated space for input array already
-  assert( _in[0] == this, "Must pass arg count to 'new'" );
   assert( is_not_dead(n0), "can not use dead node");
   _in[0] = n0; if (n0 != NULL) n0->add_out((Node *)this);
 }
@@ -361,8 +354,6 @@ Node::Node(Node *n0, Node *n1)
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
-  // Assert we allocated space for input array already
-  assert( _in[1] == this, "Must pass arg count to 'new'" );
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
   _in[0] = n0; if (n0 != NULL) n0->add_out((Node *)this);
@@ -378,8 +369,6 @@ Node::Node(Node *n0, Node *n1, Node *n2)
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
-  // Assert we allocated space for input array already
-  assert( _in[2] == this, "Must pass arg count to 'new'" );
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
   assert( is_not_dead(n2), "can not use dead node");
@@ -397,8 +386,6 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3)
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
-  // Assert we allocated space for input array already
-  assert( _in[3] == this, "Must pass arg count to 'new'" );
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
   assert( is_not_dead(n2), "can not use dead node");
@@ -418,8 +405,6 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3, Node *n4)
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
-  // Assert we allocated space for input array already
-  assert( _in[4] == this, "Must pass arg count to 'new'" );
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
   assert( is_not_dead(n2), "can not use dead node");
@@ -442,8 +427,6 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
-  // Assert we allocated space for input array already
-  assert( _in[5] == this, "Must pass arg count to 'new'" );
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
   assert( is_not_dead(n2), "can not use dead node");
@@ -468,8 +451,6 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
-  // Assert we allocated space for input array already
-  assert( _in[6] == this, "Must pass arg count to 'new'" );
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
   assert( is_not_dead(n2), "can not use dead node");

@@ -22,14 +22,20 @@
  *
  */
 
-import java.lang.invoke.*;
-
 /**
  * @test
  * @bug 8148752
  * @summary Test correct casting of MH arguments during inlining.
- * @run main LongReferenceCastingTest
+ *
+ * @run main compiler.jsr292.LongReferenceCastingTest
  */
+
+package compiler.jsr292;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+
 public class LongReferenceCastingTest {
     static final String MY_STRING = "myString";
     static final MethodHandle MH;

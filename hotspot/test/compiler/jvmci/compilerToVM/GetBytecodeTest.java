@@ -43,12 +43,13 @@ package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.CTVMUtilities;
 import compiler.jvmci.common.testcases.TestCase;
-import java.lang.reflect.Executable;
-import java.lang.reflect.Modifier;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.test.lib.Asserts;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+
+import java.lang.reflect.Executable;
+import java.lang.reflect.Modifier;
 
 public class GetBytecodeTest {
 

@@ -25,9 +25,12 @@
  * @test
  * @bug 8080699
  * @summary eliminated arraycopy node still reachable through exception edges
- * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation TestDeadArrayCopyOnMemChain
  *
+ * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
+ *                   compiler.arraycopy.TestDeadArrayCopyOnMemChain
  */
+
+package compiler.arraycopy;
 
 public class TestDeadArrayCopyOnMemChain {
     static class A {

@@ -31,7 +31,7 @@ package p;
  * of course is NOT usually the case in this test).
  *
  */
-public abstract class E implements p.I {
+public abstract class E implements I {
        public int m() {
            return 2;
        }

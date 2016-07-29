@@ -24,11 +24,21 @@
 /**
  * @test
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
- * @run main ContinuousCallSiteTargetChange
+ * @library /testlibrary /
+ *
+ * @run driver compiler.jsr292.ContinuousCallSiteTargetChange
  */
-import java.lang.invoke.*;
-import jdk.test.lib.*;
+
+package compiler.jsr292;
+
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
+
+import java.lang.invoke.CallSite;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.MutableCallSite;
 
 public class ContinuousCallSiteTargetChange {
     static void testServer() throws Exception {
@@ -37,7 +47,7 @@ public class ContinuousCallSiteTargetChange {
                 "-server", "-XX:-TieredCompilation", "-Xbatch",
                 "-XX:PerBytecodeRecompilationCutoff=10", "-XX:PerMethodRecompilationCutoff=10",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
-                "ContinuousCallSiteTargetChange$Test", "100");
+                Test.class.getName(), "100");
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 
@@ -53,7 +63,7 @@ public class ContinuousCallSiteTargetChange {
                 "-client", "-XX:+TieredCompilation", "-XX:TieredStopAtLevel=1", "-Xbatch",
                 "-XX:PerBytecodeRecompilationCutoff=10", "-XX:PerMethodRecompilationCutoff=10",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
-                "ContinuousCallSiteTargetChange$Test", "100");
+                Test.class.getName(), "100");
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 

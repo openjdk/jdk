@@ -70,11 +70,7 @@ define_pd_global(uintx, CMSYoungGenPerWorker, 64*M);  // default max size of CMS
 
 define_pd_global(uintx, TypeProfileLevel, 111);
 
-// No performance work done here yet.
-define_pd_global(bool, CompactStrings, false);
-
-// avoid biased locking while we are bootstrapping the aarch64 build
-define_pd_global(bool, UseBiasedLocking, false);
+define_pd_global(bool, CompactStrings, true);
 
 // Clear short arrays bigger than one word in an arch-specific way
 define_pd_global(intx, InitArrayShortSize, BytesPerLong);
@@ -118,6 +114,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
 // Don't attempt to use Neon on builtin sim until builtin sim supports it
 #define UseCRC32 false
 #define UseSIMDForMemoryOps    false
+#define AvoidUnalignedAcesses false
 
 #else
 #define UseBuiltinSim           false
@@ -144,6 +141,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use CRC32 instructions for CRC32 computation")               \
   product(bool, UseSIMDForMemoryOps, false,                             \
           "Use SIMD instructions in generated memory move code")        \
+  product(bool, AvoidUnalignedAccesses, false,                          \
+          "Avoid generating unaligned memory accesses")                 \
   product(bool, UseLSE, false,                                          \
           "Use LSE instructions")                                       \
   product(bool, UseBlockZeroing, true,                                  \

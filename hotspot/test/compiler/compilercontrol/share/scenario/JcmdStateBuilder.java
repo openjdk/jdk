@@ -25,7 +25,7 @@ package compiler.compilercontrol.share.scenario;
 
 import compiler.compilercontrol.share.method.MethodDescriptor;
 import compiler.compilercontrol.share.method.MethodGenerator;
-import pool.PoolHelper;
+import compiler.compilercontrol.share.pool.PoolHelper;
 import jdk.test.lib.Pair;
 
 import java.lang.reflect.Executable;
