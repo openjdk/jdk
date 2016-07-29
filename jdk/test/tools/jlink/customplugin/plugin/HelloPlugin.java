@@ -27,8 +27,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.Map;
-import jdk.tools.jlink.plugin.ModuleEntry;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.Plugin;
 
 /**
@@ -47,7 +48,7 @@ public final class HelloPlugin implements Plugin {
     }
 
     @Override
-    public void visit(ModulePool inResources, ModulePool outResources) {
+    public ResourcePool transform(ResourcePool inResources, ResourcePoolBuilder outResources) {
         try {
             System.out.println("Hello!!!!!!!!!!");
             File f = new File(OUTPUT_FILE);
@@ -58,6 +59,7 @@ public final class HelloPlugin implements Plugin {
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
+        return outResources.build();
     }
 
     @Override

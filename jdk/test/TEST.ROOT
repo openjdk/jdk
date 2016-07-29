@@ -23,8 +23,8 @@ exclusiveAccess.dirs=java/rmi/Naming java/util/prefs sun/management/jmxremote su
 # Group definitions
 groups=TEST.groups [closed/TEST.groups]
 
-# Allow querying of sun.arch.data.model in @requires clauses
-requires.properties=sun.arch.data.model 
+# Allow querying of various System properties in @requires clauses
+requires.properties=sun.arch.data.model java.runtime.name
 
 # Tests using jtreg 4.2 b02 features
 requiredVersion=4.2 b02

@@ -20,12 +20,6 @@
 
 package com.sun.org.apache.xerces.internal.parsers;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
-import javax.xml.XMLConstants;
-
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XML11DTDScannerImpl;
 import com.sun.org.apache.xerces.internal.impl.XML11DocumentScannerImpl;
@@ -52,7 +46,6 @@ import com.sun.org.apache.xerces.internal.util.FeatureState;
 import com.sun.org.apache.xerces.internal.util.ParserConfigurationSettings;
 import com.sun.org.apache.xerces.internal.util.PropertyState;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDContentModelHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler;
@@ -69,6 +62,13 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLEntityResolver;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLErrorHandler;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLPullParserConfiguration;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Locale;
+import javax.xml.XMLConstants;
+import javax.xml.catalog.CatalogFeatures;
+import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * This class is the configuration used to parse XML 1.0 and XML 1.1 documents.
@@ -478,10 +478,6 @@ public class XML11Configuration extends ParserConfigurationSettings
         // Common components for XML 1.1. and XML 1.0
         fCommonComponents = new ArrayList<>();
 
-        // create table for features and properties
-        fFeatures = new HashMap<>();
-        fProperties = new HashMap<>();
-
         // add default recognized features
         final String[] recognizedFeatures =
         {
@@ -503,7 +499,8 @@ public class XML11Configuration extends ParserConfigurationSettings
             EXTERNAL_GENERAL_ENTITIES,
             EXTERNAL_PARAMETER_ENTITIES,
             PARSER_SETTINGS,
-            XMLConstants.FEATURE_SECURE_PROCESSING
+            XMLConstants.FEATURE_SECURE_PROCESSING,
+            XMLConstants.USE_CATALOG
         };
         addRecognizedFeatures(recognizedFeatures);
         // set state for default features
@@ -528,6 +525,7 @@ public class XML11Configuration extends ParserConfigurationSettings
         fFeatures.put(USE_GRAMMAR_POOL_ONLY, Boolean.FALSE);
         fFeatures.put(PARSER_SETTINGS, Boolean.TRUE);
         fFeatures.put(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
+        fFeatures.put(XMLConstants.USE_CATALOG, JdkXmlUtils.USE_CATALOG_DEFAULT);
 
         // add default recognized properties
         final String[] recognizedProperties =
@@ -559,7 +557,11 @@ public class XML11Configuration extends ParserConfigurationSettings
             LOCALE,
             SCHEMA_DV_FACTORY,
             SECURITY_MANAGER,
-            XML_SECURITY_PROPERTY_MANAGER
+            XML_SECURITY_PROPERTY_MANAGER,
+            JdkXmlUtils.CATALOG_DEFER,
+            JdkXmlUtils.CATALOG_FILES,
+            JdkXmlUtils.CATALOG_PREFER,
+            JdkXmlUtils.CATALOG_RESOLVE
         };
         addRecognizedProperties(recognizedProperties);
 
@@ -620,6 +622,11 @@ public class XML11Configuration extends ParserConfigurationSettings
         } catch (XNIException e) {
             // do nothing
             // REVISIT: What is the right thing to do? -Ac
+        }
+
+        // Initialize Catalog features
+        for( CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
+            fProperties.put(f.getPropertyName(), null);
         }
 
         fConfigUpdated = false;

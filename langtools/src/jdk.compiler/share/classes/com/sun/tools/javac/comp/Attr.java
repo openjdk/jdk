@@ -3159,7 +3159,7 @@ public class Attr extends JCTree.Visitor {
         Type operand = attribExpr(tree.rhs, env);
         // Find operator.
         Symbol operator = tree.operator = operators.resolveBinary(tree, tree.getTag().noAssignOp(), owntype, operand);
-        if (operator.kind == MTH &&
+        if (operator != operators.noOpSymbol &&
                 !owntype.isErroneous() &&
                 !operand.isErroneous()) {
             chk.checkDivZero(tree.rhs.pos(), operator, operand);
@@ -3179,7 +3179,7 @@ public class Attr extends JCTree.Visitor {
         // Find operator.
         Symbol operator = tree.operator = operators.resolveUnary(tree, tree.getTag(), argtype);
         Type owntype = types.createErrorType(tree.type);
-        if (operator.kind == MTH &&
+        if (operator != operators.noOpSymbol &&
                 !argtype.isErroneous()) {
             owntype = (tree.getTag().isIncOrDecUnaryOp())
                 ? tree.arg.type
@@ -3204,7 +3204,7 @@ public class Attr extends JCTree.Visitor {
         // Find operator.
         Symbol operator = tree.operator = operators.resolveBinary(tree, tree.getTag(), left, right);
         Type owntype = types.createErrorType(tree.type);
-        if (operator.kind == MTH &&
+        if (operator != operators.noOpSymbol &&
                 !left.isErroneous() &&
                 !right.isErroneous()) {
             owntype = operator.type.getReturnType();

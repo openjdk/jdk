@@ -38,6 +38,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Symbol.OperatorSymbol.AccessCode;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.code.Type.*;
 
@@ -49,6 +50,7 @@ import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
+import static com.sun.tools.javac.code.Symbol.OperatorSymbol.AccessCode.DEREF;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
@@ -816,33 +818,6 @@ public class Lower extends TreeTranslator {
  * Access methods
  *************************************************************************/
 
-    /** Access codes for dereferencing, assignment,
-     *  and pre/post increment/decrement.
-     *  Access codes for assignment operations are determined by method accessCode
-     *  below.
-     *
-     *  All access codes for accesses to the current class are even.
-     *  If a member of the superclass should be accessed instead (because
-     *  access was via a qualified super), add one to the corresponding code
-     *  for the current class, making the number odd.
-     *  This numbering scheme is used by the backend to decide whether
-     *  to issue an invokevirtual or invokespecial call.
-     *
-     *  @see Gen#visitSelect(JCFieldAccess tree)
-     */
-    private static final int
-        DEREFcode = 0,
-        ASSIGNcode = 2,
-        PREINCcode = 4,
-        PREDECcode = 6,
-        POSTINCcode = 8,
-        POSTDECcode = 10,
-        FIRSTASGOPcode = 12;
-
-    /** Number of access codes
-     */
-    private static final int NCODES = accessCode(ByteCodes.lushrl) + 2;
-
     /** A mapping from symbols to their access numbers.
      */
     private Map<Symbol,Integer> accessNums;
@@ -864,20 +839,6 @@ public class Lower extends TreeTranslator {
      */
     private ListBuffer<Symbol> accessed;
 
-    /** Map bytecode of binary operation to access code of corresponding
-     *  assignment operation. This is always an even number.
-     */
-    private static int accessCode(int bytecode) {
-        if (ByteCodes.iadd <= bytecode && bytecode <= ByteCodes.lxor)
-            return (bytecode - iadd) * 2 + FIRSTASGOPcode;
-        else if (bytecode == ByteCodes.string_add)
-            return (ByteCodes.lxor + 1 - iadd) * 2 + FIRSTASGOPcode;
-        else if (ByteCodes.ishll <= bytecode && bytecode <= ByteCodes.lushrl)
-            return (bytecode - ishll + ByteCodes.lxor + 2 - iadd) * 2 + FIRSTASGOPcode;
-        else
-            return -1;
-    }
-
     /** return access code for identifier,
      *  @param tree     The tree representing the identifier use.
      *  @param enclOp   The closest enclosing operation node of tree,
@@ -885,24 +846,24 @@ public class Lower extends TreeTranslator {
      */
     private static int accessCode(JCTree tree, JCTree enclOp) {
         if (enclOp == null)
-            return DEREFcode;
+            return AccessCode.DEREF.code;
         else if (enclOp.hasTag(ASSIGN) &&
                  tree == TreeInfo.skipParens(((JCAssign) enclOp).lhs))
-            return ASSIGNcode;
+            return AccessCode.ASSIGN.code;
         else if (enclOp.getTag().isIncOrDecUnaryOp() &&
                  tree == TreeInfo.skipParens(((JCUnary) enclOp).arg))
-            return mapTagToUnaryOpCode(enclOp.getTag());
+            return (((JCUnary) enclOp).operator).getAccessCode(enclOp.getTag());
         else if (enclOp.getTag().isAssignop() &&
                  tree == TreeInfo.skipParens(((JCAssignOp) enclOp).lhs))
-            return accessCode(((OperatorSymbol) ((JCAssignOp) enclOp).operator).opcode);
+            return (((JCAssignOp) enclOp).operator).getAccessCode(enclOp.getTag());
         else
-            return DEREFcode;
+            return AccessCode.DEREF.code;
     }
 
     /** Return binary operator that corresponds to given access code.
      */
-    private OperatorSymbol binaryAccessOperator(int acode) {
-        return (OperatorSymbol)operators.lookupBinaryOp(sym -> accessCode(((OperatorSymbol)sym).opcode) == acode);
+    private OperatorSymbol binaryAccessOperator(int acode, Tag tag) {
+        return operators.lookupBinaryOp(op -> op.getAccessCode(tag) == acode);
     }
 
     /** Return tree tag for assignment operation corresponding
@@ -984,7 +945,7 @@ public class Lower extends TreeTranslator {
         if (anum == null) {
             anum = accessed.length();
             accessNums.put(vsym, anum);
-            accessSyms.put(vsym, new MethodSymbol[NCODES]);
+            accessSyms.put(vsym, new MethodSymbol[AccessCode.numberOfAccessCodes]);
             accessed.append(vsym);
             // System.out.println("accessing " + vsym + " in " + vsym.location());
         }
@@ -996,13 +957,13 @@ public class Lower extends TreeTranslator {
         switch (vsym.kind) {
         case VAR:
             acode = accessCode(tree, enclOp);
-            if (acode >= FIRSTASGOPcode) {
-                OperatorSymbol operator = binaryAccessOperator(acode);
+            if (acode >= AccessCode.FIRSTASGOP.code) {
+                OperatorSymbol operator = binaryAccessOperator(acode, enclOp.getTag());
                 if (operator.opcode == string_add)
                     argtypes = List.of(syms.objectType);
                 else
                     argtypes = operator.type.getParameterTypes().tail;
-            } else if (acode == ASSIGNcode)
+            } else if (acode == AccessCode.ASSIGN.code)
                 argtypes = List.of(vsym.erasure(types));
             else
                 argtypes = List.nil();
@@ -1010,7 +971,7 @@ public class Lower extends TreeTranslator {
             thrown = List.nil();
             break;
         case MTH:
-            acode = DEREFcode;
+            acode = AccessCode.DEREF.code;
             argtypes = vsym.erasure(types).getParameterTypes();
             restype = vsym.erasure(types).getReturnType();
             thrown = vsym.type.getThrownTypes();
@@ -1306,47 +1267,11 @@ public class Lower extends TreeTranslator {
                 accessConstructorDef(cdef.pos, sym, accessConstrs.get(sym)));
         } else {
             MethodSymbol[] accessors = accessSyms.get(sym);
-            for (int i = 0; i < NCODES; i++) {
+            for (int i = 0; i < AccessCode.numberOfAccessCodes; i++) {
                 if (accessors[i] != null)
                     cdef.defs = cdef.defs.prepend(
                         accessDef(cdef.pos, sym, accessors[i], i));
             }
-        }
-    }
-
-    /** Maps unary operator integer codes to JCTree.Tag objects
-     *  @param unaryOpCode the unary operator code
-     */
-    private static Tag mapUnaryOpCodeToTag(int unaryOpCode){
-        switch (unaryOpCode){
-            case PREINCcode:
-                return PREINC;
-            case PREDECcode:
-                return PREDEC;
-            case POSTINCcode:
-                return POSTINC;
-            case POSTDECcode:
-                return POSTDEC;
-            default:
-                return NO_TAG;
-        }
-    }
-
-    /** Maps JCTree.Tag objects to unary operator integer codes
-     *  @param tag the JCTree.Tag
-     */
-    private static int mapTagToUnaryOpCode(Tag tag){
-        switch (tag){
-            case PREINC:
-                return PREINCcode;
-            case PREDEC:
-                return PREDECcode;
-            case POSTINC:
-                return POSTINCcode;
-            case POSTDEC:
-                return POSTDECcode;
-            default:
-                return -1;
         }
     }
 
@@ -1388,20 +1313,21 @@ public class Lower extends TreeTranslator {
             int acode1 = acode - (acode & 1);
 
             JCExpression expr;      // The access method's return value.
-            switch (acode1) {
-            case DEREFcode:
+            AccessCode aCode = AccessCode.getFromCode(acode1);
+            switch (aCode) {
+            case DEREF:
                 expr = ref;
                 break;
-            case ASSIGNcode:
+            case ASSIGN:
                 expr = make.Assign(ref, args.head);
                 break;
-            case PREINCcode: case POSTINCcode: case PREDECcode: case POSTDECcode:
-                expr = makeUnary(mapUnaryOpCodeToTag(acode1), ref);
+            case PREINC: case POSTINC: case PREDEC: case POSTDEC:
+                expr = makeUnary(aCode.tag, ref);
                 break;
             default:
                 expr = make.Assignop(
-                    treeTag(binaryAccessOperator(acode1)), ref, args.head);
-                ((JCAssignOp) expr).operator = binaryAccessOperator(acode1);
+                    treeTag(binaryAccessOperator(acode1, JCTree.Tag.NO_TAG)), ref, args.head);
+                ((JCAssignOp) expr).operator = binaryAccessOperator(acode1, JCTree.Tag.NO_TAG);
             }
             stat = make.Return(expr.setType(sym.type));
         } else {
@@ -3275,7 +3201,7 @@ public class Lower extends TreeTranslator {
                         // tree.lhs.  However, we can still get the
                         // unerased type of tree.lhs as it is stored
                         // in tree.type in Attr.
-                        Symbol newOperator = operators.resolveBinary(tree,
+                        OperatorSymbol newOperator = operators.resolveBinary(tree,
                                                                       newTag,
                                                                       tree.type,
                                                                       tree.rhs.type);
@@ -3304,7 +3230,7 @@ public class Lower extends TreeTranslator {
             JCMethodInvocation app = (JCMethodInvocation)tree.lhs;
             // if operation is a += on strings,
             // make sure to convert argument to string
-            JCExpression rhs = (((OperatorSymbol)tree.operator).opcode == string_add)
+            JCExpression rhs = tree.operator.opcode == string_add
               ? makeString(tree.rhs)
               : tree.rhs;
             app.args = List.of(rhs).prependList(app.args);

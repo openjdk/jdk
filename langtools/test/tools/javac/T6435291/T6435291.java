@@ -38,9 +38,7 @@
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.ClassFinder.BadClassFile;
 import com.sun.tools.javac.code.Symtab;
-import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.main.JavaCompiler;
-import com.sun.tools.javac.util.List;
 import javax.tools.ToolProvider;
 
 public class T6435291 {
@@ -48,8 +46,7 @@ public class T6435291 {
         javax.tools.JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         JavacTaskImpl task = (JavacTaskImpl)tool.getTask(null, null, null, null, null, null);
         Symtab syms = Symtab.instance(task.getContext());
-        //initialize unnamed module:
-        Modules.instance(task.getContext()).enter(List.nil(), syms.errSymbol);
+        task.ensureEntered();
         JavaCompiler compiler = JavaCompiler.instance(task.getContext());
         try {
             compiler.resolveIdent(syms.unnamedModule, "T").complete();

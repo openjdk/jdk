@@ -131,8 +131,7 @@ public abstract class StringConcat {
         tree = TreeInfo.skipParens(tree);
         if (tree.hasTag(PLUS) && tree.type.constValue() == null) {
             JCTree.JCBinary op = (JCTree.JCBinary) tree;
-            if (op.operator.kind == MTH &&
-                    ((Symbol.OperatorSymbol) op.operator).opcode == string_add) {
+            if (op.operator.kind == MTH && op.operator.opcode == string_add) {
                 return res
                         .appendList(collect(op.lhs, res))
                         .appendList(collect(op.rhs, res));

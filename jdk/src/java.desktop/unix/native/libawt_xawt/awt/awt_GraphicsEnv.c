@@ -2141,15 +2141,50 @@ Java_sun_awt_X11GraphicsDevice_exitFullScreenExclusive
  * End DisplayMode/FullScreen support
  */
 
+static char *get_output_screen_name(JNIEnv *env, int screen) {
+    if (!awt_XRRGetScreenResources || !awt_XRRGetOutputInfo) {
+        return NULL;
+    }
+    char *name = NULL;
+    AWT_LOCK();
+    int scr = 0, out = 0;
+    if (usingXinerama && XScreenCount(awt_display) > 0) {
+        out = screen;
+    } else {
+        scr = screen;
+    }
+
+    XRRScreenResources *res = awt_XRRGetScreenResources(awt_display,
+                                                  RootWindow(awt_display, scr));
+    if (res) {
+       if (res->noutput > out) {
+            XRROutputInfo *output_info = awt_XRRGetOutputInfo(awt_display,
+                                                        res, res->outputs[out]);
+            if (output_info) {
+                if (output_info->name) {
+                    name = strdup(output_info->name);
+                }
+                awt_XRRFreeOutputInfo(output_info);
+            }
+        }
+        awt_XRRFreeScreenResources(res);
+    }
+    AWT_UNLOCK();
+    return name;
+}
 
 /*
  * Class:     sun_awt_X11GraphicsDevice
  * Method:    getNativeScaleFactor
- * Signature: (I)I
+ * Signature: (I)D
  */
-JNIEXPORT jint JNICALL
+JNIEXPORT jdouble JNICALL
 Java_sun_awt_X11GraphicsDevice_getNativeScaleFactor
     (JNIEnv *env, jobject this, jint screen) {
-
-    return getNativeScaleFactor();
+    char *name = get_output_screen_name(env, screen);
+    double scale = getNativeScaleFactor(name);
+    if (name) {
+        free(name);
+    }
+    return scale;
 }

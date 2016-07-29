@@ -1795,7 +1795,7 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitAssignop(JCAssignOp tree) {
-        OperatorSymbol operator = (OperatorSymbol) tree.operator;
+        OperatorSymbol operator = tree.operator;
         Item l;
         if (operator.opcode == string_add) {
             l = concat.makeConcat(tree);
@@ -1827,7 +1827,7 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitUnary(JCUnary tree) {
-        OperatorSymbol operator = (OperatorSymbol)tree.operator;
+        OperatorSymbol operator = tree.operator;
         if (tree.hasTag(NOT)) {
             CondItem od = genCond(tree.arg, false);
             result = od.negate();
@@ -1909,7 +1909,7 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitBinary(JCBinary tree) {
-        OperatorSymbol operator = (OperatorSymbol)tree.operator;
+        OperatorSymbol operator = tree.operator;
         if (operator.opcode == string_add) {
             result = concat.makeConcat(tree);
         } else if (tree.hasTag(AND)) {
