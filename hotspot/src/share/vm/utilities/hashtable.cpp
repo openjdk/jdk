@@ -342,13 +342,18 @@ template <MEMFLAGS F> void BasicHashtable<F>::verify() {
 
 #ifdef ASSERT
 
-template <MEMFLAGS F> void BasicHashtable<F>::verify_lookup_length(double load) {
-  if ((double)_lookup_length / (double)_lookup_count > load * 2.0) {
+template <MEMFLAGS F> bool BasicHashtable<F>::verify_lookup_length(double load) {
+  if ((!_lookup_warning) && (_lookup_count != 0)
+      && ((double)_lookup_length / (double)_lookup_count > load * 2.0)) {
     warning("Performance bug: SystemDictionary lookup_count=%d "
             "lookup_length=%d average=%lf load=%f",
             _lookup_count, _lookup_length,
-            (double) _lookup_length / _lookup_count, load);
+            (double)_lookup_length / _lookup_count, load);
+    _lookup_warning = true;
+
+    return false;
   }
+  return true;
 }
 
 #endif

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_PPC_VM_STUBROUTINES_PPC_64_HPP
-#define CPU_PPC_VM_STUBROUTINES_PPC_64_HPP
+#ifndef CPU_PPC_VM_STUBROUTINES_PPC_HPP
+#define CPU_PPC_VM_STUBROUTINES_PPC_HPP
 
 // This file holds the platform specific parts of the StubRoutines
 // definition. See stubRoutines.hpp for a description on how to
@@ -61,4 +61,4 @@ class ppc64 {
 
 };
 
-#endif // CPU_PPC_VM_STUBROUTINES_PPC_64_HPP
+#endif // CPU_PPC_VM_STUBROUTINES_PPC_HPP

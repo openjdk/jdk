@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002-2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011 SAP AG.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,18 +20,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "mutex_solaris.inline.hpp"
-#include "runtime/interfaceSupport.hpp"
-#include "runtime/mutex.hpp"
-#include "runtime/thread.inline.hpp"
-#include "utilities/events.hpp"
+/*
+ * This source file is the same as libtest-rw.c and needs to be a separate
+ * file so it can be built with "-z execstack" by the build process.
+ * If any changes are made they probably also need to be made to libtest-rwx.c.
+ */
 
-// Solaris-specific include, therefore not in includeDB_*
-# include "os_share_solaris.hpp"
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include "jni.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-// put OS-includes here
-# include <signal.h>
+JNIEXPORT jint JNICALL Java_Test_someMethod(JNIEnv *env, jobject mainObject) {
+  return 3;
+}
+
+#ifdef __cplusplus
+}
+#endif

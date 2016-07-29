@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "mutex_linux.inline.hpp"
-#include "runtime/interfaceSupport.hpp"
-#include "runtime/mutex.hpp"
-#include "runtime/thread.inline.hpp"
-#include "utilities/events.hpp"
+#ifndef CPU_X86_VM_MACROASSEMBLER_X86_INLINE_HPP
+#define CPU_X86_VM_MACROASSEMBLER_X86_INLINE_HPP
 
-// put OS-includes here
-# include <signal.h>
+// Still empty.
+
+#endif // CPU_X86_VM_MACROASSEMBLER_X86_INLINE_HPP

@@ -73,7 +73,6 @@
 #define ATTRIBUTE_SCANF(fmt, vargs)
 #endif
 
-
 #include "utilities/macros.hpp"
 
 // This file holds all globally used constants & types, class (forward)
@@ -456,24 +455,7 @@ enum RTMState {
 // Allow targets to reduce the default size of the code cache.
 #define CODE_CACHE_DEFAULT_LIMIT CODE_CACHE_SIZE_LIMIT
 
-#ifdef TARGET_ARCH_x86
-# include "globalDefinitions_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "globalDefinitions_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "globalDefinitions_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "globalDefinitions_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "globalDefinitions_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "globalDefinitions_aarch64.hpp"
-#endif
+#include CPU_HEADER(globalDefinitions)
 
 #ifndef INCLUDE_RTM_OPT
 #define INCLUDE_RTM_OPT 0

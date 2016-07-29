@@ -26,21 +26,9 @@
 #define SHARE_VM_PRIMS_JVM_H
 
 #include "prims/jni.h"
-#ifdef TARGET_OS_FAMILY_linux
-# include "jvm_linux.h"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "jvm_solaris.h"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "jvm_windows.h"
-#endif
-#ifdef TARGET_OS_FAMILY_aix
-# include "jvm_aix.h"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "jvm_bsd.h"
-#endif
+#include "utilities/macros.hpp"
+
+#include OS_HEADER_H(jvm)
 
 #ifndef _JAVASOFT_JVM_H_
 #define _JAVASOFT_JVM_H_

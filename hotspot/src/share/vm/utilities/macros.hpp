@@ -316,6 +316,7 @@
 #endif
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
+#define BSD
 #define BSD_ONLY(code) code
 #define NOT_BSD(code)
 #else
@@ -429,6 +430,10 @@
 #define NOT_E500V2(code) code
 #endif
 
+// Note: There are three ARM ports. They set the following in the makefiles:
+// 1. Closed 32-bit port:   -DARM -DARM32           -DTARGET_ARCH_arm
+// 2. Closed 64-bit port:   -DARM -DAARCH64 -D_LP64 -DTARGET_ARCH_arm
+// 3. Open   64-bit port:         -DAARCH64 -D_LP64 -DTARGET_ARCH_aaarch64
 #ifdef ARM
 #define ARM_ONLY(code) code
 #define NOT_ARM(code)
@@ -453,14 +458,32 @@
 #define NOT_AARCH64(code) code
 #endif
 
-#ifdef JAVASE_EMBEDDED
-#define EMBEDDED_ONLY(code) code
-#define NOT_EMBEDDED(code)
-#else
-#define EMBEDDED_ONLY(code)
-#define NOT_EMBEDDED(code) code
-#endif
-
 #define define_pd_global(type, name, value) const type pd_##name = value;
+
+// Helper macros for constructing file names for includes.
+#define CPU_HEADER_STEM(basename) PASTE_TOKENS(basename, INCLUDE_SUFFIX_CPU)
+#define OS_HEADER_STEM(basename) PASTE_TOKENS(basename, INCLUDE_SUFFIX_OS)
+#define OS_CPU_HEADER_STEM(basename) PASTE_TOKENS(basename, PASTE_TOKENS(INCLUDE_SUFFIX_OS, INCLUDE_SUFFIX_CPU))
+
+// Include platform dependent files.
+//
+// This macro constructs from basename and INCLUDE_SUFFIX_OS /
+// INCLUDE_SUFFIX_CPU, which are set on the command line, the name of
+// platform dependent files to be included.
+// Example: INCLUDE_SUFFIX_OS=_linux / INCLUDE_SUFFIX_CPU=_sparc
+//   CPU_HEADER_INLINE(macroAssembler) --> macroAssembler_sparc.inline.hpp
+//   OS_CPU_HEADER(vmStructs)          --> vmStructs_linux_sparc.hpp
+//
+// basename<cpu>.hpp / basename<cpu>.inline.hpp
+#define CPU_HEADER_H(basename)         XSTR(CPU_HEADER_STEM(basename).h)
+#define CPU_HEADER(basename)           XSTR(CPU_HEADER_STEM(basename).hpp)
+#define CPU_HEADER_INLINE(basename)    XSTR(CPU_HEADER_STEM(basename).inline.hpp)
+// basename<os>.hpp / basename<os>.inline.hpp
+#define OS_HEADER_H(basename)          XSTR(OS_HEADER_STEM(basename).h)
+#define OS_HEADER(basename)            XSTR(OS_HEADER_STEM(basename).hpp)
+#define OS_HEADER_INLINE(basename)     XSTR(OS_HEADER_STEM(basename).inline.hpp)
+// basename<os><cpu>.hpp / basename<os><cpu>.inline.hpp
+#define OS_CPU_HEADER(basename)        XSTR(OS_CPU_HEADER_STEM(basename).hpp)
+#define OS_CPU_HEADER_INLINE(basename) XSTR(OS_CPU_HEADER_STEM(basename).inline.hpp)
 
 #endif // SHARE_VM_UTILITIES_MACROS_HPP

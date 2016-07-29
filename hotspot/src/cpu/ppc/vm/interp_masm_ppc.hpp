@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_PPC_VM_INTERP_MASM_PPC_64_HPP
-#define CPU_PPC_VM_INTERP_MASM_PPC_64_HPP
+#ifndef CPU_PPC_VM_INTERP_MASM_PPC_HPP
+#define CPU_PPC_VM_INTERP_MASM_PPC_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "interpreter/invocationCounter.hpp"
@@ -263,4 +263,4 @@ class InterpreterMacroAssembler: public MacroAssembler {
                           NotifyMethodExitMode mode, bool check_exceptions);
 };
 
-#endif // CPU_PPC_VM_INTERP_MASM_PPC_64_HPP
+#endif // CPU_PPC_VM_INTERP_MASM_PPC_HPP

@@ -26,9 +26,7 @@
 #include "asm/assembler.hpp"
 #include "asm/register.hpp"
 #include "register_x86.hpp"
-#ifdef TARGET_ARCH_x86
-# include "interp_masm_x86.hpp"
-#endif
+#include "interp_masm_x86.hpp"
 
 REGISTER_DEFINITION(Register, noreg);
 REGISTER_DEFINITION(Register, rax);

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +22,29 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @summary Verifies that getUnsafe() actually throws SecurityException when unsafeAccess is prohibited.
- * @library /testlibrary
+ * @bug 8026049 8151163
  * @modules java.base/jdk.internal.misc
- * @ignore 8161947
- * @run main GetUnsafe
+ * @library /testlibrary
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseUnalignedAccesses -Djdk.test.lib.random.seed=0 DirectByteBufferTest
+ * @run main/othervm -Djdk.test.lib.random.seed=0 DirectByteBufferTest
+ * @summary Verify that direct byte buffers are correctly accessed.
  */
 
-import jdk.internal.misc.Unsafe;
-import static jdk.test.lib.Asserts.*;
+public class DirectByteBufferTest extends ByteBufferTest {
 
-public class GetUnsafe {
-    public static void main(String args[]) throws Exception {
-        try {
-            Unsafe unsafe = Unsafe.getUnsafe();
-        } catch (SecurityException e) {
-            // Expected
-            return;
-        }
-        throw new RuntimeException("Did not get expected SecurityException");
+    public DirectByteBufferTest(long iterations, boolean direct) {
+        super(iterations, direct);
+    }
+
+    public static void main(String[] args) {
+        // The number of iterations is high to ensure that tiered
+        // compilation kicks in all the way up to C2.
+        long iterations = 100000;
+        if (args.length > 0)
+            iterations = Long.parseLong(args[0]);
+
+        new DirectByteBufferTest(iterations, true).run();
     }
 }
