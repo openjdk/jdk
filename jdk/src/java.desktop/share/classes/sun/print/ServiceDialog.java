@@ -74,7 +74,7 @@ import sun.print.SunPageSelection;
 import java.awt.event.KeyEvent;
 import java.net.URISyntaxException;
 import java.lang.reflect.Field;
-
+import java.net.MalformedURLException;
 
 /**
  * A class which implements a cross-platform print dialog.
@@ -932,12 +932,18 @@ public class ServiceDialog extends JDialog implements ActionListener {
                 allowedToPrintToFile() : false;
 
             // setup Destination (print-to-file) widgets
-            if (psCurrent.isAttributeCategorySupported(dstCategory)) {
-                dstSupported = true;
-            }
             Destination dst = (Destination)asCurrent.get(dstCategory);
             if (dst != null) {
-                dstSelected = true;
+                try {
+                     dst.getURI().toURL();
+                     if (psCurrent.isAttributeValueSupported(dst, docFlavor,
+                                                             asCurrent)) {
+                         dstSupported = true;
+                         dstSelected = true;
+                     }
+                 } catch (MalformedURLException ex) {
+                     dstSupported = true;
+                 }
             }
             cbPrintToFile.setEnabled(dstSupported && dstAllowed);
             cbPrintToFile.setSelected(dstSelected && dstAllowed
@@ -1294,8 +1300,16 @@ public class ServiceDialog extends JDialog implements ActionListener {
                 if (sc == null) {
                     sc = SheetCollate.UNCOLLATED;
                 }
+                if (sc != null &&
+                    !psCurrent.isAttributeValueSupported(sc, docFlavor, asCurrent)) {
+                    scSupported = false;
+                }
+            } else {
+                if (!psCurrent.isAttributeValueSupported(sc, docFlavor, asCurrent)) {
+                    scSupported = false;
+                }
             }
-            cbCollate.setSelected(sc == SheetCollate.COLLATED);
+            cbCollate.setSelected(sc == SheetCollate.COLLATED && scSupported);
             updateCollateCB();
         }
     }

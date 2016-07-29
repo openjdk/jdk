@@ -42,6 +42,8 @@ import java.util.stream.Stream;
 import jdk.testlibrary.FileUtils;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
+
+import static java.io.File.pathSeparator;
 import static java.lang.module.ModuleDescriptor.Version;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toSet;
@@ -280,6 +282,58 @@ public class JmodTest {
                            "Expecting to find \"exports ..., conceals ...\"" +
                                 "in output, but did not: [" + r.output + "]");
              });
+    }
+
+    @Test
+    public void testDuplicateEntries() throws IOException {
+        Path jmod = MODS_DIR.resolve("testDuplicates.jmod");
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+        String cp = EXPLODED_DIR.resolve("foo").resolve("classes").toString();
+        Path lp = EXPLODED_DIR.resolve("foo").resolve("lib");
+
+        jmod("create",
+             "--class-path", cp + pathSeparator + cp,
+             jmod.toString())
+             .assertSuccess()
+             .resultChecker(r ->
+                 assertContains(r.output, "Warning: ignoring duplicate entry")
+             );
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+        jmod("create",
+             "--class-path", cp,
+             "--libs", lp.toString() + pathSeparator + lp.toString(),
+             jmod.toString())
+             .assertSuccess()
+             .resultChecker(r ->
+                 assertContains(r.output, "Warning: ignoring duplicate entry")
+             );
+    }
+
+    @Test
+    public void testIgnoreModuleInfoInOtherSections() throws IOException {
+        Path jmod = MODS_DIR.resolve("testIgnoreModuleInfoInOtherSections.jmod");
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+        String cp = EXPLODED_DIR.resolve("foo").resolve("classes").toString();
+
+        jmod("create",
+            "--class-path", cp,
+            "--libs", cp,
+            jmod.toString())
+            .assertSuccess()
+            .resultChecker(r ->
+                assertContains(r.output, "Warning: ignoring entry")
+            );
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+        jmod("create",
+             "--class-path", cp,
+             "--cmds", cp,
+             jmod.toString())
+             .assertSuccess()
+             .resultChecker(r ->
+                 assertContains(r.output, "Warning: ignoring entry")
+             );
     }
 
     @Test

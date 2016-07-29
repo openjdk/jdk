@@ -39,7 +39,8 @@ import jdk.tools.jlink.Jlink;
 import jdk.tools.jlink.Jlink.JlinkConfiguration;
 import jdk.tools.jlink.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.builder.DefaultImageBuilder;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.internal.PostProcessor;
@@ -100,8 +101,9 @@ public class IntegrationTest {
         }
 
         @Override
-        public void visit(ModulePool in, ModulePool out) {
+        public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
             in.transformAndCopy(Function.identity(), out);
+            return out.build();
         }
     }
 

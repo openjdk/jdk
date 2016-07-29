@@ -195,29 +195,184 @@ import jdk.xml.internal.SecuritySupport;
                         .build();
  * }</pre>
  *
+ * <p>
+ * <h3>JAXP XML Processor Support</h3>
+ * The Catalog Features are supported throughout the JAXP processors, including
+ * SAX and DOM ({@link javax.xml.parsers}), and StAX parsers ({@link javax.xml.stream}),
+ * Schema Validation ({@link javax.xml.validation}), and XML Transformation
+ * ({@link javax.xml.transform}). The features described above can be set through JAXP
+ * factories or processors that define a setProperty or setAttribute interface.
+ * For example, the following code snippet sets a path to a catalog file on a SAX
+ * parser through the {@code javax.xml.catalog.files} property:
+ * <p>
+ * <pre>{@code
+ *      SAXParserFactory spf = SAXParserFactory.newInstance();
+ *      spf.setFeature(XMLConstants.USE_CATALOG, true); [1]
+ *      SAXParser parser = spf.newSAXParser();
+ *      parser.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), "catalog.xml");
+ * }</pre>
+ * <p>
+ * [1] Note that this statement is not required since the default value of
+ * {@link javax.xml.XMLConstants#USE_CATALOG USE_CATALOG} is true.
+ *
+ * <p>
+ * The JAXP Processors' support for Catalog depends on both the
+ * {@link javax.xml.XMLConstants#USE_CATALOG USE_CATALOG} feature and the
+ * existence of valid Catalog file(s). A JAXP processor will use the Catalog
+ * only when the feature is true and valid Catalog file(s) are specified through
+ * the {@code javax.xml.catalog.files} property. It will make no attempt to use
+ * the Catalog if either {@link javax.xml.XMLConstants#USE_CATALOG USE_CATALOG}
+ * is set to false, or there is no Catalog file specified.
+ *
+ * <p>
+ * The JAXP processors will observe the default settings of the
+ * {@link javax.xml.catalog.CatalogFeatures}. The processors, for example, will
+ * report an Exception by default when no matching entry is found since the
+ * default value of the {@code javax.xml.catalog.resolve} property is strict.
+ *
+ * <p>
+ * The JAXP processors give preference to user-specified custom resolvers. If such
+ * a resolver is registered, it will be used over the CatalogResolver. If it returns
+ * null however, the processors will continue resolving with the CatalogResolver.
+ * If it returns an empty source, no attempt will be made by the CatalogResolver.
+ *
+ * <p>
+ * The Catalog support is available for any process in the JAXP library that
+ * supports a resolver. The following table lists all such processes.
+ *
+ * <p>
+ * <center><h3><a name="CatalogFeatures">Processes with Catalog Support</a></h3></center></p>
+ *
+ * <table border="1">
+ * <thead>
+ * <tr>
+ * <th>Process</th>
+ * <th>Catalog Entry Type</th>
+ * <th>Example</th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr>
+ * <td>DTDs and external entities</td>
+ * <td>public, system</td>
+ * <td>
+ * <pre>{@literal
+   The following DTD reference:
+   <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+   Can be resolved using the following Catalog entry:
+   <public publicId="-//W3C//DTD XHTML 1.0 Strict//EN" uri="catalog/xhtml1-strict.dtd"/>
+   or
+   <systemSuffix systemIdSuffix="html1-strict.dtd" uri="catalog/xhtml1-strict.dtd"/>
+ * }</pre>
+ * </td>
+ * </tr>
+ * <tr>
+ * <td>XInclude</td>
+ * <td>uri</td>
+ * <td>
+ * <pre>{@literal
+   The following XInclude element:
+   <xi:include href="http://openjdk.java.net/xml/disclaimer.xml"/>
+
+   can be resolved using an uri entry:
+   <uri name="http://openjdk.java.net/xml/disclaimer.xml" uri="file:///pathto/local/disclaimer.xml"/>
+   or
+   <uriSuffix uriSuffix="disclaimer.xml" uri="file:///pathto/local/disclaimer.xml"/>
+ * }</pre>
+ * </td>
+ * </tr>
+ * <tr>
+ * <td>XSD import</td>
+ * <td>uri</td>
+ * <td>
+ * <pre>{@literal
+   The following import element:
+    <xsd:import namespace="http://openjdk.java.net/xsd/XSDImport_person"
+                schemaLocation="http://openjdk.java.net/xsd/XSDImport_person.xsd"/>
+
+   can be resolved using an uri entry:
+   <uri name="http://openjdk.java.net/xsd/XSDImport_person.xsd" uri="file:///pathto/local/XSDImport_person.xsd"/>
+   or
+   <uriSuffix uriSuffix="XSDImport_person.xsd" uri="file:///pathto/local/XSDImport_person.xsd"/>
+   or
+   <uriSuffix uriSuffix="http://openjdk.java.net/xsd/XSDImport_person" uri="file:///pathto/local/XSDImport_person.xsd"/>
+ * }</pre>
+ * </td>
+ * </tr>
+ * <tr>
+ * <td>XSD include</td>
+ * <td>uri</td>
+ * <td>
+ * <pre>{@literal
+   The following include element:
+   <xsd:include schemaLocation="http://openjdk.java.net/xsd/XSDInclude_person.xsd"/>
+
+   can be resolved using an uri entry:
+   <uri name="http://openjdk.java.net/xsd/XSDInclude_person.xsd" uri="file:///pathto/local/XSDInclude_person.xsd"/>
+   or
+   <uriSuffix uriSuffix="XSDInclude_person.xsd" uri="file:///pathto/local/XSDInclude_person.xsd"/>
+ * }</pre>
+ * </td>
+ * </tr>
+ * <tr>
+ * <td>XSL import and include</td>
+ * <td>uri</td>
+ * <td>
+ * <pre>{@literal
+   The following include element:
+   <xsl:include href="http://openjdk.java.net/xsl/include.xsl"/>
+
+   can be resolved using an uri entry:
+   <uri name="http://openjdk.java.net/xsl/include.xsl" uri="file:///pathto/local/include.xsl"/>
+   or
+   <uriSuffix uriSuffix="include.xsl" uri="file:///pathto/local/include.xsl"/>
+ * }</pre>
+ * </td>
+ * </tr>
+ * <tr>
+ * <td>XSL document function</td>
+ * <td>uri</td>
+ * <td>
+ * <pre>{@literal
+   The document in the following element:
+   <xsl:variable name="dummy" select="document('http://openjdk.java.net/xsl/list.xml')"/>
+
+   can be resolved using an uri entry:
+   <uri name="http://openjdk.java.net/xsl/list.xml" uri="file:///pathto/local/list.xml"/>
+   or
+   <uriSuffix uriSuffix="list.xml" uri="file:///pathto/local/list.xml"/>
+ * }</pre>
+ * </td>
+ * </tr>
+ * </tbody>
+ * </table>
+ *
  * @since 9
  */
 public class CatalogFeatures {
 
     /**
-     * The constant name of the javax.xml.catalog.files property. See the property table for more details.
+     * The constant name of the javax.xml.catalog.files property as described
+     * in the property table above.
      */
     static final String CATALOG_FILES = "javax.xml.catalog.files";
 
     /**
-     * The javax.xml.catalog.prefer property. See the property table for more details.
+     * The javax.xml.catalog.prefer property as described
+     * in the property table above.
      */
     static final String CATALOG_PREFER = "javax.xml.catalog.prefer";
 
     /**
-     * Determines whether or not delegated catalogs and nextCatalog will be read
-     * when the current catalog is loaded.
+     * The javax.xml.catalog.defer property as described
+     * in the property table above.
      */
     static final String CATALOG_DEFER = "javax.xml.catalog.defer";
 
     /**
-     * Determines the action if there is no matching entry found after
-     * all of the specified catalogs are exhausted.
+     * The javax.xml.catalog.resolve property as described
+     * in the property table above.
      */
     static final String CATALOG_RESOLVE = "javax.xml.catalog.resolve";
 
@@ -305,7 +460,7 @@ public class CatalogFeatures {
          * Returns the default value of the property.
          * @return the default value of the property
          */
-        String defaultValue() {
+        public String defaultValue() {
             return defaultValue;
         }
 

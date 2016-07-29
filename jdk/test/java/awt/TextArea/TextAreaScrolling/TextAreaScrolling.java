@@ -24,7 +24,7 @@
 /*
  @test
  @key headful
- @bug 6180449
+ @bug 6180449 8160764
  @summary TextArea scrolls to its left when selecting the text from the end.
  @run main TextAreaScrolling
  */
@@ -42,6 +42,12 @@ public class TextAreaScrolling {
     Robot robot;
 
     TextAreaScrolling() {
+        try {
+            robot = new Robot();
+        } catch (Exception ex) {
+            throw new RuntimeException("Robot Creation Failed");
+        }
+
         mainFrame = new Frame();
         mainFrame.setSize(200, 200);
         mainFrame.setLocation(200, 200);
@@ -49,19 +55,10 @@ public class TextAreaScrolling {
         textArea = new TextArea();
         textArea.setText("1234 5678");
         textArea.setSelectionStart(3);
-        textArea.setSelectionStart(4);
+        textArea.setSelectionEnd(4);
         mainFrame.add(textArea);
         mainFrame.setVisible(true);
         textArea.requestFocusInWindow();
-
-        try {
-            robot = new Robot();
-            robot.setAutoWaitForIdle(true);
-        } catch (Exception ex) {
-            dispose();
-            System.exit(0);
-            throw new RuntimeException("Robot Creation Failed");
-        }
     }
 
     public void dispose() {
@@ -71,6 +68,8 @@ public class TextAreaScrolling {
     }
 
     public void performTest() {
+        robot.waitForIdle();
+        robot.delay(200);
         Point loc = textArea.getLocationOnScreen();
         Rectangle textAreaBounds = new Rectangle();
         textArea.getBounds(textAreaBounds);
@@ -80,7 +79,7 @@ public class TextAreaScrolling {
 
         // Perform selection by scrolling to left from end of char sequence.
         robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseMove(textAreaBounds.x - 5, loc.y + 5);
+        robot.mouseMove(loc.x - 5, loc.y + 5);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
 
         // Perform double click on beginning word of TextArea
@@ -91,11 +90,12 @@ public class TextAreaScrolling {
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
         robot.delay(100);
+        robot.waitForIdle();
 
         if (textArea.getSelectedText().contentEquals("5678")) {
             dispose();
-            throw new RuntimeException ("TextArea over scrolled towards left"
-                + "Expected selected text: '1234 ' and for mac '1234'"
+            throw new RuntimeException ("TextArea over scrolled towards left. "
+                + "Expected selected text: '1234 ' and for mac '1234' "
                 + "Actual selected text: 5678");
         }
     }
