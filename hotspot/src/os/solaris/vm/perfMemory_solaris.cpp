@@ -336,7 +336,7 @@ static DIR *open_directory_secure(const char* dirname) {
   }
 
   // Check to make sure fd and dirp are referencing the same file system object.
-  if (!is_same_fsobject(fd, dirp->dd_fd)) {
+  if (!is_same_fsobject(fd, dirp->d_fd)) {
     // The directory is not secure.
     os::close(fd);
     os::closedir(dirp);
@@ -368,7 +368,7 @@ static DIR *open_directory_secure_cwd(const char* dirname, int *saved_cwd_fd) {
     // Directory doesn't exist or is insecure, so there is nothing to cleanup.
     return dirp;
   }
-  int fd = dirp->dd_fd;
+  int fd = dirp->d_fd;
 
   // Open a fd to the cwd and save it off.
   int result;
