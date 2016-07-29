@@ -20,8 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.io.PrintWriter;
-import jdk.test.lib.*;
 
 /*
  * @test
@@ -30,21 +28,34 @@ import jdk.test.lib.*;
  * @modules java.base/jdk.internal.misc
  *          java.instrument
  *          java.management
- * @build Agent
- * @run main ClassFileInstaller Agent
- * @run main Launcher
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222 -XX:ReservedCodeCacheSize=3M Agent
+ * @build compiler.profiling.spectrapredefineclass_classloaders.Agent
+ * @run driver ClassFileInstaller compiler.profiling.spectrapredefineclass.Agent
+ * @run driver compiler.profiling.spectrapredefineclass.Launcher
+ * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation
+ *                   -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222
+ *                   -XX:ReservedCodeCacheSize=3M
+ *                   compiler.profiling.spectrapredefineclass.Agent
  */
+
+package compiler.profiling.spectrapredefineclass;
+
+import jdk.test.lib.JDKToolFinder;
+
+import java.io.File;
+import java.io.PrintWriter;
+
 public class Launcher {
     public static void main(String[] args) throws Exception  {
 
       PrintWriter pw = new PrintWriter("MANIFEST.MF");
-      pw.println("Agent-Class: Agent");
+      pw.println("Agent-Class: " + Launcher.class.getPackage().getName() +".Agent");
       pw.println("Can-Retransform-Classes: true");
       pw.close();
 
       ProcessBuilder pb = new ProcessBuilder();
-      pb.command(new String[] { JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", System.getProperty("test.classes",".") + "/agent.jar", "Agent.class"});
+      pb.command(new String[] { JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF",
+              System.getProperty("test.classes",".") + "/agent.jar",
+              "compiler/profiling/spectrapredefineclass/Agent.class".replace('/', File.separatorChar)});
       pb.start().waitFor();
     }
 }

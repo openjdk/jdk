@@ -21,33 +21,43 @@
  * questions.
  */
 
+/*
+ * @test PoolsIndependenceTest
+ * @summary testing of getUsageThreshold()
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @library /testlibrary /test/lib /
+ *
+ * @build compiler.codecache.jmx.PoolsIndependenceTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+WhiteBoxAPI -XX:-UseCodeCacheFlushing -XX:-MethodFlushing
+ *     -XX:+SegmentedCodeCache
+ *     compiler.codecache.jmx.PoolsIndependenceTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+WhiteBoxAPI -XX:-UseCodeCacheFlushing -XX:-MethodFlushing
+ *     -XX:-SegmentedCodeCache
+ *     compiler.codecache.jmx.PoolsIndependenceTest
+ */
+
+package compiler.codecache.jmx;
+
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
+import sun.hotspot.code.BlobType;
+
+import javax.management.ListenerNotFoundException;
+import javax.management.Notification;
+import javax.management.NotificationEmitter;
+import javax.management.NotificationListener;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryNotificationInfo;
 import java.lang.management.MemoryPoolMXBean;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.management.ListenerNotFoundException;
-import javax.management.Notification;
-import javax.management.NotificationEmitter;
-import javax.management.NotificationListener;
-import sun.hotspot.code.BlobType;
 
-/*
- * @test PoolsIndependenceTest
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @library /testlibrary /test/lib
- * @build PoolsIndependenceTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *     sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
- *     -XX:-MethodFlushing -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:+SegmentedCodeCache PoolsIndependenceTest
- * @summary testing of getUsageThreshold()
- */
 public class PoolsIndependenceTest implements NotificationListener {
 
     private final Map<String, AtomicInteger> counters;

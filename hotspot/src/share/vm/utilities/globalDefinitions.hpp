@@ -933,7 +933,7 @@ enum CompLevel {
   CompLevel_full_profile      = 3,         // C1, invocation & backedge counters + mdo
   CompLevel_full_optimization = 4,         // C2, Shark or JVMCI
 
-#if defined(COMPILER2) || defined(SHARK) || INCLUDE_JVMCI
+#if defined(COMPILER2) || defined(SHARK)
   CompLevel_highest_tier      = CompLevel_full_optimization,  // pure C2 and tiered or JVMCI and tiered
 #elif defined(COMPILER1)
   CompLevel_highest_tier      = CompLevel_simple,             // pure C1 or JVMCI

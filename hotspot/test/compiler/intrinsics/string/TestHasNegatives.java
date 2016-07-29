@@ -28,13 +28,13 @@
  * @bug 8054307
  * @summary Validates StringCoding.hasNegatives intrinsic with a small range of tests.
  * @library /compiler/patches
+ *
  * @build java.base/java.lang.Helper
  * @build compiler.intrinsics.string.TestHasNegatives
  * @run main compiler.intrinsics.string.TestHasNegatives
  */
-package compiler.intrinsics.string;
 
-import java.lang.Helper;
+package compiler.intrinsics.string;
 
 /*
  * @summary Validates StringCoding.hasNegatives intrinsic with a small

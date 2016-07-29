@@ -30,9 +30,6 @@
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
  * @summary Test of diagnostic command Compiler.queue
- * Fails intermittently on 32-bit VMs due to 8158756 so quarantine
- * it on those platforms:
- * @requires vm.bits != "32"
  * @build jdk.test.lib.*
  *        jdk.test.lib.dcmd.*
  *        sun.hotspot.WhiteBox
@@ -110,7 +107,7 @@ public class CompilerQueueTest {
             boolean added = WB.enqueueMethodForCompilation(testcase.method, testcase.level);
             // Set results to false for those methods we must to find
             // We will also assert if we find any test method we don't expect
-            Assert.assertTrue(WB.isMethodQueuedForCompilation(testcase.method));
+            Assert.assertEquals(added, WB.isMethodQueuedForCompilation(testcase.method));
             testcase.check = false;
         }
 

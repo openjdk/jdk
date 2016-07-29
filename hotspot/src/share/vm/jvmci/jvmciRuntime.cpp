@@ -613,6 +613,17 @@ JRT_ENTRY(jint, JVMCIRuntime::test_deoptimize_call_int(JavaThread* thread, int v
   return value;
 JRT_END
 
+void JVMCIRuntime::force_initialization(TRAPS) {
+  JVMCIRuntime::initialize_well_known_classes(CHECK);
+
+  ResourceMark rm;
+  TempNewSymbol getCompiler = SymbolTable::new_symbol("getCompiler", CHECK);
+  TempNewSymbol sig = SymbolTable::new_symbol("()Ljdk/vm/ci/runtime/JVMCICompiler;", CHECK);
+  Handle jvmciRuntime = JVMCIRuntime::get_HotSpotJVMCIRuntime(CHECK);
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_virtual(&result, jvmciRuntime, HotSpotJVMCIRuntime::klass(), getCompiler, sig, CHECK);
+}
+
 // private static JVMCIRuntime JVMCI.initializeRuntime()
 JVM_ENTRY(jobject, JVM_GetJVMCIRuntime(JNIEnv *env, jclass c))
   if (!EnableJVMCI) {
@@ -687,8 +698,21 @@ void JVMCIRuntime::initialize_JVMCI(TRAPS) {
   assert(_HotSpotJVMCIRuntime_initialized == true, "what?");
 }
 
+bool JVMCIRuntime::can_initialize_JVMCI() {
+  // Initializing JVMCI requires the module system to be initialized past phase 3.
+  // The JVMCI API itself isn't available until phase 2 and ServiceLoader (which
+  // JVMCI initialization requires) isn't usable until after phase 3. Testing
+  // whether the system loader is initialized satisfies all these invariants.
+  if (SystemDictionary::java_system_loader() == NULL) {
+    return false;
+  }
+  assert(Universe::is_module_initialized(), "must be");
+  return true;
+}
+
 void JVMCIRuntime::initialize_well_known_classes(TRAPS) {
   if (JVMCIRuntime::_well_known_classes_initialized == false) {
+    guarantee(can_initialize_JVMCI(), "VM is not yet sufficiently booted to initialize JVMCI");
     SystemDictionary::WKID scan = SystemDictionary::FIRST_JVMCI_WKID;
     SystemDictionary::initialize_wk_klasses_through(SystemDictionary::LAST_JVMCI_WKID, scan, CHECK);
     JVMCIJavaClasses::compute_offsets(CHECK);

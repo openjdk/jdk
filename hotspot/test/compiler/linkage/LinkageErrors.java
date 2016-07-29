@@ -25,10 +25,16 @@
  * @test
  * @bug 8132879
  * @compile CallSites.jasm
- * @run main/othervm -Xverify:all -Xbatch -XX:CompileCommand=dontinline,Test::test* LinkageErrors
+ * @run main/othervm -Xverify:all -Xbatch
+ *                   -XX:CompileCommand=dontinline,compiler.linkage.LinkageErrors::test*
+ *                   compiler.linkage.LinkageErrors
  */
 
-import java.lang.invoke.*;
+package compiler.linkage;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 
 interface I {
     void m1(int i);
@@ -62,7 +68,7 @@ public class LinkageErrors {
     }
 
     public static void main(String args[]) throws Throwable {
-        Class<?> test = Class.forName("CallSites");
+        Class<?> test = Class.forName("compiler.linkage.CallSites");
 
         // Non-existent method lookups.
         MethodHandle testI1 = L.findStatic(test, "testI1", MethodType.methodType(void.class, I.class));

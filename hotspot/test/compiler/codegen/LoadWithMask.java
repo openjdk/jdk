@@ -25,20 +25,26 @@
  * @test
  * @bug 8032207
  * @summary Invalid node sizing for loadUS2L_immI16 and loadI2L_immI
- * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,LoadWithMask.foo LoadWithMask
  *
+ * @run main/othervm -Xbatch
+ *      -XX:CompileCommand=compileonly,compiler.codegen.LoadWithMask::foo
+ *      compiler.codegen.LoadWithMask
  */
-public class LoadWithMask {
-  static int x[] = new int[1];
-  static long foo() {
-    return x[0] & 0xfff0ffff;
-  }
 
-  public static void main(String[] args) {
-    x[0] = -1;
-    long l = 0;
-    for (int i = 0; i < 100000; ++i) {
-      l = foo();
+package compiler.codegen;
+
+public class LoadWithMask {
+    static int x[] = new int[1];
+
+    static long foo() {
+        return x[0] & 0xfff0ffff;
     }
-  }
+
+    public static void main(String[] args) {
+        x[0] = -1;
+        long l = 0;
+        for (int i = 0; i < 100000; ++i) {
+            l = foo();
+        }
+    }
 }

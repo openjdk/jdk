@@ -23,11 +23,15 @@
 
 package jdk.vm.ci.code.test.amd64;
 
+import static jdk.vm.ci.amd64.AMD64.xmm0;
+
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64Kind;
+import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.DebugInfo;
 import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.RegisterValue;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.site.ConstantReference;
 import jdk.vm.ci.code.site.DataSectionReference;
@@ -36,10 +40,14 @@ import jdk.vm.ci.code.test.TestHotSpotVMConfig;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.hotspot.HotSpotForeignCallTarget;
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.VMConstant;
 
 public class AMD64TestAssembler extends TestAssembler {
+
+    private static final Register scratchRegister = AMD64.r12;
+    private static final Register doubleScratch = AMD64.xmm15;
 
     public AMD64TestAssembler(CodeCacheProvider codeCache, TestHotSpotVMConfig config) {
         super(codeCache, config, 16, 16, AMD64Kind.DWORD, AMD64.rax, AMD64.rcx, AMD64.rdi, AMD64.r8, AMD64.r9, AMD64.r10);
@@ -116,6 +124,10 @@ public class AMD64TestAssembler extends TestAssembler {
     @Override
     public Register emitLoadInt(int c) {
         Register ret = newRegister();
+        return emitLoadInt(ret, c);
+    }
+
+    public Register emitLoadInt(Register ret, int c) {
         emitREX(false, 0, 0, ret.encoding);
         code.emitByte(0xB8 | (ret.encoding & 0x7)); // MOV r32, imm32
         code.emitInt(c);
@@ -125,6 +137,10 @@ public class AMD64TestAssembler extends TestAssembler {
     @Override
     public Register emitLoadLong(long c) {
         Register ret = newRegister();
+        return emitLoadLong(ret, c);
+    }
+
+    public Register emitLoadLong(Register ret, long c) {
         emitREX(true, 0, 0, ret.encoding);
         code.emitByte(0xB8 | (ret.encoding & 0x7)); // MOV r64, imm64
         code.emitLong(c);
@@ -133,16 +149,40 @@ public class AMD64TestAssembler extends TestAssembler {
 
     @Override
     public Register emitLoadFloat(float c) {
+        Register ret = AMD64.xmm0;
+        return emitLoadFloat(ret, c);
+    }
+
+    public Register emitLoadFloat(Register ret, float c) {
         DataSectionReference ref = new DataSectionReference();
         ref.setOffset(data.position());
         data.emitFloat(c);
 
         recordDataPatchInCode(ref);
-        Register ret = AMD64.xmm0;
         emitREX(false, ret.encoding, 0, 0);
         code.emitByte(0xF3);
         code.emitByte(0x0F);
         code.emitByte(0x10);                               // MOVSS xmm1, xmm2/m32
+        code.emitByte(0x05 | ((ret.encoding & 0x7) << 3)); // xmm, [rip+offset]
+        code.emitInt(0xDEADDEAD);
+        return ret;
+    }
+
+    public Register emitLoadDouble(double c) {
+        Register ret = AMD64.xmm0;
+        return emitLoadDouble(ret, c);
+    }
+
+    public Register emitLoadDouble(Register ret, double c) {
+        DataSectionReference ref = new DataSectionReference();
+        ref.setOffset(data.position());
+        data.emitDouble(c);
+
+        recordDataPatchInCode(ref);
+        emitREX(false, ret.encoding, 0, 0);
+        code.emitByte(0xF2);
+        code.emitByte(0x0F);
+        code.emitByte(0x10);                               // MOVSD xmm1, xmm2/m32
         code.emitByte(0x05 | ((ret.encoding & 0x7) << 3)); // xmm, [rip+offset]
         code.emitInt(0xDEADDEAD);
         return ret;
@@ -189,31 +229,67 @@ public class AMD64TestAssembler extends TestAssembler {
         return ret;
     }
 
+    private int getAdjustedOffset(StackSlot ret) {
+        if (ret.getRawOffset() < 0) {
+            return ret.getRawOffset() + 16;
+        } else {
+            return -(frameSize - ret.getRawOffset()) + 16;
+        }
+    }
+
     @Override
     public StackSlot emitIntToStack(Register a) {
         StackSlot ret = newStackSlot(AMD64Kind.DWORD);
+        return emitIntToStack(ret, a);
+    }
+
+    public StackSlot emitIntToStack(StackSlot ret, Register a) {
         // MOV r/m32,r32
-        emitModRMMemory(false, 0x89, a.encoding, AMD64.rbp.encoding, ret.getRawOffset() + 16);
+        emitModRMMemory(false, 0x89, a.encoding, AMD64.rbp.encoding, getAdjustedOffset(ret));
         return ret;
     }
 
     @Override
     public StackSlot emitLongToStack(Register a) {
         StackSlot ret = newStackSlot(AMD64Kind.QWORD);
+        return emitLongToStack(ret, a);
+    }
+
+    public StackSlot emitLongToStack(StackSlot ret, Register a) {
         // MOV r/m64,r64
-        emitModRMMemory(true, 0x89, a.encoding, AMD64.rbp.encoding, ret.getRawOffset() + 16);
+        emitModRMMemory(true, 0x89, a.encoding, AMD64.rbp.encoding, getAdjustedOffset(ret));
         return ret;
     }
 
     @Override
     public StackSlot emitFloatToStack(Register a) {
         StackSlot ret = newStackSlot(AMD64Kind.SINGLE);
+        return emitFloatToStack(ret, a);
+    }
+
+    public StackSlot emitFloatToStack(StackSlot ret, Register a) {
         emitREX(false, a.encoding, 0, 0);
         code.emitByte(0xF3);
         code.emitByte(0x0F);
         code.emitByte(0x11);                               // MOVSS xmm2/m32, xmm1
         code.emitByte(0x85 | ((a.encoding & 0x7) << 3));   // [rbp+offset]
-        code.emitInt(ret.getRawOffset() + 16);
+        code.emitInt(getAdjustedOffset(ret));
+        return ret;
+    }
+
+    @Override
+    public StackSlot emitDoubleToStack(Register a) {
+        StackSlot ret = newStackSlot(AMD64Kind.DOUBLE);
+        return emitDoubleToStack(ret, a);
+    }
+
+    public StackSlot emitDoubleToStack(StackSlot ret, Register a) {
+        emitREX(false, a.encoding, 0, 0);
+        code.emitByte(0xF2);
+        code.emitByte(0x0F);
+        code.emitByte(0x11);                               // MOVSD xmm2/m32, xmm1
+        code.emitByte(0x85 | ((a.encoding & 0x7) << 3));   // [rbp+offset]
+        code.emitInt(getAdjustedOffset(ret));
         return ret;
     }
 
@@ -269,6 +345,14 @@ public class AMD64TestAssembler extends TestAssembler {
     }
 
     @Override
+    public void emitFloatRet(Register a) {
+        assert a == xmm0 : "Unimplemented move " + a;
+        emitMove(true, AMD64.rsp, AMD64.rbp);      // MOV rsp, rbp
+        code.emitByte(0x58 | AMD64.rbp.encoding);  // POP rbp
+        code.emitByte(0xC3);                       // RET
+    }
+
+    @Override
     public void emitPointerRet(Register a) {
         emitMove(true, AMD64.rax, a);              // MOV rax, ...
         emitMove(true, AMD64.rsp, AMD64.rbp);      // MOV rsp, rbp
@@ -284,5 +368,66 @@ public class AMD64TestAssembler extends TestAssembler {
         code.emitByte(0x04);
         code.emitByte(0x25);
         code.emitInt(0);
+    }
+
+    @Override
+    public void emitLoad(AllocatableValue av, Object prim) {
+        if (av instanceof RegisterValue) {
+            Register reg = ((RegisterValue) av).getRegister();
+            if (prim instanceof Float) {
+                emitLoadFloat(reg, (Float) prim);
+            } else if (prim instanceof Double) {
+                emitLoadDouble(reg, (Double) prim);
+            } else if (prim instanceof Integer) {
+                emitLoadInt(reg, (Integer) prim);
+            } else if (prim instanceof Long) {
+                emitLoadLong(reg, (Long) prim);
+            }
+        } else if (av instanceof StackSlot) {
+            StackSlot slot = (StackSlot) av;
+            if (prim instanceof Float) {
+                emitFloatToStack(slot, emitLoadFloat(doubleScratch, (Float) prim));
+            } else if (prim instanceof Double) {
+                emitDoubleToStack(slot, emitLoadDouble(doubleScratch, (Double) prim));
+            } else if (prim instanceof Integer) {
+                emitIntToStack(slot, emitLoadInt(scratchRegister, (Integer) prim));
+            } else if (prim instanceof Long) {
+                emitLongToStack(slot, emitLoadLong(scratchRegister, (Long) prim));
+            } else {
+                assert false : "Unimplemented";
+            }
+        } else {
+            throw new IllegalArgumentException("Unknown value " + av);
+        }
+    }
+
+    @Override
+    public void emitCallPrologue(CallingConvention cc, Object... prim) {
+        emitGrowStack(cc.getStackSize());
+        frameSize += cc.getStackSize();
+        AllocatableValue[] args = cc.getArguments();
+        // Do the emission in reverse, this avoids register collisons of xmm0 - which is used a
+        // scratch register when putting arguments on the stack.
+        for (int i = args.length - 1; i >= 0; i--) {
+            emitLoad(args[i], prim[i]);
+        }
+    }
+
+    @Override
+    public void emitCall(long addr) {
+        Register target = emitLoadLong(addr);
+        code.emitByte(0xFF); // CALL r/m64
+        int enc = target.encoding;
+        if (enc >= 8) {
+            code.emitByte(0x41);
+            enc -= 8;
+        }
+        code.emitByte(0xD0 | enc);
+    }
+
+    @Override
+    public void emitCallEpilogue(CallingConvention cc) {
+        emitGrowStack(-cc.getStackSize());
+        frameSize -= cc.getStackSize();
     }
 }

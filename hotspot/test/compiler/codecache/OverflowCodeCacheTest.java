@@ -22,32 +22,38 @@
  *
  */
 
-import java.lang.management.MemoryPoolMXBean;
-import java.util.EnumSet;
-import java.util.ArrayList;
-
-import sun.hotspot.WhiteBox;
-import sun.hotspot.code.BlobType;
-import sun.hotspot.code.CodeBlob;
-import jdk.test.lib.Asserts;
-
 /*
  * @test OverflowCodeCacheTest
  * @bug 8059550
+ * @summary testing of code cache segments overflow
  * @library /testlibrary /test/lib
  * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build OverflowCodeCacheTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ *          java.management
+ *
+ * @build compiler.codecache.OverflowCodeCacheTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
- *                   -XX:-SegmentedCodeCache OverflowCodeCacheTest
+ *                   -XX:-SegmentedCodeCache
+ *                   compiler.codecache.OverflowCodeCacheTest
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
- *                   -XX:+SegmentedCodeCache OverflowCodeCacheTest
- * @summary testing of code cache segments overflow
+ *                   -XX:+SegmentedCodeCache
+ *                   compiler.codecache.OverflowCodeCacheTest
  */
+
+package compiler.codecache;
+
+import jdk.test.lib.Asserts;
+import sun.hotspot.WhiteBox;
+import sun.hotspot.code.BlobType;
+import sun.hotspot.code.CodeBlob;
+
+import java.lang.management.MemoryPoolMXBean;
+import java.util.ArrayList;
+import java.util.EnumSet;
+
 public class OverflowCodeCacheTest {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 

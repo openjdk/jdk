@@ -28,17 +28,23 @@
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc
  *          java.management
+ *
+ * @run driver compiler.debug.VerifyAdapterSharing
  */
-import jdk.test.lib.*;
+
+package compiler.debug;
+
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
 
 public class VerifyAdapterSharing {
-  public static void main(String[] args) throws Exception {
-    ProcessBuilder pb;
-    OutputAnalyzer out;
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb;
+        OutputAnalyzer out;
 
-    pb = ProcessTools.createJavaProcessBuilder("-Xcomp", "-XX:+IgnoreUnrecognizedVMOptions",
-                                               "-XX:+VerifyAdapterSharing", "-version");
-    out = new OutputAnalyzer(pb.start());
-    out.shouldHaveExitValue(0);
-  }
+        pb = ProcessTools.createJavaProcessBuilder("-Xcomp", "-XX:+IgnoreUnrecognizedVMOptions",
+                "-XX:+VerifyAdapterSharing", "-version");
+        out = new OutputAnalyzer(pb.start());
+        out.shouldHaveExitValue(0);
+    }
 }

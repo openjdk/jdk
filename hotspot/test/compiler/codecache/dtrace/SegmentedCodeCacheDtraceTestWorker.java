@@ -21,13 +21,16 @@
  * questions.
  */
 
+package compiler.codecache.dtrace;
+
 import jdk.test.lib.Utils;
+import sun.hotspot.WhiteBox;
+
 import java.lang.reflect.Executable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import sun.hotspot.WhiteBox;
 
 public class SegmentedCodeCacheDtraceTestWorker {
 

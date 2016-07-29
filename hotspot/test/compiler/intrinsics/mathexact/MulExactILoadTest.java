@@ -25,13 +25,14 @@
  * @test
  * @bug 8026844
  * @summary Test multiplyExact
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @compile MulExactILoadTest.java Verify.java
- * @run main MulExactILoadTest
  *
+ * @run main compiler.intrinsics.mathexact.MulExactILoadTest
  */
+
+package compiler.intrinsics.mathexact;
 
 public class MulExactILoadTest {
     public static void main(String[] args) {

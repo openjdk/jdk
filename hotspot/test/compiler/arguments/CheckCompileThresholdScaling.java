@@ -21,17 +21,20 @@
  * questions.
  */
 
-import jdk.test.lib.*;
-
 /*
  * @test CheckCompileThresholdScaling
  * @bug 8059604
- * @summary "Add CompileThresholdScaling flag to control when methods are first compiled (with +/-TieredCompilation)"
+ * @summary Add CompileThresholdScaling flag to control when methods are first compiled (with +/-TieredCompilation)
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main CheckCompileThresholdScaling
+ * @run driver compiler.arguments.CheckCompileThresholdScaling
  */
+
+package compiler.arguments;
+
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
 
 public class CheckCompileThresholdScaling {
 

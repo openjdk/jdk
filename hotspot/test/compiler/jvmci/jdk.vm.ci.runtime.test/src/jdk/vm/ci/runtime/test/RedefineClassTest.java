@@ -34,8 +34,11 @@
 
 package jdk.vm.ci.runtime.test;
 
-import static org.junit.Assume.assumeTrue;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.junit.Assert;
+import org.junit.Test;
 
+import javax.tools.ToolProvider;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,12 +56,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
-import javax.tools.ToolProvider;
-
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * Tests that {@link ResolvedJavaMethod}s are safe in the context of class redefinition being used
