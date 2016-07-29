@@ -1031,11 +1031,14 @@ void G1ConcurrentMark::mark_from_roots() {
   uint active_workers = MAX2(1U, parallel_marking_threads());
   assert(active_workers > 0, "Should have been set");
 
+  // Setting active workers is not guaranteed since fewer
+  // worker threads may currently exist and more may not be
+  // available.
+  active_workers = _parallel_workers->update_active_workers(active_workers);
   // Parallel task terminator is set in "set_concurrency_and_phase()"
   set_concurrency_and_phase(active_workers, true /* concurrent */);
 
   G1CMConcurrentMarkingTask markingTask(this, cmThread());
-  _parallel_workers->set_active_workers(active_workers);
   _parallel_workers->run_task(&markingTask);
   print_stats();
 }
