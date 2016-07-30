@@ -39,6 +39,7 @@ import java.security.PrivilegedAction;
 
 import com.sun.jndi.ldap.pool.PoolCleaner;
 import com.sun.jndi.ldap.pool.Pool;
+import jdk.internal.misc.InnocuousThread;
 
 /**
  * Contains utilities for managing connection pools of LdapClient.
@@ -163,7 +164,17 @@ public final class LdapPoolManager {
 
         if (idleTimeout > 0) {
             // Create cleaner to expire idle connections
-            new PoolCleaner(idleTimeout, pools).start();
+            PrivilegedAction<Void> pa = new PrivilegedAction<Void>() {
+                public Void run() {
+                    Thread t = InnocuousThread.newSystemThread(
+                            "LDAP PoolCleaner",
+                            new PoolCleaner(idleTimeout, pools));
+                    assert t.getContextClassLoader() == null;
+                    t.setDaemon(true);
+                    t.start();
+                    return null;
+                }};
+            AccessController.doPrivileged(pa);
         }
 
         if (debug) {
