@@ -29,28 +29,28 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.Objects;
-import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 /**
- * A ModuleEntry backed by a given Archive Entry.
+ * A ResourcePoolEntry backed by a given Archive Entry.
  */
-final class ArchiveEntryModuleEntry extends AbstractModuleEntry {
+final class ArchiveEntryResourcePoolEntry extends AbstractResourcePoolEntry {
     private final Archive.Entry entry;
 
     /**
-     * Create a new ArchiveModuleEntry.
+     * Create a new ArchiveResourcePoolEntry.
      *
      * @param module The module name.
      * @param path The data path identifier.
      * @param entry The archive Entry.
      */
-    ArchiveEntryModuleEntry(String module, String path, Archive.Entry entry) {
+    ArchiveEntryResourcePoolEntry(String module, String path, Archive.Entry entry) {
         super(module, path, getImageFileType(Objects.requireNonNull(entry)));
         this.entry = entry;
     }
 
     @Override
-    public InputStream stream() {
+    public InputStream content() {
         try {
             return entry.stream();
         } catch (IOException ex) {
@@ -59,22 +59,22 @@ final class ArchiveEntryModuleEntry extends AbstractModuleEntry {
     }
 
     @Override
-    public long getLength() {
+    public long contentLength() {
         return entry.size();
     }
 
-    private static ModuleEntry.Type getImageFileType(Archive.Entry entry) {
+    private static ResourcePoolEntry.Type getImageFileType(Archive.Entry entry) {
         switch(entry.type()) {
             case CLASS_OR_RESOURCE:
-                return ModuleEntry.Type.CLASS_OR_RESOURCE;
+                return ResourcePoolEntry.Type.CLASS_OR_RESOURCE;
             case CONFIG:
-                return ModuleEntry.Type.CONFIG;
+                return ResourcePoolEntry.Type.CONFIG;
             case NATIVE_CMD:
-                return ModuleEntry.Type.NATIVE_CMD;
+                return ResourcePoolEntry.Type.NATIVE_CMD;
             case NATIVE_LIB:
-                return ModuleEntry.Type.NATIVE_LIB;
+                return ResourcePoolEntry.Type.NATIVE_LIB;
             default:
-                return ModuleEntry.Type.OTHER;
+                return ResourcePoolEntry.Type.OTHER;
         }
     }
 }

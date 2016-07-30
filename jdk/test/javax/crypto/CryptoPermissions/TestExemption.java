@@ -23,55 +23,38 @@
  * questions.
  */
 
-package jdk.tools.jlink.internal;
+import javax.crypto.*;
+import java.security.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
-import java.util.Objects;
+public class TestExemption {
 
-/**
- * A ModuleEntry backed by a given byte[].
- */
-class ByteArrayModuleEntry extends AbstractModuleEntry {
-    private final byte[] buffer;
+    public static void main(String[] args) throws Exception {
 
-    /**
-     * Create a new ByteArrayModuleEntry.
-     *
-     * @param module The module name.
-     * @param path The data path identifier.
-     * @param type The data type.
-     * @param buf  The byte buffer.
-     */
-    ByteArrayModuleEntry(String module, String path, Type type, byte[] buffer) {
-        super(module, path, type);
-        this.buffer = Objects.requireNonNull(buffer);
-    }
+        KeyGenerator kg = KeyGenerator.getInstance("AES");
+        kg.init(128);
+        SecretKey key128 = kg.generateKey();
 
-    @Override
-    public byte[] getBytes() {
-        return buffer.clone();
-    }
+        kg.init(192);
+        SecretKey key192 = kg.generateKey();
 
-    @Override
-    public InputStream stream() {
-        return new ByteArrayInputStream(buffer);
-    }
+        kg.init(256);
+        SecretKey key256 = kg.generateKey();
 
-    @Override
-    public void write(OutputStream out) {
+        Cipher c = Cipher.getInstance("AES/CBC/NoPadding");
+
+        System.out.println("Testing 128-bit");
+        c.init(Cipher.ENCRYPT_MODE, key128);
+
+        System.out.println("Testing 192-bit");
+        c.init(Cipher.ENCRYPT_MODE, key192);
+
         try {
-            out.write(buffer);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
+            System.out.println("Testing 256-bit");
+            c.init(Cipher.ENCRYPT_MODE, key256);
+        } catch (InvalidKeyException e) {
+            System.out.println("Caught the right exception");
         }
-    }
 
-    @Override
-    public long getLength() {
-        return buffer.length;
+        System.out.println("DONE!");
     }
 }

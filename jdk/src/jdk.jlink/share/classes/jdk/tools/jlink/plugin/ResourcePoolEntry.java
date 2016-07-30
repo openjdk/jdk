@@ -31,13 +31,13 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import jdk.tools.jlink.internal.ModuleEntryFactory;
+import jdk.tools.jlink.internal.ResourcePoolEntryFactory;
 
 /**
- * A ModuleEntry is the elementary unit of data inside an image. It is
+ * A ResourcePoolEntry is the elementary unit of data inside an image. It is
  * generally a file. e.g.: a java class file, a resource file, a shared library.
  * <br>
- * A ModuleEntry is identified by a path of the form:
+ * A ResourcePoolEntry is identified by a path of the form:
  * <ul>
  * <li>For jimage content: /{module name}/{package1}/.../{packageN}/{file
  * name}</li>
@@ -45,7 +45,7 @@ import jdk.tools.jlink.internal.ModuleEntryFactory;
  * {@literal bin|conf|native}/{dir1}/.../{dirN}/{file name}</li>
  * </ul>
  */
-public interface ModuleEntry {
+public interface ResourcePoolEntry {
 
     /**
      * Type of module data.
@@ -64,34 +64,49 @@ public interface ModuleEntry {
         NATIVE_LIB,
         OTHER
     }
+
     /**
-     * The ModuleEntry module name.
+     * The module name of this ResourcePoolEntry.
      *
      * @return The module name.
      */
-    public String getModule();
+    public String moduleName();
 
     /**
-     * The ModuleEntry path.
+     * The path of this ResourcePoolEntry.
      *
      * @return The module path.
      */
-    public String getPath();
+    public String path();
 
     /**
-     * The ModuleEntry's type.
+     * The ResourcePoolEntry's type.
      *
      * @return The data type.
      */
-    public Type getType();
+    public Type type();
 
     /**
-     * The ModuleEntry content as an array of bytes.
+     * The ResourcePoolEntry content length.
+     *
+     * @return The content length.
+     */
+    public long contentLength();
+
+    /**
+     * The ResourcePoolEntry content as an InputStream.
+     *
+     * @return The resource content as an InputStream.
+     */
+    public InputStream content();
+
+    /**
+     * The ResourcePoolEntry content as an array of bytes.
      *
      * @return An Array of bytes.
      */
-    public default byte[] getBytes() {
-        try (InputStream is = stream()) {
+    public default byte[] contentBytes() {
+        try (InputStream is = content()) {
             return is.readAllBytes();
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
@@ -99,99 +114,85 @@ public interface ModuleEntry {
     }
 
     /**
-     * The ModuleEntry content length.
-     *
-     * @return The length.
-     */
-    public long getLength();
-
-    /**
-     * The ModuleEntry stream.
-     *
-     * @return The module data stream.
-     */
-    public InputStream stream();
-
-    /**
-     * Write the content of this ModuleEntry to stream.
+     * Write the content of this ResourcePoolEntry to an OutputStream.
      *
      * @param out the output stream
      */
     public default void write(OutputStream out) {
         try {
-            out.write(getBytes());
+            out.write(contentBytes());
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
     }
 
     /**
-     * Create a ModuleEntry with new content but other information
-     * copied from this ModuleEntry.
+     * Create a ResourcePoolEntry with new content but other information
+     * copied from this ResourcePoolEntry.
      *
      * @param content The new resource content.
-     * @return A new ModuleEntry.
+     * @return A new ResourcePoolEntry.
      */
-    public default ModuleEntry create(byte[] content) {
-        return ModuleEntryFactory.create(this, content);
+    public default ResourcePoolEntry copyWithContent(byte[] content) {
+        return ResourcePoolEntryFactory.create(this, content);
     }
 
     /**
-     * Create a ModuleEntry with new content but other information
-     * copied from this ModuleEntry.
+     * Create a ResourcePoolEntry with new content but other information
+     * copied from this ResourcePoolEntry.
      *
      * @param file The new resource content.
-     * @return A new ModuleEntry.
+     * @return A new ResourcePoolEntry.
      */
-    public default ModuleEntry create(Path file) {
-        return ModuleEntryFactory.create(this, file);
+    public default ResourcePoolEntry copyWithContent(Path file) {
+        return ResourcePoolEntryFactory.create(this, file);
     }
 
     /**
-     * Create a ModuleEntry for a resource of the given type.
+     * Create a ResourcePoolEntry for a resource of the given type.
      *
      * @param path The resource path.
-     * @param type The ModuleEntry type.
+     * @param type The ResourcePoolEntry type.
      * @param content The resource content.
-     * @return A new ModuleEntry.
+     * @return A new ResourcePoolEntry.
      */
-    public static ModuleEntry create(String path,
-            ModuleEntry.Type type, byte[] content) {
-        return ModuleEntryFactory.create(path, type, content);
+    public static ResourcePoolEntry create(String path,
+            ResourcePoolEntry.Type type, byte[] content) {
+        return ResourcePoolEntryFactory.create(path, type, content);
     }
 
     /**
-     * Create a ModuleEntry for a resource of type {@link Type#CLASS_OR_RESOURCE}.
+     * Create a ResourcePoolEntry for a resource of type {@link Type#CLASS_OR_RESOURCE}.
      *
      * @param path The resource path.
      * @param content The resource content.
-     * @return A new ModuleEntry.
+     * @return A new ResourcePoolEntry.
      */
-    public static ModuleEntry create(String path, byte[] content) {
+    public static ResourcePoolEntry create(String path, byte[] content) {
         return create(path, Type.CLASS_OR_RESOURCE, content);
     }
 
     /**
-     * Create a ModuleEntry for a resource of the given type.
+     * Create a ResourcePoolEntry for a resource of the given type.
      *
      * @param path The resource path.
-     * @param type The ModuleEntry type.
+     * @param type The ResourcePoolEntry type.
      * @param file The resource file.
-     * @return A new ModuleEntry.
+     * @return A new ResourcePoolEntry.
      */
-    public static ModuleEntry create(String path,
-            ModuleEntry.Type type, Path file) {
-        return ModuleEntryFactory.create(path, type, file);
+    public static ResourcePoolEntry create(String path,
+            ResourcePoolEntry.Type type, Path file) {
+        return ResourcePoolEntryFactory.create(path, type, file);
     }
 
     /**
-     * Create a ModuleEntry for a resource of type {@link Type#CLASS_OR_RESOURCE}.
+     * Create a ResourcePoolEntry for a resource of type {@link Type#CLASS_OR_RESOURCE}.
      *
      * @param path The resource path.
      * @param file The resource file.
-     * @return A new ModuleEntry.
+     * @return A new ResourcePoolEntry.
      */
-    public static ModuleEntry create(String path, Path file) {
+    public static ResourcePoolEntry create(String path, Path file) {
         return create(path, Type.CLASS_OR_RESOURCE, file);
     }
 }

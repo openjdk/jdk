@@ -122,6 +122,14 @@ grant codeBase "jrt:/java.xml.bind" {
         permission java.util.PropertyPermission "*", "read";
 };
 
+grant codeBase "jrt:/java.xml.crypto" {
+        permission java.util.PropertyPermission "*", "read";
+        permission java.security.SecurityPermission "putProviderProperty.XMLDSig";
+        permission java.security.SecurityPermission "clearProviderProperties.XMLDSig";
+        permission java.security.SecurityPermission "removeProviderProperty.XMLDSig";
+        permission java.security.SecurityPermission "com.sun.org.apache.xml.internal.security.register";
+};
+
 grant codeBase "jrt:/java.xml.ws" {
         permission java.lang.RuntimePermission "accessClassInPackage.com.sun.xml.internal.*";
         permission java.lang.RuntimePermission "accessClassInPackage.com.sun.istack.internal";

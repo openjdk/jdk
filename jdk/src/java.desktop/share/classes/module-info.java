@@ -23,6 +23,10 @@
  * questions.
  */
 
+/**
+  * java.desktop defines and exports the user interface, graphics
+  * and imaging APIs of the Java SE platform.
+  */
 module java.desktop {
     requires public java.datatransfer;
     requires public java.xml;

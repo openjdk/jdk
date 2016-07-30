@@ -33,20 +33,20 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 /**
- * A ModuleEntry backed by a given nio Path.
+ * A ResourcePoolEntry backed by a given nio Path.
  */
-public class PathModuleEntry extends AbstractModuleEntry {
+public class PathResourcePoolEntry extends AbstractResourcePoolEntry {
     private final Path file;
 
     /**
-     * Create a new PathModuleEntry.
+     * Create a new PathResourcePoolEntry.
      *
      * @param module The module name.
      * @param path The path for the resource content.
      * @param type The data type.
      * @param file The data file identifier.
      */
-    public PathModuleEntry(String module, String path, Type type, Path file) {
+    public PathResourcePoolEntry(String module, String path, Type type, Path file) {
         super(module, path, type);
         this.file = Objects.requireNonNull(file);
         if (!Files.isRegularFile(file)) {
@@ -55,7 +55,7 @@ public class PathModuleEntry extends AbstractModuleEntry {
     }
 
     @Override
-    public final InputStream stream() {
+    public final InputStream content() {
         try {
             return Files.newInputStream(file);
         } catch (IOException ex) {
@@ -64,7 +64,7 @@ public class PathModuleEntry extends AbstractModuleEntry {
     }
 
     @Override
-    public final long getLength() {
+    public final long contentLength() {
         try {
             return Files.size(file);
         } catch (IOException ex) {

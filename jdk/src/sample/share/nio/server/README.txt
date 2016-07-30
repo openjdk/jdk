@@ -67,7 +67,7 @@ The server must be built on version 1.5 (or later) of the platform.
 Invoking the following should be sufficient:
 
     % mkdir build
-    % javac -source 1.5 -target 1.5 -d build *.java
+    % javac -d build *.java
 
 The following creates the document root:
 
