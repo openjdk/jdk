@@ -634,7 +634,7 @@ public class TransformerFactoryImpl
         }
 
         // Inefficient, but array is small
-        for (int i =0; i < features.length; i++) {
+        for (int i = 0; i < features.length; i++) {
             if (name.equals(features[i])) {
                 return true;
             }
@@ -923,7 +923,7 @@ public class TransformerFactoryImpl
             String transletClassName = getTransletBaseName(source);
 
             if (_packageName != null)
-               transletClassName = _packageName + "." + transletClassName;
+                transletClassName = _packageName + "." + transletClassName;
 
             if (_jarFileName != null)
                 bytecodes = getBytecodesFromJar(source, transletClassName);
