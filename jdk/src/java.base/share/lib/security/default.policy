@@ -24,6 +24,10 @@ grant codeBase "jrt:/java.scripting" {
     permission java.security.AllPermission;
 };
 
+grant codeBase "jrt:/java.security.jgss" {
+    permission java.security.AllPermission;
+};
+
 grant codeBase "jrt:/java.smartcardio" {
     permission javax.smartcardio.CardPermission "*", "*";
     permission java.lang.RuntimePermission "loadLibrary.j2pcsc";
@@ -149,6 +153,14 @@ grant codeBase "jrt:/jdk.scripting.nashorn" {
 };
 
 grant codeBase "jrt:/jdk.scripting.nashorn.shell" {
+    permission java.security.AllPermission;
+};
+
+grant codeBase "jrt:/jdk.security.auth" {
+    permission java.security.AllPermission;
+};
+
+grant codeBase "jrt:/jdk.security.jgss" {
     permission java.security.AllPermission;
 };
 
