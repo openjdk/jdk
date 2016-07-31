@@ -154,11 +154,11 @@ public final class XSLTC {
     *  Extension function class loader variables
     */
 
-    /* Class loader reference that will be used to external extension functions loading */
+    /* Class loader reference that will be used for external extension functions loading */
     private ClassLoader _extensionClassLoader;
 
     /**
-    *  HashSet with the loaded classes
+    *  HashMap with the loaded classes
     */
     private final Map<String, Class> _externalExtensionFunctions;
 
@@ -295,7 +295,7 @@ public final class XSLTC {
     }
 
     /*
-     * Function loads an external external extension functions.
+     * Function loads an external extension function.
      * The filtering of function types (external,internal) takes place in FunctionCall class
      *
      */
