@@ -55,15 +55,12 @@ BOOT_MODULES += \
     java.naming \
     java.prefs \
     java.rmi \
-    java.security.jgss \
     java.security.sasl \
     java.xml \
     jdk.httpserver \
     jdk.management \
     jdk.net \
     jdk.sctp \
-    jdk.security.auth \
-    jdk.security.jgss \
     jdk.unsupported \
     jdk.vm.ci \
     #
@@ -102,6 +99,7 @@ PLATFORM_MODULES += \
 PLATFORM_MODULES += \
     java.compiler \
     java.scripting \
+    java.security.jgss \
     java.smartcardio \
     java.sql \
     java.sql.rowset \
@@ -112,10 +110,12 @@ PLATFORM_MODULES += \
     jdk.crypto.pkcs11 \
     jdk.dynalink \
     jdk.jsobject \
-    jdk.xml.dom \
     jdk.localedata \
     jdk.naming.dns \
     jdk.scripting.nashorn \
+    jdk.security.auth \
+    jdk.security.jgss \
+    jdk.xml.dom \
     jdk.zipfs \
     #
 
