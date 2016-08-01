@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,9 +227,10 @@ class SecurityManager {
      *
      * @deprecated This type of security checking is not recommended.
      *  It is recommended that the <code>checkPermission</code>
-     *  call be used instead.
+     *  call be used instead. This field is subject to removal in a
+     *  future version of Java SE.
      */
-    @Deprecated(since="1.2")
+    @Deprecated(since="1.2", forRemoval=true)
     protected boolean inCheck;
 
     /*
@@ -260,9 +261,10 @@ class SecurityManager {
      * @see     java.lang.SecurityManager#inCheck
      * @deprecated This type of security checking is not recommended.
      *  It is recommended that the <code>checkPermission</code>
-     *  call be used instead.
+     *  call be used instead. This method is subject to removal in a
+     *  future version of Java SE.
      */
-    @Deprecated(since="1.2")
+    @Deprecated(since="1.2", forRemoval=true)
     public boolean getInCheck() {
         return inCheck;
     }
@@ -340,12 +342,13 @@ class SecurityManager {
      *
      * @deprecated This type of security checking is not recommended.
      *  It is recommended that the <code>checkPermission</code>
-     *  call be used instead.
+     *  call be used instead. This method is subject to removal in a
+     *  future version of Java SE.
      *
      * @see  java.lang.ClassLoader#getSystemClassLoader() getSystemClassLoader
      * @see  #checkPermission(java.security.Permission) checkPermission
      */
-    @Deprecated(since="1.2")
+    @Deprecated(since="1.2", forRemoval=true)
     protected ClassLoader currentClassLoader() {
         ClassLoader cl = currentClassLoader0();
         if ((cl != null) && hasAllPermission())
@@ -386,12 +389,13 @@ class SecurityManager {
      *
      * @deprecated This type of security checking is not recommended.
      *  It is recommended that the <code>checkPermission</code>
-     *  call be used instead.
+     *  call be used instead. This method is subject to removal in a
+     *  future version of Java SE.
      *
      * @see  java.lang.ClassLoader#getSystemClassLoader() getSystemClassLoader
      * @see  #checkPermission(java.security.Permission) checkPermission
      */
-    @Deprecated(since="1.2")
+    @Deprecated(since="1.2", forRemoval=true)
     protected Class<?> currentLoadedClass() {
         Class<?> c = currentLoadedClass0();
         if ((c != null) && hasAllPermission())
@@ -408,10 +412,10 @@ class SecurityManager {
      *          <code>-1</code> if such a frame cannot be found.
      * @deprecated This type of security checking is not recommended.
      *  It is recommended that the <code>checkPermission</code>
-     *  call be used instead.
-     *
+     *  call be used instead. This method is subject to removal in a
+     *  future version of Java SE.
      */
-    @Deprecated(since="1.2")
+    @Deprecated(since="1.2", forRemoval=true)
     protected native int classDepth(String name);
 
     /**
@@ -444,12 +448,13 @@ class SecurityManager {
      *
      * @deprecated This type of security checking is not recommended.
      *  It is recommended that the <code>checkPermission</code>
-     *  call be used instead.
+     *  call be used instead. This method is subject to removal in a
+     *  future version of Java SE.
      *
      * @see   java.lang.ClassLoader#getSystemClassLoader() getSystemClassLoader
      * @see   #checkPermission(java.security.Permission) checkPermission
      */
-    @Deprecated(since="1.2")
+    @Deprecated(since="1.2", forRemoval=true)
     protected int classLoaderDepth() {
         int depth = classLoaderDepth0();
         if (depth != -1) {
@@ -472,9 +477,10 @@ class SecurityManager {
      *         name is on the execution stack; <code>false</code> otherwise.
      * @deprecated This type of security checking is not recommended.
      *  It is recommended that the <code>checkPermission</code>
-     *  call be used instead.
+     *  call be used instead. This method is subject to removal in a
+     *  future version of Java SE.
      */
-    @Deprecated(since="1.2")
+    @Deprecated(since="1.2", forRemoval=true)
     protected boolean inClass(String name) {
         return classDepth(name) >= 0;
     }
@@ -488,10 +494,11 @@ class SecurityManager {
      *
      * @deprecated This type of security checking is not recommended.
      *  It is recommended that the <code>checkPermission</code>
-     *  call be used instead.
+     *  call be used instead. This method is subject to removal in a
+     *  future version of Java SE.
      * @see        #currentClassLoader() currentClassLoader
      */
-    @Deprecated(since="1.2")
+    @Deprecated(since="1.2", forRemoval=true)
     protected boolean inClassLoader() {
         return currentClassLoader() != null;
     }

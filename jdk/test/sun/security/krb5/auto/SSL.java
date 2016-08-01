@@ -92,6 +92,10 @@ public class SSL extends SecurityManager {
 
         boolean unbound = args.length > 1;
 
+        // Workaround for JDK-8161101, reference the class before
+        // SecurityManager is set.
+        System.out.println("Touching " + ServicePermission.class);
+
         System.setSecurityManager(new SSL());
 
         KDC kdc = KDC.create(OneKDC.REALM);
