@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -822,18 +822,21 @@ getGMTOffsetID()
 {
     time_t offset;
     char sign, buf[32];
-    struct tm *local_tm;
+    struct tm local_tm;
     time_t clock;
-    time_t currenttime;
 
     clock = time(NULL);
-    tzset();
-    local_tm = localtime(&clock);
-    if (local_tm->tm_gmtoff >= 0) {
-        offset = (time_t) local_tm->tm_gmtoff;
+    if (localtime_r(&clock, &local_tm) == NULL) {
+        return strdup("GMT");
+    }
+    offset = (time_t)local_tm.tm_gmtoff;
+    if (offset == 0) {
+        return strdup("GMT");
+    }
+    if (offset > 0) {
         sign = '+';
     } else {
-        offset = (time_t) -local_tm->tm_gmtoff;
+        offset = -offset;
         sign = '-';
     }
     sprintf(buf, (const char *)"GMT%c%02d:%02d",
@@ -854,7 +857,7 @@ getGMTOffsetID()
 
     currenttime = time(NULL);
     if (localtime_r(&currenttime, &localtm) == NULL) {
-        return NULL;
+        return strdup("GMT");
     }
 
     offset = localtm.tm_isdst ? altzone : timezone;
