@@ -1876,8 +1876,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         private Tag opcode;
         public JCExpression lhs;
         public JCExpression rhs;
-        public Symbol operator;
-        protected JCAssignOp(Tag opcode, JCTree lhs, JCTree rhs, Symbol operator) {
+        public OperatorSymbol operator;
+        protected JCAssignOp(Tag opcode, JCTree lhs, JCTree rhs, OperatorSymbol operator) {
             this.opcode = opcode;
             this.lhs = (JCExpression)lhs;
             this.rhs = (JCExpression)rhs;
@@ -1892,7 +1892,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression getVariable() { return lhs; }
         @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getExpression() { return rhs; }
-        public Symbol getOperator() {
+        public OperatorSymbol getOperator() {
             return operator;
         }
         @Override @DefinedBy(Api.COMPILER_TREE)
@@ -1911,7 +1911,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCUnary extends JCExpression implements UnaryTree {
         private Tag opcode;
         public JCExpression arg;
-        public Symbol operator;
+        public OperatorSymbol operator;
         protected JCUnary(Tag opcode, JCExpression arg) {
             this.opcode = opcode;
             this.arg = arg;
@@ -1923,7 +1923,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public Kind getKind() { return TreeInfo.tagToKind(getTag()); }
         @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getExpression() { return arg; }
-        public Symbol getOperator() {
+        public OperatorSymbol getOperator() {
             return operator;
         }
         @Override @DefinedBy(Api.COMPILER_TREE)
@@ -1947,11 +1947,11 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         private Tag opcode;
         public JCExpression lhs;
         public JCExpression rhs;
-        public Symbol operator;
+        public OperatorSymbol operator;
         protected JCBinary(Tag opcode,
                          JCExpression lhs,
                          JCExpression rhs,
-                         Symbol operator) {
+                         OperatorSymbol operator) {
             this.opcode = opcode;
             this.lhs = lhs;
             this.rhs = rhs;
@@ -1966,7 +1966,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression getLeftOperand() { return lhs; }
         @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getRightOperand() { return rhs; }
-        public Symbol getOperator() {
+        public OperatorSymbol getOperator() {
             return operator;
         }
         @Override @DefinedBy(Api.COMPILER_TREE)
