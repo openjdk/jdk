@@ -141,6 +141,13 @@ Java_com_sun_management_internal_Flag_getFlags
             // ignore unsupported type
             continue;
         }
+
+        if (valueObj == NULL) {
+            free(globals);
+            JNU_ThrowOutOfMemoryError(env, 0);
+            return 0;
+        }
+
         switch (globals[i].origin) {
         case JMM_VMGLOBAL_ORIGIN_DEFAULT:
             origin = default_origin;
