@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,78 +181,78 @@ import java.util.GregorianCalendar;
 public abstract class XMLGregorianCalendar
         implements Cloneable {
 
-        /**
-         * Default no-arg constructor.
-         *
-         * <p>Note: Always use the {@link DatatypeFactory} to
-         * construct an instance of {@code XMLGregorianCalendar}.
-         * The constructor on this class cannot be guaranteed to
-         * produce an object with a consistent state and may be
-         * removed in the future.
-         */
-         public XMLGregorianCalendar() {
-         }
+    /**
+     * Default no-arg constructor.
+     *
+     * <p>Note: Always use the {@link DatatypeFactory} to
+     * construct an instance of {@code XMLGregorianCalendar}.
+     * The constructor on this class cannot be guaranteed to
+     * produce an object with a consistent state and may be
+     * removed in the future.
+     */
+    public XMLGregorianCalendar() {
+    }
 
-        /**
-         * Unset all fields to undefined.
-         *
-         * <p>Set all int fields to {@link DatatypeConstants#FIELD_UNDEFINED} and reference fields
-         * to null.
-         */
-        public abstract void clear();
+    /**
+     * Unset all fields to undefined.
+     *
+     * <p>Set all int fields to {@link DatatypeConstants#FIELD_UNDEFINED} and reference fields
+     * to null.
+     */
+    public abstract void clear();
 
-        /**
-         * Reset this {@code XMLGregorianCalendar} to its original values.
-         *
-         * <p>{@code XMLGregorianCalendar} is reset to the same values as when it was created with
-         * {@link DatatypeFactory#newXMLGregorianCalendar()},
-         * {@link DatatypeFactory#newXMLGregorianCalendar(String lexicalRepresentation)},
-         * {@link DatatypeFactory#newXMLGregorianCalendar(
-         *   BigInteger year,
-         *   int month,
-         *   int day,
-         *   int hour,
-         *   int minute,
-         *   int second,
-         *   BigDecimal fractionalSecond,
-         *   int timezone)},
-         * {@link DatatypeFactory#newXMLGregorianCalendar(
-         *   int year,
-         *   int month,
-         *   int day,
-         *   int hour,
-         *   int minute,
-         *   int second,
-         *   int millisecond,
-         *   int timezone)},
-         * {@link DatatypeFactory#newXMLGregorianCalendar(GregorianCalendar cal)},
-         * {@link DatatypeFactory#newXMLGregorianCalendarDate(
-         *   int year,
-         *   int month,
-         *   int day,
-         *   int timezone)},
-         * {@link DatatypeFactory#newXMLGregorianCalendarTime(
-         *   int hours,
-         *   int minutes,
-         *   int seconds,
-         *   int timezone)},
-         * {@link DatatypeFactory#newXMLGregorianCalendarTime(
-         *   int hours,
-         *   int minutes,
-         *   int seconds,
-         *   BigDecimal fractionalSecond,
-         *   int timezone)} or
-         * {@link DatatypeFactory#newXMLGregorianCalendarTime(
-         *   int hours,
-         *   int minutes,
-         *   int seconds,
-         *   int milliseconds,
-         *   int timezone)}.
-         *
-         * <p>{@code reset()} is designed to allow the reuse of existing {@code XMLGregorianCalendar}s
-         * thus saving resources associated with the creation of new {@code XMLGregorianCalendar}s.
-         */
-        public abstract void reset();
+    /**
+     * Reset this {@code XMLGregorianCalendar} to its original values.
+     *
+     * <p>{@code XMLGregorianCalendar} is reset to the same values as when it was created with
+     * {@link DatatypeFactory#newXMLGregorianCalendar()},
+     * {@link DatatypeFactory#newXMLGregorianCalendar(String lexicalRepresentation)},
+     * {@link DatatypeFactory#newXMLGregorianCalendar(
+     *   BigInteger year,
+     *   int month,
+     *   int day,
+     *   int hour,
+     *   int minute,
+     *   int second,
+     *   BigDecimal fractionalSecond,
+     *   int timezone)},
+     * {@link DatatypeFactory#newXMLGregorianCalendar(
+     *   int year,
+     *   int month,
+     *   int day,
+     *   int hour,
+     *   int minute,
+     *   int second,
+     *   int millisecond,
+     *   int timezone)},
+     * {@link DatatypeFactory#newXMLGregorianCalendar(GregorianCalendar cal)},
+     * {@link DatatypeFactory#newXMLGregorianCalendarDate(
+     *   int year,
+     *   int month,
+     *   int day,
+     *   int timezone)},
+     * {@link DatatypeFactory#newXMLGregorianCalendarTime(
+     *   int hours,
+     *   int minutes,
+     *   int seconds,
+     *   int timezone)},
+     * {@link DatatypeFactory#newXMLGregorianCalendarTime(
+     *   int hours,
+     *   int minutes,
+     *   int seconds,
+     *   BigDecimal fractionalSecond,
+     *   int timezone)} or
+     * {@link DatatypeFactory#newXMLGregorianCalendarTime(
+     *   int hours,
+     *   int minutes,
+     *   int seconds,
+     *   int milliseconds,
+     *   int timezone)}.
+     *
+     * <p>{@code reset()} is designed to allow the reuse of existing {@code XMLGregorianCalendar}s
+     * thus saving resources associated with the creation of new {@code XMLGregorianCalendar}s.
+     */
+    public abstract void reset();
 
     /**
      * Set low and high order component of XSD {@code dateTime} year field.
@@ -340,75 +340,75 @@ public abstract class XMLGregorianCalendar
      */
     public void setTime(int hour, int minute, int second) {
 
-                setTime(
-                        hour,
-                        minute,
-                        second,
-                        null // fractional
-                );
+        setTime(
+                hour,
+                minute,
+                second,
+                null // fractional
+        );
     }
 
-        /**
-         * Set hours.
-         *
-         * <p>Unset this field by invoking the setter with a parameter value of {@link DatatypeConstants#FIELD_UNDEFINED}.
-         *
-         * @param hour value constraints summarized in <a href="#datetimefield-hour">hour field of date/time field mapping table</a>.
-         *
-         * @throws IllegalArgumentException if {@code hour} parameter is outside value constraints for the field as specified in
-         *   <a href="#datetimefieldmapping">date/time field mapping table</a>.
-        */
-        public abstract void setHour(int hour);
+    /**
+     * Set hours.
+     *
+     * <p>Unset this field by invoking the setter with a parameter value of {@link DatatypeConstants#FIELD_UNDEFINED}.
+     *
+     * @param hour value constraints summarized in <a href="#datetimefield-hour">hour field of date/time field mapping table</a>.
+     *
+     * @throws IllegalArgumentException if {@code hour} parameter is outside value constraints for the field as specified in
+     *   <a href="#datetimefieldmapping">date/time field mapping table</a>.
+     */
+    public abstract void setHour(int hour);
 
-        /**
-         * Set minutes.
-         *
-         * <p>Unset this field by invoking the setter with a parameter value of {@link DatatypeConstants#FIELD_UNDEFINED}.
-         *
-         * @param minute value constraints summarized in <a href="#datetimefield-minute">minute field of date/time field mapping table</a>.
-         *
-         * @throws IllegalArgumentException if {@code minute} parameter is outside value constraints for the field as specified in
-         *   <a href="#datetimefieldmapping">date/time field mapping table</a>.
-        */
-        public abstract void setMinute(int minute);
+    /**
+     * Set minutes.
+     *
+     * <p>Unset this field by invoking the setter with a parameter value of {@link DatatypeConstants#FIELD_UNDEFINED}.
+     *
+     * @param minute value constraints summarized in <a href="#datetimefield-minute">minute field of date/time field mapping table</a>.
+     *
+     * @throws IllegalArgumentException if {@code minute} parameter is outside value constraints for the field as specified in
+     *   <a href="#datetimefieldmapping">date/time field mapping table</a>.
+     */
+    public abstract void setMinute(int minute);
 
-        /**
-         * Set seconds.
-         *
-         * <p>Unset this field by invoking the setter with a parameter value of {@link DatatypeConstants#FIELD_UNDEFINED}.
-         *
-         * @param second value constraints summarized in <a href="#datetimefield-second">second field of date/time field mapping table</a>.
-         *
-         * @throws IllegalArgumentException if {@code second} parameter is outside value constraints for the field as specified in
-         *   <a href="#datetimefieldmapping">date/time field mapping table</a>.
-        */
-        public abstract void setSecond(int second);
+    /**
+     * Set seconds.
+     *
+     * <p>Unset this field by invoking the setter with a parameter value of {@link DatatypeConstants#FIELD_UNDEFINED}.
+     *
+     * @param second value constraints summarized in <a href="#datetimefield-second">second field of date/time field mapping table</a>.
+     *
+     * @throws IllegalArgumentException if {@code second} parameter is outside value constraints for the field as specified in
+     *   <a href="#datetimefieldmapping">date/time field mapping table</a>.
+     */
+    public abstract void setSecond(int second);
 
-        /**
-         * Set milliseconds.
-         *
-         * <p>Unset this field by invoking the setter with a parameter value of {@link DatatypeConstants#FIELD_UNDEFINED}.
-         *
-         * @param millisecond value constraints summarized in
-         *   <a href="#datetimefield-second">second field of date/time field mapping table</a>.
-         *
-         * @throws IllegalArgumentException if {@code millisecond} parameter is outside value constraints for the field as specified
-         *   in <a href="#datetimefieldmapping">date/time field mapping table</a>.
-        */
-        public abstract void setMillisecond(int millisecond);
+    /**
+     * Set milliseconds.
+     *
+     * <p>Unset this field by invoking the setter with a parameter value of {@link DatatypeConstants#FIELD_UNDEFINED}.
+     *
+     * @param millisecond value constraints summarized in
+     *   <a href="#datetimefield-second">second field of date/time field mapping table</a>.
+     *
+     * @throws IllegalArgumentException if {@code millisecond} parameter is outside value constraints for the field as specified
+     *   in <a href="#datetimefieldmapping">date/time field mapping table</a>.
+     */
+    public abstract void setMillisecond(int millisecond);
 
-        /**
-         * Set fractional seconds.
-         *
-         * <p>Unset this field by invoking the setter with a parameter value of {@code null}.
-         *
-         * @param fractional value constraints summarized in
-         *   <a href="#datetimefield-second">second field of date/time field mapping table</a>.
-         *
-         * @throws IllegalArgumentException if {@code fractional} parameter is outside value constraints for the field as specified
-         *   in <a href="#datetimefieldmapping">date/time field mapping table</a>.
-        */
-        public abstract void setFractionalSecond(BigDecimal fractional);
+    /**
+     * Set fractional seconds.
+     *
+     * <p>Unset this field by invoking the setter with a parameter value of {@code null}.
+     *
+     * @param fractional value constraints summarized in
+     *   <a href="#datetimefield-second">second field of date/time field mapping table</a>.
+     *
+     * @throws IllegalArgumentException if {@code fractional} parameter is outside value constraints for the field as specified
+     *   in <a href="#datetimefieldmapping">date/time field mapping table</a>.
+     */
+    public abstract void setFractionalSecond(BigDecimal fractional);
 
 
     /**
@@ -429,12 +429,12 @@ public abstract class XMLGregorianCalendar
      * <a href="#datetimefieldmapping">date/time field mapping table</a>.
      */
     public void setTime(
-        int hour,
-        int minute,
-        int second,
-        BigDecimal fractional) {
+            int hour,
+            int minute,
+            int second,
+            BigDecimal fractional) {
 
-                setHour(hour);
+        setHour(hour);
         setMinute(minute);
         setSecond(second);
         setFractionalSecond(fractional);
@@ -465,173 +465,182 @@ public abstract class XMLGregorianCalendar
         setMillisecond(millisecond);
     }
 
-        /**
-         * Return high order component for XML Schema 1.0 dateTime datatype field for
-         * {@code year}.
-         * {@code null} if this optional part of the year field is not defined.
-         *
-         * <p>Value constraints for this value are summarized in
-         * <a href="#datetimefield-year">year field of date/time field mapping table</a>.
-         * @return eon of this {@code XMLGregorianCalendar}. The value
-         * returned is an integer multiple of 10^9.
-         *
-         * @see #getYear()
-         * @see #getEonAndYear()
-         */
-        public abstract BigInteger getEon();
+    /**
+     * Returns the high order component for XML Schema 1.0 dateTime datatype field for
+     * {@code year}.
+     * {@code null} if this optional part of the year field is not defined.
+     *
+     * <p>Value constraints for this value are summarized in
+     * <a href="#datetimefield-year">year field of date/time field mapping table</a>.
+     * @return The eon of this {@code XMLGregorianCalendar}. The value
+     * returned is an integer multiple of 10^9.
+     *
+     * @see #getYear()
+     * @see #getEonAndYear()
+     */
+    public abstract BigInteger getEon();
 
-        /**
-         * Return low order component for XML Schema 1.0 dateTime datatype field for
-         * {@code year} or {@link DatatypeConstants#FIELD_UNDEFINED}.
-         *
-         * <p>Value constraints for this value are summarized in
-         * <a href="#datetimefield-year">year field of date/time field mapping table</a>.
-         *
-         * @return year  of this {@code XMLGregorianCalendar}.
-         *
-         * @see #getEon()
-         * @see #getEonAndYear()
-         */
-        public abstract int getYear();
+    /**
+     * Returns the low order component for XML Schema 1.0 dateTime datatype field for
+     * {@code year} or {@link DatatypeConstants#FIELD_UNDEFINED}.
+     *
+     * <p>Value constraints for this value are summarized in
+     * <a href="#datetimefield-year">year field of date/time field mapping table</a>.
+     *
+     * @return The year of this {@code XMLGregorianCalendar}.
+     *
+     * @see #getEon()
+     * @see #getEonAndYear()
+     */
+    public abstract int getYear();
 
-        /**
-         * Return XML Schema 1.0 dateTime datatype field for
-         * {@code year}.
-         *
-         * <p>Value constraints for this value are summarized in
-         * <a href="#datetimefield-year">year field of date/time field mapping table</a>.
-         *
-         * @return sum of {@code eon} and {@code BigInteger.valueOf(year)}
-         * when both fields are defined. When only {@code year} is defined,
-         * return it. When both {@code eon} and {@code year} are not
-         * defined, return {@code null}.
-         *
-         * @see #getEon()
-         * @see #getYear()
-         */
-        public abstract BigInteger getEonAndYear();
+    /**
+     * Returns the XML Schema 1.0 dateTime datatype field for
+     * {@code year}.
+     *
+     * <p>Value constraints for this value are summarized in
+     * <a href="#datetimefield-year">year field of date/time field mapping table</a>.
+     *
+     * @return sum of {@code eon} and {@code BigInteger.valueOf(year)}
+     * when both fields are defined. When only {@code year} is defined,
+     * return it. When both {@code eon} and {@code year} are not
+     * defined, return {@code null}.
+     *
+     * @see #getEon()
+     * @see #getYear()
+     */
+    public abstract BigInteger getEonAndYear();
 
-        /**
-         * Return number of month or {@link DatatypeConstants#FIELD_UNDEFINED}.
-         *
-         * <p>Value constraints for this value are summarized in
-         * <a href="#datetimefield-month">month field of date/time field mapping table</a>.
-         *
-         * @return year  of this {@code XMLGregorianCalendar}.
-         *
-         */
-        public abstract int getMonth();
+    /**
+     * Returns the month of this calendar or {@link DatatypeConstants#FIELD_UNDEFINED}.
+     *
+     * <p>Value constraints for this value are summarized in
+     * <a href="#datetimefield-month">month field of date/time field mapping table</a>.
+     *
+     * @return The month of this {@code XMLGregorianCalendar}, from 1 to 12.
+     *
+     */
+    public abstract int getMonth();
 
-        /**
-         * Return day in month or {@link DatatypeConstants#FIELD_UNDEFINED}.
-         *
-         * <p>Value constraints for this value are summarized in
-         * <a href="#datetimefield-day">day field of date/time field mapping table</a>.
-         *
-         * @see #setDay(int)
-         */
-        public abstract int getDay();
+    /**
+     * Returns the day of month or {@link DatatypeConstants#FIELD_UNDEFINED}.
+     *
+     * <p>Value constraints for this value are summarized in
+     * <a href="#datetimefield-day">day field of date/time field mapping table</a>.
+     *
+     * @return The day of month of this {@code XMLGregorianCalendar}, from 1 to 31.
+     *
+     * @see #setDay(int)
+     */
+    public abstract int getDay();
 
-        /**
-         * Return timezone offset in minutes or
-         * {@link DatatypeConstants#FIELD_UNDEFINED} if this optional field is not defined.
-         *
-         * <p>Value constraints for this value are summarized in
-         * <a href="#datetimefield-timezone">timezone field of date/time field mapping table</a>.
-         *
-         * @see #setTimezone(int)
-         */
-        public abstract int getTimezone();
+    /**
+     * Returns the Timezone offset in minutes or
+     * {@link DatatypeConstants#FIELD_UNDEFINED} if this optional field is not defined.
+     *
+     * <p>Value constraints for this value are summarized in
+     * <a href="#datetimefield-timezone">timezone field of date/time field mapping table</a>.
+     *
+     * @return The Timezone offset in minutes of this {@code XMLGregorianCalendar}.
+     *
+     * @see #setTimezone(int)
+     */
+    public abstract int getTimezone();
 
-        /**
-         * Return hours or {@link DatatypeConstants#FIELD_UNDEFINED}.
-         * Returns {@link DatatypeConstants#FIELD_UNDEFINED} if this field is not defined.
-         *
-         * <p>Value constraints for this value are summarized in
-         * <a href="#datetimefield-hour">hour field of date/time field mapping table</a>.
-         * @see #setTime(int, int, int)
-         */
-        public abstract int getHour();
+    /**
+     * Returns the hour of day or
+     * {@link DatatypeConstants#FIELD_UNDEFINED} if this field is not defined.
+     *
+     * <p>Value constraints for this value are summarized in
+     * <a href="#datetimefield-hour">hour field of date/time field mapping table</a>.
+     *
+     * @return The hour of day of this {@code XMLGregorianCalendar}, from 0 to 23.
+     *
+     * @see #setTime(int, int, int)
+     */
+    public abstract int getHour();
 
-        /**
-         * Return minutes or {@link DatatypeConstants#FIELD_UNDEFINED}.
-         * Returns {@link DatatypeConstants#FIELD_UNDEFINED} if this field is not defined.
-         *
-         * <p>Value constraints for this value are summarized in
-         * <a href="#datetimefield-minute">minute field of date/time field mapping table</a>.
-         * @see #setTime(int, int, int)
-         */
-        public abstract int getMinute();
+    /**
+     * Returns the minute of hour or
+     * {@link DatatypeConstants#FIELD_UNDEFINED} if this field is not defined.
+     *
+     * <p>Value constraints for this value are summarized in
+     * <a href="#datetimefield-minute">minute field of date/time field mapping table</a>.
+     *
+     * @return The minute of hour of this {@code XMLGregorianCalendar}, from 0 to 59.
+     *
+     * @see #setTime(int, int, int)
+     */
+    public abstract int getMinute();
 
-        /**
-         * Return seconds or {@link DatatypeConstants#FIELD_UNDEFINED}.
-         *
-         * <p>Returns {@link DatatypeConstants#FIELD_UNDEFINED} if this field is not defined.
-         * When this field is not defined, the optional xs:dateTime
-         * fractional seconds field, represented by
-         * {@link #getFractionalSecond()} and {@link #getMillisecond()},
-         * must not be defined.
-         *
-         * <p>Value constraints for this value are summarized in
-         * <a href="#datetimefield-second">second field of date/time field mapping table</a>.
-         *
-         * @return Second  of this {@code XMLGregorianCalendar}.
-         *
-         * @see #getFractionalSecond()
-         * @see #getMillisecond()
-         * @see #setTime(int, int, int)
-         */
-        public abstract int getSecond();
+    /**
+     * Returns the second of minute or
+     * {@link DatatypeConstants#FIELD_UNDEFINED} if this field is not defined.
+     * When this field is not defined, the optional xs:dateTime
+     * fractional seconds field, represented by
+     * {@link #getFractionalSecond()} and {@link #getMillisecond()},
+     * must not be defined.
+     *
+     * <p>Value constraints for this value are summarized in
+     * <a href="#datetimefield-second">second field of date/time field mapping table</a>.
+     *
+     * @return The second of minute of this {@code XMLGregorianCalendar},  from 0 to 59.
+     *
+     * @see #getFractionalSecond()
+     * @see #getMillisecond()
+     * @see #setTime(int, int, int)
+     */
+    public abstract int getSecond();
 
-        /**
-         * Return millisecond precision of {@link #getFractionalSecond()}.
-         *
-         * <p>This method represents a convenience accessor to infinite
-         * precision fractional second value returned by
-         * {@link #getFractionalSecond()}. The returned value is the rounded
-         * down to milliseconds value of
-         * {@link #getFractionalSecond()}. When {@link #getFractionalSecond()}
-         * returns {@code null}, this method must return
-         * {@link DatatypeConstants#FIELD_UNDEFINED}.
-         *
-         * <p>Value constraints for this value are summarized in
-         * <a href="#datetimefield-second">second field of date/time field mapping table</a>.
-         *
-         * @return Millisecond  of this {@code XMLGregorianCalendar}.
-         *
-         * @see #getFractionalSecond()
-         * @see #setTime(int, int, int)
-         */
-        public int getMillisecond() {
+    /**
+     * Returns the millisecond precision of {@link #getFractionalSecond()}.
+     *
+     * <p>This method represents a convenience accessor to infinite
+     * precision fractional second value returned by
+     * {@link #getFractionalSecond()}. The returned value is the rounded
+     * down to milliseconds value of
+     * {@link #getFractionalSecond()}. When {@link #getFractionalSecond()}
+     * returns {@code null}, this method must return
+     * {@link DatatypeConstants#FIELD_UNDEFINED}.
+     *
+     * <p>Value constraints for this value are summarized in
+     * <a href="#datetimefield-second">second field of date/time field mapping table</a>.
+     *
+     * @return The millisecond precision of this {@code XMLGregorianCalendar}.
+     *
+     * @see #getFractionalSecond()
+     * @see #setTime(int, int, int)
+     */
+    public int getMillisecond() {
 
-                BigDecimal fractionalSeconds = getFractionalSecond();
+        BigDecimal fractionalSeconds = getFractionalSecond();
 
-                // is field undefined?
-                if (fractionalSeconds == null) {
-                        return DatatypeConstants.FIELD_UNDEFINED;
-                }
-
-                return getFractionalSecond().movePointRight(3).intValue();
+        // is field undefined?
+        if (fractionalSeconds == null) {
+            return DatatypeConstants.FIELD_UNDEFINED;
         }
 
-        /**
-         * Return fractional seconds.
-         *
-         * <p>{@code null} is returned when this optional field is not defined.
-         *
-         * <p>Value constraints are detailed in
-         * <a href="#datetimefield-second">second field of date/time field mapping table</a>.
-         *
-         * <p>This optional field can only have a defined value when the
-         * xs:dateTime second field, represented by {@link #getSecond()},
-         * does not return {@link DatatypeConstants#FIELD_UNDEFINED}.
-         *
-         * @return fractional seconds  of this {@code XMLGregorianCalendar}.
-         *
-         * @see #getSecond()
-         * @see #setTime(int, int, int, BigDecimal)
-         */
-        public abstract BigDecimal getFractionalSecond();
+        return getFractionalSecond().movePointRight(3).intValue();
+    }
+
+    /**
+     * Returns fractional seconds.
+     *
+     * <p>{@code null} is returned when this optional field is not defined.
+     *
+     * <p>Value constraints are detailed in
+     * <a href="#datetimefield-second">second field of date/time field mapping table</a>.
+     *
+     * <p>This optional field can only have a defined value when the
+     * xs:dateTime second field, represented by {@link #getSecond()},
+     * does not return {@link DatatypeConstants#FIELD_UNDEFINED}.
+     *
+     * @return Fractional seconds of this {@code XMLGregorianCalendar}.
+     *
+     * @see #getSecond()
+     * @see #setTime(int, int, int, BigDecimal)
+     */
+    public abstract BigDecimal getFractionalSecond();
 
     // comparisons
     /**
@@ -681,10 +690,11 @@ public abstract class XMLGregorianCalendar
      * returns {@link DatatypeConstants#EQUAL},
      * otherwise {@code false}.
      */
+    @Override
     public boolean equals(Object obj) {
 
         if (obj == null || !(obj instanceof XMLGregorianCalendar)) {
-               return false;
+            return false;
         }
         return compare((XMLGregorianCalendar) obj) == DatatypeConstants.EQUAL;
     }
@@ -694,6 +704,7 @@ public abstract class XMLGregorianCalendar
      *
      * @return hash code of this object.
      */
+    @Override
     public int hashCode() {
 
         // Following two dates compare to EQUALS since in different timezones.
@@ -846,18 +857,19 @@ public abstract class XMLGregorianCalendar
      */
     public abstract QName getXMLSchemaType();
 
-        /**
-         * Returns a {@code String} representation of this {@code XMLGregorianCalendar} {@code Object}.
-         *
-         * <p>The result is a lexical representation generated by {@link #toXMLFormat()}.
-         *
-         * @return A non-{@code null} valid {@code String} representation of this {@code XMLGregorianCalendar}.
-         *
+    /**
+     * Returns a {@code String} representation of this {@code XMLGregorianCalendar} {@code Object}.
+     *
+     * <p>The result is a lexical representation generated by {@link #toXMLFormat()}.
+     *
+     * @return A non-{@code null} valid {@code String} representation of this {@code XMLGregorianCalendar}.
+     *
      * @throws IllegalStateException if the combination of set fields
      *    does not match one of the eight defined XML Schema builtin date/time datatypes.
      *
      * @see #toXMLFormat()
-         */
+     */
+    @Override
     public String toString() {
 
         return toXMLFormat();
@@ -970,6 +982,8 @@ public abstract class XMLGregorianCalendar
      *       {@code Calendar.set(int,int)}</li>
      * </ul>
      *
+     * @return An instance of {@link java.util.GregorianCalendar}.
+     *
      * @see #toGregorianCalendar(java.util.TimeZone, java.util.Locale, XMLGregorianCalendar)
      */
     public abstract GregorianCalendar toGregorianCalendar();
@@ -1026,9 +1040,9 @@ public abstract class XMLGregorianCalendar
      * @return a java.util.GregorianCalendar conversion of this instance.
      */
     public abstract GregorianCalendar toGregorianCalendar(
-        java.util.TimeZone timezone,
-                java.util.Locale aLocale,
-                XMLGregorianCalendar defaults);
+            java.util.TimeZone timezone,
+            java.util.Locale aLocale,
+            XMLGregorianCalendar defaults);
 
     /**
      * Returns a {@code java.util.TimeZone} for this class.
@@ -1055,5 +1069,7 @@ public abstract class XMLGregorianCalendar
      *
      * @return copy of this {@code Object}
      */
-   public abstract Object clone();
+    @Override
+    public abstract Object clone();
 }
+

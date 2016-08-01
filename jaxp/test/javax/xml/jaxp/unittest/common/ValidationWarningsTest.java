@@ -38,8 +38,9 @@ import org.xml.sax.InputSource;
 
 /*
  * @test
- * @modules javax.xml/com.sun.org.apache.xerces.internal.jaxp
  * @bug 8144593
+ * @key intermittent
+ * @modules javax.xml/com.sun.org.apache.xerces.internal.jaxp
  * @summary Check that warnings about unsupported properties from SAX
  *  parsers are suppressed during the xml validation process.
  */

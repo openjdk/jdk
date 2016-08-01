@@ -123,6 +123,9 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     /** Is this a builtin object? */
     public static final int IS_BUILTIN             = 1 << 3;
 
+    /** Is this an internal object that should not be visible to scripts? */
+    public static final int IS_INTERNAL            = 1 << 4;
+
     /**
      * Spill growth rate - by how many elements does {@link ScriptObject#primitiveSpill} and
      * {@link ScriptObject#objectSpill} when full
@@ -1668,6 +1671,21 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     /**
+     * Tag this script object as internal object that should not be visible to script code.
+     */
+    public final void setIsInternal() {
+        flags |= IS_INTERNAL;
+    }
+
+    /**
+     * Check if this script object is an internal object that should not be visible to script code.
+     * @return true if internal
+     */
+    public final boolean isInternal() {
+        return (flags & IS_INTERNAL) != 0;
+    }
+
+    /**
      * Clears the properties from a ScriptObject
      * (java.util.Map-like method to help ScriptObjectMirror implementation)
      *
@@ -2045,7 +2063,13 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     private Object megamorphicGet(final String key, final boolean isMethod, final boolean isScope) {
         final FindProperty find = findProperty(key, true, isScope, this);
         if (find != null) {
-            return find.getObjectValue();
+            // If this is a method invocation, and found property has a different self object then this,
+            // then return a function bound to the self object. This is the case for functions in with expressions.
+            final Object value = find.getObjectValue();
+            if (isMethod && value instanceof ScriptFunction && find.getSelf() != this && !find.getSelf().isInternal()) {
+                return ((ScriptFunction) value).createBound(find.getSelf(), ScriptRuntime.EMPTY_ARRAY);
+            }
+            return value;
         }
 
         return isMethod ? getNoSuchMethod(key, isScope, INVALID_PROGRAM_POINT) : invokeNoSuchProperty(key, isScope, INVALID_PROGRAM_POINT);

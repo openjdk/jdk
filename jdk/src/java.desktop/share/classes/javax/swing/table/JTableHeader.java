@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,11 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
       *  does not define a <code>headerRenderer</code>.
       */
     private TableCellRenderer defaultRenderer;
+
+    /**
+     * Flag to indicate UI update is in progress
+     */
+    private transient boolean updateInProgress;
 
 //
 // Constructors
@@ -475,11 +480,18 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
      * @see JComponent#updateUI
      */
     public void updateUI(){
-        setUI((TableHeaderUI)UIManager.getUI(this));
+        if (!updateInProgress) {
+            updateInProgress = true;
+            try {
+                setUI((TableHeaderUI)UIManager.getUI(this));
 
-        TableCellRenderer renderer = getDefaultRenderer();
-        if (renderer instanceof Component) {
-            SwingUtilities.updateComponentTreeUI((Component)renderer);
+                TableCellRenderer renderer = getDefaultRenderer();
+                if (renderer instanceof Component) {
+                    SwingUtilities.updateComponentTreeUI((Component)renderer);
+                }
+            } finally {
+                updateInProgress = false;
+            }
         }
     }
 

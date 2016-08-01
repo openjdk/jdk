@@ -27,6 +27,9 @@
     #error This file should not be included in headless library
 #endif
 
+#include "jvm_md.h"
+#include <dlfcn.h>
+
 #include "awt_p.h"
 #include "awt_GraphicsEnv.h"
 #define XK_MISCELLANY
@@ -50,10 +53,45 @@
 #include <sys/socket.h>
 #endif
 
+static Bool   (*compositeQueryExtension)   (Display*, int*, int*);
+static Status (*compositeQueryVersion)     (Display*, int*, int*);
+static Window (*compositeGetOverlayWindow) (Display *, Window);
+
 extern struct X11GraphicsConfigIDs x11GraphicsConfigIDs;
 
 static jint * masks;
 static jint num_buttons;
+
+static void *xCompositeHandle;
+
+static const char* XCOMPOSITE = JNI_LIB_NAME("Xcomposite");
+static const char* XCOMPOSITE_VERSIONED = VERSIONED_JNI_LIB_NAME("Xcomposite", "1");
+
+static Bool checkXCompositeFunctions(void) {
+    return (compositeQueryExtension   != NULL   &&
+            compositeQueryVersion     != NULL   &&
+            compositeGetOverlayWindow != NULL);
+}
+
+static void initXCompositeFunctions(void) {
+
+    if (xCompositeHandle == NULL) {
+        xCompositeHandle = dlopen(XCOMPOSITE, RTLD_LAZY | RTLD_GLOBAL);
+        if (xCompositeHandle == NULL) {
+            xCompositeHandle = dlopen(XCOMPOSITE_VERSIONED, RTLD_LAZY | RTLD_GLOBAL);
+        }
+    }
+    //*(void **)(&asyncGetCallTraceFunction)
+    if (xCompositeHandle != NULL) {
+        *(void **)(&compositeQueryExtension) = dlsym(xCompositeHandle, "XCompositeQueryExtension");
+        *(void **)(&compositeQueryVersion) = dlsym(xCompositeHandle, "XCompositeQueryVersion");
+        *(void **)(&compositeGetOverlayWindow) = dlsym(xCompositeHandle, "XCompositeGetOverlayWindow");
+    }
+
+    if (xCompositeHandle && !checkXCompositeFunctions()) {
+        dlclose(xCompositeHandle);
+    }
+}
 
 static int32_t isXTestAvailable() {
     int32_t major_opcode, first_event, first_error;
@@ -89,6 +127,35 @@ static int32_t isXTestAvailable() {
     return isXTestAvailable;
 }
 
+static Bool hasXCompositeOverlayExtension(Display *display) {
+
+    int xoverlay = False;
+    int eventBase, errorBase;
+    if (checkXCompositeFunctions() &&
+        compositeQueryExtension(display, &eventBase, &errorBase))
+    {
+        int major = 0;
+        int minor = 0;
+
+        compositeQueryVersion(display, &major, &minor);
+        if (major > 0 || minor >= 3) {
+            xoverlay = True;
+        }
+    }
+
+    return xoverlay;
+}
+
+static jboolean isXCompositeDisplay(Display *display, int screenNumber) {
+
+    char NET_WM_CM_Sn[25];
+    snprintf(NET_WM_CM_Sn, sizeof(NET_WM_CM_Sn), "_NET_WM_CM_S%d\0", screenNumber);
+
+    Atom managerSelection = XInternAtom(display, NET_WM_CM_Sn, 0);
+    Window owner = XGetSelectionOwner(display, managerSelection);
+
+    return owner != 0;
+}
 
 static XImage *getWindowImage(Display * display, Window window,
                               int32_t x, int32_t y,
@@ -211,7 +278,7 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
                              jint jheight,
                              jint scale,
                              jintArray pixelArray,
-                             jboolean isGtkSupported) {
+                             jboolean useGtk) {
     XImage *image;
     jint *ary;               /* Array of jints for sending pixel values back
                               * to parent process.
@@ -238,6 +305,14 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
 
     rootWindow = XRootWindow(awt_display, adata->awt_visInfo.screen);
 
+    if (!useGtk) {
+        if (hasXCompositeOverlayExtension(awt_display) &&
+            isXCompositeDisplay(awt_display, adata->awt_visInfo.screen))
+        {
+            rootWindow = compositeGetOverlayWindow(awt_display, rootWindow);
+        }
+    }
+
     if (!XGetWindowAttributes(awt_display, rootWindow, &attr)
             || sx + swidth <= attr.x
             || attr.x + attr.width <= sx
@@ -262,7 +337,7 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
 
     int index;
 
-    if (isGtkSupported) {
+    if (useGtk) {
         gtk->gdk_threads_enter();
         gtk_failed = gtk->get_drawable_data(env, pixelArray, x, y, width,
                                             height, jwidth, dx, dy, scale);
@@ -453,4 +528,9 @@ Java_sun_awt_X11_XRobotPeer_mouseWheelImpl (JNIEnv *env,
     XSync(awt_display, False);
 
     AWT_UNLOCK();
+}
+
+JNIEXPORT void JNICALL
+Java_sun_awt_X11_XRobotPeer_loadNativeLibraries (JNIEnv *env, jclass cls) {
+    initXCompositeFunctions();
 }

@@ -36,8 +36,9 @@ import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.PluginException;
 
 /**
@@ -97,25 +98,25 @@ public final class ExcludeVMPlugin implements Plugin {
      * e.g.: /java.base/native/amd64/server/libjvm.so
      * /java.base/native/server/libjvm.dylib
      */
-    private List<ModuleEntry> getVMs(ModulePool in) {
+    private List<ResourcePoolEntry> getVMs(ResourcePool in) {
         String jvmlib = jvmlib();
-        List<ModuleEntry> ret = in.findModule("java.base").get().entries().filter((t) -> {
-            return t.getPath().endsWith("/" + jvmlib);
+        List<ResourcePoolEntry> ret = in.moduleView().findModule("java.base").get().entries().filter((t) -> {
+            return t.path().endsWith("/" + jvmlib);
         }).collect(Collectors.toList());
         return ret;
     }
 
     @Override
-    public void visit(ModulePool in, ModulePool out) {
+    public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         String jvmlib = jvmlib();
         TreeSet<Jvm> existing = new TreeSet<>(new JvmComparator());
         TreeSet<Jvm> removed = new TreeSet<>(new JvmComparator());
         if (!keepAll) {
             // First retrieve all available VM names and removed VM
-            List<ModuleEntry> jvms = getVMs(in);
+            List<ResourcePoolEntry> jvms = getVMs(in);
             for (Jvm jvm : Jvm.values()) {
-                for (ModuleEntry md : jvms) {
-                    if (md.getPath().endsWith("/" + jvm.getName() + "/" + jvmlib)) {
+                for (ResourcePoolEntry md : jvms) {
+                    if (md.path().endsWith("/" + jvm.getName() + "/" + jvmlib)) {
                         existing.add(jvm);
                         if (isRemoved(md)) {
                             removed.add(jvm);
@@ -134,8 +135,8 @@ public final class ExcludeVMPlugin implements Plugin {
         // Rewrite the jvm.cfg file.
         in.transformAndCopy((file) -> {
             if (!keepAll) {
-                if (file.getType().equals(ModuleEntry.Type.NATIVE_LIB)) {
-                    if (file.getPath().endsWith(JVM_CFG)) {
+                if (file.type().equals(ResourcePoolEntry.Type.NATIVE_LIB)) {
+                    if (file.path().endsWith(JVM_CFG)) {
                         try {
                             file = handleJvmCfgFile(file, existing, removed);
                         } catch (IOException ex) {
@@ -148,10 +149,11 @@ public final class ExcludeVMPlugin implements Plugin {
             return file;
         }, out);
 
+        return out.build();
     }
 
-    private boolean isRemoved(ModuleEntry file) {
-        return !predicate.test(file.getPath());
+    private boolean isRemoved(ResourcePoolEntry file) {
+        return !predicate.test(file.path());
     }
 
     @Override
@@ -206,7 +208,7 @@ public final class ExcludeVMPlugin implements Plugin {
         predicate = ResourceFilter.excludeFilter(exclude);
     }
 
-    private ModuleEntry handleJvmCfgFile(ModuleEntry orig,
+    private ResourcePoolEntry handleJvmCfgFile(ResourcePoolEntry orig,
             TreeSet<Jvm> existing,
             TreeSet<Jvm> removed) throws IOException {
         if (keepAll) {
@@ -215,7 +217,7 @@ public final class ExcludeVMPlugin implements Plugin {
         StringBuilder builder = new StringBuilder();
         // Keep comments
         try (BufferedReader reader
-                = new BufferedReader(new InputStreamReader(orig.stream(),
+                = new BufferedReader(new InputStreamReader(orig.content(),
                         StandardCharsets.UTF_8))) {
             reader.lines().forEach((s) -> {
                 if (s.startsWith("#")) {
@@ -242,7 +244,7 @@ public final class ExcludeVMPlugin implements Plugin {
 
         byte[] content = builder.toString().getBytes(StandardCharsets.UTF_8);
 
-        return orig.create(content);
+        return orig.copyWithContent(content);
     }
 
     private static String jvmlib() {

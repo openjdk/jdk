@@ -32,6 +32,7 @@ import java.awt.event.ActionEvent;
 
 import sun.awt.UNIXToolkit;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import sun.security.action.GetPropertyAction;
 
 final class XTaskbarPeer implements TaskbarPeer {
@@ -40,6 +41,14 @@ final class XTaskbarPeer implements TaskbarPeer {
     private static boolean initExecuted = false;
 
     private PopupMenu menu = null;
+    private static boolean isUnity;
+
+    static {
+        String de = AccessController.doPrivileged(
+                        (PrivilegedAction<String>) ()
+                                -> System.getenv("XDG_CURRENT_DESKTOP"));
+        isUnity = de != null && de.equals("Unity");
+    }
 
     private static void initWithLock() {
         XToolkit.awtLock();
@@ -68,6 +77,9 @@ final class XTaskbarPeer implements TaskbarPeer {
     }
 
     static boolean isTaskbarSupported() {
+        if (!isUnity) {
+            return false;
+        }
         initWithLock();
         return nativeLibraryLoaded;
     }
@@ -107,6 +119,8 @@ final class XTaskbarPeer implements TaskbarPeer {
                 val = Long.parseLong(badge);
                 visible = true;
             } catch (NumberFormatException e) {
+                throw new UnsupportedOperationException("The " + Feature.ICON_BADGE_TEXT
+                    + " feature is not supported on the current platform!");
             }
         }
         setBadge(val, visible);
