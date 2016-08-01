@@ -53,14 +53,15 @@ import jdk.internal.jimage.decompressor.ResourceDecompressor;
 import jdk.internal.jimage.decompressor.ResourceDecompressorFactory;
 import jdk.internal.jimage.decompressor.StringSharingDecompressorFactory;
 import jdk.internal.jimage.decompressor.ZipDecompressorFactory;
-import jdk.tools.jlink.internal.ModulePoolImpl;
+import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.internal.StringTable;
 import jdk.tools.jlink.internal.plugins.DefaultCompressPlugin;
 import jdk.tools.jlink.internal.plugins.StringSharingPlugin;
 import jdk.tools.jlink.internal.plugins.ZipPlugin;
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.tools.jlink.plugin.ModuleEntry;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 public class CompressorPluginTest {
 
@@ -85,7 +86,7 @@ public class CompressorPluginTest {
                     new ZipDecompressorFactory()
                 });
 
-        ModulePool classes = gatherClasses(javabase);
+        ResourcePool classes = gatherClasses(javabase);
         // compress = String sharing
         checkCompress(classes, new StringSharingPlugin(), null,
                 new ResourceDecompressorFactory[]{
@@ -168,8 +169,8 @@ public class CompressorPluginTest {
                 }, Collections.singletonList(".*Exception.class"));
     }
 
-    private ModulePool gatherResources(Path module) throws Exception {
-        ModulePool pool = new ModulePoolImpl(ByteOrder.nativeOrder(), new StringTable() {
+    private ResourcePool gatherResources(Path module) throws Exception {
+        ResourcePoolManager poolMgr = new ResourcePoolManager(ByteOrder.nativeOrder(), new StringTable() {
 
             @Override
             public int addString(String str) {
@@ -181,20 +182,22 @@ public class CompressorPluginTest {
                 return null;
             }
         });
+
+        ResourcePoolBuilder poolBuilder = poolMgr.resourcePoolBuilder();
         try (Stream<Path> stream = Files.walk(module)) {
             for (Iterator<Path> iterator = stream.iterator(); iterator.hasNext();) {
                 Path p = iterator.next();
                 if (Files.isRegularFile(p)) {
                     byte[] content = Files.readAllBytes(p);
-                    pool.add(ModuleEntry.create(p.toString(), content));
+                    poolBuilder.add(ResourcePoolEntry.create(p.toString(), content));
                 }
             }
         }
-        return pool;
+        return poolBuilder.build();
     }
 
-    private ModulePool gatherClasses(Path module) throws Exception {
-        ModulePool pool = new ModulePoolImpl(ByteOrder.nativeOrder(), new StringTable() {
+    private ResourcePool gatherClasses(Path module) throws Exception {
+        ResourcePoolManager poolMgr = new ResourcePoolManager(ByteOrder.nativeOrder(), new StringTable() {
 
             @Override
             public int addString(String str) {
@@ -206,25 +209,27 @@ public class CompressorPluginTest {
                 return null;
             }
         });
+
+        ResourcePoolBuilder poolBuilder = poolMgr.resourcePoolBuilder();
         try (Stream<Path> stream = Files.walk(module)) {
             for (Iterator<Path> iterator = stream.iterator(); iterator.hasNext();) {
                 Path p = iterator.next();
                 if (Files.isRegularFile(p) && p.toString().endsWith(".class")) {
                     byte[] content = Files.readAllBytes(p);
-                    pool.add(ModuleEntry.create(p.toString(), content));
+                    poolBuilder.add(ResourcePoolEntry.create(p.toString(), content));
                 }
             }
         }
-        return pool;
+        return poolBuilder.build();
     }
 
-    private void checkCompress(ModulePool resources, Plugin prov,
+    private void checkCompress(ResourcePool resources, Plugin prov,
             Properties config,
             ResourceDecompressorFactory[] factories) throws Exception {
         checkCompress(resources, prov, config, factories, Collections.emptyList());
     }
 
-    private void checkCompress(ModulePool resources, Plugin prov,
+    private void checkCompress(ResourcePool resources, Plugin prov,
             Properties config,
             ResourceDecompressorFactory[] factories,
             List<String> includes) throws Exception {
@@ -243,7 +248,7 @@ public class CompressorPluginTest {
             }
             prov.configure(props);
             final Map<Integer, String> strings = new HashMap<>();
-            ModulePoolImpl inputResources = new ModulePoolImpl(ByteOrder.nativeOrder(), new StringTable() {
+            ResourcePoolManager inputResourcesMgr = new ResourcePoolManager(ByteOrder.nativeOrder(), new StringTable() {
                 @Override
                 public int addString(String str) {
                     int id = strID;
@@ -257,11 +262,11 @@ public class CompressorPluginTest {
                     return strings.get(id);
                 }
             });
-            inputResources.add(resource);
-            ModulePool compressedResources = applyCompressor(prov, inputResources, resource, includesPatterns);
-            original[0] += resource.getLength();
-            compressed[0] += compressedResources.findEntry(resource.getPath()).get().getLength();
-            applyDecompressors(factories, inputResources, compressedResources, strings, includesPatterns);
+            inputResourcesMgr.add(resource);
+            ResourcePool compressedResources = applyCompressor(prov, inputResourcesMgr, resource, includesPatterns);
+            original[0] += resource.contentLength();
+            compressed[0] += compressedResources.findEntry(resource.path()).get().contentLength();
+            applyDecompressors(factories, inputResourcesMgr.resourcePool(), compressedResources, strings, includesPatterns);
         });
         String compressors = Stream.of(factories)
                 .map(Object::getClass)
@@ -274,16 +279,18 @@ public class CompressorPluginTest {
         }
     }
 
-    private ModulePool applyCompressor(Plugin plugin,
-            ModulePoolImpl inputResources,
-            ModuleEntry res,
+    private ResourcePool applyCompressor(Plugin plugin,
+            ResourcePoolManager inputResources,
+            ResourcePoolEntry res,
             List<Pattern> includesPatterns) {
-        ModulePool compressedModulePool = new ModulePoolImpl(ByteOrder.nativeOrder(), inputResources.getStringTable());
-        plugin.visit(inputResources, compressedModulePool);
-        String path = res.getPath();
-        ModuleEntry compressed = compressedModulePool.findEntry(path).get();
+        ResourcePoolManager resMgr = new ResourcePoolManager(ByteOrder.nativeOrder(),
+                inputResources.getStringTable());
+        ResourcePool compressedResourcePool = plugin.transform(inputResources.resourcePool(),
+            resMgr.resourcePoolBuilder());
+        String path = res.path();
+        ResourcePoolEntry compressed = compressedResourcePool.findEntry(path).get();
         CompressedResourceHeader header
-                = CompressedResourceHeader.readFromResource(ByteOrder.nativeOrder(), compressed.getBytes());
+                = CompressedResourceHeader.readFromResource(ByteOrder.nativeOrder(), compressed.contentBytes());
         if (isIncluded(includesPatterns, path)) {
             if (header == null) {
                 throw new AssertionError("Path should be compressed: " + path);
@@ -299,23 +306,23 @@ public class CompressorPluginTest {
         } else if (header != null) {
             throw new AssertionError("Path should not be compressed: " + path);
         }
-        return compressedModulePool;
+        return compressedResourcePool;
     }
 
     private void applyDecompressors(ResourceDecompressorFactory[] decompressors,
-            ModulePool inputResources,
-            ModulePool compressedResources,
+            ResourcePool inputResources,
+            ResourcePool compressedResources,
             Map<Integer, String> strings,
             List<Pattern> includesPatterns) {
         compressedResources.entries().forEach(compressed -> {
             CompressedResourceHeader header = CompressedResourceHeader.readFromResource(
-                    ByteOrder.nativeOrder(), compressed.getBytes());
-            String path = compressed.getPath();
-            ModuleEntry orig = inputResources.findEntry(path).get();
+                    ByteOrder.nativeOrder(), compressed.contentBytes());
+            String path = compressed.path();
+            ResourcePoolEntry orig = inputResources.findEntry(path).get();
             if (!isIncluded(includesPatterns, path)) {
                 return;
             }
-            byte[] decompressed = compressed.getBytes();
+            byte[] decompressed = compressed.contentBytes();
             for (ResourceDecompressorFactory factory : decompressors) {
                 try {
                     ResourceDecompressor decompressor = factory.newDecompressor(new Properties());
@@ -327,11 +334,11 @@ public class CompressorPluginTest {
                 }
             }
 
-            if (decompressed.length != orig.getLength()) {
+            if (decompressed.length != orig.contentLength()) {
                 throw new AssertionError("Invalid uncompressed size "
                         + header.getUncompressedSize());
             }
-            byte[] origContent = orig.getBytes();
+            byte[] origContent = orig.contentBytes();
             for (int i = 0; i < decompressed.length; i++) {
                 if (decompressed[i] != origContent[i]) {
                     throw new AssertionError("Decompressed and original differ at index " + i);

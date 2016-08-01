@@ -366,6 +366,12 @@ Rule	Egypt	2007	only	-	Sep	Thu>=1	24:00	0	-
 # decision to abandon DST permanently.  See Ahram Online 2015-04-24.
 # http://english.ahram.org.eg/NewsContent/1/64/128509/Egypt/Politics-/Sisi-cancels-daylight-saving-time-in-Egypt.aspx
 
+# From Steffen Thorsen (2016-04-29):
+# Egypt will have DST from July 7 until the end of October....
+# http://english.ahram.org.eg/NewsContentP/1/204655/Egypt/Daylight-savings-time-returning-to-Egypt-on--July.aspx
+# From Mina Samuel (2016-07-04):
+# Egyptian government took the decision to cancel the DST,
+
 Rule	Egypt	2008	only	-	Aug	lastThu	24:00	0	-
 Rule	Egypt	2009	only	-	Aug	20	24:00	0	-
 Rule	Egypt	2010	only	-	Aug	10	24:00	0	-
@@ -881,11 +887,11 @@ Rule	Morocco	2009	only	-	Aug	21	 0:00	0	-
 Rule	Morocco	2010	only	-	May	 2	 0:00	1:00	S
 Rule	Morocco	2010	only	-	Aug	 8	 0:00	0	-
 Rule	Morocco	2011	only	-	Apr	 3	 0:00	1:00	S
-Rule	Morocco	2011	only	-	Jul	31	 0	0	-
+Rule	Morocco	2011	only	-	Jul	31	 0:00	0	-
 Rule	Morocco	2012	2013	-	Apr	lastSun	 2:00	1:00	S
-Rule	Morocco	2012	only	-	Sep	30	 3:00	0	-
 Rule	Morocco	2012	only	-	Jul	20	 3:00	0	-
 Rule	Morocco	2012	only	-	Aug	20	 2:00	1:00	S
+Rule	Morocco	2012	only	-	Sep	30	 3:00	0	-
 Rule	Morocco	2013	only	-	Jul	 7	 3:00	0	-
 Rule	Morocco	2013	only	-	Aug	10	 2:00	1:00	S
 Rule	Morocco	2013	max	-	Oct	lastSun	 3:00	0	-

@@ -285,7 +285,7 @@ class CAccessibility implements PropertyChangeListener {
     }
 
     public static int getAccessibleIndexInParent(final Accessible a, final Component c) {
-        if (a == null) return 0;
+        if (a == null) return -1;
 
         return invokeAndWait(new Callable<Integer>() {
             public Integer call() throws Exception {
@@ -468,6 +468,24 @@ class CAccessibility implements PropertyChangeListener {
         }, c);
     }
 
+    public static void requestSelection(final Accessible a, final Component c) {
+        if (a == null) return;
+        invokeLater(new Runnable() {
+            public void run() {
+                AccessibleContext ac = a.getAccessibleContext();
+                if (ac == null) return;
+                int i = ac.getAccessibleIndexInParent();
+                if (i == -1) return;
+                Accessible parent = ac.getAccessibleParent();
+                AccessibleContext pac = parent.getAccessibleContext();
+                if (pac == null) return;
+                AccessibleSelection as = pac.getAccessibleSelection();
+                if (as == null) return;
+                as.addAccessibleSelection(i);
+            }
+        }, c);
+    }
+
     public static Number getMaximumAccessibleValue(final Accessible a, final Component c) {
         if (a == null) return null;
 
@@ -572,8 +590,56 @@ class CAccessibility implements PropertyChangeListener {
         if (a == null) return null;
         return invokeAndWait(new Callable<Object[]>() {
             public Object[] call() throws Exception {
-                final ArrayList<Object> childrenAndRoles = new ArrayList<Object>();
+                ArrayList<Object> childrenAndRoles = new ArrayList<Object>();
                 _addChildren(a, whichChildren, allowIgnored, childrenAndRoles);
+
+                /* In the case of fetching a selection, need to check to see if
+                 * the active descendant is at the beginning of the list.  If it
+                 * is not it needs to be moved to the beginning of the list so
+                 * VoiceOver will annouce it correctly.  The list returned
+                 * from Java is always in order from top to bottom, but when shift
+                 * selecting downward (extending the list) or multi-selecting using
+                 * the VO keys control+option+command+return the active descendant
+                 * is not at the top of the list in the shift select down case and
+                 * may not be in the multi select case.
+                 */
+                if (whichChildren == JAVA_AX_SELECTED_CHILDREN) {
+                    if (!childrenAndRoles.isEmpty()) {
+                        AccessibleContext activeDescendantAC =
+                            CAccessible.getActiveDescendant(a);
+                        if (activeDescendantAC != null) {
+                            String activeDescendantName =
+                                activeDescendantAC.getAccessibleName();
+                            AccessibleRole activeDescendantRole =
+                                activeDescendantAC.getAccessibleRole();
+                            // Move active descendant to front of list.
+                            // List contains pairs of each selected item's
+                            // Accessible and AccessibleRole.
+                            ArrayList<Object> newArray  = new ArrayList<Object>();
+                            int count = childrenAndRoles.size();
+                            Accessible currentAccessible = null;
+                            AccessibleContext currentAC = null;
+                            String currentName = null;
+                            AccessibleRole currentRole = null;
+                            for (int i = 0; i < count; i+=2) {
+                                // Is this the active descendant?
+                                currentAccessible = (Accessible)childrenAndRoles.get(i);
+                                currentAC = currentAccessible.getAccessibleContext();
+                                currentName = currentAC.getAccessibleName();
+                                currentRole = (AccessibleRole)childrenAndRoles.get(i+1);
+                                if ( currentName.equals(activeDescendantName) &&
+                                     currentRole.equals(activeDescendantRole) ) {
+                                    newArray.add(0, currentAccessible);
+                                    newArray.add(1, currentRole);
+                                } else {
+                                    newArray.add(currentAccessible);
+                                    newArray.add(currentRole);
+                                }
+                            }
+                            childrenAndRoles = newArray;
+                        }
+                    }
+                }
 
                 if ((whichChildren < 0) || (whichChildren * 2 >= childrenAndRoles.size())) {
                     return childrenAndRoles.toArray();

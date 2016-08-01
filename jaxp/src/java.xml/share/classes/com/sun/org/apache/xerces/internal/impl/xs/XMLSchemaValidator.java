@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -86,6 +86,8 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.Vector;
 import javax.xml.XMLConstants;
+import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * The XML Schema validator. The validator implements a document
@@ -264,6 +266,8 @@ public class XMLSchemaValidator
 
     protected static final String USE_SERVICE_MECHANISM = Constants.ORACLE_FEATURE_SERVICE_MECHANISM;
 
+    protected static final String USE_CATALOG = XMLConstants.USE_CATALOG;
+
     // recognized features and properties
 
     /** Recognized features. */
@@ -286,7 +290,8 @@ public class XMLSchemaValidator
             UNPARSED_ENTITY_CHECKING,
             NAMESPACE_GROWTH,
             TOLERATE_DUPLICATES,
-            USE_SERVICE_MECHANISM
+            USE_SERVICE_MECHANISM,
+            USE_CATALOG
         };
 
     /** Feature defaults. */
@@ -317,7 +322,8 @@ public class XMLSchemaValidator
         null,
         null,
         null,
-        Boolean.TRUE
+        Boolean.TRUE,
+        JdkXmlUtils.USE_CATALOG_DEFAULT
     };
 
     /** Recognized properties. */
@@ -334,12 +340,17 @@ public class XMLSchemaValidator
             ROOT_TYPE_DEF,
             ROOT_ELEMENT_DECL,
             SCHEMA_DV_FACTORY,
-            XML_SECURITY_PROPERTY_MANAGER
+            XML_SECURITY_PROPERTY_MANAGER,
+            JdkXmlUtils.CATALOG_DEFER,
+            JdkXmlUtils.CATALOG_FILES,
+            JdkXmlUtils.CATALOG_PREFER,
+            JdkXmlUtils.CATALOG_RESOLVE
         };
 
     /** Property defaults. */
     private static final Object[] PROPERTY_DEFAULTS =
-        { null, null, null, null, null, null, null, null, null, null, null, null};
+        { null, null, null, null, null, null, null, null, null, null, null, null,
+        null, null, null, null};
 
     // this is the number of valuestores of each kind
     // we expect an element to have.  It's almost

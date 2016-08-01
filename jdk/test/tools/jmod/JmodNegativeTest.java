@@ -229,21 +229,6 @@ public class JmodNegativeTest {
         }
     }
 
-    @Test(enabled = false)  // TODO: jmod should check for duplicates before creating.
-    public void testDuplicates() throws IOException {
-        Path jmod = MODS_DIR.resolve("testDuplicates.jmod");
-        FileUtils.deleteFileIfExistsWithRetry(jmod);
-        String cp = EXPLODED_DIR.resolve("foo").resolve("classes").toString();
-
-        jmod("create",
-             "--class-path", cp + pathSeparator + cp,
-             jmod.toString())
-            .assertFailure()
-            .resultChecker(r ->
-                assertContains(r.output, "Error: duplicate resource found, etc..")
-            );
-    }
-
     @Test
     public void testEmptyFileInClasspath() throws IOException {
         Path jmod = MODS_DIR.resolve("testEmptyFileInClasspath.jmod");

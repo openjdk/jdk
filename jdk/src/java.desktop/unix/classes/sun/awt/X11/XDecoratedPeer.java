@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,9 @@ import java.awt.*;
 import java.awt.event.ComponentEvent;
 import java.awt.event.InvocationEvent;
 import java.awt.event.WindowEvent;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import sun.awt.IconInfo;
 import sun.util.logging.PlatformLogger;
@@ -52,6 +55,8 @@ abstract class XDecoratedPeer extends XWindowPeer {
     XContentWindow content;
     Insets currentInsets;
     XFocusProxyWindow focusProxy;
+    static final Map<Class<?>,Insets> lastKnownInsets =
+                                   Collections.synchronizedMap(new HashMap<>());
 
     XDecoratedPeer(Window target) {
         super(target);
@@ -74,6 +79,9 @@ abstract class XDecoratedPeer extends XWindowPeer {
         winAttr.initialFocus = true;
 
         currentInsets = new Insets(0,0,0,0);
+        if (XWM.getWMID() == XWM.UNITY_COMPIZ_WM) {
+            currentInsets = lastKnownInsets.get(getClass());
+        }
         applyGuessedInsets();
 
         Rectangle bounds = (Rectangle)params.get(BOUNDS);
@@ -297,7 +305,25 @@ abstract class XDecoratedPeer extends XWindowPeer {
         if (ev.get_atom() == XWM.XA_KDE_NET_WM_FRAME_STRUT.getAtom()
             || ev.get_atom() == XWM.XA_NET_FRAME_EXTENTS.getAtom())
         {
-            getWMSetInsets(XAtom.get(ev.get_atom()));
+            if (XWM.getWMID() != XWM.UNITY_COMPIZ_WM) {
+                getWMSetInsets(XAtom.get(ev.get_atom()));
+            } else {
+                if(!isReparented()) {
+                    return;
+                }
+                wm_set_insets = null;
+                Insets in = getWMSetInsets(XAtom.get(ev.get_atom()));
+                if (isNull(in)) {
+                    return;
+                }
+                if (!isEmbedded() && !isTargetUndecorated()) {
+                    lastKnownInsets.put(getClass(), in);
+                }
+                if (!in.equals(dimensions.getInsets())) {
+                    handleCorrectInsets(in);
+                }
+                insets_corrected = true;
+            }
         }
     }
 
@@ -370,7 +396,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
                     }
                 }
 
-                if (correctWM != null) {
+                if (correctWM != null && XWM.getWMID() != XWM.UNITY_COMPIZ_WM) {
                     handleCorrectInsets(correctWM);
                 }
             }
@@ -664,6 +690,9 @@ abstract class XDecoratedPeer extends XWindowPeer {
 
     boolean no_reparent_artifacts = false;
     public void handleConfigureNotifyEvent(XEvent xev) {
+        if (XWM.getWMID() == XWM.UNITY_COMPIZ_WM && !insets_corrected) {
+            return;
+        }
         assert (SunToolkit.isAWTLockHeldByCurrentThread());
         XConfigureEvent xe = xev.get_xconfigure();
         if (insLog.isLoggable(PlatformLogger.Level.FINE)) {
@@ -1010,7 +1039,22 @@ abstract class XDecoratedPeer extends XWindowPeer {
         if (focusLog.isLoggable(PlatformLogger.Level.FINE)) {
             focusLog.fine("WM_TAKE_FOCUS on {0}", this);
         }
-        requestWindowFocus(cl.get_data(1), true);
+
+        if (XWM.getWMID() == XWM.UNITY_COMPIZ_WM) {
+            // JDK-8159460
+            Window focusedWindow = XKeyboardFocusManagerPeer.getInstance()
+                    .getCurrentFocusedWindow();
+            Window activeWindow = XWindowPeer.getDecoratedOwner(focusedWindow);
+            if (activeWindow != target) {
+                requestWindowFocus(cl.get_data(1), true);
+            } else {
+                WindowEvent we = new WindowEvent(focusedWindow,
+                        WindowEvent.WINDOW_GAINED_FOCUS);
+                sendEvent(we);
+            }
+        } else {
+            requestWindowFocus(cl.get_data(1), true);
+        }
     }
 
     /**

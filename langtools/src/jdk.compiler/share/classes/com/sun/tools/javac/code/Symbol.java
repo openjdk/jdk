@@ -55,7 +55,9 @@ import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
+import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Name;
@@ -64,9 +66,15 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
+import static com.sun.tools.javac.code.Symbol.OperatorSymbol.AccessCode.FIRSTASGOP;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.FORALL;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
+import static com.sun.tools.javac.jvm.ByteCodes.iadd;
+import static com.sun.tools.javac.jvm.ByteCodes.ishll;
+import static com.sun.tools.javac.jvm.ByteCodes.lushrl;
+import static com.sun.tools.javac.jvm.ByteCodes.lxor;
+import static com.sun.tools.javac.jvm.ByteCodes.string_add;
 
 /** Root class for Java symbols. It contains subclasses
  *  for specific sorts of symbols, such as variables, methods and operators,
@@ -1950,14 +1958,89 @@ public abstract class Symbol extends AnnoConstruct implements Element {
     public static class OperatorSymbol extends MethodSymbol {
 
         public int opcode;
+        private int accessCode = Integer.MIN_VALUE;
 
         public OperatorSymbol(Name name, Type type, int opcode, Symbol owner) {
             super(PUBLIC | STATIC, name, type, owner);
             this.opcode = opcode;
         }
 
+        @Override
         public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
             return v.visitOperatorSymbol(this, p);
+        }
+
+        public int getAccessCode(Tag tag) {
+            if (accessCode != Integer.MIN_VALUE && !tag.isIncOrDecUnaryOp()) {
+                return accessCode;
+            }
+            accessCode = AccessCode.from(tag, opcode);
+            return accessCode;
+        }
+
+        /** Access codes for dereferencing, assignment,
+         *  and pre/post increment/decrement.
+
+         *  All access codes for accesses to the current class are even.
+         *  If a member of the superclass should be accessed instead (because
+         *  access was via a qualified super), add one to the corresponding code
+         *  for the current class, making the number odd.
+         *  This numbering scheme is used by the backend to decide whether
+         *  to issue an invokevirtual or invokespecial call.
+         *
+         *  @see Gen#visitSelect(JCFieldAccess tree)
+         */
+        public enum AccessCode {
+            UNKNOWN(-1, Tag.NO_TAG),
+            DEREF(0, Tag.NO_TAG),
+            ASSIGN(2, Tag.ASSIGN),
+            PREINC(4, Tag.PREINC),
+            PREDEC(6, Tag.PREDEC),
+            POSTINC(8, Tag.POSTINC),
+            POSTDEC(10, Tag.POSTDEC),
+            FIRSTASGOP(12, Tag.NO_TAG);
+
+            public final int code;
+            public final Tag tag;
+            public static final int numberOfAccessCodes = (lushrl - ishll + lxor + 2 - iadd) * 2 + FIRSTASGOP.code + 2;
+
+            AccessCode(int code, Tag tag) {
+                this.code = code;
+                this.tag = tag;
+            }
+
+            static public AccessCode getFromCode(int code) {
+                for (AccessCode aCodes : AccessCode.values()) {
+                    if (aCodes.code == code) {
+                        return aCodes;
+                    }
+                }
+                return UNKNOWN;
+            }
+
+            static int from(Tag tag, int opcode) {
+                /** Map bytecode of binary operation to access code of corresponding
+                *  assignment operation. This is always an even number.
+                */
+                switch (tag) {
+                    case PREINC:
+                        return AccessCode.PREINC.code;
+                    case PREDEC:
+                        return AccessCode.PREDEC.code;
+                    case POSTINC:
+                        return AccessCode.POSTINC.code;
+                    case POSTDEC:
+                        return AccessCode.POSTDEC.code;
+                }
+                if (iadd <= opcode && opcode <= lxor) {
+                    return (opcode - iadd) * 2 + FIRSTASGOP.code;
+                } else if (opcode == string_add) {
+                    return (lxor + 1 - iadd) * 2 + FIRSTASGOP.code;
+                } else if (ishll <= opcode && opcode <= lushrl) {
+                    return (opcode - ishll + lxor + 2 - iadd) * 2 + FIRSTASGOP.code;
+                }
+                return -1;
+            }
         }
     }
 

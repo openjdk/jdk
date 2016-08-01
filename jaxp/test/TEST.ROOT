@@ -15,7 +15,7 @@ keys=intermittent randomness
 othervm.dirs=javax/xml/jaxp
 
 # Group definitions
-groups=TEST.groups 
+groups=TEST.groups
 
 # Minimum jtreg version
 requiredVersion=4.2 b02

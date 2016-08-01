@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,9 +16,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-/*
- * $Id: Parser.java,v 1.2.4.1 2005/09/13 12:14:32 pvedula Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
@@ -37,6 +34,7 @@ import com.sun.org.apache.xml.internal.serializer.utils.SystemIDResolver;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -44,17 +42,20 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Stack;
 import java.util.StringTokenizer;
-import java.util.Vector;
 import javax.xml.XMLConstants;
+import javax.xml.catalog.CatalogFeatures;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import jdk.xml.internal.JdkXmlFeatures;
+import jdk.xml.internal.JdkXmlUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.AttributesImpl;
@@ -68,20 +69,20 @@ import org.xml.sax.helpers.AttributesImpl;
  */
 public class Parser implements Constants, ContentHandler {
 
-    private static final String XSL = "xsl";            // standard prefix
+    private static final String XSL = "xsl";           // standard prefix
     private static final String TRANSLET = "translet"; // extension prefix
 
     private Locator _locator = null;
 
-    private XSLTC _xsltc;             // Reference to the compiler object.
-    private XPathParser _xpathParser; // Reference to the XPath parser.
-    private Vector _errors;           // Contains all compilation errors
-    private Vector _warnings;         // Contains all compilation errors
+    private XSLTC _xsltc;                  // Reference to the compiler object.
+    private XPathParser _xpathParser;      // Reference to the XPath parser.
+    private ArrayList<ErrorMsg> _errors;   // Contains all compilation errors
+    private ArrayList<ErrorMsg> _warnings; // Contains all compilation warnings
 
     private Map<String, String>   _instructionClasses; // Maps instructions to classes
     private Map<String, String[]> _instructionAttrs;  // reqd and opt attrs
-    private Map<String, QName>   _qNames;
-    private Map<String, Map>     _namespaces;
+    private Map<String, QName>    _qNames;
+    private Map<String, Map<String, QName>> _namespaces;
     private QName       _useAttributeSets;
     private QName       _excludeResultPrefixes;
     private QName       _extensionElementPrefixes;
@@ -113,8 +114,8 @@ public class Parser implements Constants, ContentHandler {
         _instructionAttrs    = new HashMap<>();
         _variableScope       = new HashMap<>();
         _template            = null;
-        _errors              = new Vector();
-        _warnings            = new Vector();
+        _errors              = new ArrayList<>();
+        _warnings            = new ArrayList<>();
         _symbolTable         = new SymbolTable();
         _xpathParser         = new XPathParser(this);
         _currentStylesheet   = null;
@@ -139,7 +140,6 @@ public class Parser implements Constants, ContentHandler {
     public void setOutput(Output output) {
         if (_output != null) {
             if (_output.getImportPrecedence() <= output.getImportPrecedence()) {
-                String cdata = _output.getCdata();
                 output.mergeOutput(_output);
                 _output.disable();
                 _output = output;
@@ -173,12 +173,13 @@ public class Parser implements Constants, ContentHandler {
         Object existing = _variableScope.get(var.getName().getStringRep());
         if (existing != null) {
             if (existing instanceof Stack) {
-                Stack stack = (Stack)existing;
+                @SuppressWarnings("unchecked")
+                Stack<VariableBase> stack = (Stack<VariableBase>)existing;
                 stack.push(var);
             }
             else if (existing instanceof VariableBase) {
-                Stack stack = new Stack();
-                stack.push(existing);
+                Stack<VariableBase> stack = new Stack<>();
+                stack.push((VariableBase)existing);
                 stack.push(var);
                 _variableScope.put(var.getName().getStringRep(), stack);
             }
@@ -191,7 +192,8 @@ public class Parser implements Constants, ContentHandler {
     public void removeVariable(QName name) {
         Object existing = _variableScope.get(name.getStringRep());
         if (existing instanceof Stack) {
-            Stack stack = (Stack)existing;
+            @SuppressWarnings("unchecked")
+            Stack<VariableBase> stack = (Stack<VariableBase>)existing;
             if (!stack.isEmpty()) stack.pop();
             if (!stack.isEmpty()) return;
         }
@@ -201,13 +203,14 @@ public class Parser implements Constants, ContentHandler {
     public VariableBase lookupVariable(QName name) {
         Object existing = _variableScope.get(name.getStringRep());
         if (existing instanceof VariableBase) {
-            return((VariableBase)existing);
+            return (VariableBase)existing;
         }
         else if (existing instanceof Stack) {
-            Stack stack = (Stack)existing;
-            return((VariableBase)stack.peek());
+            @SuppressWarnings("unchecked")
+            Stack<VariableBase> stack = (Stack<VariableBase>)existing;
+            return stack.peek();
         }
-        return(null);
+        return null;
     }
 
     public void setXSLTC(XSLTC xsltc) {
@@ -397,10 +400,9 @@ public class Parser implements Constants, ContentHandler {
         try {
             if (stylesheet != null) {
                 stylesheet.parseContents(this);
-                final int precedence = stylesheet.getImportPrecedence();
                 final Iterator<SyntaxTreeNode> elements = stylesheet.elements();
                 while (elements.hasNext()) {
-                    Object child = elements.next();
+                    SyntaxTreeNode child = elements.next();
                     if (child instanceof Text) {
                         final int l = getLineNumber();
                         ErrorMsg err =
@@ -475,9 +477,10 @@ public class Parser implements Constants, ContentHandler {
             try {
                 factory.setFeature(Constants.NAMESPACE_FEATURE,true);
             }
-            catch (Exception e) {
+            catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
                 factory.setNamespaceAware(true);
             }
+
             final SAXParser parser = factory.newSAXParser();
             try {
                 parser.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD,
@@ -486,6 +489,28 @@ public class Parser implements Constants, ContentHandler {
                 ErrorMsg err = new ErrorMsg(ErrorMsg.WARNING_MSG,
                         parser.getClass().getName() + ": " + e.getMessage());
                 reportError(WARNING, err);
+            }
+
+            boolean supportCatalog = true;
+            boolean useCatalog = _xsltc.getFeature(JdkXmlFeatures.XmlFeature.USE_CATALOG);
+            try {
+                factory.setFeature(JdkXmlUtils.USE_CATALOG,useCatalog);
+            }
+            catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
+                supportCatalog = false;
+            }
+
+            if (supportCatalog && useCatalog) {
+                try {
+                    CatalogFeatures cf = (CatalogFeatures)_xsltc.getProperty(JdkXmlFeatures.CATALOG_FEATURES);
+                    if (cf != null) {
+                        for (CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
+                            parser.setProperty(f.getPropertyName(), cf.get(f));
+                        }
+                    }
+                } catch (SAXNotRecognizedException e) {
+                    //shall not happen for internal settings
+                }
             }
 
             final XMLReader reader = parser.getXMLReader();
@@ -704,8 +729,6 @@ public class Parser implements Constants, ContentHandler {
            new String[] {"stylesheet-prefix", "result-prefix"});
     }
 
-
-
     /**
      * Initialize the _instructionClasses map, which maps XSL element
      * names to Java classes in this package.
@@ -779,6 +802,7 @@ public class Parser implements Constants, ContentHandler {
     /**
      * Add primops and base functions to the symbol table.
      */
+    @SuppressWarnings("unused")
     private void initSymbolTable() {
         MethodType I_V  = new MethodType(Type.Int, Type.Void);
         MethodType I_R  = new MethodType(Type.Int, Type.Real);
@@ -971,12 +995,12 @@ public class Parser implements Constants, ContentHandler {
         String local, Attributes attributes)
     {
         SyntaxTreeNode node = null;
-        QName  qname = getQName(uri, prefix, local);
+        QName qname = getQName(uri, prefix, local);
         String className = _instructionClasses.get(qname.getStringRep());
 
         if (className != null) {
             try {
-                final Class clazz = ObjectFactory.findProviderClass(className, true);
+                final Class<?> clazz = ObjectFactory.findProviderClass(className, true);
                 node = (SyntaxTreeNode)clazz.newInstance();
                 node.setQName(qname);
                 node.setParser(this);
@@ -1023,7 +1047,7 @@ public class Parser implements Constants, ContentHandler {
                 else {
                     Stylesheet sheet = _xsltc.getStylesheet();
                     if ((sheet != null) && (sheet.isExtension(uri))) {
-                        if (sheet != (SyntaxTreeNode)_parentStack.peek()) {
+                        if (sheet != _parentStack.peek()) {
                             node = new UnsupportedElement(uri, prefix, local, true);
                             UnsupportedElement elem = (UnsupportedElement)node;
                             ErrorMsg msg =
@@ -1156,7 +1180,6 @@ public class Parser implements Constants, ContentHandler {
                     node.setParser(this);
                     node.setParent(parent);
                     node.setLineNumber(line);
-// System.out.println("e = " + text + " " + node);
                     return node;
                 }
             }
@@ -1191,7 +1214,7 @@ public class Parser implements Constants, ContentHandler {
         if (size > 0) {
             System.err.println(new ErrorMsg(ErrorMsg.COMPILER_ERROR_KEY));
             for (int i = 0; i < size; i++) {
-                System.err.println("  " + _errors.elementAt(i));
+                System.err.println("  " + _errors.get(i));
             }
         }
     }
@@ -1204,7 +1227,7 @@ public class Parser implements Constants, ContentHandler {
         if (size > 0) {
             System.err.println(new ErrorMsg(ErrorMsg.COMPILER_WARNING_KEY));
             for (int i = 0; i < size; i++) {
-                System.err.println("  " + _warnings.elementAt(i));
+                System.err.println("  " + _warnings.get(i));
             }
         }
     }
@@ -1217,42 +1240,42 @@ public class Parser implements Constants, ContentHandler {
         case Constants.INTERNAL:
             // Unexpected internal errors, such as null-ptr exceptions, etc.
             // Immediately terminates compilation, no translet produced
-            _errors.addElement(error);
+            _errors.add(error);
             break;
         case Constants.UNSUPPORTED:
             // XSLT elements that are not implemented and unsupported ext.
             // Immediately terminates compilation, no translet produced
-            _errors.addElement(error);
+            _errors.add(error);
             break;
         case Constants.FATAL:
             // Fatal error in the stylesheet input (parsing or content)
             // Immediately terminates compilation, no translet produced
-            _errors.addElement(error);
+            _errors.add(error);
             break;
         case Constants.ERROR:
             // Other error in the stylesheet input (parsing or content)
             // Does not terminate compilation, no translet produced
-            _errors.addElement(error);
+            _errors.add(error);
             break;
         case Constants.WARNING:
             // Other error in the stylesheet input (content errors only)
             // Does not terminate compilation, a translet is produced
-            _warnings.addElement(error);
+            _warnings.add(error);
             break;
         }
     }
 
-    public Vector getErrors() {
+    public ArrayList<ErrorMsg> getErrors() {
         return _errors;
     }
 
-    public Vector getWarnings() {
+    public ArrayList<ErrorMsg> getWarnings() {
         return _warnings;
     }
 
     /************************ SAX2 ContentHandler INTERFACE *****************/
 
-    private Stack _parentStack = null;
+    private Stack<SyntaxTreeNode> _parentStack = null;
     private Map<String, String> _prefixMapping = null;
 
     /**
@@ -1262,7 +1285,7 @@ public class Parser implements Constants, ContentHandler {
         _root = null;
         _target = null;
         _prefixMapping = null;
-        _parentStack = new Stack();
+        _parentStack = new Stack<>();
     }
 
     /**
@@ -1318,7 +1341,7 @@ public class Parser implements Constants, ContentHandler {
             _root = element;
         }
         else {
-            SyntaxTreeNode parent = (SyntaxTreeNode)_parentStack.peek();
+            SyntaxTreeNode parent = _parentStack.peek();
             parent.addElement(element);
             element.setParent(parent);
         }
@@ -1349,7 +1372,7 @@ public class Parser implements Constants, ContentHandler {
      */
     public void characters(char[] ch, int start, int length) {
         String string = new String(ch, start, length);
-        SyntaxTreeNode parent = (SyntaxTreeNode)_parentStack.peek();
+        SyntaxTreeNode parent = _parentStack.peek();
 
         if (string.length() == 0) return;
 

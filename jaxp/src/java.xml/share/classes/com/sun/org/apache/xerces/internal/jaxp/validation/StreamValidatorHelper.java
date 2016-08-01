@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -32,6 +32,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 import javax.xml.XMLConstants;
+import javax.xml.catalog.CatalogFeatures;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerConfigurationException;
@@ -41,6 +42,8 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import jdk.xml.internal.JdkXmlFeatures;
+import jdk.xml.internal.JdkXmlUtils;
 import org.xml.sax.SAXException;
 
 /**
@@ -190,6 +193,10 @@ final class StreamValidatorHelper implements ValidatorHelper {
                 fComponentManager.getProperty(Constants.XML_SECURITY_PROPERTY_MANAGER));
         config.setProperty(Constants.SECURITY_MANAGER,
                 fComponentManager.getProperty(Constants.SECURITY_MANAGER));
+
+        // Passing on the CatalogFeatures settings
+        JdkXmlUtils.catalogFeaturesConfig2Config(fComponentManager, config);
+
         fConfiguration = new SoftReference(config);
         return config;
     }
