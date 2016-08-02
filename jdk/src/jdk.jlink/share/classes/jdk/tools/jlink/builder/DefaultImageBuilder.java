@@ -228,6 +228,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
             desc.osName().ifPresent(s -> props.setProperty("OS_NAME", s));
             desc.osVersion().ifPresent(s -> props.setProperty("OS_VERSION", s));
             desc.osArch().ifPresent(s -> props.setProperty("OS_ARCH", s));
+            props.setProperty("JAVA_VERSION", System.getProperty("java.version"));
         });
 
         Optional<ResourcePoolEntry> release = pool.findEntry("/java.base/release");
