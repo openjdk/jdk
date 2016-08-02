@@ -142,7 +142,7 @@ Java_com_sun_management_internal_Flag_getFlags
             continue;
         }
 
-        if (valueObj == NULL) {
+        if (valueObj == NULL && globals[i].type != JMM_VMGLOBAL_TYPE_JSTRING) {
             free(globals);
             JNU_ThrowOutOfMemoryError(env, 0);
             return 0;
