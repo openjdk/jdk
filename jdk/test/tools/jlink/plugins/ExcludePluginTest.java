@@ -34,11 +34,12 @@ import java.io.File;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
-import jdk.tools.jlink.internal.ModulePoolImpl;
+import jdk.tools.jlink.internal.ResourcePoolManager;
 
 import jdk.tools.jlink.internal.plugins.ExcludePlugin;
-import jdk.tools.jlink.plugin.ModuleEntry;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 public class ExcludePluginTest {
 
@@ -75,17 +76,18 @@ public class ExcludePluginTest {
         prop.put(ExcludePlugin.NAME, s);
         ExcludePlugin excludePlugin = new ExcludePlugin();
         excludePlugin.configure(prop);
-        ModulePool resources = new ModulePoolImpl();
-        ModuleEntry resource = ModuleEntry.create(sample, new byte[0]);
-        resources.add(resource);
-        ModulePool result = new ModulePoolImpl();
-        excludePlugin.visit(resources, result);
+        ResourcePoolManager resourcesMgr = new ResourcePoolManager();
+        ResourcePoolEntry resource = ResourcePoolEntry.create(sample, new byte[0]);
+        resourcesMgr.add(resource);
+        ResourcePoolManager resultMgr = new ResourcePoolManager();
+        ResourcePool resPool = excludePlugin.transform(resourcesMgr.resourcePool(),
+                resultMgr.resourcePoolBuilder());
         if (exclude) {
-            if (result.contains(resource)) {
+            if (resPool.contains(resource)) {
                 throw new AssertionError(sample + " should be excluded by " + s);
             }
         } else {
-            if (!result.contains(resource)) {
+            if (!resPool.contains(resource)) {
                 throw new AssertionError(sample + " shouldn't be excluded by " + s);
             }
         }

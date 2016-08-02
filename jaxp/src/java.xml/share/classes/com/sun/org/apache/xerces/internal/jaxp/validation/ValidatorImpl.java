@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -22,12 +22,10 @@ package com.sun.org.apache.xerces.internal.jaxp.validation;
 
 import java.io.IOException;
 
-import javax.xml.XMLConstants;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
-import javax.xml.transform.stax.StAXResult;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Validator;
@@ -83,7 +81,8 @@ final class ValidatorImpl extends Validator implements PSVIProvider {
     private boolean fResourceResolverChanged = false;
 
     /** Support current-element-node property */
-    private static final String CURRENT_ELEMENT_NODE = Constants.XERCES_PROPERTY_PREFIX + Constants.CURRENT_ELEMENT_NODE_PROPERTY;
+    private static final String CURRENT_ELEMENT_NODE =
+            Constants.XERCES_PROPERTY_PREFIX + Constants.CURRENT_ELEMENT_NODE_PROPERTY;
 
     public ValidatorImpl(XSGrammarPoolContainer grammarContainer) {
         fComponentManager = new XMLSchemaValidatorComponentManager(grammarContainer);
@@ -91,6 +90,7 @@ final class ValidatorImpl extends Validator implements PSVIProvider {
         setResourceResolver(null);
     }
 
+    @Override
     public void validate(Source source, Result result)
         throws SAXException, IOException {
         if (source instanceof SAXSource) {
@@ -133,24 +133,29 @@ final class ValidatorImpl extends Validator implements PSVIProvider {
         }
     }
 
+    @Override
     public void setErrorHandler(ErrorHandler errorHandler) {
         fErrorHandlerChanged = (errorHandler != null);
         fComponentManager.setErrorHandler(errorHandler);
     }
 
+    @Override
     public ErrorHandler getErrorHandler() {
         return fComponentManager.getErrorHandler();
     }
 
+    @Override
     public void setResourceResolver(LSResourceResolver resourceResolver) {
         fResourceResolverChanged = (resourceResolver != null);
         fComponentManager.setResourceResolver(resourceResolver);
     }
 
+    @Override
     public LSResourceResolver getResourceResolver() {
         return fComponentManager.getResourceResolver();
     }
 
+    @Override
     public boolean getFeature(String name)
         throws SAXNotRecognizedException, SAXNotSupportedException {
         if (name == null) {
@@ -169,6 +174,7 @@ final class ValidatorImpl extends Validator implements PSVIProvider {
         }
     }
 
+    @Override
     public void setFeature(String name, boolean value)
         throws SAXNotRecognizedException, SAXNotSupportedException {
         if (name == null) {
@@ -197,6 +203,7 @@ final class ValidatorImpl extends Validator implements PSVIProvider {
         fConfigurationChanged = true;
     }
 
+    @Override
     public Object getProperty(String name)
         throws SAXNotRecognizedException, SAXNotSupportedException {
         if (name == null) {
@@ -219,6 +226,7 @@ final class ValidatorImpl extends Validator implements PSVIProvider {
         }
     }
 
+    @Override
     public void setProperty(String name, Object object)
         throws SAXNotRecognizedException, SAXNotSupportedException {
         if (name == null) {
@@ -238,6 +246,7 @@ final class ValidatorImpl extends Validator implements PSVIProvider {
         fConfigurationChanged = true;
     }
 
+    @Override
     public void reset() {
         // avoid resetting features and properties if the state the validator
         // is currently in, is the same as it will be after reset.
@@ -265,14 +274,17 @@ final class ValidatorImpl extends Validator implements PSVIProvider {
      * PSVIProvider methods
      */
 
+    @Override
     public ElementPSVI getElementPSVI() {
         return (fSAXValidatorHelper != null) ? fSAXValidatorHelper.getElementPSVI() : null;
     }
 
+    @Override
     public AttributePSVI getAttributePSVI(int index) {
         return (fSAXValidatorHelper != null) ? fSAXValidatorHelper.getAttributePSVI(index) : null;
     }
 
+    @Override
     public AttributePSVI getAttributePSVIByName(String uri, String localname) {
         return (fSAXValidatorHelper != null) ? fSAXValidatorHelper.getAttributePSVIByName(uri, localname) : null;
     }

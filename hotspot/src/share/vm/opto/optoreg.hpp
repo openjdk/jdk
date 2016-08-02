@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,11 @@
 #ifndef SHARE_VM_OPTO_OPTOREG_HPP
 #define SHARE_VM_OPTO_OPTOREG_HPP
 
+#include "utilities/macros.hpp"
+
 // AdGlobals contains c2 specific register handling code as specified
 // in the .ad files.
-#if defined ADGLOBALS_MD_HPP
-# include ADGLOBALS_MD_HPP
-#elif defined TARGET_ARCH_MODEL_x86_32
-# include "adfiles/adGlobals_x86_32.hpp"
-#elif defined TARGET_ARCH_MODEL_x86_64
-# include "adfiles/adGlobals_x86_64.hpp"
-#elif defined TARGET_ARCH_MODEL_sparc
-# include "adfiles/adGlobals_sparc.hpp"
-#elif defined TARGET_ARCH_MODEL_zero
-# include "adfiles/adGlobals_zero.hpp"
-#elif defined TARGET_ARCH_MODEL_ppc_64
-# include "adfiles/adGlobals_ppc_64.hpp"
-#elif defined TARGET_ARCH_MODEL_aarch64
-# include "adfiles/adGlobals_aarch64.hpp"
-#endif
+#include CPU_HEADER(adfiles/adGlobals)
 
 //------------------------------OptoReg----------------------------------------
 // We eventually need Registers for the Real World.  Registers are essentially

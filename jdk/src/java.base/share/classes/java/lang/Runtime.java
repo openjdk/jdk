@@ -945,7 +945,7 @@ public class Runtime {
     }
 
     /**
-     * A representation of a version string for an implemenation of the
+     * A representation of a version string for an implementation of the
      * Java&nbsp;SE Platform.  A version string contains a version number
      * optionally followed by pre-release and build information.
      *
@@ -1058,10 +1058,10 @@ public class Runtime {
      * <p> When comparing two version strings, the value of {@code $OPT}, if
      * present, may or may not be significant depending on the chosen
      * comparison method.  The comparison methods {@link #compareTo(Version)
-     * compareTo()} and {@link #compareToIgnoreOpt(Version)
-     * compareToIgnoreOpt()} should be used consistently with the
+     * compareTo()} and {@link #compareToIgnoreOptional(Version)
+     * compareToIgnoreOptional()} should be used consistently with the
      * corresponding methods {@link #equals(Object) equals()} and {@link
-     * #equalsIgnoreOpt(Object) equalsIgnoreOpt()}.  </p>
+     * #equalsIgnoreOptional(Object) equalsIgnoreOptional()}.  </p>
      *
      * <p> A <em>short version string</em>, {@code $SVSTR}, often useful in
      * less formal contexts, is a version number optionally followed by a
@@ -1112,7 +1112,62 @@ public class Runtime {
          * @return  The Version of the given string
          */
         public static Version parse(String s) {
-            return VersionBuilder.parse(s);
+            if (s == null)
+                throw new NullPointerException();
+
+            // Shortcut to avoid initializing VersionPattern when creating
+            // major version constants during startup
+            if (isSimpleNumber(s)) {
+                return new Version(List.of(Integer.parseInt(s)),
+                        Optional.empty(), Optional.empty(), Optional.empty());
+            }
+            Matcher m = VersionPattern.VSTR_PATTERN.matcher(s);
+            if (!m.matches())
+                throw new IllegalArgumentException("Invalid version string: '"
+                                                   + s + "'");
+
+            // $VNUM is a dot-separated list of integers of arbitrary length
+            List<Integer> version = new ArrayList<>();
+            for (String i : m.group(VersionPattern.VNUM_GROUP).split("\\."))
+                version.add(Integer.parseInt(i));
+
+            Optional<String> pre = Optional.ofNullable(
+                    m.group(VersionPattern.PRE_GROUP));
+
+            String b = m.group(VersionPattern.BUILD_GROUP);
+            // $BUILD is an integer
+            Optional<Integer> build = (b == null)
+                ? Optional.empty()
+                : Optional.of(Integer.parseInt(b));
+
+            Optional<String> optional = Optional.ofNullable(
+                    m.group(VersionPattern.OPT_GROUP));
+
+            // empty '+'
+            if ((m.group(VersionPattern.PLUS_GROUP) != null)
+                    && !build.isPresent()) {
+                if (optional.isPresent()) {
+                    if (pre.isPresent())
+                        throw new IllegalArgumentException("'+' found with"
+                            + " pre-release and optional components:'" + s
+                            + "'");
+                } else {
+                    throw new IllegalArgumentException("'+' found with neither"
+                        + " build or optional components: '" + s + "'");
+                }
+            }
+            return new Version(version, pre, build, optional);
+        }
+
+        private static boolean isSimpleNumber(String s) {
+            for (int i = 0; i < s.length(); i++) {
+                char c = s.charAt(i);
+                char lowerBound = (i > 0) ? '0' : '1';
+                if (c < lowerBound || c > '9') {
+                    return false;
+                }
+            }
+            return true;
         }
 
         /**
@@ -1249,7 +1304,7 @@ public class Runtime {
          * @throws  NullPointerException
          *          If the given object is {@code null}
          */
-        public int compareToIgnoreOpt(Version ob) {
+        public int compareToIgnoreOptional(Version ob) {
             return compare(ob, true);
         }
 
@@ -1270,7 +1325,7 @@ public class Runtime {
                 return ret;
 
             if (!ignoreOpt)
-                return compareOpt(ob);
+                return compareOptional(ob);
 
             return 0;
         }
@@ -1325,7 +1380,7 @@ public class Runtime {
             return 0;
         }
 
-        private int compareOpt(Version ob) {
+        private int compareOptional(Version ob) {
             Optional<String> oOpt = ob.optional();
             if (!optional.isPresent()) {
                 if (oOpt.isPresent())
@@ -1384,7 +1439,7 @@ public class Runtime {
          */
         @Override
         public boolean equals(Object ob) {
-            boolean ret = equalsIgnoreOpt(ob);
+            boolean ret = equalsIgnoreOptional(ob);
             if (!ret)
                 return false;
 
@@ -1407,7 +1462,7 @@ public class Runtime {
          *          ignoring the optinal build information
          *
          */
-        public boolean equalsIgnoreOpt(Object ob) {
+        public boolean equalsIgnoreOptional(Object ob) {
             if (this == ob)
                 return true;
             if (!(ob instanceof Version))
@@ -1441,86 +1496,26 @@ public class Runtime {
         }
     }
 
-    private static class VersionBuilder {
+    private static class VersionPattern {
         // $VNUM(-$PRE)?(\+($BUILD)?(\-$OPT)?)?
         // RE limits the format of version strings
         // ([1-9][0-9]*(?:(?:\.0)*\.[1-9][0-9]*)*)(?:-([a-zA-Z0-9]+))?(?:(\+)(0|[1-9][0-9]*)?)?(?:-([-a-zA-Z0-9.]+))?
 
         private static final String VNUM
             = "(?<VNUM>[1-9][0-9]*(?:(?:\\.0)*\\.[1-9][0-9]*)*)";
-        private static final String VNUM_GROUP  = "VNUM";
-
         private static final String PRE      = "(?:-(?<PRE>[a-zA-Z0-9]+))?";
-        private static final String PRE_GROUP   = "PRE";
-
         private static final String BUILD
             = "(?:(?<PLUS>\\+)(?<BUILD>0|[1-9][0-9]*)?)?";
-        private static final String PLUS_GROUP  = "PLUS";
-        private static final String BUILD_GROUP = "BUILD";
-
         private static final String OPT      = "(?:-(?<OPT>[-a-zA-Z0-9.]+))?";
-        private static final String OPT_GROUP   = "OPT";
-
         private static final String VSTR_FORMAT
             = "^" + VNUM + PRE + BUILD + OPT + "$";
-        private static final Pattern VSTR_PATTERN = Pattern.compile(VSTR_FORMAT);
 
-        /**
-         * Constructs a valid <a href="verStr">version string</a> containing
-         * a <a href="#verNum">version number</a> followed by pre-release and
-         * build information.
-         *
-         * @param  s
-         *         A string to be interpreted as a version
-         *
-         * @throws  IllegalArgumentException
-         *          If the given string cannot be interpreted as a valid
-         *          version
-         *
-         * @throws  NullPointerException
-         *          If {@code s} is {@code null}
-         *
-         * @throws  NumberFormatException
-         *          If an element of the version number or the build number
-         *          cannot be represented as an {@link Integer}
-         */
-        static Version parse(String s) {
-            if (s == null)
-                throw new NullPointerException();
+        static final Pattern VSTR_PATTERN = Pattern.compile(VSTR_FORMAT);
 
-            Matcher m = VSTR_PATTERN.matcher(s);
-            if (!m.matches())
-                throw new IllegalArgumentException("Invalid version string: '"
-                                                   + s + "'");
-
-            // $VNUM is a dot-separated list of integers of arbitrary length
-            List<Integer> version = new ArrayList<>();
-            for (String i : m.group(VNUM_GROUP).split("\\."))
-                version.add(Integer.parseInt(i));
-
-            Optional<String> pre = Optional.ofNullable(m.group(PRE_GROUP));
-
-            String b = m.group(BUILD_GROUP);
-            // $BUILD is an integer
-            Optional<Integer> build = (b == null)
-                ? Optional.empty()
-                : Optional.of(Integer.parseInt(b));
-
-            Optional<String> optional = Optional.ofNullable(m.group(OPT_GROUP));
-
-            // empty '+'
-            if ((m.group(PLUS_GROUP) != null) && !build.isPresent()) {
-                if (optional.isPresent()) {
-                    if (pre.isPresent())
-                        throw new IllegalArgumentException("'+' found with"
-                            + " pre-release and optional components:'" + s
-                            + "'");
-                } else {
-                    throw new IllegalArgumentException("'+' found with neither"
-                        + " build or optional components: '" + s + "'");
-                }
-            }
-            return new Version(version, pre, build, optional);
-        }
+        static final String VNUM_GROUP  = "VNUM";
+        static final String PRE_GROUP   = "PRE";
+        static final String PLUS_GROUP  = "PLUS";
+        static final String BUILD_GROUP = "BUILD";
+        static final String OPT_GROUP   = "OPT";
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@
 
 #include "memory/allocation.hpp"
 
-#if defined(TARGET_OS_FAMILY_linux) || defined(TARGET_OS_FAMILY_solaris) || defined(TARGET_OS_FAMILY_aix)
+#if defined(LINUX) || defined(SOLARIS) || defined(AIX)
 # include "semaphore_posix.hpp"
-#elif defined(TARGET_OS_FAMILY_bsd)
+#elif defined(BSD)
 # include "semaphore_bsd.hpp"
-#elif defined(TARGET_OS_FAMILY_windows)
+#elif defined(_WINDOWS)
 # include "semaphore_windows.hpp"
 #else
 # error "No semaphore implementation provided for this OS"

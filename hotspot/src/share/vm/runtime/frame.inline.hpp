@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,15 @@
 #include "oops/method.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/signature.hpp"
-#ifdef TARGET_ARCH_zero
+#include "utilities/macros.hpp"
+#ifdef ZERO
 # include "entryFrame_zero.hpp"
 # include "fakeStubFrame_zero.hpp"
 # include "interpreterFrame_zero.hpp"
 # include "sharkFrame_zero.hpp"
 #endif
+
+#include CPU_HEADER_INLINE(frame)
 
 inline bool frame::is_entry_frame() const {
   return StubRoutines::returns_to_call_stub(pc());
@@ -49,27 +52,5 @@ inline bool frame::is_stub_frame() const {
 inline bool frame::is_first_frame() const {
   return is_entry_frame() && entry_frame_is_first();
 }
-
-// here are the platform-dependent bodies:
-
-#ifdef TARGET_ARCH_x86
-# include "frame_x86.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "frame_sparc.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "frame_zero.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "frame_arm.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "frame_ppc.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "frame_aarch64.inline.hpp"
-#endif
-
 
 #endif // SHARE_VM_RUNTIME_FRAME_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5033583 6316717 6470106 8004979
+ * @bug 5033583 6316717 6470106 8004979 8161500 8162539
  * @summary Check toGenericString() and toString() methods
  * @author Joseph D. Darcy
  */
@@ -35,42 +35,25 @@ import java.util.*;
 public class GenericStringTest {
     public static void main(String argv[]) throws Exception {
         int failures = 0;
-        List<Class<?>> classList = new LinkedList<Class<?>>();
-        classList.add(TestClass1.class);
-        classList.add(TestClass2.class);
-        classList.add(Roebling.class);
-        classList.add(TestInterface1.class);
 
-
-        for(Class<?> clazz: classList)
+        for(Class<?> clazz: List.of(TestClass1.class, TestClass2.class,
+                                    Roebling.class, TestInterface1.class))
             for(Method method: clazz.getDeclaredMethods()) {
                 ExpectedGenericString egs = method.getAnnotation(ExpectedGenericString.class);
                 if (egs != null) {
                     String actual = method.toGenericString();
                     System.out.println(actual);
                     if (method.isBridge()) {
-                        if (! egs.bridgeValue().equals(actual)) {
-                            failures++;
-                            System.err.printf("ERROR: Expected ''%s''; got ''%s''.\n",
-                                              egs.value(), actual);
-                        }
+                        failures += checkForFailure(egs.bridgeValue(), actual);
                     } else {
-                        if (! egs.value().equals(actual)) {
-                            failures++;
-                            System.err.printf("ERROR: Expected ''%s''; got ''%s''.\n",
-                                              egs.value(), actual);
-                        }
+                        failures += checkForFailure(egs.value(), actual);
                     }
                 }
 
                 if (method.isAnnotationPresent(ExpectedString.class)) {
                     ExpectedString es = method.getAnnotation(ExpectedString.class);
                     String actual = method.toString();
-                    if (! es.value().equals(actual)) {
-                        failures++;
-                        System.err.printf("ERROR: Expected ''%s''; got ''%s''.\n",
-                                          es.value(), actual);
-                    }
+                    failures += checkForFailure(es.value(), actual);
                 }
 
             }
@@ -92,6 +75,15 @@ public class GenericStringTest {
             System.err.println("Test failed.");
             throw new RuntimeException();
         }
+    }
+
+    private static int checkForFailure(String expected, String actual) {
+        if (!expected.equals(actual)) {
+            System.err.printf("ERROR: Expected ''%s'';%ngot             ''%s''.\n",
+                              expected, actual);
+            return 1;
+        } else
+            return 0;
     }
 }
 
@@ -120,7 +112,33 @@ class TestClass2<E, F extends Exception> {
 
     @ExpectedGenericString(
    "public void TestClass2.method2() throws F")
+    @ExpectedString(
+   "public void TestClass2.method2() throws java.lang.Exception")
     public void method2() throws F {return;}
+
+    @ExpectedGenericString(
+   "public E[] TestClass2.method3()")
+    public E[] method3() {return null;}
+
+    @ExpectedGenericString(
+   "public E[][] TestClass2.method4()")
+    public E[][] method4() {return null;}
+
+    @ExpectedGenericString(
+   "public java.util.List<E[]> TestClass2.method5()")
+    public List<E[]> method5() {return null;}
+
+    @ExpectedGenericString(
+   "public java.util.List<?> TestClass2.method6()")
+    public List<?> method6() {return null;}
+
+    @ExpectedGenericString(
+   "public java.util.List<?>[] TestClass2.method7()")
+    public List<?>[] method7() {return null;}
+
+    @ExpectedGenericString(
+   "public <K,V> java.util.Map<K, V> TestClass2.method8()")
+    public <K, V> Map<K, V> method8() {return null;}
 }
 
 class Roebling implements Comparable<Roebling> {
@@ -157,7 +175,6 @@ interface TestInterface1 {
     @ExpectedGenericString(
     "public default strictfp double TestInterface1.quux()")
     strictfp default double quux(){return 1.0;}
-
 }
 
 @Retention(RetentionPolicy.RUNTIME)

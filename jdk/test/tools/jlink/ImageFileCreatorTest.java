@@ -39,7 +39,7 @@ import jdk.tools.jlink.internal.ImageFileCreator;
 import jdk.tools.jlink.internal.ImagePluginStack;
 import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.builder.ImageBuilder;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePool;
 
 
 /*
@@ -215,7 +215,7 @@ public class ImageFileCreatorTest {
             }
 
             @Override
-            public void storeFiles(ModulePool content) {
+            public void storeFiles(ResourcePool content) {
             }
         };
 

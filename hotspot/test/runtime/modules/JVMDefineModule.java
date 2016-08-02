@@ -77,7 +77,7 @@ public class JVMDefineModule {
             ModuleHelper.DefineModule(new Object(),  "9.0", "mymodule/here", new String[] { "mypackage1" });
             throw new RuntimeException("Failed to get expected IAE or NPE for bad module");
         } catch(IllegalArgumentException e) {
-            if (!e.getMessage().contains("module is not a subclass")) {
+            if (!e.getMessage().contains("module is not an instance of type java.lang.reflect.Module")) {
               throw new RuntimeException("Failed to get expected IAE message for bad module: " + e.getMessage());
             }
         }

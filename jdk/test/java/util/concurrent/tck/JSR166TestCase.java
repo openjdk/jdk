@@ -40,6 +40,7 @@
  * @build *
  * @run junit/othervm/timeout=1000 -Djsr166.testImplementationDetails=true JSR166TestCase
  * @run junit/othervm/timeout=1000 -Djava.util.concurrent.ForkJoinPool.common.parallelism=0 -Djsr166.testImplementationDetails=true JSR166TestCase
+ * @run junit/othervm/timeout=1000 -Djava.util.concurrent.ForkJoinPool.common.parallelism=1 -Djava.util.secureRandomSeed=true JSR166TestCase
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -548,6 +549,13 @@ public class JSR166TestCase extends TestCase {
         // Java9+ test classes
         if (atLeastJava9()) {
             String[] java9TestClassNames = {
+                "AtomicBoolean9Test",
+                "AtomicInteger9Test",
+                "AtomicIntegerArray9Test",
+                "AtomicLong9Test",
+                "AtomicLongArray9Test",
+                "AtomicReference9Test",
+                "AtomicReferenceArray9Test",
                 "ExecutorCompletionService9Test",
             };
             addNamedTestClasses(suite, java9TestClassNames);
@@ -975,7 +983,11 @@ public class JSR166TestCase extends TestCase {
         }
     }
 
-    /** Like Runnable, but with the freedom to throw anything */
+    /**
+     * Like Runnable, but with the freedom to throw anything.
+     * junit folks had the same idea:
+     * http://junit.org/junit5/docs/snapshot/api/org/junit/gen5/api/Executable.html
+     */
     interface Action { public void run() throws Throwable; }
 
     /**
@@ -1006,6 +1018,15 @@ public class JSR166TestCase extends TestCase {
      * Uninteresting threads are filtered out.
      */
     static void dumpTestThreads() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            try {
+                System.setSecurityManager(null);
+            } catch (SecurityException giveUp) {
+                return;
+            }
+        }
+
         ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
         System.err.println("------ stacktrace dump start ------");
         for (ThreadInfo info : threadMXBean.dumpAllThreads(true, true)) {
@@ -1023,6 +1044,8 @@ public class JSR166TestCase extends TestCase {
             System.err.print(info);
         }
         System.err.println("------ stacktrace dump end ------");
+
+        if (sm != null) System.setSecurityManager(sm);
     }
 
     /**

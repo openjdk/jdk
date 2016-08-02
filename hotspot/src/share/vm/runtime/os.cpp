@@ -71,6 +71,7 @@ volatile int32_t* os::_mem_serialize_page = NULL;
 uintptr_t         os::_serialize_page_mask = 0;
 long              os::_rand_seed          = 1;
 int               os::_processor_count    = 0;
+int               os::_initial_active_processor_count = 0;
 size_t            os::_page_sizes[os::page_sizes_max];
 
 #ifndef PRODUCT
@@ -315,6 +316,7 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
 }
 
 void os::init_before_ergo() {
+  initialize_initial_active_processor_count();
   // We need to initialize large page support here because ergonomics takes some
   // decisions depending on large page support and the calculated large page size.
   large_page_init();
@@ -829,7 +831,11 @@ void os::print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   st->print("CPU:");
   st->print("total %d", os::processor_count());
   // It's not safe to query number of active processors after crash
-  // st->print("(active %d)", os::active_processor_count());
+  // st->print("(active %d)", os::active_processor_count()); but we can
+  // print the initial number of active processors.
+  // We access the raw value here because the assert in the accessor will
+  // fail if the crash occurs before initialization of this value.
+  st->print(" (initial active %d)", _initial_active_processor_count);
   st->print(" %s", VM_Version::features_string());
   st->cr();
   pd_print_cpu_info(st, buf, buflen);
@@ -1207,7 +1213,7 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   if (jimage == NULL) return false;
   bool has_jimage = (os::stat(jimage, &st) == 0);
   if (has_jimage) {
-    Arguments::set_sysclasspath(jimage);
+    Arguments::set_sysclasspath(jimage, true);
     FREE_C_HEAP_ARRAY(char, jimage);
     return true;
   }
@@ -1217,7 +1223,7 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   char* base_classes = format_boot_path("%/modules/java.base", home, home_len, fileSep, pathSep);
   if (base_classes == NULL) return false;
   if (os::stat(base_classes, &st) == 0) {
-    Arguments::set_sysclasspath(base_classes);
+    Arguments::set_sysclasspath(base_classes, false);
     FREE_C_HEAP_ARRAY(char, base_classes);
     return true;
   }
@@ -1597,6 +1603,12 @@ bool os::is_server_class_machine() {
   return result;
 }
 
+void os::initialize_initial_active_processor_count() {
+  assert(_initial_active_processor_count == 0, "Initial active processor count already set.");
+  _initial_active_processor_count = active_processor_count();
+  log_debug(os)("Initial active processor count set to %d" , _initial_active_processor_count);
+}
+
 void os::SuspendedThreadTask::run() {
   assert(Threads_lock->owned_by_self() || (_thread == VMThread::vm_thread()), "must have threads lock to call this");
   internal_do_task();
@@ -1742,7 +1754,7 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   pd_realign_memory(addr, bytes, alignment_hint);
 }
 
-#ifndef TARGET_OS_FAMILY_windows
+#ifndef _WINDOWS
 /* try to switch state from state "from" to state "to"
  * returns the state set after the method is complete
  */

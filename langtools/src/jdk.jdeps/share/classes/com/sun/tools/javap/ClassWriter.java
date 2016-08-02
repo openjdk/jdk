@@ -808,7 +808,7 @@ public class ClassWriter extends BasicWriter {
     }
 
     private String esc(char c, char quote) {
-        if (32 <= c && c <= 126 && c != quote)
+        if (32 <= c && c <= 126 && c != quote && c != '\\')
             return String.valueOf(c);
         else switch (c) {
             case '\b': return "\\b";

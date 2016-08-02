@@ -110,7 +110,7 @@ bool Abstract_VM_Version::_parallel_worker_threads_initialized = false;
 #ifndef HOTSPOT_VM_DISTRO
   #error HOTSPOT_VM_DISTRO must be defined
 #endif
-#define VMNAME HOTSPOT_VM_DISTRO " " VMLP EMBEDDED_ONLY("Embedded ") VMTYPE " VM"
+#define VMNAME HOTSPOT_VM_DISTRO " " VMLP VMTYPE " VM"
 
 const char* Abstract_VM_Version::vm_name() {
   return VMNAME;
@@ -295,7 +295,7 @@ unsigned int Abstract_VM_Version::nof_parallel_worker_threads(
     // processor after the first 8.  For example, on a 72 cpu machine
     // and a chosen fraction of 5/8
     // use 8 + (72 - 8) * (5/8) == 48 worker threads.
-    unsigned int ncpus = (unsigned int) os::active_processor_count();
+    unsigned int ncpus = (unsigned int) os::initial_active_processor_count();
     threads = (ncpus <= switch_pt) ?
              ncpus :
              (switch_pt + ((ncpus - switch_pt) * num) / den);

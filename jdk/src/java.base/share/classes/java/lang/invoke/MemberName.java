@@ -346,7 +346,6 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
     }
 
     /** Utility method to query if this member is a method handle invocation (invoke or invokeExact).
-     *  Also returns true for the non-public MH.invokeBasic.
      */
     public boolean isMethodHandleInvoke() {
         final int bits = MH_INVOKE_MODS &~ Modifier.PUBLIC;
@@ -361,7 +360,6 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
         switch (name) {
         case "invoke":
         case "invokeExact":
-        case "invokeBasic":  // internal sig-poly method
             return true;
         default:
             return false;

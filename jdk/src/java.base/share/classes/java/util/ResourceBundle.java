@@ -660,6 +660,7 @@ public abstract class ResourceBundle {
 
         // ResourceBundleProviders for loading ResourceBundles
         private ServiceLoader<ResourceBundleProvider> providers;
+        private boolean providersChecked;
 
         // Boolean.TRUE if the factory method caller provides a ResourceBundleProvier.
         private Boolean callerHasProvider;
@@ -675,7 +676,6 @@ public abstract class ResourceBundle {
                 this.loaderRef = new KeyElementReference<>(loader, referenceQueue, this);
             }
             this.moduleRef = new KeyElementReference<>(module, referenceQueue, this);
-            this.providers = getServiceLoader(module, baseName);
             calculateHashCode();
         }
 
@@ -712,11 +712,15 @@ public abstract class ResourceBundle {
         }
 
         ServiceLoader<ResourceBundleProvider> getProviders() {
+            if (!providersChecked) {
+                providers = getServiceLoader(getModule(), name);
+                providersChecked = true;
+            }
             return providers;
         }
 
         boolean hasProviders() {
-            return providers != null;
+            return getProviders() != null;
         }
 
         boolean callerHasProvider() {
@@ -789,8 +793,9 @@ public abstract class ResourceBundle {
                 }
                 clone.moduleRef = new KeyElementReference<>(getModule(),
                                                             referenceQueue, clone);
-                // Clear the reference to ResourceBundleProviders
+                // Clear the reference to ResourceBundleProviders and the flag
                 clone.providers = null;
+                clone.providersChecked = false;
                 // Clear the reference to a Throwable
                 clone.cause = null;
                 // Clear callerHasProvider
@@ -1841,6 +1846,9 @@ public abstract class ResourceBundle {
 
     private static ServiceLoader<ResourceBundleProvider> getServiceLoader(Module module,
                                                                           String baseName) {
+        if (!module.isNamed()) {
+            return null;
+        }
         PrivilegedAction<ClassLoader> pa = module::getClassLoader;
         ClassLoader loader = AccessController.doPrivileged(pa);
         return getServiceLoader(module, loader, baseName);

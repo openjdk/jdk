@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,9 +17,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: FunctionCall.java,v 1.2.4.1 2005/09/12 10:31:32 pvedula Exp $
- */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
@@ -32,10 +29,10 @@ import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
 import com.sun.org.apache.bcel.internal.generic.InstructionConstants;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.InvokeInstruction;
+import com.sun.org.apache.bcel.internal.generic.LDC;
 import com.sun.org.apache.bcel.internal.generic.LocalVariableGen;
 import com.sun.org.apache.bcel.internal.generic.NEW;
 import com.sun.org.apache.bcel.internal.generic.PUSH;
-import com.sun.org.apache.xalan.internal.utils.FeatureManager;
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.BooleanType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
@@ -57,6 +54,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Vector;
+import jdk.xml.internal.JdkXmlFeatures;
 
 /**
  * @author Jacek Ambroziak
@@ -743,7 +741,7 @@ class FunctionCall extends Expression {
         final InstructionList il = methodGen.getInstructionList();
         final boolean isSecureProcessing = classGen.getParser().getXSLTC().isSecureProcessing();
         final boolean isExtensionFunctionEnabled = classGen.getParser().getXSLTC()
-                .getFeature(FeatureManager.Feature.ORACLE_ENABLE_EXTENSION_FUNCTION);
+                .getFeature(JdkXmlFeatures.XmlFeature.ENABLE_EXTENSION_FUNCTION);
         int index;
 
         // Translate calls to methods in the BasisLibrary
@@ -792,6 +790,11 @@ class FunctionCall extends Expression {
 
             final String clazz =
                 _chosenConstructor.getDeclaringClass().getName();
+
+            // Generate call to Module.addReads:
+            //   <TransletClass>.class.getModule().addReads(
+            generateAddReads(classGen, methodGen, clazz);
+
             Class[] paramTypes = _chosenConstructor.getParameterTypes();
             LocalVariableGen[] paramTemp = new LocalVariableGen[n];
 
@@ -855,6 +858,12 @@ class FunctionCall extends Expression {
             final String clazz = _chosenMethod.getDeclaringClass().getName();
             Class[] paramTypes = _chosenMethod.getParameterTypes();
 
+
+            // Generate call to Module.addReads:
+            //   <TransletClass>.class.getModule().addReads(
+            //        Class.forName(<clazz>).getModule());
+            generateAddReads(classGen, methodGen, clazz);
+
             // Push "this" if it is an instance method
             if (_thisArgument != null) {
                 _thisArgument.translate(classGen, methodGen);
@@ -896,6 +905,41 @@ class FunctionCall extends Expression {
         }
     }
 
+    private void generateAddReads(ClassGenerator classGen, MethodGenerator methodGen,
+                          String clazz) {
+        final ConstantPoolGen cpg = classGen.getConstantPool();
+        final InstructionList il = methodGen.getInstructionList();
+
+        // Generate call to Module.addReads:
+        //   <TransletClass>.class.getModule().addReads(
+        //        Class.forName(<clazz>).getModule());
+        // Class.forName may throw ClassNotFoundException.
+        // This is OK as it will caught higher up the stack in
+        // TransformerImpl.transform() and wrapped into a
+        // TransformerException.
+        methodGen.markChunkStart();
+
+        int index = cpg.addMethodref(CLASS_CLASS,
+                                     GET_MODULE,
+                                     GET_MODULE_SIG);
+        int index2 = cpg.addMethodref(CLASS_CLASS,
+                                      FOR_NAME,
+                                      FOR_NAME_SIG);
+        il.append(new LDC(cpg.addString(classGen.getClassName())));
+        il.append(new INVOKESTATIC(index2));
+        il.append(new INVOKEVIRTUAL(index));
+        il.append(new LDC(cpg.addString(clazz)));
+        il.append(new INVOKESTATIC(index2));
+        il.append(new INVOKEVIRTUAL(index));
+        index = cpg.addMethodref(MODULE_CLASS,
+                                 ADD_READS,
+                                 ADD_READS_SIG);
+        il.append(new INVOKEVIRTUAL(index));
+        il.append(InstructionConstants.POP);
+
+        methodGen.markChunkEnd();
+    }
+
     @Override
     public String toString() {
         return "funcall(" + _fname + ", " + _arguments + ')';
@@ -927,7 +971,7 @@ class FunctionCall extends Expression {
                 if (_clazz == null) {
                     final boolean isSecureProcessing = getXSLTC().isSecureProcessing();
                     final boolean isExtensionFunctionEnabled = getXSLTC()
-                            .getFeature(FeatureManager.Feature.ORACLE_ENABLE_EXTENSION_FUNCTION);
+                            .getFeature(JdkXmlFeatures.XmlFeature.ENABLE_EXTENSION_FUNCTION);
 
                     //Check if FSP and SM - only then process with loading
                     if (namespace != null && isSecureProcessing

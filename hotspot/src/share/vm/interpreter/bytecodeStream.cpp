@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,12 @@ Bytecodes::Code RawBytecodeStream::raw_next_special(Bytecodes::Code code) {
   // set next bytecode position
   address bcp = RawBytecodeStream::bcp();
   address end = method()->code_base() + end_bci();
-  int l = Bytecodes::raw_special_length_at(bcp, end);
-  if (l <= 0 || (_bci + l) > _end_bci) {
+  int len = Bytecodes::raw_special_length_at(bcp, end);
+  // Very large tableswitch or lookupswitch size can cause _next_bci to overflow.
+  if (len <= 0 || (_bci > _end_bci - len) || (_bci - len >= _next_bci)) {
     code = Bytecodes::_illegal;
   } else {
-    _next_bci += l;
-    assert(_bci < _next_bci, "length must be > 0");
+    _next_bci += len;
     // set attributes
     _is_wide = false;
     // check for special (uncommon) cases

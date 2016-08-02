@@ -31,9 +31,11 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.zip.Deflater;
-import jdk.tools.jlink.internal.ModulePoolImpl;
-import jdk.tools.jlink.plugin.ModuleEntry;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.internal.ResourcePoolManager;
+import jdk.tools.jlink.internal.ResourcePoolManager.ResourcePoolImpl;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.Plugin;
 
 /**
@@ -112,18 +114,20 @@ public final class ZipPlugin implements Plugin {
     }
 
     @Override
-    public void visit(ModulePool in, ModulePool out) {
+    public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         in.transformAndCopy((resource) -> {
-            ModuleEntry res = resource;
-            if (resource.getType().equals(ModuleEntry.Type.CLASS_OR_RESOURCE)
-                    && predicate.test(resource.getPath())) {
+            ResourcePoolEntry res = resource;
+            if (resource.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)
+                    && predicate.test(resource.path())) {
                 byte[] compressed;
-                compressed = compress(resource.getBytes());
-                res = ModulePoolImpl.newCompressedResource(resource,
+                compressed = compress(resource.contentBytes());
+                res = ResourcePoolManager.newCompressedResource(resource,
                         ByteBuffer.wrap(compressed), getName(), null,
-                        ((ModulePoolImpl) in).getStringTable(), in.getByteOrder());
+                        ((ResourcePoolImpl)in).getStringTable(), in.byteOrder());
             }
             return res;
         }, out);
+
+        return out.build();
     }
 }

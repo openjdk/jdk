@@ -356,7 +356,7 @@ public class Taskbar {
      *
      * Some platforms do not support string values and accept only integer
      * values. In this case, pass an integer represented as a string as parameter.
-     * This can be tested by {@code Feature.ICON_BADGE_STRING} and
+     * This can be tested by {@code Feature.ICON_BADGE_TEXT} and
      * {@code Feature.ICON_BADGE_NUMBER}.
      *
      * Passing {@code null} as parameter hides the badge.
@@ -364,7 +364,8 @@ public class Taskbar {
      * @throws SecurityException if a security manager exists and it denies the
      * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
      * @throws UnsupportedOperationException if the current platform
-     * does not support the {@link Taskbar.Feature#ICON_BADGE_NUMBER} feature
+     * does not support the {@link Taskbar.Feature#ICON_BADGE_NUMBER}
+     * or {@link Taskbar.Feature#ICON_BADGE_TEXT} feature
      */
     public void setIconBadge(final String badge) {
         checkAWTPermission();
