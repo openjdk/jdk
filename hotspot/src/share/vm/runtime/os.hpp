@@ -26,29 +26,15 @@
 #define SHARE_VM_RUNTIME_OS_HPP
 
 #include "jvmtifiles/jvmti.h"
+#include "prims/jvm.h"
 #include "runtime/extendedPC.hpp"
 #include "runtime/handles.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "jvm_linux.h"
+#include "utilities/macros.hpp"
+#ifndef _WINDOWS
 # include <setjmp.h>
 #endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "jvm_solaris.h"
-# include <setjmp.h>
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "jvm_windows.h"
-#endif
-#ifdef TARGET_OS_FAMILY_aix
-# include "jvm_aix.h"
-# include <setjmp.h>
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "jvm_bsd.h"
-# include <setjmp.h>
-# ifdef __APPLE__
-#  include <mach/mach_time.h>
-# endif
+#ifdef __APPLE__
+# include <mach/mach_time.h>
 #endif
 
 class AgentLibrary;
@@ -154,6 +140,7 @@ class os: AllStatic {
   static void  get_summary_cpu_info(char* buf, size_t buflen);
   static void  get_summary_os_info(char* buf, size_t buflen);
 
+  static void initialize_initial_active_processor_count();
  public:
   static void init(void);                      // Called before command line parsing
   static void init_before_ergo(void);          // Called after command line parsing
@@ -240,6 +227,13 @@ class os: AllStatic {
   // Returns the number of CPUs this process is currently allowed to run on.
   // Note that on some OSes this can change dynamically.
   static int active_processor_count();
+
+  // At startup the number of active CPUs this process is allowed to run on.
+  // This value does not change dynamically. May be different from active_processor_count().
+  static int initial_active_processor_count() {
+    assert(_initial_active_processor_count > 0, "Initial active processor count not set yet.");
+    return _initial_active_processor_count;
+  }
 
   // Bind processes to processors.
   //     This is a two step procedure:
@@ -816,61 +810,11 @@ class os: AllStatic {
   };
 
   // Platform dependent stuff
-#ifdef TARGET_OS_FAMILY_linux
-# include "os_linux.hpp"
+#ifndef _WINDOWS
 # include "os_posix.hpp"
 #endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "os_solaris.hpp"
-# include "os_posix.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "os_windows.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_aix
-# include "os_aix.hpp"
-# include "os_posix.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "os_posix.hpp"
-# include "os_bsd.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_x86
-# include "os_linux_x86.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_sparc
-# include "os_linux_sparc.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_zero
-# include "os_linux_zero.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_solaris_x86
-# include "os_solaris_x86.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_solaris_sparc
-# include "os_solaris_sparc.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_windows_x86
-# include "os_windows_x86.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_arm
-# include "os_linux_arm.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_ppc
-# include "os_linux_ppc.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_aix_ppc
-# include "os_aix_ppc.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_aarch64
-# include "os_linux_aarch64.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_bsd_x86
-# include "os_bsd_x86.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_bsd_zero
-# include "os_bsd_zero.hpp"
-#endif
+#include OS_CPU_HEADER(os)
+#include OS_HEADER(os)
 
 #ifndef OS_NATIVE_THREAD_CREATION_FAILED_MSG
 #define OS_NATIVE_THREAD_CREATION_FAILED_MSG "unable to create native thread: possibly out of memory or process/resource limits reached"
@@ -937,7 +881,7 @@ class os: AllStatic {
     bool _done;
   };
 
-#ifndef TARGET_OS_FAMILY_windows
+#ifndef _WINDOWS
   // Suspend/resume support
   // Protocol:
   //
@@ -1008,12 +952,13 @@ class os: AllStatic {
       return _state == SR_SUSPENDED;
     }
   };
-#endif
+#endif // !WINDOWS
 
 
  protected:
-  static long _rand_seed;                   // seed for random number generator
-  static int _processor_count;              // number of processors
+  static long _rand_seed;                     // seed for random number generator
+  static int _processor_count;                // number of processors
+  static int _initial_active_processor_count; // number of active processors during initialization.
 
   static char* format_boot_path(const char* format_string,
                                 const char* home,

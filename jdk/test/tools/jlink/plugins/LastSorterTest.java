@@ -39,12 +39,13 @@ import java.util.Map;
 import jdk.tools.jlink.internal.ImagePluginConfiguration;
 import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.internal.ImagePluginStack;
-import jdk.tools.jlink.internal.ModulePoolImpl;
+import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.Jlink;
 import jdk.tools.jlink.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.tools.jlink.plugin.ModuleEntry;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 public class LastSorterTest {
 
@@ -78,7 +79,7 @@ public class LastSorterTest {
         ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(config);
 
         // check order
-        ModulePoolImpl res = fillOutResourceModulePool();
+        ResourcePoolManager res = fillOutResourceResourcePool();
 
         try {
             stack.visitResources(res);
@@ -89,18 +90,18 @@ public class LastSorterTest {
         }
     }
 
-    private ModulePoolImpl fillOutResourceModulePool() throws Exception {
-        ModulePoolImpl res = new ModulePoolImpl();
-        res.add(ModuleEntry.create("/eee/bbb/res1.class", new byte[90]));
-        res.add(ModuleEntry.create("/aaaa/bbb/res2.class", new byte[90]));
-        res.add(ModuleEntry.create("/bbb/aa/res1.class", new byte[90]));
-        res.add(ModuleEntry.create("/aaaa/bbb/res3.class", new byte[90]));
-        res.add(ModuleEntry.create("/bbb/aa/res2.class", new byte[90]));
-        res.add(ModuleEntry.create("/fff/bbb/res1.class", new byte[90]));
-        res.add(ModuleEntry.create("/aaaa/bbb/res1.class", new byte[90]));
-        res.add(ModuleEntry.create("/bbb/aa/res3.class", new byte[90]));
-        res.add(ModuleEntry.create("/ccc/bbb/res1.class", new byte[90]));
-        res.add(ModuleEntry.create("/ddd/bbb/res1.class", new byte[90]));
+    private ResourcePoolManager fillOutResourceResourcePool() throws Exception {
+        ResourcePoolManager res = new ResourcePoolManager();
+        res.add(ResourcePoolEntry.create("/eee/bbb/res1.class", new byte[90]));
+        res.add(ResourcePoolEntry.create("/aaaa/bbb/res2.class", new byte[90]));
+        res.add(ResourcePoolEntry.create("/bbb/aa/res1.class", new byte[90]));
+        res.add(ResourcePoolEntry.create("/aaaa/bbb/res3.class", new byte[90]));
+        res.add(ResourcePoolEntry.create("/bbb/aa/res2.class", new byte[90]));
+        res.add(ResourcePoolEntry.create("/fff/bbb/res1.class", new byte[90]));
+        res.add(ResourcePoolEntry.create("/aaaa/bbb/res1.class", new byte[90]));
+        res.add(ResourcePoolEntry.create("/bbb/aa/res3.class", new byte[90]));
+        res.add(ResourcePoolEntry.create("/ccc/bbb/res1.class", new byte[90]));
+        res.add(ResourcePoolEntry.create("/ddd/bbb/res1.class", new byte[90]));
         return res;
     }
 
@@ -122,7 +123,7 @@ public class LastSorterTest {
         ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(config);
 
         // check order
-        ModulePoolImpl res = fillOutResourceModulePool();
+        ResourcePoolManager res = fillOutResourceResourcePool();
 
         stack.visitResources(res);
     }
@@ -157,7 +158,7 @@ public class LastSorterTest {
         ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(config);
 
         // check order
-        ModulePoolImpl res = fillOutResourceModulePool();
+        ResourcePoolManager res = fillOutResourceResourcePool();
         try {
             stack.visitResources(res);
             throw new AssertionError("Order was changed after the last sorter, but no exception occurred");
@@ -176,19 +177,21 @@ public class LastSorterTest {
         }
 
         @Override
-        public void visit(ModulePool resources, ModulePool output) {
-            List<ModuleEntry> paths = new ArrayList<>();
+        public ResourcePool transform(ResourcePool resources, ResourcePoolBuilder output) {
+            List<ResourcePoolEntry> paths = new ArrayList<>();
             resources.entries().forEach(res -> {
-                if (res.getPath().startsWith(starts)) {
+                if (res.path().startsWith(starts)) {
                     paths.add(0, res);
                 } else {
                     paths.add(res);
                 }
             });
 
-            for (ModuleEntry r : paths) {
+            for (ResourcePoolEntry r : paths) {
                 output.add(r);
             }
+
+            return output.build();
         }
 
         @Override

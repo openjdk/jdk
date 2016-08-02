@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -51,6 +51,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
+import javax.xml.XMLConstants;
+import javax.xml.catalog.CatalogFeatures;
+import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.SecuritySupport;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMErrorHandler;
 import org.w3c.dom.DOMException;
@@ -191,7 +195,7 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
     protected SymbolTable fSymbolTable;
 
     /** Components. */
-    protected ArrayList fComponents;
+    protected ArrayList<XMLComponent> fComponents;
 
     protected ValidationManager fValidationManager;
 
@@ -253,7 +257,8 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
             NORMALIZE_DATA,
             SEND_PSVI,
             NAMESPACE_GROWTH,
-            TOLERATE_DUPLICATES
+            TOLERATE_DUPLICATES,
+            XMLConstants.USE_CATALOG
         };
         addRecognizedFeatures(recognizedFeatures);
 
@@ -266,6 +271,7 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
         setFeature(XERCES_NAMESPACES, true);
         setFeature(SEND_PSVI, true);
         setFeature(NAMESPACE_GROWTH, false);
+        setFeature(XMLConstants.USE_CATALOG, JdkXmlUtils.USE_CATALOG_DEFAULT);
 
         // add default recognized properties
         final String[] recognizedProperties = {
@@ -282,7 +288,11 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
             DTD_VALIDATOR_FACTORY_PROPERTY,
             SCHEMA_DV_FACTORY,
             SECURITY_MANAGER,
-            XML_SECURITY_PROPERTY_MANAGER
+            XML_SECURITY_PROPERTY_MANAGER,
+            JdkXmlUtils.CATALOG_DEFER,
+            JdkXmlUtils.CATALOG_FILES,
+            JdkXmlUtils.CATALOG_PREFER,
+            JdkXmlUtils.CATALOG_RESOLVE
         };
         addRecognizedProperties(recognizedProperties);
 
@@ -300,7 +310,7 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
         }
         fSymbolTable = symbolTable;
 
-        fComponents = new ArrayList();
+        fComponents = new ArrayList<>();
 
         setProperty(SYMBOL_TABLE, fSymbolTable);
         fErrorReporter = new XMLErrorReporter();
@@ -354,7 +364,10 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
             // REVISIT: What is the right thing to do? -Ac
         }
 
-
+        // Initialize Catalog features
+        for( CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
+            setProperty(f.getPropertyName(), null);
+        }
     } // <init>(SymbolTable)
 
 
@@ -1027,7 +1040,7 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
 
         int count = fComponents.size();
         for (int i = 0; i < count; i++) {
-            XMLComponent c = (XMLComponent) fComponents.get(i);
+            XMLComponent c = fComponents.get(i);
             c.reset(this);
         }
 

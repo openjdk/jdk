@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,13 @@ import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.xml.internal.stream.StaxEntityResolverWrapper;
 import java.util.HashMap;
+import javax.xml.XMLConstants;
+import javax.xml.catalog.CatalogFeatures;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLResolver;
+import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  *  This class manages different properties related to Stax specification and its implementation.
@@ -58,7 +62,7 @@ public class PropertyManager {
     private static final String XML_SECURITY_PROPERTY_MANAGER =
             Constants.XML_SECURITY_PROPERTY_MANAGER;
 
-    HashMap supportedProps = new HashMap();
+    HashMap<String, Object> supportedProps = new HashMap<>();
 
     private XMLSecurityManager fSecurityManager;
     private XMLSecurityPropertyManager fSecurityPropertyMgr;
@@ -85,13 +89,13 @@ public class PropertyManager {
      */
     public PropertyManager(PropertyManager propertyManager){
 
-        HashMap properties = propertyManager.getProperties();
+        HashMap<String, Object> properties = propertyManager.getProperties();
         supportedProps.putAll(properties);
         fSecurityManager = (XMLSecurityManager)getProperty(SECURITY_MANAGER);
         fSecurityPropertyMgr = (XMLSecurityPropertyManager)getProperty(XML_SECURITY_PROPERTY_MANAGER);
     }
 
-    private HashMap getProperties(){
+    private HashMap<String, Object> getProperties(){
         return supportedProps ;
     }
 
@@ -117,30 +121,36 @@ public class PropertyManager {
 
         //zephyr (implementation) specific properties which can be set by the application.
         //interning is always done
-        supportedProps.put(Constants.SAX_FEATURE_PREFIX + Constants.STRING_INTERNING_FEATURE , new Boolean(true));
+        supportedProps.put(Constants.SAX_FEATURE_PREFIX + Constants.STRING_INTERNING_FEATURE , true);
         //recognizing java encoding names by default
-        supportedProps.put(Constants.XERCES_FEATURE_PREFIX + Constants.ALLOW_JAVA_ENCODINGS_FEATURE,  new Boolean(true)) ;
+        supportedProps.put(Constants.XERCES_FEATURE_PREFIX + Constants.ALLOW_JAVA_ENCODINGS_FEATURE, true) ;
         //in stax mode, namespace declarations are not added as attributes
         supportedProps.put(Constants.ADD_NAMESPACE_DECL_AS_ATTRIBUTE ,  Boolean.FALSE) ;
-        supportedProps.put(Constants.READER_IN_DEFINED_STATE, new Boolean(true));
-        supportedProps.put(Constants.REUSE_INSTANCE, new Boolean(true));
-        supportedProps.put(Constants.ZEPHYR_PROPERTY_PREFIX + Constants.STAX_REPORT_CDATA_EVENT , new Boolean(false));
+        supportedProps.put(Constants.READER_IN_DEFINED_STATE, true);
+        supportedProps.put(Constants.REUSE_INSTANCE, true);
+        supportedProps.put(Constants.ZEPHYR_PROPERTY_PREFIX + Constants.STAX_REPORT_CDATA_EVENT , false);
         supportedProps.put(Constants.ZEPHYR_PROPERTY_PREFIX + Constants.IGNORE_EXTERNAL_DTD, Boolean.FALSE);
-        supportedProps.put(Constants.XERCES_FEATURE_PREFIX + Constants.WARN_ON_DUPLICATE_ATTDEF_FEATURE, new Boolean(false));
-        supportedProps.put(Constants.XERCES_FEATURE_PREFIX + Constants.WARN_ON_DUPLICATE_ENTITYDEF_FEATURE, new Boolean(false));
-        supportedProps.put(Constants.XERCES_FEATURE_PREFIX + Constants.WARN_ON_UNDECLARED_ELEMDEF_FEATURE, new Boolean(false));
+        supportedProps.put(Constants.XERCES_FEATURE_PREFIX + Constants.WARN_ON_DUPLICATE_ATTDEF_FEATURE, false);
+        supportedProps.put(Constants.XERCES_FEATURE_PREFIX + Constants.WARN_ON_DUPLICATE_ENTITYDEF_FEATURE, false);
+        supportedProps.put(Constants.XERCES_FEATURE_PREFIX + Constants.WARN_ON_UNDECLARED_ELEMDEF_FEATURE, false);
 
         fSecurityManager = new XMLSecurityManager(true);
         supportedProps.put(SECURITY_MANAGER, fSecurityManager);
         fSecurityPropertyMgr = new XMLSecurityPropertyManager();
         supportedProps.put(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
+
+        // Initialize Catalog features
+        supportedProps.put(XMLConstants.USE_CATALOG, JdkXmlUtils.USE_CATALOG_DEFAULT);
+        for( CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
+            supportedProps.put(f.getPropertyName(), null);
+        }
     }
 
     private void initWriterProps(){
         supportedProps.put(XMLOutputFactory.IS_REPAIRING_NAMESPACES , Boolean.FALSE);
         //default value of escaping characters is 'true'
         supportedProps.put(Constants.ESCAPE_CHARACTERS , Boolean.TRUE);
-        supportedProps.put(Constants.REUSE_INSTANCE, new Boolean(true));
+        supportedProps.put(Constants.REUSE_INSTANCE, true);
     }
 
     /**
@@ -160,20 +170,20 @@ public class PropertyManager {
 
     public void setProperty(String property, Object value){
         String equivalentProperty = null ;
-        if(property == XMLInputFactory.IS_NAMESPACE_AWARE || property.equals(XMLInputFactory.IS_NAMESPACE_AWARE)){
+        if(property.equals(XMLInputFactory.IS_NAMESPACE_AWARE)){
             equivalentProperty = Constants.XERCES_FEATURE_PREFIX + Constants.NAMESPACES_FEATURE ;
         }
-        else if(property == XMLInputFactory.IS_VALIDATING || property.equals(XMLInputFactory.IS_VALIDATING)){
+        else if(property.equals(XMLInputFactory.IS_VALIDATING)){
             if( (value instanceof Boolean) && ((Boolean)value).booleanValue()){
                 throw new java.lang.IllegalArgumentException("true value of isValidating not supported") ;
             }
         }
-        else if(property == STRING_INTERNING || property.equals(STRING_INTERNING)){
+        else if(property.equals(STRING_INTERNING)){
             if( (value instanceof Boolean) && !((Boolean)value).booleanValue()){
                 throw new java.lang.IllegalArgumentException("false value of " + STRING_INTERNING + "feature is not supported") ;
             }
         }
-        else if(property == XMLInputFactory.RESOLVER || property.equals(XMLInputFactory.RESOLVER)){
+        else if(property.equals(XMLInputFactory.RESOLVER)){
             //add internal stax property
             supportedProps.put( Constants.XERCES_PROPERTY_PREFIX + Constants.STAX_ENTITY_RESOLVER_PROPERTY , new StaxEntityResolverWrapper((XMLResolver)value)) ;
         }

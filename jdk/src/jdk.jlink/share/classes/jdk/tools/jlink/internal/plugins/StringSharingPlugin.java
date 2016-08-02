@@ -55,11 +55,13 @@ import java.util.stream.Collectors;
 import jdk.internal.jimage.decompressor.CompressIndexes;
 import jdk.internal.jimage.decompressor.SignatureParser;
 import jdk.internal.jimage.decompressor.StringSharingDecompressor;
-import jdk.tools.jlink.internal.ModulePoolImpl;
+import jdk.tools.jlink.internal.ResourcePoolManager.ResourcePoolImpl;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.ModuleEntry;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
+import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
 
@@ -226,22 +228,22 @@ public class StringSharingPlugin implements Plugin, ResourcePrevisitor {
             }
         }
 
-        public byte[] transform(ModuleEntry resource, ModulePool out,
+        public byte[] transform(ResourcePoolEntry resource, ResourcePoolBuilder out,
                 StringTable strings) throws IOException, Exception {
-            byte[] content = resource.getBytes();
+            byte[] content = resource.contentBytes();
             ClassFile cf;
             try (InputStream stream = new ByteArrayInputStream(content)) {
                 cf = ClassFile.read(stream);
             } catch (ConstantPoolException ex) {
                 throw new IOException("Compressor EX " + ex + " for "
-                        + resource.getPath() + " content.length " + content.length, ex);
+                        + resource.path() + " content.length " + content.length, ex);
             }
             DescriptorsScanner scanner = new DescriptorsScanner(cf);
             return optimize(resource, out, strings, scanner.scan(), content);
         }
 
         @SuppressWarnings("fallthrough")
-        private byte[] optimize(ModuleEntry resource, ModulePool resources,
+        private byte[] optimize(ResourcePoolEntry resource, ResourcePoolBuilder resources,
                 StringTable strings,
                 Set<Integer> descriptorIndexes, byte[] content) throws Exception {
             DataInputStream stream = new DataInputStream(new ByteArrayInputStream(content));
@@ -347,23 +349,25 @@ public class StringSharingPlugin implements Plugin, ResourcePrevisitor {
     }
 
     @Override
-    public void visit(ModulePool in, ModulePool result) {
+    public ResourcePool transform(ResourcePool in, ResourcePoolBuilder result) {
         CompactCPHelper visit = new CompactCPHelper();
         in.transformAndCopy((resource) -> {
-            ModuleEntry res = resource;
-            if (predicate.test(resource.getPath()) && resource.getPath().endsWith(".class")) {
+            ResourcePoolEntry res = resource;
+            if (predicate.test(resource.path()) && resource.path().endsWith(".class")) {
                 byte[] compressed = null;
                 try {
-                    compressed = visit.transform(resource, result, ((ModulePoolImpl) in).getStringTable());
+                    compressed = visit.transform(resource, result, ((ResourcePoolImpl)in).getStringTable());
                 } catch (Exception ex) {
                     throw new PluginException(ex);
                 }
-                res = ModulePoolImpl.newCompressedResource(resource,
+                res = ResourcePoolManager.newCompressedResource(resource,
                         ByteBuffer.wrap(compressed), getName(), null,
-                        ((ModulePoolImpl) in).getStringTable(), in.getByteOrder());
+                        ((ResourcePoolImpl)in).getStringTable(), in.byteOrder());
             }
             return res;
         }, result);
+
+        return result.build();
     }
 
     @Override
@@ -392,11 +396,11 @@ public class StringSharingPlugin implements Plugin, ResourcePrevisitor {
     }
 
     @Override
-    public void previsit(ModulePool resources, StringTable strings) {
+    public void previsit(ResourcePool resources, StringTable strings) {
         CompactCPHelper preVisit = new CompactCPHelper();
         resources.entries().forEach(resource -> {
-            if (resource.getType().equals(ModuleEntry.Type.CLASS_OR_RESOURCE)
-                    && resource.getPath().endsWith(".class") && predicate.test(resource.getPath())) {
+            if (resource.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)
+                    && resource.path().endsWith(".class") && predicate.test(resource.path())) {
                 try {
                     preVisit.transform(resource, null, strings);
                 } catch (Exception ex) {

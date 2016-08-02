@@ -91,12 +91,6 @@
 // The allocation (or lookup) of K increments the reference count for K
 // and the destructor decrements the reference count.
 //
-// Another example of TempNewSymbol usage is parsed_name used in
-// ClassFileParser::parseClassFile() where parsed_name is used in the cleanup
-// after a failed attempt to load a class.  Here parsed_name is a
-// TempNewSymbol (passed in as a parameter) so the reference count on its symbol
-// will be decremented when it goes out of scope.
-
 // This cannot be inherited from ResourceObj because it cannot have a vtable.
 // Since sometimes this is allocated from Metadata, pick a base allocation
 // type without virtual functions.

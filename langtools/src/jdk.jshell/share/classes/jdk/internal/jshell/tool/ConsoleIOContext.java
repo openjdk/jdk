@@ -233,6 +233,7 @@ class ConsoleIOContext extends IOContext {
     private static final String DOCUMENTATION_SHORTCUT = "\033\133\132"; //Shift-TAB
     private static final String[] SHORTCUT_FIXES = {
         "\033\015", //Alt-Enter (Linux)
+        "\033\012", //Alt-Enter (Linux)
         "\033\133\061\067\176", //F6/Alt-F1 (Mac)
         "\u001BO3P" //Alt-F1 (Linux)
     };

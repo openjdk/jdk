@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -85,7 +85,7 @@ extern "C" void JIMAGE_Close(JImageFile* image) {
  * Ex.
  *  const char* package = (*JImagePackageToModule)(image, "java/lang");
  *  tty->print_cr(package);
- *  —> java.base
+ *  -> java.base
  */
 extern "C" const char* JIMAGE_PackageToModule(JImageFile* image, const char* package_name) {
     return ((ImageFileReader*) image)->get_image_module_data()->package_to_module(package_name);
@@ -137,7 +137,7 @@ extern "C" JImageLocationRef JIMAGE_FindResource(JImageFile* image,
 }
 
 /*
- * JImageGetResource - Given an open image file (see JImageOpen), a resource’s
+ * JImageGetResource - Given an open image file (see JImageOpen), a resource's
  * location information (see JImageFindResource), a buffer of appropriate
  * size and the size, retrieve the bytes associated with the
  * resource. If the size is less than the resource size then the read is truncated.
@@ -168,7 +168,7 @@ extern "C" jlong JIMAGE_GetResource(JImageFile* image, JImageLocationRef locatio
  * Ex.
  *   bool ctw_visitor(JImageFile* jimage, const char* module_name, const char* version,
  *                  const char* package, const char* name, const char* extension, void* arg) {
- *     if (strcmp(extension, “class”) == 0) {
+ *     if (strcmp(extension, "class") == 0) {
  *       char path[JIMAGE_MAX_PATH];
  *       Thread* THREAD = Thread::current();
  *       jio_snprintf(path, JIMAGE_MAX_PATH - 1, "/%s/%s", package, name);

@@ -175,8 +175,8 @@ VERSION_NUMBER_FOUR_POSITIONS := @VERSION_NUMBER_FOUR_POSITIONS@
 VERSION_STRING := @VERSION_STRING@
 # The short version string, without trailing zeroes and just PRE, if present.
 VERSION_SHORT := @VERSION_SHORT@
-# The Java specification version. It should be equal to version number.
-VERSION_SPECIFICATION := @VERSION_NUMBER@
+# The Java specification version. It usually equals to the major version number.
+VERSION_SPECIFICATION := @VERSION_MAJOR@
 # A GA version is defined by the PRE string being empty. Rather than testing for
 # that, this variable defines it with true/false.
 VERSION_IS_GA := @VERSION_IS_GA@

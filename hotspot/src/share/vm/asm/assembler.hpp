@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/macros.hpp"
 
 // This file contains platform-independent assembler declarations.
 
@@ -426,24 +427,6 @@ class AbstractAssembler : public ResourceObj  {
 
 };
 
-#ifdef TARGET_ARCH_x86
-# include "assembler_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "assembler_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "assembler_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "assembler_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "assembler_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "assembler_aarch64.hpp"
-#endif
-
+#include CPU_HEADER(assembler)
 
 #endif // SHARE_VM_ASM_ASSEMBLER_HPP

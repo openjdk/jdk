@@ -1748,8 +1748,8 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         if (listSelectionModel != null) {
             listSelectionModel.clearSelection();
             if (listSelectionModel instanceof DefaultListSelectionModel) {
-                ((DefaultListSelectionModel)listSelectionModel).moveLeadSelectionIndex(0);
-                listSelectionModel.setAnchorSelectionIndex(0);
+                ((DefaultListSelectionModel)listSelectionModel).moveLeadSelectionIndex(-1);
+                listSelectionModel.setAnchorSelectionIndex(-1);
             }
         }
     }

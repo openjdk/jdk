@@ -37,7 +37,11 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import sun.lwawt.macosx.CFRetainedResource;
+import static javax.accessibility.AccessibleContext.ACCESSIBLE_ACTIVE_DESCENDANT_PROPERTY;
+import static javax.accessibility.AccessibleContext.ACCESSIBLE_CARET_PROPERTY;
+import static javax.accessibility.AccessibleContext.ACCESSIBLE_SELECTION_PROPERTY;
+import static javax.accessibility.AccessibleContext.ACCESSIBLE_TEXT_PROPERTY;
+
 
 class CAccessible extends CFRetainedResource implements Accessible {
     static Field getNativeAXResourceField() {
@@ -71,9 +75,12 @@ class CAccessible extends CFRetainedResource implements Accessible {
 
     private static native void unregisterFromCocoaAXSystem(long ptr);
     private static native void valueChanged(long ptr);
+    private static native void selectedTextChanged(long ptr);
     private static native void selectionChanged(long ptr);
 
     private Accessible accessible;
+
+    private AccessibleContext activeDescendant;
 
     private CAccessible(final Accessible accessible) {
         super(0L, true); // real pointer will be poked in by native
@@ -98,9 +105,9 @@ class CAccessible extends CFRetainedResource implements Accessible {
     }
 
     public void addNotificationListeners(Component c) {
-        AXTextChangeNotifier listener = new AXTextChangeNotifier();
         if (c instanceof Accessible) {
-            AccessibilityEventMonitor.addPropertyChangeListener(listener, (Accessible)c);
+            AccessibleContext ac = ((Accessible)c).getAccessibleContext();
+            ac.addPropertyChangeListener(new AXChangeNotifier());
         }
         if (c instanceof JProgressBar) {
             JProgressBar pb = (JProgressBar) c;
@@ -112,16 +119,23 @@ class CAccessible extends CFRetainedResource implements Accessible {
     }
 
 
-    private class AXTextChangeNotifier implements PropertyChangeListener {
+    private class AXChangeNotifier implements PropertyChangeListener {
 
         @Override
         public void propertyChange(PropertyChangeEvent e) {
             String name = e.getPropertyName();
             if ( ptr != 0 ) {
-                if (name.compareTo(AccessibleContext.ACCESSIBLE_CARET_PROPERTY) == 0) {
-                    selectionChanged(ptr);
-                } else if (name.compareTo(AccessibleContext.ACCESSIBLE_TEXT_PROPERTY) == 0 ) {
+                if (name.compareTo(ACCESSIBLE_CARET_PROPERTY) == 0) {
+                    selectedTextChanged(ptr);
+                } else if (name.compareTo(ACCESSIBLE_TEXT_PROPERTY) == 0 ) {
                     valueChanged(ptr);
+                } else if (name.compareTo(ACCESSIBLE_SELECTION_PROPERTY) == 0 ) {
+                    selectionChanged(ptr);
+                }  else if (name.compareTo(ACCESSIBLE_ACTIVE_DESCENDANT_PROPERTY) == 0 ) {
+                    Object nv = e.getNewValue();
+                    if (nv instanceof AccessibleContext) {
+                        activeDescendant = (AccessibleContext)nv;
+                    }
                 }
             }
         }
@@ -137,4 +151,9 @@ class CAccessible extends CFRetainedResource implements Accessible {
     static Accessible getSwingAccessible(final Accessible a) {
         return (a instanceof CAccessible) ? ((CAccessible)a).accessible : a;
     }
+
+    static AccessibleContext getActiveDescendant(final Accessible a) {
+        return (a instanceof CAccessible) ? ((CAccessible)a).activeDescendant : null;
+    }
+
 }

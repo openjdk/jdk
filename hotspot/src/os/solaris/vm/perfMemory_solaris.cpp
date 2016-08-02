@@ -336,7 +336,7 @@ static DIR *open_directory_secure(const char* dirname) {
   }
 
   // Check to make sure fd and dirp are referencing the same file system object.
-  if (!is_same_fsobject(fd, dirp->dd_fd)) {
+  if (!is_same_fsobject(fd, dirp->d_fd)) {
     // The directory is not secure.
     os::close(fd);
     os::closedir(dirp);
@@ -368,7 +368,7 @@ static DIR *open_directory_secure_cwd(const char* dirname, int *saved_cwd_fd) {
     // Directory doesn't exist or is insecure, so there is nothing to cleanup.
     return dirp;
   }
-  int fd = dirp->dd_fd;
+  int fd = dirp->d_fd;
 
   // Open a fd to the cwd and save it off.
   int result;
@@ -907,14 +907,15 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
   if (result == OS_ERR) {
     if (errno == ENOENT) {
       THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
-                  "Process not found", OS_ERR);
+                 "Process not found", OS_ERR);
     }
     else if (errno == EACCES) {
       THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
-                  "Permission denied", OS_ERR);
+                 "Permission denied", OS_ERR);
     }
     else {
-      THROW_MSG_(vmSymbols::java_io_IOException(), os::strerror(errno), OS_ERR);
+      THROW_MSG_(vmSymbols::java_io_IOException(),
+                 os::strerror(errno), OS_ERR);
     }
   }
   int fd = result;
@@ -932,7 +933,7 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
 // memory region on success or NULL on failure. A return value of
 // NULL will ultimately disable the shared memory feature.
 //
-// On Solaris and Linux, the name space for shared memory objects
+// On Solaris, the name space for shared memory objects
 // is the file system name space.
 //
 // A monitoring application attaching to a JVM does not need to know

@@ -35,10 +35,13 @@
 
 package java.util.concurrent.atomic;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.LongBinaryOperator;
+import jdk.internal.misc.Unsafe;
 
 /**
  * A package-local class holding common representation and mechanics
@@ -123,22 +126,21 @@ abstract class Striped64 extends Number {
         volatile long value;
         Cell(long x) { value = x; }
         final boolean cas(long cmp, long val) {
-            return U.compareAndSwapLong(this, VALUE, cmp, val);
+            return VALUE.compareAndSet(this, cmp, val);
         }
         final void reset() {
-            U.putLongVolatile(this, VALUE, 0L);
+            VALUE.setVolatile(this, 0L);
         }
         final void reset(long identity) {
-            U.putLongVolatile(this, VALUE, identity);
+            VALUE.setVolatile(this, identity);
         }
 
-        // Unsafe mechanics
-        private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-        private static final long VALUE;
+        // VarHandle mechanics
+        private static final VarHandle VALUE;
         static {
             try {
-                VALUE = U.objectFieldOffset
-                    (Cell.class.getDeclaredField("value"));
+                MethodHandles.Lookup l = MethodHandles.lookup();
+                VALUE = l.findVarHandle(Cell.class, "value", long.class);
             } catch (ReflectiveOperationException e) {
                 throw new Error(e);
             }
@@ -174,14 +176,14 @@ abstract class Striped64 extends Number {
      * CASes the base field.
      */
     final boolean casBase(long cmp, long val) {
-        return U.compareAndSwapLong(this, BASE, cmp, val);
+        return BASE.compareAndSet(this, cmp, val);
     }
 
     /**
      * CASes the cellsBusy field from 0 to 1 to acquire lock.
      */
     final boolean casCellsBusy() {
-        return U.compareAndSwapInt(this, CELLSBUSY, 0, 1);
+        return CELLSBUSY.compareAndSet(this, 0, 1);
     }
 
     /**
@@ -371,18 +373,16 @@ abstract class Striped64 extends Number {
         }
     }
 
-    // Unsafe mechanics
-    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-    private static final long BASE;
-    private static final long CELLSBUSY;
+    // Unsafe and VarHandle mechanics
+    private static final Unsafe U = Unsafe.getUnsafe();
+    private static final VarHandle BASE;
+    private static final VarHandle CELLSBUSY;
     private static final long PROBE;
     static {
         try {
-            BASE = U.objectFieldOffset
-                (Striped64.class.getDeclaredField("base"));
-            CELLSBUSY = U.objectFieldOffset
-                (Striped64.class.getDeclaredField("cellsBusy"));
-
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            BASE = l.findVarHandle(Striped64.class, "base", long.class);
+            CELLSBUSY = l.findVarHandle(Striped64.class, "cellsBusy", int.class);
             PROBE = U.objectFieldOffset
                 (Thread.class.getDeclaredField("threadLocalRandomProbe"));
         } catch (ReflectiveOperationException e) {
