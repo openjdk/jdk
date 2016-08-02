@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154119 8154262 8156077 8157987 8154261
+ * @bug 8154119 8154262 8156077 8157987 8154261 8154817
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -50,6 +50,8 @@ public class TestModules extends JavadocTester {
         testNoDescription(false);
         testOverviewSummaryModules();
         testModuleLink();
+        testModuleClickThroughLinks();
+        testModuleClickThrough(true);
     }
 
     @Test
@@ -63,6 +65,8 @@ public class TestModules extends JavadocTester {
         testHtml5NoDescription(false);
         testHtml5OverviewSummaryModules();
         testModuleLink();
+        testModuleClickThroughLinks();
+        testModuleClickThrough(true);
     }
 
     @Test
@@ -96,6 +100,7 @@ public class TestModules extends JavadocTester {
                 "testpkgnomodule", "testpkgnomodule1");
         checkExit(Exit.OK);
         testOverviewSummaryPackages();
+        testModuleClickThrough(false);
     }
 
    @Test
@@ -442,4 +447,27 @@ public class TestModules extends JavadocTester {
                 + "<!--   -->\n"
                 + "</a>");
     }
+
+     void testModuleClickThroughLinks() {
+        checkOutput("module-overview-frame.html", true,
+                "<li><a href=\"module1-frame.html\" target=\"packageListFrame\" "
+                + "onclick=\"updateModuleFrame('module1-type-frame.html','module1-summary.html');"
+                + "\">module1</a></li>");
+        checkOutput("module-overview-frame.html", true,
+                "<li><a href=\"module2-frame.html\" target=\"packageListFrame\" "
+                + "onclick=\"updateModuleFrame('module2-type-frame.html','module2-summary.html');"
+                + "\">module2</a></li>");
+        checkOutput("script.js", true,
+                 "function updateModuleFrame(pFrame, cFrame)\n"
+                 + "{\n"
+                 + "    top.packageFrame.location = pFrame;\n"
+                 + "    top.classFrame.location = cFrame;\n"
+                 + "}");
+}
+
+     void testModuleClickThrough(boolean found) {
+        checkFiles(found,
+                "module1-type-frame.html",
+                "module2-type-frame.html");
+     }
 }
