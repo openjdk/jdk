@@ -75,6 +75,28 @@ tools/javac/annotations/typeAnnotations/referenceinfos/NestedTypes.java         
 tools/javac/warnings/suppress/TypeAnnotations.java                              8057683    generic-all    improve ordering of errors with type annotations
 tools/javac/modules/T8159439/NPEForModuleInfoWithNonZeroSuperClassTest.java     8160396    generic-all    current version of jtreg needs a new promotion to include lastes version of ASM
 
+tools/javac/annotations/repeatingAnnotations/combo/ReflectionTest.java                                          8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/MixRepeatableAndOfficialContainerBasicTest.java       8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/MixRepeatableAndOfficialContainerInheritedA1Test.java 8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/MixRepeatableAndOfficialContainerInheritedA2Test.java 8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/MixRepeatableAndOfficialContainerInheritedB1Test.java 8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/MixRepeatableAndOfficialContainerInheritedB2Test.java 8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/MixSingularAndUnofficialContainerBasicTest.java       8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/MixSingularAndUnofficialContainerInheritedA1Test.java 8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/MixSingularAndUnofficialContainerInheritedA2Test.java 8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/MixSingularAndUnofficialContainerInheritedB1Test.java 8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/MixSingularAndUnofficialContainerInheritedB2Test.java 8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/OfficialContainerBasicTest.java                       8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/OfficialContainerInheritedTest.java                   8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/RepeatableBasicTest.java                              8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/RepeatableInheritedTest.java                          8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/RepeatableOfficialContainerBasicTest.java             8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/RepeatableOfficialContainerInheritedTest.java         8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/RepeatableOverrideATest.java                          8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/RepeatableOverrideBTest.java                          8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/UnofficialContainerBasicTest.java                     8163113 generic-all
+tools/javac/processing/model/element/repeatingAnnotations/UnofficialContainerInheritedTest.java                 8163113 generic-all 
+
 ###########################################################################
 #
 # javap
