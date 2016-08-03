@@ -105,6 +105,7 @@ import java.nio.file.Files;
 
 //REMIND: Remove use of this class when IPPPrintService is moved to share directory.
 import java.lang.reflect.Method;
+import javax.print.attribute.standard.JobSheets;
 
 /**
  * A class which initiates and executes a PostScript printer job.
@@ -1573,10 +1574,10 @@ public class PSPrinterJob extends RasterPrinterJob {
 
     private String[] printExecCmd(String printer, String options,
                                   boolean noJobSheet,
-                                  String banner, int copies, String spoolFile) {
+                                  String jobTitle, int copies, String spoolFile) {
         int PRINTER = 0x1;
         int OPTIONS = 0x2;
-        int BANNER  = 0x4;
+        int JOBTITLE  = 0x4;
         int COPIES  = 0x8;
         int NOSHEET = 0x10;
         int pFlags = 0;
@@ -1592,8 +1593,8 @@ public class PSPrinterJob extends RasterPrinterJob {
             pFlags |= OPTIONS;
             ncomps+=1;
         }
-        if (banner != null && !banner.equals("")) {
-            pFlags |= BANNER;
+        if (jobTitle != null && !jobTitle.equals("")) {
+            pFlags |= JOBTITLE;
             ncomps+=1;
         }
         if (copies > 1) {
@@ -1603,23 +1604,29 @@ public class PSPrinterJob extends RasterPrinterJob {
         if (noJobSheet) {
             pFlags |= NOSHEET;
             ncomps+=1;
+        } else if (getPrintService().
+                        isAttributeCategorySupported(JobSheets.class)) {
+            ncomps+=1; // for jobsheet
         }
 
-       String osname = System.getProperty("os.name");
-       if (osname.equals("Linux") || osname.contains("OS X")) {
+        String osname = System.getProperty("os.name");
+        if (osname.equals("Linux") || osname.contains("OS X")) {
             execCmd = new String[ncomps];
             execCmd[n++] = "/usr/bin/lpr";
             if ((pFlags & PRINTER) != 0) {
                 execCmd[n++] = "-P" + printer;
             }
-            if ((pFlags & BANNER) != 0) {
-                execCmd[n++] = "-J"  + banner;
+            if ((pFlags & JOBTITLE) != 0) {
+                execCmd[n++] = "-J"  + jobTitle;
             }
             if ((pFlags & COPIES) != 0) {
                 execCmd[n++] = "-#" + copies;
             }
             if ((pFlags & NOSHEET) != 0) {
                 execCmd[n++] = "-h";
+            } else if (getPrintService().
+                        isAttributeCategorySupported(JobSheets.class)) {
+                execCmd[n++] = "-o job-sheets=standard";
             }
             if ((pFlags & OPTIONS) != 0) {
                 execCmd[n++] = new String(options);
@@ -1632,14 +1639,17 @@ public class PSPrinterJob extends RasterPrinterJob {
             if ((pFlags & PRINTER) != 0) {
                 execCmd[n++] = "-d" + printer;
             }
-            if ((pFlags & BANNER) != 0) {
-                execCmd[n++] = "-t"  + banner;
+            if ((pFlags & JOBTITLE) != 0) {
+                execCmd[n++] = "-t"  + jobTitle;
             }
             if ((pFlags & COPIES) != 0) {
                 execCmd[n++] = "-n" + copies;
             }
             if ((pFlags & NOSHEET) != 0) {
                 execCmd[n++] = "-o nobanner";
+            } else if (getPrintService().
+                        isAttributeCategorySupported(JobSheets.class)) {
+                execCmd[n++] = "-o job-sheets=standard";
             }
             if ((pFlags & OPTIONS) != 0) {
                 execCmd[n++] = "-o" + options;
