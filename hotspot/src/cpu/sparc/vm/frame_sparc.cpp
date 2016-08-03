@@ -339,12 +339,6 @@ void frame::init(intptr_t* sp, address pc, CodeBlob* cb) {
     _cb = CodeCache::find_blob(_pc);
   }
   _deopt_state = unknown;
-#ifdef ASSERT
-  if ( _cb != NULL && _cb->is_compiled()) {
-    // Without a valid unextended_sp() we can't convert the pc to "original"
-    assert(!((CompiledMethod*)_cb)->is_deopt_pc(_pc), "invariant broken");
-  }
-#endif // ASSERT
 }
 
 frame::frame(intptr_t* sp, unpatchable_t, address pc, CodeBlob* cb) {
@@ -516,6 +510,7 @@ frame frame::sender(RegisterMap* map) const {
 
 
 void frame::patch_pc(Thread* thread, address pc) {
+  vmassert(_deopt_state != unknown, "frame is unpatchable");
   if(thread == Thread::current()) {
    StubRoutines::Sparc::flush_callers_register_windows_func()();
   }
