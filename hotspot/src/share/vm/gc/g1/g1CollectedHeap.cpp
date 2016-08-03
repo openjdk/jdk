@@ -28,6 +28,7 @@
 #include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
+#include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/bufferingOopClosure.hpp"
 #include "gc/g1/concurrentG1Refine.hpp"
 #include "gc/g1/concurrentG1RefineThread.hpp"
@@ -2473,8 +2474,19 @@ size_t G1CollectedHeap::max_capacity() const {
 }
 
 jlong G1CollectedHeap::millis_since_last_gc() {
-  // assert(false, "NYI");
-  return 0;
+  jlong now = os::elapsed_counter() / NANOSECS_PER_MILLISEC;
+  const G1Analytics* analytics = _g1_policy->analytics();
+  double last = analytics->last_known_gc_end_time_sec();
+  jlong ret_val = now - (last * 1000);
+  if (ret_val < 0) {
+    // See the notes in GenCollectedHeap::millis_since_last_gc()
+    // for more information about the implementation.
+    log_warning(gc)("Detected clock going backwards. "
+      "Milliseconds since last GC would be " JLONG_FORMAT
+      ". returning zero instead.", ret_val);
+    return 0;
+  }
+  return ret_val;
 }
 
 void G1CollectedHeap::prepare_for_verify() {
