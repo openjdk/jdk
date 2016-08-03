@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     8004822
+ * @bug     8004822 8163113
  * @author  mnunez
  * @summary Language model api test basics for repeating annotations
  * @library /tools/javac/lib
@@ -53,8 +53,8 @@
         })
 @ExpectedContainer(
         value = BarContainer.class,
-        getAnnotation = "@BarContainer(value=[@Bar(value=1), @Bar(value=2)])",
-        getAnnotationsByType = {"@BarContainer(value=[@Bar(value=1), @Bar(value=2)])"})
+        getAnnotation = "@BarContainer(value={@Bar(value=1), @Bar(value=2)})",
+        getAnnotationsByType = {"@BarContainer(value={@Bar(value=1), @Bar(value=2)})"})
 @BarContainer(value = {@Bar(value = 1), @Bar(value = 2)})
 class OfficialContainerBasicTest {
 
@@ -77,8 +77,8 @@ class OfficialContainerBasicTest {
             })
     @ExpectedContainer(
             value = BarContainer.class,
-            getAnnotation = "@BarContainer(value=[@Bar(value=1), @Bar(value=2)])",
-            getAnnotationsByType = {"@BarContainer(value=[@Bar(value=1), @Bar(value=2)])"})
+            getAnnotation = "@BarContainer(value={@Bar(value=1), @Bar(value=2)})",
+            getAnnotationsByType = {"@BarContainer(value={@Bar(value=1), @Bar(value=2)})"})
     @BarContainer(value = {@Bar(value = 1), @Bar(value = 2)})
     int testField = 0;
 
@@ -101,8 +101,8 @@ class OfficialContainerBasicTest {
             })
     @ExpectedContainer(
             value = BarContainer.class,
-            getAnnotation = "@BarContainer(value=[@Bar(value=1), @Bar(value=2)])",
-            getAnnotationsByType = {"@BarContainer(value=[@Bar(value=1), @Bar(value=2)])"})
+            getAnnotation = "@BarContainer(value={@Bar(value=1), @Bar(value=2)})",
+            getAnnotationsByType = {"@BarContainer(value={@Bar(value=1), @Bar(value=2)})"})
     @BarContainer(value = {@Bar(value = 1), @Bar(value = 2)})
     void testMethod() {}
 }

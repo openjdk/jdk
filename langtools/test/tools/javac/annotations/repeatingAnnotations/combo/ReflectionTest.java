@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug      8001457 8027477
+ * @bug      8001457 8027477 8163113
  * @author   sogoel
  * @summary  Reflection api tests
  * @modules jdk.compiler
@@ -483,17 +483,17 @@ public class ReflectionTest {
         BasicContainer_Legacy(
         "@ExpectedBase(value = Foo.class, "
                 + "getAnnotationVal = \"NULL\","
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnoVal = \"NULL\", " + "getAnnosArgs = {}, "
                 + "getDeclAnnosArgs = {} )",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
-                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
-                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
-                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"} )") {
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
+                + "getDeclAnnoVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
+                + "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
+                + "getDeclAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"} )") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -583,21 +583,21 @@ public class ReflectionTest {
         "@ExpectedBase(value = Foo.class, "
                 + "getAnnotationVal = \"@Foo(value=0)\","
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnoVal = \"@Foo(value=0)\", "
                 + "getAnnosArgs = {\"@Foo(value=0)\"}, "
                 + "getDeclAnnosArgs = {\"@Foo(value=0)\"} )",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
-                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
-                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
-                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"} )") {
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
+                + "getDeclAnnoVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
+                + "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
+                + "getDeclAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"} )") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -691,17 +691,17 @@ public class ReflectionTest {
         BasicContainer_Inherited_Legacy(
         "@ExpectedBase(value = Foo.class, "
                 + "getAnnotationVal = \"NULL\","
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\"}, "
                 + "getDeclAnnoVal = \"NULL\", "
                 + "getAnnosArgs = {}, "
                 + "getDeclAnnosArgs = {} )",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\"}, "
                 + "getDeclAnnoVal = \"NULL\", "
-                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosArgs = {} )") {
 
             @Override
@@ -765,18 +765,18 @@ public class ReflectionTest {
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"@Foo(value=0)\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=0)\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", \"@Foo(value=0)\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"},"
                 + "getDeclAnnoVal = \"@Foo(value=0)\","
                 + "getAnnosArgs = {\"@Foo(value=0)\"},"
                 + "getDeclAnnosArgs = {\"@Foo(value=0)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=0)\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", \"@Foo(value=0)\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"},"
                 + "getDeclAnnoVal = \"NULL\","
-                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
                 + "getDeclAnnosArgs = {})") {
 
             @Override
@@ -844,18 +844,18 @@ public class ReflectionTest {
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"@Foo(value=0)\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=0)\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", \"@Foo(value=0)\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"},"
                 + "getDeclAnnoVal = \"@Foo(value=0)\","
                 + "getAnnosArgs = {\"@Foo(value=0)\"},"
                 + "getDeclAnnosArgs = {\"@Foo(value=0)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=0)\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", \"@Foo(value=0)\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"},"
                 + "getDeclAnnoVal = \"NULL\","
-                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
                 + "getDeclAnnosArgs = {})") {
 
             @Override
@@ -923,19 +923,19 @@ public class ReflectionTest {
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"@Foo(value=0)\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
                 + "getDeclAnnoVal = \"NULL\","
                 + "getAnnosArgs = {\"@Foo(value=0)\"},"
                 + "getDeclAnnosArgs = {})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
-                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
-                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
-                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"})") {
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
+                + "getDeclAnnoVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\","
+                + "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
+                + "getDeclAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"})") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -1000,21 +1000,21 @@ public class ReflectionTest {
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"@Foo(value=3)\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=3)\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", \"@Foo(value=3)\"}, "
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=3)\"},"
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", \"@Foo(value=3)\"},"
                 + "getDeclAnnoVal = \"@Foo(value=3)\","
                 + "getAnnosArgs = {\"@Foo(value=3)\"},"
                 + "getDeclAnnosArgs = {\"@Foo(value=3)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=3)\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", \"@Foo(value=3)\"}, "
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=3)\"},"
-                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
-                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
-                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"})") {
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", \"@Foo(value=3)\"},"
+                + "getDeclAnnoVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\","
+                + "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
+                + "getDeclAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"})") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -1077,18 +1077,18 @@ public class ReflectionTest {
         BasicRepeatable(
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"NULL\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\" }, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\" }, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
                 + "getDeclAnnoVal = \"NULL\","
                 + "getAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"},"
                 + "getDeclAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
-                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
-                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
-                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"} )") {
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\","
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
+                + "getDeclAnnoVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\","
+                + "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
+                + "getDeclAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"} )") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -1179,21 +1179,21 @@ public class ReflectionTest {
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"NULL\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
                 + "getDeclAnnoVal = \"NULL\","
                 + "getAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"},"
                 + "getDeclAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\","
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
-                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
-                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
-                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"} )") {
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
+                + "getDeclAnnoVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\","
+                + "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
+                + "getDeclAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"} )") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -1283,17 +1283,17 @@ public class ReflectionTest {
         BasicContainerRepeatable_Inherited(
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"NULL\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\"}, "
                 + "getDeclAnnoVal = \"NULL\", "
                 + "getAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"}, "
                 + "getDeclAnnosArgs = {})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosVals = { \"ExpectedBase\", \"ExpectedContainer\"}, "
                 + "getDeclAnnoVal = \"NULL\", "
-                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosArgs = {})") {
 
             @Override
@@ -1356,7 +1356,7 @@ public class ReflectionTest {
         RepeatableAnnoInherited(
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"NULL\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\"}, "
                 + // ignores inherited annotations
                 "getDeclAnnoVal = \"NULL\", "
@@ -1364,13 +1364,13 @@ public class ReflectionTest {
                 "getAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"}, "
                 + "getDeclAnnosArgs = {})", // ignores inherited
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosVals = { \"ExpectedBase\", \"ExpectedContainer\"}, "
                 + // ignores inherited annotations
                 "getDeclAnnoVal = \"NULL\", "
                 + // ignores inherited
-                "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosArgs = {})") { // ignores inherited
 
             @Override
@@ -1436,21 +1436,21 @@ public class ReflectionTest {
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"@Foo(value=0)\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
                 + "getDeclAnnoVal = \"@Foo(value=0)\","
                 + "getAnnosArgs = {\"@Foo(value=0)\", \"@Foo(value=1)\", \"@Foo(value=2)\"},"
                 + "getDeclAnnosArgs = {\"@Foo(value=0)\", \"@Foo(value=1)\",\"@Foo(value=2)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
-                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
-                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
-                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"})") {
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
+                + "getDeclAnnoVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\","
+                + "getDeclAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
+                + "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"})") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -1624,7 +1624,7 @@ public class ReflectionTest {
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"@Foo(value=3)\", "
                 + "getAnnotationsVals = {"
-                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=3)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=3)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + //override every annotation on superClass
                 "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=3)\"}, "
                 + // ignores inherited annotations
@@ -1632,13 +1632,13 @@ public class ReflectionTest {
                 + "getAnnosArgs = {\"@Foo(value=3)\"}, "
                 + "getDeclAnnosArgs = { \"@Foo(value=3)\" })", // ignores inherited
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
                 + "getAnnotationsVals = {"
-                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=3)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=3)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=3)\"}, "
                 + // ignores inherited annotations
                 "getDeclAnnoVal = \"NULL\", "
-                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosArgs = {}) // ignores inherited ") {
 
             @Override
@@ -1704,22 +1704,22 @@ public class ReflectionTest {
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"@Foo(value=0)\", "
                 + "getAnnotationsVals = {"
-                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + //override every annotation on superClass
-                "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + // ignores inherited annotations
                 "getDeclAnnoVal = \"NULL\","// ignores inherited
                 + "getAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"}, "
                 + "getDeclAnnosArgs = { \"@Foo(value=1)\", \"@Foo(value=2)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
                 + "getAnnotationsVals = {"
-                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + // ignores inherited annotations
-                "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "// ignores inherited
-                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
-                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"})") {
+                "getDeclAnnoVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "// ignores inherited
+                + "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
+                + "getDeclAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"})") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -1785,18 +1785,18 @@ public class ReflectionTest {
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"@Foo(value=0)\", "
                 + "getAnnotationsVals = {"
-                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"},"
                 + "getDeclAnnoVal = \"@Foo(value=0)\","
                 + "getAnnosArgs = {\"@Foo(value=0)\"},"
                 + "getDeclAnnosArgs = {\"@Foo(value=0)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
                 + "getAnnotationsVals = {"
-                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"},"
                 + "getDeclAnnoVal = \"NULL\","
-                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
                 + "getDeclAnnosArgs = {})") {
 
             @Override
@@ -1863,19 +1863,19 @@ public class ReflectionTest {
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"@Foo(value=0)\", "
                 + "getAnnotationsVals = {"
-                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
                 + "getDeclAnnoVal = \"NULL\","
                 + "getAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"},"
                 + "getDeclAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
                 + "getAnnotationsVals = {"
-                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
-                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
-                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
-                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"})") {
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
+                + "getDeclAnnoVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\","
+                + "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
+                + "getDeclAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"})") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -1941,21 +1941,21 @@ public class ReflectionTest {
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"@Foo(value=3)\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=3)\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", \"@Foo(value=3)\"}, "
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=3)\"},"
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", \"@Foo(value=3)\"},"
                 + "getDeclAnnoVal = \"@Foo(value=3)\","
                 + "getAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\", \"@Foo(value=3)\"},"
                 + "getDeclAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\", \"@Foo(value=3)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=3)\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", \"@Foo(value=3)\"}, "
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=3)\"},"
-                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
-                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
-                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"})") {
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", \"@Foo(value=3)\"},"
+                + "getDeclAnnoVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\","
+                + "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
+                + "getDeclAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"})") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -2021,18 +2021,18 @@ public class ReflectionTest {
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"@Foo(value=0)\", "
                 + "getAnnotationsVals = {"
-                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"},"
                 + "getDeclAnnoVal = \"@Foo(value=0)\","
                 + "getAnnosArgs = {\"@Foo(value=0)\"},"
                 + "getDeclAnnosArgs = {\"@Foo(value=0)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationVal = \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\", "
                 + "getAnnotationsVals = {"
-                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"},"
                 + "getDeclAnnoVal = \"NULL\","
-                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getAnnosArgs = {\"@FooContainer(value={@Foo(value=1), @Foo(value=2)})\"},"
                 + "getDeclAnnosArgs = {})") {
 
             @Override
