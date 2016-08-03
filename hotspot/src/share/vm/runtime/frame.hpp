@@ -166,6 +166,8 @@ class frame VALUE_OBJ_CLASS_SPEC {
   frame sender_for_interpreter_frame(RegisterMap* map) const;
   frame sender_for_native_frame(RegisterMap* map) const;
 
+  bool is_entry_frame_valid(JavaThread* thread) const;
+
   // All frames:
 
   // A low-level interface for vframes:
