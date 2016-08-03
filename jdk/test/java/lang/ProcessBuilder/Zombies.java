@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 6474073
+ * @run main/othervm Zombies
+ * @bug 6474073 6180151
  * @key intermittent
  * @summary Make sure zombies don't get created on Unix
  * @author Martin Buchholz
@@ -65,22 +66,21 @@ public class Zombies {
 
         Process p = rt.exec(TrueCommand);
         ProcessHandle pp = p.toHandle().parent().orElse(null);
-        System.out.printf("pid: %d, parent: %s%n", p.getPid(), pp);
+        System.out.printf("%s pid: %d, parent: %s%n", TrueCommand, p.getPid(), pp);
         p.waitFor();
 
         // Count all the zombies that are children of this Java process
         final String[] zombieCounter = {
             "/usr/bin/perl", "-e",
-            "exit @{[`/bin/ps -eo ppid,s` =~ /^ *@{[getppid]} +Z$/mog]}"
+                "$a=`/bin/ps -eo ppid,pid,s,command`;" +
+                        "print @b=$a=~/^ *@{[getppid]} +[0-9]+ +Z.*$/mog;" +
+                        "exit @b"
         };
 
-        int zombies = rt.exec(zombieCounter).waitFor();
+        ProcessBuilder pb = new ProcessBuilder(zombieCounter);
+        pb.inheritIO();
+        int zombies = pb.start().waitFor();
         if (zombies != 0) {
-            // Log remaining processes
-            ProcessBuilder pb = new ProcessBuilder("/bin/ps", "-ef");
-            pb.inheritIO();
-            Process p2 = pb.start();
-            p2.waitFor();
             throw new Error(zombies + " zombies!");
         }
     }
