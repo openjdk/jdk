@@ -56,7 +56,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import jdk.tools.jlink.internal.BasicImageWriter;
-import jdk.tools.jlink.internal.plugins.FileCopierPlugin;
 import jdk.tools.jlink.internal.plugins.FileCopierPlugin.SymImageFile;
 import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.plugin.ResourcePool;
@@ -184,10 +183,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
             files.moduleView().modules().forEach(m -> {
                 // Only add modules that contain packages
                 if (!m.packages().isEmpty()) {
-                    // Skip the fake module used by FileCopierPlugin when copying files.
-                    if (m.name().equals(FileCopierPlugin.FAKE_MODULE)) {
-                        return;
-                    }
                     modules.add(m.name());
                 }
             });
