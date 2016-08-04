@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 // make sure the defines don't screw up the declarations later on in this file
 #define DONT_USE_REGISTER_DEFINES
 
-#include "precompiled.hpp"
+// Note: precompiled headers can not be used in this file because of the above
+//       definition
+
 #include "asm/assembler.hpp"
 #include "asm/register.hpp"
 #include "interp_masm_sparc.hpp"

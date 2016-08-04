@@ -225,6 +225,19 @@ JavaCallWrapper* frame::entry_frame_call_wrapper_if_safe(JavaThread* thread) con
   return NULL;
 }
 
+bool frame::is_entry_frame_valid(JavaThread* thread) const {
+  // Validate the JavaCallWrapper an entry frame must have
+  address jcw = (address)entry_frame_call_wrapper();
+  bool jcw_safe = (jcw < thread->stack_base()) && (jcw > (address)fp()); // less than stack base
+  if (!jcw_safe) {
+    return false;
+  }
+
+  // Validate sp saved in the java frame anchor
+  JavaFrameAnchor* jfa = entry_frame_call_wrapper()->anchor();
+  return (jfa->last_Java_sp() > sp());
+}
+
 bool frame::should_be_deoptimized() const {
   if (_deopt_state == is_deoptimized ||
       !is_compiled_frame() ) return false;
