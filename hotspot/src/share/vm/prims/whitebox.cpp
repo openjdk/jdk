@@ -667,7 +667,7 @@ WB_ENTRY(jboolean, WB_IsMethodQueuedForCompilation(JNIEnv* env, jobject o, jobje
 WB_END
 
 WB_ENTRY(jboolean, WB_IsIntrinsicAvailable(JNIEnv* env, jobject o, jobject method, jobject compilation_context, jint compLevel))
-  if (compLevel < CompLevel_none || compLevel > CompLevel_highest_tier) {
+  if (compLevel < CompLevel_none || compLevel > TieredStopAtLevel) {
     return false; // Intrinsic is not available on a non-existent compilation level.
   }
   jmethodID method_id, compilation_context_id;
@@ -677,6 +677,7 @@ WB_ENTRY(jboolean, WB_IsIntrinsicAvailable(JNIEnv* env, jobject o, jobject metho
 
   DirectiveSet* directive;
   AbstractCompiler* comp = CompileBroker::compiler((int)compLevel);
+  assert(comp != NULL, "compiler not available");
   if (compilation_context != NULL) {
     compilation_context_id = reflected_method_to_jmid(thread, env, compilation_context);
     CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
@@ -686,7 +687,7 @@ WB_ENTRY(jboolean, WB_IsIntrinsicAvailable(JNIEnv* env, jobject o, jobject metho
     // Calling with NULL matches default directive
     directive = DirectivesStack::getDefaultDirective(comp);
   }
-  bool result = CompileBroker::compiler(compLevel)->is_intrinsic_available(mh, directive);
+  bool result = comp->is_intrinsic_available(mh, directive);
   DirectivesStack::release(directive);
   return result;
 WB_END
