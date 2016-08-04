@@ -117,7 +117,7 @@ define SetupParseProperties
     $$(addprefix _SPACE_, $$(PARSEPROPALLDIRS))))
 
   # Now setup the rule for the generation of the resource bundles.
-  $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the_parsed_props: $(PARSEPROPSOURCES)
+  $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the_parsed_props: $$(PARSEPROPSOURCES)
 	$(MKDIR) -p $$(@D) $$(PARSEPROPDIRS)
 	$(FIND) $$(@D) -name "*Properties.java" $(FIND_DELETE)
 	$(ECHO) Parsing $$(words $$(PARSEPROPSOURCES)) properties into enum-like class for $(MODULE)

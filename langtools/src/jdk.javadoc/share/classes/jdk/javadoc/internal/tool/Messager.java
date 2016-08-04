@@ -165,8 +165,8 @@ public class Messager extends Log implements Reporter {
     /**
      * Constructor
      * @param programName  Name of the program (for error messages).
-     * @param outWriter    Stream for notices etc.
-     * @param errWriter    Stream for errors and warnings
+     * @param stdOut    Stream for notices etc.
+     * @param stdErr    Stream for errors and warnings
      */
     @SuppressWarnings("deprecation")
     public Messager(Context context, String programName, PrintWriter outWriter, PrintWriter errWriter) {
@@ -254,6 +254,7 @@ public class Messager extends Log implements Reporter {
 
     private void incrementErrorCount(String prefix, String msg) {
         if (nerrors < MaxErrors) {
+            PrintWriter errWriter = getWriter(WriterKind.ERROR);
             errWriter.println(prefix + ": " + getText("javadoc.error") + " - " + msg);
             errWriter.flush();
             prompt();
@@ -291,6 +292,7 @@ public class Messager extends Log implements Reporter {
 
     private void incrementWarningCount(String prefix, String msg) {
         if (nwarnings < MaxWarnings) {
+            PrintWriter warnWriter = getWriter(WriterKind.WARNING);
             warnWriter.println(prefix + ": " + getText("javadoc.warning") + " - " + msg);
             warnWriter.flush();
             nwarnings++;
@@ -314,6 +316,7 @@ public class Messager extends Log implements Reporter {
             return;
         }
 
+        PrintWriter noticeWriter = getWriter(WriterKind.NOTICE);
         if (path == null) {
             noticeWriter.println(msg);
         } else {
@@ -329,6 +332,7 @@ public class Messager extends Log implements Reporter {
             return;
         }
 
+        PrintWriter noticeWriter = getWriter(WriterKind.NOTICE);
         if (e == null) {
             noticeWriter.println(msg);
         } else {

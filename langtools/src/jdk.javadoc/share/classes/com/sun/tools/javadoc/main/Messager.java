@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,6 +174,7 @@ public class Messager extends Log implements DocErrorReporter {
 
         if (nerrors < MaxErrors) {
             String prefix = (pos == null) ? programName : pos.toString();
+            PrintWriter errWriter = getWriter(WriterKind.ERROR);
             errWriter.println(prefix + ": " + getText("javadoc.error") + " - " + msg);
             errWriter.flush();
             prompt();
@@ -206,6 +207,7 @@ public class Messager extends Log implements DocErrorReporter {
 
         if (nwarnings < MaxWarnings) {
             String prefix = (pos == null) ? programName : pos.toString();
+            PrintWriter warnWriter = getWriter(WriterKind.WARNING);
             warnWriter.println(prefix +  ": " + getText("javadoc.warning") +" - " + msg);
             warnWriter.flush();
             nwarnings++;
@@ -235,6 +237,7 @@ public class Messager extends Log implements DocErrorReporter {
             return;
         }
 
+        PrintWriter noticeWriter = getWriter(WriterKind.NOTICE);
         if (pos == null)
             noticeWriter.println(msg);
         else

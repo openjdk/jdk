@@ -155,6 +155,11 @@ public class DocPaths {
         return DocPath.create(mdle.getQualifiedName() + "-summary.html");
     }
 
+    /** The name of the file for the module frame. */
+    public static DocPath moduleTypeFrame(ModuleElement mdle) {
+        return DocPath.create(mdle.getQualifiedName() + "-type-frame.html");
+    }
+
     /** The name of the file for the module overview frame. */
     public static final DocPath MODULE_OVERVIEW_FRAME = DocPath.create("module-overview-frame.html");
 
