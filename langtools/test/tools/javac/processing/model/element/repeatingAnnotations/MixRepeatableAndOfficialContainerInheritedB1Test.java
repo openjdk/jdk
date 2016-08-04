@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     8004822 8007961
+ * @bug     8004822 8007961 8163113
  * @author  mnunez
  * @summary Language model api test basics for repeating annotations
  * @library /tools/javac/lib
@@ -56,8 +56,8 @@ class M {}
 @ExpectedContainer(
         value = BarInheritedContainer.class,
         getAnnotation = "@BarInheritedContainer("
-        + "value=[@BarInherited(value=1), @BarInherited(value=2)])",
+        + "value={@BarInherited(value=1), @BarInherited(value=2)})",
         getAnnotationsByType = {"@BarInheritedContainer("
-                + "value=[@BarInherited(value=1), @BarInherited(value=2)])"})
+                + "value={@BarInherited(value=1), @BarInherited(value=2)})"})
 @BarInherited(value = 0)
 class MixRepeatableAndOfficialContainerInheritedB1Test extends M {}
