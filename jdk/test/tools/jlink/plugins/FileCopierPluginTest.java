@@ -41,6 +41,7 @@ import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 
 import jdk.tools.jlink.internal.plugins.FileCopierPlugin;
+import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePool;
 
@@ -103,7 +104,18 @@ public class FileCopierPluginTest {
         });
         Path root = new File(".").toPath();
         DefaultImageBuilder imgbuilder = new DefaultImageBuilder(root);
-        imgbuilder.storeFiles(pool);
+        try {
+            imgbuilder.storeFiles(pool);
+        } catch (PluginException e) {
+            // We didn't add any .class resource of the java.base module!
+            // This cannot happen in non-testing scenario as java.base module
+            // is minimum mandatory module in a .jimage. jlink depends on java.base
+            // to generate 'release' file. If the current exception came from that
+            // part of the code, then it is okay.
+            if (!e.getMessage().contains("No module-info for java.base module")) {
+                throw e;
+            }
+        }
 
         if (lic.exists()) {
             File license = new File(root.toFile(), "LICENSE");
