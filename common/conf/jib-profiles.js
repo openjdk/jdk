@@ -357,6 +357,18 @@ var getJibProfilesDependencies = function (input, common) {
     var boot_jdk_platform = input.build_os + "-"
         + (input.build_cpu == "x86" ? "i586" : input.build_cpu);
 
+    var boot_jdk_revision = "8";
+    var boot_jdk_subdirpart = "1.8.0";
+    // JDK 8 does not work on sparc M7 cpus, need a newer update when building
+    // on such hardware.
+    if (input.build_cpu == "sparcv9") {
+       var cpu_brand = $EXEC("bash -c \"kstat -m cpu_info | grep brand | head -n1 | awk '{ print \$2 }'\"");
+       if (cpu_brand.trim() == 'SPARC-M7') {
+           boot_jdk_revision = "8u20";
+           boot_jdk_subdirpart = "1.8.0_20";
+       }
+    }
+
     var devkit_platform_revisions = {
         linux_x64: "gcc4.9.2-OEL6.4+1.0",
         macosx_x64: "Xcode6.3-MacOSX10.9+1.0",
@@ -374,12 +386,12 @@ var getJibProfilesDependencies = function (input, common) {
         boot_jdk: {
             server: "javare",
             module: "jdk",
-            revision: "8",
+            revision: boot_jdk_revision,
             checksum_file: boot_jdk_platform + "/MD5_VALUES",
-            file: boot_jdk_platform + "/jdk-8-" + boot_jdk_platform + ".tar.gz",
+            file: boot_jdk_platform + "/jdk-" + boot_jdk_revision + "-" + boot_jdk_platform + ".tar.gz",
             configure_args: (input.build_os == "macosx"
-                ? "--with-boot-jdk=" + input.get("boot_jdk", "install_path") + "/jdk1.8.0.jdk/Contents/Home"
-                : "--with-boot-jdk=" + input.get("boot_jdk", "install_path") + "/jdk1.8.0")
+                ? "--with-boot-jdk=" + input.get("boot_jdk", "install_path") + "/jdk" + boot_jdk_subdirpart + ".jdk/Contents/Home"
+                : "--with-boot-jdk=" + input.get("boot_jdk", "install_path") + "/jdk" + boot_jdk_subdirpart)
         },
 
         devkit: {
