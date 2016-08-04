@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8007320 8014709
+ * @bug 8007320 8014709 8163231
  * @summary Test all optional fields in ConstMethod
  * @compile -g -parameters ConstMethodTest.java
  * @run main ConstMethodTest
@@ -122,8 +122,8 @@ public class ConstMethodTest {
                 equal(ann.length, 3);
                 Annotation foo = ann[0][0];
                 Annotation bar = ann[1][0];
-                equal(foo.toString(), "@Named(value=aName)");
-                equal(bar.toString(), "@Named(value=bName)");
+                equal(foo.toString(), "@Named(value=\"aName\")");
+                equal(bar.toString(), "@Named(value=\"bName\")");
                 check(foo.equals(foo));
                 check(bar.equals(bar));
                 check(! foo.equals(bar));
@@ -131,7 +131,7 @@ public class ConstMethodTest {
                 Annotation[] ann2 = m.getAnnotations();
                 equal(ann2.length, 1);
                 Annotation mann = ann2[0];
-                equal(mann.toString(), "@MyAnnotation(date=today, name=someName, value=Hello World)");
+                equal(mann.toString(), "@MyAnnotation(date=\"today\", name=\"someName\", value=\"Hello World\")");
                 // Test Method parameter names
                 Parameter[] parameters = m.getParameters();
                 if(parameters == null)
