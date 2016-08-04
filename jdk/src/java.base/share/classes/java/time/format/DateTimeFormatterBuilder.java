@@ -810,7 +810,7 @@ public final class DateTimeFormatterBuilder {
      * The localized decimal style is not used.
      * <p>
      * The instant is obtained using {@link ChronoField#INSTANT_SECONDS INSTANT_SECONDS}
-     * and optionally (@code NANO_OF_SECOND). The value of {@code INSTANT_SECONDS}
+     * and optionally {@code NANO_OF_SECOND}. The value of {@code INSTANT_SECONDS}
      * may be outside the maximum range of {@code LocalDateTime}.
      * <p>
      * The {@linkplain ResolverStyle resolver style} has no effect on instant parsing.
@@ -848,7 +848,7 @@ public final class DateTimeFormatterBuilder {
      * digits from zero to nine are accepted.
      * <p>
      * The instant is obtained using {@link ChronoField#INSTANT_SECONDS INSTANT_SECONDS}
-     * and optionally (@code NANO_OF_SECOND). The value of {@code INSTANT_SECONDS}
+     * and optionally {@code NANO_OF_SECOND}. The value of {@code INSTANT_SECONDS}
      * may be outside the maximum range of {@code LocalDateTime}.
      * <p>
      * The {@linkplain ResolverStyle resolver style} has no effect on instant parsing.
