@@ -604,7 +604,7 @@ void G1DefaultPolicy::record_collection_pause_end(double pause_time_ms, size_t c
     _analytics->report_alloc_rate_ms(alloc_rate_ms);
 
     double interval_ms =
-      (end_time_sec - _analytics->last_known_gc_end_time_sec()) * 1000.0;
+      (end_time_sec - _analytics->oldest_known_gc_end_time_sec()) * 1000.0;
     _analytics->update_recent_gc_times(end_time_sec, pause_time_ms);
     _analytics->compute_pause_time_ratio(interval_ms, pause_time_ms);
   }
