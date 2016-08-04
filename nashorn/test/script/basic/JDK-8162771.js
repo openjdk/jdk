@@ -22,48 +22,33 @@
  */
 
 /**
- * JDK-8160034: The `this` value in the `with` is broken by the repetition of a function call
+ * JDK-8162771: Strict equality operators should not be optimistic
  *
  * @test
- * @option --unstable-relink-threshold=4
  * @run
  */
 
+var l = new java.lang.Long(1);
 
-var bar = "BAR";
+Assert.assertTrue(typeof l === "object");
+Assert.assertTrue(typeof l.longValue() === "object");
 
-function Foo() {
-    this.bar = "bar";
-    this.baz = "baz";
-}
+Assert.assertTrue(1 == l);
+Assert.assertTrue(1 == l.longValue());
+Assert.assertTrue(l == 1);
+Assert.assertTrue(l.longValue() == 1);
 
-function foo_proto_h() {
-    print(this.bar);
-    delete Foo.prototype._h;
-}
+Assert.assertFalse(1 != l);
+Assert.assertFalse(1 != l.longValue());
+Assert.assertFalse(l != 1);
+Assert.assertFalse(l.longValue() != 1);
 
-function foo_proto_e() {
-    print(this.baz);
-}
+Assert.assertFalse(1 === l);
+Assert.assertFalse(1 === l.longValue());
+Assert.assertFalse(l === 1);
+Assert.assertFalse(l.longValue() === 1);
 
-function _h() {
-    print(this.bar);
-    Foo.prototype._h = foo_proto_h;
-}
-
-Foo.prototype._e = foo_proto_e;
-Foo.prototype._h = foo_proto_h;
-
-
-var fn = new Function("with(this) { _h(); _e(); }");
-
-for (var i = 0; i < 20; i++) {
-    fn.call(new Foo());
-}
-
-for (var i = 0; i < 20; i++) {
-    foo = new Foo();
-    foo['e' + Math.random()] = 1; // force new map
-    fn.call(foo);
-}
-
+Assert.assertTrue(1 !== l);
+Assert.assertTrue(1 !== l.longValue());
+Assert.assertTrue(l !== 1);
+Assert.assertTrue(l.longValue() !== 1);
