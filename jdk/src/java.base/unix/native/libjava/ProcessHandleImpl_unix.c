@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <pwd.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -45,6 +44,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+
+/* For POSIX-compliant getpwuid_r on Solaris */
+#if defined(__solaris__)
+#define _POSIX_PTHREAD_SEMANTICS
+#endif
+#include <pwd.h>
 
 #ifdef _AIX
 #include <sys/procfs.h>
@@ -429,7 +434,9 @@ void unix_fillArgArray(JNIEnv *env, jobject jinfo, int nargs, char *cp,
 
     if (nargs >= 1) {
         // Create a String array for nargs-1 elements
-        argsArray = (*env)->NewObjectArray(env, nargs - 1, JNU_ClassString(env), NULL);
+        jclass clazzString = JNU_ClassString(env);
+        CHECK_NULL(clazzString);
+        argsArray = (*env)->NewObjectArray(env, nargs - 1, clazzString, NULL);
         CHECK_NULL(argsArray);
 
         for (i = 0; i < nargs - 1; i++) {
@@ -468,12 +475,7 @@ void unix_getUserInfo(JNIEnv* env, jobject jinfo, uid_t uid) {
     } else {
         struct passwd pwent;
         struct passwd* p = NULL;
-
-#ifdef __solaris__
-        RESTARTABLE_RETURN_PTR(getpwuid_r(uid, &pwent, pwbuf, (size_t)getpw_buf_size), p);
-#else
         RESTARTABLE(getpwuid_r(uid, &pwent, pwbuf, (size_t)getpw_buf_size, &p), result);
-#endif
 
         // Create the Java String if a name was found
         if (result == 0 && p != NULL &&

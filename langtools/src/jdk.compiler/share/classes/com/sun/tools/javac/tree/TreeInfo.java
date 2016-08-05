@@ -36,13 +36,18 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCPolyExpression.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.BLOCK;
 import static com.sun.tools.javac.tree.JCTree.Tag.SYNCHRONIZED;
+
 import javax.tools.JavaFileObject;
+
+import static com.sun.tools.javac.tree.JCTree.JCOperatorExpression.OperandPos.LEFT;
+import static com.sun.tools.javac.tree.JCTree.JCOperatorExpression.OperandPos.RIGHT;
 
 /** Utility class containing inspector methods for trees.
  *
@@ -386,7 +391,6 @@ public class TreeInfo {
             case SL_ASG: case SR_ASG: case USR_ASG:
             case PLUS_ASG: case MINUS_ASG: case MUL_ASG:
             case DIV_ASG: case MOD_ASG:
-                return getStartPos(((JCAssignOp) tree).lhs);
             case OR: case AND: case BITOR:
             case BITXOR: case BITAND: case EQ:
             case NE: case LT: case GT:
@@ -394,7 +398,9 @@ public class TreeInfo {
             case SR: case USR: case PLUS:
             case MINUS: case MUL: case DIV:
             case MOD:
-                return getStartPos(((JCBinary) tree).lhs);
+            case POSTINC:
+            case POSTDEC:
+                return getStartPos(((JCOperatorExpression) tree).getOperand(LEFT));
             case CLASSDEF: {
                 JCClassDecl node = (JCClassDecl)tree;
                 if (node.mods.pos != Position.NOPOS)
@@ -423,9 +429,6 @@ public class TreeInfo {
                 return getStartPos(((JCArrayTypeTree) tree).elemtype);
             case TYPETEST:
                 return getStartPos(((JCInstanceOf) tree).expr);
-            case POSTINC:
-            case POSTDEC:
-                return getStartPos(((JCUnary) tree).arg);
             case ANNOTATED_TYPE: {
                 JCAnnotatedType node = (JCAnnotatedType) tree;
                 if (node.annotations.nonEmpty()) {
@@ -486,7 +489,6 @@ public class TreeInfo {
             case SL_ASG: case SR_ASG: case USR_ASG:
             case PLUS_ASG: case MINUS_ASG: case MUL_ASG:
             case DIV_ASG: case MOD_ASG:
-                return getEndPos(((JCAssignOp) tree).rhs, endPosTable);
             case OR: case AND: case BITOR:
             case BITXOR: case BITAND: case EQ:
             case NE: case LT: case GT:
@@ -494,7 +496,13 @@ public class TreeInfo {
             case SR: case USR: case PLUS:
             case MINUS: case MUL: case DIV:
             case MOD:
-                return getEndPos(((JCBinary) tree).rhs, endPosTable);
+            case POS:
+            case NEG:
+            case NOT:
+            case COMPL:
+            case PREINC:
+            case PREDEC:
+                return getEndPos(((JCOperatorExpression) tree).getOperand(RIGHT), endPosTable);
             case CASE:
                 return getEndPos(((JCCase) tree).stats.last(), endPosTable);
             case CATCH:
@@ -537,13 +545,6 @@ public class TreeInfo {
                 return getEndPos(((JCTypeCast) tree).expr, endPosTable);
             case TYPETEST:
                 return getEndPos(((JCInstanceOf) tree).clazz, endPosTable);
-            case POS:
-            case NEG:
-            case NOT:
-            case COMPL:
-            case PREINC:
-            case PREDEC:
-                return getEndPos(((JCUnary) tree).arg, endPosTable);
             case WHILELOOP:
                 return getEndPos(((JCWhileLoop) tree).body, endPosTable);
             case ANNOTATED_TYPE:

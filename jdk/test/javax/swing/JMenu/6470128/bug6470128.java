@@ -20,14 +20,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
-   @bug 6470128
-   @summary Escape Key causes JMenu Selection to Disappear
-   @author Alexander Potochkin
-   @library ../../../../lib/testlibrary
-   @build jdk.testlibrary.OSInfo
-   @run main bug6470128
-*/
+
+/*
+ * @test
+ * @key headful
+ * @bug 6470128
+ * @summary Escape Key causes JMenu Selection to Disappear
+ * @author Alexander Potochkin
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
+ * @run main bug6470128
+ */
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;

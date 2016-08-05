@@ -21,12 +21,14 @@
  * questions.
  */
 
- /*
- @test
- @bug 8057574
- @summary Verify that child Window does not inherit parent's Properties
- @run main ChildWindowProperties
+/*
+ * @test
+ * @key headful
+ * @bug 8057574
+ * @summary Verify that child Window does not inherit parent's Properties
+ * @run main ChildWindowProperties
  */
+
 import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.Font;

@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2012 Marti Maria Saguer
+//  Copyright (c) 1998-2016 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -534,7 +534,7 @@ void* CLUTElemDup(cmsStage* mpe)
                 goto Error;
         } else {
             NewElem ->Tab.T = (cmsUInt16Number*) _cmsDupMem(mpe ->ContextID, Data ->Tab.T, Data ->nEntries * sizeof (cmsUInt16Number));
-            if (NewElem ->Tab.TFloat == NULL)
+            if (NewElem ->Tab.T == NULL)
                 goto Error;
         }
     }
@@ -1482,7 +1482,8 @@ cmsPipeline* CMSEXPORT cmsPipelineDup(const cmsPipeline* lut)
                  First = FALSE;
              }
              else {
-                Anterior ->Next = NewMPE;
+                if (Anterior != NULL)
+                    Anterior ->Next = NewMPE;
              }
 
             Anterior = NewMPE;
@@ -1836,3 +1837,5 @@ cmsBool CMSEXPORT cmsPipelineEvalReverseFloat(cmsFloat32Number Target[],
 
     return TRUE;
 }
+
+

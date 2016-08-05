@@ -35,6 +35,7 @@ import javax.swing.UIManager;
 
 /**
  * @test
+ * @key headful
  * @bug 8020708 8032568
  * @author Alexander Scherbatiy
  * @summary NLS: mnemonics missing in SwingSet2/JInternalFrame demo

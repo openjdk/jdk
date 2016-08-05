@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6256140
  * @summary Esc key doesn't restore old value in JFormattedtextField when ToolTip is set
  * @author Alexander Potochkin

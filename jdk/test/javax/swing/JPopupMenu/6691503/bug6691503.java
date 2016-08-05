@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6691503
  * @summary Checks that there is no opportunity for a malicious applet
  * to show a popup menu which has whole screen size.

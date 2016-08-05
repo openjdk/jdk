@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8049617
  * @summary Check whether a modal Dialog created with a hidden Dialog
  *          constructor receives focus; whether its components receive focus

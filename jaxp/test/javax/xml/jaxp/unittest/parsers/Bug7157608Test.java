@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 package parsers;
 
+import static jaxp.library.JAXPTestUtilities.getSystemProperty;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -31,6 +33,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -39,13 +42,18 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /*
+ * @test
  * @bug 7157608
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true parsers.Bug7157608Test
+ * @run testng/othervm parsers.Bug7157608Test
  * @summary Test feature standard-uri-conformant works.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug7157608Test {
     public static boolean isWindows = false;
     static {
-        if (System.getProperty("os.name").indexOf("Windows") > -1) {
+        if (getSystemProperty("os.name").indexOf("Windows") > -1) {
             isWindows = true;
         }
     };
@@ -53,7 +61,7 @@ public class Bug7157608Test {
     String xml1, xml2;
 
     @BeforeMethod
-    protected void setUp() throws IOException {
+    public void setUp() throws IOException {
         File file1 = new File(getClass().getResource("Bug7157608.xml").getFile());
         xml1 = file1.getPath().replace("\\", "\\\\");
         File file2 = new File(getClass().getResource("Bug7157608_1.xml").getFile());
@@ -210,3 +218,4 @@ public class Bug7157608Test {
         boolean validating = false;
     }
 }
+

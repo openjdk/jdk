@@ -27,6 +27,7 @@ import javax.swing.*;
 
 /**
  * @test
+ * @key headful
  * @bug 4670486
  * @author Mark Davidson
  * @summary Regression: Popup menu bindings doesn't work when a default button has been defined.

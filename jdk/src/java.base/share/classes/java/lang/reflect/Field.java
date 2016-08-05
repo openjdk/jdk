@@ -29,6 +29,7 @@ import jdk.internal.misc.SharedSecrets;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.FieldAccessor;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.ForceInline;
 import sun.reflect.generics.repository.FieldRepository;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;
@@ -396,6 +397,7 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public Object get(Object obj)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -429,6 +431,7 @@ class Field extends AccessibleObject implements Member {
      * @see       Field#get
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public boolean getBoolean(Object obj)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -462,6 +465,7 @@ class Field extends AccessibleObject implements Member {
      * @see       Field#get
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public byte getByte(Object obj)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -497,6 +501,7 @@ class Field extends AccessibleObject implements Member {
      * @see Field#get
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public char getChar(Object obj)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -532,6 +537,7 @@ class Field extends AccessibleObject implements Member {
      * @see       Field#get
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public short getShort(Object obj)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -567,6 +573,7 @@ class Field extends AccessibleObject implements Member {
      * @see       Field#get
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public int getInt(Object obj)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -602,6 +609,7 @@ class Field extends AccessibleObject implements Member {
      * @see       Field#get
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public long getLong(Object obj)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -637,6 +645,7 @@ class Field extends AccessibleObject implements Member {
      * @see Field#get
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public float getFloat(Object obj)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -672,6 +681,7 @@ class Field extends AccessibleObject implements Member {
      * @see       Field#get
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public double getDouble(Object obj)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -749,6 +759,7 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public void set(Object obj, Object value)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -784,6 +795,7 @@ class Field extends AccessibleObject implements Member {
      * @see       Field#set
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public void setBoolean(Object obj, boolean z)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -819,6 +831,7 @@ class Field extends AccessibleObject implements Member {
      * @see       Field#set
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public void setByte(Object obj, byte b)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -854,6 +867,7 @@ class Field extends AccessibleObject implements Member {
      * @see       Field#set
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public void setChar(Object obj, char c)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -889,6 +903,7 @@ class Field extends AccessibleObject implements Member {
      * @see       Field#set
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public void setShort(Object obj, short s)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -924,6 +939,7 @@ class Field extends AccessibleObject implements Member {
      * @see       Field#set
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public void setInt(Object obj, int i)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -959,6 +975,7 @@ class Field extends AccessibleObject implements Member {
      * @see       Field#set
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public void setLong(Object obj, long l)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -994,6 +1011,7 @@ class Field extends AccessibleObject implements Member {
      * @see       Field#set
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public void setFloat(Object obj, float f)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -1029,6 +1047,7 @@ class Field extends AccessibleObject implements Member {
      * @see       Field#set
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public void setDouble(Object obj, double d)
         throws IllegalArgumentException, IllegalAccessException
     {

@@ -39,6 +39,7 @@ import javax.swing.text.html.HTMLEditorKit;
 
 /*
  * @test
+ * @key headful
  * @bug 8008289
  * @summary Shared ButtonModel instance should deregister previous listeners.
  * @author Frank Ding

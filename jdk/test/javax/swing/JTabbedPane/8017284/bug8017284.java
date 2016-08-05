@@ -31,6 +31,7 @@ import javax.swing.plaf.metal.MetalLookAndFeel;
 
 /**
  * @test
+ * @key headful
  * @bug 8017284
  * @author Alexander Scherbatiy
  * @summary  Aqua LaF: memory leak when HTML is used for JTabbedPane tab titles

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,10 @@
 
 package transform;
 
+import static jaxp.library.JAXPTestUtilities.getSystemProperty;
+
 import java.io.File;
+import java.io.FilePermission;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -32,57 +35,63 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import jaxp.library.JAXPTestUtilities;
+
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 /*
+ * @test
  * @bug 6551600
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true transform.CR6551600Test
+ * @run testng/othervm transform.CR6551600Test
  * @summary Test using UNC path as StreamResult.
  */
+@Listeners({ jaxp.library.BasePolicy.class })
 public class CR6551600Test {
 
     @Test
     public final void testUNCPath() {
-        String hostName = "";
-        try {
-            hostName = java.net.InetAddress.getLocalHost().getHostName();
-        } catch (java.net.UnknownHostException e) {
-            // falls through
-        }
+        boolean isWindows = getSystemProperty("os.name").contains("Windows");
+        JAXPTestUtilities.runWithTmpPermission(() -> {
+            String hostName = "";
+            try {
+                hostName = java.net.InetAddress.getLocalHost().getHostName();
+            } catch (java.net.UnknownHostException e) {
+                // falls through
+            }
 
-        String path = "\\\\" + hostName + "\\C$\\xslt_unc_test.xml";
-        String os = System.getProperty("os.name");
-        if (os.indexOf("Windows") < 0) {
-            path = "///tmp/test.xml";
-        }
-        else {
-                policy.PolicyUtil.changePolicy(getClass().getResource("CR6551600.policy").getFile());
-        }
+            String path = isWindows ? "\\\\" + hostName + "\\C$\\xslt_unc_test.xml" : "///tmp/test.xml";
 
-        try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document doc = builder.newDocument();
-            Element root = doc.createElement("test");
-            doc.appendChild(root);
-            // create an identity transform
-            Transformer t = TransformerFactory.newInstance().newTransformer();
-            File f = new File(path);
-            StreamResult result = new StreamResult(f);
-            DOMSource source = new DOMSource(doc);
-            System.out.println("Writing to " + f);
-            t.transform(source, result);
-        } catch (Exception e) {
-            // unexpected failure
-            e.printStackTrace();
-            Assert.fail(e.toString());
-        }
+            try {
+                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                DocumentBuilder builder = factory.newDocumentBuilder();
+                Document doc = builder.newDocument();
+                Element root = doc.createElement("test");
+                doc.appendChild(root);
+                // create an identity transform
+                Transformer t = TransformerFactory.newInstance().newTransformer();
+                File f = new File(path);
+                StreamResult result = new StreamResult(f);
+                DOMSource source = new DOMSource(doc);
+                System.out.println("Writing to " + f);
+                t.transform(source, result);
+            } catch (Exception e) {
+                // unexpected failure
+                e.printStackTrace();
+                Assert.fail(e.toString());
+            }
 
-        File file = new File(path);
-        if (file.exists()) {
-            file.deleteOnExit();
-        }
+            File file = new File(path);
+            if (file.exists()) {
+                file.deleteOnExit();
+            }
+        }, isWindows ? new FilePermission("//localhost/C$/xslt_unc_test.xml", "read,write,delete")
+                : new FilePermission("///tmp/test.xml", "read,write,delete"));
     }
 }
+

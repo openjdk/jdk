@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6541987
  * @summary Tests closing by ESC
  * @author Sergey Malenkov

@@ -56,3 +56,4 @@ public class TestSAXDriver extends SAXParserImpl.JAXPSAXParser {
 
     private static final String ENT_EXP_LIMIT_PROP = "http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit";
 }
+

@@ -1,0 +1,204 @@
+/*
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package jdk.javadoc.internal.doclets.formats.html;
+
+import java.io.*;
+import java.util.*;
+
+import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.ElementFilter;
+
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
+
+
+/**
+ * Class to generate file for each module contents in the left-hand bottom
+ * frame. This will list all the Class Kinds in the module. A click on any
+ * class-kind will update the right-hand frame with the clicked class-kind page.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ *
+ * @author Bhavesh Patel
+ */
+public class ModuleFrameWriter extends HtmlDocletWriter {
+
+    /**
+     * The module being documented.
+     */
+    private ModuleElement mdle;
+
+    /**
+     * The classes to be documented.  Use this to filter out classes
+     * that will not be documented.
+     */
+    private SortedSet<TypeElement> documentedClasses;
+
+    /**
+     * Constructor to construct ModuleFrameWriter object and to generate
+     * "module_name-type-frame.html" file. For example for module "java.base" this will generate file
+     * "java.base-type-frame.html" file.
+     *
+     * @param configuration the configuration of the doclet.
+     * @param moduleElement moduleElement under consideration.
+     */
+    public ModuleFrameWriter(ConfigurationImpl configuration, ModuleElement moduleElement)
+            throws IOException {
+        super(configuration, DocPaths.moduleTypeFrame(moduleElement));
+        this.mdle = moduleElement;
+        if (utils.getSpecifiedPackages().isEmpty()) {
+            documentedClasses = new TreeSet<>(utils.makeGeneralPurposeComparator());
+            documentedClasses.addAll(configuration.docEnv.getIncludedClasses());
+        }
+    }
+
+    /**
+     * Generate a module type summary page for the left-hand bottom frame.
+     *
+     * @param configuration the current configuration of the doclet.
+     * @param moduleElement The package for which "module_name-type-frame.html" is to be generated.
+     */
+    public static void generate(ConfigurationImpl configuration, ModuleElement moduleElement) {
+        ModuleFrameWriter mdlgen;
+        try {
+            mdlgen = new ModuleFrameWriter(configuration, moduleElement);
+            String mdlName = moduleElement.getQualifiedName().toString();
+            Content mdlLabel = new StringContent(mdlName);
+            HtmlTree body = mdlgen.getBody(false, mdlgen.getWindowTitle(mdlName));
+            HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
+                    ? HtmlTree.MAIN()
+                    : body;
+            Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, HtmlStyle.bar,
+                    mdlgen.getHyperLink(DocPaths.moduleSummary(moduleElement), mdlLabel, "", "classFrame"));
+            htmlTree.addContent(heading);
+            HtmlTree div = new HtmlTree(HtmlTag.DIV);
+            div.addStyle(HtmlStyle.indexContainer);
+            mdlgen.addClassListing(div);
+            htmlTree.addContent(div);
+            if (configuration.allowTag(HtmlTag.MAIN)) {
+                body.addContent(htmlTree);
+            }
+            mdlgen.printHtmlDocument(
+                    configuration.metakeywords.getMetaKeywordsForModule(moduleElement), false, body);
+            mdlgen.close();
+        } catch (IOException exc) {
+            configuration.standardmessage.error(
+                    "doclet.exception_encountered",
+                    exc.toString(), DocPaths.moduleTypeFrame(moduleElement).getPath());
+            throw new DocletAbortException(exc);
+        }
+    }
+
+    /**
+     * Add class listing for all the classes in this module. Divide class
+     * listing as per the class kind and generate separate listing for
+     * Classes, Interfaces, Exceptions and Errors.
+     *
+     * @param contentTree the content tree to which the listing will be added
+     */
+    protected void addClassListing(HtmlTree contentTree) {
+        List<PackageElement> packagesIn = ElementFilter.packagesIn(mdle.getEnclosedElements());
+        SortedSet<TypeElement> interfaces = new TreeSet<>(utils.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> classes = new TreeSet<>(utils.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> enums = new TreeSet<>(utils.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> exceptions = new TreeSet<>(utils.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> errors = new TreeSet<>(utils.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> annotationTypes = new TreeSet<>(utils.makeGeneralPurposeComparator());
+        for (PackageElement pkg : packagesIn) {
+            if (utils.isIncluded(pkg)) {
+                interfaces.addAll(utils.getInterfaces(pkg));
+                classes.addAll(utils.getOrdinaryClasses(pkg));
+                enums.addAll(utils.getEnums(pkg));
+                exceptions.addAll(utils.getExceptions(pkg));
+                errors.addAll(utils.getErrors(pkg));
+                annotationTypes.addAll(utils.getAnnotationTypes(pkg));
+            }
+        }
+        addClassKindListing(interfaces, getResource("doclet.Interfaces"), contentTree);
+        addClassKindListing(classes, getResource("doclet.Classes"), contentTree);
+        addClassKindListing(enums, getResource("doclet.Enums"), contentTree);
+        addClassKindListing(exceptions, getResource("doclet.Exceptions"), contentTree);
+        addClassKindListing(errors, getResource("doclet.Errors"), contentTree);
+        addClassKindListing(annotationTypes, getResource("doclet.AnnotationTypes"), contentTree);
+    }
+
+    /**
+     * Add specific class kind listing. Also add label to the listing.
+     *
+     * @param list Iterable list of TypeElements
+     * @param labelContent content tree of the label to be added
+     * @param contentTree the content tree to which the class kind listing will be added
+     */
+    protected void addClassKindListing(Iterable<TypeElement> list, Content labelContent,
+            HtmlTree contentTree) {
+        SortedSet<TypeElement> tset = utils.filterOutPrivateClasses(list, configuration.javafx);
+        if (!tset.isEmpty()) {
+            boolean printedHeader = false;
+            HtmlTree htmlTree = (configuration.allowTag(HtmlTag.SECTION))
+                    ? HtmlTree.SECTION()
+                    : contentTree;
+            HtmlTree ul = new HtmlTree(HtmlTag.UL);
+            ul.setTitle(labelContent);
+            for (TypeElement typeElement : tset) {
+                if (documentedClasses != null && !documentedClasses.contains(typeElement)) {
+                    continue;
+                }
+                if (!utils.isCoreClass(typeElement) || !configuration.isGeneratedDoc(typeElement)) {
+                    continue;
+                }
+                if (!printedHeader) {
+                    Content heading = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
+                            true, labelContent);
+                    htmlTree.addContent(heading);
+                    printedHeader = true;
+                }
+                Content arr_i_name = new StringContent(utils.getSimpleName(typeElement));
+                if (utils.isInterface(typeElement)) {
+                    arr_i_name = HtmlTree.SPAN(HtmlStyle.interfaceName, arr_i_name);
+                }
+                Content link = getLink(new LinkInfoImpl(configuration,
+                        LinkInfoImpl.Kind.ALL_CLASSES_FRAME, typeElement).label(arr_i_name).target("classFrame"));
+                Content li = HtmlTree.LI(link);
+                ul.addContent(li);
+            }
+            htmlTree.addContent(ul);
+            if (configuration.allowTag(HtmlTag.SECTION)) {
+                contentTree.addContent(htmlTree);
+            }
+        }
+    }
+}

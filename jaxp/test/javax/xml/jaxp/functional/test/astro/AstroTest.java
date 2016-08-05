@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package test.astro;
 
 import static java.lang.String.valueOf;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static org.testng.Assert.assertEquals;
 import static test.astro.AstroConstants.ASTROCAT;
 import static test.astro.AstroConstants.GOLDEN_DIR;
@@ -35,13 +36,16 @@ import java.util.List;
 
 import javax.xml.transform.sax.TransformerHandler;
 
-import jaxp.library.JAXPFileBaseTest;
-
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true test.astro.AstroTest
+ * @run testng/othervm test.astro.AstroTest
  * @summary run astro application, test xslt
  *
  * There are vast amounts of textual astronomical data, typically user is
@@ -66,7 +70,8 @@ import org.testng.annotations.Test;
  * AstroProcessor to test different JAXP classes and features.
  *
  */
-public class AstroTest extends JAXPFileBaseTest {
+@Listeners({jaxp.library.FilePolicy.class})
+public class AstroTest {
     private FiltersAndGolden[] data;
 
     @BeforeClass
@@ -107,7 +112,7 @@ public class AstroTest extends JAXPFileBaseTest {
         for (int i = 0; i < filterCreators.length; i++)
             filters[i] = filterCreators[i].createFilter(astro);
 
-        String outputfile = Files.createTempFile(Paths.get("").toAbsolutePath(), "query" + processNum + ".out.", null).toString();
+        String outputfile = Files.createTempFile(Paths.get(USER_DIR), "query" + processNum + ".out.", null).toString();
         System.out.println("output file: " + outputfile);
         astro.process(outputfile, filters);
         assertEquals(Files.readAllLines(Paths.get(outputfile)), goldenfileContent);
@@ -140,3 +145,4 @@ public class AstroTest extends JAXPFileBaseTest {
         }
     }
 }
+

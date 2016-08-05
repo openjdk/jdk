@@ -30,6 +30,7 @@ import javax.swing.UIManager.LookAndFeelInfo;
 
 /**
  * @test
+ * @key headful
  * @bug 8002077
  * @author Alexander Scherbatiy
  * @summary Possible mnemonic issue on JFileChooser Save button on nimbus L&F

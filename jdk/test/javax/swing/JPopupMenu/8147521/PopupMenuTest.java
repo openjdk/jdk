@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8147521 8158358
  * @summary [macosx] Internal API Usage: setPopupType used to force creation of
  * heavyweight popup

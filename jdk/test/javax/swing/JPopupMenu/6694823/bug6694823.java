@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6694823
  * @summary Checks that popup menu cannot be partially hidden
  * by the task bar in applets.

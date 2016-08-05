@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,7 +253,6 @@ public class LookupOp implements BufferedImageOp, RasterOp {
      */
     public final WritableRaster filter (Raster src, WritableRaster dst) {
         int numBands  = src.getNumBands();
-        int dstLength = dst.getNumBands();
         int height    = src.getHeight();
         int width     = src.getWidth();
         int srcPix[]  = new int[numBands];
@@ -268,7 +267,7 @@ public class LookupOp implements BufferedImageOp, RasterOp {
                 IllegalArgumentException ("Width or height of Rasters do not "+
                                           "match");
         }
-        dstLength = dst.getNumBands();
+        int dstLength = dst.getNumBands();
 
         if (numBands != dstLength) {
             throw new

@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8052012
  * @summary Check whether a modal Dialog created with visible Frame
  *          constructor stays on top of the windows it blocks.

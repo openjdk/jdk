@@ -42,17 +42,23 @@ import toolbox.Task;
 import toolbox.ToolBox;
 
 //original test: test/tools/javac/newlines/Newlines.sh
+/*
+ * Checks that the usage message, contained in the properties in the
+ * resource file javac.properties, is correctly rendered, including
+ * embedded newlines in the resource strings. For more context,
+ * see JDK-4110560.
+ */
 public class NewLineTest {
 
     public static void main(String args[]) throws Exception {
         ToolBox tb = new ToolBox();
-        File javacErrOutput = new File("output.txt");
+        File javacOutput = new File("output.txt");
         new JavacTask(tb, Task.Mode.EXEC)
-                .redirect(Task.OutputKind.STDERR, javacErrOutput.getPath())
+                .redirect(Task.OutputKind.STDOUT, javacOutput.getPath())
                 .options("-J-Dline.separator='@'")
                 .run(Task.Expect.FAIL);
 
-        List<String> lines = Files.readAllLines(javacErrOutput.toPath(),
+        List<String> lines = Files.readAllLines(javacOutput.toPath(),
                 Charset.defaultCharset());
         if (lines.size() != 1) {
             throw new AssertionError("The compiler output should have one line only");

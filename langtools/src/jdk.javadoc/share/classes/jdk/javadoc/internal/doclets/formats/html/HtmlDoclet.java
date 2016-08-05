@@ -275,6 +275,7 @@ public class HtmlDoclet extends AbstractDoclet {
             int i = 0;
             for (ModuleElement mdle : mdles) {
                 ModulePackageIndexFrameWriter.generate(configuration, mdle);
+                ModuleFrameWriter.generate(configuration, mdle);
                 nextModule = (i + 1 < mdles.size()) ? mdles.get(i + 1) : null;
                 AbstractBuilder moduleSummaryBuilder =
                         configuration.getBuilderFactory().getModuleSummaryBuilder(

@@ -20,14 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
+/*
+   @test
+   @key headful
    @bug 4973721
    @summary Up and Down Arrow key buttons are not working for the JSpinner in Synth LAF
    @library ../../regtesthelpers
    @build Util
    @author Oleg Mokhovikov
    @run main bug4973721
-*/
+ */
 
 import java.awt.Robot;
 import javax.swing.event.ChangeListener;

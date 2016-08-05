@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6396844
  * @summary Tests memory leak for 20000 files
  * @author Sergey Malenkov
