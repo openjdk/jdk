@@ -90,7 +90,7 @@ public class InitialAndMaxUsageTest {
             Asserts.assertEQ(initialUsage, 0L, "Unexpected initial usage");
         }
         ArrayList<Long> blobs = new ArrayList<>();
-        long minAllocationUnit = Math.max(0, CodeCacheUtils.MIN_ALLOCATION - headerSize);
+        long minAllocationUnit = Math.max(1, CodeCacheUtils.MIN_ALLOCATION - headerSize);
         /* now filling code cache with large-sized allocation first, since
          lots of small allocations takes too much time, so, just a small
          optimization */
