@@ -26,6 +26,7 @@ import java.awt.event.KeyEvent;
 
 /*
   @test
+  @key headful
   @summary verify LOCK buttons toogle
   @author Yuri.Nesterenko, Dmitriy.Ermashov
   @library ../../../../lib/testlibrary

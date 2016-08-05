@@ -110,14 +110,13 @@ class CompletenessAnalyzer {
 
         private static CaLog createLog(Context context) {
             PrintWriter pw = new PrintWriter(new StringWriter());
-            CaLog log = new CaLog(context, pw, pw, pw);
-            context.put(outKey, pw);
+            CaLog log = new CaLog(context, pw);
             context.put(logKey, log);
             return log;
         }
 
-        private CaLog(Context context, PrintWriter errWriter, PrintWriter warnWriter, PrintWriter noticeWriter) {
-            super(context, errWriter, warnWriter, noticeWriter);
+        private CaLog(Context context, PrintWriter pw) {
+            super(context, pw);
         }
 
         @Override

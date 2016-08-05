@@ -296,6 +296,8 @@ public abstract class Scope {
          */
         int nelems = 0;
 
+        int removeCount = 0;
+
         /** Use as a "not-found" result for lookup.
          * Also used to mark deleted entries in the table.
          */
@@ -474,6 +476,8 @@ public abstract class Scope {
                 te = te.sibling;
             }
 
+            removeCount++;
+
             //notify listeners
             listeners.symbolRemoved(sym, this);
         }
@@ -569,15 +573,29 @@ public abstract class Scope {
                     return new Iterator<Symbol>() {
                         private ScopeImpl currScope = ScopeImpl.this;
                         private Scope.Entry currEntry = elems;
+                        private int seenRemoveCount = currScope.removeCount;
                         {
                             update();
                         }
 
                         public boolean hasNext() {
+                            if (seenRemoveCount != currScope.removeCount &&
+                                currEntry != null &&
+                                !currEntry.scope.includes(currEntry.sym)) {
+                                doNext(); //skip entry that is no longer in the Scope
+                                seenRemoveCount = currScope.removeCount;
+                            }
                             return currEntry != null;
                         }
 
                         public Symbol next() {
+                            if (!hasNext()) {
+                                throw new NoSuchElementException();
+                            }
+
+                            return doNext();
+                        }
+                        private Symbol doNext() {
                             Symbol sym = (currEntry == null ? null : currEntry.sym);
                             if (currEntry != null) {
                                 currEntry = currEntry.sibling;
@@ -596,6 +614,7 @@ public abstract class Scope {
                                 while (currEntry == null && currScope.next != null) {
                                     currScope = currScope.next;
                                     currEntry = currScope.elems;
+                                    seenRemoveCount = currScope.removeCount;
                                     skipToNextMatchingEntry();
                                 }
                             }
@@ -618,13 +637,26 @@ public abstract class Scope {
                 public Iterator<Symbol> iterator() {
                      return new Iterator<Symbol>() {
                         Scope.Entry currentEntry = lookup(name, sf);
+                        int seenRemoveCount = currentEntry.scope != null ?
+                                currentEntry.scope.removeCount : -1;
 
                         public boolean hasNext() {
+                            if (currentEntry.scope != null &&
+                                seenRemoveCount != currentEntry.scope.removeCount &&
+                                !currentEntry.scope.includes(currentEntry.sym)) {
+                                doNext(); //skip entry that is no longer in the Scope
+                            }
                             return currentEntry.scope != null &&
                                     (lookupKind == RECURSIVE ||
                                      currentEntry.scope == ScopeImpl.this);
                         }
                         public Symbol next() {
+                            if (!hasNext()) {
+                                throw new NoSuchElementException();
+                            }
+                            return doNext();
+                        }
+                        private Symbol doNext() {
                             Scope.Entry prevEntry = currentEntry;
                             currentEntry = currentEntry.next(sf);
                             return prevEntry.sym;
@@ -686,9 +718,9 @@ public abstract class Scope {
         /** The entry's scope.
          *  scope == null   iff   this == sentinel
          */
-        public Scope scope;
+        public ScopeImpl scope;
 
-        public Entry(Symbol sym, Entry shadowed, Entry sibling, Scope scope) {
+        public Entry(Symbol sym, Entry shadowed, Entry sibling, ScopeImpl scope) {
             this.sym = sym;
             this.shadowed = shadowed;
             this.sibling = sibling;

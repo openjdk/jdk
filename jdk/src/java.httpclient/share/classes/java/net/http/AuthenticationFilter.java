@@ -189,7 +189,7 @@ class AuthenticationFilter implements HeaderFilter {
         }
 
         boolean proxy = status == PROXY_UNAUTHORIZED;
-        String authname = proxy ? "Proxy-Authentication" : "WWW-Authenticate";
+        String authname = proxy ? "Proxy-Authenticate" : "WWW-Authenticate";
         String authval = hdrs.firstValue(authname).orElseThrow(() -> {
             return new IOException("Invalid auth header");
         });

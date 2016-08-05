@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6827032
  * @summary Color chooser with drag enabled shouldn't throw NPE
  * @author Peter Zhelezniakov

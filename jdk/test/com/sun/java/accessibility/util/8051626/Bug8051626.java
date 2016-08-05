@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8051626
  * @summary Ensure no failure when using Java Accessibility Utility with security manager
  * @modules java.desktop jdk.accessibility

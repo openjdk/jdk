@@ -32,11 +32,17 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.events.XMLEvent;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLEventReaderTest.Issue40Test
+ * @run testng/othervm stream.XMLEventReaderTest.Issue40Test
  * @summary Test XMLEventReader.getElementText() works after calling peek().
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Issue40Test {
 
     public java.io.File input;
@@ -94,3 +100,4 @@ public class Issue40Test {
     }
 
 }
+

@@ -266,6 +266,12 @@ abstract class XDecoratedPeer extends XWindowPeer {
         return new Insets(i.top, i.left, i.bottom, i.right);
     }
 
+    private Insets copyAndScaleDown(Insets i) {
+        return new Insets(scaleDown(i.top), scaleDown(i.left),
+                          scaleDown(i.bottom), scaleDown(i.right));
+    }
+
+
     // insets which we get from WM (e.g from _NET_FRAME_EXTENTS)
     private Insets wm_set_insets;
 
@@ -289,7 +295,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
         }
 
         if (wm_set_insets != null) {
-            wm_set_insets = copy(wm_set_insets);
+            wm_set_insets = copyAndScaleDown(wm_set_insets);
         }
         return wm_set_insets;
     }
@@ -386,6 +392,9 @@ abstract class XDecoratedPeer extends XWindowPeer {
                     }
                 } else {
                     correctWM = XWM.getWM().getInsets(this, xe.get_window(), xe.get_parent());
+                    if (correctWM != null) {
+                        correctWM = copyAndScaleDown(correctWM);
+                    }
 
                     if (insLog.isLoggable(PlatformLogger.Level.FINER)) {
                         if (correctWM != null) {
@@ -470,6 +479,9 @@ abstract class XDecoratedPeer extends XWindowPeer {
                 Insets res = getWMSetInsets(null);
                 if (res == null) {
                     res = XWM.getWM().guessInsets(this);
+                    if (res != null) {
+                        res = copyAndScaleDown(res);
+                    }
                 }
                 return res;
             }
@@ -756,7 +768,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
                 }
             }
             if (correctWM != null) {
-                handleCorrectInsets(correctWM);
+                handleCorrectInsets(copyAndScaleDown(correctWM));
             } else {
                 //Only one attempt to correct insets is made (to lower risk)
                 //if insets are still not available we simply set the flag

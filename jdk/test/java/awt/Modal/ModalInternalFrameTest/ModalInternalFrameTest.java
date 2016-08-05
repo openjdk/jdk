@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 6518753
   @summary Tests the functionality of modal Swing internal frames
   @author artem.ananiev: area=awt.modal

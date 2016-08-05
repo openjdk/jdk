@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 4697612 6244705
  * @author Peter Zhelezniakov
  * @library ../../regtesthelpers

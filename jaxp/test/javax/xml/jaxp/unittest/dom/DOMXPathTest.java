@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,19 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.DOMImplementation;
 
 /*
+ * @test
  * @bug 8042244
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true dom.DOMXPathTest
+ * @run testng/othervm dom.DOMXPathTest
  * @summary Verifies that the experimental DOM L3 XPath implementation is no longer available.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class DOMXPathTest {
     /*
        Verifies that DOMImplementation::hasFeature returns false and getFeature
@@ -48,3 +54,4 @@ public class DOMXPathTest {
         Assert.assertEquals(domImpl.getFeature("+XPath", "3.0"), null);
     }
 }
+

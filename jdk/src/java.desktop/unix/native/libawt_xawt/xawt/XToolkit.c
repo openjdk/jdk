@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,11 +122,7 @@ Java_sun_awt_X11_XToolkit_initIDs
 JNIEXPORT jlong JNICALL Java_sun_awt_X11_XToolkit_getTrayIconDisplayTimeout
   (JNIEnv *env, jclass clazz)
 {
-#ifndef JAVASE_EMBEDDED
     return (jlong) 2000;
-#else
-    return (jlong) 10000;
-#endif
 }
 
 /*
@@ -369,12 +365,7 @@ static uint32_t get_poll_timeout(jlong nextTaskTime);
 #define AWT_READPIPE            (awt_pipe_fds[0])
 #define AWT_WRITEPIPE           (awt_pipe_fds[1])
 
-#ifdef JAVASE_EMBEDDED
-  #define DEF_AWT_MAX_POLL_TIMEOUT ((uint32_t)4000000000) /* milliseconds */
-#else
-  #define DEF_AWT_MAX_POLL_TIMEOUT ((uint32_t)500) /* milliseconds */
-#endif
-
+#define DEF_AWT_MAX_POLL_TIMEOUT ((uint32_t)500) /* milliseconds */
 #define DEF_AWT_FLUSH_TIMEOUT ((uint32_t)100) /* milliseconds */
 #define AWT_MIN_POLL_TIMEOUT ((uint32_t)0) /* milliseconds */
 
@@ -391,11 +382,7 @@ static uint32_t get_poll_timeout(jlong nextTaskTime);
 
 // Static fields
 
-#ifdef JAVASE_EMBEDDED
-  static int          awt_poll_alg = AWT_POLL_AGING_FAST;
-#else
-  static int          awt_poll_alg = AWT_POLL_AGING_SLOW;
-#endif
+static int          awt_poll_alg = AWT_POLL_AGING_SLOW;
 
 static uint32_t AWT_FLUSH_TIMEOUT  =  DEF_AWT_FLUSH_TIMEOUT; /* milliseconds */
 static uint32_t AWT_MAX_POLL_TIMEOUT = DEF_AWT_MAX_POLL_TIMEOUT; /* milliseconds */
@@ -1021,9 +1008,9 @@ int32_t getNumButtons() {
      * before calling XTestFakeButtonEvent().
      */
     xinputAvailable = XQueryExtension(awt_display, INAME, &major_opcode, &first_event, &first_error);
-    DTRACE_PRINTLN3("RobotPeer: XQueryExtension(XINPUT) returns major_opcode = %d, first_event = %d, first_error = %d",
-                    major_opcode, first_event, first_error);
     if (xinputAvailable) {
+        DTRACE_PRINTLN3("RobotPeer: XQueryExtension(XINPUT) returns major_opcode = %d, first_event = %d, first_error = %d",
+                        major_opcode, first_event, first_error);
         devices = XListInputDevices(awt_display, &numDevices);
         for (devIdx = 0; devIdx < numDevices; devIdx++) {
             aDevice = &(devices[devIdx]);

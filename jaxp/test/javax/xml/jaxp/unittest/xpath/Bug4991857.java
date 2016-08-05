@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,20 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 
 
 /*
+ * @test
  * @bug 4991857
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true xpath.Bug4991857
+ * @run testng/othervm xpath.Bug4991857
  * @summary XPath.evaluate(...) throws XPathExpressionException when context is null and expression refers to the context.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug4991857 {
 
     Document d = null;
@@ -86,3 +92,4 @@ public class Bug4991857 {
         }
     }
 }
+

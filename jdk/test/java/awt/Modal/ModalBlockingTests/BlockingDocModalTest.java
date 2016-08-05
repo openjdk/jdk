@@ -28,6 +28,7 @@ import static jdk.testlibrary.Asserts.*;
 
 /*
  * @test
+ * @key headful
  * @bug 8049617
  * @summary Test if a document modality works as expected:
  *          whether all the windows lying down the document root

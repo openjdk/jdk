@@ -40,6 +40,7 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
 
 /**
  * @test
+ * @key headful
  * @bug 8073795
  * @summary JMenuBar has incorrect border when the window is on retina display.
  * @author Sergey Bylokhov

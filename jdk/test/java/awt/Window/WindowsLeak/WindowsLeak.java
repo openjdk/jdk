@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8013563 8028486
  * @summary Tests that windows are removed from windows list
  * @library /javax/swing/regtesthelpers

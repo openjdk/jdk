@@ -21,14 +21,15 @@
  * questions.
  */
 /*
-@test
-@bug 6515446
-@summary JMenuItems in JPopupMenus not receiving ActionEvents - incompat with 1.5
-@author Alexander Potochkin
-@library ../../../../lib/testlibrary
-@build ExtendedRobot
-@run main bug6515446
-*/
+ * @test
+ * @key headful
+ * @bug 6515446
+ * @summary JMenuItems in JPopupMenus not receiving ActionEvents - incompat with 1.5
+ * @author Alexander Potochkin
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot
+ * @run main bug6515446
+ */
 
 import javax.swing.*;
 import java.awt.event.*;

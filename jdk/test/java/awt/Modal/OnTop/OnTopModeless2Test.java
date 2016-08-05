@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8052012
  * @summary Check whether a modeless Dialog created with a
  *          null Dialog constructor follows normal Z Order.

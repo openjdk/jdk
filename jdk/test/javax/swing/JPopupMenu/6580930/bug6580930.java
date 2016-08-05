@@ -21,14 +21,15 @@
  * questions.
  */
 /*
-@test
-@bug 6580930 7184956
-@summary Swing Popups should overlap taskbar
-@author Alexander Potochkin
-@library ../../../../lib/testlibrary
-@build ExtendedRobot
-@run main bug6580930
-*/
+ * @test
+ * @key headful
+ * @bug 6580930 7184956
+ * @summary Swing Popups should overlap taskbar
+ * @author Alexander Potochkin
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot
+ * @run main bug6580930
+ */
 
 import javax.swing.*;
 import java.awt.*;

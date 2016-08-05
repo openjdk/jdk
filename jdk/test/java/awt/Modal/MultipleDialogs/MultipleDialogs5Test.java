@@ -23,9 +23,10 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8054358
  * @summary This is a simple check if a chain of dialogs having different
-  *         modality types block each other properly.
+ *          modality types block each other properly.
  *
  * @library ../helpers ../../../../lib/testlibrary/
  * @build ExtendedRobot

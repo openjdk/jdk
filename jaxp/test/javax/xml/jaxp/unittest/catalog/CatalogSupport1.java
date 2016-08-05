@@ -23,8 +23,12 @@
 
 package catalog;
 
+import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+
 import java.io.File;
 import java.io.StringReader;
+
 import javax.xml.catalog.CatalogFeatures.Feature;
 import javax.xml.transform.Source;
 import javax.xml.transform.URIResolver;
@@ -32,15 +36,21 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
+
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.InputSource;
 
 /*
+ * @test
  * @bug 8158084 8162438 8162442
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true catalog.CatalogSupport1
+ * @run testng/othervm catalog.CatalogSupport1
  * @summary extends CatalogSupport, verifies that the catalog file can be set
  * using the System property.
  */
@@ -51,6 +61,7 @@ import org.xml.sax.InputSource;
  *
  * @author huizhe.wang@oracle.com
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class CatalogSupport1 extends CatalogSupportBase {
     /*
      * Initializing fields
@@ -58,12 +69,12 @@ public class CatalogSupport1 extends CatalogSupportBase {
     @BeforeClass
     public void setUpClass() throws Exception {
         setUp();
-        System.setProperty(Feature.FILES.getPropertyName(), xml_catalog);
+        setSystemProperty(Feature.FILES.getPropertyName(), xml_catalog);
     }
 
     @AfterClass
     public void tearDownClass() throws Exception {
-        System.clearProperty(Feature.FILES.getPropertyName());
+        clearSystemProperty(Feature.FILES.getPropertyName());
     }
 
     /*
@@ -149,7 +160,7 @@ public class CatalogSupport1 extends CatalogSupportBase {
        Data: set use_catalog, use_catalog, catalog file, xml file, handler, expected result string
      */
     @DataProvider(name = "data_SAXC")
-    Object[][] getDataSAXC() {
+    public Object[][] getDataSAXC() {
         return new Object[][]{
             {false, true, null, xml_system, new MyHandler(elementInSystem), expectedWCatalog}
 
@@ -161,7 +172,7 @@ public class CatalogSupport1 extends CatalogSupportBase {
        Data: set use_catalog, use_catalog, catalog file, xml file, handler, expected result string
      */
     @DataProvider(name = "data_XIC")
-    Object[][] getDataXIC() {
+    public Object[][] getDataXIC() {
         return new Object[][]{
             {false, true, null, xml_xInclude, new MyHandler(elementInXISimple), contentInUIutf8Catalog},
         };
@@ -172,7 +183,7 @@ public class CatalogSupport1 extends CatalogSupportBase {
        Data: set use_catalog, use_catalog, catalog file, xml file, handler, expected result string
      */
     @DataProvider(name = "data_DOMC")
-    Object[][] getDataDOMC() {
+    public Object[][] getDataDOMC() {
         return new Object[][]{
             {false, true, null, xml_system, new MyHandler(elementInSystem), expectedWCatalog}
         };
@@ -183,7 +194,7 @@ public class CatalogSupport1 extends CatalogSupportBase {
        Data: set use_catalog, use_catalog, catalog file, xsd file, a LSResourceResolver
      */
     @DataProvider(name = "data_SchemaC")
-    Object[][] getDataSchemaC() {
+    public Object[][] getDataSchemaC() {
 
         return new Object[][]{
             // for resolving DTD in xsd
@@ -201,7 +212,7 @@ public class CatalogSupport1 extends CatalogSupportBase {
        Data: source, resolver1, resolver2, catalog1, a catalog2
      */
     @DataProvider(name = "data_ValidatorC")
-    Object[][] getDataValidator() {
+    public Object[][] getDataValidator() {
         DOMSource ds = getDOMSource(xml_val_test, xml_val_test_id, false, true, null);
 
         SAXSource ss = new SAXSource(new InputSource(xml_val_test));
@@ -242,7 +253,7 @@ public class CatalogSupport1 extends CatalogSupportBase {
        Data: set use_catalog, use_catalog, catalog file, xsl file, xml file, a URIResolver, expected
      */
     @DataProvider(name = "data_XSLC")
-    Object[][] getDataXSLC() {
+    public Object[][] getDataXSLC() {
         SAXSource xslSourceDTD = new SAXSource(new InputSource(new StringReader(xsl_includeDTD)));
         StreamSource xmlSourceDTD = new StreamSource(new StringReader(xml_xslDTD));
 
@@ -257,3 +268,4 @@ public class CatalogSupport1 extends CatalogSupportBase {
     }
 
 }
+

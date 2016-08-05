@@ -23,13 +23,15 @@
  * questions.
  */
 
-/* @test
-   @bug 6274267
-   @summary Checks that ScrollPaneLayout properly calculates preferred
-   layout size.
-   @author Mikhail Lapshin
-   @run main bug6274267
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 6274267
+ * @summary Checks that ScrollPaneLayout properly calculates preferred
+ * layout size.
+ * @author Mikhail Lapshin
+ * @run main bug6274267
+ */
 
 import javax.swing.*;
 import java.awt.*;

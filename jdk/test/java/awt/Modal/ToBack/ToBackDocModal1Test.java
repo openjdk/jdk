@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8054143
  * @summary Check if toBack method works correctly for
  *          a document modal dialog with null Frame parent.

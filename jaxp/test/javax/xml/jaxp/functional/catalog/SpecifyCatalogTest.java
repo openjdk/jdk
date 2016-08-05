@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 package catalog;
 
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+
 import static catalog.CatalogTestUtils.FEATURE_FILES;
 import static catalog.CatalogTestUtils.catalogResolver;
 import static catalog.CatalogTestUtils.catalogUriResolver;
@@ -36,15 +38,18 @@ import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogResolver;
 import javax.xml.catalog.CatalogUriResolver;
 
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8077931
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true catalog.SpecifyCatalogTest
+ * @run testng/othervm catalog.SpecifyCatalogTest
  * @summary This case tests how to specify the catalog files.
- * @compile ../../libs/catalog/CatalogTestUtils.java
- * @compile ../../libs/catalog/ResolutionChecker.java
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class SpecifyCatalogTest {
 
     private static final String ID_URI = "http://remote/dtd/uri/doc.dtd";
@@ -76,7 +81,7 @@ public class SpecifyCatalogTest {
      */
     @Test
     public void specifyCatalogViaSysProps() {
-        System.setProperty(FEATURE_FILES,
+        setSystemProperty(FEATURE_FILES,
                 getCatalogPath("specifyCatalog-sysProps.xml"));
 
         checkResolutionOnEntityResolver(catalogResolver((String[]) null),
@@ -106,3 +111,4 @@ public class SpecifyCatalogTest {
         return builder().with(FILES, getCatalogPath(catalogName)).build();
     }
 }
+

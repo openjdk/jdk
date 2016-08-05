@@ -158,7 +158,7 @@ public class Start extends ToolOption.Helper {
         if (log instanceof Messager)
             messager = (Messager) log;
         else {
-            PrintWriter out = context.get(Log.outKey);
+            PrintWriter out = context.get(Log.errKey);
             messager = (out == null) ? new Messager(context, javadocName)
                     : new Messager(context, javadocName, out, out, out);
         }

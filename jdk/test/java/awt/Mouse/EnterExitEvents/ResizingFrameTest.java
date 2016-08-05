@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 7154048
  * @summary Programmatically resized  window does not receive mouse entered/exited events
  * @author  alexandr.scherbatiy area=awt.event

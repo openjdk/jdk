@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8054143
  * @summary Check whether a modeless dialog having a null Dialog constructor
  *          goes behind other windows when toBack is called for it.

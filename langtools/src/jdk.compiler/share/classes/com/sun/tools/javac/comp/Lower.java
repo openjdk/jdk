@@ -52,6 +52,7 @@ import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Symbol.OperatorSymbol.AccessCode.DEREF;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
+import static com.sun.tools.javac.tree.JCTree.JCOperatorExpression.OperandPos.LEFT;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /** This pass translates away some syntactic sugar: inner classes,
@@ -850,12 +851,9 @@ public class Lower extends TreeTranslator {
         else if (enclOp.hasTag(ASSIGN) &&
                  tree == TreeInfo.skipParens(((JCAssign) enclOp).lhs))
             return AccessCode.ASSIGN.code;
-        else if (enclOp.getTag().isIncOrDecUnaryOp() &&
-                 tree == TreeInfo.skipParens(((JCUnary) enclOp).arg))
-            return (((JCUnary) enclOp).operator).getAccessCode(enclOp.getTag());
-        else if (enclOp.getTag().isAssignop() &&
-                 tree == TreeInfo.skipParens(((JCAssignOp) enclOp).lhs))
-            return (((JCAssignOp) enclOp).operator).getAccessCode(enclOp.getTag());
+        else if ((enclOp.getTag().isIncOrDecUnaryOp() || enclOp.getTag().isAssignop()) &&
+                tree == TreeInfo.skipParens(((JCOperatorExpression) enclOp).getOperand(LEFT)))
+            return (((JCOperatorExpression) enclOp).operator).getAccessCode(enclOp.getTag());
         else
             return AccessCode.DEREF.code;
     }

@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8043126 8145116
  * @summary Check whether
  *          1. correct extended modifiers are returned

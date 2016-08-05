@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8025082
  * @summary The behaviour of the highlight will be lost after clicking the set
  * button.

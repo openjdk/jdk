@@ -54,7 +54,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 TOOLCHAIN_MINIMUM_VERSION_clang="3.2"
 TOOLCHAIN_MINIMUM_VERSION_gcc="4.3"
 TOOLCHAIN_MINIMUM_VERSION_microsoft=""
-TOOLCHAIN_MINIMUM_VERSION_solstudio="5.12"
+TOOLCHAIN_MINIMUM_VERSION_solstudio="5.13"
 TOOLCHAIN_MINIMUM_VERSION_xlc=""
 
 # Prepare the system so that TOOLCHAIN_CHECK_COMPILER_VERSION can be called.
@@ -312,8 +312,12 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
 # Restore path, etc
 AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
 [
-  # Restore old path.
-  PATH="$OLD_PATH"
+  # Restore old path, except for the microsoft toolchain, which requires VS_PATH
+  # to remain in place. Otherwise the compiler will not work in some siutations
+  # in later configure checks.
+  if test "x$TOOLCHAIN_TYPE" != "xmicrosoft"; then
+    PATH="$OLD_PATH"
+  fi
 
   # Restore the flags to the user specified values.
   # This is necessary since AC_PROG_CC defaults CFLAGS to "-g -O2"
@@ -831,6 +835,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     BUILD_SYSROOT_CFLAGS="$SYSROOT_CFLAGS"
     BUILD_SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS"
     BUILD_AR="$AR"
+    
+    TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS([], [OPENJDK_BUILD_])
   fi
 
   AC_SUBST(BUILD_CC)
