@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001, 2002,2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -20,15 +20,14 @@
 
 package com.sun.org.apache.xerces.internal.util;
 
+import com.sun.org.apache.xerces.internal.impl.Constants;
+import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
+import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import com.sun.org.apache.xerces.internal.impl.Constants;
-import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
-import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 
 /**
  * This class implements the basic operations for managing parser
@@ -87,12 +86,12 @@ public class ParserConfigurationSettings
     public ParserConfigurationSettings(XMLComponentManager parent) {
 
         // create storage for recognized features and properties
-        fRecognizedFeatures = new HashSet<String>();
-        fRecognizedProperties = new HashSet<String>();
+        fRecognizedFeatures = new HashSet<>();
+        fRecognizedProperties = new HashSet<>();
 
         // create table for features and properties
-        fFeatures = new HashMap<String, Boolean>();
-        fProperties = new HashMap<String, Object>();
+        fFeatures = new HashMap<>();
+        fProperties = new HashMap<>();
 
         // save parent
         fParentSettings = parent;
@@ -195,6 +194,7 @@ public class ParserConfigurationSettings
      *                                   it is <strong>really</strong>
      *                                   a critical error.
      */
+    @Override
     public final boolean getFeature(String featureId)
         throws XMLConfigurationException {
 
@@ -205,6 +205,7 @@ public class ParserConfigurationSettings
         return state.state;
     } // getFeature(String):boolean
 
+    @Override
     public final boolean getFeature(String featureId, boolean defaultValue) {
         FeatureState state = getFeatureState(featureId);
         if (state.isExceptional()) {
@@ -213,8 +214,9 @@ public class ParserConfigurationSettings
         return state.state;
     }
 
+    @Override
     public FeatureState getFeatureState(String featureId) {
-        Boolean state = (Boolean) fFeatures.get(featureId);
+        Boolean state = fFeatures.get(featureId);
 
         if (state == null) {
             FeatureState checkState = checkFeature(featureId);
@@ -238,6 +240,7 @@ public class ParserConfigurationSettings
      *                                   it is <strong>really</strong>
      *                                   a critical error.
      */
+    @Override
     public final Object getProperty(String propertyId)
         throws XMLConfigurationException {
 
@@ -249,6 +252,7 @@ public class ParserConfigurationSettings
         return state.state;
     } // getProperty(String):Object
 
+    @Override
     public final Object getProperty(String propertyId, Object defaultValue) {
         PropertyState state = getPropertyState(propertyId);
         if (state.isExceptional()) {
@@ -258,6 +262,7 @@ public class ParserConfigurationSettings
         return state.state;
     }
 
+    @Override
     public PropertyState getPropertyState(String propertyId) {
         Object propertyValue = fProperties.get(propertyId);
 
@@ -307,6 +312,7 @@ public class ParserConfigurationSettings
      *
      * @param propertyId The unique identifier (URI) of the property
      *                   being set.
+     * @return the PropertyState
      * @exception com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException If the
      *            requested feature is not known.
      */

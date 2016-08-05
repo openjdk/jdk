@@ -95,13 +95,6 @@ public interface ResourcePool {
     public ByteOrder byteOrder();
 
     /**
-     * Release properties such as OS, CPU name, version etc.
-     *
-     * @return the release properties
-     */
-    public Map<String, String> releaseProperties();
-
-    /**
      * Visit each ResourcePoolEntry in this ResourcePool to transform it and copy
      * the transformed ResourcePoolEntry to the output ResourcePoolBuilder.
      *

@@ -62,7 +62,7 @@ import org.xml.sax.helpers.AttributesImpl;
 
 /*
  * @summary Transformer Tests
- * @bug 6272879 6305029 6505031 8150704
+ * @bug 6272879 6305029 6505031 8150704 8162598
  */
 public class TransformerTest {
     private Transformer createTransformer() throws TransformerException {
@@ -108,6 +108,41 @@ public class TransformerTest {
                 sb.append(line).append("\n");
             }
             return sb.toString();
+        }
+    }
+
+    /**
+     * Utility method for testBug8162598().
+     * Provides a convenient way to check/assert the expected namespaces
+     * of a Node and its siblings.
+     *
+     * @param test
+     * The node to check
+     * @param nstest
+     * Expected namespace of the node
+     * @param nsb
+     * Expected namespace of the first sibling
+     * @param nsc
+     * Expected namespace of the first sibling of the first sibling
+     */
+    private void checkNodeNS8162598(Node test, String nstest, String nsb, String nsc) {
+        String testNodeName = test.getNodeName();
+        if (nstest == null) {
+            Assert.assertNull(test.getNamespaceURI(), "unexpected namespace for " + testNodeName);
+        } else {
+            Assert.assertEquals(test.getNamespaceURI(), nstest, "unexpected namespace for " + testNodeName);
+        }
+        Node b = test.getChildNodes().item(0);
+        if (nsb == null) {
+            Assert.assertNull(b.getNamespaceURI(), "unexpected namespace for " + testNodeName + "->b");
+        } else {
+            Assert.assertEquals(b.getNamespaceURI(), nsb, "unexpected namespace for " + testNodeName + "->b");
+        }
+        Node c = b.getChildNodes().item(0);
+        if (nsc == null) {
+            Assert.assertNull(c.getNamespaceURI(), "unexpected namespace for " + testNodeName + "->b->c");
+        } else {
+            Assert.assertEquals(c.getNamespaceURI(), nsc, "unexpected namespace for " + testNodeName + "->b->c");
         }
     }
 
@@ -249,22 +284,19 @@ public class TransformerTest {
                 "  </test>" + LINE_SEPARATOR +
                 "</XMLUtils>";
 
-        Document document;
-        Node node;
-
         System.out.println("Stylesheet:");
-        System.out.println("==================================");
+        System.out.println("=============================");
         System.out.println(xsl);
         System.out.println();
 
-        System.out.println("Source file before transformation:");
-        System.out.println("==================================");
+        System.out.println("Source before transformation:");
+        System.out.println("=============================");
         System.out.println(sourceXml);
         System.out.println();
 
-        System.out.println("Source file after transformation:");
-        System.out.println("=================================");
-        document = transformInputStreamToDocument(createTransformerFromInputstream(new ByteArrayInputStream(xsl.getBytes())),
+        System.out.println("Result after transformation:");
+        System.out.println("============================");
+        Document document = transformInputStreamToDocument(createTransformerFromInputstream(new ByteArrayInputStream(xsl.getBytes())),
             new ByteArrayInputStream(sourceXml.getBytes()));
         OutputFormat format = new OutputFormat();
         format.setIndenting(true);
@@ -274,9 +306,8 @@ public class TransformerTest {
         System.out.println("Node content for element valeur2:");
         System.out.println("=================================");
         NodeList nodes = document.getElementsByTagName("valeur2");
-        nodes = document.getElementsByTagName("valeur2");
         for (int i = 0; i < nodes.getLength(); i++) {
-            node = nodes.item(i);
+            Node node = nodes.item(i);
             System.out.println("  Node value: " + node.getFirstChild().getNodeValue());
             System.out.println("  Node attribute: " + node.getAttributes().item(0).getNodeValue());
 
@@ -340,5 +371,63 @@ public class TransformerTest {
         reference = getFileContentAsString(new File(getClass().getResource("Bug8150704-2.ref").getPath()));
         Assert.assertEquals(resultstring, reference, "Output of transformation of Bug8150704-2.xml does not match reference");
         System.out.println("Passed.");
+    }
+
+    /*
+     * @bug 8162598
+     * @summary Test XSLTC handling of namespaces, especially empty namespace definitions to reset the
+     *          default namespace
+     */
+    @Test
+    public final void testBug8162598() throws IOException, TransformerException {
+        final String LINE_SEPARATOR = System.getProperty("line.separator");
+
+        final String xsl =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + LINE_SEPARATOR +
+            "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">" + LINE_SEPARATOR +
+            "    <xsl:template match=\"/\">" + LINE_SEPARATOR +
+            "        <root xmlns=\"ns1\">" + LINE_SEPARATOR +
+            "            <xsl:call-template name=\"transform\"/>" + LINE_SEPARATOR +
+            "        </root>" + LINE_SEPARATOR +
+            "    </xsl:template>" + LINE_SEPARATOR +
+            "    <xsl:template name=\"transform\">" + LINE_SEPARATOR +
+            "        <test1 xmlns=\"ns2\"><b xmlns=\"ns2\"><c xmlns=\"\"></c></b></test1>" + LINE_SEPARATOR +
+            "        <test2 xmlns=\"ns1\"><b xmlns=\"ns2\"><c xmlns=\"\"></c></b></test2>" + LINE_SEPARATOR +
+            "        <test3><b><c xmlns=\"\"></c></b></test3>" + LINE_SEPARATOR +
+            "        <test4 xmlns=\"\"><b><c xmlns=\"\"></c></b></test4>" + LINE_SEPARATOR +
+            "        <test5 xmlns=\"ns1\"><b><c xmlns=\"\"></c></b></test5>" + LINE_SEPARATOR +
+            "        <test6 xmlns=\"\"/>" + LINE_SEPARATOR +
+            "    </xsl:template>" + LINE_SEPARATOR +
+            "</xsl:stylesheet>";
+
+
+        final String sourceXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?><aaa></aaa>" + LINE_SEPARATOR;
+
+        System.out.println("Stylesheet:");
+        System.out.println("=============================");
+        System.out.println(xsl);
+        System.out.println();
+
+        System.out.println("Source before transformation:");
+        System.out.println("=============================");
+        System.out.println(sourceXml);
+        System.out.println();
+
+        System.out.println("Result after transformation:");
+        System.out.println("============================");
+        Document document = transformInputStreamToDocument(
+            createTransformerFromInputstream(new ByteArrayInputStream(xsl.getBytes())),
+                                             new ByteArrayInputStream(sourceXml.getBytes()));
+        OutputFormat format = new OutputFormat();
+        format.setIndenting(true);
+        new XMLSerializer(System.out, format).serialize(document);
+        System.out.println();
+        checkNodeNS8162598(document.getElementsByTagName("test1").item(0), "ns2", "ns2", null);
+        checkNodeNS8162598(document.getElementsByTagName("test2").item(0), "ns1", "ns2", null);
+        checkNodeNS8162598(document.getElementsByTagName("test3").item(0), null, null, null);
+        checkNodeNS8162598(document.getElementsByTagName("test4").item(0), null, null, null);
+        checkNodeNS8162598(document.getElementsByTagName("test5").item(0), "ns1", "ns1", null);
+        Assert.assertNull(document.getElementsByTagName("test6").item(0).getNamespaceURI(), "unexpected namespace for test6");
     }
 }

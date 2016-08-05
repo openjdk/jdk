@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -47,6 +47,9 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDScanner;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentScanner;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLPullParserConfiguration;
+import javax.xml.XMLConstants;
+import javax.xml.catalog.CatalogFeatures;
+import jdk.xml.internal.JdkXmlUtils;
 
 /**
  * This is the non validating parser configuration. It extends the basic
@@ -281,8 +284,8 @@ public class NonValidatingConfiguration
 
         // add default recognized features
         final String[] recognizedFeatures = {
-                PARSER_SETTINGS,
-                        NAMESPACES,
+            PARSER_SETTINGS,
+            NAMESPACES,
             //WARN_ON_DUPLICATE_ATTDEF,     // from XMLDTDScannerImpl
             //WARN_ON_UNDECLARED_ELEMDEF,   // from XMLDTDScannerImpl
             //ALLOW_JAVA_ENCODINGS,         // from XMLEntityManager
@@ -291,6 +294,7 @@ public class NonValidatingConfiguration
             //NOTIFY_BUILTIN_REFS,  // from XMLDocumentFragmentScannerImpl
             //NOTIFY_CHAR_REFS,         // from XMLDocumentFragmentScannerImpl
             //WARN_ON_DUPLICATE_ENTITYDEF   // from XMLEntityManager
+            XMLConstants.USE_CATALOG
         };
         addRecognizedFeatures(recognizedFeatures);
 
@@ -299,12 +303,13 @@ public class NonValidatingConfiguration
         //setFeature(WARN_ON_UNDECLARED_ELEMDEF, false);    // from XMLDTDScannerImpl
         //setFeature(ALLOW_JAVA_ENCODINGS, false);      // from XMLEntityManager
         fFeatures.put(CONTINUE_AFTER_FATAL_ERROR, Boolean.FALSE);
-                fFeatures.put(PARSER_SETTINGS, Boolean.TRUE);
-                fFeatures.put(NAMESPACES, Boolean.TRUE);
+        fFeatures.put(PARSER_SETTINGS, Boolean.TRUE);
+        fFeatures.put(NAMESPACES, Boolean.TRUE);
         //setFeature(LOAD_EXTERNAL_DTD, true);      // from XMLDTDScannerImpl
         //setFeature(NOTIFY_BUILTIN_REFS, false);   // from XMLDocumentFragmentScannerImpl
         //setFeature(NOTIFY_CHAR_REFS, false);      // from XMLDocumentFragmentScannerImpl
         //setFeature(WARN_ON_DUPLICATE_ENTITYDEF, false);   // from XMLEntityManager
+        fFeatures.put(XMLConstants.USE_CATALOG, JdkXmlUtils.USE_CATALOG_DEFAULT);
 
         // add default recognized properties
         final String[] recognizedProperties = {
@@ -319,7 +324,11 @@ public class NonValidatingConfiguration
             VALIDATION_MANAGER,
             LOCALE,
             SECURITY_MANAGER,
-            XML_SECURITY_PROPERTY_MANAGER
+            XML_SECURITY_PROPERTY_MANAGER,
+            JdkXmlUtils.CATALOG_DEFER,
+            JdkXmlUtils.CATALOG_FILES,
+            JdkXmlUtils.CATALOG_PREFER,
+            JdkXmlUtils.CATALOG_RESOLVE
         };
         addRecognizedProperties(recognizedProperties);
 
@@ -377,6 +386,11 @@ public class NonValidatingConfiguration
         }
 
         setProperty(XML_SECURITY_PROPERTY_MANAGER, new XMLSecurityPropertyManager());
+
+        // Initialize Catalog features
+        for( CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
+            setProperty(f.getPropertyName(), null);
+        }
     } // <init>(SymbolTable,XMLGrammarPool)
 
     //

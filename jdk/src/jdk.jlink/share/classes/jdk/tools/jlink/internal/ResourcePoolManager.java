@@ -50,10 +50,22 @@ import jdk.tools.jlink.internal.plugins.FileCopierPlugin;
  * A manager for pool of resources.
  */
 public class ResourcePoolManager {
+    // utility to read ModuleDescriptor of the given ResourcePoolModule
+    static ModuleDescriptor readModuleDescriptor(ResourcePoolModule mod) {
+        String p = "/" + mod.name() + "/module-info.class";
+        Optional<ResourcePoolEntry> content = mod.findEntry(p);
+        if (!content.isPresent()) {
+              throw new PluginException("No module-info for " + mod.name()
+                      + " module");
+        }
+        ByteBuffer bb = ByteBuffer.wrap(content.get().contentBytes());
+        return ModuleDescriptor.read(bb);
+    }
 
     class ResourcePoolModuleImpl implements ResourcePoolModule {
 
         final Map<String, ResourcePoolEntry> moduleContent = new LinkedHashMap<>();
+        // lazily initialized
         private ModuleDescriptor descriptor;
         final String name;
 
@@ -80,14 +92,7 @@ public class ResourcePoolManager {
         @Override
         public ModuleDescriptor descriptor() {
             if (descriptor == null) {
-                String p = "/" + name + "/module-info.class";
-                Optional<ResourcePoolEntry> content = findEntry(p);
-                if (!content.isPresent()) {
-                    throw new PluginException("No module-info for " + name
-                            + " module");
-                }
-                ByteBuffer bb = ByteBuffer.wrap(content.get().contentBytes());
-                descriptor = ModuleDescriptor.read(bb);
+                descriptor = readModuleDescriptor(this);
             }
             return descriptor;
         }
@@ -166,11 +171,6 @@ public class ResourcePoolManager {
             return ResourcePoolManager.this.byteOrder();
         }
 
-        @Override
-        public Map<String, String> releaseProperties() {
-            return ResourcePoolManager.this.releaseProperties();
-        }
-
         public StringTable getStringTable() {
             return ResourcePoolManager.this.getStringTable();
         }
@@ -213,8 +213,6 @@ public class ResourcePoolManager {
 
     private final Map<String, ResourcePoolEntry> resources = new LinkedHashMap<>();
     private final Map<String, ResourcePoolModule> modules = new LinkedHashMap<>();
-    private final ResourcePoolModuleImpl fileCopierModule = new ResourcePoolModuleImpl(FileCopierPlugin.FAKE_MODULE);
-    private Map<String, String> releaseProps = new HashMap<>();
     private final ByteOrder order;
     private final StringTable table;
     private final ResourcePool poolImpl;
@@ -273,11 +271,6 @@ public class ResourcePoolManager {
         }
         String modulename = data.moduleName();
         ResourcePoolModuleImpl m = (ResourcePoolModuleImpl)modules.get(modulename);
-        // ## TODO: FileCopierPlugin should not add content to a module
-        // FAKE_MODULE is not really a module to be added in the image
-        if (FileCopierPlugin.FAKE_MODULE.equals(modulename)) {
-            m = fileCopierModule;
-        }
         if (m == null) {
             m = new ResourcePoolModuleImpl(modulename);
             modules.put(modulename, m);
@@ -389,10 +382,6 @@ public class ResourcePoolManager {
      */
     public ByteOrder byteOrder() {
         return order;
-    }
-
-    public Map<String, String> releaseProperties() {
-        return releaseProps;
     }
 
     public StringTable getStringTable() {
