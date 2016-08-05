@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/macros.hpp"
 
 // VM_Version provides information about the VM.
 
@@ -160,20 +161,6 @@ class Abstract_VM_Version: AllStatic {
   static bool supports_on_spin_wait() { return false; }
 };
 
-#ifdef TARGET_ARCH_x86
-# include "vm_version_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "vm_version_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "vm_version_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "vm_version_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "vm_version_ppc.hpp"
-#endif
+#include CPU_HEADER(vm_version)
 
 #endif // SHARE_VM_RUNTIME_VM_VERSION_HPP

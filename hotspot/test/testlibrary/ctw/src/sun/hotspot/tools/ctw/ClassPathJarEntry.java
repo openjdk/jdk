@@ -50,7 +50,7 @@ public class ClassPathJarEntry extends PathHandler {
 
     @Override
     public void process() {
-        System.out.println("# jar: " + root);
+        CompileTheWorld.OUT.println("# jar: " + root);
         if (!Files.exists(root)) {
             return;
         }

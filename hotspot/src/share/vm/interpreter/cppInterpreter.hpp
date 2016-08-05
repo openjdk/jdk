@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #define SHARE_VM_INTERPRETER_CPPINTERPRETER_HPP
 
 #include "interpreter/abstractInterpreter.hpp"
+#include "utilities/macros.hpp"
+
 #ifdef CC_INTERP
 
 class InterpreterCodelet;
@@ -60,7 +62,7 @@ class CppInterpreter: public AbstractInterpreter {
                          address   entry_point,
                          address   osr_buf,
                          TRAPS);
-#ifdef TARGET_ARCH_zero
+#ifdef ZERO
 # include "cppInterpreter_zero.hpp"
 #endif
 

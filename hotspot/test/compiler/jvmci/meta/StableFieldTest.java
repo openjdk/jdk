@@ -31,18 +31,17 @@
  *          jdk.vm.ci/jdk.vm.ci.hotspot
  *          jdk.vm.ci/jdk.vm.ci.meta
  *          jdk.vm.ci/jdk.vm.ci.runtime
+ *
  * @compile StableFieldTest.java
- * @run main ClassFileInstaller compiler.jvmci.meta.StableFieldTest
+ * @run driver ClassFileInstaller compiler.jvmci.meta.StableFieldTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -Xbootclasspath/a:. compiler.jvmci.meta.StableFieldTest
  */
 
 package compiler.jvmci.meta;
 
-import java.lang.reflect.Field;
 import jdk.internal.vm.annotation.Stable;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.runtime.JVMCI;
 
 public class StableFieldTest {

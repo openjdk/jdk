@@ -26,13 +26,14 @@
  * @bug 8026844
  * @bug 8027353
  * @summary Test constant subtractExact
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @compile SubExactLConstantTest.java Verify.java
- * @run main SubExactLConstantTest
  *
+ * @run main compiler.intrinsics.mathexact.SubExactLConstantTest
  */
+
+package compiler.intrinsics.mathexact;
 
 public class SubExactLConstantTest {
     public static void main(String[] args) {

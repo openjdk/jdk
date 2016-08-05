@@ -22,19 +22,26 @@
  */
 
 
-import java.util.Arrays;
+
 
 /*
  * @test
  * @bug 8159244
- * @requires vm.gc == "Parallel" | vm.gc == "null"
  * @summary Verifies that no partially initialized String object escapes from
  *          C2's String concat optimization in a highly concurrent setting.
  *          This test triggers the bug in about 1 out of 10 runs.
+ * @requires vm.gc == "Parallel" | vm.gc == "null"
+ *
  * @compile -XDstringConcat=inline TestStringObjectInitialization.java
  * @run main/othervm/timeout=300 -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-CompactStrings
- *                               -XX:-UseG1GC -XX:+UseParallelGC TestStringObjectInitialization
+ *                               -XX:-UseG1GC -XX:+UseParallelGC
+ *                               compiler.stringopts.TestStringObjectInitialization
  */
+
+package compiler.stringopts;
+
+import java.util.Arrays;
+
 public class TestStringObjectInitialization {
 
     String myString;
@@ -59,19 +66,19 @@ public class TestStringObjectInitialization {
         // Trigger C2's string concatenation optimization
         add(s + Arrays.toString(sArray) + " const ");
     }
-}
 
-class Runner implements Runnable {
-    private TestStringObjectInitialization test;
+    private static class Runner implements Runnable {
+        private TestStringObjectInitialization test;
 
-    public Runner(TestStringObjectInitialization t) {
-        test = t;
-    }
+        public Runner(TestStringObjectInitialization t) {
+            test = t;
+        }
 
-    public void run(){
-        String[] array = {"a", "b", "c"};
-        for (int i = 0; i < 10000; ++i) {
-            test.run("a", array);
+        public void run() {
+            String[] array = {"a", "b", "c"};
+            for (int i = 0; i < 10000; ++i) {
+                test.run("a", array);
+            }
         }
     }
 }

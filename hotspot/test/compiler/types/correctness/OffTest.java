@@ -24,24 +24,25 @@
 /*
  * @test CorrectnessTest
  * @bug 8038418
- * @library /testlibrary /test/lib
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ *
  * @ignore 8066173
- * @compile execution/TypeConflict.java execution/TypeProfile.java
- *          execution/MethodHandleDelegate.java
- * @build CorrectnessTest
- * @build OffTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/timeout=1200 OffTest
+ * @build compiler.types.correctness.OffTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/timeout=1200 compiler.types.correctness.OffTest
  */
 
+package compiler.types.correctness;
+
+import compiler.types.correctness.scenarios.ProfilingType;
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.ProcessTools;
 import jdk.test.lib.Utils;
+
 import java.util.Random;
-import scenarios.ProfilingType;
 
 public class OffTest {
     private static final String[] OPTIONS = {
@@ -50,8 +51,8 @@ public class OffTest {
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+WhiteBoxAPI",
-            "-XX:CompileCommand=exclude,execution/*::methodNotToCompile",
-            "-XX:CompileCommand=dontinline,scenarios/Scenario::collectReturnType",
+            "-XX:CompileCommand=exclude,compiler.types.correctness.execution.*::methodNotToCompile",
+            "-XX:CompileCommand=dontinline,compiler.types.correctness.scenarios.Scenario::collectReturnType",
             "", // -XX:TypeProfileLevel=?
             "", // -XX:?UseTypeSpeculation
             CorrectnessTest.class.getName(),

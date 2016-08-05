@@ -24,6 +24,9 @@
 /**
  * Worker class that is dynamically loaded/unloaded by TestMethodUnloading.
  */
+
+package compiler.classUnloading.methodUnloading;
+
 public class WorkerClass {
     /**
      * We override hashCode here to be able to access this implementation

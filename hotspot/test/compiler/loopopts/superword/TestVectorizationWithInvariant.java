@@ -22,17 +22,20 @@
  *
  */
 
-import jdk.test.lib.*;
-import jdk.internal.misc.Unsafe;
-
 /**
  * @test
  * @bug 8078497
  * @summary Tests correct alignment of vectors with loop invariant offset.
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary
- * @run main TestVectorizationWithInvariant
+ * @run main compiler.loopopts.superword.TestVectorizationWithInvariant
  */
+
+package compiler.loopopts.superword;
+
+import jdk.internal.misc.Unsafe;
+import jdk.test.lib.Utils;
+
 public class TestVectorizationWithInvariant {
 
     private static Unsafe unsafe;

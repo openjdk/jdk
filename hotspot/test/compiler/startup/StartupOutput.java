@@ -28,18 +28,24 @@
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc
  *          java.management
+ *
+ * @run driver compiler.startup.StartupOutput
  */
-import jdk.test.lib.*;
+
+package compiler.startup;
+
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
 
 public class StartupOutput {
-  public static void main(String[] args) throws Exception {
-    ProcessBuilder pb;
-    OutputAnalyzer out;
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb;
+        OutputAnalyzer out;
 
-    pb = ProcessTools.createJavaProcessBuilder("-Xint", "-XX:+DisplayVMOutputToStdout", "-version");
-    out = new OutputAnalyzer(pb.start());
-    out.shouldNotContain("no space to run compilers");
+        pb = ProcessTools.createJavaProcessBuilder("-Xint", "-XX:+DisplayVMOutputToStdout", "-version");
+        out = new OutputAnalyzer(pb.start());
+        out.shouldNotContain("no space to run compilers");
 
-    out.shouldHaveExitValue(0);
-  }
+        out.shouldHaveExitValue(0);
+    }
 }

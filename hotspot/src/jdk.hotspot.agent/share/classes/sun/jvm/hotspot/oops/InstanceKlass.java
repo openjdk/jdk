@@ -242,7 +242,15 @@ public class InstanceKlass extends Klass {
   }
 
   public long getSize() {
-    return alignSize(getHeaderSize() + getVtableLen() + getItableLen() + getNonstaticOopMapSize());
+    long wordLength = VM.getVM().getBytesPerWord();
+    long size = getHeaderSize() +
+                (getVtableLen() +
+                 getItableLen() +
+                 getNonstaticOopMapSize()) * wordLength;
+    if (isInterface()) {
+      size += wordLength;
+    }
+    return alignSize(size);
   }
 
   public static long getHeaderSize() { return headerSize; }

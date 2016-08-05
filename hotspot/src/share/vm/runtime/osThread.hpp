@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/javaFrameAnchor.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "utilities/macros.hpp"
 
 // The OSThread class holds OS-specific thread information.  It is equivalent
 // to the sys_thread_t structure of the classic JVM implementation.
@@ -96,21 +97,7 @@ class OSThread: public CHeapObj<mtThread> {
   static ByteSize interrupted_offset()            { return byte_offset_of(OSThread, _interrupted); }
 
   // Platform dependent stuff
-#ifdef TARGET_OS_FAMILY_linux
-# include "osThread_linux.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "osThread_solaris.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "osThread_windows.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_aix
-# include "osThread_aix.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "osThread_bsd.hpp"
-#endif
+#include OS_HEADER(osThread)
 
  public:
   static ByteSize thread_id_offset()              { return byte_offset_of(OSThread, _thread_id); }

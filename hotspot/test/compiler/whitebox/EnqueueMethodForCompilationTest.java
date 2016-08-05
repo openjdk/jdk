@@ -21,21 +21,23 @@
  * questions.
  */
 
-import compiler.whitebox.CompilerWhiteBoxTest;
-
 /*
  * @test EnqueueMethodForCompilationTest
  * @bug 8006683 8007288 8022832
+ * @summary testing of WB::enqueueMethodForCompilation()
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build EnqueueMethodForCompilationTest
+ *          java.management
+ * @build compiler.whitebox.EnqueueMethodForCompilationTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+PrintCompilation -XX:-UseCounterDecay EnqueueMethodForCompilationTest
- * @summary testing of WB::enqueueMethodForCompilation()
- * @author igor.ignatyev@oracle.com
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:+PrintCompilation -XX:-UseCounterDecay
+ *                   compiler.whitebox.EnqueueMethodForCompilationTest
  */
+
+package compiler.whitebox;
+
 public class EnqueueMethodForCompilationTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {

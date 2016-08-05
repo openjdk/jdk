@@ -25,15 +25,17 @@
  * @test
  * @bug 8026844
  * @summary Test repeating subtractExact
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @compile SubExactIRepeatTest.java Verify.java
- * @run main SubExactIRepeatTest
  *
+ * @run main compiler.intrinsics.mathexact.SubExactIRepeatTest
  */
 
+package compiler.intrinsics.mathexact;
+
 import jdk.test.lib.Utils;
+
 import java.util.Random;
 
 public class SubExactIRepeatTest {

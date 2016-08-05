@@ -25,9 +25,13 @@
  * @test
  * @bug 8073792
  * @summary assert broken when array size becomes known during igvn
- * @run main/othervm -Xcomp -XX:CompileOnly=TestArrayCloneBadAssert.m TestArrayCloneBadAssert
  *
+ * @run main/othervm -Xcomp
+ *      -XX:CompileCommand=compileonly,compiler.arraycopy.TestArrayCloneBadAssert::m
+ *      compiler.arraycopy.TestArrayCloneBadAssert
  */
+
+package compiler.arraycopy;
 
 public class TestArrayCloneBadAssert {
 

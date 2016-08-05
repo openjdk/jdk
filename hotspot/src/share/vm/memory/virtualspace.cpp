@@ -676,7 +676,7 @@ VirtualSpace::~VirtualSpace() {
 
 
 void VirtualSpace::release() {
-  // This does not release memory it never reserved.
+  // This does not release memory it reserved.
   // Caller must release via rs.release();
   _low_boundary           = NULL;
   _high_boundary          = NULL;

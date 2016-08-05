@@ -25,10 +25,12 @@
  * @test
  * @bug 8026722
  * @summary Verify that the compare after addExact is a signed compare
- * @compile CompareTest.java
- * @run main CompareTest
  *
+ * @run main compiler.intrinsics.mathexact.CompareTest
  */
+
+
+package compiler.intrinsics.mathexact;
 
 public class CompareTest {
     public static long store = 0;

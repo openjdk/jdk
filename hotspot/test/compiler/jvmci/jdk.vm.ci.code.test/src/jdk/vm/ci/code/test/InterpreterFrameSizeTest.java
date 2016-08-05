@@ -38,14 +38,13 @@
 
 package jdk.vm.ci.code.test;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaValue;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class InterpreterFrameSizeTest extends CodeInstallationTest {
 
