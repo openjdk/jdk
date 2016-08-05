@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,22 @@ public class SecuritySupport {
         return
         AccessController.doPrivileged(
                 (PrivilegedAction<String>) () -> (String)System.getProperty(propName));
+    }
+
+    /**
+     * Reads boolean type system property.
+     *
+     * @param propName the name of the property
+     * @param defValue the default value
+     * @return the value of the property, or the default value of no system
+     * property is found
+     */
+    public static boolean getJAXPSystemProperty(String propName, boolean defValue) {
+        String value = getJAXPSystemProperty(propName);
+        if (value == null) {
+            return defValue;
+        }
+        return Boolean.parseBoolean(value);
     }
 
     /**

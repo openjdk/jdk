@@ -34,6 +34,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
@@ -55,11 +56,11 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import jdk.tools.jlink.internal.BasicImageWriter;
-import jdk.tools.jlink.internal.plugins.FileCopierPlugin;
 import jdk.tools.jlink.internal.plugins.FileCopierPlugin.SymImageFile;
 import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
+import jdk.tools.jlink.plugin.ResourcePoolModule;
 import jdk.tools.jlink.plugin.PluginException;
 
 /**
@@ -144,14 +145,12 @@ public final class DefaultImageBuilder implements ImageBuilder {
         Files.createDirectories(mdir);
     }
 
-    private void storeFiles(Set<String> modules, Map<String, String> release) throws IOException {
+    private void storeFiles(Set<String> modules, Properties release) throws IOException {
         if (release != null) {
-            Properties props = new Properties();
-            props.putAll(release);
-            addModules(props, modules);
+            addModules(release, modules);
             File r = new File(root.toFile(), "release");
             try (FileOutputStream fo = new FileOutputStream(r)) {
-                props.store(fo, null);
+                release.store(fo, null);
             }
         }
     }
@@ -184,14 +183,10 @@ public final class DefaultImageBuilder implements ImageBuilder {
             files.moduleView().modules().forEach(m -> {
                 // Only add modules that contain packages
                 if (!m.packages().isEmpty()) {
-                    // Skip the fake module used by FileCopierPlugin when copying files.
-                    if (m.name().equals(FileCopierPlugin.FAKE_MODULE)) {
-                        return;
-                    }
                     modules.add(m.name());
                 }
             });
-            storeFiles(modules, files.releaseProperties());
+            storeFiles(modules, releaseProperties(files));
 
             if (Files.getFileStore(root).supportsFileAttributeView(PosixFileAttributeView.class)) {
                 // launchers in the bin directory need execute permission
@@ -217,6 +212,28 @@ public final class DefaultImageBuilder implements ImageBuilder {
         } catch (IOException ex) {
             throw new PluginException(ex);
         }
+    }
+
+    private Properties releaseProperties(ResourcePool pool) throws IOException {
+        Properties props = new Properties();
+        Optional<ResourcePoolModule> javaBase = pool.moduleView().findModule("java.base");
+        javaBase.ifPresent(mod -> {
+            // fill release information available from transformed "java.base" module!
+            ModuleDescriptor desc = mod.descriptor();
+            desc.osName().ifPresent(s -> props.setProperty("OS_NAME", s));
+            desc.osVersion().ifPresent(s -> props.setProperty("OS_VERSION", s));
+            desc.osArch().ifPresent(s -> props.setProperty("OS_ARCH", s));
+            props.setProperty("JAVA_VERSION", System.getProperty("java.version"));
+        });
+
+        Optional<ResourcePoolEntry> release = pool.findEntry("/java.base/release");
+        if (release.isPresent()) {
+            try (InputStream is = release.get().content()) {
+                props.load(is);
+            }
+        }
+
+        return props;
     }
 
     /**
@@ -316,6 +333,8 @@ public final class DefaultImageBuilder implements ImageBuilder {
                     break;
                 case CONFIG:
                     writeEntry(in, destFile("conf", filename));
+                    break;
+                case TOP:
                     break;
                 case OTHER:
                     if (file instanceof SymImageFile) {

@@ -32,7 +32,7 @@
  * @run main/othervm -Djava.security.debug=sunpkcs11 TestKeyPairGenerator
  * @run main/othervm -Djava.security.debug=sunpkcs11 TestKeyPairGenerator
  *                                                   sm TestKeyPairGenerator.policy
- * @key intermittent randomness
+ * @key randomness
  */
 
 import java.math.BigInteger;

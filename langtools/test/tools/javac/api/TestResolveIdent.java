@@ -36,9 +36,7 @@
 
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symtab;
-import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.main.JavaCompiler;
-import com.sun.tools.javac.util.List;
 import java.io.IOException;
 import javax.tools.ToolProvider;
 
@@ -54,8 +52,7 @@ public class TestResolveIdent {
         JavacTaskImpl task = (JavacTaskImpl)tool.getTask(null, null, null, null, null, null);
         JavaCompiler compiler = JavaCompiler.instance(task.getContext());
         Symtab syms = Symtab.instance(task.getContext());
-        Modules modules = Modules.instance(task.getContext());
-        modules.enter(List.nil(), null);
+        task.ensureEntered();
         System.out.println(compiler.resolveIdent(syms.unnamedModule, getDeprecatedClass().getCanonicalName()));
     }
 

@@ -44,6 +44,12 @@
 
 #define SKIP_SPACE(p)   while (*p == ' ' || *p == '\t') p++;
 
+#define RESTARTABLE(_cmd, _result) do { \
+  do { \
+    _result = _cmd; \
+  } while((_result == -1) && (errno == EINTR)); \
+} while(0)
+
 #if defined(_ALLBSD_SOURCE)
 #define dirent64 dirent
 #define readdir64_r readdir_r
@@ -121,6 +127,7 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
     int fd = -1;
     char *dbuf = NULL;
     char *tz = NULL;
+    int res;
 
     dirp = opendir(dir);
     if (dirp == NULL) {
@@ -161,7 +168,8 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
         if (pathname == NULL) {
             break;
         }
-        if (stat(pathname, &statbuf) == -1) {
+        RESTARTABLE(stat(pathname, &statbuf), res);
+        if (res == -1) {
             break;
         }
 
@@ -175,10 +183,12 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
             if (dbuf == NULL) {
                 break;
             }
-            if ((fd = open(pathname, O_RDONLY)) == -1) {
+            RESTARTABLE(open(pathname, O_RDONLY), fd);
+            if (fd == -1) {
                 break;
             }
-            if (read(fd, dbuf, size) != (ssize_t) size) {
+            RESTARTABLE(read(fd, dbuf, size), res);
+            if (res != (ssize_t) size) {
                 break;
             }
             if (memcmp(buf, dbuf, size) == 0) {
@@ -230,6 +240,7 @@ getPlatformTimeZoneID()
     int fd;
     char *buf;
     size_t size;
+    int res;
 
 #if defined(__linux__)
     /*
@@ -260,7 +271,8 @@ getPlatformTimeZoneID()
     /*
      * Next, try /etc/localtime to find the zone ID.
      */
-    if (lstat(DEFAULT_ZONEINFO_FILE, &statbuf) == -1) {
+    RESTARTABLE(lstat(DEFAULT_ZONEINFO_FILE, &statbuf), res);
+    if (res == -1) {
         return NULL;
     }
 
@@ -294,10 +306,13 @@ getPlatformTimeZoneID()
      * If initial symbolic link resolution failed, we should treat target
      * file as a regular file.
      */
-    if ((fd = open(DEFAULT_ZONEINFO_FILE, O_RDONLY)) == -1) {
+    RESTARTABLE(open(DEFAULT_ZONEINFO_FILE, O_RDONLY), fd);
+    if (fd == -1) {
         return NULL;
     }
-    if (fstat(fd, &statbuf) == -1) {
+
+    RESTARTABLE(fstat(fd, &statbuf), res);
+    if (res == -1) {
         (void) close(fd);
         return NULL;
     }
@@ -308,7 +323,8 @@ getPlatformTimeZoneID()
         return NULL;
     }
 
-    if (read(fd, buf, size) != (ssize_t) size) {
+    RESTARTABLE(read(fd, buf, size), res);
+    if (res != (ssize_t) size) {
         (void) close(fd);
         free((void *) buf);
         return NULL;
@@ -372,7 +388,8 @@ fileopen(const char *fname, const char *fmode)
     /*
      * It assumes read open.
      */
-    if ((fd = open(fname, O_RDONLY)) == -1) {
+    RESTARTABLE(open(fname, O_RDONLY), fd);
+    if (fd == -1) {
         return NULL;
     }
 
@@ -420,7 +437,8 @@ filegets(char *s, int n, FILE *stream)
         if (iop->ptr == iop->endptr) {
             ssize_t len;
 
-            if ((len = read(iop->fd, (void *)iop->buffer, BUFFER_SIZE)) == -1) {
+            RESTARTABLE(read(iop->fd, (void *)iop->buffer, BUFFER_SIZE), len);
+            if (len == -1) {
                 return NULL;
             }
             if (len == 0) {
@@ -558,6 +576,7 @@ getSolarisDefaultZoneID() {
     size_t size;
     char *buf;
     int fd;
+    int res;
     /* scf specific variables */
     scf_handle_t *h = NULL;
     scf_snapshot_t *snap = NULL;
@@ -593,7 +612,8 @@ getSolarisDefaultZoneID() {
     }
     cleanupScf(h, snap, inst, pg, prop, val, tz);
 
-    if (stat(DEFAULT_ZONEINFO_FILE, &statbuf) == -1) {
+    RESTARTABLE(stat(DEFAULT_ZONEINFO_FILE, &statbuf), res);
+    if (res == -1) {
         return NULL;
     }
     size = (size_t) statbuf.st_size;
@@ -601,12 +621,14 @@ getSolarisDefaultZoneID() {
     if (buf == NULL) {
         return NULL;
     }
-    if ((fd = open(DEFAULT_ZONEINFO_FILE, O_RDONLY)) == -1) {
+    RESTARTABLE(open(DEFAULT_ZONEINFO_FILE, O_RDONLY), fd);
+    if (fd == -1) {
         free((void *) buf);
         return NULL;
     }
 
-    if (read(fd, buf, size) != (ssize_t) size) {
+    RESTARTABLE(read(fd, buf, size), res);
+    if (res != (ssize_t) size) {
         (void) close(fd);
         free((void *) buf);
         return NULL;

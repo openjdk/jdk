@@ -11,6 +11,6 @@ grant codeBase "jrt:/jdk.crypto.ucrypto" {
                    "clearProviderProperties.OracleUcrypto";
     permission java.security.SecurityPermission
                    "removeProviderProperty.OracleUcrypto";
-    permission java.io.FilePermission
-                   "${java.home}/conf/security/ucrypto-solaris.cfg", "read";
+    // Needed for reading Ucrypto config file
+    permission java.io.FilePermission "<<ALL FILES>>", "read";
 };
