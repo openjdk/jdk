@@ -312,8 +312,12 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
 # Restore path, etc
 AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
 [
-  # Restore old path.
-  PATH="$OLD_PATH"
+  # Restore old path, except for the microsoft toolchain, which requires VS_PATH
+  # to remain in place. Otherwise the compiler will not work in some siutations
+  # in later configure checks.
+  if test "x$TOOLCHAIN_TYPE" != "xmicrosoft"; then
+    PATH="$OLD_PATH"
+  fi
 
   # Restore the flags to the user specified values.
   # This is necessary since AC_PROG_CC defaults CFLAGS to "-g -O2"
