@@ -5094,7 +5094,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1469202305
+DATE_WHEN_GENERATED=1470297769
 
 ###############################################################################
 #
@@ -43767,8 +43767,12 @@ $as_echo "$as_me: Rewriting OBJDUMP to \"$new_complete\"" >&6;}
   fi
 
 
-  # Restore old path.
-  PATH="$OLD_PATH"
+  # Restore old path, except for the microsoft toolchain, which requires VS_PATH
+  # to remain in place. Otherwise the compiler will not work in some siutations
+  # in later configure checks.
+  if test "x$TOOLCHAIN_TYPE" != "xmicrosoft"; then
+    PATH="$OLD_PATH"
+  fi
 
   # Restore the flags to the user specified values.
   # This is necessary since AC_PROG_CC defaults CFLAGS to "-g -O2"
