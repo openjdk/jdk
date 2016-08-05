@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -17,37 +17,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: Util.java,v 1.2.4.1 2005/09/14 09:37:34 pvedula Exp $
- */
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
 import com.sun.org.apache.xalan.internal.XalanConstants;
+import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
+import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
+import com.sun.org.apache.xalan.internal.xsltc.compiler.XSLTC;
+import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import java.io.InputStream;
 import java.io.Reader;
-
 import javax.xml.XMLConstants;
+import javax.xml.catalog.CatalogFeatures;
+import javax.xml.catalog.CatalogFeatures.Feature;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
-
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamReader;
-
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
-
-import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
-import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
-import com.sun.org.apache.xalan.internal.xsltc.compiler.XSLTC;
-import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
-
+import jdk.xml.internal.JdkXmlFeatures;
+import jdk.xml.internal.JdkXmlUtils;
 import org.w3c.dom.Document;
-
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
@@ -57,6 +52,8 @@ import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  * @author Santiago Pericas-Geertsen
+ *
+ * Added Catalog Support for URI resolution
  */
 public final class Util {
 
@@ -71,9 +68,6 @@ public final class Util {
     public static String toJavaName(String name) {
         return com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util.toJavaName(name);
     }
-
-
-
 
     /**
      * Creates a SAX2 InputSource object from a TrAX Source object
@@ -169,6 +163,29 @@ public final class Util {
                     } catch (SAXException se) {
                         XMLSecurityManager.printWarning(reader.getClass().getName(), lastProperty, se);
                     }
+
+                    boolean supportCatalog = true;
+                    boolean useCatalog = xsltc.getFeature(JdkXmlFeatures.XmlFeature.USE_CATALOG);
+                    try {
+                        reader.setFeature(JdkXmlUtils.USE_CATALOG, useCatalog);
+                    }
+                    catch (SAXNotRecognizedException | SAXNotSupportedException e) {
+                        supportCatalog = false;
+                    }
+
+                    if (supportCatalog & useCatalog) {
+                        try {
+                            CatalogFeatures cf = (CatalogFeatures)xsltc.getProperty(JdkXmlFeatures.CATALOG_FEATURES);
+                            if (cf != null) {
+                                for (Feature f : CatalogFeatures.Feature.values()) {
+                                    reader.setProperty(f.getPropertyName(), cf.get(f));
+                                }
+                            }
+                        } catch (SAXNotRecognizedException e) {
+                            //shall not happen for internal settings
+                        }
+                    }
+
                     xsltc.setXMLReader(reader);
                 }catch (SAXNotRecognizedException snre ) {
                   throw new TransformerConfigurationException

@@ -41,6 +41,7 @@ import jdk.tools.jlink.internal.ResourcePoolEntryFactory;
  * <ul>
  * <li>For jimage content: /{module name}/{package1}/.../{packageN}/{file
  * name}</li>
+ * <li>For top-level files:/{module name}/{file name}</li>
  * <li>For other files (shared lib, launchers, config, ...):/{module name}/
  * {@literal bin|conf|native}/{dir1}/.../{dirN}/{file name}</li>
  * </ul>
@@ -54,6 +55,7 @@ public interface ResourcePoolEntry {
      * <ul>CONFIG: A configuration file.</ul>
      * <ul>NATIVE_CMD: A native process launcher.</ul>
      * <ul>NATIVE_LIB: A native library.</ul>
+     * <ul>TOP: A top-level file in the jdk run-time image directory.</ul>
      * <ul>OTHER: Other kind of file.</ul>
      * </li>
      */
@@ -62,6 +64,7 @@ public interface ResourcePoolEntry {
         CONFIG,
         NATIVE_CMD,
         NATIVE_LIB,
+        TOP,
         OTHER
     }
 

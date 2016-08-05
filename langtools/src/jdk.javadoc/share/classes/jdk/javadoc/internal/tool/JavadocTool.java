@@ -49,6 +49,7 @@ import com.sun.tools.javac.code.ClassFinder;
 import com.sun.tools.javac.code.Symbol.Completer;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
+import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
@@ -56,6 +57,7 @@ import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Abort;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Position;
 import jdk.javadoc.doclet.DocletEnvironment;
 
@@ -187,9 +189,8 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
 
             // Parse file objects provide via the DocumentationTool API
             parse(fileObjects, classTrees, true);
-            modules.enter(classTrees.toList(), null);
 
-            syms.unnamedModule.complete(); // TEMP to force reading all named modules
+            modules.initModules(classTrees.toList(), Collections.emptySet(), Collections.emptySet());
 
             // Build up the complete list of any packages to be documented
             Location location = modules.multiModuleMode ? StandardLocation.MODULE_SOURCE_PATH
@@ -394,11 +395,16 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         private Location getLocation(String packageName) throws IOException {
             if (location == StandardLocation.MODULE_SOURCE_PATH) {
                 // TODO: handle invalid results better.
-                ModuleSymbol msym = syms.inferModule(names.fromString(packageName));
-                if (msym == null) {
-                    return null;
+                Name pack = names.fromString(packageName);
+
+                for (ModuleSymbol msym : modules.allModules()) {
+                    PackageSymbol p = syms.getPackage(msym, pack);
+                    if (p != null && !p.members().isEmpty()) {
+                        return fm.getModuleLocation(location, msym.name.toString());
+                    }
                 }
-                return fm.getModuleLocation(location, msym.name.toString());
+
+                return null;
             } else {
                 return location;
             }

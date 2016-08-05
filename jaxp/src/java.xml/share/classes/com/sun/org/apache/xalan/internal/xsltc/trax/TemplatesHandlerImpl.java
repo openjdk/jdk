@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -17,18 +17,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: TemplatesHandlerImpl.java,v 1.2.4.1 2005/09/06 12:09:03 pvedula Exp $
- */
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
-import javax.xml.XMLConstants;
-import javax.xml.transform.Source;
-import javax.xml.transform.Templates;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.URIResolver;
-import javax.xml.transform.sax.TemplatesHandler;
 import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.CompilerException;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.Parser;
@@ -37,14 +28,20 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.Stylesheet;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.SyntaxTreeNode;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.XSLTC;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
-
+import java.util.ArrayList;
+import javax.xml.XMLConstants;
+import javax.xml.catalog.CatalogFeatures;
+import javax.xml.transform.Source;
+import javax.xml.transform.Templates;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.URIResolver;
+import javax.xml.transform.sax.TemplatesHandler;
+import jdk.xml.internal.JdkXmlFeatures;
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
-import org.xml.sax.Attributes;
-
-import java.util.Vector;
 
 /**
  * Implementation of a JAXP1.1 TemplatesHandler
@@ -85,6 +82,12 @@ public class TemplatesHandlerImpl
      */
     private TemplatesImpl _templates = null;
 
+    // Catalog features
+    CatalogFeatures _catalogFeatures;
+
+    // Catalog is enabled by default
+    boolean _useCatalog = true;
+
     /**
      * Default constructor
      */
@@ -95,7 +98,7 @@ public class TemplatesHandlerImpl
         _tfactory = tfactory;
 
         // Instantiate XSLTC and get reference to parser object
-        XSLTC xsltc = new XSLTC(tfactory.useServicesMechnism(), tfactory.getFeatureManager());
+        XSLTC xsltc = new XSLTC(tfactory.useServicesMechnism(), tfactory.getJdkXmlFeatures());
         if (tfactory.getFeature(XMLConstants.FEATURE_SECURE_PROCESSING))
             xsltc.setSecureProcessing(true);
 
@@ -111,6 +114,10 @@ public class TemplatesHandlerImpl
             xsltc.setTemplateInlining(true);
         else
             xsltc.setTemplateInlining(false);
+
+        _useCatalog = tfactory.getFeature(XMLConstants.USE_CATALOG);
+        _catalogFeatures = (CatalogFeatures)tfactory.getAttribute(JdkXmlFeatures.CATALOG_FEATURES);
+        xsltc.setProperty(JdkXmlFeatures.CATALOG_FEATURES, _catalogFeatures);
 
         _parser = xsltc.getParser();
     }
@@ -229,7 +236,8 @@ public class TemplatesHandlerImpl
                    stylesheet.setTemplateInlining(false);
 
                 // Set a document loader (for xsl:include/import) if defined
-                if (_uriResolver != null) {
+                if (_uriResolver != null || (_useCatalog &&
+                        _catalogFeatures.get(CatalogFeatures.Feature.FILES) != null)) {
                     stylesheet.setSourceLoader(this);
                 }
 
@@ -268,13 +276,13 @@ public class TemplatesHandlerImpl
                 }
             }
             else {
-                StringBuffer errorMessage = new StringBuffer();
-                Vector errors = _parser.getErrors();
+                StringBuilder errorMessage = new StringBuilder();
+                ArrayList<ErrorMsg> errors = _parser.getErrors();
                 final int count = errors.size();
                 for (int i = 0; i < count; i++) {
                     if (errorMessage.length() > 0)
                         errorMessage.append('\n');
-                    errorMessage.append(errors.elementAt(i).toString());
+                    errorMessage.append(errors.get(i).toString());
                 }
                 throw new SAXException(ErrorMsg.JAXP_COMPILE_ERR, new TransformerException(errorMessage.toString()));
             }
