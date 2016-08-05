@@ -44,9 +44,7 @@ import java.nio.channels.*;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.ClassFinder.BadClassFile;
 import com.sun.tools.javac.code.Symtab;
-import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.main.JavaCompiler;
-import com.sun.tools.javac.util.List;
 import javax.tools.ToolProvider;
 
 public class T6330997 {
@@ -57,8 +55,7 @@ public class T6330997 {
         JavacTaskImpl task = (JavacTaskImpl)tool.getTask(null, null, null, null, null, null);
         JavaCompiler compiler = JavaCompiler.instance(task.getContext());
         Symtab syms = Symtab.instance(task.getContext());
-        Modules modules = Modules.instance(task.getContext());
-        modules.enter(List.nil(), null);
+        task.ensureEntered();
         try {
             compiler.resolveIdent(syms.unnamedModule, "T1").complete();
         } catch (Exception e) {

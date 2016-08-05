@@ -385,6 +385,10 @@ public class ConstantWriter extends BasicWriter {
                         sb.append('\\').append('\\');
                         break;
                     default:
+                        if (Character.isISOControl(c)) {
+                            sb.append(String.format("\\u%04x", (int) c));
+                            break;
+                        }
                         sb.append(c);
                 }
             }

@@ -30,6 +30,7 @@ import java.lang.reflect.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URI;
+import java.nio.file.Paths;
 import java.util.*;
 import java.text.MessageFormat;
 import java.security.*;
@@ -52,24 +53,31 @@ import sun.security.util.SecurityConstants;
 import sun.net.www.ParseUtil;
 
 /**
- * This class represents a default implementation for
- * <code>java.security.Policy</code>.
+ * This class represents a default Policy implementation for the
+ * "JavaPolicy" type.
  *
  * Note:
  * For backward compatibility with JAAS 1.0 it loads
- * both java.auth.policy and java.policy. However it
- * is recommended that java.auth.policy be not used
- * and the java.policy contain all grant entries including
- * that contain principal-based entries.
+ * both java.auth.policy and java.policy. However, it
+ * is recommended that java.auth.policy not be used
+ * and that java.policy contain all grant entries including
+ * those that contain principal-based entries.
  *
- *
- * <p> This object stores the policy for entire Java runtime,
+ * <p> This object stores the policy for the entire Java runtime,
  * and is the amalgamation of multiple static policy
  * configurations that resides in files.
  * The algorithm for locating the policy file(s) and reading their
  * information into this <code>Policy</code> object is:
  *
  * <ol>
+ * <li>
+ *   Read in and load the default policy file named
+ *   &lt;JAVA_HOME&gt;/lib/security/default.policy. &lt;JAVA_HOME&gt; refers
+ *   to the value of the java.home system property, and specifies the directory
+ *   where the JRE is installed. This policy file grants permissions to the
+ *   modules loaded by the platform class loader. If the default policy file
+ *   cannot be loaded, a fatal InternalError is thrown as these permissions
+ *   are needed in order for the runtime to operate correctly.
  * <li>
  *   Loop through the <code>java.security.Security</code> properties,
  *   <i>policy.url.1</i>, <i>policy.url.2</i>, ...,
@@ -78,12 +86,13 @@ import sun.net.www.ParseUtil;
  *   <i>auth.policy.url.X</i>".  These properties are set
  *   in the Java security properties file, which is located in the file named
  *   &lt;JAVA_HOME&gt;/conf/security/java.security.
- *   &lt;JAVA_HOME&gt; refers to the value of the java.home system property,
- *   and specifies the directory where the JRE is installed.
  *   Each property value specifies a <code>URL</code> pointing to a
  *   policy file to be loaded.  Read in and load each policy.
  *
  *   <i>auth.policy.url</i> is supported only for backward compatibility.
+ *
+ *   If none of these could be loaded, use a builtin static policy
+ *   equivalent to the conf/security/java.policy file.
  *
  * <li>
  *   The <code>java.lang.System</code> property <i>java.security.policy</i>
@@ -107,10 +116,13 @@ import sun.net.www.ParseUtil;
  *   <i>java.security.auth.policy</i> is supported only for backward
  *   compatibility.
  *
- *   If the  <i>java.security.policy</i> or
+ *   If the <i>java.security.policy</i> or
  *   <i>java.security.auth.policy</i> property is defined using
- *   "==" (rather than "="), then ignore all other specified
- *   policies and only load this policy.
+ *   "==" (rather than "="), then load the specified policy file and ignore
+ *   all other configured policies. Note, that the default.policy file is
+ *   also loaded, as specified in the first step of the algorithm above.
+ *   If the specified policy file cannot be loaded, use a builtin static policy
+ *   equivalent to the default conf/security/java.policy file.
  * </ol>
  *
  * Each policy file consists of one or more grant entries, each of
@@ -177,7 +189,6 @@ import sun.net.www.ParseUtil;
  * <code>Foo.class</code> permission has been signed by the
  * "FooSoft" alias, or if XXX <code>Foo.class</code> is a
  * system class (i.e., is found on the CLASSPATH).
- *
  *
  * <p> Items that appear in an entry must appear in the specified order
  * (<code>permission</code>, <i>Type</i>, "<i>name</i>", and
@@ -246,7 +257,6 @@ import sun.net.www.ParseUtil;
  *  with all the principals associated with the <code>Subject</code>
  *  in the current <code>AccessControlContext</code>.
  *
- *
  * <p> For PrivateCredentialPermissions, you can also use "<b>self</b>"
  * instead of "<b>${{self}}</b>". However the use of "<b>self</b>" is
  * deprecated in favour of "<b>${{self}}</b>".
@@ -278,7 +288,6 @@ public class PolicyFile extends java.security.Policy {
     private URL url;
 
     // for use with the reflection API
-
     private static final Class<?>[] PARAMS0 = { };
     private static final Class<?>[] PARAMS1 = { String.class };
     private static final Class<?>[] PARAMS2 = { String.class, String.class };
@@ -293,6 +302,23 @@ public class PolicyFile extends java.security.Policy {
      */
     private static AtomicReference<Set<URL>> badPolicyURLs =
         new AtomicReference<>(new HashSet<>());
+
+    // The default.policy file
+    private static final URL DEFAULT_POLICY_URL =
+        AccessController.doPrivileged(new PrivilegedAction<>() {
+            @Override
+            public URL run() {
+                String sep = File.separator;
+                try {
+                    return Paths.get(System.getProperty("java.home"),
+                                     "lib", "security",
+                                     "default.policy").toUri().toURL();
+                } catch (MalformedURLException mue) {
+                    // should not happen
+                    throw new Error("Malformed default.policy URL: " + mue);
+                }
+            }
+        });
 
     /**
      * Initializes the Policy object and reads the default policy
@@ -315,108 +341,15 @@ public class PolicyFile extends java.security.Policy {
      * Initializes the Policy object and reads the default policy
      * configuration file(s) into the Policy object.
      *
-     * The algorithm for locating the policy file(s) and reading their
-     * information into the Policy object is:
-     * <pre>
-     *   loop through the Security Properties named "policy.url.1",
-     *  ""policy.url.2", "auth.policy.url.1",  "auth.policy.url.2" etc, until
-     *   you don't find one. Each of these specify a policy file.
-     *
-     *   if none of these could be loaded, use a builtin static policy
-     *      equivalent to the default conf/security/java.policy file.
-     *
-     *   if the system property "java.policy" or "java.auth.policy" is defined
-     * (which is the
-     *      case when the user uses the -D switch at runtime), and
-     *     its use is allowed by the security property file,
-     *     also load it.
-     * </pre>
-     *
-     * Each policy file consists of one or more grant entries, each of
-     * which consists of a number of permission entries.
-     * <pre>
-     *   grant signedBy "<i>alias</i>", codeBase "<i>URL</i>" {
-     *     permission <i>Type</i> "<i>name</i>", "<i>action</i>",
-     *         signedBy "<i>alias</i>";
-     *     ....
-     *     permission <i>Type</i> "<i>name</i>", "<i>action</i>",
-     *         signedBy "<i>alias</i>";
-     *   };
-     *
-     * </pre>
-     *
-     * All non-italicized items above must appear as is (although case
-     * doesn't matter and some are optional, as noted below).
-     * Italicized items represent variable values.
-     *
-     * <p> A grant entry must begin with the word <code>grant</code>.
-     * The <code>signedBy</code> and <code>codeBase</code> name/value
-     * pairs are optional.
-     * If they are not present, then any signer (including unsigned code)
-     * will match, and any codeBase will match.
-     *
-     * <p> A permission entry must begin with the word <code>permission</code>.
-     * The word <code><i>Type</i></code> in the template above would actually
-     * be a specific permission type, such as
-     * <code>java.io.FilePermission</code> or
-     * <code>java.lang.RuntimePermission</code>.
-     *
-     * <p>The "<i>action</i>" is required for
-     * many permission types, such as <code>java.io.FilePermission</code>
-     * (where it specifies what type of file access is permitted).
-     * It is not required for categories such as
-     * <code>java.lang.RuntimePermission</code>
-     * where it is not necessary - you either have the
-     * permission specified by the <code>"<i>name</i>"</code>
-     * value following the type name or you don't.
-     *
-     * <p>The <code>signedBy</code> name/value pair for a permission entry
-     * is optional. If present, it indicates a signed permission. That is,
-     * the permission class itself must be signed by the given alias in
-     * order for it to be granted. For example,
-     * suppose you have the following grant entry:
-     *
-     * <pre>
-     *   grant {
-     *     permission Foo "foobar", signedBy "FooSoft";
-     *   }
-     * </pre>
-     *
-     * <p>Then this permission of type <i>Foo</i> is granted if the
-     * <code>Foo.class</code> permission has been signed by the
-     * "FooSoft" alias, or if <code>Foo.class</code> is a
-     * system class (i.e., is found on the CLASSPATH).
-     *
-     * <p>Items that appear in an entry must appear in the specified order
-     * (<code>permission</code>, <i>Type</i>, "<i>name</i>", and
-     * "<i>action</i>"). An entry is terminated with a semicolon.
-     *
-     * <p>Case is unimportant for the identifiers (<code>permission</code>,
-     * <code>signedBy</code>, <code>codeBase</code>, etc.) but is
-     * significant for the <i>Type</i>
-     * or for any string that is passed in as a value.
-     *
-     * <p>An example of two entries in a policy configuration file is
-     * <pre>
-     *   //  if the code is signed by "Duke", grant it read/write to all
-     *   // files in /tmp.
-     *
-     *   grant signedBy "Duke" {
-     *          permission java.io.FilePermission "/tmp/*", "read,write";
-     *   };
-     *
-     *   // grant everyone the following permission
-     *
-     *   grant {
-     *     permission java.util.PropertyPermission "java.vendor";
-     *   };
-     *  </pre>
+     * See the class description for details on the algorithm used to
+     * initialize the Policy object.
      */
     private void init(URL url) {
         // Properties are set once for each init(); ignore changes between
         // between diff invocations of initPolicyFile(policy, url, info).
         String numCacheStr =
-          AccessController.doPrivileged(new PrivilegedAction<String>() {
+          AccessController.doPrivileged(new PrivilegedAction<>() {
+            @Override
             public String run() {
                 expandProperties = "true".equalsIgnoreCase
                     (Security.getProperty("policy.expandProperties"));
@@ -445,19 +378,32 @@ public class PolicyFile extends java.security.Policy {
 
     private void initPolicyFile(final PolicyInfo newInfo, final URL url) {
 
+        // always load default.policy
+        if (debug != null) {
+            debug.println("reading " + DEFAULT_POLICY_URL);
+        }
+        AccessController.doPrivileged(new PrivilegedAction<>() {
+            @Override
+            public Void run() {
+                init(DEFAULT_POLICY_URL, newInfo, true);
+                return null;
+            }
+        });
+
         if (url != null) {
 
             /**
              * If the caller specified a URL via Policy.getInstance,
-             * we only read from that URL
+             * we only read from default.policy and that URL.
              */
 
             if (debug != null) {
-                debug.println("reading "+url);
+                debug.println("reading " + url);
             }
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            AccessController.doPrivileged(new PrivilegedAction<>() {
+                @Override
                 public Void run() {
-                    if (init(url, newInfo) == false) {
+                    if (init(url, newInfo, false) == false) {
                         // use static policy if all else fails
                         initStaticPolicy(newInfo);
                     }
@@ -472,7 +418,7 @@ public class PolicyFile extends java.security.Policy {
              * Read from URLs listed in the java.security properties file.
              *
              * We call initPolicyFile with POLICY, POLICY_URL and then
-             * call it with AUTH_POLICY and AUTH_POLICY_URL
+             * call it with AUTH_POLICY and AUTH_POLICY_URL.
              * So first we will process the JAVA standard policy
              * and then process the JAVA AUTH Policy.
              * This is for backward compatibility as well as to handle
@@ -493,9 +439,10 @@ public class PolicyFile extends java.security.Policy {
     }
 
     private boolean initPolicyFile(final String propname, final String urlname,
-                                final PolicyInfo newInfo) {
-        Boolean loadedPolicy =
-            AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+                                   final PolicyInfo newInfo) {
+        boolean loadedPolicy =
+            AccessController.doPrivileged(new PrivilegedAction<>() {
+            @Override
             public Boolean run() {
                 boolean loaded_policy = false;
 
@@ -519,10 +466,12 @@ public class PolicyFile extends java.security.Policy {
                             } else {
                                 policyURL = new URL(extra_policy);
                             }
-                            if (debug != null)
+                            if (debug != null) {
                                 debug.println("reading "+policyURL);
-                            if (init(policyURL, newInfo))
+                            }
+                            if (init(policyURL, newInfo, false)) {
                                 loaded_policy = true;
+                            }
                         } catch (Exception e) {
                             // ignore.
                             if (debug != null) {
@@ -560,10 +509,12 @@ public class PolicyFile extends java.security.Policy {
                             policy_url = new URI(expanded_uri).toURL();
                         }
 
-                        if (debug != null)
-                            debug.println("reading "+policy_url);
-                        if (init(policy_url, newInfo))
+                        if (debug != null) {
+                            debug.println("reading " + policy_url);
+                        }
+                        if (init(policy_url, newInfo, false)) {
                             loaded_policy = true;
+                        }
                     } catch (Exception e) {
                         if (debug != null) {
                             debug.println("error reading policy "+e);
@@ -577,7 +528,7 @@ public class PolicyFile extends java.security.Policy {
             }
         });
 
-        return loadedPolicy.booleanValue();
+        return loadedPolicy;
     }
 
     /**
@@ -586,7 +537,7 @@ public class PolicyFile extends java.security.Policy {
      *
      * @param policyFile the policy Reader object.
      */
-    private boolean init(URL policy, PolicyInfo newInfo) {
+    private boolean init(URL policy, PolicyInfo newInfo, boolean defPolicy) {
 
         // skip parsing policy file if it has been previously parsed and
         // has syntax errors
@@ -597,24 +548,10 @@ public class PolicyFile extends java.security.Policy {
             return false;
         }
 
-        boolean success = false;
-        PolicyParser pp = new PolicyParser(expandProperties);
-        InputStreamReader isr = null;
-        try {
+        try (InputStreamReader isr =
+                 getInputStreamReader(PolicyUtil.getInputStream(policy))) {
 
-            // read in policy using UTF-8 by default
-            //
-            // check non-standard system property to see if
-            // the default encoding should be used instead
-
-            if (notUtf8) {
-                isr = new InputStreamReader
-                                (PolicyUtil.getInputStream(policy));
-            } else {
-                isr = new InputStreamReader
-                                (PolicyUtil.getInputStream(policy), "UTF-8");
-            }
-
+            PolicyParser pp = new PolicyParser(expandProperties);
             pp.read(isr);
 
             KeyStore keyStore = null;
@@ -638,7 +575,11 @@ public class PolicyFile extends java.security.Policy {
                 PolicyParser.GrantEntry ge = enum_.nextElement();
                 addGrantEntry(ge, keyStore, newInfo);
             }
+            return true;
         } catch (PolicyParser.ParsingException pe) {
+            if (defPolicy) {
+                throw new InternalError("Failed to load default.policy", pe);
+            }
             // record bad policy file to avoid later reparsing it
             badPolicyURLs.updateAndGet(k -> {
                 k.add(policy);
@@ -652,29 +593,38 @@ public class PolicyFile extends java.security.Policy {
                 pe.printStackTrace();
             }
         } catch (Exception e) {
+            if (defPolicy) {
+                throw new InternalError("Failed to load default.policy", e);
+            }
             if (debug != null) {
                 debug.println("error parsing "+policy);
                 debug.println(e.toString());
                 e.printStackTrace();
             }
-        } finally {
-            if (isr != null) {
-                try {
-                    isr.close();
-                    success = true;
-                } catch (IOException e) {
-                    // ignore the exception
-                }
-            } else {
-                success = true;
-            }
         }
 
-        return success;
+        return false;
+    }
+
+    private InputStreamReader getInputStreamReader(InputStream is)
+                              throws IOException {
+        /*
+         * Read in policy using UTF-8 by default.
+         *
+         * Check non-standard system property to see if the default encoding
+         * should be used instead.
+         */
+        return (notUtf8)
+            ? new InputStreamReader(is)
+            : new InputStreamReader(is, "UTF-8");
     }
 
     private void initStaticPolicy(final PolicyInfo newInfo) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        if (debug != null) {
+            debug.println("Initializing with static permissions");
+        }
+        AccessController.doPrivileged(new PrivilegedAction<>() {
+            @Override
             public Void run() {
                 PolicyEntry pe = new PolicyEntry(new CodeSource(null,
                     (Certificate[]) null));
@@ -1193,7 +1143,8 @@ public class PolicyFile extends java.security.Policy {
             return perms;
 
         CodeSource canonCodeSource = AccessController.doPrivileged(
-            new java.security.PrivilegedAction<CodeSource>(){
+            new java.security.PrivilegedAction<>(){
+                @Override
                 public CodeSource run() {
                     return canonicalizeCodebase(cs, true);
                 }
@@ -1220,7 +1171,8 @@ public class PolicyFile extends java.security.Policy {
             return perms;
 
         CodeSource canonCodeSource = AccessController.doPrivileged(
-            new java.security.PrivilegedAction<CodeSource>(){
+            new PrivilegedAction<>(){
+                @Override
                 public CodeSource run() {
                     return canonicalizeCodebase(cs, true);
                 }
@@ -1254,7 +1206,8 @@ public class PolicyFile extends java.security.Policy {
 
         // check to see if the CodeSource implies
         Boolean imp = AccessController.doPrivileged
-            (new PrivilegedAction<Boolean>() {
+            (new PrivilegedAction<>() {
+            @Override
             public Boolean run() {
                 return entry.getCodeSource().implies(cs);
             }

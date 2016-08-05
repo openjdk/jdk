@@ -297,7 +297,7 @@ public abstract class RenderingEngine {
      * If {@code lw1} and {@code lw2} are both greater than zero, then
      * the parallelogram figure is doubled by both expanding and contracting
      * each delta vector by its corresponding {@code lw} value.
-     * If either (@code lw1) or {@code lw2} are also greater than 1, then
+     * If either {@code lw1} or {@code lw2} are also greater than 1, then
      * the inner (contracted) parallelogram disappears and the figure is
      * simply a single expanded parallelogram.
      * The {@code clip} parameter specifies the current clip in effect
