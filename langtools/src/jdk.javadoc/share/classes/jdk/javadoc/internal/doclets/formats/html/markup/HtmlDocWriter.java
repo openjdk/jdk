@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html.markup;
 import java.io.*;
 import java.util.*;
 
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
@@ -279,6 +280,21 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         if (target != null && target.length() != 0) {
             anchor.addAttr(HtmlAttr.TARGET, target);
         }
+        return anchor;
+    }
+
+    public Content getModuleFramesHyperLink(ModuleElement mdle, Content label, String target) {
+        DocLink mdlLink = new DocLink(DocPaths.moduleFrame(mdle));
+        DocLink mtFrameLink = new DocLink(DocPaths.moduleTypeFrame(mdle));
+        DocLink cFrameLink = new DocLink(DocPaths.moduleSummary(mdle));
+        HtmlTree anchor = HtmlTree.A(mdlLink.toString(), label);
+        StringBuilder onclickStr = new StringBuilder("updateModuleFrame('")
+                .append(mtFrameLink.toString())
+                .append("','")
+                .append(cFrameLink.toString())
+                .append("');");
+        anchor.addAttr(HtmlAttr.TARGET, target);
+        anchor.addAttr(HtmlAttr.ONCLICK, onclickStr.toString());
         return anchor;
     }
 

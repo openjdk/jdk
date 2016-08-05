@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8160421
+ * @bug 8160421 8161902
  * @summary Test to check OffScreenImageSource handles case where
  *          imageComplete(ImageConsumer.SINGLEFRAMEDONE) unregisters.
  * @run main/othervm ImageConsumerUnregisterTest
@@ -35,7 +35,7 @@ public class ImageConsumerUnregisterTest extends javax.swing.JFrame {
 
     public static void main(String[] args) throws Exception {
 
-        final java.awt.Component component = new TestBug8160421();
+        final java.awt.Component component = new ImageConsumerUnregisterTest();
 
         // Redirect the System.err stream and verify there is no
         // stacktrace printed
@@ -59,7 +59,8 @@ public class ImageConsumerUnregisterTest extends javax.swing.JFrame {
             System.setErr(obj);
 
             if (!str.isEmpty()) {
-                throw new RuntimeException("Invalid imageComplete(STATICIMAGEDONE) call");
+                throw new RuntimeException("Invalid"
+                        + " imageComplete(STATICIMAGEDONE) call");
             }
         }
     }

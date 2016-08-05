@@ -25,10 +25,12 @@
 package sun.awt;
 import java.awt.*;
 import java.awt.color.*;
+import java.awt.geom.AffineTransform;
 import java.awt.image.*;
 import sun.awt.image.ToolkitImage;
 import sun.awt.image.ImageRepresentation;
 import java.util.Arrays;
+import sun.java2d.pipe.Region;
 
 public class IconInfo {
     /**
@@ -101,7 +103,7 @@ public class IconInfo {
         }
         this.scaledWidth = width;
         this.scaledHeight = height;
-        this.rawLength = width * height + 2;
+        this.rawLength = getScaledRawLength();
     }
 
     /*
@@ -110,7 +112,27 @@ public class IconInfo {
     public void setScaledSize(int width, int height) {
         this.scaledWidth = width;
         this.scaledHeight = height;
-        this.rawLength = width * height + 2;
+        this.rawLength = getScaledRawLength();
+    }
+
+    /*
+    * returns scaled raw length.
+     */
+    private int getScaledRawLength() {
+        int scaledWidthAndHeight[] = getScaledWidthAndHeight(width, height);
+        return scaledWidthAndHeight[0] * scaledWidthAndHeight[1] + 2;
+    }
+
+    /*
+    * returns the scaled width and height.
+     */
+    private static int[] getScaledWidthAndHeight(int width, int height) {
+        AffineTransform tx = GraphicsEnvironment.getLocalGraphicsEnvironment().
+                getDefaultScreenDevice().getDefaultConfiguration().
+                getDefaultTransform();
+        int w = Region.clipScale(width, tx.getScaleX());
+        int h = Region.clipScale(height, tx.getScaleY());
+        return new int[]{w, h};
     }
 
     public boolean isValid() {
@@ -215,6 +237,9 @@ public class IconInfo {
             new DirectColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), 32,
                                  0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000,
                                  false, DataBuffer.TYPE_INT);
+        int scaledWidthAndHeight[] = getScaledWidthAndHeight(width, height);
+        width = scaledWidthAndHeight[0];
+        height = scaledWidthAndHeight[1];
         DataBufferInt buffer = new DataBufferInt(width * height);
         WritableRaster raster =
             Raster.createPackedRaster(buffer, width, height,

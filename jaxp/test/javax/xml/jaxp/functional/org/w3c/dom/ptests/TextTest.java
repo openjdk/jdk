@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.IOException;
 
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.CharacterData;
 import org.w3c.dom.Document;
@@ -39,8 +40,13 @@ import org.w3c.dom.Text;
 import org.xml.sax.SAXException;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/functional
+ * @run testng/othervm -DrunSecMngr=true org.w3c.dom.ptests.TextTest
+ * @run testng/othervm org.w3c.dom.ptests.TextTest
  * @summary Test for Text implementation returned by Document.createTextNode(String)
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class TextTest extends AbstractCharacterDataTest {
     /*
      * Verify splitText method works as the spec.
@@ -68,3 +74,4 @@ public class TextTest extends AbstractCharacterDataTest {
     }
 
 }
+

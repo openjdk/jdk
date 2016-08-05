@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,8 @@ class XXX {
 #if[rw]
 
     private $type$ get$Type$(long a) {
-        if (unaligned) {
-            $memtype$ x = unsafe.get$Memtype$(a);
-            return $fromBits$(nativeByteOrder ? x : Bits.swap(x));
-        }
-        return Bits.get$Type$(a, bigEndian);
+        $memtype$ x = unsafe.get$Memtype$Unaligned(null, a, bigEndian);
+        return $fromBits$(x);
     }
 
     public $type$ get$Type$() {
@@ -51,12 +48,8 @@ class XXX {
 
     private ByteBuffer put$Type$(long a, $type$ x) {
 #if[rw]
-        if (unaligned) {
-            $memtype$ y = $toBits$(x);
-            unsafe.put$Memtype$(a, (nativeByteOrder ? y : Bits.swap(y)));
-        } else {
-            Bits.put$Type$(a, x, bigEndian);
-        }
+        $memtype$ y = $toBits$(x);
+        unsafe.put$Memtype$Unaligned(null, a, y, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -95,13 +88,13 @@ class XXX {
                                                                        0,
                                                                        size,
                                                                        size,
-                                                                       off))
+                                                                       address + off))
                     : ($Type$Buffer)(new ByteBufferAs$Type$Buffer$RW$L(this,
                                                                        -1,
                                                                        0,
                                                                        size,
                                                                        size,
-                                                                       off)));
+                                                                       address + off)));
         } else {
             return (nativeByteOrder
                     ? ($Type$Buffer)(new Direct$Type$Buffer$RW$U(this,

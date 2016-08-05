@@ -33,6 +33,7 @@ import javax.swing.WindowConstants;
 
 /**
  * @test
+ * @key headful
  * @bug 8057893
  * @author Alexander Scherbatiy
  * @summary JComboBox actionListener never receives "comboBoxEdited"

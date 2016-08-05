@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 4917669
  * @summary 1.4 REGRESSION: MenuItem accelerator doesn't work if parent menu is in JDialog
  * @author Alexander Zuev

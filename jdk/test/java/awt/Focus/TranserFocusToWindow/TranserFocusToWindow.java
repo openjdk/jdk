@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 6562853 7035459
   @summary Tests that focus transfered directy to window w/o transfering it to frame.
   @author Oleg Sukhodolsky: area=awt.focus

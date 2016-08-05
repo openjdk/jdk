@@ -20,14 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
+/*
+   @test
+   @key headful
    @bug 4202954
    @library ../../../../lib/testlibrary
    @library ../../regtesthelpers
    @build Util jdk.testlibrary.OSInfo
    @author Michael C. Albers
    @run main bug4202954
-*/
+ */
 
 import java.awt.*;
 import java.awt.event.InputEvent;

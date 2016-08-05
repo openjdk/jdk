@@ -81,7 +81,8 @@ public class Util {
 
     /**
      * Fills the heap until OutOfMemoryError occurs. This method is useful for
-     * WeakReferences removing.
+     * WeakReferences removing. To minimize the amount of filled memory the
+     * test should provide reasonable heap size via -mx option.
      */
     public static void generateOOME() {
         List<Object> bigLeak = new LinkedList<Object>();

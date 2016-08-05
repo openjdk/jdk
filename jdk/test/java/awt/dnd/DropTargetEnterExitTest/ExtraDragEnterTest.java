@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key headful
  * @bug 8024163
  * @summary Checks the dragEnter event is correctly generated
  * @library ../../regtesthelpers

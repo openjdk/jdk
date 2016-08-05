@@ -131,6 +131,25 @@ public class JLinkTest {
         }
 
         {
+            String moduleName = "m"; // 8163382
+            Path jmod = helper.generateDefaultJModule(moduleName).assertSuccess();
+            JImageGenerator.getJLinkTask()
+                    .modulePath(helper.defaultModulePath())
+                    .output(helper.createNewImageDir(moduleName))
+                    .addMods("m")
+                    .option("")
+                    .call().assertSuccess();
+            moduleName = "mod";
+            jmod = helper.generateDefaultJModule(moduleName).assertSuccess();
+            JImageGenerator.getJLinkTask()
+                    .modulePath(helper.defaultModulePath())
+                    .output(helper.createNewImageDir(moduleName))
+                    .addMods("m")
+                    .option("")
+                    .call().assertSuccess();
+        }
+
+        {
             // Help
             StringWriter writer = new StringWriter();
             jdk.tools.jlink.internal.Main.run(new String[]{"--help"}, new PrintWriter(writer));

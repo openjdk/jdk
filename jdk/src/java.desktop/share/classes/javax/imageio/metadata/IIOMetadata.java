@@ -414,14 +414,23 @@ public abstract class IIOMetadata {
         }
     }
 
+    // If updating this method also see the same in ImageReaderWriterSpi.java
     private Class<?> getMetadataFormatClass(String formatClassName) {
         Module thisModule = IIOMetadata.class.getModule();
         Module targetModule = this.getClass().getModule();
-        Class<?> c = Class.forName(targetModule, formatClassName);
+        Class<?> c = null;
+        try {
+            ClassLoader cl = this.getClass().getClassLoader();
+            c = Class.forName(formatClassName, false, cl);
+            if (!IIOMetadataFormat.class.isAssignableFrom(c)) {
+                return null;
+            }
+        } catch (ClassNotFoundException e) {
+        }
         if (thisModule.equals(targetModule) || c == null) {
             return c;
         }
-        if (thisModule.isNamed()) {
+        if (targetModule.isNamed()) {
             int i = formatClassName.lastIndexOf(".");
             String pn = i > 0 ? formatClassName.substring(0, i) : "";
             if (!targetModule.isExported(pn, thisModule)) {

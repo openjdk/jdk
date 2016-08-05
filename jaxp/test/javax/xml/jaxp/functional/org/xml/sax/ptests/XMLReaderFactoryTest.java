@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,11 @@
  */
 package org.xml.sax.ptests;
 
-import jaxp.library.JAXPBaseTest;
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+
 import static org.testng.Assert.assertNotNull;
+
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.XMLReaderFactory;
@@ -31,7 +34,14 @@ import org.xml.sax.helpers.XMLReaderFactory;
 /**
  * Unit test for XMLReaderFactory.createXMLReader API.
  */
-public class XMLReaderFactoryTest extends JAXPBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true org.xml.sax.ptests.XMLReaderFactoryTest
+ * @run testng/othervm org.xml.sax.ptests.XMLReaderFactoryTest
+ */
+@Listeners({jaxp.library.BasePolicy.class})
+public class XMLReaderFactoryTest {
     /**
      * No exception expected when create XMLReader by default.
      * @throws org.xml.sax.SAXException when xml reader creation failed.
@@ -66,3 +76,5 @@ public class XMLReaderFactoryTest extends JAXPBaseTest {
         XMLReaderFactory.createXMLReader("org.apache.crimson.parser.ABCD");
     }
 }
+
+

@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 8027025
  * @summary [macosx] getLocationOnScreen returns 0 if parent invisible
  * @author Petr Pchelko

@@ -395,7 +395,7 @@ public interface GSSContextSpi {
     public void dispose() throws GSSException;
 
     /**
-     * Return the mechanism-specific attribute associated with (@code type}.
+     * Return the mechanism-specific attribute associated with {@code type}.
      *
      * @param type the type of the attribute requested
      * @return the attribute

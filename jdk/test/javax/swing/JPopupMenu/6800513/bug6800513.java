@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6800513
  * @summary GTK-LaF renders menus incompletely
  * @author Mario Torre

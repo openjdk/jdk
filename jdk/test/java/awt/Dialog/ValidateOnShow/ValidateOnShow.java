@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 7027013
   @summary Dialog.show() should validate the window unconditionally
   @author anthony.petrov@oracle.com: area=awt.toplevel

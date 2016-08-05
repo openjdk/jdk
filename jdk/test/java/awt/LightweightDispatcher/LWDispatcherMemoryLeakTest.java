@@ -38,6 +38,7 @@ import test.java.awt.regtesthelpers.Util;
 
 /*
  @test
+ @key headful
  @bug 7079254
  @summary Toolkit eventListener leaks memory
  @library ../regtesthelpers

@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+   @test
+  @key headful
    @bug 6884066
    @summary JTableHeader listens mouse in disabled state and doesn't work when not attached to a table
    @author Alexander Potochkin

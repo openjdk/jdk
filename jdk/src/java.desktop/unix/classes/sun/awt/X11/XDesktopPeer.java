@@ -60,7 +60,7 @@ public class XDesktopPeer implements DesktopPeer {
         try {
             if (!initExecuted) {
                 nativeLibraryLoaded = init(UNIXToolkit.getEnabledGtkVersion()
-                        .ordinal(), UNIXToolkit.isGtkVerbose());
+                        .getNumber(), UNIXToolkit.isGtkVerbose());
             }
         } finally {
             initExecuted = true;

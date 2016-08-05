@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 4492274
  * @summary  Tests if JEditorPane.getPage() correctly returns anchor reference.
  * @author Denis Sharypov

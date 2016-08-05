@@ -79,10 +79,8 @@ public class TIFFJPEGCompressor extends TIFFBaseJPEGCompressor {
 
         try {
             IIORegistry registry = IIORegistry.getDefaultInstance();
-            Class<?> imageReaderClass =
-                Class.forName("javax.imageio.spi.ImageReaderSpi");
             Iterator<?> readerSPIs =
-                registry.getServiceProviders(imageReaderClass,
+                registry.getServiceProviders(ImageReaderSpi.class,
                                              new JPEGSPIFilter(),
                                              true);
             if(readerSPIs.hasNext()) {

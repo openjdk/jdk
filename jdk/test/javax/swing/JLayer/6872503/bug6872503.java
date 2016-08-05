@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 6872503
  * @summary Checks that JLayer correctly works with its AWTEventListener
  * @author Alexander Potochkin
