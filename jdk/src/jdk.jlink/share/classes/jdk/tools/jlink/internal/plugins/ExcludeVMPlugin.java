@@ -263,6 +263,6 @@ public final class ExcludeVMPlugin implements Plugin {
     }
 
     private static boolean isMac(String osName) {
-        return osName.startsWith("Mac OS");
+        return osName.startsWith("Mac OS") || osName.startsWith("Darwin");
     }
 }
