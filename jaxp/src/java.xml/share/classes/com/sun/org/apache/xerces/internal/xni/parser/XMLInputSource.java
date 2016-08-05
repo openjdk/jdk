@@ -21,9 +21,9 @@
 package com.sun.org.apache.xerces.internal.xni.parser;
 
 import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
-
 import java.io.InputStream;
 import java.io.Reader;
+import org.xml.sax.InputSource;
 
 /**
  * This class represents an input source for an XML document. The
@@ -106,6 +106,23 @@ public class XMLInputSource {
         fSystemId = resourceIdentifier.getLiteralSystemId();
         fBaseSystemId = resourceIdentifier.getBaseSystemId();
     } // <init>(XMLResourceIdentifier)
+
+    /**
+     * Constructs an input source from a SAX InputSource
+     * object.
+     *
+     * @param inputSource  a SAX InputSource
+     * @param isCreatedByResolver a flag to indicate whether the source is
+     * created by a resolver
+     */
+    public XMLInputSource(InputSource inputSource, boolean isCreatedByResolver) {
+        fPublicId = inputSource.getPublicId();
+        fSystemId = inputSource.getSystemId();
+        fByteStream = inputSource.getByteStream();
+        fCharStream = inputSource.getCharacterStream();
+        fEncoding = inputSource.getEncoding();
+        fIsCreatedByResolver = isCreatedByResolver;
+    }
 
     /**
      * Constructs an input source from a byte stream.
