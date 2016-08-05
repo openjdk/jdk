@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,21 @@ package org.w3c.dom.ptests;
 
 import static org.testng.Assert.assertEquals;
 import static org.w3c.dom.ptests.DOMTestUtil.createDOMWithNS;
-import jaxp.library.JAXPFileBaseTest;
 
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.ProcessingInstruction;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true org.w3c.dom.ptests.PITest
+ * @run testng/othervm org.w3c.dom.ptests.PITest
  * @summary Test for the methods of Processing Instruction
  */
-public class PITest extends JAXPFileBaseTest {
+@Listeners({jaxp.library.FilePolicy.class})
+public class PITest {
     /*
      * Test getData, setData and getTarget methods
      */
@@ -49,3 +54,4 @@ public class PITest extends JAXPFileBaseTest {
     }
 
 }
+

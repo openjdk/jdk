@@ -26,6 +26,7 @@ import java.awt.event.*;
 import javax.swing.*;
 /*
  * @test
+ * @key headful
  * @bug 8080137
  * @summary Dragged events for extra mouse buttons (4,5,6) are not generated
  *            on JSplitPane

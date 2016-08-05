@@ -21,11 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 8133108
-   @summary [PIT] Container size is wrong in JEditorPane
-   @author Semyon Sadetsky
-  */
+/*
+ * @test
+ * @key headful
+ * @bug 8133108
+ * @summary [PIT] Container size is wrong in JEditorPane
+ * @author Semyon Sadetsky
+ */
 
 import javax.swing.*;
 import javax.swing.text.BadLocationException;

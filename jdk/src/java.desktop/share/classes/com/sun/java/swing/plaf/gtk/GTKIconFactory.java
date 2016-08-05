@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,6 +214,18 @@ class GTKIconFactory {
 
             Region region = context.getRegion();
             GTKStyle style = (GTKStyle) context.getStyle();
+            if (GTKLookAndFeel.is3() && region == Region.MENU) {
+                Object value = style.getClassSpecificValue("arrow-scaling");
+                if (value instanceof Number) {
+                    iconDimension = (int)(((Number) value).floatValue() *
+                            (style.getFont(context).getSize2D() +
+                            2 * style.getClassSpecificIntValue(context,
+                            "indicator-spacing", DEFAULT_ICON_SPACING)));
+                    if (iconDimension > 0) {
+                        return iconDimension;
+                    }
+                }
+            }
             iconDimension = style.getClassSpecificIntValue(context,
                     "indicator-size",
                     (region == Region.CHECK_BOX_MENU_ITEM ||

@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6987844
  * @summary Incorrect width of JComboBox drop down
  * @author Alexander Potochkin

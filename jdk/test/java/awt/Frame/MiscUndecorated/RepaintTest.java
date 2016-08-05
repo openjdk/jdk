@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,16 +20,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
-* @test
-* @summary Make sure that on changing state of Undecorated Frame,
-*          all the components on it are repainted correctly
-* @author Jitender(jitender.singh@eng.sun.com) area=AWT
-* @author yan
-* @library ../../../../lib/testlibrary
-* @build ExtendedRobot
-* @run main RepaintTest
-*/
+ * @test
+ * @key headful
+ * @summary Make sure that on changing state of Undecorated Frame,
+ *          all the components on it are repainted correctly
+ * @author Jitender(jitender.singh@eng.sun.com) area=AWT
+ * @author yan
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot
+ * @run main RepaintTest
+ */
 
 import java.awt.*;
 import java.awt.event.*;

@@ -23,6 +23,7 @@
 package test.astro;
 
 import static jaxp.library.JAXPTestUtilities.filenameToURL;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static org.w3c.dom.ls.DOMImplementationLS.MODE_SYNCHRONOUS;
 import static org.w3c.dom.traversal.NodeFilter.SHOW_ELEMENT;
 
@@ -81,7 +82,7 @@ public class DOML3InputSourceFactoryImpl implements InputSourceFactory {
 
         // Use DOM L3 LSSerializer (previously called a DOMWriter)
         // to serialize the xml doc DOM to a file stream.
-        String tmpCatalog = Files.createTempFile(Paths.get("").toAbsolutePath(), "catalog.xml", null).toString();
+        String tmpCatalog = Files.createTempFile(Paths.get(USER_DIR), "catalog.xml", null).toString();
 
         LSSerializer domserializer = impl.createLSSerializer();
         domserializer.setFilter(new MyDOMWriterFilter());

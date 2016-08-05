@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,11 +107,11 @@ public class JavadocTool implements DocumentationTool {
                 context.put(DiagnosticListener.class, ccw.wrap(diagnosticListener));
 
             if (out == null)
-                context.put(Log.outKey, new PrintWriter(System.err, true));
+                context.put(Log.errKey, new PrintWriter(System.err, true));
             else if (out instanceof PrintWriter)
-                context.put(Log.outKey, ((PrintWriter) out));
+                context.put(Log.errKey, ((PrintWriter) out));
             else
-                context.put(Log.outKey, new PrintWriter(out, true));
+                context.put(Log.errKey, new PrintWriter(out, true));
 
             if (fileManager == null) {
                 fileManager = getStandardFileManager(diagnosticListener, null, null);
@@ -141,7 +141,7 @@ public class JavadocTool implements DocumentationTool {
         PrintWriter pw = (charset == null)
                 ? new PrintWriter(System.err, true)
                 : new PrintWriter(new OutputStreamWriter(System.err, charset), true);
-        context.put(Log.outKey, pw);
+        context.put(Log.errKey, pw);
         return new JavacFileManager(context, true, charset);
     }
 

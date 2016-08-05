@@ -62,9 +62,13 @@ public class Main {
      */
     String ownName;
 
+    /** The writer to use for normal output.
+     */
+    PrintWriter stdOut;
+
     /** The writer to use for diagnostic output.
      */
-    PrintWriter out;
+    PrintWriter stdErr;
 
     /** The log to use for diagnostic output.
      */
@@ -102,7 +106,7 @@ public class Main {
      * @param name the name of this tool
      */
     public Main(String name) {
-        this(name, new PrintWriter(System.err, true));
+        this.ownName = name;
     }
 
     /**
@@ -112,7 +116,7 @@ public class Main {
      */
     public Main(String name, PrintWriter out) {
         this.ownName = name;
-        this.out = out;
+        this.stdOut = this.stdErr = out;
     }
 
     /** Report a usage error.
@@ -161,7 +165,14 @@ public class Main {
      * @return the result of the compilation
      */
     public Result compile(String[] argv, Context context) {
-        context.put(Log.outKey, out);
+        if (stdOut != null) {
+            context.put(Log.outKey, stdOut);
+        }
+
+        if (stdErr != null) {
+            context.put(Log.errKey, stdErr);
+        }
+
         log = Log.instance(context);
 
         if (argv.length == 0) {

@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 6411406
   @summary Components automatically transfer focus on removal, even if developer requests focus elsewhere first
   @author oleg.sukhodolsky, anton.tarasov: area=awt.focus

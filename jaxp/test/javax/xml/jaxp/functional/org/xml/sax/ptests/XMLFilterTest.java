@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,33 @@
  */
 package org.xml.sax.ptests;
 
-import java.io.FileInputStream;
-import javax.xml.parsers.SAXParserFactory;
-import jaxp.library.JAXPFileReadOnlyBaseTest;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
+import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
+
+import java.io.FileInputStream;
+
+import javax.xml.parsers.SAXParserFactory;
+
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
-import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 
 /**
  * Unit test for XMLFilter.
  */
-public class XMLFilterTest extends JAXPFileReadOnlyBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true org.xml.sax.ptests.XMLFilterTest
+ * @run testng/othervm org.xml.sax.ptests.XMLFilterTest
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class XMLFilterTest {
     /**
      * name spaces constant.
      */
@@ -217,7 +227,7 @@ public class XMLFilterTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"}, expectedExceptions = NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void parse02() throws Exception {
         try(FileInputStream fis = new FileInputStream(XML_DIR + "invalid.xml")) {
             new XMLFilterImpl().parse(new InputSource(fis));
@@ -229,10 +239,12 @@ public class XMLFilterTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"}, expectedExceptions = NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void parse03() throws Exception {
         try(FileInputStream fis = new FileInputStream(XML_DIR + "correct2.xml")) {
             new XMLFilterImpl().parse(new InputSource(fis));
         }
     }
 }
+
+

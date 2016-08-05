@@ -32,6 +32,7 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
 
 /**
  * @test
+ * @key headful
  * @bug 6368321
  * @author Sergey Bylokhov
  */

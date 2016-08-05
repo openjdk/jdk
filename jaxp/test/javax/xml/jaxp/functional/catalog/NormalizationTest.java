@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,18 +33,21 @@ import javax.xml.catalog.CatalogResolver;
 import javax.xml.catalog.CatalogUriResolver;
 
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8077931
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true catalog.NormalizationTest
+ * @run testng/othervm catalog.NormalizationTest
  * @summary Before matching identifiers and URI references, it has to normalize
  *          the passed identifiers and URI references. And then the catalog
  *          resolver uses the normalized stuff to search the counterparts in
  *          catalog files.
- * @compile ../../libs/catalog/CatalogTestUtils.java
- * @compile ../../libs/catalog/ResolutionChecker.java
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class NormalizationTest {
 
     private static final String CATALOG_NORMALIZATION = "normalization.xml";
@@ -65,7 +68,7 @@ public class NormalizationTest {
     }
 
     @DataProvider(name = "systemId_uri-matchedUri")
-    private Object[][] dataOnSysIdAndUri() {
+    public Object[][] dataOnSysIdAndUri() {
         return new Object[][] {
                 // The specified system id/URI reference contains spaces. And
                 // the counterparts in system/uri entries also contain spaces.
@@ -87,7 +90,7 @@ public class NormalizationTest {
     }
 
     @DataProvider(name = "publicId-matchedUri")
-    private Object[][] dataOnPubId() {
+    public Object[][] dataOnPubId() {
         return new Object[][] {
                 // The specified public id contains spaces. And the counterparts
                 // in public entry also contains spaces.
@@ -112,3 +115,4 @@ public class NormalizationTest {
         return catalogUriResolver(CATALOG_NORMALIZATION);
     }
 }
+

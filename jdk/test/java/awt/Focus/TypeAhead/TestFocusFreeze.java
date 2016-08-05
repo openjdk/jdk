@@ -22,14 +22,15 @@
  */
 
 /*
-   @test
-   @bug        6183877 6216005 6225560
-   @library    ../../regtesthelpers
-   @build      Util
-   @summary    Tests that keyboard input doesn't freeze due to type-ahead problems
-   @author     Denis.Mikhalkin, Anton.Tarasov: area=awt.focus
-   @run        main TestFocusFreeze
-*/
+ * @test
+ * @key headful
+ * @bug        6183877 6216005 6225560
+ * @library    ../../regtesthelpers
+ * @build      Util
+ * @summary    Tests that keyboard input doesn't freeze due to type-ahead problems
+ * @author     Denis.Mikhalkin, Anton.Tarasov: area=awt.focus
+ * @run        main TestFocusFreeze
+ */
 
 import java.awt.Component;
 import java.awt.DefaultKeyboardFocusManager;

@@ -22,6 +22,7 @@
  */
 /*
  * @test
+ * @key headful
  * @bug 6842011 8158758
  * @summary Test if StackOverflowError occurs during printing landscape with
  *          scale and transform.

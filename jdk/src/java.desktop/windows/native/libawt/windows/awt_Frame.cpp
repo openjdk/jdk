@@ -1374,7 +1374,6 @@ void AwtFrame::_SetState(void *param)
             } else { // zoom == iconify == FALSE
                 wp.showCmd = focusable ? SW_RESTORE : SW_SHOWNOACTIVATE;
             }
-            ::ShowWindow(hwnd, wp.showCmd);
             if (zoom && iconify) {
                 wp.flags |= WPF_RESTORETOMAXIMIZED;
             } else {

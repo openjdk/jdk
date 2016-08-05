@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,10 +229,13 @@ public class BasicButtonListener implements MouseListener, MouseMotionListener,
           AbstractButton b = (AbstractButton) e.getSource();
 
           if(b.contains(e.getX(), e.getY())) {
-              long multiClickThreshhold = b.getMultiClickThreshhold();
               long lastTime = lastPressedTimestamp;
-              long currentTime = lastPressedTimestamp = e.getWhen();
-              if (lastTime != -1 && currentTime - lastTime < multiClickThreshhold) {
+              lastPressedTimestamp = e.getWhen();
+              long timeSinceLastClick = lastPressedTimestamp - lastTime;
+              if (lastTime != -1 &&
+                  timeSinceLastClick > 0 &&
+                  timeSinceLastClick < b.getMultiClickThreshhold()) {
+
                   shouldDiscardRelease = true;
                   return;
               }

@@ -21,11 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 4242228
-   @summary Tests that HTMLEditorKit.setText() doesn't throw exceptions
-   @author Peter Zhelezniakov
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 4242228
+ * @summary Tests that HTMLEditorKit.setText() doesn't throw exceptions
+ * @author Peter Zhelezniakov
+ */
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;

@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 4654927
  * @summary Clicking on Greyed Menuitems closes the Menubar Dropdown
  * @author Alexander Potochkin

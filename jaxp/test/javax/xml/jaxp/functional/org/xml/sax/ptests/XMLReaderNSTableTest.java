@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,35 @@
  */
 package org.xml.sax.ptests;
 
-import java.io.FileInputStream;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import jaxp.library.JAXPFileBaseTest;
 import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
 import static org.testng.Assert.assertTrue;
-import org.xml.sax.InputSource;
-import org.xml.sax.XMLReader;
 import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
 import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
+
+import java.io.FileInputStream;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
+import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
 
 /** This class contains the testcases to test XMLReader with regard to
   * Namespace Table defined at
   * http://www.megginson.com/SAX/Java/namespaces.html
   */
-public class XMLReaderNSTableTest extends JAXPFileBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true org.xml.sax.ptests.XMLReaderNSTableTest
+ * @run testng/othervm org.xml.sax.ptests.XMLReaderNSTableTest
+ */
+@Test
+@Listeners({jaxp.library.FilePolicy.class})
+public class XMLReaderNSTableTest {
     /**
      * XML file that used to be parsed.
      */
@@ -109,7 +121,7 @@ public class XMLReaderNSTableTest extends JAXPFileBaseTest {
         String goldFile = GOLDEN_DIR + "NSTableFTGF.out";
 
         SAXParserFactory spf = SAXParserFactory.newInstance();
-        spf.setNamespaceAware(true);
+        //NamespaceAware is false by default, so don't need to set here
         XMLReader xmlReader = spf.newSAXParser().getXMLReader();
         try (FileInputStream fis = new FileInputStream(xmlFile);
             MyNSContentHandler handler = new MyNSContentHandler(outputFile)) {
@@ -119,3 +131,5 @@ public class XMLReaderNSTableTest extends JAXPFileBaseTest {
         assertTrue(compareWithGold(goldFile, outputFile));
     }
 }
+
+

@@ -26,6 +26,7 @@ import java.awt.event.*;
 
 /**
  * @test
+ * @key headful
  * @bug 7161568
  * @author Alexander Scherbatiy
  * @summary Tests that navigating tabs in the JTAbbedPane does not throw NPE

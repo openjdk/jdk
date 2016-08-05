@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     8004822
+ * @bug     8004822 8163113
  * @author  mnunez
  * @summary Language model api test basics for repeating annotations
  * @library /tools/javac/lib
@@ -53,9 +53,9 @@
 @ExpectedContainer(
         value = UnofficialContainer.class,
         getAnnotation = "@UnofficialContainer("
-        + "value=[@Foo(value=1), @Foo(value=2)])",
+        + "value={@Foo(value=1), @Foo(value=2)})",
         getAnnotationsByType = {"@UnofficialContainer("
-                + "value=[@Foo(value=1), @Foo(value=2)])"})
+                + "value={@Foo(value=1), @Foo(value=2)})"})
 @Foo(value = 0)
 @UnofficialContainer(value = {@Foo(value = 1), @Foo(value = 2)})
 class MixSingularAndUnofficialContainerBasicTest {
@@ -79,9 +79,9 @@ class MixSingularAndUnofficialContainerBasicTest {
     @ExpectedContainer(
             value = UnofficialContainer.class,
             getAnnotation = "@UnofficialContainer("
-            + "value=[@Foo(value=1), @Foo(value=2)])",
+            + "value={@Foo(value=1), @Foo(value=2)})",
             getAnnotationsByType = {"@UnofficialContainer("
-                    + "value=[@Foo(value=1), @Foo(value=2)])"})
+                    + "value={@Foo(value=1), @Foo(value=2)})"})
     @Foo(value = 0)
     @UnofficialContainer(value = {@Foo(value = 1), @Foo(value = 2)})
     int testField = 0;
@@ -105,9 +105,9 @@ class MixSingularAndUnofficialContainerBasicTest {
     @ExpectedContainer(
             value = UnofficialContainer.class,
             getAnnotation = "@UnofficialContainer("
-            + "value=[@Foo(value=1), @Foo(value=2)])",
+            + "value={@Foo(value=1), @Foo(value=2)})",
             getAnnotationsByType = {"@UnofficialContainer("
-                    + "value=[@Foo(value=1), @Foo(value=2)])"})
+                    + "value={@Foo(value=1), @Foo(value=2)})"})
     @Foo(value = 0)
     @UnofficialContainer(value = {@Foo(value = 1), @Foo(value = 2)})
     void testMethod() {}

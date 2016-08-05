@@ -28,12 +28,18 @@ import java.io.File;
 import javax.xml.XMLConstants;
 import javax.xml.validation.SchemaFactory;
 
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true validation.SchemaTest
+ * @run testng/othervm validation.SchemaTest
  * @summary Test Schema creation
  * @bug 8149915
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class SchemaTest {
 
     /*
@@ -48,3 +54,4 @@ public class SchemaTest {
         factory.newSchema(new File(getClass().getResource("Bug8149915.xsd").getFile()));
     }
 }
+

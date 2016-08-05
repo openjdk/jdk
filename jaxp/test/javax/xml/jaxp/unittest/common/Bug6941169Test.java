@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 
 package common;
 
+import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
+import static jaxp.library.JAXPTestUtilities.getSystemProperty;
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+
+import java.io.FilePermission;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.security.AllPermission;
-import java.security.Permission;
-import java.security.Permissions;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -44,15 +46,24 @@ import javax.xml.validation.Validator;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
 
+import jaxp.library.JAXPTestUtilities;
+
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
 /*
+ * @test
  * @bug 6941169
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true common.Bug6941169Test
+ * @run testng/othervm common.Bug6941169Test
  * @summary Test use-service-mechanism feature.
  */
+@Test(singleThreaded = true)
+@Listeners({ jaxp.library.FilePolicy.class })
 public class Bug6941169Test {
     static final String SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
     static final String SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
@@ -71,7 +82,7 @@ public class Bug6941169Test {
         System.out.println("Validation using SAX Source;  Service mechnism is turned off;  SAX Impl should be the default:");
         InputSource is = new InputSource(Bug6941169Test.class.getResourceAsStream("Bug6941169.xml"));
         SAXSource ss = new SAXSource(is);
-        System.setProperty(SAX_FACTORY_ID, "MySAXFactoryImpl");
+        setSystemProperty(SAX_FACTORY_ID, "MySAXFactoryImpl");
         long start = System.currentTimeMillis();
         try {
             SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
@@ -94,7 +105,7 @@ public class Bug6941169Test {
         long end = System.currentTimeMillis();
         double elapsedTime = ((end - start));
         System.out.println("Time elapsed: " + elapsedTime);
-        System.clearProperty(SAX_FACTORY_ID);
+        clearSystemProperty(SAX_FACTORY_ID);
     }
 
     @Test
@@ -102,7 +113,7 @@ public class Bug6941169Test {
         System.out.println("Validation using SAX Source. Using service mechnism (by default) to find SAX Impl:");
         InputSource is = new InputSource(Bug6941169Test.class.getResourceAsStream("Bug6941169.xml"));
         SAXSource ss = new SAXSource(is);
-        System.setProperty(SAX_FACTORY_ID, "MySAXFactoryImpl");
+        setSystemProperty(SAX_FACTORY_ID, "MySAXFactoryImpl");
         long start = System.currentTimeMillis();
         try {
             SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
@@ -121,18 +132,18 @@ public class Bug6941169Test {
         long end = System.currentTimeMillis();
         double elapsedTime = ((end - start));
         System.out.println("Time elapsed: " + elapsedTime);
-        System.clearProperty(SAX_FACTORY_ID);
+        clearSystemProperty(SAX_FACTORY_ID);
     }
 
     @Test
-    public void testValidation_SAX_withSM() {
+    public void testValidation_SAX_withSM() throws Exception {
+        if(System.getSecurityManager() == null)
+            return;
+
         System.out.println("Validation using SAX Source with security manager:");
         InputSource is = new InputSource(Bug6941169Test.class.getResourceAsStream("Bug6941169.xml"));
         SAXSource ss = new SAXSource(is);
-        System.setProperty(SAX_FACTORY_ID, "MySAXFactoryImpl");
-        Permissions granted = new java.security.Permissions();
-        granted.add(new AllPermission());
-        System.setSecurityManager(new MySM(granted));
+        setSystemProperty(SAX_FACTORY_ID, "MySAXFactoryImpl");
 
         long start = System.currentTimeMillis();
         try {
@@ -152,13 +163,11 @@ public class Bug6941169Test {
             // System.out.println(e.getMessage());
 
         } finally {
-            System.clearProperty(SAX_FACTORY_ID);
-            System.setSecurityManager(null);
+            clearSystemProperty(SAX_FACTORY_ID);
         }
         long end = System.currentTimeMillis();
         double elapsedTime = ((end - start));
         System.out.println("Time elapsed: " + elapsedTime);
-        System.setSecurityManager(null);
 
     }
 
@@ -170,7 +179,7 @@ public class Bug6941169Test {
 
         // DOMSource domSource = new
         // DOMSource(getDocument(Bug6941169Test.class.getResourceAsStream("Bug6941169.xml")));
-        System.setProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
+        setSystemProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
         long start = System.currentTimeMillis();
         try {
             TransformerFactory factory = TransformerFactory.newInstance();
@@ -210,7 +219,7 @@ public class Bug6941169Test {
         long end = System.currentTimeMillis();
         double elapsedTime = ((end - start));
         System.out.println("Time elapsed: " + elapsedTime);
-        System.clearProperty(DOM_FACTORY_ID);
+        clearSystemProperty(DOM_FACTORY_ID);
     }
 
     /** this is by default */
@@ -222,7 +231,7 @@ public class Bug6941169Test {
 
         // DOMSource domSource = new
         // DOMSource(getDocument(Bug6941169Test.class.getResourceAsStream("Bug6941169.xml")));
-        System.setProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
+        setSystemProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
         long start = System.currentTimeMillis();
         try {
             TransformerFactory factory = TransformerFactory.newInstance();
@@ -254,21 +263,20 @@ public class Bug6941169Test {
         long end = System.currentTimeMillis();
         double elapsedTime = ((end - start));
         System.out.println("Time elapsed: " + elapsedTime);
-        System.clearProperty(DOM_FACTORY_ID);
+        clearSystemProperty(DOM_FACTORY_ID);
     }
 
     @Test
-    public void testTransform_DOM_withSM() {
+    public void testTransform_DOM_withSM() throws Exception {
+        if(System.getSecurityManager() == null)
+            return;
         System.out.println("Transform using DOM Source;  Security Manager is set:");
         DOMSource domSource = new DOMSource();
         domSource.setSystemId(_xml);
 
         // DOMSource domSource = new
         // DOMSource(getDocument(Bug6941169Test.class.getResourceAsStream("Bug6941169.xml")));
-        Permissions granted = new java.security.Permissions();
-        granted.add(new AllPermission());
-        System.setSecurityManager(new MySM(granted));
-        System.setProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
+        setSystemProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
         long start = System.currentTimeMillis();
         try {
             TransformerFactory factory = TransformerFactory.newInstance("com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl",
@@ -301,13 +309,12 @@ public class Bug6941169Test {
             // System.out.println(e.getMessage());
 
         } finally {
-            System.clearProperty(DOM_FACTORY_ID);
-            System.setSecurityManager(null);
+            clearSystemProperty(DOM_FACTORY_ID);
         }
         long end = System.currentTimeMillis();
         double elapsedTime = ((end - start));
         System.out.println("Time elapsed: " + elapsedTime);
-        System.clearProperty(DOM_FACTORY_ID);
+
     }
 
     @Test
@@ -315,7 +322,7 @@ public class Bug6941169Test {
         final String XPATH_EXPRESSION = "/fooTest";
         System.out.println("Evaluate DOM Source;  Service mechnism is turned off;  Default DOM Impl should be used:");
         Document doc = getDocument(Bug6941169Test.class.getResourceAsStream("Bug6941169.xml"));
-        System.setProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
+        setSystemProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
         long start = System.currentTimeMillis();
         try {
             XPathFactory xPathFactory = XPathFactory.newInstance();
@@ -352,7 +359,7 @@ public class Bug6941169Test {
         long end = System.currentTimeMillis();
         double elapsedTime = ((end - start));
         System.out.println("Time elapsed: " + elapsedTime);
-        System.clearProperty(DOM_FACTORY_ID);
+        clearSystemProperty(DOM_FACTORY_ID);
     }
 
     @Test
@@ -361,7 +368,7 @@ public class Bug6941169Test {
         System.out.println("Evaluate DOM Source;  Service mechnism is on by default;  It would try to use MyDOMFactoryImpl:");
         InputStream input = getClass().getResourceAsStream("Bug6941169.xml");
         InputSource source = new InputSource(input);
-        System.setProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
+        setSystemProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
         long start = System.currentTimeMillis();
         try {
             XPathFactory xPathFactory = XPathFactory.newInstance();
@@ -400,19 +407,18 @@ public class Bug6941169Test {
         long end = System.currentTimeMillis();
         double elapsedTime = ((end - start));
         System.out.println("Time elapsed: " + elapsedTime);
-        System.clearProperty(DOM_FACTORY_ID);
+        clearSystemProperty(DOM_FACTORY_ID);
     }
 
     @Test
-    public void testXPath_DOM_withSM() {
+    public void testXPath_DOM_withSM() throws Exception {
+        if(System.getSecurityManager() == null)
+            return;
         final String XPATH_EXPRESSION = "/fooTest";
         System.out.println("Evaluate DOM Source;  Security Manager is set:");
-        Permissions granted = new java.security.Permissions();
-        granted.add(new AllPermission());
-        System.setSecurityManager(new MySM(granted));
         InputStream input = getClass().getResourceAsStream("Bug6941169.xml");
         InputSource source = new InputSource(input);
-        System.setProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
+        setSystemProperty(DOM_FACTORY_ID, "MyDOMFactoryImpl");
         long start = System.currentTimeMillis();
         try {
             XPathFactory xPathFactory = XPathFactory.newInstance("http://java.sun.com/jaxp/xpath/dom",
@@ -445,13 +451,12 @@ public class Bug6941169Test {
             // System.out.println(e.getMessage());
 
         } finally {
-            System.clearProperty(DOM_FACTORY_ID);
-            System.setSecurityManager(null);
+            clearSystemProperty(DOM_FACTORY_ID);
         }
         long end = System.currentTimeMillis();
         double elapsedTime = ((end - start));
         System.out.println("Time elapsed: " + elapsedTime);
-        System.clearProperty(DOM_FACTORY_ID);
+
     }
 
     @Test
@@ -480,22 +485,5 @@ public class Bug6941169Test {
 
         return document;
     }
-
-    class MySM extends SecurityManager {
-        Permissions granted;
-
-        public MySM(Permissions perms) {
-            granted = perms;
-        }
-
-        @Override
-        public void checkPermission(Permission perm) {
-            if (granted.implies(perm)) {
-                return;
-            }
-            super.checkPermission(perm);
-        }
-
-    }
-
 }
+

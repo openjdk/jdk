@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,22 @@ import static org.w3c.dom.ptests.DOMTestUtil.createNewDocument;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import jaxp.library.JAXPBaseTest;
-
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true org.w3c.dom.ptests.DomImplementationTest
+ * @run testng/othervm org.w3c.dom.ptests.DomImplementationTest
  * @summary Test DomImplementation API
  */
-public class DomImplementationTest extends JAXPBaseTest {
+@Listeners({jaxp.library.BasePolicy.class})
+public class DomImplementationTest {
     /*
      * Test createDocument method with a namespace uri, qualified name and null
      * for the doctype
@@ -125,3 +129,4 @@ public class DomImplementationTest extends JAXPBaseTest {
         assertEquals(documentType.getName(), name);
     }
 }
+

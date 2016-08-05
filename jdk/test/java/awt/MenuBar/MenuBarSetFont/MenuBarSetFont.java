@@ -37,6 +37,7 @@ import jdk.testlibrary.OSInfo;
 
 /**
  * @test
+ * @key headful
  * @bug 6263470
  * @summary Tries to change font of MenuBar. Test passes if the font has changed
  * fails otherwise.

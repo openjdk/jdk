@@ -26,6 +26,7 @@ import java.awt.Robot;
 import java.awt.Window;
 /**
  * @test
+ * @key headful
  * @bug 7081594
  * @author Alexander Scherbatiy
  * @summary Windows owned by an always-on-top window DO NOT automatically become always-on-top
@@ -37,7 +38,7 @@ public class AlwaysOnTopFieldTest {
         Robot robot;
         try {
             robot = new Robot();
-        }catch(Exception ex) {
+        } catch(Exception ex) {
             ex.printStackTrace();
             throw new RuntimeException("Unexpected failure");
         }

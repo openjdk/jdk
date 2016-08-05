@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,31 @@
  */
 package org.xml.sax.ptests;
 
-import java.io.File;
-import javax.xml.parsers.SAXParserFactory;
-import jaxp.library.JAXPFileBaseTest;
 import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
 import static org.testng.Assert.assertTrue;
-import org.testng.annotations.Test;
 import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
 import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
+
+import java.io.File;
+
+import javax.xml.parsers.SAXParserFactory;
+
+import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
 
 /**
  * This class contains the testcases to test SAXParser with regard to
  * Namespace Table defined at http://www.megginson.com/SAX/Java/namespaces.html
  */
-public class SAXParserNSTableTest extends JAXPFileBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true org.xml.sax.ptests.SAXParserNSTableTest
+ * @run testng/othervm org.xml.sax.ptests.SAXParserNSTableTest
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class SAXParserNSTableTest {
     /**
      * namespace processing is enabled. namespace-prefix is also is enabled.
      * So it is a True-True combination.
@@ -97,3 +107,5 @@ public class SAXParserNSTableTest extends JAXPFileBaseTest {
         assertTrue(compareWithGold(goldFile, outputFile));
     }
 }
+
+

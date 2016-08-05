@@ -88,21 +88,13 @@ public class MFontConfiguration extends FontConfiguration {
         reorderMap.put("UTF-8.th", "thai");
         reorderMap.put("UTF-8.zh.TW", "chinese-big5");
         reorderMap.put("UTF-8.zh.HK", split("chinese-big5,chinese-hkscs"));
-        if (FontUtilities.isSolaris8) {
-            reorderMap.put("UTF-8.zh.CN", split("chinese-gb2312,chinese-big5"));
-        } else {
-            reorderMap.put("UTF-8.zh.CN",
-                           split("chinese-gb18030-0,chinese-gb18030-1"));
-        }
+        reorderMap.put("UTF-8.zh.CN",
+                       split("chinese-gb18030-0,chinese-gb18030-1"));
         reorderMap.put("UTF-8.zh",
                        split("chinese-big5,chinese-hkscs,chinese-gb18030-0,chinese-gb18030-1"));
         reorderMap.put("Big5", "chinese-big5");
         reorderMap.put("Big5-HKSCS", split("chinese-big5,chinese-hkscs"));
-        if (! FontUtilities.isSolaris8 && ! FontUtilities.isSolaris9) {
-            reorderMap.put("GB2312", split("chinese-gbk,chinese-gb2312"));
-        } else {
-            reorderMap.put("GB2312","chinese-gb2312");
-        }
+        reorderMap.put("GB2312", split("chinese-gbk,chinese-gb2312"));
         reorderMap.put("x-EUC-TW",
             split("chinese-cns11643-1,chinese-cns11643-2,chinese-cns11643-3"));
         reorderMap.put("GBK", "chinese-gbk");

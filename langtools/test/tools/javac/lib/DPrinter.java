@@ -138,7 +138,7 @@ public class DPrinter {
 
     protected DPrinter(Context context) {
         context.put(DPrinter.class, this);
-        out = context.get(Log.outKey);
+        out = context.get(Log.logKey).getWriter(Log.WriterKind.STDERR);
         trees = JavacTrees.instance(context);
     }
 

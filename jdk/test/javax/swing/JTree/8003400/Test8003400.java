@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8003400
  * @summary Tests that JTree shows the last row
  * @author Sergey Malenkov

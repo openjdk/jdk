@@ -107,3 +107,9 @@ function updateTabs(type)
         }
     }
 }
+
+function updateModuleFrame(pFrame, cFrame)
+{
+    top.packageFrame.location = pFrame;
+    top.classFrame.location = cFrame;
+}

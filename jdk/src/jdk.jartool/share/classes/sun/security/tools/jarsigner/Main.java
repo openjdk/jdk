@@ -70,7 +70,6 @@ import sun.security.util.*;
  * @author Roland Schemers
  * @author Jan Luehe
  */
-@SuppressWarnings("deprecation")
 public class Main {
 
     // for i18n
@@ -98,7 +97,6 @@ public class Main {
     static final String VERSION = "1.0";
 
     static final int IN_KEYSTORE = 0x01;        // signer is in keystore
-    static final int IN_SCOPE = 0x02;
     static final int NOT_ALIAS = 0x04;          // alias list is NOT empty and
                                                 // signer is not in alias list
     static final int SIGNED_BY_ALIAS = 0x08;    // signer is in alias list
@@ -676,14 +674,13 @@ public class Main {
                     hasUnsignedEntry |= !je.isDirectory() && !isSigned
                                         && !signatureRelated(name);
 
-                    int inStoreOrScope = inKeyStore(signers);
+                    int inStoreWithAlias = inKeyStore(signers);
 
-                    boolean inStore = (inStoreOrScope & IN_KEYSTORE) != 0;
-                    boolean inScope = (inStoreOrScope & IN_SCOPE) != 0;
+                    boolean inStore = (inStoreWithAlias & IN_KEYSTORE) != 0;
 
-                    notSignedByAlias |= (inStoreOrScope & NOT_ALIAS) != 0;
+                    notSignedByAlias |= (inStoreWithAlias & NOT_ALIAS) != 0;
                     if (keystore != null) {
-                        aliasNotInStore |= isSigned && (!inStore && !inScope);
+                        aliasNotInStore |= isSigned && !inStore;
                     }
 
                     // Only used when -verbose provided
@@ -697,8 +694,7 @@ public class Main {
                         sb.append(isSigned ? rb.getString("s") : rb.getString("SPACE"))
                                 .append(inManifest ? rb.getString("m") : rb.getString("SPACE"))
                                 .append(inStore ? rb.getString("k") : rb.getString("SPACE"))
-                                .append(inScope ? rb.getString("i") : rb.getString("SPACE"))
-                                .append((inStoreOrScope & NOT_ALIAS) != 0 ? 'X' : ' ')
+                                .append((inStoreWithAlias & NOT_ALIAS) != 0 ? 'X' : ' ')
                                 .append(rb.getString("SPACE"));
                         sb.append('|');
                     }
@@ -800,8 +796,6 @@ public class Main {
                     ".m.entry.is.listed.in.manifest"));
                 System.out.println(rb.getString(
                     ".k.at.least.one.certificate.was.found.in.keystore"));
-                System.out.println(rb.getString(
-                    ".i.at.least.one.certificate.was.found.in.identity.scope"));
                 if (ckaliases.size() > 0) {
                     System.out.println(rb.getString(
                         ".X.not.signed.by.specified.alias.es."));
@@ -1076,8 +1070,6 @@ public class Main {
             if (alias != null) {
                 if (alias.startsWith("(")) {
                     result |= IN_KEYSTORE;
-                } else if (alias.startsWith("[")) {
-                    result |= IN_SCOPE;
                 }
                 if (ckaliases.contains(alias.substring(1, alias.length() - 1))) {
                     result |= SIGNED_BY_ALIAS;

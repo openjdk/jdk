@@ -20,16 +20,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
-   @bug 6236162
-   @summary Checks that there is no an inconsistence in combo box
-            behavior when user points an item in combo popup
-            by mouse and then uses UP/DOWN keys.
-   @library ../../regtesthelpers
-   @build Util
-   @author Mikhail Lapshin
-   @run main bug6236162
-*/
+
+/*
+ * @test
+ * @key headful
+ * @bug 6236162
+ * @summary Checks that there is no an inconsistence in combo box
+ *          behavior when user points an item in combo popup
+ *          by mouse and then uses UP/DOWN keys.
+ * @library ../../regtesthelpers
+ * @build Util
+ * @author Mikhail Lapshin
+ * @run main bug6236162
+ */
 
 import javax.swing.*;
 import javax.swing.plaf.basic.*;

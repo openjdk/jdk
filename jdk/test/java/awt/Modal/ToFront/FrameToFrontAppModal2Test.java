@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8050885
  * @summary Check that calling toFront method for a frame in presence of
  *          blocking application modal dialog having a null Dialog parent

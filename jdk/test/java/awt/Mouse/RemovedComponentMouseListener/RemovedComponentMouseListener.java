@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8061636
  * @summary fix for 7079254 changes behavior of MouseListener, MouseMotionListener
  * @library ../../regtesthelpers

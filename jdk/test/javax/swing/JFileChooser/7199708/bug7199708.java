@@ -40,6 +40,7 @@ import javax.swing.UIManager;
 
 /**
  * @test
+ * @key headful
  * @bug 7199708 8159587
  * @author Alexander Scherbatiy
  * @summary FileChooser crashs when opening large folder

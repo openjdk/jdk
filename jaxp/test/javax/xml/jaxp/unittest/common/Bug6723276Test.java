@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package common;
 
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.testng.Assert;
 import java.net.URL;
@@ -31,9 +32,14 @@ import java.net.URLClassLoader;
 import javax.xml.parsers.SAXParserFactory;
 
 /*
+ * @test
  * @bug 6723276
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true common.Bug6723276Test
+ * @run testng/othervm common.Bug6723276Test
  * @summary Test JAXP class can be loaded by bootstrap classloader.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6723276Test {
 
     @Test
@@ -62,3 +68,4 @@ public class Bug6723276Test {
     }
 
 }
+
