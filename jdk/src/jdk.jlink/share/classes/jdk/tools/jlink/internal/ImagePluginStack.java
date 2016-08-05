@@ -279,6 +279,8 @@ public final class ImagePluginStack {
         private class LastModule implements ResourcePoolModule {
 
             final ResourcePoolModule module;
+            // lazily initialized
+            ModuleDescriptor descriptor;
 
             LastModule(ResourcePoolModule module) {
                 this.module = module;
@@ -297,7 +299,10 @@ public final class ImagePluginStack {
 
             @Override
             public ModuleDescriptor descriptor() {
-                return module.descriptor();
+                if (descriptor == null) {
+                    descriptor = ResourcePoolManager.readModuleDescriptor(this);
+                }
+                return descriptor;
             }
 
             @Override
@@ -420,11 +425,6 @@ public final class ImagePluginStack {
             return pool.byteOrder();
         }
 
-        @Override
-        public Map<String, String> releaseProperties() {
-            return pool.releaseProperties();
-        }
-
         private ResourcePoolEntry getUncompressed(ResourcePoolEntry res) {
             if (res != null) {
                 if (res instanceof ResourcePoolManager.CompressedModuleData) {
@@ -458,18 +458,6 @@ public final class ImagePluginStack {
             throws Exception {
         Objects.requireNonNull(original);
         Objects.requireNonNull(transformed);
-        Optional<ResourcePoolModule> javaBase = transformed.moduleView().findModule("java.base");
-        javaBase.ifPresent(mod -> {
-            try {
-                Map<String, String> release = transformed.releaseProperties();
-                // fill release information available from transformed "java.base" module!
-                ModuleDescriptor desc = mod.descriptor();
-                desc.osName().ifPresent(s -> release.put("OS_NAME", s));
-                desc.osVersion().ifPresent(s -> release.put("OS_VERSION", s));
-                desc.osArch().ifPresent(s -> release.put("OS_ARCH", s));
-            } catch (Exception ignored) {}
-        });
-
         imageBuilder.storeFiles(new LastPoolManager(transformed).resourcePool());
     }
 
