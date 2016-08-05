@@ -42,14 +42,15 @@
 package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.CTVMUtilities;
+import jdk.test.lib.Asserts;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+
 import java.io.IOException;
 import java.lang.reflect.Executable;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.test.lib.Asserts;
 
 public class GetExceptionTableTest {
 

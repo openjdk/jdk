@@ -26,14 +26,15 @@
  * @bug 8136421
  * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
  * @library / /testlibrary /test/lib
- * @library ../common/patches
+ *          ../common/patches
  * @modules java.base/jdk.internal.misc
- * @modules jdk.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.vm.ci/jdk.vm.ci.hotspot
+ *
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
- * @build compiler.jvmci.compilerToVM.IsMatureTest
- * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ *        compiler.jvmci.compilerToVM.IsMatureTest
+ *        sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
@@ -44,16 +45,15 @@ package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.testcases.SimpleClass;
 import compiler.whitebox.CompilerWhiteBoxTest;
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Executable;
 
 public class IsMatureTest {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
-    private static final boolean IS_XCOMP
-            = System.getProperty("java.vm.info").contains("compiled mode");
     private static final boolean TIERED
             = WB.getBooleanVMFlag("TieredCompilation");
 
@@ -82,7 +82,7 @@ public class IsMatureTest {
                     "Multiple times invoked method should have method data");
             /* a method is not mature in Xcomp mode with tiered compilation disabled,
                see NonTieredCompPolicy::is_mature */
-            Asserts.assertEQ(isMature, !(IS_XCOMP && !TIERED),
+            Asserts.assertEQ(isMature, !(Platform.isComp() && !TIERED),
                     "Unexpected isMature state for multiple times invoked method");
         }
     }

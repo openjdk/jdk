@@ -28,7 +28,7 @@
  * @summary tests on constant folding of unsafe get operations from stable arrays
  * @library /testlibrary
  *
- * @requires vm.flavor != "client"
+ * @requires vm.flavor == "server"
  *
  * @modules java.base/jdk.internal.vm.annotation
  *          java.base/jdk.internal.misc
@@ -39,15 +39,18 @@
  *                   -XX:CompileCommand=dontinline,*Test::test*
  *                   compiler.unsafe.UnsafeGetStableArrayElement
  */
+
 package compiler.unsafe;
 
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
-import java.util.concurrent.Callable;
 import jdk.test.lib.Platform;
 
+import java.util.concurrent.Callable;
+
 import static jdk.internal.misc.Unsafe.*;
-import static jdk.test.lib.Asserts.*;
+import static jdk.test.lib.Asserts.assertEQ;
+import static jdk.test.lib.Asserts.assertNE;
 
 public class UnsafeGetStableArrayElement {
     @Stable static final boolean[] STABLE_BOOLEAN_ARRAY = new boolean[16];
@@ -329,9 +332,10 @@ public class UnsafeGetStableArrayElement {
     }
 
     public static void main(String[] args) throws Exception {
-        if (Platform.isServer()) {
-            testUnsafeAccess();
+        if (!Platform.isServer()) {
+            throw new Error("TESTBUG: Not server VM");
         }
+        testUnsafeAccess();
         System.out.println("TEST PASSED");
     }
 }

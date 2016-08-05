@@ -25,15 +25,17 @@
  * @test
  * @bug 8025657
  * @summary Test repeating addExact
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @compile AddExactIRepeatTest.java Verify.java
- * @run main AddExactIRepeatTest
  *
+ * @run main compiler.intrinsics.mathexact.AddExactIRepeatTest
  */
 
+package compiler.intrinsics.mathexact;
+
 import jdk.test.lib.Utils;
+
 import java.util.Random;
 
 public class AddExactIRepeatTest {

@@ -37,19 +37,10 @@
 
 package compiler.jvmci.compilerToVM;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.function.Consumer;
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.test.lib.Asserts;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
-import jdk.internal.misc.Unsafe;
 
 public class InitializeConfigurationTest {
     public static void main(String args[]) {

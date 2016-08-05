@@ -39,13 +39,12 @@
 
 package jdk.vm.ci.code.test;
 
-import org.junit.Test;
-
 import jdk.vm.ci.code.Location;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
+import org.junit.Test;
 
 public class MaxOopMapStackOffsetTest extends DebugInfoTest {
 

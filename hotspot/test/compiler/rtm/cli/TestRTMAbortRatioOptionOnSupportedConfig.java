@@ -30,12 +30,16 @@
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestRTMAbortRatioOptionOnSupportedConfig
+ *
+ * @build compiler.rtm.cli.TestRTMAbortRatioOptionOnSupportedConfig
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI TestRTMAbortRatioOptionOnSupportedConfig
+ *                   -XX:+WhiteBoxAPI
+ *                   compiler.rtm.cli.TestRTMAbortRatioOptionOnSupportedConfig
  */
+
+package compiler.rtm.cli;
 
 public class TestRTMAbortRatioOptionOnSupportedConfig
         extends RTMLockingAwareTest {

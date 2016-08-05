@@ -28,30 +28,23 @@
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
+ *
  * @build jdk.test.lib.*
  *        jdk.test.lib.dcmd.*
  *        sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils
+ *        compiler.compilercontrol.TestCompilerDirectivesCompatibilityFlag
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run testng/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions
- *      -XX:+PrintAssembly -XX:+WhiteBoxAPI TestCompilerDirectivesCompatibilityFlag
+ *      -XX:+PrintAssembly -XX:+WhiteBoxAPI
+ *      compiler.compilercontrol.TestCompilerDirectivesCompatibilityFlag
  * @summary Test compiler control compatibility with compile command
  */
 
+package compiler.compilercontrol;
+
 import jdk.test.lib.dcmd.CommandExecutor;
-import jdk.test.lib.dcmd.JMXExecutor;
-
-import org.testng.annotations.Test;
-import org.testng.Assert;
-
-import sun.hotspot.WhiteBox;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.StringReader;
-import java.lang.reflect.Method;
-import java.util.Objects;
 
 public class TestCompilerDirectivesCompatibilityFlag extends TestCompilerDirectivesCompatibilityBase {
 

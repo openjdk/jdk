@@ -25,9 +25,14 @@
  * @test
  * @bug 6898462
  * @summary failed reallocations of scalar replaced objects during deoptimization causes crash
- * @run main/othervm -XX:-BackgroundCompilation -XX:CompileCommand=exclude,TestDeoptOOM::main -XX:CompileCommand=exclude,TestDeoptOOM::m9_1 -Xmx128M TestDeoptOOM
  *
+ * @run main/othervm -XX:-BackgroundCompilation -Xmx128M
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::main
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::m9_1
+ *      compiler.uncommontrap.TestDeoptOOM
  */
+
+package compiler.uncommontrap;
 
 public class TestDeoptOOM {
 

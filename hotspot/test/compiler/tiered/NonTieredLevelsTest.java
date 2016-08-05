@@ -23,39 +23,39 @@
 
 /**
  * @test NonTieredLevelsTest
+ * @summary Verify that only one level can be used
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @ignore 8157984
- * @build NonTieredLevelsTest
+ *          java.management
+ * @requires vm.opt.TieredStopAtLevel==null
+ * @build compiler.tiered.NonTieredLevelsTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:-TieredCompilation
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCounterDecay
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
- *                   NonTieredLevelsTest
- * @summary Verify that only one level can be used
- * @author igor.ignatyev@oracle.com
+ *                   compiler.tiered.NonTieredLevelsTest
  */
+
+package compiler.tiered;
 
 import java.util.function.IntPredicate;
 import compiler.whitebox.CompilerWhiteBoxTest;
+import jdk.test.lib.Platform;
 
 public class NonTieredLevelsTest extends CompLevelsTest {
     private static final int AVAILABLE_COMP_LEVEL;
     private static final IntPredicate IS_AVAILABLE_COMPLEVEL;
     static {
-        String vmName = System.getProperty("java.vm.name");
-        if (vmName.endsWith(" Server VM")) {
+        if (Platform.isServer()) {
             AVAILABLE_COMP_LEVEL = COMP_LEVEL_FULL_OPTIMIZATION;
             IS_AVAILABLE_COMPLEVEL = x -> x == COMP_LEVEL_FULL_OPTIMIZATION;
-        } else if (vmName.endsWith(" Client VM")
-                || vmName.endsWith(" Minimal VM")) {
+        } else if (Platform.isClient() || Platform.isMinimal()) {
             AVAILABLE_COMP_LEVEL = COMP_LEVEL_SIMPLE;
             IS_AVAILABLE_COMPLEVEL = x -> x >= COMP_LEVEL_SIMPLE
                     && x <= COMP_LEVEL_FULL_PROFILE;
         } else {
-            throw new RuntimeException("Unknown VM: " + vmName);
+            throw new Error("TESTBUG: unknown VM: " + Platform.vmName);
         }
 
     }

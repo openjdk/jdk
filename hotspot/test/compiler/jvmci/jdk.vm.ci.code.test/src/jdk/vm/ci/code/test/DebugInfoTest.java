@@ -22,8 +22,6 @@
  */
 package jdk.vm.ci.code.test;
 
-import java.lang.reflect.Method;
-
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.DebugInfo;
 import jdk.vm.ci.code.Location;
@@ -32,6 +30,8 @@ import jdk.vm.ci.hotspot.HotSpotReferenceMap;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaValue;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+
+import java.lang.reflect.Method;
 
 /**
  * Test code installation with debug information.

@@ -22,11 +22,11 @@
  */
 package jdk.vm.ci.runtime.test;
 
+import jdk.vm.ci.meta.ResolvedJavaField;
+
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
-
-import jdk.vm.ci.meta.ResolvedJavaField;
 
 /**
  * Context for field related tests.

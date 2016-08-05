@@ -951,25 +951,24 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
 
   // open the file
   int result;
-  // No O_NOFOLLOW defined at buildtime, and it is not documented for open;
-  // so provide a workaround in this case
+  // provide a workaround in case no O_NOFOLLOW is defined at buildtime
 #ifdef O_NOFOLLOW
   RESTARTABLE(::open(filename, oflags), result);
 #else
   result = open_o_nofollow(filename, oflags);
 #endif
-
   if (result == OS_ERR) {
     if (errno == ENOENT) {
-      THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
-                  "Process not found");
+      THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
+                 "Process not found", OS_ERR);
     }
     else if (errno == EACCES) {
-      THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
-                  "Permission denied");
+      THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
+                 "Permission denied", OS_ERR);
     }
     else {
-      THROW_MSG_0(vmSymbols::java_io_IOException(), os::strerror(errno));
+      THROW_MSG_(vmSymbols::java_io_IOException(),
+                 os::strerror(errno), OS_ERR);
     }
   }
   int fd = result;
@@ -987,7 +986,7 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
 // memory region on success or NULL on failure. A return value of
 // NULL will ultimately disable the shared memory feature.
 //
-// On AIX, Solaris and Linux, the name space for shared memory objects
+// On AIX, the name space for shared memory objects
 // is the file system name space.
 //
 // A monitoring application attaching to a JVM does not need to know
@@ -1011,6 +1010,7 @@ static char* mmap_create_shared(size_t size) {
 
   char* dirname = get_user_tmp_dir(user_name);
   char* filename = get_sharedmem_filename(dirname, vmid);
+
   // get the short filename.
   char* short_filename = strrchr(filename, '/');
   if (short_filename == NULL) {

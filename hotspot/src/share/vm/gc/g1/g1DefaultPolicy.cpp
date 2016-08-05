@@ -97,47 +97,64 @@ void G1DefaultPolicy::note_gc_start() {
   phase_times()->note_gc_start();
 }
 
-bool G1DefaultPolicy::predict_will_fit(uint young_length,
-                                       double base_time_ms,
-                                       uint base_free_regions,
-                                       double target_pause_time_ms) const {
-  if (young_length >= base_free_regions) {
-    // end condition 1: not enough space for the young regions
-    return false;
+class G1YoungLengthPredictor VALUE_OBJ_CLASS_SPEC {
+  const bool _during_cm;
+  const double _base_time_ms;
+  const double _base_free_regions;
+  const double _target_pause_time_ms;
+  const G1DefaultPolicy* const _policy;
+
+ public:
+  G1YoungLengthPredictor(bool during_cm,
+                         double base_time_ms,
+                         double base_free_regions,
+                         double target_pause_time_ms,
+                         const G1DefaultPolicy* policy) :
+    _during_cm(during_cm),
+    _base_time_ms(base_time_ms),
+    _base_free_regions(base_free_regions),
+    _target_pause_time_ms(target_pause_time_ms),
+    _policy(policy) {}
+
+  bool will_fit(uint young_length) const {
+    if (young_length >= _base_free_regions) {
+      // end condition 1: not enough space for the young regions
+      return false;
+    }
+
+    const double accum_surv_rate = _policy->accum_yg_surv_rate_pred((int) young_length - 1);
+    const size_t bytes_to_copy =
+                 (size_t) (accum_surv_rate * (double) HeapRegion::GrainBytes);
+    const double copy_time_ms =
+      _policy->analytics()->predict_object_copy_time_ms(bytes_to_copy, _during_cm);
+    const double young_other_time_ms = _policy->analytics()->predict_young_other_time_ms(young_length);
+    const double pause_time_ms = _base_time_ms + copy_time_ms + young_other_time_ms;
+    if (pause_time_ms > _target_pause_time_ms) {
+      // end condition 2: prediction is over the target pause time
+      return false;
+    }
+
+    const size_t free_bytes = (_base_free_regions - young_length) * HeapRegion::GrainBytes;
+
+    // When copying, we will likely need more bytes free than is live in the region.
+    // Add some safety margin to factor in the confidence of our guess, and the
+    // natural expected waste.
+    // (100.0 / G1ConfidencePercent) is a scale factor that expresses the uncertainty
+    // of the calculation: the lower the confidence, the more headroom.
+    // (100 + TargetPLABWastePct) represents the increase in expected bytes during
+    // copying due to anticipated waste in the PLABs.
+    const double safety_factor = (100.0 / G1ConfidencePercent) * (100 + TargetPLABWastePct) / 100.0;
+    const size_t expected_bytes_to_copy = (size_t)(safety_factor * bytes_to_copy);
+
+    if (expected_bytes_to_copy > free_bytes) {
+      // end condition 3: out-of-space
+      return false;
+    }
+
+    // success!
+    return true;
   }
-
-  double accum_surv_rate = accum_yg_surv_rate_pred((int) young_length - 1);
-  size_t bytes_to_copy =
-               (size_t) (accum_surv_rate * (double) HeapRegion::GrainBytes);
-  double copy_time_ms = _analytics->predict_object_copy_time_ms(bytes_to_copy,
-                                                                collector_state()->during_concurrent_mark());
-  double young_other_time_ms = _analytics->predict_young_other_time_ms(young_length);
-  double pause_time_ms = base_time_ms + copy_time_ms + young_other_time_ms;
-  if (pause_time_ms > target_pause_time_ms) {
-    // end condition 2: prediction is over the target pause time
-    return false;
-  }
-
-  size_t free_bytes = (base_free_regions - young_length) * HeapRegion::GrainBytes;
-
-  // When copying, we will likely need more bytes free than is live in the region.
-  // Add some safety margin to factor in the confidence of our guess, and the
-  // natural expected waste.
-  // (100.0 / G1ConfidencePercent) is a scale factor that expresses the uncertainty
-  // of the calculation: the lower the confidence, the more headroom.
-  // (100 + TargetPLABWastePct) represents the increase in expected bytes during
-  // copying due to anticipated waste in the PLABs.
-  double safety_factor = (100.0 / G1ConfidencePercent) * (100 + TargetPLABWastePct) / 100.0;
-  size_t expected_bytes_to_copy = (size_t)(safety_factor * bytes_to_copy);
-
-  if (expected_bytes_to_copy > free_bytes) {
-    // end condition 3: out-of-space
-    return false;
-  }
-
-  // success!
-  return true;
-}
+};
 
 void G1DefaultPolicy::record_new_heap_size(uint new_number_of_regions) {
   // re-calculate the necessary reserve
@@ -279,31 +296,32 @@ G1DefaultPolicy::calculate_young_list_target_length(size_t rs_lengths,
   assert(desired_max_length > base_min_length, "invariant");
   uint max_young_length = desired_max_length - base_min_length;
 
-  double target_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
-  double survivor_regions_evac_time = predict_survivor_regions_evac_time();
-  size_t pending_cards = _analytics->predict_pending_cards();
-  size_t adj_rs_lengths = rs_lengths + _analytics->predict_rs_length_diff();
-  size_t scanned_cards = _analytics->predict_card_num(adj_rs_lengths, /* gcs_are_young */ true);
-  double base_time_ms =
+  const double target_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
+  const double survivor_regions_evac_time = predict_survivor_regions_evac_time();
+  const size_t pending_cards = _analytics->predict_pending_cards();
+  const size_t adj_rs_lengths = rs_lengths + _analytics->predict_rs_length_diff();
+  const size_t scanned_cards = _analytics->predict_card_num(adj_rs_lengths, /* gcs_are_young */ true);
+  const double base_time_ms =
     predict_base_elapsed_time_ms(pending_cards, scanned_cards) +
     survivor_regions_evac_time;
-  uint available_free_regions = _free_regions_at_end_of_collection;
-  uint base_free_regions = 0;
-  if (available_free_regions > _reserve_regions) {
-    base_free_regions = available_free_regions - _reserve_regions;
-  }
+  const uint available_free_regions = _free_regions_at_end_of_collection;
+  const uint base_free_regions =
+    available_free_regions > _reserve_regions ? available_free_regions - _reserve_regions : 0;
 
   // Here, we will make sure that the shortest young length that
   // makes sense fits within the target pause time.
 
-  if (predict_will_fit(min_young_length, base_time_ms,
-                       base_free_regions, target_pause_time_ms)) {
+  G1YoungLengthPredictor p(collector_state()->during_concurrent_mark(),
+                           base_time_ms,
+                           base_free_regions,
+                           target_pause_time_ms,
+                           this);
+  if (p.will_fit(min_young_length)) {
     // The shortest young length will fit into the target pause time;
     // we'll now check whether the absolute maximum number of young
     // regions will fit in the target pause time. If not, we'll do
     // a binary search between min_young_length and max_young_length.
-    if (predict_will_fit(max_young_length, base_time_ms,
-                         base_free_regions, target_pause_time_ms)) {
+    if (p.will_fit(max_young_length)) {
       // The maximum young length will fit into the target pause time.
       // We are done so set min young length to the maximum length (as
       // the result is assumed to be returned in min_young_length).
@@ -328,8 +346,7 @@ G1DefaultPolicy::calculate_young_list_target_length(size_t rs_lengths,
       uint diff = (max_young_length - min_young_length) / 2;
       while (diff > 0) {
         uint young_length = min_young_length + diff;
-        if (predict_will_fit(young_length, base_time_ms,
-                             base_free_regions, target_pause_time_ms)) {
+        if (p.will_fit(young_length)) {
           min_young_length = young_length;
         } else {
           max_young_length = young_length;
@@ -344,12 +361,10 @@ G1DefaultPolicy::calculate_young_list_target_length(size_t rs_lengths,
       assert(min_young_length < max_young_length,
              "otherwise we should have discovered that max_young_length "
              "fits into the pause target and not done the binary search");
-      assert(predict_will_fit(min_young_length, base_time_ms,
-                              base_free_regions, target_pause_time_ms),
+      assert(p.will_fit(min_young_length),
              "min_young_length, the result of the binary search, should "
              "fit into the pause target");
-      assert(!predict_will_fit(min_young_length + 1, base_time_ms,
-                               base_free_regions, target_pause_time_ms),
+      assert(!p.will_fit(min_young_length + 1),
              "min_young_length, the result of the binary search, should be "
              "optimal, so no larger length should fit into the pause target");
     }
@@ -501,13 +516,12 @@ double G1DefaultPolicy::average_time_ms(G1GCPhaseTimes::GCParPhases phase) const
 
 double G1DefaultPolicy::young_other_time_ms() const {
   return phase_times()->young_cset_choice_time_ms() +
-         phase_times()->young_free_cset_time_ms();
+         phase_times()->average_time_ms(G1GCPhaseTimes::YoungFreeCSet);
 }
 
 double G1DefaultPolicy::non_young_other_time_ms() const {
   return phase_times()->non_young_cset_choice_time_ms() +
-         phase_times()->non_young_free_cset_time_ms();
-
+         phase_times()->average_time_ms(G1GCPhaseTimes::NonYoungFreeCSet);
 }
 
 double G1DefaultPolicy::other_time_ms(double pause_time_ms) const {
@@ -515,7 +529,7 @@ double G1DefaultPolicy::other_time_ms(double pause_time_ms) const {
 }
 
 double G1DefaultPolicy::constant_other_time_ms(double pause_time_ms) const {
-  return other_time_ms(pause_time_ms) - young_other_time_ms() - non_young_other_time_ms();
+  return other_time_ms(pause_time_ms) - phase_times()->total_free_cset_time_ms();
 }
 
 CollectionSetChooser* G1DefaultPolicy::cset_chooser() const {

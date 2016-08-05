@@ -777,9 +777,6 @@ class java_lang_reflect_Module {
     static Handle create(Handle loader, Handle module_name, TRAPS);
 
     // Testers
-    static bool is_subclass(Klass* klass) {
-      return klass->is_subclass_of(SystemDictionary::reflect_Module_klass());
-    }
     static bool is_instance(oop obj);
 
     // Accessors
@@ -1110,8 +1107,6 @@ class java_lang_invoke_MemberName: AllStatic {
   static int flags_offset_in_bytes()            { return _flags_offset; }
   static int vmtarget_offset_in_bytes()         { return _vmtarget_offset; }
   static int vmindex_offset_in_bytes()          { return _vmindex_offset; }
-
-  static bool equals(oop mt1, oop mt2);
 };
 
 
