@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,22 @@
  */
 package jaxp.library;
 
-import java.io.FilePermission;
-import static jaxp.library.JAXPBaseTest.setPermissions;
-import org.testng.annotations.AfterGroups;
-import org.testng.annotations.BeforeGroups;
+import java.net.SocketPermission;
+
+import org.testng.ITestContext;
 
 /**
- * This is a base class that every test class that need to reading local XML
- * files must extend if it needs to be run with security mode.
+ * This policy can access network.
  */
-public class JAXPFileReadOnlyBaseTest extends JAXPBaseTest {
-    /**
-     * Source files/XML files directory.
-     */
-    private final String SRC_DIR = getSystemProperty("test.src");
+public class NetAccessPolicy extends BasePolicy {
 
-    /**
-     * Allowing access local file system for this group.
-     */
-    @BeforeGroups (groups = {"readLocalFiles"})
-    public void setFilePermissions() {
-        setPermissions(new FilePermission(SRC_DIR + "/-", "read"));
-    }
-
-    /**
-     * Restore the system property.
-     */
-    @AfterGroups (groups = {"readLocalFiles"})
-    public void restoreFilePermissions() {
-        setPermissions();
+    @Override
+    public void onStart(ITestContext arg0) {
+        // suppose to only run othervm mode
+        if (isRunWithSecurityManager()) {
+            JAXPPolicyManager policyManager = JAXPPolicyManager.getJAXPPolicyManager(true);
+            policyManager.addPermission(new SocketPermission("openjdk.java.net:80", "connect,resolve"));
+            policyManager.addPermission(new SocketPermission("www.w3.org:80", "connect,resolve"));
+        }
     }
 }

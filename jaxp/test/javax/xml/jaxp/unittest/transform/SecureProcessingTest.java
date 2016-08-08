@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,10 @@
 
 package transform;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 
 import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -39,29 +35,19 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.testng.Assert;
-import org.testng.annotations.Test;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
+import org.testng.annotations.Listeners;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true transform.SecureProcessingTest
+ * @run testng/othervm transform.SecureProcessingTest
  * @summary Test XSLT shall report TransformerException for unsafe xsl when FEATURE_SECURE_PROCESSING is true.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class SecureProcessingTest {
-    static boolean _isSecureMode = false;
-    static {
-        if (System.getSecurityManager() != null) {
-            _isSecureMode = true;
-            System.out.println("Security Manager is present");
-        } else {
-            System.out.println("Security Manager is NOT present");
-        }
-    }
-
-
-
-    @Test
-    public final void testSecureProcessing() {
-
+    public void testSecureProcessing() {
+        boolean _isSecureMode = System.getSecurityManager() != null;
         // SECURE_PROCESSING == false
 
         // the style sheet
@@ -149,3 +135,4 @@ public class SecureProcessingTest {
         }
     }
 }
+

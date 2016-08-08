@@ -28,12 +28,18 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6440324
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.IsValidatingTest
+ * @run testng/othervm stream.XMLStreamReaderTest.IsValidatingTest
  * @summary Test StAX can accept non-existent DTD if IS_VALIDATING if false.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class IsValidatingTest {
 
     /**
@@ -159,3 +165,4 @@ public class IsValidatingTest {
         }
     }
 }
+

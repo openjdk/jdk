@@ -40,11 +40,17 @@ import javax.xml.stream.XMLStreamWriter;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.WriterTest
+ * @run testng/othervm stream.XMLStreamWriterTest.WriterTest
  * @summary Test XMLStreamWriter functionality.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class WriterTest {
 
     final String ENCODING = "UTF-8";
@@ -57,7 +63,7 @@ public class WriterTest {
     String output = "";
 
     @BeforeMethod
-    protected void setUp() {
+    public void setUp() {
         try {
             outputFactory = XMLOutputFactory.newInstance();
             inputFactory = XMLInputFactory.newInstance();
@@ -67,7 +73,7 @@ public class WriterTest {
     }
 
     @AfterMethod
-    protected void tearDown() {
+    public void tearDown() {
         outputFactory = null;
         inputFactory = null;
     }
@@ -778,3 +784,4 @@ public class WriterTest {
         }
     }
 }
+

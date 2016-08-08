@@ -34,13 +34,19 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.AttributeEscapeTest
+ * @run testng/othervm stream.XMLStreamWriterTest.AttributeEscapeTest
  * @summary Test XMLStreamWriter shall escape the illegal characters.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class AttributeEscapeTest {
 
     /**
@@ -97,3 +103,4 @@ public class AttributeEscapeTest {
         }
     }
 }
+

@@ -14,6 +14,11 @@ keys=intermittent randomness
 # Tests that must run in othervm mode
 othervm.dirs=javax/xml/jaxp
 
+lib.dirs = /javax/xml/jaxp/libs
+
+# Declare module dependency
+modules=java.xml
+
 # Group definitions
 groups=TEST.groups
 

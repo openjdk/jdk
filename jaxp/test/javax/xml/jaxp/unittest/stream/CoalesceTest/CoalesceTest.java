@@ -32,11 +32,17 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.CoalesceTest.CoalesceTest
+ * @run testng/othervm stream.CoalesceTest.CoalesceTest
  * @summary Test Coalesce property works.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class CoalesceTest {
 
     String countryElementContent = "START India  CS}}}}}} India END";
@@ -104,3 +110,4 @@ public class CoalesceTest {
     }
 
 }
+

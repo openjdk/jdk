@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,15 +34,18 @@ import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogUriResolver;
 
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8077931
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true catalog.UriTest
+ * @run testng/othervm catalog.UriTest
  * @summary Get matched URIs from uri entries.
- * @compile ../../libs/catalog/CatalogTestUtils.java
- * @compile ../../libs/catalog/ResolutionChecker.java
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class UriTest {
 
     @Test(dataProvider = "uri-matchedUri")
@@ -101,3 +104,4 @@ public class UriTest {
         return catalogUriResolver(CATALOG_URI);
     }
 }
+

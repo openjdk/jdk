@@ -40,11 +40,17 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.XMLEvent;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLEventWriterTest.ReaderToWriterTest
+ * @run testng/othervm stream.XMLEventWriterTest.ReaderToWriterTest
  * @summary Test XMLEventWriter.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class ReaderToWriterTest {
 
     private static final XMLEventFactory XML_EVENT_FACTORY = XMLEventFactory.newInstance();
@@ -208,3 +214,4 @@ public class ReaderToWriterTest {
     }
 
 }
+

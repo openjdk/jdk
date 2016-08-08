@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,32 +22,40 @@
  */
 package javax.xml.transform.ptests;
 
-import java.io.File;
-import java.io.FilePermission;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
 import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
-import javax.xml.transform.sax.SAXResult;
-import javax.xml.transform.stream.StreamSource;
-import jaxp.library.JAXPBaseTest;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.fail;
+
+import java.io.File;
+
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.sax.SAXResult;
+import javax.xml.transform.stream.StreamSource;
+
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /**
  *  Basic test for TransformerException specification.
  */
-public class TransformerExcpTest extends JAXPBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.transform.ptests.TransformerExcpTest
+ * @run testng/othervm javax.xml.transform.ptests.TransformerExcpTest
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class TransformerExcpTest {
     /**
      * Transform an unformatted style-sheet file. TransformerException is thrown.
      */
     @Test
     public void tfexception() {
         try {
-            setPermissions(new FilePermission(XML_DIR  + "-", "read"));
             // invalid.xsl has well-formedness error. Therefore transform throws
             // TransformerException
             StreamSource streamSource
@@ -63,8 +71,6 @@ public class TransformerExcpTest extends JAXPBaseTest {
             assertNotNull(e.getException());
             assertNull(e.getLocationAsString());
             assertEquals(e.getMessageAndLocation(),e.getMessage());
-        } finally {
-            setPermissions();
         }
     }
 
@@ -99,3 +105,5 @@ public class TransformerExcpTest extends JAXPBaseTest {
         assertNotNull(te.initCause(null));
     }
 }
+
+

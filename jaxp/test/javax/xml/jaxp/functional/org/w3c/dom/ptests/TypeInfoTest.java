@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@ import java.io.StringReader;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import jaxp.library.JAXPBaseTest;
-
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -39,9 +38,14 @@ import org.w3c.dom.TypeInfo;
 import org.xml.sax.InputSource;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true org.w3c.dom.ptests.TypeInfoTest
+ * @run testng/othervm org.w3c.dom.ptests.TypeInfoTest
  * @summary Test getTypeName and getTypeNamespace methods of TypeInfo interface
  */
-public class TypeInfoTest extends JAXPBaseTest {
+@Listeners({jaxp.library.BasePolicy.class})
+public class TypeInfoTest {
     /*
      * Get the TypeInfo of the root element, and verify it.
      */
@@ -136,3 +140,4 @@ public class TypeInfoTest extends JAXPBaseTest {
 
 
 }
+
