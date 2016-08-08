@@ -429,7 +429,9 @@ void unix_fillArgArray(JNIEnv *env, jobject jinfo, int nargs, char *cp,
 
     if (nargs >= 1) {
         // Create a String array for nargs-1 elements
-        argsArray = (*env)->NewObjectArray(env, nargs - 1, JNU_ClassString(env), NULL);
+        jclass clazzString = JNU_ClassString(env);
+        CHECK_NULL(clazzString);
+        argsArray = (*env)->NewObjectArray(env, nargs - 1, clazzString, NULL);
         CHECK_NULL(argsArray);
 
         for (i = 0; i < nargs - 1; i++) {
