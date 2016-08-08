@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 8129632 8129633 8162624 8146215
+ * @bug 4313887 8129632 8129633 8162624 8146215 8162745
  * @summary Unit test for probeContentType method
  * @library ../..
  * @build Basic SimpleFileTypeDetector
@@ -95,7 +95,7 @@ public class Basic {
         return 0;
     }
 
-    static int checkOSXContentTypes(String[] extensions, String[] expectedTypes)
+    static int checkContentTypes(String[] extensions, String[] expectedTypes)
         throws IOException {
         if (extensions.length != expectedTypes.length) {
             System.err.println("Parameter array lengths differ");
@@ -157,18 +157,15 @@ public class Basic {
             Files.delete(file);
         }
 
-        // Verify that common file extensions are mapped to the correct content
-        // types on Mac OS X only which has consistent Uniform Type Identifiers.
-        if (System.getProperty("os.name").contains("OS X")) {
-            String[] extensions = new String[]{
-                "jpg", "mp3", "mp4", "pdf", "png"
-            };
-            String[] expectedTypes = new String[]{
-                "image/jpeg", "audio/mpeg", "video/mp4", "application/pdf",
-                "image/png"
-            };
-            failures += checkOSXContentTypes(extensions, expectedTypes);
-        }
+        // Verify that certain media extensions are mapped to the correct type.
+        String[] extensions = new String[]{
+            "aac", "flac", "jpg", "mp3", "mp4", "pdf", "png", "webm"
+        };
+        String[] expectedTypes = new String[]{
+            "audio/aac", "audio/flac", "image/jpeg", "audio/mpeg",
+            "video/mp4", "application/pdf", "image/png", "video/webm"
+        };
+        failures += checkContentTypes(extensions, expectedTypes);
 
         if (failures > 0) {
             throw new RuntimeException("Test failed!");
