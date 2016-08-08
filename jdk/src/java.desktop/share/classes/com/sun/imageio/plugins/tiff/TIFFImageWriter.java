@@ -3622,6 +3622,8 @@ public class TIFFImageWriter extends ImageWriter {
         streamMetadata = null;
         imageMetadata = null;
 
+        isRescaling = false;
+
         isWritingSequence = false;
         isWritingEmpty = false;
         isInsertingEmpty = false;
