@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 5074573
  * @summary tests delte-next-word and delete-prev-word actions for all text compnents and all look&feels
  * @author Igor Kushnirskiy

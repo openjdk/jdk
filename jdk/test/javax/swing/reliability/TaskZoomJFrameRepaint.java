@@ -26,6 +26,7 @@ import java.awt.*;
 
 /*
  * @test
+ * @key headful
  * @summary Construct a jframe with some components and zoom the frame and bring it back to normal state.
  * @author Aruna Samji
  * @library ../../../lib/testlibrary

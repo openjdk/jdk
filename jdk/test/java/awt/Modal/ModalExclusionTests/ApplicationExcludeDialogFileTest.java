@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8047179 8044429
  * @summary Check whether a FileDialog blocks an application modality excluded Dialog
  *          (it shouldn't). Checks also whether setting a parent dialog to be

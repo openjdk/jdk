@@ -24,12 +24,13 @@
  */
 
 /*
-@test
-@bug 6583251
-@summary One more ClassCastException in Swing with TrayIcon
-@author Alexander Potochkin
-@run main bug6583251
-*/
+ * @test
+ * @key headful
+ * @bug 6583251
+ * @summary One more ClassCastException in Swing with TrayIcon
+ * @author Alexander Potochkin
+ * @run main bug6583251
+ */
 
 import javax.swing.*;
 import java.awt.*;

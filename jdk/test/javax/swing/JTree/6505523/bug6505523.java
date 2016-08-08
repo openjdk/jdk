@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6505523
  * @summary NullPointerException in BasicTreeUI when a node is removed by expansion listener
  * @author Alexandr Scherbatiy

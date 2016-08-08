@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 7045593
  * @summary Possible Regression : JTextfield cursor placement behavior algorithm has changed
  * @author Pavel Porvatov

@@ -28,7 +28,7 @@
  * @author Alexander Potochkin
  * @library ../../regtesthelpers
  * @build Util
- * @run main bug6795356
+ * @run main/othervm -mx128m bug6795356
  */
 
 import java.lang.ref.WeakReference;

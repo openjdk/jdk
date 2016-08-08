@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+   @test
+  @key headful
    @bug 6889007
    @summary No resize cursor during hovering mouse over JTable
    @author Alexander Potochkin

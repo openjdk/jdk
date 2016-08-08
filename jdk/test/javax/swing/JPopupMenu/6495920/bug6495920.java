@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6495920
  * @summary Tests that if the JPopupMenu.setVisible method throws an exception,
             interaction with GNOME is not crippled

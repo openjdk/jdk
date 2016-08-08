@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 6918861
  * @summary SynthSliderUI.uninstallDefaults() is not called when UI is uninstalled
  * @author Pavel Porvatov

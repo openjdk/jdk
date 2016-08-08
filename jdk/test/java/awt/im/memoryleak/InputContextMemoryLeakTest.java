@@ -36,6 +36,7 @@ import test.java.awt.regtesthelpers.Util;
 
 /*
  @test
+ @key headful
  @bug 7079260
  @summary XInputContext leaks memory by needRecetXXIClient field
  @author Petr Pchelko

@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 4708809
  * @summary JScrollBar functionality slightly different from native scrollbar
  * @author Andrey Pikalev

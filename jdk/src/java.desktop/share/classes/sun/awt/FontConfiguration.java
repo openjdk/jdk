@@ -251,12 +251,24 @@ public abstract class FontConfiguration {
 
     private File findImpl(String fname) {
         File f = new File(fname + ".properties");
+        if (FontUtilities.debugFonts()) {
+            logger.info("Looking for text fontconfig file : " + f);
+        }
         if (f.canRead()) {
+            if (FontUtilities.debugFonts()) {
+                logger.info("Found file : " + f);
+            }
             isProperties = true;
             return f;
         }
         f = new File(fname + ".bfc");
+        if (FontUtilities.debugFonts()) {
+            logger.info("Looking for binary fontconfig file : " + f);
+        }
         if (f.canRead()) {
+            if (FontUtilities.debugFonts()) {
+                logger.info("Found file : " + f);
+            }
             isProperties = false;
             return f;
         }
@@ -304,6 +316,9 @@ public abstract class FontConfiguration {
         configFile = findImpl(baseName);
         if (configFile != null) {
             return configFile;
+        }
+        if (FontUtilities.debugFonts()) {
+            logger.info("Did not find a fontconfig file.");
         }
         return null;
     }

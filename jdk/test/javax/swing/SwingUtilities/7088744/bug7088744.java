@@ -21,11 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 7088744
-   @summary SwingUtilities.isMiddleMouseButton does not work with ALT/Meta keys
-   @author Pavel Porvatov
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 7088744
+ * @summary SwingUtilities.isMiddleMouseButton does not work with ALT/Meta keys
+ * @author Pavel Porvatov
+ */
 
 import java.awt.Component;
 import java.awt.Event;

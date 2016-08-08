@@ -21,12 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 4368790
-   @summary JButton stays pressed when focus stolen
-   @author Alexander Potochkin
-   @run main bug4368790
-*/
+/*
+ * @test
+ * @key headful
+ *    @bug 4368790
+ *    @summary JButton stays pressed when focus stolen
+ *    @author Alexander Potochkin
+ *    @run main bug4368790
+ */
 
 import javax.swing.*;
 import java.awt.*;

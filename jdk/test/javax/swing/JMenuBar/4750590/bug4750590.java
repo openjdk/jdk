@@ -21,13 +21,15 @@
  * questions.
  */
 
-/* @test
- @library ../../regtesthelpers
- @build Util
- @bug 4750590 8015597
- @summary SwingSet: Cannot change Themes using menu accelerators
- @author Alexander Zuev
- @run main bug4750590
+/*
+ * @test
+ * @key headful
+ * @library ../../regtesthelpers
+ * @build Util
+ * @bug 4750590 8015597
+ * @summary SwingSet: Cannot change Themes using menu accelerators
+ * @author Alexander Zuev
+ * @run main bug4750590
  */
 
 import javax.swing.*;

@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 8016665
  * @summary verifies different behaviour of JFileChooser changing orientation
  * @run main JFileChooserOrientation
