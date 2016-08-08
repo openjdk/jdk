@@ -21,11 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 8041642 8079450
-   @summary Incorrect paint of JProgressBar in Nimbus LF
-   @author Semyon Sadetsky
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 8041642 8079450
+ * @summary Incorrect paint of JProgressBar in Nimbus LF
+ * @author Semyon Sadetsky
+ */
 
 import javax.swing.*;
 import java.awt.*;

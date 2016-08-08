@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 8032878 8078855
  * @summary Checks that JComboBox as JTable cell editor processes key events
  *          even where setSurrendersFocusOnKeystroke flag in JTable is false and

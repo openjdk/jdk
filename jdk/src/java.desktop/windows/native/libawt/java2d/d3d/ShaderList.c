@@ -49,7 +49,7 @@ ShaderList_AddProgram(ShaderList *programList,
     info = (ShaderInfo *)malloc(sizeof(ShaderInfo));
     if (info == NULL) {
         J2dTraceLn(J2D_TRACE_ERROR,
-                   "OGLContext_AddProgram: could not allocate ShaderInfo");
+                   "D3DContext_AddProgram: could not allocate ShaderInfo");
         return;
     }
 

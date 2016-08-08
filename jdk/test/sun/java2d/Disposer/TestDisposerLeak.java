@@ -31,7 +31,7 @@ import sun.java2d.DisposerRecord;
  * @test
  * @bug 8129457
  * @summary Check Disposer disposes all objects without any memory leaks
- * @run main/othervm TestDisposerLeak
+ * @run main/othervm -mx128m TestDisposerLeak
  * @modules java.desktop/sun.java2d
  */
 public final class TestDisposerLeak {

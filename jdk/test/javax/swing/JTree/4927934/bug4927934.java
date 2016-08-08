@@ -20,7 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
+/*
+   @test
+  @key headful
    @bug 4927934
    @summary JTree traversal is unlike Native windows tree traversal
    @author Andrey Pikalev

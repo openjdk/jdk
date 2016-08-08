@@ -38,7 +38,9 @@ import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 8136998
  * @summary Checks that JComboBox does not prevent mouse-wheel scrolling JScrollPane.
  * @library ../../regtesthelpers

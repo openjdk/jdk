@@ -35,6 +35,7 @@ import javax.swing.SwingUtilities;
 
 /**
  * @test
+ * @key headful
  * @bug 8021253
  * @author Alexander Scherbatiy
  * @summary JFileChooser does not react on pressing enter since java 7

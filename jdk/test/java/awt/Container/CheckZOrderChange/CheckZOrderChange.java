@@ -22,12 +22,14 @@
  */
 
 /*
-   @test %I% %E%
-   @bug 2161766
-   @summary Component is missing after changing the z-order of the component & focus is not transfered in
-   @author  Andrei Dmitriev : area=awt.container
-   @run main CheckZOrderChange
-*/
+ * @test %I% %E%
+ * @key headful
+ * @bug 2161766
+ * @summary Component is missing after changing the z-order of the component & focus is not transfered in
+ * @author  Andrei Dmitriev : area=awt.container
+ * @run main CheckZOrderChange
+ */
+
 import java.awt.*;
 import java.awt.event.*;
 

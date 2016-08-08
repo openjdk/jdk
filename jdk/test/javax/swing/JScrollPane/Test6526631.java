@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6526631
  * @summary Resizes right-oriented scroll pane
  * @author Sergey Malenkov

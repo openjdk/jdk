@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 7154048
  * @summary Window created under a mouse does not receive mouse enter event.
  *     Mouse Entered/Exited events should be generated during dragging the window

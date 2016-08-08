@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8054358 8055003
  * @summary Check whether application and document modality levels for Dialog
  *          work properly. Also check whether the blocking dialogs are

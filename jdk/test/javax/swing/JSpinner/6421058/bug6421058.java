@@ -21,13 +21,14 @@
  * questions.
  */
 
- /*
-  * @test
-  * @bug 6421058
-  * @summary Verify font of the text field is changed to the font of
-  *        JSpinner if the font of text field was NOT set by the user
-  * @run main bug6421058
-  */
+/*
+ * @test
+ * @key headful
+ * @bug 6421058
+ * @summary Verify font of the text field is changed to the font of
+ *          JSpinner if the font of text field was NOT set by the user
+ * @run main bug6421058
+ */
 
 import java.awt.Font;
 import javax.swing.JFrame;

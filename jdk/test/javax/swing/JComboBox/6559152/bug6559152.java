@@ -20,15 +20,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
-   @bug 6559152
-   @summary Checks that you can select an item in JComboBox with keyboard
-            when it is a JTable cell editor.
-   @author Mikhail Lapshin
-   @library ../../../../lib/testlibrary
-   @build ExtendedRobot
-   @run main bug6559152
-*/
+
+/*
+ * @test
+ * @key headful
+ * @bug 6559152
+ * @summary Checks that you can select an item in JComboBox with keyboard
+ *          when it is a JTable cell editor.
+ * @author Mikhail Lapshin
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot
+ * @run main bug6559152
+ */
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;

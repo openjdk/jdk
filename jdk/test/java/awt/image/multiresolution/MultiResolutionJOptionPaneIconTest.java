@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 8150176 8150844
   @author a.stepanov
   @summary Check if correct resolution variant is used

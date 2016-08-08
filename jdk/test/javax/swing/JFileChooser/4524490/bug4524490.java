@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 4524490
  * @summary Tests if in JFileChooser, ALT+L does not bring focus to 'Files' selection list in Motif LAF
  * @author Konstantin Eremin
