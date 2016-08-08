@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,26 +20,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jaxp.library;
 
-/*
- * @test
- * @modules java.xml/com.sun.org.apache.xml.internal.utils
- * @summary Test internal transform CLI.
+import org.testng.ITestContext;
+
+/**
+ * This policy can access internal jaxp packages.
  */
+public class InternalAPIPolicy extends BasePolicy {
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
-public class CLITest {
-
-    @Test
-    public void testCLI() {
-        try {
-            String[] args = new String[] { "-XSLTC", "-XSL", getClass().getResource("tigertest.xsl").toString(), "-IN",
-                    getClass().getResource("tigertest-in.xml").toString(), };
-            ProcessXSLT.main(args);
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
+    @Override
+    public void onStart(ITestContext arg0) {
+        // suppose to only run othervm mode
+        if (isRunWithSecurityManager()) {
+            JAXPPolicyManager policyManager = JAXPPolicyManager.getJAXPPolicyManager(true);
+            policyManager.addPermission(new RuntimePermission("accessClassInPackage.com.sun.org.apache.xerces.internal.jaxp"));
+            policyManager.addPermission(new RuntimePermission("accessClassInPackage.com.sun.org.apache.bcel.internal.classfile"));
+            policyManager.addPermission(new RuntimePermission("accessClassInPackage.com.sun.org.apache.bcel.internal.generic"));
+            policyManager.addPermission(new RuntimePermission("accessClassInPackage.com.sun.org.apache.xalan.internal.xsltc.trax"));
         }
     }
 }

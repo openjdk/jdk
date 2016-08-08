@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,33 @@
  * questions.
  */
 
-package policy;
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true transform.CLITest
+ * @run testng/othervm transform.CLITest
+ * @summary Test internal transform CLI.
+ */
 
-import java.security.Policy;
+package transform;
 
-public class PolicyUtil {
+import java.util.PropertyPermission;
 
-    public static void changePolicy(String policyFile) {
-        System.setProperty("java.security.policy", policyFile);
-        Policy.getPolicy().refresh();
+import jaxp.library.JAXPTestUtilities;
+
+import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
+
+@Listeners({ jaxp.library.FilePolicy.class })
+public class CLITest {
+
+    @Test
+    public void testCLI() throws Exception {
+        JAXPTestUtilities.tryRunWithTmpPermission(() -> {
+            String[] args = new String[] { "-XSLTC", "-XSL", getClass().getResource("tigertest.xsl").toString(),
+                "-IN", getClass().getResource("tigertest-in.xml").toString(), };
+            ProcessXSLT.main(args);
+        }, new PropertyPermission("*", "read,write"));
     }
-
 }
+

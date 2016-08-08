@@ -30,11 +30,17 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamFilterTest.HasNextTest
+ * @run testng/othervm stream.XMLStreamFilterTest.HasNextTest
  * @summary Test Filtered XMLStreamReader hasNext() always return the correct value if repeat to call it.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class HasNextTest {
 
     private static String INPUT_FILE = "HasNextTest.xml";
@@ -139,3 +145,4 @@ public class HasNextTest {
         }
     }
 }
+

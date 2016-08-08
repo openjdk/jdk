@@ -29,12 +29,18 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6600882
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.Bug6600882Test
+ * @run testng/othervm stream.XMLStreamWriterTest.Bug6600882Test
  * @summary Test toString(), hashCode() of XMLStreamWriter .
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6600882Test {
 
 
@@ -53,3 +59,4 @@ public class Bug6600882Test {
     }
 
 }
+

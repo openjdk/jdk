@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,19 @@ package validation;
 import javax.xml.XMLConstants;
 import javax.xml.validation.SchemaFactory;
 
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 
 /*
+ * @test
  * @bug 6449797
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true validation.Bug6449797
+ * @run testng/othervm validation.Bug6449797
  * @summary Test SchemaFactory can parse the specified attribute value with a specified namespace.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6449797 {
 
     @Test
@@ -40,3 +46,4 @@ public class Bug6449797 {
         SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI).newSchema(getClass().getResource("Bug6449797.xsd"));
     }
 }
+

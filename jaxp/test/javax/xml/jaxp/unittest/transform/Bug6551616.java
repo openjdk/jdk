@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,14 @@
 
 /*
  * @test
- * @modules java.xml/com.sun.org.apache.xalan.internal.xsltc.trax
  * @bug 6551616
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true transform.Bug6551616
+ * @run testng/othervm transform.Bug6551616
  * @summary Test SAX2StAXEventWriter.
  */
+
+package transform;
 
 import java.io.InputStream;
 import java.io.StringBufferInputStream;
@@ -34,10 +38,12 @@ import java.io.StringBufferInputStream;
 import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLOutputFactory;
 
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 import com.sun.org.apache.xalan.internal.xsltc.trax.SAX2StAXEventWriter;
 
+@Listeners({jaxp.library.InternalAPIPolicy.class})
 public class Bug6551616 {
     String _cache = "";
 
@@ -62,3 +68,4 @@ public class Bug6551616 {
         // if it doesn't blow up, it succeeded.
     }
 }
+

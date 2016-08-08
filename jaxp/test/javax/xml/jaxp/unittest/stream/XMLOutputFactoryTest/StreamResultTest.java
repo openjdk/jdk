@@ -23,6 +23,8 @@
 
 package stream.XMLOutputFactoryTest;
 
+import static jaxp.library.JAXPTestUtilities.getSystemProperty;
+
 import java.io.ByteArrayOutputStream;
 
 import javax.xml.stream.XMLEventFactory;
@@ -33,11 +35,17 @@ import javax.xml.transform.stax.StAXResult;
 import javax.xml.transform.stream.StreamResult;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLOutputFactoryTest.StreamResultTest
+ * @run testng/othervm stream.XMLOutputFactoryTest.StreamResultTest
  * @summary Test create XMLWriter with variant Result.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class StreamResultTest {
 
     @Test
@@ -85,7 +93,7 @@ public class StreamResultTest {
     @Test
     public void testEventWriterWithStAXResultNStreamWriter() {
         String encoding = "";
-        if (System.getProperty("file.encoding").equals("UTF-8")) {
+        if (getSystemProperty("file.encoding").equals("UTF-8")) {
             encoding = " encoding=\"UTF-8\"";
         }
         final String EXPECTED_OUTPUT = "<?xml version=\"1.0\"" + encoding + "?><root></root>";
@@ -114,7 +122,7 @@ public class StreamResultTest {
     @Test
     public void testEventWriterWithStAXResultNEventWriter() {
         String encoding = "";
-        if (System.getProperty("file.encoding").equals("UTF-8")) {
+        if (getSystemProperty("file.encoding").equals("UTF-8")) {
             encoding = " encoding=\"UTF-8\"";
         }
         final String EXPECTED_OUTPUT = "<?xml version=\"1.0\"" + encoding + "?><root></root>";
@@ -154,3 +162,4 @@ public class StreamResultTest {
         }
     }
 }
+

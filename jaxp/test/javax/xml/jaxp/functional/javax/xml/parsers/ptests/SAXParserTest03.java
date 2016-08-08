@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,32 @@
 
 package javax.xml.parsers.ptests;
 
+import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
+
 import java.io.File;
-import java.io.FilePermission;
+
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
-import jaxp.library.JAXPFileReadOnlyBaseTest;
-import static org.testng.Assert.fail;
-import org.testng.annotations.AfterGroups;
-import org.testng.annotations.BeforeGroups;
+
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 
 /**
  * Class contains the test cases for SAXParser API
  */
-public class SAXParserTest03 extends JAXPFileReadOnlyBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.parsers.ptests.SAXParserTest03
+ * @run testng/othervm javax.xml.parsers.ptests.SAXParserTest03
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class SAXParserTest03 {
 
     /**
      * Provide SAXParserFactory.
@@ -63,7 +70,7 @@ public class SAXParserTest03 extends JAXPFileReadOnlyBaseTest {
      * @param handler an error handler for capturing events.
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"}, dataProvider = "input-provider")
+    @Test(dataProvider = "input-provider")
     public void testParseValidate01(SAXParserFactory spf, MyErrorHandler handler)
             throws Exception {
             spf.newSAXParser().parse(new File(XML_DIR, "parsertest.xml"), handler);
@@ -78,7 +85,7 @@ public class SAXParserTest03 extends JAXPFileReadOnlyBaseTest {
      * @param handler an error handler for capturing events.
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"}, dataProvider = "input-provider")
+    @Test(dataProvider = "input-provider")
     public void testParseValidate02(SAXParserFactory spf, MyErrorHandler handler)
             throws Exception {
             spf.setNamespaceAware(true);
@@ -95,7 +102,7 @@ public class SAXParserTest03 extends JAXPFileReadOnlyBaseTest {
      * @param handler an error handler for capturing events.
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"}, dataProvider = "input-provider")
+    @Test(dataProvider = "input-provider")
     public void testParseValidate03(SAXParserFactory spf, MyErrorHandler handler)
             throws Exception {
         try {
@@ -109,3 +116,5 @@ public class SAXParserTest03 extends JAXPFileReadOnlyBaseTest {
     }
 
 }
+
+

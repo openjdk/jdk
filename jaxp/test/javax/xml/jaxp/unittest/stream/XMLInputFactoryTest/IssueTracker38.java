@@ -31,11 +31,17 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLInputFactoryTest.IssueTracker38
+ * @run testng/othervm stream.XMLInputFactoryTest.IssueTracker38
  * @summary Test createXMLEventReader from DOM or SAX source is unsupported.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class IssueTracker38 {
 
     @Test
@@ -86,3 +92,4 @@ public class IssueTracker38 {
 
 
 }
+

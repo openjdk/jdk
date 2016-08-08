@@ -22,8 +22,15 @@
  */
 package catalog;
 
+import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
+import static jaxp.library.JAXPTestUtilities.getSystemProperty;
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+
+import java.io.FilePermission;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.PropertyPermission;
+
 import javax.xml.catalog.Catalog;
 import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogFeatures;
@@ -35,9 +42,13 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
+
+import jaxp.library.JAXPTestUtilities;
+
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.ErrorHandler;
@@ -47,9 +58,14 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
 
 /*
- * @bug 8081248, 8144966, 8146606, 8146237, 8151154, 8150969, 8151162, 8152527, 8154220
+ * @test
+ * @bug 8081248 8144966 8146606 8146237 8151154 8150969 8151162 8152527 8154220
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true catalog.CatalogTest
+ * @run testng/othervm catalog.CatalogTest
  * @summary Tests basic Catalog functions.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class CatalogTest {
     static final String KEY_FILES = "javax.xml.catalog.files";
 
@@ -61,7 +77,7 @@ public class CatalogTest {
     @BeforeClass
     public void setUpClass() throws Exception {
         String file1 = getClass().getResource("first_cat.xml").getFile();
-        if (System.getProperty("os.name").contains("Windows")) {
+        if (getSystemProperty("os.name").contains("Windows")) {
             filepath = file1.substring(1, file1.lastIndexOf("/") + 1);
         } else {
             filepath = file1.substring(0, file1.lastIndexOf("/") + 1);
@@ -112,12 +128,12 @@ public class CatalogTest {
         String files = file1 + ";" + file2;
 
         try {
-            System.setProperty(KEY_FILES, files);
+            setSystemProperty(KEY_FILES, files);
             CatalogResolver catalogResolver = CatalogManager.catalogResolver(CatalogFeatures.defaults());
             String sysId = catalogResolver.resolveEntity(null, systemId).getSystemId();
             Assert.assertEquals(sysId, Paths.get(filepath + expectedUri).toUri().toString().replace("///", "/"), "System ID match not right");
         } finally {
-            System.clearProperty(KEY_FILES);
+            clearSystemProperty(KEY_FILES);
         }
 
     }
@@ -203,9 +219,12 @@ public class CatalogTest {
      */
     @Test(dataProvider = "invalidPaths", expectedExceptions = IllegalArgumentException.class)
     public void testFileInput(String file) {
+        JAXPTestUtilities.runWithTmpPermission(() -> {
             CatalogFeatures features = CatalogFeatures.builder()
                 .with(CatalogFeatures.Feature.FILES, file)
                 .build();
+        }, new FilePermission("/../../..", "read"), new FilePermission("c:\\te:t", "read"),
+                new FilePermission("c:\\te?t", "read"), new PropertyPermission("user.dir", "read"));
     }
 
     /**
@@ -371,7 +390,7 @@ public class CatalogTest {
         This DataProvider is copied from JCK ResolveTests' dataMatch1
      */
     @DataProvider(name = "resolveUri")
-    Object[][] getDataForUriResolver() {
+    public Object[][] getDataForUriResolver() {
         return new Object[][]{
             {"uri.xml", "urn:publicid:-:Acme,+Inc.:DTD+Book+Version+1.0", null, "http://local/base/dtd/book.dtd", "Uri in publicId namespace is incorrectly unwrapped"},
         };
@@ -382,7 +401,7 @@ public class CatalogTest {
     hierarchyOfCatFiles2.
      */
     @DataProvider(name = "hierarchyOfCatFilesData")
-    Object[][] getHierarchyOfCatFilesData() {
+    public Object[][] getHierarchyOfCatFilesData() {
         return new Object[][]{
             {"http://www.oracle.com/sequence.dtd", "first.dtd"},
             {"http://www.oracle.com/sequence_next.dtd", "next.dtd"},
@@ -396,7 +415,7 @@ public class CatalogTest {
         catalog, prefer, systemId, publicId, expectedUri, expectedFile, msg
      */
     @DataProvider(name = "resolveEntity")
-    Object[][] getDataForMatchingBothIds() {
+    public Object[][] getDataForMatchingBothIds() {
         String expected = "http://www.groupxmlbase.com/dtds/rewrite.dtd";
         return new Object[][]{
             {"rewriteSystem_id.xml", "system", "http://www.sys00test.com/rewrite.dtd", "PUB-404", expected, expected, "Relative rewriteSystem with xml:base at group level failed"},
@@ -411,7 +430,7 @@ public class CatalogTest {
         prefer, catalog, publicId, systemId, expected result
      */
     @DataProvider(name = "matchWithPrefer")
-    Object[][] getDataForMatch() {
+    public Object[][] getDataForMatch() {
         return new Object[][]{
             {"public", "pubOnly.xml", id, "", "http://local/base/dtd/public.dtd"},
             {"public", "sysOnly.xml", id, "", null},
@@ -435,7 +454,7 @@ public class CatalogTest {
         prefer, catalog, publicId, systemId, expected result
      */
     @DataProvider(name = "resolveWithPrefer")
-    Object[][] getDataForResolve() {
+    public Object[][] getDataForResolve() {
         return new Object[][]{
             {"system", "pubOnly.xml", id, "", "http://local/base/dtd/public.dtd"},
             {"system", "pubOnly.xml", "", id, null},
@@ -462,7 +481,7 @@ public class CatalogTest {
                      The defer attribute is set to false.
      */
     @DataProvider(name = "invalidAltCatalogs")
-    Object[][] getCatalogs() {
+    public Object[][] getCatalogs() {
         return new Object[][]{
             {"defer_false_2.xml"},
             {"defer_del_false.xml"}
@@ -474,7 +493,7 @@ public class CatalogTest {
                      the CatalogFeatures builder
      */
     @DataProvider(name = "invalidPaths")
-    Object[][] getFiles() {
+    public Object[][] getFiles() {
         return new Object[][]{
             {null},
             {""},
@@ -493,7 +512,7 @@ public class CatalogTest {
        document.
      */
     @DataProvider(name = "catalog")
-    Object[][] getCatalog() {
+    public Object[][] getCatalog() {
         return new Object[][]{
             {"testSystem", "Test system entry", "catalog.xml", "system.xml", getParser()},
             {"testRewriteSystem", "Test rewritesystem entry", "catalog.xml", "rewritesystem.xml", getParser()},
@@ -517,7 +536,6 @@ public class CatalogTest {
         return saxParser;
     }
 
-
     /**
      * SAX handler
      */
@@ -536,7 +554,8 @@ public class CatalogTest {
         }
 
         @Override
-        public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+        public void startElement(String uri, String localName, String qName, Attributes attributes)
+                throws SAXException {
             textContent.delete(0, textContent.length());
             try {
                 System.out.println("Element: " + uri + ":" + localName + " " + qName);
@@ -552,3 +571,4 @@ public class CatalogTest {
         }
     }
 }
+

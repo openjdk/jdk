@@ -70,3 +70,4 @@ public class SAXUtil extends TransformerUtil {
         Assert.assertTrue(encoding.equals(resultEncoding), "Expected XML Version is " + encoding + " , but actual  encoding " + resultEncoding);
     }
 }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,12 @@
 
 package validation;
 
+import static jaxp.library.JAXPTestUtilities.runWithTmpPermission;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
+import java.util.PropertyPermission;
 
 import javax.xml.XMLConstants;
 import javax.xml.stream.XMLEventReader;
@@ -39,12 +42,18 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.ErrorHandler;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true validation.ValidatorTest
+ * @run testng/othervm validation.ValidatorTest
  * @summary Test Validator.validate(Source, Result).
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class ValidatorTest {
 
     @Test
@@ -83,10 +92,11 @@ public class ValidatorTest {
             if (resultFile.exists()) {
                 resultFile.delete();
             }
-
             // Validate this instance document against the
             // Instance document supplied
-            Result xmlResult = new javax.xml.transform.stream.StreamResult(resultFile);
+            File resultAlias = resultFile;
+            Result xmlResult = runWithTmpPermission(() -> new javax.xml.transform.stream.StreamResult(
+                    resultAlias), new PropertyPermission("user.dir", "read"));
             Source xmlSource = new javax.xml.transform.stream.StreamSource(new File(ValidatorTest.class.getResource("toys.xml").toURI()));
 
             validate("toys.xsd", xmlSource, xmlResult);
@@ -114,7 +124,9 @@ public class ValidatorTest {
 
             // Validate this instance document against the
             // Instance document supplied
-            Result xmlResult = new javax.xml.transform.stream.StreamResult(resultFile);
+            File resultAlias = resultFile;
+            Result xmlResult = runWithTmpPermission(() -> new javax.xml.transform.stream.StreamResult(
+                    resultAlias), new PropertyPermission("user.dir", "read"));
             Source xmlSource = new javax.xml.transform.stream.StreamSource(new File(ValidatorTest.class.getResource("gMonths.xml").toURI()));
 
             validate("gMonths.xsd", xmlSource, xmlResult);
@@ -196,3 +208,4 @@ public class ValidatorTest {
         return xmlr;
     }
 }
+

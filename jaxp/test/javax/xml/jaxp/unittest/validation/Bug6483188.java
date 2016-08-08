@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,29 +31,25 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXParseException;
 
 /*
+ * @test
  * @bug 6483188
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true validation.Bug6483188
+ * @run testng/othervm validation.Bug6483188
  * @summary Test Schema Validator can handle element with having large maxOccurs, but doesn't accept sequence with having large maxOccurs in FEATURE_SECURE_PROCESSING mode.
  */
+@Test(singleThreaded = true)
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6483188 {
-    static boolean _isSecureMode = false;
-    static {
-        if (System.getSecurityManager() != null) {
-            _isSecureMode = true;
-            System.out.println("Security Manager is present");
-        } else {
-            System.out.println("Security Manager is NOT present");
-        }
-    }
-
     SchemaFactory sf = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 
-    @Test
     public void testLargeElementNoSecurity() {
-        if (_isSecureMode)
+        if (System.getSecurityManager() != null)
             return; // jaxp secure feature can not be turned off when security
                     // manager is present
         try {
@@ -66,7 +62,6 @@ public class Bug6483188 {
         }
     }
 
-    @Test
     public void testLargeElementWithSecurity() {
         try {
             sf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
@@ -78,7 +73,6 @@ public class Bug6483188 {
         }
     }
 
-    @Test
     public void testLargeSequenceWithSecurity() {
         try {
             sf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
@@ -94,3 +88,4 @@ public class Bug6483188 {
     }
 
 }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,21 @@
 
 package javax.xml.parsers.ptests;
 
+import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
 import static jaxp.library.JAXPTestUtilities.FILE_SEP;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilePermission;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
-import jaxp.library.JAXPFileReadOnlyBaseTest;
-import static org.testng.Assert.assertNotNull;
+
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
@@ -42,8 +45,14 @@ import org.xml.sax.InputSource;
 /**
  * This checks for the methods of DocumentBuilder
  */
-public class DocumentBuilderImpl01 extends JAXPFileReadOnlyBaseTest
-            implements EntityResolver {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.parsers.ptests.DocumentBuilderImpl01
+ * @run testng/othervm javax.xml.parsers.ptests.DocumentBuilderImpl01
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class DocumentBuilderImpl01 implements EntityResolver {
     /**
      * Provide DocumentBuilder.
      *
@@ -82,7 +91,7 @@ public class DocumentBuilderImpl01 extends JAXPFileReadOnlyBaseTest
      * @param docBuilder document builder instance.
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"}, dataProvider = "builder-provider")
+    @Test(dataProvider = "builder-provider")
     public void testCheckDocumentBuilderImpl04(DocumentBuilder docBuilder)
             throws Exception {
         try (FileInputStream fis = new FileInputStream(new File(XML_DIR,
@@ -97,7 +106,7 @@ public class DocumentBuilderImpl01 extends JAXPFileReadOnlyBaseTest
      * @param docBuilder document builder instance.
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"}, dataProvider = "builder-provider")
+    @Test(dataProvider = "builder-provider")
     public void testCheckDocumentBuilderImpl05(DocumentBuilder docBuilder)
             throws Exception {
         assertNotNull(docBuilder.parse(new File(XML_DIR,
@@ -109,11 +118,9 @@ public class DocumentBuilderImpl01 extends JAXPFileReadOnlyBaseTest
      * @param docBuilder document builder instance.
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"}, dataProvider = "builder-provider")
+    @Test(dataProvider = "builder-provider")
     public void testCheckDocumentBuilderImpl06(DocumentBuilder docBuilder)
             throws Exception {
-        setPermissions(new FilePermission(XML_DIR + "../-",
-                "read"));
         try (FileInputStream fis = new FileInputStream(new File(XML_DIR,
                 "DocumentBuilderImpl02.xml"))) {
             assertNotNull(docBuilder.parse(fis, new File(XML_DIR).toURI()
@@ -150,3 +157,5 @@ public class DocumentBuilderImpl01 extends JAXPFileReadOnlyBaseTest
             return null;
     }
 }
+
+
