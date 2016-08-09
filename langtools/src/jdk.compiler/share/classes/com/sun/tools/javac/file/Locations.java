@@ -773,39 +773,19 @@ public class Locations {
         private Collection<Path> systemClasses() throws IOException {
             // Return "modules" jimage file if available
             if (Files.isRegularFile(thisSystemModules)) {
-                return addAdditionalBootEntries(Collections.singleton(thisSystemModules));
+                return Collections.singleton(thisSystemModules);
             }
 
             // Exploded module image
             Path modules = javaHome.resolve("modules");
             if (Files.isDirectory(modules.resolve("java.base"))) {
                 try (Stream<Path> listedModules = Files.list(modules)) {
-                    return addAdditionalBootEntries(listedModules.collect(Collectors.toList()));
+                    return listedModules.collect(Collectors.toList());
                 }
             }
 
             // not a modular image that we know about
             return null;
-        }
-
-        //ensure bootclasspath prepends/appends are reflected in the systemClasses
-        private Collection<Path> addAdditionalBootEntries(Collection<Path> modules) throws IOException {
-            String files = System.getProperty("sun.boot.class.path");
-            if (files == null)
-                return modules;
-
-            Set<Path> paths = new LinkedHashSet<>();
-
-            // The JVM no longer supports -Xbootclasspath/p:, so any interesting
-            // entries should be appended to the set of modules.
-
-            paths.addAll(modules);
-
-            for (String s : files.split(Pattern.quote(File.pathSeparator))) {
-                paths.add(getPath(s));
-            }
-
-            return paths;
         }
 
         private void lazy() {
