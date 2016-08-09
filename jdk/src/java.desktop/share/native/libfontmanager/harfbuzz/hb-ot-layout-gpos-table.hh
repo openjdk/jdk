@@ -36,8 +36,17 @@ namespace OT {
 
 
 /* buffer **position** var allocations */
-#define attach_lookback() var.u16[0] /* number of glyphs to go back to attach this glyph to its base */
-#define cursive_chain() var.i16[1] /* character to which this connects, may be positive or negative */
+#define attach_chain() var.i16[0] /* glyph to which this attaches to, relative to current glyphs; negative for going back, positive for forward. */
+#define attach_type() var.u8[2] /* attachment type */
+/* Note! if attach_chain() is zero, the value of attach_type() is irrelevant. */
+
+enum attach_type_t {
+  ATTACH_TYPE_NONE      = 0X00,
+
+  /* Each attachment should be either a mark or a cursive; can't be both. */
+  ATTACH_TYPE_MARK      = 0X01,
+  ATTACH_TYPE_CURSIVE   = 0X02,
+};
 
 
 /* Shared Tables: ValueRecord, Anchor Table, and MarkArray */
@@ -425,7 +434,9 @@ struct MarkArray : ArrayOf<MarkRecord>  /* Array of MarkRecords--in Coverage ord
     hb_glyph_position_t &o = buffer->cur_pos();
     o.x_offset = base_x - mark_x;
     o.y_offset = base_y - mark_y;
-    o.attach_lookback() = buffer->idx - glyph_pos;
+    o.attach_type() = ATTACH_TYPE_MARK;
+    o.attach_chain() = (int) glyph_pos - (int) buffer->idx;
+    buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_GPOS_ATTACHMENT;
 
     buffer->idx++;
     return_trace (true);
@@ -741,7 +752,7 @@ struct PairPosFormat2
   inline void collect_glyphs (hb_collect_glyphs_context_t *c) const
   {
     TRACE_COLLECT_GLYPHS (this);
-    /* (this+coverage).add_coverage (c->input); // Don't need this. */
+    (this+coverage).add_coverage (c->input);
 
     unsigned int count1 = class1Count;
     const ClassDef &klass1 = this+classDef1;
@@ -906,9 +917,6 @@ struct CursivePosFormat1
     TRACE_APPLY (this);
     hb_buffer_t *buffer = c->buffer;
 
-    /* We don't handle mark glyphs here. */
-    if (unlikely (_hb_glyph_info_is_mark (&buffer->cur()))) return_trace (false);
-
     const EntryExitRecord &this_record = entryExitRecord[(this+coverage).get_coverage  (buffer->cur().codepoint)];
     if (!this_record.exitAnchor) return_trace (false);
 
@@ -992,7 +1000,9 @@ struct CursivePosFormat1
      */
     reverse_cursive_minor_offset (pos, child, c->direction, parent);
 
-    pos[child].cursive_chain() = parent - child;
+    pos[child].attach_type() = ATTACH_TYPE_CURSIVE;
+    pos[child].attach_chain() = (int) parent - (int) child;
+    buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_GPOS_ATTACHMENT;
     if (likely (HB_DIRECTION_IS_HORIZONTAL (c->direction)))
       pos[child].y_offset = y_offset;
     else
@@ -1067,7 +1077,7 @@ struct MarkBasePosFormat1
     unsigned int mark_index = (this+markCoverage).get_coverage  (buffer->cur().codepoint);
     if (likely (mark_index == NOT_COVERED)) return_trace (false);
 
-    /* now we search backwards for a non-mark glyph */
+    /* Now we search backwards for a non-mark glyph */
     hb_apply_context_t::skipping_iterator_t &skippy_iter = c->iter_input;
     skippy_iter.reset (buffer->idx, 1);
     skippy_iter.set_lookup_props (LookupFlag::IgnoreMarks);
@@ -1079,7 +1089,7 @@ struct MarkBasePosFormat1
     } while (1);
 
     /* Checking that matched glyph is actually a base glyph by GDEF is too strong; disabled */
-    if (!_hb_glyph_info_is_base_glyph (&buffer->info[skippy_iter.idx])) { /*return_trace (false);*/ }
+    //if (!_hb_glyph_info_is_base_glyph (&buffer->info[skippy_iter.idx])) { return_trace (false); }
 
     unsigned int base_index = (this+baseCoverage).get_coverage  (buffer->info[skippy_iter.idx].codepoint);
     if (base_index == NOT_COVERED) return_trace (false);
@@ -1168,14 +1178,14 @@ struct MarkLigPosFormat1
     unsigned int mark_index = (this+markCoverage).get_coverage  (buffer->cur().codepoint);
     if (likely (mark_index == NOT_COVERED)) return_trace (false);
 
-    /* now we search backwards for a non-mark glyph */
+    /* Now we search backwards for a non-mark glyph */
     hb_apply_context_t::skipping_iterator_t &skippy_iter = c->iter_input;
     skippy_iter.reset (buffer->idx, 1);
     skippy_iter.set_lookup_props (LookupFlag::IgnoreMarks);
     if (!skippy_iter.prev ()) return_trace (false);
 
     /* Checking that matched glyph is actually a ligature by GDEF is too strong; disabled */
-    if (!_hb_glyph_info_is_ligature (&buffer->info[skippy_iter.idx])) { /*return_trace (false);*/ }
+    //if (!_hb_glyph_info_is_ligature (&buffer->info[skippy_iter.idx])) { return_trace (false); }
 
     unsigned int j = skippy_iter.idx;
     unsigned int lig_index = (this+ligatureCoverage).get_coverage  (buffer->info[j].codepoint);
@@ -1499,7 +1509,8 @@ struct GPOS : GSUBGPOS
   { return CastR<PosLookup> (GSUBGPOS::get_lookup (i)); }
 
   static inline void position_start (hb_font_t *font, hb_buffer_t *buffer);
-  static inline void position_finish (hb_font_t *font, hb_buffer_t *buffer);
+  static inline void position_finish_advances (hb_font_t *font, hb_buffer_t *buffer);
+  static inline void position_finish_offsets (hb_font_t *font, hb_buffer_t *buffer);
 
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
@@ -1516,13 +1527,13 @@ struct GPOS : GSUBGPOS
 static void
 reverse_cursive_minor_offset (hb_glyph_position_t *pos, unsigned int i, hb_direction_t direction, unsigned int new_parent)
 {
-  unsigned int j = pos[i].cursive_chain();
-  if (likely (!j))
+  int chain = pos[i].attach_chain(), type = pos[i].attach_type();
+  if (likely (!chain || 0 == (type & ATTACH_TYPE_CURSIVE)))
     return;
 
-  j += i;
+  pos[i].attach_chain() = 0;
 
-  pos[i].cursive_chain() = 0;
+  unsigned int j = (int) i + chain;
 
   /* Stop if we see new parent in the chain. */
   if (j == new_parent)
@@ -1535,62 +1546,68 @@ reverse_cursive_minor_offset (hb_glyph_position_t *pos, unsigned int i, hb_direc
   else
     pos[j].x_offset = -pos[i].x_offset;
 
-  pos[j].cursive_chain() = i - j;
+  pos[j].attach_chain() = -chain;
+  pos[j].attach_type() = type;
 }
 static void
-fix_cursive_minor_offset (hb_glyph_position_t *pos, unsigned int i, hb_direction_t direction)
+propagate_attachment_offsets (hb_glyph_position_t *pos, unsigned int i, hb_direction_t direction)
 {
-  unsigned int j = pos[i].cursive_chain();
-  if (likely (!j))
+  /* Adjusts offsets of attached glyphs (both cursive and mark) to accumulate
+   * offset of glyph they are attached to. */
+  int chain = pos[i].attach_chain(), type = pos[i].attach_type();
+  if (likely (!chain))
     return;
 
-  j += i;
+  unsigned int j = (int) i + chain;
 
-  pos[i].cursive_chain() = 0;
+  pos[i].attach_chain() = 0;
 
-  fix_cursive_minor_offset (pos, j, direction);
+  propagate_attachment_offsets (pos, j, direction);
 
-  if (HB_DIRECTION_IS_HORIZONTAL (direction))
-    pos[i].y_offset += pos[j].y_offset;
-  else
+  assert (!!(type & ATTACH_TYPE_MARK) ^ !!(type & ATTACH_TYPE_CURSIVE));
+
+  if (type & ATTACH_TYPE_CURSIVE)
+  {
+    if (HB_DIRECTION_IS_HORIZONTAL (direction))
+      pos[i].y_offset += pos[j].y_offset;
+    else
+      pos[i].x_offset += pos[j].x_offset;
+  }
+  else /*if (type & ATTACH_TYPE_MARK)*/
+  {
     pos[i].x_offset += pos[j].x_offset;
-}
+    pos[i].y_offset += pos[j].y_offset;
 
-static void
-fix_mark_attachment (hb_glyph_position_t *pos, unsigned int i, hb_direction_t direction)
-{
-  if (likely (!(pos[i].attach_lookback())))
-    return;
-
-  unsigned int j = i - pos[i].attach_lookback();
-
-  pos[i].x_offset += pos[j].x_offset;
-  pos[i].y_offset += pos[j].y_offset;
-
-  if (HB_DIRECTION_IS_FORWARD (direction))
-    for (unsigned int k = j; k < i; k++) {
-      pos[i].x_offset -= pos[k].x_advance;
-      pos[i].y_offset -= pos[k].y_advance;
-    }
-  else
-    for (unsigned int k = j + 1; k < i + 1; k++) {
-      pos[i].x_offset += pos[k].x_advance;
-      pos[i].y_offset += pos[k].y_advance;
-    }
+    assert (j < i);
+    if (HB_DIRECTION_IS_FORWARD (direction))
+      for (unsigned int k = j; k < i; k++) {
+        pos[i].x_offset -= pos[k].x_advance;
+        pos[i].y_offset -= pos[k].y_advance;
+      }
+    else
+      for (unsigned int k = j + 1; k < i + 1; k++) {
+        pos[i].x_offset += pos[k].x_advance;
+        pos[i].y_offset += pos[k].y_advance;
+      }
+  }
 }
 
 void
 GPOS::position_start (hb_font_t *font HB_UNUSED, hb_buffer_t *buffer)
 {
-  buffer->clear_positions ();
-
   unsigned int count = buffer->len;
   for (unsigned int i = 0; i < count; i++)
-    buffer->pos[i].attach_lookback() = buffer->pos[i].cursive_chain() = 0;
+    buffer->pos[i].attach_chain() = buffer->pos[i].attach_type() = 0;
 }
 
 void
-GPOS::position_finish (hb_font_t *font HB_UNUSED, hb_buffer_t *buffer)
+GPOS::position_finish_advances (hb_font_t *font HB_UNUSED, hb_buffer_t *buffer)
+{
+  //_hb_buffer_assert_gsubgpos_vars (buffer);
+}
+
+void
+GPOS::position_finish_offsets (hb_font_t *font HB_UNUSED, hb_buffer_t *buffer)
 {
   _hb_buffer_assert_gsubgpos_vars (buffer);
 
@@ -1598,13 +1615,10 @@ GPOS::position_finish (hb_font_t *font HB_UNUSED, hb_buffer_t *buffer)
   hb_glyph_position_t *pos = hb_buffer_get_glyph_positions (buffer, &len);
   hb_direction_t direction = buffer->props.direction;
 
-  /* Handle cursive connections */
-  for (unsigned int i = 0; i < len; i++)
-    fix_cursive_minor_offset (pos, i, direction);
-
   /* Handle attachments */
-  for (unsigned int i = 0; i < len; i++)
-    fix_mark_attachment (pos, i, direction);
+  if (buffer->scratch_flags & HB_BUFFER_SCRATCH_FLAG_HAS_GPOS_ATTACHMENT)
+    for (unsigned int i = 0; i < len; i++)
+      propagate_attachment_offsets (pos, i, direction);
 }
 
 
@@ -1633,8 +1647,8 @@ template <typename context_t>
 }
 
 
-#undef attach_lookback
-#undef cursive_chain
+#undef attach_chain
+#undef attach_type
 
 
 } /* namespace OT */
