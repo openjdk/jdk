@@ -124,7 +124,6 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
          writer.addAnnotationContentTree(contentTree, annotationContentTree);
          writer.addFooter(contentTree);
          writer.printDocument(contentTree);
-         writer.close();
          copyDocFiles();
      }
 

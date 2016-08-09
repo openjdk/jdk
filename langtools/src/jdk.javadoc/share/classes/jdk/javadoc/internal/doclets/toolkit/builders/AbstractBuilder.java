@@ -33,6 +33,7 @@ import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
@@ -89,6 +90,7 @@ public abstract class AbstractBuilder {
      */
     protected final Configuration configuration;
 
+    protected final Messages messages;
     protected final Utils utils;
 
     /**
@@ -112,6 +114,7 @@ public abstract class AbstractBuilder {
      */
     public AbstractBuilder(Context c) {
         this.configuration = c.configuration;
+        this.messages = configuration.getMessages();
         this.utils = configuration.utils;
         this.containingPackagesSeen = c.containingPackagesSeen;
         this.layoutParser = c.layoutParser;
@@ -144,13 +147,18 @@ public abstract class AbstractBuilder {
                     new Class<?>[]{XMLNode.class, Content.class},
                     new Object[]{node, contentTree});
         } catch (NoSuchMethodException e) {
-            e.printStackTrace();
+            e.printStackTrace(System.err);
             configuration.reporter.print(ERROR, "Unknown element: " + component);
             throw new DocletAbortException(e);
         } catch (InvocationTargetException e) {
-            throw new DocletAbortException(e.getCause());
+            Throwable cause = e.getCause();
+            if (cause instanceof DocletAbortException) {
+                throw (DocletAbortException) cause;
+            } else {
+                throw new DocletAbortException(e.getCause());
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace(System.err);
             configuration.reporter.print(ERROR, "Exception " +
                     e.getClass().getName() +
                     " thrown while processing element: " + component);
