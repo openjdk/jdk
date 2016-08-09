@@ -30,7 +30,7 @@
  * file and, per its terms, should not be removed:
  *
  * Last changed in libpng 1.6.19 [November 12, 2015]
- * Copyright (c) 1998-2015 Glenn Randers-Pehrson
+ * Copyright (c) 1998-2002,2004,2006-2015 Glenn Randers-Pehrson
  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
  *
@@ -42,7 +42,7 @@
 #include "pngpriv.h"
 
 /* Generate a compiler error if there is an old png.h in the search path. */
-typedef png_libpng_version_1_6_20 Your_png_h_is_not_version_1_6_20;
+typedef png_libpng_version_1_6_23 Your_png_h_is_not_version_1_6_23;
 
 /* Tells libpng that we have already handled the first "num_bytes" bytes
  * of the PNG file signature.  If the PNG data is embedded into another
@@ -803,14 +803,15 @@ png_get_copyright(png_const_structrp png_ptr)
 #else
 #  ifdef __STDC__
    return PNG_STRING_NEWLINE \
-      "libpng version 1.6.20 - December 3, 2015" PNG_STRING_NEWLINE \
-      "Copyright (c) 1998-2015 Glenn Randers-Pehrson" PNG_STRING_NEWLINE \
+      "libpng version 1.6.23 - June 9, 2016" PNG_STRING_NEWLINE \
+      "Copyright (c) 1998-2002,2004,2006-2016 Glenn Randers-Pehrson" \
+      PNG_STRING_NEWLINE \
       "Copyright (c) 1996-1997 Andreas Dilger" PNG_STRING_NEWLINE \
       "Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc." \
       PNG_STRING_NEWLINE;
 #  else
-   return "libpng version 1.6.20 - December 3, 2015\
-      Copyright (c) 1998-2015 Glenn Randers-Pehrson\
+   return "libpng version 1.6.23 - June 9, 2016\
+      Copyright (c) 1998-2002,2004,2006-2016 Glenn Randers-Pehrson\
       Copyright (c) 1996-1997 Andreas Dilger\
       Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.";
 #  endif
