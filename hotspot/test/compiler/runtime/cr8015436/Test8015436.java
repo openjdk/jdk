@@ -25,8 +25,12 @@
  * @test
  * @bug 8015436
  * @summary the IK _initial_method_idnum value must be adjusted if overpass methods are added
+ * @library /test/lib/share/classes /
+ * @modules java.base/jdk.internal.misc
+ * @build compiler.runtime.cr8015436.Test8015436
+ *        compiler.runtime.cr8015436.Driver8015436
  *
- * @run main compiler.runtime.cr8015436.Test8015436
+ * @run driver compiler.runtime.cr8015436.Driver8015436
  */
 
 /*
@@ -45,20 +49,24 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
 public class Test8015436 implements InterfaceWithDefaultMethod {
+    public static final String SOME_MTD_INVOKED = "someMethod() invoked";
+    public static final String DEFAULT_MTD_INVOKED_DIRECTLY = "defaultMethod() invoked directly";
+    public static final String DEFAULT_MTD_INVOKED_MH = "defaultMethod() invoked via a MethodHandle";
+
     @Override
     public void someMethod() {
-        System.out.println("someMethod() invoked");
+        System.out.println(SOME_MTD_INVOKED);
     }
 
     public static void main(String[] args) throws Throwable {
         Test8015436 testObj = new Test8015436();
         testObj.someMethod();
-        testObj.defaultMethod("invoked directly");
+        testObj.defaultMethod(DEFAULT_MTD_INVOKED_DIRECTLY);
 
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         MethodType   mt = MethodType.methodType(void.class, String.class);
         MethodHandle mh = lookup.findVirtual(Test8015436.class, "defaultMethod", mt);
-        mh.invokeExact(testObj, "invoked via a MethodHandle");
+        mh.invokeExact(testObj, DEFAULT_MTD_INVOKED_MH);
     }
 }
 
@@ -66,7 +74,7 @@ interface InterfaceWithDefaultMethod {
     public void someMethod();
 
     default public void defaultMethod(String str){
-        System.out.println("defaultMethod() " + str);
+        System.out.println(str);
     }
 }
 /*
