@@ -783,7 +783,9 @@ class LambdaForm {
         }
         MethodType invokerType = methodType();
         assert(vmentry == null || vmentry.getMethodType().basicType().equals(invokerType));
-        MemberName member = new MemberName(lookupClass, debugName, invokerType, REF_invokeStatic);
+        int dot = debugName.indexOf('.');
+        String methodName = (dot > 0) ? debugName.substring(dot + 1) : debugName;
+        MemberName member = new MemberName(lookupClass, methodName, invokerType, REF_invokeStatic);
         MemberName resolvedMember = MemberName.getFactory().resolveOrNull(REF_invokeStatic, member, lookupClass);
         if (resolvedMember != null) {
             vmentry = resolvedMember;
