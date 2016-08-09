@@ -83,8 +83,8 @@ public class ResourcePoolManager {
             if (!path.startsWith("/")) {
                 path = "/" + path;
             }
-            if (!path.startsWith("/" + name)) {
-                path = "/" + name + path;
+            if (!path.startsWith("/" + name + "/")) {
+                path = "/" + name + path; // path already starts with '/'
             }
             return Optional.ofNullable(moduleContent.get(path));
         }
