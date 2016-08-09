@@ -34,6 +34,7 @@ import javax.lang.model.element.TypeElement;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.ParamTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
@@ -288,6 +289,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     private Content processParamTags(Element e, boolean isParams,
             List<? extends DocTree> paramTags, Map<String, String> rankMap, TagletWriter writer,
             Set<String> alreadyDocumented) {
+        Messages messages = writer.configuration().getMessages();
         Content result = writer.getOutputInstance();
         if (!paramTags.isEmpty()) {
             CommentHelper ch = writer.configuration().utils.getCommentHelper(e);
@@ -296,22 +298,22 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                         ? ch.getParameterName(dt)
                         : "<" + ch.getParameterName(dt) + ">";
                 if (!rankMap.containsKey(ch.getParameterName(dt))) {
-                    writer.getMsgRetriever().warning(ch.getDocTreePath(dt),
-                                                     isParams ?
-                                                     "doclet.Parameters_warn" :
-                                                     "doclet.Type_Parameters_warn",
-                                                     paramName);
+                    messages.warning(ch.getDocTreePath(dt),
+                            isParams
+                                    ? "doclet.Parameters_warn"
+                                    : "doclet.Type_Parameters_warn",
+                            paramName);
                 }
                 String rank = rankMap.get(ch.getParameterName(dt));
                 if (rank != null && alreadyDocumented.contains(rank)) {
-                    writer.getMsgRetriever().warning(ch.getDocTreePath(dt),
-                                                     isParams ?
-                                                     "doclet.Parameters_dup_warn" :
-                                                     "doclet.Type_Parameters_dup_warn",
-                                                     paramName);
+                    messages.warning(ch.getDocTreePath(dt),
+                            isParams
+                                    ? "doclet.Parameters_dup_warn"
+                                    : "doclet.Type_Parameters_dup_warn",
+                            paramName);
                 }
                 result.addContent(processParamTag(e, isParams, writer, dt,
-                                                  ch.getParameterName(dt), alreadyDocumented.isEmpty()));
+                        ch.getParameterName(dt), alreadyDocumented.isEmpty()));
                 alreadyDocumented.add(rank);
             }
         }

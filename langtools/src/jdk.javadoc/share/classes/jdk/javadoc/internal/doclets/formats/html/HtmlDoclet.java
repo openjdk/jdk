@@ -38,6 +38,7 @@ import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.internal.doclets.toolkit.AbstractDoclet;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.builders.AbstractBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
@@ -68,7 +69,9 @@ public class HtmlDoclet extends AbstractDoclet {
     /**
      * The global configuration information for this run.
      */
-    public final ConfigurationImpl configuration;
+    private final ConfigurationImpl configuration;
+
+    private Messages messages;
 
 
     private static final DocPath DOCLET_RESOURCES = DocPath
@@ -77,6 +80,7 @@ public class HtmlDoclet extends AbstractDoclet {
     public void init(Locale locale, Reporter reporter) {
         configuration.reporter = reporter;
         configuration.locale = locale;
+        messages = configuration.getMessages();
     }
 
     /**
@@ -118,8 +122,7 @@ public class HtmlDoclet extends AbstractDoclet {
         }
 
         if (configuration.topFile.isEmpty()) {
-            configuration.standardmessage.
-                error("doclet.No_Non_Deprecated_Classes_To_Document");
+            messages.error("doclet.No_Non_Deprecated_Classes_To_Document");
             return;
         }
         boolean nodeprecated = configuration.nodeprecated;
@@ -351,11 +354,11 @@ public class HtmlDoclet extends AbstractDoclet {
             if (toFile.isSameFile(fromfile))
                 return;
 
-            configuration.message.notice("doclet.Copying_File_0_To_File_1",
+            messages.notice("doclet.Copying_File_0_To_File_1",
                     fromfile.toString(), path.getPath());
             toFile.copyFile(fromfile);
         } catch (IOException exc) {
-            configuration.message.error("doclet.perform_copy_exception_encountered",
+            messages.error("doclet.perform_copy_exception_encountered",
                     exc.toString());
             throw new DocletAbortException(exc);
         }

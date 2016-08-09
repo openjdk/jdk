@@ -138,11 +138,6 @@ public interface SerializedFormWriter {
     public SerialMethodWriter getSerialMethodWriter(TypeElement typeElement);
 
     /**
-     * Close the writer.
-     */
-    public abstract void close() throws IOException;
-
-    /**
      * Get the serialized content.
      *
      * @param serializedTreeContent content for serialized data

@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.javadoc.internal.doclets.formats.html.markup;
 
 import java.io.IOException;
@@ -33,28 +32,25 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 /**
- * Class for generating raw HTML content to be added to HTML pages of javadoc output.
+ * Class for containing fixed string content for HTML tags of javadoc output.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
- *
- * @author Bhavesh Patel
  */
-public class RawHtml extends Content {
-
-    private final String rawHtmlContent;
-
-    public static final Content nbsp = new RawHtml("&nbsp;");
+public class FixedStringContent extends Content {
+    private final String string;
 
     /**
-     * Constructor to construct a RawHtml object.
+     * Constructor to construct FixedStringContent object.
      *
-     * @param rawHtml raw HTML text to be added
+     * @param content content for the object
      */
-    public RawHtml(CharSequence rawHtml) {
-        rawHtmlContent = rawHtml.toString();
+    public FixedStringContent(CharSequence content) {
+        string = needEscape(content)
+                ? escape(content)
+                : content.toString();
     }
 
     /**
@@ -65,28 +61,36 @@ public class RawHtml extends Content {
      *                              DocletAbortException because it
      *                              is not supported.
      */
+    @Override
     public void addContent(Content content) {
         throw new DocletAbortException("not supported");
     }
 
     /**
-     * This method is not supported by the class.
+     * Adds content for the StringContent object.  The method escapes
+     * HTML characters for the string content that is added.
      *
-     * @param stringContent string content that needs to be added
+     * @param strContent string content to be added
      * @throws DocletAbortException this method will always throw a
      *                              DocletAbortException because it
      *                              is not supported.
      */
     @Override
-    public void addContent(CharSequence stringContent) {
+    public void addContent(CharSequence strContent) {
         throw new DocletAbortException("not supported");
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isEmpty() {
-        return rawHtmlContent.isEmpty();
+        return string.isEmpty();
+    }
+
+    @Override
+    public int charCount() {
+        return RawHtml.charCount(string);
     }
 
     /**
@@ -94,61 +98,7 @@ public class RawHtml extends Content {
      */
     @Override
     public String toString() {
-        return rawHtmlContent;
-    }
-
-    private enum State { TEXT, ENTITY, TAG, STRING }
-
-    @Override
-    public int charCount() {
-        return charCount(rawHtmlContent);
-    }
-
-    static int charCount(CharSequence htmlText) {
-        State state = State.TEXT;
-        int count = 0;
-        for (int i = 0; i < htmlText.length(); i++) {
-            char c = htmlText.charAt(i);
-            switch (state) {
-                case TEXT:
-                    switch (c) {
-                        case '<':
-                            state = State.TAG;
-                            break;
-                        case '&':
-                            state = State.ENTITY;
-                            count++;
-                            break;
-                        default:
-                            count++;
-                    }
-                    break;
-
-                case ENTITY:
-                    if (!Character.isLetterOrDigit(c))
-                        state = State.TEXT;
-                    break;
-
-                case TAG:
-                    switch (c) {
-                        case '"':
-                            state = State.STRING;
-                            break;
-                        case '>':
-                            state = State.TEXT;
-                            break;
-                    }
-                    break;
-
-                case STRING:
-                    switch (c) {
-                        case '"':
-                            state = State.TAG;
-                            break;
-                    }
-            }
-        }
-        return count;
+        return string;
     }
 
     /**
@@ -156,7 +106,33 @@ public class RawHtml extends Content {
      */
     @Override
     public boolean write(Writer out, boolean atNewline) throws IOException {
-        out.write(rawHtmlContent);
-        return rawHtmlContent.endsWith(DocletConstants.NL);
+        out.write(string);
+        return string.endsWith(DocletConstants.NL);
     }
+
+    private boolean needEscape(CharSequence cs) {
+        for (int i = 0; i < cs.length(); i++) {
+            switch (cs.charAt(i)) {
+                case '<':
+                case '>':
+                case '&':
+                    return true;
+            }
+        }
+        return false;
+    }
+    private String escape(CharSequence s) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char ch = s.charAt(i);
+            switch (ch) {
+                case '<': sb.append("&lt;");  break;
+                case '>': sb.append("&gt;");  break;
+                case '&': sb.append("&amp;"); break;
+                default:  sb.append(ch);      break;
+            }
+        }
+        return sb.toString();
+    }
+
 }
