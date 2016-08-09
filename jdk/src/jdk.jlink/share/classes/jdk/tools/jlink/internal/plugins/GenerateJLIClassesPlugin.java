@@ -117,7 +117,7 @@ public final class GenerateJLIClassesPlugin implements Plugin {
      */
     public static Map<String, List<String>> defaultDMHMethods() {
         return Map.of(
-            DMH_INVOKE_VIRTUAL, List.of("_L", "L_L", "LI_I"),
+            DMH_INVOKE_VIRTUAL, List.of("_L", "L_L", "LI_I", "LL_V"),
             DMH_INVOKE_SPECIAL, List.of("L_I", "L_L", "LF_L", "LD_L", "LL_L",
                 "L3_L", "L4_L", "L5_L", "L6_L", "L7_L", "LI_I", "LI_L", "LIL_I",
                 "LII_I", "LII_L", "LLI_L", "LLI_I", "LILI_I", "LIIL_L",

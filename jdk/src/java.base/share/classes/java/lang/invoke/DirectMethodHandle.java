@@ -191,12 +191,12 @@ class DirectMethodHandle extends MethodHandle {
         boolean doesAlloc = (which == LF_NEWINVSPECIAL);
         String linkerName, lambdaName;
         switch (which) {
-        case LF_INVVIRTUAL:    linkerName = "linkToVirtual";    lambdaName = "invokeVirtual";    break;
-        case LF_INVSTATIC:     linkerName = "linkToStatic";     lambdaName = "invokeStatic";     break;
-        case LF_INVSTATIC_INIT:linkerName = "linkToStatic";     lambdaName = "invokeStaticInit"; break;
-        case LF_INVSPECIAL:    linkerName = "linkToSpecial";    lambdaName = "invokeSpecial";    break;
-        case LF_INVINTERFACE:  linkerName = "linkToInterface";  lambdaName = "invokeInterface";  break;
-        case LF_NEWINVSPECIAL: linkerName = "linkToSpecial";    lambdaName = "newInvokeSpecial"; break;
+        case LF_INVVIRTUAL:    linkerName = "linkToVirtual";    lambdaName = "DMH.invokeVirtual";    break;
+        case LF_INVSTATIC:     linkerName = "linkToStatic";     lambdaName = "DMH.invokeStatic";     break;
+        case LF_INVSTATIC_INIT:linkerName = "linkToStatic";     lambdaName = "DMH.invokeStaticInit"; break;
+        case LF_INVSPECIAL:    linkerName = "linkToSpecial";    lambdaName = "DMH.invokeSpecial";    break;
+        case LF_INVINTERFACE:  linkerName = "linkToInterface";  lambdaName = "DMH.invokeInterface";  break;
+        case LF_NEWINVSPECIAL: linkerName = "linkToSpecial";    lambdaName = "DMH.newInvokeSpecial"; break;
         default:  throw new InternalError("which="+which);
         }
 
