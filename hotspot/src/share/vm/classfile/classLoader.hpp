@@ -150,7 +150,7 @@ public:
 
 // ModuleClassPathList contains a linked list of ClassPathEntry's
 // that have been specified for a specific module.  Currently,
-// the only way to specify a module/path pair is via the -Xpatch
+// the only way to specify a module/path pair is via the --patch-module
 // command line option.
 class ModuleClassPathList : public CHeapObj<mtClass> {
 private:
@@ -213,8 +213,8 @@ class ClassLoader: AllStatic {
   static PerfCounter* _load_instance_class_failCounter;
 
   // The boot class path consists of 3 ordered pieces:
-  //  1. the module/path pairs specified to -Xpatch
-  //    -Xpatch:<module>=<file>(<pathsep><file>)*
+  //  1. the module/path pairs specified to --patch-module
+  //    --patch-module=<module>=<file>(<pathsep><file>)*
   //  2. the base piece
   //    [jimage | build with exploded modules]
   //  3. boot loader append path
@@ -223,8 +223,8 @@ class ClassLoader: AllStatic {
   // The boot loader must obey this order when attempting
   // to load a class.
 
-  // 1. Contains the module/path pairs specified to -Xpatch
-  static GrowableArray<ModuleClassPathList*>* _xpatch_entries;
+  // 1. Contains the module/path pairs specified to --patch-module
+  static GrowableArray<ModuleClassPathList*>* _patch_mod_entries;
 
   // 2. the base piece
   //    Contains the ClassPathEntry of the modular java runtime image.
@@ -256,11 +256,11 @@ class ClassLoader: AllStatic {
 
   // Initialization:
   //   - setup the boot loader's system class path
-  //   - setup the boot loader's xpatch entries, if present
+  //   - setup the boot loader's patch mod entries, if present
   //   - create the ModuleEntry for java.base
   static void setup_bootstrap_search_path();
   static void setup_search_path(const char *class_path, bool setting_bootstrap);
-  static void setup_xpatch_entries();
+  static void setup_patch_mod_entries();
   static void create_javabase();
 
   static void load_zip_library();
@@ -363,7 +363,7 @@ class ClassLoader: AllStatic {
   // Add a module's exploded directory to the boot loader's exploded module build list
   static void add_to_exploded_build_list(Symbol* module_name, TRAPS);
 
-  // Attempt load of individual class from either the xpatch or exploded modules build lists
+  // Attempt load of individual class from either the patched or exploded modules build lists
   static ClassFileStream* search_module_entries(const GrowableArray<ModuleClassPathList*>* const module_list,
                                                 const char* const class_name,
                                                 const char* const file_name, TRAPS);

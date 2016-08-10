@@ -23,26 +23,35 @@
 
 /*
  * @test
- * @summary Module system initialization exception results if a module is specificed twice to Xpatch.
+ * @bug 8130399
+ * @summary Make sure --patch-module works for java.base.
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary
+ * @compile PatchModuleMain.java
+ * @run main PatchModuleJavaBase
  */
 
 import jdk.test.lib.*;
 
-public class XpatchDupModule {
+public class PatchModuleJavaBase {
 
-  // The module system initialization should generate an ExceptionInInitializerError
-  // if -Xpatch is specified with the same module more than once.
+    public static void main(String[] args) throws Exception {
+        String source = "package java.lang; "                       +
+                        "public class NewClass { "                  +
+                        "    static { "                             +
+                        "        System.out.println(\"I pass!\"); " +
+                        "    } "                                    +
+                        "}";
 
-  public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-      "-Xpatch:module1=module1_dir",
-      "-Xpatch:module1=module1_dir",
-      "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("java.lang.ExceptionInInitializerError");
-    output.shouldHaveExitValue(1);
-  }
+        ClassFileInstaller.writeClassToDisk("java/lang/NewClass",
+             InMemoryJavaCompiler.compile("java.lang.NewClass", source, "-Xmodule:java.base"),
+             "mods/java.base");
+
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("--patch-module=java.base=mods/java.base",
+             "PatchModuleMain", "java.lang.NewClass");
+
+        new OutputAnalyzer(pb.start())
+            .shouldContain("I pass!")
+            .shouldHaveExitValue(0);
+    }
 }
-

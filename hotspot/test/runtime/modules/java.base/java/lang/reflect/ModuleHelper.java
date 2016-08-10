@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import java.lang.module.ModuleDescriptor;
 
 /**
  * A helper class intended to be injected into java.lang.reflect using the
- * java -Xpatch option. The helper class provides access to package private
+ * java --patch-module option. The helper class provides access to package private
  * methods in java.lang.reflect.Module.
  */
 
