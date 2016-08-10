@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.illegal.argument.for.option
-// options: -modulepath doesNotExist
+// options: --module-path doesNotExist
 // run: simple
 
 class X {}

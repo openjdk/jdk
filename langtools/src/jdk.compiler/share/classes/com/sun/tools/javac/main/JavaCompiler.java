@@ -892,8 +892,8 @@ public class JavaCompiler {
 
         // forcibly set the equivalent of -Xlint:-options, so that no further
         // warnings about command line options are generated from this point on
-        options.put(XLINT_CUSTOM.text + "-" + LintCategory.OPTIONS.option, "true");
-        options.remove(XLINT_CUSTOM.text + LintCategory.OPTIONS.option);
+        options.put(XLINT_CUSTOM.primaryName + "-" + LintCategory.OPTIONS.option, "true");
+        options.remove(XLINT_CUSTOM.primaryName + LintCategory.OPTIONS.option);
 
         start_msec = now();
 
@@ -1258,8 +1258,8 @@ public class JavaCompiler {
     static boolean explicitAnnotationProcessingRequested(Options options) {
         return
             options.isSet(PROCESSOR) ||
-            options.isSet(PROCESSORPATH) ||
-            options.isSet(PROCESSORMODULEPATH) ||
+            options.isSet(PROCESSOR_PATH) ||
+            options.isSet(PROCESSOR_MODULE_PATH) ||
             options.isSet(PROC, "only") ||
             options.isSet(XPRINT);
     }

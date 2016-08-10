@@ -81,7 +81,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                           "package impl; public class Impl { }");
 
         String log = new JavacTask(tb)
-                .options("-modulesourcepath", moduleSrc.toString(),
+                .options("--module-source-path", moduleSrc.toString(),
                          "-processor", AP.class.getName(),
                          "-AexpectedEnclosedElements=m1=>impl")
                 .outdir(classes)
@@ -113,7 +113,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                           "package impl2; public class Impl2 { }");
 
         String log = new JavacTask(tb)
-                .options("-modulesourcepath", moduleSrc.toString(),
+                .options("--module-source-path", moduleSrc.toString(),
                          "-processor", AP.class.getName(),
                          "-AexpectedEnclosedElements=m1=>impl1,m2=>impl2")
                 .outdir(classes)

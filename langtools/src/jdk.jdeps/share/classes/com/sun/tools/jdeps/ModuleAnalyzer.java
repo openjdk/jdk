@@ -77,7 +77,7 @@ public class ModuleAnalyzer {
             String list = config.initialArchives().stream()
                 .map(Archive::getPathName).collect(joining(" "));
             throw new JdepsTask.UncheckedBadArgs(new BadArgs("err.invalid.module.option",
-                list, "-check"));
+                list, "--check"));
         }
 
         this.configuration = config;

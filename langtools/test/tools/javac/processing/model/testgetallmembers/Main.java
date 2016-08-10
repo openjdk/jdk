@@ -64,7 +64,7 @@ public class Main {
     static JavacTask javac;
     static Elements elements;
 
-    static List<String> addmods_ALL_SYSTEM = Arrays.asList("-addmods", "ALL-SYSTEM");
+    static List<String> addmods_ALL_SYSTEM = Arrays.asList("--add-modules", "ALL-SYSTEM");
 
     public static void main(String[] args) throws Exception {
         JavaCompiler tool = ToolProvider.getSystemJavaCompiler();

@@ -526,19 +526,27 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
 
     private void showHelp() {
         log.println(getMessage("main.usage", progname));
+
         for (Option o: recognizedOptions) {
             if (o.isHidden())
                 continue;
             String name = o.aliases[0].substring(1); // there must always be at least one name
             log.println(getMessage("main.opt." + name));
         }
-        String[] fmOptions = { "-classpath", "-cp", "-bootclasspath" };
+
+        String[] fmOptions = {
+            "--module-path", "--system",
+            "--class-path", "-classpath", "-cp",
+            "-bootclasspath"
+        };
+
         for (String o: fmOptions) {
             if (fileManager.isSupportedOption(o) == -1)
                 continue;
-            String name = o.substring(1);
+            String name = o.replaceAll("^-+", "").replaceAll("-+", "_");
             log.println(getMessage("main.opt." + name));
         }
+
         log.println(getMessage("main.usage.foot"));
     }
 

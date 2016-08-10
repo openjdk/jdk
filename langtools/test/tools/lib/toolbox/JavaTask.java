@@ -67,6 +67,16 @@ public class JavaTask extends AbstractTask<JavaTask> {
     }
 
     /**
+     * Sets the VM options.
+     * @param vmOptions the options
+     * @return this task object
+     */
+    public JavaTask vmOptions(List<String> vmOptions) {
+        this.vmOptions = vmOptions;
+        return this;
+    }
+
+    /**
      * Sets the name of the class to be executed.
      * @param className the name of the class
      * @return this task object
@@ -83,6 +93,16 @@ public class JavaTask extends AbstractTask<JavaTask> {
      */
     public JavaTask classArgs(String... classArgs) {
         this.classArgs = Arrays.asList(classArgs);
+        return this;
+    }
+
+    /**
+     * Sets the arguments for the class to be executed.
+     * @param classArgs the arguments
+     * @return this task object
+     */
+    public JavaTask classArgs(List<String> classArgs) {
+        this.classArgs = classArgs;
         return this;
     }
 
