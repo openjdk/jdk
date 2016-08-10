@@ -54,6 +54,7 @@ jdk/javadoc/tool/varArgs/Main.java                                              
 #
 # jshell
 
+jdk/jshell/EditorPadTest.java                                                   8161276    windows-all    Test set-up cannot press buttons
 jdk/jshell/ToolBasicTest.java                                                   8139873    generic-all    JShell tests failing
 
 ###########################################################################
