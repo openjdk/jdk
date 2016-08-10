@@ -1002,7 +1002,9 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
                     Collections.addAll(result, buf0);
                 }
             }
-            result.addAll(Arrays.asList(buf).subList(0, bufCount));
+            for (int i = 0; i < bufCount; i++) {
+                result.add(buf[i]);
+            }
             // Signature matching is not the same as type matching, since
             // one signature might correspond to several types.
             // So if matchType is a Class or MethodType, refilter the results.
