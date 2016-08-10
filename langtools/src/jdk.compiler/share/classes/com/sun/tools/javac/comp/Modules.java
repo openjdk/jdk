@@ -182,10 +182,10 @@ public class Modules extends JCTree.Visitor {
         java_se = names.fromString("java.se");
         java_ = names.fromString("java.");
 
-        addExportsOpt = options.get(Option.XADDEXPORTS);
-        addReadsOpt = options.get(Option.XADDREADS);
-        addModsOpt = options.get(Option.ADDMODS);
-        limitModsOpt = options.get(Option.LIMITMODS);
+        addExportsOpt = options.get(Option.ADD_EXPORTS);
+        addReadsOpt = options.get(Option.ADD_READS);
+        addModsOpt = options.get(Option.ADD_MODULES);
+        limitModsOpt = options.get(Option.LIMIT_MODULES);
     }
 
     int depth = -1;

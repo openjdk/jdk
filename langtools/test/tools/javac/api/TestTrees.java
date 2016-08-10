@@ -79,8 +79,7 @@ public class TestTrees extends AbstractProcessor {
                 fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrcDir, self + ".java")));
 
             Iterable<String> opts = Arrays.asList(
-                "-XaddExports:"
-                + "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+                "--add-exports", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
                 "-d", ".",
                 "-XDcompilePolicy=simple");
 
@@ -91,8 +90,7 @@ public class TestTrees extends AbstractProcessor {
                 throw new AssertionError("compilation failed");
 
             opts =  Arrays.asList(
-                "-XaddExports:"
-                + "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+                "--add-exports", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
                 "-XDaccessInternalAPI",
                 "-d", ".",
                 "-processorpath", testClassDir,
