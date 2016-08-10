@@ -515,7 +515,7 @@ class DirectMethodHandle extends MethodHandle {
     // Enumerate the different field kinds using Wrapper,
     // with an extra case added for checked references.
     private static final int
-            FT_LAST_WRAPPER    = Wrapper.values().length-1,
+            FT_LAST_WRAPPER    = Wrapper.COUNT-1,
             FT_UNCHECKED_REF   = Wrapper.OBJECT.ordinal(),
             FT_CHECKED_REF     = FT_LAST_WRAPPER+1,
             FT_LIMIT           = FT_LAST_WRAPPER+2;

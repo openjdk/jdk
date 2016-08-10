@@ -3115,7 +3115,7 @@ assert((int)twice.invokeExact(21) == 42);
         return dropArguments(zero(type.returnType()), 0, type.parameterList());
     }
 
-    private static final MethodHandle[] IDENTITY_MHS = new MethodHandle[Wrapper.values().length];
+    private static final MethodHandle[] IDENTITY_MHS = new MethodHandle[Wrapper.COUNT];
     private static MethodHandle makeIdentity(Class<?> ptype) {
         MethodType mtype = methodType(ptype, ptype);
         LambdaForm lform = LambdaForm.identityForm(BasicType.basicType(ptype));
@@ -3133,7 +3133,7 @@ assert((int)twice.invokeExact(21) == 42);
         assert(btw == Wrapper.OBJECT);
         return makeZero(rtype);
     }
-    private static final MethodHandle[] ZERO_MHS = new MethodHandle[Wrapper.values().length];
+    private static final MethodHandle[] ZERO_MHS = new MethodHandle[Wrapper.COUNT];
     private static MethodHandle makeZero(Class<?> rtype) {
         MethodType mtype = methodType(rtype);
         LambdaForm lform = LambdaForm.zeroForm(BasicType.basicType(rtype));
