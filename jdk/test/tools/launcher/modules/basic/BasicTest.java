@@ -37,7 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static jdk.testlibrary.ProcessTools.*;
+import jdk.testlibrary.ProcessTools;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -72,6 +72,16 @@ public class BasicTest {
         assertTrue(compiled, "test module did not compile");
     }
 
+    /**
+     * Execute "java" with the given arguments, returning the exit code.
+     */
+    private int exec(String... args) throws Exception {
+       return ProcessTools.executeTestJava(args)
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .getExitValue();
+    }
+
 
     /**
      * The initial module is loaded from an exploded module
@@ -81,20 +91,28 @@ public class BasicTest {
         String subdir = MODS_DIR.resolve(TEST_MODULE).toString();
         String mid = TEST_MODULE + "/" + MAIN_CLASS;
 
-        // java -mp mods -m $TESTMODULE/$MAINCLASS
-        int exitValue
-            = executeTestJava("-mp", dir, "-m", mid)
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .getExitValue();
+        // java --module-path mods -module $TESTMODULE/$MAINCLASS
+        int exitValue = exec("--module-path", dir, "--module", mid);
         assertTrue(exitValue == 0);
 
-        // java -mp mods/$TESTMODULE -m $TESTMODULE/$MAINCLASS
-        exitValue
-            = executeTestJava("-mp", subdir, "-m", mid)
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .getExitValue();
+        // java --module-path mods/$TESTMODULE --module $TESTMODULE/$MAINCLASS
+        exitValue = exec("--module-path", subdir, "--module", mid);
+        assertTrue(exitValue == 0);
+
+        // java --module-path=mods --module=$TESTMODULE/$MAINCLASS
+        exitValue = exec("--module-path=" + dir, "--module=" + mid);
+        assertTrue(exitValue == 0);
+
+        // java --module-path=mods/$TESTMODULE --module=$TESTMODULE/$MAINCLASS
+        exitValue = exec("--module-path=" + subdir, "--module=" + mid);
+        assertTrue(exitValue == 0);
+
+        // java -p mods -m $TESTMODULE/$MAINCLASS
+        exitValue = exec("-p", dir, "-m", mid);
+        assertTrue(exitValue == 0);
+
+        // java -p mods/$TESTMODULE -m $TESTMODULE/$MAINCLASS
+        exitValue = exec("-p", subdir, "-m", mid);
         assertTrue(exitValue == 0);
     }
 
@@ -119,22 +137,14 @@ public class BasicTest {
                 .run(args);
         assertTrue(success);
 
-        // java -mp mlib -m $TESTMODULE
-        int exitValue
-            = executeTestJava("-mp", dir.toString(),
-                              "-m", TEST_MODULE)
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .getExitValue();
+        // java --module-path mlib -module $TESTMODULE
+        int exitValue = exec("--module-path", dir.toString(),
+                             "--module", TEST_MODULE);
         assertTrue(exitValue == 0);
 
-        // java -mp mlib/m.jar -m $TESTMODULE
-        exitValue
-            = executeTestJava("-mp", jar.toString(),
-                              "-m", TEST_MODULE)
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .getExitValue();
+        // java --module-path mlib/m.jar -module $TESTMODULE
+        exitValue = exec("--module-path", jar.toString(),
+                         "--module", TEST_MODULE);
         assertTrue(exitValue == 0);
     }
 
@@ -157,14 +167,9 @@ public class BasicTest {
         jdk.tools.jmod.JmodTask task = new jdk.tools.jmod.JmodTask();
         assertEquals(task.run(args), 0);
 
-        // java -mp mods -m $TESTMODULE
-        int exitValue
-            = executeTestJava("-mp", dir.toString(),
-                "-m", TEST_MODULE)
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .getExitValue();
-
+        // java --module-path mods --module $TESTMODULE
+        int exitValue = exec("--module-path", dir.toString(),
+                             "--module", TEST_MODULE);
         assertTrue(exitValue != 0);
     }
 
@@ -177,14 +182,8 @@ public class BasicTest {
         String mp = "DoesNotExist" + File.pathSeparator + MODS_DIR.toString();
         String mid = TEST_MODULE + "/" + MAIN_CLASS;
 
-        // java -mp mods -m $TESTMODULE/$MAINCLASS
-        int exitValue
-            = executeTestJava("-mp", mp,
-                              "-m", mid)
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .getExitValue();
-
+        // java --module-path mods --module $TESTMODULE/$MAINCLASS
+        int exitValue = exec("--module-path", mp, "--module", mid);
         assertTrue(exitValue == 0);
     }
 
@@ -195,15 +194,8 @@ public class BasicTest {
     public void testTryRunWithBadModule() throws Exception {
         String modulepath = MODS_DIR.toString();
 
-        // java -mp mods -m $TESTMODULE
-        int exitValue
-            = executeTestJava("-mp", modulepath,
-                              "-m", "rhubarb")
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .shouldContain("not found")
-                .getExitValue();
-
+        // java --module-path mods -m $TESTMODULE
+        int exitValue = exec("--module-path", modulepath, "-m", "rhubarb");
         assertTrue(exitValue != 0);
     }
 
@@ -216,14 +208,8 @@ public class BasicTest {
         String modulepath = MODS_DIR.toString();
         String mid = TEST_MODULE + "/p.rhubarb";
 
-        // java -mp mods -m $TESTMODULE/$MAINCLASS
-        int exitValue
-            = executeTestJava("-mp", modulepath,
-                              "-m", mid)
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .getExitValue();
-
+        // java --module-path mods -m $TESTMODULE/$MAINCLASS
+        int exitValue = exec("--module-path", modulepath, "-m", mid);
         assertTrue(exitValue != 0);
     }
 
@@ -248,15 +234,8 @@ public class BasicTest {
                 .run(args);
         assertTrue(success);
 
-        // java -mp mods -m $TESTMODULE
-        int exitValue
-            = executeTestJava("-mp", dir.toString(),
-                              "-m", TEST_MODULE)
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .shouldContain("does not have a MainClass attribute")
-                .getExitValue();
-
+        // java --module-path mods -m $TESTMODULE
+        int exitValue = exec("--module-path", dir.toString(), "-m", TEST_MODULE);
         assertTrue(exitValue != 0);
     }
 
@@ -269,14 +248,8 @@ public class BasicTest {
         String modulepath = MODS_DIR.toString();
         String mid = "java.base/" + MAIN_CLASS;
 
-        // java -mp mods -m $TESTMODULE/$MAINCLASS
-        int exitValue
-            = executeTestJava("-mp", modulepath,
-                              "-m", mid)
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .getExitValue();
-
+        // java --module-path mods --module $TESTMODULE/$MAINCLASS
+        int exitValue = exec("--module-path", modulepath, "--module", mid);
         assertTrue(exitValue != 0);
     }
 

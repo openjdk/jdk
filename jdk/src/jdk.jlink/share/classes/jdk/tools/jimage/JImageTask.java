@@ -61,11 +61,11 @@ class JImageTask {
 
         new Option<JImageTask>(false, (task, option, arg) -> {
             task.options.fullVersion = true;
-        }, true, "--fullversion"),
+        }, true, "--full-version"),
 
         new Option<JImageTask>(false, (task, option, arg) -> {
             task.options.help = true;
-        }, "--help"),
+        }, "--help", "-h"),
 
         new Option<JImageTask>(false, (task, option, arg) -> {
             task.options.verbose = true;

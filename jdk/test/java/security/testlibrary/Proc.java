@@ -25,19 +25,19 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Permission;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Stream;
 
 /**
  * This is a test library that makes writing a Java test that spawns multiple
@@ -184,12 +184,9 @@ public class Proc {
                         "java").getPath());
         }
 
-        int n = 0;
-        String addexports;
-        while ((addexports = System.getProperty("jdk.launcher.addexports." + n)) != null) {
-            prop("jdk.launcher.addexports." + n, addexports);
-            n++;
-        }
+        Stream.of(jdk.internal.misc.VM.getRuntimeArguments())
+            .filter(arg -> arg.startsWith("--add-exports="))
+            .forEach(cmd::add);
 
         Collections.addAll(cmd, splitProperty("test.vm.opts"));
         Collections.addAll(cmd, splitProperty("test.java.opts"));

@@ -26,7 +26,7 @@
 # @run shell other_resources.sh
 # @summary Access a jrt:/ resource in an observable module that is not in
 #  the boot layer and hence not known to the built-in class loaders. This
-#  test is a shell test because the run tag doesn't support -limitmods.
+#  test is a shell test because the run tag doesn't support --limit-modules.
 
 set -e
 
@@ -39,7 +39,7 @@ if [ -z "$TESTJAVA" ]; then
 fi
 
 JAVA="$TESTJAVA/bin/java ${TESTVMOPTS}"
-$JAVA -limitmods java.base -cp $TESTCLASSES OtherResources
+$JAVA --limit-modules java.base -cp $TESTCLASSES OtherResources
 
 exit 0
 
