@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,15 @@
  * @bug 4548768
  * @summary Javadoc in JDK 1.4 uses classpath and not just source dir
  * @author gafter
- * @ignore API modifications
- * @modules jdk.javadoc
- * @compile p/SourceOnly.java
- * @run main p.SourceOnly
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
+ * @compile p/SourceOnly.java p/NonSource.jasm
+ * @run main Test
  */
 
-// this file is just a dummy to get the javadoc started.
-//
-// NOTE: this test only seems to work in separate JVM mode for
-// reasons having something to do with javing tools.jar
-// on the classpath.  Until that is sorted out, these tests
-// must be run in separate VM mode.
+public class Test {
+    public static void main(String[] args) {
+        // run javadoc on package p
+        if (jdk.javadoc.internal.tool.Main.execute("javadoc", "p.SourceOnly", "p") != 0)
+            throw new Error();
+    }
+}
