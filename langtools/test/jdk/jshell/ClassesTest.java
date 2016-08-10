@@ -41,6 +41,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import jdk.jshell.Diag;
+import static java.util.stream.Collectors.toList;
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Snippet.Status.RECOVERABLE_NOT_DEFINED;
 import static jdk.jshell.Snippet.Status.RECOVERABLE_DEFINED;
@@ -210,8 +211,8 @@ public class ClassesTest extends KullaTesting {
                 ste(b, RECOVERABLE_NOT_DEFINED, RECOVERABLE_NOT_DEFINED, false, MAIN_SNIPPET));
         ***/
         // It is random which one it shows up in, but cyclic error should be there
-        List<Diag> diagsA = getState().diagnostics(a);
-        List<Diag> diagsB = getState().diagnostics(b);
+        List<Diag> diagsA = getState().diagnostics(a).collect(toList());
+        List<Diag> diagsB = getState().diagnostics(b).collect(toList());
         List<Diag> diags;
         if (diagsA.isEmpty()) {
             diags = diagsB;
