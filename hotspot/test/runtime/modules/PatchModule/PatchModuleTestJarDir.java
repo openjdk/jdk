@@ -23,20 +23,20 @@
 
 /*
  * @test
- * @summary Make sure -Xpatch works when a jar file and a directory is specified for a module
+ * @summary Make sure --patch-module works when a jar file and a directory is specified for a module
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
  * @build BasicJarBuilder
- * @compile Xpatch2DirsMain.java
- * @run main XpatchTestJarDir
+ * @compile PatchModule2DirsMain.java
+ * @run main PatchModuleTestJarDir
  */
 
 import java.io.File;
 import java.nio.file.Files;
 import jdk.test.lib.*;
 
-public class XpatchTestJarDir {
+public class PatchModuleTestJarDir {
     private static String moduleJar;
 
     public static void main(String[] args) throws Exception {
@@ -88,12 +88,12 @@ public class XpatchTestJarDir {
              (System.getProperty("test.classes") + "/mods/java.naming"));
 
 
-        // Supply -Xpatch with the name of the jar file for the module java.naming.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xpatch:java.naming=" +
+        // Supply --patch-module with the name of the jar file for the module java.naming.
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("--patch-module=java.naming=" +
                                                                            moduleJar +
                                                                            File.pathSeparator +
                                                                            System.getProperty("test.classes") + "/mods/java.naming",
-                                                                  "Xpatch2DirsMain",
+                                                                  "PatchModule2DirsMain",
                                                                   "javax.naming.spi.NamingManager1",
                                                                   "javax.naming.spi.NamingManager2");
 
