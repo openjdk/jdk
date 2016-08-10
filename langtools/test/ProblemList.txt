@@ -54,8 +54,6 @@ jdk/javadoc/tool/varArgs/Main.java                                              
 #
 # jshell
 
-jdk/jshell/EditorPadTest.java                                                   8139872    generic-all    test requires a non-headless environment
-jdk/jshell/ExternalEditorTest.java                                              8080843    generic-all    invalid key error occurs when external editor is used.
 jdk/jshell/ToolBasicTest.java                                                   8139873    generic-all    JShell tests failing
 
 ###########################################################################
