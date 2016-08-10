@@ -70,7 +70,7 @@ class InvokerBytecodeGenerator {
     private static final String LLV_SIG = "(L" + OBJ + ";L" + OBJ + ";)V";
 
     /** Name of its super class*/
-    private static final String INVOKER_SUPER_NAME = OBJ;
+    static final String INVOKER_SUPER_NAME = OBJ;
 
     /** Name of new class */
     private final String className;
@@ -124,7 +124,7 @@ class InvokerBytecodeGenerator {
     }
 
     /** For generating customized code for a single LambdaForm. */
-    private InvokerBytecodeGenerator(String className, LambdaForm form, MethodType invokerType) {
+    InvokerBytecodeGenerator(String className, LambdaForm form, MethodType invokerType) {
         this(form, form.names.length,
              className, form.debugName, invokerType);
         // Create an array to map name indexes to locals indexes.
@@ -655,35 +655,11 @@ class InvokerBytecodeGenerator {
         return classFile;
     }
 
-    /*
-     * NOTE: This is used from GenerateJLIClassesPlugin via
-     * DirectMethodHandle::generateDMHClassBytes.
-     *
-     * Generate customized code for a set of LambdaForms of specified types into
-     * a class with a specified name.
-     */
-    static byte[] generateCodeBytesForMultiple(String className,
-            LambdaForm[] forms, MethodType[] types) {
-        assert(forms.length == types.length);
-
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(Opcodes.V1_8, Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL + Opcodes.ACC_SUPER,
-                className, null, INVOKER_SUPER_NAME, null);
-        cw.visitSource(className.substring(className.lastIndexOf('/') + 1), null);
-        for (int i = 0; i < forms.length; i++) {
-            InvokerBytecodeGenerator g
-                    = new InvokerBytecodeGenerator(className, forms[i], types[i]);
-            g.setClassWriter(cw);
-            g.addMethod();
-        }
-        return cw.toByteArray();
-    }
-
-    private void setClassWriter(ClassWriter cw) {
+    void setClassWriter(ClassWriter cw) {
         this.cw = cw;
     }
 
-    private void addMethod() {
+    void addMethod() {
         methodPrologue();
 
         // Suppress this method in backtraces displayed to the user.

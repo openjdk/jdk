@@ -95,7 +95,7 @@ public class SharedSecrets {
     public static JavaLangInvokeAccess getJavaLangInvokeAccess() {
         if (javaLangInvokeAccess == null) {
             try {
-                Class<?> c = Class.forName("java.lang.invoke.MemberName");
+                Class<?> c = Class.forName("java.lang.invoke.MethodHandleImpl");
                 unsafe.ensureClassInitialized(c);
             } catch (ClassNotFoundException e) {};
         }

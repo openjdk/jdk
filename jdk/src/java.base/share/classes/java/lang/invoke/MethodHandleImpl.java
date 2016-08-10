@@ -25,6 +25,8 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.JavaLangInvokeAccess;
+import jdk.internal.misc.SharedSecrets;
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -44,6 +46,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -1710,6 +1713,39 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);
         }
+
+        SharedSecrets.setJavaLangInvokeAccess(new JavaLangInvokeAccess() {
+            @Override
+            public Object newMemberName() {
+                return new MemberName();
+            }
+
+            @Override
+            public String getName(Object mname) {
+                MemberName memberName = (MemberName)mname;
+                return memberName.getName();
+            }
+
+            @Override
+            public boolean isNative(Object mname) {
+                MemberName memberName = (MemberName)mname;
+                return memberName.isNative();
+            }
+
+            @Override
+            public byte[] generateDMHClassBytes(String className,
+            MethodType[] methodTypes, int[] types) {
+                return GenerateJLIClassesHelper
+                        .generateDMHClassBytes(className, methodTypes, types);
+            }
+
+            @Override
+            public Map.Entry<String, byte[]> generateConcreteBMHClassBytes(
+                    final String types) {
+                return GenerateJLIClassesHelper
+                        .generateConcreteBMHClassBytes(types);
+            }
+        });
     }
 
     /** Result unboxing: ValueConversions.unbox() OR ValueConversions.identity() OR ValueConversions.ignore(). */
