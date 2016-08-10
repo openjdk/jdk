@@ -151,7 +151,7 @@ public class ToolsOpts extends TestHelper {
         init();
         TestResult tr;
         int jpos = -1;
-        String xPatch = "-J-Xpatch:jdk.compiler=jdk.compiler";
+        String xPatch = "-J--patch-module=jdk.compiler=jdk.compiler";
         for (String arg[] : optionPatterns) {
             jpos = indexOfJoption(arg);
             //Build a cmd string for output in results reporting.

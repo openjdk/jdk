@@ -39,7 +39,7 @@ import java.util.List;
  *          java.corba
  *          java.xml.bind
  * @compile -XDignore.symbol.file TestConstructorFinder.java
- * @run main/othervm -addmods java.activation -addmods java.transaction -addmods java.corba -addmods java.xml.bind TestConstructorFinder
+ * @run main/othervm --add-modules=java.activation,java.transaction,java.corba,java.xml.bind TestConstructorFinder
  */
 
 public class TestConstructorFinder {

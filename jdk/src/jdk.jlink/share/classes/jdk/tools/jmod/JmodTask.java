@@ -1181,7 +1181,7 @@ public class JmodTask {
         }
     }
 
-    private final OptionParser parser = new OptionParser();
+    private final OptionParser parser = new OptionParser("hp");
 
     private void handleOptions(String[] args) {
         parser.formatHelpWith(new JmodHelpFormatter());
@@ -1218,7 +1218,7 @@ public class JmodTask {
                         .withValuesConvertedBy(new PatternConverter());
 
         OptionSpec<Void> help
-                = parser.accepts("help", getMessage("main.opt.help"))
+                = parser.acceptsAll(Set.of("h", "help"), getMessage("main.opt.help"))
                         .forHelp();
 
         OptionSpec<Path> libs
@@ -1232,9 +1232,9 @@ public class JmodTask {
                         .withRequiredArg()
                         .describedAs(getMessage("main.opt.main-class.arg"));
 
-        OptionSpec<Path> modulePath  // TODO: short version of --mp ??
-                = parser.acceptsAll(Arrays.asList("mp", "modulepath"),
-                                    getMessage("main.opt.modulepath"))
+        OptionSpec<Path> modulePath
+                = parser.acceptsAll(Set.of("p", "module-path"),
+                                    getMessage("main.opt.module-path"))
                         .withRequiredArg()
                         .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);

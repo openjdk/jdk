@@ -69,11 +69,11 @@ public class DryRunTest {
         // javac -d mods/$TESTMODULE src/$TESTMODULE/**
         assertTrue(CompilerUtils.compile(SRC_DIR.resolve(M_MODULE),
                                          MODS_DIR,
-                                         "-modulesourcepath", SRC_DIR.toString()));
+                                         "--module-source-path", SRC_DIR.toString()));
 
         assertTrue(CompilerUtils.compile(SRC_DIR.resolve(TEST_MODULE),
                                          MODS_DIR,
-                                         "-modulesourcepath", SRC_DIR.toString()));
+                                         "--module-source-path", SRC_DIR.toString()));
 
         Files.createDirectories(LIBS_DIR);
 
@@ -101,7 +101,7 @@ public class DryRunTest {
         String mid = TEST_MODULE + "/" + MAIN_CLASS;
 
         // no resolution failure
-        int exitValue = exec("--dry-run", "-modulepath", dir, "-m", mid);
+        int exitValue = exec("--dry-run", "--module-path", dir, "-m", mid);
         assertTrue(exitValue == 0);
     }
 
@@ -112,23 +112,23 @@ public class DryRunTest {
         String dir = MODS_DIR.toString();
         String mid = TEST_MODULE + "/" + MAIN_CLINIT_CLASS;
 
-        int exitValue = exec("--dry-run", "-modulepath", dir, "-m", mid);
+        int exitValue = exec("--dry-run", "--module-path", dir, "-m", mid);
         assertTrue(exitValue == 0);
 
         // expect the test to fail if main class is initialized
-        exitValue = exec("-modulepath", dir, "-m", mid);
+        exitValue = exec("--module-path", dir, "-m", mid);
         assertTrue(exitValue != 0);
     }
 
     /**
-     * Test non-existence module in -addmods
+     * Test non-existence module in --add-modules
      */
     public void testNonExistAddModules() throws Exception {
         String dir = MODS_DIR.toString();
         String mid = TEST_MODULE + "/" + MAIN_CLASS;
 
-        int exitValue = exec("--dry-run", "-modulepath", dir,
-                             "-addmods", "non.existence",
+        int exitValue = exec("--dry-run", "--module-path", dir,
+                             "--add-modules", "non.existence",
                              "-m", mid);
         assertTrue(exitValue != 0);
     }
@@ -163,24 +163,24 @@ public class DryRunTest {
                         LIBS_DIR.resolve(TEST_MODULE + ".jar").toString();
         String mid = TEST_MODULE + "/" + MAIN_CLASS;
 
-        // test main method with and without -addmods mm
-        int exitValue = exec("-modulepath", LIBS_DIR.toString(),
+        // test main method with and without --add-modules mm
+        int exitValue = exec("--module-path", LIBS_DIR.toString(),
                              "-m", mid);
         assertTrue(exitValue != 0);
 
-        exitValue = exec("-modulepath", LIBS_DIR.toString(),
-                         "-addmods", M_MODULE,
+        exitValue = exec("--module-path", LIBS_DIR.toString(),
+                         "--add-modules", M_MODULE,
                          "-m", mid);
         assertTrue(exitValue == 0);
 
-        // test dry run with and without -addmods m
+        // test dry run with and without --add-modules m
         // no resolution failure
-        exitValue = exec("--dry-run", "-modulepath", LIBS_DIR.toString(),
+        exitValue = exec("--dry-run", "--module-path", LIBS_DIR.toString(),
                          "-m", mid);
         assertTrue(exitValue == 0);
 
-        exitValue = exec("--dry-run", "-modulepath", LIBS_DIR.toString(),
-                         "-addmods", M_MODULE,
+        exitValue = exec("--dry-run", "--module-path", LIBS_DIR.toString(),
+                         "--add-modules", M_MODULE,
                          "-m", mid);
         assertTrue(exitValue == 0);
     }
@@ -193,7 +193,7 @@ public class DryRunTest {
         String mid = TEST_MODULE + "/" + MAIN_CLASS;
 
         // resolution failure
-        int exitValue = exec("--dry-run", "-modulepath", subdir, "-m", mid);
+        int exitValue = exec("--dry-run", "--module-path", subdir, "-m", mid);
         assertTrue(exitValue != 0);
     }
 
