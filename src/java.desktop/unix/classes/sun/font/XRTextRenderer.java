@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.font;
 
 import sun.awt.*;
+import sun.java2d.InvalidPipeException;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.pipe.GlyphListPipe;
 import sun.java2d.xr.*;
@@ -61,8 +62,12 @@ public class XRTextRenderer extends GlyphListPipe {
 
         try {
             SunToolkit.awtLock();
-
-            XRSurfaceData x11sd = (XRSurfaceData) sg2d.surfaceData;
+            XRSurfaceData x11sd;
+            try {
+                x11sd = (XRSurfaceData) sg2d.surfaceData;
+            } catch (ClassCastException e) {
+                throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+            }
             x11sd.validateAsDestination(null, sg2d.getCompClip());
             x11sd.maskBuffer.validateCompositeState(sg2d.composite, sg2d.transform, sg2d.paint, sg2d);
 
