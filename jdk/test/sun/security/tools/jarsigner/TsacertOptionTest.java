@@ -77,11 +77,6 @@ public class TsacertOptionTest {
         Utils.createFiles(FILENAME);
         JarUtils.createJar(UNSIGNED_JARFILE, FILENAME);
 
-        // look for free network port for TSA service
-        int port = jdk.testlibrary.Utils.getFreePort();
-        String host = "127.0.0.1";
-        String tsaUrl = "http://" + host + ":" + port;
-
         // create key pair for jar signing
         ProcessTools.executeCommand(KEYTOOL,
                 "-genkey",
@@ -126,24 +121,30 @@ public class TsacertOptionTest {
                 "-keypass", PASSWORD,
                 "-file", "cert").shouldHaveExitValue(0);
 
-        // create key pair for TSA service
-        // SubjectInfoAccess extension contains URL to TSA service
-        ProcessTools.executeCommand(KEYTOOL,
-                "-genkey",
-                "-v",
-                "-alias", TSA_KEY_ALIAS,
-                "-keyalg", KEY_ALG,
-                "-keysize", Integer.toString(KEY_SIZE),
-                "-keystore", KEYSTORE,
-                "-storepass", PASSWORD,
-                "-keypass", PASSWORD,
-                "-dname", "CN=TSA",
-                "-ext", "ExtendedkeyUsage:critical=timeStamping",
-                "-ext", "SubjectInfoAccess=timeStamping:URI:" + tsaUrl,
-                "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
 
-        try (TimestampCheck.Handler tsa = TimestampCheck.Handler.init(port,
-                KEYSTORE);) {
+        try (TimestampCheck.Handler tsa = TimestampCheck.Handler.init(0,
+                KEYSTORE)) {
+
+            // look for free network port for TSA service
+            int port = tsa.getPort();
+            String host = "127.0.0.1";
+            String tsaUrl = "http://" + host + ":" + port;
+
+            // create key pair for TSA service
+            // SubjectInfoAccess extension contains URL to TSA service
+            ProcessTools.executeCommand(KEYTOOL,
+                    "-genkey",
+                    "-v",
+                    "-alias", TSA_KEY_ALIAS,
+                    "-keyalg", KEY_ALG,
+                    "-keysize", Integer.toString(KEY_SIZE),
+                    "-keystore", KEYSTORE,
+                    "-storepass", PASSWORD,
+                    "-keypass", PASSWORD,
+                    "-dname", "CN=TSA",
+                    "-ext", "ExtendedkeyUsage:critical=timeStamping",
+                    "-ext", "SubjectInfoAccess=timeStamping:URI:" + tsaUrl,
+                    "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
 
             // start TSA
             tsa.start();
