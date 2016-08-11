@@ -37,7 +37,7 @@ public class BasePolicy implements ITestListener {
         try {
             JAXPPolicyManager.teardownPolicyManager();
         } catch (Exception e) {
-            throw new RuntimeException("Failed to teardonw the policy manager", e);
+            throw new RuntimeException("Failed to teardown the policy manager", e);
         }
     }
 
