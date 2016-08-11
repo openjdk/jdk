@@ -55,7 +55,7 @@ public class ChainNotValidatedTest extends Test {
         // create self-signed certificate whose BasicConstraints extension
         // is set to false, so the certificate may not be used
         // as a parent certificate (certpath validation should fail)
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-genkeypair",
                 "-alias", CA_KEY_ALIAS,
                 "-keyalg", KEY_ALG,
@@ -70,7 +70,7 @@ public class ChainNotValidatedTest extends Test {
         // create a certificate that is signed by self-signed certificate
         // despite of it may not be used as a parent certificate
         // (certpath validation should fail)
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-genkeypair",
                 "-alias", KEY_ALIAS,
                 "-keyalg", KEY_ALG,
@@ -82,7 +82,7 @@ public class ChainNotValidatedTest extends Test {
                 "-ext", "BasicConstraints:critical=ca:false",
                 "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
 
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-certreq",
                 "-alias", KEY_ALIAS,
                 "-keystore", KEYSTORE,
@@ -90,7 +90,7 @@ public class ChainNotValidatedTest extends Test {
                 "-keypass", PASSWORD,
                 "-file", CERT_REQUEST_FILENAME).shouldHaveExitValue(0);
 
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-gencert",
                 "-alias", CA_KEY_ALIAS,
                 "-keystore", KEYSTORE,
@@ -100,7 +100,7 @@ public class ChainNotValidatedTest extends Test {
                 "-validity", Integer.toString(VALIDITY),
                 "-outfile", CERT_FILENAME).shouldHaveExitValue(0);
 
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-importcert",
                 "-alias", KEY_ALIAS,
                 "-keystore", KEYSTORE,
@@ -129,7 +129,7 @@ public class ChainNotValidatedTest extends Test {
         ProcessTools.executeCommand(pb).shouldHaveExitValue(0);
 
         // remove CA certificate
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-delete",
                 "-alias", CA_KEY_ALIAS,
                 "-keystore", KEYSTORE,
@@ -137,7 +137,7 @@ public class ChainNotValidatedTest extends Test {
                 "-keypass", PASSWORD).shouldHaveExitValue(0);
 
         // sign jar
-        OutputAnalyzer analyzer = ProcessTools.executeCommand(JARSIGNER,
+        OutputAnalyzer analyzer = jarsigner(
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
                 "-keypass", PASSWORD,
@@ -149,7 +149,7 @@ public class ChainNotValidatedTest extends Test {
         checkSigning(analyzer, CHAIN_NOT_VALIDATED_SIGNING_WARNING);
 
         // verify signed jar
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-verbose",
                 "-keystore", KEYSTORE,
@@ -161,7 +161,7 @@ public class ChainNotValidatedTest extends Test {
         checkVerifying(analyzer, 0, CHAIN_NOT_VALIDATED_VERIFYING_WARNING);
 
         // verify signed jar in strict mode
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-verbose",
                 "-strict",
