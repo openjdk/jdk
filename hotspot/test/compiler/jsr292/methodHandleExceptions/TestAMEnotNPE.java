@@ -21,28 +21,47 @@
  * questions.
  *
  */
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
+
+/**
+ * @test
+ * @bug 8025260 8016839
+ * @summary Ensure that AbstractMethodError and IllegalAccessError are thrown appropriately, not NullPointerException
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library / .
+ *
+ * @build p.*
+ * @run main/othervm compiler.jsr292.methodHandleExceptions.TestAMEnotNPE
+ * @run main/othervm -Xint compiler.jsr292.methodHandleExceptions.TestAMEnotNPE
+ * @run main/othervm -Xcomp compiler.jsr292.methodHandleExceptions.TestAMEnotNPE
+ */
+
+package compiler.jsr292.methodHandleExceptions;
+
+import p.Dok;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
-import p.Dok;
 
-/**
- * @test @bug 8025260 8016839
- * @summary Ensure that AbstractMethodError and IllegalAccessError are thrown appropriately, not NullPointerException
- *
- * @modules java.base/jdk.internal.org.objectweb.asm
- * @compile -XDignore.symbol.file TestAMEnotNPE.java ByteClassLoader.java p/C.java p/Dok.java p/E.java p/F.java p/I.java p/Tdirect.java p/Treflect.java
- *
- * @run main/othervm TestAMEnotNPE
- * @run main/othervm -Xint TestAMEnotNPE
- * @run main/othervm -Xcomp TestAMEnotNPE
- */
-public class TestAMEnotNPE implements Opcodes {
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_STATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SUPER;
+import static jdk.internal.org.objectweb.asm.Opcodes.ALOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.ILOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static jdk.internal.org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static jdk.internal.org.objectweb.asm.Opcodes.IRETURN;
+import static jdk.internal.org.objectweb.asm.Opcodes.LLOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.RETURN;
+import static jdk.internal.org.objectweb.asm.Opcodes.V1_8;
+
+public class TestAMEnotNPE {
 
     static boolean writeJarFiles = false;
     static boolean readJarFiles = false;
@@ -115,7 +134,7 @@ public class TestAMEnotNPE implements Opcodes {
             System.out.flush();
             Thread.sleep(250); // This de-interleaves output and error in Netbeans, sigh.
             for (Throwable th : lt)
-              System.err.println(th);
+                System.err.println(th);
             throw new Error("Test failed, there were " + lt.size() + " failures listed above");
         } else {
             System.out.println("ALL PASS, HOORAY!");
@@ -191,7 +210,7 @@ public class TestAMEnotNPE implements Opcodes {
      * @throws Exception
      */
     public static byte[] bytesForSomeDsubSomethingSomeAccess
-            (String d_name, String sub_what, int method_acc)
+    (String d_name, String sub_what, int method_acc)
             throws Exception {
 
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES

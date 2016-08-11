@@ -25,9 +25,14 @@
  * @test
  * @bug 8069263
  * @summary Deoptimization between array allocation and arraycopy may result in non initialized array
- * @run main/othervm -XX:-BackgroundCompilation -XX:CompileOnly=DefaultMethodsDependencies::test -XX:CompileOnly=DefaultMethodsDependencies$I2::m1 DefaultMethodsDependencies
  *
+ * @run main/othervm -XX:-BackgroundCompilation
+ *      -XX:CompileCommand=compileonly,compiler.inlining.DefaultMethodsDependencies::test
+ *      -XX:CompileCommand=compileonly,compiler.inlining.DefaultMethodsDependencies$I2::m1
+ *      compiler.inlining.DefaultMethodsDependencies
  */
+
+package compiler.inlining;
 
 public class DefaultMethodsDependencies {
 

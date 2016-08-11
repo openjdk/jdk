@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,28 @@
 
 package javax.xml.xpath.ptests;
 
-import java.io.FilePermission;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import javax.xml.XMLConstants;
-import javax.xml.namespace.QName;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPath;
 import static javax.xml.xpath.XPathConstants.BOOLEAN;
 import static javax.xml.xpath.XPathConstants.NODE;
 import static javax.xml.xpath.XPathConstants.NODESET;
 import static javax.xml.xpath.XPathConstants.NUMBER;
 import static javax.xml.xpath.XPathConstants.STRING;
+import static javax.xml.xpath.ptests.XPathTestConst.XML_DIR;
+import static org.testng.Assert.assertEquals;
+
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import static javax.xml.xpath.ptests.XPathTestConst.XML_DIR;
-import jaxp.library.JAXPFileReadOnlyBaseTest;
-import static org.testng.Assert.assertEquals;
+
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -52,7 +54,14 @@ import org.xml.sax.InputSource;
 /**
  * Class containing the test cases for XPathExpression API.
  */
-public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.xpath.ptests.XPathExpressionTest
+ * @run testng/othervm javax.xml.xpath.ptests.XPathExpressionTest
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class XPathExpressionTest {
     /**
      * Document object for testing XML file.
      */
@@ -89,7 +98,6 @@ public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
      */
     @BeforeTest
     public void setup() throws Exception {
-        setPermissions(new FilePermission(XML_PATH.toFile().toString(), "read"));
         document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(XML_PATH.toFile());
         xpath = XPathFactory.newInstance().newXPath();
     }
@@ -264,7 +272,7 @@ public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test (groups = {"readLocalFiles"})
+    @Test
     public void testCheckXPathExpression15() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             assertEquals(xpath.compile(EXPRESSION_NAME_A).
@@ -287,7 +295,7 @@ public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"}, expectedExceptions = NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void testCheckXPathExpression17() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             xpath.compile(null).evaluate(new InputSource(is));
@@ -300,7 +308,7 @@ public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"}, expectedExceptions = XPathExpressionException.class)
+    @Test(expectedExceptions = XPathExpressionException.class)
     public void testCheckXPathExpression18() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             xpath.compile("-*&").evaluate(new InputSource(is));
@@ -313,7 +321,7 @@ public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"}, expectedExceptions = XPathExpressionException.class)
+    @Test(expectedExceptions = XPathExpressionException.class)
     public void testCheckXPathExpression19() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             xpath.compile(" ").evaluate(new InputSource(is));
@@ -326,7 +334,7 @@ public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void testCheckXPathExpression20() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             assertEquals(xpath.compile(EXPRESSION_NAME_A).
@@ -351,7 +359,7 @@ public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"}, expectedExceptions = NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void testCheckXPathExpression22() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             xpath.compile(null).evaluate(new InputSource(is), STRING);
@@ -364,7 +372,7 @@ public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"}, expectedExceptions = NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void testCheckXPathExpression23() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             xpath.compile(EXPRESSION_NAME_A).evaluate(new InputSource(is), null);
@@ -377,7 +385,7 @@ public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"}, expectedExceptions = XPathExpressionException.class)
+    @Test(expectedExceptions = XPathExpressionException.class)
     public void testCheckXPathExpression24() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             xpath.compile("-*&").evaluate(new InputSource(is), STRING);
@@ -390,7 +398,7 @@ public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"}, expectedExceptions = XPathExpressionException.class)
+    @Test(expectedExceptions = XPathExpressionException.class)
     public void testCheckXPathExpression25() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             xpath.compile(" ").evaluate(new InputSource(is), STRING);
@@ -404,7 +412,7 @@ public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"}, expectedExceptions = IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void testCheckXPathExpression26() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             xpath.compile(EXPRESSION_NAME_A).evaluate(new InputSource(is), TEST_QNAME);
@@ -417,7 +425,7 @@ public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void testCheckXPathExpression27() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             assertEquals(xpath.compile(EXPRESSION_NAME_A).
@@ -431,7 +439,7 @@ public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void testCheckXPathExpression28() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             assertEquals(xpath.compile(EXPRESSION_NAME_B).
@@ -445,7 +453,7 @@ public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void testCheckXPathExpression29() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             assertEquals(xpath.compile(EXPRESSION_NAME_A).
@@ -459,7 +467,7 @@ public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void testCheckXPathExpression30() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             Attr attr = (Attr) xpath.compile(EXPRESSION_NAME_A).
@@ -474,7 +482,7 @@ public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void testCheckXPathExpression31() throws Exception {
         try (InputStream is = Files.newInputStream(XML_PATH)) {
             NodeList nodeList = (NodeList) xpath.compile(EXPRESSION_NAME_A).
@@ -483,3 +491,5 @@ public class XPathExpressionTest extends JAXPFileReadOnlyBaseTest {
         }
     }
 }
+
+

@@ -28,30 +28,33 @@
  * @library / /testlibrary
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
-            java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.org.objectweb.asm.tree
  *          jdk.vm.ci/jdk.vm.ci.hotspot
  *          jdk.vm.ci/jdk.vm.ci.code
  *          jdk.vm.ci/jdk.vm.ci.meta
  *          jdk.vm.ci/jdk.vm.ci.runtime
+ *
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.common.JVMCIHelpers
- *     compiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest
- * @run main jdk.test.lib.FileInstaller ../common/services/ ./META-INF/services/
- * @run main jdk.test.lib.FileInstaller ./JvmciNotifyBootstrapFinishedEventTest.config
+ *        compiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest
+ * @run driver jdk.test.lib.FileInstaller ../common/services/ ./META-INF/services/
+ * @run driver jdk.test.lib.FileInstaller ./JvmciNotifyBootstrapFinishedEventTest.config
  *     ./META-INF/services/jdk.vm.ci.hotspot.services.HotSpotVMEventListener
- * @run main ClassFileInstaller
- *     compiler.jvmci.common.JVMCIHelpers$EmptyHotspotCompiler
- *     compiler.jvmci.common.JVMCIHelpers$EmptyCompilerFactory
- *     compiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest
- *     jdk.test.lib.Asserts
- *     jdk.test.lib.Utils
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @run driver ClassFileInstaller
+ *      compiler.jvmci.common.JVMCIHelpers$EmptyHotspotCompiler
+ *      compiler.jvmci.common.JVMCIHelpers$EmptyCompilerFactory
+ *      compiler.jvmci.common.JVMCIHelpers$EmptyCompilationRequestResult
+ *      compiler.jvmci.common.JVMCIHelpers$EmptyVMEventListener
+ *      compiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest
+ *      jdk.test.lib.Asserts
+ *      jdk.test.lib.Utils
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *     -Djvmci.Compiler=EmptyCompiler -Xbootclasspath/a:.
  *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI
  *     -Dcompiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest.bootstrap=false
  *     compiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *     -Djvmci.Compiler=EmptyCompiler -Xbootclasspath/a:.
  *     -XX:+UseJVMCICompiler -XX:+BootstrapJVMCI
  *     -Dcompiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest.bootstrap=true

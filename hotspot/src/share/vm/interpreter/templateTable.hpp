@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/frame.hpp"
+#include "utilities/macros.hpp"
 
 #ifndef CC_INTERP
 // All the necessary definitions used for (bytecode) template generation. Instead of
@@ -349,17 +350,7 @@ class TemplateTable: AllStatic {
   static Template* template_for_wide(Bytecodes::Code code)  { Bytecodes::wide_check(code); return &_template_table_wide[code]; }
 
   // Platform specifics
-#if defined TEMPLATETABLE_MD_HPP
-# include TEMPLATETABLE_MD_HPP
-#elif defined (TARGET_ARCH_MODEL_x86_32) || defined (TARGET_ARCH_MODEL_x86_64)
-# include "templateTable_x86.hpp"
-#elif defined TARGET_ARCH_MODEL_sparc
-# include "templateTable_sparc.hpp"
-#elif defined TARGET_ARCH_MODEL_ppc_64
-# include "templateTable_ppc_64.hpp"
-#elif defined TARGET_ARCH_MODEL_aarch64
-# include "templateTable_aarch64.hpp"
-#endif
+#include CPU_HEADER(templateTable)
 
 };
 #endif /* !CC_INTERP */

@@ -24,14 +24,14 @@
 /**
  * @test
  * @modules java.sql java.transaction
- * @compile -addmods java.transaction
+ * @compile
  *   test/transaction/InvalidTransactionExceptionTests.java
  *   test/transaction/TransactionRequiredExceptionTests.java
  *   test/transaction/TransactionRolledbackExceptionTests.java
  *   test/transaction/XAExceptionTests.java
  *   util/SerializedTransactionExceptions.java
- * @run testng/othervm -addmods java.transaction test.transaction.InvalidTransactionExceptionTests
- * @run testng/othervm -addmods java.transaction test.transaction.TransactionRequiredExceptionTests
- * @run testng/othervm -addmods java.transaction test.transaction.TransactionRolledbackExceptionTests
- * @run testng/othervm -addmods java.transaction util.SerializedTransactionExceptions
+ * @run testng/othervm test.transaction.InvalidTransactionExceptionTests
+ * @run testng/othervm test.transaction.TransactionRequiredExceptionTests
+ * @run testng/othervm test.transaction.TransactionRolledbackExceptionTests
+ * @run testng/othervm util.SerializedTransactionExceptions
  */

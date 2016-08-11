@@ -26,12 +26,15 @@
  * @test
  * @bug 8031320
  * @summary Verify processing of RTMRetryCount option.
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestRTMRetryCountOption
- * @run main/othervm TestRTMRetryCountOption
+ *
+ * @build compiler.rtm.cli.TestRTMRetryCountOption
+ * @run main/othervm compiler.rtm.cli.TestRTMRetryCountOption
  */
+
+package compiler.rtm.cli;
 
 public class TestRTMRetryCountOption extends RTMGenericCommandLineOptionTest {
     private static final String DEFAULT_VALUE = "5";

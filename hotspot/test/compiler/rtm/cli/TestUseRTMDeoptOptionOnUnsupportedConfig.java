@@ -30,19 +30,22 @@
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestUseRTMDeoptOptionOnUnsupportedConfig
+ *
+ * @build compiler.rtm.cli.TestUseRTMDeoptOptionOnUnsupportedConfig
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI TestUseRTMDeoptOptionOnUnsupportedConfig
+ *                   -XX:+WhiteBoxAPI
+ *                   compiler.rtm.cli.TestUseRTMDeoptOptionOnUnsupportedConfig
  */
 
-import jdk.test.lib.cli.CommandLineOptionTest;
+package compiler.rtm.cli;
 
-import jdk.test.lib.cli.predicate.AndPredicate;
-import jdk.test.lib.cli.predicate.NotPredicate;
 import compiler.testlibrary.rtm.predicate.SupportedCPU;
 import compiler.testlibrary.rtm.predicate.SupportedVM;
+import jdk.test.lib.cli.CommandLineOptionTest;
+import jdk.test.lib.cli.predicate.AndPredicate;
+import jdk.test.lib.cli.predicate.NotPredicate;
 
 public class TestUseRTMDeoptOptionOnUnsupportedConfig
         extends RTMGenericCommandLineOptionTest {

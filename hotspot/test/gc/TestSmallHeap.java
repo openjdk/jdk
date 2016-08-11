@@ -27,7 +27,6 @@
  * @requires vm.gc=="null"
  * @summary Verify that starting the VM with a small heap works
  * @library /testlibrary /test/lib /test/lib/share/classes
- * @ignore 8161552
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
  * @build TestSmallHeap
@@ -35,7 +34,7 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestSmallHeap
  */
 
-/* Note: It would be nice to verify the minimal supported heap size (2m) here,
+/* Note: It would be nice to verify the minimal supported heap size here,
  * but we align the heap size based on the card table size. And the card table
  * size is aligned based on the minimal pages size provided by the os. This
  * means that on most platforms, where the minimal page size is 4k, we get a
@@ -44,14 +43,18 @@
  * we get a minimal heap size of 32m. We never use large pages for the card table.
  *
  * There is also no check in the VM for verifying that the maximum heap size
- * is larger than the supported minimal heap size. This means that specifying
- * -Xmx1m on the command line is fine but will give a heap of 2m (or 4m or 32m).
+ * is larger than the supported minimal heap size.
  *
- * To work around these rather strange behaviors this test uses -Xmx2m but then
+ * To work around these behaviors this test uses -Xmx4m but then
  * calculates what the expected heap size should be. The calculation is a
  * simplified version of the code in the VM. We assume that the card table will
  * use one page. Each byte in the card table corresponds to 512 bytes on the heap.
  * So, the expected heap size is page_size * 512.
+ *
+ * There is no formal requirement for the minimal value of the maximum heap size
+ * the VM should support. In most cases the VM could start with -Xmx2m.
+ * But with 2m limit GC could be triggered before VM initialization completed.
+ * Therefore we start the VM with 4M heap.
  */
 
 import jdk.test.lib.Asserts;
@@ -80,9 +83,10 @@ public class TestSmallHeap {
     }
 
     private static void verifySmallHeapSize(String gc, long expectedMaxHeap) throws Exception {
+        long minMaxHeap = 4 * 1024 * 1024;
         LinkedList<String> vmOptions = new LinkedList<>();
         vmOptions.add(gc);
-        vmOptions.add("-Xmx2m");
+        vmOptions.add("-Xmx" + minMaxHeap);
         vmOptions.add("-XX:+PrintFlagsFinal");
         vmOptions.add(VerifyHeapSize.class.getName());
 
@@ -90,6 +94,7 @@ public class TestSmallHeap {
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
 
+        expectedMaxHeap = Math.max(expectedMaxHeap, minMaxHeap);
         long maxHeapSize = Long.parseLong(analyzer.firstMatch("MaxHeapSize.+=\\s+(\\d+)",1));
         long actualHeapSize = Long.parseLong(analyzer.firstMatch(VerifyHeapSize.actualMsg + "(\\d+)",1));
         Asserts.assertEQ(maxHeapSize, expectedMaxHeap);

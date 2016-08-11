@@ -25,11 +25,18 @@
  * @test
  * @bug 8041458
  * @summary profiling of arguments in C1 at MethodHandle invoke of intrinsic tries to profile popped argument.
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TieredStopAtLevel=3 TestMethodHandleInvokesIntrinsic
+ *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   -XX:TieredStopAtLevel=3
+ *                   compiler.profiling.TestMethodHandleInvokesIntrinsic
  *
  */
 
-import java.lang.invoke.*;
+package compiler.profiling;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 
 public class TestMethodHandleInvokesIntrinsic {
 

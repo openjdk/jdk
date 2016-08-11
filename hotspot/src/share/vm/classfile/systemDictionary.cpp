@@ -70,7 +70,6 @@
 #include "services/threadService.hpp"
 #include "trace/traceMacros.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/stringUtils.hpp"
 #include "utilities/ticks.hpp"
 #if INCLUDE_CDS
 #include "classfile/sharedClassUtil.hpp"
@@ -138,24 +137,6 @@ ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, TRAPS) {
   if (class_loader() == NULL) return ClassLoaderData::the_null_class_loader_data();
   return ClassLoaderDataGraph::find_or_create(class_loader, THREAD);
 }
-
-// ----------------------------------------------------------------------------
-// debugging
-
-#ifdef ASSERT
-
-// return true if class_name contains no '.' (internal format is '/')
-bool SystemDictionary::is_internal_format(Symbol* class_name) {
-  if (class_name != NULL) {
-    ResourceMark rm;
-    char* name = class_name->as_C_string();
-    return strchr(name, '.') == NULL;
-  } else {
-    return true;
-  }
-}
-
-#endif
 
 // ----------------------------------------------------------------------------
 // Parallel class loading check
@@ -335,6 +316,10 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
 // Must be called, even if superclass is null, since this is
 // where the placeholder entry is created which claims this
 // thread is loading this class/classloader.
+// Be careful when modifying this code: once you have run
+// placeholders()->find_and_add(PlaceholderTable::LOAD_SUPER),
+// you need to find_and_remove it before returning.
+// So be careful to not exit with a CHECK_ macro betweeen these calls.
 Klass* SystemDictionary::resolve_super_or_fail(Symbol* child_name,
                                                  Symbol* class_name,
                                                  Handle class_loader,
@@ -399,6 +384,7 @@ Klass* SystemDictionary::resolve_super_or_fail(Symbol* child_name,
       }
     }
     if (!throw_circularity_error) {
+      // Be careful not to exit resolve_super
       PlaceholderEntry* newprobe = placeholders()->find_and_add(p_index, p_hash, child_name, loader_data, PlaceholderTable::LOAD_SUPER, class_name, THREAD);
     }
   }
@@ -655,6 +641,24 @@ static void post_class_load_event(const Ticks& start_time,
 #endif // INCLUDE_TRACE
 }
 
+// utility function for class define event
+static void class_define_event(instanceKlassHandle k) {
+#if INCLUDE_TRACE
+  EventClassDefine event(UNTIMED);
+  if (event.should_commit()) {
+    event.set_definedClass(k());
+    oop defining_class_loader = k->class_loader();
+    event.set_definingClassLoader(defining_class_loader != NULL ?
+      defining_class_loader->klass() : (Klass*)NULL);
+    event.commit();
+  }
+#endif // INCLUDE_TRACE
+}
+
+// Be careful when modifying this code: once you have run
+// placeholders()->find_and_add(PlaceholderTable::LOAD_INSTANCE),
+// you need to find_and_remove it before returning.
+// So be careful to not exit with a CHECK_ macro betweeen these calls.
 Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
                                                         Handle class_loader,
                                                         Handle protection_domain,
@@ -1016,8 +1020,9 @@ Klass* SystemDictionary::find_instance_or_array_klass(Symbol* class_name,
 }
 
 // Note: this method is much like resolve_from_stream, but
-// updates no supplemental data structures.
-// TODO consolidate the two methods with a helper routine?
+// does not publish the classes via the SystemDictionary.
+// Handles unsafe_DefineAnonymousClass and redefineclasses
+// RedefinedClasses do not add to the class hierarchy
 Klass* SystemDictionary::parse_stream(Symbol* class_name,
                                       Handle class_loader,
                                       Handle protection_domain,
@@ -1054,8 +1059,7 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
                                                            protection_domain,
                                                            host_klass,
                                                            cp_patches,
-                                                           NULL, // parsed_name
-                                                           THREAD);
+                                                           CHECK_NULL);
 
   if (host_klass != NULL && k.not_null()) {
     // If it's anonymous, initialize it now, since nobody else will.
@@ -1126,8 +1130,6 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
   // already be present in the SystemDictionary, otherwise we would not
   // throw potential ClassFormatErrors.
   //
-  // Note: "parsed_name" is updated.
-  TempNewSymbol parsed_name = NULL;
 
  instanceKlassHandle k;
 
@@ -1139,9 +1141,7 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
                                                  CHECK_NULL);
 #endif
 
-  if (k.not_null()) {
-    parsed_name = k->name();
-  } else {
+  if (k.is_null()) {
     if (st->buffer() == NULL) {
       return NULL;
     }
@@ -1151,64 +1151,28 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
                                          protection_domain,
                                          NULL, // host_klass
                                          NULL, // cp_patches
-                                         &parsed_name,
-                                         THREAD);
+                                         CHECK_NULL);
   }
 
-  const char* pkg = "java/";
-  if (!HAS_PENDING_EXCEPTION &&
-      !class_loader.is_null() &&
-      !SystemDictionary::is_platform_class_loader(class_loader) &&
-      parsed_name != NULL &&
-      !strncmp((const char*)parsed_name->bytes(), pkg, strlen(pkg))) {
-    // It is illegal to define classes in the "java." package from
-    // JVM_DefineClass or jni_DefineClass unless you're the bootclassloader
-    ResourceMark rm(THREAD);
-    TempNewSymbol pkg_name = InstanceKlass::package_from_name(parsed_name, CHECK_NULL);
-    assert(pkg_name != NULL, "Error in parsing package name starting with 'java/'");
-    char* name = pkg_name->as_C_string();
-    StringUtils::replace_no_expand(name, "/", ".");
-    const char* msg_text = "Prohibited package name: ";
-    size_t len = strlen(msg_text) + strlen(name) + 1;
-    char* message = NEW_RESOURCE_ARRAY(char, len);
-    jio_snprintf(message, len, "%s%s", msg_text, name);
-    Exceptions::_throw_msg(THREAD_AND_LOCATION,
-      vmSymbols::java_lang_SecurityException(), message);
-  }
+  assert(k.not_null(), "no klass created");
+  Symbol* h_name = k->name();
+  assert(class_name == NULL || class_name == h_name, "name mismatch");
 
-  if (!HAS_PENDING_EXCEPTION) {
-    assert(parsed_name != NULL, "Sanity");
-    assert(class_name == NULL || class_name == parsed_name, "name mismatch");
-    // Verification prevents us from creating names with dots in them, this
-    // asserts that that's the case.
-    assert(is_internal_format(parsed_name),
-           "external class name format used internally");
-
-    // Add class just loaded
-    // If a class loader supports parallel classloading handle parallel define requests
-    // find_or_define_instance_class may return a different InstanceKlass
-    if (is_parallelCapable(class_loader)) {
-      k = find_or_define_instance_class(class_name, class_loader, k, THREAD);
-    } else {
-      define_instance_class(k, THREAD);
-    }
+  // Add class just loaded
+  // If a class loader supports parallel classloading handle parallel define requests
+  // find_or_define_instance_class may return a different InstanceKlass
+  if (is_parallelCapable(class_loader)) {
+    k = find_or_define_instance_class(h_name, class_loader, k, CHECK_NULL);
+  } else {
+    define_instance_class(k, CHECK_NULL);
   }
 
   // Make sure we have an entry in the SystemDictionary on success
   debug_only( {
-    if (!HAS_PENDING_EXCEPTION) {
-      assert(parsed_name != NULL, "parsed_name is still null?");
-      Symbol*  h_name    = k->name();
-      ClassLoaderData *defining_loader_data = k->class_loader_data();
+    MutexLocker mu(SystemDictionary_lock, THREAD);
 
-      MutexLocker mu(SystemDictionary_lock, THREAD);
-
-      Klass* check = find_class(parsed_name, loader_data);
-      assert(check == k(), "should be present in the dictionary");
-
-      Klass* check2 = find_class(h_name, defining_loader_data);
-      assert(check == check2, "name inconsistancy in SystemDictionary");
-    }
+    Klass* check = find_class(h_name, k->class_loader_data());
+    assert(check == k(), "should be present in the dictionary");
   } );
 
   return k();
@@ -1246,12 +1210,16 @@ Klass* SystemDictionary::find_shared_class(Symbol* class_name) {
 
 instanceKlassHandle SystemDictionary::load_shared_class(
                  Symbol* class_name, Handle class_loader, TRAPS) {
-  instanceKlassHandle ik (THREAD, find_shared_class(class_name));
-  // Make sure we only return the boot class for the NULL classloader.
-  if (ik.not_null() &&
-      ik->is_shared_boot_class() && class_loader.is_null()) {
-    Handle protection_domain;
-    return load_shared_class(ik, class_loader, protection_domain, THREAD);
+  // Don't load shared class when JvmtiExport::should_post_class_file_load_hook()
+  // is enabled since posting CFLH is not supported when loading shared class.
+  if (!JvmtiExport::should_post_class_file_load_hook()) {
+    instanceKlassHandle ik (THREAD, find_shared_class(class_name));
+    // Make sure we only return the boot class for the NULL classloader.
+    if (ik.not_null() &&
+        ik->is_shared_boot_class() && class_loader.is_null()) {
+      Handle protection_domain;
+      return load_shared_class(ik, class_loader, protection_domain, THREAD);
+    }
   }
   return instanceKlassHandle();
 }
@@ -1334,8 +1302,14 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
 instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
                                                         Handle class_loader,
                                                         Handle protection_domain, TRAPS) {
+  instanceKlassHandle nh = instanceKlassHandle(); // null Handle
+  if (JvmtiExport::should_post_class_file_load_hook()) {
+    // Don't load shared class when JvmtiExport::should_post_class_file_load_hook()
+    // is enabled since posting CFLH is not supported when loading shared class.
+    return nh;
+  }
+
   if (ik.not_null()) {
-    instanceKlassHandle nh = instanceKlassHandle(); // null Handle
     Symbol* class_name = ik->name();
 
     bool visible = is_shared_class_visible(
@@ -1400,6 +1374,8 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
       Handle lockObject = compute_loader_lock_object(class_loader, THREAD);
       check_loader_lock_contention(lockObject, THREAD);
       ObjectLocker ol(lockObject, THREAD, true);
+      // prohibited package check assumes all classes loaded from archive call
+      // restore_unshareable_info which calls ik->set_package()
       ik->restore_unshareable_info(loader_data, protection_domain, CHECK_(nh));
     }
 
@@ -1665,9 +1641,8 @@ void SystemDictionary::define_instance_class(instanceKlassHandle k, TRAPS) {
       JvmtiExport::post_class_load((JavaThread *) THREAD, k());
 
   }
-
   TRACE_KLASS_DEFINITION(k, THREAD);
-
+  class_define_event(k);
 }
 
 // Support parallel classloading
@@ -1686,6 +1661,10 @@ void SystemDictionary::define_instance_class(instanceKlassHandle k, TRAPS) {
 // findClass(), i.e. FindLoadedClass/DefineClassIfAbsent or they
 // potentially waste time reading and parsing the bytestream.
 // Note: VM callers should ensure consistency of k/class_name,class_loader
+// Be careful when modifying this code: once you have run
+// placeholders()->find_and_add(PlaceholderTable::DEFINE_CLASS),
+// you need to find_and_remove it before returning.
+// So be careful to not exit with a CHECK_ macro betweeen these calls.
 instanceKlassHandle SystemDictionary::find_or_define_instance_class(Symbol* class_name, Handle class_loader, instanceKlassHandle k, TRAPS) {
 
   instanceKlassHandle nh = instanceKlassHandle(); // null Handle
@@ -2125,7 +2104,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
 
   // Create the ModuleEntry for java.base.  This call needs to be done here,
   // after vmSymbols::initialize() is called but before any classes are pre-loaded.
-  ClassLoader::create_javabase();
+  ClassLoader::classLoader_init2(CHECK);
 
   // Preload commonly used klasses
   WKID scan = FIRST_WKID;

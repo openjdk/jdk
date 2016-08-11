@@ -25,13 +25,14 @@
  * @test
  * @bug 8026844
  * @summary Test subtractExact as condition
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @compile SubExactICondTest.java Verify.java
- * @run main SubExactICondTest
  *
+ * @run main compiler.intrinsics.mathexact.SubExactICondTest
  */
+
+package compiler.intrinsics.mathexact;
 
 public class SubExactICondTest {
   public static int result = 0;

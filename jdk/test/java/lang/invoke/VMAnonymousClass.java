@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ public class VMAnonymousClass {
         test.testJavaUtil();
         test.testJdkInternalMisc();
         test.testJavaLangInvoke();
+        test.testProhibitedJavaPkg();
         System.out.println("TEST PASSED");
     }
 
@@ -54,13 +55,29 @@ public class VMAnonymousClass {
     @Test public void testJavaUtil()        throws Throwable { test("java/util");         }
     @Test public void testJdkInternalMisc() throws Throwable { test("jdk/internal/misc"); }
     @Test public void testJavaLangInvoke()  throws Throwable { test("java/lang/invoke");  }
+    @Test public void testProhibitedJavaPkg() throws Throwable {
+       try {
+          test("java/prohibited");
+       } catch (SecurityException e) {
+         return;
+       }
+       throw new RuntimeException("Expected SecurityException");
+     }
 
     private static Unsafe unsafe = getUnsafe();
 
     private static void test(String pkg) throws Throwable {
         byte[] bytes = dumpClass(pkg);
-        // Define VM anonymous class in privileged context (on BCP).
-        Class anonClass = unsafe.defineAnonymousClass(Object.class, bytes, null);
+        Class host_class;
+        if (pkg.equals("java/prohibited")) {
+            VMAnonymousClass sampleclass = new VMAnonymousClass();
+            host_class = (Class)sampleclass.getClass();
+        } else {
+            host_class = Object.class;
+        }
+
+        // Define VM anonymous class
+        Class anonClass = unsafe.defineAnonymousClass(host_class, bytes, null);
 
         MethodType t = MethodType.methodType(Object.class, int.class);
         MethodHandle target = MethodHandles.lookup().findStatic(anonClass, "get", t);

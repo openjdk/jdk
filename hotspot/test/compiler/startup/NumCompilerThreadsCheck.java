@@ -28,8 +28,15 @@
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc
  *          java.management
+ *
+ * @run driver compiler.startup.NumCompilerThreadsCheck
  */
-import jdk.test.lib.*;
+
+package compiler.startup;
+
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.Platform;
+import jdk.test.lib.ProcessTools;
 
 public class NumCompilerThreadsCheck {
 

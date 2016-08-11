@@ -84,6 +84,7 @@ public class WhiteBox {
   public native long getVMAllocationGranularity();
   public native long getVMLargePageSize();
   public native long getHeapSpaceAlignment();
+  public native long getHeapAlignment();
 
   private native boolean isObjectInOldGen0(Object o);
   public         boolean isObjectInOldGen(Object o) {

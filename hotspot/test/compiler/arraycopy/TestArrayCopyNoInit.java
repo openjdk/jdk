@@ -25,9 +25,12 @@
  * @test
  * @bug 8064703
  * @summary Deoptimization between array allocation and arraycopy may result in non initialized array
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TypeProfileLevel=020 TestArrayCopyNoInit
  *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TypeProfileLevel=020
+ *                   compiler.arraycopy.TestArrayCopyNoInit
  */
+
+package compiler.arraycopy;
 
 public class TestArrayCopyNoInit {
 

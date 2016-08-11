@@ -25,9 +25,13 @@
  * @test
  * @bug 8134288
  * @summary Store nodes may not have a control if used to update profiling
- * @run main/othervm -XX:-ProfileInterpreter -XX:-TieredCompilation -XX:-BackgroundCompilation TestMoveStoresOutOfLoopsStoreNoCtrl
  *
+ * @run main/othervm -XX:-ProfileInterpreter -XX:-TieredCompilation
+ *                   -XX:-BackgroundCompilation
+ *                   compiler.loopopts.TestMoveStoresOutOfLoopsStoreNoCtrl
  */
+
+package compiler.loopopts;
 
 public class TestMoveStoresOutOfLoopsStoreNoCtrl {
 

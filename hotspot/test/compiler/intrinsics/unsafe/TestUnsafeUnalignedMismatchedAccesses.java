@@ -27,13 +27,19 @@
  * @bug 8136473
  * @summary Mismatched stores on same slice possible with Unsafe.Put*Unaligned methods
  * @modules java.base/jdk.internal.misc
- * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation TestUnsafeUnalignedMismatchedAccesses
- * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:+UnlockDiagnosticVMOptions -XX:-UseUnalignedAccesses TestUnsafeUnalignedMismatchedAccesses
  *
+ * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
+ *      compiler.intrinsics.unsafe.TestUnsafeUnalignedMismatchedAccesses
+ * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
+ *      -XX:+UnlockDiagnosticVMOptions -XX:-UseUnalignedAccesses
+ *      compiler.intrinsics.unsafe.TestUnsafeUnalignedMismatchedAccesses
  */
 
-import java.lang.reflect.*;
+package compiler.intrinsics.unsafe;
+
 import jdk.internal.misc.Unsafe;
+
+import java.lang.reflect.Field;
 
 public class TestUnsafeUnalignedMismatchedAccesses {
 

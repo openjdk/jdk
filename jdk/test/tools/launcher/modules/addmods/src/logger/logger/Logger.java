@@ -24,7 +24,7 @@
 package logger;
 
 /**
- * No-op user module for use by the {@code java -addmods} tests.
+ * No-op user module for use by the {@code java --add-modules} tests.
  */
 public class Logger {
 }

@@ -25,13 +25,14 @@
  * @test
  * @bug 8026844
  * @summary Test constant addExact
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @compile AddExactLConstantTest.java Verify.java
- * @run main AddExactLConstantTest
  *
+ * @run main compiler.intrinsics.mathexact.AddExactLConstantTest
  */
+
+package compiler.intrinsics.mathexact;
 
 public class AddExactLConstantTest {
     public static void main(String[] args) {

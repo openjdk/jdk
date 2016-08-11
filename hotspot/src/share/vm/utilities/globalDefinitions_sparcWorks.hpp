@@ -33,9 +33,6 @@
 
 
 # include <ctype.h>
-#define __USE_LEGACY_PROTOTYPES__
-# include <dirent.h>
-#undef __USE_LEGACY_PROTOTYPES__
 # include <string.h>
 # include <strings.h>     // for bsd'isms
 # include <stdarg.h>

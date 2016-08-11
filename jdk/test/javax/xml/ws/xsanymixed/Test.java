@@ -28,8 +28,7 @@
  *          no white space changes and no changes to namespace prefixes
  * @modules java.xml.ws
  * @run shell compile-wsdl.sh
- * @compile -addmods java.xml.ws Test.java
- * @run main/othervm -addmods java.xml.ws Test
+ * @run main/othervm Test
  */
 
 import com.sun.net.httpserver.HttpServer;

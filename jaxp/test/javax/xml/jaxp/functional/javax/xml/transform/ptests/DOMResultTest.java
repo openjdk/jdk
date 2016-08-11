@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,23 @@
 
 package javax.xml.transform.ptests;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMResult;
 import static javax.xml.transform.ptests.TransformerTestConst.GOLDEN_DIR;
 import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
-import javax.xml.transform.sax.SAXSource;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import jaxp.library.JAXPFileBaseTest;
 import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
 import static org.testng.Assert.assertTrue;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.sax.SAXSource;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Attr;
 import org.w3c.dom.NamedNodeMap;
@@ -50,7 +53,14 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * DOM parse on test file to be compared with golden output file. No Exception
  * is expected.
  */
-public class DOMResultTest extends JAXPFileBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.transform.ptests.DOMResultTest
+ * @run testng/othervm javax.xml.transform.ptests.DOMResultTest
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class DOMResultTest {
     /**
      * Unit test for simple DOM parsing.
      * @throws Exception If any errors occur.
@@ -108,3 +118,5 @@ public class DOMResultTest extends JAXPFileBaseTest {
                 writeNodes(kids.item(i), bWriter);
     }
 }
+
+

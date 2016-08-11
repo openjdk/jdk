@@ -28,11 +28,17 @@ import java.io.IOException;
 import javax.xml.stream.XMLStreamException;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamExceptionTest.ExceptionTest
+ * @run testng/othervm stream.XMLStreamExceptionTest.ExceptionTest
  * @summary Test XMLStreamException contains the message of the wrapped exception.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class ExceptionTest {
 
     @Test
@@ -47,3 +53,4 @@ public class ExceptionTest {
         }
     }
 }
+

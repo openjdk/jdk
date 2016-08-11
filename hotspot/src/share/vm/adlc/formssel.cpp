@@ -3647,14 +3647,14 @@ int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, Matc
     // Check left operands
     if( (_lChild == NULL) && (mRule2->_lChild == NULL) ) {
       left_spillable = Maybe_cisc_spillable;
-    } else {
+    } else  if (_lChild != NULL) {
       left_spillable = _lChild->cisc_spill_match(globals, registers, mRule2->_lChild, operand, reg_type);
     }
 
     // Check right operands
     if( (_rChild == NULL) && (mRule2->_rChild == NULL) ) {
       right_spillable =  Maybe_cisc_spillable;
-    } else {
+    } else if (_rChild != NULL) {
       right_spillable = _rChild->cisc_spill_match(globals, registers, mRule2->_rChild, operand, reg_type);
     }
 

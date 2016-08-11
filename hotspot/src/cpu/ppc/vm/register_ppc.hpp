@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ class RegisterImpl;
 typedef RegisterImpl* Register;
 
 inline Register as_Register(int encoding) {
-  assert(encoding >= 0 && encoding < 32, "bad register encoding");
+  assert(encoding >= -1 && encoding < 32, "bad register encoding");
   return (Register)(intptr_t)encoding;
 }
 
@@ -91,7 +91,7 @@ class RegisterImpl: public AbstractRegisterImpl {
   inline friend Register as_Register(int encoding);
 
   // accessors
-  int encoding()  const { assert(is_valid(), "invalid register"); return value(); }
+  int encoding() const { assert(is_valid(), "invalid register"); return value(); }
   inline VMReg as_VMReg();
   Register successor() const { return as_Register(encoding() + 1); }
 
@@ -247,7 +247,7 @@ class FloatRegisterImpl;
 typedef FloatRegisterImpl* FloatRegister;
 
 inline FloatRegister as_FloatRegister(int encoding) {
-  assert(encoding >= 0 && encoding < 32, "bad float register encoding");
+  assert(encoding >= -1 && encoding < 32, "bad float register encoding");
   return (FloatRegister)(intptr_t)encoding;
 }
 
@@ -267,7 +267,7 @@ class FloatRegisterImpl: public AbstractRegisterImpl {
   FloatRegister successor() const { return as_FloatRegister(encoding() + 1); }
 
   // testers
-  bool is_valid()       const { return (0  <=  value()       &&  value()       < number_of_registers); }
+  bool is_valid() const { return (0 <= value() && value() < number_of_registers); }
 
   const char* name() const;
 };

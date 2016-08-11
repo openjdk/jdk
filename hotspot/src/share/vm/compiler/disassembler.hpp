@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "asm/codeBuffer.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/macros.hpp"
 
 class decode_env;
 
@@ -63,25 +64,7 @@ class Disassembler {
   static bool load_library();
 
   // Machine dependent stuff
-#ifdef TARGET_ARCH_x86
-# include "disassembler_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "disassembler_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "disassembler_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "disassembler_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "disassembler_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "disassembler_aarch64.hpp"
-#endif
-
+#include CPU_HEADER(disassembler)
 
  public:
   static bool can_decode() {

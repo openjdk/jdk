@@ -25,13 +25,14 @@
  * @test
  * @bug 8026844
  * @summary Test non constant mulExact
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @compile MulExactLNonConstantTest.java Verify.java
- * @run main MulExactLNonConstantTest
  *
+ * @run main compiler.intrinsics.mathexact.MulExactLNonConstantTest
  */
+
+package compiler.intrinsics.mathexact;
 
 public class MulExactLNonConstantTest {
     public static void main(String[] args) {

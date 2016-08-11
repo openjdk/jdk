@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 package jaxp.library;
 
+import static org.testng.Assert.fail;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -34,12 +36,18 @@ import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.Permission;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -48,7 +56,7 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import static org.testng.Assert.fail;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -74,12 +82,6 @@ public class JAXPTestUtilities {
     public static final String FILE_SEP = "/";
 
     /**
-     * Current test directory.
-     */
-    public static final String USER_DIR =
-            System.getProperty("user.dir", ".") + FILE_SEP;;
-
-    /**
      * A map storing every test's current test file pointer. File number should
      * be incremental and it's a thread-safe reading on this file number.
      */
@@ -89,7 +91,7 @@ public class JAXPTestUtilities {
     /**
      * BOM table for storing BOM header.
      */
-    private final static Map<String, byte[]> bom = new HashMap<>();
+    private final static Map<String, byte[]> bom = new HashMap();
 
     /**
      * Initialize all BOM headers.
@@ -130,8 +132,15 @@ public class JAXPTestUtilities {
      */
     public static boolean compareWithGold(String goldfile, String outputfile,
              Charset cs) throws IOException {
-        return Files.readAllLines(Paths.get(goldfile)).
+        boolean isSame = Files.readAllLines(Paths.get(goldfile)).
                 equals(Files.readAllLines(Paths.get(outputfile), cs));
+        if (!isSame) {
+            System.err.println("Golden file " + goldfile + " :");
+            Files.readAllLines(Paths.get(goldfile)).forEach(System.err::println);
+            System.err.println("Output file " + outputfile + " :");
+            Files.readAllLines(Paths.get(outputfile), cs).forEach(System.err::println);
+        }
+        return isSame;
     }
 
     /**
@@ -308,10 +317,10 @@ public class JAXPTestUtilities {
         int nextNumber = currentFileNumber.contains(clazz)
                 ? currentFileNumber.get(clazz) + 1 : 1;
         Integer i = currentFileNumber.putIfAbsent(clazz, nextNumber);
-        if (i != null && i != nextNumber) {
+        if (i != null) {
             do {
                 nextNumber = currentFileNumber.get(clazz) + 1;
-            } while (currentFileNumber.replace(clazz, nextNumber -1, nextNumber));
+            } while (!currentFileNumber.replace(clazz, nextNumber - 1, nextNumber));
         }
         return USER_DIR + clazz.getName() + nextNumber + ".out";
     }
@@ -324,12 +333,177 @@ public class JAXPTestUtilities {
      * @return a string represents the full path of accessing path.
      */
     public static String getPathByClassName(Class clazz, String relativeDir) {
-        String packageName = FILE_SEP +
-                clazz.getPackage().getName().replaceAll("[.]", FILE_SEP);
-        String javaSourcePath = System.getProperty("test.src").replaceAll("\\" + File.separator, FILE_SEP)
-                + packageName + FILE_SEP;
+        String javaSourcePath = System.getProperty("test.src").replaceAll("\\" + File.separator, FILE_SEP);
         String normalizedPath = Paths.get(javaSourcePath, relativeDir).normalize().
                 toAbsolutePath().toString();
         return normalizedPath.replace("\\", FILE_SEP) + FILE_SEP;
     }
+
+
+    /**
+     * Run the supplier with all permissions. This won't impact global policy.
+     *
+     * @param s
+     *            Supplier to run
+     */
+    public static <T> T runWithAllPerm(Supplier<T> s) {
+        Optional<JAXPPolicyManager> policyManager = Optional.ofNullable(JAXPPolicyManager
+                .getJAXPPolicyManager(false));
+        policyManager.ifPresent(manager -> manager.setAllowAll(true));
+        try {
+            return s.get();
+        } finally {
+            policyManager.ifPresent(manager -> manager.setAllowAll(false));
+        }
+    }
+
+    /**
+     * Run the supplier with all permissions. This won't impact global policy.
+     *
+     * @param s
+     *            Supplier to run
+     */
+    public static <T> T tryRunWithAllPerm(Callable<T> c) throws Exception {
+        Optional<JAXPPolicyManager> policyManager = Optional.ofNullable(JAXPPolicyManager
+                .getJAXPPolicyManager(false));
+        policyManager.ifPresent(manager -> manager.setAllowAll(true));
+        try {
+            return c.call();
+        } finally {
+            policyManager.ifPresent(manager -> manager.setAllowAll(false));
+        }
+    }
+
+    /**
+     * Run the Runnable with all permissions. This won't impact global policy.
+     *
+     * @param s
+     *            Supplier to run
+     */
+    public static void runWithAllPerm(Runnable r) {
+        Optional<JAXPPolicyManager> policyManager = Optional.ofNullable(JAXPPolicyManager
+                .getJAXPPolicyManager(false));
+        policyManager.ifPresent(manager -> manager.setAllowAll(true));
+        try {
+            r.run();
+        } finally {
+            policyManager.ifPresent(manager -> manager.setAllowAll(false));
+        }
+    }
+
+    /**
+     * Acquire a system property.
+     *
+     * @param name
+     *            System property name to be acquired.
+     * @return property value
+     */
+    public static String getSystemProperty(String name) {
+        return runWithAllPerm(() -> System.getProperty(name));
+    }
+
+    /**
+     * Set a system property by given system value.
+     *
+     * @param name
+     *            System property name to be set.
+     * @param value
+     *            System property value to be set.
+     */
+    public static void setSystemProperty(String name, String value) {
+        runWithAllPerm(() -> System.setProperty(name, value));
+    }
+
+    /**
+     * Clear a system property.
+     *
+     * @param name
+     *            System property name to be cleared.
+     */
+    public static void clearSystemProperty(String name) {
+        runWithAllPerm(() -> System.clearProperty(name));
+    }
+
+    /**
+     * Run the runnable with assigning temporary permissions. This won't impact
+     * global policy.
+     *
+     * @param r
+     *            Runnable to run
+     * @param ps
+     *            assigning permissions to add.
+     */
+    public static void runWithTmpPermission(Runnable r, Permission... ps) {
+        JAXPPolicyManager policyManager = JAXPPolicyManager.getJAXPPolicyManager(false);
+        List<Integer> tmpPermissionIndexes = new ArrayList();
+        if (policyManager != null) {
+            for (Permission p : ps)
+                tmpPermissionIndexes.add(policyManager.addTmpPermission(p));
+        }
+        try {
+            r.run();
+        } finally {
+            for (int index: tmpPermissionIndexes)
+                policyManager.removeTmpPermission(index);
+        }
+    }
+
+    /**
+     * Run the supplier with assigning temporary permissions. This won't impact
+     * global policy.
+     *
+     * @param s
+     *            Supplier to run
+     * @param ps
+     *            assigning permissions to add.
+     */
+    public static <T> T runWithTmpPermission(Supplier<T> s, Permission... ps) {
+        JAXPPolicyManager policyManager = JAXPPolicyManager.getJAXPPolicyManager(false);
+        List<Integer> tmpPermissionIndexes = new ArrayList();
+        if (policyManager != null) {
+            for (Permission p : ps)
+                tmpPermissionIndexes.add(policyManager.addTmpPermission(p));
+        }
+        try {
+            return s.get();
+        } finally {
+            for (int index: tmpPermissionIndexes)
+                policyManager.removeTmpPermission(index);
+        }
+    }
+
+    /**
+     * Run the RunnableWithException with assigning temporary permissions. This
+     * won't impact global policy.
+     *
+     * @param r
+     *            RunnableWithException to execute
+     * @param ps
+     *            assigning permissions to add.
+     */
+    public static void tryRunWithTmpPermission(RunnableWithException r, Permission... ps) throws Exception {
+        JAXPPolicyManager policyManager = JAXPPolicyManager.getJAXPPolicyManager(false);
+        List<Integer> tmpPermissionIndexes = new ArrayList();
+        if (policyManager != null) {
+            for (Permission p : ps)
+                tmpPermissionIndexes.add(policyManager.addTmpPermission(p));
+        }
+        try {
+            r.run();
+        } finally {
+            for (int index: tmpPermissionIndexes)
+                policyManager.removeTmpPermission(index);
+        }
+    }
+
+    @FunctionalInterface
+    public interface RunnableWithException {
+        void run() throws Exception;
+    }
+
+    /**
+     * Current test directory.
+     */
+    public static final String USER_DIR = getSystemProperty("user.dir") + FILE_SEP;;
+
 }

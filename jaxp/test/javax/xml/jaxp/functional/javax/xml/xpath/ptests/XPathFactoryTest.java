@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,22 +24,29 @@
 package javax.xml.xpath.ptests;
 
 import static javax.xml.xpath.XPathConstants.DOM_OBJECT_MODEL;
+import static org.testng.Assert.assertNotNull;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathFactoryConfigurationException;
 
 import jaxp.library.JAXPDataProvider;
-import jaxp.library.JAXPBaseTest;
-import static org.testng.Assert.assertNotNull;
 
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /**
  * Class containing the test cases for XPathFactory API.
  */
-public class XPathFactoryTest extends JAXPBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.xpath.ptests.XPathFactoryTest
+ * @run testng/othervm javax.xml.xpath.ptests.XPathFactoryTest
+ */
+@Listeners({jaxp.library.BasePolicy.class})
+public class XPathFactoryTest {
     /**
      * Valid URL for creating a XPath factory.
      */
@@ -211,3 +218,5 @@ public class XPathFactoryTest extends JAXPBaseTest {
         assertNotNull(XPathFactory.newInstance(DOM_OBJECT_MODEL));
     }
 }
+
+

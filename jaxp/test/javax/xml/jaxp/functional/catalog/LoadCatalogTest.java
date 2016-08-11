@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,17 +36,20 @@ import javax.xml.catalog.CatalogResolver;
 import javax.xml.catalog.CatalogUriResolver;
 
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8077931
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true catalog.LoadCatalogTest
+ * @run testng/othervm catalog.LoadCatalogTest
  * @summary When catalog resolver loads catalog files, the current catalog file
  *          and the catalog files specified by the nextCatalog entries may not
  *          accessible. This case tests how does the resolver handle this issue.
- * @compile ../../libs/catalog/CatalogTestUtils.java
- * @compile ../../libs/catalog/ResolutionChecker.java
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class LoadCatalogTest {
 
     private static final String CATALOG_LOADCATALOGFILES = "loadCatalogFiles.xml";
@@ -62,7 +65,7 @@ public class LoadCatalogTest {
     }
 
     @DataProvider(name = "entityResolver")
-    private Object[][] entityResolver() {
+    public Object[][] entityResolver() {
         return new Object[][] {
                 // This EntityResolver loads multiple catalog files one by one.
                 // All of the files are available.
@@ -82,7 +85,7 @@ public class LoadCatalogTest {
     }
 
     @DataProvider(name = "uriResolver")
-    private Object[][] uriResolver() {
+    public Object[][] uriResolver() {
         return new Object[][] {
                 // This URIResolver loads multiple catalog files one by one.
                 // All of the files are available.
@@ -108,7 +111,7 @@ public class LoadCatalogTest {
     }
 
     @DataProvider(name = "catalogName")
-    private Object[][] catalogName() {
+    public Object[][] catalogName() {
         return new Object[][] {
                 // This catalog file set includes null catalog files.
                 { (String[]) null },
@@ -118,3 +121,4 @@ public class LoadCatalogTest {
                 { new String[] { CATALOG_LOADCATALOGFILES } } };
     }
 }
+

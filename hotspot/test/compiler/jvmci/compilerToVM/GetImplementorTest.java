@@ -39,8 +39,8 @@ package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.testcases.AbstractClass;
 import compiler.jvmci.common.testcases.AbstractClassExtender;
-import compiler.jvmci.common.testcases.DoNotImplementInterface;
 import compiler.jvmci.common.testcases.DoNotExtendClass;
+import compiler.jvmci.common.testcases.DoNotImplementInterface;
 import compiler.jvmci.common.testcases.MultipleImplementer1;
 import compiler.jvmci.common.testcases.MultipleImplementer2;
 import compiler.jvmci.common.testcases.MultipleImplementersInterface;
@@ -48,13 +48,14 @@ import compiler.jvmci.common.testcases.SingleImplementer;
 import compiler.jvmci.common.testcases.SingleImplementerInterface;
 import compiler.jvmci.common.testcases.SingleSubclass;
 import compiler.jvmci.common.testcases.SingleSubclassedClass;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
 
 public class GetImplementorTest {
     public static void main(String args[]) {

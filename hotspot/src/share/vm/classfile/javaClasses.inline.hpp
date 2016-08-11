@@ -168,11 +168,8 @@ inline bool java_lang_invoke_DirectMethodHandle::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
 }
 
-
-
-
 inline bool java_lang_reflect_Module::is_instance(oop obj) {
-  return obj != NULL && is_subclass(obj->klass());
+  return obj != NULL && obj->klass() == SystemDictionary::reflect_Module_klass();
 }
 
 inline int Backtrace::merge_bci_and_version(int bci, int version) {

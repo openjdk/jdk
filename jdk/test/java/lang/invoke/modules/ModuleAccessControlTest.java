@@ -60,7 +60,7 @@ public class ModuleAccessControlTest {
         for (String mn : modules) {
             Path msrc = SRC_DIR.resolve(mn);
             assertTrue(CompilerUtils
-                .compile(msrc, MODS_DIR, "-modulesourcepath", SRC_DIR.toString()));
+                .compile(msrc, MODS_DIR, "--module-source-path", SRC_DIR.toString()));
         }
     }
 
@@ -69,7 +69,7 @@ public class ModuleAccessControlTest {
      */
     @Test
     public void runTest() throws Exception {
-        int exitValue = executeTestJava("-mp", MODS_DIR.toString(),
+        int exitValue = executeTestJava("--module-path", MODS_DIR.toString(),
                                         "-m", "m1/p1.Main")
                 .outputTo(System.out)
                 .errorTo(System.out)

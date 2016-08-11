@@ -21,9 +21,11 @@
  * questions.
  */
 
+package compiler.intrinsics.sha.cli;
+
+import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
-import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 
 import java.util.function.BooleanSupplier;
 
@@ -34,17 +36,17 @@ import java.util.function.BooleanSupplier;
  * from several test cases shared among different tests.
  */
 public class SHAOptionsBase extends CommandLineOptionTest {
-    protected static final String USE_SHA_OPTION = "UseSHA";
-    protected static final String USE_SHA1_INTRINSICS_OPTION
+    public static final String USE_SHA_OPTION = "UseSHA";
+    public static final String USE_SHA1_INTRINSICS_OPTION
             = "UseSHA1Intrinsics";
-    protected static final String USE_SHA256_INTRINSICS_OPTION
+    public static final String USE_SHA256_INTRINSICS_OPTION
             = "UseSHA256Intrinsics";
-    protected static final String USE_SHA512_INTRINSICS_OPTION
+    public static final String USE_SHA512_INTRINSICS_OPTION
             = "UseSHA512Intrinsics";
 
     // Intrinsics flags are of diagnostic type
     // and must be preceded by UnlockDiagnosticVMOptions.
-    protected static final String UNLOCK_DIAGNOSTIC_VM_OPTIONS
+    public static final String UNLOCK_DIAGNOSTIC_VM_OPTIONS
             = "-XX:+UnlockDiagnosticVMOptions";
 
     // Note that strings below will be passed to
@@ -71,7 +73,7 @@ public class SHAOptionsBase extends CommandLineOptionTest {
      * @return A warning message that will be printed out to VM output if CPU
      *         instructions required by the option are not supported.
      */
-    protected static String getWarningForUnsupportedCPU(String optionName) {
+    public static String getWarningForUnsupportedCPU(String optionName) {
         if (Platform.isSparc() || Platform.isAArch64() ||
             Platform.isX64() || Platform.isX86()) {
             switch (optionName) {
@@ -101,7 +103,7 @@ public class SHAOptionsBase extends CommandLineOptionTest {
      * @return The predicate on availability of CPU instructions required by the
      *         option.
      */
-    protected static BooleanSupplier getPredicateForOption(String optionName) {
+    public static BooleanSupplier getPredicateForOption(String optionName) {
         switch (optionName) {
             case SHAOptionsBase.USE_SHA_OPTION:
                 return IntrinsicPredicates.ANY_SHA_INSTRUCTION_AVAILABLE;

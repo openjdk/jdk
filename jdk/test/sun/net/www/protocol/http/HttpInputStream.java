@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,77 +23,95 @@
 
 /* @test
  * @bug 4937598
- * @summary http://www.clipstream.com vedio does not play; read() problem
+ * @summary http://www.clipstream.com video does not play; read() problem
  */
-import java.util.*;
-import java.io.*;
-import java.net.*;
-import java.text.*;
-
-public class HttpInputStream implements Runnable {
-
-  ServerSocket serverSock;
-
-  public void run() {
-      try {
-          Socket s = serverSock.accept();
-          InputStream in = s.getInputStream();
-          byte b[] = new byte[4096];
-
-          // assume we read the entire http request
-          // (bad assumption but okay for test case)
-          int nread = in.read(b);
-
-          OutputStream o = s.getOutputStream();
-
-          o.write( "HTTP/1.1 200 OK".getBytes() );
-          o.write( "Content-Length: 20".getBytes() );
-          o.write( (byte)'\r' );
-          o.write( (byte)'\n' );
-          o.write( (byte)'\r' );
-          o.write( (byte)'\n' );
-
-          for (int i = 0; i < 20; i++) {
-              o.write((byte)0xff);
-          }
-
-          o.flush();
-          o.close();
-
-      } catch (Exception e) { }
-  }
 
 
-  public HttpInputStream() throws Exception {
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URL;
 
-     serverSock = new ServerSocket(0);
-     int port = serverSock.getLocalPort();
+public class HttpInputStream {
 
-     Thread thr = new Thread(this);
-     thr.start();
+    private static final int CONTENT_LENGTH = 20;
 
-     Date date = new Date(new Date().getTime()-1440000); // this time yesterday
-     URL url;
-     HttpURLConnection con;
+    static class Server implements AutoCloseable, Runnable {
 
-     url = new URL("http://localhost:" + String.valueOf(port) +
-                   "/anything");
-     con = (HttpURLConnection)url.openConnection();
+        final ServerSocket serverSocket;
+        static final byte[] requestEnd = new byte[]{'\r', '\n', '\r', '\n'};
+        static final int TIMEOUT = 10 * 1000;
 
-     int ret = con.getResponseCode();
-     byte[] b = new byte[20];
-     InputStream is = con.getInputStream();
-     int i = 0, count = 0;
-     while ((i = is.read()) != -1) {
-         System.out.println("i = "+i);
-         count++;
-     }
-     if (count != 20) {
-         throw new RuntimeException("HttpInputStream.read() failed with 0xff");
-     }
-  }
+        Server() throws IOException {
+            serverSocket = new ServerSocket(0);
+        }
 
-  public static void main(String args[]) throws Exception {
-      new HttpInputStream();
-  }
+        void readOneRequest(InputStream is) throws IOException {
+            int requestEndCount = 0, r;
+            while ((r = is.read()) != -1) {
+                if (r == requestEnd[requestEndCount]) {
+                    requestEndCount++;
+                    if (requestEndCount == 4) {
+                        break;
+                    }
+                } else {
+                    requestEndCount = 0;
+                }
+            }
+        }
+
+        @Override
+        public void run() {
+            try (Socket s = serverSocket.accept()) {
+                s.setSoTimeout(TIMEOUT);
+                readOneRequest(s.getInputStream());
+                try (OutputStream os =
+                             s.getOutputStream()) {
+                    os.write("HTTP/1.1 200 OK".getBytes());
+                    os.write(("Content-Length: " + CONTENT_LENGTH).getBytes());
+                    os.write("\r\n\r\n".getBytes());
+                    for (int i = 0; i < CONTENT_LENGTH; i++) {
+                        os.write(0xff);
+                    }
+                    os.flush();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (!serverSocket.isClosed()) {
+                serverSocket.close();
+            }
+        }
+
+        public int getPort() {
+            return serverSocket.getLocalPort();
+        }
+    }
+
+
+    private static int read(InputStream is) throws IOException {
+        int len = 0;
+        while (is.read() != -1) {
+            len++;
+        }
+        return len;
+    }
+
+    public static void main(String args[]) throws IOException {
+        try (Server server = new Server()) {
+            (new Thread(server)).start();
+            URL url = new URL("http://localhost:" + server.getPort() + "/anything");
+            try (InputStream is = url.openConnection().getInputStream()) {
+                if (read(is) != CONTENT_LENGTH) {
+                    throw new RuntimeException("HttpInputStream.read() failed with 0xff");
+                }
+            }
+        }
+    }
 }

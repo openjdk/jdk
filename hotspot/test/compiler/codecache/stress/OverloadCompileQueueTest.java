@@ -22,35 +22,41 @@
  *
  */
 
-import java.lang.reflect.Method;
-import java.util.stream.IntStream;
+/*
+ * @test OverloadCompileQueueTest
+ * @summary stressing code cache by overloading compile queues
+ * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ *
+ * @ignore 8071905
+ * @build compiler.codecache.stress.OverloadCompileQueueTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:-SegmentedCodeCache
+ *                   compiler.codecache.stress.OverloadCompileQueueTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:+SegmentedCodeCache
+ *                   compiler.codecache.stress.OverloadCompileQueueTest
+ */
+
+package compiler.codecache.stress;
 
 import jdk.test.lib.Platform;
 
-/*
- * @test OverloadCompileQueueTest
- * @library /testlibrary /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @ignore 8071905
- * @build OverloadCompileQueueTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:CompileCommand=dontinline,Helper$TestCase::method
- *                   -XX:+WhiteBoxAPI -XX:-SegmentedCodeCache OverloadCompileQueueTest
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:CompileCommand=dontinline,Helper$TestCase::method
- *                   -XX:+WhiteBoxAPI -XX:+SegmentedCodeCache OverloadCompileQueueTest
- * @summary stressing code cache by overloading compile queues
- */
+import java.lang.reflect.Method;
+import java.util.stream.IntStream;
+
 public class OverloadCompileQueueTest implements Runnable {
     private static final int MAX_SLEEP = 10000;
     private static final String METHOD_TO_ENQUEUE = "method";
     private static final int LEVEL_SIMPLE = 1;
     private static final int LEVEL_FULL_OPTIMIZATION = 4;
-    private static final boolean INTERPRETED
-            = System.getProperty("java.vm.info").startsWith("interpreted ");
     private static final boolean TIERED_COMPILATION
             = Helper.WHITE_BOX.getBooleanVMFlag("TieredCompilation");
     private static final int TIERED_STOP_AT_LEVEL
@@ -66,15 +72,13 @@ public class OverloadCompileQueueTest implements Runnable {
         } else if (Platform.isClient() || Platform.isMinimal()) {
             AVAILABLE_LEVELS = new int[] { LEVEL_SIMPLE };
         } else {
-            throw new Error(String.format(
-                    "TESTBUG: unknown VM: %s", System.getProperty("java.vm.name")));
+            throw new Error("TESTBUG: unknown VM: " + Platform.vmName);
         }
     }
 
     public static void main(String[] args) {
-        if (INTERPRETED) {
-            System.err.println("Test isn't applicable for interpreter. Skip test.");
-            return;
+        if (Platform.isInt()) {
+            throw new Error("TESTBUG: test can not be run in interpreter");
         }
         new CodeCacheStressRunner(new OverloadCompileQueueTest()).runTest();
     }

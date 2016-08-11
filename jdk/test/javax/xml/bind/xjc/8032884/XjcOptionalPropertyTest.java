@@ -100,7 +100,7 @@ public class XjcOptionalPropertyTest {
     // Compile java classes with javac tool
     void compileXjcGeneratedClasses() throws Exception {
         JDKToolLauncher javacLauncher = JDKToolLauncher.createUsingTestJDK("javac");
-        javacLauncher.addToolArg("-addmods");
+        javacLauncher.addToolArg("--add-modules");
         javacLauncher.addToolArg("java.xml.bind");
         javacLauncher.addToolArg(xjcResultDir.resolve("Foo.java").toString());
         System.out.println("Compiling xjc generated class: " + Arrays.asList(javacLauncher.getCommand()));

@@ -43,13 +43,14 @@ import compiler.jvmci.common.testcases.DoNotExtendClass;
 import compiler.jvmci.common.testcases.MultipleImplementersInterfaceExtender;
 import compiler.jvmci.common.testcases.SingleImplementer;
 import compiler.jvmci.common.testcases.SingleImplementerInterface;
-import java.util.HashSet;
-import java.util.Set;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class GetClassInitializerTest {
 

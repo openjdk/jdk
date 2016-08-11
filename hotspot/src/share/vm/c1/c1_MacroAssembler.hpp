@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "utilities/macros.hpp"
 
 class CodeEmitInfo;
 
@@ -47,21 +48,7 @@ class C1_MacroAssembler: public MacroAssembler {
   void verify_stack_oop(int offset) PRODUCT_RETURN;
   void verify_not_null_oop(Register r)  PRODUCT_RETURN;
 
-#ifdef TARGET_ARCH_x86
-# include "c1_MacroAssembler_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "c1_MacroAssembler_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "c1_MacroAssembler_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "c1_MacroAssembler_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "c1_MacroAssembler_aarch64.hpp"
-#endif
+#include CPU_HEADER(c1_MacroAssembler)
 
 };
 
