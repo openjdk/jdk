@@ -27,8 +27,12 @@
  * @bug 8143930
  * @summary C1 LinearScan asserts when compiling two back-to-back CompareAndSwapLongs
  * @modules java.base/jdk.internal.misc
- * @run testng/othervm -Diters=200000 -XX:TieredStopAtLevel=1 UnsafeTwoCASLong
+ *
+ * @run testng/othervm -Diters=200000 -XX:TieredStopAtLevel=1
+ *      compiler.intrinsics.unsafe.UnsafeTwoCASLong
  */
+
+package compiler.intrinsics.unsafe;
 
 import org.testng.annotations.Test;
 

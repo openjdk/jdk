@@ -23,8 +23,11 @@
 
 package common;
 
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
+
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
@@ -32,24 +35,29 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import org.testng.annotations.Test;
+
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 
 /*
  * @test
  * @bug 8144593
  * @key intermittent
- * @modules javax.xml/com.sun.org.apache.xerces.internal.jaxp
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true common.ValidationWarningsTest
+ * @run testng/othervm common.ValidationWarningsTest
  * @summary Check that warnings about unsupported properties from SAX
  *  parsers are suppressed during the xml validation process.
  */
+@Listeners({jaxp.library.InternalAPIPolicy.class})
 public class ValidationWarningsTest extends WarningsTestBase {
 
     @BeforeClass
     public void setup() {
         //Set test SAX driver implementation.
-        System.setProperty("org.xml.sax.driver", "common.TestSAXDriver");
+        setSystemProperty("org.xml.sax.driver", "common.TestSAXDriver");
     }
 
     @Test
@@ -76,3 +84,4 @@ public class ValidationWarningsTest extends WarningsTestBase {
     private static final String xml = "<?xml version='1.0'?><test>Element</test>";
 
 }
+

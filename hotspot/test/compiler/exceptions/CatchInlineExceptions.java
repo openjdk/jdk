@@ -25,13 +25,15 @@
  * @test
  * @bug 8059299
  * @summary assert(adr_type != NULL) failed: expecting TypeKlassPtr
- * @run main/othervm -Xbatch CatchInlineExceptions
+ *
+ * @run main/othervm -Xbatch compiler.exceptions.CatchInlineExceptions
  */
 
-class Exception1 extends Exception {};
-class Exception2 extends Exception {};
+package compiler.exceptions;
 
 public class CatchInlineExceptions {
+    static class Exception1 extends Exception {};
+    static class Exception2 extends Exception {};
     private static int counter0;
     private static int counter1;
     private static int counter2;

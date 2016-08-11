@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -45,9 +46,14 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 /*
+ * @test
  * @bug 5072946
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true validation.Bug5072946
+ * @run testng/othervm validation.Bug5072946
  * @summary Test Validator.validate(DOMSource,DOMResult) outputs to the result.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug5072946 {
 
     @Test
@@ -119,3 +125,4 @@ public class Bug5072946 {
         Assert.assertSame(r.getNode(), n);
     }
 }
+

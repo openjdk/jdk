@@ -26,7 +26,8 @@
  * @bug 8072008
  * @library /testlibrary /test/lib ../patches
  * @modules java.base/jdk.internal.misc
- * @modules java.base/jdk.internal.vm.annotation
+ *          java.base/jdk.internal.vm.annotation
+ *
  * @build java.base/java.lang.invoke.MethodHandleHelper
  * @build sun.hotspot.WhiteBox
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
@@ -38,22 +39,20 @@
 
 package compiler.jsr292.NonInlinedCall;
 
+import jdk.internal.vm.annotation.DontInline;
+import jdk.internal.vm.annotation.Stable;
+import sun.hotspot.WhiteBox;
+
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleHelper;
 import java.lang.invoke.MethodHandleHelper.NonInlinedReinvoker;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandle;
-
 import java.lang.invoke.MethodType;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 
-import jdk.internal.vm.annotation.DontInline;
-import jdk.internal.vm.annotation.Stable;
-
-import sun.hotspot.WhiteBox;
-
-import static jdk.test.lib.Asserts.*;
+import static jdk.test.lib.Asserts.assertEquals;
 
 public class GCTest {
     static final MethodHandles.Lookup LOOKUP = MethodHandleHelper.IMPL_LOOKUP;

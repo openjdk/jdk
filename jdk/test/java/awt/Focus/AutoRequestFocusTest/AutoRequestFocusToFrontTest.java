@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug       6187066
   @summary   Tests the Window.autoRequestFocus property for the Window.toFront() method.
   @author    anton.tarasov: area=awt.focus

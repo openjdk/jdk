@@ -21,12 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 7004134
-   @summary JLabel containing a ToolTipText does no longer show ToolTip after browser refresh
-   @author Pavel Porvatov
-   @modules java.desktop/sun.awt
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 7004134
+ * @summary JLabel containing a ToolTipText does no longer show ToolTip after browser refresh
+ * @author Pavel Porvatov
+ * @modules java.desktop/sun.awt
+ */
 
 import sun.awt.SunToolkit;
 

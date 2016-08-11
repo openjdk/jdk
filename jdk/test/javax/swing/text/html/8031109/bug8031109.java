@@ -31,6 +31,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.text.EditorKit;
 /*
  * @test
+ * @key headful
  * @bug 8031109
  * @author Victor Dyakov
  * @summary  Rendering HTML code in JEditorPane throws NumberFormatException

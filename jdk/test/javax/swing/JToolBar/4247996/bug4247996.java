@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 4247996 4260485
  * @summary Test that rollover toolbar doesn't corrupt buttons
  * @author Peter Zhelezniakov

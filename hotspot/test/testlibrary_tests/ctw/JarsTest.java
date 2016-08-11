@@ -25,7 +25,8 @@
  * @test
  * @bug 8012447
  * @library /testlibrary /test/lib /testlibrary/ctw/src
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.jimage
+ *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.reflect
  *          java.compiler
  *          java.management

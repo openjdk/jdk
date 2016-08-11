@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,17 +44,21 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 import javax.xml.namespace.QName;
 
-import jaxp.library.JAXPBaseTest;
-
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.datatype.ptests.DurationTest
+ * @run testng/othervm javax.xml.datatype.ptests.DurationTest
  * @summary Class containing the test cases for Duration.
  */
-public class DurationTest extends JAXPBaseTest {
+@Listeners({jaxp.library.BasePolicy.class})
+public class DurationTest {
 
     private DatatypeFactory datatypeFactory;
 
@@ -583,3 +587,4 @@ public class DurationTest extends JAXPBaseTest {
     private final BigInteger one = BigInteger.ONE;
 
 }
+

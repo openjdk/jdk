@@ -26,21 +26,30 @@
  * @bug 8062280
  * @summary C2: inlining failure due to access checks being too strict
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
- * @run main/othervm MHInlineTest
+ * @library /testlibrary /
+ *
+ * @run main/othervm compiler.jsr292.MHInlineTest
  */
-import java.lang.invoke.*;
-import jdk.test.lib.*;
-import static jdk.test.lib.Asserts.*;
+
+package compiler.jsr292;
+
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+
+import static jdk.test.lib.Asserts.assertEquals;
 
 public class MHInlineTest {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
-                "-server", "-XX:-TieredCompilation", "-Xbatch",
+                "-XX:-TieredCompilation", "-Xbatch",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
-                "-XX:CompileCommand=dontinline,MHInlineTest::test*",
-                    "MHInlineTest$Launcher");
+                "-XX:CompileCommand=dontinline,compiler.jsr292.MHInlineTest::test*",
+                    Launcher.class.getName());
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 
@@ -48,13 +57,13 @@ public class MHInlineTest {
 
         // The test is applicable only to C2 (present in Server VM).
         if (analyzer.getStderr().contains("Server VM")) {
-            analyzer.shouldContain("MHInlineTest$B::public_x (3 bytes)   inline (hot)");
-            analyzer.shouldContain("MHInlineTest$B::protected_x (3 bytes)   inline (hot)");
-            analyzer.shouldContain("MHInlineTest$B::package_x (3 bytes)   inline (hot)");
-            analyzer.shouldContain("MHInlineTest$A::package_final_x (3 bytes)   inline (hot)");
-            analyzer.shouldContain("MHInlineTest$B::private_x (3 bytes)   inline (hot)");
-            analyzer.shouldContain("MHInlineTest$B::private_static_x (3 bytes)   inline (hot)");
-            analyzer.shouldContain("MHInlineTest$A::package_static_x (3 bytes)   inline (hot)");
+            analyzer.shouldContain("compiler.jsr292.MHInlineTest$B::public_x (3 bytes)   inline (hot)");
+            analyzer.shouldContain("compiler.jsr292.MHInlineTest$B::protected_x (3 bytes)   inline (hot)");
+            analyzer.shouldContain("compiler.jsr292.MHInlineTest$B::package_x (3 bytes)   inline (hot)");
+            analyzer.shouldContain("compiler.jsr292.MHInlineTest$A::package_final_x (3 bytes)   inline (hot)");
+            analyzer.shouldContain("compiler.jsr292.MHInlineTest$B::private_x (3 bytes)   inline (hot)");
+            analyzer.shouldContain("compiler.jsr292.MHInlineTest$B::private_static_x (3 bytes)   inline (hot)");
+            analyzer.shouldContain("compiler.jsr292.MHInlineTest$A::package_static_x (3 bytes)   inline (hot)");
         }
     }
 

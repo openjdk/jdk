@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 6988428
   @summary Tests whether shape is always set
   @author anthony.petrov@oracle.com: area=awt.toplevel

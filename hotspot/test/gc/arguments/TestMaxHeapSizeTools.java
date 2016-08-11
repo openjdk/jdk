@@ -106,7 +106,6 @@ class TestMaxHeapSizeTools {
   }
 
   public static void checkGenMaxHeapErgo(String gcflag) throws Exception {
-    TestMaxHeapSizeTools.checkGenMaxHeapSize(gcflag, 3);
     TestMaxHeapSizeTools.checkGenMaxHeapSize(gcflag, 4);
     TestMaxHeapSizeTools.checkGenMaxHeapSize(gcflag, 5);
   }
@@ -132,7 +131,6 @@ class TestMaxHeapSizeTools {
   }
 
   private static void checkValidInitialMaxHeapCombinations(String gcflag) throws Exception {
-    expectValid(new String[] { gcflag, "-XX:MaxHeapSize=2048K", "-version" });
     expectValid(new String[] { gcflag, "-XX:InitialHeapSize=4M", "-XX:MaxHeapSize=8M", "-version" });
     expectValid(new String[] { gcflag, "-XX:MaxHeapSize=8M", "-XX:InitialHeapSize=4M", "-version" });
     expectValid(new String[] { gcflag, "-XX:MaxHeapSize=4M", "-XX:InitialHeapSize=4M", "-version" });

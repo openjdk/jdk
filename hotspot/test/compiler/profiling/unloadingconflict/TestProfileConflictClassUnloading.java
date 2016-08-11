@@ -24,11 +24,16 @@
 /*
  * @test
  * @bug 8027572
- * @summary class unloading resets profile, method compiled after the profile is first set and before class loading sets unknown bit with not recorded class
- * @build B
- * @run main/othervm -XX:TypeProfileLevel=222 -XX:-BackgroundCompilation TestProfileConflictClassUnloading
+ * @summary class unloading resets profile, method compiled after the profile is
+ * first set and before class loading sets unknown bit with not recorded class
+ * @library /
+ * @build compiler.profiling.unloadingconflict.B
+ * @run main/othervm -XX:TypeProfileLevel=222 -XX:-BackgroundCompilation
+ *                   compiler.profiling.unloadingconflict.TestProfileConflictClassUnloading
  *
  */
+
+package compiler.profiling.unloadingconflict;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -66,7 +71,7 @@ public class TestProfileConflictClassUnloading {
 
     public static void main(String[] args) throws Exception {
         ClassLoader loader = newClassLoader();
-        Object o = loader.loadClass("B").newInstance();
+        Object o = loader.loadClass("compiler.profiling.unloadingconflict.B").newInstance();
         // collect conflicting profiles
         for (int i = 0; i < 5000; i++) {
             m2(o);

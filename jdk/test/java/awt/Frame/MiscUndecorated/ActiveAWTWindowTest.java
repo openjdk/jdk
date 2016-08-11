@@ -22,14 +22,15 @@
  */
 
 /*
-* @test
-* @summary To check proper WINDOW_EVENTS are triggered when Frame gains or losses the focus
-* @author Jitender(jitender.singh@eng.sun.com) area=AWT
-* @author yan
-* @library ../../../../lib/testlibrary
-* @build ExtendedRobot
-* @run main ActiveAWTWindowTest
-*/
+ * @test
+ * @key headful
+ * @summary To check proper WINDOW_EVENTS are triggered when Frame gains or losses the focus
+ * @author Jitender(jitender.singh@eng.sun.com) area=AWT
+ * @author yan
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot
+ * @run main ActiveAWTWindowTest
+ */
 
 import java.awt.*;
 import java.awt.event.*;

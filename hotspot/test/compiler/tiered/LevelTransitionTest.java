@@ -23,29 +23,37 @@
 
 /**
  * @test LevelTransitionTest
+ * @summary Test the correctness of compilation level transitions for different methods
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ *
  * @ignore 8067651
- * @build TransitionsTestExecutor LevelTransitionTest
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @build compiler.tiered.TransitionsTestExecutor compiler.tiered.LevelTransitionTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm/timeout=240 -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation
+ *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation -XX:-UseCounterDecay
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
- *                   -XX:CompileCommand=compileonly,ExtendedTestCase$CompileMethodHolder::*
- *                   TransitionsTestExecutor LevelTransitionTest
- * @summary Test the correctness of compilation level transitions for different methods
+ *                   -XX:CompileCommand=compileonly,compiler.tiered.LevelTransitionTest$ExtendedTestCase$CompileMethodHolder::*
+ *                   compiler.tiered.TransitionsTestExecutor
+ *                   compiler.tiered.LevelTransitionTest
  */
+
+package compiler.tiered;
+
+import compiler.whitebox.CompilerWhiteBoxTest;
+import compiler.whitebox.SimpleTestCase;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.concurrent.Callable;
-import compiler.whitebox.CompilerWhiteBoxTest;
-import compiler.whitebox.SimpleTestCase;
 
 public class LevelTransitionTest extends TieredLevelsTest {
-    /** Shows if method was profiled by being executed on levels 2 or 3 */
+    /**
+     * Shows if method was profiled by being executed on levels 2 or 3
+     */
     protected boolean isMethodProfiled;
     private int transitionCount;
 
@@ -103,7 +111,8 @@ public class LevelTransitionTest extends TieredLevelsTest {
             System.out.printf("Method %s is compiled on level %d. Expected level is %d%n", method, newLevel, expected);
             checkLevel(expected, newLevel);
             printInfo();
-        };
+        }
+        ;
     }
 
     /**
@@ -195,59 +204,66 @@ public class LevelTransitionTest extends TieredLevelsTest {
             };
         }
     }
-}
 
-enum ExtendedTestCase implements CompilerWhiteBoxTest.TestCase {
-    ACCESSOR_TEST("accessor"),
-    NONTRIVIAL_METHOD_TEST("nonTrivialMethod"),
-    TRIVIAL_CODE_TEST("trivialCode");
+    private static enum ExtendedTestCase implements CompilerWhiteBoxTest.TestCase {
+        ACCESSOR_TEST("accessor"),
+        NONTRIVIAL_METHOD_TEST("nonTrivialMethod"),
+        TRIVIAL_CODE_TEST("trivialCode");
 
-    private final Executable executable;
-    private final Callable<Integer> callable;
+        private final Executable executable;
+        private final Callable<Integer> callable;
 
-    @Override
-    public Executable getExecutable() {
-        return executable;
-    }
+        @Override
+        public Executable getExecutable() {
+            return executable;
+        }
 
-    @Override
-    public Callable<Integer> getCallable() {
-        return callable;
-    }
+        @Override
+        public Callable<Integer> getCallable() {
+            return callable;
+        }
 
-    @Override
-    public boolean isOsr() {
-        return false;
-    }
+        @Override
+        public boolean isOsr() {
+            return false;
+        }
 
-    private ExtendedTestCase(String methodName) {
-        this.executable = LevelTransitionTest.Helper.getMethod(CompileMethodHolder.class, methodName);
-        this.callable = LevelTransitionTest.Helper.getCallable(new CompileMethodHolder(), methodName);
-    }
+        private ExtendedTestCase(String methodName) {
+            this.executable = LevelTransitionTest.Helper.getMethod(CompileMethodHolder.class, methodName);
+            this.callable = LevelTransitionTest.Helper.getCallable(new CompileMethodHolder(), methodName);
+        }
 
-    private static class CompileMethodHolder {
-        private final int iter = 10;
-        private int field = 42;
+        private static class CompileMethodHolder {
+            private final int iter = 10;
+            private int field = 42;
 
-        /** Non-trivial method for threshold policy: contains loops */
-        public int nonTrivialMethod() {
-            int acc = 0;
-            for (int i = 0; i < iter; i++) {
-                acc += i;
+            /**
+             * Non-trivial method for threshold policy: contains loops
+             */
+            public int nonTrivialMethod() {
+                int acc = 0;
+                for (int i = 0; i < iter; i++) {
+                    acc += i;
+                }
+                return acc;
             }
-            return acc;
-        }
 
-        /** Field accessor method */
-        public int accessor() {
-            return field;
-        }
+            /**
+             * Field accessor method
+             */
+            public int accessor() {
+                return field;
+            }
 
-        /** Method considered as trivial by amount of code */
-        public int trivialCode() {
-            int var = 0xBAAD_C0DE;
-            var *= field;
-            return var;
+            /**
+             * Method considered as trivial by amount of code
+             */
+            public int trivialCode() {
+                int var = 0xBAAD_C0DE;
+                var *= field;
+                return var;
+            }
         }
     }
+
 }

@@ -20,14 +20,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
-   @bug 4458079
-   @library ../../regtesthelpers
-   @build Util
-   @summary Tests calling removeAll() from PopupMenuListener
-   @author Peter Zhelezniakov
-   @run main bug4458079
-*/
+
+/*
+ * @test
+ * @key headful
+ * @bug 4458079
+ * @library ../../regtesthelpers
+ * @build Util
+ * @summary Tests calling removeAll() from PopupMenuListener
+ * @author Peter Zhelezniakov
+ * @run main bug4458079
+ */
+
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.*;

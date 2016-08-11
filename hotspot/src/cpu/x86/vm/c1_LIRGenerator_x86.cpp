@@ -761,7 +761,6 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   } else {
     a = new LIR_Address(obj.result(),
                         offset.result(),
-                        LIR_Address::times_1,
                         0,
                         as_BasicType(type));
   }
@@ -1081,7 +1080,6 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
 
       LIR_Address* a = new LIR_Address(base_op,
                                        index,
-                                       LIR_Address::times_1,
                                        offset,
                                        T_BYTE);
       BasicTypeList signature(3);
@@ -1157,13 +1155,11 @@ void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {
 
   LIR_Address* addr_a = new LIR_Address(result_a,
                                         result_aOffset,
-                                        LIR_Address::times_1,
                                         constant_aOffset,
                                         T_BYTE);
 
   LIR_Address* addr_b = new LIR_Address(result_b,
                                         result_bOffset,
-                                        LIR_Address::times_1,
                                         constant_bOffset,
                                         T_BYTE);
 

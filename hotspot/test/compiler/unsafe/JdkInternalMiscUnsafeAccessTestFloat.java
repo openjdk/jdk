@@ -25,12 +25,15 @@
  * @test
  * @bug 8143628
  * @summary Test unsafe access for float
+ *
  * @modules java.base/jdk.internal.misc
- * @run testng/othervm -Diters=100   -Xint                   JdkInternalMiscUnsafeAccessTestFloat
- * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 JdkInternalMiscUnsafeAccessTestFloat
- * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  JdkInternalMiscUnsafeAccessTestFloat
- * @run testng/othervm -Diters=20000                         JdkInternalMiscUnsafeAccessTestFloat
+ * @run testng/othervm -Diters=100   -Xint                   compiler.unsafe.JdkInternalMiscUnsafeAccessTestFloat
+ * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 compiler.unsafe.JdkInternalMiscUnsafeAccessTestFloat
+ * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  compiler.unsafe.JdkInternalMiscUnsafeAccessTestFloat
+ * @run testng/othervm -Diters=20000                         compiler.unsafe.JdkInternalMiscUnsafeAccessTestFloat
  */
+
+package compiler.unsafe;
 
 import org.testng.annotations.Test;
 

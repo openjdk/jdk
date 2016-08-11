@@ -27,6 +27,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 7194184
  * @summary Tests JColorChooser Swatch keyboard accessibility.
  * @author Sean Chou

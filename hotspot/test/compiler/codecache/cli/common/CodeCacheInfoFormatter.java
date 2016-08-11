@@ -20,9 +20,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package common;
+package compiler.codecache.cli.common;
 
 import sun.hotspot.code.BlobType;
+
 import java.util.Arrays;
 
 public class CodeCacheInfoFormatter {

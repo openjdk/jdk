@@ -22,17 +22,21 @@
  *
  */
 
+package compiler.intrinsics.bmi.verifycode;
+
+import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import sun.hotspot.code.NMethod;
 import sun.hotspot.cpuinfo.CPUInfo;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
-import compiler.whitebox.CompilerWhiteBoxTest;
 
 public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
 
@@ -56,8 +60,11 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
         }
 
         if (!Platform.isServer()) {
-            System.out.println("Not server VM, test SKIPPED");
-            return;
+            throw new Error("TESTBUG: Not server VM");
+        }
+
+        if (Platform.isInt()) {
+            throw new Error("TESTBUG: test can not be run in interpreter");
         }
 
         if (!CPUInfo.hasFeature(bmiTestCase.getCpuFlag())) {
@@ -72,22 +79,12 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
 
         System.out.println(testCase.name());
 
-        switch (MODE) {
-            case "compiled mode":
-            case "mixed mode":
-                if (TIERED_COMPILATION && TIERED_STOP_AT_LEVEL != CompilerWhiteBoxTest.COMP_LEVEL_MAX) {
-                    System.out.println("TieredStopAtLevel value (" + TIERED_STOP_AT_LEVEL + ") is too low, test SKIPPED");
-                    return;
-                }
-                deoptimize();
-                compileAtLevelAndCheck(CompilerWhiteBoxTest.COMP_LEVEL_MAX);
-                break;
-            case "interpreted mode": // test is not applicable in this mode;
-                System.err.println("Warning: This test is not applicable in mode: " + MODE);
-                break;
-            default:
-                throw new AssertionError("Test bug, unknown VM mode: " + MODE);
+        if (TIERED_COMPILATION && TIERED_STOP_AT_LEVEL != CompilerWhiteBoxTest.COMP_LEVEL_MAX) {
+            System.out.println("TieredStopAtLevel value (" + TIERED_STOP_AT_LEVEL + ") is too low, test SKIPPED");
+            return;
         }
+        deoptimize();
+        compileAtLevelAndCheck(CompilerWhiteBoxTest.COMP_LEVEL_MAX);
     }
 
     protected void compileAtLevelAndCheck(int level) {

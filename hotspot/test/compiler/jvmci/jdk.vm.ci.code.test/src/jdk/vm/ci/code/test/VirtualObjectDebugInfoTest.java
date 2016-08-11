@@ -38,12 +38,6 @@
 
 package jdk.vm.ci.code.test;
 
-import java.util.ArrayList;
-import java.util.Objects;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.VirtualObject;
 import jdk.vm.ci.hotspot.HotSpotConstant;
@@ -52,6 +46,11 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaValue;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Objects;
 
 public class VirtualObjectDebugInfoTest extends DebugInfoTest {
 

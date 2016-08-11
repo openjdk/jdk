@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8050885
  * @summary Check if toFront method works correctly for a document modal dialog.
  *

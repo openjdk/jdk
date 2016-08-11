@@ -44,7 +44,6 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "misc_aix.hpp"
-#include "mutex_aix.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_aix.inline.hpp"
 #include "os_share_aix.hpp"

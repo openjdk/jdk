@@ -21,36 +21,36 @@
  * questions.
  */
 
-import compiler.whitebox.CompilerWhiteBoxTest;
-
 /*
  * @test DeoptimizeFramesTest
  * @bug 8028595
+ * @summary testing of WB::deoptimizeFrames()
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build DeoptimizeFramesTest
+ *          java.management
+ * @build compiler.whitebox.DeoptimizeFramesTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xmixed -XX:-UseCounterDecay
- *                   -XX:CompileCommand=compileonly,DeoptimizeFramesTest$TestCaseImpl::method
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.DeoptimizeFramesTest$TestCaseImpl::method
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeRandom -XX:-DeoptimizeALot
- *                   DeoptimizeFramesTest true
+ *                   compiler.whitebox.DeoptimizeFramesTest true
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xmixed -XX:-UseCounterDecay
- *                   -XX:CompileCommand=compileonly,DeoptimizeFramesTest$TestCaseImpl::method
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.DeoptimizeFramesTest$TestCaseImpl::method
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeRandom -XX:-DeoptimizeALot
- *                   DeoptimizeFramesTest false
- * @summary testing of WB::deoptimizeFrames()
+ *                   compiler.whitebox.DeoptimizeFramesTest false
  */
+
+package compiler.whitebox;
+
+import jdk.test.lib.Asserts;
+import sun.hotspot.code.NMethod;
+
 import java.lang.reflect.Executable;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Phaser;
-
-import sun.hotspot.code.NMethod;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.InfiniteLoop;
 
 public class DeoptimizeFramesTest extends CompilerWhiteBoxTest {
     private final boolean makeNotEntrant;

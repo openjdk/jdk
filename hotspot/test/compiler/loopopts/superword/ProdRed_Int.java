@@ -28,55 +28,84 @@
  * @summary Add C2 x86 Superword support for scalar product reduction optimizations : int test
  * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
  *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+SuperWordReductions -XX:LoopUnrollLimit=250 -XX:LoopMaxUnroll=2 -XX:CompileThresholdScaling=0.1 ProdRed_Int
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-SuperWordReductions -XX:LoopUnrollLimit=250 -XX:LoopMaxUnroll=2 -XX:CompileThresholdScaling=0.1 ProdRed_Int
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ *      -XX:CompileThresholdScaling=0.1
+ *      -XX:+SuperWordReductions
+ *      -XX:LoopMaxUnroll=2
+ *      compiler.loopopts.superword.ProdRed_Int
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ *      -XX:CompileThresholdScaling=0.1
+ *      -XX:-SuperWordReductions
+ *      -XX:LoopMaxUnroll=2
+ *      compiler.loopopts.superword.ProdRed_Int
  *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+SuperWordReductions -XX:LoopUnrollLimit=250 -XX:LoopMaxUnroll=4 -XX:CompileThresholdScaling=0.1 ProdRed_Int
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-SuperWordReductions -XX:LoopUnrollLimit=250 -XX:LoopMaxUnroll=4 -XX:CompileThresholdScaling=0.1 ProdRed_Int
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ *      -XX:CompileThresholdScaling=0.1
+ *      -XX:+SuperWordReductions
+ *      -XX:LoopMaxUnroll=4
+ *      compiler.loopopts.superword.ProdRed_Int
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ *      -XX:CompileThresholdScaling=0.1
+ *      -XX:-SuperWordReductions
+ *      -XX:LoopMaxUnroll=4
+ *      compiler.loopopts.superword.ProdRed_Int
  *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+SuperWordReductions -XX:LoopUnrollLimit=250 -XX:LoopMaxUnroll=8 -XX:CompileThresholdScaling=0.1 ProdRed_Int
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-SuperWordReductions -XX:LoopUnrollLimit=250 -XX:LoopMaxUnroll=8 -XX:CompileThresholdScaling=0.1 ProdRed_Int
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ *      -XX:CompileThresholdScaling=0.1
+ *      -XX:+SuperWordReductions
+ *      -XX:LoopMaxUnroll=8
+ *      compiler.loopopts.superword.ProdRed_Int
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ *      -XX:CompileThresholdScaling=0.1
+ *      -XX:-SuperWordReductions
+ *      -XX:LoopMaxUnroll=8
+ *      compiler.loopopts.superword.ProdRed_Int
  *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+SuperWordReductions -XX:LoopUnrollLimit=250 -XX:LoopMaxUnroll=16 -XX:CompileThresholdScaling=0.1 ProdRed_Int
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-SuperWordReductions -XX:LoopUnrollLimit=250 -XX:LoopMaxUnroll=16 -XX:CompileThresholdScaling=0.1 ProdRed_Int
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ *      -XX:CompileThresholdScaling=0.1
+ *      -XX:+SuperWordReductions
+ *      -XX:LoopMaxUnroll=16
+ *      compiler.loopopts.superword.ProdRed_Int
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ *      -XX:CompileThresholdScaling=0.1
+ *      -XX:-SuperWordReductions
+ *      -XX:LoopMaxUnroll=16
+ *      compiler.loopopts.superword.ProdRed_Int
  */
 
-public class ProdRed_Int
-{
-  public static void main(String[] args) throws Exception {
-    int[] a = new int[256*1024];
-    int[] b = new int[256*1024];
-    prodReductionInit(a,b);
-    int valid = 419430401;
-    int total = 1;
-    for(int j = 0; j < 2000; j++) {
-      total = prodReductionImplement(a,b,total);
-    }
-    if(total == valid) {
-      System.out.println("Success");
-    } else {
-      System.out.println("Invalid sum of elements variable in total: " + total);
-      System.out.println("Expected value = " + valid);
-      throw new Exception("Failed");
-    }
-  }
+package compiler.loopopts.superword;
 
-  public static void prodReductionInit(int[] a, int[] b)
-  {
-    for(int i = 0; i < a.length; i++)
-    {
-      a[i] = i + 2;
-      b[i] = i + 1;
+public class ProdRed_Int {
+    public static void main(String[] args) throws Exception {
+        int[] a = new int[256 * 1024];
+        int[] b = new int[256 * 1024];
+        prodReductionInit(a, b);
+        int valid = 419430401;
+        int total = 1;
+        for (int j = 0; j < 2000; j++) {
+            total = prodReductionImplement(a, b, total);
+        }
+        if (total == valid) {
+            System.out.println("Success");
+        } else {
+            System.out.println("Invalid sum of elements variable in total: " + total);
+            System.out.println("Expected value = " + valid);
+            throw new Exception("Failed");
+        }
     }
-  }
 
-  public static int prodReductionImplement(int[] a, int[] b, int total)
-  {
-    for(int i = 0; i < a.length; i++)
-    {
-      total *= a[i] + b[i];
+    public static void prodReductionInit(int[] a, int[] b) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = i + 2;
+            b[i] = i + 1;
+        }
     }
-    return total;
-  }
+
+    public static int prodReductionImplement(int[] a, int[] b, int total) {
+        for (int i = 0; i < a.length; i++) {
+            total *= a[i] + b[i];
+        }
+        return total;
+    }
 
 }

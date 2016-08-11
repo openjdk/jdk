@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 4220171
  * @author Konstantin Eremin
  * @summary Tests

@@ -71,10 +71,4 @@ public class ModuleTestBase extends TestRunner {
     Path[] findJavaFiles(Path... paths) throws IOException {
         return tb.findJavaFiles(paths);
     }
-
-    void error(String message) {
-        out.println("Error: " + message);
-        errors++;
-    }
-
 }

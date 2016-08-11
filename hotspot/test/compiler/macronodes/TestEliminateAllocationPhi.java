@@ -25,9 +25,11 @@
  * @test
  * @bug 8046698
  * @summary PhiNode inserted between AllocateNode and Initialization node confuses allocation elimination
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestEliminateAllocationPhi
- *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   compiler.macronodes.TestEliminateAllocationPhi
  */
+
+package compiler.macronodes;
 
 public class TestEliminateAllocationPhi {
 

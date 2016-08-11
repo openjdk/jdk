@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,32 @@
 
 package javax.xml.transform.ptests;
 
+import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
+
 import java.io.File;
-import java.io.FilePermission;
+
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
-import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
 import javax.xml.transform.stream.StreamSource;
-import jaxp.library.JAXPBaseTest;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /**
  * Class containing the test cases for ErrorListener interface
  */
-public class ErrorListenerTest extends JAXPBaseTest implements ErrorListener {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.transform.ptests.ErrorListenerTest
+ * @run testng/othervm javax.xml.transform.ptests.ErrorListenerTest
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class ErrorListenerTest implements ErrorListener {
     /**
      * Define ErrorListener's status.
      */
@@ -60,7 +69,6 @@ public class ErrorListenerTest extends JAXPBaseTest implements ErrorListener {
         try {
             TransformerFactory tfactory = TransformerFactory.newInstance();
             tfactory.setErrorListener (listener);
-            setPermissions(new FilePermission(XML_DIR + "invalid.xsl", "read"));
             tfactory.newTransformer(new StreamSource(
                                         new File(XML_DIR + "invalid.xsl")));
             fail("Expect TransformerConfigurationException here");
@@ -96,3 +104,5 @@ public class ErrorListenerTest extends JAXPBaseTest implements ErrorListener {
         this.status = ListenerStatus.FATAL;
     }
 }
+
+

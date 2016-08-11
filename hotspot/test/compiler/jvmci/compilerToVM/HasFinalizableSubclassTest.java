@@ -43,13 +43,14 @@ import compiler.jvmci.common.testcases.DoNotImplementInterface;
 import compiler.jvmci.common.testcases.MultipleImplementer1;
 import compiler.jvmci.common.testcases.MultipleImplementersInterface;
 import compiler.jvmci.common.testcases.SingleImplementerInterface;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
 
 public class HasFinalizableSubclassTest {
     public static void main(String args[]) {

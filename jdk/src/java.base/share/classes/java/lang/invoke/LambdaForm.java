@@ -773,6 +773,28 @@ class LambdaForm {
         }
     }
 
+    /**
+     * Generate optimizable bytecode for this form after first looking for a
+     * pregenerated version in a specified class.
+     */
+    void compileToBytecode(Class<?> lookupClass) {
+        if (vmentry != null && isCompiled) {
+            return;  // already compiled somehow
+        }
+        MethodType invokerType = methodType();
+        assert(vmentry == null || vmentry.getMethodType().basicType().equals(invokerType));
+        int dot = debugName.indexOf('.');
+        String methodName = (dot > 0) ? debugName.substring(dot + 1) : debugName;
+        MemberName member = new MemberName(lookupClass, methodName, invokerType, REF_invokeStatic);
+        MemberName resolvedMember = MemberName.getFactory().resolveOrNull(REF_invokeStatic, member, lookupClass);
+        if (resolvedMember != null) {
+            vmentry = resolvedMember;
+            isCompiled = true;
+        } else {
+            compileToBytecode();
+        }
+    }
+
     private static void computeInitialPreparedForms() {
         // Find all predefined invokers and associate them with canonical empty lambda forms.
         for (MemberName m : MemberName.getFactory().getMethods(LambdaForm.class, false, null, null, null)) {

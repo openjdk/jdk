@@ -51,6 +51,9 @@ ifeq ($(call check-jvm-feature, compiler2), true)
     ADLC_CFLAGS_WARNINGS := -W3 -D_CRT_SECURE_NO_WARNINGS
   endif
 
+  # Set the C++ standard if supported
+  ADLC_CFLAGS += $(CXXSTD_CXXFLAG)
+  
   # NOTE: The old build didn't set -DASSERT for windows but it doesn't seem to
   # hurt.
   ADLC_CFLAGS += -DASSERT
@@ -153,10 +156,10 @@ ifeq ($(call check-jvm-feature, compiler2), true)
 	$(call MakeDir, $(@D))
 	$(call ExecuteWithLog, $(ADLC_SUPPORT_DIR)/adlc_run, \
 	    $(FIXPATH) $(ADLC_TOOL) $(ADLCFLAGS) $(SINGLE_AD_SRCFILE) \
-	        -c$(ADLC_SUPPORT_DIR)/ad_$(HOTSPOT_TARGET_CPU).cpp \
-	        -h$(ADLC_SUPPORT_DIR)/ad_$(HOTSPOT_TARGET_CPU).hpp \
-	        -a$(ADLC_SUPPORT_DIR)/dfa_$(HOTSPOT_TARGET_CPU).cpp \
-	        -v$(ADLC_SUPPORT_DIR)/adGlobals_$(HOTSPOT_TARGET_CPU).hpp)
+	        -c$(ADLC_SUPPORT_DIR)/ad_$(HOTSPOT_TARGET_CPU_ARCH).cpp \
+	        -h$(ADLC_SUPPORT_DIR)/ad_$(HOTSPOT_TARGET_CPU_ARCH).hpp \
+	        -a$(ADLC_SUPPORT_DIR)/dfa_$(HOTSPOT_TARGET_CPU_ARCH).cpp \
+	        -v$(ADLC_SUPPORT_DIR)/adGlobals_$(HOTSPOT_TARGET_CPU_ARCH).hpp)
 	$(TOUCH) $@
 
   ##############################################################################
@@ -164,17 +167,17 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   # and postprocess them by fixing dummy #line directives.
 
   ADLC_GENERATED_FILES := $(addprefix $(JVM_VARIANT_OUTPUTDIR)/gensrc/adfiles/, \
-      ad_$(HOTSPOT_TARGET_CPU).cpp \
-      ad_$(HOTSPOT_TARGET_CPU).hpp \
-      ad_$(HOTSPOT_TARGET_CPU)_clone.cpp \
-      ad_$(HOTSPOT_TARGET_CPU)_expand.cpp \
-      ad_$(HOTSPOT_TARGET_CPU)_format.cpp \
-      ad_$(HOTSPOT_TARGET_CPU)_gen.cpp \
-      ad_$(HOTSPOT_TARGET_CPU)_misc.cpp \
-      ad_$(HOTSPOT_TARGET_CPU)_peephole.cpp \
-      ad_$(HOTSPOT_TARGET_CPU)_pipeline.cpp \
-      adGlobals_$(HOTSPOT_TARGET_CPU).hpp \
-      dfa_$(HOTSPOT_TARGET_CPU).cpp \
+      ad_$(HOTSPOT_TARGET_CPU_ARCH).cpp \
+      ad_$(HOTSPOT_TARGET_CPU_ARCH).hpp \
+      ad_$(HOTSPOT_TARGET_CPU_ARCH)_clone.cpp \
+      ad_$(HOTSPOT_TARGET_CPU_ARCH)_expand.cpp \
+      ad_$(HOTSPOT_TARGET_CPU_ARCH)_format.cpp \
+      ad_$(HOTSPOT_TARGET_CPU_ARCH)_gen.cpp \
+      ad_$(HOTSPOT_TARGET_CPU_ARCH)_misc.cpp \
+      ad_$(HOTSPOT_TARGET_CPU_ARCH)_peephole.cpp \
+      ad_$(HOTSPOT_TARGET_CPU_ARCH)_pipeline.cpp \
+      adGlobals_$(HOTSPOT_TARGET_CPU_ARCH).hpp \
+      dfa_$(HOTSPOT_TARGET_CPU_ARCH).cpp \
   )
 
   $(JVM_VARIANT_OUTPUTDIR)/gensrc/adfiles/%: $(ADLC_RUN_MARKER)

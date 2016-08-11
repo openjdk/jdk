@@ -20,13 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
-   @bug 6249972
-   @summary Tests that JMenuItem(String,int) handles lower-case mnemonics properly.
-   @library ../../../../lib/testlibrary
-   @build ExtendedRobot
-   @author Mikhail Lapshin
-   @run main bug6249972
+
+/*
+ * @test
+ * @key headful
+ * @bug 6249972
+ * @summary Tests that JMenuItem(String,int) handles lower-case mnemonics properly.
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot
+ * @author Mikhail Lapshin
+ * @run main bug6249972
  */
 
 import javax.swing.*;

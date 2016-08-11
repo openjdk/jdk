@@ -23,11 +23,13 @@
  * questions.
  */
 
-/* @test
-   @bug 6406264
-   @summary Tests that JComboBox's focusable popup can be shown.
-   @author Mikhail Lapshin
-   @run main bug6406264
+/*
+ * @test
+ * @key headful
+ * @bug 6406264
+ * @summary Tests that JComboBox's focusable popup can be shown.
+ * @author Mikhail Lapshin
+ * @run main bug6406264
  */
 
 import javax.swing.JComboBox;

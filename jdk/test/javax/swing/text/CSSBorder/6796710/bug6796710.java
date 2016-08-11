@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6796710 7124242
  * @summary Html content in JEditorPane is overlapping on swing components while resizing the application.
  * @library ../../../regtesthelpers

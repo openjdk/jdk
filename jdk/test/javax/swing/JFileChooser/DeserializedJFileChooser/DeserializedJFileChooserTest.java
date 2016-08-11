@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key headful
  * @bug 8146301
  * @summary Enter key does not work in a deserialized JFileChooser.
  * @run main DeserializedJFileChooserTest

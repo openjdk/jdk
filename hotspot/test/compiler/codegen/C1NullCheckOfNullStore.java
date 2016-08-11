@@ -25,33 +25,39 @@
  * @test
  * @bug 8039043
  * @summary Null check is placed in a wrong place when storing a null to an object field on x64 with compressed oops off
- * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:CompileCommand=compileonly,C1NullCheckOfNullStore::test -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -XX:-UseCompressedOops C1NullCheckOfNullStore
  *
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions
+ *    -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -XX:-UseCompressedOops
+ *    -XX:CompileCommand=compileonly,compiler.codegen.C1NullCheckOfNullStore::test
+ *    compiler.codegen.C1NullCheckOfNullStore
  */
 
+package compiler.codegen;
+
 public class C1NullCheckOfNullStore {
-  private static class Foo {
-    Object bar;
-  }
-  static private void test(Foo x) {
-    x.bar = null;
-  }
-  static public void main(String args[]) {
-    Foo x = new Foo();
-    for (int i = 0; i < 10000; i++) {
-      test(x);
+    private static class Foo {
+        Object bar;
     }
-    boolean gotNPE = false;
-    try {
-      for (int i = 0; i < 10000; i++) {
-        test(null);
-      }
+
+    static private void test(Foo x) {
+        x.bar = null;
     }
-    catch(NullPointerException e) {
-      gotNPE = true;
+
+    static public void main(String args[]) {
+        Foo x = new Foo();
+        for (int i = 0; i < 10000; i++) {
+            test(x);
+        }
+        boolean gotNPE = false;
+        try {
+            for (int i = 0; i < 10000; i++) {
+                test(null);
+            }
+        } catch (NullPointerException e) {
+            gotNPE = true;
+        }
+        if (!gotNPE) {
+            throw new Error("Expecting a NullPointerException");
+        }
     }
-    if (!gotNPE) {
-      throw new Error("Expecting a NullPointerException");
-    }
-  }
 }

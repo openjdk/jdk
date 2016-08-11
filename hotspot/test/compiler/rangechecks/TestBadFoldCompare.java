@@ -26,8 +26,12 @@
  * @bug 8085832
  * @bug 8135069
  * @summary x <= 0 || x > 0 wrongly folded as (x-1) >u -1 and x < 0 || x > -1 wrongly folded as x >u -1
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestBadFoldCompare
+ *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   compiler.rangechecks.TestBadFoldCompare
  */
+
+package compiler.rangechecks;
 
 public class TestBadFoldCompare {
 

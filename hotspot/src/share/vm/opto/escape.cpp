@@ -2067,7 +2067,9 @@ bool ConnectionGraph::is_oop_field(Node* n, int offset, bool* unsafe) {
         bt = field->layout_type();
       } else {
         // Check for unsafe oop field access
-        if (n->has_out_with(Op_StoreP, Op_LoadP, Op_StoreN, Op_LoadN)) {
+        if (n->has_out_with(Op_StoreP, Op_LoadP, Op_StoreN, Op_LoadN) ||
+            n->has_out_with(Op_GetAndSetP, Op_GetAndSetN, Op_CompareAndExchangeP, Op_CompareAndExchangeN) ||
+            n->has_out_with(Op_CompareAndSwapP, Op_CompareAndSwapN, Op_WeakCompareAndSwapP, Op_WeakCompareAndSwapN)) {
           bt = T_OBJECT;
           (*unsafe) = true;
         }
@@ -2083,7 +2085,9 @@ bool ConnectionGraph::is_oop_field(Node* n, int offset, bool* unsafe) {
       }
     } else if (adr_type->isa_rawptr() || adr_type->isa_klassptr()) {
       // Allocation initialization, ThreadLocal field access, unsafe access
-      if (n->has_out_with(Op_StoreP, Op_LoadP, Op_StoreN, Op_LoadN)) {
+      if (n->has_out_with(Op_StoreP, Op_LoadP, Op_StoreN, Op_LoadN) ||
+          n->has_out_with(Op_GetAndSetP, Op_GetAndSetN, Op_CompareAndExchangeP, Op_CompareAndExchangeN) ||
+          n->has_out_with(Op_CompareAndSwapP, Op_CompareAndSwapN, Op_WeakCompareAndSwapP, Op_WeakCompareAndSwapN)) {
         bt = T_OBJECT;
       }
     }
@@ -3134,8 +3138,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         }
       } else {
         uint op = use->Opcode();
-        if ((use->in(MemNode::Memory) == n) &&
-            (op == Op_StrCompressedCopy || op == Op_StrInflatedCopy)) {
+        if ((op == Op_StrCompressedCopy || op == Op_StrInflatedCopy) &&
+            (use->in(MemNode::Memory) == n)) {
           // They overwrite memory edge corresponding to destination array,
           memnode_worklist.append_if_missing(use);
         } else if (!(op == Op_CmpP || op == Op_Conv2B ||

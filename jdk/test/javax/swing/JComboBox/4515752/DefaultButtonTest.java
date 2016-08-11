@@ -27,6 +27,7 @@ import javax.swing.*;
 
 /**
  * @test
+ * @key headful
  * @bug 4515752 4337071
  * @author Mark Davidson
  * @summary Tests the invocation of the default button within the JComboBox.

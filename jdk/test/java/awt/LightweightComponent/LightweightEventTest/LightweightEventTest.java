@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key headful
  * @summary Test of mouse move messages to lightweight components
  * @library ../../regtesthelpers
  * @build Util

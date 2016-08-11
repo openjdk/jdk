@@ -22,6 +22,7 @@
  */
 /*
  * @test
+ * @key headful
  * @bug 4665214
  * @summary Makes sure that RepaintManager doesn't attempt to repaint
  *          a frame when it is iconified.

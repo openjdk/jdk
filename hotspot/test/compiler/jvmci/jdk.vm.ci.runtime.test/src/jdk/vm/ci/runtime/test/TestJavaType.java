@@ -34,11 +34,11 @@
 
 package jdk.vm.ci.runtime.test;
 
-import static org.junit.Assert.assertEquals;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
-
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests for {@link JavaType}.

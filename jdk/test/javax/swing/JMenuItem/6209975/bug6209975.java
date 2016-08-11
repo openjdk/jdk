@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6209975
  * @summary regression: JMenuItem icons overimposed on JMenuItem labels under Metal LAF
  * @author Alexander Zuev
