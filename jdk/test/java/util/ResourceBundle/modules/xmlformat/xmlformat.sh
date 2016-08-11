@@ -48,7 +48,7 @@ B=bundles
 mkdir -p mods/$B
 CLASSES="`find $TESTSRC/src/$B -name '*.java'`"
 if [ "x$CLASSES" != x ]; then
-    $JAVAC -g -d mods -modulesourcepath $TESTSRC/src $CLASSES
+    $JAVAC -g -d mods --module-source-path $TESTSRC/src $CLASSES
 fi
 PROPS="`(cd $TESTSRC/src/$B; find . -name '*.xml')`"
 if [ "x$PROPS" != x ]; then
@@ -60,9 +60,9 @@ if [ "x$PROPS" != x ]; then
     done
 fi
 
-$JAVAC -g -d mods -modulesourcepath $TESTSRC/src \
+$JAVAC -g -d mods --module-source-path $TESTSRC/src \
        -cp mods/bundles `find $TESTSRC/src/test -name "*.java"`
 
-$JAVA -mp mods -m test/jdk.test.Main de fr ja zh-tw en de
+$JAVA -p mods -m test/jdk.test.Main de fr ja zh-tw en de
 
 exit $?

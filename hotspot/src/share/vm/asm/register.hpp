@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 // Use AbstractRegister as shortcut
 class AbstractRegisterImpl;
@@ -94,25 +95,7 @@ enum { name##_##type##EnumValue = value##_##type##EnumValue }
 #define REGISTER_DEFINITION(type, name) \
 const type name = ((type)name##_##type##EnumValue)
 
-#ifdef TARGET_ARCH_x86
-# include "register_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "register_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "register_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "register_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "register_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "register_aarch64.hpp"
-#endif
-
+#include CPU_HEADER(register)
 
 // Debugging support
 

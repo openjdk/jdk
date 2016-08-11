@@ -169,7 +169,7 @@ public final class ModuleReference {
 
 
     /**
-     * Returns {@code true} if this module has been patched via -Xpatch.
+     * Returns {@code true} if this module has been patched via --patch-module.
      */
     boolean isPatched() {
         return patched;

@@ -34,7 +34,7 @@ package p;
  * m.
  *
  */
-public abstract class F implements p.I {
+public abstract class F implements I {
        final public int m() {
            return 2;
        }

@@ -38,7 +38,7 @@ BUILD_TOOLS_JDK := $(call SetupJavaCompilationCompileTarget, \
 ################################################################################
 
 ifeq ($(BOOT_JDK_MODULAR), true)
-  COMPILEFONTCONFIG_ADD_EXPORTS := -XaddExports:java.desktop/sun.awt=ALL-UNNAMED
+  COMPILEFONTCONFIG_ADD_EXPORTS := --add-exports java.desktop/sun.awt=ALL-UNNAMED
 endif
 
 TOOL_COMPILEFONTCONFIG = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
@@ -94,7 +94,7 @@ TOOL_SPP = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes build.too
 # Nimbus is used somewhere in the swing build.
 
 ifeq ($(BOOT_JDK_MODULAR), true)
-  COMPILENIMBUS_ADD_MODS := -addmods java.xml.bind
+  COMPILENIMBUS_ADD_MODS := --add-modules java.xml.bind
 endif
 
 TOOL_GENERATENIMBUS = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \

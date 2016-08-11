@@ -311,6 +311,7 @@ public class TimestampCheck {
 
             cmd += " " + System.getProperty("test.tool.vm.opts")
                     + " -J-Djava.security.egd=file:/dev/./urandom"
+                    + " -J-Duser.language=en -J-Duser.country=US"
                     + " -debug -keystore " + TSKS + " -storepass changeit"
                     + " -tsa http://localhost:" + port + "/%d"
                     + " -signedjar new_%d.jar " + JAR + " old";

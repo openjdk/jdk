@@ -25,14 +25,24 @@
 /**
  * @test
  * @bug 8148175
- * @ignore 8153194
- * @run main/othervm/timeout=300 -Xbatch -Xmx128m PreserveFPRegistersTest
+ * @requires vm.gc=="G1" | vm.gc=="null"
+ * @library /testlibrary /test/lib
+ * @run main/bootclasspath/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI -Xmx300m -XX:+UseG1GC
+ *      compiler.gcbarriers.PreserveFPRegistersTest
  */
+
+package compiler.gcbarriers;
+
+import sun.hotspot.WhiteBox;
+
 public class PreserveFPRegistersTest {
 
     public static void main(String... args) throws InterruptedException {
         new PreserveFPRegistersTest().go();
     }
+
+    private static WhiteBox wb = WhiteBox.getWhiteBox();
 
     public final Object[][] storage;
 
@@ -52,18 +62,32 @@ public class PreserveFPRegistersTest {
     public final int regionCount;
 
     PreserveFPRegistersTest() {
-        long regionSize = 1_000_000; //WB.g1RegionSize();
-
+        long regionSize = wb.g1RegionSize();
         Runtime rt = Runtime.getRuntime();
         long used = rt.totalMemory() - rt.freeMemory();
         long totalFree = rt.maxMemory() - used;
         regionCount = (int) ( (totalFree / regionSize) * 0.9);
-        int refSize = 4;
-
+        int refSize = wb.getHeapOopSize();
         N = (int) ((regionSize / K ) / refSize) - 5;
-        storage = new Object[regionCount * K][];
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = new Object[N];
+
+        System.out.println("%% Memory");
+        System.out.println("%%   used          :        " + used / 1024 + "M");
+        System.out.println("%%   available     :        " + totalFree / 1024 + "M");
+        System.out.println("%%   G1 Region Size:        " + regionSize / 1024 + "M");
+        System.out.println("%%   region count  :        " + regionCount);
+
+        System.out.println("%% Objects storage");
+        System.out.println("%%   N (array length)      : " + N);
+        System.out.println("%%   K (objects in regions): " + K);
+        System.out.println("%%   Reference size        : " + refSize);
+
+        try {
+            storage = new Object[regionCount * K][];
+            for (int i = 0; i < storage.length; i++) {
+                storage[i] = new Object[N];
+            }
+        } catch(OutOfMemoryError e) {
+            throw new AssertionError("Test Failed with unexpected OutOfMemoryError exception");
         }
     }
 

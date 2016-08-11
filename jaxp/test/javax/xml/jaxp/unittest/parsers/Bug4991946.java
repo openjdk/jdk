@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,18 @@ package parsers;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 4991946
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true parsers.Bug4991946
+ * @run testng/othervm parsers.Bug4991946
  * @summary Can parse the element type is anyType in the schema and is substituted by the simple type via the 'xsi:type' attribute in xml document.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug4991946 {
 
     protected static SAXParser createParser() throws Exception {
@@ -50,3 +56,4 @@ public class Bug4991946 {
         parser.parse(Bug4991946.class.getResource("Bug4991946.xml").toExternalForm(), new util.DraconianErrorHandler());
     }
 }
+

@@ -28,9 +28,10 @@
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
+ *
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm
  *        -Xbootclasspath/a:.
  *        -XX:+UnlockDiagnosticVMOptions
@@ -41,10 +42,10 @@
  *        -XX:CICompilerCount=1
  *        -XX:+PrintCompilation
  *        -XX:+PrintInlining
- *        -XX:CompileCommand=compileonly,MeetIncompatibleInterfaceArrays*.run
- *        -XX:CompileCommand=dontinline,TestMeetIncompatibleInterfaceArrays$Helper.createI2*
+ *        -XX:CompileCommand=compileonly,MeetIncompatibleInterfaceArrays*::run
+ *        -XX:CompileCommand=dontinline,compiler.types.TestMeetIncompatibleInterfaceArrays$Helper::createI2*
  *        -XX:CompileCommand=quiet
- *        TestMeetIncompatibleInterfaceArrays 0
+ *        compiler.types.TestMeetIncompatibleInterfaceArrays 0
  * @run main/othervm
  *        -Xbootclasspath/a:.
  *        -XX:+UnlockDiagnosticVMOptions
@@ -55,10 +56,10 @@
  *        -XX:CICompilerCount=1
  *        -XX:+PrintCompilation
  *        -XX:+PrintInlining
- *        -XX:CompileCommand=compileonly,MeetIncompatibleInterfaceArrays*.run
- *        -XX:CompileCommand=inline,TestMeetIncompatibleInterfaceArrays$Helper.createI2*
+ *        -XX:CompileCommand=compileonly,MeetIncompatibleInterfaceArrays*::run
+ *        -XX:CompileCommand=inline,compiler.types.TestMeetIncompatibleInterfaceArrays$Helper::createI2*
  *        -XX:CompileCommand=quiet
- *        TestMeetIncompatibleInterfaceArrays 1
+ *        compiler.types.TestMeetIncompatibleInterfaceArrays 1
  * @run main/othervm
  *        -Xbootclasspath/a:.
  *        -XX:+UnlockDiagnosticVMOptions
@@ -72,22 +73,39 @@
  *        -XX:CICompilerCount=2
  *        -XX:+PrintCompilation
  *        -XX:+PrintInlining
- *        -XX:CompileCommand=compileonly,MeetIncompatibleInterfaceArrays*.run
- *        -XX:CompileCommand=compileonly,TestMeetIncompatibleInterfaceArrays$Helper.createI2*
- *        -XX:CompileCommand=inline,TestMeetIncompatibleInterfaceArrays$Helper.createI2*
+ *        -XX:CompileCommand=compileonly,MeetIncompatibleInterfaceArrays*::run
+ *        -XX:CompileCommand=compileonly,compiler.types.TestMeetIncompatibleInterfaceArrays$Helper::createI2*
+ *        -XX:CompileCommand=inline,compiler.types.TestMeetIncompatibleInterfaceArrays$Helper::createI2*
  *        -XX:CompileCommand=quiet
- *        TestMeetIncompatibleInterfaceArrays 2
+ *        compiler.types.TestMeetIncompatibleInterfaceArrays 2
  *
  * @author volker.simonis@gmail.com
  */
 
+package compiler.types;
+
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import sun.hotspot.WhiteBox;
+
 import java.io.FileOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
-import sun.hotspot.WhiteBox;
+
+import static jdk.internal.org.objectweb.asm.Opcodes.AALOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_STATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.ALOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.ARETURN;
+import static jdk.internal.org.objectweb.asm.Opcodes.ASTORE;
+import static jdk.internal.org.objectweb.asm.Opcodes.GETSTATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_0;
+import static jdk.internal.org.objectweb.asm.Opcodes.INVOKEINTERFACE;
+import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESTATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static jdk.internal.org.objectweb.asm.Opcodes.RETURN;
+import static jdk.internal.org.objectweb.asm.Opcodes.V1_8;
 
 public class TestMeetIncompatibleInterfaceArrays extends ClassLoader {
 
@@ -245,14 +263,14 @@ public class TestMeetIncompatibleInterfaceArrays extends ClassLoader {
         constr.visitMaxs(0, 0);
         constr.visitEnd();
         MethodVisitor run = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "run",
-                "()" + a + "LTestMeetIncompatibleInterfaceArrays$I1;", null, null);
+                "()" + a + "Lcompiler/types/TestMeetIncompatibleInterfaceArrays$I1;", null, null);
         run.visitCode();
         if (dim == 4) {
-            run.visitMethodInsn(INVOKESTATIC, "TestMeetIncompatibleInterfaceArrays$Helper", createName + 3,
-                    "()" + "[[[" + "LTestMeetIncompatibleInterfaceArrays$I2;", false);
+            run.visitMethodInsn(INVOKESTATIC, "compiler/types/TestMeetIncompatibleInterfaceArrays$Helper", createName + 3,
+                    "()" + "[[[" + "Lcompiler/types/TestMeetIncompatibleInterfaceArrays$I2;", false);
         } else {
-            run.visitMethodInsn(INVOKESTATIC, "TestMeetIncompatibleInterfaceArrays$Helper", createName + dim,
-                    "()" + a + "LTestMeetIncompatibleInterfaceArrays$I2;", false);
+            run.visitMethodInsn(INVOKESTATIC, "compiler/types/TestMeetIncompatibleInterfaceArrays$Helper", createName + dim,
+                    "()" + a + "Lcompiler/types/TestMeetIncompatibleInterfaceArrays$I2;", false);
         }
         run.visitInsn(ARETURN);
         run.visitMaxs(0, 0);
@@ -260,7 +278,7 @@ public class TestMeetIncompatibleInterfaceArrays extends ClassLoader {
         MethodVisitor test = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "test", "()V", null, null);
         test.visitCode();
         test.visitMethodInsn(INVOKESTATIC, baseClassName + dim + "ASM", "run",
-                "()" + a + "LTestMeetIncompatibleInterfaceArrays$I1;", false);
+                "()" + a + "Lcompiler/types/TestMeetIncompatibleInterfaceArrays$I1;", false);
         test.visitVarInsn(ASTORE, 0);
         if (dim > 0) {
             test.visitVarInsn(ALOAD, 0);
@@ -272,7 +290,7 @@ public class TestMeetIncompatibleInterfaceArrays extends ClassLoader {
         }
         test.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
         test.visitVarInsn(ALOAD, dim > 0 ? 1 : 0);
-        test.visitMethodInsn(INVOKEINTERFACE, "TestMeetIncompatibleInterfaceArrays$I1", "getName",
+        test.visitMethodInsn(INVOKEINTERFACE, "compiler/types/TestMeetIncompatibleInterfaceArrays$I1", "getName",
                 "()Ljava/lang/String;", true);
         test.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/Object;)V", false);
         test.visitInsn(RETURN);
@@ -296,9 +314,9 @@ public class TestMeetIncompatibleInterfaceArrays extends ClassLoader {
         final int pass = Integer.parseInt(args.length > 0 ? args[0] : "0");
 
         // Load and initialize some classes required for compilation
-        Class.forName("TestMeetIncompatibleInterfaceArrays$I1");
-        Class.forName("TestMeetIncompatibleInterfaceArrays$I2");
-        Class.forName("TestMeetIncompatibleInterfaceArrays$Helper");
+        Class.forName("compiler.types.TestMeetIncompatibleInterfaceArrays$I1");
+        Class.forName("compiler.types.TestMeetIncompatibleInterfaceArrays$I2");
+        Class.forName("compiler.types.TestMeetIncompatibleInterfaceArrays$Helper");
 
         for (int g = 0; g < 2; g++) {
             String baseClassName = "MeetIncompatibleInterfaceArrays";

@@ -644,23 +644,20 @@ public final class System {
      * <code>getProperties</code> operation, it may choose to permit the
      * {@link #getProperty(String)} operation.
      *
-     * @implNote In addition to the standard system properties, the {@code
-     * java} launcher may create the Java Virtual Machine with system
-     * properties that have the following keys:
+     * @implNote In addition to the standard system properties, the system
+     * properties may include the following keys:
      * <table summary="Shows property keys and associated values">
      * <tr><th>Key</th>
      *     <th>Description of Associated Value</th></tr>
      * <tr><td>{@code jdk.module.path}</td>
-     *     <td>Application module path</td></tr>
-     * <tr><td>{@code jdk.upgrade.module.path}</td>
+     *     <td>The application module path</td></tr>
+     * <tr><td>{@code jdk.module.upgrade.path}</td>
      *     <td>The upgrade module path</td></tr>
      * <tr><td>{@code jdk.module.main}</td>
      *     <td>The module name of the initial/main module</td></tr>
      * <tr><td>{@code jdk.module.main.class}</td>
      *     <td>The main class name of the initial module</td></tr>
      * </table>
-     * These properties may also be set by custom launchers that use the JNI
-     * invocation API to create the Java Virtual Machine.
      *
      * @return     the system properties
      * @exception  SecurityException  if a security manager exists and its

@@ -26,8 +26,8 @@
  * @bug 6293767
  * @summary Test for the CardPermission class
  * @author Andreas Sterbenz
- * @compile -addmods java.smartcardio TestCardPermission.java
- * @run main/othervm -addmods java.smartcardio TestCardPermission
+ * @compile --add-modules=java.smartcardio TestCardPermission.java
+ * @run main/othervm --add-modules=java.smartcardio TestCardPermission
  */
 
 import javax.smartcardio.*;

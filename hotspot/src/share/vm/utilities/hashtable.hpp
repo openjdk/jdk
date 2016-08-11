@@ -124,9 +124,17 @@ private:
   // Instance variable
   BasicHashtableEntry<F>*       _entry;
 
+#ifdef ASSERT
+private:
+  unsigned _hits;
+public:
+  unsigned hits()   { return _hits; }
+  void count_hit()  { _hits++; }
+#endif
+
 public:
   // Accessing
-  void clear()                        { _entry = NULL; }
+  void clear()                        { _entry = NULL; DEBUG_ONLY(_hits = 0); }
 
   // The following methods use order access methods to avoid race
   // conditions in multiprocessor systems.
@@ -135,6 +143,7 @@ public:
 
   // The following method is not MT-safe and must be done under lock.
   BasicHashtableEntry<F>** entry_addr()  { return &_entry; }
+
 };
 
 
@@ -173,9 +182,10 @@ private:
 protected:
 
 #ifdef ASSERT
+  bool              _lookup_warning;
   mutable int       _lookup_count;
   mutable int       _lookup_length;
-  void verify_lookup_length(double load);
+  bool verify_lookup_length(double load);
 #endif
 
   void initialize(int table_size, int entry_size, int number_of_entries);
@@ -226,6 +236,15 @@ public:
   int number_of_entries() { return _number_of_entries; }
 
   void verify() PRODUCT_RETURN;
+
+#ifdef ASSERT
+  void bucket_count_hit(int i) const {
+    _buckets[i].count_hit();
+  }
+  unsigned bucket_hits(int i) const {
+    return _buckets[i].hits();
+  }
+#endif
 };
 
 

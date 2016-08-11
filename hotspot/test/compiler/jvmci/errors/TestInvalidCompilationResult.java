@@ -51,7 +51,6 @@ import jdk.vm.ci.hotspot.HotSpotCompiledCode.Comment;
 import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.meta.Assumptions.Assumption;
 import jdk.vm.ci.meta.VMConstant;
-
 import org.junit.Test;
 
 /**

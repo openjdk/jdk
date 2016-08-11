@@ -67,6 +67,7 @@
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/stringUtils.hpp"
 #include "logging/log.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
@@ -2225,9 +2226,14 @@ ModuleEntry* InstanceKlass::module() const {
 }
 
 void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
+
+  // ensure java/ packages only loaded by boot or platform builtin loaders
+  check_prohibited_package(name(), loader_data->class_loader(), CHECK);
+
   TempNewSymbol pkg_name = package_from_name(name(), CHECK);
 
   if (pkg_name != NULL && loader_data != NULL) {
+
     // Find in class loader's package entry table.
     _package_entry = loader_data->packages()->lookup_only(pkg_name);
 
@@ -2375,6 +2381,31 @@ Klass* InstanceKlass::compute_enclosing_class_impl(instanceKlassHandle self,
   ...
 }
 */
+
+// Only boot and platform class loaders can define classes in "java/" packages.
+void InstanceKlass::check_prohibited_package(Symbol* class_name,
+                                                Handle class_loader,
+                                                TRAPS) {
+  const char* javapkg = "java/";
+  ResourceMark rm(THREAD);
+  if (!class_loader.is_null() &&
+      !SystemDictionary::is_platform_class_loader(class_loader) &&
+      class_name != NULL &&
+      strncmp(class_name->as_C_string(), javapkg, strlen(javapkg)) == 0) {
+    TempNewSymbol pkg_name = InstanceKlass::package_from_name(class_name, CHECK);
+    assert(pkg_name != NULL, "Error in parsing package name starting with 'java/'");
+    char* name = pkg_name->as_C_string();
+    const char* class_loader_name = InstanceKlass::cast(class_loader()->klass())->name()->as_C_string();
+    StringUtils::replace_no_expand(name, "/", ".");
+    const char* msg_text1 = "Class loader (instance of): ";
+    const char* msg_text2 = " tried to load prohibited package name: ";
+    size_t len = strlen(msg_text1) + strlen(class_loader_name) + strlen(msg_text2) + strlen(name) + 1;
+    char* message = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, len);
+    jio_snprintf(message, len, "%s%s%s%s", msg_text1, class_loader_name, msg_text2, name);
+    THROW_MSG(vmSymbols::java_lang_SecurityException(), message);
+  }
+  return;
+}
 
 // tell if two classes have the same enclosing class (at package level)
 bool InstanceKlass::is_same_package_member_impl(const InstanceKlass* class1,
@@ -2706,7 +2737,7 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
   return NULL;
 }
 
-oop InstanceKlass::add_member_name(Handle mem_name, bool intern) {
+bool InstanceKlass::add_member_name(Handle mem_name) {
   jweak mem_name_wref = JNIHandles::make_weak_global(mem_name);
   MutexLocker ml(MemberNameTable_lock);
   DEBUG_ONLY(NoSafepointVerifier nsv);
@@ -2716,7 +2747,7 @@ oop InstanceKlass::add_member_name(Handle mem_name, bool intern) {
   // is called!
   Method* method = (Method*)java_lang_invoke_MemberName::vmtarget(mem_name());
   if (method->is_obsolete()) {
-    return NULL;
+    return false;
   } else if (method->is_old()) {
     // Replace method with redefined version
     java_lang_invoke_MemberName::set_vmtarget(mem_name(), method_with_idnum(method->method_idnum()));
@@ -2725,11 +2756,8 @@ oop InstanceKlass::add_member_name(Handle mem_name, bool intern) {
   if (_member_names == NULL) {
     _member_names = new (ResourceObj::C_HEAP, mtClass) MemberNameTable(idnum_allocated_count());
   }
-  if (intern) {
-    return _member_names->find_or_add_member_name(mem_name_wref);
-  } else {
-    return _member_names->add_member_name(mem_name_wref);
-  }
+  _member_names->add_member_name(mem_name_wref);
+  return true;
 }
 
 // -----------------------------------------------------------------------------------------------------

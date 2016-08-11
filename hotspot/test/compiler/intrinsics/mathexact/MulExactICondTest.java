@@ -25,10 +25,11 @@
  * @test
  * @bug 8026844
  * @summary Test multiplyExact as condition
- * @compile MulExactICondTest.java
- * @run main MulExactICondTest
  *
+ * @run main compiler.intrinsics.mathexact.MulExactICondTest
  */
+
+package compiler.intrinsics.mathexact;
 
 public class MulExactICondTest {
     public static int result = 0;

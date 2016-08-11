@@ -25,13 +25,22 @@
  * @test
  * @bug 6912521
  * @summary small array copy as loads/stores
- * @compile TestArrayCopyAsLoadsStores.java TestArrayCopyUtils.java
- * @run main/othervm -ea -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=dontinline,TestArrayCopyAsLoadsStores::m* -XX:TypeProfileLevel=200 TestArrayCopyAsLoadsStores
- * @run main/othervm -ea -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=dontinline,TestArrayCopyAsLoadsStores::m* -XX:+IgnoreUnrecognizedVMOptions -XX:+StressArrayCopyMacroNode -XX:TypeProfileLevel=200 TestArrayCopyAsLoadsStores
+ * @library /
  *
+ * @run main/othervm -ea -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestArrayCopyAsLoadsStores::m*
+ *                   -XX:TypeProfileLevel=200
+ *                   compiler.arraycopy.TestArrayCopyAsLoadsStores
+ * @run main/othervm -ea -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestArrayCopyAsLoadsStores::m*
+ *                   -XX:TypeProfileLevel=200
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+StressArrayCopyMacroNode
+ *                   compiler.arraycopy.TestArrayCopyAsLoadsStores
  */
 
-import java.util.*;
+package compiler.arraycopy;
+
+import java.util.Arrays;
 
 public class TestArrayCopyAsLoadsStores extends TestArrayCopyUtils {
 

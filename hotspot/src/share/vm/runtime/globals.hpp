@@ -26,6 +26,8 @@
 #define SHARE_VM_RUNTIME_GLOBALS_HPP
 
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
+
 #include <float.h> // for DBL_MAX
 
 // use this for flags that are true per default in the tiered build
@@ -38,141 +40,19 @@
 #define falseInTiered true
 #endif
 
-#ifdef TARGET_ARCH_x86
-# include "globals_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "globals_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "globals_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "globals_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "globals_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "globals_aarch64.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_linux
-# include "globals_linux.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "globals_solaris.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "globals_windows.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_aix
-# include "globals_aix.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "globals_bsd.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_x86
-# include "globals_linux_x86.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_sparc
-# include "globals_linux_sparc.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_zero
-# include "globals_linux_zero.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_solaris_x86
-# include "globals_solaris_x86.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_solaris_sparc
-# include "globals_solaris_sparc.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_windows_x86
-# include "globals_windows_x86.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_arm
-# include "globals_linux_arm.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_ppc
-# include "globals_linux_ppc.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_aarch64
-# include "globals_linux_aarch64.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_aix_ppc
-# include "globals_aix_ppc.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_bsd_x86
-# include "globals_bsd_x86.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_bsd_zero
-# include "globals_bsd_zero.hpp"
-#endif
+#include CPU_HEADER(globals)
+#include OS_HEADER(globals)
+#include OS_CPU_HEADER(globals)
 #ifdef COMPILER1
-#ifdef TARGET_ARCH_x86
-# include "c1_globals_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "c1_globals_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "c1_globals_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "c1_globals_aarch64.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_linux
-# include "c1_globals_linux.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "c1_globals_solaris.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "c1_globals_windows.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_aix
-# include "c1_globals_aix.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "c1_globals_bsd.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "c1_globals_ppc.hpp"
-#endif
+#include CPU_HEADER(c1_globals)
+#include OS_HEADER(c1_globals)
 #endif
 #ifdef COMPILER2
-#ifdef TARGET_ARCH_x86
-# include "c2_globals_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "c2_globals_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "c2_globals_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "c2_globals_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "c2_globals_aarch64.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_linux
-# include "c2_globals_linux.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "c2_globals_solaris.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "c2_globals_windows.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_aix
-# include "c2_globals_aix.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "c2_globals_bsd.hpp"
-#endif
+#include CPU_HEADER(c2_globals)
+#include OS_HEADER(c2_globals)
 #endif
 #ifdef SHARK
-#ifdef TARGET_ARCH_zero
+#ifdef ZERO
 # include "shark_globals_zero.hpp"
 #endif
 #endif
@@ -229,7 +109,7 @@ typedef const char* (*RangeStrFunc)(void);
 
 struct Flag {
   enum Flags {
-    // value origin
+    // latest value origin
     DEFAULT          = 0,
     COMMAND_LINE     = 1,
     ENVIRON_VAR      = 2,
@@ -260,7 +140,10 @@ struct Flag {
     KIND_COMMERCIAL         = 1 << 17,
     KIND_JVMCI              = 1 << 18,
 
-    KIND_MASK = ~VALUE_ORIGIN_MASK
+    // set this bit if the flag was set on the command line
+    ORIG_COMMAND_LINE       = 1 << 19,
+
+    KIND_MASK = ~(VALUE_ORIGIN_MASK | ORIG_COMMAND_LINE)
   };
 
   enum Error {
@@ -272,7 +155,7 @@ struct Flag {
     MISSING_VALUE,
     // error parsing the textual form of the value
     WRONG_FORMAT,
-    // flag is not writeable
+    // flag is not writable
     NON_WRITABLE,
     // flag value is outside of its bounds
     OUT_OF_BOUNDS,
@@ -367,6 +250,7 @@ struct Flag {
   bool is_default();
   bool is_ergonomic();
   bool is_command_line();
+  void set_command_line();
 
   bool is_product() const;
   bool is_manageable() const;
@@ -396,7 +280,7 @@ struct Flag {
 
   // printRanges will print out flags type, name and range values as expected by -XX:+PrintFlagsRanges
   void print_on(outputStream* st, bool withComments = false, bool printRanges = false);
-  void print_kind(outputStream* st);
+  void print_kind_and_origin(outputStream* st);
   void print_as_flag(outputStream* st);
 
   static const char* flag_error_str(Flag::Error error);
@@ -574,12 +458,6 @@ public:
 #define falseInProduct true
 #endif
 
-#ifdef JAVASE_EMBEDDED
-#define falseInEmbedded false
-#else
-#define falseInEmbedded true
-#endif
-
 // develop flags are settable / visible only during development and are constant in the PRODUCT version
 // product flags are always settable / visible
 // notproduct flags are settable / visible only during development and are not declared in the PRODUCT version
@@ -708,7 +586,7 @@ public:
   product_pd(bool, UseMembar,                                               \
           "(Unstable) Issues membars on thread state transitions")          \
                                                                             \
-  develop(bool, CleanChunkPoolAsync, falseInEmbedded,                       \
+  develop(bool, CleanChunkPoolAsync, true,                                  \
           "Clean the chunk pool asynchronously")                            \
                                                                             \
   experimental(bool, AlwaysSafeConstructors, false,                         \
@@ -801,9 +679,6 @@ public:
                                                                             \
   develop(bool, TracePcPatching, false,                                     \
           "Trace usage of frame::patch_pc")                                 \
-                                                                            \
-  develop(bool, TraceJumps, false,                                          \
-          "Trace assembly jumps in thread ring buffer")                     \
                                                                             \
   develop(bool, TraceRelocator, false,                                      \
           "Trace the bytecode relocator")                                   \
@@ -1562,6 +1437,10 @@ public:
   product(bool, UseDynamicNumberOfGCThreads, false,                         \
           "Dynamically choose the number of parallel threads "              \
           "parallel gc will use")                                           \
+                                                                            \
+  diagnostic(bool, InjectGCWorkerCreationFailure, false,                    \
+             "Inject thread creation failures for "                         \
+             "UseDynamicNumberOfGCThreads")                                 \
                                                                             \
   diagnostic(bool, ForceDynamicNumberOfGCThreads, false,                    \
           "Force dynamic selection of the number of "                       \
@@ -3006,15 +2885,10 @@ public:
                                                                             \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \
-  NOT_EMBEDDED(diagnostic(intx, GuaranteedSafepointInterval, 1000,          \
+  diagnostic(intx, GuaranteedSafepointInterval, 1000,                       \
           "Guarantee a safepoint (at least) every so many milliseconds "    \
-          "(0 means none)"))                                                \
-  NOT_EMBEDDED(range(0, max_jint))                                          \
-                                                                            \
-  EMBEDDED_ONLY(product(intx, GuaranteedSafepointInterval, 0,               \
-          "Guarantee a safepoint (at least) every so many milliseconds "    \
-          "(0 means none)"))                                                \
-  EMBEDDED_ONLY(range(0, max_jint))                                         \
+          "(0 means none)")                                                 \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, SafepointTimeoutDelay, 10000,                               \
           "Delay in milliseconds for option SafepointTimeout")              \
@@ -3916,7 +3790,7 @@ public:
                                                                             \
   /* flags for performance data collection */                               \
                                                                             \
-  product(bool, UsePerfData, falseInEmbedded,                               \
+  product(bool, UsePerfData, true,                                          \
           "Flag to disable jvmstat instrumentation for performance testing "\
           "and problem isolation purposes")                                 \
                                                                             \

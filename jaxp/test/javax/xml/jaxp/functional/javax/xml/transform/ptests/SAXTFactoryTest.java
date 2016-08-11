@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,30 @@
 
 package javax.xml.transform.ptests;
 
+import static javax.xml.transform.ptests.TransformerTestConst.GOLDEN_DIR;
+import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+import static jaxp.library.JAXPTestUtilities.compareWithGold;
+import static org.testng.Assert.assertTrue;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Result;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
-import static javax.xml.transform.ptests.TransformerTestConst.GOLDEN_DIR;
-import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TemplatesHandler;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-import jaxp.library.JAXPFileBaseTest;
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static org.testng.Assert.assertTrue;
+
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -56,7 +59,14 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * Test newTransformerhandler() method which takes StreamSource as argument can
  * be set to XMLReader.
  */
-public class SAXTFactoryTest extends JAXPFileBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.transform.ptests.SAXTFactoryTest
+ * @run testng/othervm javax.xml.transform.ptests.SAXTFactoryTest
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class SAXTFactoryTest {
     /**
      * Test style-sheet file.
      */
@@ -421,3 +431,5 @@ public class SAXTFactoryTest extends JAXPFileBaseTest {
         assertTrue(compareWithGold(goldFile, outputFile));
     }
 }
+
+

@@ -23,21 +23,27 @@
 
 /**
  * @test ConstantGettersTransitionsTest
+ * @summary Test the correctness of compilation level transitions for constant getters methods
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TransitionsTestExecutor ConstantGettersTransitionsTest
+ *
+ * @build compiler.tiered.TransitionsTestExecutor
+ *        compiler.tiered.ConstantGettersTransitionsTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm/timeout=240 -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation -XX:-UseCounterDecay
- *                   -XX:CompileCommand=compileonly,ConstantGettersTestCase$TrivialMethods::*
- *                   TransitionsTestExecutor ConstantGettersTransitionsTest
- * @summary Test the correctness of compilation level transitions for constant getters methods
+ *      -XX:+WhiteBoxAPI -XX:+TieredCompilation -XX:-UseCounterDecay
+ *      -XX:CompileCommand=compileonly,compiler.tiered.ConstantGettersTransitionsTest$ConstantGettersTestCase$TrivialMethods::*
+ *      compiler.tiered.TransitionsTestExecutor
+ *      compiler.tiered.ConstantGettersTransitionsTest
  */
+
+package compiler.tiered;
+
+import compiler.whitebox.CompilerWhiteBoxTest;
 
 import java.lang.reflect.Executable;
 import java.util.concurrent.Callable;
-import compiler.whitebox.CompilerWhiteBoxTest;
 
 public class ConstantGettersTransitionsTest extends LevelTransitionTest {
     public static void main(String[] args) {
@@ -57,141 +63,141 @@ public class ConstantGettersTransitionsTest extends LevelTransitionTest {
     private ConstantGettersTransitionsTest(TestCase testCase) {
         super(testCase);
     }
-}
 
-enum ConstantGettersTestCase implements CompilerWhiteBoxTest.TestCase {
-    ICONST_M1,
-    ICONST_0,
-    ICONST_1,
-    ICONST_2,
-    ICONST_3,
-    ICONST_4,
-    ICONST_5,
-    LCONST_0,
-    LCONST_1,
-    FCONST_0,
-    FCONST_1,
-    FCONST_2,
-    DCONST_0,
-    DCONST_1,
-    DCONST_W,
-    BYTE,
-    SHORT,
-    CHAR;
+    private static enum ConstantGettersTestCase implements CompilerWhiteBoxTest.TestCase {
+        ICONST_M1,
+        ICONST_0,
+        ICONST_1,
+        ICONST_2,
+        ICONST_3,
+        ICONST_4,
+        ICONST_5,
+        LCONST_0,
+        LCONST_1,
+        FCONST_0,
+        FCONST_1,
+        FCONST_2,
+        DCONST_0,
+        DCONST_1,
+        DCONST_W,
+        BYTE,
+        SHORT,
+        CHAR;
 
-    private final Executable executable;
-    private final Callable<Integer> callable;
+        private final Executable executable;
+        private final Callable<Integer> callable;
 
-    @Override
-    public Executable getExecutable() {
-        return executable;
-    }
-
-    @Override
-    public Callable<Integer> getCallable() {
-        return callable;
-    }
-
-    @Override
-    public boolean isOsr() {
-        return false;
-    }
-
-    private ConstantGettersTestCase() {
-        String name = "make" + this.name();
-        this.executable = LevelTransitionTest.Helper.getMethod(TrivialMethods.class, name);
-        this.callable = LevelTransitionTest.Helper.getCallable(new TrivialMethods(), name);
-    }
-
-    /**
-     * Contains methods that load constants with certain types of bytecodes
-     * See JVMS 2.11.2. Load and Store Instructions
-     * Note that it doesn't have a method for ldc_w instruction
-     */
-    private static class TrivialMethods {
-        public static int makeICONST_M1() {
-            return -1;
+        @Override
+        public Executable getExecutable() {
+            return executable;
         }
 
-        public static int makeICONST_0() {
-            return 0;
+        @Override
+        public Callable<Integer> getCallable() {
+            return callable;
         }
 
-        public static int makeICONST_1() {
-            return 1;
+        @Override
+        public boolean isOsr() {
+            return false;
         }
 
-        public static int makeICONST_2() {
-            return 2;
+        private ConstantGettersTestCase() {
+            String name = "make" + this.name();
+            this.executable = LevelTransitionTest.Helper.getMethod(TrivialMethods.class, name);
+            this.callable = LevelTransitionTest.Helper.getCallable(new TrivialMethods(), name);
         }
 
-        public static int makeICONST_3() {
-            return 3;
-        }
+        /**
+         * Contains methods that load constants with certain types of bytecodes
+         * See JVMS 2.11.2. Load and Store Instructions
+         * Note that it doesn't have a method for ldc_w instruction
+         */
+        private static class TrivialMethods {
+            public static int makeICONST_M1() {
+                return -1;
+            }
 
-        public static int makeICONST_4() {
-            return 4;
-        }
+            public static int makeICONST_0() {
+                return 0;
+            }
 
-        public static int makeICONST_5() {
-            return 5;
-        }
+            public static int makeICONST_1() {
+                return 1;
+            }
 
-        public static long makeLCONST_0() {
-            return 0L;
-        }
+            public static int makeICONST_2() {
+                return 2;
+            }
 
-        public static long makeLCONST_1() {
-            return 1L;
-        }
+            public static int makeICONST_3() {
+                return 3;
+            }
 
-        public static float makeFCONST_0() {
-            return 0F;
-        }
+            public static int makeICONST_4() {
+                return 4;
+            }
 
-        public static float makeFCONST_1() {
-            return 1F;
-        }
+            public static int makeICONST_5() {
+                return 5;
+            }
 
-        public static float makeFCONST_2() {
-            return 2F;
-        }
+            public static long makeLCONST_0() {
+                return 0L;
+            }
 
-        public static double makeDCONST_0() {
-            return 0D;
-        }
+            public static long makeLCONST_1() {
+                return 1L;
+            }
 
-        public static double makeDCONST_1() {
-            return 1D;
-        }
+            public static float makeFCONST_0() {
+                return 0F;
+            }
 
-        public static double makeDCONST_W() {
-            // ldc2_w
-            return Double.MAX_VALUE;
-        }
+            public static float makeFCONST_1() {
+                return 1F;
+            }
 
-        public static Object makeOBJECT() {
-            // aconst_null
-            return null;
-        }
+            public static float makeFCONST_2() {
+                return 2F;
+            }
 
-        public static byte makeBYTE() {
-            // bipush
-            return (byte) 0x7F;
-        }
+            public static double makeDCONST_0() {
+                return 0D;
+            }
 
-        public static short makeSHORT() {
-            // sipush
-            return (short) 0x7FFF;
-        }
+            public static double makeDCONST_1() {
+                return 1D;
+            }
 
-        public static char makeCHAR() {
-            // ldc
-            return (char) 0xFFFF;
-        }
+            public static double makeDCONST_W() {
+                // ldc2_w
+                return Double.MAX_VALUE;
+            }
 
-        public static boolean makeBOOLEAN() {
-            return true;
+            public static Object makeOBJECT() {
+                // aconst_null
+                return null;
+            }
+
+            public static byte makeBYTE() {
+                // bipush
+                return (byte) 0x7F;
+            }
+
+            public static short makeSHORT() {
+                // sipush
+                return (short) 0x7FFF;
+            }
+
+            public static char makeCHAR() {
+                // ldc
+                return (char) 0xFFFF;
+            }
+
+            public static boolean makeBOOLEAN() {
+                return true;
+            }
         }
     }
 }

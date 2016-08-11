@@ -21,9 +21,12 @@
  * questions.
  */
 
+package compiler.intrinsics.mathexact.sanity;
+
+import compiler.whitebox.CompilerWhiteBoxTest;
+
 import java.lang.reflect.Executable;
 import java.util.concurrent.Callable;
-import compiler.whitebox.CompilerWhiteBoxTest;
 
 public class MathIntrinsic {
 

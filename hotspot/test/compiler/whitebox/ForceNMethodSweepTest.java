@@ -22,31 +22,30 @@
  *
  */
 
-import java.lang.reflect.Method;
-import java.util.EnumSet;
-
-import sun.hotspot.WhiteBox;
-import sun.hotspot.code.BlobType;
-
-import jdk.test.lib.Asserts;
-import jdk.test.lib.InfiniteLoop;
-import compiler.whitebox.CompilerWhiteBoxTest;
-
 /*
  * @test
  * @bug 8059624 8064669 8153265
+ * @summary testing of WB::forceNMethodSweep
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build ForceNMethodSweepTest
+ *          java.management
+ * @build compiler.whitebox.ForceNMethodSweepTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-TieredCompilation -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
- *                   -XX:-BackgroundCompilation -XX:-UseCounterDecay ForceNMethodSweepTest
- * @summary testing of WB::forceNMethodSweep
+ *                   -XX:-BackgroundCompilation -XX:-UseCounterDecay
+ *                   compiler.whitebox.ForceNMethodSweepTest
  */
+
+package compiler.whitebox;
+
+import jdk.test.lib.Asserts;
+import sun.hotspot.code.BlobType;
+
+import java.util.EnumSet;
+
 public class ForceNMethodSweepTest extends CompilerWhiteBoxTest {
     public static void main(String[] args) throws Exception {
         CompilerWhiteBoxTest.main(ForceNMethodSweepTest::new, args);

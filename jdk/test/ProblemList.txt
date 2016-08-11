@@ -341,6 +341,11 @@ com/sun/jdi/CatchPatternTest.sh                                 8068645 generic-
 
 com/sun/jdi/GetLocalVariables4Test.sh                           8067354 windows-all
 
+com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-all
+
+com/sun/jdi/ClassesByName2Test.java				8160833 generic-all
+com/sun/jdi/RedefineCrossEvent.java				8160833 generic-all
+
 ############################################################################
 
 # jdk_time
@@ -364,6 +369,10 @@ java/util/BitSet/BitSetStreamTest.java                          8079538 generic-
 # svc_tools
 
 sun/tools/jcmd/TestJcmdSanity.java                              8031482 windows-all
+
+sun/tools/jhsdb/BasicLauncherTest.java                          8160376 macosx-all
+
+sun/tools/jhsdb/heapconfig/JMapHeapConfigTest.java              8160376 macosx-all
 
 sun/tools/jstatd/TestJstatdExternalRegistry.java                8046285 generic-all
 

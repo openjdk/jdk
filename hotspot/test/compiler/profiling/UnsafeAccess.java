@@ -24,10 +24,14 @@
  * @test
  * @bug 8134918
  * @modules java.base/jdk.internal.misc
+ *
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:TypeProfileLevel=222 -XX:+UseTypeSpeculation -Xbatch
- *                                 -XX:CompileCommand=dontinline,UnsafeAccess::test*
- *                                 UnsafeAccess
+ *                                 -XX:CompileCommand=dontinline,compiler.profiling.UnsafeAccess::test*
+ *                                 compiler.profiling.UnsafeAccess
  */
+
+package compiler.profiling;
+
 import jdk.internal.misc.Unsafe;
 
 public class UnsafeAccess {

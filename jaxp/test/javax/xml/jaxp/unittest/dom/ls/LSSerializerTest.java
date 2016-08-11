@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMError;
@@ -48,9 +49,14 @@ import org.xml.sax.SAXException;
 
 
 /*
+ * @test
  * @bug 6439439 8080906
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true dom.ls.LSSerializerTest
+ * @run testng/othervm dom.ls.LSSerializerTest
  * @summary Test LSSerializer.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class LSSerializerTest {
     private static final String DOM_FORMAT_PRETTY_PRINT = "format-pretty-print";
 
@@ -313,3 +319,4 @@ public class LSSerializerTest {
         Assert.assertEquals(XML11_DOCUMENT_OUTPUT, defaultSerialization, "Invalid serialization of XML 1.1 document: ");
     }
 }
+

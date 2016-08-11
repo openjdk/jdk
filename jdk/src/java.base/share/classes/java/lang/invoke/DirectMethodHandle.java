@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.VerifyType;
@@ -185,7 +186,7 @@ class DirectMethodHandle extends MethodHandle {
         return mtype.form().setCachedLambdaForm(which, lform);
     }
 
-    private static LambdaForm makePreparedLambdaForm(MethodType mtype, int which) {
+    static LambdaForm makePreparedLambdaForm(MethodType mtype, int which) {
         boolean needsInit = (which == LF_INVSTATIC_INIT);
         boolean doesAlloc = (which == LF_NEWINVSPECIAL);
         String linkerName, lambdaName;
@@ -198,6 +199,7 @@ class DirectMethodHandle extends MethodHandle {
         case LF_NEWINVSPECIAL: linkerName = "linkToSpecial";    lambdaName = "DMH.newInvokeSpecial"; break;
         default:  throw new InternalError("which="+which);
         }
+
         MethodType mtypeWithArg = mtype.appendParameterTypes(MemberName.class);
         if (doesAlloc)
             mtypeWithArg = mtypeWithArg
@@ -240,8 +242,9 @@ class DirectMethodHandle extends MethodHandle {
         names[LINKER_CALL] = new Name(linker, outArgs);
         lambdaName += "_" + shortenSignature(basicTypeSignature(mtype));
         LambdaForm lform = new LambdaForm(lambdaName, ARG_LIMIT, names, result);
+
         // This is a tricky bit of code.  Don't send it through the LF interpreter.
-        lform.compileToBytecode();
+        lform.compileToBytecode(Holder.class);
         return lform;
     }
 
@@ -487,7 +490,7 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     // Caching machinery for field accessors:
-    private static byte
+    private static final byte
             AF_GETFIELD        = 0,
             AF_PUTFIELD        = 1,
             AF_GETSTATIC       = 2,
@@ -497,8 +500,8 @@ class DirectMethodHandle extends MethodHandle {
             AF_LIMIT           = 6;
     // Enumerate the different field kinds using Wrapper,
     // with an extra case added for checked references.
-    private static int
-            FT_LAST_WRAPPER    = Wrapper.values().length-1,
+    private static final int
+            FT_LAST_WRAPPER    = Wrapper.COUNT-1,
             FT_UNCHECKED_REF   = Wrapper.OBJECT.ordinal(),
             FT_CHECKED_REF     = FT_LAST_WRAPPER+1,
             FT_LIMIT           = FT_LAST_WRAPPER+2;
@@ -507,6 +510,7 @@ class DirectMethodHandle extends MethodHandle {
                 + (isVolatile ? FT_LIMIT : 0)
                 + ftypeKind);
     }
+    @Stable
     private static final LambdaForm[] ACCESSOR_FORMS
             = new LambdaForm[afIndex(AF_LIMIT, false, 0)];
     private static int ftypeKind(Class<?> ftype) {
@@ -549,10 +553,11 @@ class DirectMethodHandle extends MethodHandle {
         return lform;
     }
     private static LambdaForm preparedFieldLambdaForm(byte formOp, boolean isVolatile, Class<?> ftype) {
-        int afIndex = afIndex(formOp, isVolatile, ftypeKind(ftype));
+        int ftypeKind = ftypeKind(ftype);
+        int afIndex = afIndex(formOp, isVolatile, ftypeKind);
         LambdaForm lform = ACCESSOR_FORMS[afIndex];
         if (lform != null)  return lform;
-        lform = makePreparedFieldLambdaForm(formOp, isVolatile, ftypeKind(ftype));
+        lform = makePreparedFieldLambdaForm(formOp, isVolatile, ftypeKind);
         ACCESSOR_FORMS[afIndex] = lform;  // don't bother with a CAS
         return lform;
     }
@@ -682,4 +687,15 @@ class DirectMethodHandle extends MethodHandle {
             throw newInternalError(ex);
         }
     }
+
+    static {
+        // The DMH class will contain pre-generated DirectMethodHandles resolved
+        // speculatively using MemberName.getFactory().resolveOrNull. However, that
+        // doesn't initialize the class, which subtly breaks inlining etc. By forcing
+        // initialization of the Holder class we avoid these issues.
+        UNSAFE.ensureClassInitialized(Holder.class);
+    }
+
+    /* Placeholder class for DirectMethodHandles generated ahead of time */
+    private final class Holder {}
 }

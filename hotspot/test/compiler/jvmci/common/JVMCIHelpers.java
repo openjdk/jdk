@@ -23,14 +23,12 @@
 
 package compiler.jvmci.common;
 
-import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompilationRequestResult;
 import jdk.vm.ci.hotspot.services.HotSpotVMEventListener;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCICompiler;
-import jdk.vm.ci.runtime.services.JVMCICompilerFactory;
 import jdk.vm.ci.runtime.JVMCIRuntime;
+import jdk.vm.ci.runtime.services.JVMCICompilerFactory;
 
 /*
  * A stub classes to be able to use jvmci

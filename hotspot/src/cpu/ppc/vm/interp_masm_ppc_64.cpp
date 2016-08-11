@@ -26,7 +26,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
-#include "interp_masm_ppc_64.hpp"
+#include "interp_masm_ppc.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/sharedRuntime.hpp"

@@ -23,11 +23,13 @@
 
 /*
  * @test
+ * @summary check calls from interpreted to compiled using InvokeDynamic
  * @library /test/lib /testlibrary /
  * @modules java.base/jdk.internal.misc
- * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.org.objectweb.asm
+ *
  * @build compiler.calls.common.InvokeDynamic
- * @build compiler.calls.common.InvokeDynamicPatcher
+ *        compiler.calls.common.InvokeDynamicPatcher
  * @run main compiler.calls.common.InvokeDynamicPatcher
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *    sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -37,5 +39,4 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *    -XX:CompileCommand=exclude,compiler.calls.common.InvokeDynamic::caller -Xbatch compiler.calls.common.InvokeDynamic
  *    -checkCallerCompileLevel 0 -compileCallee 4 -checkCalleeCompileLevel 4
- * @summary check calls from interpreted to compiled using InvokeDynamic
  */

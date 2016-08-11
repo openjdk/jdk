@@ -344,8 +344,6 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
       BUILD_LIBAWT_XAWT_awt_Font.c_CFLAGS := -w
       # initializing a declared 'extern'
       BUILD_LIBAWT_XAWT_debug_mem.c_CFLAGS := -w
-      # decimal constant is unsigned only in ISO C90 (JAVASE_EMBEDDED)
-      BUILD_LIBAWT_XAWT_XToolkit.c_CFLAGS := -w
    endif
 
     $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_XAWT, \

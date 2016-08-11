@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,20 @@ import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogResolver;
 
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8077931
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true catalog.PreferFeatureTest
+ * @run testng/othervm catalog.PreferFeatureTest
  * @summary This case tests how does the feature affect the catalog resolution,
  *          and tests the priority between this feature and attribute prefer
  *          in catalog file.
- * @compile ../../libs/catalog/CatalogTestUtils.java
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class PreferFeatureTest {
 
     @Test(dataProvider = "prefer-publicId-systemId",
@@ -53,7 +57,7 @@ public class PreferFeatureTest {
     }
 
     @DataProvider(name = "prefer-publicId-systemId")
-    private Object[][] data() {
+    public Object[][] data() {
         return new Object[][] {
                 // The feature prefer is system. There's a match for the
                 // specified public id, and no match for the specified system id.
@@ -77,3 +81,4 @@ public class PreferFeatureTest {
                 "preferFeature.xml");
     }
 }
+

@@ -45,7 +45,7 @@ G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults), _adaptive_size(
                             "A new max generation size of " SIZE_FORMAT "k will be used.",
                             NewSize/K, MaxNewSize/K, NewSize/K);
     }
-    MaxNewSize = NewSize;
+    FLAG_SET_ERGO(size_t, MaxNewSize, NewSize);
   }
 
   if (FLAG_IS_CMDLINE(NewSize)) {

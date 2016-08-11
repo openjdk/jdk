@@ -128,6 +128,7 @@ module java.base {
     exports jdk.internal.logger to
         java.logging;
     exports jdk.internal.org.objectweb.asm to
+        jdk.jartool,
         jdk.jlink,
         jdk.scripting.nashorn,
         jdk.vm.ci;

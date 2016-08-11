@@ -29,6 +29,7 @@
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
+ * @summary Test of diagnostic command Compiler.queue
  * @build jdk.test.lib.*
  *        jdk.test.lib.dcmd.*
  *        sun.hotspot.WhiteBox
@@ -38,7 +39,6 @@
  * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xmixed -XX:+WhiteBoxAPI CompilerQueueTest
  * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xmixed -XX:-TieredCompilation -XX:+WhiteBoxAPI CompilerQueueTest
  * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xint -XX:+WhiteBoxAPI CompilerQueueTest
- * @summary Test of diagnostic command Compiler.queue
  */
 
 import compiler.testlibrary.CompilerUtils;
@@ -107,7 +107,7 @@ public class CompilerQueueTest {
             boolean added = WB.enqueueMethodForCompilation(testcase.method, testcase.level);
             // Set results to false for those methods we must to find
             // We will also assert if we find any test method we don't expect
-            Assert.assertTrue(WB.isMethodQueuedForCompilation(testcase.method));
+            Assert.assertEquals(added, WB.isMethodQueuedForCompilation(testcase.method));
             testcase.check = false;
         }
 

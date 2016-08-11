@@ -29,6 +29,7 @@ import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.Wrapper;
@@ -104,6 +105,7 @@ public class MethodHandles {
      * @return a lookup object for the caller of this method, with private access
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public static Lookup lookup() {
         return new Lookup(Reflection.getCallerClass());
     }
@@ -3113,7 +3115,7 @@ assert((int)twice.invokeExact(21) == 42);
         return dropArguments(zero(type.returnType()), 0, type.parameterList());
     }
 
-    private static final MethodHandle[] IDENTITY_MHS = new MethodHandle[Wrapper.values().length];
+    private static final MethodHandle[] IDENTITY_MHS = new MethodHandle[Wrapper.COUNT];
     private static MethodHandle makeIdentity(Class<?> ptype) {
         MethodType mtype = methodType(ptype, ptype);
         LambdaForm lform = LambdaForm.identityForm(BasicType.basicType(ptype));
@@ -3131,7 +3133,7 @@ assert((int)twice.invokeExact(21) == 42);
         assert(btw == Wrapper.OBJECT);
         return makeZero(rtype);
     }
-    private static final MethodHandle[] ZERO_MHS = new MethodHandle[Wrapper.values().length];
+    private static final MethodHandle[] ZERO_MHS = new MethodHandle[Wrapper.COUNT];
     private static MethodHandle makeZero(Class<?> rtype) {
         MethodType mtype = methodType(rtype);
         LambdaForm lform = LambdaForm.zeroForm(BasicType.basicType(rtype));

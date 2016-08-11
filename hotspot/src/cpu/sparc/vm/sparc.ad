@@ -501,16 +501,10 @@ class HandlerImpl {
   static int emit_deopt_handler(CodeBuffer& cbuf);
 
   static uint size_exception_handler() {
-    if (TraceJumps) {
-      return (400); // just a guess
-    }
     return ( NativeJump::instruction_size ); // sethi;jmp;nop
   }
 
   static uint size_deopt_handler() {
-    if (TraceJumps) {
-      return (400); // just a guess
-    }
     return ( 4+  NativeJump::instruction_size ); // save;sethi;jmp;restore
   }
 };
@@ -720,7 +714,7 @@ intptr_t get_offset_from_base_2(const MachNode* n, const TypePtr* atype, int dis
   return offset;
 }
 
-static inline jdouble replicate_immI(int con, int count, int width) {
+static inline jlong replicate_immI(int con, int count, int width) {
   // Load a constant replicated "count" times with width "width"
   assert(count*width == 8 && width <= 4, "sanity");
   int bit_width = width * 8;
@@ -729,17 +723,15 @@ static inline jdouble replicate_immI(int con, int count, int width) {
   for (int i = 0; i < count - 1; i++) {
     val |= (val << bit_width);
   }
-  jdouble dval = *((jdouble*) &val);  // coerce to double type
-  return dval;
+  return val;
 }
 
-static inline jdouble replicate_immF(float con) {
+static inline jlong replicate_immF(float con) {
   // Replicate float con 2 times and pack into vector.
   int val = *((int*)&con);
   jlong lval = val;
   lval = (lval << 32) | (lval & 0xFFFFFFFFl);
-  jdouble dval = *((jdouble*) &lval);  // coerce to double type
-  return dval;
+  return lval;
 }
 
 // Standard Sparc opcode form2 field breakdown
@@ -2661,8 +2653,7 @@ encode %{
 
       // Emit stub for static call.
       address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
-      // Stub does not fit into scratch buffer if TraceJumps is enabled
-      if (stub == NULL && !(TraceJumps && Compile::current()->in_scratch_emit_size())) {
+      if (stub == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }

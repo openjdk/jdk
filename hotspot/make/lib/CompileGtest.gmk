@@ -104,7 +104,7 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LAUNCHER, \
         -I$(GTEST_FRAMEWORK_SRC)/include, \
     CFLAGS_DEBUG_SYMBOLS := $(JVM_CFLAGS_SYMBOLS), \
     CXXFLAGS_DEBUG_SYMBOLS := $(JVM_CFLAGS_SYMBOLS), \
-    LDFLAGS := $(LDFLAGS_TESTEXE), \
+    LDFLAGS := $(LDFLAGS_JDKEXE), \
     LDFLAGS_unix := -L$(JVM_OUTPUTDIR)/gtest $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_solaris := -library=stlport4, \
     LIBS_unix := -ljvm, \

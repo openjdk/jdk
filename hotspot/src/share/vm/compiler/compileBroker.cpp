@@ -551,17 +551,6 @@ void CompileBroker::compilation_init(TRAPS) {
       } else {
         c1_count = JVMCIHostThreads;
       }
-
-      if (!UseInterpreter || !BackgroundCompilation) {
-        // Force initialization of JVMCI compiler otherwise JVMCI
-        // compilations will not block until JVMCI is initialized
-        ResourceMark rm;
-        TempNewSymbol getCompiler = SymbolTable::new_symbol("getCompiler", CHECK);
-        TempNewSymbol sig = SymbolTable::new_symbol("()Ljdk/vm/ci/runtime/JVMCICompiler;", CHECK);
-        Handle jvmciRuntime = JVMCIRuntime::get_HotSpotJVMCIRuntime(CHECK);
-        JavaValue result(T_OBJECT);
-        JavaCalls::call_virtual(&result, jvmciRuntime, HotSpotJVMCIRuntime::klass(), getCompiler, sig, CHECK);
-      }
     }
   }
 #endif // INCLUDE_JVMCI
@@ -1078,6 +1067,12 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
       compilation_is_prohibited(method, osr_bci, comp_level, directive->ExcludeOption)) {
     return NULL;
   }
+
+#if INCLUDE_JVMCI
+  if (comp->is_jvmci() && !JVMCIRuntime::can_initialize_JVMCI()) {
+    return NULL;
+  }
+#endif
 
   if (osr_bci == InvocationEntryBci) {
     // standard compilation

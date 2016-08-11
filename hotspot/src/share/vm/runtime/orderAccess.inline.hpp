@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014 SAP SE. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,52 +28,9 @@
 
 #include "runtime/atomic.inline.hpp"
 #include "runtime/orderAccess.hpp"
+#include "utilities/macros.hpp"
 
-// Linux
-#ifdef TARGET_OS_ARCH_linux_x86
-# include "orderAccess_linux_x86.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_sparc
-# include "orderAccess_linux_sparc.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_zero
-# include "orderAccess_linux_zero.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_arm
-# include "orderAccess_linux_arm.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_aarch64
-# include "orderAccess_linux_aarch64.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_ppc
-# include "orderAccess_linux_ppc.inline.hpp"
-#endif
-
-// Solaris
-#ifdef TARGET_OS_ARCH_solaris_x86
-# include "orderAccess_solaris_x86.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_solaris_sparc
-# include "orderAccess_solaris_sparc.inline.hpp"
-#endif
-
-// Windows
-#ifdef TARGET_OS_ARCH_windows_x86
-# include "orderAccess_windows_x86.inline.hpp"
-#endif
-
-// AIX
-#ifdef TARGET_OS_ARCH_aix_ppc
-# include "orderAccess_aix_ppc.inline.hpp"
-#endif
-
-// BSD
-#ifdef TARGET_OS_ARCH_bsd_x86
-# include "orderAccess_bsd_x86.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_bsd_zero
-# include "orderAccess_bsd_zero.inline.hpp"
-#endif
+#include OS_CPU_HEADER_INLINE(orderAccess)
 
 #ifdef VM_HAS_GENERALIZED_ORDER_ACCESS
 

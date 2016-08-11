@@ -65,7 +65,7 @@ public class TestDriver {
     public void setup() throws Exception {
         assertTrue(CompilerUtils.compile(
                         MOD_SRC_DIR, MOD_DEST_DIR,
-                        "-modulesourcepath",
+                        "--module-source-path",
                         MOD_SRC_DIR.toString()));
 
         copyDirectories(MOD_DEST_DIR.resolve("m1"), Paths.get("mods1"));
@@ -76,8 +76,8 @@ public class TestDriver {
     public void test() throws Exception {
         String[] options = new String[] {
                 "-cp", TEST_CLASSES,
-                "-mp", MOD_DEST_DIR.toString(),
-                "-addmods", String.join(",", modules),
+                "--module-path", MOD_DEST_DIR.toString(),
+                "--add-modules", String.join(",", modules),
                 "-m", "m2/p2.test.Main"
         };
         runTest(options);
@@ -87,8 +87,8 @@ public class TestDriver {
     public void testUnnamedModule() throws Exception {
         String[] options = new String[] {
                 "-cp", TEST_CLASSES,
-                "-mp", MOD_DEST_DIR.toString(),
-                "-addmods", String.join(",", modules),
+                "--module-path", MOD_DEST_DIR.toString(),
+                "--add-modules", String.join(",", modules),
                 "TestMain"
         };
         runTest(options);
@@ -107,8 +107,8 @@ public class TestDriver {
     @Test
     public void testDeniedClassLoaderAccess() throws Exception {
         String[] options = new String[] {
-                "-mp", MOD_DEST_DIR.toString(),
-                "-addmods", String.join(",", modules),
+                "--module-path", MOD_DEST_DIR.toString(),
+                "--add-modules", String.join(",", modules),
                 "-m", "m3/p3.NoGetClassLoaderAccess"
         };
         assertTrue(executeTestJava(options)
@@ -124,8 +124,8 @@ public class TestDriver {
         String[] options = new String[] {
                 "-Djava.security.manager",
                 "-Djava.security.policy=" + policyFile.toString(),
-                "-mp", MOD_DEST_DIR.toString(),
-                "-addmods", String.join(",", modules),
+                "--module-path", MOD_DEST_DIR.toString(),
+                "--add-modules", String.join(",", modules),
                 "-m", "m3/p3.NoAccess"
         };
         assertTrue(executeTestJava(options)

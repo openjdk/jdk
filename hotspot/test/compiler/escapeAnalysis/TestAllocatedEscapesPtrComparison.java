@@ -24,10 +24,15 @@
 /*
  * @test
  * @bug 8043354
- * @summary  bcEscapeAnalyzer allocated_escapes not conservative enough
- * @run main/othervm -XX:CompileOnly=.visitAndPop TestAllocatedEscapesPtrComparison
+ * @summary bcEscapeAnalyzer allocated_escapes not conservative enough
+ *
+ * @run main/othervm
+ *      -XX:CompileCommand=compileonly,compiler.escapeAnalysis.TestAllocatedEscapesPtrComparison::visitAndPop
+ *      compiler.escapeAnalysis.TestAllocatedEscapesPtrComparison
  * @author Chuck Rasbold rasbold@google.com
  */
+
+package compiler.escapeAnalysis;
 
 /*
  * Test always passes with -XX:-OptmimizePtrCompare

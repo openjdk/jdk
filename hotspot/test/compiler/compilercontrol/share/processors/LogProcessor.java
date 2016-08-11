@@ -25,10 +25,10 @@ package compiler.compilercontrol.share.processors;
 
 import compiler.compilercontrol.share.method.MethodDescriptor;
 import compiler.compilercontrol.share.method.MethodGenerator;
+import compiler.compilercontrol.share.pool.PoolHelper;
 import compiler.compilercontrol.share.scenario.State;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.OutputAnalyzer;
-import pool.PoolHelper;
 
 import java.io.File;
 import java.io.FileNotFoundException;

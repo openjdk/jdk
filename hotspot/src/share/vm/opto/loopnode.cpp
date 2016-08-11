@@ -279,8 +279,16 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
     return false;
 
   // Allow funny placement of Safepoint
-  if (back_control->Opcode() == Op_SafePoint)
+  if (back_control->Opcode() == Op_SafePoint) {
+    if (UseCountedLoopSafepoints) {
+      // Leaving the safepoint on the backedge and creating a
+      // CountedLoop will confuse optimizations. We can't move the
+      // safepoint around because its jvm state wouldn't match a new
+      // location. Give up on that loop.
+      return false;
+    }
     back_control = back_control->in(TypeFunc::Control);
+  }
 
   // Controlling test for loop
   Node *iftrue = back_control;

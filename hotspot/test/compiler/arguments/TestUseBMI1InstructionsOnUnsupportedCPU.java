@@ -26,20 +26,19 @@
  * @bug 8031321
  * @summary Verify processing of UseBMI1Instructions option on CPU without
  *          BMI1 feature support.
- * @library /testlibrary /test/lib
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestUseBMI1InstructionsOnUnsupportedCPU
- *        BMIUnsupportedCPUTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @build compiler.arguments.TestUseBMI1InstructionsOnUnsupportedCPU
+ *        compiler.arguments.BMIUnsupportedCPUTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI TestUseBMI1InstructionsOnUnsupportedCPU
+ *                   -XX:+WhiteBoxAPI
+ *                   compiler.arguments.TestUseBMI1InstructionsOnUnsupportedCPU
  */
 
-import sun.hotspot.cpuinfo.CPUInfo;
-import jdk.test.lib.*;
-import jdk.test.lib.cli.*;
+package compiler.arguments;
 
 public class TestUseBMI1InstructionsOnUnsupportedCPU
       extends BMIUnsupportedCPUTest {

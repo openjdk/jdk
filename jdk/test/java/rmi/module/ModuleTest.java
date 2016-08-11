@@ -97,8 +97,8 @@ public class ModuleTest {
      */
     @Test
     public void testAllInModule() throws Exception {
-        assertEquals(executeTestJava("-mp", pathJoin(MTEST_JAR, CLIENT_JAR, SERVER_JAR),
-                "-addmods", "mclient,mserver",
+        assertEquals(executeTestJava("--module-path", pathJoin(MTEST_JAR, CLIENT_JAR, SERVER_JAR),
+                "--add-modules", "mclient,mserver",
                 "-m", "mtest/" + DUMMY_MAIN)
                 .outputTo(System.out)
                 .errorTo(System.out)
@@ -113,7 +113,7 @@ public class ModuleTest {
      */
     @Test
     public void testAppInModule() throws Exception {
-        assertEquals(executeTestJava("-mp", MTEST_JAR,
+        assertEquals(executeTestJava("--module-path", MTEST_JAR,
                 "-cp", pathJoin(CLIENT_JAR, SERVER_JAR),
                 "-m", "mtest/" + DUMMY_MAIN)
                 .outputTo(System.out)
@@ -129,8 +129,8 @@ public class ModuleTest {
      */
     @Test
     public void testAppInUnnamedModule() throws Exception {
-        assertEquals(executeTestJava("-mp", pathJoin(CLIENT_JAR, SERVER_JAR),
-                "-addmods", "mclient,mserver",
+        assertEquals(executeTestJava("--module-path", pathJoin(CLIENT_JAR, SERVER_JAR),
+                "--add-modules", "mclient,mserver",
                 "-cp", MTEST_JAR,
                 DUMMY_MAIN)
                 .outputTo(System.out)
@@ -146,8 +146,8 @@ public class ModuleTest {
      */
     @Test
     public void testClientInUnamedModule() throws Exception {
-        assertEquals(executeTestJava("-mp", pathJoin(MTEST_JAR, SERVER_JAR),
-                "-addmods", "mserver",
+        assertEquals(executeTestJava("--module-path", pathJoin(MTEST_JAR, SERVER_JAR),
+                "--add-modules", "mserver",
                 "-cp", CLIENT_JAR,
                 "-m", "mtest/" + DUMMY_MAIN)
                 .outputTo(System.out)
