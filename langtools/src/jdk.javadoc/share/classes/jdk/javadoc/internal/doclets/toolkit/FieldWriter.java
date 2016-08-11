@@ -113,9 +113,4 @@ public interface FieldWriter {
      * @return content tree for the field documentation
      */
     public Content getFieldDoc(Content fieldDocTree, boolean isLastContent);
-
-    /**
-     * Close the writer.
-     */
-    public void close() throws IOException;
 }

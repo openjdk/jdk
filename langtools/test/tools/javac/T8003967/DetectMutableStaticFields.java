@@ -116,6 +116,8 @@ public class DetectMutableStaticFields {
                 "moduleFinderClass", "ofMethod");
         ignore("com/sun/tools/javac/util/JDK9Wrappers$ServiceLoaderHelper",
                 "loadMethod");
+        ignore("com/sun/tools/javac/util/JDK9Wrappers$VMHelper",
+                "vmClass", "getRuntimeArgumentsMethod");
     }
 
     private final List<String> errors = new ArrayList<>();

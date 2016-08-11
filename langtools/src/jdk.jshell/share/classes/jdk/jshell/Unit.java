@@ -414,25 +414,29 @@ final class Unit {
     // types are the same. if so, consider it an overwrite replacement.
     private Status overwriteMatchingMethod(MethodSnippet msi) {
         String qpt = msi.qualifiedParameterTypes();
+        List<MethodSnippet> matching = state.methods()
+                .filter(sn ->
+                           sn != null
+                        && sn != msi
+                        && sn.status().isActive()
+                        && sn.name().equals(msi.name())
+                        && qpt.equals(sn.qualifiedParameterTypes()))
+                .collect(toList());
 
         // Look through all methods for a method of the same name, with the
         // same computed qualified parameter types
         Status overwrittenStatus = null;
-        for (MethodSnippet sn : state.methods()) {
-            if (sn != null && sn != msi && sn.status().isActive() && sn.name().equals(msi.name())) {
-                if (qpt.equals(sn.qualifiedParameterTypes())) {
-                    overwrittenStatus = sn.status();
-                    SnippetEvent se = new SnippetEvent(
-                            sn, overwrittenStatus, OVERWRITTEN,
-                            false, msi, null, null);
-                    sn.setOverwritten();
-                    secondaryEvents.add(se);
-                    state.debug(DBG_EVNT,
-                            "Overwrite event #%d -- key: %s before: %s status: %s sig: %b cause: %s\n",
-                            secondaryEvents.size(), se.snippet(), se.previousStatus(),
-                            se.status(), se.isSignatureChange(), se.causeSnippet());
-                }
-            }
+        for (MethodSnippet sn : matching) {
+            overwrittenStatus = sn.status();
+            SnippetEvent se = new SnippetEvent(
+                    sn, overwrittenStatus, OVERWRITTEN,
+                    false, msi, null, null);
+            sn.setOverwritten();
+            secondaryEvents.add(se);
+            state.debug(DBG_EVNT,
+                    "Overwrite event #%d -- key: %s before: %s status: %s sig: %b cause: %s\n",
+                    secondaryEvents.size(), se.snippet(), se.previousStatus(),
+                    se.status(), se.isSignatureChange(), se.causeSnippet());
         }
         return overwrittenStatus;
     }

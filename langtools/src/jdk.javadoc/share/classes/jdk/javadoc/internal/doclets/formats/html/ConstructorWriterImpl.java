@@ -119,7 +119,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         constructorDetailsTree.addContent(writer.getMarkerAnchor(
                 SectionName.CONSTRUCTOR_DETAIL));
         Content heading = HtmlTree.HEADING(HtmlConstants.DETAILS_HEADING,
-                writer.constructorDetailsLabel);
+                contents.constructorDetailsLabel);
         constructorDetailsTree.addContent(heading);
         return constructorDetailsTree;
     }
@@ -221,14 +221,6 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     }
 
     /**
-     * Close the writer.
-     */
-    @Override
-    public void close() throws IOException {
-        writer.close();
-    }
-
-    /**
      * Let the writer know whether a non public constructor was found.
      *
      * @param foundNonPubConstructor true if we found a non public constructor.
@@ -244,7 +236,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public void addSummaryLabel(Content memberTree) {
         Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
-                writer.getResource("doclet.Constructor_Summary"));
+                contents.constructorSummaryLabel);
         memberTree.addContent(label);
     }
 
@@ -253,9 +245,9 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public String getTableSummary() {
-        return configuration.getText("doclet.Member_Table_Summary",
-                configuration.getText("doclet.Constructor_Summary"),
-                configuration.getText("doclet.constructors"));
+        return resources.getText("doclet.Member_Table_Summary",
+                resources.getText("doclet.Constructor_Summary"),
+                resources.getText("doclet.constructors"));
     }
 
     /**
@@ -263,7 +255,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public Content getCaption() {
-        return configuration.getResource("doclet.Constructors");
+        return contents.constructors;
     }
 
     /**
@@ -273,11 +265,11 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     public List<String> getSummaryTableHeader(Element member) {
         List<String> header = new ArrayList<>();
         if (foundNonPubConstructor) {
-            header.add(configuration.getText("doclet.Modifier"));
+            header.add(resources.getText("doclet.Modifier"));
         }
-        header.add(configuration.getText("doclet.0_and_1",
-                configuration.getText("doclet.Constructor"),
-                configuration.getText("doclet.Description")));
+        header.add(resources.getText("doclet.0_and_1",
+                resources.getText("doclet.Constructor"),
+                resources.getText("doclet.Description")));
         return header;
     }
 
@@ -311,9 +303,9 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
         if (link) {
             return writer.getHyperLink(SectionName.CONSTRUCTOR_SUMMARY,
-                    writer.getResource("doclet.navConstructor"));
+                    contents.navConstructor);
         } else {
-            return writer.getResource("doclet.navConstructor");
+            return contents.navConstructor;
         }
     }
 
@@ -325,9 +317,9 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         if (link) {
             liNav.addContent(writer.getHyperLink(
                     SectionName.CONSTRUCTOR_DETAIL,
-                    writer.getResource("doclet.navConstructor")));
+                    contents.navConstructor));
         } else {
-            liNav.addContent(writer.getResource("doclet.navConstructor"));
+            liNav.addContent(contents.navConstructor);
         }
     }
 
@@ -343,7 +335,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
             } else if (utils.isPrivate(member)) {
                 code.addContent("private ");
             } else if (utils.isPublic(member)) {
-                code.addContent(writer.getSpace());
+                code.addContent(Contents.SPACE);
             } else {
                 code.addContent(
                         configuration.getText("doclet.Package_private"));

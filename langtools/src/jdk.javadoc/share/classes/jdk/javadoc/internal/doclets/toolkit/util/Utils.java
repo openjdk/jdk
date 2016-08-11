@@ -85,7 +85,10 @@ import static javax.lang.model.element.Modifier.*;
 import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
+
 import com.sun.source.util.SimpleDocTreeVisitor;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
+
 import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
 
 
@@ -102,12 +105,14 @@ import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuil
  */
 public class Utils {
     public final Configuration configuration;
+    public final Messages messages;
     public final DocTrees docTrees;
     public final Elements elementUtils;
     public final Types typeUtils;
 
     public Utils(Configuration c) {
         configuration = c;
+        messages = configuration.getMessages();
         elementUtils = c.docEnv.getElementUtils();
         typeUtils = c.docEnv.getTypeUtils();
         docTrees = c.docEnv.getDocTrees();
@@ -293,11 +298,10 @@ public class Utils {
                     DocFile destfile = destdir.resolve(srcfile.getName());
                     if (srcfile.isFile()) {
                         if (destfile.exists() && !first) {
-                            configuration.message.warning("doclet.Copy_Overwrite_warning",
+                            messages.warning("doclet.Copy_Overwrite_warning",
                                     srcfile.getPath(), destdir.getPath());
                         } else {
-                            configuration.message.notice(
-                                    "doclet.Copying_File_0_To_Dir_1",
+                            messages.notice("doclet.Copying_File_0_To_Dir_1",
                                     srcfile.getPath(), destdir.getPath());
                             destfile.copyFile(srcfile);
                         }
@@ -1577,11 +1581,10 @@ public class Utils {
                     DocFile destfile = destdir.resolve(srcfile.getName());
                     if (srcfile.isFile()) {
                         if (destfile.exists() && !first) {
-                            configuration.message.warning("doclet.Copy_Overwrite_warning",
+                            messages.warning("doclet.Copy_Overwrite_warning",
                                     srcfile.getPath(), destdir.getPath());
                         } else {
-                            configuration.message.notice(
-                                    "doclet.Copying_File_0_To_Dir_1",
+                            messages.notice("doclet.Copying_File_0_To_Dir_1",
                                     srcfile.getPath(), destdir.getPath());
                             destfile.copyFile(srcfile);
                         }

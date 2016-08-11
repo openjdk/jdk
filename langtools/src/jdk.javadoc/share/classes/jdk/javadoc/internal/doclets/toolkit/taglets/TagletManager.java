@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.io.*;
-import java.lang.reflect.Method;
 import java.util.*;
 
 import javax.lang.model.element.Element;
@@ -42,9 +41,11 @@ import javax.tools.StandardJavaFileManager;
 import com.sun.source.doctree.DocTree;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
+import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.Resources;
 
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
-import jdk.javadoc.internal.doclets.toolkit.util.MessageRetriever;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 import static javax.tools.DocumentationTool.Location.*;
@@ -126,10 +127,8 @@ public class TagletManager {
      */
     private List<Taglet> serializedFormTags;
 
-    /**
-     * The message retriever that will be used to print error messages.
-     */
-    private final MessageRetriever message;
+    private final Messages messages;
+    private final Resources resources;
 
     /**
      * Keep track of standard tags.
@@ -191,7 +190,7 @@ public class TagletManager {
      */
     public TagletManager(boolean nosince, boolean showversion,
                          boolean showauthor, boolean javafx,
-                         MessageRetriever message) {
+                         Configuration configuration) {
         overridenStandardTags = new HashSet<>();
         potentiallyConflictingTags = new HashSet<>();
         standardTags = new HashSet<>();
@@ -202,7 +201,8 @@ public class TagletManager {
         this.showversion = showversion;
         this.showauthor = showauthor;
         this.javafx = javafx;
-        this.message = message;
+        this.messages = configuration.getMessages();
+        this.resources = configuration.getResources();
         initStandardTaglets();
         initStandardTagsLowercase();
     }
@@ -260,9 +260,9 @@ public class TagletManager {
                 customTags.remove(tname);
             }
             customTags.put(tname, newLegacy);
-            message.notice("doclet.Notice_taglet_registered", classname);
+            messages.notice("doclet.Notice_taglet_registered", classname);
         } catch (Exception exc) {
-            message.error("doclet.Error_taglet_not_registered", exc.getClass().getName(), classname);
+            messages.error("doclet.Error_taglet_not_registered", exc.getClass().getName(), classname);
         }
     }
 
@@ -359,10 +359,10 @@ public class TagletManager {
             }
             if (! (standardTags.contains(name) || customTags.containsKey(name))) {
                 if (standardTagsLowercase.contains(Utils.toLowerCase(name))) {
-                    message.warning(ch.getDocTreePath(tag), "doclet.UnknownTagLowercase", ch.getTagName(tag));
+                    messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTagLowercase", ch.getTagName(tag));
                     continue;
                 } else {
-                    message.warning(ch.getDocTreePath(tag), "doclet.UnknownTag", ch.getTagName(tag));
+                    messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTag", ch.getTagName(tag));
                     continue;
                 }
             }
@@ -481,7 +481,7 @@ public class TagletManager {
             }
             combined_locations.append(locations[i]);
         }
-        message.warning(ch.getDocTreePath(tag), "doclet.tag_misuse",
+        messages.warning(ch.getDocTreePath(tag), "doclet.tag_misuse",
             "@" + taglet.getName(), holderType, combined_locations.toString());
     }
 
@@ -698,17 +698,17 @@ public class TagletManager {
         addStandardTaglet(new ThrowsTaglet());
         addStandardTaglet(new SimpleTaglet(EXCEPTION.tagName, null,
                 SimpleTaglet.METHOD + SimpleTaglet.CONSTRUCTOR));
-        addStandardTaglet(!nosince, new SimpleTaglet(SINCE.tagName, message.getText("doclet.Since"),
+        addStandardTaglet(!nosince, new SimpleTaglet(SINCE.tagName, resources.getText("doclet.Since"),
                 SimpleTaglet.ALL));
-        addStandardTaglet(showversion, new SimpleTaglet(VERSION.tagName, message.getText("doclet.Version"),
+        addStandardTaglet(showversion, new SimpleTaglet(VERSION.tagName, resources.getText("doclet.Version"),
                 SimpleTaglet.MODULE + SimpleTaglet.PACKAGE + SimpleTaglet.TYPE + SimpleTaglet.OVERVIEW));
-        addStandardTaglet(showauthor, new SimpleTaglet(AUTHOR.tagName, message.getText("doclet.Author"),
+        addStandardTaglet(showauthor, new SimpleTaglet(AUTHOR.tagName, resources.getText("doclet.Author"),
                 SimpleTaglet.MODULE + SimpleTaglet.PACKAGE + SimpleTaglet.TYPE + SimpleTaglet.OVERVIEW));
-        addStandardTaglet(new SimpleTaglet(SERIAL_DATA.tagName, message.getText("doclet.SerialData"),
+        addStandardTaglet(new SimpleTaglet(SERIAL_DATA.tagName, resources.getText("doclet.SerialData"),
                 SimpleTaglet.EXCLUDED));
-        addStandardTaglet(new SimpleTaglet(HIDDEN.tagName, message.getText("doclet.Hidden"),
+        addStandardTaglet(new SimpleTaglet(HIDDEN.tagName, resources.getText("doclet.Hidden"),
                 SimpleTaglet.FIELD + SimpleTaglet.METHOD + SimpleTaglet.TYPE));
-        customTags.put((temp = new SimpleTaglet("factory", message.getText("doclet.Factory"),
+        customTags.put((temp = new SimpleTaglet("factory", resources.getText("doclet.Factory"),
                 SimpleTaglet.METHOD)).getName(), temp);
         addStandardTaglet(new SeeTaglet());
         //Standard inline tags
@@ -735,9 +735,9 @@ public class TagletManager {
         addStandardTaglet(new PropertyGetterTaglet());
         addStandardTaglet(new PropertySetterTaglet());
         addStandardTaglet(new SimpleTaglet("propertyDescription",
-                message.getText("doclet.PropertyDescription"),
+                resources.getText("doclet.PropertyDescription"),
                 SimpleTaglet.FIELD + SimpleTaglet.METHOD));
-        addStandardTaglet(new SimpleTaglet("defaultValue", message.getText("doclet.DefaultValue"),
+        addStandardTaglet(new SimpleTaglet("defaultValue", resources.getText("doclet.DefaultValue"),
             SimpleTaglet.FIELD + SimpleTaglet.METHOD));
         addStandardTaglet(new SimpleTaglet("treatAsPrivate", null,
                 SimpleTaglet.FIELD + SimpleTaglet.METHOD + SimpleTaglet.TYPE));
@@ -790,7 +790,7 @@ public class TagletManager {
                     result += ", ";
                 }
             }
-            message.notice(noticeKey, result);
+            messages.notice(noticeKey, result);
         }
     }
 

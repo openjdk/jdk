@@ -25,8 +25,7 @@
  * @test
  * @bug 8047183
  * @summary JDK build fails with sjavac enabled
- *
- * @modules jdk.compiler
+ * @modules jdk.compiler/com.sun.tools.sjavac
  * @build Wrapper
  * @run main Wrapper IgnoreSymbolFile
  */

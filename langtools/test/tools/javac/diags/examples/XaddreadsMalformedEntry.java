@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.xaddreads.malformed.entry
-// options: -XaddReads:jdk.compiler
+// options: --add-reads jdk.compiler
 
 public class XaddreadsMalformedEntry {
 }

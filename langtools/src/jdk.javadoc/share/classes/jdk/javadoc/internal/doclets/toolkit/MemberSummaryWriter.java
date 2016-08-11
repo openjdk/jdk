@@ -122,9 +122,4 @@ public interface MemberSummaryWriter {
      * @return a content tree for the member
      */
     public Content getMemberTree(Content memberTree);
-
-    /**
-     * Close the writer.
-     */
-    public void close() throws IOException;
 }

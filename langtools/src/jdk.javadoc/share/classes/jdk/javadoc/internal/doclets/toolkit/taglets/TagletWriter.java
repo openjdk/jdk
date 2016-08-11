@@ -36,7 +36,6 @@ import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet.UnsupportedTagletOperationException;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
-import jdk.javadoc.internal.doclets.toolkit.util.MessageRetriever;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -105,13 +104,6 @@ public abstract class TagletWriter {
      * @return the output of the taglet.
      */
     protected abstract Content literalTagOutput(Element element, DocTree tag);
-
-    /**
-     * Returns {@link MessageRetriever} for output purposes.
-     *
-     * @return {@link MessageRetriever} for output purposes.
-     */
-    protected abstract MessageRetriever getMsgRetriever();
 
     /**
      * Return the header for the param tags.

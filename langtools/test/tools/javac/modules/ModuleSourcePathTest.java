@@ -62,14 +62,14 @@ public class ModuleSourcePathTest extends ModuleTestBase {
 
         String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-sourcepath", sp.toString().replace('/', File.separatorChar),
-                        "-modulesourcepath", msp.toString().replace('/', File.separatorChar),
+                        "--source-path", sp.toString().replace('/', File.separatorChar),
+                        "--module-source-path", msp.toString().replace('/', File.separatorChar),
                         "dummyClass")
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("cannot specify both -sourcepath and -modulesourcepath"))
+        if (!log.contains("cannot specify both --source-path and --module-source-path"))
             throw new Exception("expected diagnostic not found");
     }
 
@@ -83,7 +83,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
 
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", src.toString())
+                        "--module-source-path", src.toString())
                 .outdir(modules)
                 .files(prefixAll(findJavaFiles(src), Paths.get("./")))
                 .run()
@@ -100,7 +100,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
 
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", "./" + src)
+                        "--module-source-path", "./" + src)
                 .outdir(modules)
                 .files(findJavaFiles(src))
                 .run()
@@ -123,7 +123,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
 
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", base + "/{src1,src2/inner_dir}")
+                        "--module-source-path", base + "/{src1,src2/inner_dir}")
                 .files(base.resolve("src1/m0/pkg0/A.java"), base.resolve("src2/inner_dir/m1/pkg1/A.java"))
                 .outdir(modules)
                 .run()
@@ -154,12 +154,12 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         for (String sourcepath : sourcePaths) {
             String log = new JavacTask(tb, Task.Mode.CMDLINE)
                     .options("-XDrawDiagnostics",
-                            "-modulesourcepath", sourcepath.replace('/', File.separatorChar))
+                            "--module-source-path", sourcepath.replace('/', File.separatorChar))
                     .run(Task.Expect.FAIL)
                     .writeAll()
                     .getOutput(Task.OutputKind.DIRECT);
 
-            if (!log.contains("- compiler.err.illegal.argument.for.option: -modulesourcepath, mismatched braces"))
+            if (!log.contains("- compiler.err.illegal.argument.for.option: --module-source-path, mismatched braces"))
                 throw new Exception("expected output for path [" + sourcepath + "] not found");
         }
     }
@@ -182,7 +182,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
 
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath",
+                        "--module-source-path",
                         base + "/{src/{{src1,src2,src3},{srcB,srcC}/{src1,src2/srcX{X,Y}/}},.}"
                                 .replace('/', File.separatorChar))
                 .files(findJavaFiles(base.resolve(modulePaths[modulePaths.length - 1])))
@@ -207,7 +207,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
 
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", base + "/{dummy.txt,src}")
+                        "--module-source-path", base + "/{dummy.txt,src}")
                 .files(src.resolve("kettle$/electric/Heater.java"))
                 .outdir(modules)
                 .run()
@@ -227,7 +227,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
 
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", base + "/{src}")
+                        "--module-source-path", base + "/{src}")
                 .files(src.resolve("kettle$/electric/Heater.java"))
                 .outdir(modules)
                 .run()
@@ -246,7 +246,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
 
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", base + "/{}")
+                        "--module-source-path", base + "/{}")
                 .files(base.resolve("kettle$/electric/Heater.java"))
                 .outdir(modules)
                 .run()
@@ -267,7 +267,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
 
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", "{" + src + "," + src + "/car}")
+                        "--module-source-path", "{" + src + "," + src + "/car}")
                 .files(findJavaFiles(src))
                 .outdir(modules)
                 .run()
@@ -286,7 +286,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
 
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", base + "/src/./../src")
+                        "--module-source-path", base + "/src/./../src")
                 .files(src.resolve("kettle/electric/Heater.java"))
                 .outdir(modules)
                 .run()
@@ -305,7 +305,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
 
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", base + "/{src,src,src}")
+                        "--module-source-path", base + "/{src,src,src}")
                 .files(src.resolve("m1/a/A.java"))
                 .outdir(modules)
                 .run()
@@ -323,7 +323,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
 
         String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", base + "/not_exist" + PATH_SEP + base + "/{not_exist,}")
+                        "--module-source-path", base + "/not_exist" + PATH_SEP + base + "/{not_exist,}")
                 .files(base.resolve("m1/a/A.java"))
                 .outdir(modules)
                 .run(Task.Expect.FAIL)
@@ -342,7 +342,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
 
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", base + "{/not_exist,/}")
+                        "--module-source-path", base + "{/not_exist,/}")
                 .files(base.resolve("m1/a/A.java"))
                 .outdir(modules)
                 .run()
@@ -361,7 +361,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
 
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", base + "/{,{,,,,src,,,}}")
+                        "--module-source-path", base + "/{,{,,,,src,,,}}")
                 .files(src.resolve("m1/a/A.java"))
                 .outdir(modules)
                 .run()
@@ -380,7 +380,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
 
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", base + "/*/classes/")
+                        "--module-source-path", base + "/*/classes/")
                 .files(base.resolve("kettle/classes/electric/Heater.java"))
                 .outdir(modules)
                 .run()
@@ -403,7 +403,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
 
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", src + "{/*/gensrc/,/*/classes/}" + PATH_SEP
+                        "--module-source-path", src + "{/*/gensrc/,/*/classes/}" + PATH_SEP
                                 + src + "/*/special/classes")
                 .files(findJavaFiles(src))
                 .outdir(modules)
@@ -432,12 +432,12 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         for (String sourcepath : sourcePaths) {
             String log = new JavacTask(tb, Task.Mode.CMDLINE)
                     .options("-XDrawDiagnostics",
-                            "-modulesourcepath", sourcepath.replace('/', File.separatorChar))
+                            "--module-source-path", sourcepath.replace('/', File.separatorChar))
                     .run(Task.Expect.FAIL)
                     .writeAll()
                     .getOutput(Task.OutputKind.DIRECT);
 
-            if (!log.contains("- compiler.err.illegal.argument.for.option: -modulesourcepath, illegal use of *"))
+            if (!log.contains("- compiler.err.illegal.argument.for.option: --module-source-path, illegal use of *"))
                 throw new Exception("expected output for path [" + sourcepath + "] not found");
         }
     }

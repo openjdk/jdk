@@ -34,6 +34,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -112,10 +113,9 @@ public class PackageTreeWriter extends AbstractTreeWriter {
             packgen = new PackageTreeWriter(configuration, path, pkg,
                 prev, next);
             packgen.generatePackageTreeFile();
-            packgen.close();
         } catch (IOException exc) {
-            configuration.standardmessage.error(
-                        "doclet.exception_encountered",
+            Messages messages = configuration.getMessages();
+            messages.error("doclet.exception_encountered",
                         exc.toString(), path.getPath());
             throw new DocletAbortException(exc);
         }
@@ -130,7 +130,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
                 ? HtmlTree.MAIN()
                 : body;
-        Content headContent = getResource("doclet.Hierarchy_For_Package",
+        Content headContent = contents.getContent("doclet.Hierarchy_For_Package",
                 utils.getPackageName(packageElement));
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, false,
                 HtmlStyle.title, headContent);
@@ -187,7 +187,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      */
     protected void addLinkToMainTree(Content div) {
         Content span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
-                getResource("doclet.Package_Hierarchies"));
+                contents.packageHierarchies);
         div.addContent(span);
         HtmlTree ul = new HtmlTree (HtmlTag.UL);
         ul.addStyle(HtmlStyle.horizontal);
@@ -231,7 +231,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     @Override
     protected Content getNavLinkModule() {
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
-                moduleLabel);
+                contents.moduleLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -243,7 +243,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      */
     protected Content getNavLinkPackage() {
         Content linkContent = getHyperLink(DocPaths.PACKAGE_SUMMARY,
-                packageLabel);
+                contents.packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }

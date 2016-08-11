@@ -66,8 +66,8 @@ public class UpgradeModulePathTest extends ModuleTestBase {
                 "package p; class A { void main() { pkg2.E.class.getName(); } }");
 
         new JavacTask(tb, Task.Mode.CMDLINE)
-                .options("-modulepath", modules.toString(),
-                        "-upgrademodulepath", upgradeModules.toString())
+                .options("--module-path", modules.toString(),
+                        "--upgrade-module-path", upgradeModules.toString())
                 .files(findJavaFiles(src))
                 .run()
                 .writeAll();
@@ -92,7 +92,7 @@ public class UpgradeModulePathTest extends ModuleTestBase {
                 "package p; class A { void main() { pkg2.E.class.getName(); } }");
 
         new JavacTask(tb, Task.Mode.CMDLINE)
-                .options("-upgrademodulepath", upgradeModule + File.pathSeparator + module)
+                .options("--upgrade-module-path", upgradeModule + File.pathSeparator + module)
                 .files(findJavaFiles(src))
                 .run()
                 .writeAll();
@@ -126,9 +126,9 @@ public class UpgradeModulePathTest extends ModuleTestBase {
                 "package p; class A { void main() { pkg2.E.class.getName(); } }");
 
         new JavacTask(tb, Task.Mode.CMDLINE)
-                .options("-modulepath", module.toString(),
-                        "-modulesourcepath", src + File.pathSeparator + s,
-                        "-upgrademodulepath", upgradeModule + File.pathSeparator + upgradeModule3)
+                .options("--module-path", module.toString(),
+                        "--module-source-path", src + File.pathSeparator + s,
+                        "--upgrade-module-path", upgradeModule + File.pathSeparator + upgradeModule3)
                 .outdir(module)
                 .files(findJavaFiles(src))
                 .run()
@@ -154,8 +154,8 @@ public class UpgradeModulePathTest extends ModuleTestBase {
                 "package p; class A { void main() { pkg2.E.class.getName(); } }");
 
         new JavacTask(tb, Task.Mode.CMDLINE)
-                .options("-modulepath", upgradeModule + File.pathSeparator + module,
-                        "-upgrademodulepath", upgradeModule.toString())
+                .options("--module-path", upgradeModule + File.pathSeparator + module,
+                        "--upgrade-module-path", upgradeModule.toString())
                 .files(findJavaFiles(src))
                 .run()
                 .writeAll();
@@ -178,13 +178,13 @@ public class UpgradeModulePathTest extends ModuleTestBase {
 
         String output = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulepath", module.toString(),
-                        "-upgrademodulepath", dummy.toString())
+                        "--module-path", module.toString(),
+                        "--upgrade-module-path", dummy.toString())
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
-        if (!output.contains("compiler.err.illegal.argument.for.option: -upgrademodulepath, " + dummy)) {
+        if (!output.contains("compiler.err.illegal.argument.for.option: --upgrade-module-path, " + dummy)) {
             throw new Exception("Expected output was not found");
         }
     }
@@ -217,8 +217,8 @@ public class UpgradeModulePathTest extends ModuleTestBase {
                 "package p; class A { void main() { pkg1.A.class.getName(); pkg2.BC.class.getName(); pkg3.DC.class.getName(); } }");
 
         new JavacTask(tb, Task.Mode.CMDLINE)
-                .options("-modulepath", module.toString(),
-                        "-upgrademodulepath", upgradeModule.toString())
+                .options("--module-path", module.toString(),
+                        "--upgrade-module-path", upgradeModule.toString())
                 .files(findJavaFiles(src))
                 .run()
                 .writeAll();
@@ -229,8 +229,8 @@ public class UpgradeModulePathTest extends ModuleTestBase {
 
         String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulepath", module.toString(),
-                        "-upgrademodulepath", upgradeModule.toString())
+                        "--module-path", module.toString(),
+                        "--upgrade-module-path", upgradeModule.toString())
                 .files(findJavaFiles(src2))
                 .run(Task.Expect.FAIL)
                 .writeAll()
@@ -265,9 +265,9 @@ public class UpgradeModulePathTest extends ModuleTestBase {
                 "package p; class A { void main() { pkg2.EC2.class.getName(); } }");
 
         new JavacTask(tb, Task.Mode.CMDLINE)
-                .options("-modulepath", module.toString(),
-                        "-upgrademodulepath", upgradeModule1.toString(),
-                        "-upgrademodulepath", upgradeModule2.toString())
+                .options("--module-path", module.toString(),
+                        "--upgrade-module-path", upgradeModule1.toString(),
+                        "--upgrade-module-path", upgradeModule2.toString())
                 .files(findJavaFiles(src))
                 .run()
                 .writeAll();
@@ -278,9 +278,9 @@ public class UpgradeModulePathTest extends ModuleTestBase {
 
         final String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulepath", module.toString(),
-                        "-upgrademodulepath", upgradeModule1.toString(),
-                        "-upgrademodulepath", upgradeModule2.toString())
+                        "--module-path", module.toString(),
+                        "--upgrade-module-path", upgradeModule1.toString(),
+                        "--upgrade-module-path", upgradeModule2.toString())
                 .files(findJavaFiles(src2))
                 .run(Task.Expect.FAIL)
                 .writeAll()
