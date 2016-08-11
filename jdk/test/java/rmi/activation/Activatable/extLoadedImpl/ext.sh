@@ -52,9 +52,9 @@ mkdir -p ext
 $COMPILEJAVA/bin/jar ${TESTTOOLVMOPTS} cf ext/ext.jar -C $TESTCLASSES ExtLoadedImpl.class -C $TESTCLASSES ExtLoadedImpl_Stub.class -C $TESTCLASSES CheckLoader.class
 
 TESTVMOPTS="${TESTVMOPTS} \
- -XaddExports:java.rmi/sun.rmi.registry=ALL-UNNAMED \
- -XaddExports:java.rmi/sun.rmi.server=ALL-UNNAMED \
- -XaddExports:java.rmi/sun.rmi.transport=ALL-UNNAMED \
- -XaddExports:java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED"
+ --add-exports java.rmi/sun.rmi.registry=ALL-UNNAMED \
+ --add-exports java.rmi/sun.rmi.server=ALL-UNNAMED \
+ --add-exports java.rmi/sun.rmi.transport=ALL-UNNAMED \
+ --add-exports java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED"
 $TESTJAVA/bin/java ${TESTVMOPTS} -cp classes -Dtest.src=$TESTSRC -Dtest.classes=$TESTCLASSES -Djava.security.policy=$TESTSRC/security.policy -Djava.ext.dirs=ext ExtLoadedImplTest
 

@@ -47,6 +47,8 @@ esac
 # Choose 1024-bit RSA to make sure it runs fine and fast on all platforms. In
 # fact, every keyalg/keysize combination is OK for this test.
 
+TESTTOOLVMOPTS="$TESTTOOLVMOPTS -J-Duser.language=en -J-Duser.country=US"
+
 KS=js.ks
 KT="$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -storepass changeit -keypass changeit -keystore $KS -keyalg rsa -keysize 1024"
 JAR="$TESTJAVA${FS}bin${FS}jar ${TESTTOOLVMOPTS}"

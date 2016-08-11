@@ -186,7 +186,7 @@ class DirectMethodHandle extends MethodHandle {
         return mtype.form().setCachedLambdaForm(which, lform);
     }
 
-    private static LambdaForm makePreparedLambdaForm(MethodType mtype, int which) {
+    static LambdaForm makePreparedLambdaForm(MethodType mtype, int which) {
         boolean needsInit = (which == LF_INVSTATIC_INIT);
         boolean doesAlloc = (which == LF_NEWINVSPECIAL);
         String linkerName, lambdaName;
@@ -246,20 +246,6 @@ class DirectMethodHandle extends MethodHandle {
         // This is a tricky bit of code.  Don't send it through the LF interpreter.
         lform.compileToBytecode(Holder.class);
         return lform;
-    }
-
-    /*
-     * NOTE: This method acts as an API hook for use by the
-     * GenerateJLIClassesPlugin to generate a class wrapping DirectMethodHandle
-     * methods for an array of method types.
-     */
-    static byte[] generateDMHClassBytes(String className, MethodType[] methodTypes, int[] types) {
-        LambdaForm[] forms = new LambdaForm[methodTypes.length];
-        for (int i = 0; i < forms.length; i++) {
-            forms[i] = makePreparedLambdaForm(methodTypes[i], types[i]);
-            methodTypes[i] = forms[i].methodType();
-        }
-        return InvokerBytecodeGenerator.generateCodeBytesForMultiple(className, forms, methodTypes);
     }
 
     static Object findDirectMethodHandle(Name name) {
@@ -515,7 +501,7 @@ class DirectMethodHandle extends MethodHandle {
     // Enumerate the different field kinds using Wrapper,
     // with an extra case added for checked references.
     private static final int
-            FT_LAST_WRAPPER    = Wrapper.values().length-1,
+            FT_LAST_WRAPPER    = Wrapper.COUNT-1,
             FT_UNCHECKED_REF   = Wrapper.OBJECT.ordinal(),
             FT_CHECKED_REF     = FT_LAST_WRAPPER+1,
             FT_LIMIT           = FT_LAST_WRAPPER+2;

@@ -38,7 +38,7 @@ public class ProxyModuleMapping {
         Module unnamed = ld.getUnnamedModule();
         new ProxyModuleMapping(unnamed, Runnable.class).test();
 
-        // unnamed module gets access to sun.invoke package (e.g. via -XaddExports)
+        // unnamed module gets access to sun.invoke package (e.g. via --add-exports)
         new ProxyModuleMapping(sun.invoke.WrapperInstance.class).test();
 
         Class<?> modulePrivateIntf = Class.forName("sun.net.ProgressListener");

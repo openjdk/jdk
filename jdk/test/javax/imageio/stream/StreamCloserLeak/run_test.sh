@@ -199,14 +199,14 @@ if [ $? -ne 0 ] ; then
 fi
 
 # Verify that all classloaders are destroyed
-${TESTJAVA}/bin/java -XaddExports:java.desktop/sun.awt=ALL-UNNAMED ${TESTVMOPTS} -cp Test.jar test.Main
+${TESTJAVA}/bin/java --add-exports java.desktop/sun.awt=ALL-UNNAMED ${TESTVMOPTS} -cp Test.jar test.Main
 if [ $? -ne 0 ] ; then
     fail "Test FAILED: some classloaders weren't destroyed."
 fi
 
 
 # Verify that ImageIO shutdown hook works correcly
-${TESTJAVA}/bin/java -XaddExports:java.desktop/sun.awt=ALL-UNNAMED ${TESTVMOPTS} \
+${TESTJAVA}/bin/java --add-exports java.desktop/sun.awt=ALL-UNNAMED ${TESTVMOPTS} \
     -cp Test.jar -DforgetSomeStreams=true test.Main
 if [ $? -ne 0 ] ; then
     fail "Test FAILED: some classloaders weren't destroyed of shutdown hook failed."

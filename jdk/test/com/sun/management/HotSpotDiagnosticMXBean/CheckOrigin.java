@@ -61,7 +61,7 @@ public class CheckOrigin {
 
             ProcessBuilder pb = ProcessTools.
                 createJavaProcessBuilder(
-                    "-XaddExports:jdk.attach/sun.tools.attach=ALL-UNNAMED",
+                    "--add-exports", "jdk.attach/sun.tools.attach=ALL-UNNAMED",
                     "-XX:+UseConcMarkSweepGC",  // this will cause UseParNewGC to be FLAG_SET_ERGO
                     "-XX:+UseCodeAging",
                     "-XX:+UseCerealGC",         // Should be ignored.

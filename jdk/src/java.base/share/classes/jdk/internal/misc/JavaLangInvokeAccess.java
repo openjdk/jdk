@@ -25,19 +25,42 @@
 
 package jdk.internal.misc;
 
+import java.lang.invoke.MethodType;
+import java.util.Map;
+
 public interface JavaLangInvokeAccess {
     /**
-     * Create a new MemberName instance
+     * Create a new MemberName instance. Used by {@see StackFrameInfo}.
      */
     Object newMemberName();
 
     /**
-     * Returns the name for the given MemberName
+     * Returns the name for the given MemberName. Used by {@see StackFrameInfo}.
      */
     String getName(Object mname);
 
     /**
-     * Returns {@code true} if the given MemberName is a native method
+     * Returns {@code true} if the given MemberName is a native method. Used by
+     * {@see StackFrameInfo}.
      */
     boolean isNative(Object mname);
+
+    /**
+     * Returns a {@code byte[]} containing the bytecode for a class implementing
+     * DirectMethodHandle of each pairwise combination of {@code MethodType} and
+     * an {@code int} representing method type.  Used by
+     * GenerateJLIClassesPlugin to generate such a class during the jlink phase.
+     */
+    byte[] generateDMHClassBytes(String className, MethodType[] methodTypes,
+            int[] types);
+
+    /**
+     * Returns a {@code byte[]} containing the bytecode for a BoundMethodHandle
+     * species class implementing the signature defined by {@code types}. Used
+     * by GenerateBMHClassesPlugin to enable generation of such classes during
+     * the jlink phase. Should do some added validation since this string may be
+     * user provided.
+     */
+    Map.Entry<String, byte[]> generateConcreteBMHClassBytes(
+            final String types);
 }
