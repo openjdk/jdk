@@ -93,7 +93,7 @@ public class ResolveTest extends ModuleTestBase {
         Files.createDirectories(modules);
 
         String log = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
+                .options("-XDrawDiagnostics", "--module-source-path", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
@@ -117,7 +117,7 @@ public class ResolveTest extends ModuleTestBase {
         Files.createDirectories(modules);
 
         String log = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
+                .options("-XDrawDiagnostics", "--module-source-path", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
@@ -143,7 +143,7 @@ public class ResolveTest extends ModuleTestBase {
         Files.createDirectories(modules);
 
         String log = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
+                .options("-XDrawDiagnostics", "--module-source-path", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
@@ -167,7 +167,7 @@ public class ResolveTest extends ModuleTestBase {
         Files.createDirectories(modules);
 
         String log = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
+                .options("-XDrawDiagnostics", "--module-source-path", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
@@ -191,7 +191,7 @@ public class ResolveTest extends ModuleTestBase {
         Files.createDirectories(modules);
 
         new JavacTask(tb)
-                .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
+                .options("-XDrawDiagnostics", "--module-source-path", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))
                 .run()
@@ -211,7 +211,7 @@ public class ResolveTest extends ModuleTestBase {
         Files.createDirectories(modules);
 
         new JavacTask(tb)
-                .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
+                .options("-XDrawDiagnostics", "--module-source-path", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))
                 .run()

@@ -66,7 +66,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      * @param filename Name of the module index file to be generated.
      */
     public AbstractModuleIndexWriter(ConfigurationImpl configuration,
-                                      DocPath filename) throws IOException {
+                                      DocPath filename) {
         super(configuration, filename);
         modules = configuration.modulePackages;
     }
@@ -259,7 +259,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      * @return a Content object to be added to the documentation tree
      */
     protected Content getNavLinkContents() {
-        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, overviewLabel);
+        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.overviewLabel);
         return li;
     }
 

@@ -88,7 +88,7 @@ public class NoJavaLangTest {
                 .run();
 
         // ideally we'd have a better message for this case
-        String[] mpOpts = { "-system", "none", "-modulepath", "modules" };
+        String[] mpOpts = { "--system", "none", "--module-path", "modules" };
         test(mpOpts, compilerErrorMessage);
     }
 

@@ -39,7 +39,6 @@ import java.util.List;
 
 import toolbox.JavacTask;
 import toolbox.Task;
-import toolbox.ToolBox;
 
 public class PackageMultipleModules extends ModuleTestBase {
 
@@ -64,7 +63,7 @@ public class PackageMultipleModules extends ModuleTestBase {
         Files.createDirectories(classes);
 
         List<String> log = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "-modulesourcepath", base.toString())
+                .options("-XDrawDiagnostics", "--module-source-path", base.toString())
                 .outdir(classes)
                 .files(findJavaFiles(base))
                 .run(Task.Expect.FAIL)

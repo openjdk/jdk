@@ -38,6 +38,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -108,11 +109,9 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         try {
             pkgusegen = new PackageUseWriter(configuration, mapper, filename, pkgElement);
             pkgusegen.generatePackageUseFile();
-            pkgusegen.close();
         } catch (IOException exc) {
-            configuration.standardmessage.error(
-                "doclet.exception_encountered",
-                exc.toString(), filename);
+            Messages messages = configuration.getMessages();
+            messages.error(exc.toString(), filename);
             throw new DocletAbortException(exc);
         }
     }
@@ -125,7 +124,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.contentContainer);
         if (usingPackageToUsedClasses.isEmpty()) {
-            div.addContent(getResource("doclet.ClassUse_No.usage.of.0", utils.getPackageName(packageElement)));
+            div.addContent(contents.getContent("doclet.ClassUse_No.usage.of.0", utils.getPackageName(packageElement)));
         } else {
             addPackageUse(div);
         }
@@ -167,7 +166,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      * @param contentTree the content tree to which the package list will be added
      */
     protected void addPackageList(Content contentTree) throws IOException {
-        Content caption = getTableCaption(configuration.getResource(
+        Content caption = getTableCaption(configuration.getContent(
                 "doclet.ClassUse_Packages.that.use.0",
                 getPackageLink(packageElement, utils.getPackageName(packageElement))));
         Content table = (configuration.isOutputHtml5())
@@ -208,7 +207,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             }
             String tableSummary = configuration.getText("doclet.Use_Table_Summary",
                                                         configuration.getText("doclet.classes"));
-            Content caption = getTableCaption(configuration.getResource(
+            Content caption = getTableCaption(configuration.getContent(
                     "doclet.ClassUse_Classes.in.0.used.by.1",
                     getPackageLink(packageElement, utils.getPackageName(packageElement)),
                     getPackageLink(usingPackage, utils.getPackageName(usingPackage))));
@@ -265,7 +264,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         if (pkg != null && !pkg.isUnnamed()) {
             addSummaryComment(pkg, tdLast);
         } else {
-            tdLast.addContent(getSpace());
+            tdLast.addContent(Contents.SPACE);
         }
         contentTree.addContent(tdLast);
     }
@@ -289,7 +288,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             bodyTree.addContent(htmlTree);
         }
         ContentBuilder headContent = new ContentBuilder();
-        headContent.addContent(getResource("doclet.ClassUse_Title", packageText));
+        headContent.addContent(contents.getContent("doclet.ClassUse_Title", packageText));
         headContent.addContent(new HtmlTree(HtmlTag.BR));
         headContent.addContent(name);
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
@@ -311,7 +310,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     @Override
     protected Content getNavLinkModule() {
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
-                moduleLabel);
+                contents.moduleLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -323,7 +322,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      */
     protected Content getNavLinkPackage() {
         Content linkContent = getHyperLink(DocPaths.PACKAGE_SUMMARY,
-                packageLabel);
+                contents.packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -334,7 +333,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      * @return a content tree for the use link
      */
     protected Content getNavLinkClassUse() {
-        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, useLabel);
+        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.useLabel);
         return li;
     }
 
@@ -345,7 +344,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      */
     protected Content getNavLinkTree() {
         Content linkContent = getHyperLink(DocPaths.PACKAGE_TREE,
-                treeLabel);
+                contents.treeLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }

@@ -58,7 +58,10 @@ public abstract class AbstractDoclet {
     /**
      * The global configuration information for this run.
      */
-    public Configuration configuration;
+    private Configuration configuration;
+
+    protected Messages messages;
+
     /*
      *  a handle to our utility methods
      */
@@ -76,7 +79,7 @@ public abstract class AbstractDoclet {
      */
     private boolean isValidDoclet() {
         if (!getClass().getName().equals(TOOLKIT_DOCLET_NAME)) {
-            configuration.message.error("doclet.Toolkit_Usage_Violation",
+            messages.error("doclet.Toolkit_Usage_Violation",
                 TOOLKIT_DOCLET_NAME);
             return false;
         }
@@ -96,6 +99,8 @@ public abstract class AbstractDoclet {
         configuration.utils = new Utils(configuration);
         utils = configuration.utils;
         configuration.workArounds = new WorkArounds(configuration);
+        messages = configuration.getMessages();
+
         if (!isValidDoclet()) {
             return false;
         }
@@ -116,6 +121,7 @@ public abstract class AbstractDoclet {
             }
             return false;
         } catch (Exception exc) {
+            exc.printStackTrace(System.err);
             return false;
         }
         return true;
@@ -146,14 +152,13 @@ public abstract class AbstractDoclet {
      */
     private void startGeneration(DocletEnvironment root) throws Configuration.Fault, Exception {
         if (root.getIncludedClasses().isEmpty()) {
-            configuration.message.
-                error("doclet.No_Public_Classes_To_Document");
+            messages.error("doclet.No_Public_Classes_To_Document");
             return;
         }
         if (!configuration.setOptions()) {
             return;
         }
-        configuration.getDocletSpecificMsg().notice("doclet.build_version",
+        messages.notice("doclet.build_version",
             configuration.getDocletSpecificBuildDate());
         ClassTree classtree = new ClassTree(configuration, configuration.nodeprecated);
 

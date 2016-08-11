@@ -47,11 +47,6 @@ import javax.lang.model.element.VariableElement;
 public interface ConstantsSummaryWriter {
 
     /**
-     * Close the writer.
-     */
-    public abstract void close() throws IOException;
-
-    /**
      * Get the header for the constant summary documentation.
      *
      * @return header that needs to be added to the documentation
