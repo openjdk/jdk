@@ -107,6 +107,38 @@ public class BasicLauncherTest {
         }
     }
 
+    public static void launchJStack() throws IOException {
+
+        if (Platform.isOSX()) {
+            // Coredump stackwalking is not implemented for Darwin
+            System.out.println("This test is not expected to work on OS X. Skipping");
+            return;
+        }
+
+        System.out.println("Starting LingeredApp");
+        try {
+            theApp = LingeredApp.startApp(Arrays.asList("-Xmx256m"));
+
+            System.out.println("Starting jstack against " + theApp.getPid());
+            JDKToolLauncher launcher = createSALauncher();
+
+            launcher.addToolArg("jstack");
+            launcher.addToolArg("--pid=" + Long.toString(theApp.getPid()));
+
+            ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
+            OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);;
+            output.shouldContain("No deadlocks found");
+            output.shouldNotContain("illegal bci");
+            output.shouldNotContain("AssertionFailure");
+            output.shouldHaveExitValue(0);
+
+        } catch (Exception ex) {
+            throw new RuntimeException("Test ERROR " + ex, ex);
+        } finally {
+            LingeredApp.stopApp(theApp);
+        }
+    }
+
     /**
      *
      * @param vmArgs  - vm and java arguments to launch test app
@@ -151,19 +183,6 @@ public class BasicLauncherTest {
                                                        Arrays.asList(toolArgs));
     }
 
-    public static void launchNotOSX(String expectedMessage,
-                              String unexpectedMessage, String... toolArgs)
-        throws IOException {
-
-        if (Platform.isOSX()) {
-            // Coredump stackwalking is not implemented for Darwin
-            System.out.println("This test is not expected to work on OS X. Skipping");
-            return;
-        }
-
-        launch(expectedMessage, unexpectedMessage, toolArgs);
-    }
-
     public static void testHeapDump() throws IOException {
         File dump = new File("jhsdb.jmap.dump." +
                              System.currentTimeMillis() + ".hprof");
@@ -191,7 +210,7 @@ public class BasicLauncherTest {
         launchCLHSDB();
 
         launch("compiler detected", null, "jmap", "--clstats");
-        launchNotOSX("No deadlocks found", null, "jstack");
+        launchJStack();
         launch("compiler detected", null, "jmap");
         launch("Java System Properties",
                "System Properties info not available", "jinfo");
