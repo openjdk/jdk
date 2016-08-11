@@ -70,7 +70,7 @@ public class MiscTests extends TestHelper {
 
         final String mainClass = "Foo6856415";
         final String exportOpts
-            = "-XaddExports:jdk.crypto.pkcs11/sun.security.pkcs11=ALL-UNNAMED";
+            = "--add-exports=jdk.crypto.pkcs11/sun.security.pkcs11=ALL-UNNAMED";
 
         List<String> scratch = new ArrayList<>();
         scratch.add("public class Foo6856415 {");

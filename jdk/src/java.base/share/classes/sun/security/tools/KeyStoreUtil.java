@@ -63,8 +63,6 @@ public class KeyStoreUtil {
         // this class is not meant to be instantiated
     }
 
-    private static final String JKS = "jks";
-
     private static final Collator collator = Collator.getInstance();
     static {
         // this is for case insensitive string comparisons
@@ -113,24 +111,24 @@ public class KeyStoreUtil {
     }
 
     /**
+     * Returns the file name of the keystore with the configured CA certificates.
+     */
+    public static String getCacerts() {
+        String sep = File.separator;
+        return System.getProperty("java.home") + sep
+                + "lib" + sep + "security" + sep
+                + "cacerts";
+    }
+
+    /**
      * Returns the keystore with the configured CA certificates.
      */
-    public static KeyStore getCacertsKeyStore()
-        throws Exception
-    {
-        String sep = File.separator;
-        File file = new File(System.getProperty("java.home") + sep
-                             + "lib" + sep + "security" + sep
-                             + "cacerts");
+    public static KeyStore getCacertsKeyStore() throws Exception {
+        File file = new File(getCacerts());
         if (!file.exists()) {
             return null;
         }
-        KeyStore caks = null;
-        try (FileInputStream fis = new FileInputStream(file)) {
-            caks = KeyStore.getInstance(JKS);
-            caks.load(fis, null);
-        }
-        return caks;
+        return KeyStore.getInstance(file, (char[])null);
     }
 
     public static char[] getPassWithModifier(String modifier, String arg,

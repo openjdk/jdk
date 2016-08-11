@@ -27,7 +27,7 @@
  * @modules jdk.compiler
  * @build AddReadsTest CompilerUtils JarUtils jdk.testlibrary.*
  * @run testng AddReadsTest
- * @summary Basic tests for java -XaddReads
+ * @summary Basic tests for java --add-reads
  */
 
 import java.nio.file.Path;
@@ -45,7 +45,7 @@ import static org.testng.Assert.*;
  * The tests consists of two modules: m1 and junit.
  * Code in module m1 calls into code in module junit but the module-info.java
  * does not have a 'requires'. Instead a read edge is added via the command
- * line option -XaddReads.
+ * line option --add-reads.
  */
 
 @Test
@@ -72,7 +72,7 @@ public class AddReadsTest {
             .compile(SRC_DIR.resolve("m1"),
                     MODS_DIR.resolve("m1"),
                     "-cp", CLASSES_DIR.toString(),
-                    "-XaddReads:m1=ALL-UNNAMED"));
+                    "--add-reads", "m1=ALL-UNNAMED"));
 
         // jar cf mods/junit.jar -C classes .
         JarUtils.createJarFile(MODS_DIR.resolve("junit.jar"), CLASSES_DIR);
@@ -91,11 +91,11 @@ public class AddReadsTest {
      */
     public void testJUnitOnModulePath() throws Exception {
 
-        // java -mp mods -addmods junit -XaddReads:m1=junit -m ..
+        // java --module-path mods --add-modules junit --add-reads m1=junit -m ..
         int exitValue
-            = run("-mp", MODS_DIR.toString(),
-                  "-addmods", "junit",
-                  "-XaddReads:m1=junit",
+            = run("--module-path", MODS_DIR.toString(),
+                  "--add-modules", "junit",
+                  "--add-reads", "m1=junit",
                   "-m", MAIN)
                 .getExitValue();
 
@@ -104,17 +104,17 @@ public class AddReadsTest {
 
 
     /**
-     * Exercise -XaddReads:m1=ALL-UNNAMED by running with junit on the
+     * Exercise --add-reads m1=ALL-UNNAMED by running with junit on the
      * class path.
      */
     public void testJUnitOnClassPath() throws Exception {
 
-        // java -mp mods -cp mods/junit.jar -XaddReads:m1=ALL-UNNAMED -m ..
+        // java --module-path mods -cp mods/junit.jar --add-reads m1=ALL-UNNAMED -m ..
         String cp = MODS_DIR.resolve("junit.jar").toString();
         int exitValue
-            = run("-mp", MODS_DIR.toString(),
+            = run("--module-path", MODS_DIR.toString(),
                   "-cp", cp,
-                  "-XaddReads:m1=ALL-UNNAMED",
+                  "--add-reads", "m1=ALL-UNNAMED",
                   "-m", MAIN)
                 .getExitValue();
 
@@ -123,14 +123,14 @@ public class AddReadsTest {
 
 
     /**
-     * Run with junit as a module on the module path but without -XaddReads.
+     * Run with junit as a module on the module path but without --add-reads.
      */
     public void testJUnitOnModulePathMissingAddReads() throws Exception {
-        // java -mp mods -addmods junit -m ..
+        // java --module-path mods --add-modules junit --module ..
         int exitValue
-            = run("-mp", MODS_DIR.toString(),
-                  "-addmods", "junit",
-                  "-m", MAIN)
+            = run("--module-path", MODS_DIR.toString(),
+                  "--add-modules", "junit",
+                  "--module", MAIN)
                 .shouldContain("IllegalAccessError")
                 .getExitValue();
 
@@ -139,13 +139,13 @@ public class AddReadsTest {
 
 
     /**
-     * Run with junit on the class path but without -XaddReads.
+     * Run with junit on the class path but without --add-reads.
      */
     public void testJUnitOnClassPathMissingAddReads() throws Exception {
-        // java -mp mods -cp mods/junit.jar -m ..
+        // java --module-path mods -cp mods/junit.jar -m ..
         String cp = MODS_DIR.resolve("junit.jar").toString();
         int exitValue
-            = run("-mp", MODS_DIR.toString(),
+            = run("--module-path", MODS_DIR.toString(),
                   "-cp", cp,
                   "-m", MAIN)
                 .shouldContain("IllegalAccessError")
@@ -156,15 +156,15 @@ public class AddReadsTest {
 
 
     /**
-     * Exercise -XaddReads with a more than one source module.
+     * Exercise --add-reads with a more than one source module.
      */
     public void testJUnitWithMultiValueOption() throws Exception {
 
         int exitValue
-            = run("-mp", MODS_DIR.toString(),
-                  "-addmods", "java.xml,junit",
-                  "-XaddReads:m1=java.xml,junit",
-                  "-m", MAIN)
+            = run("--module-path", MODS_DIR.toString(),
+                  "--add-modules", "java.xml,junit",
+                  "--add-reads", "m1=java.xml,junit",
+                  "--module", MAIN)
                 .getExitValue();
 
         assertTrue(exitValue == 0);
@@ -172,31 +172,31 @@ public class AddReadsTest {
 
 
     /**
-     * Exercise -XaddReads where the target module is specified more than once
+     * Exercise --add-reads where the target module is specified more than once
      */
     public void testWithTargetSpecifiedManyTimes() throws Exception {
 
         int exitValue
-            = run("-mp", MODS_DIR.toString(),
-                "-addmods", "java.xml,junit",
-                "-XaddReads:m1=java.xml",
-                "-XaddReads:m1=junit",
-                "-m", MAIN)
-                .shouldContain("specified more than once")
-                .getExitValue();
+            = run("--module-path", MODS_DIR.toString(),
+                  "--add-modules", "java.xml,junit",
+                  "--add-reads", "m1=java.xml",
+                  "--add-reads", "m1=junit",
+                  "-m", MAIN)
+                  .shouldContain("specified more than once")
+                 .getExitValue();
 
         assertTrue(exitValue != 0);
     }
 
 
     /**
-     * Exercise -XaddReads with bad values
+     * Exercise --add-reads with bad values
      */
     @Test(dataProvider = "badvalues")
     public void testWithBadValue(String value, String ignore) throws Exception {
 
-        //  -XaddExports:$VALUE -version
-        assertTrue(run("-XaddReads:" + value, "-version").getExitValue() != 0);
+        //  --add-exports $VALUE -version
+        assertTrue(run("--add-reads", value, "-version").getExitValue() != 0);
     }
 
     @DataProvider(name = "badvalues")

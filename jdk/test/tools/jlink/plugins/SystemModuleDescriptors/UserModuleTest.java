@@ -73,7 +73,7 @@ public class UserModuleTest {
 
         for (String mn : modules) {
             Path msrc = SRC_DIR.resolve(mn);
-            assertTrue(CompilerUtils.compile(msrc, MODS_DIR, "-modulesourcepath", SRC_DIR.toString()));
+            assertTrue(CompilerUtils.compile(msrc, MODS_DIR, "--module-source-path", SRC_DIR.toString()));
         }
 
         if (Files.exists(IMAGE)) {
@@ -87,8 +87,8 @@ public class UserModuleTest {
         Path jlink = Paths.get(JAVA_HOME, "bin", "jlink");
         String mp = JMODS.toString() + File.pathSeparator + MODS_DIR.toString();
         assertTrue(executeProcess(jlink.toString(), "--output", outputDir.toString(),
-                        "--addmods", Arrays.stream(modules).collect(Collectors.joining(",")),
-                        "--modulepath", mp)
+                        "--add-modules", Arrays.stream(modules).collect(Collectors.joining(",")),
+                        "--module-path", mp)
                         .outputTo(System.out)
                         .errorTo(System.out)
                         .getExitValue() == 0);

@@ -164,7 +164,7 @@ public class Helper {
         Path srcMod = src.resolve(moduleName);
         JImageGenerator.generateModuleInfo(srcMod, packages, dependencies);
         Path destination = classes.resolve(moduleName);
-        if (!JImageGenerator.compile(srcMod, destination, "-modulepath", modulePath, "-g")) {
+        if (!JImageGenerator.compile(srcMod, destination, "--module-path", modulePath, "-g")) {
             throw new AssertionError("Compilation failure");
         }
         return destination;

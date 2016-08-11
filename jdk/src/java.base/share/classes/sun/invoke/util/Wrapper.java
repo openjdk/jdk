@@ -42,6 +42,8 @@ public enum Wrapper {
     VOID   (     Void.class,    void.class, 'V',           null, Format.other(    0)),
     ;
 
+    public static final int COUNT = 10;
+
     private final Class<?> wrapperType;
     private final Class<?> primitiveType;
     private final char     basicTypeChar;
@@ -160,7 +162,10 @@ public enum Wrapper {
         return true;
     }
 
-    static { assert(checkConvertibleFrom()); }
+    static {
+        assert(checkConvertibleFrom());
+        assert(COUNT == Wrapper.values().length);
+    }
     private static boolean checkConvertibleFrom() {
         // Check the matrix for correct classification of widening conversions.
         for (Wrapper w : values()) {

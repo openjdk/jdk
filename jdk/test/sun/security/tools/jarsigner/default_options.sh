@@ -34,6 +34,8 @@ fi
 PASS=changeit
 export PASS
 
+TESTTOOLVMOPTS="$TESTTOOLVMOPTS -J-Duser.language=en -J-Duser.country=US"
+
 KS=ks
 KEYTOOL="$TESTJAVA/bin/keytool ${TESTTOOLVMOPTS} -storepass:env PASS -keypass:env PASS -keystore $KS"
 JAR="$TESTJAVA/bin/jar ${TESTTOOLVMOPTS}"
