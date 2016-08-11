@@ -900,6 +900,13 @@ public class JavaCompiler {
         try {
             initProcessAnnotations(processors);
 
+            for (String className : classnames) {
+                int sep = className.indexOf('/');
+                if (sep != -1) {
+                    modules.addExtraAddModules(className.substring(0, sep));
+                }
+            }
+
             // These method calls must be chained to avoid memory leaks
             processAnnotations(
                 enterTrees(
@@ -1010,7 +1017,7 @@ public class JavaCompiler {
     }
 
     public List<JCCompilationUnit> initModules(List<JCCompilationUnit> roots) {
-        modules.initModules(roots, Collections.emptySet(), Collections.emptySet());
+        modules.initModules(roots);
         if (roots.isEmpty()) {
             enterDone = true;
         }
