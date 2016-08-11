@@ -714,11 +714,7 @@ public class SPARCFrame extends Frame {
   /** 2 words, also used to save float regs across  calls to C */
   public static final int INTERPRETER_FRAME_D_SCRATCH_FP_OFFSET           = -2;
   public static final int INTERPRETER_FRAME_L_SCRATCH_FP_OFFSET           = -4;
-  /** For native calls only */
-  public static final int INTERPRETER_FRAME_PADDING_OFFSET                = -5;
-  /** For native calls only */
-  public static final int INTERPRETER_FRAME_MIRROR_OFFSET                 = -6;
-  /** Should be same as above, and should be zero mod 8 */
+  public static final int INTERPRETER_FRAME_MIRROR_OFFSET                 = -5;
   public static final int INTERPRETER_FRAME_VM_LOCALS_FP_OFFSET           = -6;
   public static final int INTERPRETER_FRAME_VM_LOCAL_WORDS                = -INTERPRETER_FRAME_VM_LOCALS_FP_OFFSET;
 
