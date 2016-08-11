@@ -28,6 +28,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib/share/classes
  *
+ * @ignore 8163805
  * @run main/othervm SADebugDTest
  */
 import java.io.File;
