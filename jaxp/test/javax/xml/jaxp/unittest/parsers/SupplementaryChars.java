@@ -5,18 +5,24 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
+ * @test
  * @bug 8072081
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true parsers.SupplementaryChars
+ * @run testng/othervm parsers.SupplementaryChars
  * @summary verifies that supplementary characters are supported as character
  * data in xml 1.0, and also names in xml 1.1.
  *
  * Joe Wang (huizhe.wang@oracle.com)
  */
 
+@Listeners({jaxp.library.BasePolicy.class})
 public class SupplementaryChars {
 
     @Test(dataProvider = "supported")
@@ -34,7 +40,7 @@ public class SupplementaryChars {
     }
 
     @DataProvider(name = "supported")
-    private Object[][] supported() {
+    public Object[][] supported() {
 
         return new Object[][] {
             {"<?xml version=\"1.0\"?><tag>\uD840\uDC0B</tag>"},
@@ -47,7 +53,7 @@ public class SupplementaryChars {
     }
 
     @DataProvider(name = "unsupported")
-    private Object[][] unsupported() {
+    public Object[][] unsupported() {
         return new Object[][] {
             {"<?xml version=\"1.0\"?><tag\uD840\uDC0B>in tag name</tag\uD840\uDC0B>"},
             {"<?xml version=\"1.0\"?><tag attr\uD840\uDC0B=\"in attribute\">in attribute name</tag>"}
@@ -65,3 +71,4 @@ public class SupplementaryChars {
         return parser;
     }
 }
+

@@ -21,14 +21,17 @@
  * questions.
  */
 
+package compiler.intrinsics.sha.cli.testcases;
+
+import compiler.intrinsics.sha.cli.SHAOptionsBase;
+import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.ExitCode;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
 import jdk.test.lib.cli.predicate.AndPredicate;
-import jdk.test.lib.cli.predicate.OrPredicate;
 import jdk.test.lib.cli.predicate.NotPredicate;
-import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
+import jdk.test.lib.cli.predicate.OrPredicate;
 
 /**
  * UseSHA specific test case targeted to SPARC and AArch64 CPUs which don't

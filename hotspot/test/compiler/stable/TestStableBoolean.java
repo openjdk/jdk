@@ -58,6 +58,7 @@
 package compiler.stable;
 
 import jdk.internal.vm.annotation.Stable;
+
 import java.lang.reflect.InvocationTargetException;
 
 public class TestStableBoolean {

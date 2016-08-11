@@ -25,8 +25,14 @@
  * @test
  * @bug 8073956
  * @summary Tests C2 EA with allocated object escaping through a call.
- * @run main/othervm -XX:CompileCommand=dontinline,TestEscapeThroughInvoke::create TestEscapeThroughInvoke
+ *
+ * @run main/othervm
+ *      -XX:CompileCommand=dontinline,compiler.escapeAnalysis.TestEscapeThroughInvoke::create
+ *      compiler.escapeAnalysis.TestEscapeThroughInvoke
  */
+
+package compiler.escapeAnalysis;
+
 public class TestEscapeThroughInvoke {
     private A a;
 
@@ -55,20 +61,21 @@ public class TestEscapeThroughInvoke {
         result.saveInto(a, dummy); // result escapes into 'a' here
         return result;
     }
-}
 
-class A {
-    private A saved;
+    static class A {
+        private A saved;
 
-    public A(Integer dummy) { }
+        public A(Integer dummy) {
+        }
 
-    public void saveInto(A other, Integer dummy) {
-        other.saved = this;
-    }
+        public void saveInto(A other, Integer dummy) {
+            other.saved = this;
+        }
 
-    public void check(A other) {
-        if (this.saved != other) {
-            throw new RuntimeException("TEST FAILED: Objects not equal.");
+        public void check(A other) {
+            if (this.saved != other) {
+                throw new RuntimeException("TEST FAILED: Objects not equal.");
+            }
         }
     }
 }

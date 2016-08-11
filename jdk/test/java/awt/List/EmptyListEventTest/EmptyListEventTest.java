@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6366126
  * @summary List throws ArrayIndexOutOfBoundsException when pressing ENTER after removing all the items, Win32
  * @author Dmitry Cherepanov area=awt.list

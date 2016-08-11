@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug      8013611
   @summary  Tests showing a modal dialog with requesting focus in frame.
   @author   Anton.Tarasov: area=awt.focus

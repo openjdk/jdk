@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 package dom;
 
+import static jaxp.library.JAXPTestUtilities.getSystemProperty;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -30,7 +32,10 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import jaxp.library.JAXPTestUtilities;
+
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -38,9 +43,14 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 /*
+ * @test
  * @bug 6582545
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true dom.Bug6582545Test
+ * @run testng/othervm dom.Bug6582545Test
  * @summary Test the value is correct when iterating attributes.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6582545Test {
     private DocumentBuilder xmlParser = null;
     private Document document = null;
@@ -90,7 +100,7 @@ public class Bug6582545Test {
         }
 
         // Test specifique a node
-        String javaSpecificationVersion = System.getProperty("java.specification.version");
+        String javaSpecificationVersion = getSystemProperty("java.specification.version");
         for (int k = 0; k < attributes.getLength(); k++) {
             name = attributes.item(k).getNodeName();
             value = attributes.item(k).getNodeValue();
@@ -113,3 +123,4 @@ public class Bug6582545Test {
     }
 
 }
+

@@ -47,3 +47,4 @@ public class HasNextTypeFilter implements EventFilter, StreamFilter {
         return types[r.getEventType()];
     }
 }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,26 @@
  */
 package test.auctionportal;
 
-import static test.auctionportal.HiBidConstants.SP_ENTITY_EXPANSION_LIMIT;
-import static test.auctionportal.HiBidConstants.SP_MAX_OCCUR_LIMIT;
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+
+import static javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING;
+import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+import static jaxp.library.JAXPTestUtilities.compareDocumentWithGold;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+import static test.auctionportal.HiBidConstants.GOLDEN_DIR;
 import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_LANGUAGE;
 import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_SOURCE;
-import static org.testng.Assert.assertTrue;
+import static test.auctionportal.HiBidConstants.SP_ENTITY_EXPANSION_LIMIT;
+import static test.auctionportal.HiBidConstants.SP_MAX_OCCUR_LIMIT;
+import static test.auctionportal.HiBidConstants.XML_DIR;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FilePermission;
 import java.io.InputStream;
-import static javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING;
-import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.SAXParser;
@@ -41,20 +49,23 @@ import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import jaxp.library.JAXPFileBaseTest;
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.compareDocumentWithGold;
-import static org.testng.Assert.assertFalse;
+
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXParseException;
-import static test.auctionportal.HiBidConstants.GOLDEN_DIR;
-import static test.auctionportal.HiBidConstants.XML_DIR;
 
 /**
  * This is a test class for the Auction portal HiBid.com.
  */
-public class AuctionItemRepository extends JAXPFileBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true test.auctionportal.AuctionItemRepository
+ * @run testng/othervm test.auctionportal.AuctionItemRepository
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class AuctionItemRepository {
     /**
      * XML file for parsing.
      */
@@ -84,7 +95,6 @@ public class AuctionItemRepository extends JAXPFileBaseTest {
         SAXParser parser = factory.newSAXParser();
 
         MyErrorHandler fatalHandler = new MyErrorHandler();
-        setPermissions(new FilePermission(ENTITY_XML, "read"));
         parser.parse(new File(ENTITY_XML), fatalHandler);
         assertFalse(fatalHandler.isAnyError());
     }
@@ -107,7 +117,6 @@ public class AuctionItemRepository extends JAXPFileBaseTest {
 
         SAXParser parser = factory.newSAXParser();
         MyErrorHandler fatalHandler = new MyErrorHandler();
-        setPermissions(new FilePermission(ENTITY_XML, "read"));
         parser.parse(new File(ENTITY_XML), fatalHandler);
     }
 
@@ -127,7 +136,6 @@ public class AuctionItemRepository extends JAXPFileBaseTest {
         setSystemProperty(SP_MAX_OCCUR_LIMIT, String.valueOf(10000));
         SAXParser parser = factory.newSAXParser();
         parser.setProperty(JAXP_SCHEMA_LANGUAGE, W3C_XML_SCHEMA_NS_URI);
-        setPermissions(new FilePermission(XML_DIR + "-", "read"));
         parser.setProperty(JAXP_SCHEMA_SOURCE, new File(schema_file));
         try (InputStream is = new FileInputStream(xml_file)) {
             MyErrorHandler eh = new MyErrorHandler();
@@ -150,13 +158,8 @@ public class AuctionItemRepository extends JAXPFileBaseTest {
         DocumentBuilder dBuilder = dfactory.newDocumentBuilder();
         MyErrorHandler eh = new MyErrorHandler();
         dBuilder.setErrorHandler(eh);
-        try {
-            setPermissions(new FilePermission(ENTITY_XML, "read"));
-            dBuilder.parse(ENTITY_XML);
-            assertFalse(eh.isAnyError());
-        } finally {
-            setPermissions();
-        }
+        dBuilder.parse(ENTITY_XML);
+        assertFalse(eh.isAnyError());
     }
 
     /**
@@ -174,7 +177,6 @@ public class AuctionItemRepository extends JAXPFileBaseTest {
         DocumentBuilder dBuilder = dfactory.newDocumentBuilder();
         MyErrorHandler eh = new MyErrorHandler();
         dBuilder.setErrorHandler(eh);
-        setPermissions(new FilePermission(ENTITY_XML, "read"));
         dBuilder.parse(ENTITY_XML);
     }
 
@@ -369,3 +371,5 @@ public class AuctionItemRepository extends JAXPFileBaseTest {
         assertTrue(compareDocumentWithGold(goldFile, resultFile));
     }
 }
+
+

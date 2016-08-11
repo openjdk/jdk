@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 8015748
  * @summary verifies ProgressBar RightToLeft orientations for all Look and Feels
  * @library ../../regtesthelpers

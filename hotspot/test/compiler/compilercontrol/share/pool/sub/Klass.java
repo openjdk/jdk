@@ -21,10 +21,10 @@
  * questions.
  */
 
-package pool.sub;
+package compiler.compilercontrol.share.pool.sub;
 
-import pool.MethodHolder;
-import pool.SubMethodHolder;
+import compiler.compilercontrol.share.pool.MethodHolder;
+import compiler.compilercontrol.share.pool.SubMethodHolder;
 
 /**
  * Simple class with methods to test signatures

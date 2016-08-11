@@ -25,12 +25,15 @@
  * @test
  * @bug 8143628
  * @summary Test unsafe access for int
+ *
  * @modules jdk.unsupported/sun.misc
- * @run testng/othervm -Diters=100   -Xint                   SunMiscUnsafeAccessTestInt
- * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 SunMiscUnsafeAccessTestInt
- * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  SunMiscUnsafeAccessTestInt
- * @run testng/othervm -Diters=20000                         SunMiscUnsafeAccessTestInt
+ * @run testng/othervm -Diters=100   -Xint                   compiler.unsafe.SunMiscUnsafeAccessTestInt
+ * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 compiler.unsafe.SunMiscUnsafeAccessTestInt
+ * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  compiler.unsafe.SunMiscUnsafeAccessTestInt
+ * @run testng/othervm -Diters=20000                         compiler.unsafe.SunMiscUnsafeAccessTestInt
  */
+
+package compiler.unsafe;
 
 import org.testng.annotations.Test;
 

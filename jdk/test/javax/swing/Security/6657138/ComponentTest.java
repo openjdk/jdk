@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6657138
  * @summary Verifies that buttons and labels work well after the fix for 6657138
  * @author Alexander Potochkin

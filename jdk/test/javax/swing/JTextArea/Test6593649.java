@@ -21,12 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 6593649
-   @summary Word wrap does not work in JTextArea: long lines are not wrapped
-   @author Lillian Angel
-   @run main Test6593649
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 6593649
+ * @summary Word wrap does not work in JTextArea: long lines are not wrapped
+ * @author Lillian Angel
+ * @run main Test6593649
+ */
 
 import javax.swing.*;
 import java.awt.*;

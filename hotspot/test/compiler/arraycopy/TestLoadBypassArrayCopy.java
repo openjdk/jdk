@@ -25,9 +25,14 @@
  * @test
  * @bug 8086046
  * @summary load bypasses arraycopy that sets the value after the ArrayCopyNode is expanded
- * @run main/othervm -XX:-BackgroundCompilation  -XX:-UseOnStackReplacement -XX:CompileCommand=dontinline,TestLoadBypassArrayCopy::test_helper -XX:-TieredCompilation TestLoadBypassArrayCopy
  *
+ * @run main/othervm -XX:-BackgroundCompilation  -XX:-UseOnStackReplacement
+ *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestLoadBypassArrayCopy::test_helper
+ *                   -XX:-TieredCompilation
+ *                   compiler.arraycopy.TestLoadBypassArrayCopy
  */
+
+package compiler.arraycopy;
 
 public class TestLoadBypassArrayCopy {
 

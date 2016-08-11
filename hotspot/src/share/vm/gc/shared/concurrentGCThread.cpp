@@ -43,7 +43,7 @@ void ConcurrentGCThread::create_and_start(ThreadPriority prio) {
     // unless "aggressive mode" set; priority
     // should be just less than that of VMThread.
     os::set_priority(this, prio);
-    if (!_should_terminate && !DisableStartThread) {
+    if (!_should_terminate) {
       os::start_thread(this);
     }
   }

@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
+import jdk.tools.jlink.plugin.ResourcePoolModule;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.PluginException;
 
@@ -98,9 +99,8 @@ public final class ExcludeVMPlugin implements Plugin {
      * e.g.: /java.base/native/amd64/server/libjvm.so
      * /java.base/native/server/libjvm.dylib
      */
-    private List<ResourcePoolEntry> getVMs(ResourcePool in) {
-        String jvmlib = jvmlib();
-        List<ResourcePoolEntry> ret = in.moduleView().findModule("java.base").get().entries().filter((t) -> {
+    private List<ResourcePoolEntry> getVMs(ResourcePoolModule javaBase, String jvmlib) {
+        List<ResourcePoolEntry> ret = javaBase.entries().filter((t) -> {
             return t.path().endsWith("/" + jvmlib);
         }).collect(Collectors.toList());
         return ret;
@@ -108,12 +108,13 @@ public final class ExcludeVMPlugin implements Plugin {
 
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
-        String jvmlib = jvmlib();
+        ResourcePoolModule javaBase = in.moduleView().findModule("java.base").get();
+        String jvmlib = jvmlib(javaBase.descriptor().osName().get());
         TreeSet<Jvm> existing = new TreeSet<>(new JvmComparator());
         TreeSet<Jvm> removed = new TreeSet<>(new JvmComparator());
         if (!keepAll) {
             // First retrieve all available VM names and removed VM
-            List<ResourcePoolEntry> jvms = getVMs(in);
+            List<ResourcePoolEntry> jvms = getVMs(javaBase, jvmlib);
             for (Jvm jvm : Jvm.values()) {
                 for (ResourcePoolEntry md : jvms) {
                     if (md.path().endsWith("/" + jvm.getName() + "/" + jvmlib)) {
@@ -247,21 +248,21 @@ public final class ExcludeVMPlugin implements Plugin {
         return orig.copyWithContent(content);
     }
 
-    private static String jvmlib() {
+    private static String jvmlib(String osName) {
         String lib = "libjvm.so";
-        if (isWindows()) {
+        if (isWindows(osName)) {
             lib = "jvm.dll";
-        } else if (isMac()) {
+        } else if (isMac(osName)) {
             lib = "libjvm.dylib";
         }
         return lib;
     }
 
-    private static boolean isWindows() {
-        return System.getProperty("os.name").startsWith("Windows");
+    private static boolean isWindows(String osName) {
+        return osName.startsWith("Windows");
     }
 
-    private static boolean isMac() {
-        return System.getProperty("os.name").startsWith("Mac OS");
+    private static boolean isMac(String osName) {
+        return osName.startsWith("Mac OS") || osName.startsWith("Darwin");
     }
 }

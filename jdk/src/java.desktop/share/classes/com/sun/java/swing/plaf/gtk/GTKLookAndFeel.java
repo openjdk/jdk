@@ -65,12 +65,6 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
      */
     static Map<Object, Object> aaTextInfo;
 
-    /**
-     * Solaris, or Linux with Sun JDS in a CJK Locale.
-     * Used to determine if Sun's high quality CJK fonts are present.
-     */
-    private static boolean isSunCJK;
-
     /*
      * Used to override if system (desktop) text anti-aliasing settings should
      * be used. The reasons for this are are is that currently its "off"
@@ -106,36 +100,6 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
      * Cached theme name. Used by GTKGraphicsUtils
      */
     private static String gtkThemeName = "Default";
-
-    static {
-        String language = Locale.getDefault().getLanguage();
-        boolean cjkLocale =
-            (Locale.CHINESE.getLanguage().equals(language) ||
-             Locale.JAPANESE.getLanguage().equals(language) ||
-             Locale.KOREAN.getLanguage().equals(language));
-
-        if (cjkLocale) {
-            boolean isSunDesktop = false;
-            switch (OSInfo.getOSType()) {
-                case SOLARIS:
-                    isSunDesktop = true;
-                    break;
-
-                case LINUX:
-                    Boolean val = AccessController.doPrivileged(
-                                    new PrivilegedAction<Boolean>() {
-                                        public Boolean run() {
-                                            File f = new File("/etc/sun-release");
-                                            return Boolean.valueOf(f.exists());
-                                        }
-                                    });
-                    isSunDesktop = val.booleanValue();
-            }
-            if (isSunDesktop && !sun.java2d.SunGraphicsEnvironment.isOpenSolaris) {
-                isSunCJK = true;
-            }
-        }
-    }
 
     /**
      * Returns true if running on system containing at least 2.2.
@@ -1474,19 +1438,10 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
 
         /*
          * Check if system AA font settings should be used.
-         * Sun's JDS (for Linux and Solaris) ships with high quality CJK
-         * fonts and specifies via fontconfig that these be rendered in
-         * B&W to take advantage of the embedded bitmaps.
-         * If is a Sun CJK locale or remote display, indicate by the condition
-         * variable that in this case the L&F recommends ignoring desktop
-         * settings. On other Unixes (eg Linux) this doesn't apply.
-         * REMIND 1: The isSunCJK test is really just a place holder
-         * until we can properly query fontconfig and use the properties
-         * set for specific fonts.
-         * REMIND 2: See comment on isLocalDisplay() definition regarding
+         * REMIND: See comment on isLocalDisplay() definition regarding
          * XRender.
          */
-        gtkAAFontSettingsCond = !isSunCJK && SwingUtilities2.isLocalDisplay();
+        gtkAAFontSettingsCond = SwingUtilities2.isLocalDisplay();
         aaTextInfo = new HashMap<>(2);
         SwingUtilities2.putAATextInfo(gtkAAFontSettingsCond, aaTextInfo);
     }

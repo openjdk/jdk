@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2012 Marti Maria Saguer
+//  Copyright (c) 1998-2016 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -625,7 +625,7 @@ void ReadReal(cmsIT8* it8, int inum)
 }
 
 // Parses a float number
-// This can not call directly atof because it uses locale dependant
+// This can not call directly atof because it uses locale dependent
 // parsing, while CCMX files always use . as decimal separator
 static
 cmsFloat64Number ParseFloatNumber(const char *Buffer)
@@ -830,11 +830,11 @@ void InSymbol(cmsIT8* it8)
 
                     if (it8 ->sy == SINUM) {
 
-                        sprintf(it8->id, "%d", it8->inum);
+                        snprintf(it8->id, 127, "%d", it8->inum);
                     }
                     else {
 
-                        sprintf(it8->id, it8 ->DoubleFormatter, it8->dnum);
+                        snprintf(it8->id, 127, it8 ->DoubleFormatter, it8->dnum);
                     }
 
                     k = (int) strlen(it8 ->id);
@@ -1392,7 +1392,7 @@ cmsBool CMSEXPORT cmsIT8SetPropertyDbl(cmsHANDLE hIT8, const char* cProp, cmsFlo
     cmsIT8* it8 = (cmsIT8*) hIT8;
     char Buffer[1024];
 
-    sprintf(Buffer, it8->DoubleFormatter, Val);
+    snprintf(Buffer, 1023, it8->DoubleFormatter, Val);
 
     return AddToList(it8, &GetTable(it8)->HeaderList, cProp, NULL, Buffer, WRITE_UNCOOKED) != NULL;
 }
@@ -1402,7 +1402,7 @@ cmsBool CMSEXPORT cmsIT8SetPropertyHex(cmsHANDLE hIT8, const char* cProp, cmsUIn
     cmsIT8* it8 = (cmsIT8*) hIT8;
     char Buffer[1024];
 
-    sprintf(Buffer, "%u", Val);
+    snprintf(Buffer, 1023, "%u", Val);
 
     return AddToList(it8, &GetTable(it8)->HeaderList, cProp, NULL, Buffer, WRITE_HEXADECIMAL) != NULL;
 }
@@ -1846,7 +1846,7 @@ cmsBool CMSEXPORT cmsIT8SaveToMem(cmsHANDLE hIT8, void *MemPtr, cmsUInt32Number*
 }
 
 
-// -------------------------------------------------------------- Higer level parsing
+// -------------------------------------------------------------- Higher level parsing
 
 static
 cmsBool DataFormatSection(cmsIT8* it8)
@@ -2149,7 +2149,7 @@ cmsBool ParseIT8(cmsIT8* it8, cmsBool nosheet)
 
 
 
-// Init usefull pointers
+// Init useful pointers
 
 static
 void CookPointers(cmsIT8* it8)
@@ -2546,9 +2546,9 @@ int LocateSample(cmsIT8* it8, const char* cSample)
 
         fld = GetDataFormat(it8, i);
         if (fld != NULL) {
-        if (cmsstrcasecmp(fld, cSample) == 0)
-            return i;
-    }
+            if (cmsstrcasecmp(fld, cSample) == 0)
+                return i;
+        }
     }
 
     return -1;
@@ -2606,7 +2606,7 @@ cmsBool CMSEXPORT cmsIT8SetDataRowColDbl(cmsHANDLE hIT8, int row, int col, cmsFl
 
     _cmsAssert(hIT8 != NULL);
 
-    sprintf(Buff, it8->DoubleFormatter, Val);
+    snprintf(Buff, 255, it8->DoubleFormatter, Val);
 
     return SetData(it8, row, col, Buff);
 }

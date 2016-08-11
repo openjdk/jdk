@@ -21,24 +21,33 @@
  * questions.
  */
 
-import jdk.test.lib.Asserts;
-import java.lang.management.MemoryType;
-import sun.hotspot.code.BlobType;
-
 /**
  * @test BeanTypeTest
- * @library /testlibrary /test/lib
- * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build BeanTypeTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *     sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *     -XX:+WhiteBoxAPI -XX:+SegmentedCodeCache BeanTypeTest
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *     -XX:+WhiteBoxAPI -XX:-SegmentedCodeCache BeanTypeTest
  * @summary verify types of code cache memory pool bean
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @library /testlibrary /test/lib
+ *
+ * @build compiler.codecache.jmx.BeanTypeTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+WhiteBoxAPI
+ *     -XX:+SegmentedCodeCache
+ *     compiler.codecache.jmx.BeanTypeTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+WhiteBoxAPI
+ *     -XX:-SegmentedCodeCache
+ *     compiler.codecache.jmx.BeanTypeTest
  */
+
+package compiler.codecache.jmx;
+
+import jdk.test.lib.Asserts;
+import sun.hotspot.code.BlobType;
+
+import java.lang.management.MemoryType;
+
 public class BeanTypeTest {
 
     public static void main(String args[]) {

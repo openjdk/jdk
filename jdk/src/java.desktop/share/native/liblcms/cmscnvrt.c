@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2012 Marti Maria Saguer
+//  Copyright (c) 1998-2016 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -136,7 +136,7 @@ static cmsIntentsList DefaultIntents[] = {
 };
 
 
-// A pointer to the begining of the list
+// A pointer to the beginning of the list
 _cmsIntentsPluginChunkType _cmsIntentsPluginChunk = { NULL };
 
 // Duplicates the zone of memory used by the plug-in in the new context
@@ -299,6 +299,7 @@ cmsBool  ComputeAbsoluteIntent(cmsFloat64Number AdaptationState,
     cmsMAT3 Scale, m1, m2, m3, m4;
 
     // TODO: Follow Marc Mahy's recommendation to check if CHAD is same by using M1*M2 == M2*M1. If so, do nothing.
+    // TODO: Add support for ArgyllArts tag
 
     // Adaptation state
     if (AdaptationState == 1.0) {
@@ -917,7 +918,7 @@ int BlackPreservingSampler(register const cmsUInt16Number In[], register cmsUInt
         return TRUE;
     }
 
-    // Make sure to pass thru K (which now is fixed)
+    // Make sure to pass through K (which now is fixed)
     Outf[3] = LabK[3];
 
     // Apply TAC if needed
@@ -985,7 +986,7 @@ cmsPipeline* BlackPreservingKPlaneIntents(cmsContext     ContextID,
     memset(&bp, 0, sizeof(bp));
 
     // We need the input LUT of the last profile, assuming this one is responsible of
-    // black generation. This LUT will be seached in inverse order.
+    // black generation. This LUT will be searched in inverse order.
     bp.LabK2cmyk = _cmsReadInputLUT(hProfiles[nProfiles-1], INTENT_RELATIVE_COLORIMETRIC);
     if (bp.LabK2cmyk == NULL) goto Cleanup;
 

@@ -34,7 +34,6 @@
 #include "jvm_windows.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "mutex_windows.inline.hpp"
 #include "nativeInst_x86.hpp"
 #include "os_share_windows.hpp"
 #include "prims/jniFastGetField.hpp"

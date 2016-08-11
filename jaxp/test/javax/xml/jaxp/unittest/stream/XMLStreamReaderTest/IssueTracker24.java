@@ -29,11 +29,17 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.IssueTracker24
+ * @run testng/othervm stream.XMLStreamReaderTest.IssueTracker24
  * @summary Test no prefix is represented by "", not null.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class IssueTracker24 {
 
     @Test
@@ -55,3 +61,4 @@ public class IssueTracker24 {
     }
 
 }
+

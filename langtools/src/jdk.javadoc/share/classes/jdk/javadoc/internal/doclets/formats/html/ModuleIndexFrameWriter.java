@@ -110,15 +110,13 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
     /**
      * Returns each module name as a separate link.
      *
-     * @param moduleName the module being documented
+     * @param mdle the module being documented
      * @return content for the module link
      */
     protected Content getModuleLink(ModuleElement mdle) {
         Content moduleLinkContent;
-        Content moduleLabel;
-        moduleLabel = new StringContent(mdle.getQualifiedName().toString());
-        moduleLinkContent = getHyperLink(DocPaths.moduleFrame(mdle),
-                moduleLabel, "", "packageListFrame");
+        Content mdlLabel = new StringContent(mdle.getQualifiedName());
+        moduleLinkContent = getModuleFramesHyperLink(mdle, mdlLabel, "packageListFrame");
         Content li = HtmlTree.LI(moduleLinkContent);
         return li;
     }

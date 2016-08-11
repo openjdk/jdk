@@ -21,13 +21,14 @@
  * questions.
  */
 /*
-@test
-@bug 6428694
-@summary Checks that double click closes JOptionPane's input dialog.
-@library ../../../../lib/testlibrary
-@build ExtendedRobot
-@author Mikhail Lapshin
-@run main bug6428694
+ * @test
+ * @key headful
+ * @bug 6428694
+ * @summary Checks that double click closes JOptionPane's input dialog.
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot
+ * @author Mikhail Lapshin
+ * @run main bug6428694
 */
 
 import javax.swing.JFrame;

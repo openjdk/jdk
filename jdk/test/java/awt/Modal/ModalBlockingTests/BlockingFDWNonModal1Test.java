@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8049617
  * @summary Check whether a non-modal Dialog created with a null Frame
  *          constructor receives focus; whether its components receive focus

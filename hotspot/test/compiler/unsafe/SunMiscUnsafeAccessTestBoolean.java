@@ -25,12 +25,15 @@
  * @test
  * @bug 8143628
  * @summary Test unsafe access for boolean
+ *
  * @modules jdk.unsupported/sun.misc
- * @run testng/othervm -Diters=100   -Xint                   SunMiscUnsafeAccessTestBoolean
- * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 SunMiscUnsafeAccessTestBoolean
- * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  SunMiscUnsafeAccessTestBoolean
- * @run testng/othervm -Diters=20000                         SunMiscUnsafeAccessTestBoolean
+ * @run testng/othervm -Diters=100   -Xint                   compiler.unsafe.SunMiscUnsafeAccessTestBoolean
+ * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 compiler.unsafe.SunMiscUnsafeAccessTestBoolean
+ * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  compiler.unsafe.SunMiscUnsafeAccessTestBoolean
+ * @run testng/othervm -Diters=20000                         compiler.unsafe.SunMiscUnsafeAccessTestBoolean
  */
+
+package compiler.unsafe;
 
 import org.testng.annotations.Test;
 

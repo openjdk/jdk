@@ -278,6 +278,12 @@ JNIEXPORT jboolean JNICALL Java_sun_font_SunLayoutEngine_shape
      hb_buffer_set_direction(buffer, direction);
 
      chars = (*env)->GetCharArrayElements(env, text, NULL);
+     if ((*env)->ExceptionCheck(env)) {
+         hb_buffer_destroy(buffer);
+         hb_font_destroy(hbfont);
+         free((void*)jdkFontInfo);
+         return JNI_FALSE;
+     }
      len = (*env)->GetArrayLength(env, text);
 
      hb_buffer_add_utf16(buffer, chars, len, offset, limit-offset);
@@ -309,6 +315,7 @@ JNIEXPORT jboolean JNICALL Java_sun_font_SunLayoutEngine_shape
      hb_font_destroy(hbfont);
      free((void*)jdkFontInfo);
      if (features != NULL) free(features);
+     (*env)->ReleaseCharArrayElements(env, text, chars, JNI_ABORT);
 
      return JNI_TRUE;
 }

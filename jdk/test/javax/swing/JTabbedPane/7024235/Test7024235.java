@@ -38,6 +38,7 @@ import javax.swing.UIManager.LookAndFeelInfo;
 
 /*
  * @test
+ * @key headful
  * @bug 7024235
  * @summary Tests JFrame.pack() with the JTabbedPane
  * @library ../../../../lib/testlibrary/

@@ -73,7 +73,6 @@
 #define ATTRIBUTE_SCANF(fmt, vargs)
 #endif
 
-
 #include "utilities/macros.hpp"
 
 // This file holds all globally used constants & types, class (forward)
@@ -456,24 +455,7 @@ enum RTMState {
 // Allow targets to reduce the default size of the code cache.
 #define CODE_CACHE_DEFAULT_LIMIT CODE_CACHE_SIZE_LIMIT
 
-#ifdef TARGET_ARCH_x86
-# include "globalDefinitions_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "globalDefinitions_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "globalDefinitions_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "globalDefinitions_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "globalDefinitions_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "globalDefinitions_aarch64.hpp"
-#endif
+#include CPU_HEADER(globalDefinitions)
 
 #ifndef INCLUDE_RTM_OPT
 #define INCLUDE_RTM_OPT 0
@@ -951,7 +933,7 @@ enum CompLevel {
   CompLevel_full_profile      = 3,         // C1, invocation & backedge counters + mdo
   CompLevel_full_optimization = 4,         // C2, Shark or JVMCI
 
-#if defined(COMPILER2) || defined(SHARK) || INCLUDE_JVMCI
+#if defined(COMPILER2) || defined(SHARK)
   CompLevel_highest_tier      = CompLevel_full_optimization,  // pure C2 and tiered or JVMCI and tiered
 #elif defined(COMPILER1)
   CompLevel_highest_tier      = CompLevel_simple,             // pure C1 or JVMCI

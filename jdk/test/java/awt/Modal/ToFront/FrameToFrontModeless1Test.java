@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8050885
  * @summary Check that calling toFront method does not bring a frame to the top of
  *          a modeless child dialog.

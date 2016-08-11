@@ -25,24 +25,31 @@
  * @test
  * @bug 8073480
  * @summary explicit range checks should be recognized by C2
- * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib /
- * @build TestExplicitRangeChecks
+ * @modules java.base/jdk.internal.misc
+ * @build compiler.rangechecks.TestExplicitRangeChecks
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                jdk.test.lib.Platform
  * @run main/othervm -ea -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=compileonly,TestExplicitRangeChecks.test* TestExplicitRangeChecks
+ *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   -XX:CompileCommand=compileonly,compiler.rangechecks.TestExplicitRangeChecks::test*
+ *                   compiler.rangechecks.TestExplicitRangeChecks
  *
  */
 
-import java.lang.annotation.*;
-import java.lang.reflect.*;
-import java.util.*;
-import sun.hotspot.WhiteBox;
-import sun.hotspot.code.NMethod;
-import jdk.test.lib.Platform;
-import jdk.internal.misc.Unsafe;
+package compiler.rangechecks;
+
 import compiler.whitebox.CompilerWhiteBoxTest;
+import jdk.internal.misc.Unsafe;
+import jdk.test.lib.Platform;
+import sun.hotspot.WhiteBox;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
 
 public class TestExplicitRangeChecks {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();

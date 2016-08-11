@@ -25,6 +25,7 @@
 
 #
 #   @test       ShowExitTest.sh
+#   @key        headful
 #   @bug        6513421
 #   @summary    Java process does not terminate on closing the Main Application Frame
 #

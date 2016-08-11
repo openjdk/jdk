@@ -24,14 +24,17 @@
 /**
  * @test
  * @bug 8073154
- * @build TestProfileReturnTypePrinting
+ * @build compiler.print.TestProfileReturnTypePrinting
  * @run main/othervm -XX:TypeProfileLevel=020
- *                   -XX:CompileOnly=TestProfileReturnTypePrinting.testMethod
+ *                   -XX:CompileCommand=compileonly,compiler.print.TestProfileReturnTypePrinting::testMethod
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+PrintLIR
- *                   TestProfileReturnTypePrinting
+ *                   compiler.print.TestProfileReturnTypePrinting
  * @summary Verify that c1's LIR that contains ProfileType node could be dumped
  *          without a crash disregard to an exact class knowledge.
  */
+
+package compiler.print;
+
 public class TestProfileReturnTypePrinting {
     private static final int ITERATIONS = 1_000_000;
 

@@ -21,9 +21,13 @@
  * questions.
  */
 
-import java.lang.annotation.*;
-import java.lang.reflect.*;
-import java.util.*;
+package compiler.arraycopy;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
 
 abstract class TestArrayCopyUtils {
     public enum ArraySrc {

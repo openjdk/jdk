@@ -1942,11 +1942,34 @@ source %{
 
   bool is_CAS(int opcode)
   {
-    return (opcode == Op_CompareAndSwapI ||
-	    opcode == Op_CompareAndSwapL ||
-	    opcode == Op_CompareAndSwapN ||
-	    opcode == Op_CompareAndSwapP);
+    switch(opcode) {
+      // We handle these
+    case Op_CompareAndSwapI:
+    case Op_CompareAndSwapL:
+    case Op_CompareAndSwapP:
+    case Op_CompareAndSwapN:
+ // case Op_CompareAndSwapB:
+ // case Op_CompareAndSwapS:
+      return true;
+      // These are TBD
+    case Op_WeakCompareAndSwapB:
+    case Op_WeakCompareAndSwapS:
+    case Op_WeakCompareAndSwapI:
+    case Op_WeakCompareAndSwapL:
+    case Op_WeakCompareAndSwapP:
+    case Op_WeakCompareAndSwapN:
+    case Op_CompareAndExchangeB:
+    case Op_CompareAndExchangeS:
+    case Op_CompareAndExchangeI:
+    case Op_CompareAndExchangeL:
+    case Op_CompareAndExchangeP:
+    case Op_CompareAndExchangeN:
+      return false;
+    default:
+      return false;
+    }
   }
+
 
   // leading_to_trailing
   //
@@ -3330,9 +3353,6 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
 const bool Matcher::match_rule_supported(int opcode) {
 
   switch (opcode) {
-  case Op_StrComp:
-    if (CompactStrings)  return false;
-    break;
   default:
     break;
   }
@@ -4241,14 +4261,16 @@ encode %{
     MacroAssembler _masm(&cbuf);
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::xword, /*acquire*/ false, /*release*/ true);
+               Assembler::xword, /*acquire*/ false, /*release*/ true,
+               /*weak*/ false, noreg);
   %}
 
   enc_class aarch64_enc_cmpxchgw(memory mem, iRegINoSp oldval, iRegINoSp newval) %{
     MacroAssembler _masm(&cbuf);
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::word, /*acquire*/ false, /*release*/ true);
+               Assembler::word, /*acquire*/ false, /*release*/ true,
+               /*weak*/ false, noreg);
   %}
 
 
@@ -4260,14 +4282,16 @@ encode %{
     MacroAssembler _masm(&cbuf);
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::xword, /*acquire*/ true, /*release*/ true);
+               Assembler::xword, /*acquire*/ true, /*release*/ true,
+               /*weak*/ false, noreg);
   %}
 
   enc_class aarch64_enc_cmpxchgw_acq(memory mem, iRegINoSp oldval, iRegINoSp newval) %{
     MacroAssembler _masm(&cbuf);
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::word, /*acquire*/ true, /*release*/ true);
+               Assembler::word, /*acquire*/ true, /*release*/ true,
+               /*weak*/ false, noreg);
   %}
 
 
@@ -5806,6 +5830,7 @@ operand iRegLNoSp()
 %{
   constraint(ALLOC_IN_RC(no_special_reg));
   match(RegL);
+  match(iRegL_R0);
   format %{ %}
   interface(REG_INTER);
 %}
@@ -5927,6 +5952,39 @@ operand iRegP_R10()
   interface(REG_INTER);
 %}
 
+// Long 64 bit Register R0 only
+operand iRegL_R0()
+%{
+  constraint(ALLOC_IN_RC(r0_reg));
+  match(RegL);
+  match(iRegLNoSp);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+// Long 64 bit Register R2 only
+operand iRegL_R2()
+%{
+  constraint(ALLOC_IN_RC(r2_reg));
+  match(RegL);
+  match(iRegLNoSp);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+// Long 64 bit Register R3 only
+operand iRegL_R3()
+%{
+  constraint(ALLOC_IN_RC(r3_reg));
+  match(RegL);
+  match(iRegLNoSp);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
 // Long 64 bit Register R11 only
 operand iRegL_R11()
 %{
@@ -5983,7 +6041,7 @@ operand iRegI_R3()
 %}
 
 
-// Register R2 only
+// Register R4 only
 operand iRegI_R4()
 %{
   constraint(ALLOC_IN_RC(int_r4_reg));
@@ -6002,6 +6060,33 @@ operand iRegN()
   constraint(ALLOC_IN_RC(any_reg32));
   match(RegN);
   match(iRegNNoSp);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand iRegN_R0()
+%{
+  constraint(ALLOC_IN_RC(r0_reg));
+  match(iRegN);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand iRegN_R2()
+%{
+  constraint(ALLOC_IN_RC(r2_reg));
+  match(iRegN);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand iRegN_R3()
+%{
+  constraint(ALLOC_IN_RC(r3_reg));
+  match(iRegN);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
@@ -9393,11 +9478,11 @@ instruct storeIConditional(indirect mem, iRegINoSp oldval, iRegINoSp newval, rFl
   ins_pipe(pipe_slow);
 %}
 
-// XXX No flag versions for CompareAndSwap{I,L,P,N} because matcher
-// can't match them
-
 // standard CompareAndSwapX when we are using barriers
 // these have higher priority than the rules selected by a predicate
+
+// XXX No flag versions for CompareAndSwap{I,L,P,N} because matcher
+// can't match them
 
 instruct compareAndSwapI(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegINoSp newval, rFlagsReg cr) %{
 
@@ -9549,6 +9634,216 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN
   ins_pipe(pipe_slow);
 %}
 
+
+// ---------------------------------------------------------------------
+// Sundry CAS operations.  Note that release is always true,
+// regardless of the memory ordering of the CAS.  This is because we
+// need the volatile case to be sequentially consistent but there is
+// no trailing StoreLoad barrier emitted by C2.  Unfortunately we
+// can't check the type of memory ordering here, so we always emit a
+// STLXR.
+
+// This section is generated from aarch64_ad_cas.m4
+
+
+instruct compareAndExchangeB(iRegI_R0 res, indirect mem, iRegI_R2 oldval, iRegI_R3 newval, rFlagsReg cr) %{
+  match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
+  ins_cost(2 * VOLATILE_REF_COST);
+  effect(KILL cr);
+  format %{
+    "cmpxchg $res = $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval"
+  %}
+  ins_encode %{
+    __ uxtbw(rscratch2, $oldval$$Register);
+    __ cmpxchg($mem$$Register, rscratch2, $newval$$Register,
+               Assembler::byte, /*acquire*/ false, /*release*/ true,
+               /*weak*/ false, $res$$Register);
+    __ sxtbw($res$$Register, $res$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct compareAndExchangeS(iRegI_R0 res, indirect mem, iRegI_R2 oldval, iRegI_R3 newval, rFlagsReg cr) %{
+  match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
+  ins_cost(2 * VOLATILE_REF_COST);
+  effect(KILL cr);
+  format %{
+    "cmpxchg $res = $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval"
+  %}
+  ins_encode %{
+    __ uxthw(rscratch2, $oldval$$Register);
+    __ cmpxchg($mem$$Register, rscratch2, $newval$$Register,
+               Assembler::halfword, /*acquire*/ false, /*release*/ true,
+               /*weak*/ false, $res$$Register);
+    __ sxthw($res$$Register, $res$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct compareAndExchangeI(iRegI_R0 res, indirect mem, iRegI_R2 oldval, iRegI_R3 newval, rFlagsReg cr) %{
+  match(Set res (CompareAndExchangeI mem (Binary oldval newval)));
+  ins_cost(2 * VOLATILE_REF_COST);
+  effect(KILL cr);
+  format %{
+    "cmpxchg $res = $mem, $oldval, $newval\t# (int, weak) if $mem == $oldval then $mem <-- $newval"
+  %}
+  ins_encode %{
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
+               Assembler::word, /*acquire*/ false, /*release*/ true,
+               /*weak*/ false, $res$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct compareAndExchangeL(iRegL_R0 res, indirect mem, iRegL_R2 oldval, iRegL_R3 newval, rFlagsReg cr) %{
+  match(Set res (CompareAndExchangeL mem (Binary oldval newval)));
+  ins_cost(2 * VOLATILE_REF_COST);
+  effect(KILL cr);
+  format %{
+    "cmpxchg $res = $mem, $oldval, $newval\t# (long, weak) if $mem == $oldval then $mem <-- $newval"
+  %}
+  ins_encode %{
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
+               Assembler::xword, /*acquire*/ false, /*release*/ true,
+               /*weak*/ false, $res$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct compareAndExchangeN(iRegN_R0 res, indirect mem, iRegN_R2 oldval, iRegN_R3 newval, rFlagsReg cr) %{
+  match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
+  ins_cost(2 * VOLATILE_REF_COST);
+  effect(KILL cr);
+  format %{
+    "cmpxchg $res = $mem, $oldval, $newval\t# (narrow oop, weak) if $mem == $oldval then $mem <-- $newval"
+  %}
+  ins_encode %{
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
+               Assembler::word, /*acquire*/ false, /*release*/ true,
+               /*weak*/ false, $res$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct compareAndExchangeP(iRegP_R0 res, indirect mem, iRegP_R2 oldval, iRegP_R3 newval, rFlagsReg cr) %{
+  match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
+  ins_cost(2 * VOLATILE_REF_COST);
+  effect(KILL cr);
+  format %{
+    "cmpxchg $res = $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval"
+  %}
+  ins_encode %{
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
+               Assembler::xword, /*acquire*/ false, /*release*/ true,
+               /*weak*/ false, $res$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+  match(Set res (WeakCompareAndSwapB mem (Binary oldval newval)));
+  ins_cost(2 * VOLATILE_REF_COST);
+  effect(KILL cr);
+  format %{
+    "cmpxchg $res = $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval"
+    "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
+  %}
+  ins_encode %{
+    __ uxtbw(rscratch2, $oldval$$Register);
+    __ cmpxchg($mem$$Register, rscratch2, $newval$$Register,
+               Assembler::byte, /*acquire*/ false, /*release*/ true,
+               /*weak*/ true, noreg);
+    __ csetw($res$$Register, Assembler::EQ);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+  match(Set res (WeakCompareAndSwapS mem (Binary oldval newval)));
+  ins_cost(2 * VOLATILE_REF_COST);
+  effect(KILL cr);
+  format %{
+    "cmpxchg $res = $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval"
+    "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
+  %}
+  ins_encode %{
+    __ uxthw(rscratch2, $oldval$$Register);
+    __ cmpxchg($mem$$Register, rscratch2, $newval$$Register,
+               Assembler::halfword, /*acquire*/ false, /*release*/ true,
+               /*weak*/ true, noreg);
+    __ csetw($res$$Register, Assembler::EQ);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+  match(Set res (WeakCompareAndSwapI mem (Binary oldval newval)));
+  ins_cost(2 * VOLATILE_REF_COST);
+  effect(KILL cr);
+  format %{
+    "cmpxchg $res = $mem, $oldval, $newval\t# (int, weak) if $mem == $oldval then $mem <-- $newval"
+    "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
+  %}
+  ins_encode %{
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
+               Assembler::word, /*acquire*/ false, /*release*/ true,
+               /*weak*/ true, noreg);
+    __ csetw($res$$Register, Assembler::EQ);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
+  match(Set res (WeakCompareAndSwapL mem (Binary oldval newval)));
+  ins_cost(2 * VOLATILE_REF_COST);
+  effect(KILL cr);
+  format %{
+    "cmpxchg $res = $mem, $oldval, $newval\t# (long, weak) if $mem == $oldval then $mem <-- $newval"
+    "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
+  %}
+  ins_encode %{
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
+               Assembler::xword, /*acquire*/ false, /*release*/ true,
+               /*weak*/ true, noreg);
+    __ csetw($res$$Register, Assembler::EQ);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
+  match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
+  ins_cost(2 * VOLATILE_REF_COST);
+  effect(KILL cr);
+  format %{
+    "cmpxchg $res = $mem, $oldval, $newval\t# (narrow oop, weak) if $mem == $oldval then $mem <-- $newval"
+    "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
+  %}
+  ins_encode %{
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
+               Assembler::word, /*acquire*/ false, /*release*/ true,
+               /*weak*/ true, noreg);
+    __ csetw($res$$Register, Assembler::EQ);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
+  match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
+  ins_cost(2 * VOLATILE_REF_COST);
+  effect(KILL cr);
+  format %{
+    "cmpxchg $res = $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval"
+    "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
+  %}
+  ins_encode %{
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
+               Assembler::xword, /*acquire*/ false, /*release*/ true,
+               /*weak*/ true, noreg);
+    __ csetw($res$$Register, Assembler::EQ);
+  %}
+  ins_pipe(pipe_slow);
+%}
+// ---------------------------------------------------------------------
 
 instruct get_and_setI(indirect mem, iRegINoSp newv, iRegI prev) %{
   match(Set prev (GetAndSetI mem newv));
@@ -14988,11 +15283,61 @@ instruct string_compareU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 c
   format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # KILL $tmp1" %}
   ins_encode %{
     // Count is in 8-bit bytes; non-Compact chars are 16 bits.
-    __ asrw($cnt1$$Register, $cnt1$$Register, 1);
-    __ asrw($cnt2$$Register, $cnt2$$Register, 1);
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
-                      $tmp1$$Register);
+                      $tmp1$$Register,
+                      fnoreg, fnoreg, StrIntrinsicNode::UU);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct string_compareL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
+                        iRegI_R0 result, iRegP_R10 tmp1, rFlagsReg cr)
+%{
+  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL);
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(KILL tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
+
+  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # KILL $tmp1" %}
+  ins_encode %{
+    __ string_compare($str1$$Register, $str2$$Register,
+                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
+                      $tmp1$$Register,
+                      fnoreg, fnoreg, StrIntrinsicNode::LL);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct string_compareUL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
+                        iRegI_R0 result, vRegD vtmp1, vRegD vtmp2, iRegP_R10 tmp1, rFlagsReg cr)
+%{
+  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL);
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(KILL tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, TEMP vtmp1, TEMP vtmp2, KILL cr);
+
+  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # KILL $tmp1" %}
+  ins_encode %{
+    __ string_compare($str1$$Register, $str2$$Register,
+                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
+                      $tmp1$$Register,
+                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister, StrIntrinsicNode::UL);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct string_compareLU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
+                        iRegI_R0 result, vRegD vtmp1, vRegD vtmp2, iRegP_R10 tmp1, rFlagsReg cr)
+%{
+  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU);
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(KILL tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, TEMP vtmp1, TEMP vtmp2, KILL cr);
+
+  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # KILL $tmp1" %}
+  ins_encode %{
+    __ string_compare($str1$$Register, $str2$$Register,
+                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
+                      $tmp1$$Register,
+                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister, StrIntrinsicNode::LU);
   %}
   ins_pipe(pipe_class_memory);
 %}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,9 +70,9 @@ void IdealLoopTree::record_for_igvn() {
 }
 
 //------------------------------compute_exact_trip_count-----------------------
-// Compute loop exact trip count if possible. Do not recalculate trip count for
+// Compute loop trip count if possible. Do not recalculate trip count for
 // split loops (pre-main-post) which have their limits and inits behind Opaque node.
-void IdealLoopTree::compute_exact_trip_count( PhaseIdealLoop *phase ) {
+void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase) {
   if (!_head->as_Loop()->is_valid_counted_loop()) {
     return;
   }
@@ -94,17 +94,21 @@ void IdealLoopTree::compute_exact_trip_count( PhaseIdealLoop *phase ) {
 
   Node* init_n = cl->init_trip();
   Node* limit_n = cl->limit();
-  if (init_n  != NULL &&  init_n->is_Con() &&
-      limit_n != NULL && limit_n->is_Con()) {
+  if (init_n != NULL && limit_n != NULL) {
     // Use longs to avoid integer overflow.
-    int stride_con  = cl->stride_con();
-    jlong init_con   = cl->init_trip()->get_int();
-    jlong limit_con  = cl->limit()->get_int();
-    int stride_m    = stride_con - (stride_con > 0 ? 1 : -1);
+    int stride_con = cl->stride_con();
+    jlong init_con = phase->_igvn.type(init_n)->is_int()->_lo;
+    jlong limit_con = phase->_igvn.type(limit_n)->is_int()->_hi;
+    int stride_m   = stride_con - (stride_con > 0 ? 1 : -1);
     jlong trip_count = (limit_con - init_con + stride_m)/stride_con;
     if (trip_count > 0 && (julong)trip_count < (julong)max_juint) {
-      // Set exact trip count.
-      cl->set_exact_trip_count((uint)trip_count);
+      if (init_n->is_Con() && limit_n->is_Con()) {
+        // Set exact trip count.
+        cl->set_exact_trip_count((uint)trip_count);
+      } else if (cl->unrolled_count() == 1) {
+        // Set maximum trip count before unrolling.
+        cl->set_trip_count((uint)trip_count);
+      }
     }
   }
 }
@@ -1305,7 +1309,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree *loop, Node_List &old_new,
   assert(main_exit->Opcode() == Op_IfFalse, "");
   int dd_main_exit = dom_depth(main_exit);
 
-  // Step A1: Clone the loop body of main.  The clone becomes the vector post-loop.
+  // Step A1: Clone the loop body of main. The clone becomes the post-loop.
   // The main loop pre-header illegally has 2 control users (old & new loops).
   clone_loop(loop, old_new, dd_main_exit);
   assert(old_new[main_end->_idx]->Opcode() == Op_CountedLoopEnd, "");
@@ -2095,8 +2099,7 @@ int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
   // the loop is in canonical form to multiversion.
   closed_range_checks = 0;
 
-  // Check loop body for tests of trip-counter plus loop-invariant vs
-  // loop-invariant.
+  // Check loop body for tests of trip-counter plus loop-invariant vs loop-variant.
   for( uint i = 0; i < loop->_body.size(); i++ ) {
     Node *iff = loop->_body[i];
     if (iff->Opcode() == Op_If ||
@@ -2298,7 +2301,7 @@ void PhaseIdealLoop::has_range_checks(IdealLoopTree *loop) {
   // skip this loop if it is already checked
   if (cl->has_been_range_checked()) return;
 
-  // Now check for existance of range checks
+  // Now check for existence of range checks
   for (uint i = 0; i < loop->_body.size(); i++) {
     Node *iff = loop->_body[i];
     int iff_opc = iff->Opcode();
@@ -2319,7 +2322,7 @@ bool PhaseIdealLoop::multi_version_post_loops(IdealLoopTree *rce_loop, IdealLoop
   CountedLoopNode *legacy_cl = legacy_loop->_head->as_CountedLoop();
   assert(legacy_cl->is_post_loop(), "");
 
-  // Check for existance of range checks using the unique instance to make a guard with
+  // Check for existence of range checks using the unique instance to make a guard with
   Unique_Node_List worklist;
   for (uint i = 0; i < legacy_loop->_body.size(); i++) {
     Node *iff = legacy_loop->_body[i];
@@ -2422,7 +2425,7 @@ bool PhaseIdealLoop::multi_version_post_loops(IdealLoopTree *rce_loop, IdealLoop
 }
 
 //-------------------------poison_rce_post_loop--------------------------------
-// Causes the rce'd post loop to be optimized away if multiverioning fails
+// Causes the rce'd post loop to be optimized away if multiversioning fails
 void PhaseIdealLoop::poison_rce_post_loop(IdealLoopTree *rce_loop) {
   CountedLoopNode *rce_cl = rce_loop->_head->as_CountedLoop();
   Node* ctrl = rce_cl->in(LoopNode::EntryControl);
@@ -2710,8 +2713,8 @@ bool IdealLoopTree::policy_do_one_iteration_loop( PhaseIdealLoop *phase ) {
 //=============================================================================
 //------------------------------iteration_split_impl---------------------------
 bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_new ) {
-  // Compute exact loop trip count if possible.
-  compute_exact_trip_count(phase);
+  // Compute loop trip count if possible.
+  compute_trip_count(phase);
 
   // Convert one iteration loop into normal code.
   if (policy_do_one_iteration_loop(phase))

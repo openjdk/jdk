@@ -14,8 +14,16 @@ keys=intermittent randomness
 # Tests that must run in othervm mode
 othervm.dirs=javax/xml/jaxp
 
+lib.dirs = /javax/xml/jaxp/libs
+
+# Declare module dependency
+modules=java.xml
+
 # Group definitions
 groups=TEST.groups
 
 # Minimum jtreg version
-requiredVersion=4.2 b02
+requiredVersion=4.2 b03
+
+# Use new module options
+useNewOptions=true

@@ -39,23 +39,21 @@ import jdk.test.lib.Platform;
 public class MonitorMismatchTest {
 
     public static void main(String... args) throws Exception {
-        if (!Platform.isEmbedded()){
-            // monitormismatch should turn on.
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xcomp",
-                                                                      "-XX:+TieredCompilation",
-                                                                      "-Xlog:monitormismatch=info",
-                                                                      "MonitorMismatchHelper");
-            OutputAnalyzer o = new OutputAnalyzer(pb.start());
-            o.shouldContain("[monitormismatch] Monitor mismatch in method");
+        // monitormismatch should turn on.
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xcomp",
+                                                                  "-XX:+TieredCompilation",
+                                                                  "-Xlog:monitormismatch=info",
+                                                                  "MonitorMismatchHelper");
+        OutputAnalyzer o = new OutputAnalyzer(pb.start());
+        o.shouldContain("[monitormismatch] Monitor mismatch in method");
 
-            // monitormismatch should turn off.
-            pb = ProcessTools.createJavaProcessBuilder("-Xcomp",
-                                                       "-XX:+TieredCompilation",
-                                                       "-Xlog:monitormismatch=off",
-                                                       "MonitorMismatchHelper");
-            o = new OutputAnalyzer(pb.start());
-            o.shouldNotContain("[monitormismatch]");
-        }
+        // monitormismatch should turn off.
+        pb = ProcessTools.createJavaProcessBuilder("-Xcomp",
+                                                   "-XX:+TieredCompilation",
+                                                   "-Xlog:monitormismatch=off",
+                                                   "MonitorMismatchHelper");
+        o = new OutputAnalyzer(pb.start());
+        o.shouldNotContain("[monitormismatch]");
     };
 
 }

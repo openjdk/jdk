@@ -30,6 +30,7 @@ import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
@@ -44,7 +45,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.LambdaForm.*;
@@ -1246,6 +1246,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         }
 
         @CallerSensitive
+        @ForceInline // to ensure Reflection.getCallerClass optimization
         private static boolean checkCallerClass(Class<?> expected) {
             // This method is called via MH_checkCallerClass and so it's correct to ask for the immediate caller here.
             Class<?> actual = Reflection.getCallerClass();

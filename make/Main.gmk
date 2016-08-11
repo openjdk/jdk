@@ -704,7 +704,7 @@ else
 
   test-image-failure-handler: build-test-failure-handler
 
-  build-test-hotspot-jtreg-native: buildtools-jdk
+  build-test-hotspot-jtreg-native: buildtools-jdk import-hotspot
 
   build-test-jdk-jtreg-native: buildtools-jdk
 

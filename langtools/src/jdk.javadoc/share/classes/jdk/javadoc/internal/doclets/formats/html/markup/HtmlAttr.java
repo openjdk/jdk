@@ -49,6 +49,7 @@ public enum HtmlAttr {
     ID,
     LANG,
     NAME,
+    ONCLICK,
     ONLOAD,
     REL,
     ROLE,

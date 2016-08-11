@@ -283,7 +283,16 @@ public class PSStreamPrintService extends StreamPrintService
         } else if (category == OrientationRequested.class) {
             if (flavor == null ||
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
-                flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
+                flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE) ||
+                flavor.equals(DocFlavor.INPUT_STREAM.GIF) ||
+                flavor.equals(DocFlavor.INPUT_STREAM.JPEG) ||
+                flavor.equals(DocFlavor.INPUT_STREAM.PNG) ||
+                flavor.equals(DocFlavor.BYTE_ARRAY.GIF) ||
+                flavor.equals(DocFlavor.BYTE_ARRAY.JPEG) ||
+                flavor.equals(DocFlavor.BYTE_ARRAY.PNG) ||
+                flavor.equals(DocFlavor.URL.GIF) ||
+                flavor.equals(DocFlavor.URL.JPEG) ||
+                flavor.equals(DocFlavor.URL.PNG)) {
                 OrientationRequested []arr = new OrientationRequested[3];
                 arr[0] = OrientationRequested.PORTRAIT;
                 arr[1] = OrientationRequested.LANDSCAPE;

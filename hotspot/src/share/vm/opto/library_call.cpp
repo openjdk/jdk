@@ -222,7 +222,6 @@ class LibraryCallKit : public GraphKit {
   Node* round_double_node(Node* n);
   bool runtime_math(const TypeFunc* call_type, address funcAddr, const char* funcName);
   bool inline_math_native(vmIntrinsics::ID id);
-  bool inline_trig(vmIntrinsics::ID id);
   bool inline_math(vmIntrinsics::ID id);
   template <typename OverflowOp>
   bool inline_math_overflow(Node* arg1, Node* arg2);
@@ -1404,18 +1403,20 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
          (!compress && src_elem == T_BYTE && (dst_elem == T_BYTE || dst_elem == T_CHAR)),
          "Unsupported array types for inline_string_copy");
 
-  // Range checks
-  generate_string_range_check(src, src_offset, length, compress && src_elem == T_BYTE);
-  generate_string_range_check(dst, dst_offset, length, !compress && dst_elem == T_BYTE);
-  if (stopped()) {
-    return true;
+  // Convert char[] offsets to byte[] offsets
+  bool convert_src = (compress && src_elem == T_BYTE);
+  bool convert_dst = (!compress && dst_elem == T_BYTE);
+  if (convert_src) {
+    src_offset = _gvn.transform(new LShiftINode(src_offset, intcon(1)));
+  } else if (convert_dst) {
+    dst_offset = _gvn.transform(new LShiftINode(dst_offset, intcon(1)));
   }
 
-  // Convert char[] offsets to byte[] offsets
-  if (compress && src_elem == T_BYTE) {
-    src_offset = _gvn.transform(new LShiftINode(src_offset, intcon(1)));
-  } else if (!compress && dst_elem == T_BYTE) {
-    dst_offset = _gvn.transform(new LShiftINode(dst_offset, intcon(1)));
+  // Range checks
+  generate_string_range_check(src, src_offset, length, convert_src);
+  generate_string_range_check(dst, dst_offset, length, convert_dst);
+  if (stopped()) {
+    return true;
   }
 
   Node* src_start = array_element_address(src, src_offset, src_elem);
@@ -1688,94 +1689,6 @@ bool LibraryCallKit::inline_math(vmIntrinsics::ID id) {
   default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
-  return true;
-}
-
-//------------------------------inline_trig----------------------------------
-// Inline sin/cos/tan instructions, if possible.  If rounding is required, do
-// argument reduction which will turn into a fast/slow diamond.
-bool LibraryCallKit::inline_trig(vmIntrinsics::ID id) {
-  Node* arg = round_double_node(argument(0));
-  Node* n = NULL;
-
-  n = _gvn.transform(n);
-
-  // Rounding required?  Check for argument reduction!
-  if (Matcher::strict_fp_requires_explicit_rounding) {
-    static const double     pi_4 =  0.7853981633974483;
-    static const double neg_pi_4 = -0.7853981633974483;
-    // pi/2 in 80-bit extended precision
-    // static const unsigned char pi_2_bits_x[] = {0x35,0xc2,0x68,0x21,0xa2,0xda,0x0f,0xc9,0xff,0x3f,0x00,0x00,0x00,0x00,0x00,0x00};
-    // -pi/2 in 80-bit extended precision
-    // static const unsigned char neg_pi_2_bits_x[] = {0x35,0xc2,0x68,0x21,0xa2,0xda,0x0f,0xc9,0xff,0xbf,0x00,0x00,0x00,0x00,0x00,0x00};
-    // Cutoff value for using this argument reduction technique
-    //static const double    pi_2_minus_epsilon =  1.564660403643354;
-    //static const double neg_pi_2_plus_epsilon = -1.564660403643354;
-
-    // Pseudocode for sin:
-    // if (x <= Math.PI / 4.0) {
-    //   if (x >= -Math.PI / 4.0) return  fsin(x);
-    //   if (x >= -Math.PI / 2.0) return -fcos(x + Math.PI / 2.0);
-    // } else {
-    //   if (x <=  Math.PI / 2.0) return  fcos(x - Math.PI / 2.0);
-    // }
-    // return StrictMath.sin(x);
-
-    // Pseudocode for cos:
-    // if (x <= Math.PI / 4.0) {
-    //   if (x >= -Math.PI / 4.0) return  fcos(x);
-    //   if (x >= -Math.PI / 2.0) return  fsin(x + Math.PI / 2.0);
-    // } else {
-    //   if (x <=  Math.PI / 2.0) return -fsin(x - Math.PI / 2.0);
-    // }
-    // return StrictMath.cos(x);
-
-    // Actually, sticking in an 80-bit Intel value into C2 will be tough; it
-    // requires a special machine instruction to load it.  Instead we'll try
-    // the 'easy' case.  If we really need the extra range +/- PI/2 we'll
-    // probably do the math inside the SIN encoding.
-
-    // Make the merge point
-    RegionNode* r = new RegionNode(3);
-    Node* phi = new PhiNode(r, Type::DOUBLE);
-
-    // Flatten arg so we need only 1 test
-    Node *abs = _gvn.transform(new AbsDNode(arg));
-    // Node for PI/4 constant
-    Node *pi4 = makecon(TypeD::make(pi_4));
-    // Check PI/4 : abs(arg)
-    Node *cmp = _gvn.transform(new CmpDNode(pi4,abs));
-    // Check: If PI/4 < abs(arg) then go slow
-    Node *bol = _gvn.transform(new BoolNode( cmp, BoolTest::lt ));
-    // Branch either way
-    IfNode *iff = create_and_xform_if(control(),bol, PROB_STATIC_FREQUENT, COUNT_UNKNOWN);
-    set_control(opt_iff(r,iff));
-
-    // Set fast path result
-    phi->init_req(2, n);
-
-    // Slow path - non-blocking leaf call
-    Node* call = NULL;
-    switch (id) {
-    case vmIntrinsics::_dtan:
-      call = make_runtime_call(RC_LEAF, OptoRuntime::Math_D_D_Type(),
-                               CAST_FROM_FN_PTR(address, SharedRuntime::dtan),
-                               "Tan", NULL, arg, top());
-      break;
-    }
-    assert(control()->in(0) == call, "");
-    Node* slow_result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-    r->init_req(1, control());
-    phi->init_req(1, slow_result);
-
-    // Post-merge
-    set_control(_gvn.transform(r));
-    record_for_igvn(r);
-    n = _gvn.transform(phi);
-
-    C->set_has_split_ifs(true); // Has chance for split-if optimization
-  }
-  set_result(n);
   return true;
 }
 
@@ -2429,6 +2342,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
       return false;
     }
     mismatched = (bt != type);
+  } else if (alias_type->adr_type() == TypeOopPtr::BOTTOM) {
+    mismatched = true; // conservatively mark all "wide" on-heap accesses as mismatched
   }
 
   // First guess at the value type.
@@ -3304,7 +3219,7 @@ bool LibraryCallKit::inline_native_isInterrupted() {
   // drop through to next case
   set_control( _gvn.transform(new IfTrueNode(iff_bit)));
 
-#ifndef TARGET_OS_FAMILY_windows
+#ifndef _WINDOWS
   // (c) Or, if interrupt bit is set and clear_int is false, use 2nd fast path.
   Node* clr_arg = argument(1);
   Node* cmp_arg = _gvn.transform(new CmpINode(clr_arg, intcon(0)));
@@ -3321,7 +3236,7 @@ bool LibraryCallKit::inline_native_isInterrupted() {
 #else
   // To return true on Windows you must read the _interrupted field
   // and check the event state i.e. take the slow path.
-#endif // TARGET_OS_FAMILY_windows
+#endif // _WINDOWS
 
   // (d) Otherwise, go to the slow path.
   slow_region->add_req(control());

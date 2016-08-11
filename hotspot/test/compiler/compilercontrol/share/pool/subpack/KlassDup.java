@@ -21,14 +21,14 @@
  * questions.
  */
 
-package pool.subpack;
+package compiler.compilercontrol.share.pool.subpack;
 
-import pool.MethodHolder;
-import pool.SubMethodHolder;
+import compiler.compilercontrol.share.pool.MethodHolder;
+import compiler.compilercontrol.share.pool.SubMethodHolder;
 
 /**
- * This is a clone of the pool.sub.Klass used to test pattern matching
- * Full class name contains both suffix (Dup) and prefix (pool.subpack)
+ * This is a clone of the c.c.s.pool.sub.Klass used to test pattern matching
+ * Full class name contains both suffix (Dup) and prefix (c.c.s.pool.subpack)
  */
 public class KlassDup extends MethodHolder {
     public void method(int a, String[] ss, Integer i, byte[] bb, double[][] dd) { }
