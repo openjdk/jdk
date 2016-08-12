@@ -132,7 +132,7 @@ public class TIFFImageMetadata extends IIOMetadata {
             if (tag == null) {
                 node = f.getAsNativeNode();
             } else if (tag.isIFDPointer() && f.hasDirectory()) {
-                TIFFIFD subIFD = (TIFFIFD)f.getDirectory();
+                TIFFIFD subIFD = TIFFIFD.getDirectoryAsIFD(f.getDirectory());
 
                 // Recurse
                 node = getIFDAsTree(subIFD, tag.getName(), tag.getNumber());
