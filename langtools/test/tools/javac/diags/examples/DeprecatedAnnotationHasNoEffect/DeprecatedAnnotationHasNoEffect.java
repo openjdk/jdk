@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,13 +21,9 @@
  * questions.
  */
 
-/**
- * This package and its contents are deprecated and
- * may be removed in a future release.
- * See
- * {@code javax.tools.ToolProvider.getSystemDocumentationTool}
- * and
- * {@code javax.tools.DocumentationTool}
- * for replacement functionality.
- */
-package com.sun.tools.javadoc;
+// options: -Xlint:deprecation
+// key: compiler.warn.deprecated.annotation.has.no.effect
+
+class DeprecatedAnnotationHasNoEffect {
+    void foo(@Deprecated int p) {}
+}
