@@ -38,7 +38,6 @@ import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
-import sun.security.action.GetPropertyAction;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -59,10 +58,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  * @author jrose
  */
 /*non-public*/ abstract class MethodHandleImpl {
-    // Do not adjust this except for special platforms:
-    private static final int MAX_ARITY = Integer.decode(
-                GetPropertyAction.privilegedGetProperty(
-                        MethodHandleImpl.class.getName()+".MAX_ARITY", "255"));
 
     /// Factory methods to create method handles:
 
