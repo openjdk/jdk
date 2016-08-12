@@ -22,7 +22,6 @@
  */
 
 import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.JarUtils;
 
 /**
@@ -50,7 +49,7 @@ public class NotSignedByAliasTest extends Test {
         JarUtils.createJar(UNSIGNED_JARFILE, FIRST_FILE);
 
         // create first key pair for signing
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-genkey",
                 "-alias", FIRST_KEY_ALIAS,
                 "-keyalg", KEY_ALG,
@@ -62,7 +61,7 @@ public class NotSignedByAliasTest extends Test {
                 "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
 
         // create first key pair for signing
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-genkey",
                 "-alias", SECOND_KEY_ALIAS,
                 "-keyalg", KEY_ALG,
@@ -74,7 +73,7 @@ public class NotSignedByAliasTest extends Test {
                 "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
 
         // sign jar with first key
-        OutputAnalyzer analyzer = ProcessTools.executeCommand(JARSIGNER,
+        OutputAnalyzer analyzer = jarsigner(
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
                 "-keypass", PASSWORD,
@@ -85,7 +84,7 @@ public class NotSignedByAliasTest extends Test {
         checkSigning(analyzer);
 
         // verify jar with second key
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
@@ -96,7 +95,7 @@ public class NotSignedByAliasTest extends Test {
         checkVerifying(analyzer, 0, NOT_SIGNED_BY_ALIAS_VERIFYING_WARNING);
 
         // verify jar with second key in strict mode
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-strict",
                 "-keystore", KEYSTORE,
@@ -109,7 +108,7 @@ public class NotSignedByAliasTest extends Test {
                 NOT_SIGNED_BY_ALIAS_VERIFYING_WARNING);
 
         // verify jar with non-existing alias
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
@@ -120,7 +119,7 @@ public class NotSignedByAliasTest extends Test {
         checkVerifying(analyzer, 0, NOT_SIGNED_BY_ALIAS_VERIFYING_WARNING);
 
         // verify jar with non-existing alias in strict mode
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-strict",
                 "-keystore", KEYSTORE,

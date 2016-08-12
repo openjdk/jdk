@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,17 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.ProcessingInstructionTest.ProcessingInstructionTest
+ * @run testng/othervm stream.ProcessingInstructionTest.ProcessingInstructionTest
  * @summary Test XMLStreamReader parses Processing Instruction.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class ProcessingInstructionTest {
 
     @Test
@@ -61,3 +67,4 @@ public class ProcessingInstructionTest {
     }
 
 }
+

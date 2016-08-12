@@ -21,7 +21,10 @@
  * questions.
  */
 
+package compiler.intrinsics.mathexact;
+
 import jdk.test.lib.Utils;
+
 import java.util.Random;
 
 /**

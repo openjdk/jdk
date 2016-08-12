@@ -291,7 +291,7 @@ public class JaasModularClientTest extends ModularTest {
         vmArgs.put("-Djava.security.auth.login.config=", SRC.resolve(
                 "jaas.conf").toFile().getCanonicalPath());
         if (addModName != null && sModuletype == MODULE_TYPE.AUTO) {
-            vmArgs.put("-addmods ", addModName);
+            vmArgs.put("--add-modules ", addModName);
         }
         return vmArgs;
     }

@@ -30,6 +30,7 @@ import javax.swing.text.Position;
 
 /*
  * @test
+ * @key headful
  * @bug 8058305
  * @summary BadLocationException is not thrown by
  *   javax.swing.text.View.getNextVisualPositionFrom() for invalid positions

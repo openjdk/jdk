@@ -22,38 +22,21 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/register.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "code/compiledIC.hpp"
+#include "code/vmreg.inline.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
-#include "oops/oop.inline.hpp"
-#include "oops/objArrayOop.inline.hpp"
-#include "runtime/javaCalls.hpp"
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciCompiler.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciRuntime.hpp"
-#include "asm/register.hpp"
-#include "classfile/vmSymbols.hpp"
-#include "code/vmreg.hpp"
-
-#ifdef TARGET_ARCH_x86
-# include "vmreg_x86.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "vmreg_sparc.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "vmreg_zero.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "vmreg_arm.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "vmreg_ppc.inline.hpp"
-#endif
-
+#include "oops/oop.inline.hpp"
+#include "oops/objArrayOop.inline.hpp"
+#include "runtime/javaCalls.hpp"
 
 // frequently used constants
 // Allocate them with new so they are never destroyed (otherwise, a
@@ -782,7 +765,7 @@ JVMCIEnv::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer,
     }
     last_pc_offset = pc_offset;
 
-    if (CodeInstallSafepointChecks && SafepointSynchronize::do_call_back()) {
+    if (SafepointSynchronize::do_call_back()) {
       // this is a hacky way to force a safepoint check but nothing else was jumping out at me.
       ThreadToNativeFromVM ttnfv(JavaThread::current());
     }

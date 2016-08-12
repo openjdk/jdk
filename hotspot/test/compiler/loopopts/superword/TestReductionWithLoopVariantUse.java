@@ -25,9 +25,11 @@
  * @test
  * @bug 8080976
  * @summary Loop variant use in reduction should prevent vectorization
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestReductionWithLoopVariantUse
- *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *      compiler.loopopts.superword.TestReductionWithLoopVariantUse
  */
+
+package compiler.loopopts.superword;
 
 public class TestReductionWithLoopVariantUse {
     static int m(int[] array) {

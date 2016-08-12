@@ -21,7 +21,7 @@
  * questions.
  */
 
-package hierarchies;
+package compiler.types.correctness.hierarchies;
 
 public class DefaultMethodInterface {
     private DefaultMethodInterface() {

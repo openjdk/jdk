@@ -39,18 +39,16 @@
 
 package jdk.vm.ci.hotspot.test;
 
-import static jdk.vm.ci.hotspot.test.TestHelper.CONSTANT_REFLECTION_PROVIDER;
-
-import java.lang.reflect.Method;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
-import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.MemoryAccessProvider;
 import jdk.vm.ci.meta.MethodHandleAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import static jdk.vm.ci.hotspot.test.TestHelper.CONSTANT_REFLECTION_PROVIDER;
 
 public class HotSpotConstantReflectionProviderTest {
 
@@ -117,12 +115,6 @@ public class HotSpotConstantReflectionProviderTest {
     @Test(dataProvider = "unboxPrimitiveDataProvider", dataProviderClass = UnboxPrimitiveDataProvider.class)
     public void testUnboxPrimitive(JavaConstant constant, JavaConstant expected) {
         JavaConstant actual = CONSTANT_REFLECTION_PROVIDER.unboxPrimitive(constant);
-        Assert.assertEquals(actual, expected, "Unexpected result:");
-    }
-
-    @Test(dataProvider = "isEmbeddableDataProvider", dataProviderClass = IsEmbeddableDataProvider.class)
-    public void testIsEmbeddable(JavaConstant constant, boolean expected) {
-        boolean actual = CONSTANT_REFLECTION_PROVIDER.isEmbeddable(constant);
         Assert.assertEquals(actual, expected, "Unexpected result:");
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     8004822
+ * @bug     8004822 8163113
  * @author  mnunez
  * @summary Language model api test basics for repeating annotations
  * @library /tools/javac/lib
@@ -54,7 +54,7 @@ class F {}
 @ExpectedContainer(
         value = UnofficialInheritedContainer.class,
         getAnnotation = "@UnofficialInheritedContainer("
-        + "value=[@FooInherited(value=1), @FooInherited(value=2)])",
+        + "value={@FooInherited(value=1), @FooInherited(value=2)})",
         getAnnotationsByType = {"@UnofficialInheritedContainer("
-                + "value=[@FooInherited(value=1), @FooInherited(value=2)])"})
+                + "value={@FooInherited(value=1), @FooInherited(value=2)})"})
 class UnofficialContainerInheritedTest extends F {}

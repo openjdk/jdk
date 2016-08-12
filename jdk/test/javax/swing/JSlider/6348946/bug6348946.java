@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6348946
  * @summary Tests that JSlider's thumb moves in the right direction
  *          when it is used as a JTable cell editor.

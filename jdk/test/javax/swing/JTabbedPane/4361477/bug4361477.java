@@ -28,6 +28,7 @@ import javax.swing.event.*;
 
 /*
  * @test
+ * @key headful
  * @bug 4361477
  * @summary JTabbedPane throws ArrayOutOfBoundsException
  * @author Oleg Mokhovikov

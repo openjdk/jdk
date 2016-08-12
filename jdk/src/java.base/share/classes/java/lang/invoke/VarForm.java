@@ -31,7 +31,6 @@ import java.lang.invoke.VarHandle.AccessMode;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -54,7 +53,8 @@ final class VarForm {
         List<Class<?>> l = new ArrayList<>();
         if (receiver != null)
             l.add(receiver);
-        l.addAll(Arrays.asList(intermediate));
+        for (Class<?> c : intermediate)
+            l.add(c);
 
         // (Receiver, <Intermediates>)Value
         methodType_table[VarHandle.AccessType.GET.ordinal()] =

@@ -84,8 +84,7 @@ void mlib_ImageAffine_bit_1ch_nn(mlib_affine_param *param,
         ySrc = MLIB_POINTER_SHIFT(Y);
         srcPixelPtr = MLIB_POINTER_GET(lineAddr, ySrc);
 
-        res = (res & ~(1 << bit)) | (((srcPixelPtr[X >> (MLIB_SHIFT + 3)] >> (7 - (X >> MLIB_SHIFT) & 7)) & 1) <<
-           bit);
+        res = (res & ~(1 << bit)) | (((srcPixelPtr[X >> (MLIB_SHIFT + 3)] >> (7 - ((X >> MLIB_SHIFT) & 7))) & 1) << bit);
 
         X += dX;
         Y += dY;
@@ -150,7 +149,7 @@ void mlib_ImageAffine_bit_1ch_nn(mlib_affine_param *param,
         ySrc = MLIB_POINTER_SHIFT(Y);
         srcPixelPtr = MLIB_POINTER_GET(lineAddr, ySrc);
 
-        res = (res & ~(1 << bit)) | (((srcPixelPtr[X >> (MLIB_SHIFT + 3)] >> (7 - (X >> MLIB_SHIFT) & 7)) & 1) << bit);
+        res = (res & ~(1 << bit)) | (((srcPixelPtr[X >> (MLIB_SHIFT + 3)] >> (7 - ((X >> MLIB_SHIFT) & 7))) & 1) << bit);
 
         X += dX;
         Y += dY;

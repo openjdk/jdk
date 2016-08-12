@@ -25,29 +25,32 @@
  * @test
  * @bug 8026735
  * @summary CHA in C1 should make correct decisions about default methods
- * @run main/othervm -Xcomp -XX:CompileOnly=InlineDefaultMethod::test -XX:TieredStopAtLevel=1 InlineDefaultMethod
+ *
+ * @run main/othervm -Xcomp -XX:TieredStopAtLevel=1
+ *      -XX:CompileCommand=compileonly,compiler.inlining.InlineDefaultMethod::test
+ *      compiler.inlining.InlineDefaultMethod
  */
 
-
-interface InterfaceWithDefaultMethod0 {
-    default public int defaultMethod() {
-        return 1;
-    }
-}
-
-interface InterfaceWithDefaultMethod1 extends InterfaceWithDefaultMethod0 { }
-
-abstract class Subtype implements InterfaceWithDefaultMethod1 { }
-
-class Decoy extends Subtype {
-    public int defaultMethod() {
-        return 2;
-    }
-}
-
-class Instance extends Subtype { }
-
+package compiler.inlining;
 public class InlineDefaultMethod {
+    interface InterfaceWithDefaultMethod0 {
+        default public int defaultMethod() {
+            return 1;
+        }
+    }
+
+    interface InterfaceWithDefaultMethod1 extends InterfaceWithDefaultMethod0 { }
+
+    static abstract class Subtype implements InterfaceWithDefaultMethod1 { }
+
+    static class Decoy extends Subtype {
+        public int defaultMethod() {
+            return 2;
+        }
+    }
+
+    static class Instance extends Subtype { }
+
     public static int test(InterfaceWithDefaultMethod1 x) {
         return x.defaultMethod();
     }

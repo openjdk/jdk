@@ -23,6 +23,7 @@
 
 /**
  * @test @summary JVM crash if the frame is disposed in DropTargetListener
+ * @key headful
  * @author Petr Pchelko
  * @library ../../regtesthelpers
  * @build Util

@@ -58,7 +58,7 @@ import sun.net.www.ParseUtil;
 
 
 /**
- * Provides support for patching modules in the boot layer with -Xpatch.
+ * Provides support for patching modules in the boot layer with --patch-module.
  */
 
 public final class ModulePatcher {
@@ -66,28 +66,27 @@ public final class ModulePatcher {
     private static final JavaLangModuleAccess JLMA
         = SharedSecrets.getJavaLangModuleAccess();
 
-    // the prefix of the system properties that encode the value of -Xpatch
-    private static final String PATCH_PROPERTY_PREFIX = "jdk.launcher.patch.";
+    // the prefix of the system properties that encode the value of --patch-module
+    private static final String PATCH_PROPERTY_PREFIX = "jdk.module.patch.";
 
     // module name -> sequence of patches (directories or JAR files)
     private static final Map<String, List<Path>> PATCH_MAP = decodeProperties();
 
     private ModulePatcher() { }
 
-
     /**
-     * Decodes the values of -Xpatch options, returning a Map of module name to
-     * list of file paths.
+     * Decodes the values of --patch-module options, returning a Map of module
+     * name to list of file paths.
      *
      * @throws IllegalArgumentException if the the module name is missing or
-     *         -Xpatch is used more than once to patch the same module
+     *         --patch-module is used more than once to patch the same module
      */
     private static Map<String, List<Path>> decodeProperties() {
 
         int index = 0;
-        String value = System.getProperty(PATCH_PROPERTY_PREFIX + index);
+        String value = getAndRemoveProperty(PATCH_PROPERTY_PREFIX + index);
         if (value == null)
-            return Collections.emptyMap();  // -Xpatch not specified
+            return Collections.emptyMap();  // --patch-module not specified
 
         Map<String, List<Path>> map = new HashMap<>();
         while (value != null) {
@@ -115,12 +114,20 @@ public final class ModulePatcher {
             }
 
             index++;
-            value = System.getProperty(PATCH_PROPERTY_PREFIX + index);
+            value = getAndRemoveProperty(PATCH_PROPERTY_PREFIX + index);
         }
 
         return map;
     }
 
+
+    /**
+     * Returns {@code true} is --patch-module is specified to patch modules
+     * in the boot layer.
+     */
+    static boolean isBootLayerPatched() {
+        return !PATCH_MAP.isEmpty();
+    }
 
     /**
      * Returns a module reference that interposes on the given module if
@@ -534,6 +541,13 @@ public final class ModulePatcher {
         } else {
             return parent.toString().replace(File.separatorChar, '.');
         }
+    }
+
+    /**
+     * Gets and remove the named system property
+     */
+    private static String getAndRemoveProperty(String key) {
+        return (String)System.getProperties().remove(key);
     }
 
     /**

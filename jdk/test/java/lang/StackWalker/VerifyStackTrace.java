@@ -205,6 +205,8 @@ public class VerifyStackTrace {
                     .replaceAll("java.base@(\\d+\\.){0,3}(\\d+)/", "java.base/")
                     .replaceAll("/[0-9]+\\.run", "/xxxxxxxx.run")
                     .replaceAll("/[0-9]+\\.invoke", "/xxxxxxxx.invoke")
+                    .replaceAll("DirectMethodHandle\\$Holder", "LambdaForm\\$DMH")
+                    .replaceAll("DMH\\.invoke", "DMH/xxxxxxxx.invoke")
                     .replaceAll("\\$[0-9]+", "\\$??");
         } else {
             return produced;

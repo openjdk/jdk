@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 4510355
- * @key intermittent
  * @summary ActivationGroup implementations cannot be downloaded by default;
  * Creates a custom activation group without setting a security manager
  * in activation group's descriptor.  The custom activation group
@@ -140,10 +139,10 @@ public class DownloadActivationGroup
             CommandEnvironment cmd = new ActivationGroupDesc.CommandEnvironment(
                     null,
                     new String[] {
-                        "-XaddExports:java.rmi/sun.rmi.registry=ALL-UNNAMED",
-                        "-XaddExports:java.rmi/sun.rmi.server=ALL-UNNAMED",
-                        "-XaddExports:java.rmi/sun.rmi.transport=ALL-UNNAMED",
-                        "-XaddExports:java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED" });
+                        "--add-exports=java.rmi/sun.rmi.registry=ALL-UNNAMED",
+                        "--add-exports=java.rmi/sun.rmi.server=ALL-UNNAMED",
+                        "--add-exports=java.rmi/sun.rmi.transport=ALL-UNNAMED",
+                        "--add-exports=java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED" });
 
             ActivationGroupDesc groupDesc =
                 new ActivationGroupDesc("MyActivationGroupImpl",

@@ -37,6 +37,7 @@ import javax.swing.SwingUtilities;
 
 /**
  * @test
+ * @key headful
  * @bug 8072767
  * @author Alexander Scherbatiy
  * @summary DefaultCellEditor for comboBox creates ActionEvent with wrong source

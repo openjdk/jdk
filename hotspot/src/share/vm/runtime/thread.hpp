@@ -50,7 +50,7 @@
 #include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/satbMarkQueue.hpp"
 #endif // INCLUDE_ALL_GCS
-#ifdef TARGET_ARCH_zero
+#ifdef ZERO
 # include "stack_zero.hpp"
 #endif
 
@@ -1905,43 +1905,7 @@ class JavaThread: public Thread {
 #endif // INCLUDE_ALL_GCS
 
   // Machine dependent stuff
-#ifdef TARGET_OS_ARCH_linux_x86
-# include "thread_linux_x86.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_sparc
-# include "thread_linux_sparc.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_zero
-# include "thread_linux_zero.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_solaris_x86
-# include "thread_solaris_x86.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_solaris_sparc
-# include "thread_solaris_sparc.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_windows_x86
-# include "thread_windows_x86.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_arm
-# include "thread_linux_arm.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_ppc
-# include "thread_linux_ppc.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_aarch64
-# include "thread_linux_aarch64.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_aix_ppc
-# include "thread_aix_ppc.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_bsd_x86
-# include "thread_bsd_x86.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_bsd_zero
-# include "thread_bsd_zero.hpp"
-#endif
-
+#include OS_CPU_HEADER(thread)
 
  public:
   void set_blocked_on_compilation(bool value) {

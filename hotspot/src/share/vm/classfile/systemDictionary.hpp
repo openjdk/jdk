@@ -281,6 +281,7 @@ public:
 
   // Parse new stream. This won't update the system dictionary or
   // class hierarchy, simply parse the stream. Used by JVMTI RedefineClasses.
+  // Also used by Unsafe_DefineAnonymousClass
   static Klass* parse_stream(Symbol* class_name,
                              Handle class_loader,
                              Handle protection_domain,
@@ -412,10 +413,6 @@ public:
 
   // Verification
   static void verify();
-
-#ifdef ASSERT
-  static bool is_internal_format(Symbol* class_name);
-#endif
 
   // Initialization
   static void initialize(TRAPS);

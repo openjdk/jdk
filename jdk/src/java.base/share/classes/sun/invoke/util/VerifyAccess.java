@@ -28,6 +28,7 @@ package sun.invoke.util;
 import java.lang.reflect.Modifier;
 import static java.lang.reflect.Modifier.*;
 import java.lang.reflect.Module;
+import java.util.Objects;
 import jdk.internal.reflect.Reflection;
 
 /**
@@ -330,15 +331,7 @@ public class VerifyAccess {
             return true;
         if (class1.getClassLoader() != class2.getClassLoader())
             return false;
-        String name1 = class1.getName(), name2 = class2.getName();
-        int dot = name1.lastIndexOf('.');
-        if (dot != name2.lastIndexOf('.'))
-            return false;
-        for (int i = 0; i < dot; i++) {
-            if (name1.charAt(i) != name2.charAt(i))
-                return false;
-        }
-        return true;
+        return Objects.equals(class1.getPackageName(), class2.getPackageName());
     }
 
     /** Return the package name for this class.

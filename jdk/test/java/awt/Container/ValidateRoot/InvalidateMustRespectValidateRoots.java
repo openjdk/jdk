@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 6852592
   @summary invalidate() must stop when it encounters a validate root
   @author anthony.petrov@sun.com

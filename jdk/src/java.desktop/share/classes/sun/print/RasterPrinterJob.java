@@ -1271,6 +1271,12 @@ public abstract class RasterPrinterJob extends PrinterJob {
         JobSheets jobSheets = (JobSheets)attributes.get(JobSheets.class);
         if (jobSheets != null) {
             noJobSheet = jobSheets == JobSheets.NONE;
+        } else {
+            JobSheets js = (JobSheets)getPrintService().
+                                      getDefaultAttributeValue(JobSheets.class);
+            if (js != null && js.equals(JobSheets.NONE)) {
+                noJobSheet = true;
+            }
         }
 
         JobName jobName = (JobName)attributes.get(JobName.class);

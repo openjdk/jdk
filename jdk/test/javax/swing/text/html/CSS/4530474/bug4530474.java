@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 4530474
  * @summary  Tests if background-color CSS attribute in HTML font tag in class attribute
  * @author Denis Sharypov

@@ -25,9 +25,11 @@
  * @test
  * @bug 8075587
  * @summary meet of 2 constant arrays result in bottom
- * @run main/othervm TestMeetExactConstantArrays
  *
+ * @run main/othervm compiler.types.TestMeetExactConstantArrays
  */
+
+package compiler.types;
 
 public class TestMeetExactConstantArrays {
     public abstract static class NumbersHolder {

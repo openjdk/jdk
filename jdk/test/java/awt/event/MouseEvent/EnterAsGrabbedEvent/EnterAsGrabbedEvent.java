@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 6317481 8012325
   @summary REG:Pressing the mouse, dragging and releasing it outside the button triggers ActionEvent, XAWT
   @author Dmitry.Cherepanov@SUN.COM area=awt.event

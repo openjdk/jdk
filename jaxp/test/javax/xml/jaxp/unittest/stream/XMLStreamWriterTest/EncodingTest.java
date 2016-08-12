@@ -29,11 +29,17 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.EncodingTest
+ * @run testng/othervm stream.XMLStreamWriterTest.EncodingTest
  * @summary Test XMLStreamWriter writes a document with encoding setting.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class EncodingTest {
 
     private static final XMLOutputFactory XML_OUTPUT_FACTORY = XMLOutputFactory.newInstance();
@@ -104,3 +110,4 @@ public class EncodingTest {
         }
     }
 }
+

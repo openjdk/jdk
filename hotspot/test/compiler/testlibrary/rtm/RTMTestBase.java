@@ -24,20 +24,20 @@
 
 package compiler.testlibrary.rtm;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.LinkedList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.ProcessTools;
 import jdk.test.lib.Utils;
 import jdk.test.lib.cli.CommandLineOptionTest;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Auxiliary methods used for RTM testing.

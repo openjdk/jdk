@@ -24,8 +24,11 @@
 /**
  * @test
  * @bug 8059556
- * @run main/othervm -Xbatch NullConstantReceiver
+ *
+ * @run main/othervm -Xbatch compiler.jsr292.NullConstantReceiver
  */
+
+package compiler.jsr292;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -604,7 +604,7 @@ public class JavacFiler implements Filer, Closeable {
      * Debugging function to display internal state.
      */
     public void displayState() {
-        PrintWriter xout = context.get(Log.outKey);
+        PrintWriter xout = context.get(Log.logKey).getWriter(Log.WriterKind.STDERR);
         xout.println("File Object History : " +  fileObjectHistory);
         xout.println("Open Type Names     : " +  openTypeNames);
         xout.println("Gen. Src Names      : " +  generatedSourceNames);

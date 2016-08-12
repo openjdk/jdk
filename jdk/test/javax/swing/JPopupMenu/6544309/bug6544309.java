@@ -20,7 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
+/*
+   @test
+  @key headful
    @bug 6544309
    @summary Checks that 'Select Input Method' popup menu allows to select
             items with keyboard.

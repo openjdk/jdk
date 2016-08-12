@@ -23,9 +23,12 @@
 
 package jdk.vm.ci.code.test.sparc;
 
+import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.DebugInfo;
 import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.Register.RegisterCategory;
+import jdk.vm.ci.code.RegisterValue;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.site.ConstantReference;
 import jdk.vm.ci.code.site.DataSectionReference;
@@ -36,6 +39,7 @@ import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.hotspot.HotSpotForeignCallTarget;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.VMConstant;
 import jdk.vm.ci.sparc.SPARC;
@@ -44,6 +48,9 @@ import jdk.vm.ci.sparc.SPARCKind;
 public class SPARCTestAssembler extends TestAssembler {
 
     private static final int MASK13 = (1 << 13) - 1;
+    private static final Register scratchRegister = SPARC.g5;
+    private static final Register floatScratch = SPARC.f30;
+    private static final Register doubleScratch = SPARC.d62;
 
     public SPARCTestAssembler(CodeCacheProvider codeCache, TestHotSpotVMConfig config) {
         super(codeCache, config, 0, 16, SPARCKind.WORD, SPARC.l0, SPARC.l1, SPARC.l2, SPARC.l3, SPARC.l4, SPARC.l5, SPARC.l6, SPARC.l7);
@@ -136,7 +143,7 @@ public class SPARCTestAssembler extends TestAssembler {
         return ret;
     }
 
-    private void loadIntToRegister(int c, Register ret) {
+    private Register loadIntToRegister(int c, Register ret) {
         int hi = c >>> 10;
         int lo = c & ((1 << 10) - 1);
         if (hi == 0) {
@@ -147,6 +154,7 @@ public class SPARCTestAssembler extends TestAssembler {
                 emitOp3(0b10, ret, 0b000010, ret, lo);  // OR ret, lo, ret
             }
         }
+        return ret;
     }
 
     @Override
@@ -164,12 +172,13 @@ public class SPARCTestAssembler extends TestAssembler {
         emitLoadPointerToRegister(ref, ret);
     }
 
-    public void emitLoadLongToRegister(long c, Register r) {
+    public Register emitLoadLongToRegister(long c, Register r) {
         if ((c & 0xFFFF_FFFFL) == c) {
             loadIntToRegister((int) c, r);
         } else {
             loadLongToRegister(c, r);
         }
+        return r;
     }
 
     private void emitPatchableSethi(Register ret, boolean wide) {
@@ -185,16 +194,39 @@ public class SPARCTestAssembler extends TestAssembler {
 
     @Override
     public Register emitLoadFloat(float c) {
+        return emitLoadFloat(SPARC.f0, c);
+    }
+
+    public Register emitLoadFloat(Register reg, float c) {
+        return emitLoadFloat(reg, c, newRegister());
+    }
+
+    public Register emitLoadFloat(Register reg, float c, Register scratch) {
         DataSectionReference ref = new DataSectionReference();
         data.align(4);
         ref.setOffset(data.position());
         data.emitFloat(c);
 
-        Register ptr = newRegister();
         recordDataPatchInCode(ref);
-        emitPatchableSethi(ptr, true);
-        emitOp3(0b11, SPARC.f0, 0b100000, ptr, 0); // LDF [ptr+0], f0
-        return SPARC.f0;
+        emitPatchableSethi(scratch, true);
+        emitOp3(0b11, reg, 0b100000, scratch, 0); // LDF [scratch+0], f0
+        return reg;
+    }
+
+    public Register emitLoadDouble(Register reg, double c) {
+        return emitLoadDouble(reg, c, newRegister());
+    }
+
+    public Register emitLoadDouble(Register reg, double c, Register scratch) {
+        DataSectionReference ref = new DataSectionReference();
+        data.align(8);
+        ref.setOffset(data.position());
+        data.emitDouble(c);
+
+        recordDataPatchInCode(ref);
+        emitPatchableSethi(scratch, true);
+        emitOp3(0b11, reg, 0b100011, scratch, 0); // LDDF [ptr+0], f0
+        return reg;
     }
 
     @Override
@@ -240,24 +272,48 @@ public class SPARCTestAssembler extends TestAssembler {
     @Override
     public StackSlot emitIntToStack(Register a) {
         StackSlot ret = newStackSlot(SPARCKind.WORD);
-        // STW a, [fp+offset]
-        emitStore(0b000100, a, ret);
+        intToStack(a, ret);
         return ret;
+    }
+
+    public void intToStack(Register a, StackSlot ret) {
+        // STW a, [(s|f)p+offset]
+        emitStore(0b000100, a, ret);
     }
 
     @Override
     public StackSlot emitLongToStack(Register a) {
         StackSlot ret = newStackSlot(SPARCKind.XWORD);
-        // STX a, [sp+offset]
-        emitStore(0b001110, a, ret);
+        longToStack(a, ret);
         return ret;
+    }
+
+    public void longToStack(Register a, StackSlot ret) {
+        // STX a, [(f|s)p+offset]
+        emitStore(0b001110, a, ret);
     }
 
     @Override
     public StackSlot emitFloatToStack(Register a) {
         StackSlot ret = newStackSlot(SPARCKind.SINGLE);
+        floatToStack(a, ret);
+        return ret;
+    }
+
+    public void floatToStack(Register a, StackSlot ret) {
         // STF a, [fp+offset]
         emitStore(0b100100, a, ret);
+    }
+
+    @Override
+    public StackSlot emitDoubleToStack(Register a) {
+        StackSlot ret = newStackSlot(SPARCKind.DOUBLE);
+        return doubleToStack(a, ret);
+    }
+
+    public StackSlot doubleToStack(Register a, StackSlot ret) {
+        // STD a, [(s|f)p+offset]
+        emitStore(0b100111, a, ret);
         return ret;
     }
 
@@ -278,16 +334,22 @@ public class SPARCTestAssembler extends TestAssembler {
     }
 
     private void emitStore(int op3, Register a, StackSlot ret) {
+        Register base;
+        if (ret.getRawOffset() < 0) {
+            base = SPARC.fp;
+        } else {
+            base = SPARC.sp;
+        }
         int offset = ret.getRawOffset() + SPARC.STACK_BIAS;
         if (isSimm(offset, 13)) {
             // op3 a, [sp+offset]
-            emitOp3(0b11, a, op3, SPARC.fp, offset);
+            emitOp3(0b11, a, op3, base, offset);
         } else {
             assert a != SPARC.g3;
             Register r = SPARC.g3;
             loadLongToRegister(offset, r);
             // op3 a, [sp+g3]
-            emitOp3(0b11, a, op3, SPARC.fp, r);
+            emitOp3(0b11, a, op3, base, r);
         }
     }
 
@@ -328,6 +390,13 @@ public class SPARCTestAssembler extends TestAssembler {
     }
 
     @Override
+    public void emitFloatRet(Register a) {
+        assert a == SPARC.f0 : "Unimplemented";
+        emitOp3(0b10, SPARC.g0, 0b111000, SPARC.i7, 8);        // JMPL [i7+8], g0
+        emitOp3(0b10, SPARC.g0, 0b111101, SPARC.g0, SPARC.g0); // RESTORE g0, g0, g0
+    }
+
+    @Override
     public void emitPointerRet(Register a) {
         emitMove(SPARC.i0, a);
         emitOp3(0b10, SPARC.g0, 0b111000, SPARC.i7, 8);        // JMPL [i7+8], g0
@@ -349,4 +418,57 @@ public class SPARCTestAssembler extends TestAssembler {
         }
         return super.emitDataItem(c);
     }
+
+    @Override
+    public void emitCall(long addr) {
+        Register dst = emitLoadLong(addr);
+        emitOp3(0b10, SPARC.o7, 0b111000, dst, 0);        // JMPL [dst+0], o7
+        emitNop();
+    }
+
+    @Override
+    public void emitLoad(AllocatableValue av, Object prim) {
+        if (av instanceof RegisterValue) {
+            Register reg = ((RegisterValue) av).getRegister();
+            RegisterCategory cat = reg.getRegisterCategory();
+            if (cat.equals(SPARC.FPUs)) {
+                emitLoadFloat(reg, (Float) prim, scratchRegister);
+            } else if (cat.equals(SPARC.FPUd)) {
+                emitLoadDouble(reg, (Double) prim, scratchRegister);
+            } else if (prim instanceof Integer) {
+                loadIntToRegister((Integer) prim, reg);
+            } else if (prim instanceof Long) {
+                loadLongToRegister((Long) prim, reg);
+            }
+        } else if (av instanceof StackSlot) {
+            StackSlot slot = (StackSlot) av;
+            if (prim instanceof Float) {
+                floatToStack(emitLoadFloat(floatScratch, (Float) prim, scratchRegister), slot);
+            } else if (prim instanceof Double) {
+                doubleToStack(emitLoadDouble(doubleScratch, (Double) prim, scratchRegister), slot);
+            } else if (prim instanceof Integer) {
+                intToStack(loadIntToRegister((Integer) prim, scratchRegister), slot);
+            } else if (prim instanceof Long) {
+                longToStack(emitLoadLongToRegister((Long) prim, scratchRegister), slot);
+            }
+        } else {
+            throw new IllegalArgumentException("Unknown value " + av);
+        }
+    }
+
+    @Override
+    public void emitCallEpilogue(CallingConvention cc) {
+        // Nothing to do here.
+    }
+
+    @Override
+    public void emitCallPrologue(CallingConvention cc, Object... prim) {
+        emitGrowStack(cc.getStackSize());
+        frameSize += cc.getStackSize();
+        AllocatableValue[] args = cc.getArguments();
+        for (int i = 0; i < args.length; i++) {
+            emitLoad(args[i], prim[i]);
+        }
+    }
+
 }

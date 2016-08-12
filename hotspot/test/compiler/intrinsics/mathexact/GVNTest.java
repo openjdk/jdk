@@ -25,10 +25,11 @@
  * @test
  * @bug 8028207
  * @summary Verify that GVN doesn't mess up the two addExacts
- * @compile GVNTest.java
- * @run main GVNTest
  *
+ * @run main compiler.intrinsics.mathexact.GVNTest
  */
+
+package compiler.intrinsics.mathexact;
 
 public class GVNTest {
   public static int result = 0;

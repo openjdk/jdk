@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.io.FileInputStream;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -37,9 +38,14 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 /*
+ * @test
  * @bug 6518733
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true parsers.Bug6690015
+ * @run testng/othervm parsers.Bug6690015
  * @summary Test SAX parser handles several attributes with newlines.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6690015 {
 
     public Bug6690015() {
@@ -81,3 +87,4 @@ public class Bug6690015 {
     }
 
 }
+

@@ -31,11 +31,17 @@ import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.stream.StreamResult;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLOutputFactoryTest.DuplicateNSDeclarationTest
+ * @run testng/othervm stream.XMLOutputFactoryTest.DuplicateNSDeclarationTest
  * @summary Test the writing of duplicate namespace declarations when IS_REPAIRING_NAMESPACES is ture.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class DuplicateNSDeclarationTest {
 
     @Test
@@ -77,3 +83,4 @@ public class DuplicateNSDeclarationTest {
         Assert.assertEquals(EXPECTED_OUTPUT, buffer.toString());
     }
 }
+

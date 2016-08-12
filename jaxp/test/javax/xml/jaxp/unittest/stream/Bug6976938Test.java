@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,18 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.XMLEvent;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6976938
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.Bug6976938Test
+ * @run testng/othervm stream.Bug6976938Test
  * @summary Test StAX parser won't throw StackOverflowError while reading valid XML file, in case the text content of an XML element contains many lines like "&lt; ... &gt;".
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6976938Test {
 
     private static final String INPUT_FILE = "Bug6976938.xml";
@@ -94,3 +100,4 @@ public class Bug6976938Test {
     }
 
 }
+

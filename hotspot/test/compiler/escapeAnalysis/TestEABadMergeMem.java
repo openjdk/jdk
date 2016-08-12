@@ -25,9 +25,13 @@
  * @test
  * @bug 8134031
  * @summary Bad rewiring of memory edges when we split unique types during EA
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=dontinline,TestEABadMergeMem::m_notinlined TestEABadMergeMem
  *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *      -XX:CompileCommand=dontinline,compiler.escapeAnalysis.TestEABadMergeMem::m_notinlined
+ *      compiler.escapeAnalysis.TestEABadMergeMem
  */
+
+package compiler.escapeAnalysis;
 
 public class TestEABadMergeMem {
 

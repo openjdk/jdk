@@ -1869,14 +1869,33 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
     }
 
+    public static abstract class JCOperatorExpression extends JCExpression {
+        public enum OperandPos {
+            LEFT,
+            RIGHT
+        }
+
+        protected Tag opcode;
+        public OperatorSymbol operator;
+
+        public OperatorSymbol getOperator() {
+            return operator;
+        }
+
+        @Override
+        public Tag getTag() {
+            return opcode;
+        }
+
+        public abstract JCExpression getOperand(OperandPos pos);
+    }
+
     /**
      * An assignment with "+=", "|=" ...
      */
-    public static class JCAssignOp extends JCExpression implements CompoundAssignmentTree {
-        private Tag opcode;
+    public static class JCAssignOp extends JCOperatorExpression implements CompoundAssignmentTree {
         public JCExpression lhs;
         public JCExpression rhs;
-        public OperatorSymbol operator;
         protected JCAssignOp(Tag opcode, JCTree lhs, JCTree rhs, OperatorSymbol operator) {
             this.opcode = opcode;
             this.lhs = (JCExpression)lhs;
@@ -1892,26 +1911,21 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression getVariable() { return lhs; }
         @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getExpression() { return rhs; }
-        public OperatorSymbol getOperator() {
-            return operator;
-        }
         @Override @DefinedBy(Api.COMPILER_TREE)
         public <R,D> R accept(TreeVisitor<R,D> v, D d) {
             return v.visitCompoundAssignment(this, d);
         }
         @Override
-        public Tag getTag() {
-            return opcode;
+        public JCExpression getOperand(OperandPos pos) {
+            return pos == OperandPos.LEFT ? lhs : rhs;
         }
     }
 
     /**
      * A unary operation.
      */
-    public static class JCUnary extends JCExpression implements UnaryTree {
-        private Tag opcode;
+    public static class JCUnary extends JCOperatorExpression implements UnaryTree {
         public JCExpression arg;
-        public OperatorSymbol operator;
         protected JCUnary(Tag opcode, JCExpression arg) {
             this.opcode = opcode;
             this.arg = arg;
@@ -1923,31 +1937,25 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public Kind getKind() { return TreeInfo.tagToKind(getTag()); }
         @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getExpression() { return arg; }
-        public OperatorSymbol getOperator() {
-            return operator;
-        }
         @Override @DefinedBy(Api.COMPILER_TREE)
         public <R,D> R accept(TreeVisitor<R,D> v, D d) {
             return v.visitUnary(this, d);
         }
-        @Override
-        public Tag getTag() {
-            return opcode;
-        }
-
         public void setTag(Tag tag) {
             opcode = tag;
+        }
+        @Override
+        public JCExpression getOperand(OperandPos pos) {
+            return arg;
         }
     }
 
     /**
      * A binary operation.
      */
-    public static class JCBinary extends JCExpression implements BinaryTree {
-        private Tag opcode;
+    public static class JCBinary extends JCOperatorExpression implements BinaryTree {
         public JCExpression lhs;
         public JCExpression rhs;
-        public OperatorSymbol operator;
         protected JCBinary(Tag opcode,
                          JCExpression lhs,
                          JCExpression rhs,
@@ -1966,16 +1974,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression getLeftOperand() { return lhs; }
         @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getRightOperand() { return rhs; }
-        public OperatorSymbol getOperator() {
-            return operator;
-        }
         @Override @DefinedBy(Api.COMPILER_TREE)
         public <R,D> R accept(TreeVisitor<R,D> v, D d) {
             return v.visitBinary(this, d);
         }
         @Override
-        public Tag getTag() {
-            return opcode;
+        public JCExpression getOperand(OperandPos pos) {
+            return pos == OperandPos.LEFT ? lhs : rhs;
         }
     }
 

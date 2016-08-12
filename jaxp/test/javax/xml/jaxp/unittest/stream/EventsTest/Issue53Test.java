@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,17 @@ import javax.xml.stream.XMLEventFactory;
 import javax.xml.stream.events.StartDocument;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.EventsTest.Issue53Test
+ * @run testng/othervm stream.EventsTest.Issue53Test
  * @summary Test encodingSet/standaloneSet returns correct result in case encoding/standalone is set when constructing StartDocument.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Issue53Test {
 
     @Test
@@ -65,3 +71,4 @@ public class Issue53Test {
     }
 
 }
+

@@ -21,28 +21,35 @@
  * questions.
  */
 
-import jdk.test.lib.Asserts;
-import java.lang.management.MemoryPoolMXBean;
-import sun.hotspot.code.BlobType;
-
 /*
  * @test PeakUsageTest
- * @ignore 8151345
- * @library /testlibrary /test/lib
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build PeakUsageTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *
+ * @ignore 8151345
+ * @build ompiler.codecache.jmx.PeakUsageTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *     sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *     -XX:+WhiteBoxAPI -XX:+SegmentedCodeCache
- *     -XX:CompileCommand=compileonly,null::* PeakUsageTest
+ *     -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
+ *     -XX:+SegmentedCodeCache
+ *     compiler.codecache.jmx.PeakUsageTest
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *     -XX:+WhiteBoxAPI -XX:-SegmentedCodeCache
- *     -XX:CompileCommand=compileonly,null::* PeakUsageTest
+ *     -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
+ *     -XX:-SegmentedCodeCache
+ *     compiler.codecache.jmx.PeakUsageTest
  * @summary testing of getPeakUsage() and resetPeakUsage for
  *     segmented code cache
  */
+
+package compiler.codecache.jmx;
+
+import sun.hotspot.code.BlobType;
+
+import java.lang.management.MemoryPoolMXBean;
+
+
 public class PeakUsageTest {
 
     private final BlobType btype;

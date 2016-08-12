@@ -106,8 +106,8 @@ public class BasicTest {
     private void runJlink(Path image, String modName, String... options) {
         List<String> args = new ArrayList<>();
         Collections.addAll(args,
-                "--modulepath", jdkMods + File.pathSeparator + jmods,
-                "--addmods", modName,
+                "--module-path", jdkMods + File.pathSeparator + jmods,
+                "--add-modules", modName,
                 "--output", image.toString());
         Collections.addAll(args, options);
         int rc = jdk.tools.jlink.internal.Main.run(args.toArray(new String[args.size()]), new PrintWriter(System.out));

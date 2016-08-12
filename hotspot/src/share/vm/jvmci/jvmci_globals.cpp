@@ -39,196 +39,65 @@ JVMCI_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
             IGNORE_CONSTRAINT, \
             IGNORE_WRITEABLE)
 
-#define JVMCI_IGNORE_FLAG_FOUR_PARAM(type, name, value, doc)
-#define JVMCI_IGNORE_FLAG_THREE_PARAM(type, name, doc)
-
 // Return true if jvmci flags are consistent.
 bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
-  if (EnableJVMCI) {
-    return true;
-  }
-
-  // "FLAG_IS_DEFAULT" fail count.
-  int fail_count = 0;
-  // Number of "FLAG_IS_DEFAULT" fails that should be skipped before code
-  // detect real consistency failure.
-  int skip_fail_count;
-
-  // EnableJVMCI flag is false here.
-  // If any other flag is changed, consistency check should fail.
-  // JVMCI_FLAGS macros added below can handle all JVMCI flags automatically.
-  // But it contains check for EnableJVMCI flag too, which is required to be
-  // skipped. This can't be handled easily!
-  // So the code looks for at-least two flag changes to detect consistency
-  // failure when EnableJVMCI flag is changed.
-  // Otherwise one flag change is sufficient to detect consistency failure.
-  // Set skip_fail_count to 0 if EnableJVMCI flag is default.
-  // Set skip_fail_count to 1 if EnableJVMCI flag is changed.
-  // This value will be used to skip fails in macro expanded code later.
-  if (!FLAG_IS_DEFAULT(EnableJVMCI)) {
-    skip_fail_count = 1;
-  } else {
-    skip_fail_count = 0;
-  }
-
-#define EMIT_FLAG_VALUE_CHANGED_CHECK_CODE(FLAG)  \
-  if (!FLAG_IS_DEFAULT(FLAG)) {                   \
-    fail_count++;                                 \
-    if (fail_count > skip_fail_count) {           \
-      return false;                               \
-    }                                             \
-  }
-
-#define JVMCI_DIAGNOSTIC_FLAG_VALUE_CHANGED_CHECK_CODE(type, name, value, doc)     EMIT_FLAG_VALUE_CHANGED_CHECK_CODE(name)
-#define JVMCI_EXPERIMENTAL_FLAG_VALUE_CHANGED_CHECK_CODE(type, name, value, doc)   EMIT_FLAG_VALUE_CHANGED_CHECK_CODE(name)
-
-  // Check consistency of diagnostic flags if UnlockDiagnosticVMOptions is true
-  // or not default. UnlockDiagnosticVMOptions is default true in debug builds.
-  if (UnlockDiagnosticVMOptions || !FLAG_IS_DEFAULT(UnlockDiagnosticVMOptions)) {
-    JVMCI_FLAGS(JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-                JVMCI_IGNORE_FLAG_THREE_PARAM, \
-                JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-                JVMCI_IGNORE_FLAG_THREE_PARAM, \
-                JVMCI_DIAGNOSTIC_FLAG_VALUE_CHANGED_CHECK_CODE, \
-                JVMCI_IGNORE_FLAG_THREE_PARAM, \
-                JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-                JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-                IGNORE_RANGE, \
-                IGNORE_CONSTRAINT, \
-                IGNORE_WRITEABLE)
-  }
-
-  // Check consistency of experimental flags if UnlockExperimentalVMOptions is
-  // true or not default.
-  if (UnlockExperimentalVMOptions || !FLAG_IS_DEFAULT(UnlockExperimentalVMOptions)) {
-    JVMCI_FLAGS(JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-                JVMCI_IGNORE_FLAG_THREE_PARAM, \
-                JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-                JVMCI_IGNORE_FLAG_THREE_PARAM, \
-                JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-                JVMCI_IGNORE_FLAG_THREE_PARAM, \
-                JVMCI_EXPERIMENTAL_FLAG_VALUE_CHANGED_CHECK_CODE, \
-                JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-                IGNORE_RANGE, \
-                IGNORE_CONSTRAINT, \
-                IGNORE_WRITEABLE)
-  }
 
 #ifndef PRODUCT
-#define JVMCI_DEVELOP_FLAG_VALUE_CHANGED_CHECK_CODE(type, name, value, doc)        EMIT_FLAG_VALUE_CHANGED_CHECK_CODE(name)
-#define JVMCI_PD_DEVELOP_FLAG_VALUE_CHANGED_CHECK_CODE(type, name, doc)            EMIT_FLAG_VALUE_CHANGED_CHECK_CODE(name)
-#define JVMCI_NOTPRODUCT_FLAG_VALUE_CHANGED_CHECK_CODE(type, name, value, doc)     EMIT_FLAG_VALUE_CHANGED_CHECK_CODE(name)
+#define APPLY_JVMCI_FLAGS(params3, params4) \
+  JVMCI_FLAGS(params4, params3, params4, params3, params4, params3, params4, params4, IGNORE_RANGE, IGNORE_CONSTRAINT, IGNORE_WRITEABLE)
+#define JVMCI_DECLARE_CHECK4(type, name, value, doc) bool name##checked = false;
+#define JVMCI_DECLARE_CHECK3(type, name, doc)        bool name##checked = false;
+#define JVMCI_FLAG_CHECKED(name)                          name##checked = true;
+  APPLY_JVMCI_FLAGS(JVMCI_DECLARE_CHECK3, JVMCI_DECLARE_CHECK4)
 #else
-#define JVMCI_DEVELOP_FLAG_VALUE_CHANGED_CHECK_CODE(type, name, value, doc)
-#define JVMCI_PD_DEVELOP_FLAG_VALUE_CHANGED_CHECK_CODE(type, name, doc)
-#define JVMCI_NOTPRODUCT_FLAG_VALUE_CHANGED_CHECK_CODE(type, name, value, doc)
+#define JVMCI_FLAG_CHECKED(name)
 #endif
 
-#define JVMCI_PD_PRODUCT_FLAG_VALUE_CHANGED_CHECK_CODE(type, name, doc)            EMIT_FLAG_VALUE_CHANGED_CHECK_CODE(name)
-#define JVMCI_PRODUCT_FLAG_VALUE_CHANGED_CHECK_CODE(type, name, value, doc)        EMIT_FLAG_VALUE_CHANGED_CHECK_CODE(name)
+  // Checks that a given flag is not set if a given guard flag is false.
+#define CHECK_NOT_SET(FLAG, GUARD)                     \
+  JVMCI_FLAG_CHECKED(FLAG)                             \
+  if (!GUARD && !FLAG_IS_DEFAULT(FLAG)) {              \
+    jio_fprintf(defaultStream::error_stream(),         \
+        "Improperly specified VM option '%s': '%s' must be enabled\n", #FLAG, #GUARD); \
+    return false;                                      \
+  }
 
-  JVMCI_FLAGS(JVMCI_DEVELOP_FLAG_VALUE_CHANGED_CHECK_CODE, \
-              JVMCI_PD_DEVELOP_FLAG_VALUE_CHANGED_CHECK_CODE, \
-              JVMCI_PRODUCT_FLAG_VALUE_CHANGED_CHECK_CODE, \
-              JVMCI_PD_PRODUCT_FLAG_VALUE_CHANGED_CHECK_CODE, \
-              JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-              JVMCI_IGNORE_FLAG_THREE_PARAM, \
-              JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-              JVMCI_NOTPRODUCT_FLAG_VALUE_CHANGED_CHECK_CODE, \
-              IGNORE_RANGE, \
-              IGNORE_CONSTRAINT, \
-              IGNORE_WRITEABLE)
+  JVMCI_FLAG_CHECKED(UseJVMCICompiler)
+  JVMCI_FLAG_CHECKED(EnableJVMCI)
 
-#undef EMIT_FLAG_VALUE_CHANGED_CHECK_CODE
-#undef JVMCI_DEVELOP_FLAG_VALUE_CHANGED_CHECK_CODE
-#undef JVMCI_PD_DEVELOP_FLAG_VALUE_CHANGED_CHECK_CODE
-#undef JVMCI_NOTPRODUCT_FLAG_VALUE_CHANGED_CHECK_CODE
-#undef JVMCI_DIAGNOSTIC_FLAG_VALUE_CHANGED_CHECK_CODE
-#undef JVMCI_PD_PRODUCT_FLAG_VALUE_CHANGED_CHECK_CODE
-#undef JVMCI_PRODUCT_FLAG_VALUE_CHANGED_CHECK_CODE
-#undef JVMCI_EXPERIMENTAL_FLAG_VALUE_CHANGED_CHECK_CODE
+  CHECK_NOT_SET(BootstrapJVMCI,   UseJVMCICompiler)
+  CHECK_NOT_SET(PrintBootstrap,   UseJVMCICompiler)
+  CHECK_NOT_SET(JVMCIThreads,     UseJVMCICompiler)
+  CHECK_NOT_SET(JVMCIHostThreads, UseJVMCICompiler)
 
+  if (UseJVMCICompiler) {
+    if (!FLAG_IS_DEFAULT(EnableJVMCI) && !EnableJVMCI) {
+      jio_fprintf(defaultStream::error_stream(),
+          "Improperly specified VM option UseJVMCICompiler: EnableJVMCI cannot be disabled\n");
+      return false;
+    }
+    FLAG_SET_DEFAULT(EnableJVMCI, true);
+  }
+
+  CHECK_NOT_SET(JVMCITraceLevel,              EnableJVMCI)
+  CHECK_NOT_SET(JVMCICounterSize,             EnableJVMCI)
+  CHECK_NOT_SET(JVMCICountersExcludeCompiler, EnableJVMCI)
+  CHECK_NOT_SET(JVMCIUseFastLocking,          EnableJVMCI)
+  CHECK_NOT_SET(JVMCINMethodSizeLimit,        EnableJVMCI)
+  CHECK_NOT_SET(TraceUncollectedSpeculations, EnableJVMCI)
+
+#ifndef PRODUCT
+#define JVMCI_CHECK4(type, name, value, doc) assert(name##checked, #name " flag not checked");
+#define JVMCI_CHECK3(type, name, doc)        assert(name##checked, #name " flag not checked");
+  // Ensures that all JVMCI flags are checked by this method.
+  APPLY_JVMCI_FLAGS(JVMCI_CHECK3, JVMCI_CHECK4)
+#undef APPLY_JVMCI_FLAGS
+#undef JVMCI_DECLARE_CHECK3
+#undef JVMCI_DECLARE_CHECK4
+#undef JVMCI_CHECK3
+#undef JVMCI_CHECK4
+#undef JVMCI_FLAG_CHECKED
+#endif
+#undef CHECK_NOT_SET
   return true;
 }
-
-// Print jvmci arguments inconsistency error message.
-void JVMCIGlobals::print_jvmci_args_inconsistency_error_message() {
-  const char* error_msg = "Improperly specified VM option '%s'\n";
-  jio_fprintf(defaultStream::error_stream(), "EnableJVMCI must be enabled\n");
-
-#define EMIT_CHECK_PRINT_ERR_MSG_CODE(FLAG)                         \
-  if (!FLAG_IS_DEFAULT(FLAG)) {                                     \
-    if (strcmp(#FLAG, "EnableJVMCI")) {                             \
-      jio_fprintf(defaultStream::error_stream(), error_msg, #FLAG); \
-    }                                                               \
-  }
-
-#define JVMCI_DIAGNOSTIC_FLAG_CHECK_PRINT_ERR_MSG_CODE(type, name, value, doc)     EMIT_CHECK_PRINT_ERR_MSG_CODE(name)
-#define JVMCI_EXPERIMENTAL_FLAG_CHECK_PRINT_ERR_MSG_CODE(type, name, value, doc)   EMIT_CHECK_PRINT_ERR_MSG_CODE(name)
-
-  if (UnlockDiagnosticVMOptions || !FLAG_IS_DEFAULT(UnlockDiagnosticVMOptions)) {
-    JVMCI_FLAGS(JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-                JVMCI_IGNORE_FLAG_THREE_PARAM, \
-                JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-                JVMCI_IGNORE_FLAG_THREE_PARAM, \
-                JVMCI_DIAGNOSTIC_FLAG_CHECK_PRINT_ERR_MSG_CODE, \
-                JVMCI_IGNORE_FLAG_THREE_PARAM, \
-                JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-                JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-                IGNORE_RANGE, \
-                IGNORE_CONSTRAINT, \
-                IGNORE_WRITEABLE)
-  }
-
-  if (UnlockExperimentalVMOptions || !FLAG_IS_DEFAULT(UnlockExperimentalVMOptions)) {
-    JVMCI_FLAGS(JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-                JVMCI_IGNORE_FLAG_THREE_PARAM, \
-                JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-                JVMCI_IGNORE_FLAG_THREE_PARAM, \
-                JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-                JVMCI_IGNORE_FLAG_THREE_PARAM, \
-                JVMCI_EXPERIMENTAL_FLAG_CHECK_PRINT_ERR_MSG_CODE, \
-                JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-                IGNORE_RANGE, \
-                IGNORE_CONSTRAINT, \
-                IGNORE_WRITEABLE)
-  }
-
-#ifndef PRODUCT
-#define JVMCI_DEVELOP_FLAG_CHECK_PRINT_ERR_MSG_CODE(type, name, value, doc)        EMIT_CHECK_PRINT_ERR_MSG_CODE(name)
-#define JVMCI_PD_DEVELOP_FLAG_CHECK_PRINT_ERR_MSG_CODE(type, name, doc)            EMIT_CHECK_PRINT_ERR_MSG_CODE(name)
-#define JVMCI_NOTPRODUCT_FLAG_CHECK_PRINT_ERR_MSG_CODE(type, name, value, doc)     EMIT_CHECK_PRINT_ERR_MSG_CODE(name)
-#else
-#define JVMCI_DEVELOP_FLAG_CHECK_PRINT_ERR_MSG_CODE(type, name, value, doc)
-#define JVMCI_PD_DEVELOP_FLAG_CHECK_PRINT_ERR_MSG_CODE(type, name, doc)
-#define JVMCI_NOTPRODUCT_FLAG_CHECK_PRINT_ERR_MSG_CODE(type, name, value, doc)
-#endif
-
-#define JVMCI_PD_PRODUCT_FLAG_CHECK_PRINT_ERR_MSG_CODE(type, name, doc)            EMIT_CHECK_PRINT_ERR_MSG_CODE(name)
-#define JVMCI_PRODUCT_FLAG_CHECK_PRINT_ERR_MSG_CODE(type, name, value, doc)        EMIT_CHECK_PRINT_ERR_MSG_CODE(name)
-
-  JVMCI_FLAGS(JVMCI_DEVELOP_FLAG_CHECK_PRINT_ERR_MSG_CODE, \
-              JVMCI_PD_DEVELOP_FLAG_CHECK_PRINT_ERR_MSG_CODE, \
-              JVMCI_PRODUCT_FLAG_CHECK_PRINT_ERR_MSG_CODE, \
-              JVMCI_PD_PRODUCT_FLAG_CHECK_PRINT_ERR_MSG_CODE, \
-              JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-              JVMCI_IGNORE_FLAG_THREE_PARAM, \
-              JVMCI_IGNORE_FLAG_FOUR_PARAM, \
-              JVMCI_NOTPRODUCT_FLAG_CHECK_PRINT_ERR_MSG_CODE, \
-              IGNORE_RANGE, \
-              IGNORE_CONSTRAINT, \
-              IGNORE_WRITEABLE)
-
-#undef EMIT_CHECK_PRINT_ERR_MSG_CODE
-#undef JVMCI_DEVELOP_FLAG_CHECK_PRINT_ERR_MSG_CODE
-#undef JVMCI_PD_DEVELOP_FLAG_CHECK_PRINT_ERR_MSG_CODE
-#undef JVMCI_NOTPRODUCT_FLAG_CHECK_PRINT_ERR_MSG_CODE
-#undef JVMCI_PD_PRODUCT_FLAG_CHECK_PRINT_ERR_MSG_CODE
-#undef JVMCI_PRODUCT_FLAG_CHECK_PRINT_ERR_MSG_CODE
-#undef JVMCI_DIAGNOSTIC_FLAG_CHECK_PRINT_ERR_MSG_CODE
-#undef JVMCI_EXPERIMENTAL_FLAG_CHECK_PRINT_ERR_MSG_CODE
-
-}
-
-#undef JVMCI_IGNORE_FLAG_FOUR_PARAM
-#undef JVMCI_IGNORE_FLAG_THREE_PARAM

@@ -116,6 +116,12 @@ Declares a structure type that can be used in other events.
     <value type="CLASS" field="initiatingClassLoader" label="Initiating Class Loader"/>
   </event>
 
+  <event id="ClassDefine" path="vm/class/define" label="Class Define"
+          has_thread="true" has_stacktrace="true" is_instant="true">
+    <value type="CLASS" field="definedClass" label="Defined Class"/>
+    <value type="CLASS" field="definingClassLoader" label="Defining Class Loader"/>
+  </event>
+
   <event id="ClassUnload" path="vm/class/unload" label="Class Unload"
       has_thread="true" is_instant="true">
     <value type="CLASS" field="unloadedClass" label="Unloaded Class"/>
@@ -374,7 +380,7 @@ Declares a structure type that can be used in other events.
          description="Basic statistics related to current IHOP calculation">
     <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
     <value type="BYTES64" field="threshold" label="Current IHOP threshold" description="Current IHOP threshold in bytes"/>
-    <value type="BYTES64" field="thresholdPercentage" label="Current IHOP threshold in percent" description="Current IHOP threshold in percent of old gen"/>
+    <value type="PERCENTAGE" field="thresholdPercentage" label="Current IHOP threshold in percent" description="Current IHOP threshold in percent of old gen"/>
     <value type="BYTES64" field="targetOccupancy" label="Target occupancy" description="Target old gen occupancy to reach at the start of mixed GC in bytes"/>
     <value type="BYTES64" field="currentOccupancy" label="Current occupancy" description="Current old gen occupancy in bytes"/>
     <value type="BYTES64" field="lastAllocationSize" label="Last mutator allocation size" description="Mutator allocation during mutator operation since last GC in bytes"/>
@@ -387,7 +393,7 @@ Declares a structure type that can be used in other events.
          description="Statistics related to current adaptive IHOP calculation">
     <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
     <value type="BYTES64" field="threshold" label="Current IHOP threshold" description="Current IHOP threshold in bytes"/>
-    <value type="BYTES64" field="thresholdPercentage" label="Current IHOP threshold in percent" description="Current IHOP threshold in percent of the internal target occupancy"/>
+    <value type="PERCENTAGE" field="thresholdPercentage" label="Current IHOP threshold in percent" description="Current IHOP threshold in percent of the internal target occupancy"/>
     <value type="BYTES64" field="internalTargetOccupancy" label="Target occupancy" description="Internal target old gen occupancy to reach at the start of mixed GC in bytes"/>
     <value type="BYTES64" field="currentOccupancy" label="Current occupancy" description="Current old gen occupancy in bytes"/>
     <value type="BYTES64" field="additionalBufferSize" label="Additional buffer size" description="Additional buffer size in bytes"/>

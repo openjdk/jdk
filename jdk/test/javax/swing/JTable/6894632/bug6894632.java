@@ -21,12 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 6894632
-   @summary Removing rows from a DefaultTableModel with a RowSorter deselectes
-   last row
-   @author Semyon Sadetsky
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 6894632
+ * @summary Removing rows from a DefaultTableModel with a RowSorter deselectes
+ * last row
+ * @author Semyon Sadetsky
+ */
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;

@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 6838089
   @summary Translucent windows should throw exception in FS mode
   @author dmitry.cherepanov@oracle.com: area=awt-multiscreen

@@ -33,14 +33,14 @@
  *          java.sql
  *          java.xml
  *          java.xml.bind
+ *          java.xml.ws
  *          jdk.attach
  *          jdk.jdi
  *          jdk.net
  *          jdk.security.auth
  *          jdk.security.jgss
- * @compile -addmods java.xml.ws,java.smartcardio Modules.java
- * @run main/othervm/java.security.policy==modules.policy
- *     -addmods java.xml.ws,java.smartcardio Modules
+ * @compile --add-modules=java.xml.ws,java.smartcardio Modules.java
+ * @run main/othervm/java.security.policy==modules.policy Modules
  */
 
 import java.security.AccessController;

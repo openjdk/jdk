@@ -25,27 +25,42 @@
  * @test
  * @bug 8042235
  * @summary redefining method used by multiple MethodHandles crashes VM
+ * @library /
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.compiler
  *          java.instrument
  *          java.management
- * @compile -XDignore.symbol.file RedefineMethodUsedByMultipleMethodHandles.java
- * @run main/othervm RedefineMethodUsedByMultipleMethodHandles
+ *
+ * @run main/othervm compiler.jsr292.RedefineMethodUsedByMultipleMethodHandles
  */
 
-import java.io.*;
-import java.lang.instrument.*;
-import java.lang.invoke.*;
+package compiler.jsr292;
+
+import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.internal.org.objectweb.asm.ClassVisitor;
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.org.objectweb.asm.Opcodes;
+
+import javax.tools.ToolProvider;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.instrument.ClassFileTransformer;
+import java.lang.instrument.IllegalClassFormatException;
+import java.lang.instrument.Instrumentation;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.management.*;
-import java.lang.reflect.*;
-import java.nio.file.*;
-import java.security.*;
-import java.util.jar.*;
-
-import javax.tools.*;
-
-import jdk.internal.org.objectweb.asm.*;
+import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.ProtectionDomain;
+import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 
 public class RedefineMethodUsedByMultipleMethodHandles {
 

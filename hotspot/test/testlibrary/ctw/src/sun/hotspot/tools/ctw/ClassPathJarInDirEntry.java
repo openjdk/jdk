@@ -40,7 +40,7 @@ public class ClassPathJarInDirEntry extends PathHandler {
 
     @Override
     public void process() {
-        System.out.println("# jar_in_dir: " + root);
+        CompileTheWorld.OUT.println("# jar_in_dir: " + root);
         if (!Files.exists(root)) {
             return;
         }

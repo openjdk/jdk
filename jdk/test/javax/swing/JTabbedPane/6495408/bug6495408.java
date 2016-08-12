@@ -25,6 +25,7 @@ import javax.swing.*;
 import java.awt.*;
 /*
  * @test
+ * @key headful
  * @bug 6495408
  * @summary REGRESSION: JTabbedPane throws ArrayIndexOutOfBoundsException
  * @author Alexander Potochkin

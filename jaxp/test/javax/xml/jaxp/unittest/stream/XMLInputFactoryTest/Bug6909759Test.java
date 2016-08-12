@@ -29,12 +29,18 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.stream.StreamSource;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6909759
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLInputFactoryTest.Bug6909759Test
+ * @run testng/othervm stream.XMLInputFactoryTest.Bug6909759Test
  * @summary Test createXMLStreamReader with StreamSource.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6909759Test {
 
 
@@ -60,3 +66,4 @@ public class Bug6909759Test {
         }
     }
 }
+

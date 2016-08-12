@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import java.io.IOException;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import jaxp.library.JAXPFileBaseTest;
-
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.w3c.dom.CharacterData;
@@ -42,7 +40,7 @@ import org.xml.sax.SAXException;
 /*
  * @summary common test for the CharacterData Interface
  */
-public abstract class AbstractCharacterDataTest extends JAXPFileBaseTest {
+public abstract class AbstractCharacterDataTest {
     @DataProvider(name = "data-for-length")
     public Object[][] getDataForTestLength() {
         return new Object[][] {

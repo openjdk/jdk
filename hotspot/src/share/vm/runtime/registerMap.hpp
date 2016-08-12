@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "code/vmreg.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 class JavaThread;
 
@@ -120,24 +121,7 @@ class RegisterMap : public StackObj {
   void print() const;
 
   // the following contains the definition of pd_xxx methods
-#ifdef TARGET_ARCH_x86
-# include "registerMap_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "registerMap_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "registerMap_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "registerMap_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "registerMap_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "registerMap_aarch64.hpp"
-#endif
+#include CPU_HEADER(registerMap)
 
 };
 
