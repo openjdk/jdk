@@ -259,7 +259,7 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     private static void maybeCompile(LambdaForm lform, MemberName m) {
-        if (VerifyAccess.isSamePackage(m.getDeclaringClass(), MethodHandle.class))
+        if (lform.vmentry == null && VerifyAccess.isSamePackage(m.getDeclaringClass(), MethodHandle.class))
             // Help along bootstrapping...
             lform.compileToBytecode();
     }
@@ -562,25 +562,36 @@ class DirectMethodHandle extends MethodHandle {
         return lform;
     }
 
+    private static final Wrapper[] ALL_WRAPPERS = Wrapper.values();
+
     private static LambdaForm makePreparedFieldLambdaForm(byte formOp, boolean isVolatile, int ftypeKind) {
         boolean isGetter  = (formOp & 1) == (AF_GETFIELD & 1);
         boolean isStatic  = (formOp >= AF_GETSTATIC);
         boolean needsInit = (formOp >= AF_GETSTATIC_INIT);
         boolean needsCast = (ftypeKind == FT_CHECKED_REF);
-        Wrapper fw = (needsCast ? Wrapper.OBJECT : Wrapper.values()[ftypeKind]);
+        Wrapper fw = (needsCast ? Wrapper.OBJECT : ALL_WRAPPERS[ftypeKind]);
         Class<?> ft = fw.primitiveType();
         assert(ftypeKind(needsCast ? String.class : ft) == ftypeKind);
-        String tname  = fw.primitiveSimpleName();
-        String ctname = Character.toUpperCase(tname.charAt(0)) + tname.substring(1);
-        if (isVolatile)  ctname += "Volatile";
-        String getOrPut = (isGetter ? "get" : "put");
-        String linkerName = (getOrPut + ctname);  // getObject, putIntVolatile, etc.
+
+        // getObject, putIntVolatile, etc.
+        StringBuilder nameBuilder = new StringBuilder();
+        if (isGetter) {
+            nameBuilder.append("get");
+        } else {
+            nameBuilder.append("put");
+        }
+        nameBuilder.append(fw.primitiveSimpleName());
+        nameBuilder.setCharAt(3, Character.toUpperCase(nameBuilder.charAt(3)));
+        if (isVolatile) {
+            nameBuilder.append("Volatile");
+        }
+
         MethodType linkerType;
         if (isGetter)
             linkerType = MethodType.methodType(ft, Object.class, long.class);
         else
             linkerType = MethodType.methodType(void.class, Object.class, long.class, ft);
-        MemberName linker = new MemberName(Unsafe.class, linkerName, linkerType, REF_invokeVirtual);
+        MemberName linker = new MemberName(Unsafe.class, nameBuilder.toString(), linkerType, REF_invokeVirtual);
         try {
             linker = IMPL_NAMES.resolveOrFail(REF_invokeVirtual, linker, null, NoSuchMethodException.class);
         } catch (ReflectiveOperationException ex) {
@@ -635,11 +646,16 @@ class DirectMethodHandle extends MethodHandle {
         if (needsCast && isGetter)
             names[POST_CAST] = new Name(NF_checkCast, names[DMH_THIS], names[LINKER_CALL]);
         for (Name n : names)  assert(n != null);
-        String fieldOrStatic = (isStatic ? "Static" : "Field");
-        String lambdaName = (linkerName + fieldOrStatic);  // significant only for debugging
-        if (needsCast)  lambdaName += "Cast";
-        if (needsInit)  lambdaName += "Init";
-        return new LambdaForm(lambdaName, ARG_LIMIT, names, RESULT);
+        // add some detail to the lambdaForm debugname,
+        // significant only for debugging
+        if (isStatic) {
+            nameBuilder.append("Static");
+        } else {
+            nameBuilder.append("Field");
+        }
+        if (needsCast)  nameBuilder.append("Cast");
+        if (needsInit)  nameBuilder.append("Init");
+        return new LambdaForm(nameBuilder.toString(), ARG_LIMIT, names, RESULT);
     }
 
     /**

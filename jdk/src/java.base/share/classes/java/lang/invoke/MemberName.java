@@ -78,7 +78,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
     private int      flags;       // modifier bits; see reflect.Modifier
     //@Injected JVM_Method* vmtarget;
     //@Injected int         vmindex;
-    private Object   resolution;  // if null, this guy is resolved
+    Object   resolution;  // if null, this guy is resolved
 
     /** Return the declaring class of this member.
      *  In the case of a bare name and type, the declaring class will be null.
@@ -826,7 +826,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
         return resolution == null;
     }
 
-    private void initResolved(boolean isResolved) {
+    void initResolved(boolean isResolved) {
         assert(this.resolution == null);  // not initialized yet!
         if (!isResolved)
             this.resolution = this;
