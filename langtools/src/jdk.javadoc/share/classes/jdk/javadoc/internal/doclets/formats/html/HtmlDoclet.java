@@ -32,7 +32,6 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import com.sun.javadoc.PackageDoc;
 import jdk.javadoc.doclet.Doclet.Option;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
@@ -66,6 +65,11 @@ public class HtmlDoclet extends AbstractDoclet {
         configuration = new ConfigurationImpl();
     }
 
+    @Override // defined by Doclet
+    public String getName() {
+        return "Html";
+    }
+
     /**
      * The global configuration information for this run.
      */
@@ -77,6 +81,7 @@ public class HtmlDoclet extends AbstractDoclet {
     private static final DocPath DOCLET_RESOURCES = DocPath
             .create("/jdk/javadoc/internal/doclets/formats/html/resources");
 
+    @Override // defined by Doclet
     public void init(Locale locale, Reporter reporter) {
         configuration.reporter = reporter;
         configuration.locale = locale;
@@ -84,21 +89,11 @@ public class HtmlDoclet extends AbstractDoclet {
     }
 
     /**
-     * The "start" method as required by Javadoc.
-     *
-     * @param docEnv the root of the documentation tree.
-     * @see jdk.doclet.DocletEnvironment
-     * @return true if the doclet ran without encountering any errors.
-     */
-    public boolean run(DocletEnvironment docEnv) {
-        return startDoclet(docEnv);
-    }
-
-    /**
      * Create the configuration instance.
      * Override this method to use a different
      * configuration.
      */
+    @Override // defined by AbstractDoclet
     public Configuration configuration() {
         return configuration;
     }
@@ -113,6 +108,7 @@ public class HtmlDoclet extends AbstractDoclet {
      *
      * @see jdk.doclet.RootDoc
      */
+    @Override // defined by AbstractDoclet
     protected void generateOtherFiles(DocletEnvironment docEnv, ClassTree classtree)
             throws Exception {
         super.generateOtherFiles(docEnv, classtree);
@@ -228,6 +224,7 @@ public class HtmlDoclet extends AbstractDoclet {
     /**
      * {@inheritDoc}
      */
+    @Override // defined by AbstractDoclet
     protected void generateClassFiles(SortedSet<TypeElement> arr, ClassTree classtree) {
         List<TypeElement> list = new ArrayList<>(arr);
         ListIterator<TypeElement> iterator = list.listIterator();
@@ -270,6 +267,7 @@ public class HtmlDoclet extends AbstractDoclet {
     /**
      * {@inheritDoc}
      */
+    @Override // defined by AbstractDoclet
     protected void generateModuleFiles() throws Exception {
         if (configuration.showModules) {
             ModuleIndexFrameWriter.generate(configuration);
@@ -303,6 +301,7 @@ public class HtmlDoclet extends AbstractDoclet {
     /**
      * {@inheritDoc}
      */
+    @Override // defined by AbstractDoclet
     protected void generatePackageFiles(ClassTree classtree) throws Exception {
         Set<PackageElement> packages = configuration.packages;
         if (packages.size() > 1) {
@@ -339,6 +338,7 @@ public class HtmlDoclet extends AbstractDoclet {
         }
     }
 
+    @Override // defined by Doclet
     public Set<Option> getSupportedOptions() {
         return configuration.getSupportedOptions();
     }
