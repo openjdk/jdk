@@ -1017,14 +1017,13 @@ public abstract class Configuration {
         protected Option(Configuration config, String keyName, String name, int argCount) {
             c = config;
             this.name = name;
-            String key = keyName + "name";
-            String oname = getOptionsMessage(key);
-            if (oname.isEmpty()) {
-                this.parameters = "<MISSING KEY>";
+            String desc = getOptionsMessage(keyName + "description");
+            if (desc.isEmpty()) {
                 this.description = "<MISSING KEY>";
+                this.parameters = "<MISSING KEY>";
             } else {
+                this.description = desc;
                 this.parameters = getOptionsMessage(keyName + "parameters");
-                this.description = getOptionsMessage(keyName + "description");
             }
             this.argCount = argCount;
         }
@@ -1076,10 +1075,8 @@ public abstract class Configuration {
         @Override
         public String toString() {
             String opt = name + (name.endsWith(":") ? "" : " ") + parameters;
-            int optlen = opt.length();
-            int spaces = 32 - optlen;
-            StringBuffer sb = new StringBuffer("  ").append(opt);
-            for (int i = 0; i < spaces; i++) {
+            StringBuffer sb = new StringBuffer("  ").append(opt).append(" ");
+            for (int i = opt.length(); i < 32; i++) {
                 sb.append(" ");
             }
             sb.append(description);
