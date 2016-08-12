@@ -32,6 +32,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
+import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.toolkit.builders.AbstractBuilder;
 import jdk.javadoc.internal.doclets.toolkit.builders.BuilderFactory;
@@ -53,7 +54,7 @@ import static javax.tools.Diagnostic.Kind.*;
  *
  * @author Jamie Ho
  */
-public abstract class AbstractDoclet {
+public abstract class AbstractDoclet implements Doclet {
 
     /**
      * The global configuration information for this run.
@@ -92,7 +93,8 @@ public abstract class AbstractDoclet {
      * @param root   the {@link DocletEnvironment} that points to the source to document.
      * @return true if the doclet executed without error.  False otherwise.
      */
-    public boolean startDoclet(DocletEnvironment root) {
+    @Override
+    public boolean run(DocletEnvironment root) {
         configuration = configuration();
         configuration.docEnv = root;
         configuration.cmtUtils = new CommentUtils(configuration);
@@ -131,7 +133,8 @@ public abstract class AbstractDoclet {
      * Returns the SourceVersion indicating the features supported by this doclet.
      * @return SourceVersion
      */
-    public SourceVersion sourceVersion() {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.RELEASE_9;
     }
 
