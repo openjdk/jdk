@@ -50,7 +50,6 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC := \
     $(HOTSPOT_TOPDIR)/test/runtime/BoolReturn \
     $(HOTSPOT_TOPDIR)/test/compiler/floatingpoint/ \
     $(HOTSPOT_TOPDIR)/test/compiler/calls \
-    $(HOTSPOT_TOPDIR)/test/compiler/native \
     $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/GetNamedModule \
     $(HOTSPOT_TOPDIR)/test/testlibrary/jvmti \
     $(HOTSPOT_TOPDIR)/test/compiler/jvmci/jdk.vm.ci.code.test \
