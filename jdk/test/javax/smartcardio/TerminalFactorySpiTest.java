@@ -25,8 +25,8 @@
  * @test
  * @bug 8049021
  * @summary Test if we can write new provider for smart card
- * @compile -addmods java.smartcardio TerminalFactorySpiTest.java
- * @run main/othervm/java.security.policy=policy -addmods java.smartcardio TerminalFactorySpiTest
+ * @compile --add-modules=java.smartcardio TerminalFactorySpiTest.java
+ * @run main/othervm/java.security.policy=policy --add-modules=java.smartcardio TerminalFactorySpiTest
  */
 import java.security.Provider;
 import java.security.Security;

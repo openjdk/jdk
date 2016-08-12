@@ -40,6 +40,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -73,6 +74,7 @@ public class SourceToHTMLConverter {
     private static final String NEW_LINE = DocletConstants.NL;
 
     private final ConfigurationImpl configuration;
+    private final Messages messages;
     private final Utils utils;
 
     private final DocletEnvironment docEnv;
@@ -88,6 +90,7 @@ public class SourceToHTMLConverter {
     private SourceToHTMLConverter(ConfigurationImpl configuration, DocletEnvironment rd,
             DocPath outputdir) {
         this.configuration  = configuration;
+        this.messages = configuration.getMessages();
         this.utils = configuration.utils;
         this.docEnv = rd;
         this.outputdir = outputdir;
@@ -200,7 +203,7 @@ public class SourceToHTMLConverter {
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
                 head, body);
         Content htmlDocument = new HtmlDocument(htmlDocType, htmlTree);
-        configuration.message.notice("doclet.Generating_0", path.getPath());
+        messages.notice("doclet.Generating_0", path.getPath());
         DocFile df = DocFile.createFileForOutput(configuration, path);
         try (Writer w = df.openWriter()) {
             htmlDocument.write(w, true);

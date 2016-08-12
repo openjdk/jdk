@@ -112,9 +112,4 @@ public interface PropertyWriter {
      * @return content tree for the property documentation
      */
     public Content getPropertyDoc(Content propertyDocTree, boolean isLastContent);
-
-    /**
-     * Close the writer.
-     */
-    public void close() throws IOException;
 }

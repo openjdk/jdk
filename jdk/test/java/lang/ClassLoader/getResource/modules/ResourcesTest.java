@@ -56,19 +56,19 @@ public class ResourcesTest {
     public void compileAll() throws Exception {
         boolean compiled;
 
-        // javac -modulesource mods -d mods src/**
+        // javac --module-source-path mods -d mods src/**
         compiled = CompilerUtils
             .compile(SRC_DIR,
                      MODS_DIR,
-                     "-modulesourcepath", SRC_DIR.toString());
+                     "--module-source-path", SRC_DIR.toString());
         assertTrue(compiled);
 
-        // javac -mp mods -d classes Main.java
+        // javac --module-path mods -d classes Main.java
         compiled = CompilerUtils
             .compile(Paths.get(TEST_SRC, "Main.java"),
                      CLASSES_DIR,
-                     "-mp", MODS_DIR.toString(),
-                     "-addmods", "m1,m2,m3");
+                     "--module-path", MODS_DIR.toString(),
+                     "--add-modules", "m1,m2,m3");
         assertTrue(compiled);
     }
 
@@ -77,8 +77,8 @@ public class ResourcesTest {
      */
     public void runTest() throws Exception {
         int exitValue
-            = executeTestJava("-mp", MODS_DIR.toString(),
-                              "-addmods", "m1,m2,m3",
+            = executeTestJava("--module-path", MODS_DIR.toString(),
+                              "--add-modules", "m1,m2,m3",
                                "-cp", CLASSES_DIR.toString(),
                               "Main")
                 .outputTo(System.out)

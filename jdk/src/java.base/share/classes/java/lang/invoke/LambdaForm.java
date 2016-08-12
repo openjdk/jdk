@@ -149,9 +149,9 @@ class LambdaForm {
         static final int ARG_TYPE_LIMIT = ARG_TYPES.length;
         static final int TYPE_LIMIT = ALL_TYPES.length;
 
-        private final char btChar;
-        private final Class<?> btClass;
-        private final Wrapper btWrapper;
+        final char btChar;
+        final Class<?> btClass;
+        final Wrapper btWrapper;
 
         private BasicType(char btChar, Class<?> btClass, Wrapper wrapper) {
             this.btChar = btChar;
@@ -1366,10 +1366,11 @@ class LambdaForm {
     }
 
     public static String basicTypeSignature(MethodType type) {
-        char[] sig = new char[type.parameterCount() + 2];
+        int params = type.parameterCount();
+        char[] sig = new char[params + 2];
         int sigp = 0;
-        for (Class<?> pt : type.parameterList()) {
-            sig[sigp++] = basicTypeChar(pt);
+        while (sigp < params) {
+            sig[sigp] = basicTypeChar(type.parameterType(sigp++));
         }
         sig[sigp++] = '_';
         sig[sigp++] = basicTypeChar(type.returnType());
@@ -1407,7 +1408,7 @@ class LambdaForm {
 
     static final class Name {
         final BasicType type;
-        private short index;
+        @Stable short index;
         final NamedFunction function;
         final Object constraint;  // additional type information, if not null
         @Stable final Object[] arguments;

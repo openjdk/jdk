@@ -190,7 +190,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             // Parse file objects provide via the DocumentationTool API
             parse(fileObjects, classTrees, true);
 
-            modules.initModules(classTrees.toList(), Collections.emptySet(), Collections.emptySet());
+            modules.initModules(classTrees.toList());
 
             // Build up the complete list of any packages to be documented
             Location location = modules.multiModuleMode ? StandardLocation.MODULE_SOURCE_PATH

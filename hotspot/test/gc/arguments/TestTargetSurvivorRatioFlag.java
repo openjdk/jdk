@@ -132,7 +132,7 @@ public class TestTargetSurvivorRatioFlag {
         LinkedList<String> vmOptions = new LinkedList<>(options);
         Collections.addAll(vmOptions,
                 "-Xbootclasspath/a:.",
-                "-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED",
+                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
                 "-XX:+UseAdaptiveSizePolicy",

@@ -84,20 +84,12 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     }
 
     /**
-     * Close the writer.
-     */
-    @Override
-    public void close() throws IOException {
-        writer.close();
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
     public void addSummaryLabel(Content memberTree) {
         Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
-                writer.getResource("doclet.Nested_Class_Summary"));
+                contents.nestedClassSummary);
         memberTree.addContent(label);
     }
 
@@ -106,9 +98,9 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      */
     @Override
     public String getTableSummary() {
-        return configuration.getText("doclet.Member_Table_Summary",
-                configuration.getText("doclet.Nested_Class_Summary"),
-                configuration.getText("doclet.nested_classes"));
+        return resources.getText("doclet.Member_Table_Summary",
+                resources.getText("doclet.Nested_Class_Summary"),
+                resources.getText("doclet.nested_classes"));
     }
 
     /**
@@ -116,7 +108,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      */
     @Override
     public Content getCaption() {
-        return configuration.getResource("doclet.Nested_Classes");
+        return configuration.getContent("doclet.Nested_Classes");
     }
 
     /**
@@ -169,7 +161,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
                 : configuration.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Class"));
         Content labelHeading = HtmlTree.HEADING(HtmlConstants.INHERITED_SUMMARY_HEADING,
                 label);
-        labelHeading.addContent(writer.getSpace());
+        labelHeading.addContent(Contents.SPACE);
         labelHeading.addContent(classLink);
         inheritedTree.addContent(labelHeading);
     }
@@ -221,14 +213,14 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
             if (typeElement == null) {
                 return writer.getHyperLink(
                         SectionName.NESTED_CLASS_SUMMARY,
-                        writer.getResource("doclet.navNested"));
+                        contents.navNested);
             } else {
                 return writer.getHyperLink(
                         SectionName.NESTED_CLASSES_INHERITANCE,
-                        utils.getFullyQualifiedName(typeElement), writer.getResource("doclet.navNested"));
+                        utils.getFullyQualifiedName(typeElement), contents.navNested);
             }
         } else {
-            return writer.getResource("doclet.navNested");
+            return contents.navNested;
         }
     }
 

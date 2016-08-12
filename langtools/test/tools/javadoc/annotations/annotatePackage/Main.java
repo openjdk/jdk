@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,16 @@
  * @summary Test package annotations and package-info.java package comments.
  * @library ../../lib
  * @modules jdk.javadoc
- * @compile  ../../lib/Tester.java Main.java
+ * @compile  ../../lib/OldToolTester.java Main.java
  * @run main Main
  */
 
 import java.io.*;
 import com.sun.javadoc.*;
 
-public class Main extends Tester.Doclet {
+public class Main extends OldToolTester.Doclet {
 
-    private static final Tester tester = new Tester("Main", "pkg1", "pkg2");
+    private static final OldToolTester tester = new OldToolTester("Main", "pkg1", "pkg2");
 
     public static void main(String[] args) throws IOException {
         tester.run();

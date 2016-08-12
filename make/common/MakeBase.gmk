@@ -828,7 +828,7 @@ else
 endif
 
 ################################################################################
-# Return a string suitable for use after a -classpath or -modulepath option. It
+# Return a string suitable for use after a -classpath or --module-path option. It
 # will be correct and safe to use on all platforms. Arguments are given as space
 # separate classpath entries. Safe for multiple nested calls.
 # param 1 : A space separated list of classpath entries

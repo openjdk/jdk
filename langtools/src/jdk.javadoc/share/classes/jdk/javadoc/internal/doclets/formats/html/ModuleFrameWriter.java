@@ -60,7 +60,7 @@ public class ModuleFrameWriter extends HtmlDocletWriter {
     /**
      * The module being documented.
      */
-    private ModuleElement mdle;
+    private final ModuleElement mdle;
 
     /**
      * The classes to be documented.  Use this to filter out classes
@@ -114,9 +114,8 @@ public class ModuleFrameWriter extends HtmlDocletWriter {
             }
             mdlgen.printHtmlDocument(
                     configuration.metakeywords.getMetaKeywordsForModule(moduleElement), false, body);
-            mdlgen.close();
         } catch (IOException exc) {
-            configuration.standardmessage.error(
+            configuration.messages.error(
                     "doclet.exception_encountered",
                     exc.toString(), DocPaths.moduleTypeFrame(moduleElement).getPath());
             throw new DocletAbortException(exc);
@@ -148,12 +147,12 @@ public class ModuleFrameWriter extends HtmlDocletWriter {
                 annotationTypes.addAll(utils.getAnnotationTypes(pkg));
             }
         }
-        addClassKindListing(interfaces, getResource("doclet.Interfaces"), contentTree);
-        addClassKindListing(classes, getResource("doclet.Classes"), contentTree);
-        addClassKindListing(enums, getResource("doclet.Enums"), contentTree);
-        addClassKindListing(exceptions, getResource("doclet.Exceptions"), contentTree);
-        addClassKindListing(errors, getResource("doclet.Errors"), contentTree);
-        addClassKindListing(annotationTypes, getResource("doclet.AnnotationTypes"), contentTree);
+        addClassKindListing(interfaces, contents.interfaces, contentTree);
+        addClassKindListing(classes, contents.classes, contentTree);
+        addClassKindListing(enums, contents.enums, contentTree);
+        addClassKindListing(exceptions, contents.exceptions, contentTree);
+        addClassKindListing(errors, contents.errors, contentTree);
+        addClassKindListing(annotationTypes, contents.annotationTypes, contentTree);
     }
 
     /**

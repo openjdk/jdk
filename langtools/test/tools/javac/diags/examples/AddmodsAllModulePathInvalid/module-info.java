@@ -22,5 +22,5 @@
  */
 
 // key: compiler.err.addmods.all.module.path.invalid
-// options: -addmods ALL-MODULE-PATH
+// options: --add-modules ALL-MODULE-PATH
 module m {}

@@ -31,6 +31,8 @@ if [ "${TESTJAVA}" = "" ] ; then
   TESTJAVA=`dirname $JAVAC_CMD`/..
 fi
 
+TESTTOOLVMOPTS="$TESTTOOLVMOPTS -J-Duser.language=en -J-Duser.country=US"
+
 KS=ks
 KEYTOOL="$TESTJAVA/bin/keytool ${TESTTOOLVMOPTS} -keystore ks -storepass changeit -keypass changeit"
 

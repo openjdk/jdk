@@ -32,13 +32,14 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.sjavac
- *          jdk.jdeps/com.sun.tools.javap
  * @build Wrapper toolbox.ToolBox
  * @run main Wrapper OverlappingSrcDst
  */
 
 import java.io.File;
 import java.nio.file.Paths;
+
+import toolbox.ToolBox;
 
 public class OverlappingSrcDst extends SJavacTester {
     public static void main(String... args) {

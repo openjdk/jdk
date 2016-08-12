@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,13 +46,13 @@ import java.util.*;
  * produced to help debugging. Test annotated with {@code ignore}
  * can be executed explicitly.
  */
-public class RepeatingTypeAnnotations extends Tester {
+public class RepeatingTypeAnnotations extends JavapTester {
 
     /**
      * Main method instantiates test and run test-cases.
      */
     public static void main(String... args) throws Exception {
-        Tester tester = new RepeatingTypeAnnotations();
+        JavapTester tester = new RepeatingTypeAnnotations();
         tester.run(args);
     }
 

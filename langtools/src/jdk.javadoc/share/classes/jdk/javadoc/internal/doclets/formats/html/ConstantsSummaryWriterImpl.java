@@ -87,8 +87,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      * @param configuration the configuration used in this run
      *        of the standard doclet.
      */
-    public ConstantsSummaryWriterImpl(ConfigurationImpl configuration)
-            throws IOException {
+    public ConstantsSummaryWriterImpl(ConfigurationImpl configuration) {
         super(configuration, DocPaths.CONSTANT_VALUES);
         this.configuration = configuration;
         constantsTableSummary = configuration.getText("doclet.Constants_Table_Summary",
@@ -133,7 +132,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         if (pkg.isUnnamed()) {
             link = getHyperLink(getDocLink(
                     SectionName.UNNAMED_PACKAGE_ANCHOR),
-                    defaultPackageLabel, "", "");
+                    contents.defaultPackageLabel, "", "");
         } else {
             String parsedPackageName = utils.parsePackageName(pkg);
             Content packageNameContent = getPackageLabel(parsedPackageName);
@@ -150,13 +149,11 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      * {@inheritDoc}
      */
     public void addContentsList(Content contentTree, Content contentListTree) {
-        Content titleContent = getResource(
-                "doclet.Constants_Summary");
+        Content titleContent = contents.constantsSummaryTitle;
         Content pHeading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
                 HtmlStyle.title, titleContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, pHeading);
-        Content headingContent = getResource(
-                "doclet.Contents");
+        Content headingContent = contents.contentsHeading;
         Content heading = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING, true,
                 headingContent);
         if (configuration.allowTag(HtmlTag.SECTION)) {
@@ -191,7 +188,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         if (pkg.isUnnamed()) {
             summariesTree.addContent(getMarkerAnchor(
                     SectionName.UNNAMED_PACKAGE_ANCHOR));
-            pkgNameContent = defaultPackageLabel;
+            pkgNameContent = contents.defaultPackageLabel;
         } else {
             String parsedPackageName = utils.parsePackageName(pkg);
             summariesTree.addContent(getMarkerAnchor(parsedPackageName));
@@ -315,7 +312,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         for (Modifier mod : member.getModifiers()) {
             Content modifier = new StringContent(mod.toString());
             code.addContent(modifier);
-            code.addContent(getSpace());
+            code.addContent(Contents.SPACE);
         }
         Content type = getLink(new LinkInfoImpl(configuration,
                 LinkInfoImpl.Kind.CONSTANT_SUMMARY, member.asType()));

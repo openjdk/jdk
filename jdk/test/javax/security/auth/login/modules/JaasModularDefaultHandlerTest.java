@@ -247,7 +247,7 @@ public class JaasModularDefaultHandlerTest extends ModularTest {
         if (addModName != null
                 && !(cModuleType == MODULE_TYPE.EXPLICIT
                 && sModuletype == MODULE_TYPE.EXPLICIT)) {
-            vmArgs.put("-addmods ", addModName);
+            vmArgs.put("--add-modules=", addModName);
         }
         return vmArgs;
     }

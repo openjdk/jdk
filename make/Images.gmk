@@ -127,7 +127,7 @@ JLINK_ORDER_RESOURCES += \
     /jdk.localedata/** \
     #
 
-JLINK_TOOL := $(JLINK) --modulepath $(IMAGES_OUTPUTDIR)/jmods \
+JLINK_TOOL := $(JLINK) --module-path $(IMAGES_OUTPUTDIR)/jmods \
     --endian $(OPENJDK_BUILD_CPU_ENDIAN) \
     --release-info $(BASE_RELEASE_FILE) \
     --order-resources=$(call CommaList, $(JLINK_ORDER_RESOURCES)) \
@@ -142,7 +142,7 @@ $(JDK_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
 	$(ECHO) Creating jdk jimage
 	$(RM) -r $(JDK_IMAGE_DIR)
 	$(JLINK_TOOL) --output $(JDK_IMAGE_DIR) \
-	    --addmods $(JDK_MODULES_LIST) $(JLINK_EXTRA_OPTS)
+	    --add-modules $(JDK_MODULES_LIST) $(JLINK_EXTRA_OPTS)
 	$(TOUCH) $@
 
 $(JRE_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
@@ -150,7 +150,7 @@ $(JRE_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
 	$(ECHO) Creating jre jimage
 	$(RM) -r $(JRE_IMAGE_DIR)
 	$(JLINK_TOOL) --output $(JRE_IMAGE_DIR) \
-	    --addmods $(JRE_MODULES_LIST)
+	    --add-modules $(JRE_MODULES_LIST)
 	$(TOUCH) $@
 
 JRE_COMPACT1_IMAGE_DIR := $(JRE_IMAGE_DIR)-compact1
@@ -161,7 +161,7 @@ $(JRE_COMPACT1_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JRE_COMPACT1_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jre compact1 jimage
 	$(RM) -r $(JRE_COMPACT1_IMAGE_DIR)
-	$(JLINK_TOOL) --addmods $(JRE_COMPACT1_MODULES_LIST) \
+	$(JLINK_TOOL) --add-modules $(JRE_COMPACT1_MODULES_LIST) \
 	    --output $(JRE_COMPACT1_IMAGE_DIR)
 	$(TOUCH) $@
 
@@ -169,7 +169,7 @@ $(JRE_COMPACT2_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JRE_COMPACT2_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jre compact2 jimage
 	$(RM) -r $(JRE_COMPACT2_IMAGE_DIR)
-	$(JLINK_TOOL) --addmods $(JRE_COMPACT2_MODULES_LIST) \
+	$(JLINK_TOOL) --add-modules $(JRE_COMPACT2_MODULES_LIST) \
 	    --output $(JRE_COMPACT2_IMAGE_DIR)
 	$(TOUCH) $@
 
@@ -177,7 +177,7 @@ $(JRE_COMPACT3_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JRE_COMPACT3_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jre compact3 jimage
 	$(RM) -r $(JRE_COMPACT3_IMAGE_DIR)
-	$(JLINK_TOOL) --addmods $(JRE_COMPACT3_MODULES_LIST) \
+	$(JLINK_TOOL) --add-modules $(JRE_COMPACT3_MODULES_LIST) \
 	    --output $(JRE_COMPACT3_IMAGE_DIR)
 	$(TOUCH) $@
 

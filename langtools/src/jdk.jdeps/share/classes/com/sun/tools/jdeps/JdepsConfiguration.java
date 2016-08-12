@@ -514,7 +514,7 @@ public class JdepsConfiguration implements AutoCloseable {
         }
 
         /*
-         * This method is for -check option to find all target modules specified
+         * This method is for --check option to find all target modules specified
          * in qualified exports.
          *
          * Include all system modules and modules found on modulepath

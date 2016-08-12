@@ -160,10 +160,10 @@ public class BootAppendTests {
 
     // Test #3: If a class on -Xbootclasspath/a is from a package defined in boot modules,
     //          the class can be loaded from -Xbootclasspath/a when the module is excluded
-    //          using -limitmods. Verify the behavior is the same at runtime when CDS is
-    //          enabled.
+    //          using --limit-modules. Verify the behavior is the same at runtime when CDS
+    //          is enabled.
     //
-    //          The java.desktop module is excluded using -limitmods at runtime,
+    //          The java.desktop module is excluded using --limit-modules at runtime,
     //          javax.sound.sampled.MyClass is archived from -Xbootclasspath/a. It can be
     //          loaded from the archive at runtime.
     public static void testBootAppendExcludedModuleClass() throws Exception {
@@ -174,7 +174,7 @@ public class BootAppendTests {
                 "-XX:+TraceClassLoading",
                 "-cp", appJar,
                 "-Xbootclasspath/a:" + bootAppendJar,
-                "-limitmods", "java.base",
+                "--limit-modules=java.base",
                 "-Xshare:" + mode,
                 APP_CLASS,
                 BOOT_APPEND_MODULE_CLASS_NAME);
@@ -191,8 +191,8 @@ public class BootAppendTests {
     // Test #4: If a class on -Xbootclasspath/a has the same fully qualified
     //          name as a class defined in boot modules, the class is loaded
     //          from -Xbootclasspath/a when the boot module is excluded using
-    //          -limitmods. Verify the behavior is the same at runtime when CDS is
-    //          enabled.
+    //          --limit-modules. Verify the behavior is the same at runtime
+    //          when CDS is enabled.
     //
     //          The org.omg.CORBA.Context is a boot module class. The class
     //          on -Xbootclasspath/a that has the same fully-qualified name
@@ -206,7 +206,7 @@ public class BootAppendTests {
                 "-XX:+TraceClassLoading",
                 "-cp", appJar,
                 "-Xbootclasspath/a:" + bootAppendJar,
-                "-limitmods", "java.base",
+                "--limit-modules=java.base",
                 "-Xshare:" + mode,
                 APP_CLASS,
                 BOOT_APPEND_DUPLICATE_MODULE_CLASS_NAME);
