@@ -133,14 +133,12 @@ java/lang/invoke/VarHandles/VarHandleTestMethodHandleAccessShort.java	8160690 ge
 
 # jdk_instrument
 
-java/lang/instrument/RedefineBigClass.sh                        8061177 generic-all
-java/lang/instrument/RetransformBigClass.sh                     8061177 generic-all
+java/lang/instrument/RedefineBigClass.sh                        8065756 generic-all
+java/lang/instrument/RetransformBigClass.sh                     8065756 generic-all
 
 java/lang/instrument/BootClassPath/BootClassPathTest.sh         8072130 macosx-all
 
 java/lang/instrument/DaemonThread/TestDaemonThread.java         8161225 generic-all
-
-java/lang/management/MemoryMXBean/LowMemoryTest.java            8130339 generic-all
 
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158760 generic-all
@@ -331,13 +329,9 @@ tools/pack200/Pack200Props.java                                 8155857 generic-
 
 com/sun/jdi/RedefineImplementor.sh                              8004127 generic-all
 
-com/sun/jdi/JdbMethodExitTest.sh                                8031555 generic-all
+com/sun/jdi/JdbMethodExitTest.sh                                6902121 generic-all
 
 com/sun/jdi/RepStep.java                                        8043571 generic-all
-
-com/sun/jdi/RedefinePop.sh                                      8058616 generic-all
-
-com/sun/jdi/CatchPatternTest.sh                                 8068645 generic-all
 
 com/sun/jdi/GetLocalVariables4Test.sh                           8067354 windows-all
 
@@ -373,8 +367,6 @@ sun/tools/jcmd/TestJcmdSanity.java                              8031482 windows-
 sun/tools/jhsdb/BasicLauncherTest.java                          8160376 macosx-all
 
 sun/tools/jhsdb/heapconfig/JMapHeapConfigTest.java              8160376 macosx-all
-
-sun/tools/jstatd/TestJstatdExternalRegistry.java                8046285 generic-all
 
 sun/tools/jps/TestJpsJar.java                                   8160923 generic-all
 
