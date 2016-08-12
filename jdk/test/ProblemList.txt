@@ -285,7 +285,6 @@ sun/security/pkcs11/tls/TestPremaster.java                      8077138,8023434 
 
 sun/security/krb5/auto/HttpNegotiateServer.java                 8038079 generic-all
 
-sun/security/tools/keytool/autotest.sh                          8130302 generic-all
 sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java         8161232 macosx-all
 
 ############################################################################
