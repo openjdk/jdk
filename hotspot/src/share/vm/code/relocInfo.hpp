@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
+#include "utilities/macros.hpp"
 
 class nmethod;
 class CompiledMethod;
@@ -423,24 +424,7 @@ class relocInfo VALUE_OBJ_CLASS_SPEC {
   static void remove_reloc_info_for_address(RelocIterator *itr, address pc, relocType old_type);
 
   // Machine dependent stuff
-#ifdef TARGET_ARCH_x86
-# include "relocInfo_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "relocInfo_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "relocInfo_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "relocInfo_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "relocInfo_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "relocInfo_aarch64.hpp"
-#endif
+#include CPU_HEADER(relocInfo)
 
  protected:
   // Derived constant, based on format_width which is PD:

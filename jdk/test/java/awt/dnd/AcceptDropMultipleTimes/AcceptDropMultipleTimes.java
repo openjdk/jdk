@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key headful
  * @bug 8029979
  * @summary Checks if acceptDrop() can be called several times
  * @library ../../regtesthelpers

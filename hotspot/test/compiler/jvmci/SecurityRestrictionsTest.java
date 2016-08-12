@@ -56,14 +56,11 @@
 package compiler.jvmci;
 
 import jdk.test.lib.Utils;
-import java.lang.InternalError;
-import java.lang.reflect.Constructor;
+
 import java.security.AccessControlException;
 import java.security.Permission;
 import java.util.PropertyPermission;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class SecurityRestrictionsTest {
 

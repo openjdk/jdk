@@ -26,9 +26,13 @@
  * @test
  * @bug 8134883
  * @summary C1's range check elimination breaks with a non-natural loop that an exception handler as one entry
+ *
  * @compile TestRangeCheckExceptionHandlerLoop.jasm
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestRangeCheckExceptionHandlerLoopMain
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                  compiler.rangechecks.TestRangeCheckExceptionHandlerLoopMain
  */
+
+package compiler.rangechecks;
 
 public class TestRangeCheckExceptionHandlerLoopMain {
     public static void main(String[] args) throws Exception {

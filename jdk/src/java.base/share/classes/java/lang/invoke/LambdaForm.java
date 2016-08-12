@@ -149,9 +149,9 @@ class LambdaForm {
         static final int ARG_TYPE_LIMIT = ARG_TYPES.length;
         static final int TYPE_LIMIT = ALL_TYPES.length;
 
-        private final char btChar;
-        private final Class<?> btClass;
-        private final Wrapper btWrapper;
+        final char btChar;
+        final Class<?> btClass;
+        final Wrapper btWrapper;
 
         private BasicType(char btChar, Class<?> btClass, Wrapper wrapper) {
             this.btChar = btChar;
@@ -773,6 +773,28 @@ class LambdaForm {
         }
     }
 
+    /**
+     * Generate optimizable bytecode for this form after first looking for a
+     * pregenerated version in a specified class.
+     */
+    void compileToBytecode(Class<?> lookupClass) {
+        if (vmentry != null && isCompiled) {
+            return;  // already compiled somehow
+        }
+        MethodType invokerType = methodType();
+        assert(vmentry == null || vmentry.getMethodType().basicType().equals(invokerType));
+        int dot = debugName.indexOf('.');
+        String methodName = (dot > 0) ? debugName.substring(dot + 1) : debugName;
+        MemberName member = new MemberName(lookupClass, methodName, invokerType, REF_invokeStatic);
+        MemberName resolvedMember = MemberName.getFactory().resolveOrNull(REF_invokeStatic, member, lookupClass);
+        if (resolvedMember != null) {
+            vmentry = resolvedMember;
+            isCompiled = true;
+        } else {
+            compileToBytecode();
+        }
+    }
+
     private static void computeInitialPreparedForms() {
         // Find all predefined invokers and associate them with canonical empty lambda forms.
         for (MemberName m : MemberName.getFactory().getMethods(LambdaForm.class, false, null, null, null)) {
@@ -1344,10 +1366,11 @@ class LambdaForm {
     }
 
     public static String basicTypeSignature(MethodType type) {
-        char[] sig = new char[type.parameterCount() + 2];
+        int params = type.parameterCount();
+        char[] sig = new char[params + 2];
         int sigp = 0;
-        for (Class<?> pt : type.parameterList()) {
-            sig[sigp++] = basicTypeChar(pt);
+        while (sigp < params) {
+            sig[sigp] = basicTypeChar(type.parameterType(sigp++));
         }
         sig[sigp++] = '_';
         sig[sigp++] = basicTypeChar(type.returnType());
@@ -1385,7 +1408,7 @@ class LambdaForm {
 
     static final class Name {
         final BasicType type;
-        private short index;
+        @Stable short index;
         final NamedFunction function;
         final Object constraint;  // additional type information, if not null
         @Stable final Object[] arguments;

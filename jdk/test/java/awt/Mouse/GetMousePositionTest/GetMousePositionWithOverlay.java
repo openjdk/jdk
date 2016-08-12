@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @test
+ * @key headful
  * @bug 8012026
  * @summary Component.getMousePosition() does not work in an applet on MacOS
  * @author Petr Pchelko

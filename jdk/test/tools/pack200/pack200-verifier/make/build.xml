@@ -27,7 +27,7 @@
 	   destdir="${build}/classes"
 	   verbose="no"
 	   debug="on">
-       <compilerarg value="-XaddExports:jdk.jdeps/com.sun.tools.classfile"/>
+       <compilerarg value="--add-exports=jdk.jdeps/com.sun.tools.classfile"/>
      </javac>
   </target>
 

@@ -334,7 +334,8 @@ Flag::Flags Flag::get_origin() {
 
 void Flag::set_origin(Flags origin) {
   assert((origin & VALUE_ORIGIN_MASK) == origin, "sanity");
-  _flags = Flags((_flags & ~VALUE_ORIGIN_MASK) | origin);
+  Flags new_origin = Flags((origin == COMMAND_LINE) ? Flags(origin | ORIG_COMMAND_LINE) : origin);
+  _flags = Flags((_flags & ~VALUE_ORIGIN_MASK) | new_origin);
 }
 
 bool Flag::is_default() {
@@ -346,7 +347,11 @@ bool Flag::is_ergonomic() {
 }
 
 bool Flag::is_command_line() {
-  return (get_origin() == COMMAND_LINE);
+  return (_flags & ORIG_COMMAND_LINE) != 0;
+}
+
+void Flag::set_command_line() {
+  _flags = Flags(_flags | ORIG_COMMAND_LINE);
 }
 
 bool Flag::is_product() const {
@@ -464,25 +469,31 @@ void Flag::print_on(outputStream* st, bool withComments, bool printRanges) {
   }
 
   if (!printRanges) {
-
-    st->print("%9s %-40s %c= ", _type, _name, (!is_default() ? ':' : ' '));
+    // The print below assumes that the flag name is 40 characters or less.
+    // This works for most flags, but there are exceptions. Our longest flag
+    // name right now is UseAdaptiveGenerationSizePolicyAtMajorCollection and
+    // its minor collection buddy. These are 48 characters. We use a buffer of
+    // 10 spaces below to adjust the space between the flag value and the
+    // column of flag type and origin that is printed in the end of the line.
+    char spaces[10 + 1] = "          ";
+    st->print("%9s %-40s = ", _type, _name);
 
     if (is_bool()) {
-      st->print("%-16s", get_bool() ? "true" : "false");
+      st->print("%-20s", get_bool() ? "true" : "false");
     } else if (is_int()) {
-      st->print("%-16d", get_int());
+      st->print("%-20d", get_int());
     } else if (is_uint()) {
-      st->print("%-16u", get_uint());
+      st->print("%-20u", get_uint());
     } else if (is_intx()) {
-      st->print(INTX_FORMAT_W(-16), get_intx());
+      st->print(INTX_FORMAT_W(-20), get_intx());
     } else if (is_uintx()) {
-      st->print(UINTX_FORMAT_W(-16), get_uintx());
+      st->print(UINTX_FORMAT_W(-20), get_uintx());
     } else if (is_uint64_t()) {
-      st->print(UINT64_FORMAT_W(-16), get_uint64_t());
+      st->print(UINT64_FORMAT_W(-20), get_uint64_t());
     } else if (is_size_t()) {
-      st->print(SIZE_FORMAT_W(-16), get_size_t());
+      st->print(SIZE_FORMAT_W(-20), get_size_t());
     } else if (is_double()) {
-      st->print("%-16f", get_double());
+      st->print("%-20f", get_double());
     } else if (is_ccstr()) {
       const char* cp = get_ccstr();
       if (cp != NULL) {
@@ -494,13 +505,14 @@ void Flag::print_on(outputStream* st, bool withComments, bool printRanges) {
           cp = eol+1;
           st->print("%5s %-35s += ", "", _name);
         }
-        st->print("%-16s", cp);
+        st->print("%-20s", cp);
       }
-      else st->print("%-16s", "");
+      else st->print("%-20s", "");
     }
-
-    st->print("%-20s", " ");
-    print_kind(st);
+    assert(strlen(_name) < 50, "Flag name is longer than expected");
+    spaces[50 - MAX2((size_t)40, strlen(_name))] = '\0';
+    st->print("%s", spaces);
+    print_kind_and_origin(st);
 
 #ifndef PRODUCT
     if (withComments) {
@@ -533,8 +545,8 @@ void Flag::print_on(outputStream* st, bool withComments, bool printRanges) {
     }
     CommandLineFlagRangeList::print(st, _name, func);
 
-    st->print(" %-20s", " ");
-    print_kind(st);
+    st->print(" %-16s", " ");
+    print_kind_and_origin(st);
 
 #ifndef PRODUCT
     if (withComments) {
@@ -546,7 +558,7 @@ void Flag::print_on(outputStream* st, bool withComments, bool printRanges) {
   }
 }
 
-void Flag::print_kind(outputStream* st) {
+void Flag::print_kind_and_origin(outputStream* st) {
   struct Data {
     int flag;
     const char* name;
@@ -572,23 +584,58 @@ void Flag::print_kind(outputStream* st) {
   };
 
   if ((_flags & KIND_MASK) != 0) {
-    st->print("{");
     bool is_first = true;
+    const size_t buffer_size = 64;
+    size_t buffer_used = 0;
+    char kind[buffer_size];
 
+    jio_snprintf(kind, buffer_size, "{");
+    buffer_used++;
     for (int i = 0; data[i].flag != -1; i++) {
       Data d = data[i];
       if ((_flags & d.flag) != 0) {
         if (is_first) {
           is_first = false;
         } else {
-          st->print(" ");
+          assert(buffer_used + 1 < buffer_size, "Too small buffer");
+          jio_snprintf(kind + buffer_used, buffer_size - buffer_used, " ");
+          buffer_used++;
         }
-        st->print("%s", d.name);
+        size_t length = strlen(d.name);
+        assert(buffer_used + length < buffer_size, "Too small buffer");
+        jio_snprintf(kind + buffer_used, buffer_size - buffer_used, "%s", d.name);
+        buffer_used += length;
       }
     }
-
-    st->print("}");
+    assert(buffer_used + 2 <= buffer_size, "Too small buffer");
+    jio_snprintf(kind + buffer_used, buffer_size - buffer_used, "}");
+    st->print("%20s", kind);
   }
+
+  int origin = _flags & VALUE_ORIGIN_MASK;
+  st->print(" {");
+  switch(origin) {
+    case DEFAULT:
+      st->print("default"); break;
+    case COMMAND_LINE:
+      st->print("command line"); break;
+    case ENVIRON_VAR:
+      st->print("environment"); break;
+    case CONFIG_FILE:
+      st->print("config file"); break;
+    case MANAGEMENT:
+      st->print("management"); break;
+    case ERGONOMIC:
+      if (_flags & ORIG_COMMAND_LINE) {
+        st->print("command line, ");
+      }
+      st->print("ergonomic"); break;
+    case ATTACH_ON_DEMAND:
+      st->print("attach"); break;
+    case INTERNAL:
+      st->print("internal"); break;
+  }
+  st->print("}");
 }
 
 void Flag::print_as_flag(outputStream* st) {
@@ -916,6 +963,12 @@ bool CommandLineFlags::wasSetOnCmdline(const char* name, bool* value) {
   if (result == NULL) return false;
   *value = result->is_command_line();
   return true;
+}
+
+void CommandLineFlagsEx::setOnCmdLine(CommandLineFlagWithType flag) {
+  Flag* faddr = address_of_flag(flag);
+  assert(faddr != NULL, "Unknown flag");
+  faddr->set_command_line();
 }
 
 template<class E, class T>

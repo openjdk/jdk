@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+   @test
+   @key headful
    @bug 6919629
    @summary Tests that components with Nimbus.Overrides are GC'ed properly
    @author Peter Zhelezniakov

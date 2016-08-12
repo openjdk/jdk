@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key headful
  * @bug 8027913
  * @library ../../regtesthelpers
  * @build Util

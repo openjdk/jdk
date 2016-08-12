@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8047367
  * @summary Check whether the focus transfer between windows occurs correctly when
  *          the following happens: an application modal dialog (D1) having a null

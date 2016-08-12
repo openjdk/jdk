@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,8 @@
 #include "runtime/thread.hpp"
 #include "shark/llvmHeaders.hpp"
 #include "shark/sharkRuntime.hpp"
-#ifdef TARGET_ARCH_zero
+#include "utilities/macros.hpp"
+#ifdef ZERO
 # include "stack_zero.inline.hpp"
 #endif
 

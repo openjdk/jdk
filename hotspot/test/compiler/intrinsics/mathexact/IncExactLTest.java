@@ -25,13 +25,14 @@
  * @test
  * @bug 8026844
  * @summary Test incrementExact
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @compile IncExactLTest.java Verify.java
- * @run main IncExactLTest
  *
+ * @run main compiler.intrinsics.mathexact.IncExactLTest
  */
+
+package compiler.intrinsics.mathexact;
 
 public class IncExactLTest {
     public static long[] values = {1, 1, 1, 1};

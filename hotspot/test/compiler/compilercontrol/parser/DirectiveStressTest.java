@@ -26,7 +26,8 @@
  * @bug 8137167
  * @summary Stress directive json parser
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib ../share /
+ * @library /testlibrary /test/lib /
+ *
  * @run driver compiler.compilercontrol.parser.DirectiveStressTest
  */
 
@@ -35,9 +36,9 @@ package compiler.compilercontrol.parser;
 import compiler.compilercontrol.share.AbstractTestBase;
 import compiler.compilercontrol.share.JSONFile;
 import compiler.compilercontrol.share.method.MethodDescriptor;
+import compiler.compilercontrol.share.pool.PoolHelper;
 import compiler.compilercontrol.share.scenario.DirectiveWriter;
 import jdk.test.lib.OutputAnalyzer;
-import pool.PoolHelper;
 
 import java.util.List;
 import java.util.stream.Collectors;

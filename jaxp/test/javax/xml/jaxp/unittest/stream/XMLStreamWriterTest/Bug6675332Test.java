@@ -30,14 +30,20 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 import util.BaseStAXUT;
 
 /*
+ * @test
  * @bug 6675332
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.Bug6675332Test
+ * @run testng/othervm stream.XMLStreamWriterTest.Bug6675332Test
  * @summary Test XMLStreamWriter writeAttribute when IS_REPAIRING_NAMESPACES is true.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6675332Test extends BaseStAXUT {
 
     private static final XMLOutputFactory XML_OUTPUT_FACTORY = XMLOutputFactory.newInstance();
@@ -158,3 +164,4 @@ public class Bug6675332Test extends BaseStAXUT {
     }
 
 }
+

@@ -30,6 +30,6 @@ package p;
  * an abstract method error if called.
  *
  */
-public abstract class C implements p.I {
+public abstract class C implements I {
        public abstract int m();
 }

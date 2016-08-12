@@ -27,6 +27,8 @@
  * @author igor.ignatyev@oracle.com
  */
 
+package compiler.tiered;
+
 import compiler.whitebox.CompilerWhiteBoxTest;
 
 public abstract class CompLevelsTest extends CompilerWhiteBoxTest {

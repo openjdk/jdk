@@ -819,7 +819,6 @@ void CompilerOracle::parse_compile_only(char * line) {
 
       if (className == NULL) {
         className = newName;
-        c_match = MethodMatcher::Prefix;
       } else {
         methodName = newName;
       }
@@ -829,26 +828,15 @@ void CompilerOracle::parse_compile_only(char * line) {
       if (className == NULL) {
         className = "";
         c_match = MethodMatcher::Any;
-      } else {
-        // foo/bar.blah is an exact match on foo/bar, bar.blah is a suffix match on bar
-        if (strchr(className, '/') != NULL) {
-          c_match = MethodMatcher::Exact;
-        } else {
-          c_match = MethodMatcher::Suffix;
-        }
       }
     } else {
       // got foo or foo/bar
       if (className == NULL) {
         ShouldNotReachHere();
       } else {
-        // got foo or foo/bar
-        if (strchr(className, '/') != NULL) {
-          c_match = MethodMatcher::Prefix;
-        } else if (className[0] == '\0') {
+        // missing class name handled as "Any" class match
+        if (className[0] == '\0') {
           c_match = MethodMatcher::Any;
-        } else {
-          c_match = MethodMatcher::Substring;
         }
       }
     }

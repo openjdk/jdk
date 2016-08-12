@@ -96,23 +96,23 @@ public enum Option {
             if (this.kind != kind)
                 return;
 
-            log.printRawLines(WriterKind.NOTICE,
+            log.printRawLines(WriterKind.STDOUT,
                               String.format(HELP_LINE_FORMAT,
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.subopts"),
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.suboptlist")));
-            log.printRawLines(WriterKind.NOTICE,
+            log.printRawLines(WriterKind.STDOUT,
                               String.format(LINT_KEY_FORMAT,
                                             "all",
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.all")));
             for (LintCategory lc : LintCategory.values()) {
                 if (lc.hidden) continue;
-                log.printRawLines(WriterKind.NOTICE,
+                log.printRawLines(WriterKind.STDOUT,
                                   String.format(LINT_KEY_FORMAT,
                                                 lc.option,
                                                 log.localize(PrefixKind.JAVAC,
                                                              "opt.Xlint.desc." + lc.option)));
             }
-            log.printRawLines(WriterKind.NOTICE,
+            log.printRawLines(WriterKind.STDOUT,
                               String.format(LINT_KEY_FORMAT,
                                             "none",
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.none")));
@@ -307,7 +307,7 @@ public enum Option {
                 delim = ", ";
             }
 
-            log.printRawLines(WriterKind.NOTICE,
+            log.printRawLines(WriterKind.STDOUT,
                     String.format(HELP_LINE_FORMAT,
                         super.helpSynopsis(log),
                         log.localize(PrefixKind.JAVAC, descrKey, targets.toString())));
@@ -331,7 +331,7 @@ public enum Option {
         public boolean process(OptionHelper helper, String option) {
             Log log = helper.getLog();
             String ownName = helper.getOwnName();
-            log.printLines(PrefixKind.JAVAC, "version", ownName,  JavaCompiler.version());
+            log.printLines(WriterKind.STDOUT, PrefixKind.JAVAC, "version", ownName,  JavaCompiler.version());
             return super.process(helper, option);
         }
     },
@@ -341,7 +341,7 @@ public enum Option {
         public boolean process(OptionHelper helper, String option) {
             Log log = helper.getLog();
             String ownName = helper.getOwnName();
-            log.printLines(PrefixKind.JAVAC, "fullVersion", ownName,  JavaCompiler.fullVersion());
+            log.printLines(WriterKind.STDOUT, PrefixKind.JAVAC, "fullVersion", ownName,  JavaCompiler.fullVersion());
             return super.process(helper, option);
         }
     },
@@ -351,11 +351,11 @@ public enum Option {
         public boolean process(OptionHelper helper, String option) {
             Log log = helper.getLog();
             String ownName = helper.getOwnName();
-            log.printLines(PrefixKind.JAVAC, "msg.usage.header", ownName);
+            log.printLines(WriterKind.STDOUT, PrefixKind.JAVAC, "msg.usage.header", ownName);
             for (Option o: getJavaCompilerOptions()) {
                 o.help(log, OptionKind.STANDARD);
             }
-            log.printNewline();
+            log.printNewline(WriterKind.STDOUT);
             return super.process(helper, option);
         }
     },
@@ -396,8 +396,8 @@ public enum Option {
             for (Option o: getJavaCompilerOptions()) {
                 o.help(log, OptionKind.EXTENDED);
             }
-            log.printNewline();
-            log.printLines(PrefixKind.JAVAC, "msg.usage.nonstandard.footer");
+            log.printNewline(WriterKind.STDOUT);
+            log.printLines(WriterKind.STDOUT, PrefixKind.JAVAC, "msg.usage.nonstandard.footer");
             return super.process(helper, option);
         }
     },
@@ -840,7 +840,7 @@ public enum Option {
         if (this.kind != kind)
             return;
 
-        log.printRawLines(WriterKind.NOTICE,
+        log.printRawLines(WriterKind.STDOUT,
                 String.format(HELP_LINE_FORMAT,
                     helpSynopsis(log),
                     log.localize(PrefixKind.JAVAC, descrKey)));

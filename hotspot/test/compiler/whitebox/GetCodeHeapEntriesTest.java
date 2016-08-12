@@ -22,31 +22,34 @@
  *
  */
 
-import java.util.Arrays;
-import java.util.EnumSet;
-
-import sun.hotspot.WhiteBox;
-import sun.hotspot.code.CodeBlob;
-import sun.hotspot.code.BlobType;
-import jdk.test.lib.Asserts;
-
 /*
  * @test GetCodeHeapEntriesTest
  * @bug 8059624
- * @library /testlibrary /test/lib
+ * @summary testing of WB::getCodeHeapEntries()
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build GetCodeHeapEntriesTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ *          java.management
+ * @build compiler.whitebox.GetCodeHeapEntriesTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:-SegmentedCodeCache
- *                   GetCodeHeapEntriesTest
+ *                   compiler.whitebox.GetCodeHeapEntriesTest
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+SegmentedCodeCache
- *                   GetCodeHeapEntriesTest
- * @summary testing of WB::getCodeHeapEntries()
+ *                   compiler.whitebox.GetCodeHeapEntriesTest
  */
+
+package compiler.whitebox;
+
+import jdk.test.lib.Asserts;
+import sun.hotspot.WhiteBox;
+import sun.hotspot.code.BlobType;
+import sun.hotspot.code.CodeBlob;
+
+import java.util.Arrays;
+import java.util.EnumSet;
+
 public class GetCodeHeapEntriesTest {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final int SIZE = 1024;

@@ -87,7 +87,7 @@ ${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} bootreporter/*.java
 cd ..
 
 ${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
-    -XaddExports:java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED ${AGENT}.java asmlib/*.java
+    --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED ${AGENT}.java asmlib/*.java
 ${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -classpath .${PATHSEP}bootpath ${APP}.java
 
 echo "Manifest-Version: 1.0"    >  ${AGENT}.mf

@@ -55,7 +55,7 @@ BCP=${TESTCLASSES}/bcp
 rm -rf ${BCP}
 mkdir ${BCP}
 
-EXTRAOPTS="-XaddExports:java.base/jdk.internal.reflect=ALL-UNNAMED"
+EXTRAOPTS="--add-exports java.base/jdk.internal.reflect=ALL-UNNAMED"
 
 # Compile GetCallerClass in bootclasspath
 ${COMPILEJAVA}/bin/javac ${TESTTOOLVMOPTS} ${EXTRAOPTS} \

@@ -291,12 +291,7 @@ public abstract class URLConnection {
    /**
     * @since   1.1
     */
-    private static FileNameMap fileNameMap;
-
-    /**
-     * @since 1.2.2
-     */
-    private static boolean fileNameMapLoaded = false;
+    private static volatile FileNameMap fileNameMap;
 
     /**
      * Loads filename map (a mimetable) from a data file. It will
@@ -308,18 +303,21 @@ public abstract class URLConnection {
      * @since 1.2
      * @see #setFileNameMap(java.net.FileNameMap)
      */
-    public static synchronized FileNameMap getFileNameMap() {
-        if ((fileNameMap == null) && !fileNameMapLoaded) {
-            fileNameMap = sun.net.www.MimeTable.loadTable();
-            fileNameMapLoaded = true;
+    public static FileNameMap getFileNameMap() {
+        FileNameMap map = fileNameMap;
+
+        if (map == null) {
+            fileNameMap = map = new FileNameMap() {
+                private FileNameMap internalMap =
+                    sun.net.www.MimeTable.loadTable();
+
+                public String getContentTypeFor(String fileName) {
+                    return internalMap.getContentTypeFor(fileName);
+                }
+            };
         }
 
-        return new FileNameMap() {
-            private FileNameMap map = fileNameMap;
-            public String getContentTypeFor(String fileName) {
-                return map.getContentTypeFor(fileName);
-            }
-        };
+        return map;
     }
 
     /**

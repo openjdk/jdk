@@ -22,7 +22,7 @@
 #
 
 # @test
-# @bug 8081729
+# @bug 8081729 8140314
 # @summary Test external plugin as classpath jar and as a modular jar.
 #          Test both cases with and without a security manager.
 
@@ -86,7 +86,7 @@ fi
 
 # expect to find SimpReader on module path
 echo "Test modular jar .. "
-$JAVA -mp $PLUGINDIR -cp $TESTDIR simptest.TestSIMPPlugin
+$JAVA --module-path $PLUGINDIR -cp $TESTDIR simptest.TestSIMPPlugin
 
 if [ $? -ne 0 ]; then
     exception=1
@@ -94,7 +94,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Test modular jar with security manager .."
-$JAVA -Djava.security.manager -mp $PLUGINDIR -cp $TESTDIR simptest.TestSIMPPlugin
+$JAVA -Djava.security.manager --module-path $PLUGINDIR -cp $TESTDIR simptest.TestSIMPPlugin
 if [ $? -ne 0 ]; then
     exception=1
     echo "modular jar with security manager test failed: exception thrown!"

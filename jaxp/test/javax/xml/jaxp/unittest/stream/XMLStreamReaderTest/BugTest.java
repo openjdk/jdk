@@ -30,11 +30,17 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.BugTest
+ * @run testng/othervm stream.XMLStreamReaderTest.BugTest
  * @summary Test StAX parser can parse xml without declaration.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class BugTest {
 
     @Test
@@ -45,3 +51,4 @@ public class BugTest {
         Assert.assertEquals(XMLStreamConstants.START_DOCUMENT, r.getEventType());
     }
 }
+

@@ -38,7 +38,6 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
-#include "mutex_windows.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_share_windows.hpp"
 #include "os_windows.inline.hpp"
@@ -3898,6 +3897,13 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
     DWORD res;
     HANDLE hproc, hthr;
 
+    // We only attempt to register threads until a process exiting
+    // thread manages to set the process_exiting flag. Any threads
+    // that come through here after the process_exiting flag is set
+    // are unregistered and will be caught in the SuspendThread()
+    // infinite loop below.
+    bool registered = false;
+
     // The first thread that reached this point, initializes the critical section.
     if (!InitOnceExecuteOnce(&init_once_crit_sect, init_crit_sect_call, &crit_sect, NULL)) {
       warning("crit_sect initialization failed in %s: %d\n", __FILE__, __LINE__);
@@ -3957,12 +3963,21 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
                              0, FALSE, DUPLICATE_SAME_ACCESS)) {
           warning("DuplicateHandle failed (%u) in %s: %d\n",
                   GetLastError(), __FILE__, __LINE__);
+
+          // We can't register this thread (no more handles) so this thread
+          // may be racing with a thread that is calling exit(). If the thread
+          // that is calling exit() has managed to set the process_exiting
+          // flag, then this thread will be caught in the SuspendThread()
+          // infinite loop below which closes that race. A small timing
+          // window remains before the process_exiting flag is set, but it
+          // is only exposed when we are out of handles.
         } else {
           ++handle_count;
-        }
+          registered = true;
 
-        // The current exiting thread has stored its handle in the array, and now
-        // should leave the critical section before calling _endthreadex().
+          // The current exiting thread has stored its handle in the array, and now
+          // should leave the critical section before calling _endthreadex().
+        }
 
       } else if (what != EPT_THREAD && handle_count > 0) {
         jlong start_time, finish_time, timeout_left;
@@ -4012,10 +4027,11 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
       LeaveCriticalSection(&crit_sect);
     }
 
-    if (OrderAccess::load_acquire(&process_exiting) != 0 &&
+    if (!registered &&
+        OrderAccess::load_acquire(&process_exiting) != 0 &&
         process_exiting != (jint)GetCurrentThreadId()) {
-      // Some other thread is about to call exit(), so we
-      // don't let the current thread proceed to exit() or _endthreadex()
+      // Some other thread is about to call exit(), so we don't let
+      // the current unregistered thread proceed to exit() or _endthreadex()
       while (true) {
         SuspendThread(GetCurrentThread());
         // Avoid busy-wait loop, if SuspendThread() failed.
@@ -4027,7 +4043,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
   // We are here if either
   // - there's no 'race at exit' bug on this OS release;
   // - initialization of the critical section failed (unlikely);
-  // - the current thread has stored its handle and left the critical section;
+  // - the current thread has registered itself and left the critical section;
   // - the process-exiting thread has raised the flag and left the critical section.
   if (what == EPT_THREAD) {
     _endthreadex((unsigned)exit_code);

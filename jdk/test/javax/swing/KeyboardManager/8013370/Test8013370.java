@@ -40,6 +40,7 @@ import static javax.swing.SwingUtilities.invokeAndWait;
 
 /*
  * @test
+ * @key headful
  * @bug 8013370
  * @summary Ensure that key stroke is not null
  * @author Sergey Malenkov

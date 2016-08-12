@@ -51,21 +51,6 @@
 #include "utilities/events.hpp"
 #include "utilities/xmlstream.hpp"
 #include "logging/log.hpp"
-#ifdef TARGET_ARCH_x86
-# include "nativeInst_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "nativeInst_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "nativeInst_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "nativeInst_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "nativeInst_ppc.hpp"
-#endif
 #ifdef SHARK
 #include "shark/sharkCompiler.hpp"
 #endif

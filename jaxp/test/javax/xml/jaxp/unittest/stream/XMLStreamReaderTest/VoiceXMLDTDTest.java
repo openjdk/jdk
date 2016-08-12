@@ -27,11 +27,17 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.VoiceXMLDTDTest
+ * @run testng/othervm stream.XMLStreamReaderTest.VoiceXMLDTDTest
  * @summary Test parsing Voice XML DTD.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class VoiceXMLDTDTest {
 
     private static final String INPUT_FILE1 = "voicexml.xml";
@@ -52,3 +58,4 @@ public class VoiceXMLDTDTest {
         }
     }
 }
+

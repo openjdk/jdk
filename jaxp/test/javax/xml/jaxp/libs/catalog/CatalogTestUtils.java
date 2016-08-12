@@ -37,6 +37,8 @@ import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
 import javax.xml.catalog.CatalogUriResolver;
 
+import jaxp.library.JAXPTestUtilities;
+
 /*
  * Utilities for testing XML Catalog API.
  */
@@ -126,22 +128,8 @@ final class CatalogTestUtils {
     static String getCatalogPath(String catalogName) {
         return catalogName == null
                 ? null
-                : getPathByClassName(CatalogTestUtils.class, "catalogFiles")
+                : JAXPTestUtilities.getPathByClassName(CatalogTestUtils.class, "catalogFiles")
                         + catalogName;
-    }
-
-    /*
-     * Acquire a full path string by given class name and relative path string.
-     */
-    private static String getPathByClassName(Class<?> clazz,
-            String relativeDir) {
-        String packageName = FILE_SEP
-                + clazz.getPackage().getName().replaceAll("[.]", FILE_SEP);
-        String javaSourcePath = System.getProperty("test.src").replaceAll(
-                "\\" + File.separator, FILE_SEP) + packageName + FILE_SEP;
-        String normalizedPath = Paths.get(javaSourcePath,
-                relativeDir).normalize().toAbsolutePath().toString();
-        return normalizedPath.replace("\\", FILE_SEP) + FILE_SEP;
     }
 
     /* ********** jaxp.properties ********** */

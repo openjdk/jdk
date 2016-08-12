@@ -28,7 +28,7 @@
  * @modules java.base/sun.util.locale.provider
  *          java.base/sun.util.spi
  * @compile -XDignore.symbol.file Bug8038436.java
- * @run main/othervm  -limitmods java.base           Bug8038436  security
+ * @run main/othervm  --limit-modules java.base      Bug8038436  security
  * @run main/othervm  -Djava.locale.providers=COMPAT Bug8038436  availlocs
  */
 
@@ -69,7 +69,7 @@ public class Bug8038436 {
 
         /*
          * Check only English/ROOT locales are returned if the jdk.localedata
-         * module is not loaded (implied by "-limitmods java.base").
+         * module is not loaded (implied by "--limit-modules java.base").
          */
         List<Locale> nonEnglishLocales= (Arrays.stream(Locale.getAvailableLocales())
                 .filter(l -> (l != Locale.ROOT && !(l.getLanguage() == "en" && (l.getCountry() == "US" || l.getCountry() == "" ))))

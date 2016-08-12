@@ -21,21 +21,24 @@
  * questions.
  */
 
-import compiler.whitebox.CompilerWhiteBoxTest;
-
 /*
  * @test SetForceInlineMethodTest
  * @bug 8006683 8007288 8022832
+ * @summary testing of WB::testSetForceInlineMethod()
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build SetForceInlineMethodTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::* SetForceInlineMethodTest
- * @summary testing of WB::testSetForceInlineMethod()
- * @author igor.ignatyev@oracle.com
+ *          java.management
+ * @build compiler.whitebox.SetForceInlineMethodTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
+ *                   compiler.whitebox.SetForceInlineMethodTest
  */
+
+package compiler.whitebox;
+
 public class SetForceInlineMethodTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {

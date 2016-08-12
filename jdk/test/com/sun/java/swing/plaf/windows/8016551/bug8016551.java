@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 8016551
  * @summary JMenuItem in WindowsLookAndFeel can't paint default icons
  * @author Leonid Romanov

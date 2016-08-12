@@ -97,7 +97,7 @@ public final class JavacTool implements JavaCompiler {
         PrintWriter pw = (charset == null)
                 ? new PrintWriter(System.err, true)
                 : new PrintWriter(new OutputStreamWriter(System.err, charset), true);
-        context.put(Log.outKey, pw);
+        context.put(Log.errKey, pw);
         CacheFSInfo.preRegister(context);
         return new JavacFileManager(context, true, charset);
     }
@@ -161,9 +161,9 @@ public final class JavacTool implements JavaCompiler {
                 context.put(DiagnosticListener.class, ccw.wrap(diagnosticListener));
 
             if (out == null)
-                context.put(Log.outKey, new PrintWriter(System.err, true));
+                context.put(Log.errKey, new PrintWriter(System.err, true));
             else
-                context.put(Log.outKey, new PrintWriter(out, true));
+                context.put(Log.errKey, new PrintWriter(out, true));
 
             if (fileManager == null) {
                 fileManager = getStandardFileManager(diagnosticListener, null, null);

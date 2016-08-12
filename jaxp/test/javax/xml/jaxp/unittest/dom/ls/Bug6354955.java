@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.CDATASection;
 import org.w3c.dom.Comment;
@@ -40,9 +41,14 @@ import org.w3c.dom.ls.LSSerializer;
 
 
 /*
+ * @test
  * @bug 6354955
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true dom.ls.Bug6354955
+ * @run testng/othervm dom.ls.Bug6354955
  * @summary Test LSSerializer can writeToString on DOM Text node with white space.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6354955 {
 
     @Test
@@ -136,3 +142,4 @@ public class Bug6354955 {
         return documentBuilder.newDocument();
     }
 }
+

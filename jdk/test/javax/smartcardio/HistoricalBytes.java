@@ -26,8 +26,8 @@
  * @bug 6445367
  * @summary Verify that ATR.getHistoricalBytes() works
  * @author Andreas Sterbenz
- * @compile -addmods java.smartcardio HistoricalBytes.java
- * @run main/othervm -addmods java.smartcardio HistoricalBytes
+ * @compile --add-modules=java.smartcardio HistoricalBytes.java
+ * @run main/othervm --add-modules=java.smartcardio HistoricalBytes
  */
 
 import java.util.Arrays;

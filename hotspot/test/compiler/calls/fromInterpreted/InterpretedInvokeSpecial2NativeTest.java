@@ -23,13 +23,14 @@
 
 /*
  * @test
+ * @summary check calls from interpreted to native using InvokeSpecial
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /testlibrary /
+ *
  * @build compiler.calls.common.InvokeSpecial
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *    sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *    -XX:CompileCommand=exclude,compiler.calls.common.InvokeSpecial::caller  compiler.calls.common.InvokeSpecial
  *    -checkCallerCompileLevel 0 -nativeCallee
- * @summary check calls from interpreted to native using InvokeSpecial
  */

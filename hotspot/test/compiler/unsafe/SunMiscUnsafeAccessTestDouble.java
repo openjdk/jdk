@@ -25,12 +25,15 @@
  * @test
  * @bug 8143628
  * @summary Test unsafe access for double
+ *
  * @modules jdk.unsupported/sun.misc
- * @run testng/othervm -Diters=100   -Xint                   SunMiscUnsafeAccessTestDouble
- * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 SunMiscUnsafeAccessTestDouble
- * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  SunMiscUnsafeAccessTestDouble
- * @run testng/othervm -Diters=20000                         SunMiscUnsafeAccessTestDouble
+ * @run testng/othervm -Diters=100   -Xint                   compiler.unsafe.SunMiscUnsafeAccessTestDouble
+ * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 compiler.unsafe.SunMiscUnsafeAccessTestDouble
+ * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  compiler.unsafe.SunMiscUnsafeAccessTestDouble
+ * @run testng/othervm -Diters=20000                         compiler.unsafe.SunMiscUnsafeAccessTestDouble
  */
+
+package compiler.unsafe;
 
 import org.testng.annotations.Test;
 

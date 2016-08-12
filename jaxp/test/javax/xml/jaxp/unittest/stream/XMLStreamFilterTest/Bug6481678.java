@@ -35,12 +35,18 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6481678
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamFilterTest.Bug6481678
+ * @run testng/othervm stream.XMLStreamFilterTest.Bug6481678
  * @summary Test Filtered XMLStreamReader parses namespace correctly.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6481678 {
 
     String rootElement = "fruits";
@@ -219,3 +225,4 @@ public class Bug6481678 {
         }
     }
 }
+

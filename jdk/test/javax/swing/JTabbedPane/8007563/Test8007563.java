@@ -33,6 +33,7 @@ import static javax.swing.SwingUtilities.*;
 
 /*
  * @test
+ * @key headful
  * @bug 8007563
  * @summary Tests JTabbedPane background
  * @author Sergey Malenkov

@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 8129830 8132771
  * @summary JTree drag/drop on lower half of last child of container incorrect
  * @run main LastNodeLowerHalfDrop

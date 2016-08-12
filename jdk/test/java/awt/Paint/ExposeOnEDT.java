@@ -26,6 +26,7 @@ import java.awt.*;
 
 /**
  * @test
+ * @key headful
  * @bug 7090424
  * @author Sergey Bylokhov
  * @library ../../../lib/testlibrary/

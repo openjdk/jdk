@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 6794831
  * @summary Infinite loop while painting ticks on Slider with maximum=MAX_INT
  * @author Pavel Porvatov

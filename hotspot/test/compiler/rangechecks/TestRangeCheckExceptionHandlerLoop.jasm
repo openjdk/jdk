@@ -22,7 +22,7 @@
  *
  */
 
-super public class TestRangeCheckExceptionHandlerLoop
+super public class compiler/rangechecks/TestRangeCheckExceptionHandlerLoop
 	version 51:0
 {
 

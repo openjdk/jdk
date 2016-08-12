@@ -23,13 +23,13 @@
 
 package jdk.vm.ci.hotspot.test;
 
-import static jdk.vm.ci.hotspot.test.TestHelper.CONSTANT_REFLECTION_PROVIDER;
-import static jdk.vm.ci.hotspot.test.TestHelper.DUMMY_CLASS_INSTANCE;
+import jdk.vm.ci.meta.JavaConstant;
+import org.testng.annotations.DataProvider;
 
 import java.util.LinkedList;
 
-import jdk.vm.ci.meta.JavaConstant;
-import org.testng.annotations.DataProvider;
+import static jdk.vm.ci.hotspot.test.TestHelper.CONSTANT_REFLECTION_PROVIDER;
+import static jdk.vm.ci.hotspot.test.TestHelper.DUMMY_CLASS_INSTANCE;
 
 public class UnboxPrimitiveDataProvider {
 

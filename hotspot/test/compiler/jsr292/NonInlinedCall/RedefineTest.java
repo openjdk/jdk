@@ -29,13 +29,16 @@
  *          java.base/jdk.internal.vm.annotation
  * @library /testlibrary /test/lib / ../patches
  * @requires vm.flavor != "minimal"
+ *
  * @build sun.hotspot.WhiteBox
- * @build java.base/java.lang.invoke.MethodHandleHelper
- * @build compiler.jsr292.NonInlinedCall.RedefineTest
- * @run main compiler.jsr292.NonInlinedCall.Agent agent.jar compiler.jsr292.NonInlinedCall.RedefineTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- *                              compiler.jsr292.NonInlinedCall.RedefineTest
+ *        java.base/java.lang.invoke.MethodHandleHelper
+ *        compiler.jsr292.NonInlinedCall.RedefineTest
+ * @run driver compiler.jsr292.NonInlinedCall.Agent
+ *             agent.jar
+ *             compiler.jsr292.NonInlinedCall.RedefineTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ *                                compiler.jsr292.NonInlinedCall.RedefineTest
  * @run main/bootclasspath/othervm -javaagent:agent.jar
  *                                 -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -45,20 +48,23 @@
 
 package compiler.jsr292.NonInlinedCall;
 
+import jdk.internal.misc.Unsafe;
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.vm.annotation.DontInline;
 import sun.hotspot.WhiteBox;
 
 import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.Instrumentation;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandleHelper;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
-import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.annotation.DontInline;
-import jdk.internal.org.objectweb.asm.*;
-
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_STATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SUPER;
+import static jdk.internal.org.objectweb.asm.Opcodes.IRETURN;
 
 public class RedefineTest {
     static final MethodHandles.Lookup LOOKUP = MethodHandleHelper.IMPL_LOOKUP;
