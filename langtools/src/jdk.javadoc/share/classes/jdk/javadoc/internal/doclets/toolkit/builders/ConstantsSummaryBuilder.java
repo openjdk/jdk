@@ -153,7 +153,6 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
         buildChildren(node, contentTree);
         writer.addFooter(contentTree);
         writer.printDocument(contentTree);
-        writer.close();
     }
 
     /**

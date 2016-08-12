@@ -88,7 +88,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE_NOWARNINGS, \
 $(eval $(call SetupJavaCompiler,GENERATE_USINGJDKBYTECODE, \
     JVM := $(JAVA_SMALL), \
     JAVAC := $(NEW_JAVAC), \
-    FLAGS := -upgrademodulepath $(JDK_OUTPUTDIR)/modules -system none $(DISABLE_WARNINGS), \
+    FLAGS := --upgrade-module-path $(JDK_OUTPUTDIR)/modules -system none $(DISABLE_WARNINGS), \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 

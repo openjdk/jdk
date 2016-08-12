@@ -136,7 +136,7 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
                 annotationProcessor2);
 
         String log = new JavacTask(tb)
-                .options("-modulesourcepath", moduleSrc.toString())
+                .options("--module-source-path", moduleSrc.toString())
                 .outdir(processorCompiledModules)
                 .files(findJavaFiles(moduleSrc))
                 .run()
@@ -159,7 +159,7 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
     public void testUseOnlyOneProcessor(Path base) throws Exception {
         initialization(base);
         String log = new JavacTask(tb)
-                .options("-processormodulepath", processorCompiledModules.toString(),
+                .options("--processor-module-path", processorCompiledModules.toString(),
                         "-processor", "mypkg2.MyProcessor2")
                 .outdir(classes)
                 .sources(testClass)
@@ -175,7 +175,7 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
     public void testAnnotationProcessorExecutionOrder(Path base) throws Exception {
         initialization(base);
         List<String> log = new JavacTask(tb)
-                .options("-processormodulepath", processorCompiledModules.toString(),
+                .options("--processor-module-path", processorCompiledModules.toString(),
                         "-processor", "mypkg1.MyProcessor1,mypkg2.MyProcessor2")
                 .outdir(classes)
                 .sources(testClass)
@@ -188,7 +188,7 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
         }
 
         log = new JavacTask(tb)
-                .options("-processormodulepath", processorCompiledModules.toString(),
+                .options("--processor-module-path", processorCompiledModules.toString(),
                         "-processor", "mypkg2.MyProcessor2,mypkg1.MyProcessor1")
                 .outdir(classes)
                 .sources(testClass)
@@ -205,7 +205,8 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
     public void testErrorOutputIfOneProcessorNameIsIncorrect(Path base) throws Exception {
         initialization(base);
         String log = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "-processormodulepath", processorCompiledModules.toString(),
+                .options("-XDrawDiagnostics",
+                         "--processor-module-path", processorCompiledModules.toString(),
                          "-processor", "mypkg2.MyProcessor2,noPackage.noProcessor,mypkg1.MyProcessor1")
                 .outdir(classes)
                 .sources(testClass)
@@ -221,8 +222,9 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
     public void testOptionsExclusion(Path base) throws Exception {
         initialization(base);
         List<String> log = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "-processormodulepath", processorCompiledModules.toString(),
-                        "-processorpath", processorCompiledModules.toString())
+                .options("-XDrawDiagnostics",
+                        "--processor-module-path", processorCompiledModules.toString(),
+                        "--processor-path", processorCompiledModules.toString())
                 .outdir(classes)
                 .sources(testClass)
                 .run(Task.Expect.FAIL)

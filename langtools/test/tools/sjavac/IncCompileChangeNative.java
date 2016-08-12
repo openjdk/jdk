@@ -31,7 +31,6 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.sjavac
- *          jdk.jdeps/com.sun.tools.javap
  * @build Wrapper toolbox.ToolBox
  * @run main Wrapper IncCompileChangeNative
  */
@@ -48,7 +47,6 @@ public class IncCompileChangeNative extends SJavacTester {
     // Remember the previous bin and headers state here.
     Map<String,Long> previous_bin_state;
     Map<String,Long> previous_headers_state;
-    ToolBox tb = new ToolBox();
 
     void test() throws Exception {
         Files.createDirectories(GENSRC);

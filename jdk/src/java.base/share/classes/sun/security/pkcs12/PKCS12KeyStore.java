@@ -580,6 +580,9 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             Entry entry;
 
             if (key instanceof PrivateKey) {
+                // Check that all the certs are X.509 certs
+                checkX509Certs(chain);
+
                 PrivateKeyEntry keyEntry = new PrivateKeyEntry();
                 keyEntry.date = new Date();
 
@@ -690,6 +693,9 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                                   Certificate[] chain)
         throws KeyStoreException
     {
+        // Check that all the certs are X.509 certs
+        checkX509Certs(chain);
+
         // Private key must be encoded as EncryptedPrivateKeyInfo
         // as defined in PKCS#8
         try {
@@ -959,6 +965,13 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      */
     private void setCertEntry(String alias, Certificate cert,
         Set<KeyStore.Entry.Attribute> attributes) throws KeyStoreException {
+
+        // Check that the cert is an X.509 cert
+        if (cert != null && (!(cert instanceof X509Certificate))) {
+            throw new KeyStoreException(
+                "Only X.509 certificates are supported - rejecting class: " +
+                cert.getClass().getName());
+        }
 
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
         if (entry != null && entry instanceof KeyEntry) {
@@ -1505,6 +1518,21 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         return set.size() == certChain.length;
     }
 
+    /*
+     * Check that all the certificates are X.509 certificates
+     */
+    private static void checkX509Certs(Certificate[] certs)
+            throws KeyStoreException {
+        if (certs != null) {
+            for (Certificate cert : certs) {
+                if (!(cert instanceof X509Certificate)) {
+                    throw new KeyStoreException(
+                        "Only X.509 certificates are supported - " +
+                        "rejecting class: " + cert.getClass().getName());
+                }
+            }
+        }
+    }
 
     /*
      * Create PKCS#12 Attributes, friendlyName, localKeyId and trustedKeyUsage.

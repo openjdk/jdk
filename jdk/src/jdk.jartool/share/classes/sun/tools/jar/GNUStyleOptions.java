@@ -91,7 +91,7 @@ class GNUStyleOptions {
                     tool.xflag = true;
                 }
             },
-            new Option(false, OptionType.MAIN_OPERATION, "--print-module-descriptor", "-p") {
+            new Option(false, OptionType.MAIN_OPERATION, "--print-module-descriptor", "-d") {
                 void process(Main tool, String opt, String arg) throws BadArgs {
                     if (tool.cflag || tool.iflag  || tool.tflag || tool.uflag || tool.xflag)
                         throw new BadArgs("error.multiple.main.operations").showUsage(true);
@@ -145,7 +145,7 @@ class GNUStyleOptions {
                     }
                 }
             },
-            new Option(true, OptionType.CREATE_UPDATE, "--modulepath", "--mp") {
+            new Option(true, OptionType.CREATE_UPDATE, "--module-path", "-p") {
                 void process(Main jartool, String opt, String arg) {
                     String[] dirs = arg.split(File.pathSeparator);
                     Path[] paths = new Path[dirs.length];

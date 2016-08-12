@@ -25,8 +25,8 @@
  * @test
  * @bug 8016271 8026405
  * @summary wsimport -clientjar does not create portable jar on windows due to hardcoded '\'
- * @compile -addmods java.xml.ws TestWsImport.java
- * @run main/othervm -addmods java.xml.ws TestWsImport
+ * @modules java.xml.ws
+ * @run main TestWsImport
  */
 
 import javax.xml.namespace.QName;

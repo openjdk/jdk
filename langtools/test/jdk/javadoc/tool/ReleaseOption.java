@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -53,16 +54,16 @@ public class ReleaseOption {
         List<String> options = new ArrayList<>();
         options.addAll(Arrays.asList(args));
         options.add("-XDrawDiagnostics");
-        options.add(System.getProperty("test.src", ".") + java.io.File.separatorChar + "ReleaseOptionSource.java");
+        options.add(new File(System.getProperty("test.src", "."), "ReleaseOptionSource.java").getPath());
         StringWriter out = new StringWriter();
         PrintWriter pw = new PrintWriter(out);
         int actualResult = Main.execute(options.toArray(new String[0]), pw);
         System.err.println("actual result=" + actualResult);
         System.err.println("actual output=" + out.toString());
         if (actualResult != expectedResult)
-            throw new Error();
+            throw new Error("Exit code not as expected");
         if (!validate.test(out.toString())) {
-            throw new Error("Not an expected error output: " + out.toString());
+            throw new Error("Output not as expected");
         }
     }
 }

@@ -176,6 +176,16 @@ public class JavacTask extends AbstractTask<JavacTask> {
     }
 
     /**
+     * Sets the options.
+     * @param options the options
+     * @return this task object
+     */
+    public JavacTask options(List<String> options) {
+        this.options = options;
+        return this;
+    }
+
+    /**
      * Sets the classes to be analyzed.
      * @param classes the classes
      * @return this task object

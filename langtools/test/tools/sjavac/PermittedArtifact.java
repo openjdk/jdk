@@ -31,7 +31,6 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.sjavac
- *          jdk.jdeps/com.sun.tools.javap
  * @build Wrapper toolbox.ToolBox
  * @run main Wrapper PermittedArtifact
  */
@@ -51,7 +50,6 @@ public class PermittedArtifact extends SJavacTester {
 
         Map<String,Long> previous_bin_state = collectState(BIN);
 
-        ToolBox tb = new ToolBox();
         tb.writeFile(GENSRC + "/alfa/omega/A.java",
                      "package alfa.omega; public class A { }");
 

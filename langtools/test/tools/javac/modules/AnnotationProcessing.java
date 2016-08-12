@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8133884 8162711
  * @summary Verify that annotation processing works.
  * @library /tools/lib
  * @modules
@@ -43,6 +44,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.Messager;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedOptions;
@@ -53,13 +55,15 @@ import javax.lang.model.element.ModuleElement.ProvidesDirective;
 import javax.lang.model.element.ModuleElement.UsesDirective;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.ElementScanner9;
+import javax.tools.Diagnostic.Kind;
 
 import toolbox.JavacTask;
 import toolbox.Task;
-import toolbox.ToolBox;
+import toolbox.Task.Mode;
 
 public class AnnotationProcessing extends ModuleTestBase {
 
@@ -81,7 +85,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                           "package impl; public class Impl { }");
 
         String log = new JavacTask(tb)
-                .options("-modulesourcepath", moduleSrc.toString(),
+                .options("--module-source-path", moduleSrc.toString(),
                          "-processor", AP.class.getName(),
                          "-AexpectedEnclosedElements=m1=>impl")
                 .outdir(classes)
@@ -113,7 +117,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                           "package impl2; public class Impl2 { }");
 
         String log = new JavacTask(tb)
-                .options("-modulesourcepath", moduleSrc.toString(),
+                .options("--module-source-path", moduleSrc.toString(),
                          "-processor", AP.class.getName(),
                          "-AexpectedEnclosedElements=m1=>impl1,m2=>impl2")
                 .outdir(classes)
@@ -289,6 +293,76 @@ public class AnnotationProcessing extends ModuleTestBase {
             ModuleElement modle = (ModuleElement) processingEnv.getElementUtils().getPackageOf(api).getEnclosingElement();
 
             assertNull("modle is not null", modle);
+
+            return false;
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
+        }
+
+    }
+
+    @Test
+    public void testQualifiedClassForProcessing(Path base) throws Exception {
+        Path moduleSrc = base.resolve("module-src");
+        Path m1 = moduleSrc.resolve("m1");
+        Path m2 = moduleSrc.resolve("m2");
+
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        tb.writeJavaFiles(m1,
+                          "module m1 { }",
+                          "package impl; public class Impl { int m1; }");
+
+        tb.writeJavaFiles(m2,
+                          "module m2 { }",
+                          "package impl; public class Impl { int m2; }");
+
+        new JavacTask(tb)
+            .options("--module-source-path", moduleSrc.toString())
+            .outdir(classes)
+            .files(findJavaFiles(moduleSrc))
+            .run()
+            .writeAll()
+            .getOutput(Task.OutputKind.DIRECT);
+
+        List<String> expected = Arrays.asList("Note: field: m1");
+
+        for (Mode mode : new Mode[] {Mode.API, Mode.CMDLINE}) {
+            List<String> log = new JavacTask(tb, mode)
+                    .options("-processor", QualifiedClassForProcessing.class.getName(),
+                             "--module-path", classes.toString())
+                    .classes("m1/impl.Impl")
+                    .outdir(classes)
+                    .run()
+                    .writeAll()
+                    .getOutputLines(Task.OutputKind.DIRECT);
+
+            if (!expected.equals(log))
+                throw new AssertionError("Unexpected output: " + log);
+        }
+    }
+
+    @SupportedAnnotationTypes("*")
+    public static final class QualifiedClassForProcessing extends AbstractProcessor {
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            if (processingEnv.getElementUtils().getModuleElement("m1") == null) {
+                throw new AssertionError("No m1 module found.");
+            }
+
+            Messager messager = processingEnv.getMessager();
+
+            for (TypeElement clazz : ElementFilter.typesIn(roundEnv.getRootElements())) {
+                for (VariableElement field : ElementFilter.fieldsIn(clazz.getEnclosedElements())) {
+                    messager.printMessage(Kind.NOTE, "field: " + field.getSimpleName());
+                }
+            }
 
             return false;
         }

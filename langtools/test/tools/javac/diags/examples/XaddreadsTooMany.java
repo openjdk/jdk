@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.xaddreads.too.many
-// options: -XaddReads:jdk.compiler=ALL-UNNAMED  -XaddReads:jdk.compiler=ALL-UNNAMED
+// options: --add-reads jdk.compiler=ALL-UNNAMED  --add-reads jdk.compiler=ALL-UNNAMED
 
 public class XaddreadsTooMany {
 }

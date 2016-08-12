@@ -102,8 +102,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param nextModule   Next module in the sorted array.
      */
     public ModuleWriterImpl(ConfigurationImpl configuration,
-            ModuleElement mdle, ModuleElement prevModule, ModuleElement nextModule)
-            throws IOException {
+            ModuleElement mdle, ModuleElement prevModule, ModuleElement nextModule) {
         super(configuration, DocPaths.moduleSummary(mdle));
         this.prevModule = prevModule;
         this.nextModule = nextModule;
@@ -129,8 +128,8 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.header);
         Content tHeading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
-                HtmlStyle.title, moduleLabel);
-        tHeading.addContent(getSpace());
+                HtmlStyle.title, contents.moduleLabel);
+        tHeading.addContent(Contents.SPACE);
         Content moduleHead = new RawHtml(heading);
         tHeading.addContent(moduleHead);
         div.addContent(tHeading);
@@ -262,7 +261,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             HtmlTree li = new HtmlTree(HtmlTag.LI);
             li.addStyle(HtmlStyle.blockList);
             addSummaryHeader(HtmlConstants.START_OF_MODULES_SUMMARY, SectionName.MODULES,
-                    getResource("doclet.navModules"), li);
+                    contents.navModules, li);
             String text = configuration.getText("doclet.Requires_Summary");
             String tableSummary = configuration.getText("doclet.Member_Table_Summary",
                     configuration.getText("doclet.Requires_Summary"),
@@ -315,7 +314,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             HtmlTree li = new HtmlTree(HtmlTag.LI);
             li.addStyle(HtmlStyle.blockList);
             addSummaryHeader(HtmlConstants.START_OF_PACKAGES_SUMMARY, SectionName.PACKAGES,
-                    getResource("doclet.navPackages"), li);
+                    contents.navPackages, li);
             String text = configuration.getText("doclet.Exported_Packages_Summary");
             String tableSummary = configuration.getText("doclet.Member_Table_Summary",
                     configuration.getText("doclet.Exported_Packages_Summary"),
@@ -385,7 +384,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             HtmlTree li = new HtmlTree(HtmlTag.LI);
             li.addStyle(HtmlStyle.blockList);
             addSummaryHeader(HtmlConstants.START_OF_SERVICES_SUMMARY, SectionName.SERVICES,
-                    getResource("doclet.navServices"), li);
+                    contents.navServices, li);
             String text;
             String tableSummary;
             if (usesDirs != null && !usesDirs.isEmpty()) {
@@ -468,9 +467,9 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         HtmlTree tdType = HtmlTree.TD(HtmlStyle.colFirst, srvLinkContent);
         tdType.addContent(new HtmlTree(HtmlTag.BR));
         tdType.addContent("(");
-        HtmlTree implSpan = HtmlTree.SPAN(HtmlStyle.implementationLabel, getResource("doclet.Implementation"));
+        HtmlTree implSpan = HtmlTree.SPAN(HtmlStyle.implementationLabel, contents.implementation);
         tdType.addContent(implSpan);
-        tdType.addContent(getSpace());
+        tdType.addContent(Contents.SPACE);
         tdType.addContent(implLinkContent);
         tdType.addContent(")");
         HtmlTree tdDesc = new HtmlTree(HtmlTag.TD);
@@ -530,25 +529,25 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @return the content tree for the navigation summary links
      */
     protected Content getNavSummaryLinks() throws Exception {
-        Content li = HtmlTree.LI(moduleSubNavLabel);
-        li.addContent(getSpace());
+        Content li = HtmlTree.LI(contents.moduleSubNavLabel);
+        li.addContent(Contents.SPACE);
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
         Content liNav = new HtmlTree(HtmlTag.LI);
         liNav.addContent(!utils.getBody(mdle).isEmpty() && !configuration.nocomment
-                ? getHyperLink(SectionName.MODULE_DESCRIPTION, getResource("doclet.navModuleDescription"))
-                : getResource("doclet.navModuleDescription"));
+                ? getHyperLink(SectionName.MODULE_DESCRIPTION, contents.navModuleDescription)
+                : contents.navModuleDescription);
         addNavGap(liNav);
         liNav.addContent(showDirectives(DirectiveKind.REQUIRES)
-                ? getHyperLink(SectionName.MODULES, getResource("doclet.navModules"))
-                : getResource("doclet.navModules"));
+                ? getHyperLink(SectionName.MODULES, contents.navModules)
+                : contents.navModules);
         addNavGap(liNav);
         liNav.addContent(showDirectives(DirectiveKind.EXPORTS)
-                ? getHyperLink(SectionName.PACKAGES, getResource("doclet.navPackages"))
-                : getResource("doclet.navPackages"));
+                ? getHyperLink(SectionName.PACKAGES, contents.navPackages)
+                : contents.navPackages);
         addNavGap(liNav);
         liNav.addContent((showDirectives(DirectiveKind.USES) || showDirectives(DirectiveKind.PROVIDES))
-                ? getHyperLink(SectionName.SERVICES, getResource("doclet.navServices"))
-                : getResource("doclet.navServices"));
+                ? getHyperLink(SectionName.SERVICES, contents.navServices)
+                : contents.navServices);
         ulNav.addContent(liNav);
         return ulNav;
     }
@@ -609,7 +608,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             deprs = utils.getDeprecatedTrees(pkg);
             HtmlTree deprDiv = new HtmlTree(HtmlTag.DIV);
             deprDiv.addStyle(HtmlStyle.deprecatedContent);
-            Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
+            Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, contents.deprecatedPhrase);
             deprDiv.addContent(deprPhrase);
             if (!deprs.isEmpty()) {
                 CommentHelper ch = utils.getCommentHelper(pkg);
@@ -629,7 +628,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      */
     @Override
     protected Content getNavLinkModule() {
-        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, moduleLabel);
+        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.moduleLabel);
         return li;
     }
 
@@ -641,10 +640,10 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     public Content getNavLinkPrevious() {
         Content li;
         if (prevModule == null) {
-            li = HtmlTree.LI(prevmoduleLabel);
+            li = HtmlTree.LI(contents.prevModuleLabel);
         } else {
             li = HtmlTree.LI(getHyperLink(pathToRoot.resolve(DocPaths.moduleSummary(
-                    prevModule)), prevmoduleLabel, "", ""));
+                    prevModule)), contents.prevModuleLabel, "", ""));
         }
         return li;
     }
@@ -657,10 +656,10 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     public Content getNavLinkNext() {
         Content li;
         if (nextModule == null) {
-            li = HtmlTree.LI(nextmoduleLabel);
+            li = HtmlTree.LI(contents.nextModuleLabel);
         } else {
             li = HtmlTree.LI(getHyperLink(pathToRoot.resolve(DocPaths.moduleSummary(
-                    nextModule)), nextmoduleLabel, "", ""));
+                    nextModule)), contents.nextModuleLabel, "", ""));
         }
         return li;
     }

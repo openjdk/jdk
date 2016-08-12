@@ -25,8 +25,6 @@
 
 package java.lang.invoke;
 
-import jdk.internal.misc.JavaLangInvokeAccess;
-import jdk.internal.misc.SharedSecrets;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyAccess;
 
@@ -37,7 +35,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Module;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -81,7 +78,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
     private int      flags;       // modifier bits; see reflect.Modifier
     //@Injected JVM_Method* vmtarget;
     //@Injected int         vmindex;
-    private Object   resolution;  // if null, this guy is resolved
+    Object   resolution;  // if null, this guy is resolved
 
     /** Return the declaring class of this member.
      *  In the case of a bare name and type, the declaring class will be null.
@@ -829,7 +826,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
         return resolution == null;
     }
 
-    private void initResolved(boolean isResolved) {
+    void initResolved(boolean isResolved) {
         assert(this.resolution == null);  // not initialized yet!
         if (!isResolved)
             this.resolution = this;
@@ -1002,7 +999,9 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
                     Collections.addAll(result, buf0);
                 }
             }
-            result.addAll(Arrays.asList(buf).subList(0, bufCount));
+            for (int i = 0; i < bufCount; i++) {
+                result.add(buf[i]);
+            }
             // Signature matching is not the same as type matching, since
             // one signature might correspond to several types.
             // So if matchType is a Class or MethodType, refilter the results.
@@ -1149,28 +1148,5 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
                 buf[i] = new MemberName();
             return buf;
         }
-    }
-
-    static {
-        // StackFrameInfo stores Member and this provides the shared secrets
-        // for stack walker to access MemberName information.
-        SharedSecrets.setJavaLangInvokeAccess(new JavaLangInvokeAccess() {
-            @Override
-            public Object newMemberName() {
-                return new MemberName();
-            }
-
-            @Override
-            public String getName(Object mname) {
-                MemberName memberName = (MemberName)mname;
-                return memberName.getName();
-            }
-
-            @Override
-            public boolean isNative(Object mname) {
-                MemberName memberName = (MemberName)mname;
-                return memberName.isNative();
-            }
-        });
     }
 }

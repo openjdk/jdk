@@ -33,13 +33,9 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.SimpleElementVisitor9;
 
 import com.sun.source.doctree.DocTree;
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
@@ -48,6 +44,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.taglets.DeprecatedTaglet;
 import jdk.javadoc.internal.doclets.toolkit.util.MethodTypes;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
@@ -73,6 +70,9 @@ public abstract class AbstractMemberWriter {
     protected final ConfigurationImpl configuration;
     protected final Utils utils;
     protected final SubWriterHolderWriter writer;
+    protected final Contents contents;
+    protected final Resources resources;
+
     protected final TypeElement typeElement;
     protected Map<String, Integer> typeMap = new LinkedHashMap<>();
     protected Set<MethodTypes> methodTypes = EnumSet.noneOf(MethodTypes.class);
@@ -86,7 +86,9 @@ public abstract class AbstractMemberWriter {
         this.writer = writer;
         this.nodepr = configuration.nodeprecated;
         this.typeElement = typeElement;
-        this.utils = writer.configuration.utils;
+        this.utils = configuration.utils;
+        this.contents = configuration.contents;
+        this.resources = configuration.resources;
     }
 
     public AbstractMemberWriter(SubWriterHolderWriter writer) {
@@ -258,7 +260,7 @@ public abstract class AbstractMemberWriter {
         if (!set.isEmpty()) {
             String mods = set.stream().map(m -> m.toString()).collect(Collectors.joining(" "));
             htmltree.addContent(mods);
-            htmltree.addContent(writer.getSpace());
+            htmltree.addContent(Contents.SPACE);
         }
     }
 
@@ -286,7 +288,7 @@ public abstract class AbstractMemberWriter {
         addModifier(member, code);
         if (type == null) {
             code.addContent(utils.isClass(member) ? "class" : "interface");
-            code.addContent(writer.getSpace());
+            code.addContent(Contents.SPACE);
         } else {
             List<? extends TypeParameterElement> list = utils.isExecutableElement(member)
                     ? ((ExecutableElement)member).getTypeParameters()
@@ -299,7 +301,7 @@ public abstract class AbstractMemberWriter {
                 if (typeParameters.charCount() > 10) {
                     code.addContent(new HtmlTree(HtmlTag.BR));
                 } else {
-                    code.addContent(writer.getSpace());
+                    code.addContent(Contents.SPACE);
                 }
                 code.addContent(
                         writer.getLink(new LinkInfoImpl(configuration,
@@ -394,6 +396,7 @@ public abstract class AbstractMemberWriter {
     * @param ped The <code>ProgramElement</code> being checked.
     * return true if the <code>ProgramElement</code> is being inherited and
     * false otherwise.
+     *@return true if inherited
     */
     protected boolean isInherited(Element ped){
         return (!utils.isPrivate(ped) &&
@@ -413,7 +416,7 @@ public abstract class AbstractMemberWriter {
     protected void addDeprecatedAPI(Collection<Element> deprmembers, String headingKey,
             String tableSummary, List<String> tableHeader, Content contentTree) {
         if (deprmembers.size() > 0) {
-            Content caption = writer.getTableCaption(configuration.getResource(headingKey));
+            Content caption = writer.getTableCaption(configuration.getContent(headingKey));
             Content table = (configuration.isOutputHtml5())
                     ? HtmlTree.TABLE(HtmlStyle.deprecatedSummary, caption)
                     : HtmlTree.TABLE(HtmlStyle.deprecatedSummary, tableSummary, caption);
@@ -536,7 +539,7 @@ public abstract class AbstractMemberWriter {
 
     protected void serialWarning(Element e, String key, String a1, String a2) {
         if (configuration.serialwarn) {
-            configuration.getDocletSpecificMsg().warning(e, key, a1, a2);
+            configuration.messages.warning(e, key, a1, a2);
         }
     }
 

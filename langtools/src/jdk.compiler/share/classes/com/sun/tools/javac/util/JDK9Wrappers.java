@@ -252,4 +252,40 @@ public class JDK9Wrappers {
             }
         }
     }
+
+
+    /**
+     * Helper class for new method in jdk.internal.misc.VM.
+     */
+    public static final class VMHelper {
+        public static final String VM_CLASSNAME = "jdk.internal.misc.VM";
+
+        @SuppressWarnings("unchecked")
+        public static String[] getRuntimeArguments() {
+            try {
+                init();
+                Object result = getRuntimeArgumentsMethod.invoke(null);
+                return (String[])result;
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
+                    | SecurityException ex) {
+                throw new Abort(ex);
+            }
+        }
+
+        // -----------------------------------------------------------------------------------------
+
+        private static Class<?> vmClass = null;
+        private static Method getRuntimeArgumentsMethod = null;
+
+        private static void init() {
+            if (vmClass == null) {
+                try {
+                    vmClass = Class.forName(VM_CLASSNAME, false, null);
+                    getRuntimeArgumentsMethod = vmClass.getDeclaredMethod("getRuntimeArguments");
+                } catch (ClassNotFoundException | NoSuchMethodException | SecurityException ex) {
+                    throw new Abort(ex);
+                }
+            }
+        }
+    }
 }

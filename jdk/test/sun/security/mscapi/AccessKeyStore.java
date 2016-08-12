@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,12 @@
  */
 
 /**
- * @see AccessKeyStore.sh
+ * @test
+ * @bug 6324295 6931562 8154113
+ * @modules jdk.crypto.mscapi
+ * @run main/othervm/java.security.policy==access.policy AccessKeyStore pass
+ * @run main/othervm/java.security.policy==noaccess.policy AccessKeyStore fail
+ * @summary Confirm that right permissions are granted to access keystores.
  */
 
 import java.security.Provider;
@@ -36,13 +41,16 @@ public class AccessKeyStore {
 
     public static void main(String[] args) throws Exception {
 
-        // Check that a security manager has been installed
+        // Check for security manager and required arg(s)
         if (System.getSecurityManager() == null) {
-            throw new Exception("A security manager has not been installed");
+            throw new Exception("Missing security manager");
         }
+        if (args.length <= 0) {
+            throw new Exception("Missing expected test status");
+        }
+        boolean shouldPass = args[0].equalsIgnoreCase("pass");
 
         Provider p = Security.getProvider("SunMSCAPI");
-
         System.out.println("SunMSCAPI provider classname is " +
             p.getClass().getName());
 
@@ -56,18 +64,14 @@ public class AccessKeyStore {
          *     SecurityPermission("authProvider.SunMSCAPI")
          */
         try {
-
             keyStore.load(null, null);
-
-            if (args.length > 0 && "-deny".equals(args[0])) {
+            if (!shouldPass) {
                 throw new Exception(
                     "Expected KeyStore.load to throw a SecurityException");
             }
-
         } catch (SecurityException se) {
-
-            if (args.length > 0 && "-deny".equals(args[0])) {
-                System.out.println("Caught the expected exception: " + se);
+            if (!shouldPass) {
+                System.out.println("Expected exception thrown: " + se);
                 return;
             } else {
                 throw se;

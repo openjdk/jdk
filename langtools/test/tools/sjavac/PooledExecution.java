@@ -25,11 +25,13 @@
  * @test
  * @bug 8044131
  * @summary Makes sure sjavac poolsize option is honored.
- * @modules jdk.compiler/com.sun.tools.sjavac.comp
+ * @modules jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.sjavac.comp
  *          jdk.compiler/com.sun.tools.sjavac.server
  * @build Wrapper
  * @run main Wrapper PooledExecution
  */
+
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 

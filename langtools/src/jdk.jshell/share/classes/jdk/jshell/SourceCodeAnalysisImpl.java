@@ -27,6 +27,7 @@ package jdk.jshell;
 
 import jdk.jshell.SourceCodeAnalysis.Completeness;
 import com.sun.source.tree.AssignmentTree;
+import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ErroneousTree;
 import com.sun.source.tree.ExpressionTree;
@@ -39,6 +40,7 @@ import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Scope;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.Tree.Kind;
+import com.sun.source.tree.TypeParameterTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.SourcePositions;
@@ -91,6 +93,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -267,6 +270,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             case IMPORT:
                 codeWrap = proc.outerMap.wrapImport(Wrap.simpleWrap(code + "any.any"), null);
                 break;
+            case CLASS:
             case METHOD:
                 codeWrap = proc.outerMap.wrapInTrialClass(Wrap.classMemberWrap(code));
                 break;
@@ -380,10 +384,46 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                         addElements(membersOf(at, at.getElements().getPackageElement("").asType(), false), it.isStatic() ? STATIC_ONLY.and(accessibility) : accessibility, smartFilter, result);
                     }
                     break;
-                case ERRONEOUS:
-                case EMPTY_STATEMENT: {
+                case CLASS: {
+                    Predicate<Element> accept = accessibility.and(IS_TYPE);
+                    addScopeElements(at, scope, IDENTITY, accept, smartFilter, result);
+                    addElements(primitivesOrVoid(at), TRUE, smartFilter, result);
+                    break;
+                }
+                case BLOCK:
+                case EMPTY_STATEMENT:
+                case ERRONEOUS: {
                     boolean staticOnly = ReplResolve.isStatic(((JavacScope)scope).getEnv());
                     Predicate<Element> accept = accessibility.and(staticOnly ? STATIC_ONLY : TRUE);
+                    if (isClass(tp)) {
+                        ClassTree clazz = (ClassTree) tp.getParentPath().getLeaf();
+                        if (clazz.getExtendsClause() == tp.getLeaf()) {
+                            accept = accept.and(IS_TYPE);
+                            smartFilter = smartFilter.and(el -> el.getKind() == ElementKind.CLASS);
+                        } else {
+                            Predicate<Element> f = smartFilterFromList(at, tp, clazz.getImplementsClause(), tp.getLeaf());
+                            if (f != null) {
+                                accept = accept.and(IS_TYPE);
+                                smartFilter = f.and(el -> el.getKind() == ElementKind.INTERFACE);
+                            }
+                        }
+                    } else if (isTypeParameter(tp)) {
+                        TypeParameterTree tpt = (TypeParameterTree) tp.getParentPath().getLeaf();
+                        Predicate<Element> f = smartFilterFromList(at, tp, tpt.getBounds(), tp.getLeaf());
+                        if (f != null) {
+                            accept = accept.and(IS_TYPE);
+                            smartFilter = f;
+                            if (!tpt.getBounds().isEmpty() && tpt.getBounds().get(0) != tp.getLeaf()) {
+                                smartFilter = smartFilter.and(el -> el.getKind() == ElementKind.INTERFACE);
+                            }
+                        }
+                    } else if (isVariable(tp)) {
+                        VariableTree var = (VariableTree) tp.getParentPath().getLeaf();
+                        if (var.getType() == tp.getLeaf()) {
+                            accept = accept.and(IS_TYPE);
+                        }
+                    }
+
                     addScopeElements(at, scope, IDENTITY, accept, smartFilter, result);
 
                     Tree parent = tp.getParentPath().getLeaf();
@@ -411,6 +451,23 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
         anchor[0] = cursor;
         return result;
+    }
+
+    private static final Set<Kind> CLASS_KINDS = EnumSet.of(
+            Kind.ANNOTATION_TYPE, Kind.CLASS, Kind.ENUM, Kind.INTERFACE
+    );
+
+    private Predicate<Element> smartFilterFromList(AnalyzeTask at, TreePath base, Collection<? extends Tree> types, Tree current) {
+        Set<Element> existingEls = new HashSet<>();
+
+        for (Tree type : types) {
+            if (type == current) {
+                return el -> !existingEls.contains(el);
+            }
+            existingEls.add(at.trees().getElement(new TreePath(base, type)));
+        }
+
+        return null;
     }
 
     @Override
@@ -516,6 +573,21 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 ((MethodTree)parent).getThrows().contains(tp.getLeaf());
     }
 
+    private boolean isClass(TreePath tp) {
+        return tp.getParentPath() != null &&
+               CLASS_KINDS.contains(tp.getParentPath().getLeaf().getKind());
+    }
+
+    private boolean isTypeParameter(TreePath tp) {
+        return tp.getParentPath() != null &&
+               tp.getParentPath().getLeaf().getKind() == Kind.TYPE_PARAMETER;
+    }
+
+    private boolean isVariable(TreePath tp) {
+        return tp.getParentPath() != null &&
+               tp.getParentPath().getLeaf().getKind() == Kind.VARIABLE;
+    }
+
     private ImportTree findImport(TreePath tp) {
         while (tp != null && tp.getLeaf().getKind() != Kind.IMPORT) {
             tp = tp.getParentPath();
@@ -550,6 +622,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     private final Predicate<Element> IS_PACKAGE = el -> el.getKind() == ElementKind.PACKAGE;
     private final Predicate<Element> IS_CLASS = el -> el.getKind().isClass();
     private final Predicate<Element> IS_INTERFACE = el -> el.getKind().isInterface();
+    private final Predicate<Element> IS_TYPE = IS_CLASS.or(IS_INTERFACE).or(el -> el.getKind() == ElementKind.TYPE_PARAMETER);
     private final Predicate<Element> IS_VOID = el -> el.asType().getKind() == TypeKind.VOID;
     private final Predicate<Element> STATIC_ONLY = el -> {
         ElementKind kind = el.getKind();
@@ -583,6 +656,11 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         for (Element c : elements) {
             if (!accept.test(c))
                 continue;
+            if (c.getKind() == ElementKind.METHOD &&
+                c.getSimpleName().contentEquals(Util.DOIT_METHOD_NAME) &&
+                ((ExecutableElement) c).getParameters().isEmpty()) {
+                continue;
+            }
             String simpleName = simpleName(c);
             if (c.getKind() == ElementKind.CONSTRUCTOR || c.getKind() == ElementKind.METHOD) {
                 simpleName += paren.apply(hasParams.contains(simpleName));
@@ -754,11 +832,23 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         };
         @SuppressWarnings("unchecked")
         List<Element> result = Util.stream(scopeIterable)
-                             .flatMap(s -> Util.stream((Iterable<Element>)s.getLocalElements()))
+                             .flatMap(s -> localElements(s))
                              .flatMap(el -> Util.stream((Iterable<Element>)elementConvertor.apply(el)))
                              .collect(toCollection(ArrayList :: new));
         result.addAll(listPackages(at, ""));
         return result;
+    }
+
+    private Stream<Element> localElements(Scope scope) {
+        @SuppressWarnings("unchecked")
+        Stream<Element> elements = Util.stream((Iterable<Element>)scope.getLocalElements());
+
+        if (scope.getEnclosingScope() != null &&
+            scope.getEnclosingClass() != scope.getEnclosingScope().getEnclosingClass()) {
+            elements = Stream.concat(elements, scope.getEnclosingClass().getEnclosedElements().stream());
+        }
+
+        return elements;
     }
 
     @SuppressWarnings("fallthrough")

@@ -27,7 +27,7 @@
  * @modules java.desktop java.compact1 jdk.compiler
  * @build LimitModsTest CompilerUtils jdk.testlibrary.*
  * @run testng LimitModsTest
- * @summary Basic tests for java -limitmods
+ * @summary Basic tests for java --limit-modules
  */
 
 import java.nio.file.Path;
@@ -66,13 +66,13 @@ public class LimitModsTest {
 
 
     /**
-     * Basic test of -limitmods to limit which platform modules are observable.
+     * Basic test of --limit-modules to limit which platform modules are observable.
      */
     public void testLimitingPlatformModules() throws Exception {
         int exitValue;
 
-        // java -limitmods java.base -listmods
-        exitValue = executeTestJava("-limitmods", "java.base", "-listmods")
+        // java --limit-modules java.base --list-modules
+        exitValue = executeTestJava("--limit-modules", "java.base", "--list-modules")
             .outputTo(System.out)
             .errorTo(System.out)
             .shouldContain("java.base")
@@ -83,8 +83,8 @@ public class LimitModsTest {
         assertTrue(exitValue == 0);
 
 
-        // java -limitmods java.compact1 -listmods
-        exitValue = executeTestJava("-limitmods", "java.compact1", "-listmods")
+        // java --limit-modules java.compact1 --list-modules
+        exitValue = executeTestJava("--limit-modules", "java.compact1", "--list-modules")
             .outputTo(System.out)
             .errorTo(System.out)
             .shouldContain("java.base")
@@ -98,15 +98,15 @@ public class LimitModsTest {
 
 
     /**
-     * Test -limitmods with -addmods
+     * Test --limit-modules with --add-modules
      */
     public void testWithAddMods() throws Exception {
         int exitValue;
 
-        // java -limitmods java.base -addmods java.logging -listmods
-        exitValue = executeTestJava("-limitmods", "java.base",
-                                    "-addmods", "java.logging",
-                                    "-listmods")
+        // java --limit-modules java.base --add-modules java.logging --list-modules
+        exitValue = executeTestJava("--limit-modules", "java.base",
+                                    "--add-modules", "java.logging",
+                                    "--list-modules")
             .outputTo(System.out)
             .errorTo(System.out)
             .shouldContain("java.base")
@@ -117,11 +117,11 @@ public class LimitModsTest {
         assertTrue(exitValue == 0);
 
 
-        // java -limitmods java.base -addmods java.sql -listmods
+        // java --limit-modules java.base --add-modules java.sql --list-modules
         // This should fail because java.sql has dependences beyond java.base
-        exitValue = executeTestJava("-limitmods", "java.base",
-                                    "-addmods", "java.sql",
-                                    "-listmods")
+        exitValue = executeTestJava("--limit-modules", "java.base",
+                                    "--add-modules", "java.sql",
+                                    "--list-modules")
             .outputTo(System.out)
             .errorTo(System.out)
             .getExitValue();
@@ -131,14 +131,14 @@ public class LimitModsTest {
 
 
     /**
-     * Run class path application with -limitmods
+     * Run class path application with --limit-modules
      */
     public void testUnnamedModule() throws Exception {
         String classpath = MODS_DIR.resolve(TEST_MODULE).toString();
 
-        // java -limitmods java.base -cp mods/$TESTMODULE ...
+        // java --limit-modules java.base -cp mods/$TESTMODULE ...
         int exitValue1
-            = executeTestJava("-limitmods", "java.base",
+            = executeTestJava("--limit-modules", "java.base",
                               "-cp", classpath,
                               MAIN_CLASS)
                 .outputTo(System.out)
@@ -149,9 +149,9 @@ public class LimitModsTest {
         assertTrue(exitValue1 != 0);
 
 
-        // java -limitmods java.base -cp mods/$TESTMODULE ...
+        // java --limit-modules java.base -cp mods/$TESTMODULE ...
         int exitValue2
-            = executeTestJava("-limitmods", "java.desktop",
+            = executeTestJava("--limit-modules", "java.desktop",
                               "-cp", classpath,
                              MAIN_CLASS)
                 .outputTo(System.out)
@@ -163,16 +163,16 @@ public class LimitModsTest {
 
 
     /**
-     * Run named module with -limitmods
+     * Run named module with --limit-modules
      */
     public void testNamedModule() throws Exception {
 
         String modulepath = MODS_DIR.toString();
         String mid = TEST_MODULE + "/" + MAIN_CLASS;
 
-        // java -limitmods java.base -mp mods -m $TESTMODULE/$MAINCLASS
-        int exitValue = executeTestJava("-limitmods", "java.base",
-                                        "-mp", modulepath,
+        // java --limit-modules java.base --module-path mods -m $TESTMODULE/$MAINCLASS
+        int exitValue = executeTestJava("--limit-modules", "java.base",
+                                        "--module-path", modulepath,
                                         "-m", mid)
                 .outputTo(System.out)
                 .errorTo(System.out)
@@ -180,9 +180,9 @@ public class LimitModsTest {
 
         assertTrue(exitValue != 0);
 
-        // java -limitmods java.desktop -mp mods -m $TESTMODULE/$MAINCLASS
-        exitValue = executeTestJava("-limitmods", "java.desktop",
-                                    "-mp", modulepath,
+        // java --limit-modules java.desktop --module-path mods -m $TESTMODULE/$MAINCLASS
+        exitValue = executeTestJava("--limit-modules", "java.desktop",
+                                    "--module-path", modulepath,
                                     "-m", mid)
                 .outputTo(System.out)
                 .errorTo(System.out)

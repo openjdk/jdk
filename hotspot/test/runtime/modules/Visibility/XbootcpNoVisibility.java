@@ -50,7 +50,7 @@ public class XbootcpNoVisibility {
                         // Try loading a class within a named package in a module which has been defined
                         // to the boot loader. In this situation, the class should only be attempted
                         // to be loaded from the boot loader's module path which consists of:
-                        //   [-Xpatch]; exploded build | "modules" jimage
+                        //   [--patch-module]; exploded build | "modules" jimage
                         //
                         // Since the class is located on the boot loader's append path via
                         // -Xbootclasspath/a specification, it should not be found.

@@ -39,6 +39,7 @@ import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 
 /**
  * A data structure that encapsulates the visible members of a particular
@@ -126,6 +127,7 @@ public class VisibleMemberMap {
      * The configuration this VisibleMemberMap was created with.
      */
     private final Configuration configuration;
+    private final Messages messages;
     private final Utils utils;
     private final Comparator<Element> comparator;
 
@@ -149,6 +151,7 @@ public class VisibleMemberMap {
         this.typeElement = typeElement;
         this.kind = kind;
         this.configuration = configuration;
+        this.messages = configuration.getMessages();
         this.utils = configuration.utils;
         propertiesCache = configuration.propertiesCache;
         classPropertiesMap = configuration.classPropertiesMap;
@@ -697,7 +700,7 @@ public class VisibleMemberMap {
                                 || tagName.equals("@propertyGetter")
                                 || tagName.equals("@propertyDescription")) {
                             if (!isPropertyGetterOrSetter(members, ee)) {
-                                configuration.message.warning(ch.getDocTreePath(tree),
+                                messages.warning(ch.getDocTreePath(tree),
                                         "doclet.javafx_tag_misuse");
                             }
                             break;
