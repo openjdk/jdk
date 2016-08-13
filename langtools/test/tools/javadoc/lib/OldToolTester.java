@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.*;
 import com.sun.javadoc.*;
 
 
-public class Tester {
+public class OldToolTester {
 
     protected final String TEST_SRC = System.getProperty("test.src", ".");
     protected final String TEST_CLASSES = System.getProperty("test.classes",
@@ -65,11 +65,11 @@ public class Tester {
     }
 
 
-    public Tester(String docletName) {
+    public OldToolTester(String docletName) {
         this(docletName, new String[0]);
     }
 
-    public Tester(String docletName, String... additionalArgs) {
+    public OldToolTester(String docletName, String... additionalArgs) {
         this.docletName = docletName;
 
         int len = DEFAULT_ARGS.length + additionalArgs.length;
