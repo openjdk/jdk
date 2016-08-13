@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import java.lang.annotation.*;
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * {@code Tester} is an abstract test-driver that provides the logic
+ * {@code JavapTester} is an abstract test-driver that provides the logic
  * to execute test-cases, grouped by test classes.
  * A test class is a main class extending this class, that instantiate
  * itself, and calls the {@link run} method, passing any command line
@@ -45,7 +45,7 @@ import java.lang.reflect.InvocationTargetException;
  * setting up a test-case template, and possibly overwrite default
  * test-driver behaviour.
  */
-public abstract class Tester {
+public abstract class JavapTester {
 
     private static boolean debug = false;
     private static final PrintStream out = System.err;
@@ -95,7 +95,7 @@ public abstract class Tester {
                 }
                 out.println("TestCase: " + clname);
                 cases++;
-                Tester tc = (Tester) tclass.getConstructor().newInstance();
+                JavapTester tc = (JavapTester) tclass.getConstructor().newInstance();
                 if (tc.errors > 0) {
                     error("" + tc.errors + " test points failed in " + clname);
                     errors += tc.errors - 1;
@@ -120,7 +120,7 @@ public abstract class Tester {
 
     /**
      * Test-cases must be marked with the {@code TestCase} annotation,
-     * as well as extend {@code Tester} (or an driver extension
+     * as well as extend {@code JavapTester} (or an driver extension
      * specified as the first argument to the {@code main()} method.
      */
     @Retention(RetentionPolicy.RUNTIME)
@@ -135,7 +135,7 @@ public abstract class Tester {
     @interface ignore { }
 
     /**
-     * Test-cases are classes extending {@code Tester}, and
+     * Test-cases are classes extending {@code JavapTester}, and
      * calling {@link setSrc}, followed by one or more invocations
      * of {@link verify} in the body of the constructor.
      * <p>
@@ -144,7 +144,7 @@ public abstract class Tester {
      * Subclasses will typically call {@code setSrc(TestSource)}
      * to setup a useful test-case template.
      */
-    public Tester() {
+    public JavapTester() {
         this.testCase = this.getClass().getName();
         src = new TestSource("TESTCASE");
     }
@@ -152,7 +152,7 @@ public abstract class Tester {
     /**
      * Set the top-level source template.
      */
-    protected Tester setSrc(TestSource src) {
+    protected JavapTester setSrc(TestSource src) {
         this.src = src;
         return this;
     }
@@ -160,14 +160,14 @@ public abstract class Tester {
     /**
      * Convenience method for calling {@code innerSrc("TESTCASE", ...)}.
      */
-    protected Tester setSrc(String... lines) {
+    protected JavapTester setSrc(String... lines) {
         return innerSrc("TESTCASE", lines);
     }
 
     /**
      * Convenience method for calling {@code innerSrc(key, new TestSource(...))}.
      */
-    protected Tester innerSrc(String key, String... lines) {
+    protected JavapTester innerSrc(String key, String... lines) {
         return innerSrc(key, new TestSource(lines));
     }
 
@@ -175,7 +175,7 @@ public abstract class Tester {
      * Specialize the testcase template, setting replacement content
      * for the specified key.
      */
-    protected Tester innerSrc(String key, TestSource content) {
+    protected JavapTester innerSrc(String key, TestSource content) {
         if (src == null) {
             src = new TestSource(key);
         }

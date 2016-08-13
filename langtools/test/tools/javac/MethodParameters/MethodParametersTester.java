@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import java.util.List;
  * we wish to reuse the same test-cases, so both test are committed together,
  * under langtools. The tests, may be duplicated in the jdk repository.
  */
-public class Tester {
+public class MethodParametersTester {
 
     final static File classesdir = new File(System.getProperty("test.classes", "."));
 
@@ -92,10 +92,10 @@ public class Tester {
             throw new Error(file.getPath() + " not found");
         }
 
-        new Tester(testName, files, refFile).run();
+        new MethodParametersTester(testName, files, refFile).run();
     }
 
-    public Tester(String name, File[] files, File refFile) {
+    public MethodParametersTester(String name, File[] files, File refFile) {
         this.classname = name;
         this.files = files;
         this.refFile = refFile;
@@ -108,7 +108,7 @@ public class Tester {
             boolean compResult = false;
             try {
                 String vname = vclass.getName();
-                Constructor c = vclass.getConstructor(Tester.class);
+                Constructor c = vclass.getConstructor(MethodParametersTester.class);
 
                 info("\nRun " + vname + " for " + classname + "\n");
                 StringBuilder sb = new StringBuilder();
@@ -167,10 +167,10 @@ public class Tester {
     }
 
     abstract static  class Visitor {
-        Tester tester;
+        MethodParametersTester tester;
         File classesdir;
 
-        public Visitor(Tester tester) {
+        public Visitor(MethodParametersTester tester) {
             this.tester = tester;
         }
 
