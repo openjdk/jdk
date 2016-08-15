@@ -144,30 +144,16 @@ public abstract class SourceCodeAnalysis {
 
     /**
      * The result of {@code analyzeCompletion(String input)}.
-     * Describes the completeness and position of the first snippet in the given input.
+     * Describes the completeness of the first snippet in the given input.
      */
-    public static class CompletionInfo {
-
-        private final Completeness completeness;
-        private final int unitEndPos;
-        private final String source;
-        private final String remaining;
-
-        CompletionInfo(Completeness completeness, int unitEndPos, String source, String remaining) {
-            this.completeness = completeness;
-            this.unitEndPos = unitEndPos;
-            this.source = source;
-            this.remaining = remaining;
-        }
+    public interface CompletionInfo {
 
         /**
          * The analyzed completeness of the input.
          *
          * @return an enum describing the completeness of the input string.
          */
-        public Completeness completeness() {
-            return completeness;
-        }
+        Completeness completeness();
 
         /**
          * Input remaining after the complete part of the source.
@@ -175,9 +161,7 @@ public abstract class SourceCodeAnalysis {
          * @return the portion of the input string that remains after the
          * complete Snippet
          */
-        public String remaining() {
-            return remaining;
-        }
+        String remaining();
 
         /**
          * Source code for the first Snippet of code input. For example, first
@@ -186,18 +170,7 @@ public abstract class SourceCodeAnalysis {
          *
          * @return the source of the first encountered Snippet
          */
-        public String source() {
-            return source;
-        }
-
-        /**
-         * The end of the first Snippet of source.
-         *
-         * @return the position of the end of the first Snippet in the input.
-         */
-        public int unitEndPos() {
-            return unitEndPos;
-        }
+        String source();
     }
 
     /**
@@ -272,30 +245,14 @@ public abstract class SourceCodeAnalysis {
     /**
      * A candidate for continuation of the given user's input.
      */
-    public static class Suggestion {
-
-        private final String continuation;
-        private final boolean matchesType;
-
-        /**
-         * Create a {@code Suggestion} instance.
-         *
-         * @param continuation a candidate continuation of the user's input
-         * @param matchesType does the candidate match the target type
-         */
-        public Suggestion(String continuation, boolean matchesType) {
-            this.continuation = continuation;
-            this.matchesType = matchesType;
-        }
+    public interface Suggestion {
 
         /**
          * The candidate continuation of the given user's input.
          *
          * @return the continuation string
          */
-        public String continuation() {
-            return continuation;
-        }
+        String continuation();
 
         /**
          * Indicates whether input continuation matches the target type and is thus
@@ -305,9 +262,7 @@ public abstract class SourceCodeAnalysis {
          * @return {@code true} if this suggested continuation matches the
          * target type; otherwise {@code false}
          */
-        public boolean matchesType() {
-            return matchesType;
-        }
+        boolean matchesType();
     }
 
     /**
