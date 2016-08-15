@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 /**
@@ -134,6 +135,7 @@ public final class ModelIdentifier {
         this.variable = variable;
     }
 
+    @Override
     public int hashCode() {
         int hashcode = instance;
         if(object != null) hashcode |= object.hashCode();
@@ -141,6 +143,7 @@ public final class ModelIdentifier {
         return  hashcode;
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof ModelIdentifier))
             return false;
@@ -159,6 +162,7 @@ public final class ModelIdentifier {
         return true;
     }
 
+    @Override
     public String toString() {
         if (variable == null) {
             return object + "[" + instance + "]";

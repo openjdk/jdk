@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 /**
@@ -31,18 +32,17 @@ package com.sun.media.sound;
  */
 public interface SoftAudioProcessor {
 
-    public void globalParameterControlChange(int[] slothpath, long param,
-            long value);
+    void globalParameterControlChange(int[] slothpath, long param, long value);
 
-    public void init(float samplerate, float controlrate);
+    void init(float samplerate, float controlrate);
 
-    public void setInput(int pin, SoftAudioBuffer input);
+    void setInput(int pin, SoftAudioBuffer input);
 
-    public void setOutput(int pin, SoftAudioBuffer output);
+    void setOutput(int pin, SoftAudioBuffer output);
 
-    public void setMixMode(boolean mix);
+    void setMixMode(boolean mix);
 
-    public void processAudio();
+    void processAudio();
 
-    public void processControlLogic();
+    void processControlLogic();
 }

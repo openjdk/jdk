@@ -33,7 +33,6 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 
-
 /**
  * A-law encodes linear data, and decodes a-law data to linear data.
  *
@@ -52,7 +51,7 @@ public final class AlawCodec extends SunCodec {
                                              0x7FF, 0xFFF, 0x1FFF, 0x3FFF, 0x7FFF};
 
     /**
-     * Initializes the decode tables
+     * Initializes the decode tables.
      */
     static {
         for (int i=0;i<256;i++) {
@@ -83,10 +82,7 @@ public final class AlawCodec extends SunCodec {
         super(alawEncodings, alawEncodings);
     }
 
-    // NEW CODE
-
-    /**
-     */
+    @Override
     public AudioFormat.Encoding[] getTargetEncodings(AudioFormat sourceFormat){
 
         if( sourceFormat.getEncoding().equals( AudioFormat.Encoding.PCM_SIGNED )) {
@@ -117,8 +113,7 @@ public final class AlawCodec extends SunCodec {
         }
     }
 
-    /**
-     */
+    @Override
     public AudioFormat[] getTargetFormats(AudioFormat.Encoding targetEncoding, AudioFormat sourceFormat){
         Objects.requireNonNull(sourceFormat);
         if( (targetEncoding.equals( AudioFormat.Encoding.PCM_SIGNED ) && sourceFormat.getEncoding().equals( AudioFormat.Encoding.ALAW)) ||
@@ -129,8 +124,7 @@ public final class AlawCodec extends SunCodec {
             }
     }
 
-    /**
-     */
+    @Override
     public AudioInputStream getAudioInputStream(AudioFormat.Encoding targetEncoding, AudioInputStream sourceStream){
         AudioFormat sourceFormat = sourceStream.getFormat();
         AudioFormat.Encoding sourceEncoding = sourceFormat.getEncoding();
@@ -169,9 +163,7 @@ public final class AlawCodec extends SunCodec {
         return getConvertedStream(targetFormat, sourceStream);
     }
 
-    /**
-     * use old code...
-     */
+    @Override
     public AudioInputStream getAudioInputStream(AudioFormat targetFormat, AudioInputStream sourceStream){
         if (!isConversionSupported(targetFormat, sourceStream.getFormat()))
             throw new IllegalArgumentException("Unsupported conversion: "
@@ -179,10 +171,6 @@ public final class AlawCodec extends SunCodec {
                                                + targetFormat.toString());
         return getConvertedStream( targetFormat, sourceStream );
     }
-
-
-    // OLD CODE
-
 
     /**
      * Opens the codec with the specified parameters.
@@ -192,7 +180,6 @@ public final class AlawCodec extends SunCodec {
      * @throws IllegalArgumentException if the format combination supplied is
      * not supported.
      */
-    /*  public AudioInputStream getConvertedStream(AudioFormat outputFormat, AudioInputStream stream) { */
     private AudioInputStream getConvertedStream(AudioFormat outputFormat, AudioInputStream stream) {
 
         AudioInputStream cs = null;
@@ -201,7 +188,7 @@ public final class AlawCodec extends SunCodec {
         if( inputFormat.matches(outputFormat) ) {
             cs = stream;
         } else {
-            cs = (AudioInputStream) (new AlawCodecStream(stream, outputFormat));
+            cs = new AlawCodecStream(stream, outputFormat);
         }
 
         return cs;
@@ -214,7 +201,6 @@ public final class AlawCodec extends SunCodec {
      * returns an array of length 0.
      * @return array of supported output formats.
      */
-    /*  public AudioFormat[] getOutputFormats(AudioFormat inputFormat) { */
     private AudioFormat[] getOutputFormats(AudioFormat inputFormat) {
 
 
@@ -343,18 +329,20 @@ public final class AlawCodec extends SunCodec {
          * Note that this won't actually read anything; must read in
          * two-byte units.
          */
+        @Override
         public int read() throws IOException {
 
             byte[] b = new byte[1];
             return read(b, 0, b.length);
         }
 
-
+        @Override
         public int read(byte[] b) throws IOException {
 
             return read(b, 0, b.length);
         }
 
+        @Override
         public int read(byte[] b, int off, int len) throws IOException {
 
             // don't read fractional frames
