@@ -846,7 +846,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         }
     }
 
-    private static final Lookup LOOKUP = Lookup.IMPL_LOOKUP;
+    static final Lookup LOOKUP = Lookup.IMPL_LOOKUP;
 
     /**
      * All subclasses must provide such a value describing their type signature.
