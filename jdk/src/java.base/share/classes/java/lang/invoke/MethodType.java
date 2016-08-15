@@ -539,10 +539,10 @@ class MethodType implements java.io.Serializable {
             return res;
         } else {
             // insert after (if need be), then before
-            if (pos < parameterList().size() - 1) {
-                res = res.insertParameterTypes(arrayLength, parameterList().subList(pos + 1, parameterList().size()));
+            if (pos < ptypes.length - 1) {
+                res = res.insertParameterTypes(arrayLength, Arrays.copyOfRange(ptypes, pos + 1, ptypes.length));
             }
-            return res.insertParameterTypes(0, parameterList().subList(0, pos));
+            return res.insertParameterTypes(0, Arrays.copyOf(ptypes, pos));
         }
     }
 

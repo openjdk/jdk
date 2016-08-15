@@ -42,6 +42,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -278,23 +279,20 @@ class Main {
                     }
                 }
             }
+
             if (cflag) {
                 Manifest manifest = null;
-                InputStream in = null;
-
                 if (!Mflag) {
                     if (mname != null) {
-                        in = new FileInputStream(mname);
-                        manifest = new Manifest(new BufferedInputStream(in));
+                        try (InputStream in = new FileInputStream(mname)) {
+                            manifest = new Manifest(new BufferedInputStream(in));
+                        }
                     } else {
                         manifest = new Manifest();
                     }
                     addVersion(manifest);
                     addCreatedBy(manifest);
                     if (isAmbiguousMainClass(manifest)) {
-                        if (in != null) {
-                            in.close();
-                        }
                         return false;
                     }
                     if (ename != null) {
@@ -304,11 +302,13 @@ class Main {
                         addMultiRelease(manifest);
                     }
                 }
+
                 Map<String,Path> moduleInfoPaths = new HashMap<>();
                 for (int version : filesMap.keySet()) {
                     String[] files = filesMap.get(version);
                     expand(null, files, false, moduleInfoPaths, version);
                 }
+
                 Map<String,byte[]> moduleInfos = new LinkedHashMap<>();
                 if (!moduleInfoPaths.isEmpty()) {
                     if (!checkModuleInfos(moduleInfoPaths))
@@ -332,84 +332,61 @@ class Main {
                     return false;
                 }
 
-                OutputStream out;
-                if (fname != null) {
-                    out = new FileOutputStream(fname);
-                } else {
-                    out = new FileOutputStream(FileDescriptor.out);
-                    if (vflag) {
-                        // Disable verbose output so that it does not appear
-                        // on stdout along with file data
-                        // error("Warning: -v option ignored");
-                        vflag = false;
-                    }
+                if (vflag && fname == null) {
+                    // Disable verbose output so that it does not appear
+                    // on stdout along with file data
+                    // error("Warning: -v option ignored");
+                    vflag = false;
                 }
-                File tmpfile = null;
-                final OutputStream finalout = out;
+
                 final String tmpbase = (fname == null)
                         ? "tmpjar"
                         : fname.substring(fname.indexOf(File.separatorChar) + 1);
-                if (nflag) {
-                    tmpfile = createTemporaryFile(tmpbase, ".jar");
-                    out = new FileOutputStream(tmpfile);
-                }
-                create(new BufferedOutputStream(out, 4096), manifest, moduleInfos);
+                File tmpfile = createTemporaryFile(tmpbase, ".jar");
 
-                if (in != null) {
-                    in.close();
+                try (OutputStream out = new FileOutputStream(tmpfile)) {
+                    create(new BufferedOutputStream(out, 4096), manifest, moduleInfos);
                 }
-                out.close();
+
                 if (nflag) {
-                    JarFile jarFile = null;
-                    File packFile = null;
-                    JarOutputStream jos = null;
+                    File packFile = createTemporaryFile(tmpbase, ".pack");
                     try {
                         Packer packer = Pack200.newPacker();
                         Map<String, String> p = packer.properties();
                         p.put(Packer.EFFORT, "1"); // Minimal effort to conserve CPU
-                        jarFile = new JarFile(tmpfile.getCanonicalPath());
-                        packFile = createTemporaryFile(tmpbase, ".pack");
-                        out = new FileOutputStream(packFile);
-                        packer.pack(jarFile, out);
-                        jos = new JarOutputStream(finalout);
-                        Unpacker unpacker = Pack200.newUnpacker();
-                        unpacker.unpack(packFile, jos);
-                    } catch (IOException ioe) {
-                        fatalError(ioe);
-                    } finally {
-                        if (jarFile != null) {
-                            jarFile.close();
+                        try (
+                                JarFile jarFile = new JarFile(tmpfile.getCanonicalPath());
+                                OutputStream pack = new FileOutputStream(packFile)
+                        ) {
+                            packer.pack(jarFile, pack);
                         }
-                        if (out != null) {
-                            out.close();
-                        }
-                        if (jos != null) {
-                            jos.close();
-                        }
-                        if (tmpfile != null && tmpfile.exists()) {
+                        if (tmpfile.exists()) {
                             tmpfile.delete();
                         }
-                        if (packFile != null && packFile.exists()) {
-                            packFile.delete();
+                        tmpfile = createTemporaryFile(tmpbase, ".jar");
+                        try (
+                                OutputStream out = new FileOutputStream(tmpfile);
+                                JarOutputStream jos = new JarOutputStream(out)
+                        ) {
+                            Unpacker unpacker = Pack200.newUnpacker();
+                            unpacker.unpack(packFile, jos);
                         }
+                    } finally {
+                        Files.deleteIfExists(packFile.toPath());
                     }
                 }
+
+                validateAndClose(tmpfile);
+
             } else if (uflag) {
                 File inputFile = null, tmpFile = null;
-                FileInputStream in;
-                FileOutputStream out;
                 if (fname != null) {
                     inputFile = new File(fname);
                     tmpFile = createTempFileInSameDirectoryAs(inputFile);
-                    in = new FileInputStream(inputFile);
-                    out = new FileOutputStream(tmpFile);
                 } else {
-                    in = new FileInputStream(FileDescriptor.in);
-                    out = new FileOutputStream(FileDescriptor.out);
                     vflag = false;
+                    tmpFile = createTemporaryFile("tmpjar", ".jar");
                 }
-                InputStream manifest = (!Mflag && (mname != null)) ?
-                    (new FileInputStream(mname)) : null;
 
                 Map<String,Path> moduleInfoPaths = new HashMap<>();
                 for (int version : filesMap.keySet()) {
@@ -421,8 +398,19 @@ class Main {
                 for (Map.Entry<String,Path> e : moduleInfoPaths.entrySet())
                     moduleInfos.put(e.getKey(), readModuleInfo(e.getValue()));
 
-                boolean updateOk = update(in, new BufferedOutputStream(out),
-                                          manifest, moduleInfos, null);
+                try (
+                        FileInputStream in = (fname != null) ? new FileInputStream(inputFile)
+                                : new FileInputStream(FileDescriptor.in);
+                        FileOutputStream out = new FileOutputStream(tmpFile);
+                        InputStream manifest = (!Mflag && (mname != null)) ?
+                                (new FileInputStream(mname)) : null;
+                ) {
+                        boolean updateOk = update(in, new BufferedOutputStream(out),
+                                manifest, moduleInfos, null);
+                        if (ok) {
+                            ok = updateOk;
+                        }
+                }
 
                 // Consistency checks for modular jars.
                 if (!moduleInfos.isEmpty()) {
@@ -430,23 +418,8 @@ class Main {
                         return false;
                 }
 
-                if (ok) {
-                    ok = updateOk;
-                }
-                in.close();
-                out.close();
-                if (manifest != null) {
-                    manifest.close();
-                }
-                if (ok && fname != null) {
-                    // on Win32, we need this delete
-                    inputFile.delete();
-                    if (!tmpFile.renameTo(inputFile)) {
-                        tmpFile.delete();
-                        throw new IOException(getMsg("error.write.file"));
-                    }
-                    tmpFile.delete();
-                }
+                validateAndClose(tmpFile);
+
             } else if (tflag) {
                 replaceFSC(filesMap);
                 // For the "list table contents" action, access using the
@@ -520,6 +493,28 @@ class Main {
         return ok;
     }
 
+    private void validateAndClose(File tmpfile) throws IOException {
+        if (ok && isMultiRelease) {
+            ok = validate(tmpfile.getCanonicalPath());
+            if (!ok) {
+                error(formatMsg("error.validator.jarfile.invalid", fname));
+            }
+        }
+
+        Path path = tmpfile.toPath();
+        try {
+            if (ok) {
+                if (fname != null) {
+                    Files.move(path, Paths.get(fname), StandardCopyOption.REPLACE_EXISTING);
+                } else {
+                    Files.copy(path, new FileOutputStream(FileDescriptor.out));
+                }
+            }
+        } finally {
+            Files.deleteIfExists(path);
+        }
+    }
+
     private String[] filesMapToFiles(Map<Integer,String[]> filesMap) {
         if (filesMap.isEmpty()) return null;
         return filesMap.entrySet()
@@ -532,6 +527,76 @@ class Main {
         int version = fileEntries.getKey();
         return Stream.of(fileEntries.getValue())
                 .map(f -> (new EntryName(f, version)).entryName);
+    }
+
+    // sort base entries before versioned entries, and sort entry classes with
+    // nested classes so that the top level class appears before the associated
+    // nested class
+    private Comparator<JarEntry> entryComparator = (je1, je2) ->  {
+        String s1 = je1.getName();
+        String s2 = je2.getName();
+        if (s1.equals(s2)) return 0;
+        boolean b1 = s1.startsWith(VERSIONS_DIR);
+        boolean b2 = s2.startsWith(VERSIONS_DIR);
+        if (b1 && !b2) return 1;
+        if (!b1 && b2) return -1;
+        int n = 0; // starting char for String compare
+        if (b1 && b2) {
+            // normally strings would be sorted so "10" goes before "9", but
+            // version number strings need to be sorted numerically
+            n = VERSIONS_DIR.length();   // skip the common prefix
+            int i1 = s1.indexOf('/', n);
+            int i2 = s1.indexOf('/', n);
+            if (i1 == -1) throw new InvalidJarException(s1);
+            if (i2 == -1) throw new InvalidJarException(s2);
+            // shorter version numbers go first
+            if (i1 != i2) return i1 - i2;
+            // otherwise, handle equal length numbers below
+        }
+        int l1 = s1.length();
+        int l2 = s2.length();
+        int lim = Math.min(l1, l2);
+        for (int k = n; k < lim; k++) {
+            char c1 = s1.charAt(k);
+            char c2 = s2.charAt(k);
+            if (c1 != c2) {
+                // change natural ordering so '.' comes before '$'
+                // i.e. top level classes come before nested classes
+                if (c1 == '$' && c2 == '.') return 1;
+                if (c1 == '.' && c2 == '$') return -1;
+                return c1 - c2;
+            }
+        }
+        return l1 - l2;
+    };
+
+    private boolean validate(String fname) {
+        boolean valid;
+
+        try (JarFile jf = new JarFile(fname)) {
+            Validator validator = new Validator(this, jf);
+            jf.stream()
+                    .filter(e -> !e.isDirectory())
+                    .filter(e -> !e.getName().equals(MANIFEST_NAME))
+                    .filter(e -> !e.getName().endsWith(MODULE_INFO))
+                    .sorted(entryComparator)
+                    .forEachOrdered(validator);
+             valid = validator.isValid();
+        } catch (IOException e) {
+            error(formatMsg2("error.validator.jarfile.exception", fname, e.getMessage()));
+            valid = false;
+        } catch (InvalidJarException e) {
+            error(formatMsg("error.validator.bad.entry.name", e.getMessage()));
+            valid = false;
+        }
+        return valid;
+    }
+
+    private static class InvalidJarException extends RuntimeException {
+        private static final long serialVersionUID = -3642329147299217726L;
+        InvalidJarException(String msg) {
+            super(msg);
+        }
     }
 
     /**

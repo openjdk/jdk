@@ -74,7 +74,7 @@ public class OverlappingPackagesTest {
      */
     public void testNoOverlappingPackages() throws Exception {
         int exitValue
-            = executeTestJava("-mp", MODS_DIR.toString(),
+            = executeTestJava("--module-path", MODS_DIR.toString(),
                               "-m", "test/test.Main")
                 .outputTo(System.out)
                 .errorTo(System.err)
@@ -85,13 +85,13 @@ public class OverlappingPackagesTest {
 
 
     /**
-     * Run the test with "-addmods misc", the misc module has package
+     * Run the test with "--add-modules misc", the misc module has package
      * jdk.internal.misc and so should overlap with the base module.
      */
     public void testOverlapWithBaseModule() throws Exception {
         int exitValue
-            = executeTestJava("-mp", MODS_DIR.toString(),
-                              "-addmods", "misc",
+            = executeTestJava("--module-path", MODS_DIR.toString(),
+                              "-add-modules", "misc",
                               "-m", "test/test.Main")
                 .outputTo(System.out)
                 .errorTo(System.err)
@@ -101,12 +101,12 @@ public class OverlappingPackagesTest {
     }
 
     /**
-     * Run the test with "-addmods m1,m2". Both modules have package p.
+     * Run the test with "--add-modules m1,m2". Both modules have package p.
      */
     public void testOverlap() throws Exception {
         int exitValue
-            = executeTestJava("-mp", MODS_DIR.toString(),
-                              "-addmods", "m1,m2",
+            = executeTestJava("--module-path", MODS_DIR.toString(),
+                              "--add-modules", "m1,m2",
                               "-m", "test/test.Main")
                 .outputTo(System.out)
                 .errorTo(System.err)

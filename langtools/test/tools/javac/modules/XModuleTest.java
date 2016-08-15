@@ -112,7 +112,7 @@ public class XModuleTest extends ModuleTestBase {
         tb.createDirectories(classes);
 
         String log = new JavacTask(tb)
-                .options("-Xmodule:java.compiler", "-classpath", cpClasses.toString())
+                .options("-Xmodule:java.compiler", "--class-path", cpClasses.toString())
                 .outdir(classes)
                 .files(src.resolve("javax/lang/model/element/Extra.java"))
                 .run()
@@ -197,7 +197,7 @@ public class XModuleTest extends ModuleTestBase {
         tb.createDirectories(classes);
 
         List<String> log = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "-Xmodule:java.compiler", "-modulesourcepath", src.toString())
+                .options("-XDrawDiagnostics", "-Xmodule:java.compiler", "--module-source-path", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
@@ -229,7 +229,7 @@ public class XModuleTest extends ModuleTestBase {
 
         List<String> expected = Arrays.asList("javac: option -Xmodule: can only be specified once",
                                               "Usage: javac <options> <source files>",
-                                              "use -help for a list of possible options");
+                                              "use --help for a list of possible options");
 
         if (!expected.equals(log))
             throw new Exception("expected output not found: " + log);
@@ -247,7 +247,7 @@ public class XModuleTest extends ModuleTestBase {
         tb.writeJavaFiles(src, "package p; interface A extends pkg1.E { }");
 
         new JavacTask(tb, Task.Mode.CMDLINE)
-                .options("-modulepath", modules.toString(),
+                .options("--module-path", modules.toString(),
                         "-Xmodule:m1")
                 .files(findJavaFiles(src))
                 .run()
@@ -263,7 +263,7 @@ public class XModuleTest extends ModuleTestBase {
 
         List<String> log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulepath", modules.toString(),
+                        "--module-path", modules.toString(),
                         "-Xmodule:m1")
                 .files(findJavaFiles(src2))
                 .run(Task.Expect.FAIL)
@@ -295,8 +295,8 @@ public class XModuleTest extends ModuleTestBase {
         tb.writeJavaFiles(src, "package p; interface A extends pkg1.D { }");
 
         new JavacTask(tb, Task.Mode.CMDLINE)
-                .options("-modulepath", modules.toString(),
-                        "-upgrademodulepath", upgrade.toString(),
+                .options("--module-path", modules.toString(),
+                        "--upgrade-module-path", upgrade.toString(),
                         "-Xmodule:m1")
                 .files(findJavaFiles(src))
                 .run()

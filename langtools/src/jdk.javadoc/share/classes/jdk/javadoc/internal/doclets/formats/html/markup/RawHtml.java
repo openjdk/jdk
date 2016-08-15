@@ -44,7 +44,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
  */
 public class RawHtml extends Content {
 
-    private String rawHtmlContent;
+    private final String rawHtmlContent;
 
     public static final Content nbsp = new RawHtml("&nbsp;");
 

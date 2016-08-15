@@ -54,12 +54,12 @@ public class T8142931 extends AbstractProcessor {
         try (StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, null)) {
             Iterable<? extends JavaFileObject> files =
                 fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, T8142931.class.getName()+".java")));
-            Iterable<String> opts = Arrays.asList("-XaddExports:" +
-                                                  "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
-                                                  "-XDaccessInternalAPI",
-                                                  "-proc:only",
-                                                  "-processor", "T8142931",
-                                                  "-processorpath", testClasses);
+            Iterable<String> opts = Arrays.asList(
+                "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+                "-XDaccessInternalAPI",
+                "-proc:only",
+                "-processor", "T8142931",
+                "-processorpath", testClasses);
             StringWriter out = new StringWriter();
             JavacTask task = (JavacTask)tool.getTask(out, fm, dl, opts, null, files);
             task.call();

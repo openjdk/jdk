@@ -48,7 +48,6 @@ public class IncCompileFullyQualifiedRef extends SJavacTester {
 
     void test() throws Exception {
         clean(TEST_ROOT);
-        ToolBox tb = new ToolBox();
         tb.writeFile(GENSRC.resolve("alfa/omega/A.java"),
                      "package alfa.omega; public class A { "+
                      "  public final static int DEFINITION = 18; "+

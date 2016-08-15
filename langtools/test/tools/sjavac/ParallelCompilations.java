@@ -30,7 +30,6 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.sjavac
- *          jdk.jdeps/com.sun.tools.javap
  * @build Wrapper toolbox.ToolBox
  * @run main Wrapper ParallelCompilations
  */
@@ -45,8 +44,6 @@ class ParallelCompilations extends SJavacTester {
   }
 
   public void run() throws Exception {
-    ToolBox tb = new ToolBox();
-
     // Generate 10 files
     for (int i = 0; i < 10; i++) {
       String content = "package foo"+ i + ";\n" +

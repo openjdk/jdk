@@ -125,9 +125,4 @@ public interface AnnotationTypeRequiredMemberWriter {
      * @param annotationDocTree the content tree to which the tags will be added
      */
     public void addTags(Element member, Content annotationDocTree);
-
-    /**
-     * Close the writer.
-     */
-    public void close() throws IOException;
 }

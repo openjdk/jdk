@@ -32,5 +32,4 @@
  * {@code javax.tools.DocumentationTool}
  * for replacement functionality.
  */
-@Deprecated
 package com.sun.tools.javadoc;

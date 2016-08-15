@@ -28,7 +28,7 @@
  *          jdk.compiler
  * @build AddModsTest CompilerUtils jdk.testlibrary.*
  * @run testng AddModsTest
- * @summary Basic test for java -addmods
+ * @summary Basic test for java --add-modules
  */
 
 import java.nio.file.Path;
@@ -78,15 +78,15 @@ public class AddModsTest {
 
 
     /**
-     * Basic test of -addmods ALL-DEFAULT. Module java.sql should be
+     * Basic test of --add-modules ALL-DEFAULT. Module java.sql should be
      * resolved and the types in that module should be visible.
      */
     public void testAddDefaultModules1() throws Exception {
 
-        // java -addmods ALL-DEFAULT -mp mods1 -m test ...
+        // java --add-modules ALL-DEFAULT --module-path mods1 -m test ...
         int exitValue
-            = executeTestJava("-mp", MODS1_DIR.toString(),
-                              "-addmods", "ALL-DEFAULT",
+            = executeTestJava("--module-path", MODS1_DIR.toString(),
+                              "--add-modules", "ALL-DEFAULT",
                               "-m", TEST_MID,
                               "java.sql.Connection")
                 .outputTo(System.out)
@@ -97,16 +97,16 @@ public class AddModsTest {
     }
 
     /**
-     * Basic test of -addmods ALL-DEFAULT. Module java.annotations.common
+     * Basic test of --add-modules ALL-DEFAULT. Module java.annotations.common
      * should not resolved and so the types in that module should not be
      * visible.
      */
     public void testAddDefaultModules2() throws Exception {
 
-        // java -addmods ALL-DEFAULT -mp mods1 -m test ...
+        // java --add-modules ALL-DEFAULT --module-path mods1 -m test ...
         int exitValue
-            = executeTestJava("-mp", MODS1_DIR.toString(),
-                              "-addmods", "ALL-DEFAULT",
+            = executeTestJava("--module-path", MODS1_DIR.toString(),
+                              "--add-modules", "ALL-DEFAULT",
                               "-m", TEST_MID,
                               "javax.annotation.Generated")
                 .outputTo(System.out)
@@ -118,15 +118,15 @@ public class AddModsTest {
     }
 
     /**
-     * Basic test of -addmods ALL-SYSTEM. All system modules should be resolved
+     * Basic test of --add-modules ALL-SYSTEM. All system modules should be resolved
      * and thus all types in those modules should be visible.
      */
     public void testAddSystemModules() throws Exception {
 
-        // java -addmods ALL-SYSTEM -mp mods1 -m test ...
+        // java --add-modules ALL-SYSTEM --module-path mods1 -m test ...
         int exitValue
-            = executeTestJava("-mp", MODS1_DIR.toString(),
-                              "-addmods", "ALL-SYSTEM",
+            = executeTestJava("--module-path", MODS1_DIR.toString(),
+                              "--add-modules", "ALL-SYSTEM",
                               "-m", TEST_MID,
                               "java.sql.Connection",
                               "javax.annotation.Generated")
@@ -140,16 +140,16 @@ public class AddModsTest {
 
     /**
      * Run test on class path to load a type in a module on the application
-     * module path, uses {@code -addmods logger}.
+     * module path, uses {@code --add-modules logger}.
      */
     public void testRunWithAddMods() throws Exception {
 
-        // java -mp mods -addmods logger -cp classes test.Main
+        // java --module-path mods --add-modules logger -cp classes test.Main
         String classpath = MODS1_DIR.resolve(TEST_MODULE).toString();
         String modulepath = MODS2_DIR.toString();
         int exitValue
-            = executeTestJava("-mp", modulepath,
-                              "-addmods", LOGGER_MODULE,
+            = executeTestJava("--module-path", modulepath,
+                              "--add-modules", LOGGER_MODULE,
                               "-cp", classpath,
                               TEST_MAIN_CLASS,
                               "logger.Logger")
@@ -162,16 +162,16 @@ public class AddModsTest {
 
      /**
       * Run application on class path that makes use of module on the
-      * application module path. Does not use -addmods and so should
+      * application module path. Does not use --add-modules and so should
       * fail at run-time.
       */
      public void testRunMissingAddMods() throws Exception {
 
-         // java -mp mods -cp classes test.Main
+         // java --module-path mods -cp classes test.Main
          String classpath = MODS1_DIR.resolve(TEST_MODULE).toString();
          String modulepath = MODS1_DIR.toString();
          int exitValue
-             = executeTestJava("-mp", modulepath,
+             = executeTestJava("--module-path", modulepath,
                                "-cp", classpath,
                                TEST_MAIN_CLASS,
                                "logger.Logger")
@@ -186,16 +186,16 @@ public class AddModsTest {
 
     /**
      * Run test on class path to load a type in a module on the application
-     * module path, uses {@code -addmods ALL-MODULE-PATH}.
+     * module path, uses {@code --add-modules ALL-MODULE-PATH}.
      */
     public void testAddAllModulePath() throws Exception {
 
-        // java -mp mods -addmods ALL-MODULE-PATH -cp classes test.Main
+        // java --module-path mods --add-modules ALL-MODULE-PATH -cp classes test.Main
         String classpath = MODS1_DIR.resolve(TEST_MODULE).toString();
         String modulepath = MODS1_DIR.toString();
         int exitValue
-            = executeTestJava("-mp", modulepath,
-                              "-addmods", "ALL-MODULE-PATH",
+            = executeTestJava("--module-path", modulepath,
+                              "--add-modules", "ALL-MODULE-PATH",
                               "-cp", classpath,
                               TEST_MAIN_CLASS)
                 .outputTo(System.out)
@@ -207,13 +207,13 @@ public class AddModsTest {
 
 
     /**
-     * Test {@code -addmods ALL-MODULE-PATH} without {@code -modulepath}.
+     * Test {@code --add-modules ALL-MODULE-PATH} without {@code --module-path}.
      */
     public void testAddAllModulePathWithNoModulePath() throws Exception {
 
-        // java -addmods ALL-MODULE-PATH -version
+        // java --add-modules ALL-MODULE-PATH -version
         int exitValue
-            = executeTestJava("-addmods", "ALL-MODULE-PATH",
+            = executeTestJava("--add-modules", "ALL-MODULE-PATH",
                               "-version")
                 .outputTo(System.out)
                 .errorTo(System.out)
@@ -224,14 +224,14 @@ public class AddModsTest {
 
 
     /**
-     * Attempt to run with a bad module name specified to -addmods
+     * Attempt to run with a bad module name specified to --add-modules
      */
     public void testRunWithBadAddMods() throws Exception {
 
-        // java -mp mods -addmods DoesNotExist -m test ...
+        // java --module-path mods --add-modules DoesNotExist -m test ...
         int exitValue
-            = executeTestJava("-mp", MODS1_DIR.toString(),
-                              "-addmods", "DoesNotExist",
+            = executeTestJava("--module-path", MODS1_DIR.toString(),
+                              "--add-modules", "DoesNotExist",
                               "-m", TEST_MID)
                 .outputTo(System.out)
                 .errorTo(System.out)

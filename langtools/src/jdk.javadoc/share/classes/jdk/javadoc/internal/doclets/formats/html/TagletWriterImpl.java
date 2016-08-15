@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.List;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -51,7 +52,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
-import jdk.javadoc.internal.doclets.toolkit.util.MessageRetriever;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -144,7 +144,7 @@ public class TagletWriterImpl extends TagletWriter {
                     return null;
                 }
             }.visit(element);
-            si.setCategory(configuration.getResource("doclet.SearchTags").toString());
+            si.setCategory(configuration.getContent("doclet.SearchTags").toString());
             configuration.tagSearchIndex.add(si);
         }
         return result;
@@ -210,13 +210,6 @@ public class TagletWriterImpl extends TagletWriter {
         CommentHelper ch = utils.getCommentHelper(element);
         Content result = new StringContent(utils.normalizeNewlines(ch.getText(tag)));
         return result;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public MessageRetriever getMsgRetriever() {
-        return configuration.message;
     }
 
     /**

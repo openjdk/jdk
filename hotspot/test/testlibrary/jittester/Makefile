@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -95,10 +95,10 @@ manifest:
 	@echo 'Main-Class: jdk.test.lib.jittester.Automatic' >> $(MANIFEST)
 
 compile_testlib: INIT
-	$(JAVAC) -XDignore.symbol.file -XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED -XaddExports:java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -Xlint $(TESTLIBRARY_SRC_FILES) -d $(CLASSES_DIR)
+	$(JAVAC) -XDignore.symbol.file --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED --add-exports=java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -Xlint $(TESTLIBRARY_SRC_FILES) -d $(CLASSES_DIR)
 
 COMPILE: INIT filelist compile_testlib
-	$(JAVAC) -cp $(CLASSES_DIR) -XDignore.symbol.file -XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED -XaddExports:java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -Xlint -sourcepath $(SRC_DIR) -d $(CLASSES_DIR) @filelist
+	$(JAVAC) -cp $(CLASSES_DIR) -XDignore.symbol.file --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED --add-exports=java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -Xlint -sourcepath $(SRC_DIR) -d $(CLASSES_DIR) @filelist
 
 filelist: $(SRC_FILES)
 		@rm -f $@
@@ -109,7 +109,7 @@ INIT: $(DIST_DIR)
 	$(shell if [ ! -d $(CLASSES_DIR) ]; then mkdir -p $(CLASSES_DIR); fi)
 
 install: clean_testbase testgroup testroot copytestlibrary JAR cleantmp
-	$(JAVA) -XaddExports:java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -ea -jar $(DIST_JAR) $(APPLICATION_ARGS)
+	$(JAVA) --add-exports=java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -ea -jar $(DIST_JAR) $(APPLICATION_ARGS)
 
 clean_testbase:
 	@rm -rf $(TESTBASE_DIR)

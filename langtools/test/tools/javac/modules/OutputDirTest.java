@@ -63,7 +63,7 @@ public class OutputDirTest extends ModuleTestBase {
     public void testError(Path base) throws Exception {
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", src.toString())
+                        "--module-source-path", src.toString())
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
                 .writeAll()
@@ -78,7 +78,7 @@ public class OutputDirTest extends ModuleTestBase {
         new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                         "-proc:only",
-                        "-modulesourcepath", src.toString())
+                        "--module-source-path", src.toString())
                 .files(findJavaFiles(src))
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
@@ -90,7 +90,7 @@ public class OutputDirTest extends ModuleTestBase {
         new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                         "-d", classes.toString(),
-                        "-modulesourcepath", src.toString())
+                        "--module-source-path", src.toString())
                 .files(findJavaFiles(src))
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
@@ -120,7 +120,7 @@ public class OutputDirTest extends ModuleTestBase {
         String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(modClasses) // an exploded module
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", src.toString())
+                        "--module-source-path", src.toString())
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
                 .writeAll()
@@ -157,7 +157,7 @@ public class OutputDirTest extends ModuleTestBase {
                 .outdir(classes) // within an exploded module
                 .options("-XDrawDiagnostics",
                         "-Xlint", "-Werror",
-                        "-modulepath", modClasses.toString())
+                        "--module-path", modClasses.toString())
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
                 .writeAll()

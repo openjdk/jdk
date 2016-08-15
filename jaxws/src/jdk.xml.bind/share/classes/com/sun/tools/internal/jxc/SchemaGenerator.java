@@ -140,7 +140,7 @@ public class SchemaGenerator {
         aptargs.add("-cp");
         aptargs.add(setClasspath(options.classpath)); // set original classpath + jaxb-api to be visible to annotation processor
 
-        aptargs.add("-addmods");
+        aptargs.add("--add-modules");
         aptargs.add("java.xml.bind");
 
         if(options.targetDir!=null) {

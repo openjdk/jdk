@@ -60,7 +60,7 @@ public class MultiModuleModeTest extends ModuleTestBase {
 
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", src.toString())
+                        "--module-source-path", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
@@ -83,7 +83,7 @@ public class MultiModuleModeTest extends ModuleTestBase {
 
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", src.toString())
+                        "--module-source-path", src.toString())
                 .outdir(classes)
                 .files(join(findJavaFiles(src), findJavaFiles(misc)))
                 .run(Task.Expect.FAIL)
@@ -104,7 +104,7 @@ public class MultiModuleModeTest extends ModuleTestBase {
 
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", src.toString())
+                        "--module-source-path", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
@@ -124,7 +124,7 @@ public class MultiModuleModeTest extends ModuleTestBase {
         Files.createDirectories(modules);
 
         new JavacTask(tb)
-                .options("-modulesourcepath", src.toString())
+                .options("--module-source-path", src.toString())
                 .outdir(modules)
                 .files(src.resolve("m2/module-info.java"))
                 .run()
@@ -139,7 +139,7 @@ public class MultiModuleModeTest extends ModuleTestBase {
         Files.createDirectories(modules1);
 
         new JavacTask(tb)
-                .options("-modulesourcepath", src1.toString())
+                .options("--module-source-path", src1.toString())
                 .outdir(modules1)
                 .files(src1.resolve("m1/module-info.java"))
                 .run()
@@ -151,8 +151,8 @@ public class MultiModuleModeTest extends ModuleTestBase {
         Files.createDirectories(modules2);
 
         new JavacTask(tb)
-                .options("-modulepath", modules1.toString(),
-                        "-modulesourcepath", src2.toString())
+                .options("--module-path", modules1.toString(),
+                        "--module-source-path", src2.toString())
                 .outdir(modules2)
                 .files(src2.resolve("m2/module-info.java"))
                 .run()

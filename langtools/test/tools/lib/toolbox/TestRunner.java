@@ -117,7 +117,7 @@ public abstract class TestRunner {
         }
     }
 
-    public void error(String message) {
+    protected void error(String message) {
         out.println("Error: " + message);
         errorCount++;
     }

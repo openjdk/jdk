@@ -46,22 +46,27 @@ public class StandardDoclet implements Doclet {
         htmlDoclet = new HtmlDoclet();
     }
 
+    @Override
     public void init(Locale locale, Reporter reporter) {
         htmlDoclet.init(locale, reporter);
     }
 
+    @Override
     public String getName() {
         return "Standard";
     }
 
+    @Override
     public Set<Doclet.Option> getSupportedOptions() {
         return htmlDoclet.getSupportedOptions();
     }
 
+    @Override
     public SourceVersion getSupportedSourceVersion() {
-        return htmlDoclet.sourceVersion();
+        return htmlDoclet.getSupportedSourceVersion();
     }
 
+    @Override
     public boolean run(DocletEnvironment docEnv) {
         return htmlDoclet.run(docEnv);
     }

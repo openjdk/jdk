@@ -26,16 +26,13 @@
  * @bug 8037085
  * @summary Ensures that sjavac can handle various exclusion patterns.
  *
- * @modules jdk.compiler/com.sun.tools.sjavac
- *          jdk.jdeps/com.sun.tools.javap
+ * @modules jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.sjavac
+ *          jdk.compiler/com.sun.tools.sjavac.server
  * @library /tools/lib
- * @build Wrapper toolbox.ToolBox
+ * @build Wrapper toolbox.ToolBox toolbox.Assert
  * @run main Wrapper IncludeExcludePatterns
  */
-
-import com.sun.tools.javac.main.Main.Result;
-import com.sun.tools.javac.util.Assert;
-import com.sun.tools.sjavac.server.Sjavac;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,6 +45,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.sun.tools.javac.main.Main.Result;
+
+import toolbox.Assert;
 
 public class IncludeExcludePatterns extends SjavacBase {
 

@@ -39,6 +39,7 @@ import jdk.jshell.Snippet.Kind;
 import jdk.jshell.Snippet.Status;
 
 import jdk.jshell.SnippetEvent;
+import static java.util.stream.Collectors.toList;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -49,7 +50,7 @@ public class RejectedFailedTest extends KullaTesting {
         List<SnippetEvent> events = assertEvalFail(input);
         assertEquals(events.size(), 1, "Expected one event, got: " + events.size());
         SnippetEvent e = events.get(0);
-        List<Diag> diagnostics = getState().diagnostics(e.snippet());
+        List<Diag> diagnostics = getState().diagnostics(e.snippet()).collect(toList());
         assertTrue(diagnostics.size() > 0, "Expected diagnostics, got none");
         assertEquals(e.exception(), null, "Expected exception to be null.");
         assertEquals(e.value(), null, "Expected value to be null.");
@@ -60,7 +61,7 @@ public class RejectedFailedTest extends KullaTesting {
         SubKind expectedSubKind = kind == Kind.ERRONEOUS ? SubKind.UNKNOWN_SUBKIND : SubKind.METHOD_SUBKIND;
         assertEquals(key.subKind(), expectedSubKind, "SubKind: ");
         assertTrue(key.id().compareTo(prevId) > 0, "Current id: " + key.id() + ", previous: " + prevId);
-        assertEquals(getState().diagnostics(key), diagnostics, "Expected retrieved diagnostics to match, but didn't.");
+        assertEquals(getState().diagnostics(key).collect(toList()), diagnostics, "Expected retrieved diagnostics to match, but didn't.");
         assertEquals(key.source(), input, "Expected retrieved source: " +
                 key.source() + " to match input: " + input);
         assertEquals(getState().status(key), Status.REJECTED, "Expected status of REJECTED, got: " + getState().status(key));
