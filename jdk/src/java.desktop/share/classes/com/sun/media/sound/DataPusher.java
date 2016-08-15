@@ -27,7 +27,9 @@ package com.sun.media.sound;
 
 import java.util.Arrays;
 
-import javax.sound.sampled.*;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.SourceDataLine;
 
 /**
  * Class to write an AudioInputStream to a SourceDataLine.
@@ -125,7 +127,6 @@ public final class DataPusher implements Runnable {
         if (DEBUG || Printer.debug) Printer.debug("< DataPusher.start(loop="+loop+")");
     }
 
-
     public synchronized void stop() {
         if (DEBUG || Printer.debug) Printer.debug("> DataPusher.stop()");
         if (threadState == STATE_STOPPING
@@ -161,6 +162,7 @@ public final class DataPusher implements Runnable {
     /**
      * Write data to the source data line.
      */
+    @Override
     public void run() {
         byte[] buffer = null;
         boolean useStream = (ais != null);
@@ -242,5 +244,4 @@ public final class DataPusher implements Runnable {
         }
         if (DEBUG || Printer.debug)Printer.debug("DataPusher:end of thread");
     }
-
 } // class DataPusher

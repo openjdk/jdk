@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.util.ArrayList;
@@ -45,8 +46,7 @@ public final class SF2Instrument extends ModelInstrument {
     long genre = 0;
     long morphology = 0;
     SF2GlobalRegion globalregion = null;
-    List<SF2InstrumentRegion> regions
-            = new ArrayList<SF2InstrumentRegion>();
+    List<SF2InstrumentRegion> regions = new ArrayList<>();
 
     public SF2Instrument() {
         super(null, null, null, null);
@@ -56,6 +56,7 @@ public final class SF2Instrument extends ModelInstrument {
         super(soundbank, null, null, null);
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -64,6 +65,7 @@ public final class SF2Instrument extends ModelInstrument {
         this.name = name;
     }
 
+    @Override
     public Patch getPatch() {
         if (bank == 128)
             return new ModelPatch(0, preset, true);
@@ -81,6 +83,7 @@ public final class SF2Instrument extends ModelInstrument {
         }
     }
 
+    @Override
     public Object getData() {
         return null;
     }
@@ -121,6 +124,7 @@ public final class SF2Instrument extends ModelInstrument {
         globalregion = zone;
     }
 
+    @Override
     public String toString() {
         if (bank == 128)
             return "Drumkit: " + name + " preset #" + preset;
@@ -129,6 +133,7 @@ public final class SF2Instrument extends ModelInstrument {
                     + " preset #" + preset;
     }
 
+    @Override
     public ModelPerformer[] getPerformers() {
         int performercount = 0;
         for (SF2InstrumentRegion presetzone : regions)
@@ -138,7 +143,7 @@ public final class SF2Instrument extends ModelInstrument {
 
         SF2GlobalRegion presetglobal = globalregion;
         for (SF2InstrumentRegion presetzone : regions) {
-            Map<Integer, Short> pgenerators = new HashMap<Integer, Short>();
+            Map<Integer, Short> pgenerators = new HashMap<>();
             pgenerators.putAll(presetzone.getGenerators());
             if (presetglobal != null)
                 pgenerators.putAll(presetglobal.getGenerators());
@@ -267,7 +272,7 @@ public final class SF2Instrument extends ModelInstrument {
                 if (buff24 != null)
                     osc.set8BitExtensionBuffer(buff24);
 
-                Map<Integer, Short> generators = new HashMap<Integer, Short>();
+                Map<Integer, Short> generators = new HashMap<>();
                 if (layerglobal != null)
                     generators.putAll(layerglobal.getGenerators());
                 generators.putAll(layerzone.getGenerators());
@@ -608,6 +613,7 @@ public final class SF2Instrument extends ModelInstrument {
                     new ModelConnectionBlock(
                         new ModelSource(ModelSource.SOURCE_NOTEON_VELOCITY,
                             new ModelTransform() {
+                                @Override
                                 public double transform(double value) {
                                     if (value < 0.5)
                                         return 1 - value * 2;
