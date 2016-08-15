@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.util.Arrays;
@@ -190,6 +191,7 @@ public final class SoftChorus implements SoftAudioProcessor {
     private float dirty_vdelay1R_reverbsendgain;
     private float controlrate;
 
+    @Override
     public void init(float samplerate, float controlrate) {
         this.controlrate = controlrate;
         vdelay1L = new LFODelay(samplerate, controlrate);
@@ -202,8 +204,9 @@ public final class SoftChorus implements SoftAudioProcessor {
         globalParameterControlChange(new int[]{0x01 * 128 + 0x02}, 0, 2);
     }
 
+    @Override
     public void globalParameterControlChange(int[] slothpath, long param,
-            long value) {
+                                             long value) {
         if (slothpath.length == 1) {
             if (slothpath[0] == 0x01 * 128 + 0x02) {
                 if (param == 0) { // Chorus Type
@@ -271,6 +274,7 @@ public final class SoftChorus implements SoftAudioProcessor {
         }
     }
 
+    @Override
     public void processControlLogic() {
         if (dirty) {
             dirty = false;
@@ -286,6 +290,7 @@ public final class SoftChorus implements SoftAudioProcessor {
     }
     double silentcounter = 1000;
 
+    @Override
     public void processAudio() {
 
         if (inputA.isSilent()) {
@@ -317,15 +322,18 @@ public final class SoftChorus implements SoftAudioProcessor {
         }
     }
 
+    @Override
     public void setInput(int pin, SoftAudioBuffer input) {
         if (pin == 0)
             inputA = input;
     }
 
+    @Override
     public void setMixMode(boolean mix) {
         this.mix = mix;
     }
 
+    @Override
     public void setOutput(int pin, SoftAudioBuffer output) {
         if (pin == 0)
             left = output;

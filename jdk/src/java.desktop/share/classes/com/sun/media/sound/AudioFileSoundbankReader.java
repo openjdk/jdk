@@ -45,6 +45,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
  */
 public final class AudioFileSoundbankReader extends SoundbankReader {
 
+    @Override
     public Soundbank getSoundbank(URL url)
             throws InvalidMidiDataException, IOException {
         try {
@@ -59,6 +60,7 @@ public final class AudioFileSoundbankReader extends SoundbankReader {
         }
     }
 
+    @Override
     public Soundbank getSoundbank(InputStream stream)
             throws InvalidMidiDataException, IOException {
         stream.mark(512);
@@ -108,6 +110,7 @@ public final class AudioFileSoundbankReader extends SoundbankReader {
         }
     }
 
+    @Override
     public Soundbank getSoundbank(File file)
             throws InvalidMidiDataException, IOException {
         try {

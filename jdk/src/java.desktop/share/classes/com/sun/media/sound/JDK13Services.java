@@ -136,7 +136,6 @@ public final class JDK13Services {
         return value;
     }
 
-
     /** Obtain the instance name part of a default provider property.
         @param typeClass The type of the default provider property. This
         should be one of Receiver.class, Transmitter.class, Sequencer.class,
@@ -157,7 +156,6 @@ public final class JDK13Services {
         }
         return value;
     }
-
 
     /** Obtain the value of a default provider property.
         @param typeClass The type of the default provider property. This
@@ -189,7 +187,6 @@ public final class JDK13Services {
         }
         return value;
     }
-
 
     /** Obtain a properties bundle containing property values from the
         properties file. If the properties file could not be loaded,
