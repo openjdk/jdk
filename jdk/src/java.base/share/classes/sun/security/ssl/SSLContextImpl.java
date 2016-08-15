@@ -59,6 +59,11 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             "jdk.tls.client.enableStatusRequestExtension", true);
     private final boolean serverEnableStapling = Debug.getBooleanProperty(
             "jdk.tls.server.enableStatusRequestExtension", false);
+    private final static Collection<CipherSuite> clientCustomizedCipherSuites =
+            getCustomizedCipherSuites("jdk.tls.client.cipherSuites");
+    private final static Collection<CipherSuite> serverCustomizedCipherSuites =
+            getCustomizedCipherSuites("jdk.tls.server.cipherSuites");
+
     private volatile StatusResponseManager statusResponseManager;
 
     SSLContextImpl() {
@@ -336,20 +341,52 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         return isClient ? clientEnableStapling : serverEnableStapling;
     }
 
-    /*
-     * Return the list of all available CipherSuites with a priority of
-     * minPriority or above.
-     */
-    private static CipherSuiteList getApplicableCipherSuiteList(
-            ProtocolList protocols, boolean onlyEnabled) {
 
-        int minPriority = CipherSuite.SUPPORTED_SUITES_PRIORITY;
-        if (onlyEnabled) {
-            minPriority = CipherSuite.DEFAULT_SUITES_PRIORITY;
+    /*
+     * Return the list of all available CipherSuites that are supported
+     * using currently installed providers.
+     */
+    private static CipherSuiteList getApplicableSupportedCipherSuiteList(
+            ProtocolList protocols) {
+
+        return getApplicableCipherSuiteList(
+                CipherSuite.allowedCipherSuites(),
+                protocols, CipherSuite.SUPPORTED_SUITES_PRIORITY);
+    }
+
+    /*
+     * Return the list of all available CipherSuites that are default enabled
+     * in client or server side.
+     */
+    private static CipherSuiteList getApplicableEnabledCipherSuiteList(
+            ProtocolList protocols, boolean isClient) {
+
+        if (isClient) {
+            if (!clientCustomizedCipherSuites.isEmpty()) {
+                return getApplicableCipherSuiteList(
+                        clientCustomizedCipherSuites,
+                        protocols, CipherSuite.SUPPORTED_SUITES_PRIORITY);
+            }
+        } else {
+            if (!serverCustomizedCipherSuites.isEmpty()) {
+                return getApplicableCipherSuiteList(
+                        serverCustomizedCipherSuites,
+                        protocols, CipherSuite.SUPPORTED_SUITES_PRIORITY);
+            }
         }
 
-        Collection<CipherSuite> allowedCipherSuites =
-                                    CipherSuite.allowedCipherSuites();
+        return getApplicableCipherSuiteList(
+                CipherSuite.allowedCipherSuites(),
+                protocols, CipherSuite.DEFAULT_SUITES_PRIORITY);
+    }
+
+    /*
+     * Return the list of available CipherSuites which are applicable to
+     * the specified protocols.
+     */
+    private static CipherSuiteList getApplicableCipherSuiteList(
+            Collection<CipherSuite> allowedCipherSuites,
+            ProtocolList protocols, int minPriority) {
 
         TreeSet<CipherSuite> suites = new TreeSet<>();
         if (!(protocols.collection().isEmpty()) &&
@@ -385,6 +422,67 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
         return new CipherSuiteList(suites);
     }
+
+    /*
+     * Get the customized cipher suites specified by the given system property.
+     */
+    private static Collection<CipherSuite> getCustomizedCipherSuites(
+            String propertyName) {
+
+        String property = GetPropertyAction.privilegedGetProperty(propertyName);
+        if (debug != null && Debug.isOn("sslctx")) {
+            System.out.println(
+                    "System property " + propertyName + " is set to '" +
+                    property + "'");
+        }
+        if (property != null && property.length() != 0) {
+            // remove double quote marks from beginning/end of the property
+            if (property.length() > 1 && property.charAt(0) == '"' &&
+                    property.charAt(property.length() - 1) == '"') {
+                property = property.substring(1, property.length() - 1);
+            }
+        }
+
+        if (property != null && property.length() != 0) {
+            String[] cipherSuiteNames = property.split(",");
+            Collection<CipherSuite> cipherSuites =
+                        new ArrayList<>(cipherSuiteNames.length);
+            for (int i = 0; i < cipherSuiteNames.length; i++) {
+                cipherSuiteNames[i] = cipherSuiteNames[i].trim();
+                if (cipherSuiteNames[i].isEmpty()) {
+                    continue;
+                }
+
+                CipherSuite suite;
+                try {
+                    suite = CipherSuite.valueOf(cipherSuiteNames[i]);
+                } catch (IllegalArgumentException iae) {
+                    if (debug != null && Debug.isOn("sslctx")) {
+                        System.out.println(
+                                "Unknown or unsupported cipher suite name: " +
+                                cipherSuiteNames[i]);
+                    }
+
+                    continue;
+                }
+
+                if (suite.isAvailable()) {
+                    cipherSuites.add(suite);
+                } else {
+                    if (debug != null && Debug.isOn("sslctx")) {
+                        System.out.println(
+                                "The current installed providers do not " +
+                                "support cipher suite: " + cipherSuiteNames[i]);
+                    }
+                }
+            }
+
+            return cipherSuites;
+        }
+
+        return Collections.emptyList();
+    }
+
 
     private static String[] getAvailableProtocols(
             ProtocolVersion[] protocolCandidates) {
@@ -481,10 +579,10 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 }));
             }
 
-            supportedCipherSuiteList = getApplicableCipherSuiteList(
-                    supportedProtocolList, false);          // all supported
-            serverDefaultCipherSuiteList = getApplicableCipherSuiteList(
-                    serverDefaultProtocolList, true);       // enabled only
+            supportedCipherSuiteList = getApplicableSupportedCipherSuiteList(
+                    supportedProtocolList);
+            serverDefaultCipherSuiteList = getApplicableEnabledCipherSuiteList(
+                    serverDefaultProtocolList, false);
         }
 
         @Override
@@ -541,8 +639,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 }));
             }
 
-            clientDefaultCipherSuiteList = getApplicableCipherSuiteList(
-                    clientDefaultProtocolList, true);       // enabled only
+            clientDefaultCipherSuiteList = getApplicableEnabledCipherSuiteList(
+                    clientDefaultProtocolList, true);
         }
 
         @Override
@@ -581,8 +679,9 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 }));
             }
 
-            clientDefaultCipherSuiteList = getApplicableCipherSuiteList(
-                    clientDefaultProtocolList, true);       // enabled only
+            clientDefaultCipherSuiteList = getApplicableEnabledCipherSuiteList(
+                    clientDefaultProtocolList, true);
+
         }
 
         @Override
@@ -623,8 +722,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 }));
             }
 
-            clientDefaultCipherSuiteList = getApplicableCipherSuiteList(
-                    clientDefaultProtocolList, true);       // enabled only
+            clientDefaultCipherSuiteList = getApplicableEnabledCipherSuiteList(
+                    clientDefaultProtocolList, true);
         }
 
         @Override
@@ -757,8 +856,9 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
                 clientDefaultProtocolList = new ProtocolList(
                         getAvailableProtocols(candidates));
-                clientDefaultCipherSuiteList = getApplicableCipherSuiteList(
-                    clientDefaultProtocolList, true);   // enabled only
+                clientDefaultCipherSuiteList =
+                        getApplicableEnabledCipherSuiteList(
+                                clientDefaultProtocolList, true);
             } else {
                 clientDefaultProtocolList = null;       // unlikely to be used
                 clientDefaultCipherSuiteList = null;    // unlikely to be used
@@ -1032,10 +1132,10 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 ProtocolVersion.DTLS12
             }));
 
-            supportedCipherSuiteList = getApplicableCipherSuiteList(
-                    supportedProtocolList, false);          // all supported
-            serverDefaultCipherSuiteList = getApplicableCipherSuiteList(
-                    serverDefaultProtocolList, true);       // enabled only
+            supportedCipherSuiteList = getApplicableSupportedCipherSuiteList(
+                    supportedProtocolList);
+            serverDefaultCipherSuiteList = getApplicableEnabledCipherSuiteList(
+                    serverDefaultProtocolList, false);
         }
 
         @Override
@@ -1090,8 +1190,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 ProtocolVersion.DTLS10
             }));
 
-            clientDefaultCipherSuiteList = getApplicableCipherSuiteList(
-                    clientDefaultProtocolList, true);       // enabled only
+            clientDefaultCipherSuiteList = getApplicableEnabledCipherSuiteList(
+                    clientDefaultProtocolList, true);
         }
 
         @Override
@@ -1122,8 +1222,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 ProtocolVersion.DTLS12
             }));
 
-            clientDefaultCipherSuiteList = getApplicableCipherSuiteList(
-                    clientDefaultProtocolList, true);       // enabled only
+            clientDefaultCipherSuiteList = getApplicableEnabledCipherSuiteList(
+                    clientDefaultProtocolList, true);
         }
 
         @Override
@@ -1187,8 +1287,9 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
                 clientDefaultProtocolList = new ProtocolList(
                         getAvailableProtocols(candidates));
-                clientDefaultCipherSuiteList = getApplicableCipherSuiteList(
-                    clientDefaultProtocolList, true);   // enabled only
+                clientDefaultCipherSuiteList =
+                        getApplicableEnabledCipherSuiteList(
+                                clientDefaultProtocolList, true);
             } else {
                 clientDefaultProtocolList = null;       // unlikely to be used
                 clientDefaultCipherSuiteList = null;    // unlikely to be used

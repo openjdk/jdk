@@ -40,8 +40,6 @@ import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
 
 import java.lang.reflect.Array;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -60,19 +58,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  * @author jrose
  */
 /*non-public*/ abstract class MethodHandleImpl {
-    // Do not adjust this except for special platforms:
-    private static final int MAX_ARITY;
-    static {
-        final Object[] values = { 255 };
-        AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public Void run() {
-                values[0] = Integer.getInteger(MethodHandleImpl.class.getName()+".MAX_ARITY", 255);
-                return null;
-            }
-        });
-        MAX_ARITY = (Integer) values[0];
-    }
 
     /// Factory methods to create method handles:
 
@@ -652,7 +637,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         MethodType srcType = targetType                 // (a..., [b...])=>r
                 .dropParameterTypes(collectArgPos, collectArgPos+collectValCount);
         if (!retainOriginalArgs) {                      // (a..., b...)=>r
-            srcType = srcType.insertParameterTypes(collectArgPos, collectorType.parameterList());
+            srcType = srcType.insertParameterTypes(collectArgPos, collectorType.parameterArray());
         }
         // in  arglist: [0: ...keep1 | cpos: collect...  | cpos+cacount: keep2... ]
         // out arglist: [0: ...keep1 | cpos: collectVal? | cpos+cvcount: keep2... ]
@@ -1097,7 +1082,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         int arity = type.parameterCount();
         if (arity > 1) {
             MethodHandle mh = throwException(type.dropParameterTypes(1, arity));
-            mh = MethodHandles.dropArguments(mh, 1, type.parameterList().subList(1, arity));
+            mh = MethodHandles.dropArguments(mh, 1, Arrays.copyOfRange(type.parameterArray(), 1, arity));
             return mh;
         }
         return makePairwiseConvert(NF_throwException.resolvedHandle(), type, false, true);
