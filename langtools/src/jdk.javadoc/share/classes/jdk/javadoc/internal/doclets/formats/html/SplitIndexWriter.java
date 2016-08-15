@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,13 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 import java.util.TreeSet;
+
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
@@ -115,11 +117,10 @@ public class SplitIndexWriter extends AbstractIndexWriter {
                 if (!li.hasNext()) {
                     indexgen.createSearchIndexFiles();
                 }
-                indexgen.close();
             }
         } catch (IOException exc) {
-            configuration.standardmessage.error(
-                        "doclet.exception_encountered",
+            Messages messages = configuration.getMessages();
+            messages.error("doclet.exception_encountered",
                         exc.toString(), filename.getPath());
             throw new DocletAbortException(exc);
         }
@@ -178,7 +179,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             int j = i + 1;
             contentTree.addContent(getHyperLink(DocPaths.indexN(j),
                     new StringContent(indexElements.get(i).toString())));
-            contentTree.addContent(getSpace());
+            contentTree.addContent(Contents.SPACE);
         }
     }
 
@@ -188,7 +189,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      * @return a content tree for the link
      */
     public Content getNavLinkPrevious() {
-        Content prevletterLabel = getResource("doclet.Prev_Letter");
+        Content prevletterLabel = contents.prevLetter;
         if (prev == -1) {
             return HtmlTree.LI(prevletterLabel);
         }
@@ -205,7 +206,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      * @return a content tree for the link
      */
     public Content getNavLinkNext() {
-        Content nextletterLabel = getResource("doclet.Next_Letter");
+        Content nextletterLabel = contents.nextLetter;
         if (next == -1) {
             return HtmlTree.LI(nextletterLabel);
         }

@@ -107,7 +107,7 @@ public class PluginsInModulesTest extends ModuleTestBase {
                 plugin1);
 
         String log = new JavacTask(tb)
-                .options("-modulesourcepath", moduleSrc.toString())
+                .options("--module-source-path", moduleSrc.toString())
                 .outdir(processorCompiledModules)
                 .files(findJavaFiles(moduleSrc))
                 .run()
@@ -130,7 +130,7 @@ public class PluginsInModulesTest extends ModuleTestBase {
     public void testUseOnlyOneProcessor(Path base) throws Exception {
         initialization(base);
         List<String> log = new JavacTask(tb)
-                .options("-processormodulepath", processorCompiledModules.toString(),
+                .options("--processor-module-path", processorCompiledModules.toString(),
                         "-Xplugin:simpleplugin1")
                 .outdir(classes)
                 .sources(testClass)

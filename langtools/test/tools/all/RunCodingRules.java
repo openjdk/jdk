@@ -111,11 +111,11 @@ public class RunCodingRules {
             Path crulesTarget = targetDir.resolve("crules");
             Files.createDirectories(crulesTarget);
             List<String> crulesOptions = Arrays.asList(
-                    "-XaddExports:jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
-                    "-XaddExports:jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
-                    "-XaddExports:jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED",
-                    "-XaddExports:jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
-                    "-XaddExports:jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+                    "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+                    "--add-exports", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+                    "--add-exports", "jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED",
+                    "--add-exports", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+                    "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
                     "-d", crulesTarget.toString());
             javaCompiler.getTask(null, fm, noErrors, crulesOptions, null,
                     fm.getJavaFileObjectsFromFiles(crulesFiles)).call();
@@ -178,7 +178,7 @@ public class RunCodingRules {
 
             List<String> options = Arrays.asList(
                     "-d", sourceTarget.toString(),
-                    "-modulesourcepath", mainSrcDir + FS + "*" + FS + "share" + FS + "classes" + PS
+                    "--module-source-path", mainSrcDir + FS + "*" + FS + "share" + FS + "classes" + PS
                                        + genSrcTarget + FS + "*" + FS + "share" + FS + "classes",
                     "-XDaccessInternalAPI",
                     "-processorpath", processorPath,

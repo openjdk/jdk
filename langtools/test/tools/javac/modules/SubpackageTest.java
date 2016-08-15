@@ -110,7 +110,7 @@ public class SubpackageTest extends ModuleTestBase {
         Files.createDirectories(modules);
 
         new JavacTask(tb)
-                .options("-modulesourcepath", src.toString())
+                .options("--module-source-path", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))
                 .run()

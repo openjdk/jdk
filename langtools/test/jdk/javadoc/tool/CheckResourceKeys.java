@@ -148,7 +148,7 @@ public class CheckResourceKeys {
             if (codeKeys.contains(rk))
                 continue;
 
-            error("Resource key not found in code: " + rk);
+            error("Resource key not found in code: '" + rk + '"');
         }
     }
 

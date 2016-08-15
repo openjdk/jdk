@@ -36,12 +36,12 @@ $(eval $(call SetupJavaCompilation,BUILD_JIGSAW_TOOLS, \
     INCLUDES := build/tools/deps \
                 build/tools/jigsaw, \
     BIN := $(TOOLS_CLASSES_DIR), \
-    ADD_JAVAC_FLAGS := -XaddExports:jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED ))
+    ADD_JAVAC_FLAGS := --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED ))
 
 
 TOOL_GENGRAPHS := $(BUILD_JAVA) -esa -ea -cp $(TOOLS_CLASSES_DIR) \
     build.tools.jigsaw.GenGraphs
 
 TOOL_MODULESUMMARY := $(BUILD_JAVA) -esa -ea -cp $(TOOLS_CLASSES_DIR) \
-    -XaddExports:jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED \
+    --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED \
     build.tools.jigsaw.ModuleSummary

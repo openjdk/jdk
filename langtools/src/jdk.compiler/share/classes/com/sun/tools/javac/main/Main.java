@@ -176,12 +176,13 @@ public class Main {
         log = Log.instance(context);
 
         if (argv.length == 0) {
-            Option.HELP.process(new OptionHelper.GrumpyHelper(log) {
+            OptionHelper h = new OptionHelper.GrumpyHelper(log) {
                 @Override
                 public String getOwnName() { return ownName; }
                 @Override
                 public void put(String name, String value) { }
-            }, "-help");
+            };
+            Option.HELP.process(h, "-help");
             return Result.CMDERR;
         }
 
@@ -266,10 +267,10 @@ public class Main {
         }
 
         // init multi-release jar handling
-        if (fileManager.isSupportedOption(Option.MULTIRELEASE.text) == 1) {
+        if (fileManager.isSupportedOption(Option.MULTIRELEASE.primaryName) == 1) {
             Target target = Target.instance(context);
             List<String> list = List.of(target.multiReleaseValue());
-            fileManager.handleOption(Option.MULTIRELEASE.text, list.iterator());
+            fileManager.handleOption(Option.MULTIRELEASE.primaryName, list.iterator());
         }
 
         // init JavaCompiler

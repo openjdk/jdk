@@ -22,7 +22,6 @@
  */
 
 import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.JarUtils;
 
 /**
@@ -50,7 +49,7 @@ public class NotYetValidCertTest extends Test {
         JarUtils.createJar(UNSIGNED_JARFILE, FIRST_FILE);
 
         // create certificate that will be valid only tomorrow
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-genkey",
                 "-alias", KEY_ALIAS,
                 "-keyalg", KEY_ALG,
@@ -63,7 +62,7 @@ public class NotYetValidCertTest extends Test {
                 "-validity", Integer.toString(VALIDITY));
 
         // sign jar
-        OutputAnalyzer analyzer = ProcessTools.executeCommand(JARSIGNER,
+        OutputAnalyzer analyzer = jarsigner(
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
                 "-keypass", PASSWORD,
@@ -74,7 +73,7 @@ public class NotYetValidCertTest extends Test {
         checkSigning(analyzer, NOT_YET_VALID_CERT_SIGNING_WARNING);
 
         // verify signed jar
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-verbose",
                 "-keystore", KEYSTORE,
@@ -86,7 +85,7 @@ public class NotYetValidCertTest extends Test {
         checkVerifying(analyzer, 0, NOT_YET_VALID_CERT_VERIFYING_WARNING);
 
         // verify jar in strict mode
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-verbose",
                 "-strict",

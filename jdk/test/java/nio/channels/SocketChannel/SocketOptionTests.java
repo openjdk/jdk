@@ -26,7 +26,7 @@
  * @summary Unit test to check SocketChannel setOption/getOption/options
  *          methods.
  * @run main SocketOptionTests
- * @run main/othervm -limitmods java.base SocketOptionTests
+ * @run main/othervm --limit-modules=java.base SocketOptionTests
  */
 
 import java.nio.*;

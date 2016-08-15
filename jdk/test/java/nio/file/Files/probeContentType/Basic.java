@@ -95,7 +95,7 @@ public class Basic {
         return 0;
     }
 
-    static int checkContentTypes(String[] extensions, String[] expectedTypes)
+    static int checkContentTypes(String[] extensions, String[][] expectedTypes)
         throws IOException {
         if (extensions.length != expectedTypes.length) {
             System.err.println("Parameter array lengths differ");
@@ -113,9 +113,24 @@ public class Basic {
                             + " cannot be determined");
                     failures++;
                 } else {
-                    if (!type.equals(expectedTypes[i])) {
-                        System.err.println("Content type: " + type
-                                + "; expected: " + expectedTypes[i]);
+                    boolean isTypeFound = false;
+                    for (String s : expectedTypes[i]) {
+                        if (type.equals(s)) {
+                            isTypeFound = true;
+                            break;
+                        }
+                    }
+                    if (!isTypeFound) {
+                        System.err.printf("Content type: %s; expected: ", type);
+                        int j = 0;
+                        for (String s : expectedTypes[i]) {
+                            if (j++ == 0) {
+                                System.err.printf("%s", s);
+                            } else {
+                                System.err.printf(", or %s", s);
+                            }
+                        }
+                        System.err.println();
                         failures++;
                     }
                 }
@@ -159,11 +174,24 @@ public class Basic {
 
         // Verify that certain media extensions are mapped to the correct type.
         String[] extensions = new String[]{
-            "aac", "flac", "jpg", "mp3", "mp4", "pdf", "png", "webm"
+            "aac",
+            "flac",
+            "jpg",
+            "mp3",
+            "mp4",
+            "pdf",
+            "png",
+            "webm"
         };
-        String[] expectedTypes = new String[]{
-            "audio/aac", "audio/flac", "image/jpeg", "audio/mpeg",
-            "video/mp4", "application/pdf", "image/png", "video/webm"
+        String[][] expectedTypes = new String[][] {
+            {"audio/aac", "audio/x-aac"},
+            {"audio/flac", "audio/x-flac"},
+            {"image/jpeg"},
+            {"audio/mpeg"},
+            {"video/mp4"},
+            {"application/pdf"},
+            {"image/png"},
+            {"video/webm"}
         };
         failures += checkContentTypes(extensions, expectedTypes);
 

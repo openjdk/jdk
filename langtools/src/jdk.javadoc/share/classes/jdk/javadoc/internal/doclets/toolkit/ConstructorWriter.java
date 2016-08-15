@@ -119,9 +119,4 @@ public interface ConstructorWriter {
      * @param foundNonPubConstructor true if we found a non public constructor.
      */
     public void setFoundNonPubConstructor(boolean foundNonPubConstructor);
-
-    /**
-     * Close the writer.
-     */
-    public void close() throws IOException;
 }

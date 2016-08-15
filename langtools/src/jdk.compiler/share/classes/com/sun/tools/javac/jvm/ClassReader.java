@@ -55,6 +55,7 @@ import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.jvm.ClassFile.NameAndType;
 import com.sun.tools.javac.jvm.ClassFile.Version;
+import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -67,7 +68,7 @@ import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 import static com.sun.tools.javac.jvm.ClassFile.*;
 import static com.sun.tools.javac.jvm.ClassFile.Version.*;
 
-import static com.sun.tools.javac.main.Option.*;
+import static com.sun.tools.javac.main.Option.PARAMETERS;
 
 /** This class provides operations to read a classfile into an internal
  *  representation. The internal representation is anchored in a
@@ -236,7 +237,7 @@ public class ClassReader {
         log = Log.instance(context);
 
         Options options = Options.instance(context);
-        verbose         = options.isSet(VERBOSE);
+        verbose         = options.isSet(Option.VERBOSE);
 
         Source source = Source.instance(context);
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();

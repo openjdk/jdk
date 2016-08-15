@@ -62,9 +62,9 @@ case "$OS" in
 
         echo
         echo "Running the test..."
-        ${TESTJAVA}/bin/javac -XaddExports:java.base/sun.security.util=ALL-UNNAMED \
+        ${TESTJAVA}/bin/javac --add-exports java.base/sun.security.util=ALL-UNNAMED \
             ${TESTTOOLVMOPTS} ${TESTJAVACOPTS} -d . ${TESTSRC}\\PublicKeyInterop.java
-        ${TESTJAVA}/bin/java -XaddExports:java.base/sun.security.util=ALL-UNNAMED \
+        ${TESTJAVA}/bin/java --add-exports java.base/sun.security.util=ALL-UNNAMED \
             ${TESTVMOPTS} PublicKeyInterop
 
         rc=$?

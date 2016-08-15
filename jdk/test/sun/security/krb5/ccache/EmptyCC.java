@@ -27,7 +27,8 @@
  * @bug 8001208
  * @summary NPE in sun.security.krb5.Credentials.acquireDefaultCreds()
  * @library ../../../../java/security/testlibrary/
- * @modules java.security.jgss/sun.security.krb5
+ * @modules java.base/jdk.internal.misc
+ *          java.security.jgss/sun.security.krb5
  *          java.security.jgss/sun.security.krb5.internal.ccache
  * @compile -XDignore.symbol.file EmptyCC.java
  * @run main EmptyCC tmpcc

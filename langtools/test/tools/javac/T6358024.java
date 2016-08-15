@@ -70,9 +70,9 @@ public class T6358024 extends AbstractProcessor {
         JavacTool tool = JavacTool.create();
         List<String> flags = new ArrayList<String>();
         flags.addAll(Arrays.asList(
-                "-XaddExports:jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
-                "-XaddExports:jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
-                "-XaddExports:jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"));
+                "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+                "--add-exports", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+                "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"));
         for (Option opt: opts) {
             flags.add(opt.name);
             for (Object arg : opt.args)

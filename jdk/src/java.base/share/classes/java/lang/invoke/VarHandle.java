@@ -1057,57 +1057,11 @@ public abstract class VarHandle {
     Object addAndGet(Object... args);
 
     enum AccessType {
-        GET(Object.class) {
-            @Override
-            MethodType accessModeType(Class<?> receiver, Class<?> value,
-                                      Class<?>... intermediate) {
-                Class<?>[] ps =  allocateParameters(0, receiver, intermediate);
-                fillParameters(ps, receiver, intermediate);
-                return MethodType.methodType(value, ps);
-            }
-        },
-        SET(void.class) {
-            @Override
-            MethodType accessModeType(Class<?> receiver, Class<?> value,
-                                      Class<?>... intermediate) {
-                Class<?>[] ps =  allocateParameters(1, receiver, intermediate);
-                int i = fillParameters(ps, receiver, intermediate);
-                ps[i] = value;
-                return MethodType.methodType(void.class, ps);
-            }
-        },
-        COMPARE_AND_SWAP(boolean.class) {
-            @Override
-            MethodType accessModeType(Class<?> receiver, Class<?> value,
-                                      Class<?>... intermediate) {
-                Class<?>[] ps =  allocateParameters(2, receiver, intermediate);
-                int i = fillParameters(ps, receiver, intermediate);
-                ps[i++] = value;
-                ps[i] = value;
-                return MethodType.methodType(boolean.class, ps);
-            }
-        },
-        COMPARE_AND_EXCHANGE(Object.class) {
-            @Override
-            MethodType accessModeType(Class<?> receiver, Class<?> value,
-                                      Class<?>... intermediate) {
-                Class<?>[] ps =  allocateParameters(2, receiver, intermediate);
-                int i = fillParameters(ps, receiver, intermediate);
-                ps[i++] = value;
-                ps[i] = value;
-                return MethodType.methodType(value, ps);
-            }
-        },
-        GET_AND_UPDATE(Object.class) {
-            @Override
-            MethodType accessModeType(Class<?> receiver, Class<?> value,
-                                      Class<?>... intermediate) {
-                Class<?>[] ps =  allocateParameters(1, receiver, intermediate);
-                int i = fillParameters(ps, receiver, intermediate);
-                ps[i] = value;
-                return MethodType.methodType(value, ps);
-            }
-        };
+        GET(Object.class),
+        SET(void.class),
+        COMPARE_AND_SWAP(boolean.class),
+        COMPARE_AND_EXCHANGE(Object.class),
+        GET_AND_UPDATE(Object.class);
 
         final Class<?> returnType;
         final boolean isMonomorphicInReturnType;
@@ -1117,8 +1071,41 @@ public abstract class VarHandle {
             isMonomorphicInReturnType = returnType != Object.class;
         }
 
-        abstract MethodType accessModeType(Class<?> receiver, Class<?> value,
-                                           Class<?>... intermediate);
+        MethodType accessModeType(Class<?> receiver, Class<?> value,
+                                  Class<?>... intermediate) {
+            Class<?>[] ps;
+            int i;
+            switch (this) {
+                case GET:
+                    ps = allocateParameters(0, receiver, intermediate);
+                    fillParameters(ps, receiver, intermediate);
+                    return MethodType.methodType(value, ps);
+                case SET:
+                    ps = allocateParameters(1, receiver, intermediate);
+                    i = fillParameters(ps, receiver, intermediate);
+                    ps[i] = value;
+                    return MethodType.methodType(void.class, ps);
+                case COMPARE_AND_SWAP:
+                    ps = allocateParameters(2, receiver, intermediate);
+                    i = fillParameters(ps, receiver, intermediate);
+                    ps[i++] = value;
+                    ps[i] = value;
+                    return MethodType.methodType(boolean.class, ps);
+                case COMPARE_AND_EXCHANGE:
+                    ps = allocateParameters(2, receiver, intermediate);
+                    i = fillParameters(ps, receiver, intermediate);
+                    ps[i++] = value;
+                    ps[i] = value;
+                    return MethodType.methodType(value, ps);
+                case GET_AND_UPDATE:
+                    ps = allocateParameters(1, receiver, intermediate);
+                    i = fillParameters(ps, receiver, intermediate);
+                    ps[i] = value;
+                    return MethodType.methodType(value, ps);
+                default:
+                    throw new InternalError("Unknown AccessType");
+            }
+        }
 
         private static Class<?>[] allocateParameters(int values,
                                                      Class<?> receiver, Class<?>... intermediate) {

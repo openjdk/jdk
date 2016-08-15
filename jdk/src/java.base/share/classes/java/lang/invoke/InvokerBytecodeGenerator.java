@@ -40,8 +40,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.LambdaForm.*;
@@ -68,9 +68,10 @@ class InvokerBytecodeGenerator {
     private static final String LFN_SIG = "L" + LFN + ";";
     private static final String LL_SIG  = "(L" + OBJ + ";)L" + OBJ + ";";
     private static final String LLV_SIG = "(L" + OBJ + ";L" + OBJ + ";)V";
+    private static final String CLASS_PREFIX = LF + "$";
 
     /** Name of its super class*/
-    private static final String INVOKER_SUPER_NAME = OBJ;
+    static final String INVOKER_SUPER_NAME = OBJ;
 
     /** Name of new class */
     private final String className;
@@ -96,15 +97,15 @@ class InvokerBytecodeGenerator {
     /** Main constructor; other constructors delegate to this one. */
     private InvokerBytecodeGenerator(LambdaForm lambdaForm, int localsMapSize,
                                      String className, String invokerName, MethodType invokerType) {
-        if (invokerName.contains(".")) {
-            int p = invokerName.indexOf('.');
+        int p = invokerName.indexOf('.');
+        if (p > -1) {
             className = invokerName.substring(0, p);
-            invokerName = invokerName.substring(p+1);
+            invokerName = invokerName.substring(p + 1);
         }
         if (DUMP_CLASS_FILES) {
             className = makeDumpableClassName(className);
         }
-        this.className  = LF + "$" + className;
+        this.className  = CLASS_PREFIX + className;
         this.sourceFile = "LambdaForm$" + className;
         this.lambdaForm = lambdaForm;
         this.invokerName = invokerName;
@@ -124,7 +125,7 @@ class InvokerBytecodeGenerator {
     }
 
     /** For generating customized code for a single LambdaForm. */
-    private InvokerBytecodeGenerator(String className, LambdaForm form, MethodType invokerType) {
+    InvokerBytecodeGenerator(String className, LambdaForm form, MethodType invokerType) {
         this(form, form.names.length,
              className, form.debugName, invokerType);
         // Create an array to map name indexes to locals indexes.
@@ -201,38 +202,34 @@ class InvokerBytecodeGenerator {
 
     class CpPatch {
         final int index;
-        final String placeholder;
         final Object value;
-        CpPatch(int index, String placeholder, Object value) {
+        CpPatch(int index, Object value) {
             this.index = index;
-            this.placeholder = placeholder;
             this.value = value;
         }
         public String toString() {
-            return "CpPatch/index="+index+",placeholder="+placeholder+",value="+value;
+            return "CpPatch/index="+index+",value="+value;
         }
     }
 
-    Map<Object, CpPatch> cpPatches = new HashMap<>();
+    private final ArrayList<CpPatch> cpPatches = new ArrayList<>();
 
-    int cph = 0;  // for counting constant placeholders
+    private int cph = 0;  // for counting constant placeholders
 
     String constantPlaceholder(Object arg) {
         String cpPlaceholder = "CONSTANT_PLACEHOLDER_" + cph++;
-        if (DUMP_CLASS_FILES) cpPlaceholder += " <<" + debugString(arg) + ">>";  // debugging aid
-        if (cpPatches.containsKey(cpPlaceholder)) {
-            throw new InternalError("observed CP placeholder twice: " + cpPlaceholder);
-        }
+        if (DUMP_CLASS_FILES) cpPlaceholder += " <<" + debugString(arg) + ">>";
+        // TODO check if arg is already in the constant pool
         // insert placeholder in CP and remember the patch
-        int index = cw.newConst((Object) cpPlaceholder);  // TODO check if already in the constant pool
-        cpPatches.put(cpPlaceholder, new CpPatch(index, cpPlaceholder, arg));
+        int index = cw.newConst((Object) cpPlaceholder);
+        cpPatches.add(new CpPatch(index, arg));
         return cpPlaceholder;
     }
 
     Object[] cpPatches(byte[] classFile) {
         int size = getConstantPoolSize(classFile);
         Object[] res = new Object[size];
-        for (CpPatch p : cpPatches.values()) {
+        for (CpPatch p : cpPatches) {
             if (p.index >= size)
                 throw new InternalError("in cpool["+size+"]: "+p+"\n"+Arrays.toString(Arrays.copyOf(classFile, 20)));
             res[p.index] = p.value;
@@ -655,35 +652,11 @@ class InvokerBytecodeGenerator {
         return classFile;
     }
 
-    /*
-     * NOTE: This is used from GenerateJLIClassesPlugin via
-     * DirectMethodHandle::generateDMHClassBytes.
-     *
-     * Generate customized code for a set of LambdaForms of specified types into
-     * a class with a specified name.
-     */
-    static byte[] generateCodeBytesForMultiple(String className,
-            LambdaForm[] forms, MethodType[] types) {
-        assert(forms.length == types.length);
-
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(Opcodes.V1_8, Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL + Opcodes.ACC_SUPER,
-                className, null, INVOKER_SUPER_NAME, null);
-        cw.visitSource(className.substring(className.lastIndexOf('/') + 1), null);
-        for (int i = 0; i < forms.length; i++) {
-            InvokerBytecodeGenerator g
-                    = new InvokerBytecodeGenerator(className, forms[i], types[i]);
-            g.setClassWriter(cw);
-            g.addMethod();
-        }
-        return cw.toByteArray();
-    }
-
-    private void setClassWriter(ClassWriter cw) {
+    void setClassWriter(ClassWriter cw) {
         this.cw = cw;
     }
 
-    private void addMethod() {
+    void addMethod() {
         methodPrologue();
 
         // Suppress this method in backtraces displayed to the user.
@@ -765,7 +738,7 @@ class InvokerBytecodeGenerator {
                     continue;
                 case IDENTITY:
                     assert(name.arguments.length == 1);
-                    emitPushArguments(name);
+                    emitPushArguments(name, 0);
                     continue;
                 case ZERO:
                     assert(name.arguments.length == 0);
@@ -819,7 +792,7 @@ class InvokerBytecodeGenerator {
         assert arrayOpcode == Opcodes.AALOAD || arrayOpcode == Opcodes.AASTORE || arrayOpcode == Opcodes.ARRAYLENGTH;
         Class<?> elementType = name.function.methodType().parameterType(0).getComponentType();
         assert elementType != null;
-        emitPushArguments(name);
+        emitPushArguments(name, 0);
         if (arrayOpcode != Opcodes.ARRAYLENGTH && elementType.isPrimitive()) {
             Wrapper w = Wrapper.forPrimitiveType(elementType);
             arrayOpcode = arrayInsnOpcode(arrayTypeCode(w), arrayOpcode);
@@ -848,7 +821,7 @@ class InvokerBytecodeGenerator {
         }
 
         // push arguments
-        emitPushArguments(name);
+        emitPushArguments(name, 0);
 
         // invocation
         MethodType type = name.function.methodType();
@@ -947,7 +920,7 @@ class InvokerBytecodeGenerator {
         assert(!(member.getDeclaringClass().isInterface() && refKind == REF_invokeVirtual));
 
         // push arguments
-        emitPushArguments(name);
+        emitPushArguments(name, 0);
 
         // invocation
         if (member.isMethod()) {
@@ -1468,13 +1441,10 @@ class InvokerBytecodeGenerator {
         }
     }
 
-    private void emitPushArguments(Name args) {
-        emitPushArguments(args, 0);
-    }
-
     private void emitPushArguments(Name args, int start) {
+        MethodType type = args.function.methodType();
         for (int i = start; i < args.arguments.length; i++) {
-            emitPushArgument(args, i);
+            emitPushArgument(type.parameterType(i), args.arguments[i]);
         }
     }
 

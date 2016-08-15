@@ -94,7 +94,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
         Files.createDirectories(modulePath);
 
         new JavacTask(tb)
-                .options("-modulesourcepath", moduleSrc.toString())
+                .options("--module-source-path", moduleSrc.toString())
                 .outdir(modulePath)
                 .files(findJavaFiles(moduleSrc))
                 .run()
@@ -131,8 +131,8 @@ public class QueryBeforeEnter extends ModuleTestBase {
                 (com.sun.source.util.JavacTask) javaCompiler.getTask(null,
                                                               null,
                                                               d -> { throw new IllegalStateException(d.toString()); },
-                                                              Arrays.asList("-modulepath", modulePath.toString(),
-                                                                            "-classpath", cp.toString(),
+                                                              Arrays.asList("--module-path", modulePath.toString(),
+                                                                            "--class-path", cp.toString(),
                                                                             "-sourcepath", src.toString()),
                                                               null,
                                                               fm.getJavaFileObjects(src.resolve("test").resolve("Test2.java")));
@@ -170,7 +170,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
         Files.createDirectories(modulePath);
 
         new JavacTask(tb)
-                .options("-modulesourcepath", moduleSrc.toString())
+                .options("--module-source-path", moduleSrc.toString())
                 .outdir(modulePath)
                 .files(findJavaFiles(moduleSrc))
                 .run()
@@ -207,8 +207,8 @@ public class QueryBeforeEnter extends ModuleTestBase {
                 (com.sun.source.util.JavacTask) javaCompiler.getTask(null,
                                                               null,
                                                               d -> { throw new IllegalStateException(d.toString()); },
-                                                              Arrays.asList("-modulepath", modulePath.toString(),
-                                                                            "-classpath", cp.toString(),
+                                                              Arrays.asList("--module-path", modulePath.toString(),
+                                                                            "--class-path", cp.toString(),
                                                                             "-sourcepath", src.toString()),
                                                               null,
                                                               fm.getJavaFileObjects(findJavaFiles(src)));
@@ -245,7 +245,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
         Files.createDirectories(modulePath);
 
         new JavacTask(tb)
-                .options("-modulesourcepath", modulePathSrc.toString())
+                .options("--module-source-path", modulePathSrc.toString())
                 .outdir(modulePath)
                 .files(findJavaFiles(modulePathSrc))
                 .run()
@@ -289,9 +289,9 @@ public class QueryBeforeEnter extends ModuleTestBase {
                 (com.sun.source.util.JavacTask) javaCompiler.getTask(null,
                                                               null,
                                                               d -> { throw new IllegalStateException(d.toString()); },
-                                                              Arrays.asList("-modulepath", modulePath.toString(),
-                                                                            "-classpath", cp.toString(),
-                                                                            "-modulesourcepath", moduleSrc.toString(),
+                                                              Arrays.asList("--module-path", modulePath.toString(),
+                                                                            "--class-path", cp.toString(),
+                                                                            "--module-source-path", moduleSrc.toString(),
                                                                             "-d", out.toString()),
                                                               null,
                                                               fm.getJavaFileObjects(findJavaFiles(moduleSrc)));
@@ -339,7 +339,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
                 (com.sun.source.util.JavacTask) javaCompiler.getTask(null,
                                                               null,
                                                               d -> { throw new IllegalStateException(d.toString()); },
-                                                              Arrays.asList("-processorpath", processorPath,
+                                                              Arrays.asList("--processor-path", processorPath,
                                                                             "-processor", AP.class.getName(),
                                                                             "-Xplugin:test"),
                                                               null,
@@ -347,7 +347,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
             task.call();
         }
 
-        Main.compile(new String[] {"-processorpath", processorPath,
+        Main.compile(new String[] {"--processor-path", processorPath,
                                    "-Xplugin:test",
                                    testSource.toString()});
     }

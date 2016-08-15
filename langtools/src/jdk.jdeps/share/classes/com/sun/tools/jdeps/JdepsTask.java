@@ -144,7 +144,7 @@ class JdepsTask {
     }
 
     static Option[] recognizedOptions = {
-        new Option(false, "-h", "-?", "-help") {
+        new Option(false, "-h", "-?", "-help", "--help") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.help = true;
             }
@@ -195,14 +195,14 @@ class JdepsTask {
                 task.options.apiOnly = true;
             }
         },
-        new Option(true, "-check") {
+        new Option(true, "--check") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 Set<String> mods =  Set.of(arg.split(","));
                 task.options.checkModuleDeps = mods;
                 task.options.addmods.addAll(mods);
             }
         },
-        new Option(true, "-genmoduleinfo") {
+        new Option(true, "--gen-module-info") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 Path p = Paths.get(arg);
                 if (Files.exists(p) && (!Files.isDirectory(p) || !Files.isWritable(p))) {
@@ -222,22 +222,22 @@ class JdepsTask {
         },
 
         // ---- paths option ----
-        new Option(true, "-cp", "-classpath") {
+        new Option(true, "-cp", "-classpath", "--class-path") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.classpath = arg;
             }
         },
-        new Option(true, "-mp", "-modulepath") {
+        new Option(true, "--module-path") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 task.options.modulePath = arg;
             }
         },
-        new Option(true, "-upgrademodulepath") {
+        new Option(true, "--upgrade-module-path") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 task.options.upgradeModulePath = arg;
             }
         },
-        new Option(true, "-system") {
+        new Option(true, "--system") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 if (arg.equals("none")) {
                     task.options.systemModulePath = null;
@@ -250,13 +250,13 @@ class JdepsTask {
                 }
             }
         },
-        new Option(true, "-addmods") {
+        new Option(true, "--add-modules") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 Set<String> mods = Set.of(arg.split(","));
                 task.options.addmods.addAll(mods);
             }
         },
-        new Option(true, "-m") {
+        new Option(true, "-m", "--module") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 task.options.rootModule = arg;
                 task.options.addmods.add(arg);
@@ -314,7 +314,7 @@ class JdepsTask {
         },
 
         // Another alternative to list modules in -addmods option
-        new HiddenOption(true, "-include-system-modules") {
+        new HiddenOption(true, "--include-system-modules") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 task.options.includeSystemModulePattern = Pattern.compile(arg);
             }
@@ -345,7 +345,7 @@ class JdepsTask {
             }
         },
 
-        new Option(false, "-ct", "-compile-time") {
+        new Option(false, "--compile-time") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.compileTimeView = true;
                 task.options.filterSamePackage = true;
@@ -375,7 +375,7 @@ class JdepsTask {
                 task.options.showLabel = true;
             }
         },
-        new HiddenOption(false, "-hide-module") {
+        new HiddenOption(false, "--hide-show-module") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.showModule = false;
             }
@@ -464,7 +464,7 @@ class JdepsTask {
                 return EXIT_CMDERR;
             }
             if (options.checkModuleDeps != null && !inputArgs.isEmpty()) {
-                reportError("err.invalid.module.option", inputArgs, "-check");
+                reportError("err.invalid.module.option", inputArgs, "--check");
             }
 
             boolean ok = run();
@@ -501,12 +501,12 @@ class JdepsTask {
                 .forEach(mn -> config.findModule(mn).orElseThrow(() ->
                     new UncheckedBadArgs(new BadArgs("err.module.not.found", mn))));
 
-            // -genmoduleinfo
+            // --gen-module-info
             if (options.genModuleInfo != null) {
                 return genModuleInfo(config);
             }
 
-            // -check
+            // --check
             if (options.checkModuleDeps != null) {
                 return new ModuleAnalyzer(config, log, options.checkModuleDeps).run();
             }

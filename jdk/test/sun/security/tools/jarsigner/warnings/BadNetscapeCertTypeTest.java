@@ -22,7 +22,6 @@
  */
 
 import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.JarUtils;
 
 import java.nio.file.Files;
@@ -67,7 +66,7 @@ public class BadNetscapeCertTypeTest extends Test {
         JarUtils.createJar(UNSIGNED_JARFILE, FIRST_FILE);
 
         // sign jar
-        OutputAnalyzer analyzer = ProcessTools.executeCommand(JARSIGNER,
+        OutputAnalyzer analyzer = jarsigner(
                 "-verbose",
                 "-keystore", NETSCAPE_KEYSTORE,
                 "-storepass", PASSWORD,
@@ -79,7 +78,7 @@ public class BadNetscapeCertTypeTest extends Test {
         checkSigning(analyzer, BAD_NETSCAPE_CERT_TYPE_SIGNING_WARNING);
 
         // verify signed jar
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-verbose",
                 "-keystore", NETSCAPE_KEYSTORE,
@@ -90,7 +89,7 @@ public class BadNetscapeCertTypeTest extends Test {
         checkVerifying(analyzer, 0, BAD_NETSCAPE_CERT_TYPE_VERIFYING_WARNING);
 
         // verify signed jar in strict mode
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-verbose",
                 "-strict",

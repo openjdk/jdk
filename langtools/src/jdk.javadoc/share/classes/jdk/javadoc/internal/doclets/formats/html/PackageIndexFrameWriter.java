@@ -37,6 +37,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
@@ -76,10 +77,9 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
         try {
             packgen = new PackageIndexFrameWriter(configuration, filename);
             packgen.buildPackageIndexFile("doclet.Window_Overview", false);
-            packgen.close();
         } catch (IOException exc) {
-            configuration.standardmessage.error(
-                        "doclet.exception_encountered",
+            Messages messages = configuration.getMessages();
+            messages.error("doclet.exception_encountered",
                         exc.toString(), filename);
             throw new DocletAbortException(exc);
         }
@@ -91,12 +91,12 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     protected void addPackagesList(Collection<PackageElement> packages, String text,
             String tableSummary, Content body) {
         Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
-                packagesLabel);
+                contents.packagesLabel);
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
                 ? HtmlTree.MAIN(HtmlStyle.indexContainer, heading)
                 : HtmlTree.DIV(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.setTitle(packagesLabel);
+        ul.setTitle(contents.packagesLabel);
         for (PackageElement aPackage : packages) {
             // Do not list the package if -nodeprecated option is set and the
             // package is marked as deprecated.
@@ -161,7 +161,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      */
     protected void addAllClassesLink(Content ul) {
         Content linkContent = getHyperLink(DocPaths.ALLCLASSES_FRAME,
-                allclassesLabel, "", "packageFrame");
+                contents.allClassesLabel, "", "packageFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);
     }
@@ -174,7 +174,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      */
     protected void addAllModulesLink(Content ul) {
         Content linkContent = getHyperLink(DocPaths.MODULE_OVERVIEW_FRAME,
-                allmodulesLabel, "", "packageListFrame");
+                contents.allModulesLabel, "", "packageListFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);
     }
@@ -183,7 +183,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      * {@inheritDoc}
      */
     protected void addNavigationBarFooter(Content body) {
-        Content p = HtmlTree.P(getSpace());
+        Content p = HtmlTree.P(Contents.SPACE);
         body.addContent(p);
     }
 }

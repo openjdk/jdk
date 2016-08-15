@@ -62,8 +62,8 @@ public class ExportModuleStressTest {
         compiled = CompilerUtils.compile(
             SRC_DIR.resolve("jdk.translet"),
             MODS_DIR.resolve("jdk.translet"),
-            "-XaddExports:jdk.test/test=jdk.translet",
-            "-mp", MODS_DIR.toString());
+            "--add-exports=jdk.test/test=jdk.translet",
+            "-p", MODS_DIR.toString());
         if (!compiled) {
             throw new RuntimeException("Test failed to compile module jdk.translet");
         }
@@ -71,7 +71,7 @@ public class ExportModuleStressTest {
         // Sanity check that the test, jdk.test/test/Main.java
         // runs without error.
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-mp", MODS_DIR.toString(),
+            "-p", MODS_DIR.toString(),
             "-m", "jdk.test/test.Main");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("failed: 0")
