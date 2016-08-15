@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.util.ArrayList;
@@ -47,8 +48,8 @@ public final class DLSInstrument extends ModelInstrument {
     boolean druminstrument = false;
     byte[] guid = null;
     DLSInfo info = new DLSInfo();
-    List<DLSRegion> regions = new ArrayList<DLSRegion>();
-    List<DLSModulator> modulators = new ArrayList<DLSModulator>();
+    List<DLSRegion> regions = new ArrayList<>();
+    List<DLSModulator> modulators = new ArrayList<>();
 
     public DLSInstrument() {
         super(null, null, null, null);
@@ -62,6 +63,7 @@ public final class DLSInstrument extends ModelInstrument {
         return info;
     }
 
+    @Override
     public String getName() {
         return info.name;
     }
@@ -70,6 +72,7 @@ public final class DLSInstrument extends ModelInstrument {
         info.name = name;
     }
 
+    @Override
     public ModelPatch getPatch() {
         return new ModelPatch(bank, preset, druminstrument);
     }
@@ -86,6 +89,7 @@ public final class DLSInstrument extends ModelInstrument {
         }
     }
 
+    @Override
     public Object getData() {
         return null;
     }
@@ -98,6 +102,7 @@ public final class DLSInstrument extends ModelInstrument {
         return modulators;
     }
 
+    @Override
     public String toString() {
         if (druminstrument)
             return "Drumkit: " + info.name
@@ -362,17 +367,17 @@ public final class DLSInstrument extends ModelInstrument {
         return null;
     }
 
+    @Override
     public ModelPerformer[] getPerformers() {
-        List<ModelPerformer> performers = new ArrayList<ModelPerformer>();
+        List<ModelPerformer> performers = new ArrayList<>();
 
-        Map<String, DLSModulator> modmap = new HashMap<String, DLSModulator>();
+        Map<String, DLSModulator> modmap = new HashMap<>();
         for (DLSModulator mod: getModulators()) {
             modmap.put(mod.getSource() + "x" + mod.getControl() + "=" +
                     mod.getDestination(), mod);
         }
 
-        Map<String, DLSModulator> insmodmap =
-                new HashMap<String, DLSModulator>();
+        Map<String, DLSModulator> insmodmap = new HashMap<>();
 
         for (DLSRegion zone: regions) {
             ModelPerformer performer = new ModelPerformer();

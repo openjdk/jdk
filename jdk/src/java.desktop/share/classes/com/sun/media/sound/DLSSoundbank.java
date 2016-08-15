@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.io.File;
@@ -42,9 +43,9 @@ import javax.sound.midi.Patch;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.SoundbankResource;
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioFormat.Encoding;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.AudioFormat.Encoding;
 
 /**
  * A DLS Level 1 and Level 2 soundbank reader (from files/url/streams).
@@ -100,10 +101,12 @@ public final class DLSSoundbank implements Soundbank {
             return d;
         }
 
+        @Override
         public int hashCode() {
             return (int)i1;
         }
 
+        @Override
         public boolean equals(Object obj) {
             if (!(obj instanceof DLSID)) {
                 return false;
@@ -176,8 +179,8 @@ public final class DLSSoundbank implements Soundbank {
 
     private final DLSInfo info = new DLSInfo();
 
-    private final List<DLSInstrument> instruments = new ArrayList<DLSInstrument>();
-    private final List<DLSSample> samples = new ArrayList<DLSSample>();
+    private final List<DLSInstrument> instruments = new ArrayList<>();
+    private final List<DLSSample> samples = new ArrayList<>();
 
     private boolean largeFormat = false;
     private File sampleFile;
@@ -300,7 +303,7 @@ public final class DLSSoundbank implements Soundbank {
         DLSID uuid;
         long x;
         long y;
-        Stack<Long> stack = new Stack<Long>();
+        Stack<Long> stack = new Stack<>();
 
         while (riff.available() != 0) {
             int opcode = riff.readUnsignedShort();
@@ -482,7 +485,7 @@ public final class DLSSoundbank implements Soundbank {
                     }
                 }
                 if (chunk.getType().equals("lart")) {
-                    List<DLSModulator> modlist = new ArrayList<DLSModulator>();
+                    List<DLSModulator> modlist = new ArrayList<>();
                     while (chunk.hasNextChunk()) {
                         RIFFReader subchunk = chunk.nextChunk();
                         if (chunk.getFormat().equals("cdl ")) {
@@ -498,7 +501,7 @@ public final class DLSSoundbank implements Soundbank {
                 }
                 if (chunk.getType().equals("lar2")) {
                     // support for DLS level 2 ART
-                    List<DLSModulator> modlist = new ArrayList<DLSModulator>();
+                    List<DLSModulator> modlist = new ArrayList<>();
                     while (chunk.hasNextChunk()) {
                         RIFFReader subchunk = chunk.nextChunk();
                         if (chunk.getFormat().equals("cdl ")) {
@@ -582,7 +585,7 @@ public final class DLSSoundbank implements Soundbank {
         }
     }
 
-    private Map<DLSRegion, Long> temp_rgnassign = new HashMap<DLSRegion, Long>();
+    private Map<DLSRegion, Long> temp_rgnassign = new HashMap<>();
 
     private boolean readRgnChunk(DLSRegion split, RIFFReader riff)
             throws IOException {
@@ -591,7 +594,7 @@ public final class DLSSoundbank implements Soundbank {
             String format = chunk.getFormat();
             if (format.equals("LIST")) {
                 if (chunk.getType().equals("lart")) {
-                    List<DLSModulator> modlist = new ArrayList<DLSModulator>();
+                    List<DLSModulator> modlist = new ArrayList<>();
                     while (chunk.hasNextChunk()) {
                         RIFFReader subchunk = chunk.nextChunk();
                         if (chunk.getFormat().equals("cdl ")) {
@@ -607,7 +610,7 @@ public final class DLSSoundbank implements Soundbank {
                 }
                 if (chunk.getType().equals("lar2")) {
                     // support for DLS level 2 ART
-                    List<DLSModulator> modlist = new ArrayList<DLSModulator>();
+                    List<DLSModulator> modlist = new ArrayList<>();
                     while (chunk.hasNextChunk()) {
                         RIFFReader subchunk = chunk.nextChunk();
                         if (chunk.getFormat().equals("cdl ")) {
@@ -902,7 +905,7 @@ public final class DLSSoundbank implements Soundbank {
 
         RIFFWriter wvpl = writer.writeList("wvpl");
         long off = wvpl.getFilePointer();
-        List<Long> offsettable = new ArrayList<Long>();
+        List<Long> offsettable = new ArrayList<>();
         for (DLSSample sample : samples) {
             offsettable.add(Long.valueOf(wvpl.getFilePointer() - off));
             writeSample(wvpl.writeList("wave"), sample);
@@ -1179,18 +1182,22 @@ public final class DLSSoundbank implements Soundbank {
         return info;
     }
 
+    @Override
     public String getName() {
         return info.name;
     }
 
+    @Override
     public String getVersion() {
         return major + "." + minor;
     }
 
+    @Override
     public String getVendor() {
         return info.engineers;
     }
 
+    @Override
     public String getDescription() {
         return info.comments;
     }
@@ -1207,6 +1214,7 @@ public final class DLSSoundbank implements Soundbank {
         info.comments = s;
     }
 
+    @Override
     public SoundbankResource[] getResources() {
         SoundbankResource[] resources = new SoundbankResource[samples.size()];
         int j = 0;
@@ -1215,6 +1223,7 @@ public final class DLSSoundbank implements Soundbank {
         return resources;
     }
 
+    @Override
     public DLSInstrument[] getInstruments() {
         DLSInstrument[] inslist_array =
                 instruments.toArray(new DLSInstrument[instruments.size()]);
@@ -1226,6 +1235,7 @@ public final class DLSSoundbank implements Soundbank {
         return samples.toArray(new DLSSample[samples.size()]);
     }
 
+    @Override
     public Instrument getInstrument(Patch patch) {
         int program = patch.getProgram();
         int bank = patch.getBank();
@@ -1256,9 +1266,9 @@ public final class DLSSoundbank implements Soundbank {
 
     public void removeResource(SoundbankResource resource) {
         if (resource instanceof DLSInstrument)
-            instruments.remove((DLSInstrument) resource);
+            instruments.remove(resource);
         if (resource instanceof DLSSample)
-            samples.remove((DLSSample) resource);
+            samples.remove(resource);
     }
 
     public void addInstrument(DLSInstrument resource) {
