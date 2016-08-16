@@ -1167,7 +1167,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_Java);
 
   // reset_last_Java_frame
-  __ reset_last_Java_frame(thread, true, true);
+  __ reset_last_Java_frame(thread, true);
 
   // reset handle block
   __ movptr(t, Address(thread, JavaThread::active_handles_offset()));
@@ -1659,7 +1659,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ set_last_Java_frame(noreg, rbp, __ pc());
   __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::popframe_move_outgoing_args), r15_thread, c_rarg1, c_rarg2);
 #endif
-  __ reset_last_Java_frame(thread, true, true);
+  __ reset_last_Java_frame(thread, true);
 
   // Restore the last_sp and null it out
   __ movptr(rsp, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
