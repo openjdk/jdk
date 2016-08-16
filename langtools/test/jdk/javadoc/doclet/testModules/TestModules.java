@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154119 8154262 8156077 8157987 8154261 8154817
+ * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -31,7 +31,6 @@
  * @build JavadocTester
  * @run main TestModules
  */
-
 public class TestModules extends JavadocTester {
 
     public static void main(String... args) throws Exception {
@@ -39,72 +38,108 @@ public class TestModules extends JavadocTester {
         tester.runTests();
     }
 
+    /**
+     * Test generated module pages for HTML 4.
+     */
     @Test
-    void test1() {
+    void testHtml4() {
         javadoc("-d", "out", "-use",
                 "--module-source-path", testSrc,
                 "--add-modules", "module1,module2",
                 "testpkgmdl1", "testpkgmdl2");
         checkExit(Exit.OK);
-        testDescription(true);
-        testNoDescription(false);
-        testOverviewSummaryModules();
-        testModuleLink();
-        testModuleClickThroughLinks();
-        testModuleClickThrough(true);
+        checkDescription(true);
+        checkNoDescription(false);
+        checkOverviewSummaryModules();
+        checkModuleLink();
+        checkModuleClickThroughLinks();
+        checkModuleClickThrough(true);
+        checkModuleFilesAndLinks(true);
     }
 
+    /**
+     * Test generated module pages for HTML 5.
+     */
     @Test
-    void test2() {
+    void testHtml5() {
         javadoc("-d", "out-html5", "-html5", "-use",
                 "--module-source-path", testSrc,
                 "--add-modules", "module1,module2",
                 "testpkgmdl1", "testpkgmdl2");
         checkExit(Exit.OK);
-        testHtml5Description(true);
-        testHtml5NoDescription(false);
-        testHtml5OverviewSummaryModules();
-        testModuleLink();
-        testModuleClickThroughLinks();
-        testModuleClickThrough(true);
+        checkHtml5Description(true);
+        checkHtml5NoDescription(false);
+        checkHtml5OverviewSummaryModules();
+        checkModuleLink();
+        checkModuleClickThroughLinks();
+        checkModuleClickThrough(true);
+        checkModuleFilesAndLinks(true);
     }
 
+    /**
+     * Test generated module pages for HTML 4 with -nocomment option.
+     */
     @Test
-    void test3() {
+    void testHtml4NoComment() {
         javadoc("-d", "out-nocomment", "-nocomment", "-use",
                 "--module-source-path", testSrc,
                 "--add-modules", "module1,module2",
                 "testpkgmdl1", "testpkgmdl2");
         checkExit(Exit.OK);
-        testDescription(false);
-        testNoDescription(true);
-        testModuleLink();
+        checkDescription(false);
+        checkNoDescription(true);
+        checkModuleLink();
+        checkModuleFilesAndLinks(true);
     }
 
+    /**
+     * Test generated module pages for HTML 5 with -nocomment option.
+     */
     @Test
-    void test4() {
+    void testHtml5NoComment() {
         javadoc("-d", "out-html5-nocomment", "-nocomment", "-html5", "-use",
                 "--module-source-path", testSrc,
                 "--add-modules", "module1,module2",
                 "testpkgmdl1", "testpkgmdl2");
         checkExit(Exit.OK);
-        testHtml5Description(false);
-        testHtml5NoDescription(true);
-        testModuleLink();
+        checkHtml5Description(false);
+        checkHtml5NoDescription(true);
+        checkModuleLink();
+        checkModuleFilesAndLinks(true);
     }
 
-   @Test
-    void test5() {
+    /**
+     * Test generated pages, in an unnamed module, for HTML 4.
+     */
+    @Test
+    void testHtml4UnnamedModule() {
         javadoc("-d", "out-nomodule", "-use",
                 "-sourcepath", testSrc,
                 "testpkgnomodule", "testpkgnomodule1");
         checkExit(Exit.OK);
-        testOverviewSummaryPackages();
-        testModuleClickThrough(false);
+        checkOverviewSummaryPackages();
+        checkModuleClickThrough(false);
+        checkModuleFilesAndLinks(false);
     }
 
-   @Test
-    void test6() {
+    /**
+     * Test generated pages, in an unnamed module, for HTML 5.
+     */
+    @Test
+    void testHtml5UnnamedModule() {
+        javadoc("-d", "out-html5-nomodule", "-html5", "-use",
+                "-sourcepath", testSrc,
+                "testpkgnomodule", "testpkgnomodule1");
+        checkExit(Exit.OK);
+        checkHtml5OverviewSummaryPackages();
+        checkModuleFilesAndLinks(false);
+    }
+
+    /**
+     * Test generated module pages with javadoc tags.
+     */
+    @Test
+    void testJDTagsInModules() {
         javadoc("-d", "out-mdltags", "-author", "-version",
                 "-tag", "regular:a:Regular Tag:",
                 "-tag", "moduletag:s:Module Tag:",
@@ -112,30 +147,37 @@ public class TestModules extends JavadocTester {
                 "--add-modules", "moduletags,module2",
                 "testpkgmdltags", "testpkgmdl2");
         checkExit(Exit.OK);
-        testModuleTags();
+        checkModuleTags();
     }
 
+    /**
+     * Test generated module summary page.
+     */
     @Test
-    void test7() {
+    void testModuleSummary() {
         javadoc("-d", "out-moduleSummary", "-use",
                 "-modulesourcepath", testSrc,
                 "-addmods", "module1,module2",
                 "testpkgmdl1", "testpkgmdl2", "testpkg2mdl2");
         checkExit(Exit.OK);
-        testModuleSummary();
-        testNegatedModuleSummary();
+        checkModuleSummary();
+        checkNegatedModuleSummary();
     }
 
-   @Test
-    void test8() {
-        javadoc("-d", "out-html5-nomodule", "-html5", "-use",
-                "-sourcepath", testSrc,
-                "testpkgnomodule", "testpkgnomodule1");
+    /**
+     * Test generated module pages and pages with link to modules.
+     */
+    @Test
+    void testModuleFilesAndLinks() {
+        javadoc("-d", "out-modulelinks",
+                "-modulesourcepath", testSrc,
+                "-addmods", "module1",
+                "testpkgmdl1");
         checkExit(Exit.OK);
-        testHtml5OverviewSummaryPackages();
+        checkModuleFilesAndLinks(false);
     }
 
-    void testDescription(boolean found) {
+    void checkDescription(boolean found) {
         checkOutput("module1-summary.html", found,
                 "<!-- ============ MODULE DESCRIPTION =========== -->\n"
                 + "<a name=\"module.description\">\n"
@@ -150,7 +192,7 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">This is a test description for the module2 module.</div>");
     }
 
-    void testNoDescription(boolean found) {
+    void checkNoDescription(boolean found) {
         checkOutput("module1-summary.html", found,
                 "<div class=\"contentContainer\">\n"
                 + "<ul class=\"blockList\">\n"
@@ -167,7 +209,7 @@ public class TestModules extends JavadocTester {
                 + "<!-- ============ MODULES SUMMARY =========== -->");
     }
 
-    void testHtml5Description(boolean found) {
+    void checkHtml5Description(boolean found) {
         checkOutput("module1-summary.html", found,
                 "<section role=\"region\">\n"
                 + "<!-- ============ MODULE DESCRIPTION =========== -->\n"
@@ -186,7 +228,7 @@ public class TestModules extends JavadocTester {
                 + "</section>");
     }
 
-    void testHtml5NoDescription(boolean found) {
+    void checkHtml5NoDescription(boolean found) {
         checkOutput("module1-summary.html", found,
                 "<div class=\"contentContainer\">\n"
                 + "<ul class=\"blockList\">\n"
@@ -203,17 +245,13 @@ public class TestModules extends JavadocTester {
                 + "<!-- ============ MODULES SUMMARY =========== -->");
     }
 
-    void testModuleLink() {
+    void checkModuleLink() {
         checkOutput("overview-summary.html", true,
                 "<li>Module</li>");
         checkOutput("module1-summary.html", true,
                 "<li class=\"navBarCell1Rev\">Module</li>");
         checkOutput("module2-summary.html", true,
                 "<li class=\"navBarCell1Rev\">Module</li>");
-        checkOutput("testpkgmdl1/package-summary.html", true,
-                "<li><a href=\"../module1-summary.html\">Module</a></li>");
-        checkOutput("testpkgmdl1/TestClassInModule1.html", true,
-                "<li><a href=\"../module1-summary.html\">Module</a></li>");
         checkOutput("testpkgmdl1/class-use/TestClassInModule1.html", true,
                 "<li><a href=\"../../module1-summary.html\">Module</a></li>");
         checkOutput("testpkgmdl2/package-summary.html", true,
@@ -224,7 +262,7 @@ public class TestModules extends JavadocTester {
                 "<li><a href=\"../../module2-summary.html\">Module</a></li>");
     }
 
-    void testNoModuleLink() {
+    void checkNoModuleLink() {
         checkOutput("testpkgnomodule/package-summary.html", true,
                 "<ul class=\"navList\" title=\"Navigation\">\n"
                 + "<li><a href=\"../testpkgnomodule/package-summary.html\">Package</a></li>");
@@ -236,7 +274,7 @@ public class TestModules extends JavadocTester {
                 + "<li><a href=\"../../testpkgnomodule/package-summary.html\">Package</a></li>");
     }
 
-    void testModuleTags() {
+    void checkModuleTags() {
         checkOutput("moduletags-summary.html", true,
                 "Type Link: <a href=\"testpkgmdltags/TestClassInModuleTags.html\" title=\"class in "
                 + "testpkgmdltags\"><code>TestClassInModuleTags</code></a>.");
@@ -270,7 +308,7 @@ public class TestModules extends JavadocTester {
                 + "<dd>Just a simple module tag.</dd>");
     }
 
-    void testOverviewSummaryModules() {
+    void checkOverviewSummaryModules() {
         checkOutput("overview-summary.html", true,
                 "<table class=\"overviewSummary\" summary=\"Module Summary table, listing modules, and an explanation\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
@@ -287,7 +325,7 @@ public class TestModules extends JavadocTester {
                 + "</tr>");
     }
 
-    void testOverviewSummaryPackages() {
+    void checkOverviewSummaryPackages() {
         checkOutput("overview-summary.html", false,
                 "<table class=\"overviewSummary\" summary=\"Module Summary table, listing modules, and an explanation\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
@@ -304,7 +342,7 @@ public class TestModules extends JavadocTester {
                 + "</tr>");
     }
 
-    void testHtml5OverviewSummaryModules() {
+    void checkHtml5OverviewSummaryModules() {
         checkOutput("overview-summary.html", true,
                 "<table class=\"overviewSummary\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
@@ -321,7 +359,7 @@ public class TestModules extends JavadocTester {
                 + "</tr>");
     }
 
-    void testHtml5OverviewSummaryPackages() {
+    void checkHtml5OverviewSummaryPackages() {
         checkOutput("overview-summary.html", false,
                 "<table class=\"overviewSummary\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
@@ -338,7 +376,7 @@ public class TestModules extends JavadocTester {
                 + "</tr>");
     }
 
-    void testModuleSummary() {
+    void checkModuleSummary() {
         checkOutput("module1-summary.html", true,
                 "<ul class=\"subNavList\">\n"
                 + "<li>Module:&nbsp;</li>\n"
@@ -440,7 +478,7 @@ public class TestModules extends JavadocTester {
                 + "</tr>");
     }
 
-    void testNegatedModuleSummary() {
+    void checkNegatedModuleSummary() {
         checkOutput("module1-summary.html", false,
                 "<!-- ============ SERVICES SUMMARY =========== -->\n"
                 + "<a name=\"services.summary\">\n"
@@ -448,7 +486,7 @@ public class TestModules extends JavadocTester {
                 + "</a>");
     }
 
-     void testModuleClickThroughLinks() {
+    void checkModuleClickThroughLinks() {
         checkOutput("module-overview-frame.html", true,
                 "<li><a href=\"module1-frame.html\" target=\"packageListFrame\" "
                 + "onclick=\"updateModuleFrame('module1-type-frame.html','module1-summary.html');"
@@ -458,16 +496,33 @@ public class TestModules extends JavadocTester {
                 + "onclick=\"updateModuleFrame('module2-type-frame.html','module2-summary.html');"
                 + "\">module2</a></li>");
         checkOutput("script.js", true,
-                 "function updateModuleFrame(pFrame, cFrame)\n"
-                 + "{\n"
-                 + "    top.packageFrame.location = pFrame;\n"
-                 + "    top.classFrame.location = cFrame;\n"
-                 + "}");
-}
+                "function updateModuleFrame(pFrame, cFrame)\n"
+                + "{\n"
+                + "    top.packageFrame.location = pFrame;\n"
+                + "    top.classFrame.location = cFrame;\n"
+                + "}");
+    }
 
-     void testModuleClickThrough(boolean found) {
+    void checkModuleClickThrough(boolean found) {
         checkFiles(found,
                 "module1-type-frame.html",
                 "module2-type-frame.html");
-     }
+    }
+
+    void checkModuleFilesAndLinks(boolean found) {
+        checkOutput("testpkgmdl1/package-summary.html", found,
+                "<li><a href=\"../module1-summary.html\">Module</a></li>");
+        checkOutput("testpkgmdl1/package-summary.html", found,
+                "<div class=\"subTitle\"><span class=\"moduleLabelInClass\">Module</span>&nbsp;"
+                + "<a href=\"../module1-summary.html\">module1</a></div>");
+        checkOutput("testpkgmdl1/TestClassInModule1.html", found,
+                "<li><a href=\"../module1-summary.html\">Module</a></li>");
+        checkOutput("testpkgmdl1/TestClassInModule1.html", found,
+                "<div class=\"subTitle\"><span class=\"moduleLabelInClass\">Module</span>&nbsp;"
+                + "<a href=\"../module1-summary.html\">module1</a></div>");
+        checkFiles(found,
+                "module1-frame.html",
+                "module1-summary.html",
+                "module-overview-frame.html");
+    }
 }
