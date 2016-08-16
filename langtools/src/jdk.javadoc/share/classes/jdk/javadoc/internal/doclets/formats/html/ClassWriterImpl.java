@@ -651,11 +651,11 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             if (type instanceof TypeElement) {
                 Content link = getLink(
                         new LinkInfoImpl(configuration, context, (TypeElement)(type)));
-                dd.addContent(link);
+                dd.addContent(HtmlTree.CODE(link));
             } else {
                 Content link = getLink(
                         new LinkInfoImpl(configuration, context, ((TypeMirror)type)));
-                dd.addContent(link);
+                dd.addContent(HtmlTree.CODE(link));
             }
         }
         return dd;
