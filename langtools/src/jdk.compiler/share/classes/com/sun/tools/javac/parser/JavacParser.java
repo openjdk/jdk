@@ -3238,6 +3238,8 @@ public class JavacParser implements Parser {
                 accept(SEMI);
                 defs.append(toP(F.at(pos).Uses(service)));
             } else {
+                setErrorEndPos(pos);
+                reportSyntaxError(pos, "invalid.module.directive");
                 break;
             }
         }
