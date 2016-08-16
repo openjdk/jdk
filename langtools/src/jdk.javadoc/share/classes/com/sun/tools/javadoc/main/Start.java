@@ -45,6 +45,8 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.CommandLine;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.file.BaseFileManager;
+import com.sun.tools.javac.main.OptionHelper;
+import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
 import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.platform.PlatformUtils;
 import com.sun.tools.javac.util.ClientCodeException;
@@ -173,7 +175,7 @@ public class Start extends ToolOption.Helper {
     }
 
     void usage(boolean exit) {
-        usage("main.usage", "-help", null, exit);
+        usage("main.usage", "-help", "main.usage.foot", exit);
     }
 
     @Override
@@ -365,14 +367,14 @@ public class Start extends ToolOption.Helper {
             ((BaseFileManager) fileManager).handleOptions(fileManagerOpts);
         }
 
-        String platformString = compOpts.get("-release");
+        String platformString = compOpts.get("--release");
 
         if (platformString != null) {
             if (compOpts.isSet("-source")) {
                 usageError("main.release.bootclasspath.conflict", "-source");
             }
-            if (fileManagerOpts.containsKey(Option.BOOTCLASSPATH)) {
-                usageError("main.release.bootclasspath.conflict", Option.BOOTCLASSPATH.getText());
+            if (fileManagerOpts.containsKey(Option.BOOT_CLASS_PATH)) {
+                usageError("main.release.bootclasspath.conflict", Option.BOOT_CLASS_PATH.getPrimaryName());
             }
 
             PlatformDescription platformDescription =
@@ -554,5 +556,20 @@ public class Start extends ToolOption.Helper {
             args[k++] = i.head;
         }
         options.append(args);
+    }
+
+    @Override
+    OptionHelper getOptionHelper() {
+        return new GrumpyHelper(null) {
+            @Override
+            public String get(com.sun.tools.javac.main.Option option) {
+                return compOpts.get(option);
+            }
+
+            @Override
+            public void put(String name, String value) {
+                compOpts.put(name, value);
+            }
+        };
     }
 }

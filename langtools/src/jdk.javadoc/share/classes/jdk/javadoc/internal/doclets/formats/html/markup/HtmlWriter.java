@@ -30,6 +30,7 @@ import java.util.*;
 
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
@@ -60,11 +61,6 @@ public class HtmlWriter {
      * The configuration
      */
     protected Configuration configuration;
-
-    /**
-     * The flag to indicate whether a member details list is printed or not.
-     */
-    protected boolean memberDetailsListPrinted;
 
     /**
      * Header for table displaying modules and description..
@@ -106,89 +102,7 @@ public class HtmlWriter {
      */
     protected final String modifierTypeHeader;
 
-    public final Content overviewLabel;
-
-    public final Content defaultPackageLabel;
-
-    public final Content packageLabel;
-
-    public final Content moduleLabel;
-
-    public final Content useLabel;
-
-    public final Content prevLabel;
-
-    public final Content nextLabel;
-
-    public final Content prevclassLabel;
-
-    public final Content nextclassLabel;
-
-    public final Content summaryLabel;
-
-    public final Content detailLabel;
-
-    public final Content moduleSubNavLabel;
-
-    public final Content framesLabel;
-
-    public final Content noframesLabel;
-
-    public final Content treeLabel;
-
-    public final Content classLabel;
-
-    public final Content deprecatedLabel;
-
-    public final Content deprecatedPhrase;
-
-    public final Content allclassesLabel;
-
-    public final Content allpackagesLabel;
-
-    public final Content allmodulesLabel;
-
-    public final Content indexLabel;
-
-    public final Content helpLabel;
-
-    public final Content seeLabel;
-
-    public final Content descriptionLabel;
-
-    public final Content prevpackageLabel;
-
-    public final Content nextpackageLabel;
-
-    public final Content prevmoduleLabel;
-
-    public final Content nextmoduleLabel;
-
-    public final Content packagesLabel;
-
-    public final Content modulesLabel;
-
-    public final Content methodDetailsLabel;
-
-    public final Content annotationTypeDetailsLabel;
-
-    public final Content fieldDetailsLabel;
-
-    public final Content propertyDetailsLabel;
-
-    public final Content constructorDetailsLabel;
-
-    public final Content enumConstantsDetailsLabel;
-
-    public final Content specifiedByLabel;
-
-    public final Content overridesLabel;
-
-    public final Content descfrmClassLabel;
-
-    public final Content descfrmInterfaceLabel;
-
-    private final Writer writer;
+    private final DocFile docFile;
 
     protected Content script;
 
@@ -198,143 +112,45 @@ public class HtmlWriter {
      *
      * @param path The directory path to be created for this file
      *             or null if none to be created.
-     * @exception IOException Exception raised by the FileWriter is passed on
-     * to next level.
-     * @exception UnsupportedEncodingException Exception raised by the
-     * OutputStreamWriter is passed on to next level.
      */
-    public HtmlWriter(Configuration configuration, DocPath path)
-            throws IOException, UnsupportedEncodingException {
-        writer = DocFile.createFileForOutput(configuration, path).openWriter();
+    public HtmlWriter(Configuration configuration, DocPath path) {
+        docFile = DocFile.createFileForOutput(configuration, path);
         this.configuration = configuration;
-        this.memberDetailsListPrinted = false;
+
+        // The following should be converted to shared Content objects
+        // and moved to Contents, but that will require additional
+        // changes at the use sites.
+        Resources resources = configuration.getResources();
         moduleTableHeader = Arrays.asList(
-            configuration.getText("doclet.Module"),
-            configuration.getText("doclet.Description"));
+            resources.getText("doclet.Module"),
+            resources.getText("doclet.Description"));
         packageTableHeader = new ArrayList<>();
-        packageTableHeader.add(configuration.getText("doclet.Package"));
-        packageTableHeader.add(configuration.getText("doclet.Description"));
+        packageTableHeader.add(resources.getText("doclet.Package"));
+        packageTableHeader.add(resources.getText("doclet.Description"));
         requiresTableHeader = new ArrayList<>();
-        requiresTableHeader.add(configuration.getText("doclet.Module"));
-        requiresTableHeader.add(configuration.getText("doclet.Description"));
+        requiresTableHeader.add(resources.getText("doclet.Module"));
+        requiresTableHeader.add(resources.getText("doclet.Description"));
         exportedPackagesTableHeader = new ArrayList<>();
-        exportedPackagesTableHeader.add(configuration.getText("doclet.Package"));
-        exportedPackagesTableHeader.add(configuration.getText("doclet.Module"));
-        exportedPackagesTableHeader.add(configuration.getText("doclet.Description"));
+        exportedPackagesTableHeader.add(resources.getText("doclet.Package"));
+        exportedPackagesTableHeader.add(resources.getText("doclet.Module"));
+        exportedPackagesTableHeader.add(resources.getText("doclet.Description"));
         usesTableHeader = new ArrayList<>();
-        usesTableHeader.add(configuration.getText("doclet.Type"));
-        usesTableHeader.add(configuration.getText("doclet.Description"));
+        usesTableHeader.add(resources.getText("doclet.Type"));
+        usesTableHeader.add(resources.getText("doclet.Description"));
         providesTableHeader = new ArrayList<>();
-        providesTableHeader.add(configuration.getText("doclet.Type"));
-        providesTableHeader.add(configuration.getText("doclet.Description"));
-        useTableSummary = configuration.getText("doclet.Use_Table_Summary",
-                configuration.getText("doclet.packages"));
-        modifierTypeHeader = configuration.getText("doclet.0_and_1",
-                configuration.getText("doclet.Modifier"),
-                configuration.getText("doclet.Type"));
-        overviewLabel = getResource("doclet.Overview");
-        defaultPackageLabel = new StringContent(DocletConstants.DEFAULT_PACKAGE_NAME);
-        packageLabel = getResource("doclet.Package");
-        moduleLabel = getResource("doclet.Module");
-        useLabel = getResource("doclet.navClassUse");
-        prevLabel = getResource("doclet.Prev");
-        nextLabel = getResource("doclet.Next");
-        prevclassLabel = getNonBreakResource("doclet.Prev_Class");
-        nextclassLabel = getNonBreakResource("doclet.Next_Class");
-        summaryLabel = getResource("doclet.Summary");
-        detailLabel = getResource("doclet.Detail");
-        moduleSubNavLabel = getResource("doclet.Module_Sub_Nav");
-        framesLabel = getResource("doclet.Frames");
-        noframesLabel = getNonBreakResource("doclet.No_Frames");
-        treeLabel = getResource("doclet.Tree");
-        classLabel = getResource("doclet.Class");
-        deprecatedLabel = getResource("doclet.navDeprecated");
-        deprecatedPhrase = getResource("doclet.Deprecated");
-        allclassesLabel = getNonBreakResource("doclet.All_Classes");
-        allpackagesLabel = getNonBreakResource("doclet.All_Packages");
-        allmodulesLabel = getNonBreakResource("doclet.All_Modules");
-        indexLabel = getResource("doclet.Index");
-        helpLabel = getResource("doclet.Help");
-        seeLabel = getResource("doclet.See");
-        descriptionLabel = getResource("doclet.Description");
-        prevpackageLabel = getNonBreakResource("doclet.Prev_Package");
-        nextpackageLabel = getNonBreakResource("doclet.Next_Package");
-        prevmoduleLabel = getNonBreakResource("doclet.Prev_Module");
-        nextmoduleLabel = getNonBreakResource("doclet.Next_Module");
-        packagesLabel = getResource("doclet.Packages");
-        modulesLabel = getResource("doclet.Modules");
-        methodDetailsLabel = getResource("doclet.Method_Detail");
-        annotationTypeDetailsLabel = getResource("doclet.Annotation_Type_Member_Detail");
-        fieldDetailsLabel = getResource("doclet.Field_Detail");
-        propertyDetailsLabel = getResource("doclet.Property_Detail");
-        constructorDetailsLabel = getResource("doclet.Constructor_Detail");
-        enumConstantsDetailsLabel = getResource("doclet.Enum_Constant_Detail");
-        specifiedByLabel = getResource("doclet.Specified_By");
-        overridesLabel = getResource("doclet.Overrides");
-        descfrmClassLabel = getResource("doclet.Description_From_Class");
-        descfrmInterfaceLabel = getResource("doclet.Description_From_Interface");
+        providesTableHeader.add(resources.getText("doclet.Type"));
+        providesTableHeader.add(resources.getText("doclet.Description"));
+        useTableSummary = resources.getText("doclet.Use_Table_Summary",
+                resources.getText("doclet.packages"));
+        modifierTypeHeader = resources.getText("doclet.0_and_1",
+                resources.getText("doclet.Modifier"),
+                resources.getText("doclet.Type"));
     }
 
     public void write(Content c) throws IOException {
-        c.write(writer, true);
-    }
-
-    public void close() throws IOException {
-        writer.close();
-    }
-
-    /**
-     * Get the configuration string as a content.
-     *
-     * @param key the key to look for in the configuration file
-     * @return a content tree for the text
-     */
-    public Content getResource(String key) {
-        return configuration.getResource(key);
-    }
-
-    /**
-     * Get the configuration string as a content, replacing spaces
-     * with non-breaking spaces.
-     *
-     * @param key the key to look for in the configuration file
-     * @return a content tree for the text
-     */
-    public Content getNonBreakResource(String key) {
-        String text = configuration.getText(key);
-        Content c = configuration.newContent();
-        int start = 0;
-        int p;
-        while ((p = text.indexOf(" ", start)) != -1) {
-            c.addContent(text.substring(start, p));
-            c.addContent(RawHtml.nbsp);
-            start = p + 1;
+        try (Writer writer = docFile.openWriter()) {
+            c.write(writer, true);
         }
-        c.addContent(text.substring(start));
-        return c;
-    }
-
-    /**
-     * Get the configuration string as a content.
-     *
-     * @param key the key to look for in the configuration file
-     * @param o   string or content argument added to configuration text
-     * @return a content tree for the text
-     */
-    public Content getResource(String key, Object o) {
-        return configuration.getResource(key, o);
-    }
-
-    /**
-     * Get the configuration string as a content.
-     *
-     * @param key the key to look for in the configuration file
-     * @param o1  string or content argument added to configuration text
-     * @param o2  string or content argument added to configuration text
-     * @return a content tree for the text
-     */
-    public Content getResource(String key, Object o0, Object o1) {
-        return configuration.getResource(key, o0, o1);
     }
 
     /**
@@ -343,21 +159,21 @@ public class HtmlWriter {
      * @return an HtmlTree for the SCRIPT tag
      */
     protected HtmlTree getWinTitleScript(){
-        HtmlTree script = HtmlTree.SCRIPT();
+        HtmlTree scriptTree = HtmlTree.SCRIPT();
         if(winTitle != null && winTitle.length() > 0) {
-            String scriptCode = "<!--" + DocletConstants.NL +
-                    "    try {" + DocletConstants.NL +
-                    "        if (location.href.indexOf('is-external=true') == -1) {" + DocletConstants.NL +
-                    "            parent.document.title=\"" + escapeJavaScriptChars(winTitle) + "\";" + DocletConstants.NL +
-                    "        }" + DocletConstants.NL +
-                    "    }" + DocletConstants.NL +
-                    "    catch(err) {" + DocletConstants.NL +
-                    "    }" + DocletConstants.NL +
-                    "//-->" + DocletConstants.NL;
-            RawHtml scriptContent = new RawHtml(scriptCode);
-            script.addContent(scriptContent);
+            String scriptCode = "<!--\n" +
+                    "    try {\n" +
+                    "        if (location.href.indexOf('is-external=true') == -1) {\n" +
+                    "            parent.document.title=\"" + escapeJavaScriptChars(winTitle) + "\";\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "    catch(err) {\n" +
+                    "    }\n" +
+                    "//-->\n";
+            RawHtml scriptContent = new RawHtml(scriptCode.replace("\n", DocletConstants.NL));
+            scriptTree.addContent(scriptContent);
         }
-        return script;
+        return scriptTree;
     }
 
     /**
@@ -413,61 +229,61 @@ public class HtmlWriter {
      * @return a content for the SCRIPT tag
      */
     protected Content getFramesJavaScript() {
-        HtmlTree script = HtmlTree.SCRIPT();
-        String scriptCode = DocletConstants.NL +
-                "    targetPage = \"\" + window.location.search;" + DocletConstants.NL +
-                "    if (targetPage != \"\" && targetPage != \"undefined\")" + DocletConstants.NL +
-                "        targetPage = targetPage.substring(1);" + DocletConstants.NL +
-                "    if (targetPage.indexOf(\":\") != -1 || (targetPage != \"\" && !validURL(targetPage)))" + DocletConstants.NL +
-                "        targetPage = \"undefined\";" + DocletConstants.NL +
-                "    function validURL(url) {" + DocletConstants.NL +
-                "        try {" + DocletConstants.NL +
-                "            url = decodeURIComponent(url);" + DocletConstants.NL +
-                "        }" + DocletConstants.NL +
-                "        catch (error) {" + DocletConstants.NL +
-                "            return false;" + DocletConstants.NL +
-                "        }" + DocletConstants.NL +
-                "        var pos = url.indexOf(\".html\");" + DocletConstants.NL +
-                "        if (pos == -1 || pos != url.length - 5)" + DocletConstants.NL +
-                "            return false;" + DocletConstants.NL +
-                "        var allowNumber = false;" + DocletConstants.NL +
-                "        var allowSep = false;" + DocletConstants.NL +
-                "        var seenDot = false;" + DocletConstants.NL +
-                "        for (var i = 0; i < url.length - 5; i++) {" + DocletConstants.NL +
-                "            var ch = url.charAt(i);" + DocletConstants.NL +
-                "            if ('a' <= ch && ch <= 'z' ||" + DocletConstants.NL +
-                "                    'A' <= ch && ch <= 'Z' ||" + DocletConstants.NL +
-                "                    ch == '$' ||" + DocletConstants.NL +
-                "                    ch == '_' ||" + DocletConstants.NL +
-                "                    ch.charCodeAt(0) > 127) {" + DocletConstants.NL +
-                "                allowNumber = true;" + DocletConstants.NL +
-                "                allowSep = true;" + DocletConstants.NL +
-                "            } else if ('0' <= ch && ch <= '9'" + DocletConstants.NL +
-                "                    || ch == '-') {" + DocletConstants.NL +
-                "                if (!allowNumber)" + DocletConstants.NL +
-                "                     return false;" + DocletConstants.NL +
-                "            } else if (ch == '/' || ch == '.') {" + DocletConstants.NL +
-                "                if (!allowSep)" + DocletConstants.NL +
-                "                    return false;" + DocletConstants.NL +
-                "                allowNumber = false;" + DocletConstants.NL +
-                "                allowSep = false;" + DocletConstants.NL +
-                "                if (ch == '.')" + DocletConstants.NL +
-                "                     seenDot = true;" + DocletConstants.NL +
-                "                if (ch == '/' && seenDot)" + DocletConstants.NL +
-                "                     return false;" + DocletConstants.NL +
-                "            } else {" + DocletConstants.NL +
-                "                return false;"+ DocletConstants.NL +
-                "            }" + DocletConstants.NL +
-                "        }" + DocletConstants.NL +
-                "        return true;" + DocletConstants.NL +
-                "    }" + DocletConstants.NL +
-                "    function loadFrames() {" + DocletConstants.NL +
-                "        if (targetPage != \"\" && targetPage != \"undefined\")" + DocletConstants.NL +
-                "             top.classFrame.location = top.targetPage;" + DocletConstants.NL +
-                "    }" + DocletConstants.NL;
-        RawHtml scriptContent = new RawHtml(scriptCode);
-        script.addContent(scriptContent);
-        return script;
+        HtmlTree scriptTree = HtmlTree.SCRIPT();
+        String scriptCode = "\n" +
+                "    targetPage = \"\" + window.location.search;\n" +
+                "    if (targetPage != \"\" && targetPage != \"undefined\")\n" +
+                "        targetPage = targetPage.substring(1);\n" +
+                "    if (targetPage.indexOf(\":\") != -1 || (targetPage != \"\" && !validURL(targetPage)))\n" +
+                "        targetPage = \"undefined\";\n" +
+                "    function validURL(url) {\n" +
+                "        try {\n" +
+                "            url = decodeURIComponent(url);\n" +
+                "        }\n" +
+                "        catch (error) {\n" +
+                "            return false;\n" +
+                "        }\n" +
+                "        var pos = url.indexOf(\".html\");\n" +
+                "        if (pos == -1 || pos != url.length - 5)\n" +
+                "            return false;\n" +
+                "        var allowNumber = false;\n" +
+                "        var allowSep = false;\n" +
+                "        var seenDot = false;\n" +
+                "        for (var i = 0; i < url.length - 5; i++) {\n" +
+                "            var ch = url.charAt(i);\n" +
+                "            if ('a' <= ch && ch <= 'z' ||\n" +
+                "                    'A' <= ch && ch <= 'Z' ||\n" +
+                "                    ch == '$' ||\n" +
+                "                    ch == '_' ||\n" +
+                "                    ch.charCodeAt(0) > 127) {\n" +
+                "                allowNumber = true;\n" +
+                "                allowSep = true;\n" +
+                "            } else if ('0' <= ch && ch <= '9'\n" +
+                "                    || ch == '-') {\n" +
+                "                if (!allowNumber)\n" +
+                "                     return false;\n" +
+                "            } else if (ch == '/' || ch == '.') {\n" +
+                "                if (!allowSep)\n" +
+                "                    return false;\n" +
+                "                allowNumber = false;\n" +
+                "                allowSep = false;\n" +
+                "                if (ch == '.')\n" +
+                "                     seenDot = true;\n" +
+                "                if (ch == '/' && seenDot)\n" +
+                "                     return false;\n" +
+                "            } else {\n" +
+                "                return false;\n" +
+                "            }\n" +
+                "        }\n" +
+                "        return true;\n" +
+                "    }\n" +
+                "    function loadFrames() {\n" +
+                "        if (targetPage != \"\" && targetPage != \"undefined\")\n" +
+                "             top.classFrame.location = top.targetPage;\n" +
+                "    }\n";
+        RawHtml scriptContent = new RawHtml(scriptCode.replace("\n", DocletConstants.NL));
+        scriptTree.addContent(scriptContent);
+        return scriptTree;
     }
 
     /**
@@ -487,7 +303,7 @@ public class HtmlWriter {
             this.script = getWinTitleScript();
             body.addContent(script);
             Content noScript = HtmlTree.NOSCRIPT(
-                    HtmlTree.DIV(getResource("doclet.No_Script_Message")));
+                    HtmlTree.DIV(configuration.getContent("doclet.No_Script_Message")));
             body.addContent(noScript);
         }
         return body;
@@ -556,17 +372,6 @@ public class HtmlWriter {
     public HtmlTree getTitle() {
         HtmlTree title = HtmlTree.TITLE(new StringContent(winTitle));
         return title;
-    }
-
-    public String codeText(String text) {
-        return "<code>" + text + "</code>";
-    }
-
-    /**
-     * Return "&#38;nbsp;", non-breaking space.
-     */
-    public Content getSpace() {
-        return RawHtml.nbsp;
     }
 
     /*

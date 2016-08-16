@@ -27,7 +27,7 @@
  * @modules jdk.compiler
  * @build PatchTest CompilerUtils JarUtils jdk.testlibrary.*
  * @run testng PatchTest
- * @summary Basic test for -Xpatch
+ * @summary Basic test for --patch-module
  */
 
 import java.io.File;
@@ -45,13 +45,13 @@ import static org.testng.Assert.*;
 
 
 /**
- * Compiles and launches a test that uses -Xpatch with two directories of
- * classes to override existing and add new classes to modules in the
- * boot layer.
+ * Compiles and launches a test that uses --patch-module with two directories
+ * of classes to override existing classes and add new classes to modules in
+ * the boot layer.
  *
- * The classes overridden or added via -Xpatch all define a public no-arg
- * constructor and override toString to return "hi". This allows the launched
- * test to check that the overridden classes are loaded.
+ * The classes overridden or added via --patch-module all define a public
+ * no-arg constructor and override toString to return "hi". This allows the
+ * launched test to check that the overridden classes are loaded.
  */
 
 @Test
@@ -76,7 +76,7 @@ public class PatchTest {
     private static final Path PATCHES_DIR = Paths.get("patches");
 
 
-    // the classes overridden or added with -Xpatch
+    // the classes overridden or added with --patch-module
     private static final String[] CLASSES = {
 
         // java.base = boot loader
@@ -137,15 +137,15 @@ public class PatchTest {
         String arg = Stream.of(CLASSES).collect(Collectors.joining(","));
 
         int exitValue
-            =  executeTestJava("-Xpatch:java.base=" + basePatches,
-                               "-Xpatch:jdk.naming.dns=" + dnsPatches,
-                               "-Xpatch:jdk.compiler=" + compilerPatches,
-                               "-XaddExports:java.base/java.lang2=test",
-                               "-XaddExports:jdk.naming.dns/com.sun.jndi.dns=test",
-                               "-XaddExports:jdk.naming.dns/com.sun.jndi.dns2=test",
-                               "-XaddExports:jdk.compiler/com.sun.tools.javac2=test",
-                               "-addmods", "jdk.naming.dns,jdk.compiler",
-                               "-mp", MODS_DIR.toString(),
+            =  executeTestJava("--patch-module", "java.base=" + basePatches,
+                               "--patch-module", "jdk.naming.dns=" + dnsPatches,
+                               "--patch-module", "jdk.compiler=" + compilerPatches,
+                               "--add-exports", "java.base/java.lang2=test",
+                               "--add-exports", "jdk.naming.dns/com.sun.jndi.dns=test",
+                               "--add-exports", "jdk.naming.dns/com.sun.jndi.dns2=test",
+                               "--add-exports", "jdk.compiler/com.sun.tools.javac2=test",
+                               "--add-modules", "jdk.naming.dns,jdk.compiler",
+                               "--module-path", MODS_DIR.toString(),
                                "-m", "test/jdk.test.Main", arg)
                 .outputTo(System.out)
                 .errorTo(System.out)
@@ -156,7 +156,7 @@ public class PatchTest {
 
 
     /**
-     * Run test with -Xpatch and exploded patches
+     * Run test with ---patch-module and exploded patches
      */
     public void testWithExplodedPatches() throws Exception {
 
@@ -175,7 +175,7 @@ public class PatchTest {
 
 
     /**
-     * Run test with -Xpatch and patches in JAR files
+     * Run test with ---patch-module and patches in JAR files
      */
     public void testWithJarPatches() throws Exception {
 
@@ -195,7 +195,7 @@ public class PatchTest {
 
 
     /**
-     * Run test with -Xpatch and patches in JAR files and exploded patches
+     * Run test with ---patch-module and patches in JAR files and exploded patches
      */
     public void testWithJarAndExplodedPatches() throws Exception {
 

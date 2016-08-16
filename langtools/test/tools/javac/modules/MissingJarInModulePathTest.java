@@ -25,7 +25,7 @@
  * @test
  * @bug 8154824
  * @summary Compiler should handle java.nio.file.FileSystemNotFoundException gracefully and not abort
- * @compile/fail/ref=MissingJarInModulePathTest.out -XDrawDiagnostics -Xlint:path -Werror -modulepath missing.jar MissingJarInModulePathTest.java
+ * @compile/fail/ref=MissingJarInModulePathTest.out -XDrawDiagnostics -Xlint:path -Werror --module-path missing.jar MissingJarInModulePathTest.java
  */
 
 class MissingJarInModulePathTest {}

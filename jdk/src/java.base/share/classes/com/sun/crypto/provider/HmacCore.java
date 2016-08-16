@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,23 +53,42 @@ abstract class HmacCore extends MacSpi implements Cloneable {
     private final int blockLen;
 
     /**
-     * Standard constructor, creates a new HmacCore instance using the
-     * specified MessageDigest object.
+     * Standard constructor, creates a new HmacCore instance instantiating
+     * a MessageDigest of the specified name.
      */
-    HmacCore(MessageDigest md, int bl) {
+    HmacCore(String digestAlgo, int bl) throws NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance(digestAlgo);
+        if (!(md instanceof Cloneable)) {
+            // use SUN provider if the most preferred one does not support
+            // cloning
+            Provider sun = Security.getProvider("SUN");
+            if (sun != null) {
+                md = MessageDigest.getInstance(digestAlgo, sun);
+            } else {
+                String noCloneProv = md.getProvider().getName();
+                // if no Sun provider, use provider list
+                Provider[] provs = Security.getProviders();
+                for (Provider p : provs) {
+                    try {
+                        if (!p.getName().equals(noCloneProv)) {
+                            MessageDigest md2 =
+                                MessageDigest.getInstance(digestAlgo, p);
+                            if (md2 instanceof Cloneable) {
+                                md = md2;
+                                break;
+                            }
+                        }
+                    } catch (NoSuchAlgorithmException nsae) {
+                        continue;
+                    }
+                }
+            }
+        }
         this.md = md;
         this.blockLen = bl;
         this.k_ipad = new byte[blockLen];
         this.k_opad = new byte[blockLen];
         first = true;
-    }
-
-    /**
-     * Standard constructor, creates a new HmacCore instance instantiating
-     * a MessageDigest of the specified name.
-     */
-    HmacCore(String digestAlgorithm, int bl) throws NoSuchAlgorithmException {
-        this(MessageDigest.getInstance(digestAlgorithm), bl);
     }
 
     /**

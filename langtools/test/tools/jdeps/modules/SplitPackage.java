@@ -65,12 +65,12 @@ public class SplitPackage {
     public void runTest() throws Exception {
         // Test jdeps classes
         runTest(null);
-        // Test jdeps -addmods
+        // Test jdeps --add-modules
         runTest(JAVA_ANNOTATIONS_COMMON, SPLIT_PKG_NAME);
     }
 
     private void runTest(String root, String... splitPackages) throws Exception {
-        String cmd = String.format("jdeps -verbose:class -addmods %s %s%n",
+        String cmd = String.format("jdeps -verbose:class --add-modules %s %s%n",
             root, CLASSES_DIR);
 
         try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd)) {

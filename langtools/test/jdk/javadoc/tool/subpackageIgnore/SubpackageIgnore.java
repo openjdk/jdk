@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,30 +26,33 @@
  * @bug 4773013
  * @summary When hunting subpackages, silently ignore any directory name that
  *          can't be part of a subpackage.
- * @ignore API modifications
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  */
 
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Set;
 
 import javax.lang.model.SourceVersion;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
+import jdk.javadoc.doclet.Reporter;
 
 public class SubpackageIgnore implements Doclet {
 
     public static void main(String[] args) {
-        if (jdk.javadoc.internal.tool.Main.execute(
-                "javadoc",
-                "SubpackageIgnore",
-                SubpackageIgnore.class.getClassLoader(),
-                new String[] {"-Xwerror",
-                              "-sourcepath",
-                              System.getProperty("test.src", "."),
-                              "-subpackages",
-                              "pkg1"}) != 0)
+        String[] cmds = new String[] {
+            "-docletpath",
+            System.getProperty("test.classes"),
+            "-doclet",
+            "SubpackageIgnore",
+            "-Xwerror",
+            "-sourcepath",
+            System.getProperty("test.src", "."),
+            "-subpackages",
+            "pkg1"};
+        if (jdk.javadoc.internal.tool.Main.execute(cmds) != 0)
             throw new Error("Javadoc encountered warnings or errors.");
     }
 
@@ -73,5 +76,10 @@ public class SubpackageIgnore implements Doclet {
     @Override
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latest();
+    }
+
+    @Override
+    public void init(Locale locale, Reporter reporter) {
+        // do nothing
     }
 }

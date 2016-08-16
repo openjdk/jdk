@@ -203,7 +203,7 @@ TARGETS += $(DEF_POLICY_DST)
 ################################################################################
 
 ifeq ($(CACERTS_FILE), )
-  CACERTS_FILE := $(JDK_TOPDIR)/src/java.base/share/conf/security/cacerts
+  CACERTS_FILE := $(JDK_TOPDIR)/src/java.base/share/lib/security/cacerts
 endif
 
 CACERTS_DST := $(LIB_DST_DIR)/security/cacerts

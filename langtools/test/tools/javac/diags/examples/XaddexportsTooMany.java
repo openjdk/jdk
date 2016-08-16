@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.xaddexports.too.many
-// options: -XaddExports:jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED  -XaddExports:jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+// options: --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED  --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
 
 public class XaddexportsTooMany {
 }

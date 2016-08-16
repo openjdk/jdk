@@ -125,7 +125,7 @@ public abstract class EditorTestBase extends ReplToolTesting {
         );
     }
 
-    @Test
+    @Test(enabled = false) // TODO 8163816
     public void testEditClass1() {
         testEditor(
                 a -> assertClass(a, "class A {}", "class", "A"),
@@ -163,7 +163,7 @@ public abstract class EditorTestBase extends ReplToolTesting {
         );
     }
 
-    @Test
+    @Test(enabled = false) // TODO 8163816
     public void testEditMethod1() {
         testEditor(
                 a -> assertMethod(a, "void f() {}", "()void", "f"),

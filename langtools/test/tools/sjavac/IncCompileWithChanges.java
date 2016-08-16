@@ -31,7 +31,6 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.sjavac
- *          jdk.jdeps/com.sun.tools.javap
  * @ignore Requires dependency code to deal with in-method dependencies.
  * @build Wrapper toolbox.ToolBox
  * @run main Wrapper IncCompileWithChanges
@@ -51,7 +50,6 @@ public class IncCompileWithChanges extends SJavacTester {
     // Remember the previous bin and headers state here.
     Map<String,Long> previous_bin_state;
     Map<String,Long> previous_headers_state;
-    ToolBox tb = new ToolBox();
 
     void test() throws Exception {
         clean(TEST_ROOT);

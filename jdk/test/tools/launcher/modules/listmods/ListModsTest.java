@@ -27,7 +27,7 @@
  * @modules java.se
  * @build ListModsTest CompilerUtils jdk.testlibrary.*
  * @run testng ListModsTest
- * @summary Basic test for java -listmods
+ * @summary Basic test for java --list-modules
  */
 
 import java.nio.file.Path;
@@ -41,7 +41,7 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 /**
- * Basic tests for java -listmods
+ * Basic tests for java --list-modules
  */
 
 public class ListModsTest {
@@ -55,13 +55,13 @@ public class ListModsTest {
     public void setup() throws Exception {
         boolean compiled;
 
-        // javac -d mods/m1 -mp mods src/m1/**
+        // javac -d mods/m1 --module-path mods src/m1/**
         compiled = CompilerUtils.compile(
                 SRC_DIR.resolve("m1"),
                 MODS_DIR.resolve("m1"));
         assertTrue(compiled);
 
-        // javac -d upgrademods/java.transaction -mp mods src/java.transaction/**
+        // javac -d upgrademods/java.transaction --module-path mods src/java.transaction/**
         compiled = CompilerUtils.compile(
                 SRC_DIR.resolve("java.transaction"),
                 UPGRADEMODS_DIR.resolve("java.transaction"));
@@ -73,7 +73,7 @@ public class ListModsTest {
     @Test
     public void testListAll() throws Exception {
         OutputAnalyzer output
-            = executeTestJava("-listmods")
+            = executeTestJava("--list-modules")
                 .outputTo(System.out)
                 .errorTo(System.out);
         output.shouldContain("java.base");
@@ -85,7 +85,7 @@ public class ListModsTest {
     @Test
     public void testListOneModule() throws Exception {
         OutputAnalyzer output
-            = executeTestJava("-listmods:java.base")
+            = executeTestJava("--list-modules=java.base")
                 .outputTo(System.out)
                 .errorTo(System.out);
         output.shouldContain("java.base");
@@ -97,7 +97,7 @@ public class ListModsTest {
     @Test
     public void testListTwoModules() throws Exception {
         OutputAnalyzer output
-            = executeTestJava("-listmods:java.base,java.xml")
+            = executeTestJava("--list-modules", "java.base,java.xml")
                 .outputTo(System.out)
                 .errorTo(System.out);
         output.shouldContain("java.base");
@@ -111,7 +111,7 @@ public class ListModsTest {
     @Test
     public void testListUnknownModule() throws Exception {
         OutputAnalyzer output
-            = executeTestJava("-listmods:java.rhubarb")
+            = executeTestJava("--list-modules", "java.rhubarb")
                 .outputTo(System.out)
                 .errorTo(System.out);
         output.shouldNotContain("java.base");
@@ -123,7 +123,7 @@ public class ListModsTest {
     @Test
     public void testListWithModulePath() throws Exception {
         OutputAnalyzer output
-            = executeTestJava("-mp", MODS_DIR.toString(), "-listmods")
+            = executeTestJava("--module-path", MODS_DIR.toString(), "--list-modules")
                 .outputTo(System.out)
                 .errorTo(System.out);
         output.shouldContain("java.base");
@@ -135,8 +135,8 @@ public class ListModsTest {
     @Test
     public void testListWithUpgradeModulePath() throws Exception {
         OutputAnalyzer output
-            = executeTestJava("-upgrademodulepath", UPGRADEMODS_DIR.toString(),
-                              "-listmods:java.transaction")
+            = executeTestJava("--upgrade-module-path", UPGRADEMODS_DIR.toString(),
+                              "--list-modules", "java.transaction")
                 .outputTo(System.out)
                 .errorTo(System.out);
         output.shouldContain("exports javax.transaction.atomic");
@@ -147,7 +147,7 @@ public class ListModsTest {
     @Test
     public void testListWithLimitMods1() throws Exception {
         OutputAnalyzer output
-            = executeTestJava("-limitmods", "java.compact1", "-listmods")
+            = executeTestJava("--limit-modules", "java.compact1", "--list-modules")
                 .outputTo(System.out)
                 .errorTo(System.out);
         output.shouldContain("java.compact1");
@@ -160,9 +160,9 @@ public class ListModsTest {
     @Test
     public void testListWithLimitMods2() throws Exception {
         OutputAnalyzer output
-            = executeTestJava("-mp", MODS_DIR.toString(),
-                              "-limitmods", "java.compact1",
-                              "-listmods")
+            = executeTestJava("--module-path", MODS_DIR.toString(),
+                              "--limit-modules", "java.compact1",
+                              "--list-modules")
                 .outputTo(System.out)
                 .errorTo(System.out);
         output.shouldContain("java.base");
@@ -172,12 +172,12 @@ public class ListModsTest {
 
 
     /**
-     * java -version -listmods => should print version and exit
+     * java -version --list-modules => should print version and exit
      */
     @Test
     public void testListWithPrintVersion1() throws Exception {
         OutputAnalyzer output
-            = executeTestJava("-version", "-listmods")
+            = executeTestJava("-version", "--list-modules")
                 .outputTo(System.out)
                 .errorTo(System.out);
         output.shouldNotContain("java.base");
@@ -187,12 +187,12 @@ public class ListModsTest {
 
 
     /**
-     * java -listmods -version => should list modules and exit
+     * java --list-modules -version => should list modules and exit
      */
     @Test
     public void testListWithPrintVersion2() throws Exception {
         OutputAnalyzer output
-            = executeTestJava("-listmods", "-version")
+            = executeTestJava("--list-modules", "-version")
                 .outputTo(System.out)
                 .errorTo(System.out);
         output.shouldContain("java.base");

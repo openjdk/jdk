@@ -35,7 +35,6 @@ import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.MethodTypes;
@@ -67,8 +66,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      */
     protected HtmlTree mainTree = HtmlTree.MAIN();
 
-    public SubWriterHolderWriter(ConfigurationImpl configuration, DocPath filename)
-            throws IOException {
+    public SubWriterHolderWriter(ConfigurationImpl configuration, DocPath filename) {
         super(configuration, filename);
     }
 
@@ -126,7 +124,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
             Content captionSpan;
             Content span;
             if (type.isDefaultTab()) {
-                captionSpan = HtmlTree.SPAN(configuration.getResource(type.resourceKey()));
+                captionSpan = HtmlTree.SPAN(configuration.getContent(type.resourceKey()));
                 span = HtmlTree.SPAN(type.tabId(),
                         HtmlStyle.activeTableTab, captionSpan);
             } else {
@@ -134,7 +132,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
                 span = HtmlTree.SPAN(type.tabId(),
                         HtmlStyle.tableTab, captionSpan);
             }
-            Content tabSpan = HtmlTree.SPAN(HtmlStyle.tabEnd, getSpace());
+            Content tabSpan = HtmlTree.SPAN(HtmlStyle.tabEnd, Contents.SPACE);
             span.addContent(tabSpan);
             tabbedCaption.addContent(span);
         }
@@ -149,7 +147,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      */
     public Content getMethodTypeLinks(MethodTypes methodType) {
         String jsShow = "javascript:show(" + methodType.value() +");";
-        HtmlTree link = HtmlTree.A(jsShow, configuration.getResource(methodType.resourceKey()));
+        HtmlTree link = HtmlTree.A(jsShow, configuration.getContent(methodType.resourceKey()));
         return link;
     }
 
@@ -189,9 +187,9 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         List<? extends DocTree> deprs = utils.getBlockTags(member, DocTree.Kind.DEPRECATED);
         Content div;
         if (utils.isDeprecated(member)) {
-            Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
+            Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, contents.deprecatedPhrase);
             div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
-            div.addContent(getSpace());
+            div.addContent(Contents.SPACE);
             if (!deprs.isEmpty()) {
                 addInlineDeprecatedComment(member, deprs.get(0), div);
             }
@@ -200,9 +198,9 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         } else {
             Element te = member.getEnclosingElement();
             if (te != null &&  utils.isTypeElement(te) && utils.isDeprecated(te)) {
-                Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
+                Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, contents.deprecatedPhrase);
                 div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
-                div.addContent(getSpace());
+                div.addContent(Contents.SPACE);
                 tdSummary.addContent(div);
             }
         }
