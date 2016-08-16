@@ -22,7 +22,7 @@
  */
 
 module m5 {
-    // m4 requires public java.compilerr
+    // m4 requires public java.compiler
     requires public m4;
     requires public java.compiler;
 

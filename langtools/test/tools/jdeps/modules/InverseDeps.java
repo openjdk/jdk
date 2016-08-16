@@ -117,7 +117,7 @@ public class InverseDeps {
 
     @Test(dataProvider = "testrequires")
     public void testrequires(String name, String[][] expected) throws Exception {
-        String cmd1 = String.format("jdeps -inverse -modulepath %s -requires %s -addmods %s%n",
+        String cmd1 = String.format("jdeps -inverse --module-path %s -requires %s --add-modules %s%n",
                 MODS_DIR, name, modules.stream().collect(Collectors.joining(",")));
 
         try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd1)) {
@@ -128,8 +128,8 @@ public class InverseDeps {
             runJdeps(jdeps, expected);
         }
 
-        String cmd2 = String.format("jdeps -inverse -modulepath %s -requires %s" +
-            " -addmods ALL-MODULE-PATH%n", LIBS_DIR, name);
+        String cmd2 = String.format("jdeps -inverse --module-path %s -requires %s" +
+            " --add-modules ALL-MODULE-PATH%n", LIBS_DIR, name);
 
             // automatic module
         try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd2)) {
@@ -164,7 +164,7 @@ public class InverseDeps {
 
     @Test(dataProvider = "testpackage")
     public void testpackage(String name, String[][] expected) throws Exception {
-        String cmd = String.format("jdeps -inverse -modulepath %s -package %s -addmods %s%n",
+        String cmd = String.format("jdeps -inverse --module-path %s -package %s --add-modules %s%n",
             MODS_DIR, name, modules.stream().collect(Collectors.joining(",")));
         try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd)) {
             jdeps.appModulePath(MODS_DIR.toString())
@@ -195,7 +195,7 @@ public class InverseDeps {
 
     @Test(dataProvider = "testregex")
     public void testregex(String name, String[][] expected) throws Exception {
-        String cmd = String.format("jdeps -inverse -modulepath %s -regex %s -addmods %s%n",
+        String cmd = String.format("jdeps -inverse --module-path %s -regex %s --add-modules %s%n",
                 MODS_DIR, name, modules.stream().collect(Collectors.joining(",")));
 
         try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd)) {

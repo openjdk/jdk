@@ -31,6 +31,7 @@ import javax.lang.model.element.ExecutableElement;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
@@ -135,6 +136,7 @@ public class InheritDocTaglet extends BaseInlineTaglet {
             Element e, DocTree holderTag, boolean isFirstSentence) {
         Content replacement = writer.getOutputInstance();
         Configuration configuration = writer.configuration();
+        Messages messages = configuration.getMessages();
         Utils utils = configuration.utils;
         CommentHelper ch = utils.getCommentHelper(e);
         Taglet inheritableTaglet = holderTag == null
@@ -147,7 +149,7 @@ public class InheritDocTaglet extends BaseInlineTaglet {
                         ? utils.flatSignature((ExecutableElement)e)
                         : "");
                 //This tag does not support inheritence.
-                configuration.message.warning(e, "doclet.noInheritedDoc", message);
+                messages.warning(e, "doclet.noInheritedDoc", message);
         }
         Input input = new DocFinder.Input(utils, e,
                 (InheritableTaglet) inheritableTaglet, new DocFinder.DocTreeInfo(holderTag, e),
@@ -165,7 +167,7 @@ public class InheritDocTaglet extends BaseInlineTaglet {
                     ((utils.isExecutableElement(e))
                         ? utils.flatSignature((ExecutableElement)e)
                         : "");
-            configuration.message.warning(e, "doclet.noInheritedDoc", message);
+            messages.warning(e, "doclet.noInheritedDoc", message);
         }
         return replacement;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  *
  * @modules jdk.compiler/com.sun.tools.sjavac
  *          jdk.compiler/com.sun.tools.sjavac.client
+ *          jdk.compiler/com.sun.tools.sjavac.comp
  *          jdk.compiler/com.sun.tools.sjavac.options
  * @build Wrapper
  * @run main Wrapper OptionDecoding
@@ -147,13 +148,13 @@ public class OptionDecoding {
         SourceLocation dir2 = new SourceLocation(Paths.get("dir2"), i, x);
         String dir1_PS_dir2 = "dir1" + File.pathSeparator + "dir2";
 
-        Options options = Options.parseArgs("-sourcepath", dir1_PS_dir2);
+        Options options = Options.parseArgs("--source-path", dir1_PS_dir2);
         assertEquals(options.getSourceSearchPaths(), Arrays.asList(dir1, dir2));
 
-        options = Options.parseArgs("-modulepath", dir1_PS_dir2);
+        options = Options.parseArgs("--module-path", dir1_PS_dir2);
         assertEquals(options.getModuleSearchPaths(), Arrays.asList(dir1, dir2));
 
-        options = Options.parseArgs("-classpath", dir1_PS_dir2);
+        options = Options.parseArgs("--class-path", dir1_PS_dir2);
         assertEquals(options.getClassSearchPath(), Arrays.asList(dir1, dir2));
     }
 

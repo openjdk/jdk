@@ -80,7 +80,7 @@ public class RequiresPublicTest extends ModuleTestBase {
         String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics")
                 .files(findJavaFiles(src))
-                .outdir(classes.toString()) // should allow Path here
+                .outdir(classes)
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
@@ -96,7 +96,7 @@ public class RequiresPublicTest extends ModuleTestBase {
         Files.createDirectories(classes);
 
         new JavacTask(tb, Task.Mode.CMDLINE)
-                .options("-modulesourcepath", src.toString())
+                .options("--module-source-path", src.toString())
                 .files(findJavaFiles(src))
                 .outdir(classes)
                 .run()
@@ -113,7 +113,7 @@ public class RequiresPublicTest extends ModuleTestBase {
 
         String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", src.toString())
+                        "--module-source-path", src.toString())
                 .files(findJavaFiles(src))
                 .outdir(classes)
                 .run(Task.Expect.FAIL)

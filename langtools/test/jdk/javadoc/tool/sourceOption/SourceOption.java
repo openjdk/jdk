@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @bug     6507179
  * @summary Ensure that "-source" option isn't ignored.
  * @author  Scott Seligman
- * @ignore API modifications
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @run main/fail SourceOption 7
  * @run main      SourceOption 9
  * @run main      SourceOption
@@ -55,34 +54,41 @@
  *      JDK8, JDK9, or JDK10.  Set -source below appropriately.
  */
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import javax.lang.model.SourceVersion;
+import javax.tools.Diagnostic.Kind;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.Doclet.Option;
 import jdk.javadoc.doclet.DocletEnvironment;
+import jdk.javadoc.doclet.Reporter;
 
 public class SourceOption implements Doclet {
 
     public static void main(String[] args) {
-        String[] params;
+        List<String> params = new ArrayList<>();
+        params.add("-sourcepath");
+        params.add(System.getProperty("test.src"));
+        params.add("-docletpath");
+        params.add(System.getProperty("test.classes"));
+        params.add("-doclet");
+        params.add("SourceOption");
         if ((args == null) || (args.length==0)) {
-            params = new String[]{"p"};
             System.out.println("NOTE : -source not provided, default taken");
         } else {
-            params = new String[]{"-source", args[0], "p"};
+            params.add("-source");
+            params.add(args[0]);
             System.out.println("NOTE : -source will be: " + args[0]);
         }
-
-        if (com.sun.tools.javadoc.Main.execute(
-                "javadoc",
-                "SourceOption",
-                SourceOption.class.getClassLoader(),
-                params) != 0)
-        throw new Error("Javadoc encountered warnings or errors.");
-
+        params.add("p");
+        System.out.println("arguments: " + params);
+        if (jdk.javadoc.internal.tool.Main.execute(params.toArray(new String[params.size()])) != 0)
+            throw new Error("Javadoc encountered warnings or errors.");
     }
 
     public boolean run(DocletEnvironment root) {
@@ -103,5 +109,10 @@ public class SourceOption implements Doclet {
     @Override
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latest();
+    }
+
+    @Override
+    public void init(Locale locale, Reporter reporter) {
+        reporter.print(Kind.NOTE, "init");
     }
 }

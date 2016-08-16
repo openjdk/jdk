@@ -502,8 +502,8 @@ $(eval $(call SetupJavaCompilation, $(MODULE), \
     HEADERS := $(SUPPORT_OUTPUTDIR)/headers, \
     ADD_JAVAC_FLAGS := \
         $($(MODULE)_ADD_JAVAC_FLAGS) \
-        -modulesourcepath $(MODULESOURCEPATH) \
-        -modulepath $(MODULEPATH) \
+        --module-source-path $(MODULESOURCEPATH) \
+        --module-path $(MODULEPATH) \
         -system none, \
 ))
 

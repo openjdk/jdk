@@ -31,7 +31,6 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.sjavac
- *          jdk.jdeps/com.sun.tools.javap
  * @build Wrapper toolbox.ToolBox
  * @run main Wrapper CompileWithInvisibleSources
  */
@@ -53,7 +52,6 @@ public class CompileWithInvisibleSources extends SJavacTester {
 
         Map<String,Long> previous_bin_state = collectState(BIN);
 
-        ToolBox tb = new ToolBox();
         tb.writeFile(GENSRC.resolve("alfa/omega/A.java"),
                      "package alfa.omega; import beta.B; import gamma.C; public class A { B b; C c; }");
         tb.writeFile(GENSRC2.resolve("beta/B.java"),

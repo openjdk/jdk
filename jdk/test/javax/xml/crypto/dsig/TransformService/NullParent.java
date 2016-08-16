@@ -26,6 +26,7 @@
  * @bug 8022120
  * @summary check that the init and marshalParams methods throw
  *          NullPointerException when the parent parameter is null
+ * @run main/othervm/java.security.policy==test.policy NullParent
  */
 
 import javax.xml.crypto.dsig.CanonicalizationMethod;

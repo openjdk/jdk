@@ -25,10 +25,12 @@
  * @test
  * @bug 8044131
  * @summary Tests the hooks used for detecting idleness of the sjavac server.
- * @modules jdk.compiler/com.sun.tools.sjavac.server
+ * @modules jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.sjavac.server
  * @build Wrapper
  * @run main Wrapper IdleShutdown
  */
+
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.sun.tools.javac.main.Main.Result;

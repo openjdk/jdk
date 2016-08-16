@@ -59,11 +59,6 @@ public class TestUserDoclet extends Doclet {
         String thisClassName = TestUserDoclet.class.getName();
         List<String> cmdArgs = new ArrayList<>();
         cmdArgs.add(javadoc.getPath());
-        int i = 0;
-        String prop;
-        while ((prop = System.getProperty("jdk.launcher.patch." + (i++))) != null) {
-            cmdArgs.add("-J-Xpatch:" + prop);
-        }
         cmdArgs.addAll(Arrays.asList(
                 "-doclet", thisClassName,
                 "-docletpath", testClasses.getPath(),

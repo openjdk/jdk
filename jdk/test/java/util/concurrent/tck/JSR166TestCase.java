@@ -68,6 +68,7 @@ import java.security.ProtectionDomain;
 import java.security.SecurityPermission;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -89,6 +90,7 @@ import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -1278,7 +1280,7 @@ public class JSR166TestCase extends TestCase {
      * thread to enter a wait state: BLOCKED, WAITING, or TIMED_WAITING.
      */
     void waitForThreadToEnterWaitState(Thread thread, long timeoutMillis) {
-        long startTime = System.nanoTime();
+        long startTime = 0L;
         for (;;) {
             Thread.State s = thread.getState();
             if (s == Thread.State.BLOCKED ||
@@ -1287,6 +1289,8 @@ public class JSR166TestCase extends TestCase {
                 return;
             else if (s == Thread.State.TERMINATED)
                 fail("Unexpected thread termination");
+            else if (startTime == 0L)
+                startTime = System.nanoTime();
             else if (millisElapsedSince(startTime) > timeoutMillis) {
                 threadAssertTrue(thread.isAlive());
                 return;
@@ -1900,4 +1904,7 @@ public class JSR166TestCase extends TestCase {
                                1000L, MILLISECONDS,
                                new SynchronousQueue<Runnable>());
 
+    static <T> void shuffle(T[] array) {
+        Collections.shuffle(Arrays.asList(array), ThreadLocalRandom.current());
+    }
 }

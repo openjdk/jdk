@@ -198,7 +198,7 @@ public final class JdepsUtil {
         }
 
         public ModuleAnalyzer getModuleAnalyzer(Set<String> mods) throws IOException {
-            // if -check is set, add to the root set and all modules are observable
+            // if --check is set, add to the root set and all modules are observable
             addmods(mods);
             builder.allModules();
             return new ModuleAnalyzer(configuration(), pw, mods);

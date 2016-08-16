@@ -34,6 +34,7 @@ import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
@@ -87,6 +88,7 @@ public class ReturnTaglet extends BaseExecutableMemberTaglet implements Inherita
      * {@inheritDoc}
      */
     public Content getTagletOutput(Element holder, TagletWriter writer) {
+        Messages messages = writer.configuration().getMessages();
         Utils utils = writer.configuration().utils;
         TypeMirror returnType = utils.getReturnType((ExecutableElement)holder);
         List<? extends DocTree> tags = utils.getBlockTags(holder, name);
@@ -94,7 +96,7 @@ public class ReturnTaglet extends BaseExecutableMemberTaglet implements Inherita
         //Make sure we are not using @return tag on method with void return type.
         if (returnType != null && utils.isVoid(returnType)) {
             if (!tags.isEmpty()) {
-                writer.getMsgRetriever().warning(holder, "doclet.Return_tag_on_void_method");
+                messages.warning(holder, "doclet.Return_tag_on_void_method");
             }
             return null;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4983023
  * @summary A bad superclass shouldn't throw the standard doclet into a loop
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  */
 
 public class BadSuper {
@@ -33,7 +33,7 @@ public class BadSuper {
     public static void main(String[] args) {
         String srcpath = System.getProperty("test.src", ".");
 
-        if (com.sun.tools.javadoc.Main.execute(
+        if (jdk.javadoc.internal.tool.Main.execute(
                 new String[] {"-d", "doc", "-sourcepath", srcpath, "p"}) != 0)
             throw new Error("Javadoc encountered warnings or errors.");
     }

@@ -28,21 +28,22 @@
  * @bug 8144226
  * @summary Ensures that excluded files are inaccessible (even for implicit
  *          compilation)
- *
- * @modules jdk.compiler/com.sun.tools.sjavac
- *          jdk.jdeps/com.sun.tools.javap
+ * @modules jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.sjavac
+ *          jdk.compiler/com.sun.tools.sjavac.server
  * @library /tools/lib
- * @build Wrapper toolbox.ToolBox
+ * @build Wrapper toolbox.ToolBox toolbox.Assert
  * @run main Wrapper HiddenFiles
  */
 
-import com.sun.tools.javac.main.Main.Result;
-import com.sun.tools.javac.util.Assert;
-import com.sun.tools.sjavac.server.Sjavac;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import com.sun.tools.javac.main.Main.Result;
+
+import toolbox.Assert;
 
 public class HiddenFiles extends SjavacBase {
 
