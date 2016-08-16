@@ -615,12 +615,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             } else {
                 tree.addContent(navDiv);
             }
-            Content ulNav = HtmlTree.UL(HtmlStyle.navList, getNavLinkPrevious());
-            ulNav.addContent(getNavLinkNext());
+            Content ulNav = HtmlTree.UL(HtmlStyle.navList, getNavLinkPrevious(), getNavLinkNext());
             Content subDiv = HtmlTree.DIV(HtmlStyle.subNav, ulNav);
-            Content ulFrames = HtmlTree.UL(HtmlStyle.navList, getNavShowLists());
-            ulFrames.addContent(getNavHideLists(filename));
-            subDiv.addContent(ulFrames);
+            if (configuration.frames) {
+                Content ulFrames = HtmlTree.UL(HtmlStyle.navList,
+                    getNavShowLists(), getNavHideLists(filename));
+                subDiv.addContent(ulFrames);
+            }
             HtmlTree ulAllClasses = HtmlTree.UL(HtmlStyle.navList, getNavLinkClassIndex());
             ulAllClasses.addAttr(HtmlAttr.ID, allClassesId);
             subDiv.addContent(ulAllClasses);
@@ -688,7 +689,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavLinkContents() {
-        Content linkContent = getHyperLink(pathToRoot.resolve(DocPaths.OVERVIEW_SUMMARY),
+        Content linkContent = getHyperLink(pathToRoot.resolve(DocPaths.overviewSummary(configuration.frames)),
                 contents.overviewLabel, "", "");
         Content li = HtmlTree.LI(linkContent);
         return li;
@@ -875,7 +876,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     protected Content getNavLinkClassIndex() {
         Content allClassesContent = getHyperLink(pathToRoot.resolve(
-                DocPaths.ALLCLASSES_NOFRAME),
+                DocPaths.AllClasses(configuration.frames)),
                 contents.allClassesLabel, "", "");
         Content li = HtmlTree.LI(allClassesContent);
         return li;

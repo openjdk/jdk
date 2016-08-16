@@ -198,6 +198,12 @@ public class ConfigurationImpl extends Configuration {
     public boolean createoverview = false;
 
     /**
+     * Specifies whether or not frames should be generated.
+     * Defaults to true; can be set by --frames; can be set to false by --no-frames; last one wins.
+     */
+    public boolean frames = true;
+
+    /**
      * This is the HTML version of the generated pages. HTML 4.01 is the default output version.
      */
     public HtmlVersion htmlVersion = HtmlVersion.HTML4;
@@ -414,18 +420,18 @@ public class ConfigurationImpl extends Configuration {
      * package to document. It will be a class page(first in the sorted order),
      * if only classes are provided on the command line.
      *
-     * @param root Root of the program structure.
+     * @param docEnv Root of the program structure.
      */
-    protected void setTopFile(DocletEnvironment root) {
-        if (!checkForDeprecation(root)) {
+    protected void setTopFile(DocletEnvironment docEnv) {
+        if (!checkForDeprecation(docEnv)) {
             return;
         }
         if (createoverview) {
-            topFile = DocPaths.OVERVIEW_SUMMARY;
+            topFile = DocPaths.overviewSummary(frames);
         } else {
             if (packages.size() == 1 && packages.first().isUnnamed()) {
-                if (!root.getIncludedClasses().isEmpty()) {
-                    List<TypeElement> classes = new ArrayList<>(root.getIncludedClasses());
+                if (!docEnv.getIncludedClasses().isEmpty()) {
+                    List<TypeElement> classes = new ArrayList<>(docEnv.getIncludedClasses());
                     TypeElement te = getValidClass(classes);
                     topFile = DocPath.forClass(utils, te);
                 }
@@ -724,6 +730,22 @@ public class ConfigurationImpl extends Configuration {
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
                     overviewpath = args.next();
+                    return true;
+                }
+            },
+            new Option(this, "--frames") {
+                @Override
+                public boolean process(String opt,  ListIterator<String> args) {
+                    optionsProcessed.add(this);
+                    frames = true;
+                    return true;
+                }
+            },
+            new Option(this, "--no-frames") {
+                @Override
+                public boolean process(String opt,  ListIterator<String> args) {
+                    optionsProcessed.add(this);
+                    frames = false;
                     return true;
                 }
             },
