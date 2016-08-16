@@ -2,6 +2,6 @@
 - compiler.warn.option.obsolete.source: 1.6
 - compiler.warn.option.obsolete.suppression
 BadlyTypedLabel2.java:12:15: compiler.err.string.switch.not.supported.in.source: 1.6
-BadlyTypedLabel2.java:15:14: compiler.err.const.expr.req
+BadlyTypedLabel2.java:15:14: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.math.RoundingMode, java.lang.String)
 2 errors
 3 warnings
