@@ -38,6 +38,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
@@ -80,8 +81,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
      * @param configuration the configuration of the doclet.
      * @param packageElement PackageElement under consideration.
      */
-    public PackageFrameWriter(ConfigurationImpl configuration, PackageElement packageElement)
-            throws IOException {
+    public PackageFrameWriter(ConfigurationImpl configuration, PackageElement packageElement) {
         super(configuration, DocPath.forPackage(packageElement).resolve(DocPaths.PACKAGE_FRAME));
         this.packageElement = packageElement;
         if (utils.getSpecifiedPackages().isEmpty()) {
@@ -119,10 +119,9 @@ public class PackageFrameWriter extends HtmlDocletWriter {
             }
             packgen.printHtmlDocument(
                     configuration.metakeywords.getMetaKeywords(packageElement), false, body);
-            packgen.close();
         } catch (IOException exc) {
-            configuration.standardmessage.error(
-                    "doclet.exception_encountered",
+            Messages messages = configuration.getMessages();
+            messages.error("doclet.exception_encountered",
                     exc.toString(), DocPaths.PACKAGE_FRAME.getPath());
             throw new DocletAbortException(exc);
         }
@@ -139,30 +138,30 @@ public class PackageFrameWriter extends HtmlDocletWriter {
         Configuration config = configuration;
         if (utils.isIncluded(packageElement)) {
             addClassKindListing(utils.getInterfaces(packageElement),
-                getResource("doclet.Interfaces"), contentTree);
+                contents.interfaces, contentTree);
             addClassKindListing(utils.getOrdinaryClasses(packageElement),
-                getResource("doclet.Classes"), contentTree);
+                contents.classes, contentTree);
             addClassKindListing(utils.getEnums(packageElement),
-                getResource("doclet.Enums"), contentTree);
+                contents.enums, contentTree);
             addClassKindListing(utils.getExceptions(packageElement),
-                getResource("doclet.Exceptions"), contentTree);
+                contents.exceptions, contentTree);
             addClassKindListing(utils.getErrors(packageElement),
-                getResource("doclet.Errors"), contentTree);
+                contents.errors, contentTree);
             addClassKindListing(utils.getAnnotationTypes(packageElement),
-                getResource("doclet.AnnotationTypes"), contentTree);
+                contents.annotationTypes, contentTree);
         } else {
             addClassKindListing(config.typeElementCatalog.interfaces(packageElement),
-                getResource("doclet.Interfaces"), contentTree);
+                contents.interfaces, contentTree);
             addClassKindListing(config.typeElementCatalog.ordinaryClasses(packageElement),
-                getResource("doclet.Classes"), contentTree);
+                contents.classes, contentTree);
             addClassKindListing(config.typeElementCatalog.enums(packageElement),
-                getResource("doclet.Enums"), contentTree);
+                contents.enums, contentTree);
             addClassKindListing(config.typeElementCatalog.exceptions(packageElement),
-                getResource("doclet.Exceptions"), contentTree);
+                contents.exceptions, contentTree);
             addClassKindListing(config.typeElementCatalog.errors(packageElement),
-                getResource("doclet.Errors"), contentTree);
+                contents.errors, contentTree);
             addClassKindListing(config.typeElementCatalog.annotationTypes(packageElement),
-                getResource("doclet.AnnotationTypes"), contentTree);
+                contents.annotationTypes, contentTree);
         }
     }
 

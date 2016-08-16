@@ -152,7 +152,6 @@ public class ClassBuilder extends AbstractBuilder {
          writer.addClassContentTree(contentTree, classContentTree);
          writer.addFooter(contentTree);
          writer.printDocument(contentTree);
-         writer.close();
          copyDocFiles();
      }
 

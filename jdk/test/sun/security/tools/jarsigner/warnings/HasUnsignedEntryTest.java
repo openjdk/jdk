@@ -22,7 +22,6 @@
  */
 
 import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.JarUtils;
 
 /**
@@ -51,7 +50,7 @@ public class HasUnsignedEntryTest extends Test {
         JarUtils.createJar(UNSIGNED_JARFILE, FIRST_FILE);
 
         // create key pair for signing
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-genkey",
                 "-alias", KEY_ALIAS,
                 "-keyalg", KEY_ALG,
@@ -63,7 +62,7 @@ public class HasUnsignedEntryTest extends Test {
                 "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
 
         // sign jar
-        OutputAnalyzer analyzer = ProcessTools.executeCommand(JARSIGNER,
+        OutputAnalyzer analyzer = jarsigner(
                 "-verbose",
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
@@ -82,7 +81,7 @@ public class HasUnsignedEntryTest extends Test {
         JarUtils.updateJar(SIGNED_JARFILE, UPDATED_SIGNED_JARFILE, SECOND_FILE);
 
         // verify jar
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-verbose",
                 "-keystore", KEYSTORE,
@@ -93,7 +92,7 @@ public class HasUnsignedEntryTest extends Test {
         checkVerifying(analyzer, 0, HAS_UNSIGNED_ENTRY_VERIFYING_WARNING);
 
         // verify jar in strict mode
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-verbose",
                 "-strict",

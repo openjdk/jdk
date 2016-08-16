@@ -22,7 +22,6 @@
  */
 
 import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.JarUtils;
 
 /**
@@ -56,7 +55,7 @@ public class MultipleWarningsTest extends Test {
 
         // create first expired certificate
         // whose ExtendedKeyUsage extension does not allow code signing
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-genkey",
                 "-alias", FIRST_KEY_ALIAS,
                 "-keyalg", KEY_ALG,
@@ -71,7 +70,7 @@ public class MultipleWarningsTest extends Test {
 
         // create second expired certificate
         // whose KeyUsage extension does not allow code signing
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-genkey",
                 "-alias", SECOND_KEY_ALIAS,
                 "-keyalg", KEY_ALG,
@@ -85,7 +84,7 @@ public class MultipleWarningsTest extends Test {
                 "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
 
         // sign jar with first key
-        OutputAnalyzer analyzer = ProcessTools.executeCommand(JARSIGNER,
+        OutputAnalyzer analyzer = jarsigner(
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
                 "-keypass", PASSWORD,
@@ -100,7 +99,7 @@ public class MultipleWarningsTest extends Test {
         JarUtils.updateJar(SIGNED_JARFILE, UPDATED_SIGNED_JARFILE, SECOND_FILE);
 
         // verify jar with second key
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
@@ -114,7 +113,7 @@ public class MultipleWarningsTest extends Test {
                 NOT_SIGNED_BY_ALIAS_VERIFYING_WARNING);
 
         // verify jar with second key in strict mode
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-strict",
                 "-keystore", KEYSTORE,
@@ -134,7 +133,7 @@ public class MultipleWarningsTest extends Test {
                 NOT_SIGNED_BY_ALIAS_VERIFYING_WARNING);
 
         // verify jar with non-exisiting alias
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
@@ -148,7 +147,7 @@ public class MultipleWarningsTest extends Test {
                 NOT_SIGNED_BY_ALIAS_VERIFYING_WARNING);
 
         // verify jar with non-exisiting alias in strict mode
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-strict",
                 "-keystore", KEYSTORE,

@@ -1994,7 +1994,7 @@ final class ServerHandshaker extends Handshaker {
 
     private StaplingParameters processStapling(ClientHello mesg) {
         StaplingParameters params = null;
-        ExtensionType ext;
+        ExtensionType ext = null;
         StatusRequestType type = null;
         StatusRequest req = null;
         Map<X509Certificate, byte[]> responses;
@@ -2012,33 +2012,40 @@ final class ServerHandshaker extends Handshaker {
         CertStatusReqListV2Extension statReqExtV2 =
                 (CertStatusReqListV2Extension)mesg.extensions.get(
                         ExtensionType.EXT_STATUS_REQUEST_V2);
-        // Keep processing only if either status_request or status_request_v2
-        // has been sent in the ClientHello.
-        if (statReqExt == null && statReqExtV2 == null) {
-            return null;
-        }
 
         // Determine which type of stapling we are doing and assert the
         // proper extension in the server hello.
         // Favor status_request_v2 over status_request and ocsp_multi
         // over ocsp.
         // If multiple ocsp or ocsp_multi types exist, select the first
-        // instance of a given type
-        ext = ExtensionType.EXT_STATUS_REQUEST;
+        // instance of a given type.  Also since we don't support ResponderId
+        // selection yet, only accept a request if the ResponderId field
+        // is empty.
         if (statReqExtV2 != null) {             // RFC 6961 stapling
             ext = ExtensionType.EXT_STATUS_REQUEST_V2;
             List<CertStatusReqItemV2> reqItems =
                     statReqExtV2.getRequestItems();
             int ocspIdx = -1;
             int ocspMultiIdx = -1;
-            for (int pos = 0; pos < reqItems.size(); pos++) {
+            for (int pos = 0; (pos < reqItems.size() &&
+                    (ocspIdx == -1 || ocspMultiIdx == -1)); pos++) {
                 CertStatusReqItemV2 item = reqItems.get(pos);
-                if (ocspIdx < 0 && item.getType() ==
-                        StatusRequestType.OCSP) {
-                    ocspIdx = pos;
-                } else if (ocspMultiIdx < 0 && item.getType() ==
-                        StatusRequestType.OCSP_MULTI) {
-                    ocspMultiIdx = pos;
+                StatusRequestType curType = item.getType();
+                if (ocspIdx < 0 && curType == StatusRequestType.OCSP) {
+                    OCSPStatusRequest ocspReq =
+                            (OCSPStatusRequest)item.getRequest();
+                    if (ocspReq.getResponderIds().isEmpty()) {
+                        ocspIdx = pos;
+                    }
+                } else if (ocspMultiIdx < 0 &&
+                        curType == StatusRequestType.OCSP_MULTI) {
+                    // If the type is OCSP, then the request
+                    // is guaranteed to be OCSPStatusRequest
+                    OCSPStatusRequest ocspReq =
+                            (OCSPStatusRequest)item.getRequest();
+                    if (ocspReq.getResponderIds().isEmpty()) {
+                        ocspMultiIdx = pos;
+                    }
                 }
             }
             if (ocspMultiIdx >= 0) {
@@ -2047,16 +2054,47 @@ final class ServerHandshaker extends Handshaker {
             } else if (ocspIdx >= 0) {
                 type = reqItems.get(ocspIdx).getType();
                 req = reqItems.get(ocspIdx).getRequest();
+            } else {
+                if (debug != null && Debug.isOn("handshake")) {
+                    System.out.println("Warning: No suitable request " +
+                            "found in the status_request_v2 extension.");
+                }
             }
-        } else {                                // RFC 6066 stapling
-            type = StatusRequestType.OCSP;
-            req = statReqExt.getRequest();
+        }
+
+        // Only attempt to process a status_request extension if:
+        // * The status_request extension is set AND
+        // * either the status_request_v2 extension is not present OR
+        // * none of the underlying OCSPStatusRequest structures is suitable
+        // for stapling.
+        // If either of the latter two bullet items is true the ext, type and
+        // req variables should all be null.  If any are null we will try
+        // processing an asserted status_request.
+        if ((statReqExt != null) &&
+               (ext == null || type == null || req == null)) {
+            ext = ExtensionType.EXT_STATUS_REQUEST;
+            type = statReqExt.getType();
+            if (type == StatusRequestType.OCSP) {
+                // If the type is OCSP, then the request is guaranteed
+                // to be OCSPStatusRequest
+                OCSPStatusRequest ocspReq =
+                        (OCSPStatusRequest)statReqExt.getRequest();
+                if (ocspReq.getResponderIds().isEmpty()) {
+                    req = ocspReq;
+                } else {
+                    if (debug != null && Debug.isOn("handshake")) {
+                        req = null;
+                        System.out.println("Warning: No suitable request " +
+                                "found in the status_request extension.");
+                    }
+                }
+            }
         }
 
         // If, after walking through the extensions we were unable to
         // find a suitable StatusRequest, then stapling is disabled.
-        // Both statReqType and statReqData must have been set to continue.
-        if (type == null || req == null) {
+        // The ext, type and req variables must have been set to continue.
+        if (type == null || req == null || ext == null) {
             return null;
         }
 

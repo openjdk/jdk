@@ -61,7 +61,7 @@ public class DoclintOtherModules extends ModuleTestBase {
         Files.createDirectories(classes);
 
         String log = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "-modulesourcepath", src.toString(), "-Xlint:deprecation", "-Xdoclint:-reference", "-Werror")
+                .options("-XDrawDiagnostics", "--module-source-path", src.toString(), "-Xlint:deprecation", "-Xdoclint:-reference", "-Werror")
                 .outdir(classes)
                 .files(findJavaFiles(m1))
                 .run(Task.Expect.SUCCESS)

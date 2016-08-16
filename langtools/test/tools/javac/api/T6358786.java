@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class T6358786 {
             String srcdir = System.getProperty("test.src");
             File file = new File(srcdir, args[0]);
             List<String> options = Arrays.asList(
-                "-XaddExports:jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED"
+                "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED"
             );
             JavacTaskImpl task = (JavacTaskImpl)tool.getTask(null, fm, null, options, null, fm.getJavaFileObjectsFromFiles(Arrays.asList(file)));
             Elements elements = task.getElements();

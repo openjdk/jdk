@@ -415,7 +415,7 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("new Clazz() {}.defaultM|", "defaultMethod()");
     }
 
-    @Test(enabled = false) // TODO 8129422
+    @Test
     public void testUncompletedDeclaration() {
         assertCompletion("class Clazz { Claz|", "Clazz");
         assertCompletion("class Clazz { class A extends Claz|", "Clazz");
@@ -423,16 +423,18 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("class Clazz { static Clazz clazz; Object o = cla|", "clazz");
         assertCompletion("class Clazz { Clazz clazz; static Object o = cla|", true);
         assertCompletion("class Clazz { void method(Claz|", "Clazz");
-        assertCompletion("class A { int method() { return 0; } int a = meth|", "method");
+        assertCompletion("class A { int method() { return 0; } int a = meth|", "method()");
         assertCompletion("class A { int field = 0; int method() { return fiel|", "field");
-        assertCompletion("class A { static int method() { return 0; } int a = meth|", "method");
+        assertCompletion("class A { static int method() { return 0; } int a = meth|", "method()");
         assertCompletion("class A { static int field = 0; int method() { return fiel|", "field");
         assertCompletion("class A { int method() { return 0; } static int a = meth|", true);
         assertCompletion("class A { int field = 0; static int method() { return fiel|", true);
     }
 
-    @Test(enabled = false) // TODO 8129421
+    @Test
     public void testClassDeclaration() {
+        assertEval("void ClazzM() {}");
+        assertEval("void InterfaceM() {}");
         assertEval("interface Interface {}");
         assertCompletion("interface A extends Interf|", "Interface");
         assertCompletion("class A implements Interf|", "Interface");
@@ -445,6 +447,27 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("interface A implements Inter|");
         assertCompletion("class A implements Claz|", true);
         assertCompletion("class A extends Clazz implements Interface, Interf|", true, "Interface1");
+        assertCompletion("class A extends Clazz implements Interface, Interf|", true, "Interface1");
+        assertEval("class InterfaceClazz {}");
+        assertCompletion("class A <T extends Claz|", "Clazz");
+        assertCompletion("class A <T extends Interf|", "Interface", "Interface1", "InterfaceClazz");
+        assertCompletion("class A <T extends Interface & Interf|", "Interface", "Interface1", "InterfaceClazz");
+        assertCompletion("class A <T extends Clazz & Interf|", "Interface", "Interface1", "InterfaceClazz");
+        assertCompletion("class A <T extends Claz|", true, "Clazz");
+        assertCompletion("class A <T extends Interf|", true, "Interface", "Interface1", "InterfaceClazz");
+        assertCompletion("class A <T extends Interface & Interf|", true, "Interface1");
+        assertCompletion("class A <T extends Clazz & Interf|", true, "Interface", "Interface1");
+    }
+
+    public void testMethodDeclaration() {
+        assertEval("void ClazzM() {}");
+        assertEval("void InterfaceM() {}");
+        assertEval("interface Interface {}");
+        assertCompletion("void m(Interf|", "Interface");
+        assertCompletion("void m(Interface i1, Interf|", "Interface");
+        assertEval("class InterfaceException extends Exception {}");
+        assertCompletion("void m(Interface i1) throws Interf|", "Interface", "InterfaceException");
+        assertCompletion("void m(Interface i1) throws Interf|", true, "InterfaceException");
     }
 
     public void testDocumentationOfUserDefinedMethods() {

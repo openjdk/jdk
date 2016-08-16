@@ -112,9 +112,4 @@ public interface EnumConstantWriter {
      * @return content tree for the enum constants documentation
      */
     public Content getEnumConstants(Content enumConstantsTree, boolean isLastContent);
-
-    /**
-     * Close the writer.
-     */
-    public void close() throws IOException;
 }

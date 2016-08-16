@@ -65,7 +65,7 @@ public class ProxyLayerTest {
     public void compileAll() throws Exception {
         for (String mn : modules) {
             Path msrc = SRC_DIR.resolve(mn);
-            assertTrue(CompilerUtils.compile(msrc, MODS_DIR, "-modulesourcepath", SRC_DIR.toString()));
+            assertTrue(CompilerUtils.compile(msrc, MODS_DIR, "--module-source-path", SRC_DIR.toString()));
         }
     }
 

@@ -317,7 +317,7 @@ public class SecurityProviderModularTest extends ModularTest {
         vmArgs.put("-Duser.language=", "en");
         vmArgs.put("-Duser.region=", "US");
         if (addModName != null && sModuletype == MODULE_TYPE.AUTO) {
-            vmArgs.put("-addmods ", addModName);
+            vmArgs.put("--add-modules=", addModName);
         }
         // If mechanism selected to find the provider through
         // Security.getProvider() then use providerName/ProviderClassName based

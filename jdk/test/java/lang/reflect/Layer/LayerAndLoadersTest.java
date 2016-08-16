@@ -63,9 +63,9 @@ public class LayerAndLoadersTest {
     @BeforeTest
     public void setup() throws Exception {
 
-        // javac -d mods -modulesourcepath src src/**
+        // javac -d mods --module-source-path src src/**
         assertTrue(CompilerUtils.compile(SRC_DIR, MODS_DIR,
-                "-modulesourcepath", SRC_DIR.toString()));
+                "--module-source-path", SRC_DIR.toString()));
     }
 
 

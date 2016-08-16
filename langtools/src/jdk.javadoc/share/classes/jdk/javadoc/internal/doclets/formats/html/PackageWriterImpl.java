@@ -100,8 +100,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      * @param next            Next package in the sorted array.
      */
     public PackageWriterImpl(ConfigurationImpl configuration,
-            PackageElement packageElement, PackageElement prev, PackageElement next)
-            throws IOException {
+            PackageElement packageElement, PackageElement prev, PackageElement next) {
         super(configuration, DocPath
                 .forPackage(packageElement)
                 .resolve(DocPaths.PACKAGE_SUMMARY));
@@ -127,9 +126,9 @@ public class PackageWriterImpl extends HtmlDocletWriter
         div.addStyle(HtmlStyle.header);
         ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(packageElement);
         if (mdle != null && !mdle.isUnnamed()) {
-            Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInClass, moduleLabel);
+            Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInClass, contents.moduleLabel);
             Content moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);
-            moduleNameDiv.addContent(getSpace());
+            moduleNameDiv.addContent(Contents.SPACE);
             moduleNameDiv.addContent(getModuleLink(mdle,
                     new StringContent(mdle.getQualifiedName().toString())));
             div.addContent(moduleNameDiv);
@@ -138,8 +137,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
         addAnnotationInfo(packageElement, annotationContent);
         div.addContent(annotationContent);
         Content tHeading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
-                HtmlStyle.title, packageLabel);
-        tHeading.addContent(getSpace());
+                HtmlStyle.title, contents.packageLabel);
+        tHeading.addContent(Contents.SPACE);
         Content packageHead = new StringContent(heading);
         tHeading.addContent(packageHead);
         div.addContent(tHeading);
@@ -149,11 +148,11 @@ public class PackageWriterImpl extends HtmlDocletWriter
             docSummaryDiv.addStyle(HtmlStyle.docSummary);
             addSummaryComment(packageElement, docSummaryDiv);
             div.addContent(docSummaryDiv);
-            Content space = getSpace();
+            Content space = Contents.SPACE;
             Content descLink = getHyperLink(getDocLink(
                     SectionName.PACKAGE_DESCRIPTION),
-                    descriptionLabel, "", "");
-            Content descPara = new HtmlTree(HtmlTag.P, seeLabel, space, descLink);
+                    contents.descriptionLabel, "", "");
+            Content descPara = new HtmlTree(HtmlTag.P, contents.seeLabel, space, descLink);
             div.addContent(descPara);
         }
         if (configuration.allowTag(HtmlTag.MAIN)) {
@@ -184,7 +183,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             CommentHelper ch = utils.getCommentHelper(packageElement);
             HtmlTree deprDiv = new HtmlTree(HtmlTag.DIV);
             deprDiv.addStyle(HtmlStyle.deprecatedContent);
-            Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
+            Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, contents.deprecatedPhrase);
             deprDiv.addContent(deprPhrase);
             if (!deprs.isEmpty()) {
                 List<? extends DocTree> commentTags = ch.getDescription(configuration, deprs.get(0));
@@ -233,7 +232,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 HtmlTree tdClassDescription = new HtmlTree(HtmlTag.TD);
                 tdClassDescription.addStyle(HtmlStyle.colLast);
                 if (utils.isDeprecated(klass)) {
-                    tdClassDescription.addContent(deprecatedLabel);
+                    tdClassDescription.addContent(contents.deprecatedLabel);
                     List<? extends DocTree> tags = utils.getDeprecatedTrees(klass);
                     if (!tags.isEmpty()) {
                         addSummaryDeprecatedComment(klass, tags.get(0), tdClassDescription);
@@ -323,7 +322,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     protected Content getNavLinkClassUse() {
         Content useLink = getHyperLink(DocPaths.PACKAGE_USE,
-                useLabel, "", "");
+                contents.useLabel, "", "");
         Content li = HtmlTree.LI(useLink);
         return li;
     }
@@ -336,11 +335,11 @@ public class PackageWriterImpl extends HtmlDocletWriter
     public Content getNavLinkPrevious() {
         Content li;
         if (prev == null) {
-            li = HtmlTree.LI(prevpackageLabel);
+            li = HtmlTree.LI(contents.prevPackageLabel);
         } else {
             DocPath path = DocPath.relativePath(packageElement, prev);
             li = HtmlTree.LI(getHyperLink(path.resolve(DocPaths.PACKAGE_SUMMARY),
-                prevpackageLabel, "", ""));
+                contents.prevPackageLabel, "", ""));
         }
         return li;
     }
@@ -353,11 +352,11 @@ public class PackageWriterImpl extends HtmlDocletWriter
     public Content getNavLinkNext() {
         Content li;
         if (next == null) {
-            li = HtmlTree.LI(nextpackageLabel);
+            li = HtmlTree.LI(contents.nextPackageLabel);
         } else {
             DocPath path = DocPath.relativePath(packageElement, next);
             li = HtmlTree.LI(getHyperLink(path.resolve(DocPaths.PACKAGE_SUMMARY),
-                nextpackageLabel, "", ""));
+                contents.nextPackageLabel, "", ""));
         }
         return li;
     }
@@ -370,7 +369,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     protected Content getNavLinkTree() {
         Content useLink = getHyperLink(DocPaths.PACKAGE_TREE,
-                treeLabel, "", "");
+                contents.treeLabel, "", "");
         Content li = HtmlTree.LI(useLink);
         return li;
     }
@@ -383,7 +382,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     @Override
     protected Content getNavLinkModule() {
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
-                moduleLabel);
+                contents.moduleLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -394,7 +393,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      * @return a content tree for the package link
      */
     protected Content getNavLinkPackage() {
-        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, packageLabel);
+        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.packageLabel);
         return li;
     }
 }

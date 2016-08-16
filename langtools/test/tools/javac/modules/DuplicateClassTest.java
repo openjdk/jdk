@@ -60,7 +60,7 @@ public class DuplicateClassTest extends ModuleTestBase {
         Files.createDirectories(classes);
 
         String log = new JavacTask(tb)
-                .options("-modulesourcepath", base.toString())
+                .options("--module-source-path", base.toString())
                 .outdir(classes)
                 .files(findJavaFiles(base))
                 .run()
