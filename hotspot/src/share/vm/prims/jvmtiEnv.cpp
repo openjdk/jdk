@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderExt.hpp"
+#include "classfile/javaClasses.inline.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -223,6 +225,7 @@ JvmtiEnv::GetNamedModule(jobject class_loader, const char* package_name, jobject
   *module_ptr = module;
   return JVMTI_ERROR_NONE;
 } /* end GetNamedModule */
+
 
   //
   // Class functions
@@ -3465,28 +3468,35 @@ jvmtiError
 JvmtiEnv::GetSystemProperties(jint* count_ptr, char*** property_ptr) {
   jvmtiError err = JVMTI_ERROR_NONE;
 
-  *count_ptr = Arguments::PropertyList_count(Arguments::system_properties());
+  // Get the number of readable properties.
+  *count_ptr = Arguments::PropertyList_readable_count(Arguments::system_properties());
 
+  // Allocate memory to hold the exact number of readable properties.
   err = allocate(*count_ptr * sizeof(char *), (unsigned char **)property_ptr);
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
-  int i = 0 ;
-  for (SystemProperty* p = Arguments::system_properties(); p != NULL && i < *count_ptr; p = p->next(), i++) {
-    const char *key = p->key();
-    char **tmp_value = *property_ptr+i;
-    err = allocate((strlen(key)+1) * sizeof(char), (unsigned char**)tmp_value);
-    if (err == JVMTI_ERROR_NONE) {
-      strcpy(*tmp_value, key);
-    } else {
-      // clean up previously allocated memory.
-      for (int j=0; j<i; j++) {
-        Deallocate((unsigned char*)*property_ptr+j);
+  int readable_count = 0;
+  // Loop through the system properties until all the readable properties are found.
+  for (SystemProperty* p = Arguments::system_properties(); p != NULL && readable_count < *count_ptr; p = p->next()) {
+    if (p->is_readable()) {
+      const char *key = p->key();
+      char **tmp_value = *property_ptr+readable_count;
+      readable_count++;
+      err = allocate((strlen(key)+1) * sizeof(char), (unsigned char**)tmp_value);
+      if (err == JVMTI_ERROR_NONE) {
+        strcpy(*tmp_value, key);
+      } else {
+        // clean up previously allocated memory.
+        for (int j=0; j<readable_count; j++) {
+          Deallocate((unsigned char*)*property_ptr+j);
+        }
+        Deallocate((unsigned char*)property_ptr);
+        break;
       }
-      Deallocate((unsigned char*)property_ptr);
-      break;
     }
   }
+  assert(err != JVMTI_ERROR_NONE || readable_count == *count_ptr, "Bad readable property count");
   return err;
 } /* end GetSystemProperties */
 
@@ -3498,7 +3508,8 @@ JvmtiEnv::GetSystemProperty(const char* property, char** value_ptr) {
   jvmtiError err = JVMTI_ERROR_NONE;
   const char *value;
 
-  value = Arguments::PropertyList_get_value(Arguments::system_properties(), property);
+  // Return JVMTI_ERROR_NOT_AVAILABLE if property is not readable or doesn't exist.
+  value = Arguments::PropertyList_get_readable_value(Arguments::system_properties(), property);
   if (value == NULL) {
     err =  JVMTI_ERROR_NOT_AVAILABLE;
   } else {

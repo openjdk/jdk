@@ -31,11 +31,13 @@ import java.util.*;
 import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.doclet.DocletEnvironment;
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
@@ -103,10 +105,9 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
         try {
             packgen = new PackageIndexWriter(configuration, filename);
             packgen.buildPackageIndexFile("doclet.Window_Overview_Summary", true);
-            packgen.close();
         } catch (IOException exc) {
-            configuration.standardmessage.error(
-                        "doclet.exception_encountered",
+            Messages messages = configuration.getMessages();
+            messages.error("doclet.exception_encountered",
                         exc.toString(), filename);
             throw new DocletAbortException(exc);
         }
@@ -189,12 +190,13 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
             subTitleDiv.addStyle(HtmlStyle.subTitle);
             addSummaryComment(configuration.overviewElement, subTitleDiv);
             Content div = HtmlTree.DIV(HtmlStyle.header, subTitleDiv);
-            Content see = seeLabel;
-            see.addContent(" ");
-            Content descPara = HtmlTree.P(see);
+            Content descBody = new ContentBuilder();
+            descBody.addContent(contents.seeLabel);
+            descBody.addContent(" ");
+            Content descPara = HtmlTree.P(descBody);
             Content descLink = getHyperLink(getDocLink(
                     SectionName.OVERVIEW_DESCRIPTION),
-                    descriptionLabel, "", "");
+                    contents.descriptionLabel, "", "");
             descPara.addContent(descLink);
             div.addContent(descPara);
             if (configuration.allowTag(HtmlTag.MAIN)) {

@@ -123,7 +123,7 @@ public class TransitiveDeps {
     public void testModulePath(String name, List<ModuleMetaData> data) throws IOException {
         Set<String> roots = Set.of("m6", "unsafe");
 
-        String cmd1 = String.format("jdeps -modulepath %s -addmods %s -m %s%n", MODS_DIR,
+        String cmd1 = String.format("jdeps --module-path %s --add-modules %s -m %s%n", MODS_DIR,
             roots.stream().collect(Collectors.joining(",")), name);
         try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd1)) {
             jdeps.verbose("-verbose:class")
@@ -136,7 +136,7 @@ public class TransitiveDeps {
         // run automatic modules
         roots = Set.of("ALL-MODULE-PATH", "jdk.unsupported");
 
-        String cmd2 = String.format("jdeps -modulepath %s -addmods %s -m %s%n", LIBS_DIR,
+        String cmd2 = String.format("jdeps --module-path %s --add-modules %s -m %s%n", LIBS_DIR,
             roots.stream().collect(Collectors.joining(",")), name);
 
         try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd2)) {

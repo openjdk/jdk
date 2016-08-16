@@ -36,6 +36,7 @@ import jdk.javadoc.internal.doclets.formats.html.ConfigurationImpl;
 import jdk.javadoc.internal.doclets.formats.html.SectionName;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -67,11 +68,11 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      *
      * @param filename String file name.
      */
-    public HtmlDocWriter(Configuration configuration, DocPath filename)
-            throws IOException {
+    public HtmlDocWriter(Configuration configuration, DocPath filename) {
         super(configuration, filename);
         this.pathToRoot = filename.parent().invert();
-        configuration.message.notice("doclet.Generating_0",
+        Messages messages = configuration.getMessages();
+        messages.notice("doclet.Generating_0",
             DocFile.createFileForOutput(configuration, filename).getPath());
     }
 
@@ -308,10 +309,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
 
         PackageElement encl = configuration.utils.containingPackage(te);
         return (encl.isUnnamed()) ? "" : (encl.getQualifiedName() + ".");
-    }
-
-    public boolean getMemberDetailsListPrinted() {
-        return memberDetailsListPrinted;
     }
 
     /**

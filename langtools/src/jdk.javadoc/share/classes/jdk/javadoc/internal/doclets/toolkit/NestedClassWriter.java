@@ -40,9 +40,4 @@ import java.io.*;
  */
 
 public interface NestedClassWriter {
-
-    /**
-     * Close the writer.
-     */
-    public void close() throws IOException;
 }

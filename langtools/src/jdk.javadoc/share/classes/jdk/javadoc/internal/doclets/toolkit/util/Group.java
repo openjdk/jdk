@@ -31,6 +31,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 
 
 /**
@@ -87,6 +88,7 @@ public class Group {
      * The global configuration information for this run.
      */
     private final Configuration configuration;
+    private Messages messages;
 
     /**
      * Since we need to sort the keys in the reverse order(longest key first),
@@ -101,6 +103,7 @@ public class Group {
 
     public Group(Configuration configuration) {
         this.configuration = configuration;
+        messages = configuration.getMessages();
     }
 
     /**
@@ -120,14 +123,16 @@ public class Group {
     public boolean checkPackageGroups(String groupname, String pkgNameFormList) {
         StringTokenizer strtok = new StringTokenizer(pkgNameFormList, ":");
         if (groupList.contains(groupname)) {
-            configuration.message.warning("doclet.Groupname_already_used", groupname);
+            initMessages();
+            messages.warning("doclet.Groupname_already_used", groupname);
             return false;
         }
         groupList.add(groupname);
         while (strtok.hasMoreTokens()) {
             String id = strtok.nextToken();
             if (id.length() == 0) {
-                configuration.message.warning("doclet.Error_in_packagelist", groupname, pkgNameFormList);
+                initMessages();
+                messages.warning("doclet.Error_in_packagelist", groupname, pkgNameFormList);
                 return false;
             }
             if (id.endsWith("*")) {
@@ -148,6 +153,14 @@ public class Group {
         return true;
     }
 
+    // Lazy init of the messages for now, because Group is created
+    // in Configuration before configuration is fully initialized.
+    private void initMessages() {
+        if (messages == null) {
+            messages = configuration.getMessages();
+        }
+    }
+
     /**
      * Search if the given map has given the package format.
      *
@@ -158,7 +171,8 @@ public class Group {
      */
     boolean foundGroupFormat(Map<String,?> map, String pkgFormat) {
         if (map.containsKey(pkgFormat)) {
-            configuration.message.error("doclet.Same_package_name_used", pkgFormat);
+            initMessages();
+            messages.error("doclet.Same_package_name_used", pkgFormat);
             return true;
         }
         return false;
@@ -181,8 +195,8 @@ public class Group {
         Map<String, SortedSet<PackageElement>> groupPackageMap = new HashMap<>();
         String defaultGroupName =
             (pkgNameGroupMap.isEmpty() && regExpGroupMap.isEmpty())?
-                configuration.message.getText("doclet.Packages") :
-                configuration.message.getText("doclet.Other_Packages");
+                configuration.getResources().getText("doclet.Packages") :
+                configuration.getResources().getText("doclet.Other_Packages");
         // if the user has not used the default group name, add it
         if (!groupList.contains(defaultGroupName)) {
             groupList.add(defaultGroupName);

@@ -29,16 +29,15 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.sjavac
- *          jdk.jdeps/com.sun.tools.javap
- * @build Wrapper toolbox.ToolBox
+ * @build Wrapper toolbox.ToolBox toolbox.Assert
  * @run main Wrapper NoState
  */
-
-import com.sun.tools.javac.util.Assert;
 
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.stream.Stream;
+
+import toolbox.Assert;
 
 public class NoState extends SJavacTester {
     public static void main(String... args) throws Exception {

@@ -112,7 +112,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     protected Content getNavLinkModule() {
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(typeElement),
-                moduleLabel);
+                contents.moduleLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -125,7 +125,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     protected Content getNavLinkPackage() {
         Content linkContent = getHyperLink(DocPaths.PACKAGE_SUMMARY,
-                packageLabel);
+                contents.packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -137,7 +137,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      */
     @Override
     protected Content getNavLinkClass() {
-        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, classLabel);
+        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.classLabel);
         return li;
     }
 
@@ -148,7 +148,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      */
     @Override
     protected Content getNavLinkClassUse() {
-        Content linkContent = getHyperLink(DocPaths.CLASS_USE.resolve(filename), useLabel);
+        Content linkContent = getHyperLink(DocPaths.CLASS_USE.resolve(filename), contents.useLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -164,11 +164,11 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         if (prev != null) {
             Content prevLink = getLink(new LinkInfoImpl(configuration,
                     LinkInfoImpl.Kind.CLASS, prev)
-                    .label(prevclassLabel).strong(true));
+                    .label(contents.prevClassLabel).strong(true));
             li = HtmlTree.LI(prevLink);
         }
         else
-            li = HtmlTree.LI(prevclassLabel);
+            li = HtmlTree.LI(contents.prevClassLabel);
         return li;
     }
 
@@ -183,11 +183,11 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         if (next != null) {
             Content nextLink = getLink(new LinkInfoImpl(configuration,
                     LinkInfoImpl.Kind.CLASS, next)
-                    .label(nextclassLabel).strong(true));
+                    .label(contents.nextClassLabel).strong(true));
             li = HtmlTree.LI(nextLink);
         }
         else
-            li = HtmlTree.LI(nextclassLabel);
+            li = HtmlTree.LI(contents.nextClassLabel);
         return li;
     }
 
@@ -210,18 +210,18 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         div.addStyle(HtmlStyle.header);
         ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(typeElement);
         if (mdle != null && !mdle.isUnnamed()) {
-            Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInClass, moduleLabel);
+            Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInClass, contents.moduleLabel);
             Content moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);
-            moduleNameDiv.addContent(getSpace());
+            moduleNameDiv.addContent(Contents.SPACE);
             moduleNameDiv.addContent(getModuleLink(mdle,
                     new StringContent(mdle.getQualifiedName().toString())));
             div.addContent(moduleNameDiv);
         }
         PackageElement pkg = utils.containingPackage(typeElement);
         if (!pkg.isUnnamed()) {
-            Content classPackageLabel = HtmlTree.SPAN(HtmlStyle.packageLabelInClass, packageLabel);
+            Content classPackageLabel = HtmlTree.SPAN(HtmlStyle.packageLabelInClass, contents.packageLabel);
             Content pkgNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classPackageLabel);
-            pkgNameDiv.addContent(getSpace());
+            pkgNameDiv.addContent(Contents.SPACE);
             Content pkgNameContent = getPackageLink(pkg,
                     new StringContent(utils.getPackageName(pkg)));
             pkgNameDiv.addContent(pkgNameContent);
@@ -469,8 +469,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             }
             Set<TypeElement> subclasses = classtree.directSubClasses(typeElement, false);
             if (!subclasses.isEmpty()) {
-                Content label = getResource(
-                        "doclet.Subclasses");
+                Content label = contents.subclassesLabel;
                 Content dt = HtmlTree.DT(label);
                 Content dl = HtmlTree.DL(dt);
                 dl.addContent(getClassLinks(LinkInfoImpl.Kind.SUBCLASSES,
@@ -488,8 +487,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         if (utils.isInterface(typeElement)) {
             Set<TypeElement> subInterfaces = classtree.allSubClasses(typeElement, false);
             if (!subInterfaces.isEmpty()) {
-                Content label = getResource(
-                        "doclet.Subinterfaces");
+                Content label = contents.subinterfacesLabel;
                 Content dt = HtmlTree.DT(label);
                 Content dl = HtmlTree.DL(dt);
                 dl.addContent(getClassLinks(LinkInfoImpl.Kind.SUBINTERFACES,
@@ -513,8 +511,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         }
         Set<TypeElement> implcl = classtree.implementingClasses(typeElement);
         if (!implcl.isEmpty()) {
-            Content label = getResource(
-                    "doclet.Implementing_Classes");
+            Content label = contents.implementingClassesLabel;
             Content dt = HtmlTree.DT(label);
             Content dl = HtmlTree.DL(dt);
             dl.addContent(getClassLinks(LinkInfoImpl.Kind.IMPLEMENTED_CLASSES,
@@ -531,8 +528,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         SortedSet<TypeMirror> interfaces = new TreeSet<>(utils.makeTypeMirrorClassUseComparator());
         interfaces.addAll(utils.getAllInterfaces(typeElement));
         if (utils.isClass(typeElement) && !interfaces.isEmpty()) {
-            Content label = getResource(
-                    "doclet.All_Implemented_Interfaces");
+            Content label = contents.allImplementedInterfacesLabel;
             Content dt = HtmlTree.DT(label);
             Content dl = HtmlTree.DL(dt);
             dl.addContent(getClassLinks(LinkInfoImpl.Kind.IMPLEMENTED_INTERFACES, interfaces));
@@ -550,7 +546,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         interfaces.addAll(utils.getAllInterfaces(typeElement));
 
         if (utils.isInterface(typeElement) && !interfaces.isEmpty()) {
-            Content label = getResource("doclet.All_Superinterfaces");
+            Content label = contents.allSuperinterfacesLabel;
             Content dt = HtmlTree.DT(label);
             Content dl = HtmlTree.DL(dt);
             dl.addContent(getClassLinks(LinkInfoImpl.Kind.SUPER_INTERFACES, interfaces));
@@ -569,10 +565,10 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         new SimpleElementVisitor8<Void, Void>() {
             @Override @DefinedBy(Api.LANGUAGE_MODEL)
             public Void visitType(TypeElement e, Void p) {
-                String label = utils.isInterface(e)
-                        ? "doclet.Enclosing_Interface"
-                        : "doclet.Enclosing_Class";
-                Content dt = HtmlTree.DT(getResource(label));
+                Content label = utils.isInterface(e)
+                        ? contents.enclosingInterfaceLabel
+                        : contents.enclosingClassLabel;
+                Content dt = HtmlTree.DT(label);
                 Content dl = HtmlTree.DL(dt);
                 Content dd = new HtmlTree(HtmlTag.DD);
                 dd.addContent(getLink(new LinkInfoImpl(configuration,
@@ -590,10 +586,10 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     public void addFunctionalInterfaceInfo (Content classInfoTree) {
         if (isFunctionalInterface()) {
-            Content dt = HtmlTree.DT(getResource("doclet.Functional_Interface"));
+            Content dt = HtmlTree.DT(contents.functionalInterface);
             Content dl = HtmlTree.DL(dt);
             Content dd = new HtmlTree(HtmlTag.DD);
-            dd.addContent(getResource("doclet.Functional_Interface_Message"));
+            dd.addContent(contents.functionalInterfaceMessage);
             dl.addContent(dd);
             classInfoTree.addContent(dl);
         }
@@ -619,14 +615,14 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         classInfoTree.addContent(hr);
         List<? extends DocTree> deprs = utils.getBlockTags(typeElement, DocTree.Kind.DEPRECATED);
         if (utils.isDeprecated(typeElement)) {
-            Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
+            Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, contents.deprecatedPhrase);
             Content div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
             if (!deprs.isEmpty()) {
                 CommentHelper ch = utils.getCommentHelper(typeElement);
                 DocTree dt = deprs.get(0);
                 List<? extends DocTree> commentTags = ch.getBody(configuration, dt);
                 if (!commentTags.isEmpty()) {
-                    div.addContent(getSpace());
+                    div.addContent(Contents.SPACE);
                     addInlineDeprecatedComment(typeElement, deprs.get(0), div);
                 }
             }
@@ -671,7 +667,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     protected Content getNavLinkTree() {
         Content treeLinkContent = getHyperLink(DocPaths.PACKAGE_TREE,
-                treeLabel, "", "");
+                contents.treeLabel, "", "");
         Content li = HtmlTree.LI(treeLinkContent);
         return li;
     }
@@ -697,8 +693,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      * @return the content tree for the navigation summary links
      */
     protected Content getNavSummaryLinks() throws Exception {
-        Content li = HtmlTree.LI(summaryLabel);
-        li.addContent(getSpace());
+        Content li = HtmlTree.LI(contents.summaryLabel);
+        li.addContent(Contents.SPACE);
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
         MemberSummaryBuilder memberSummaryBuilder = (MemberSummaryBuilder)
                 configuration.getBuilderFactory().getMemberSummaryBuilder(this);
@@ -713,7 +709,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             AbstractMemberWriter writer =
                 ((AbstractMemberWriter) memberSummaryBuilder.getMemberSummaryWriter(kind));
             if (writer == null) {
-                liNav.addContent(getResource(VisibleMemberMap.Kind.getNavLinkLabels(kind)));
+                liNav.addContent(contents.getContent(VisibleMemberMap.Kind.getNavLinkLabels(kind)));
             } else {
                 writer.addNavSummaryLink(
                         memberSummaryBuilder.members(kind),
@@ -734,8 +730,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      * @throws java.lang.Exception
      */
     protected Content getNavDetailLinks() throws Exception {
-        Content li = HtmlTree.LI(detailLabel);
-        li.addContent(getSpace());
+        Content li = HtmlTree.LI(contents.detailLabel);
+        li.addContent(Contents.SPACE);
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
         MemberSummaryBuilder memberSummaryBuilder = (MemberSummaryBuilder)
                 configuration.getBuilderFactory().getMemberSummaryBuilder(this);
@@ -751,7 +747,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 continue;
             }
             if (writer == null) {
-                liNav.addContent(getResource(VisibleMemberMap.Kind.getNavLinkLabels(kind)));
+                liNav.addContent(contents.getContent(VisibleMemberMap.Kind.getNavLinkLabels(kind)));
             } else {
                 writer.addNavDetailLink(memberSummaryBuilder.members(kind), liNav);
             }

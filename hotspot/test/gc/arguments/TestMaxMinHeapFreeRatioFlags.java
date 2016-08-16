@@ -88,7 +88,7 @@ public class TestMaxMinHeapFreeRatioFlags {
                 (useXmaxf ? "-Xmaxf" + maxRatio / 100.0 : "-XX:MaxHeapFreeRatio=" + maxRatio),
                 "-Xmx" + MAX_HEAP_SIZE,
                 "-Xms" + HEAP_SIZE,
-                "-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED",
+                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:NewSize=" + NEW_SIZE,
                 "-XX:MaxNewSize=" + MAX_NEW_SIZE,
                 "-XX:" + (shrinkHeapInSteps ? '+' : '-') + "ShrinkHeapInSteps",
@@ -120,7 +120,7 @@ public class TestMaxMinHeapFreeRatioFlags {
         Collections.addAll(vmOptions,
                 (useXminf ? "-Xminf" + minRatio / 100.0 : "-XX:MinHeapFreeRatio=" + minRatio),
                 (useXmaxf ? "-Xmaxf" + maxRatio / 100.0 : "-XX:MaxHeapFreeRatio=" + maxRatio),
-                "-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED",
+                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-version"
         );
         ProcessBuilder procBuilder = ProcessTools.createJavaProcessBuilder(vmOptions.toArray(new String[vmOptions.size()]));

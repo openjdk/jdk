@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,8 @@ public class T6410653 {
         compiler.run(null, null, out, "-d", source, source);
         System.err.println(">>>" + out + "<<<");
         useRawMessages.setBoolean(null, false);
-        if (!out.toString().equals(String.format("%s%n%s%n",
-                                                 "javac: javac.err.file.not.directory",
-                                                 "javac.msg.usage"))) {
+        if (!out.toString().equals(String.format("%s%n",
+                                                 "javac: javac.err.file.not.directory"))) {
             throw new AssertionError(out);
         }
         System.out.println("Test PASSED.  Running javac again to see localized output:");

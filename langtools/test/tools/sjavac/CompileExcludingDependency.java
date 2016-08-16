@@ -31,7 +31,6 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.sjavac
- *          jdk.jdeps/com.sun.tools.javap
  * @build Wrapper toolbox.ToolBox
  * @run main Wrapper CompileExcludingDependency
  */
@@ -49,7 +48,6 @@ public class CompileExcludingDependency extends SJavacTester {
     void test() throws Exception {
         Files.createDirectories(BIN);
         Map<String,Long> previous_bin_state = collectState(BIN);
-        ToolBox tb = new ToolBox();
         tb.writeFile(GENSRC.resolve("alfa/omega/A.java"),
                      "package alfa.omega; public class A { beta.B b; }");
         tb.writeFile(GENSRC.resolve("beta/B.java"),

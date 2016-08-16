@@ -78,7 +78,7 @@ public class CheckModuleTest {
 
     @Test(dataProvider = "javaBase")
     public void testJavaBase(String name, ModuleMetaData data) throws Exception {
-        String cmd = String.format("jdeps -check %s -mp %s%n", name, MODS_DIR);
+        String cmd = String.format("jdeps --check %s --module-path %s%n", name, MODS_DIR);
         try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd)) {
             jdeps.appModulePath(MODS_DIR.toString());
 
@@ -137,7 +137,7 @@ public class CheckModuleTest {
 
     @Test(dataProvider = "modules")
     public void modularTest(String name, ModuleMetaData[] data) throws Exception {
-        String cmd = String.format("jdeps -check %s -mp %s%n", name, MODS_DIR);
+        String cmd = String.format("jdeps --check %s --module-path %s%n", name, MODS_DIR);
 
         try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd)) {
             jdeps.appModulePath(MODS_DIR.toString());
