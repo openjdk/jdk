@@ -580,10 +580,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             if (configuration.createoverview) {
                 navList.addContent(getNavLinkContents());
             }
-            if (configuration.modules.size() == 1) {
-                navList.addContent(getNavLinkModule(configuration.modules.first()));
-            } else if (!configuration.modules.isEmpty()) {
-                navList.addContent(getNavLinkModule());
+            if (configuration.showModules) {
+                if (configuration.modules.size() == 1) {
+                    navList.addContent(getNavLinkModule(configuration.modules.first()));
+                } else if (!configuration.modules.isEmpty()) {
+                    navList.addContent(getNavLinkModule());
+                }
             }
             if (configuration.packages.size() == 1) {
                 navList.addContent(getNavLinkPackage(configuration.packages.first()));
