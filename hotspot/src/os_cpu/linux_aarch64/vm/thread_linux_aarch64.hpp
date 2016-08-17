@@ -43,12 +43,7 @@
 
   frame pd_last_frame() {
     assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
-    if (_anchor.last_Java_pc() != NULL) {
-      return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
-    } else {
-      // This will pick up pc from sp
-      return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp());
-    }
+    return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
   }
 
  public:
