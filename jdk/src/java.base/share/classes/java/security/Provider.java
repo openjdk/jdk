@@ -601,7 +601,7 @@ public abstract class Provider extends Properties {
     public synchronized Object compute(Object key, BiFunction<? super Object,
             ? super Object, ? extends Object> remappingFunction) {
         check("putProviderProperty." + name);
-        check("removeProviderProperty" + name);
+        check("removeProviderProperty." + name);
 
         if (debug != null) {
             debug.println("Compute " + name + " provider property " + key);
@@ -632,7 +632,7 @@ public abstract class Provider extends Properties {
     public synchronized Object computeIfAbsent(Object key, Function<? super Object,
             ? extends Object> mappingFunction) {
         check("putProviderProperty." + name);
-        check("removeProviderProperty" + name);
+        check("removeProviderProperty." + name);
 
         if (debug != null) {
             debug.println("ComputeIfAbsent " + name + " provider property " +
@@ -662,7 +662,7 @@ public abstract class Provider extends Properties {
     public synchronized Object computeIfPresent(Object key, BiFunction<? super Object,
             ? super Object, ? extends Object> remappingFunction) {
         check("putProviderProperty." + name);
-        check("removeProviderProperty" + name);
+        check("removeProviderProperty." + name);
 
         if (debug != null) {
             debug.println("ComputeIfPresent " + name + " provider property " +
@@ -695,7 +695,7 @@ public abstract class Provider extends Properties {
     public synchronized Object merge(Object key, Object value,  BiFunction<? super Object,
             ? super Object, ? extends Object>  remappingFunction) {
         check("putProviderProperty." + name);
-        check("removeProviderProperty" + name);
+        check("removeProviderProperty." + name);
 
         if (debug != null) {
             debug.println("Merge " + name + " provider property " + key);
@@ -904,8 +904,8 @@ public abstract class Provider extends Properties {
             if (!checkLegacy(key)) {
                 return null;
             }
-            legacyStrings.computeIfAbsent((String) key,
-                    (Function<? super String, ? extends String>) remappingFunction);
+            legacyStrings.compute((String) key,
+                    (BiFunction<? super String,? super String, ? extends String>) remappingFunction);
         }
         return super.compute(key, remappingFunction);
     }
