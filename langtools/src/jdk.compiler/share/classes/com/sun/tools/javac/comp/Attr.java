@@ -70,6 +70,7 @@ import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.TypeTag.WILDCARD;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 
 /** This is the main context-dependent analysis phase in GJC. It
  *  encompasses name resolution, type checking and constant folding as
@@ -1282,13 +1283,9 @@ public class Attr extends JCTree.Visitor {
         try {
 
             boolean enumSwitch = (seltype.tsym.flags() & Flags.ENUM) != 0;
-            boolean stringSwitch = false;
-            if (types.isSameType(seltype, syms.stringType)) {
-                if (allowStringsInSwitch) {
-                    stringSwitch = true;
-                } else {
-                    log.error(tree.selector.pos(), "string.switch.not.supported.in.source", sourceName);
-                }
+            boolean stringSwitch = types.isSameType(seltype, syms.stringType);
+            if (stringSwitch && !allowStringsInSwitch) {
+                log.error(DiagnosticFlag.SOURCE_LEVEL, tree.selector.pos(), "string.switch.not.supported.in.source", sourceName);
             }
             if (!enumSwitch && !stringSwitch)
                 seltype = chk.checkType(tree.selector.pos(), seltype, syms.intType);
@@ -3484,7 +3481,7 @@ public class Attr extends JCTree.Visitor {
             }
             if (!allowStaticInterfaceMethods && sitesym.isInterface() &&
                     sym.isStatic() && sym.kind == MTH) {
-                log.error(tree.pos(), "static.intf.method.invoke.not.supported.in.source", sourceName);
+                log.error(DiagnosticFlag.SOURCE_LEVEL, tree.pos(), "static.intf.method.invoke.not.supported.in.source", sourceName);
             }
         } else if (sym.kind != ERR &&
                    (sym.flags() & STATIC) != 0 &&

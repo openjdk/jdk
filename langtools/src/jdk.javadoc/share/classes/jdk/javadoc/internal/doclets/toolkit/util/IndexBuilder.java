@@ -122,11 +122,11 @@ public class IndexBuilder {
      * given on the command line. Form separate list of those members depending
      * upon their names.
      *
-     * @param root Root of the documemt.
+     * @param docEnv the doclet environment
      */
-    protected void buildIndexMap(DocletEnvironment root)  {
-        Set<PackageElement> packages = utils.getSpecifiedPackages();
-        Set<TypeElement> classes = root.getIncludedClasses();
+    protected void buildIndexMap(DocletEnvironment docEnv)  {
+        Set<PackageElement> packages = configuration.getSpecifiedPackages();
+        Set<TypeElement> classes = docEnv.getIncludedTypeElements();
         if (!classesOnly) {
             if (packages.isEmpty()) {
                 Set<PackageElement> set = new HashSet<>();
