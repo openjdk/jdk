@@ -1050,22 +1050,21 @@ public class ObjectOutputStream
         WeakClassKey key = new WeakClassKey(cl, Caches.subclassAuditsQueue);
         Boolean result = Caches.subclassAudits.get(key);
         if (result == null) {
-            result = Boolean.valueOf(auditSubclass(cl));
+            result = auditSubclass(cl);
             Caches.subclassAudits.putIfAbsent(key, result);
         }
-        if (result.booleanValue()) {
-            return;
+        if (!result) {
+            sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
         }
-        sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
     }
 
     /**
      * Performs reflective checks on given subclass to verify that it doesn't
-     * override security-sensitive non-final methods.  Returns true if subclass
-     * is "safe", false otherwise.
+     * override security-sensitive non-final methods.  Returns TRUE if subclass
+     * is "safe", FALSE otherwise.
      */
-    private static boolean auditSubclass(final Class<?> subcl) {
-        Boolean result = AccessController.doPrivileged(
+    private static Boolean auditSubclass(Class<?> subcl) {
+        return AccessController.doPrivileged(
             new PrivilegedAction<>() {
                 public Boolean run() {
                     for (Class<?> cl = subcl;
@@ -1088,7 +1087,6 @@ public class ObjectOutputStream
                 }
             }
         );
-        return result.booleanValue();
     }
 
     /**
