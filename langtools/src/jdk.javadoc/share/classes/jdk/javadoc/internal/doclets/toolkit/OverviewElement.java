@@ -40,8 +40,8 @@ import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.doclet.DocletEnvironment;
 
 /**
- * This is a pseudo element wrapper for the root element, essentially to
- * associate overview documentation's DocCommentTree to this Element.
+ * This is a pseudo element wrapper for the overview element, essentially to
+ * associate overview documentation's DocCommentTree to this element.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -50,10 +50,10 @@ import jdk.javadoc.doclet.DocletEnvironment;
  */
 public class OverviewElement implements Element {
 
-    public final DocletEnvironment root;
+    public final DocletEnvironment docEnv;
 
-    OverviewElement(DocletEnvironment root) {
-        this.root = root;
+    OverviewElement(DocletEnvironment docEnv) {
+        this.docEnv = docEnv;
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)

@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,25 +23,19 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4548768
- * @summary Javadoc in JDK 1.4 uses classpath and not just source dir
- * @author gafter
- * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @compile p/SourceOnly.java p/NonSource.jasm
- * @run main Test
+package jdk.javadoc.internal.tool;
+
+/**
+ * The access value kinds.
  */
 
-public class Test {
-    public static void main(String[] args) {
-        // run javadoc on package p
-        String[] jdargs = {
-            "-doclet", "p.SourceOnly",
-            "-docletpath", System.getProperty("test.classes", "."),
-            "p"
-        };
-        if (jdk.javadoc.internal.tool.Main.execute(jdargs) != 0)
-            throw new Error();
-    }
+public enum AccessKind {
+    /** Limits access to public entities */
+    PUBLIC,
+    /** Limits access to public and protected entities */
+    PROTECTED,
+    /** Limits access to public, protected and package private entities */
+    PACKAGE,
+    /** No limits */
+    PRIVATE;
 }
