@@ -1173,7 +1173,7 @@ void ClassLoaderData::print_value_on(outputStream* out) const {
   if (class_loader() == NULL) {
     out->print("NULL class_loader");
   } else {
-    out->print("class loader " INTPTR_FORMAT, p2i(this));
+    out->print("class loader " INTPTR_FORMAT " ", p2i(this));
     class_loader()->print_value_on(out);
   }
 }
