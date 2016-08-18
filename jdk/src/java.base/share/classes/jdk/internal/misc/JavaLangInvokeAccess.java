@@ -51,8 +51,17 @@ public interface JavaLangInvokeAccess {
      * an {@code int} representing method type.  Used by
      * GenerateJLIClassesPlugin to generate such a class during the jlink phase.
      */
-    byte[] generateDMHClassBytes(String className, MethodType[] methodTypes,
-            int[] types);
+    byte[] generateDirectMethodHandleHolderClassBytes(String className,
+            MethodType[] methodTypes, int[] types);
+
+    /**
+     * Returns a {@code byte[]} containing the bytecode for a class implementing
+     * DelegatingMethodHandles of each {@code MethodType} kind in the
+     * {@code methodTypes} argument.  Used by GenerateJLIClassesPlugin to
+     * generate such a class during the jlink phase.
+     */
+    byte[] generateDelegatingMethodHandleHolderClassBytes(String className,
+            MethodType[] methodTypes);
 
     /**
      * Returns a {@code byte[]} containing the bytecode for a BoundMethodHandle
