@@ -41,6 +41,7 @@ import java.util.HashMap;
 import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.REF_invokeStatic;
 import static java.lang.invoke.MethodHandleStatics.*;
+import java.util.Objects;
 
 /**
  * The symbolic, non-executable form of a method handle's invocation semantics.
@@ -127,6 +128,7 @@ class LambdaForm {
     final MethodHandle customized;
     @Stable final Name[] names;
     final String debugName;
+    final Kind kind;
     MemberName vmentry;   // low-level behavior, or null if not yet prepared
     private boolean isCompiled;
 
@@ -266,12 +268,46 @@ class LambdaForm {
         }
     }
 
+    enum Kind {
+        GENERIC(""),
+        BOUND_REINVOKER("BMH.reinvoke"),
+        REINVOKER("MH.reinvoke"),
+        DELEGATE("MH.delegate"),
+        DIRECT_INVOKE_VIRTUAL("DMH.invokeVirtual"),
+        DIRECT_INVOKE_SPECIAL("DMH.invokeSpecial"),
+        DIRECT_INVOKE_STATIC("DMH.invokeStatic"),
+        DIRECT_NEW_INVOKE_SPECIAL("DMH.newInvokeSpecial"),
+        DIRECT_INVOKE_INTERFACE("DMH.invokeInterface"),
+        DIRECT_INVOKE_STATIC_INIT("DMH.invokeStaticInit");
+
+        final String defaultLambdaName;
+        final String methodName;
+
+        private Kind(String defaultLambdaName) {
+            this.defaultLambdaName = defaultLambdaName;
+            int p = defaultLambdaName.indexOf('.');
+            if (p > -1) {
+                this.methodName = defaultLambdaName.substring(p + 1);
+            } else {
+                this.methodName = defaultLambdaName;
+            }
+        }
+    }
+
     LambdaForm(String debugName,
                int arity, Name[] names, int result) {
-        this(debugName, arity, names, result, /*forceInline=*/true, /*customized=*/null);
+        this(debugName, arity, names, result, /*forceInline=*/true, /*customized=*/null, Kind.GENERIC);
+    }
+    LambdaForm(String debugName,
+               int arity, Name[] names, int result, Kind kind) {
+        this(debugName, arity, names, result, /*forceInline=*/true, /*customized=*/null, kind);
     }
     LambdaForm(String debugName,
                int arity, Name[] names, int result, boolean forceInline, MethodHandle customized) {
+        this(debugName, arity, names, result, forceInline, customized, Kind.GENERIC);
+    }
+    LambdaForm(String debugName,
+               int arity, Name[] names, int result, boolean forceInline, MethodHandle customized, Kind kind) {
         assert(namesOK(arity, names));
         this.arity = arity;
         this.result = fixResult(result, names);
@@ -279,6 +315,7 @@ class LambdaForm {
         this.debugName = fixDebugName(debugName);
         this.forceInline = forceInline;
         this.customized = customized;
+        this.kind = kind;
         int maxOutArity = normalize();
         if (maxOutArity > MethodType.MAX_MH_INVOKER_ARITY) {
             // Cannot use LF interpreter on very high arity expressions.
@@ -288,11 +325,15 @@ class LambdaForm {
     }
     LambdaForm(String debugName,
                int arity, Name[] names) {
-        this(debugName, arity, names, LAST_RESULT, /*forceInline=*/true, /*customized=*/null);
+        this(debugName, arity, names, LAST_RESULT, /*forceInline=*/true, /*customized=*/null, Kind.GENERIC);
     }
     LambdaForm(String debugName,
                int arity, Name[] names, boolean forceInline) {
-        this(debugName, arity, names, LAST_RESULT, forceInline, /*customized=*/null);
+        this(debugName, arity, names, LAST_RESULT, forceInline, /*customized=*/null, Kind.GENERIC);
+    }
+    LambdaForm(String debugName,
+               int arity, Name[] names, boolean forceInline, Kind kind) {
+        this(debugName, arity, names, LAST_RESULT, forceInline, /*customized=*/null, kind);
     }
     LambdaForm(String debugName,
                Name[] formals, Name[] temps, Name result) {
@@ -325,6 +366,7 @@ class LambdaForm {
         this.debugName = "LF.zero";
         this.forceInline = true;
         this.customized = null;
+        this.kind = Kind.GENERIC;
         assert(nameRefsAreLegal());
         assert(isEmpty());
         String sig = null;
@@ -395,7 +437,7 @@ class LambdaForm {
 
     /** Customize LambdaForm for a particular MethodHandle */
     LambdaForm customize(MethodHandle mh) {
-        LambdaForm customForm = new LambdaForm(debugName, arity, names, result, forceInline, mh);
+        LambdaForm customForm = new LambdaForm(debugName, arity, names, result, forceInline, mh, kind);
         if (COMPILE_THRESHOLD >= 0 && isCompiled) {
             // If shared LambdaForm has been compiled, compile customized version as well.
             customForm.compileToBytecode();
@@ -770,28 +812,6 @@ class LambdaForm {
             }
         } catch (Error | Exception e) {
             throw newInternalError(this.toString(), e);
-        }
-    }
-
-    /**
-     * Generate optimizable bytecode for this form after first looking for a
-     * pregenerated version in a specified class.
-     */
-    void compileToBytecode(Class<?> lookupClass) {
-        if (vmentry != null && isCompiled) {
-            return;  // already compiled somehow
-        }
-        MethodType invokerType = methodType();
-        assert(vmentry == null || vmentry.getMethodType().basicType().equals(invokerType));
-        int dot = debugName.indexOf('.');
-        String methodName = (dot > 0) ? debugName.substring(dot + 1) : debugName;
-        MemberName member = new MemberName(lookupClass, methodName, invokerType, REF_invokeStatic);
-        MemberName resolvedMember = MemberName.getFactory().resolveOrNull(REF_invokeStatic, member, lookupClass);
-        if (resolvedMember != null) {
-            vmentry = resolvedMember;
-            isCompiled = true;
-        } else {
-            compileToBytecode();
         }
     }
 
