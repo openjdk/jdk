@@ -115,7 +115,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      * Add the summary link for the member.
      *
      * @param context the id of the context where the link will be printed
-     * @param te the classDoc that we should link to
+     * @param te the type element being linked to
      * @param member the member being linked to
      * @param tdSummary the content tree to which the link will be added
      */

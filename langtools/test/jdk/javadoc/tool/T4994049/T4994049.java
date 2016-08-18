@@ -59,7 +59,7 @@ public class T4994049 implements Doclet {
         DocTrees trees = root.getDocTrees();
 
         SourcePositions sourcePositions = trees.getSourcePositions();
-        for (TypeElement klass : root.getIncludedClasses()) {
+        for (TypeElement klass : root.getIncludedTypeElements()) {
             for (ExecutableElement method : getMethods(klass)) {
                 if (method.getSimpleName().toString().equals("tabbedMethod")) {
                     TreePath path = trees.getPath(method);

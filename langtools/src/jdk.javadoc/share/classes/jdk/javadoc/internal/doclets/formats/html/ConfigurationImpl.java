@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.IOException;
 import java.net.*;
 import java.util.*;
 
@@ -34,14 +33,10 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
-import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardJavaFileManager;
-import javax.tools.StandardLocation;
 
 import com.sun.source.util.DocTreePath;
 import com.sun.tools.doclint.DocLint;
-import com.sun.tools.javac.code.Symbol.ModuleSymbol;
-import com.sun.tools.javac.code.Symbol.PackageSymbol;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
@@ -383,7 +378,7 @@ public class ConfigurationImpl extends Configuration {
         if (!docEnv.getSpecifiedElements().isEmpty()) {
             Map<String, PackageElement> map = new HashMap<>();
             PackageElement pkg;
-            List<TypeElement> classes = new ArrayList<>(docEnv.getIncludedClasses());
+            List<TypeElement> classes = new ArrayList<>(docEnv.getIncludedTypeElements());
             for (TypeElement aClass : classes) {
                 pkg = utils.containingPackage(aClass);
                 if (!map.containsKey(utils.getPackageName(pkg))) {
@@ -420,7 +415,7 @@ public class ConfigurationImpl extends Configuration {
      * package to document. It will be a class page(first in the sorted order),
      * if only classes are provided on the command line.
      *
-     * @param docEnv Root of the program structure.
+     * @param docEnv the doclet environment
      */
     protected void setTopFile(DocletEnvironment docEnv) {
         if (!checkForDeprecation(docEnv)) {
@@ -429,9 +424,11 @@ public class ConfigurationImpl extends Configuration {
         if (createoverview) {
             topFile = DocPaths.overviewSummary(frames);
         } else {
-            if (packages.size() == 1 && packages.first().isUnnamed()) {
-                if (!docEnv.getIncludedClasses().isEmpty()) {
-                    List<TypeElement> classes = new ArrayList<>(docEnv.getIncludedClasses());
+            if (showModules) {
+                topFile = DocPath.empty.resolve(DocPaths.moduleSummary(modules.first()));
+            } else if (packages.size() == 1 && packages.first().isUnnamed()) {
+                List<TypeElement> classes = new ArrayList<>(docEnv.getIncludedTypeElements());
+                if (!classes.isEmpty()) {
                     TypeElement te = getValidClass(classes);
                     topFile = DocPath.forClass(utils, te);
                 }
@@ -454,7 +451,7 @@ public class ConfigurationImpl extends Configuration {
     }
 
     protected boolean checkForDeprecation(DocletEnvironment docEnv) {
-        for (TypeElement te : docEnv.getIncludedClasses()) {
+        for (TypeElement te : docEnv.getIncludedTypeElements()) {
             if (isGeneratedDoc(te)) {
                 return true;
             }
@@ -577,21 +574,6 @@ public class ConfigurationImpl extends Configuration {
     @Override
     public Content getContent(String key, Object o0, Object o1, Object o2) {
         return contents.getContent(key, o0, o1, o2);
-    }
-
-
-    @Override
-    public Location getLocationForPackage(PackageElement pd) {
-        JavaFileManager fm = getFileManager();
-        if (fm.hasLocation(StandardLocation.MODULE_SOURCE_PATH) && (pd instanceof PackageSymbol)) {
-            try {
-                ModuleSymbol msym = ((PackageSymbol) pd).modle;
-                return fm.getModuleLocation(StandardLocation.MODULE_SOURCE_PATH, msym.name.toString());
-            } catch (IOException e) {
-                throw new DocletAbortException(e);
-            }
-        }
-        return StandardLocation.SOURCE_PATH;
     }
 
     protected void buildSearchTagIndex() {
@@ -725,7 +707,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Hidden(this, "-overview", 1) {
+            new Option(this, "-overview", 1) {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);

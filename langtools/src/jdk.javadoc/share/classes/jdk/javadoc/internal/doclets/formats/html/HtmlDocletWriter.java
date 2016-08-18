@@ -827,8 +827,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavLinkTree() {
-        List<PackageElement> packages = new ArrayList<>(utils.getSpecifiedPackages());
-        DocPath docPath = packages.size() == 1 && utils.getSpecifiedClasses().isEmpty()
+        List<PackageElement> packages = new ArrayList<>(configuration.getSpecifiedPackages());
+        DocPath docPath = packages.size() == 1 && configuration.getSpecifiedClasses().isEmpty()
                 ? pathString(packages.get(0), DocPaths.PACKAGE_TREE)
                 : pathToRoot.resolve(DocPaths.OVERVIEW_TREE);
         return HtmlTree.LI(getHyperLink(docPath, contents.treeLabel, "", ""));

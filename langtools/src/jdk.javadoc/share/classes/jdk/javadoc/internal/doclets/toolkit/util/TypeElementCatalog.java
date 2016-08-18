@@ -100,7 +100,7 @@ public class TypeElementCatalog {
     public TypeElementCatalog(Iterable<TypeElement> typeElements, Configuration config) {
         this(config);
         for (TypeElement typeElement : typeElements) {
-            addClassDoc(typeElement);
+            addTypeElement(typeElement);
         }
     }
 
@@ -127,39 +127,38 @@ public class TypeElementCatalog {
      *
      * @param typeElement the TypeElement to add to the catalog.
      */
-    public final void addClassDoc(TypeElement typeElement) {
+    public final void addTypeElement(TypeElement typeElement) {
         if (typeElement == null) {
             return;
         }
-        addClass(typeElement, allClasses);
+        addTypeElement(typeElement, allClasses);
         if (utils.isOrdinaryClass(typeElement)) {
-            addClass(typeElement, ordinaryClasses);
+            addTypeElement(typeElement, ordinaryClasses);
         } else if (utils.isException(typeElement)) {
-            addClass(typeElement, exceptions);
+            addTypeElement(typeElement, exceptions);
         } else if (utils.isEnum(typeElement)) {
-            addClass(typeElement, enums);
+            addTypeElement(typeElement, enums);
         } else if (utils.isAnnotationType(typeElement)) {
-            addClass(typeElement, annotationTypes);
+            addTypeElement(typeElement, annotationTypes);
         } else if (utils.isError(typeElement)) {
-            addClass(typeElement, errors);
+            addTypeElement(typeElement, errors);
         } else if (utils.isInterface(typeElement)) {
-            addClass(typeElement, interfaces);
+            addTypeElement(typeElement, interfaces);
         }
     }
 
     /**
      * Add the given class to the given map.
      *
-     * @param typeElement the ClassDoc to add to the catalog.
+     * @param typeElement the class to add to the catalog.
      * @param map the Map to add the TypeElement to.
      */
-    private void addClass(TypeElement typeElement, Map<PackageElement, SortedSet<TypeElement>> map) {
+    private void addTypeElement(TypeElement typeElement, Map<PackageElement, SortedSet<TypeElement>> map) {
 
         PackageElement pkg = utils.containingPackage(typeElement);
-        if (utils.isIncluded(pkg) || (configuration.nodeprecated && utils.isDeprecated(pkg))) {
+        if (utils.isSpecified(pkg) || configuration.nodeprecated && utils.isDeprecated(pkg)) {
             // No need to catalog this class if it's package is
-            // included on the command line or if -nodeprecated option is set
-            // and the containing package is marked as deprecated.
+            // specified on the command line or if -nodeprecated option is set
             return;
         }
 
@@ -186,7 +185,7 @@ public class TypeElementCatalog {
      * @param packageElement the package to return the classes for.
      */
     public SortedSet<TypeElement> allClasses(PackageElement packageElement) {
-        return utils.isIncluded(packageElement)
+        return utils.isSpecified(packageElement)
                 ? utils.getTypeElementsAsSortedSet(utils.getEnclosedTypeElements(packageElement))
                 : getSet(allClasses, packageElement);
     }

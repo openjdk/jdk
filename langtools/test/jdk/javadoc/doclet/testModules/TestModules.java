@@ -158,7 +158,7 @@ public class TestModules extends JavadocTester {
         javadoc("-d", "out-moduleSummary", "-use",
                 "-modulesourcepath", testSrc,
                 "-addmods", "module1,module2",
-                "testpkgmdl1", "testpkgmdl2", "testpkg2mdl2");
+                "testpkgmdl1", "testpkgmdl2", "module2/testpkg2mdl2");
         checkExit(Exit.OK);
         checkModuleSummary();
         checkNegatedModuleSummary();
@@ -174,7 +174,7 @@ public class TestModules extends JavadocTester {
                 "-addmods", "module1",
                 "testpkgmdl1");
         checkExit(Exit.OK);
-        checkModuleFilesAndLinks(false);
+        checkModuleFilesAndLinks(true);
     }
 
     void checkDescription(boolean found) {
@@ -418,7 +418,8 @@ public class TestModules extends JavadocTester {
                 + "</a>");
         checkOutput("module2-summary.html", true,
                 "<tr class=\"rowColor\">\n"
-                + "<td class=\"colFirst\">testpkg2mdl2</td>\n"
+                + "<td class=\"colFirst\"><a href=\"testpkg2mdl2/package-summary.html\">"
+                + "testpkg2mdl2</a></td>\n"
                 + "<td class=\"colSecond\">module1</td>\n"
                 + "<td class=\"colLast\">&nbsp;</td>\n"
                 + "</tr>");
@@ -445,9 +446,10 @@ public class TestModules extends JavadocTester {
                 + "</tr>");
         checkOutput("module2-summary.html", true,
                 "<tr class=\"altColor\">\n"
-                + "<td class=\"colFirst\">testpkg2mdl2.TestInterfaceInModule2<br>(<span "
-                + "class=\"implementationLabel\">Implementation:</span>&nbsp;<a "
-                + "href=\"testpkgmdl2/TestClassInModule2.html\" title=\"class in testpkgmdl2\">"
+                + "<td class=\"colFirst\"><a href=\"testpkg2mdl2/TestInterfaceInModule2.html\" "
+                + "title=\"interface in testpkg2mdl2\">TestInterfaceInModule2</a><br>"
+                + "(<span class=\"implementationLabel\">Implementation:</span>&nbsp;"
+                + "<a href=\"testpkgmdl2/TestClassInModule2.html\" title=\"class in testpkgmdl2\">"
                 + "TestClassInModule2</a>)</td>\n"
                 + "<td class=\"colLast\">&nbsp;</td>\n"
                 + "</tr");

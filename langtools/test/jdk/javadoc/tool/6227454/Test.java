@@ -140,9 +140,9 @@ public class Test implements Doclet {
 
     public boolean run(DocletEnvironment root) {
         DocTrees docTrees = root.getDocTrees();
-        System.out.println("classes:" + root.getIncludedClasses());
+        System.out.println("classes:" + root.getIncludedTypeElements());
 
-        Element klass = root.getIncludedClasses().iterator().next();
+        Element klass = root.getIncludedTypeElements().iterator().next();
         String text = "";
         try {
             DocCommentTree dcTree = docTrees.getDocCommentTree(klass, overviewpath);

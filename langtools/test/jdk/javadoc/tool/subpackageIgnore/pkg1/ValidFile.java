@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,25 +21,11 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4548768
- * @summary Javadoc in JDK 1.4 uses classpath and not just source dir
- * @author gafter
- * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @compile p/SourceOnly.java p/NonSource.jasm
- * @run main Test
- */
 
-public class Test {
-    public static void main(String[] args) {
-        // run javadoc on package p
-        String[] jdargs = {
-            "-doclet", "p.SourceOnly",
-            "-docletpath", System.getProperty("test.classes", "."),
-            "p"
-        };
-        if (jdk.javadoc.internal.tool.Main.execute(jdargs) != 0)
-            throw new Error();
-    }
-}
+package pkg1;
+
+/**
+ * This file exists simply to ensure that javadoc passes
+ * without complaining about empty directory.
+ */
+public class ValidFile {}

@@ -90,13 +90,13 @@ public abstract class AbstractDoclet implements Doclet {
     /**
      * The method that starts the execution of the doclet.
      *
-     * @param root   the {@link DocletEnvironment} that points to the source to document.
+     * @param docEnv   the {@link DocletEnvironment}.
      * @return true if the doclet executed without error.  False otherwise.
      */
     @Override
-    public boolean run(DocletEnvironment root) {
+    public boolean run(DocletEnvironment docEnv) {
         configuration = configuration();
-        configuration.docEnv = root;
+        configuration.docEnv = docEnv;
         configuration.cmtUtils = new CommentUtils(configuration);
         configuration.utils = new Utils(configuration);
         utils = configuration.utils;
@@ -108,7 +108,7 @@ public abstract class AbstractDoclet implements Doclet {
         }
 
         try {
-            startGeneration(root);
+            startGeneration(docEnv);
         } catch (Configuration.Fault f) {
             configuration.reporter.print(ERROR, f.getMessage());
             return false;
@@ -153,8 +153,8 @@ public abstract class AbstractDoclet implements Doclet {
      *
      * @see jdk.doclet.DocletEnvironment
      */
-    private void startGeneration(DocletEnvironment root) throws Configuration.Fault, Exception {
-        if (root.getIncludedClasses().isEmpty()) {
+    private void startGeneration(DocletEnvironment docEnv) throws Configuration.Fault, Exception {
+        if (docEnv.getIncludedTypeElements().isEmpty()) {
             messages.error("doclet.No_Public_Classes_To_Document");
             return;
         }
@@ -165,24 +165,24 @@ public abstract class AbstractDoclet implements Doclet {
             configuration.getDocletSpecificBuildDate());
         ClassTree classtree = new ClassTree(configuration, configuration.nodeprecated);
 
-        generateClassFiles(root, classtree);
+        generateClassFiles(docEnv, classtree);
         configuration.utils.copyDocFiles(DocPaths.DOC_FILES);
 
         PackageListWriter.generate(configuration);
         generatePackageFiles(classtree);
         generateModuleFiles();
 
-        generateOtherFiles(root, classtree);
+        generateOtherFiles(docEnv, classtree);
         configuration.tagletManager.printReport();
     }
 
     /**
      * Generate additional documentation that is added to the API documentation.
      *
-     * @param root     the DocletEnvironment of source to document.
+     * @param docEnv     the DocletEnvironment.
      * @param classtree the data structure representing the class tree.
      */
-    protected void generateOtherFiles(DocletEnvironment root, ClassTree classtree) throws Exception {
+    protected void generateOtherFiles(DocletEnvironment docEnv, ClassTree classtree) throws Exception {
         BuilderFactory builderFactory = configuration.getBuilderFactory();
         AbstractBuilder constantsSummaryBuilder = builderFactory.getConstantsSummaryBuilder();
         constantsSummaryBuilder.build();
@@ -213,13 +213,16 @@ public abstract class AbstractDoclet implements Doclet {
     /**
      * Iterate through all classes and construct documentation for them.
      *
-     * @param root      the DocletEnvironment of source to document.
+     * @param docEnv      the DocletEnvironment.
      * @param classtree the data structure representing the class tree.
      */
-    protected void generateClassFiles(DocletEnvironment root, ClassTree classtree) {
+    protected void generateClassFiles(DocletEnvironment docEnv, ClassTree classtree) {
         generateClassFiles(classtree);
         SortedSet<PackageElement> packages = new TreeSet<>(utils.makePackageComparator());
-        packages.addAll(utils.getSpecifiedPackages());
+        packages.addAll(configuration.getSpecifiedPackages());
+        configuration.modulePackages.values().stream().forEach(pset -> {
+            packages.addAll(pset);
+        });
         packages.stream().forEach((pkg) -> {
             generateClassFiles(utils.getAllClasses(pkg), classtree);
         });

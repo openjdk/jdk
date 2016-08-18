@@ -205,10 +205,7 @@ public class TestFramesNoFrames extends JavadocTester {
     void testModules(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws IOException {
         javadoc(base, fKind, oKind, hKind,
             "-modulesourcepath", gensrcModules.toString(),
-            "-addmods", "m1,m2,m3", // TEMPORARY, SHOULD NOT BE NECESSARY
-            "m1p1", "m1p2", "m1p3",
-            "m2p1", "m2p2", "m2p3",
-            "m3p1", "m3p2", "m3p3");
+            "--module", "m1,m2,m3");
 
         new Checker(fKind, oKind, hKind)
             .classes("m1/m1p1.M1P1C1", "m1/m1p1.M1P1C2", "m1/m1p1.M1P1C3",
