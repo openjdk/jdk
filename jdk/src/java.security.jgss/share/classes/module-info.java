@@ -23,6 +23,11 @@
  * questions.
  */
 
+/**
+ * Defines the Java binding of the IETF Generic Security Services API (GSS-API).
+ * <P>
+ * This module also contains GSS-API mechanisms including Kerberos v5 and SPNEGO.
+ */
 module java.security.jgss {
     requires java.naming;
     exports javax.security.auth.kerberos;

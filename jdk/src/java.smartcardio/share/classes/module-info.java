@@ -23,6 +23,9 @@
  * questions.
  */
 
+/**
+ * Defines the Java Smart Card I/O API.
+ */
 module java.smartcardio {
     exports javax.smartcardio;
     provides java.security.Provider with sun.security.smartcardio.SunPCSC;

@@ -119,20 +119,22 @@ public class SSLSocketWithStapling {
             System.setProperty("javax.net.debug", "ssl");
         }
 
-        // Create the PKI we will use for the test and start the OCSP servers
-        createPKI();
+        try {
+            // Create the PKI we will use for the test and start the OCSP servers
+            createPKI();
 
-        testAllDefault();
-        testPKIXParametersRevEnabled();
-        testRevokedCertificate();
-        testHardFailFallback();
-        testSoftFailFallback();
-        testLatencyNoStaple(false);
-        testLatencyNoStaple(true);
-
-        // shut down the OCSP responders before finishing the test
-        intOcsp.stop();
-        rootOcsp.stop();
+            testAllDefault();
+            testPKIXParametersRevEnabled();
+            testRevokedCertificate();
+            testHardFailFallback();
+            testSoftFailFallback();
+            testLatencyNoStaple(false);
+            testLatencyNoStaple(true);
+        } finally {
+            // shut down the OCSP responders before finishing the test
+            intOcsp.stop();
+            rootOcsp.stop();
+        }
     }
 
     /**
@@ -281,11 +283,9 @@ public class SSLSocketWithStapling {
         ServerParameters servParams = new ServerParameters();
         serverReady = false;
 
-        // Stop the OCSP responders and give a 1 second delay before
-        // running the test.
-        intOcsp.stop();
-        rootOcsp.stop();
-        Thread.sleep(1000);
+        // make OCSP responders reject connections
+        intOcsp.rejectConnections();
+        rootOcsp.rejectConnections();
 
         System.out.println("=======================================");
         System.out.println("Stapling enbled in client and server,");
@@ -315,9 +315,9 @@ public class SSLSocketWithStapling {
         System.out.println("                 PASS");
         System.out.println("=======================================\n");
 
-        // Start the OCSP responders up again
-        intOcsp.start();
-        rootOcsp.start();
+        // Make OCSP responders accept connections
+        intOcsp.acceptConnections();
+        rootOcsp.acceptConnections();
 
         // Wait 5 seconds for server ready
         for (int i = 0; (i < 100 && (!intOcsp.isServerReady() || !rootOcsp.isServerReady())); i++) {
@@ -338,11 +338,9 @@ public class SSLSocketWithStapling {
         ServerParameters servParams = new ServerParameters();
         serverReady = false;
 
-        // Stop the OCSP responders and give a 1 second delay before
-        // running the test.
-        intOcsp.stop();
-        rootOcsp.stop();
-        Thread.sleep(1000);
+        // make OCSP responders reject connections
+        intOcsp.rejectConnections();
+        rootOcsp.rejectConnections();
 
         System.out.println("=======================================");
         System.out.println("Stapling enbled in client and server,");
@@ -372,9 +370,9 @@ public class SSLSocketWithStapling {
         System.out.println("                 PASS");
         System.out.println("=======================================\n");
 
-        // Start the OCSP responders up again
-        intOcsp.start();
-        rootOcsp.start();
+        // Make OCSP responders accept connections
+        intOcsp.acceptConnections();
+        rootOcsp.acceptConnections();
 
         // Wait 5 seconds for server ready
         for (int i = 0; (i < 100 && (!intOcsp.isServerReady() || !rootOcsp.isServerReady())); i++) {
@@ -401,15 +399,10 @@ public class SSLSocketWithStapling {
         ServerParameters servParams = new ServerParameters();
         serverReady = false;
 
-        // Stop the OCSP responders and give a 1 second delay before
-        // running the test.
-        intOcsp.stop();
-        rootOcsp.stop();
-        Thread.sleep(1000);
+        // Give a 1 second delay before running the test.
         intOcsp.setDelay(3000);
         rootOcsp.setDelay(3000);
-        rootOcsp.start();
-        intOcsp.start();
+        Thread.sleep(1000);
 
         // Wait 5 seconds for server ready
         for (int i = 0; (i < 100 && (!intOcsp.isServerReady() || !rootOcsp.isServerReady())); i++) {
@@ -458,13 +451,9 @@ public class SSLSocketWithStapling {
         System.out.println("========================================\n");
 
         // Remove the OCSP responder latency
-        intOcsp.stop();
-        rootOcsp.stop();
-        Thread.sleep(1000);
         intOcsp.setDelay(0);
         rootOcsp.setDelay(0);
-        rootOcsp.start();
-        intOcsp.start();
+        Thread.sleep(1000);
 
         // Wait 5 seconds for server ready
         for (int i = 0; (i < 100 && (!intOcsp.isServerReady() || !rootOcsp.isServerReady())); i++) {
@@ -676,6 +665,7 @@ public class SSLSocketWithStapling {
                          * Release the client, if not active already...
                          */
                         System.err.println("Server died...");
+                        e.printStackTrace(System.err);
                         serverReady = true;
                         serverException = e;
                     }
