@@ -117,6 +117,7 @@ compiler.err.output.dir.must.be.specified.with.dash.m.option  # -d is always spe
 compiler.warn.outdir.is.in.exploded.module                    # No control over -d specified by test infrastructure
 compiler.err.invalid.module.specifier                         # Not possible (?)
 compiler.err.locn.cant.get.module.name.for.jar                # bad binary ? Infer module name failure
+compiler.misc.anachronistic.module.info                       # requires binaries compiled with EA compilers.
 compiler.misc.bad.module-info.name                            # bad class file
 compiler.err.locn.bad.module-info                             # bad class file
 compiler.err.locn.cant.read.file                              # bad class file

@@ -86,7 +86,6 @@ import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
 
-import com.sun.source.util.SimpleDocTreeVisitor;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 
 import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
@@ -2220,31 +2219,6 @@ public class Utils {
         return oset;
     }
 
-    // cache these two as they are repeatedly called.
-    private Set<TypeElement> specifiedClasses = null;
-    private Set<PackageElement> specifiedPackages = null;
-
-    private void initSpecifiedElements() {
-        specifiedClasses = new LinkedHashSet<>(
-                ElementFilter.typesIn(configuration.docEnv.getSpecifiedElements()));
-        specifiedPackages = new LinkedHashSet<>(
-                ElementFilter.packagesIn(configuration.docEnv.getSpecifiedElements()));
-    }
-
-    public Set<TypeElement> getSpecifiedClasses() {
-        if (specifiedClasses == null || specifiedPackages == null) {
-            initSpecifiedElements();
-        }
-        return specifiedClasses;
-    }
-
-    public Set<PackageElement> getSpecifiedPackages() {
-        if (specifiedClasses == null || specifiedPackages == null) {
-            initSpecifiedElements();
-        }
-        return specifiedPackages;
-    }
-
     private final HashMap<Element, SortedSet<TypeElement>> cachedClasses = new HashMap<>();
     /**
      * Returns a list containing classes and interfaces,
@@ -2575,6 +2549,34 @@ public class Utils {
 
     public boolean isIncluded(Element e) {
         return configuration.docEnv.isIncluded(e);
+    }
+
+    private SimpleElementVisitor9<Boolean, Void> specifiedVisitor = null;
+    public boolean isSpecified(Element e) {
+        if (specifiedVisitor == null) {
+            specifiedVisitor = new SimpleElementVisitor9<Boolean, Void>() {
+                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                public Boolean visitModule(ModuleElement e, Void p) {
+                    return configuration.getSpecifiedModules().contains(e);
+                }
+
+                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                public Boolean visitPackage(PackageElement e, Void p) {
+                    return configuration.getSpecifiedPackages().contains(e);
+                }
+
+                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                public Boolean visitType(TypeElement e, Void p) {
+                    return configuration.getSpecifiedClasses().contains(e);
+                }
+
+                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                protected Boolean defaultAction(Element e, Void p) {
+                    return false;
+                }
+            };
+        }
+        return specifiedVisitor.visit(e);
     }
 
     /**

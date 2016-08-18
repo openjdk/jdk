@@ -428,6 +428,11 @@ public class Log extends AbstractLog {
      */
     protected Set<Pair<JavaFileObject, Integer>> recorded = new HashSet<>();
 
+    /** A set of "not-supported-in-source-X" errors produced so far. This is used to only generate
+     *  one such error per file.
+     */
+    protected Set<Pair<JavaFileObject, String>>  recordedSourceLevelErrors = new HashSet<>();
+
     public boolean hasDiagnosticListener() {
         return diagListener != null;
     }
@@ -504,6 +509,27 @@ public class Log extends AbstractLog {
         boolean shouldReport = !recorded.contains(coords);
         if (shouldReport)
             recorded.add(coords);
+        return shouldReport;
+    }
+
+    /** Returns true if a diagnostics needs to be reported.
+     */
+    private boolean shouldReport(JCDiagnostic d) {
+        JavaFileObject file = d.getSource();
+
+        if (file == null)
+            return true;
+
+        if (!shouldReport(file, d.getIntPosition()))
+            return false;
+
+        if (!d.isFlagSet(DiagnosticFlag.SOURCE_LEVEL))
+            return true;
+
+        Pair<JavaFileObject, String> coords = new Pair<>(file, d.getCode());
+        boolean shouldReport = !recordedSourceLevelErrors.contains(coords);
+        if (shouldReport)
+            recordedSourceLevelErrors.add(coords);
         return shouldReport;
     }
 
@@ -671,7 +697,7 @@ public class Log extends AbstractLog {
             case ERROR:
                 if (nerrors < MaxErrors &&
                     (diagnostic.isFlagSet(DiagnosticFlag.MULTIPLE) ||
-                     shouldReport(diagnostic.getSource(), diagnostic.getIntPosition()))) {
+                     shouldReport(diagnostic))) {
                     writeDiagnostic(diagnostic);
                     nerrors++;
                 }

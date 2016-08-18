@@ -187,7 +187,7 @@ public class WorkArounds {
 
     // TODO: implement using jx.l.model
     public boolean isVisible(TypeElement te) {
-        return toolEnv.isVisible((ClassSymbol)te);
+        return ((DocEnvImpl)(configuration.docEnv)).etable.isVisible(te);
     }
 
     // TODO: fix the caller
@@ -286,7 +286,7 @@ public class WorkArounds {
 
     // TODO: investigate and reimplement without javac dependencies.
     public boolean shouldDocument(Element e) {
-        return toolEnv.shouldDocument(e);
+        return ((DocEnvImpl)(configuration.docEnv)).etable.shouldDocument(e);
     }
 
     //------------------Start of Serializable Implementation---------------------//
