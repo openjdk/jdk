@@ -23,6 +23,9 @@
  * questions.
  */
 
+/**
+ * Supplements {@code java.compact1} with JDBC, JAXP, and RMI.
+ */
 module java.compact2 {
     requires public java.compact1;
     requires public java.rmi;
