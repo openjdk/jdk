@@ -93,6 +93,7 @@ public class XPATHErrorResources extends ListResourceBundle
   public static final String ER_CURRENT_TAKES_NO_ARGS =
          "ER_CURRENT_TAKES_NO_ARGS";
   public static final String ER_DOCUMENT_REPLACED = "ER_DOCUMENT_REPLACED";
+  public static final String ER_CONTEXT_CAN_NOT_BE_NULL = "ER_CONTEXT_CAN_NOT_BE_NULL";
   public static final String ER_CONTEXT_HAS_NO_OWNERDOC =
          "ER_CONTEXT_HAS_NO_OWNERDOC";
   public static final String ER_LOCALNAME_HAS_TOO_MANY_ARGS =
@@ -367,6 +368,9 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_DOCUMENT_REPLACED,
       "document() function implementation has been replaced by com.sun.org.apache.xalan.internal.xslt.FuncDocument!"},
+
+  { ER_CONTEXT_CAN_NOT_BE_NULL,
+      "The context can not be null when the operation is context-dependent."},
 
   { ER_CONTEXT_HAS_NO_OWNERDOC,
       "context does not have an owner document!"},
