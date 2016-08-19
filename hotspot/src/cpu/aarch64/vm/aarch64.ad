@@ -4680,7 +4680,7 @@ encode %{
       Label retaddr;
       __ adr(rscratch2, retaddr);
       __ lea(rscratch1, RuntimeAddress(entry));
-      // Leave a breadcrumb for JavaThread::pd_last_frame().
+      // Leave a breadcrumb for JavaFrameAnchor::capture_last_Java_pc()
       __ stp(zr, rscratch2, Address(__ pre(sp, -2 * wordSize)));
       __ blrt(rscratch1, gpcnt, fpcnt, rtype);
       __ bind(retaddr);
