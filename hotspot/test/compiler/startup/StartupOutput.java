@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8026949
+ * @bug 8026949 8164091
  * @summary Test ensures correct VM output during startup
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -45,7 +45,14 @@ public class StartupOutput {
         pb = ProcessTools.createJavaProcessBuilder("-Xint", "-XX:+DisplayVMOutputToStdout", "-version");
         out = new OutputAnalyzer(pb.start());
         out.shouldNotContain("no space to run compilers");
-
         out.shouldHaveExitValue(0);
+
+        pb = ProcessTools.createJavaProcessBuilder("-Xint", "-XX:ReservedCodeCacheSize=1770K", "-XX:InitialCodeCacheSize=4K", "-version");
+        out = new OutputAnalyzer(pb.start());
+        // The VM should not crash but may return an error message because we don't have enough space for adapters
+        int exitCode = out.getExitValue();
+        if (exitCode != 1 && exitCode != 0) {
+            throw new Exception("VM crashed with exit code " + exitCode);
+        }
     }
 }
