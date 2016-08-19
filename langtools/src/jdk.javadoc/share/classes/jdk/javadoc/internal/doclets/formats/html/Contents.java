@@ -104,6 +104,7 @@ public class Contents {
     public final Content methodSummary;
     public final Content methods;
     public final Content moduleLabel;
+    public final Content module_;
     public final Content moduleSubNavLabel;
     public final Content modulesLabel;
     public final Content navAnnotationTypeMember;
@@ -216,6 +217,7 @@ public class Contents {
         methodSummary = getContent("doclet.Method_Summary");
         methods = getContent("doclet.Methods");
         moduleLabel = getContent("doclet.Module");
+        module_ = getContent("doclet.module");
         moduleSubNavLabel = getContent("doclet.Module_Sub_Nav");
         modulesLabel = getContent("doclet.Modules");
         navAnnotationTypeMember = getContent("doclet.navAnnotationTypeMember");
