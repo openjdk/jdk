@@ -23,8 +23,7 @@
 
 /*
  * @test CheckCheckCICompilerCount
- * @bug 8130858
- * @bug 8132525
+ * @bug 8130858 8132525 8162881
  * @summary Check that correct range of values for CICompilerCount are allowed depending on whether tiered is enabled or not
  * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
@@ -54,6 +53,13 @@ public class CheckCICompilerCount {
             "-version"
         },
         {
+            "-server",
+            "-XX:+PrintFlagsFinal",
+            "-XX:CICompilerCount=1",
+            "-XX:-TieredCompilation",
+            "-version"
+        },
+        {
             "-client",
             "-XX:-TieredCompilation",
             "-XX:+PrintFlagsFinal",
@@ -66,30 +72,31 @@ public class CheckCICompilerCount {
             "-XX:+PrintFlagsFinal",
             "-XX:CICompilerCount=1",
             "-version"
+        },
+        {
+            "-client",
+            "-XX:+PrintFlagsFinal",
+            "-XX:CICompilerCount=1",
+            "-XX:-TieredCompilation",
+            "-version"
         }
     };
 
-    private static final String[][] NON_TIERED_EXPECTED_OUTPUTS = {
-        {
+    private static final String[] NON_TIERED_EXPECTED_OUTPUTS = {
             "CICompilerCount (0) must be at least 1",
-            "Improperly specified VM option 'CICompilerCount=0'"
-        },
-        {
-            "intx CICompilerCount                          = 1                                        {product} {command line}"
-        },
-        {
+            "intx CICompilerCount                          = 1                                        {product} {command line}",
+            "intx CICompilerCount                          = 1                                        {product} {command line}",
             "CICompilerCount (0) must be at least 1",
-            "Improperly specified VM option 'CICompilerCount=0'"
-        },
-        {
+            "intx CICompilerCount                          = 1                                        {product} {command line}",
             "intx CICompilerCount                          = 1                                        {product} {command line}"
-        }
     };
 
     private static final int[] NON_TIERED_EXIT = {
         1,
         0,
+        0,
         1,
+        0,
         0
     };
 
@@ -104,6 +111,22 @@ public class CheckCICompilerCount {
         {
             "-server",
             "-XX:+TieredCompilation",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+PrintFlagsFinal",
+            "-XX:CICompilerCount=1",
+            "-version"
+        },
+        {
+            "-server",
+            "-XX:+TieredCompilation",
+            "-XX:+PrintFlagsFinal",
+            "-XX:CICompilerCount=1",
+            "-XX:TieredStopAtLevel=1",
+            "-version"
+        },
+        {
+            "-server",
+            "-XX:+TieredCompilation",
             "-XX:+PrintFlagsFinal",
             "-XX:CICompilerCount=2",
             "-version"
@@ -118,37 +141,51 @@ public class CheckCICompilerCount {
         {
             "-client",
             "-XX:+TieredCompilation",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+PrintFlagsFinal",
+            "-XX:CICompilerCount=1",
+            "-version"
+        },
+        {
+            "-client",
+            "-XX:+TieredCompilation",
+            "-XX:+PrintFlagsFinal",
+            "-XX:CICompilerCount=1",
+            "-XX:TieredStopAtLevel=1",
+            "-version"
+        },
+        {
+            "-client",
+            "-XX:+TieredCompilation",
             "-XX:+PrintFlagsFinal",
             "-XX:CICompilerCount=2",
             "-version"
         }
     };
 
-    private static final String[][] TIERED_EXPECTED_OUTPUTS = {
-        {
+    private static final String[] TIERED_EXPECTED_OUTPUTS = {
             "CICompilerCount (1) must be at least 2",
-            "Improperly specified VM option 'CICompilerCount=1'"
-        },
-        {
-            "intx CICompilerCount                          = 2                                        {product} {command line, ergonomic}"
-        },
-        {
+            "intx CICompilerCount                          = 1                                        {product} {command line}",
+            "intx CICompilerCount                          = 1                                        {product} {command line}",
+            "intx CICompilerCount                          = 2                                        {product} {command line}",
             "CICompilerCount (1) must be at least 2",
-            "Improperly specified VM option 'CICompilerCount=1'"
-        },
-        {
-            "intx CICompilerCount                          = 2                                        {product} {command line, ergonomic}"
-        }
+            "intx CICompilerCount                          = 1                                        {product} {command line}",
+            "intx CICompilerCount                          = 1                                        {product} {command line}",
+            "intx CICompilerCount                          = 2                                        {product} {command line}",
     };
 
     private static final int[] TIERED_EXIT = {
         1,
         0,
+        0,
+        0,
         1,
+        0,
+        0,
         0
     };
 
-    private static void verifyValidOption(String[] arguments, String[] expected_outputs, int exit, boolean tiered) throws Exception {
+    private static void verifyValidOption(String[] arguments, String expected_output, int exit, boolean tiered) throws Exception {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
@@ -157,9 +194,7 @@ public class CheckCICompilerCount {
 
         try {
             out.shouldHaveExitValue(exit);
-            for (String expected_output : expected_outputs) {
-                out.shouldContain(expected_output);
-            }
+            out.shouldContain(expected_output);
         } catch (RuntimeException e) {
             // Check if tiered compilation is available in this JVM
             // Version. Throw exception only if it is available.
