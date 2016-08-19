@@ -29,9 +29,9 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
+ * @build compiler.codecache.jmx.UsageThresholdIncreasedTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @build compiler.codecache.jmx.UsageThresholdIncreasedTest
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *     -XX:+WhiteBoxAPI -XX:-UseCodeCacheFlushing  -XX:-MethodFlushing
  *     -XX:CompileCommand=compileonly,null::*
