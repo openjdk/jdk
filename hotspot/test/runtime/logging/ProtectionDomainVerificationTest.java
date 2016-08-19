@@ -25,14 +25,13 @@
  * @test ProtectionDomainVerificationTest
  * @bug 8149064
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
- * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.Platform jdk.test.lib.ProcessTools
+ * @library /test/lib
  * @run driver ProtectionDomainVerificationTest
  */
 
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 
 public class ProtectionDomainVerificationTest {
 

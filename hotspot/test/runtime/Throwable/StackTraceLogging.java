@@ -25,18 +25,17 @@
  * @test
  * @bug 8150778
  * @summary check stacktrace logging
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
  * @compile TestThrowable.java
  * @run driver StackTraceLogging
  */
 
 import java.io.File;
 import java.util.Map;
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class StackTraceLogging {
     static void analyzeOutputOn(ProcessBuilder pb) throws Exception {

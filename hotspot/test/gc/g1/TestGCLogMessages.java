@@ -27,13 +27,13 @@
  * @summary Ensure the output for a minor GC with G1
  * includes the expected necessary messages.
  * @key gc
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  */
 
-import jdk.test.lib.ProcessTools;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class TestGCLogMessages {
 

@@ -24,7 +24,7 @@
 
 package compiler.rtm.cli;
 
-import jdk.test.lib.ExitCode;
+import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
 

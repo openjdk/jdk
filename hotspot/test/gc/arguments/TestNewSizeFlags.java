@@ -26,23 +26,21 @@
  * @key gc
  * @bug 8025166
  * @summary Verify that young gen size conforms values specified by NewSize, MaxNewSize and Xmn options
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestNewSizeFlags
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver/timeout=240  TestNewSizeFlags
  */
 
-import jdk.test.lib.AllocationHelper;
 import java.io.IOException;
 import java.lang.management.MemoryUsage;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
-import jdk.test.lib.HeapRegionUsageTool;
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
 import sun.hotspot.WhiteBox;
 

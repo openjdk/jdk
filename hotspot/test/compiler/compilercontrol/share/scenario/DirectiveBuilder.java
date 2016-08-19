@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import compiler.compilercontrol.share.JSONFile;
 import compiler.compilercontrol.share.method.MethodDescriptor;
 import compiler.compilercontrol.share.method.MethodGenerator;
 import compiler.compilercontrol.share.pool.PoolHelper;
-import jdk.test.lib.Pair;
+import jdk.test.lib.util.Pair;
 
 import java.lang.reflect.Executable;
 import java.util.ArrayList;

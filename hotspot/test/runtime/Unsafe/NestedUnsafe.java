@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Creates an anonymous class inside of an anonymous class.
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
@@ -34,7 +34,8 @@
 import java.security.ProtectionDomain;
 import java.io.InputStream;
 import java.lang.*;
-import jdk.test.lib.*;
+import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.Utils;
 import jdk.internal.misc.Unsafe;
 import static jdk.test.lib.Asserts.*;
 

@@ -25,7 +25,7 @@
  * @test
  * @bug 8141564
  * @summary vtables=trace should have logging from each of the statements in the code
- * @library /testlibrary
+ * @library /test/lib
  * @compile ClassB.java
  *          p1/A.java
  *          p2/B.jcod
@@ -36,7 +36,9 @@
  * @run driver VtablesTest
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.Platform;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class VtablesTest {
     public static void main(String[] args) throws Exception {

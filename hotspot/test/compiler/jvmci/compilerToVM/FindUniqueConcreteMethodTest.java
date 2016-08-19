@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8136421
  * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
- * @library / /testlibrary /test/lib
+ * @library / /test/lib
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.org.objectweb.asm
@@ -35,7 +35,6 @@
  *          jdk.vm.ci/jdk.vm.ci.meta
  *          jdk.vm.ci/jdk.vm.ci.runtime
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
- * @build compiler.jvmci.compilerToVM.FindUniqueConcreteMethodTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                   compiler.jvmci.compilerToVM.FindUniqueConcreteMethodTest
  */
