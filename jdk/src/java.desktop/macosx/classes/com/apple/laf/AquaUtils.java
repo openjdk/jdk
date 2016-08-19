@@ -105,36 +105,42 @@ final class AquaUtils {
     }
 
     static Image generateSelectedDarkImage(final Image image) {
-        final ImageProducer prod = new FilteredImageSource(image.getSource(), new IconImageFilter() {
+        final ImageFilter filter =  new IconImageFilter() {
             @Override
             int getGreyFor(final int gray) {
                 return gray * 75 / 100;
             }
-        });
-        return Toolkit.getDefaultToolkit().createImage(prod);
+        };
+        return map(image, filter);
     }
 
     static Image generateDisabledImage(final Image image) {
-        final ImageProducer prod = new FilteredImageSource(image.getSource(), new IconImageFilter() {
+        final ImageFilter filter = new IconImageFilter() {
             @Override
             int getGreyFor(final int gray) {
                 return 255 - ((255 - gray) * 65 / 100);
             }
-        });
-        return Toolkit.getDefaultToolkit().createImage(prod);
+        };
+        return map(image, filter);
     }
 
     static Image generateLightenedImage(final Image image, final int percent) {
         final GrayFilter filter = new GrayFilter(true, percent);
-        return (image instanceof MultiResolutionCachedImage)
-                ? ((MultiResolutionCachedImage) image).map(
-                        rv -> generateLightenedImage(rv, filter))
-                : generateLightenedImage(image, filter);
+        return map(image, filter);
     }
 
-    static Image generateLightenedImage(Image image, ImageFilter filter) {
+    static Image generateFilteredImage(Image image, ImageFilter filter) {
         final ImageProducer prod = new FilteredImageSource(image.getSource(), filter);
         return Toolkit.getDefaultToolkit().createImage(prod);
+    }
+
+    private static Image map(Image image, ImageFilter filter) {
+        if (image instanceof MultiResolutionImage) {
+            return MultiResolutionCachedImage
+                    .map((MultiResolutionImage) image,
+                         (img) -> generateFilteredImage(img, filter));
+        }
+        return generateFilteredImage(image, filter);
     }
 
     private abstract static class IconImageFilter extends RGBImageFilter {
