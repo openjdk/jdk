@@ -25,8 +25,8 @@
  * @test
  * @bug 8049021
  * @summary Construct ResponseAPDU from byte array and check NR< SW, SW1 and SW2
- * @compile -addmods java.smartcardio ResponseAPDUTest.java
- * @run testng/othervm -addmods java.smartcardio ResponseAPDUTest
+ * @compile --add-modules=java.smartcardio ResponseAPDUTest.java
+ * @run testng/othervm --add-modules=java.smartcardio ResponseAPDUTest
  */
 import javax.smartcardio.ResponseAPDU;
 import static org.testng.Assert.*;

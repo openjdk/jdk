@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary class p1.c1 defined in m1 tries to access p2.c2 defined in unnamed module.
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.module
  * @compile myloaders/MyDiffClassLoader.java
@@ -34,7 +34,6 @@
  * @compile p1/c1.java
  * @compile p1/c1ReadEdgeDiffLoader.java
  * @compile p1/c1Loose.java
- * @build DiffCL_Umod
  * @run main/othervm -Xbootclasspath/a:. DiffCL_Umod
  */
 

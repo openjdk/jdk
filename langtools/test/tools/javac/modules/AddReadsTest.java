@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Test the -XaddReads option
+ * @summary Test the --add-reads option
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -73,7 +73,7 @@ public class AddReadsTest extends ModuleTestBase {
 
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
-                         "-modulesourcepath", src.toString())
+                         "--module-source-path", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
@@ -85,8 +85,8 @@ public class AddReadsTest extends ModuleTestBase {
 
         //test add dependencies:
         new JavacTask(tb)
-                .options("-XaddReads:m2=m1",
-                         "-modulesourcepath", src.toString(),
+                .options("--add-reads", "m2=m1",
+                         "--module-source-path", src.toString(),
                          "-processor", VerifyRequires.class.getName())
                 .outdir(classes)
                 .files(findJavaFiles(src))
@@ -104,8 +104,8 @@ public class AddReadsTest extends ModuleTestBase {
 
         //cyclic dependencies OK when created through addReads:
         new JavacTask(tb)
-                .options("-XaddReads:m2=m1,m1=m2",
-                         "-modulesourcepath", src.toString())
+                .options("--add-reads", "m2=m1,m1=m2",
+                         "--module-source-path", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
@@ -115,8 +115,8 @@ public class AddReadsTest extends ModuleTestBase {
                           "module m2 { requires m1; }");
 
         new JavacTask(tb)
-                .options("-XaddReads:m1=m2",
-                         "-modulesourcepath", src.toString())
+                .options("--add-reads", "m1=m2",
+                         "--module-source-path", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
@@ -165,8 +165,8 @@ public class AddReadsTest extends ModuleTestBase {
                           "package impl; public class Impl { api.Api api; }");
 
         new JavacTask(tb)
-          .options("-classpath", jar.toString(),
-                   "-XaddReads:m1=ALL-UNNAMED",
+          .options("--class-path", jar.toString(),
+                   "--add-reads", "m1=ALL-UNNAMED",
                    "-XDrawDiagnostics")
           .outdir(classes)
           .files(findJavaFiles(moduleSrc))
@@ -191,9 +191,9 @@ public class AddReadsTest extends ModuleTestBase {
                           "package impl; public class Impl { { api.Api.test(); } }");
 
         new JavacTask(tb)
-          .options("-classpath", jar.toString(),
-                   "-modulesourcepath", moduleSrc.toString(),
-                   "-XaddReads:m1=ALL-UNNAMED",
+          .options("--class-path", jar.toString(),
+                   "--module-source-path", moduleSrc.toString(),
+                   "--add-reads", "m1=ALL-UNNAMED",
                    "-XDrawDiagnostics")
           .outdir(classes)
           .files(m1.resolve("impl").resolve("Impl.java"))
@@ -213,8 +213,8 @@ public class AddReadsTest extends ModuleTestBase {
                           "package impl; public class Impl { api.Api a; }");
 
         new JavacTask(tb)
-          .options("-classpath", jar.toString(),
-                   "-XaddReads:java.base=ALL-UNNAMED",
+          .options("--class-path", jar.toString(),
+                   "--add-reads", "java.base=ALL-UNNAMED",
                    "-Xmodule:java.base")
           .outdir(classes)
           .files(src.resolve("impl").resolve("Impl.java"))
@@ -233,7 +233,7 @@ public class AddReadsTest extends ModuleTestBase {
                           "package impl; public class Impl { javax.swing.JButton b; }");
 
         new JavacTask(tb)
-          .options("-XaddReads:java.base=java.desktop",
+          .options("--add-reads", "java.base=java.desktop",
                    "-Xmodule:java.base")
           .outdir(classes)
           .files(findJavaFiles(src))
@@ -285,7 +285,7 @@ public class AddReadsTest extends ModuleTestBase {
         tb.createDirectories(classes);
 
         new JavacTask(tb)
-                .options("-modulesourcepath", src.toString())
+                .options("--module-source-path", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
@@ -300,9 +300,9 @@ public class AddReadsTest extends ModuleTestBase {
                           "package impl; public class Impl { }");
 
         new JavacTask(tb)
-          .options("-XaddReads:m1=ALL-UNNAMED",
+          .options("--add-reads", "m1=ALL-UNNAMED",
                    "-Xmodule:m1",
-                   "-modulepath", classes.toString())
+                   "--module-path", classes.toString())
           .outdir(unnamedClasses)
           .files(findJavaFiles(unnamedSrc))
           .run()

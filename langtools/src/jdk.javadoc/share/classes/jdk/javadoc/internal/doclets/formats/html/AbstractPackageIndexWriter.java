@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
      * @param filename Name of the package index file to be generated.
      */
     public AbstractPackageIndexWriter(ConfigurationImpl configuration,
-                                      DocPath filename) throws IOException {
+                                      DocPath filename) {
         super(configuration, filename);
         packages = configuration.packages;
     }
@@ -191,7 +191,7 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
      * @return a Content object to be added to the documentation tree
      */
     protected Content getNavLinkContents() {
-        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, overviewLabel);
+        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.overviewLabel);
         return li;
     }
 

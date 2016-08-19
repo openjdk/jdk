@@ -4282,6 +4282,9 @@ public class Attr extends JCTree.Visitor {
             case TOPLEVEL:
                 attribTopLevel(env);
                 break;
+            case PACKAGEDEF:
+                attribPackage(env.tree.pos(), ((JCPackageDecl) env.tree).packge);
+                break;
             default:
                 attribClass(env.tree.pos(), env.enclClass.sym);
         }
@@ -4298,6 +4301,20 @@ public class Attr extends JCTree.Visitor {
         } catch (CompletionFailure ex) {
             chk.completionError(toplevel.pos(), ex);
         }
+    }
+
+    public void attribPackage(DiagnosticPosition pos, PackageSymbol p) {
+        try {
+            annotate.flush();
+            attribPackage(p);
+        } catch (CompletionFailure ex) {
+            chk.completionError(pos, ex);
+        }
+    }
+
+    void attribPackage(PackageSymbol p) {
+        Env<AttrContext> env = typeEnvs.get(p);
+        chk.checkDeprecatedAnnotation(((JCPackageDecl) env.tree).pid.pos(), p);
     }
 
     public void attribModule(DiagnosticPosition pos, ModuleSymbol m) {

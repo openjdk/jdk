@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public class CardPermission extends Permission {
     /**
      * @serial
      */
-    private volatile String actions;
+    private final String actions;
 
     /**
      * Constructs a new CardPermission with the specified actions.
@@ -143,10 +143,14 @@ public class CardPermission extends Permission {
             throw new NullPointerException();
         }
         mask = getMask(actions);
+        this.actions = getActions(mask);
     }
 
     private static int getMask(String actions) {
-        if ((actions == null) || (actions.length() == 0)) {
+        if (actions == null) {
+            return 0;
+        }
+        if (actions.length() == 0) {
             throw new IllegalArgumentException("actions must not be empty");
         }
 
@@ -177,6 +181,9 @@ public class CardPermission extends Permission {
     }
 
     private static String getActions(int mask) {
+        if (mask == 0) {
+            return null;
+        }
         if (mask == A_ALL) {
             return S_ALL;
         }
@@ -200,9 +207,6 @@ public class CardPermission extends Permission {
      * @return the canonical string representation of the actions.
      */
     public String getActions() {
-        if (actions == null) {
-            actions = getActions(mask);
-        }
         return actions;
     }
 
@@ -278,10 +282,6 @@ public class CardPermission extends Permission {
 
     private void writeObject(ObjectOutputStream s) throws IOException {
         // Write out the actions. The superclass takes care of the name.
-        // Call getActions to make sure actions field is initialized
-        if (actions == null) {
-            getActions();
-        }
         s.defaultWriteObject();
     }
 
@@ -291,5 +291,4 @@ public class CardPermission extends Permission {
         s.defaultReadObject();
         mask = getMask(actions);
     }
-
 }

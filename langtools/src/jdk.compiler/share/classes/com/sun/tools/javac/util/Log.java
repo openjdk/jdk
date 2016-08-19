@@ -748,6 +748,14 @@ public class Log extends AbstractLog {
         return localize(PrefixKind.COMPILER_MISC, key, args);
     }
 
+    public String localize(JCDiagnostic.DiagnosticInfo diagInfo) {
+        if (useRawMessages) {
+            return diagInfo.key();
+        } else {
+            return messages.getLocalizedString(diagInfo.key(), diagInfo.args);
+        }
+    }
+
     /** Find a localized string in the resource bundle.
      *  @param key    The key for the localized string.
      *  @param args   Fields to substitute into the string.

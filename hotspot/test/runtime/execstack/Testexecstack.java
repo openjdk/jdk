@@ -28,14 +28,15 @@
  * @bug 8025519
  * @summary Stack guard pages lost after loading library with executable stack.
  * @requires (os.family == "linux")
- * @library /testlibrary
- * @build jdk.test.lib.*
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
  * @compile Test.java
  * @compile TestMT.java
  * @run driver Testexecstack
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class Testexecstack {
 

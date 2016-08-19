@@ -23,7 +23,6 @@
 
 import java.util.Date;
 import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.JarUtils;
 
 /**
@@ -57,7 +56,7 @@ public class NoTimestampTest extends Test {
                 * 24 * 60 * 60 * 1000L);
 
         // create key pair
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-genkey",
                 "-alias", KEY_ALIAS,
                 "-keyalg", KEY_ALG,
@@ -69,7 +68,7 @@ public class NoTimestampTest extends Test {
                 "-validity", Integer.toString(VALIDITY));
 
         // sign jar file
-        OutputAnalyzer analyzer = ProcessTools.executeCommand(JARSIGNER,
+        OutputAnalyzer analyzer = jarsigner(
                 "-J-Duser.timezone=" + timezone,
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
@@ -83,7 +82,7 @@ public class NoTimestampTest extends Test {
         checkSigning(analyzer, warning);
 
         // verify signed jar
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-J-Duser.timezone=" + timezone,
                 "-verify",
                 "-keystore", KEYSTORE,
@@ -96,7 +95,7 @@ public class NoTimestampTest extends Test {
         checkVerifying(analyzer, 0, warning);
 
         // verify signed jar in strict mode
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-J-Duser.timezone=" + timezone,
                 "-verify",
                 "-strict",

@@ -39,6 +39,7 @@ import jdk.jshell.Snippet.SubKind;
 import jdk.jshell.SnippetEvent;
 import org.testng.annotations.Test;
 
+import static java.util.stream.Collectors.toList;
 import static jdk.jshell.Snippet.Status.*;
 import static jdk.jshell.Snippet.SubKind.VAR_DECLARATION_SUBKIND;
 import static org.testng.Assert.assertEquals;
@@ -331,7 +332,7 @@ public class VariablesTest extends KullaTesting {
         //assertEquals(getState().source(snippet), src);
         //assertEquals(snippet, undefKey);
         assertEquals(getState().status(undefKey), RECOVERABLE_NOT_DEFINED);
-        List<String> unr = getState().unresolvedDependencies((VarSnippet) undefKey);
+        List<String> unr = getState().unresolvedDependencies((VarSnippet) undefKey).collect(toList());;
         assertEquals(unr.size(), 1);
         assertEquals(unr.get(0), "class undefined");
         assertVariables(variable("undefined", "d"));

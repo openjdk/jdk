@@ -47,8 +47,6 @@ public class TestStdDoclet {
      */
     void run() throws Exception {
         File javaHome = new File(System.getProperty("java.home"));
-        if (javaHome.getName().equals("jre"))
-            javaHome = javaHome.getParentFile();
         File javadoc = new File(new File(javaHome, "bin"), "javadoc");
         File testSrc = new File(System.getProperty("test.src"));
 
@@ -57,11 +55,6 @@ public class TestStdDoclet {
         String thisClassName = TestStdDoclet.class.getName();
         List<String> cmdArgs = new ArrayList<>();
         cmdArgs.add(javadoc.getPath());
-        int i = 0;
-        String prop;
-        while ((prop = System.getProperty("jdk.launcher.patch." + (i++))) != null) {
-            cmdArgs.add("-J-Xpatch:" + prop);
-        }
         cmdArgs.addAll(Arrays.asList(
                 "-classpath", ".", // insulates us from ambient classpath
                 "-Xdoclint:none",

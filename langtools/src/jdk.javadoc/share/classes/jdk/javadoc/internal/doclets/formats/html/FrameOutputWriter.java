@@ -32,6 +32,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
@@ -68,7 +69,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      * @param filename File to be generated.
      * @throws java.io.IOException
      */
-    public FrameOutputWriter(ConfigurationImpl configuration, DocPath filename) throws IOException {
+    public FrameOutputWriter(ConfigurationImpl configuration, DocPath filename) {
         super(configuration, filename);
         noOfPackages = configuration.packages.size();
     }
@@ -87,10 +88,9 @@ public class FrameOutputWriter extends HtmlDocletWriter {
             filename = DocPaths.INDEX;
             framegen = new FrameOutputWriter(configuration, filename);
             framegen.generateFrameFile();
-            framegen.close();
         } catch (IOException exc) {
-            configuration.standardmessage.error(
-                        "doclet.exception_encountered",
+            Messages messages = configuration.getMessages();
+            messages.error("doclet.exception_encountered",
                         exc.toString(), filename);
             throw new DocletAbortException(exc);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -96,10 +97,9 @@ public class TreeWriter extends AbstractTreeWriter {
         try {
             treegen = new TreeWriter(configuration, filename, classtree);
             treegen.generateTreeFile();
-            treegen.close();
         } catch (IOException exc) {
-            configuration.standardmessage.error(
-                        "doclet.exception_encountered",
+            Messages messages = configuration.getMessages();
+            messages.error("doclet.exception_encountered",
                         exc.toString(), filename);
             throw new DocletAbortException(exc);
         }
@@ -110,7 +110,7 @@ public class TreeWriter extends AbstractTreeWriter {
      */
     public void generateTreeFile() throws IOException {
         HtmlTree body = getTreeHeader();
-        Content headContent = getResource("doclet.Hierarchy_For_All_Packages");
+        Content headContent = contents.hierarchyForAllPackages;
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, false,
                 HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
@@ -154,7 +154,7 @@ public class TreeWriter extends AbstractTreeWriter {
         }
         if (!classesonly) {
             Content span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
-                    getResource("doclet.Package_Hierarchies"));
+                    contents.packageHierarchies);
             contentTree.addContent(span);
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
             ul.addStyle(HtmlStyle.horizontal);

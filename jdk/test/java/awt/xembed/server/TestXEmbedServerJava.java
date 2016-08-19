@@ -84,11 +84,11 @@ public class TestXEmbedServerJava extends TestXEmbedServer {
             }
             if (hasModules) {
                 System.out.println(java_home +
-                               "/bin/java  -XaddExports:java.desktop/sun.awt.X11=ALL-UNNAMED "+
-                               "-XaddExports:java.desktop/sun.awt=ALL-UNNAMED  JavaClient " + window);
+                               "/bin/java --add-exports java.desktop/sun.awt.X11=ALL-UNNAMED "+
+                               "--add-exports java.desktop/sun.awt=ALL-UNNAMED  JavaClient " + window);
                 return Runtime.getRuntime().exec(java_home +
-                               "/bin/java  -XaddExports:java.desktop/sun.awt.X11=ALL-UNNAMED "+
-                               "-XaddExports:java.desktop/sun.awt=ALL-UNNAMED  JavaClient " + window);
+                               "/bin/java --add-exports java.desktop/sun.awt.X11=ALL-UNNAMED "+
+                               "--add-exports java.desktop/sun.awt=ALL-UNNAMED  JavaClient " + window);
             }else{
                 System.out.println(java_home + "/bin/java JavaClient " + window);
                 return Runtime.getRuntime().exec(java_home + "/bin/java JavaClient " + window);

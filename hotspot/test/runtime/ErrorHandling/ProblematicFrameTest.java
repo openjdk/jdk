@@ -25,19 +25,19 @@
  * @test
  * @bug 8050167
  * @summary Test that error is not occurred during printing problematic frame
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build jdk.test.lib.*
  * @run driver ProblematicFrameTest
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Utils;
 
 import jdk.internal.misc.Unsafe;
-import jdk.test.lib.Utils;
 
 public class ProblematicFrameTest {
     private static class Crasher {
@@ -48,7 +48,7 @@ public class ProblematicFrameTest {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xmx64m", "-XX:-TransmitErrorReport", "-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED", "-XX:-CreateCoredumpOnCrash", Crasher.class.getName());
+            "-Xmx64m", "-XX:-TransmitErrorReport", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED", "-XX:-CreateCoredumpOnCrash", Crasher.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("Exception in thread");
         output.shouldNotMatch("error occurred during error reporting \\(printing problematic frame\\)");

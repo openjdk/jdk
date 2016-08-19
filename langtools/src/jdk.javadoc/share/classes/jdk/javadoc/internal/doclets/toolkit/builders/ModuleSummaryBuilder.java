@@ -132,7 +132,6 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
         buildChildren(node, contentTree);
         moduleWriter.addModuleFooter(contentTree);
         moduleWriter.printDocument(contentTree);
-        moduleWriter.close();
         // TEMPORARY:
         // The use of SOURCE_PATH on the next line is temporary. As we transition into the
         // modules world, this should migrate into using a location for the appropriate module

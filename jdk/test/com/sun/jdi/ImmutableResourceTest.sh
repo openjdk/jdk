@@ -99,11 +99,11 @@ env
 set -vx
 #
 # Compile test class
-${TESTJAVA}/bin/javac -XaddExports:jdk.jdi/com.sun.tools.example.debug.tty=ALL-UNNAMED \
+${TESTJAVA}/bin/javac --add-exports jdk.jdi/com.sun.tools.example.debug.tty=ALL-UNNAMED \
    -d "${TESTCLASSES}" ${CP} -g "${TESTSRC}"/"${TARGETCLASS}".java
 #
 # Run the test class, again with the classpath we need:
-${TESTJAVA}/bin/java -XaddExports:jdk.jdi/com.sun.tools.example.debug.tty=ALL-UNNAMED \
+${TESTJAVA}/bin/java --add-exports jdk.jdi/com.sun.tools.example.debug.tty=ALL-UNNAMED \
     ${CP} ${TARGETCLASS}
 status=$?
 echo "test status was: $status"

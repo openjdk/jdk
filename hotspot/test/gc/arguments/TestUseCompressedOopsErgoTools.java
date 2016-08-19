@@ -29,7 +29,9 @@ import java.util.regex.Pattern;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import jdk.test.lib.*;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import java.lang.management.ManagementFactory;
 import sun.hotspot.WhiteBox;
 
