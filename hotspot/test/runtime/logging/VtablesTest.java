@@ -48,10 +48,10 @@ public class VtablesTest {
             output.shouldContain("copy vtable from ClassA to ClassB");
             output.shouldContain("Initializing: ClassB");
             output.shouldContain("adding ClassB.Method1()V");
-            output.shouldContain("] overriding with ClassB::ClassB.Method2()V");
+            output.shouldContain("] overriding with ClassB.Method2()V");
             output.shouldContain("invokevirtual resolved method: caller-class:ClassB");
             output.shouldContain("invokevirtual selected method: receiver-class:ClassB");
-            output.shouldContain("NOT overriding with p2.D::p2.D.nooverride()V");
+            output.shouldContain("NOT overriding with p2.D.nooverride()V");
             output.shouldHaveExitValue(0);
 
             pb = ProcessTools.createJavaProcessBuilder("-Xlog:vtables=trace", "p1/C");
