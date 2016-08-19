@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8130450
+ * @test 8130450 8158906
  * @summary simple regression test
  * @build KullaTesting TestingInputStream
  * @run testng SimpleRegressionTest
@@ -39,6 +39,8 @@ import jdk.jshell.SnippetEvent;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 import static jdk.jshell.Snippet.Status.OVERWRITTEN;
 import static jdk.jshell.Snippet.SubKind.TEMP_VAR_EXPRESSION_SUBKIND;
 import static jdk.jshell.Snippet.Status.VALID;
@@ -98,6 +100,37 @@ public class SimpleRegressionTest extends KullaTesting {
         Snippet sn = methodKey(assertEval("<R> R n(R x) { return x; }", added(VALID)));
         VarSnippet sne = varKey(assertEval("n(5)", added(VALID)));
         assertEquals(sne.typeName(), "Integer");
+    }
+
+    public void testLongRemoteStrings() { //8158906
+        assertEval("String m(int x) { byte[] b = new byte[x]; for (int i = 0; i < x; ++i) b[i] = (byte) 'a'; return new String(b); }");
+        boolean[] shut = new boolean[1];
+        getState().onShutdown(j -> {
+            shut[0] = true;
+        });
+        for (String len : new String[]{"12345", "64000", "65535", "65536", "120000"}) {
+            List<SnippetEvent> el = assertEval("m(" + len + ");");
+            assertFalse(shut[0], "JShell died with long string");
+            assertEquals(el.size(), 1, "Excepted one event");
+            assertTrue(el.get(0).value().length() > 10000,
+                    "Expected truncated but long String, got: " + el.get(0).value().length());
+        }
+    }
+
+    public void testLongRemoteJapaneseStrings() { //8158906
+        assertEval("import java.util.stream.*;");
+        assertEval("String m(int x) { return Stream.generate(() -> \"\u3042\").limit(x).collect(Collectors.joining()); }");
+        boolean[] shut = new boolean[1];
+        getState().onShutdown(j -> {
+            shut[0] = true;
+        });
+        for (String len : new String[]{"12345", "21843", "21844", "21845", "21846", "64000", "65535", "65536", "120000"}) {
+            List<SnippetEvent> el = assertEval("m(" + len + ");");
+            assertFalse(shut[0], "JShell died with long string");
+            assertEquals(el.size(), 1, "Excepted one event");
+            assertTrue(el.get(0).value().length() > 10000,
+                    "Expected truncated but long String, got: " + el.get(0).value().length());
+        }
     }
 
     // 8130450
