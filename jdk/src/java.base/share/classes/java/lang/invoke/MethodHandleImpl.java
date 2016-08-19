@@ -1934,7 +1934,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * @return whether the counter has reached the limit.
      */
     static boolean countedLoopPredicate(int counter, int limit) {
-        return counter <= limit;
+        return counter < limit;
     }
 
     /**
