@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8056174
+ * @bug 8056174 8130181
  * @summary test the functions of JarSigner API
  * @modules java.base/sun.security.tools.keytool
  *          jdk.jartool
@@ -145,7 +145,7 @@ public class Function {
 
     public static class MyProvider extends Provider {
         MyProvider() {
-            super("MY", 1.0d, null);
+            super("MY", "1.0", null);
             put("MessageDigest.Five", Five.class.getName());
             put("Signature.SHA1WithRSA", SHA1WithRSA.class.getName());
         }

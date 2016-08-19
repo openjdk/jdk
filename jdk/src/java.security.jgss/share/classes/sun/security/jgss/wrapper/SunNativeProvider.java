@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import org.ietf.jgss.Oid;
 import sun.security.action.PutAllAction;
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 /**
  * Defines the Sun NativeGSS provider for plugging in the
@@ -120,7 +121,7 @@ public final class SunNativeProvider extends Provider {
 
     public SunNativeProvider() {
         /* We are the Sun NativeGSS provider */
-        super(NAME, 9.0d, INFO);
+        super(NAME, PROVIDER_VER, INFO);
 
         if (MECH_MAP != null) {
             AccessController.doPrivileged(new PutAllAction(this, MECH_MAP));
