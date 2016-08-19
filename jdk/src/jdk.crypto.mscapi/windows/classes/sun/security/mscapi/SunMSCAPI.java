@@ -33,6 +33,7 @@ import java.security.InvalidParameterException;
 import java.security.ProviderException;
 import java.util.HashMap;
 import java.util.Arrays;
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 /**
  * A Cryptographic Service Provider for the Microsoft Crypto API.
@@ -124,7 +125,7 @@ public final class SunMSCAPI extends Provider {
     }
 
     public SunMSCAPI() {
-        super("SunMSCAPI", 9.0d, INFO);
+        super("SunMSCAPI", PROVIDER_VER, INFO);
 
         final Provider p = this;
         AccessController.doPrivileged(new PrivilegedAction<Void>() {

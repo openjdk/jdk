@@ -44,6 +44,7 @@ import sun.security.jca.ProviderList;
 import sun.security.util.ECUtil;
 
 import static sun.security.ssl.SunJSSE.cryptoProvider;
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 /**
  * This class contains a few static methods for interaction with the JCA/JCE
@@ -90,7 +91,7 @@ final class JsseJce {
         private static final long serialVersionUID = -3284138292032213752L;
 
         SunCertificates(final Provider p) {
-            super("SunCertificates", 9.0d, "SunJSSE internal");
+            super("SunCertificates", PROVIDER_VER, "SunJSSE internal");
             AccessController.doPrivileged(new PrivilegedAction<Object>() {
                 @Override
                 public Object run() {
