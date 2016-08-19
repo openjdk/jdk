@@ -58,7 +58,7 @@ public class MOptionTest extends ModuleTestBase {
                 "package test; public class Test {}");
 
         new JavacTask(tb)
-                .options("-m", "m1", "-modulesourcepath", src.toString(), "-d", build.toString())
+                .options("-m", "m1", "--module-source-path", src.toString(), "-d", build.toString())
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
 
@@ -81,7 +81,7 @@ public class MOptionTest extends ModuleTestBase {
         Thread.sleep(2000); //timestamps
 
         new JavacTask(tb)
-                .options("-m", "m1", "-modulesourcepath", src.toString(), "-d", build.toString())
+                .options("-m", "m1", "--module-source-path", src.toString(), "-d", build.toString())
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
 
@@ -98,7 +98,7 @@ public class MOptionTest extends ModuleTestBase {
         Files.setLastModifiedTime(testTest, FileTime.fromMillis(System.currentTimeMillis()));
 
         new JavacTask(tb)
-                .options("-m", "m1", "-modulesourcepath", src.toString(), "-d", build.toString())
+                .options("-m", "m1", "--module-source-path", src.toString(), "-d", build.toString())
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
 
@@ -125,7 +125,7 @@ public class MOptionTest extends ModuleTestBase {
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                     "-m", "m1",
-                    "-modulesourcepath", src.toString())
+                    "--module-source-path", src.toString())
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
@@ -174,7 +174,7 @@ public class MOptionTest extends ModuleTestBase {
                 "package p2; public class C2 {}");
 
         new JavacTask(tb)
-                .options("-m", "m1,m2", "-modulesourcepath", src.toString(), "-d", build.toString())
+                .options("-m", "m1,m2", "--module-source-path", src.toString(), "-d", build.toString())
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
 
@@ -215,7 +215,7 @@ public class MOptionTest extends ModuleTestBase {
         Thread.sleep(2000); //timestamps
 
         new JavacTask(tb)
-                .options("-m", "m1,m2", "-modulesourcepath", src.toString(), "-d", build.toString())
+                .options("-m", "m1,m2", "--module-source-path", src.toString(), "-d", build.toString())
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
 
@@ -241,7 +241,7 @@ public class MOptionTest extends ModuleTestBase {
         Files.setLastModifiedTime(C2Source, FileTime.fromMillis(System.currentTimeMillis()));
 
         new JavacTask(tb)
-                .options("-m", "m1,m2", "-modulesourcepath", src.toString(), "-d", build.toString())
+                .options("-m", "m1,m2", "--module-source-path", src.toString(), "-d", build.toString())
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
 

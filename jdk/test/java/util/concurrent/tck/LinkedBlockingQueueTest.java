@@ -481,7 +481,7 @@ public class LinkedBlockingQueueTest extends JSR166TestCase {
             }});
 
         await(aboutToWait);
-        waitForThreadToEnterWaitState(t, LONG_DELAY_MS);
+        waitForThreadToEnterWaitState(t);
         t.interrupt();
         awaitTermination(t);
         checkEmpty(q);

@@ -57,7 +57,7 @@ public final class Services {
         if (jvmci != requestorModule) {
             for (String pkg : jvmci.getPackages()) {
                 // Export all JVMCI packages dynamically instead
-                // of requiring a long list of -XaddExports
+                // of requiring a long list of --add-exports
                 // options on the JVM command line.
                 if (!jvmci.isExported(pkg, requestorModule)) {
                     jvmci.addExports(pkg, requestorModule);

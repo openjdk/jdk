@@ -28,10 +28,8 @@ import static jaxp.library.JAXPTestUtilities.getSystemProperty;
 import static jaxp.library.JAXPTestUtilities.setSystemProperty;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.StringReader;
-import java.net.SocketTimeoutException;
-
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
@@ -52,7 +50,7 @@ import org.xml.sax.SAXParseException;
 
 /*
  * @test
- * @bug 8158084 8162438 8162442
+ * @bug 8158084 8162438 8162442 8163535
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true catalog.CatalogSupport2
  * @run testng/othervm catalog.CatalogSupport2
@@ -97,7 +95,7 @@ public class CatalogSupport2 extends CatalogSupportBase {
     /*
        Verifies the Catalog support on SAXParser.
     */
-    @Test(dataProvider = "data_SAXC", expectedExceptions = FileNotFoundException.class)
+    @Test(dataProvider = "data_SAXC", expectedExceptions = IOException.class)
     public void testSAXC(boolean setUseCatalog, boolean useCatalog, String catalog, String
             xml, MyHandler handler, String expected) throws Exception {
         testSAX(setUseCatalog, useCatalog, catalog, xml, handler, expected);
@@ -106,7 +104,7 @@ public class CatalogSupport2 extends CatalogSupportBase {
     /*
        Verifies the Catalog support on XMLReader.
     */
-    @Test(dataProvider = "data_SAXC", expectedExceptions = FileNotFoundException.class)
+    @Test(dataProvider = "data_SAXC", expectedExceptions = IOException.class)
     public void testXMLReaderC(boolean setUseCatalog, boolean useCatalog, String catalog,
             String xml, MyHandler handler, String expected) throws Exception {
         testXMLReader(setUseCatalog, useCatalog, catalog, xml, handler, expected);
@@ -124,7 +122,7 @@ public class CatalogSupport2 extends CatalogSupportBase {
     /*
        Verifies the Catalog support on DOM parser.
     */
-    @Test(dataProvider = "data_DOMC", expectedExceptions = {FileNotFoundException.class, SocketTimeoutException.class})
+    @Test(dataProvider = "data_DOMC", expectedExceptions = IOException.class)
     public void testDOMC(boolean setUseCatalog, boolean useCatalog, String catalog,
             String xml, MyHandler handler, String expected) throws Exception {
         testDOM(setUseCatalog, useCatalog, catalog, xml, handler, expected);
@@ -141,7 +139,7 @@ public class CatalogSupport2 extends CatalogSupportBase {
         testValidation(setUseCatalog, useCatalog, catalog, xsd, resolver) ;
     }
 
-    @Test(dataProvider = "data_ValidatorC", expectedExceptions = {SAXException.class, FileNotFoundException.class})
+    @Test(dataProvider = "data_ValidatorC", expectedExceptions = {SAXException.class, IOException.class})
     public void testValidatorC(boolean setUseCatalog1, boolean setUseCatalog2, boolean useCatalog,
             Source source, LSResourceResolver resolver1, LSResourceResolver resolver2,
             String catalog1, String catalog2)

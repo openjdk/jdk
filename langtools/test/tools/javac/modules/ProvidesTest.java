@@ -77,7 +77,7 @@ public class ProvidesTest extends ModuleTestBase {
         Files.createDirectories(modules);
 
         new JavacTask(tb)
-                .options("-modulesourcepath", src.toString())
+                .options("--module-source-path", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))
                 .run(Task.Expect.SUCCESS)
@@ -160,7 +160,7 @@ public class ProvidesTest extends ModuleTestBase {
 
         List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", modules.toString())
+                        "--module-source-path", modules.toString())
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(modules))
                 .run(Task.Expect.FAIL)

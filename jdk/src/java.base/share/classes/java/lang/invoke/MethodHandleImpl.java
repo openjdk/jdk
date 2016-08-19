@@ -1718,10 +1718,19 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             }
 
             @Override
-            public byte[] generateDMHClassBytes(String className,
-            MethodType[] methodTypes, int[] types) {
+            public byte[] generateDirectMethodHandleHolderClassBytes(
+                    String className, MethodType[] methodTypes, int[] types) {
                 return GenerateJLIClassesHelper
-                        .generateDMHClassBytes(className, methodTypes, types);
+                        .generateDirectMethodHandleHolderClassBytes(
+                                className, methodTypes, types);
+            }
+
+            @Override
+            public byte[] generateDelegatingMethodHandleHolderClassBytes(
+                    String className, MethodType[] methodTypes) {
+                return GenerateJLIClassesHelper
+                        .generateDelegatingMethodHandleHolderClassBytes(
+                                className, methodTypes);
             }
 
             @Override

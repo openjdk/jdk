@@ -32,6 +32,7 @@ import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 
 
 /**
@@ -73,7 +74,8 @@ public class PackageListWriter extends PrintWriter {
             packgen.generatePackageListFile(configuration.docEnv);
             packgen.close();
         } catch (IOException exc) {
-            configuration.message.error("doclet.exception_encountered",
+            Messages messages = configuration.getMessages();
+            messages.error("doclet.exception_encountered",
                 exc.toString(), DocPaths.PACKAGE_LIST);
             throw new DocletAbortException(exc);
         }

@@ -122,6 +122,7 @@ compiler.err.locn.bad.module-info                             # bad class file
 compiler.err.locn.cant.read.file                              # bad class file
 compiler.misc.module.info.invalid.super.class                 # bad class file
 compiler.err.locn.cant.read.directory                         # file system issue
+compiler.err.locn.invalid.arg.for.xpatch                      # command line option error
 compiler.misc.unnamed.module                                  # fragment uninteresting in and of itself
 compiler.misc.kindname.module                                 # fragment uninteresting in and of itself
 compiler.misc.locn.module_path                                # fragment uninteresting in and of itself

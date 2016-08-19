@@ -147,7 +147,9 @@ public class Modules extends JCTree.Visitor {
     private final String addReadsOpt;
     private Map<ModuleSymbol, Set<RequiresDirective>> addReads;
     private final String addModsOpt;
+    private final Set<String> extraAddMods = new HashSet<>();
     private final String limitModsOpt;
+    private final Set<String> extraLimitMods = new HashSet<>();
 
     private Set<ModuleSymbol> rootModules = null;
 
@@ -182,10 +184,10 @@ public class Modules extends JCTree.Visitor {
         java_se = names.fromString("java.se");
         java_ = names.fromString("java.");
 
-        addExportsOpt = options.get(Option.XADDEXPORTS);
-        addReadsOpt = options.get(Option.XADDREADS);
-        addModsOpt = options.get(Option.ADDMODS);
-        limitModsOpt = options.get(Option.LIMITMODS);
+        addExportsOpt = options.get(Option.ADD_EXPORTS);
+        addReadsOpt = options.get(Option.ADD_READS);
+        addModsOpt = options.get(Option.ADD_MODULES);
+        limitModsOpt = options.get(Option.LIMIT_MODULES);
     }
 
     int depth = -1;
@@ -195,8 +197,16 @@ public class Modules extends JCTree.Visitor {
         System.err.println(msg);
     }
 
+    public void addExtraAddModules(String... extras) {
+        extraAddMods.addAll(Arrays.asList(extras));
+    }
+
+    public void addExtraLimitModules(String... extras) {
+        extraLimitMods.addAll(Arrays.asList(extras));
+    }
+
     boolean inInitModules;
-    public void initModules(List<JCCompilationUnit> trees, Collection<String> extraAddMods, Collection<String> extraLimitMods) {
+    public void initModules(List<JCCompilationUnit> trees) {
         Assert.check(!inInitModules);
         try {
             inInitModules = true;
@@ -205,7 +215,7 @@ public class Modules extends JCTree.Visitor {
                 Assert.checkNull(rootModules);
                 Assert.checkNull(allModules);
                 this.rootModules = modules;
-                setupAllModules(extraAddMods, extraLimitMods); //initialize the module graph
+                setupAllModules(); //initialize the module graph
                 Assert.checkNonNull(allModules);
                 inInitModules = false;
             }, null);
@@ -862,7 +872,7 @@ public class Modules extends JCTree.Visitor {
         return allModules;
     }
 
-    private void setupAllModules(Collection<String> extraAddMods, Collection<String> extraLimitMods) {
+    private void setupAllModules() {
         Assert.checkNonNull(rootModules);
         Assert.checkNull(allModules);
 

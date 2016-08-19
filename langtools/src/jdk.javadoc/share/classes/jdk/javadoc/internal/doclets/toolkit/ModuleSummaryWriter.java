@@ -132,10 +132,4 @@ public interface ModuleSummaryWriter {
      * @param contentTree the content tree that will be printed
      */
     public abstract void printDocument(Content contentTree) throws IOException;
-
-    /**
-     * Close the writer.
-     */
-    public abstract void close() throws IOException;
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,27 @@
 
 package p;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Set;
 
 import javax.lang.model.SourceVersion;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
+import jdk.javadoc.doclet.Reporter;
 
 /** Test that when running javadoc on a package, we only get
  *  documentation for those classes for which source was provided.
  */
 public class SourceOnly implements Doclet {
-    public static void main(String[] args) {
-        // run javadoc on package p
-        int result = jdk.javadoc.internal.tool.Main.
-            execute("javadoc", "p.SourceOnly", SourceOnly.class.getClassLoader(), new String[] {"p"});
-        if (result != 0)
-            throw new Error();
-    }
-
-    public boolean start(DocletEnvironment root) {
+    NonSource dependency; // force a compilation error if not on classpath.
+    @Override
+    public boolean run(DocletEnvironment root) {
         if (root.getIncludedClasses().size() != 1)
-            throw new Error("wrong set of classes documented: " + java.util.Arrays.asList(root.getIncludedClasses()));
+            throw new Error("wrong set of classes documented: " +
+                    Arrays.asList(root.getIncludedClasses()));
         return true;
     }
 
@@ -62,5 +60,10 @@ public class SourceOnly implements Doclet {
     @Override
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latest();
+    }
+
+    @Override
+    public void init(Locale locale, Reporter reporter) {
+        // do nothing
     }
 }

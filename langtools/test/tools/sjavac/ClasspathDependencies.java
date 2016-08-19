@@ -29,12 +29,10 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.sjavac
- *          jdk.jdeps/com.sun.tools.javap
- * @build Wrapper toolbox.ToolBox
+ * @build Wrapper toolbox.ToolBox toolbox.Assert
  * @run main Wrapper ClasspathDependencies
  */
 
-import static com.sun.tools.javac.util.Assert.check;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -44,6 +42,8 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+
+import static toolbox.Assert.check;
 
 public class ClasspathDependencies extends SjavacBase {
 
@@ -134,5 +134,4 @@ public class ClasspathDependencies extends SjavacBase {
                  }
             });
     }
-
 }

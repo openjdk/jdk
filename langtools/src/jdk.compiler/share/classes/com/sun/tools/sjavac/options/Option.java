@@ -63,7 +63,7 @@ public enum Option {
                 helper.sourceRoots(paths);
         }
     },
-    SOURCEPATH("-sourcepath", "Specify search path for sources.") {
+    SOURCE_PATH("--source-path", "Specify search path for sources.") {
         @Override
         protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
             List<Path> paths = getFileListArg(iter, helper);
@@ -71,7 +71,13 @@ public enum Option {
                 helper.sourcepath(paths);
         }
     },
-    MODULEPATH("-modulepath", "Specify search path for modules.") {
+    SOURCEPATH("-sourcepath", "An alias for -sourcepath") {
+        @Override
+        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
+            SOURCE_PATH.processMatching(iter, helper);
+        }
+    },
+    MODULE_PATH("--module-path", "Specify search path for modules.") {
         @Override
         protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
             List<Path> paths = getFileListArg(iter, helper);
@@ -79,7 +85,19 @@ public enum Option {
                 helper.modulepath(paths);
         }
     },
-    CLASSPATH("-classpath", "Specify search path for classes.") {
+    MODULEPATH("-modulepath", "An alias for -modulepath") {
+        @Override
+        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
+            MODULE_PATH.processMatching(iter, helper);
+        }
+    },
+    P("-p", "An alias for -modulepath") {
+        @Override
+        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
+            MODULE_PATH.processMatching(iter, helper);
+        }
+    },
+    CLASS_PATH("--class-path", "Specify search path for classes.") {
         @Override
         protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
             List<Path> paths = getFileListArg(iter, helper);
@@ -87,10 +105,16 @@ public enum Option {
                 helper.classpath(paths);
         }
     },
+    CLASSPATH("-classpath", "An alias for -classpath.") {
+        @Override
+        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
+            CLASS_PATH.processMatching(iter, helper);
+        }
+    },
     CP("-cp", "An alias for -classpath") {
         @Override
         protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            CLASSPATH.processMatching(iter, helper);
+            CLASS_PATH.processMatching(iter, helper);
         }
     },
     X("-x", "Exclude files matching the given pattern") {

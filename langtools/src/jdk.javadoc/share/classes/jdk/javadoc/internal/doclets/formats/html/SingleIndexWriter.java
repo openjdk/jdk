@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
@@ -84,10 +85,9 @@ public class SingleIndexWriter extends AbstractIndexWriter {
             indexgen = new SingleIndexWriter(configuration,
                                              filename, indexbuilder);
             indexgen.generateIndexFile();
-            indexgen.close();
         } catch (IOException exc) {
-            configuration.standardmessage.error(
-                        "doclet.exception_encountered",
+            Messages messages = configuration.getMessages();
+            messages.error("doclet.exception_encountered",
                         exc.toString(), filename);
             throw new DocletAbortException(exc);
         }
@@ -150,7 +150,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
             contentTree.addContent(
                     getHyperLink(getNameForIndex(unicode),
                             new StringContent(unicode)));
-            contentTree.addContent(getSpace());
+            contentTree.addContent(Contents.SPACE);
         }
     }
 }
