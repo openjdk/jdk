@@ -65,6 +65,8 @@ public final class GenerateJLIClassesPlugin implements Plugin {
 
     private static final String DELEGATING_METHOD_HANDLE = "java/lang/invoke/DelegatingMethodHandle$Holder";
 
+    private static final String BASIC_FORMS_HANDLE = "java/lang/invoke/LambdaForm$Holder";
+
     private static final JavaLangInvokeAccess JLIA
             = SharedSecrets.getJavaLangInvokeAccess();
 
@@ -227,14 +229,15 @@ public final class GenerateJLIClassesPlugin implements Plugin {
         in.transformAndCopy(entry -> {
                 // filter out placeholder entries
                 if (entry.path().equals(DIRECT_METHOD_HANDLE_ENTRY) ||
-                    entry.path().equals(DELEGATING_METHOD_HANDLE_ENTRY)) {
+                    entry.path().equals(DELEGATING_METHOD_HANDLE_ENTRY) ||
+                    entry.path().equals(BASIC_FORMS_HANDLE_ENTRY)) {
                     return null;
                 } else {
                     return entry;
                 }
             }, out);
         speciesTypes.forEach(types -> generateBMHClass(types, out));
-        generateDMHClass(out);
+        generateHolderClasses(out);
         return out.build();
     }
 
@@ -257,7 +260,7 @@ public final class GenerateJLIClassesPlugin implements Plugin {
         }
     }
 
-    private void generateDMHClass(ResourcePoolBuilder out) {
+    private void generateHolderClasses(ResourcePoolBuilder out) {
         int count = 0;
         for (List<String> entry : dmhMethods.values()) {
             count += entry.size();
@@ -284,6 +287,10 @@ public final class GenerateJLIClassesPlugin implements Plugin {
                     DELEGATING_METHOD_HANDLE, methodTypes);
             ndata = ResourcePoolEntry.create(DELEGATING_METHOD_HANDLE_ENTRY, bytes);
             out.add(ndata);
+
+            bytes = JLIA.generateBasicFormsClassBytes(BASIC_FORMS_HANDLE);
+            ndata = ResourcePoolEntry.create(BASIC_FORMS_HANDLE_ENTRY, bytes);
+            out.add(ndata);
         } catch (Exception ex) {
             throw new PluginException(ex);
         }
@@ -292,6 +299,8 @@ public final class GenerateJLIClassesPlugin implements Plugin {
             "/java.base/" + DIRECT_METHOD_HANDLE + ".class";
     private static final String DELEGATING_METHOD_HANDLE_ENTRY =
             "/java.base/" + DELEGATING_METHOD_HANDLE + ".class";
+    private static final String BASIC_FORMS_HANDLE_ENTRY =
+            "/java.base/" + BASIC_FORMS_HANDLE + ".class";
 
     // Convert LL -> LL, L3 -> LLL
     private static String expandSignature(String signature) {
