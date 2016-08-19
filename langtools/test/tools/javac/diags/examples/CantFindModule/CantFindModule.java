@@ -24,7 +24,7 @@
 // key: compiler.err.cant.find.module
 // key: compiler.err.doesnt.exist
 
-// options: -XaddExports:undef/undef=ALL-UNNAMED
+// options: --add-exports undef/undef=ALL-UNNAMED
 
 import undef.Any;
 

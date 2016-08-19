@@ -128,7 +128,7 @@ public class SingleModuleModeTest extends ModuleTestBase{
 
         new JavacTask(tb)
                 .options("-processor", VerifyUsesProvides.class.getName(),
-                         "-processorpath", System.getProperty("test.classes"))
+                         "--processor-path", System.getProperty("test.classes"))
                 .outdir(classes)
                 .classpath(classes)
                 .files(src.resolve("C.java"))
@@ -147,7 +147,7 @@ public class SingleModuleModeTest extends ModuleTestBase{
 
         new JavacTask(tb)
                 .options("-processor", VerifyUsesProvides.class.getName(),
-                         "-processorpath", System.getProperty("test.classes"))
+                         "--processor-path", System.getProperty("test.classes"))
                 .outdir(classes)
                 .sourcepath(src)
                 .classpath(classes)

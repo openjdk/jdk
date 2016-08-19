@@ -136,8 +136,8 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     public Content getPackageHeader(String packageName) {
         Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
-                packageLabel);
-        heading.addContent(getSpace());
+                contents.packageLabel);
+        heading.addContent(Contents.SPACE);
         heading.addContent(packageName);
         return heading;
     }
@@ -183,9 +183,9 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
 
         //Print the heading.
         Content className = superClassLink == null ?
-            configuration.getResource(
+            configuration.getContent(
             "doclet.Class_0_implements_serializable", classLink) :
-            configuration.getResource(
+            configuration.getContent(
             "doclet.Class_0_extends_implements_serializable", classLink,
             superClassLink);
         li.addContent(HtmlTree.HEADING(HtmlConstants.SERIALIZED_MEMBER_HEADING,

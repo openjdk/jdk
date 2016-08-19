@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,17 @@
  * questions.
  */
 
-import com.sun.tools.doclets.internal.toolkit.Configuration;
-
 /**
  * @test
  * @bug     4696488
  * @summary javadoc doesn't handle UNC paths for destination directory
  * @author  Jesse Glick
- * @modules jdk.javadoc/com.sun.tools.doclets.internal.toolkit
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclets.toolkit
  * @run main T4696488 T4696488.java
  */
+
+import jdk.javadoc.internal.doclets.toolkit.Configuration;
+
 public class T4696488 {
 
     public static void main(String... args) {
@@ -53,5 +54,4 @@ public class T4696488 {
             throw new Error("expected " + expectedOutput + " but was " + output);
         }
     }
-
 }

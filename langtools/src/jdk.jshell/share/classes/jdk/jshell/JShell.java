@@ -43,6 +43,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import jdk.internal.jshell.debug.InternalDebugControl;
 import jdk.jshell.Snippet.Status;
 import jdk.jshell.execution.JDIDefaultExecutionControl;
@@ -504,9 +505,9 @@ public class JShell implements AutoCloseable {
      * @return the snippets for all current snippets in id order.
      * @throws IllegalStateException if this JShell instance is closed.
      */
-    public List<Snippet> snippets() throws IllegalStateException {
+    public Stream<Snippet> snippets() throws IllegalStateException {
         checkIfAlive();
-        return Collections.unmodifiableList(maps.snippetList());
+        return maps.snippetList().stream();
     }
 
     /**
@@ -518,11 +519,10 @@ public class JShell implements AutoCloseable {
      * @return the active declared variables.
      * @throws IllegalStateException if this JShell instance is closed.
      */
-    public List<VarSnippet> variables() throws IllegalStateException {
-        return snippets().stream()
+    public Stream<VarSnippet> variables() throws IllegalStateException {
+        return snippets()
                      .filter(sn -> status(sn).isActive() && sn.kind() == Snippet.Kind.VAR)
-                     .map(sn -> (VarSnippet) sn)
-                     .collect(collectingAndThen(toList(), Collections::unmodifiableList));
+                     .map(sn -> (VarSnippet) sn);
     }
 
     /**
@@ -534,11 +534,10 @@ public class JShell implements AutoCloseable {
      * @return the active declared methods.
      * @throws IllegalStateException if this JShell instance is closed.
      */
-    public List<MethodSnippet> methods() throws IllegalStateException {
-        return snippets().stream()
+    public Stream<MethodSnippet> methods() throws IllegalStateException {
+        return snippets()
                      .filter(sn -> status(sn).isActive() && sn.kind() == Snippet.Kind.METHOD)
-                     .map(sn -> (MethodSnippet)sn)
-                     .collect(collectingAndThen(toList(), Collections::unmodifiableList));
+                     .map(sn -> (MethodSnippet)sn);
     }
 
     /**
@@ -550,11 +549,10 @@ public class JShell implements AutoCloseable {
      * @return the active declared type declarations.
      * @throws IllegalStateException if this JShell instance is closed.
      */
-    public List<TypeDeclSnippet> types() throws IllegalStateException {
-        return snippets().stream()
+    public Stream<TypeDeclSnippet> types() throws IllegalStateException {
+        return snippets()
                 .filter(sn -> status(sn).isActive() && sn.kind() == Snippet.Kind.TYPE_DECL)
-                .map(sn -> (TypeDeclSnippet) sn)
-                .collect(collectingAndThen(toList(), Collections::unmodifiableList));
+                .map(sn -> (TypeDeclSnippet) sn);
     }
 
     /**
@@ -566,11 +564,10 @@ public class JShell implements AutoCloseable {
      * @return the active declared import declarations.
      * @throws IllegalStateException if this JShell instance is closed.
      */
-    public List<ImportSnippet> imports() throws IllegalStateException {
-        return snippets().stream()
+    public Stream<ImportSnippet> imports() throws IllegalStateException {
+        return snippets()
                 .filter(sn -> status(sn).isActive() && sn.kind() == Snippet.Kind.IMPORT)
-                .map(sn -> (ImportSnippet) sn)
-                .collect(collectingAndThen(toList(), Collections::unmodifiableList));
+                .map(sn -> (ImportSnippet) sn);
     }
 
     /**
@@ -598,8 +595,8 @@ public class JShell implements AutoCloseable {
      * @throws IllegalArgumentException if the snippet is not associated with
      * this {@code JShell} instance.
      */
-    public List<Diag> diagnostics(Snippet snippet) {
-        return Collections.unmodifiableList(checkValidSnippet(snippet).diagnostics());
+    public Stream<Diag> diagnostics(Snippet snippet) {
+        return checkValidSnippet(snippet).diagnostics().stream();
     }
 
     /**
@@ -611,13 +608,13 @@ public class JShell implements AutoCloseable {
      * {@code eval()} or {@code drop()} of another snippet causes
      * an update of a dependency.
      * @param snippet the declaration {@code Snippet} to look up
-     * @return the list of symbol names that are currently unresolvedDependencies.
+     * @return a stream of symbol names that are currently unresolvedDependencies.
      * @throws IllegalStateException if this {@code JShell} instance is closed.
      * @throws IllegalArgumentException if the snippet is not associated with
      * this {@code JShell} instance.
      */
-    public List<String> unresolvedDependencies(DeclarationSnippet snippet) {
-        return Collections.unmodifiableList(checkValidSnippet(snippet).unresolved());
+    public Stream<String> unresolvedDependencies(DeclarationSnippet snippet) {
+        return checkValidSnippet(snippet).unresolved().stream();
     }
 
     /**

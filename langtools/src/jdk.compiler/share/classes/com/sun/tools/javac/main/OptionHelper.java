@@ -27,6 +27,7 @@ package com.sun.tools.javac.main;
 
 import java.nio.file.Path;
 
+import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.PrefixKind;
 
@@ -62,6 +63,9 @@ public abstract class OptionHelper {
 
     /** Report an error. */
     abstract void error(String key, Object... args);
+
+    /** Report an error. */
+    abstract void error(JCDiagnostic.Error error);
 
     /** Record a file to be compiled. */
     abstract void addFile(Path p);
@@ -110,6 +114,11 @@ public abstract class OptionHelper {
         @Override
         void error(String key, Object... args) {
             throw new IllegalArgumentException(log.localize(PrefixKind.JAVAC, key, args));
+        }
+
+        @Override
+        void error(JCDiagnostic.Error error) {
+            throw new IllegalArgumentException(log.localize(error));
         }
 
         @Override

@@ -49,21 +49,28 @@ public enum ToolOption {
     BOOTCLASSPATH("-bootclasspath", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.BOOTCLASSPATH, arg);
+            helper.setFileManagerOpt(Option.BOOT_CLASS_PATH, arg);
         }
     },
 
     CLASSPATH("-classpath", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.CLASSPATH, arg);
+            helper.setFileManagerOpt(Option.CLASS_PATH, arg);
         }
     },
 
     CP("-cp", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.CP, arg);
+            helper.setFileManagerOpt(Option.CLASS_PATH, arg);
+        }
+    },
+
+    CLASS_PATH("--class-path", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setFileManagerOpt(Option.CLASS_PATH, arg);
         }
     },
 
@@ -77,28 +84,49 @@ public enum ToolOption {
     SOURCEPATH("-sourcepath", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.SOURCEPATH, arg);
+            helper.setFileManagerOpt(Option.SOURCE_PATH, arg);
+        }
+    },
+
+    SOURCE_PATH("--source-path", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setFileManagerOpt(Option.SOURCE_PATH, arg);
         }
     },
 
     SYSCLASSPATH("-sysclasspath", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.BOOTCLASSPATH, arg);
+            helper.setFileManagerOpt(Option.BOOT_CLASS_PATH, arg);
         }
     },
 
     MODULESOURCEPATH("-modulesourcepath", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.MODULESOURCEPATH, arg);
+            helper.setFileManagerOpt(Option.MODULE_SOURCE_PATH, arg);
+        }
+    },
+
+    MODULE_SOURCE_PATH("--module-source-path", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setFileManagerOpt(Option.MODULE_SOURCE_PATH, arg);
         }
     },
 
     UPGRADEMODULEPATH("-upgrademodulepath", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.UPGRADEMODULEPATH, arg);
+            helper.setFileManagerOpt(Option.UPGRADE_MODULE_PATH, arg);
+        }
+    },
+
+    UPGRADE_MODULE_PATH("--upgrade-module-path", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setFileManagerOpt(Option.UPGRADE_MODULE_PATH, arg);
         }
     },
 
@@ -109,24 +137,59 @@ public enum ToolOption {
         }
     },
 
+    SYSTEM_("--system", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setFileManagerOpt(Option.SYSTEM, arg);
+        }
+    },
+
     MODULEPATH("-modulepath", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.MODULEPATH, arg);
+            helper.setFileManagerOpt(Option.MODULE_PATH, arg);
+        }
+    },
+
+    MODULE_PATH("--module-path", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setFileManagerOpt(Option.MODULE_PATH, arg);
+        }
+    },
+
+    P("-p", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setFileManagerOpt(Option.MODULE_PATH, arg);
         }
     },
 
     ADDMODS("-addmods", true) {
         @Override
         public void process(Helper helper, String arg) {
-            Option.ADDMODS.process(helper.getOptionHelper(), opt, arg);
+            Option.ADD_MODULES.process(helper.getOptionHelper(), opt, arg);
+        }
+    },
+
+    ADD_MODULES("--add-modules", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            Option.ADD_MODULES.process(helper.getOptionHelper(), opt, arg);
         }
     },
 
     LIMITMODS("-limitmods", true) {
         @Override
         public void process(Helper helper, String arg) {
-            Option.LIMITMODS.process(helper.getOptionHelper(), opt, arg);
+            Option.LIMIT_MODULES.process(helper.getOptionHelper(), opt, arg);
+        }
+    },
+
+    LIMIT_MODULES("--limit-modules", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            Option.LIMIT_MODULES.process(helper.getOptionHelper(), opt, arg);
         }
     },
 
@@ -138,7 +201,14 @@ public enum ToolOption {
         }
     },
 
-    RELEASE("-release", true) {
+    RELEASE("--release", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            Option.RELEASE.process(helper.getOptionHelper(), opt, arg);
+        }
+    },
+
+    RELEASE_OLD("-release", true) {
         @Override
         public void process(Helper helper, String arg) {
             Option.RELEASE.process(helper.getOptionHelper(), opt, arg);
@@ -169,14 +239,28 @@ public enum ToolOption {
     XADDREADS("-XaddReads:", false) {
         @Override
         public void process(Helper helper, String arg) {
-            Option.XADDREADS.process(helper.getOptionHelper(), arg);
+            Option.ADD_READS.process(helper.getOptionHelper(), arg);
         }
     },
 
-    XADDEXPORTS("-XaddExports:", false) {
+    ADD_READS("--add-reads", true) {
         @Override
         public void process(Helper helper, String arg) {
-            Option.XADDEXPORTS.process(helper.getOptionHelper(), arg);
+            Option.ADD_READS.process(helper.getOptionHelper(), opt, arg);
+        }
+    },
+
+    ADDEXPORTS("-XaddExports:", false) {
+        @Override
+        public void process(Helper helper, String arg) {
+            Option.ADD_EXPORTS.process(helper.getOptionHelper(), arg);
+        }
+    },
+
+    ADD_EXPORTS("--add-exports", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            Option.ADD_EXPORTS.process(helper.getOptionHelper(), opt, arg);
         }
     },
 
@@ -191,6 +275,13 @@ public enum ToolOption {
         @Override
         public void process(Helper helper, String arg) {
             Option.XMODULE.process(helper.getOptionHelper(), arg);
+        }
+    },
+
+    PATCH_MODULE("--patch-module", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            Option.PATCH_MODULE.process(helper.getOptionHelper(), opt, arg);
         }
     },
 
