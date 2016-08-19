@@ -223,6 +223,8 @@ public class ConfigurationImpl extends Configuration {
 
     protected List<SearchIndexItem> memberSearchIndex = new ArrayList<>();
 
+    protected List<SearchIndexItem> moduleSearchIndex = new ArrayList<>();
+
     protected List<SearchIndexItem> packageSearchIndex = new ArrayList<>();
 
     protected List<SearchIndexItem> tagSearchIndex = new ArrayList<>();

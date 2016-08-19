@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291
+ * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -55,6 +55,7 @@ public class TestModules extends JavadocTester {
         checkModuleClickThroughLinks();
         checkModuleClickThrough(true);
         checkModuleFilesAndLinks(true);
+        checkModulesInSearch(true);
     }
 
     /**
@@ -74,6 +75,7 @@ public class TestModules extends JavadocTester {
         checkModuleClickThroughLinks();
         checkModuleClickThrough(true);
         checkModuleFilesAndLinks(true);
+        checkModulesInSearch(true);
     }
 
     /**
@@ -120,6 +122,7 @@ public class TestModules extends JavadocTester {
         checkOverviewSummaryPackages();
         checkModuleClickThrough(false);
         checkModuleFilesAndLinks(false);
+        checkModulesInSearch(false);
     }
 
     /**
@@ -133,6 +136,7 @@ public class TestModules extends JavadocTester {
         checkExit(Exit.OK);
         checkHtml5OverviewSummaryPackages();
         checkModuleFilesAndLinks(false);
+        checkModulesInSearch(false);
     }
 
     /**
@@ -183,13 +187,15 @@ public class TestModules extends JavadocTester {
                 + "<a name=\"module.description\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<div class=\"block\">This is a test description for the module1 module.</div>");
+                + "<div class=\"block\">This is a test description for the module1 module. Search "
+                + "phrase <a id=\"searchphrase\">search phrase</a>.</div>");
         checkOutput("module2-summary.html", found,
                 "<!-- ============ MODULE DESCRIPTION =========== -->\n"
                 + "<a name=\"module.description\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<div class=\"block\">This is a test description for the module2 module.</div>");
+                + "<div class=\"block\">This is a test description for the module2 module. Search "
+                + "word <a id=\"search_word\">search_word</a> with no description.</div>");
     }
 
     void checkNoDescription(boolean found) {
@@ -216,16 +222,16 @@ public class TestModules extends JavadocTester {
                 + "<a id=\"module.description\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<div class=\"block\">This is a test description for the module1 module.</div>\n"
-                + "</section>");
+                + "<div class=\"block\">This is a test description for the module1 module. Search "
+                + "phrase <a id=\"searchphrase\">search phrase</a>.</div>");
         checkOutput("module2-summary.html", found,
                 "<section role=\"region\">\n"
                 + "<!-- ============ MODULE DESCRIPTION =========== -->\n"
                 + "<a id=\"module.description\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<div class=\"block\">This is a test description for the module2 module.</div>\n"
-                + "</section>");
+                + "<div class=\"block\">This is a test description for the module2 module. Search "
+                + "word <a id=\"search_word\">search_word</a> with no description.</div>");
     }
 
     void checkHtml5NoDescription(boolean found) {
@@ -527,4 +533,27 @@ public class TestModules extends JavadocTester {
                 "module1-summary.html",
                 "module-overview-frame.html");
     }
+
+    void checkModulesInSearch(boolean found) {
+        checkOutput("index-all.html", found,
+                "<dl>\n"
+                + "<dt><a href=\"module1-summary.html\">module1</a> - module module1</dt>\n"
+                + "<dd>\n"
+                + "<div class=\"block\">This is a test description for the module1 module.</div>\n"
+                + "</dd>\n"
+                + "<dt><a href=\"module2-summary.html\">module2</a> - module module2</dt>\n"
+                + "<dd>\n"
+                + "<div class=\"block\">This is a test description for the module2 module.</div>\n"
+                + "</dd>\n"
+                + "</dl>");
+        checkOutput("index-all.html", found,
+                "<dl>\n"
+                + "<dt><span class=\"searchTagLink\"><a href=\"module1-summary.html#searchphrase\">"
+                + "search phrase</a></span> - Search tag in module1</dt>\n"
+                + "<dd>with description</dd>\n"
+                + "<dt><span class=\"searchTagLink\"><a href=\"module2-summary.html#search_word\">"
+                + "search_word</a></span> - Search tag in module2</dt>\n"
+                + "<dd>&nbsp;</dd>\n"
+                + "</dl>");
+}
 }

@@ -121,6 +121,12 @@ public class DocPaths {
     /** The name of the member search index zip file. */
     public static final DocPath MEMBER_SEARCH_INDEX_ZIP = DocPath.create("member-search-index.zip");
 
+    /** The name of the module search index file. */
+    public static final DocPath MODULE_SEARCH_INDEX_JSON = DocPath.create("module-search-index.json");
+
+    /** The name of the module search index zipfile. */
+    public static final DocPath MODULE_SEARCH_INDEX_ZIP = DocPath.create("module-search-index.zip");
+
     /** The name of the file for the overview frame. */
     public static final DocPath OVERVIEW_FRAME = DocPath.create("overview-frame.html");
 

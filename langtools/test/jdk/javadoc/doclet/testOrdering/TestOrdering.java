@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8039410 8042601 8042829 8049393 8050031 8155061
+ * @bug 8039410 8042601 8042829 8049393 8050031 8155061 8155995
  * @summary test to determine if members are ordered correctly
  * @author ksrini
  * @library ../lib/
@@ -179,10 +179,27 @@ public class TestOrdering extends JavadocTester {
         "something()</a></span> - Method in class a.<a href=\"a/something.html\"",
         "something()</a></span> - Method in class something.<a href=\"something/J.html\""
     };
+
     String[] composeTestVectors() {
         List<String> testList = new ArrayList<>();
 
         testList.addAll(Arrays.asList(expectedPackageOrdering));
+        for (String x : expectedEnumOrdering) {
+            testList.add(x.replace("REPLACE_ME", "&lt;Unnamed&gt;"));
+            for (int i = 0; i < MAX_PACKAGES; i++) {
+                String wpkg = "add" + i;
+                testList.add(wpkg + "/" + x.replace("REPLACE_ME",
+                        wpkg));
+                String dpkg = wpkg;
+                for (int j = 1; j < MAX_SUBPACKAGES_DEPTH; j++) {
+                    dpkg = dpkg + "/" + "add";
+                    testList.add(dpkg + "/" + x.replace("REPLACE_ME",
+                            pathToPackage(dpkg)));
+                }
+            }
+        }
+
+        testList.addAll(Arrays.asList(expectedFieldOrdering));
 
         for (String x : expectedMethodOrdering) {
             testList.add(x);
@@ -196,21 +213,6 @@ public class TestOrdering extends JavadocTester {
                 }
             }
         }
-
-        for (String x : expectedEnumOrdering) {
-            testList.add(x.replace("REPLACE_ME", "&lt;Unnamed&gt;"));
-            for (int i = 0; i < MAX_PACKAGES; i++) {
-                String wpkg = "add" + i;
-                testList.add(wpkg + "/" + x.replace("REPLACE_ME", wpkg));
-                String dpkg = wpkg;
-                for (int j = 1; j < MAX_SUBPACKAGES_DEPTH; j++) {
-                    dpkg = dpkg + "/" + "add";
-                    testList.add(dpkg + "/" + x.replace("REPLACE_ME", pathToPackage(dpkg)));
-                }
-            }
-        }
-
-        testList.addAll(Arrays.asList(expectedFieldOrdering));
 
         return testList.toArray(new String[testList.size()]);
     }
