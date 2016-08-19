@@ -195,6 +195,7 @@ public class MetaMessage extends MidiMessage {
      *
      * @return a clone of this instance
      */
+    @Override
     public Object clone() {
         byte[] newData = new byte[length];
         System.arraycopy(data, 0, newData, 0, newData.length);

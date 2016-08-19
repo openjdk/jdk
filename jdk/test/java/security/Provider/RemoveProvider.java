@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4190873 7054918
+ * @bug 4190873 7054918 8130181
  * @library ../testlibrary
  * @summary Make sure provider instance can be removed from list of registered
  * providers, and "entrySet", "keySet", and "values" methods don't loop
@@ -46,11 +46,11 @@ public class RemoveProvider {
     public static void main0(String[] args) throws Exception {
 
         // Add provider 1
-        Provider p1 = new MyProvider("name1",1,"");
+        Provider p1 = new MyProvider("name1","1","");
         Security.addProvider(p1);
 
         // Add provider 2
-        Provider p2 = new MyProvider("name2",1,"");
+        Provider p2 = new MyProvider("name2","1","");
         Security.addProvider(p2);
 
         // List all providers
@@ -183,7 +183,7 @@ public class RemoveProvider {
 }
 
 class MyProvider extends Provider {
-    public MyProvider(String name, double version, String info) {
+    public MyProvider(String name, String version, String info) {
         super(name, version, info);
         put("Signature", name+".signature");
         put("Digest", name+".digest");

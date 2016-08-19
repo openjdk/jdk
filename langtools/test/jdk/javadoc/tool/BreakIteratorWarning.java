@@ -75,7 +75,7 @@ public class BreakIteratorWarning implements Doclet {
     }
 
     public boolean run(DocletEnvironment root) {
-        TypeElement cd = root.getIncludedClasses().iterator().next();
+        TypeElement cd = root.getIncludedTypeElements().iterator().next();
         VariableElement fd = getFields(cd).get(0);
         DocTrees docTrees = root.getDocTrees();
         DocCommentTree docCommentTree = docTrees.getDocCommentTree(fd);

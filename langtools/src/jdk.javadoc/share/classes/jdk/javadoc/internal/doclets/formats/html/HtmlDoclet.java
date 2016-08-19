@@ -106,7 +106,7 @@ public class HtmlDoclet extends AbstractDoclet {
      *
      * For new format.
      *
-     * @see jdk.doclet.RootDoc
+     * @see jdk.doclet.DocletEnvironment
      */
     @Override // defined by AbstractDoclet
     protected void generateOtherFiles(DocletEnvironment docEnv, ClassTree classtree)
@@ -149,7 +149,9 @@ public class HtmlDoclet extends AbstractDoclet {
         AllClassesFrameWriter.generate(configuration,
             new IndexBuilder(configuration, nodeprecated, true));
 
-        FrameOutputWriter.generate(configuration);
+        if (configuration.frames) {
+            FrameOutputWriter.generate(configuration);
+        }
 
         if (configuration.createoverview) {
             if (configuration.showModules) {
@@ -158,6 +160,11 @@ public class HtmlDoclet extends AbstractDoclet {
                 PackageIndexWriter.generate(configuration);
             }
         }
+
+        if (!configuration.frames && !configuration.createoverview) {
+            IndexRedirectWriter.generate(configuration);
+        }
+
         if (configuration.helpfile.length() == 0 &&
             !configuration.nohelp) {
             HelpWriter.generate(configuration);
@@ -270,13 +277,17 @@ public class HtmlDoclet extends AbstractDoclet {
     @Override // defined by AbstractDoclet
     protected void generateModuleFiles() throws Exception {
         if (configuration.showModules) {
-            ModuleIndexFrameWriter.generate(configuration);
+            if (configuration.frames) {
+                ModuleIndexFrameWriter.generate(configuration);
+            }
             ModuleElement prevModule = null, nextModule;
             List<ModuleElement> mdles = new ArrayList<>(configuration.modulePackages.keySet());
             int i = 0;
             for (ModuleElement mdle : mdles) {
-                ModulePackageIndexFrameWriter.generate(configuration, mdle);
-                ModuleFrameWriter.generate(configuration, mdle);
+                if (configuration.frames) {
+                    ModulePackageIndexFrameWriter.generate(configuration, mdle);
+                    ModuleFrameWriter.generate(configuration, mdle);
+                }
                 nextModule = (i + 1 < mdles.size()) ? mdles.get(i + 1) : null;
                 AbstractBuilder moduleSummaryBuilder =
                         configuration.getBuilderFactory().getModuleSummaryBuilder(
@@ -304,7 +315,7 @@ public class HtmlDoclet extends AbstractDoclet {
     @Override // defined by AbstractDoclet
     protected void generatePackageFiles(ClassTree classtree) throws Exception {
         Set<PackageElement> packages = configuration.packages;
-        if (packages.size() > 1) {
+        if (packages.size() > 1 && configuration.frames) {
             PackageIndexFrameWriter.generate(configuration);
         }
         List<PackageElement> pList = new ArrayList<>(packages);
@@ -315,7 +326,9 @@ public class HtmlDoclet extends AbstractDoclet {
             // and package-tree.html pages for that package.
             PackageElement pkg = pList.get(i);
             if (!(configuration.nodeprecated && utils.isDeprecated(pkg))) {
-                PackageFrameWriter.generate(configuration, pkg);
+                if (configuration.frames) {
+                    PackageFrameWriter.generate(configuration, pkg);
+                }
                 int nexti = i + 1;
                 PackageElement next = null;
                 if (nexti < pList.size()) {

@@ -123,12 +123,17 @@ public class InheritRuntimeEnvironmentTest extends ModuleTestBase {
                 .files(findJavaFiles(src))
                 .run();
 
+        Path emptyClassPath = base.resolve("emptyClassPath");
+
+        Files.createDirectories(emptyClassPath);
+
         // This is the test, to verify that the module being compiled will not be able to read
         // modules on the module path when a --limit-modules is used
         new TestCase(base)
                 .testOpts("--module-path", modules.toString(), "--limit-modules", "jdk.compiler")
                 .otherOpts("-XDrawDiagnostics",
-                        "--module-source-path", src.toString())
+                        "--module-source-path", src.toString(),
+                        "-classpath", emptyClassPath.toString())
                 .files(findJavaFiles(src))
                 .expect(Task.Expect.FAIL, "compiler.err.module.not.found")
                 .run();

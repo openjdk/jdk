@@ -28,6 +28,10 @@
 #define HB_H
 #define HB_H_IN
 
+#ifndef HB_EXTERN
+#define HB_EXTERN extern
+#endif
+
 #include "hb-blob.h"
 #include "hb-buffer.h"
 #include "hb-common.h"

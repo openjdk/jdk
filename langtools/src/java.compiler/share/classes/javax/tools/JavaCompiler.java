@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@ import javax.annotation.processing.Processor;
  *     log all calls to {@linkplain JavaFileManager#flush}:
  *
  *     <pre>
- *       final {@linkplain java.util.logging.Logger Logger} logger = ...;
+ *       final  Logger logger = ...;
  *       {@code Iterable<? extends JavaFileObject>} compilationUnits = ...;
  *       JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
  *       StandardJavaFileManager stdFileManager = compiler.getStandardFileManager(null, null, null);

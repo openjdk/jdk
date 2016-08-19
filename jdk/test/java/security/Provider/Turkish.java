@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6220064 7054918
+ * @bug 6220064 7054918 8130181
  * @summary make sure everything works ok in the Turkish local (dotted/dotless i problem)
  * @author Andreas Sterbenz
  */
@@ -107,7 +107,7 @@ public class Turkish {
 
     private static class TProvider extends Provider {
         TProvider(String name) {
-            super(name, 1.0d, null);
+            super(name, "1.0", null);
             put("Signature.MD5withRSA", "com.foo.Sig");
             put("Alg.Alias.Signature.MD5RSA", "MD5withRSA");
             put("sIGNATURE.shaWITHrsa", "com.foo.Sig");

@@ -253,10 +253,8 @@ public class CompletenessStressTest extends KullaTesting {
                 writer.write(String.format("Empty statement: row %d, column %d: -- %s\n",
                         start, end, unit));
             } else {
-                String oops = unit.substring(max(0, ci.unitEndPos() - 10), ci.unitEndPos()) + "|||" +
-                        unit.substring(ci.unitEndPos(), min(unit.length(), ci.unitEndPos() + 10));
                 writer.write(String.format("Expected %s got %s: '%s'  row %d, column %d: -- %s\n",
-                        expected, ci.completeness(), oops, row, column, unit));
+                        expected, ci.completeness(), unit, row, column, unit));
                 return false;
             }
         }

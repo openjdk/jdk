@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.security.*;
 import sun.security.action.PutAllAction;
 
 import sun.security.rsa.SunRsaSignEntries;
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
+
 
 /**
  * Provider used for verification of signed JAR files *if* the Sun and
@@ -61,7 +63,7 @@ public final class VerificationProvider extends Provider {
     }
 
     public VerificationProvider() {
-        super("SunJarVerification", 9.0d, "Jar Verification Provider");
+        super("SunJarVerification", PROVIDER_VER, "Jar Verification Provider");
         // register all algorithms normally registered by the Sun and SunRsaSign
         // providers, but only if they are missing
         if (ACTIVE == false) {

@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.util.ArrayList;
@@ -41,7 +42,7 @@ import javax.sound.midi.Patch;
  */
 public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
 
-    private static boolean[] dontResetControls = new boolean[128];
+    private static final boolean[] dontResetControls = new boolean[128];
     static {
         for (int i = 0; i < dontResetControls.length; i++)
             dontResetControls[i] = false;
@@ -99,18 +100,18 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
     private boolean solo = false;
     private boolean solomute = false;
     private final Object control_mutex;
-    private int channel;
-    private SoftVoice[] voices;
+    private final int channel;
+    private final SoftVoice[] voices;
     private int bank;
     private int program;
-    private SoftSynthesizer synthesizer;
-    private SoftMainMixer mainmixer;
-    private int[] polypressure = new int[128];
+    private final SoftSynthesizer synthesizer;
+    private final SoftMainMixer mainmixer;
+    private final int[] polypressure = new int[128];
     private int channelpressure = 0;
-    private int[] controller = new int[128];
+    private final int[] controller = new int[128];
     private int pitchbend;
-    private double[] co_midi_pitch = new double[1];
-    private double[] co_midi_channel_pressure = new double[1];
+    private final double[] co_midi_pitch = new double[1];
+    private final double[] co_midi_channel_pressure = new double[1];
     SoftTuning tuning = new SoftTuning();
     int tuning_bank = 0;
     int tuning_program = 0;
@@ -132,6 +133,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         double[] channel_pressure = co_midi_channel_pressure;
         double[] poly_pressure = new double[1];
 
+        @Override
         public double[] get(int instance, String name) {
             if (name == null)
                 return null;
@@ -145,26 +147,28 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         }
     }
 
-    private SoftControl[] co_midi = new SoftControl[128];
+    private final SoftControl[] co_midi = new SoftControl[128];
     {
         for (int i = 0; i < co_midi.length; i++) {
             co_midi[i] = new MidiControlObject();
         }
     }
 
-    private double[][] co_midi_cc_cc = new double[128][1];
-    private SoftControl co_midi_cc = new SoftControl() {
+    private final double[][] co_midi_cc_cc = new double[128][1];
+    private final SoftControl co_midi_cc = new SoftControl() {
         double[][] cc = co_midi_cc_cc;
+        @Override
         public double[] get(int instance, String name) {
             if (name == null)
                 return null;
             return cc[Integer.parseInt(name)];
         }
     };
-    Map<Integer, int[]> co_midi_rpn_rpn_i = new HashMap<Integer, int[]>();
-    Map<Integer, double[]> co_midi_rpn_rpn = new HashMap<Integer, double[]>();
-    private SoftControl co_midi_rpn = new SoftControl() {
+    Map<Integer, int[]> co_midi_rpn_rpn_i = new HashMap<>();
+    Map<Integer, double[]> co_midi_rpn_rpn = new HashMap<>();
+    private final SoftControl co_midi_rpn = new SoftControl() {
         Map<Integer, double[]> rpn = co_midi_rpn_rpn;
+        @Override
         public double[] get(int instance, String name) {
             if (name == null)
                 return null;
@@ -177,10 +181,11 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
             return v;
         }
     };
-    Map<Integer, int[]> co_midi_nrpn_nrpn_i = new HashMap<Integer, int[]>();
-    Map<Integer, double[]> co_midi_nrpn_nrpn = new HashMap<Integer, double[]>();
-    private SoftControl co_midi_nrpn = new SoftControl() {
+    Map<Integer, int[]> co_midi_nrpn_nrpn_i = new HashMap<>();
+    Map<Integer, double[]> co_midi_nrpn_nrpn = new HashMap<>();
+    private final SoftControl co_midi_nrpn = new SoftControl() {
         Map<Integer, double[]> nrpn = co_midi_nrpn_nrpn;
+        @Override
         public double[] get(int instance, String name) {
             if (name == null)
                 return null;
@@ -407,6 +412,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         }
     }
 
+    @Override
     public void noteOn(int noteNumber, int velocity) {
         noteOn(noteNumber, velocity, 0);
     }
@@ -544,6 +550,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         }
     }
 
+    @Override
     public void noteOff(int noteNumber, int velocity) {
         noteNumber = restrict7Bit(noteNumber);
         velocity = restrict7Bit(velocity);
@@ -616,7 +623,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
 
         }
     }
-    private int[] lastVelocity = new int[128];
+    private final int[] lastVelocity = new int[128];
     private int prevVoiceID;
     private boolean firstVoice = true;
     private int voiceNo = 0;
@@ -625,6 +632,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
     private int play_delay = 0;
     private boolean play_releasetriggered = false;
 
+    @Override
     public void play(int performerIndex, ModelConnectionBlock[] connectionBlocks) {
 
         int noteNumber = play_noteNumber;
@@ -657,11 +665,13 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
                 connectionBlocks, current_mixer, releasetriggered);
     }
 
+    @Override
     public void noteOff(int noteNumber) {
         if(noteNumber < 0 || noteNumber > 127) return;
         noteOff_internal(noteNumber, 64);
     }
 
+    @Override
     public void setPolyPressure(int noteNumber, int pressure) {
         noteNumber = restrict7Bit(noteNumber);
         pressure = restrict7Bit(pressure);
@@ -680,12 +690,14 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         }
     }
 
+    @Override
     public int getPolyPressure(int noteNumber) {
         synchronized (control_mutex) {
             return polypressure[noteNumber];
         }
     }
 
+    @Override
     public void setChannelPressure(int pressure) {
         pressure = restrict7Bit(pressure);
         if (current_mixer != null)
@@ -701,6 +713,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         }
     }
 
+    @Override
     public int getChannelPressure() {
         synchronized (control_mutex) {
             return channelpressure;
@@ -823,7 +836,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         05 LFO Amplitude Depth   | 00H..7FH | 0..100 percent          |  0
         */
 
-        List<ModelConnectionBlock> conns = new ArrayList<ModelConnectionBlock>();
+        List<ModelConnectionBlock> conns = new ArrayList<>();
 
         for (int i = 0; i < destination.length; i++) {
             int d = destination[i];
@@ -869,6 +882,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
                 final double scale = (r / 64.0);
                 ModelTransform mt = new ModelTransform() {
                     double s = scale;
+                    @Override
                     public double transform(double value) {
                         if (s < 1)
                             value = s + (value * (1.0 - s));
@@ -923,6 +937,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
 
                 ModelTransform mt = new ModelTransform() {
                     double s = scale;
+                    @Override
                     public double transform(double value) {
                         return -((5.0 / 12.0) / Math.log(10))
                                 * Math.log(1 - value * s);
@@ -1055,6 +1070,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         return (int)(keybasedcontroller_value[noteNumber][controller] * 128);
     }
 
+    @Override
     public void controlChange(int controller, int value) {
         controller = restrict7Bit(controller);
         value = restrict7Bit(value);
@@ -1241,6 +1257,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         }
     }
 
+    @Override
     public int getController(int controller) {
         synchronized (control_mutex) {
             // Should only return lower 7 bits,
@@ -1259,10 +1276,12 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         }
     }
 
+    @Override
     public void programChange(int program) {
         programChange(bank, program);
     }
 
+    @Override
     public void programChange(int bank, int program) {
         bank = restrict14Bit(bank);
         program = restrict7Bit(program);
@@ -1277,12 +1296,14 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         }
     }
 
+    @Override
     public int getProgram() {
         synchronized (control_mutex) {
             return program;
         }
     }
 
+    @Override
     public void setPitchBend(int bend) {
         bend = restrict14Bit(bend);
         if (current_mixer != null)
@@ -1297,6 +1318,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         }
     }
 
+    @Override
     public int getPitchBend() {
         synchronized (control_mutex) {
             return pitchbend;
@@ -1398,6 +1420,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
                 voices[i].rpnChange(controller, val_i[0]);
     }
 
+    @Override
     public void resetAllControllers() {
         resetAllControllers(false);
     }
@@ -1463,6 +1486,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         }
     }
 
+    @Override
     public void allNotesOff() {
         if (current_mixer != null)
             current_mixer.allNotesOff();
@@ -1475,6 +1499,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         }
     }
 
+    @Override
     public void allSoundOff() {
         if (current_mixer != null)
             current_mixer.allSoundOff();
@@ -1485,10 +1510,12 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         }
     }
 
+    @Override
     public boolean localControl(boolean on) {
         return false;
     }
 
+    @Override
     public void setMono(boolean on) {
         if (current_mixer != null)
             current_mixer.setMono(on);
@@ -1498,12 +1525,14 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         }
     }
 
+    @Override
     public boolean getMono() {
         synchronized (control_mutex) {
             return mono;
         }
     }
 
+    @Override
     public void setOmni(boolean on) {
         if (current_mixer != null)
             current_mixer.setOmni(on);
@@ -1511,10 +1540,12 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
     // Omni is not supported by GM2
     }
 
+    @Override
     public boolean getOmni() {
         return false;
     }
 
+    @Override
     public void setMute(boolean mute) {
         if (current_mixer != null)
             current_mixer.setMute(mute);
@@ -1526,12 +1557,14 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         }
     }
 
+    @Override
     public boolean getMute() {
         synchronized (control_mutex) {
             return mute;
         }
     }
 
+    @Override
     public void setSolo(boolean soloState) {
         if (current_mixer != null)
             current_mixer.setSolo(soloState);
@@ -1571,6 +1604,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         }
     }
 
+    @Override
     public boolean getSolo() {
         synchronized (control_mutex) {
             return solo;

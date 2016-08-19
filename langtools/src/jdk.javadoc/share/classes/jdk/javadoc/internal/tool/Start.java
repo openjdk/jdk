@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.text.BreakIterator;
 import java.util.ArrayList;
@@ -40,8 +39,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
-
-import static javax.tools.DocumentationTool.Location.*;
 
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -64,6 +61,8 @@ import com.sun.tools.javac.util.Options;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.Doclet.Option;
 import jdk.javadoc.doclet.DocletEnvironment;
+
+import static javax.tools.DocumentationTool.Location.*;
 
 import static com.sun.tools.javac.main.Option.*;
 
@@ -91,9 +90,6 @@ public class Start extends ToolOption.Helper {
     private final Context context;
 
     private static final String ProgramName = "javadoc";
-
-    // meaning we allow all visibility of PROTECTED and PUBLIC
-    private static final String defaultModifier = "protected";
 
     private Messager messager;
 
@@ -337,6 +333,7 @@ public class Start extends ToolOption.Helper {
     /**
      * Main program - internal
      */
+    @SuppressWarnings("unchecked")
     private boolean parseAndExecute(List<String> argList,
             Iterable<? extends JavaFileObject> fileObjects) throws IOException {
         long tm = System.currentTimeMillis();
@@ -390,28 +387,25 @@ public class Start extends ToolOption.Helper {
         }
 
         compOpts.notifyListeners();
+        List<String> modules = (List<String>) jdtoolOpts.computeIfAbsent(ToolOption.MODULE,
+                s -> Collections.EMPTY_LIST);
 
-        if (javaNames.isEmpty() && subPackages.isEmpty() && isEmpty(fileObjects)) {
-            usageError("main.No_packages_or_classes_specified");
+        if (modules.isEmpty()) {
+            List<String> subpkgs = (List<String>) jdtoolOpts.computeIfAbsent(ToolOption.SUBPACKAGES,
+                    s -> Collections.EMPTY_LIST);
+            if (subpkgs.isEmpty()) {
+                if (javaNames.isEmpty() && isEmpty(fileObjects)) {
+                    usageError("main.No_modules_packages_or_classes_specified");
+                }
+            }
         }
 
         JavadocTool comp = JavadocTool.make0(context);
         if (comp == null) return false;
 
-        if (showAccess == null) {
-            setFilter(defaultModifier);
-        }
-
-        DocletEnvironment root = comp.getEnvironment(
-                encoding,
-                showAccess,
-                overviewpath,
+        DocletEnvironment docEnv = comp.getEnvironment(jdtoolOpts,
                 javaNames,
-                fileObjects,
-                subPackages,
-                excludedPackages,
-                docClasses,
-                quiet);
+                fileObjects);
 
         // release resources
         comp = null;
@@ -421,8 +415,8 @@ public class Start extends ToolOption.Helper {
             trees.setBreakIterator(BreakIterator.getSentenceInstance(locale));
         }
         // pass off control to the doclet
-        boolean ok = root != null;
-        if (ok) ok = doclet.run(root);
+        boolean ok = docEnv != null;
+        if (ok) ok = doclet.run(docEnv);
 
         // We're done.
         if (compOpts.get("-verbose") != null) {
@@ -470,11 +464,11 @@ public class Start extends ToolOption.Helper {
         for (int i = 0 ; i < argv.size() ; i++) {
             String arg = argv.get(i);
             if (arg.equals(ToolOption.LOCALE.opt)) {
-                oneArg(argv, i++);
+                checkOneArg(argv, i++);
                 String lname = argv.get(i);
                 locale = getLocale(lname);
             } else if (arg.equals(ToolOption.DOCLET.opt)) {
-                oneArg(argv, i++);
+                checkOneArg(argv, i++);
                 if (userDocletName != null) {
                     usageError("main.more_than_one_doclet_specified_0_and_1",
                             userDocletName, argv.get(i));
@@ -485,7 +479,7 @@ public class Start extends ToolOption.Helper {
                 }
                 userDocletName = argv.get(i);
             } else if (arg.equals(ToolOption.DOCLETPATH.opt)) {
-                oneArg(argv, i++);
+                checkOneArg(argv, i++);
                 if (userDocletPath == null) {
                     userDocletPath = argv.get(i);
                 } else {
@@ -605,12 +599,11 @@ public class Start extends ToolOption.Helper {
                 handleDocletOptions(i, args, true);
 
                 if (o.hasArg) {
-                    oneArg(args, i++);
+                    checkOneArg(args, i++);
                     o.process(this, args.get(i));
                 } else if (o.hasSuffix) {
                     o.process(this, arg);
                 } else {
-                    setOption(arg);
                     o.process(this);
                 }
             } else if (arg.startsWith("-XD")) {
@@ -633,13 +626,11 @@ public class Start extends ToolOption.Helper {
     }
 
     /**
-     * Set one arg option.
+     * Check the one arg option.
      * Error and exit if one argument is not provided.
      */
-    private void oneArg(List<String> args, int index) {
-        if ((index + 1) < args.size()) {
-            setOption(args.get(index), args.get(index+1));
-        } else {
+    private void checkOneArg(List<String> args, int index) {
+        if ((index + 1) >= args.size() || args.get(index + 1).startsWith("-d")) {
             usageError("main.requires_argument", args.get(index));
         }
     }
@@ -656,32 +647,6 @@ public class Start extends ToolOption.Helper {
 
     void warn(String key, Object... args)  {
         messager.warning(key, args);
-    }
-
-    /**
-     * indicate an option with no arguments was given.
-     */
-    private void setOption(String opt) {
-        String[] option = { opt };
-        options.add(Arrays.asList(option));
-    }
-
-    /**
-     * indicate an option with one argument was given.
-     */
-    private void setOption(String opt, String argument) {
-        String[] option = { opt, argument };
-        options.add(Arrays.asList(option));
-    }
-
-    /**
-     * indicate an option with the specified list of arguments was given.
-     */
-    private void setOption(String opt, List<String> arguments) {
-        List<String> args = new ArrayList<>(arguments.size() + 1);
-        args.add(opt);
-        args.addAll(arguments);
-        options.add(args);
     }
 
     /**

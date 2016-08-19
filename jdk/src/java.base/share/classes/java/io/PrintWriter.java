@@ -504,7 +504,7 @@ public class PrintWriter extends Writer {
      * @param      b   The {@code boolean} to be printed
      */
     public void print(boolean b) {
-        write(b ? "true" : "false");
+        write(String.valueOf(b));
     }
 
     /**
@@ -599,10 +599,7 @@ public class PrintWriter extends Writer {
      * @param      s   The {@code String} to be printed
      */
     public void print(String s) {
-        if (s == null) {
-            s = "null";
-        }
-        write(s);
+        write(String.valueOf(s));
     }
 
     /**
@@ -1005,10 +1002,7 @@ public class PrintWriter extends Writer {
      * @since  1.5
      */
     public PrintWriter append(CharSequence csq) {
-        if (csq == null)
-            write("null");
-        else
-            write(csq.toString());
+        write(String.valueOf(csq));
         return this;
     }
 
@@ -1047,9 +1041,8 @@ public class PrintWriter extends Writer {
      * @since  1.5
      */
     public PrintWriter append(CharSequence csq, int start, int end) {
-        CharSequence cs = (csq == null ? "null" : csq);
-        write(cs.subSequence(start, end).toString());
-        return this;
+        if (csq == null) csq = "null";
+        return append(csq.subSequence(start, end));
     }
 
     /**

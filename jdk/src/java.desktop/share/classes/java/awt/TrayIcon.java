@@ -703,6 +703,9 @@ public class TrayIcon {
         synchronized (this) {
             p = peer;
             peer = null;
+            if (popup != null) {
+                popup.removeNotify();
+            }
         }
         if (p != null) {
             p.dispose();
