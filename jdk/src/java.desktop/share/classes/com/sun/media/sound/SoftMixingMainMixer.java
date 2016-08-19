@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.io.IOException;
@@ -79,7 +80,7 @@ public final class SoftMixingMainMixer {
 
     private final Object control_mutex;
 
-    private final List<SoftMixingDataLine> openLinesList = new ArrayList<SoftMixingDataLine>();
+    private final List<SoftMixingDataLine> openLinesList = new ArrayList<>();
 
     private SoftMixingDataLine[] openLines = new SoftMixingDataLine[0];
 
@@ -184,6 +185,7 @@ public final class SoftMixingMainMixer {
                 bbuffer_pos = 0;
             }
 
+            @Override
             public int read(byte[] b, int off, int len) {
                 int bbuffer_len = bbuffer.length;
                 int offlen = off + len;
@@ -200,6 +202,7 @@ public final class SoftMixingMainMixer {
                 return len;
             }
 
+            @Override
             public int read() throws IOException {
                 int ret = read(single);
                 if (ret == -1)
@@ -207,10 +210,12 @@ public final class SoftMixingMainMixer {
                 return single[0] & 0xFF;
             }
 
+            @Override
             public int available() {
                 return bbuffer.length - bbuffer_pos;
             }
 
+            @Override
             public void close() {
                 SoftMixingMainMixer.this.mixer.close();
             }
@@ -239,14 +244,12 @@ public final class SoftMixingMainMixer {
                 if (mixer.implicitOpen)
                     mixer.close();
         }
-
     }
 
     public SoftMixingDataLine[] getOpenLines() {
         synchronized (control_mutex) {
             return openLines;
         }
-
     }
 
     public void close() {
@@ -255,5 +258,4 @@ public final class SoftMixingMainMixer {
             openLines[i].close();
         }
     }
-
 }

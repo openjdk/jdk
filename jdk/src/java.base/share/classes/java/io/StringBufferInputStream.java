@@ -108,6 +108,7 @@ class StringBufferInputStream extends InputStream {
      *             <code>-1</code> if there is no more data because the end of
      *             the stream has been reached.
      */
+    @SuppressWarnings("deprecation")
     public synchronized int read(byte b[], int off, int len) {
         if (b == null) {
             throw new NullPointerException();
@@ -126,12 +127,8 @@ class StringBufferInputStream extends InputStream {
         if (len <= 0) {
             return 0;
         }
-        String  s = buffer;
-        int cnt = len;
-        while (--cnt >= 0) {
-            b[off++] = (byte)s.charAt(pos++);
-        }
-
+        buffer.getBytes(pos, pos + len, b, off);
+        pos += len;
         return len;
     }
 

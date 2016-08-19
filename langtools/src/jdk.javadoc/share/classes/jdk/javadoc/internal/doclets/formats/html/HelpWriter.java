@@ -141,7 +141,7 @@ public class HelpWriter extends HtmlDocletWriter {
                     ? HtmlTree.SECTION(overviewHeading)
                     : HtmlTree.LI(HtmlStyle.blockList, overviewHeading);
             Content line3 = contents.getContent("doclet.Help_line_3",
-                    getHyperLink(DocPaths.OVERVIEW_SUMMARY,
+                    getHyperLink(DocPaths.overviewSummary(configuration.frames),
                     configuration.getText("doclet.Overview")));
             Content overviewPara = HtmlTree.P(line3);
             htmlTree.addContent(overviewPara);
@@ -362,26 +362,31 @@ public class HelpWriter extends HtmlDocletWriter {
         } else {
             ul.addContent(htmlTree);
         }
-        Content frameHead = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
-                contents.getContent("doclet.Help_line_25"));
-        htmlTree = (configuration.allowTag(HtmlTag.SECTION))
-                ? HtmlTree.SECTION(frameHead)
-                : HtmlTree.LI(HtmlStyle.blockList, frameHead);
-        Content line26 = contents.getContent("doclet.Help_line_26");
-        Content framePara = HtmlTree.P(line26);
-        htmlTree.addContent(framePara);
+
+        if (configuration.frames) {
+            Content frameHead = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
+                    contents.getContent("doclet.Help_line_25"));
+            htmlTree = (configuration.allowTag(HtmlTag.SECTION))
+                    ? HtmlTree.SECTION(frameHead)
+                    : HtmlTree.LI(HtmlStyle.blockList, frameHead);
+            Content line26 = contents.getContent("doclet.Help_line_26");
+            Content framePara = HtmlTree.P(line26);
+            htmlTree.addContent(framePara);
+        }
+
         if (configuration.allowTag(HtmlTag.SECTION)) {
             ul.addContent(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
         } else {
             ul.addContent(htmlTree);
         }
+
         Content allclassesHead = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
                 contents.allClassesLabel);
         htmlTree = (configuration.allowTag(HtmlTag.SECTION))
                 ? HtmlTree.SECTION(allclassesHead)
                 : HtmlTree.LI(HtmlStyle.blockList, allclassesHead);
         Content line27 = contents.getContent("doclet.Help_line_27",
-                getHyperLink(DocPaths.ALLCLASSES_NOFRAME,
+                getHyperLink(DocPaths.AllClasses(configuration.frames),
                 resources.getText("doclet.All_Classes")));
         Content allclassesPara = HtmlTree.P(line27);
         htmlTree.addContent(allclassesPara);

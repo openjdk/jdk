@@ -12,8 +12,6 @@
         <filter targetName="build-all-tools" isVisible="true" />
         <filter targetName="build-all-classes" isVisible="true" />
         <filter targetName="clean" isVisible="true" />
-        <filter targetName="jtreg" isVisible="true" />
-        <filter targetName="jtreg-debug" isVisible="true" />
         <filter targetName="crules" isVisible="true" />
       </targetFilters>
       <viewClosedWhenNoErrors value="true" />

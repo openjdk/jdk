@@ -70,11 +70,12 @@ struct hb_ft_font_t
 {
   FT_Face ft_face;
   int load_flags;
+  bool symbol; /* Whether selected cmap is symbol cmap. */
   bool unref; /* Whether to destroy ft_face when done. */
 };
 
 static hb_ft_font_t *
-_hb_ft_font_create (FT_Face ft_face, bool unref)
+_hb_ft_font_create (FT_Face ft_face, bool symbol, bool unref)
 {
   hb_ft_font_t *ft_font = (hb_ft_font_t *) calloc (1, sizeof (hb_ft_font_t));
 
@@ -82,6 +83,7 @@ _hb_ft_font_create (FT_Face ft_face, bool unref)
     return NULL;
 
   ft_font->ft_face = ft_face;
+  ft_font->symbol = symbol;
   ft_font->unref = unref;
 
   ft_font->load_flags = FT_LOAD_DEFAULT | FT_LOAD_NO_HINTING;
@@ -90,10 +92,16 @@ _hb_ft_font_create (FT_Face ft_face, bool unref)
 }
 
 static void
+_hb_ft_face_destroy (FT_Face ft_face)
+{
+  FT_Done_Face (ft_face);
+}
+
+static void
 _hb_ft_font_destroy (hb_ft_font_t *ft_font)
 {
   if (ft_font->unref)
-    FT_Done_Face (ft_font->ft_face);
+    _hb_ft_face_destroy (ft_font->ft_face);
 
   free (ft_font);
 }
@@ -155,21 +163,46 @@ hb_ft_font_get_face (hb_font_t *font)
 
 
 static hb_bool_t
-hb_ft_get_glyph (hb_font_t *font HB_UNUSED,
-                 void *font_data,
-                 hb_codepoint_t unicode,
-                 hb_codepoint_t variation_selector,
-                 hb_codepoint_t *glyph,
-                 void *user_data HB_UNUSED)
-
+hb_ft_get_nominal_glyph (hb_font_t *font HB_UNUSED,
+                         void *font_data,
+                         hb_codepoint_t unicode,
+                         hb_codepoint_t *glyph,
+                         void *user_data HB_UNUSED)
 {
   const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font_data;
-  unsigned int g;
+  unsigned int g = FT_Get_Char_Index (ft_font->ft_face, unicode);
 
-  if (likely (!variation_selector))
-    g = FT_Get_Char_Index (ft_font->ft_face, unicode);
-  else
-    g = FT_Face_GetCharVariantIndex (ft_font->ft_face, unicode, variation_selector);
+  if (unlikely (!g))
+  {
+    if (unlikely (ft_font->symbol) && unicode <= 0x00FFu)
+    {
+      /* For symbol-encoded OpenType fonts, we duplicate the
+       * U+F000..F0FF range at U+0000..U+00FF.  That's what
+       * Windows seems to do, and that's hinted about at:
+       * http://www.microsoft.com/typography/otspec/recom.htm
+       * under "Non-Standard (Symbol) Fonts". */
+      g = FT_Get_Char_Index (ft_font->ft_face, 0xF000u + unicode);
+      if (!g)
+        return false;
+    }
+    else
+      return false;
+  }
+
+  *glyph = g;
+  return true;
+}
+
+static hb_bool_t
+hb_ft_get_variation_glyph (hb_font_t *font HB_UNUSED,
+                           void *font_data,
+                           hb_codepoint_t unicode,
+                           hb_codepoint_t variation_selector,
+                           hb_codepoint_t *glyph,
+                           void *user_data HB_UNUSED)
+{
+  const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font_data;
+  unsigned int g = FT_Face_GetCharVariantIndex (ft_font->ft_face, unicode, variation_selector);
 
   if (unlikely (!g))
     return false;
@@ -217,18 +250,6 @@ hb_ft_get_glyph_v_advance (hb_font_t *font HB_UNUSED,
 }
 
 static hb_bool_t
-hb_ft_get_glyph_h_origin (hb_font_t *font HB_UNUSED,
-                          void *font_data HB_UNUSED,
-                          hb_codepoint_t glyph HB_UNUSED,
-                          hb_position_t *x HB_UNUSED,
-                          hb_position_t *y HB_UNUSED,
-                          void *user_data HB_UNUSED)
-{
-  /* We always work in the horizontal coordinates. */
-  return true;
-}
-
-static hb_bool_t
 hb_ft_get_glyph_v_origin (hb_font_t *font HB_UNUSED,
                           void *font_data,
                           hb_codepoint_t glyph,
@@ -272,17 +293,6 @@ hb_ft_get_glyph_h_kerning (hb_font_t *font,
   return kerningv.x;
 }
 
-static hb_position_t
-hb_ft_get_glyph_v_kerning (hb_font_t *font HB_UNUSED,
-                           void *font_data HB_UNUSED,
-                           hb_codepoint_t top_glyph HB_UNUSED,
-                           hb_codepoint_t bottom_glyph HB_UNUSED,
-                           void *user_data HB_UNUSED)
-{
-  /* FreeType API doesn't support vertical kerning */
-  return 0;
-}
-
 static hb_bool_t
 hb_ft_get_glyph_extents (hb_font_t *font HB_UNUSED,
                          void *font_data,
@@ -300,6 +310,16 @@ hb_ft_get_glyph_extents (hb_font_t *font HB_UNUSED,
   extents->y_bearing = ft_face->glyph->metrics.horiBearingY;
   extents->width = ft_face->glyph->metrics.width;
   extents->height = -ft_face->glyph->metrics.height;
+  if (font->x_scale < 0)
+  {
+    extents->x_bearing = -extents->x_bearing;
+    extents->width = -extents->width;
+  }
+  if (font->y_scale < 0)
+  {
+    extents->y_bearing = -extents->y_bearing;
+    extents->height = -extents->height;
+  }
   return true;
 }
 
@@ -379,25 +399,78 @@ hb_ft_get_glyph_from_name (hb_font_t *font HB_UNUSED,
   return *glyph != 0;
 }
 
+static hb_bool_t
+hb_ft_get_font_h_extents (hb_font_t *font HB_UNUSED,
+                          void *font_data,
+                          hb_font_extents_t *metrics,
+                          void *user_data HB_UNUSED)
+{
+  const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font_data;
+  FT_Face ft_face = ft_font->ft_face;
+  metrics->ascender = ft_face->size->metrics.ascender;
+  metrics->descender = ft_face->size->metrics.descender;
+  metrics->line_gap = ft_face->size->metrics.height - (ft_face->size->metrics.ascender - ft_face->size->metrics.descender);
+  if (font->y_scale < 0)
+  {
+    metrics->ascender = -metrics->ascender;
+    metrics->descender = -metrics->descender;
+    metrics->line_gap = -metrics->line_gap;
+  }
+  return true;
+}
+
+static hb_font_funcs_t *static_ft_funcs = NULL;
+
+#ifdef HB_USE_ATEXIT
+static
+void free_static_ft_funcs (void)
+{
+  hb_font_funcs_destroy (static_ft_funcs);
+}
+#endif
 
 static void
 _hb_ft_font_set_funcs (hb_font_t *font, FT_Face ft_face, bool unref)
 {
-  static const hb_font_funcs_t ft_ffuncs = {
-    HB_OBJECT_HEADER_STATIC,
+retry:
+  hb_font_funcs_t *funcs = (hb_font_funcs_t *) hb_atomic_ptr_get (&static_ft_funcs);
 
-    true, /* immutable */
+  if (unlikely (!funcs))
+  {
+    funcs = hb_font_funcs_create ();
 
-    {
-#define HB_FONT_FUNC_IMPLEMENT(name) hb_ft_get_##name,
-      HB_FONT_FUNCS_IMPLEMENT_CALLBACKS
-#undef HB_FONT_FUNC_IMPLEMENT
+    hb_font_funcs_set_font_h_extents_func (funcs, hb_ft_get_font_h_extents, NULL, NULL);
+    //hb_font_funcs_set_font_v_extents_func (funcs, hb_ft_get_font_v_extents, NULL, NULL);
+    hb_font_funcs_set_nominal_glyph_func (funcs, hb_ft_get_nominal_glyph, NULL, NULL);
+    hb_font_funcs_set_variation_glyph_func (funcs, hb_ft_get_variation_glyph, NULL, NULL);
+    hb_font_funcs_set_glyph_h_advance_func (funcs, hb_ft_get_glyph_h_advance, NULL, NULL);
+    hb_font_funcs_set_glyph_v_advance_func (funcs, hb_ft_get_glyph_v_advance, NULL, NULL);
+    //hb_font_funcs_set_glyph_h_origin_func (funcs, hb_ft_get_glyph_h_origin, NULL, NULL);
+    hb_font_funcs_set_glyph_v_origin_func (funcs, hb_ft_get_glyph_v_origin, NULL, NULL);
+    hb_font_funcs_set_glyph_h_kerning_func (funcs, hb_ft_get_glyph_h_kerning, NULL, NULL);
+    //hb_font_funcs_set_glyph_v_kerning_func (funcs, hb_ft_get_glyph_v_kerning, NULL, NULL);
+    hb_font_funcs_set_glyph_extents_func (funcs, hb_ft_get_glyph_extents, NULL, NULL);
+    hb_font_funcs_set_glyph_contour_point_func (funcs, hb_ft_get_glyph_contour_point, NULL, NULL);
+    hb_font_funcs_set_glyph_name_func (funcs, hb_ft_get_glyph_name, NULL, NULL);
+    hb_font_funcs_set_glyph_from_name_func (funcs, hb_ft_get_glyph_from_name, NULL, NULL);
+
+    hb_font_funcs_make_immutable (funcs);
+
+    if (!hb_atomic_ptr_cmpexch (&static_ft_funcs, NULL, funcs)) {
+      hb_font_funcs_destroy (funcs);
+      goto retry;
     }
+
+#ifdef HB_USE_ATEXIT
+    atexit (free_static_ft_funcs); /* First person registers atexit() callback. */
+#endif
   };
 
+  bool symbol = ft_face->charmap && ft_face->charmap->encoding == FT_ENCODING_MS_SYMBOL;
+
   hb_font_set_funcs (font,
-                     const_cast<hb_font_funcs_t *> (&ft_ffuncs),
-                     _hb_ft_font_create (ft_face, unref),
+                     funcs,
+                     _hb_ft_font_create (ft_face, symbol, unref),
                      (hb_destroy_func_t) _hb_ft_font_destroy);
 }
 
@@ -477,7 +550,7 @@ hb_face_t *
 hb_ft_face_create_referenced (FT_Face ft_face)
 {
   FT_Reference_Face (ft_face);
-  return hb_ft_face_create (ft_face, (hb_destroy_func_t) FT_Done_Face);
+  return hb_ft_face_create (ft_face, (hb_destroy_func_t) _hb_ft_face_destroy);
 }
 
 static void
@@ -557,7 +630,7 @@ hb_font_t *
 hb_ft_font_create_referenced (FT_Face ft_face)
 {
   FT_Reference_Face (ft_face);
-  return hb_ft_font_create (ft_face, (hb_destroy_func_t) FT_Done_Face);
+  return hb_ft_font_create (ft_face, (hb_destroy_func_t) _hb_ft_face_destroy);
 }
 
 
@@ -626,7 +699,8 @@ hb_ft_font_set_funcs (hb_font_t *font)
     return;
   }
 
-  FT_Select_Charmap (ft_face, FT_ENCODING_UNICODE);
+  if (FT_Select_Charmap (ft_face, FT_ENCODING_UNICODE))
+    FT_Select_Charmap (ft_face, FT_ENCODING_MS_SYMBOL);
 
   FT_Set_Char_Size (ft_face,
                     abs (font->x_scale), abs (font->y_scale),

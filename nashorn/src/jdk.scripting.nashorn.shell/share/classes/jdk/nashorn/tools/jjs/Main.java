@@ -34,6 +34,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URI;
@@ -50,6 +51,7 @@ import jdk.nashorn.internal.runtime.NativeJavaPackage;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
+import jdk.nashorn.internal.runtime.ScriptingFunctions;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.tools.Shell;
@@ -156,6 +158,15 @@ public final class Main extends Shell {
             }
 
             global.addShellBuiltins();
+
+            // redefine readLine to use jline Console's readLine!
+            ScriptingFunctions.setReadLineHelper(str-> {
+                try {
+                    return in.readLine(str);
+                } catch (final IOException ioExp) {
+                    throw new UncheckedIOException(ioExp);
+                }
+            });
 
             if (System.getSecurityManager() == null) {
                 final Consumer<String> evaluator = str -> {

@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.io.IOException;
@@ -33,11 +34,11 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.BooleanControl;
 import javax.sound.sampled.Control;
+import javax.sound.sampled.Control.Type;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineListener;
-import javax.sound.sampled.Control.Type;
 
 /**
  * General software mixing line.
@@ -130,22 +131,27 @@ public abstract class SoftMixingDataLine implements DataLine {
             ibuffer_len = buffer_len;
         }
 
+        @Override
         public int available() throws IOException {
             return 0;
         }
 
+        @Override
         public void close() throws IOException {
             ais.close();
         }
 
+        @Override
         public AudioFormat getFormat() {
             return targetFormat;
         }
 
+        @Override
         public long getFrameLength() {
             return AudioSystem.NOT_SPECIFIED; // ais.getFrameLength();
         }
 
+        @Override
         public void mark(int readlimit) {
             ais.mark((int) (readlimit * pitch[0]));
             mark_ibuffer_index = ibuffer_index;
@@ -162,6 +168,7 @@ public abstract class SoftMixingDataLine implements DataLine {
             }
         }
 
+        @Override
         public boolean markSupported() {
             return ais.markSupported();
         }
@@ -206,6 +213,7 @@ public abstract class SoftMixingDataLine implements DataLine {
 
         }
 
+        @Override
         public int read(float[] b, int off, int len) throws IOException {
 
             if (cbuffer == null || cbuffer[0].length < len / nrofchannels) {
@@ -255,6 +263,7 @@ public abstract class SoftMixingDataLine implements DataLine {
             return len - remain * nrofchannels;
         }
 
+        @Override
         public void reset() throws IOException {
             ais.reset();
             if (mark_ibuffer == null)
@@ -271,6 +280,7 @@ public abstract class SoftMixingDataLine implements DataLine {
 
         }
 
+        @Override
         public long skip(long len) throws IOException {
             if (len > 0)
                 return 0;
@@ -302,6 +312,7 @@ public abstract class SoftMixingDataLine implements DataLine {
                     -1, 0.0f, "dB", "Minimum", "", "Maximum");
         }
 
+        @Override
         public void setValue(float newValue) {
             super.setValue(newValue);
             calcVolume();
@@ -314,6 +325,7 @@ public abstract class SoftMixingDataLine implements DataLine {
             super(BooleanControl.Type.MUTE, false, "True", "False");
         }
 
+        @Override
         public void setValue(boolean newValue) {
             super.setValue(newValue);
             calcVolume();
@@ -326,6 +338,7 @@ public abstract class SoftMixingDataLine implements DataLine {
             super(BooleanControl.Type.APPLY_REVERB, false, "True", "False");
         }
 
+        @Override
         public void setValue(boolean newValue) {
             super.setValue(newValue);
             calcVolume();
@@ -340,6 +353,7 @@ public abstract class SoftMixingDataLine implements DataLine {
                     0.0f, "", "Left", "Center", "Right");
         }
 
+        @Override
         public void setValue(float newValue) {
             super.setValue(newValue);
             calcVolume();
@@ -354,11 +368,13 @@ public abstract class SoftMixingDataLine implements DataLine {
                     0.0f, "", "Left", "Center", "Right");
         }
 
+        @Override
         public void setValue(float newValue) {
             super.setValue(newValue);
             balance_control.setValue(newValue);
         }
 
+        @Override
         public float getValue() {
             return balance_control.getValue();
         }
@@ -372,6 +388,7 @@ public abstract class SoftMixingDataLine implements DataLine {
                     -1, -80f, "dB", "Minimum", "", "Maximum");
         }
 
+        @Override
         public void setValue(float newValue) {
             super.setValue(newValue);
             balance_control.setValue(newValue);
@@ -386,6 +403,7 @@ public abstract class SoftMixingDataLine implements DataLine {
                     "Minimum", "", "Maximum");
         }
 
+        @Override
         public void setValue(float newValue) {
             super.setValue(newValue);
             balance_control.setValue(newValue);
@@ -417,7 +435,7 @@ public abstract class SoftMixingDataLine implements DataLine {
 
     float eff2gain = 0;
 
-    List<LineListener> listeners = new ArrayList<LineListener>();
+    List<LineListener> listeners = new ArrayList<>();
 
     final Object control_mutex;
 
@@ -476,22 +494,26 @@ public abstract class SoftMixingDataLine implements DataLine {
         }
     }
 
+    @Override
     public final void addLineListener(LineListener listener) {
         synchronized (control_mutex) {
             listeners.add(listener);
         }
     }
 
+    @Override
     public final void removeLineListener(LineListener listener) {
         synchronized (control_mutex) {
             listeners.add(listener);
         }
     }
 
+    @Override
     public final javax.sound.sampled.Line.Info getLineInfo() {
         return info;
     }
 
+    @Override
     public final Control getControl(Type control) {
         if (control != null) {
             for (int i = 0; i < controls.length; i++) {
@@ -504,10 +526,12 @@ public abstract class SoftMixingDataLine implements DataLine {
                 + control);
     }
 
+    @Override
     public final Control[] getControls() {
         return Arrays.copyOf(controls, controls.length);
     }
 
+    @Override
     public final boolean isControlSupported(Type control) {
         if (control != null) {
             for (int i = 0; i < controls.length; i++) {
@@ -518,5 +542,4 @@ public abstract class SoftMixingDataLine implements DataLine {
         }
         return false;
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +64,9 @@ final class MethodRef {
                 this.signature = null;
                 this.methodRef = null;
                 this.typeRef = null;
+                return null;
             }
-            else {
-                this.methodRef = new SoftReference<>(method);
-            }
+            this.methodRef = new SoftReference<>(method);
         }
         return isPackageAccessible(method.getDeclaringClass()) ? method : null;
     }

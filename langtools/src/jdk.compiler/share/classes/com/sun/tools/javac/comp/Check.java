@@ -789,23 +789,25 @@ public class Check {
         if (!TreeInfo.isDiamond(tree) ||
                 t.isErroneous()) {
             return checkClassType(tree.clazz.pos(), t, true);
-        } else if (tree.def != null && !allowDiamondWithAnonymousClassCreation) {
-            log.error(tree.clazz.pos(),
-                    Errors.CantApplyDiamond1(t, Fragments.DiamondAndAnonClassNotSupportedInSource(source.name)));
-            return types.createErrorType(t);
-        } else if (t.tsym.type.getTypeArguments().isEmpty()) {
-            log.error(tree.clazz.pos(),
-                "cant.apply.diamond.1",
-                t, diags.fragment("diamond.non.generic", t));
-            return types.createErrorType(t);
-        } else if (tree.typeargs != null &&
-                tree.typeargs.nonEmpty()) {
-            log.error(tree.clazz.pos(),
-                "cant.apply.diamond.1",
-                t, diags.fragment("diamond.and.explicit.params", t));
-            return types.createErrorType(t);
         } else {
-            return t;
+            if (tree.def != null && !allowDiamondWithAnonymousClassCreation) {
+                log.error(DiagnosticFlag.SOURCE_LEVEL, tree.clazz.pos(),
+                        Errors.CantApplyDiamond1(t, Fragments.DiamondAndAnonClassNotSupportedInSource(source.name)));
+            }
+            if (t.tsym.type.getTypeArguments().isEmpty()) {
+                log.error(tree.clazz.pos(),
+                    "cant.apply.diamond.1",
+                    t, diags.fragment("diamond.non.generic", t));
+                return types.createErrorType(t);
+            } else if (tree.typeargs != null &&
+                    tree.typeargs.nonEmpty()) {
+                log.error(tree.clazz.pos(),
+                    "cant.apply.diamond.1",
+                    t, diags.fragment("diamond.and.explicit.params", t));
+                return types.createErrorType(t);
+            } else {
+                return t;
+            }
         }
     }
 

@@ -28,8 +28,6 @@
  * @build KullaTesting
  * @run testng JShellQueryTest
  */
-import java.util.Set;
-import java.util.stream.Stream;
 import jdk.jshell.Snippet;
 import org.testng.annotations.Test;
 
@@ -38,46 +36,39 @@ import jdk.jshell.MethodSnippet;
 import jdk.jshell.TypeDeclSnippet;
 import jdk.jshell.VarSnippet;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toSet;
 import static org.testng.Assert.assertEquals;
 
 @Test
 public class JShellQueryTest extends KullaTesting {
 
-    private <T> void checkStreamMatch(Stream<T> result, T... expected) {
-        Set<T> sns = result.collect(toSet());
-        Set<T> exp = Stream.of(expected).collect(toSet());
-        assertEquals(sns, exp);
-    }
-
     public void testSnippets() {
-        checkStreamMatch(getState().snippets());
+        assertStreamMatch(getState().snippets());
         VarSnippet sx = varKey(assertEval("int x = 5;"));
         VarSnippet sfoo = varKey(assertEval("String foo;"));
         MethodSnippet smm = methodKey(assertEval("int mm() { return 6; }"));
         MethodSnippet svv = methodKey(assertEval("void vv() { }"));
-        checkStreamMatch(getState().snippets(), sx, sfoo, smm, svv);
+        assertStreamMatch(getState().snippets(), sx, sfoo, smm, svv);
         TypeDeclSnippet sc = classKey(assertEval("class C { }"));
         TypeDeclSnippet si = classKey(assertEval("interface I { }"));
         ImportSnippet simp = importKey(assertEval("import java.lang.reflect.*;"));
-        checkStreamMatch(getState().snippets(), sx, sfoo, smm, svv, sc, si, simp);
+        assertStreamMatch(getState().snippets(), sx, sfoo, smm, svv, sc, si, simp);
     }
 
     public void testVars() {
-        checkStreamMatch(getState().variables());
+        assertStreamMatch(getState().variables());
         VarSnippet sx = varKey(assertEval("int x = 5;"));
         VarSnippet sfoo = varKey(assertEval("String foo;"));
         MethodSnippet smm = methodKey(assertEval("int mm() { return 6; }"));
         MethodSnippet svv = methodKey(assertEval("void vv() { }"));
-        checkStreamMatch(getState().variables(), sx, sfoo);
+        assertStreamMatch(getState().variables(), sx, sfoo);
         TypeDeclSnippet sc = classKey(assertEval("class C { }"));
         TypeDeclSnippet si = classKey(assertEval("interface I { }"));
         ImportSnippet simp = importKey(assertEval("import java.lang.reflect.*;"));
-        checkStreamMatch(getState().variables(), sx, sfoo);
+        assertStreamMatch(getState().variables(), sx, sfoo);
     }
 
     public void testMethods() {
-        checkStreamMatch(getState().methods());
+        assertStreamMatch(getState().methods());
         VarSnippet sx = varKey(assertEval("int x = 5;"));
         VarSnippet sfoo = varKey(assertEval("String foo;"));
         MethodSnippet smm = methodKey(assertEval("int mm() { return 6; }"));
@@ -85,11 +76,11 @@ public class JShellQueryTest extends KullaTesting {
         TypeDeclSnippet sc = classKey(assertEval("class C { }"));
         TypeDeclSnippet si = classKey(assertEval("interface I { }"));
         ImportSnippet simp = importKey(assertEval("import java.lang.reflect.*;"));
-        checkStreamMatch(getState().methods(), smm, svv);
+        assertStreamMatch(getState().methods(), smm, svv);
     }
 
     public void testTypes() {
-        checkStreamMatch(getState().types());
+        assertStreamMatch(getState().types());
         VarSnippet sx = varKey(assertEval("int x = 5;"));
         VarSnippet sfoo = varKey(assertEval("String foo;"));
         MethodSnippet smm = methodKey(assertEval("int mm() { return 6; }"));
@@ -97,11 +88,11 @@ public class JShellQueryTest extends KullaTesting {
         TypeDeclSnippet sc = classKey(assertEval("class C { }"));
         TypeDeclSnippet si = classKey(assertEval("interface I { }"));
         ImportSnippet simp = importKey(assertEval("import java.lang.reflect.*;"));
-        checkStreamMatch(getState().types(), sc, si);
+        assertStreamMatch(getState().types(), sc, si);
     }
 
     public void testImports() {
-        checkStreamMatch(getState().imports());
+        assertStreamMatch(getState().imports());
         VarSnippet sx = varKey(assertEval("int x = 5;"));
         VarSnippet sfoo = varKey(assertEval("String foo;"));
         MethodSnippet smm = methodKey(assertEval("int mm() { return 6; }"));
@@ -109,12 +100,12 @@ public class JShellQueryTest extends KullaTesting {
         TypeDeclSnippet sc = classKey(assertEval("class C { }"));
         TypeDeclSnippet si = classKey(assertEval("interface I { }"));
         ImportSnippet simp = importKey(assertEval("import java.lang.reflect.*;"));
-        checkStreamMatch(getState().imports(), simp);
+        assertStreamMatch(getState().imports(), simp);
     }
 
     public void testDiagnostics() {
         Snippet sx = varKey(assertEval("int x = 5;"));
-        checkStreamMatch(getState().diagnostics(sx));
+        assertStreamMatch(getState().diagnostics(sx));
         Snippet broken = methodKey(assertEvalFail("int m() { blah(); return \"hello\"; }"));
         String res = getState().diagnostics(broken)
                 .map(d -> d.getCode())
@@ -124,8 +115,8 @@ public class JShellQueryTest extends KullaTesting {
 
     public void testUnresolvedDependencies() {
         VarSnippet sx = varKey(assertEval("int x = 5;"));
-        checkStreamMatch(getState().unresolvedDependencies(sx));
+        assertStreamMatch(getState().unresolvedDependencies(sx));
         MethodSnippet unr = methodKey(getState().eval("void uu() { baz(); zips(); }"));
-        checkStreamMatch(getState().unresolvedDependencies(unr), "method zips()", "method baz()");
+        assertStreamMatch(getState().unresolvedDependencies(unr), "method zips()", "method baz()");
     }
 }

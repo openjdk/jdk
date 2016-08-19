@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 import sun.security.util.CurveDB;
 import sun.security.util.NamedCurve;
 import sun.security.util.ECParameters;
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 /**
  * Provider class for the Elliptic Curve provider.
@@ -142,7 +143,8 @@ public final class SunEC extends Provider {
     }
 
     public SunEC() {
-        super("SunEC", 9.0d, "Sun Elliptic Curve provider (EC, ECDSA, ECDH)");
+        super("SunEC", PROVIDER_VER,
+            "Sun Elliptic Curve provider (EC, ECDSA, ECDH)");
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 putEntries(useFullImplementation);

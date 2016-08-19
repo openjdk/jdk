@@ -142,8 +142,8 @@ public class StringReader extends Reader {
      */
     public boolean ready() throws IOException {
         synchronized (lock) {
-        ensureOpen();
-        return true;
+            ensureOpen();
+            return true;
         }
     }
 

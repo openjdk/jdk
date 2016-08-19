@@ -30,6 +30,8 @@ import java.io.File;
 import java.lang.reflect.Constructor;
 import java.util.*;
 import java.security.*;
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
+
 
 /**
  * OracleUcrypto provider main class.
@@ -196,7 +198,7 @@ public final class UcryptoProvider extends Provider {
     }
 
     public UcryptoProvider() {
-        super("OracleUcrypto", 9.0d, "Provider using Oracle Ucrypto API");
+        super("OracleUcrypto", PROVIDER_VER, "Provider using Oracle Ucrypto API");
 
         AccessController.doPrivileged(new PrivilegedAction<>() {
             public Void run() {

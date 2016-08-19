@@ -84,9 +84,9 @@ public class PackageFrameWriter extends HtmlDocletWriter {
     public PackageFrameWriter(ConfigurationImpl configuration, PackageElement packageElement) {
         super(configuration, DocPath.forPackage(packageElement).resolve(DocPaths.PACKAGE_FRAME));
         this.packageElement = packageElement;
-        if (utils.getSpecifiedPackages().isEmpty()) {
+        if (configuration.getSpecifiedPackages().isEmpty()) {
             documentedClasses = new TreeSet<>(utils.makeGeneralPurposeComparator());
-            documentedClasses.addAll(configuration.docEnv.getIncludedClasses());
+            documentedClasses.addAll(configuration.docEnv.getIncludedTypeElements());
         }
     }
 
@@ -136,7 +136,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
      */
     protected void addClassListing(HtmlTree contentTree) {
         Configuration config = configuration;
-        if (utils.isIncluded(packageElement)) {
+        if (utils.isSpecified(packageElement)) {
             addClassKindListing(utils.getInterfaces(packageElement),
                 contents.interfaces, contentTree);
             addClassKindListing(utils.getOrdinaryClasses(packageElement),

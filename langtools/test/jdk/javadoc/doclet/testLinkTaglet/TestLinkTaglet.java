@@ -70,5 +70,7 @@ public class TestLinkTaglet extends JavadocTester {
 
         checkOutput(Output.OUT, false,
                 "Tag @see: reference not found: A");
+
+        checkFiles(false, "checkPkg/A.html");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.util.*;
 import java.security.*;
 
 import sun.security.action.PutAllAction;
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
+
 
 /**
  * The SUN Security Provider.
@@ -47,7 +49,7 @@ public final class Sun extends Provider {
 
     public Sun() {
         /* We are the SUN provider */
-        super("SUN", 9.0d, INFO);
+        super("SUN", PROVIDER_VER, INFO);
 
         // if there is no security manager installed, put directly into
         // the provider. Otherwise, create a temporary map and use a

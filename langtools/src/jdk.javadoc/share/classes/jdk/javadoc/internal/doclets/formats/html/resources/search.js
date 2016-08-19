@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 var noResult = {l: "No results found"};
 var category = "category";
+var catModules = "Modules";
 var catPackages = "Packages";
 var catTypes = "Types";
 var catMembers = "Members";
@@ -115,8 +116,12 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
         var regexp = new RegExp($.ui.autocomplete.escapeRegex(result), "i");
         highlight = "<span class=\"resultHighlight\">$&</span>";
         var label = "";
-        if (item.category === catPackages) {
+        if (item.category === catModules) {
             label = item.l.replace(regexp, highlight);
+        } else if (item.category === catPackages) {
+            label = (item.m)
+                    ? (item.m + "/" + item.l).replace(regexp, highlight)
+                    : item.l.replace(regexp, highlight);
         } else if (item.category === catTypes) {
             label += (item.p + "." + item.l).replace(regexp, highlight);
         } else if (item.category === catMembers) {
@@ -152,24 +157,43 @@ $(function() {
         delay: 100,
         source: function(request, response) {
             var result = new Array();
+            var presult = new Array();
             var tresult = new Array();
             var mresult = new Array();
             var tgresult = new Array();
             var displayCount = 0;
             var exactMatcher = new RegExp("^" + $.ui.autocomplete.escapeRegex(request.term) + "$", "i");
             var secondaryMatcher = new RegExp($.ui.autocomplete.escapeRegex(request.term), "i");
-            if (packageSearchIndex) {
-                var pCount = 0;
-                $.each(packageSearchIndex, function(index, item) {
-                    item[category] = catPackages;
+            if (moduleSearchIndex) {
+                var mdleCount = 0;
+                $.each(moduleSearchIndex, function(index, item) {
+                    item[category] = catModules;
                     if (exactMatcher.test(item.l)) {
                         result.unshift(item);
-                        pCount++;
+                        mdleCount++;
                     } else if (secondaryMatcher.test(item.l)) {
                         result.push(item);
                     }
                 });
-                displayCount = pCount;
+                displayCount = mdleCount;
+            }
+            if (packageSearchIndex) {
+                var pCount = 0;
+                var pkg = "";
+                $.each(packageSearchIndex, function(index, item) {
+                    item[category] = catPackages;
+                    pkg = (item.m)
+                            ? (item.m + "/" + item.l)
+                            : item.l;
+                    if (exactMatcher.test(item.l)) {
+                        presult.unshift(item);
+                        pCount++;
+                    } else if (secondaryMatcher.test(pkg)) {
+                        presult.push(item);
+                    }
+                });
+                result = result.concat(presult);
+                displayCount = (pCount > displayCount) ? pCount : displayCount;
             }
             if (typeSearchIndex) {
                 var tCount = 0;
@@ -215,7 +239,7 @@ $(function() {
             }
             displayCount = (displayCount > 500) ? displayCount : 500;
             var counter = function() {
-                var count = {Packages: 0, Types: 0, Members: 0, SearchTags: 0};
+                var count = {Modules: 0, Packages: 0, Types: 0, Members: 0, SearchTags: 0};
                 var f = function(item) {
                     count[item.category] += 1;
                     return (count[item.category] <= displayCount);
@@ -238,7 +262,9 @@ $(function() {
         select: function(event, ui) {
             if (ui.item.l !== noResult.l) {
                 var url = "";
-                if (ui.item.category === catPackages) {
+                if (ui.item.category === catModules) {
+                    url = "/" + ui.item.l + "-summary.html";
+                } else if (ui.item.category === catPackages) {
                     url = ui.item.l.replace(/\./g, '/') + "/package-summary.html";
                 } else if (ui.item.category === catTypes) {
                     if (ui.item.p === "<Unnamed>") {

@@ -71,6 +71,7 @@ import org.testng.annotations.BeforeMethod;
 
 import jdk.jshell.Diag;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static jdk.jshell.Snippet.Status.*;
 import static org.testng.Assert.*;
 import static jdk.jshell.Snippet.SubKind.METHOD_SUBKIND;
@@ -356,6 +357,12 @@ public class KullaTesting {
     public List<SnippetEvent> assertEval(String input,
            DiagCheck diagMain, DiagCheck diagUpdates, EventChain... eventChains) {
         return checkEvents(() -> getState().eval(input), "eval(" + input + ")", diagMain, diagUpdates, eventChains);
+    }
+
+    <T> void assertStreamMatch(Stream<T> result, T... expected) {
+        Set<T> sns = result.collect(toSet());
+        Set<T> exp = Stream.of(expected).collect(toSet());
+        assertEquals(sns, exp);
     }
 
     private Map<Snippet, Snippet> closure(List<SnippetEvent> events) {

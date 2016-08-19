@@ -23,6 +23,10 @@
  * questions.
  */
 
+/**
+ * Defines a subset of the Common Annotations API to support programs running
+ * on the Java SE Platform.
+ */
 module java.annotations.common {
     exports javax.annotation;
 }
