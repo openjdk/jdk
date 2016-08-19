@@ -437,7 +437,7 @@ CodeBlob* CodeCache::next_blob(CodeBlob* cb) {
  * run the constructor for the CodeBlob subclass he is busy
  * instantiating.
  */
-CodeBlob* CodeCache::allocate(int size, int code_blob_type, bool strict) {
+CodeBlob* CodeCache::allocate(int size, int code_blob_type, int orig_code_blob_type) {
   // Possibly wakes up the sweeper thread.
   NMethodSweeper::notify(code_blob_type);
   assert_locked_or_safepoint(CodeCache_lock);
@@ -455,32 +455,41 @@ CodeBlob* CodeCache::allocate(int size, int code_blob_type, bool strict) {
     cb = (CodeBlob*)heap->allocate(size);
     if (cb != NULL) break;
     if (!heap->expand_by(CodeCacheExpansionSize)) {
+      // Save original type for error reporting
+      if (orig_code_blob_type == CodeBlobType::All) {
+        orig_code_blob_type = code_blob_type;
+      }
       // Expansion failed
-      if (SegmentedCodeCache && !strict) {
+      if (SegmentedCodeCache) {
         // Fallback solution: Try to store code in another code heap.
+        // NonNMethod -> MethodNonProfiled -> MethodProfiled (-> MethodNonProfiled)
         // Note that in the sweeper, we check the reverse_free_ratio of the code heap
         // and force stack scanning if less than 10% of the code heap are free.
         int type = code_blob_type;
         switch (type) {
         case CodeBlobType::NonNMethod:
           type = CodeBlobType::MethodNonProfiled;
-          strict = false;   // Allow recursive search for other heaps
-          break;
-        case CodeBlobType::MethodProfiled:
-          type = CodeBlobType::MethodNonProfiled;
-          strict = true;
           break;
         case CodeBlobType::MethodNonProfiled:
           type = CodeBlobType::MethodProfiled;
-          strict = true;
+          break;
+        case CodeBlobType::MethodProfiled:
+          // Avoid loop if we already tried that code heap
+          if (type == orig_code_blob_type) {
+            type = CodeBlobType::MethodNonProfiled;
+          }
           break;
         }
-        if (heap_available(type)) {
-          return allocate(size, type, strict);
+        if (type != code_blob_type && type != orig_code_blob_type && heap_available(type)) {
+          if (PrintCodeCacheExtension) {
+            tty->print_cr("Extension of %s failed. Trying to allocate in %s.",
+                          heap->name(), get_code_heap(type)->name());
+          }
+          return allocate(size, type, orig_code_blob_type);
         }
       }
       MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      CompileBroker::handle_full_code_cache(code_blob_type);
+      CompileBroker::handle_full_code_cache(orig_code_blob_type);
       return NULL;
     }
     if (PrintCodeCacheExtension) {
