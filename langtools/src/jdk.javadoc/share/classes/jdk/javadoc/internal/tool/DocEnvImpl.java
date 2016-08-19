@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.tool;
 
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -33,6 +32,7 @@ import java.util.stream.Collectors;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
@@ -41,7 +41,6 @@ import javax.tools.JavaFileManager;
 
 import com.sun.source.util.DocTrees;
 import com.sun.tools.javac.code.Source;
-import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import jdk.javadoc.doclet.DocletEnvironment;
 
 /**
@@ -60,202 +59,44 @@ import jdk.javadoc.doclet.DocletEnvironment;
  */
 public class DocEnvImpl implements DocletEnvironment {
 
-    /**
-     * list of classes specified on the command line.
-     */
-    private Set<TypeElement> cmdLineClasses;
-
-    /**
-     * list of packages specified on the command line.
-     */
-    private  Set<PackageElement> cmdLinePackages;
+    public final ElementsTable etable;
 
     public final ToolEnvironment toolEnv;
 
     /**
-     * Constructor used when reading source files.
+     * Construct a doclet environment.
      *
-     * @param toolEnv the documentation environment, state for this javadoc run
-     * @param classes list of classes specified on the commandline
-     * @param packages list of package names specified on the commandline
+     * @param toolEnv the tool environment
+     * @param etable the includes table, providing all the information
+     * with respect to specified, included/selected elements.
      */
-    public DocEnvImpl(ToolEnvironment toolEnv, List<JCClassDecl> classes, List<String> packages) {
+    public DocEnvImpl(ToolEnvironment toolEnv, ElementsTable etable) {
         this.toolEnv = toolEnv;
-        setPackages(toolEnv, packages);
-        setClasses(toolEnv, classes);
+        this.etable = etable;
+    }
+
+    @Override
+    public Set<ModuleElement> getIncludedModuleElements() {
+        return etable.getIncludedModuleElements();
+    }
+
+    @Override
+    public Set<PackageElement> getIncludedPackageElements() {
+        return etable.getIncludedPackageElements();
     }
 
     /**
-     * Constructor used when reading class files.
-     *
-     * @param toolEnv the documentation environment, state for this javadoc run
-     * @param classes list of class names specified on the commandline
-     */
-    public DocEnvImpl(ToolEnvironment toolEnv, List<String> classes) {
-        //super(env, null);
-        this.toolEnv = toolEnv;
-
-        Set<TypeElement> classList = new LinkedHashSet<>();
-        for (String className : classes) {
-            TypeElement c = toolEnv.loadClass(className);
-            if (c == null)
-                toolEnv.error(null, "javadoc.class_not_found", className);
-            else
-                classList.add(c);
-        }
-        cmdLineClasses = classList;
-    }
-
-    /**
-     * Initialize classes information. Those classes are input from
-     * command line.
-     *
-     * @param toolEnv the compilation environment
-     * @param classes a list of ClassDeclaration
-     */
-    private void setClasses(ToolEnvironment toolEnv, List<JCClassDecl> classes) {
-        Set<TypeElement> result = new LinkedHashSet<>();
-        classes.stream().filter((def) -> (toolEnv.shouldDocument(def.sym))).forEach((def) -> {
-            TypeElement te = (TypeElement)def.sym;
-            if (te != null) {
-                toolEnv.setIncluded((Element)def.sym);
-                result.add(te);
-            }
-        });
-        cmdLineClasses = Collections.unmodifiableSet(result);
-    }
-
-    /**
-     * Initialize packages information.
-     *
-     * @param toolEnv the compilation environment
-     * @param packages a list of package names (String)
-     */
-    private void setPackages(ToolEnvironment toolEnv, List<String> packages) {
-        Set<PackageElement> packlist = new LinkedHashSet<>();
-        packages.stream().forEach((name) -> {
-            PackageElement pkg =  getElementUtils().getPackageElement(name);
-            if (pkg != null) {
-                toolEnv.setIncluded(pkg);
-                packlist.add(pkg);
-            } else {
-                toolEnv.warning("main.no_source_files_for_package", name);
-            }
-        });
-        cmdLinePackages = Collections.unmodifiableSet(packlist);
-    }
-
-    /**
-     * Packages specified on the command line.
-     */
-    public Set<PackageElement> specifiedPackages() {
-        return cmdLinePackages;
-    }
-
-    /**
-     * Classes and interfaces specified on the command line,
-     * including their inner classes
-     */
-    public Set<TypeElement> specifiedClasses() {
-       Set<TypeElement> out = new LinkedHashSet<>();
-       cmdLineClasses.stream().forEach((te) -> {
-            toolEnv.addAllClasses(out, te, true);
-        });
-       return out;
-    }
-
-    private Set<TypeElement> classesToDocument = null;
-    /**
-     * Return all classes and interfaces (including those inside
+     * Return all TypeElements (including those inside
      * packages) to be documented.
      */
-    public Set<TypeElement> getIncludedClasses() {
-        if (classesToDocument == null) {
-            Set<TypeElement> classes = new LinkedHashSet<>();
-
-            cmdLineClasses.stream().forEach((te) -> {
-                toolEnv.addAllClasses(classes, te, true);
-            });
-            cmdLinePackages.stream().forEach((pkg) -> {
-                toolEnv.addAllClasses(classes, pkg);
-            });
-            classesToDocument = Collections.unmodifiableSet(classes);
-        }
-        return classesToDocument;
+    @Override
+    public Set<TypeElement> getIncludedTypeElements() {
+        return etable.getIncludedTypeElements();
     }
 
-    /**
-     * Return the name of this  item.
-     *
-     * @return the string <code>"*RootDocImpl*"</code>.
-     */
-    public String name() {
-        return "*RootDocImpl*";
-    }
-
-    /**
-     * Return the name of this Doc item.
-     *
-     * @return the string <code>"*RootDocImpl*"</code>.
-     */
-    public String qualifiedName() {
-        return "*RootDocImpl*";
-    }
-
-    /**
-     * Return true if this Element is included in the active set.
-     * RootDocImpl isn't even a program entity so it is always false.
-     */
     @Override
     public boolean isIncluded(Element e) {
-        return toolEnv.isIncluded(e);
-    }
-
-//    Note: these reporting methods are no longer used.
-//    /**
-//     * Print error message, increment error count.
-//     *
-//     * @param msg message to print
-//     */
-//    public void printError(String msg) {
-//        env.printError(msg);
-//    }
-//
-//    /**
-//     * Print error message, increment error count.
-//     *
-//     * @param msg message to print
-//     */
-//    public void printError(DocTreePath path, String msg) {
-//        env.printError(path, msg);
-//    }
-//
-//    public void printError(Element e, String msg) {
-//        env.printError(e, msg);
-//    }
-//
-//    public void printWarning(Element e, String msg) {
-//        env.printWarning(e, msg);
-//    }
-//
-//    public void printNotice(Element e, String msg) {
-//       env.printNotice(e, msg);
-//    }
-//
-//    /**
-//     * Print warning message, increment warning count.
-//     *
-//     * @param msg message to print
-//     */
-//    public void printWarning(String msg) {
-//        env.printWarning(msg);
-//    }
-
-    /**
-     * Return the current file manager.
-     */
-    public JavaFileManager getFileManager() {
-        return toolEnv.fileManager;
+        return etable.isIncluded(e);
     }
 
     @Override
@@ -278,12 +119,9 @@ public class DocEnvImpl implements DocletEnvironment {
     @Override
     public Set<Element> getSpecifiedElements() {
         Set<Element> out = new LinkedHashSet<>();
-        specifiedPackages().stream().forEach((pe) -> {
-            out.add(pe);
-        });
-        specifiedClasses().stream().forEach((e) -> {
-            out.add(e);
-        });
+        out.addAll(etable.getSpecifiedModuleElements());
+        out.addAll(etable.getSpecifiedPackageElements());
+        out.addAll(etable.getSpecifiedTypeElements());
         return out;
     }
 
@@ -300,5 +138,10 @@ public class DocEnvImpl implements DocletEnvironment {
     @Override
     public SourceVersion getSourceVersion() {
         return Source.toSourceVersion(toolEnv.source);
+    }
+
+    @Override
+    public ModuleMode getModuleMode() {
+        return etable.getModuleMode();
     }
 }

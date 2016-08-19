@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4162583 7054918
+ * @bug 4162583 7054918 8130181
  * @library ../testlibrary
  * @summary Make sure Provider api implementations are synchronized properly
  */
@@ -61,7 +61,7 @@ class AccessorThread extends Thread {
     public void run() {
         Provider[] provs = new Provider[10];
         for (int i=0; i < provs.length; i++)
-            provs[i] = new MyProvider("name"+i, 1, "test");
+            provs[i] = new MyProvider("name"+i, "1", "test");
 
         int rounds = 20;
         while (rounds-- > 0) {
@@ -86,7 +86,7 @@ class AccessorThread extends Thread {
 }
 
 class MyProvider extends Provider {
-    public MyProvider(String name, double version, String info) {
+    public MyProvider(String name, String version, String info) {
         super(name, version, info);
         put("Signature.sigalg", "sigimpl");
     }

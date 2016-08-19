@@ -37,12 +37,18 @@ import javax.lang.model.element.ModuleElement;
  *
  */
 public class DocPaths {
+    /** The name of the file for all classes, without using frames, when --no-frames is specified. */
+    public static final DocPath ALLCLASSES = DocPath.create("allclasses.html");
 
     /** The name of the file for all classes, using frames. */
     public static final DocPath ALLCLASSES_FRAME = DocPath.create("allclasses-frame.html");
 
     /** The name of the file for all classes, without using frames. */
     public static final DocPath ALLCLASSES_NOFRAME = DocPath.create("allclasses-noframe.html");
+
+    public static DocPath AllClasses(boolean frames) {
+        return frames ? ALLCLASSES_NOFRAME : ALLCLASSES;
+    }
 
     /** The name of the sub-directory for storing class usage info. */
     public static final DocPath CLASS_USE = DocPath.create("class-use");
@@ -115,11 +121,21 @@ public class DocPaths {
     /** The name of the member search index zip file. */
     public static final DocPath MEMBER_SEARCH_INDEX_ZIP = DocPath.create("member-search-index.zip");
 
+    /** The name of the module search index file. */
+    public static final DocPath MODULE_SEARCH_INDEX_JSON = DocPath.create("module-search-index.json");
+
+    /** The name of the module search index zipfile. */
+    public static final DocPath MODULE_SEARCH_INDEX_ZIP = DocPath.create("module-search-index.zip");
+
     /** The name of the file for the overview frame. */
     public static final DocPath OVERVIEW_FRAME = DocPath.create("overview-frame.html");
 
     /** The name of the file for the overview summary. */
     public static final DocPath OVERVIEW_SUMMARY = DocPath.create("overview-summary.html");
+
+    public static DocPath overviewSummary(boolean frames) {
+        return frames ? OVERVIEW_SUMMARY : INDEX;
+    }
 
     /** The name of the file for the overview tree. */
     public static final DocPath OVERVIEW_TREE = DocPath.create("overview-tree.html");

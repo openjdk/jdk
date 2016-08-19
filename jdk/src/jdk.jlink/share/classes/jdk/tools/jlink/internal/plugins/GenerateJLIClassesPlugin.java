@@ -55,13 +55,17 @@ public final class GenerateJLIClassesPlugin implements Plugin {
 
     private static final String DESCRIPTION = PluginsResourceBundle.getDescription(NAME);
 
-    private static final String DMH = "java/lang/invoke/DirectMethodHandle$Holder";
+    private static final String DIRECT_METHOD_HANDLE = "java/lang/invoke/DirectMethodHandle$Holder";
     private static final String DMH_INVOKE_VIRTUAL = "invokeVirtual";
     private static final String DMH_INVOKE_STATIC = "invokeStatic";
     private static final String DMH_INVOKE_SPECIAL = "invokeSpecial";
     private static final String DMH_NEW_INVOKE_SPECIAL = "newInvokeSpecial";
     private static final String DMH_INVOKE_INTERFACE = "invokeInterface";
     private static final String DMH_INVOKE_STATIC_INIT = "invokeStaticInit";
+
+    private static final String DELEGATING_METHOD_HANDLE = "java/lang/invoke/DelegatingMethodHandle$Holder";
+
+    private static final String BASIC_FORMS_HANDLE = "java/lang/invoke/LambdaForm$Holder";
 
     private static final JavaLangInvokeAccess JLIA
             = SharedSecrets.getJavaLangInvokeAccess();
@@ -222,9 +226,18 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         // Copy all but DMH_ENTRY to out
-        in.transformAndCopy(entry -> entry.path().equals(DMH_ENTRY) ? null : entry, out);
+        in.transformAndCopy(entry -> {
+                // filter out placeholder entries
+                if (entry.path().equals(DIRECT_METHOD_HANDLE_ENTRY) ||
+                    entry.path().equals(DELEGATING_METHOD_HANDLE_ENTRY) ||
+                    entry.path().equals(BASIC_FORMS_HANDLE_ENTRY)) {
+                    return null;
+                } else {
+                    return entry;
+                }
+            }, out);
         speciesTypes.forEach(types -> generateBMHClass(types, out));
-        generateDMHClass(out);
+        generateHolderClasses(out);
         return out.build();
     }
 
@@ -247,7 +260,7 @@ public final class GenerateJLIClassesPlugin implements Plugin {
         }
     }
 
-    private void generateDMHClass(ResourcePoolBuilder out) {
+    private void generateHolderClasses(ResourcePoolBuilder out) {
         int count = 0;
         for (List<String> entry : dmhMethods.values()) {
             count += entry.size();
@@ -264,15 +277,30 @@ public final class GenerateJLIClassesPlugin implements Plugin {
             }
         }
         try {
-            byte[] bytes =
-                    JLIA.generateDMHClassBytes(DMH, methodTypes, dmhTypes);
-            ResourcePoolEntry ndata = ResourcePoolEntry.create(DMH_ENTRY, bytes);
+            byte[] bytes = JLIA.generateDirectMethodHandleHolderClassBytes(
+                    DIRECT_METHOD_HANDLE, methodTypes, dmhTypes);
+            ResourcePoolEntry ndata = ResourcePoolEntry
+                    .create(DIRECT_METHOD_HANDLE_ENTRY, bytes);
+            out.add(ndata);
+
+            bytes = JLIA.generateDelegatingMethodHandleHolderClassBytes(
+                    DELEGATING_METHOD_HANDLE, methodTypes);
+            ndata = ResourcePoolEntry.create(DELEGATING_METHOD_HANDLE_ENTRY, bytes);
+            out.add(ndata);
+
+            bytes = JLIA.generateBasicFormsClassBytes(BASIC_FORMS_HANDLE);
+            ndata = ResourcePoolEntry.create(BASIC_FORMS_HANDLE_ENTRY, bytes);
             out.add(ndata);
         } catch (Exception ex) {
             throw new PluginException(ex);
         }
     }
-    private static final String DMH_ENTRY = "/java.base/" + DMH + ".class";
+    private static final String DIRECT_METHOD_HANDLE_ENTRY =
+            "/java.base/" + DIRECT_METHOD_HANDLE + ".class";
+    private static final String DELEGATING_METHOD_HANDLE_ENTRY =
+            "/java.base/" + DELEGATING_METHOD_HANDLE + ".class";
+    private static final String BASIC_FORMS_HANDLE_ENTRY =
+            "/java.base/" + BASIC_FORMS_HANDLE + ".class";
 
     // Convert LL -> LL, L3 -> LLL
     private static String expandSignature(String signature) {
@@ -310,15 +338,19 @@ public final class GenerateJLIClassesPlugin implements Plugin {
         assert(parts.length == 2);
         assert(parts[1].length() == 1);
         String parameters = expandSignature(parts[0]);
-        Class<?> rtype = primitiveType(parts[1].charAt(0));
-        Class<?>[] ptypes = new Class<?>[parameters.length()];
-        for (int i = 0; i < ptypes.length; i++) {
-            ptypes[i] = primitiveType(parameters.charAt(i));
+        Class<?> rtype = simpleType(parts[1].charAt(0));
+        if (parameters.isEmpty()) {
+            return MethodType.methodType(rtype);
+        } else {
+            Class<?>[] ptypes = new Class<?>[parameters.length()];
+            for (int i = 0; i < ptypes.length; i++) {
+                ptypes[i] = simpleType(parameters.charAt(i));
+            }
+            return MethodType.methodType(rtype, ptypes);
         }
-        return MethodType.methodType(rtype, ptypes);
     }
 
-    private static Class<?> primitiveType(char c) {
+    private static Class<?> simpleType(char c) {
         switch (c) {
             case 'F':
                 return float.class;

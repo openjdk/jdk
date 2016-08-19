@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4938922 4961104 5071293 6236533
+ * @bug 4938922 4961104 5071293 6236533 8130181
  * @summary verify that the KeyStore.Builder API works
  * @author Andreas Sterbenz
  */
@@ -219,7 +219,7 @@ public class KeyStoreBuilder {
 
     private static class MyProvider extends Provider {
         MyProvider() {
-            super("My", 1.0d, null);
+            super("My", "1.0", null);
             put("KeyStore.My", "KeyStoreBuilder$MyKeyStoreSpi");
         }
     }

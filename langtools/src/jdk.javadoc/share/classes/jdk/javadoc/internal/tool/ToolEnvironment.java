@@ -26,16 +26,12 @@
 package jdk.javadoc.internal.tool;
 
 
-import java.lang.reflect.Modifier;
 import java.util.*;
 
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.Elements;
-import javax.lang.model.util.SimpleElementVisitor9;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 
@@ -44,15 +40,11 @@ import com.sun.source.util.TreePath;
 import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.code.ClassFinder;
 import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Kinds.Kind;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
-import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
-import com.sun.tools.javac.code.Symbol.PackageSymbol;
-import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Check;
@@ -67,12 +59,8 @@ import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCPackageDecl;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Convert;
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
-
-import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 
 /**
  * Holds the environment for a run of javadoc.
@@ -113,13 +101,7 @@ public class ToolEnvironment {
     /** The name table. */
     private Names names;
 
-    /** The encoding name. */
-    private String encoding;
-
     final Symbol externalizableSym;
-
-    /** Access filter (public, protected, ...).  */
-    protected ModifierFilter filter;
 
     /**
      * True if we do not want to print any notifications at all.
@@ -181,20 +163,8 @@ public class ToolEnvironment {
         elementToTreePath = new HashMap<>();
     }
 
-    public void intialize(String encoding,
-            String showAccess,
-            String overviewpath,
-            List<String> javaNames,
-            Iterable<? extends JavaFileObject> fileObjects,
-            List<String> subPackages,
-            List<String> excludedPackages,
-            boolean docClasses,
-            boolean quiet) {
-        this.filter = ModifierFilter.getModifierFilter(showAccess);
-        this.quiet = quiet;
-
-        this.setEncoding(encoding);
-        this.docClasses = docClasses;
+    public void initialize(Map<ToolOption, Object> toolOpts) {
+        this.quiet = (boolean)toolOpts.getOrDefault(ToolOption.QUIET, false);
     }
 
     /**
@@ -212,54 +182,8 @@ public class ToolEnvironment {
         }
     }
 
-    private boolean isSynthetic(long flags) {
-        return (flags & Flags.SYNTHETIC) != 0;
-    }
-
-    private boolean isSynthetic(Symbol sym) {
-        return isSynthetic(sym.flags_field);
-    }
-
-    SimpleElementVisitor9<Boolean, Void> shouldDocumentVisitor = null;
-    public boolean shouldDocument(Element e) {
-        if (shouldDocumentVisitor == null) {
-            shouldDocumentVisitor = new SimpleElementVisitor9<Boolean, Void>() {
-
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
-            public Boolean visitType(TypeElement e, Void p) {
-                return shouldDocument((ClassSymbol)e);
-            }
-
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
-            public Boolean visitVariable(VariableElement e, Void p) {
-                return shouldDocument((VarSymbol)e);
-            }
-
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
-            public Boolean visitExecutable(ExecutableElement e, Void p) {
-                return shouldDocument((MethodSymbol)e);
-            }
-        };
-        }
-        return shouldDocumentVisitor.visit(e);
-    }
-
-    /** Check whether this member should be documented. */
-    public boolean shouldDocument(VarSymbol sym) {
-        long mod = sym.flags();
-        if (isSynthetic(mod)) {
-            return false;
-        }
-        return filter.checkModifier(translateModifiers(mod));
-    }
-
-    /** Check whether this member should be documented. */
-    public boolean shouldDocument(MethodSymbol sym) {
-        long mod = sym.flags();
-        if (isSynthetic(mod)) {
-            return false;
-        }
-        return filter.checkModifier(translateModifiers(mod));
+    boolean isSynthetic(Symbol sym) {
+        return (sym.flags() & Flags.SYNTHETIC) != 0;
     }
 
     void setElementToTreePath(Element e, TreePath tree) {
@@ -268,43 +192,16 @@ public class ToolEnvironment {
         elementToTreePath.put(e, tree);
     }
 
-    private boolean hasLeaf(ClassSymbol sym) {
-        TreePath path = elementToTreePath.get(sym);
-        if (path == null)
-            return false;
-        return path.getLeaf() != null;
-    }
-
-    /** check whether this class should be documented. */
-    public boolean shouldDocument(ClassSymbol sym) {
-        return
-            !isSynthetic(sym.flags_field) && // no synthetics
-            (docClasses || hasLeaf(sym)) &&
-            isVisible(sym);
-    }
-
-    //### Comment below is inaccurate wrt modifier filter testing
     /**
-     * Check the visibility if this is an nested class.
-     * if this is not a nested class, return true.
-     * if this is an static visible nested class,
-     *    return true.
-     * if this is an visible nested class
-     *    if the outer class is visible return true.
-     *    else return false.
-     * IMPORTANT: This also allows, static nested classes
-     * to be defined inside an nested class, which is not
-     * allowed by the compiler. So such an test case will
-     * not reach upto this method itself, but if compiler
-     * allows it, then that will go through.
+     * Returns true if the symbol has a tree path associated with it.
+     * Primarily used to disambiguate a symbol associated with a source
+     * file versus a class file.
+     * @param sym the symbol to be checked
+     * @return true if the symbol has a tree path
      */
-    public boolean isVisible(ClassSymbol sym) {
-        long mod = sym.flags_field;
-        if (!filter.checkModifier(translateModifiers(mod))) {
-            return false;
-        }
-        ClassSymbol encl = sym.owner.enclClass();
-        return (encl == null || (mod & Flags.STATIC) != 0 || isVisible(encl));
+    boolean hasPath(ClassSymbol sym) {
+        TreePath path = elementToTreePath.get(sym);
+        return path != null;
     }
 
     //---------------- print forwarders ----------------//
@@ -363,6 +260,15 @@ public class ToolEnvironment {
 //    public void printError(Element e, String msg) {
 //        messager.printError(e, msg);
 //    }
+
+    /**
+     * Print error message, increment error count.
+     * @param key selects message from resource
+     * @param args replacement arguments
+     */
+    public void error(String key, String... args) {
+        error(null, key, args);
+    }
 
     /**
      * Print error message, increment error count.
@@ -553,48 +459,6 @@ public class ToolEnvironment {
         throw new Messager.ExitJavadoc();
     }
 
-    /**
-     * Adds all inner classes of this class, and their inner classes recursively, to the list
-     */
-    void addAllClasses(Collection<TypeElement> list, TypeElement typeElement, boolean filtered) {
-        ClassSymbol klass = (ClassSymbol)typeElement;
-        try {
-            if (isSynthetic(klass.flags())) return;
-            // sometimes synthetic classes are not marked synthetic
-            if (!JavadocTool.isValidClassName(klass.name.toString())) return;
-            if (filtered && !shouldDocument(klass)) return;
-            if (list.contains(klass)) return;
-            list.add(klass);
-            for (Symbol sym : klass.members().getSymbols(NON_RECURSIVE)) {
-                if (sym != null && sym.kind == Kind.TYP) {
-                    ClassSymbol s = (ClassSymbol)sym;
-                    if (!isSynthetic(s.flags())) {
-                        addAllClasses(list, s, filtered);
-                    }
-                }
-            }
-        } catch (CompletionFailure e) {
-            // quietly ignore completion failures
-        }
-    }
-
-    /**
-     * Return a list of all classes contained in this package, including
-     * member classes of those classes, and their member classes, etc.
-     */
-    void addAllClasses(Collection<TypeElement> list, PackageElement pkg) {
-        boolean filtered = true;
-        PackageSymbol sym = (PackageSymbol)pkg;
-        for (Symbol isym : sym.members().getSymbols(NON_RECURSIVE)) {
-            if (isym != null) {
-                ClassSymbol s = (ClassSymbol)isym;
-                if (!isSynthetic(s)) {
-                    addAllClasses(list, s, filtered);
-                }
-            }
-        }
-    }
-
     TreePath getTreePath(JCCompilationUnit tree) {
         TreePath p = treePaths.get(tree);
         if (p == null)
@@ -624,225 +488,11 @@ public class ToolEnvironment {
         return types;
     }
 
-    /**
-     * Set the encoding.
-     */
-    public void setEncoding(String encoding) {
-        this.encoding = encoding;
-    }
-
     public Env<AttrContext> getEnv(ClassSymbol tsym) {
         return enter.getEnv(tsym);
-    }
-
-    /**
-     * Get the encoding.
-     */
-    public String getEncoding() {
-        return encoding;
-    }
-
-    /**
-     * Convert modifier bits from private coding used by
-     * the compiler to that of java.lang.reflect.Modifier.
-     */
-    static int translateModifiers(long flags) {
-        int result = 0;
-        if ((flags & Flags.ABSTRACT) != 0)
-            result |= Modifier.ABSTRACT;
-        if ((flags & Flags.FINAL) != 0)
-            result |= Modifier.FINAL;
-        if ((flags & Flags.INTERFACE) != 0)
-            result |= Modifier.INTERFACE;
-        if ((flags & Flags.NATIVE) != 0)
-            result |= Modifier.NATIVE;
-        if ((flags & Flags.PRIVATE) != 0)
-            result |= Modifier.PRIVATE;
-        if ((flags & Flags.PROTECTED) != 0)
-            result |= Modifier.PROTECTED;
-        if ((flags & Flags.PUBLIC) != 0)
-            result |= Modifier.PUBLIC;
-        if ((flags & Flags.STATIC) != 0)
-            result |= Modifier.STATIC;
-        if ((flags & Flags.SYNCHRONIZED) != 0)
-            result |= Modifier.SYNCHRONIZED;
-        if ((flags & Flags.TRANSIENT) != 0)
-            result |= Modifier.TRANSIENT;
-        if ((flags & Flags.VOLATILE) != 0)
-            result |= Modifier.VOLATILE;
-        return result;
-    }
-
-    private final Set<Element> includedSet = new HashSet<>();
-
-    public void setIncluded(Element element) {
-        includedSet.add(element);
-    }
-
-    private SimpleElementVisitor9<Boolean, Void> includedVisitor = null;
-
-    public boolean isIncluded(Element e) {
-        if (e == null) {
-            return false;
-        }
-        if (includedVisitor == null) {
-            includedVisitor = new SimpleElementVisitor9<Boolean, Void>() {
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
-                public Boolean visitType(TypeElement e, Void p) {
-                    if (includedSet.contains(e)) {
-                        return true;
-                    }
-                    if (shouldDocument(e)) {
-                        // Class is nameable from top-level and
-                        // the class and all enclosing classes
-                        // pass the modifier filter.
-                        PackageElement pkg = elements.getPackageOf(e);
-                        if (includedSet.contains(pkg)) {
-                            setIncluded(e);
-                            return true;
-                        }
-                        Element enclosing = e.getEnclosingElement();
-                        if (enclosing != null && includedSet.contains(enclosing)) {
-                            setIncluded(e);
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
-                public Boolean visitPackage(PackageElement e, Void p) {
-                    return includedSet.contains(e);
-                }
-
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
-                public Boolean visitUnknown(Element e, Void p) {
-                    throw new AssertionError("unknown element: " + e);
-                }
-
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
-                public Boolean defaultAction(Element e, Void p) {
-                    return visit(e.getEnclosingElement()) && shouldDocument(e);
-                }
-            };
-        }
-        return includedVisitor.visit(e);
     }
 
     public boolean isQuiet() {
         return quiet;
     }
-
-    /**
-     * A class which filters the access flags on classes, fields, methods, etc.
-     *
-     * <p>
-     * <b>This is NOT part of any supported API. If you write code that depends on this, you do so
-     * at your own risk. This code and its internal interfaces are subject to change or deletion
-     * without notice.</b>
-     *
-     * @see javax.lang.model.element.Modifier
-     * @author Robert Field
-     */
-
-    private static class ModifierFilter {
-
-        static enum FilterFlag {
-            PACKAGE,
-            PRIVATE,
-            PROTECTED,
-            PUBLIC
-        }
-
-        private Set<FilterFlag> oneOf;
-
-        /**
-         * Constructor - Specify a filter.
-         *
-         * @param oneOf a set containing desired flags to be matched.
-         */
-        ModifierFilter(Set<FilterFlag> oneOf) {
-            this.oneOf = oneOf;
-        }
-
-        /**
-         * Constructor - Specify a filter.
-         *
-         * @param oneOf an array containing desired flags to be matched.
-         */
-        ModifierFilter(FilterFlag... oneOf) {
-            this.oneOf = new HashSet<>();
-            this.oneOf.addAll(Arrays.asList(oneOf));
-        }
-
-        static ModifierFilter getModifierFilter(String showAccess) {
-            switch (showAccess) {
-                case "public":
-                    return new ModifierFilter(FilterFlag.PUBLIC);
-                case "package":
-                    return new ModifierFilter(FilterFlag.PUBLIC, FilterFlag.PROTECTED,
-                                              FilterFlag.PACKAGE);
-                case "private":
-                    return new ModifierFilter(FilterFlag.PRIVATE);
-                default:
-                    return new ModifierFilter(FilterFlag.PUBLIC, FilterFlag.PROTECTED);
-            }
-        }
-
-        private boolean hasFlag(long flag, long modifierBits) {
-            return (flag & modifierBits) != 0;
-        }
-
-        private List<FilterFlag> flagsToModifiers(long modifierBits) {
-            List<FilterFlag> list = new ArrayList<>();
-            boolean isPackage = true;
-            if (hasFlag(com.sun.tools.javac.code.Flags.PRIVATE, modifierBits)) {
-                list.add(FilterFlag.PRIVATE);
-                isPackage = false;
-            }
-            if (hasFlag(com.sun.tools.javac.code.Flags.PROTECTED, modifierBits)) {
-                list.add(FilterFlag.PROTECTED);
-                isPackage = false;
-            }
-            if (hasFlag(com.sun.tools.javac.code.Flags.PUBLIC, modifierBits)) {
-                list.add(FilterFlag.PUBLIC);
-                isPackage = false;
-            }
-            if (isPackage) {
-                list.add(FilterFlag.PACKAGE);
-            }
-            return list;
-        }
-
-        /**
-         * Filter on modifier bits.
-         *
-         * @param modifierBits Bits as specified in the Modifier class
-         *
-         * @return Whether the modifierBits pass this filter.
-         */
-        public boolean checkModifier(int modifierBits) {
-            return checkModifier(flagsToModifiers(modifierBits));
-        }
-
-        /**
-         * Filter on Filter flags
-         *
-         * @param modifiers Flags as specified in the FilterFlags enumeration.
-         *
-         * @return if the modifier is contained.
-         */
-        public boolean checkModifier(List<FilterFlag> modifiers) {
-            if (oneOf.contains(FilterFlag.PRIVATE)) {
-                return true;
-            }
-            for (FilterFlag mod : modifiers) {
-                if (oneOf.contains(mod)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-    } // end ModifierFilter
 }

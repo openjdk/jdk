@@ -177,5 +177,6 @@ public abstract class MidiMessage implements Cloneable {
      *
      * @return a clone of this instance
      */
+    @Override
     public abstract Object clone();
 }

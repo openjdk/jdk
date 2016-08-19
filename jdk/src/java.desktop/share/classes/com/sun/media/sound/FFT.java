@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 /**
@@ -588,7 +589,6 @@ public final class FFT {
             i += jmax << 1;
 
         }
-
     }
 
     // Perform Factor-4 Decomposition with 3 * complex operators and 8 +/-
@@ -682,7 +682,6 @@ public final class FFT {
             i += jmax << 1;
 
         }
-
     }
 
     private void bitreversal(double[] data) {
@@ -743,6 +742,5 @@ public final class FFT {
             data[n] = data[m];
             data[m] = tempi;
         }
-
     }
 }

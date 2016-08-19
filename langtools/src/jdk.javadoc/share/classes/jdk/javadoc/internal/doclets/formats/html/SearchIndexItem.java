@@ -38,6 +38,7 @@ public class SearchIndexItem {
     private String label = "";
     private String url = "";
     private String category = "";
+    private String containingModule = "";
     private String containingPackage = "";
     private String containingClass = "";
     private String holder = "";
@@ -57,6 +58,10 @@ public class SearchIndexItem {
 
     public String getUrl() {
         return url;
+    }
+
+    public void setContainingModule(String m) {
+        containingModule = m;
     }
 
     public void setContainingPackage(String p) {
@@ -89,9 +94,16 @@ public class SearchIndexItem {
 
     public String toString() {
         StringBuilder item = new StringBuilder("");
-        if (category.equals("Packages")) {
+        if (category.equals("Modules")) {
             item.append("{")
                     .append("\"l\":\"").append(label).append("\"")
+                    .append("}");
+        } else if (category.equals("Packages")) {
+            item.append("{");
+            if (!containingModule.isEmpty()) {
+                item.append("\"m\":\"").append(containingModule).append("\",");
+            }
+            item.append("\"l\":\"").append(label).append("\"")
                     .append("}");
         } else if (category.equals("Types")) {
             item.append("{")

@@ -53,7 +53,7 @@ public abstract class EnumControl extends Control {
     /**
      * The set of possible values.
      */
-    private Object[] values;
+    private final Object[] values;
 
     /**
      * The current value.

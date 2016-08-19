@@ -324,6 +324,7 @@ public interface Sequencer extends MidiDevice {
      * @return the current position in microseconds
      * @see #setMicrosecondPosition
      */
+    @Override
     long getMicrosecondPosition();
 
     /**
@@ -680,7 +681,7 @@ public interface Sequencer extends MidiDevice {
         /**
          * Synchronization mode name.
          */
-        private String name;
+        private final String name;
 
         /**
          * Constructs a synchronization mode.
@@ -700,6 +701,7 @@ public interface Sequencer extends MidiDevice {
          * @return {@code true} if this object is the same as the {@code obj}
          *         argument, {@code false} otherwise
          */
+        @Override
         public final boolean equals(Object obj) {
 
             return super.equals(obj);
@@ -708,6 +710,7 @@ public interface Sequencer extends MidiDevice {
         /**
          * Finalizes the hashcode method.
          */
+        @Override
         public final int hashCode() {
 
             return super.hashCode();
@@ -719,6 +722,7 @@ public interface Sequencer extends MidiDevice {
          *
          * @return the name of this synchronization mode
          */
+        @Override
         public final String toString() {
 
             return name;

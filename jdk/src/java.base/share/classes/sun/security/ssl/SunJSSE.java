@@ -27,6 +27,7 @@
 package sun.security.ssl;
 
 import java.security.*;
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 /**
  * The JSSE provider.
@@ -104,7 +105,7 @@ public abstract class SunJSSE extends java.security.Provider {
 
     // standard constructor
     protected SunJSSE() {
-        super("SunJSSE", 9.0d, info);
+        super("SunJSSE", PROVIDER_VER, info);
         subclassCheck();
         if (Boolean.TRUE.equals(fips)) {
             throw new ProviderException
@@ -132,7 +133,7 @@ public abstract class SunJSSE extends java.security.Provider {
 
     private SunJSSE(java.security.Provider cryptoProvider,
             String providerName) {
-        super("SunJSSE", 9.0d, fipsInfo + providerName + ")");
+        super("SunJSSE", PROVIDER_VER, fipsInfo + providerName + ")");
         subclassCheck();
         if (cryptoProvider == null) {
             // Calling Security.getProvider() will cause other providers to be

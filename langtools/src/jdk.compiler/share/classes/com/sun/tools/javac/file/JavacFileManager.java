@@ -69,6 +69,7 @@ import javax.tools.StandardJavaFileManager;
 
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
+import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -509,7 +510,9 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             this.archivePath = archivePath;
             if (multiReleaseValue != null && archivePath.toString().endsWith(".jar")) {
                 Map<String,String> env = Collections.singletonMap("multi-release", multiReleaseValue);
-                this.fileSystem = getJarFSProvider().newFileSystem(archivePath, env);
+                FileSystemProvider jarFSProvider = fsInfo.getJarFSProvider();
+                Assert.checkNonNull(jarFSProvider, "should have been caught before!");
+                this.fileSystem = jarFSProvider.newFileSystem(archivePath, env);
             } else {
                 this.fileSystem = FileSystems.newFileSystem(archivePath, null);
             }
@@ -595,20 +598,6 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         public void close() throws IOException {
             fileSystem.close();
         }
-    }
-
-    private FileSystemProvider jarFSProvider;
-
-    private FileSystemProvider getJarFSProvider() throws IOException {
-        if (jarFSProvider != null) {
-            return jarFSProvider;
-        }
-        for (FileSystemProvider provider: FileSystemProvider.installedProviders()) {
-            if (provider.getScheme().equals("jar")) {
-                return (jarFSProvider = provider);
-            }
-        }
-        throw new ProviderNotFoundException("no provider found for .jar files");
     }
 
     /**
