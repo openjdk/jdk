@@ -28,60 +28,45 @@ package sun.java2d.marlin;
 import java.util.Arrays;
 import static sun.java2d.marlin.MarlinUtils.logInfo;
 
-public final class ArrayCache implements MarlinConst {
+public final class ArrayCacheConst implements MarlinConst {
 
-    static final int BUCKETS = 4;
+    static final int BUCKETS = 8;
     static final int MIN_ARRAY_SIZE = 4096;
+    // maximum array size
     static final int MAX_ARRAY_SIZE;
-    static final int MASK_CLR_1 = ~1;
+    // threshold below to grow arrays by 4
+    static final int THRESHOLD_SMALL_ARRAY_SIZE = 4 * 1024 * 1024;
     // threshold to grow arrays only by (3/2) instead of 2
     static final int THRESHOLD_ARRAY_SIZE;
-    static final int[] ARRAY_SIZES = new int[BUCKETS];
-    // dirty byte array sizes
-    static final int MIN_DIRTY_BYTE_ARRAY_SIZE = 32 * 2048; // 32px x 2048px
-    static final int MAX_DIRTY_BYTE_ARRAY_SIZE;
-    static final int[] DIRTY_BYTE_ARRAY_SIZES = new int[BUCKETS];
-    // large array thresholds:
-    static final long THRESHOLD_LARGE_ARRAY_SIZE;
+    // threshold to grow arrays only by (5/4) instead of (3/2)
     static final long THRESHOLD_HUGE_ARRAY_SIZE;
-    // stats
-    private static int resizeInt = 0;
-    private static int resizeDirtyInt = 0;
-    private static int resizeDirtyFloat = 0;
-    private static int resizeDirtyByte = 0;
-    private static int oversize = 0;
+    static final int[] ARRAY_SIZES = new int[BUCKETS];
 
     static {
         // initialize buckets for int/float arrays
         int arraySize = MIN_ARRAY_SIZE;
 
-        for (int i = 0; i < BUCKETS; i++, arraySize <<= 2) {
+        int inc_lg = 2; // x4
+
+        for (int i = 0; i < BUCKETS; i++, arraySize <<= inc_lg) {
             ARRAY_SIZES[i] = arraySize;
 
             if (DO_TRACE) {
                 logInfo("arraySize[" + i + "]: " + arraySize);
             }
-        }
-        MAX_ARRAY_SIZE = arraySize >> 2;
 
-        /* initialize buckets for dirty byte arrays
-         (large AA chunk = 32 x 2048 pixels) */
-        arraySize = MIN_DIRTY_BYTE_ARRAY_SIZE;
-
-        for (int i = 0; i < BUCKETS; i++, arraySize <<= 1) {
-            DIRTY_BYTE_ARRAY_SIZES[i] = arraySize;
-
-            if (DO_TRACE) {
-                logInfo("dirty arraySize[" + i + "]: " + arraySize);
+            if (arraySize >= THRESHOLD_SMALL_ARRAY_SIZE) {
+                inc_lg = 1; // x2
             }
         }
-        MAX_DIRTY_BYTE_ARRAY_SIZE = arraySize >> 1;
+        MAX_ARRAY_SIZE = arraySize >> inc_lg;
 
-        // threshold to grow arrays only by (3/2) instead of 2
-        THRESHOLD_ARRAY_SIZE = Math.max(2 * 1024 * 1024, MAX_ARRAY_SIZE); // 2M
+        if (MAX_ARRAY_SIZE <= 0) {
+            throw new IllegalStateException("Invalid max array size !");
+        }
 
-        THRESHOLD_LARGE_ARRAY_SIZE = 8L * THRESHOLD_ARRAY_SIZE; // 16M
-        THRESHOLD_HUGE_ARRAY_SIZE  = 8L * THRESHOLD_LARGE_ARRAY_SIZE; // 128M
+        THRESHOLD_ARRAY_SIZE       =  16  * 1024 * 1024; // >16M
+        THRESHOLD_HUGE_ARRAY_SIZE  =  48L * 1024 * 1024; // >48M
 
         if (DO_STATS || DO_MONITORS) {
             logInfo("ArrayCache.BUCKETS        = " + BUCKETS);
@@ -89,54 +74,15 @@ public final class ArrayCache implements MarlinConst {
             logInfo("ArrayCache.MAX_ARRAY_SIZE = " + MAX_ARRAY_SIZE);
             logInfo("ArrayCache.ARRAY_SIZES = "
                     + Arrays.toString(ARRAY_SIZES));
-            logInfo("ArrayCache.MIN_DIRTY_BYTE_ARRAY_SIZE = "
-                    + MIN_DIRTY_BYTE_ARRAY_SIZE);
-            logInfo("ArrayCache.MAX_DIRTY_BYTE_ARRAY_SIZE = "
-                    + MAX_DIRTY_BYTE_ARRAY_SIZE);
-            logInfo("ArrayCache.ARRAY_SIZES = "
-                    + Arrays.toString(DIRTY_BYTE_ARRAY_SIZES));
             logInfo("ArrayCache.THRESHOLD_ARRAY_SIZE = "
                     + THRESHOLD_ARRAY_SIZE);
-            logInfo("ArrayCache.THRESHOLD_LARGE_ARRAY_SIZE = "
-                    + THRESHOLD_LARGE_ARRAY_SIZE);
             logInfo("ArrayCache.THRESHOLD_HUGE_ARRAY_SIZE = "
                     + THRESHOLD_HUGE_ARRAY_SIZE);
         }
     }
 
-    private ArrayCache() {
+    private ArrayCacheConst() {
         // Utility class
-    }
-
-    static synchronized void incResizeInt() {
-        resizeInt++;
-    }
-
-    static synchronized void incResizeDirtyInt() {
-        resizeDirtyInt++;
-    }
-
-    static synchronized void incResizeDirtyFloat() {
-        resizeDirtyFloat++;
-    }
-
-    static synchronized void incResizeDirtyByte() {
-        resizeDirtyByte++;
-    }
-
-    static synchronized void incOversize() {
-        oversize++;
-    }
-
-    static void dumpStats() {
-        if (resizeInt != 0 || resizeDirtyInt != 0 || resizeDirtyFloat != 0
-                || resizeDirtyByte != 0 || oversize != 0) {
-            logInfo("ArrayCache: int resize: " + resizeInt
-                    + " - dirty int resize: " + resizeDirtyInt
-                    + " - dirty float resize: " + resizeDirtyFloat
-                    + " - dirty byte resize: " + resizeDirtyByte
-                    + " - oversize: " + oversize);
-        }
     }
 
     // small methods used a lot (to be inlined / optimized by hotspot)
@@ -144,15 +90,6 @@ public final class ArrayCache implements MarlinConst {
     static int getBucket(final int length) {
         for (int i = 0; i < ARRAY_SIZES.length; i++) {
             if (length <= ARRAY_SIZES[i]) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    static int getBucketDirtyBytes(final int length) {
-        for (int i = 0; i < DIRTY_BYTE_ARRAY_SIZES.length; i++) {
-            if (length <= DIRTY_BYTE_ARRAY_SIZES[i]) {
                 return i;
             }
         }
@@ -174,7 +111,7 @@ public final class ArrayCache implements MarlinConst {
                           "array exceeds maximum capacity !");
         }
         assert curSize >= 0;
-        final int initial = (curSize & MASK_CLR_1);
+        final int initial = curSize;
         int size;
         if (initial > THRESHOLD_ARRAY_SIZE) {
             size = initial + (initial >> 1); // x(3/2)
@@ -212,10 +149,12 @@ public final class ArrayCache implements MarlinConst {
         long size;
         if (curSize > THRESHOLD_HUGE_ARRAY_SIZE) {
             size = curSize + (curSize >> 2L); // x(5/4)
-        } else  if (curSize > THRESHOLD_LARGE_ARRAY_SIZE) {
+        } else if (curSize > THRESHOLD_ARRAY_SIZE) {
             size = curSize + (curSize >> 1L); // x(3/2)
-        } else {
+        } else if (curSize > THRESHOLD_SMALL_ARRAY_SIZE) {
             size = (curSize << 1L); // x2
+        } else {
+            size = (curSize << 2L); // x4
         }
         // ensure the new size is >= needed size:
         if (size < needSize) {
@@ -228,5 +167,107 @@ public final class ArrayCache implements MarlinConst {
             size = Integer.MAX_VALUE;
         }
         return size;
+    }
+
+    static final class CacheStats {
+        final String name;
+        final BucketStats[] bucketStats;
+        int resize = 0;
+        int oversize = 0;
+        long totalInitial = 0L;
+
+        CacheStats(final String name) {
+            this.name = name;
+
+            bucketStats = new BucketStats[BUCKETS];
+            for (int i = 0; i < BUCKETS; i++) {
+                bucketStats[i] = new BucketStats();
+            }
+        }
+
+        void reset() {
+            resize = 0;
+            oversize = 0;
+
+            for (int i = 0; i < BUCKETS; i++) {
+                bucketStats[i].reset();
+            }
+        }
+
+        long dumpStats() {
+            long totalCacheBytes = 0L;
+
+            if (DO_STATS) {
+                for (int i = 0; i < BUCKETS; i++) {
+                    final BucketStats s = bucketStats[i];
+
+                    if (s.maxSize != 0) {
+                        totalCacheBytes += getByteFactor()
+                                           * (s.maxSize * ARRAY_SIZES[i]);
+                    }
+                }
+
+                if (totalInitial != 0L || totalCacheBytes != 0L
+                    || resize != 0 || oversize != 0)
+                {
+                    logInfo(name + ": resize: " + resize
+                            + " - oversize: " + oversize
+                            + " - initial: " + getTotalInitialBytes()
+                            + " bytes (" + totalInitial + " elements)"
+                            + " - cache: " + totalCacheBytes + " bytes"
+                    );
+                }
+
+                if (totalCacheBytes != 0L) {
+                    logInfo(name + ": usage stats:");
+
+                    for (int i = 0; i < BUCKETS; i++) {
+                        final BucketStats s = bucketStats[i];
+
+                        if (s.getOp != 0) {
+                            logInfo("  Bucket[" + ARRAY_SIZES[i] + "]: "
+                                    + "get: " + s.getOp
+                                    + " - put: " + s.returnOp
+                                    + " - create: " + s.createOp
+                                    + " :: max size: " + s.maxSize
+                            );
+                        }
+                    }
+                }
+            }
+            return totalCacheBytes;
+        }
+
+        private int getByteFactor() {
+            int factor = 1;
+            if (name.contains("Int") || name.contains("Float")) {
+                factor = 4;
+            }
+            return factor;
+        }
+
+        long getTotalInitialBytes() {
+            return getByteFactor() * totalInitial;
+        }
+    }
+
+    static final class BucketStats {
+        int getOp = 0;
+        int createOp = 0;
+        int returnOp = 0;
+        int maxSize = 0;
+
+        void reset() {
+            getOp = 0;
+            createOp = 0;
+            returnOp = 0;
+            maxSize = 0;
+        }
+
+        void updateMaxSize(final int size) {
+            if (size > maxSize) {
+                maxSize = size;
+            }
+        }
     }
 }

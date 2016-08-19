@@ -60,7 +60,7 @@ public class AudioInputStream extends InputStream {
      * The {@code InputStream} from which this {@code AudioInputStream} object
      * was constructed.
      */
-    private InputStream stream;
+    private final InputStream stream;
 
     /**
      * The format of the audio data contained in the stream.

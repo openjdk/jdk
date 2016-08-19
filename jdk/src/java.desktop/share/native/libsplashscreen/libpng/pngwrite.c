@@ -30,7 +30,7 @@
  * file and, per its terms, should not be removed:
  *
  * Last changed in libpng 1.6.19 [November 12, 2015]
- * Copyright (c) 1998-2015 Glenn Randers-Pehrson
+ * Copyright (c) 1998-2002,2004,2006-2015 Glenn Randers-Pehrson
  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
  *
@@ -40,9 +40,9 @@
  */
 
 #include "pngpriv.h"
-#if defined(PNG_SIMPLIFIED_WRITE_SUPPORTED) && defined(PNG_STDIO_SUPPORTED)
+#ifdef PNG_SIMPLIFIED_WRITE_STDIO_SUPPORTED
 #  include <errno.h>
-#endif
+#endif /* SIMPLIFIED_WRITE_STDIO */
 
 #ifdef PNG_WRITE_SUPPORTED
 
@@ -1480,7 +1480,6 @@ png_write_png(png_structrp png_ptr, png_inforp info_ptr,
 
 
 #ifdef PNG_SIMPLIFIED_WRITE_SUPPORTED
-# ifdef PNG_STDIO_SUPPORTED /* currently required for png_image_write_* */
 /* Initialize the write structure - general purpose utility. */
 static int
 png_image_write_init(png_imagep image)
@@ -1532,6 +1531,10 @@ typedef struct
    png_const_voidp first_row;
    ptrdiff_t       row_bytes;
    png_voidp       local_row;
+   /* Byte count for memory writing */
+   png_bytep        memory;
+   png_alloc_size_t memory_bytes; /* not used for STDIO */
+   png_alloc_size_t output_bytes; /* running total */
 } png_image_write_control;
 
 /* Write png_uint_16 input to a 16-bit PNG; the png_ptr has already been set to
@@ -1959,9 +1962,43 @@ png_image_write_main(png_voidp argument)
       png_set_benign_errors(png_ptr, 0/*error*/);
 #   endif
 
-   /* Default the 'row_stride' parameter if required. */
-   if (display->row_stride == 0)
-      display->row_stride = PNG_IMAGE_ROW_STRIDE(*image);
+   /* Default the 'row_stride' parameter if required, also check the row stride
+    * and total image size to ensure that they are within the system limits.
+    */
+   {
+      const unsigned int channels = PNG_IMAGE_PIXEL_CHANNELS(image->format);
+
+      if (image->width <= 0x7FFFFFFFU/channels) /* no overflow */
+      {
+         png_uint_32 check;
+         const png_uint_32 png_row_stride = image->width * channels;
+
+         if (display->row_stride == 0)
+            display->row_stride = (png_int_32)/*SAFE*/png_row_stride;
+
+         if (display->row_stride < 0)
+            check = -display->row_stride;
+
+         else
+            check = display->row_stride;
+
+         if (check >= png_row_stride)
+         {
+            /* Now check for overflow of the image buffer calculation; this
+             * limits the whole image size to 32 bits for API compatibility with
+             * the current, 32-bit, PNG_IMAGE_BUFFER_SIZE macro.
+             */
+            if (image->height > 0xFFFFFFFF/png_row_stride)
+               png_error(image->opaque->png_ptr, "memory image too large");
+         }
+
+         else
+            png_error(image->opaque->png_ptr, "supplied row stride too small");
+      }
+
+      else
+         png_error(image->opaque->png_ptr, "image row stride too large");
+   }
 
    /* Set the required transforms then write the rows in the correct order. */
    if ((format & PNG_FORMAT_FLAG_COLORMAP) != 0)
@@ -2138,6 +2175,122 @@ png_image_write_main(png_voidp argument)
    return 1;
 }
 
+
+static void (PNGCBAPI
+image_memory_write)(png_structp png_ptr, png_bytep/*const*/ data,
+   png_size_t size)
+{
+   png_image_write_control *display = png_voidcast(png_image_write_control*,
+      png_ptr->io_ptr/*backdoor: png_get_io_ptr(png_ptr)*/);
+   const png_alloc_size_t ob = display->output_bytes;
+
+   /* Check for overflow; this should never happen: */
+   if (size <= ((png_alloc_size_t)-1) - ob)
+   {
+      /* I don't think libpng ever does this, but just in case: */
+      if (size > 0)
+      {
+         if (display->memory_bytes >= ob+size) /* writing */
+            memcpy(display->memory+ob, data, size);
+
+         /* Always update the size: */
+         display->output_bytes = ob+size;
+      }
+   }
+
+   else
+      png_error(png_ptr, "png_image_write_to_memory: PNG too big");
+}
+
+static void (PNGCBAPI
+image_memory_flush)(png_structp png_ptr)
+{
+   PNG_UNUSED(png_ptr)
+}
+
+static int
+png_image_write_memory(png_voidp argument)
+{
+   png_image_write_control *display = png_voidcast(png_image_write_control*,
+      argument);
+
+   /* The rest of the memory-specific init and write_main in an error protected
+    * environment.  This case needs to use callbacks for the write operations
+    * since libpng has no built in support for writing to memory.
+    */
+   png_set_write_fn(display->image->opaque->png_ptr, display/*io_ptr*/,
+         image_memory_write, image_memory_flush);
+
+   return png_image_write_main(display);
+}
+
+int PNGAPI
+png_image_write_to_memory(png_imagep image, void *memory,
+   png_alloc_size_t * PNG_RESTRICT memory_bytes, int convert_to_8bit,
+   const void *buffer, png_int_32 row_stride, const void *colormap)
+{
+   /* Write the image to the given buffer, or count the bytes if it is NULL */
+   if (image != NULL && image->version == PNG_IMAGE_VERSION)
+   {
+      if (memory_bytes != NULL && buffer != NULL)
+      {
+         /* This is to give the caller an easier error detection in the NULL
+          * case and guard against uninitialized variable problems:
+          */
+         if (memory == NULL)
+            *memory_bytes = 0;
+
+         if (png_image_write_init(image) != 0)
+         {
+            png_image_write_control display;
+            int result;
+
+            memset(&display, 0, (sizeof display));
+            display.image = image;
+            display.buffer = buffer;
+            display.row_stride = row_stride;
+            display.colormap = colormap;
+            display.convert_to_8bit = convert_to_8bit;
+            display.memory = png_voidcast(png_bytep, memory);
+            display.memory_bytes = *memory_bytes;
+            display.output_bytes = 0;
+
+            result = png_safe_execute(image, png_image_write_memory, &display);
+            png_image_free(image);
+
+            /* write_memory returns true even if we ran out of buffer. */
+            if (result)
+            {
+               /* On out-of-buffer this function returns '0' but still updates
+                * memory_bytes:
+                */
+               if (memory != NULL && display.output_bytes > *memory_bytes)
+                  result = 0;
+
+               *memory_bytes = display.output_bytes;
+            }
+
+            return result;
+         }
+
+         else
+            return 0;
+      }
+
+      else
+         return png_image_error(image,
+            "png_image_write_to_memory: invalid argument");
+   }
+
+   else if (image != NULL)
+      return png_image_error(image,
+         "png_image_write_to_memory: incorrect PNG_IMAGE_VERSION");
+
+   else
+      return 0;
+}
+
+#ifdef PNG_SIMPLIFIED_WRITE_STDIO_SUPPORTED
 int PNGAPI
 png_image_write_to_stdio(png_imagep image, FILE *file, int convert_to_8bit,
    const void *buffer, png_int_32 row_stride, const void *colormap)
@@ -2145,7 +2298,7 @@ png_image_write_to_stdio(png_imagep image, FILE *file, int convert_to_8bit,
    /* Write the image to the given (FILE*). */
    if (image != NULL && image->version == PNG_IMAGE_VERSION)
    {
-      if (file != NULL)
+      if (file != NULL && buffer != NULL)
       {
          if (png_image_write_init(image) != 0)
          {
@@ -2195,7 +2348,7 @@ png_image_write_to_file(png_imagep image, const char *file_name,
    /* Write the image to the named file. */
    if (image != NULL && image->version == PNG_IMAGE_VERSION)
    {
-      if (file_name != NULL)
+      if (file_name != NULL && buffer != NULL)
       {
          FILE *fp = fopen(file_name, "wb");
 
@@ -2253,6 +2406,6 @@ png_image_write_to_file(png_imagep image, const char *file_name,
    else
       return 0;
 }
-# endif /* STDIO */
+#endif /* SIMPLIFIED_WRITE_STDIO */
 #endif /* SIMPLIFIED_WRITE */
 #endif /* WRITE */

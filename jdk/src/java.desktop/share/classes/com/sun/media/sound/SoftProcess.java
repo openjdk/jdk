@@ -22,20 +22,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 /**
- * Control signal processor interface
+ * Control signal processor interface.
  *
  * @author Karl Helgason
  */
 public interface SoftProcess extends SoftControl {
 
-    public void init(SoftSynthesizer synth);
+    void init(SoftSynthesizer synth);
 
-    public double[] get(int instance, String name);
+    @Override
+    double[] get(int instance, String name);
 
-    public void processControlLogic();
+    void processControlLogic();
 
-    public void reset();
+    void reset();
 }

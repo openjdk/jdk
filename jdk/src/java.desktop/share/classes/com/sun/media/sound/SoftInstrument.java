@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import javax.sound.midi.Instrument;
@@ -72,6 +73,7 @@ public final class SoftInstrument extends Instrument {
         return ins;
     }
 
+    @Override
     public Object getData() {
         return data;
     }
