@@ -818,6 +818,7 @@ public final class SunPKCS11 extends AuthProvider {
         }
         final TokenPoller poller = new TokenPoller(this);
         Thread t = new Thread(null, poller, "Poller " + getName(), 0, false);
+        t.setContextClassLoader(null);
         t.setDaemon(true);
         t.setPriority(Thread.MIN_PRIORITY);
         t.start();
