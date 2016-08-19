@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @library /testlibrary
+ * @library /test/lib
  * @requires vm.flavor != "minimal"
  * @run main/othervm/native -agentlib:SimpleClassFileLoadHook=Foo,XXX,YYY
  *      SimpleClassFileLoadHookTest

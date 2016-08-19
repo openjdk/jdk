@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,24 +19,11 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package compiler.codecache.dtrace;
 
-package jdk.test.lib.cli.predicate;
+import jdk.test.lib.process.OutputAnalyzer;
 
-import java.util.function.BooleanSupplier;
-
-public class OrPredicate implements BooleanSupplier {
-    private final BooleanSupplier a;
-    private final BooleanSupplier b;
-
-    public OrPredicate(BooleanSupplier a, BooleanSupplier b) {
-        this.a = a;
-        this.b = b;
-    }
-
-    @Override
-    public boolean getAsBoolean() {
-        return a.getAsBoolean() || b.getAsBoolean();
-    }
+public interface DtraceResultsAnalyzer {
+    public void analyze(OutputAnalyzer oa, String logFilePath);
 }

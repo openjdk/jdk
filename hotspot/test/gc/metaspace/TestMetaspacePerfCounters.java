@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,16 @@
 import java.util.List;
 import java.util.ArrayList;
 
-import jdk.test.lib.*;
+import jdk.test.lib.ByteCodeLoader;
+import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.Platform;
+
 import static jdk.test.lib.Asserts.*;
 
 /* @test TestMetaspacePerfCounters
  * @bug 8014659
  * @requires vm.gc=="null"
- * @library /testlibrary
+ * @library /test/lib
  * @summary Tests that performance counters for metaspace and compressed class
  *          space exists and works.
  * @modules java.base/jdk.internal.misc

@@ -25,13 +25,13 @@
  * @key gc
  * @bug 8032771
  * @summary Test silent verification.
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  */
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import java.util.ArrayList;
 import java.util.Collections;
 import jdk.test.lib.Utils;

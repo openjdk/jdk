@@ -26,7 +26,7 @@
  * @bug 8141564
  * @summary itables=trace should have logging from each of the statements
  *          in the code
- * @library /testlibrary
+ * @library /test/lib
  * @compile ClassB.java
  *          ItablesVtableTest.java
  * @modules java.base/jdk.internal.misc
@@ -34,7 +34,9 @@
  * @run driver ItablesTest
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Platform;
 
 public class ItablesTest {
     public static void main(String[] args) throws Exception {

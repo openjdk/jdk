@@ -27,12 +27,13 @@
  * @bug 8047976
  * @requires vm.gc.G1
  * @summary Tests argument processing for G1ConcRefinementThreads
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import java.util.*;
 import java.util.regex.*;
 

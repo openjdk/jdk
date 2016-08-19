@@ -28,9 +28,9 @@ import sun.hotspot.WhiteBox;
 /* @test TestMetaspaceCMSCancel
  * @bug 8026752
  * @summary Tests cancel of CMS concurrent cycle for Metaspace after a full GC
- * @library /testlibrary /test/lib /test/lib/share/classes
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @build TestMetaspaceCMSCancel
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm TestMetaspaceCMSCancel
  */

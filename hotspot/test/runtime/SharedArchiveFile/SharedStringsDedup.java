@@ -28,13 +28,14 @@
  * @requires (sun.arch.data.model != "32") & (os.family != "windows")
  * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @requires vm.gc.G1
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main SharedStringsDedup
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import java.io.File;
 
 // The main purpose is to test the interaction between shared strings

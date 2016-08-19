@@ -28,12 +28,11 @@
  * @summary class p3.c3 defined in module m1 tries to access c4 defined in an unnamed package
  *          and an unnamed module.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @compile myloaders/MyDiffClassLoader.java
  * @compile c4.java
  * @compile p3/c3.jcod
  * @compile p3/c3ReadEdgeDiffLoader.jcod
- * @build DiffCL_UmodUpkg
  * @run main/othervm -Xbootclasspath/a:. DiffCL_UmodUpkg
  */
 

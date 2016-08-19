@@ -26,18 +26,18 @@
  * @summary Check that a mixed GC is reflected in the gc logs
  * @requires vm.gc.G1
  * @requires vm.opt.MaxGCPauseMillis == "null"
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.management
- * @build sun.hotspot.WhiteBox gc.g1.mixedgc.TestLogging
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver gc.g1.mixedgc.TestLogging
  */
 
 package gc.g1.mixedgc;
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Asserts;
 import sun.hotspot.WhiteBox;
 

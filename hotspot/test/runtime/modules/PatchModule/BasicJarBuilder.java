@@ -29,8 +29,6 @@
  *   Output: A jar containing compiled classes, placed in a test classes folder
  */
 
-import jdk.test.lib.*;
-
 import java.io.File;
 import java.util.ArrayList;
 import sun.tools.jar.Main;
