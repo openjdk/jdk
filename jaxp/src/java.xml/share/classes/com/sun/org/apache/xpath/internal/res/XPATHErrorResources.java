@@ -17,9 +17,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: XPATHErrorResources.java,v 1.2.4.1 2005/09/15 01:29:15 jeffsuttor Exp $
- */
 package com.sun.org.apache.xpath.internal.res;
 
 import java.util.ListResourceBundle;
