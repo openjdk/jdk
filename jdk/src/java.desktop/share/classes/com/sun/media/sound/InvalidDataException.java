@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.io.IOException;

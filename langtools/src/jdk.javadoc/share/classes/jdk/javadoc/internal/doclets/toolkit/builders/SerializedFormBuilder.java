@@ -125,7 +125,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
      */
     public void build() throws IOException {
         SortedSet<TypeElement> rootclasses = new TreeSet<>(utils.makeGeneralPurposeComparator());
-        rootclasses.addAll(configuration.docEnv.getIncludedClasses());
+        rootclasses.addAll(configuration.docEnv.getIncludedTypeElements());
         if (!serialClassFoundToDocument(rootclasses)) {
             //Nothing to document.
             return;

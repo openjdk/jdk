@@ -861,6 +861,13 @@ public abstract class SSLEngine {
      * be enabled by default, since this list may include cipher suites which
      * do not meet quality of service requirements for those defaults.  Such
      * cipher suites might be useful in specialized applications.
+     * <P>
+     * The returned array includes cipher suites from the list of standard
+     * cipher suite names in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#ciphersuites">
+     * JSSE Cipher Suite Names</a> section of the Java Cryptography
+     * Architecture Standard Algorithm Name Documentation, and may also
+     * include other cipher suites that the provider supports.
      *
      * @return  an array of cipher suite names
      * @see     #getEnabledCipherSuites()
@@ -880,6 +887,13 @@ public abstract class SSLEngine {
      * or the requisite certificates (and private keys) for the suite are
      * not available, or an anonymous suite is enabled but authentication
      * is required.
+     * <P>
+     * The returned array includes cipher suites from the list of standard
+     * cipher suite names in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#ciphersuites">
+     * JSSE Cipher Suite Names</a> section of the Java Cryptography
+     * Architecture Standard Algorithm Name Documentation, and may also
+     * include other cipher suites that the provider supports.
      *
      * @return  an array of cipher suite names
      * @see     #getSupportedCipherSuites()
@@ -895,6 +909,14 @@ public abstract class SSLEngine {
      * been listed by getSupportedCipherSuites(), or the method will
      * fail.  Following a successful call to this method, only suites
      * listed in the {@code suites} parameter are enabled for use.
+     * <P>
+     * Note that the standard list of cipher suite names may be found in the
+     * <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#ciphersuites">
+     * JSSE Cipher Suite Names</a> section of the Java Cryptography
+     * Architecture Standard Algorithm Name Documentation.  Providers
+     * may support cipher suite names not found in this list or might not
+     * use the recommended name for a certain cipher suite.
      * <P>
      * See {@link #getEnabledCipherSuites()} for more information
      * on why a specific cipher suite may never be used on a engine.

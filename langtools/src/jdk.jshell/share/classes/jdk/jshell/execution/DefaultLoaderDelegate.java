@@ -77,6 +77,7 @@ class DefaultLoaderDelegate implements LoaderDelegate {
 
     public DefaultLoaderDelegate() {
         this.loader = new RemoteClassLoader();
+        Thread.currentThread().setContextClassLoader(loader);
     }
 
     @Override

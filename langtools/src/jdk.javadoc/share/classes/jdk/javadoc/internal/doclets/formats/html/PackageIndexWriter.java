@@ -101,7 +101,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      */
     public static void generate(ConfigurationImpl configuration) {
         PackageIndexWriter packgen;
-        DocPath filename = DocPaths.OVERVIEW_SUMMARY;
+        DocPath filename = DocPaths.overviewSummary(configuration.frames);
         try {
             packgen = new PackageIndexWriter(configuration, filename);
             packgen.buildPackageIndexFile("doclet.Window_Overview_Summary", true);

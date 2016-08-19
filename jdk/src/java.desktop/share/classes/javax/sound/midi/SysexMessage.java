@@ -179,6 +179,7 @@ public class SysexMessage extends MidiMessage {
      * @param  length the length of the valid message data in the array,
      *         including the status byte
      */
+    @Override
     public void setMessage(byte[] data, int length) throws InvalidMidiDataException {
         int status = (data[0] & 0xFF);
         if ((status != 0xF0) && (status != 0xF7)) {
@@ -233,6 +234,7 @@ public class SysexMessage extends MidiMessage {
      *
      * @return a clone of this instance
      */
+    @Override
     public Object clone() {
         byte[] newData = new byte[length];
         System.arraycopy(data, 0, newData, 0, newData.length);

@@ -22,10 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.sound.midi.Patch;
 
 /**
@@ -48,8 +50,7 @@ public class SimpleInstrument extends ModelInstrument {
     protected int bank = 0;
     protected boolean percussion = false;
     protected String name = "";
-    protected List<SimpleInstrumentPart> parts
-            = new ArrayList<SimpleInstrumentPart>();
+    protected List<SimpleInstrumentPart> parts = new ArrayList<>();
 
     public SimpleInstrument() {
         super(null, null, null, null);
@@ -121,6 +122,7 @@ public class SimpleInstrument extends ModelInstrument {
         add(ins.getPerformers());
     }
 
+    @Override
     public ModelPerformer[] getPerformers() {
 
         int percount = 0;
@@ -166,10 +168,12 @@ public class SimpleInstrument extends ModelInstrument {
         return performers;
     }
 
+    @Override
     public Object getData() {
         return null;
     }
 
+    @Override
     public String getName() {
         return this.name;
     }
@@ -178,6 +182,7 @@ public class SimpleInstrument extends ModelInstrument {
         this.name = name;
     }
 
+    @Override
     public ModelPatch getPatch() {
         return new ModelPatch(bank, preset, percussion);
     }

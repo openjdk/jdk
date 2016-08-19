@@ -32,6 +32,7 @@ import java.util.zip.*;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.SimpleElementVisitor9;
@@ -183,6 +184,15 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         new SimpleElementVisitor9<Void, Void>() {
 
             @Override @DefinedBy(DefinedBy.Api.LANGUAGE_MODEL)
+            public Void visitModule(ModuleElement e, Void p) {
+                if (configuration.showModules) {
+                    addDescription(e, dl, si);
+                    configuration.moduleSearchIndex.add(si);
+                }
+                return null;
+            }
+
+            @Override @DefinedBy(DefinedBy.Api.LANGUAGE_MODEL)
             public Void visitPackage(PackageElement e, Void p) {
                 addDescription(e, dl, si);
                 configuration.packageSearchIndex.add(si);
@@ -207,6 +217,27 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     }
 
     /**
+     * Add one line summary comment for the module.
+     *
+     * @param mdle the module to be documented
+     * @param dlTree the content tree to which the description will be added
+     */
+    protected void addDescription(ModuleElement mdle, Content dlTree, SearchIndexItem si) {
+        String moduleName = utils.getSimpleName(mdle);
+        Content link = getModuleLink(mdle, new StringContent(moduleName));
+        si.setLabel(moduleName);
+        si.setCategory(resources.getText("doclet.Modules"));
+        Content dt = HtmlTree.DT(link);
+        dt.addContent(" - ");
+        dt.addContent(contents.module_);
+        dt.addContent(" " + moduleName);
+        dlTree.addContent(dt);
+        Content dd = new HtmlTree(HtmlTag.DD);
+        addSummaryComment(mdle, dd);
+        dlTree.addContent(dd);
+    }
+
+    /**
      * Add one line summary comment for the package.
      *
      * @param pkg the package to be documented
@@ -214,6 +245,9 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      */
     protected void addDescription(PackageElement pkg, Content dlTree, SearchIndexItem si) {
         Content link = getPackageLink(pkg, new StringContent(utils.getPackageName(pkg)));
+        if (configuration.showModules) {
+            si.setContainingModule(utils.getSimpleName(utils.containingModule(pkg)));
+        }
         si.setLabel(utils.getPackageName(pkg));
         si.setCategory(resources.getText("doclet.Packages"));
         Content dt = HtmlTree.DT(link);
@@ -397,6 +431,10 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     }
 
     protected void createSearchIndexFiles() {
+        if (configuration.showModules) {
+            createSearchIndexFile(DocPaths.MODULE_SEARCH_INDEX_JSON, DocPaths.MODULE_SEARCH_INDEX_ZIP,
+                    configuration.moduleSearchIndex);
+        }
         createSearchIndexFile(DocPaths.PACKAGE_SEARCH_INDEX_JSON, DocPaths.PACKAGE_SEARCH_INDEX_ZIP,
                 configuration.packageSearchIndex);
         createSearchIndexFile(DocPaths.TYPE_SEARCH_INDEX_JSON, DocPaths.TYPE_SEARCH_INDEX_ZIP,

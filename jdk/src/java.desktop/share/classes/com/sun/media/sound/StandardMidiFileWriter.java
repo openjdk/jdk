@@ -47,7 +47,6 @@ import javax.sound.midi.SysexMessage;
 import javax.sound.midi.Track;
 import javax.sound.midi.spi.MidiFileWriter;
 
-
 /**
  * MIDI file writer.
  *
@@ -72,20 +71,15 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
     private static final int bufferSize = 16384;  // buffersize for write
     private DataOutputStream tddos;               // data output stream for track writing
 
-
-
     /**
-     * MIDI parser types
+     * MIDI parser types.
      */
     private static final int types[] = {
         MIDI_TYPE_0,
         MIDI_TYPE_1
     };
 
-
-    /**
-     * new
-     */
+    @Override
     public int[] getMidiFileTypes() {
         int[] localArray = new int[types.length];
         System.arraycopy(types, 0, localArray, 0, types.length);
@@ -100,6 +94,7 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
      * @return array of file types.  If no file types are supported,
      * returns an array of length 0.
      */
+    @Override
     public int[] getMidiFileTypes(Sequence sequence){
         int typesArray[];
         Track tracks[] = sequence.getTracks();
@@ -116,6 +111,7 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
         return typesArray;
     }
 
+    @Override
     public int write(Sequence in, int type, OutputStream out) throws IOException {
         Objects.requireNonNull(out);
         if (!isFileTypeSupported(type, in)) {
@@ -141,6 +137,7 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
         return (int) bytesWritten;
     }
 
+    @Override
     public int write(Sequence in, int type, File out) throws IOException {
         Objects.requireNonNull(in);
         FileOutputStream fos = new FileOutputStream(out); // throws IOException
@@ -150,7 +147,6 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
     }
 
     //=================================================================================
-
 
     private InputStream getFileStream(int type, Sequence sequence) throws IOException {
         Track tracks[] = sequence.getTracks();

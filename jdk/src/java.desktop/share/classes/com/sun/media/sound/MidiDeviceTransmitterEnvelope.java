@@ -22,10 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
-import javax.sound.midi.*;
-
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.MidiDeviceTransmitter;
+import javax.sound.midi.Receiver;
+import javax.sound.midi.Transmitter;
 
 /**
  * Helper class which allows to convert {@code Transmitter}
@@ -55,20 +58,23 @@ public final class MidiDeviceTransmitterEnvelope implements MidiDeviceTransmitte
     }
 
     // Transmitter implementation
+    @Override
     public void setReceiver(Receiver receiver) {
         transmitter.setReceiver(receiver);
     }
 
+    @Override
     public Receiver getReceiver() {
         return transmitter.getReceiver();
     }
 
+    @Override
     public void close() {
         transmitter.close();
     }
 
-
     // MidiDeviceReceiver implementation
+    @Override
     public MidiDevice getMidiDevice() {
         return device;
     }

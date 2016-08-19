@@ -566,6 +566,11 @@ public class ClassReader {
      * class name is of the form module-name.module-info.
      */
     Name readModuleInfoName(int i) {
+        if (majorVersion < Version.V53.major) {
+            throw badClassFile("anachronistic.module.info",
+                    Integer.toString(majorVersion),
+                    Integer.toString(minorVersion));
+        }
         int classIndex = poolIdx[i];
         if (buf[classIndex] == CONSTANT_Class) {
             int utf8Index = poolIdx[getChar(classIndex + 1)];

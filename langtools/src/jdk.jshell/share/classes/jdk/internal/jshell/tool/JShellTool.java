@@ -923,7 +923,7 @@ public class JShellTool implements MessageHandler {
 
             for (String alternative : alternatives) {
                 if (alternative.startsWith(input)) {
-                    result.add(new Suggestion(alternative, false));
+                    result.add(new ArgSuggestion(alternative));
                 }
             }
 
@@ -951,7 +951,7 @@ public class JShellTool implements MessageHandler {
             List<Suggestion> result = new ArrayList<>();
             try (Stream<Path> dir = Files.list(current)) {
                 dir.filter(f -> accept.test(f) && f.getFileName().toString().startsWith(prefix))
-                   .map(f -> new Suggestion(f.getFileName() + (Files.isDirectory(f) ? "/" : ""), false))
+                   .map(f -> new ArgSuggestion(f.getFileName() + (Files.isDirectory(f) ? "/" : "")))
                    .forEach(result::add);
             } catch (IOException ex) {
                 //ignore...
@@ -959,7 +959,7 @@ public class JShellTool implements MessageHandler {
             if (path.isEmpty()) {
                 StreamSupport.stream(FileSystems.getDefault().getRootDirectories().spliterator(), false)
                              .filter(root -> accept.test(root) && root.toString().startsWith(prefix))
-                             .map(root -> new Suggestion(root.toString(), false))
+                             .map(root -> new ArgSuggestion(root.toString()))
                              .forEach(result::add);
             }
             anchor[0] = path.length();
@@ -981,7 +981,7 @@ public class JShellTool implements MessageHandler {
                                 ? Stream.of(String.valueOf(k.id()), ((DeclarationSnippet) k).name())
                                 : Stream.of(String.valueOf(k.id())))
                         .filter(k -> k.startsWith(prefix))
-                        .map(k -> new Suggestion(k, false))
+                        .map(k -> new ArgSuggestion(k))
                         .collect(Collectors.toList());
         };
     }
@@ -1146,7 +1146,7 @@ public class JShellTool implements MessageHandler {
                              .filter(cmd -> cmd.kind.shouldSuggestCompletions)
                              .map(cmd -> cmd.command)
                              .filter(key -> key.startsWith(prefix))
-                             .map(key -> new Suggestion(key + " ", false));
+                             .map(key -> new ArgSuggestion(key + " "));
             anchor[0] = 0;
         } else {
             String arg = prefix.substring(space + 1);
@@ -1919,7 +1919,7 @@ public class JShellTool implements MessageHandler {
         {
             String val = state.status(vk) == Status.VALID
                     ? state.varValue(vk)
-                    : "jshell.msg.vars.not.active";
+                    : getResourceString("jshell.msg.vars.not.active");
             hard("  %s %s = %s", vk.typeName(), vk.name(), val);
         });
         return true;
@@ -2455,6 +2455,42 @@ public class JShellTool implements MessageHandler {
             this.snippet = snippet;
             this.space = space;
             this.tid = tid;
+        }
+    }
+
+    private static class ArgSuggestion implements Suggestion {
+
+        private final String continuation;
+
+        /**
+         * Create a {@code Suggestion} instance.
+         *
+         * @param continuation a candidate continuation of the user's input
+         */
+        public ArgSuggestion(String continuation) {
+            this.continuation = continuation;
+        }
+
+        /**
+         * The candidate continuation of the given user's input.
+         *
+         * @return the continuation string
+         */
+        @Override
+        public String continuation() {
+            return continuation;
+        }
+
+        /**
+         * Indicates whether input continuation matches the target type and is thus
+         * more likely to be the desired continuation. A matching continuation is
+         * preferred.
+         *
+         * @return {@code false}, non-types analysis
+         */
+        @Override
+        public boolean matchesType() {
+            return false;
         }
     }
 }

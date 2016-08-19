@@ -86,7 +86,6 @@ import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
 
-import com.sun.source.util.SimpleDocTreeVisitor;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 
 import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
@@ -379,6 +378,10 @@ public class Utils {
 
     public boolean isMethod(Element e) {
         return e.getKind() == METHOD;
+    }
+
+    public boolean isModule(Element e) {
+        return e.getKind() == ElementKind.MODULE;
     }
 
     public boolean isPackage(Element e) {
@@ -1727,9 +1730,10 @@ public class Utils {
 
     /**
      * Returns a Comparator for index file presentations, and are sorted as follows.
-     *  If comparing packages then simply compare the qualified names, otherwise
-     *  1. sort on simple names of entities
-     *  2. if equal, then compare the ElementKind ex: Package, Interface etc.
+     *  If comparing modules then simply compare the simple names,
+     *  comparing packages then simply compare the qualified names, otherwise
+     *  1. if equal, then compare the ElementKind ex: Module, Package, Interface etc.
+     *  2. sort on simple names of entities
      *  3a. if equal and if the type is of ExecutableElement(Constructor, Methods),
      *      a case insensitive comparison of parameter the type signatures
      *  3b. if equal, case sensitive comparison of the type signatures
@@ -1740,9 +1744,10 @@ public class Utils {
     public Comparator<Element> makeIndexUseComparator() {
         return new Utils.ElementComparator<Element>() {
             /**
-             * Compare two given elements, if comparing two packages, return the
-             * comparison of FullyQualifiedName, first sort on names, then on the
-             * kinds, then on the parameters only if the type is an ExecutableElement,
+             * Compare two given elements, if comparing two modules, return the
+             * comparison of SimpleName, if comparing two packages, return the
+             * comparison of FullyQualifiedName, first sort on kinds, then on the
+             * names, then on the parameters only if the type is an ExecutableElement,
              * the parameters are compared and finally the qualified names.
              *
              * @param e1 - an element.
@@ -1753,14 +1758,17 @@ public class Utils {
             @Override
             public int compare(Element e1, Element e2) {
                 int result = 0;
+                if (isModule(e1) && isModule(e2)) {
+                    return compareNames(e1, e2);
+                }
                 if (isPackage(e1) && isPackage(e2)) {
                     return compareFullyQualifiedNames(e1, e2);
                 }
-                result = compareNames(e1, e2);
+                result = compareElementTypeKinds(e1, e2);
                 if (result != 0) {
                     return result;
                 }
-                result = compareElementTypeKinds(e1, e2);
+                result = compareNames(e1, e2);
                 if (result != 0) {
                     return result;
                 }
@@ -1946,15 +1954,16 @@ public class Utils {
         final EnumMap<ElementKind, Integer> elementKindOrder;
         public ElementComparator() {
             elementKindOrder = new EnumMap<>(ElementKind.class);
-            elementKindOrder.put(ElementKind.PACKAGE, 0);
-            elementKindOrder.put(ElementKind.CLASS, 1);
-            elementKindOrder.put(ElementKind.ENUM, 2);
-            elementKindOrder.put(ElementKind.ENUM_CONSTANT, 3);
-            elementKindOrder.put(ElementKind.INTERFACE, 4);
-            elementKindOrder.put(ElementKind.ANNOTATION_TYPE, 5);
-            elementKindOrder.put(ElementKind.FIELD, 6);
-            elementKindOrder.put(ElementKind.CONSTRUCTOR, 7);
-            elementKindOrder.put(ElementKind.METHOD, 8);
+            elementKindOrder.put(ElementKind.MODULE, 0);
+            elementKindOrder.put(ElementKind.PACKAGE, 1);
+            elementKindOrder.put(ElementKind.CLASS, 2);
+            elementKindOrder.put(ElementKind.ENUM, 3);
+            elementKindOrder.put(ElementKind.ENUM_CONSTANT, 4);
+            elementKindOrder.put(ElementKind.INTERFACE, 5);
+            elementKindOrder.put(ElementKind.ANNOTATION_TYPE, 6);
+            elementKindOrder.put(ElementKind.FIELD, 7);
+            elementKindOrder.put(ElementKind.CONSTRUCTOR, 8);
+            elementKindOrder.put(ElementKind.METHOD, 9);
         }
 
         protected int compareParameters(boolean caseSensitive, List<? extends VariableElement> params1,
@@ -2220,31 +2229,6 @@ public class Utils {
         return oset;
     }
 
-    // cache these two as they are repeatedly called.
-    private Set<TypeElement> specifiedClasses = null;
-    private Set<PackageElement> specifiedPackages = null;
-
-    private void initSpecifiedElements() {
-        specifiedClasses = new LinkedHashSet<>(
-                ElementFilter.typesIn(configuration.docEnv.getSpecifiedElements()));
-        specifiedPackages = new LinkedHashSet<>(
-                ElementFilter.packagesIn(configuration.docEnv.getSpecifiedElements()));
-    }
-
-    public Set<TypeElement> getSpecifiedClasses() {
-        if (specifiedClasses == null || specifiedPackages == null) {
-            initSpecifiedElements();
-        }
-        return specifiedClasses;
-    }
-
-    public Set<PackageElement> getSpecifiedPackages() {
-        if (specifiedClasses == null || specifiedPackages == null) {
-            initSpecifiedElements();
-        }
-        return specifiedPackages;
-    }
-
     private final HashMap<Element, SortedSet<TypeElement>> cachedClasses = new HashMap<>();
     /**
      * Returns a list containing classes and interfaces,
@@ -2403,6 +2387,11 @@ public class Utils {
     private String getSimpleName0(Element e) {
         if (snvisitor == null) {
             snvisitor = new SimpleElementVisitor9<String, Void>() {
+                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                public String visitModule(ModuleElement e, Void p) {
+                    return e.getSimpleName().toString();
+                }
+
                 @Override @DefinedBy(Api.LANGUAGE_MODEL)
                 public String visitType(TypeElement e, Void p) {
                     StringBuilder sb = new StringBuilder(e.getSimpleName());
@@ -2575,6 +2564,34 @@ public class Utils {
 
     public boolean isIncluded(Element e) {
         return configuration.docEnv.isIncluded(e);
+    }
+
+    private SimpleElementVisitor9<Boolean, Void> specifiedVisitor = null;
+    public boolean isSpecified(Element e) {
+        if (specifiedVisitor == null) {
+            specifiedVisitor = new SimpleElementVisitor9<Boolean, Void>() {
+                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                public Boolean visitModule(ModuleElement e, Void p) {
+                    return configuration.getSpecifiedModules().contains(e);
+                }
+
+                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                public Boolean visitPackage(PackageElement e, Void p) {
+                    return configuration.getSpecifiedPackages().contains(e);
+                }
+
+                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                public Boolean visitType(TypeElement e, Void p) {
+                    return configuration.getSpecifiedClasses().contains(e);
+                }
+
+                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                protected Boolean defaultAction(Element e, Void p) {
+                    return false;
+                }
+            };
+        }
+        return specifiedVisitor.visit(e);
     }
 
     /**
@@ -2977,6 +2994,10 @@ public class Utils {
             out.add(dt);
         }
         return out;
+    }
+
+    public ModuleElement containingModule(Element e) {
+        return elementUtils.getModuleOf(e);
     }
 
     public PackageElement containingPackage(Element e) {
