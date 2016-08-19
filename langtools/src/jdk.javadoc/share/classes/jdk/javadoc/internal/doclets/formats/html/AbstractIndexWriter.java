@@ -82,8 +82,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      */
     protected AbstractIndexWriter(ConfigurationImpl configuration,
                                   DocPath path,
-                                  IndexBuilder indexbuilder)
-                                  throws IOException {
+                                  IndexBuilder indexbuilder) {
         super(configuration, path);
         this.indexbuilder = indexbuilder;
     }
@@ -94,7 +93,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @return a content tree for the tree label
      */
     protected Content getNavLinkIndex() {
-        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, indexLabel);
+        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.indexLabel);
         return li;
     }
 
@@ -216,10 +215,10 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     protected void addDescription(PackageElement pkg, Content dlTree, SearchIndexItem si) {
         Content link = getPackageLink(pkg, new StringContent(utils.getPackageName(pkg)));
         si.setLabel(utils.getPackageName(pkg));
-        si.setCategory(getResource("doclet.Packages").toString());
+        si.setCategory(resources.getText("doclet.Packages"));
         Content dt = HtmlTree.DT(link);
         dt.addContent(" - ");
-        dt.addContent(getResource("doclet.package"));
+        dt.addContent(contents.package_);
         dt.addContent(" " + utils.getPackageName(pkg));
         dlTree.addContent(dt);
         Content dd = new HtmlTree(HtmlTag.DD);
@@ -238,7 +237,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                         LinkInfoImpl.Kind.INDEX, typeElement).strong(true));
         si.setContainingPackage(utils.getPackageName(utils.containingPackage(typeElement)));
         si.setLabel(utils.getSimpleName(typeElement));
-        si.setCategory(getResource("doclet.Types").toString());
+        si.setCategory(resources.getText("doclet.Types"));
         Content dt = HtmlTree.DT(link);
         dt.addContent(" - ");
         addClassInfo(typeElement, dt);
@@ -256,7 +255,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @param contentTree the content tree to which the class info will be added
      */
     protected void addClassInfo(TypeElement te, Content contentTree) {
-        contentTree.addContent(getResource("doclet.in",
+        contentTree.addContent(contents.getContent("doclet.in",
                 utils.getTypeElementName(te, false),
                 getPackageLink(utils.containingPackage(te),
                     utils.getPackageName(utils.containingPackage(te)))
@@ -286,7 +285,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         }  else {
             si.setLabel(name);
         }
-        si.setCategory(getResource("doclet.Members").toString());
+        si.setCategory(resources.getText("doclet.Members"));
         Content span = HtmlTree.SPAN(HtmlStyle.memberNameLink,
                 getDocLink(LinkInfoImpl.Kind.INDEX, member, name));
         Content dt = HtmlTree.DT(span);
@@ -304,11 +303,11 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         HtmlTree labelLink = HtmlTree.A(path, new StringContent(sii.getLabel()));
         Content dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.searchTagLink, labelLink));
         dt.addContent(" - ");
-        dt.addContent(getResource("doclet.Search_tag_in", sii.getHolder()));
+        dt.addContent(contents.getContent("doclet.Search_tag_in", sii.getHolder()));
         dlTree.addContent(dt);
         Content dd = new HtmlTree(HtmlTag.DD);
         if (sii.getDescription().isEmpty()) {
-            dd.addContent(getSpace());
+            dd.addContent(Contents.SPACE);
         } else {
             dd.addContent(sii.getDescription());
         }
@@ -326,7 +325,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      */
     protected void addComment(Element element, Content contentTree) {
         List<? extends DocTree> tags;
-        Content span = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
+        Content span = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, contents.deprecatedPhrase);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.block);
         if (utils.isDeprecated(element)) {
@@ -360,15 +359,15 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         TypeElement containing = utils.getEnclosingTypeElement(member);
         String classdesc = utils.getTypeElementName(containing, true) + " ";
         if (utils.isField(member)) {
-            Content resource = getResource(utils.isStatic(member)
+            Content resource = contents.getContent(utils.isStatic(member)
                     ? "doclet.Static_variable_in"
                     : "doclet.Variable_in", classdesc);
             contentTree.addContent(resource);
         } else if (utils.isConstructor(member)) {
             contentTree.addContent(
-                    getResource("doclet.Constructor_for", classdesc));
+                    contents.getContent("doclet.Constructor_for", classdesc));
         } else if (utils.isMethod(member)) {
-            Content resource = getResource(utils.isStatic(member)
+            Content resource = contents.getContent(utils.isStatic(member)
                     ? "doclet.Static_method_in"
                     : "doclet.Method_in", classdesc);
             contentTree.addContent(resource);

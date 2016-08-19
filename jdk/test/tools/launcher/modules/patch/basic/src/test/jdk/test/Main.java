@@ -22,7 +22,7 @@
  */
 
 /**
- * Used with -Xpatch to exercise the replacement or addition of classes
+ * Used with --patch-module to exercise the replacement or addition of classes
  * in modules that are linked into the runtime image.
  */
 

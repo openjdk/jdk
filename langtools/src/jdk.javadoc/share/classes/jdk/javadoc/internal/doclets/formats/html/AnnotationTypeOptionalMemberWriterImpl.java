@@ -25,8 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -96,7 +94,7 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
             ExecutableElement ee = (ExecutableElement)member;
             AnnotationValue value = ee.getDefaultValue();
             if (value != null) {
-                Content dt = HtmlTree.DT(writer.getResource("doclet.Default"));
+                Content dt = HtmlTree.DT(contents.default_);
                 Content dl = HtmlTree.DL(dt);
                 Content dd = HtmlTree.DD(new StringContent(value.toString()));
                 dl.addContent(dd);
@@ -108,16 +106,9 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     /**
      * {@inheritDoc}
      */
-    public void close() throws IOException {
-        writer.close();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public void addSummaryLabel(Content memberTree) {
         Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
-                writer.getResource("doclet.Annotation_Type_Optional_Member_Summary"));
+                contents.annotateTypeOptionalMemberSummaryLabel);
         memberTree.addContent(label);
     }
 
@@ -125,16 +116,16 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
      * {@inheritDoc}
      */
     public String getTableSummary() {
-        return configuration.getText("doclet.Member_Table_Summary",
-                configuration.getText("doclet.Annotation_Type_Optional_Member_Summary"),
-                configuration.getText("doclet.annotation_type_optional_members"));
+        return resources.getText("doclet.Member_Table_Summary",
+                resources.getText("doclet.Annotation_Type_Optional_Member_Summary"),
+                resources.getText("doclet.annotation_type_optional_members"));
     }
 
     /**
      * {@inheritDoc}
      */
     public Content getCaption() {
-        return configuration.getResource("doclet.Annotation_Type_Optional_Members");
+        return configuration.getContent("doclet.Annotation_Type_Optional_Members");
     }
 
     /**
@@ -163,9 +154,9 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
         if (link) {
             return writer.getHyperLink(
                     SectionName.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY,
-                    writer.getResource("doclet.navAnnotationTypeOptionalMember"));
+                    contents.navAnnotationTypeOptionalMember);
         } else {
-            return writer.getResource("doclet.navAnnotationTypeOptionalMember");
+            return contents.navAnnotationTypeOptionalMember;
         }
     }
 }

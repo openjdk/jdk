@@ -62,6 +62,7 @@ import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.JavaCompiler;
+import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.platform.PlatformDescription;
@@ -89,7 +90,6 @@ import com.sun.tools.javac.util.Options;
 
 import static com.sun.tools.javac.code.Lint.LintCategory.PROCESSING;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
-import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.comp.CompileStates.CompileState;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 
@@ -196,17 +196,17 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         source = Source.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         options = Options.instance(context);
-        printProcessorInfo = options.isSet(XPRINTPROCESSORINFO);
-        printRounds = options.isSet(XPRINTROUNDS);
-        verbose = options.isSet(VERBOSE);
+        printProcessorInfo = options.isSet(Option.XPRINTPROCESSORINFO);
+        printRounds = options.isSet(Option.XPRINTROUNDS);
+        verbose = options.isSet(Option.VERBOSE);
         lint = Lint.instance(context).isEnabled(PROCESSING);
         compiler = JavaCompiler.instance(context);
-        if (options.isSet(PROC, "only") || options.isSet(XPRINT)) {
+        if (options.isSet(Option.PROC, "only") || options.isSet(Option.XPRINT)) {
             compiler.shouldStopPolicyIfNoError = CompileState.PROCESS;
         }
         fatalErrors = options.isSet("fatalEnterError");
         showResolveErrors = options.isSet("showResolveErrors");
-        werror = options.isSet(WERROR);
+        werror = options.isSet(Option.WERROR);
         fileManager = context.get(JavaFileManager.class);
         platformAnnotations = initPlatformAnnotations();
 
@@ -279,7 +279,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private void initProcessorIterator(Iterable<? extends Processor> processors) {
         Iterator<? extends Processor> processorIterator;
 
-        if (options.isSet(XPRINT)) {
+        if (options.isSet(Option.XPRINT)) {
             try {
                 processorIterator = List.of(new PrintingProcessor()).iterator();
             } catch (Throwable t) {
@@ -297,7 +297,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                  * path for the named class.  Otherwise, use a service
                  * provider mechanism to create the processor iterator.
                  */
-                String processorNames = options.get(PROCESSOR);
+                String processorNames = options.get(Option.PROCESSOR);
                 if (fileManager.hasLocation(ANNOTATION_PROCESSOR_MODULE_PATH)) {
                     processorIterator = (processorNames == null) ?
                             new ServiceIterator(serviceLoader, log) :
@@ -363,7 +363,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 ? standardFileManager.getLocationAsPaths(ANNOTATION_PROCESSOR_PATH)
                 : standardFileManager.getLocationAsPaths(CLASS_PATH);
 
-            if (needClassLoader(options.get(PROCESSOR), workingPath) )
+            if (needClassLoader(options.get(Option.PROCESSOR), workingPath) )
                 handleException(key, e);
 
         } else {

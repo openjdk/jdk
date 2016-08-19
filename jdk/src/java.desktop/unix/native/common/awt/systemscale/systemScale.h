@@ -26,7 +26,7 @@
 #include <signal.h>
 #include <stdlib.h>
 
-double getNativeScaleFactor();
+double getNativeScaleFactor(char *output_name);
 
 #endif
 

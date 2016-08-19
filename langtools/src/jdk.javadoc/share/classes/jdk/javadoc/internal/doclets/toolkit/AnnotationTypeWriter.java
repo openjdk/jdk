@@ -156,11 +156,6 @@ public interface AnnotationTypeWriter {
     public void printDocument(Content contentTree) throws IOException;
 
     /**
-     * Close the writer.
-     */
-    public void close() throws IOException;
-
-    /**
      * Return the {@link TypeElement} being documented.
      *
      * @return the TypeElement representing the annotation being documented.

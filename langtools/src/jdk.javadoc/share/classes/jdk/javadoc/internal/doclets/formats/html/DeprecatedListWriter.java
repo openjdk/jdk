@@ -35,6 +35,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -243,10 +244,9 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                    new DeprecatedListWriter(configuration, filename);
             depr.generateDeprecatedListFile(
                    new DeprecatedAPIListBuilder(configuration));
-            depr.close();
         } catch (IOException exc) {
-            configuration.standardmessage.error(
-                        "doclet.exception_encountered",
+            Messages messages = configuration.getMessages();
+            messages.error("doclet.exception_encountered",
                         exc.toString(), filename);
             throw new DocletAbortException(exc);
         }
@@ -314,7 +314,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
             DeprElementKind kind, Content contentTree) {
         if (builder.hasDocumentation(kind)) {
             Content li = HtmlTree.LI(getHyperLink(getAnchorName(kind),
-                    getResource(getHeadingKey(kind))));
+                    contents.getContent(getHeadingKey(kind))));
             contentTree.addContent(li);
         }
     }
@@ -326,11 +326,11 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * @return a content tree for the contents list
      */
     public Content getContentsList(DeprecatedAPIListBuilder deprapi) {
-        Content headContent = getResource("doclet.Deprecated_API");
+        Content headContent = contents.deprecatedAPI;
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
                 HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-        Content headingContent = getResource("doclet.Contents");
+        Content headingContent = contents.contentsHeading;
         div.addContent(HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING, true,
                 headingContent));
         Content ul = new HtmlTree(HtmlTag.UL);
@@ -379,7 +379,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * @return a content tree for the deprecated label
      */
     protected Content getNavLinkDeprecated() {
-        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, deprecatedLabel);
+        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.deprecatedLabel);
         return li;
     }
 }

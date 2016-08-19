@@ -38,7 +38,7 @@ import java.util.Set;
  * @summary Verify that for each group of mutually exclusive predicates defined
  *          in jdk.test.lib.Platform one and only one predicate
  *          evaluates to true.
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main TestMutuallyExclusivePlatformPredicates
@@ -48,7 +48,7 @@ public class TestMutuallyExclusivePlatformPredicates {
         ARCH("isARM", "isPPC", "isSparc", "isX86", "isX64", "isAArch64"),
         BITNESS("is32bit", "is64bit"),
         OS("isAix", "isLinux", "isOSX", "isSolaris", "isWindows"),
-        VM_TYPE("isClient", "isServer", "isGraal", "isMinimal", "isZero"),
+        VM_TYPE("isClient", "isServer", "isGraal", "isMinimal", "isZero", "isEmbedded"),
         MODE("isInt", "isMixed", "isComp"),
         IGNORED("isDebugBuild", "shouldSAAttach",
                 "canPtraceAttachLinux", "canAttachOSX", "isTieredSupported");

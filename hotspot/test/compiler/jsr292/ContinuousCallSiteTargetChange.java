@@ -24,15 +24,15 @@
 /**
  * @test
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /
+ * @library /test/lib /
  *
  * @run driver compiler.jsr292.ContinuousCallSiteTargetChange
  */
 
 package compiler.jsr292;
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;

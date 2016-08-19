@@ -63,7 +63,7 @@ public class EnvVarTest extends ModuleTestBase {
 
         tb.out.println("test that addExports can be given to javac");
         new JavacTask(tb)
-                .options("-XaddExports:jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED")
+                .options("--add-exports", "jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run(Expect.SUCCESS)
@@ -71,7 +71,7 @@ public class EnvVarTest extends ModuleTestBase {
 
         tb.out.println("test that addExports can be provided with env variable");
         new JavacTask(tb, Mode.EXEC)
-                .envVar("_JAVAC_OPTIONS", "-XaddExports:jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED")
+                .envVar("_JAVAC_OPTIONS", "--add-exports jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run(Expect.SUCCESS)
@@ -80,7 +80,7 @@ public class EnvVarTest extends ModuleTestBase {
         tb.out.println("test that addExports can be provided with env variable using @file");
         Path atFile = src.resolve("at-file.txt");
         tb.writeFile(atFile,
-                "-XaddExports:jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED");
+                "--add-exports jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED");
 
         new JavacTask(tb, Mode.EXEC)
                 .envVar("_JAVAC_OPTIONS", "@" + atFile)

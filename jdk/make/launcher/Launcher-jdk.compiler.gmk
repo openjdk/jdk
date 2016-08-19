@@ -27,7 +27,7 @@ include LauncherCommon.gmk
 
 $(eval $(call SetupBuildLauncher, javac, \
    MAIN_CLASS := com.sun.tools.javac.Main, \
-   JAVA_ARGS := -addmods ALL-DEFAULT, \
+   JAVA_ARGS := --add-modules ALL-DEFAULT, \
    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS \
         -DNEVER_ACT_AS_SERVER_CLASS_MACHINE, \
 ))

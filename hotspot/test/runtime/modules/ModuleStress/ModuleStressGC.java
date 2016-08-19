@@ -26,15 +26,15 @@
  * @bug 8159262
  * @summary layers over the boot layer are repeatedly created, during this iteration, GCs are forced to verify correct walk of module and package lists.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @compile ../CompilerUtils.java
- * @build ModuleStressGC
  * @run main/othervm ModuleStressGC
  */
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class ModuleStressGC {
 
@@ -62,8 +62,8 @@ public class ModuleStressGC {
         compiled = CompilerUtils.compile(
             SRC_DIR.resolve("jdk.translet"),
             MODS_DIR.resolve("jdk.translet"),
-            "-XaddExports:jdk.test/test=jdk.translet",
-            "-mp", MODS_DIR.toString());
+            "--add-exports=jdk.test/test=jdk.translet",
+            "-p", MODS_DIR.toString());
         if (!compiled) {
             throw new RuntimeException("Test failed to compile module jdk.translet");
         }
@@ -74,7 +74,7 @@ public class ModuleStressGC {
         // GC safepoints.
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-Xlog:modules=trace",
-            "-mp", MODS_DIR.toString(),
+            "-p", MODS_DIR.toString(),
             "-m", "jdk.test/test.MainGC");
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
         oa.shouldContain("package test defined in module jdk.test, exports list being walked")

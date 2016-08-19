@@ -25,7 +25,7 @@
 package gc.testlibrary;
 
 import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import sun.hotspot.WhiteBox;
 
 import java.io.File;

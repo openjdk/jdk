@@ -121,9 +121,4 @@ public interface PackageSummaryWriter {
      */
     public abstract void printDocument(Content contentTree) throws IOException;
 
-    /**
-     * Close the writer.
-     */
-    public abstract void close() throws IOException;
-
 }

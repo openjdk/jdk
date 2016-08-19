@@ -34,9 +34,9 @@ import com.sun.javadoc.RootDoc;
 import com.sun.javadoc.ClassDoc;
 import com.sun.javadoc.AnnotationDesc;
 
-public class Main extends Tester.Doclet {
+public class Main extends OldToolTester.Doclet {
 
-    private static final Tester tester = new Tester("Main", "somepackage");
+    private static final OldToolTester tester = new OldToolTester("Main", "somepackage");
 
     public static void main(String... args) throws Exception {
         tester.run();

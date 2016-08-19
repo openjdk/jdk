@@ -26,13 +26,12 @@
  * @test LoaderConstraintsTest
  * @bug 8149996
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /runtime/testlibrary
- * @library classes
- * @build ClassUnloadCommon test.Empty jdk.test.lib.* jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
+ * @library /test/lib /runtime/testlibrary classes
  * @run driver LoaderConstraintsTest
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.ArrayList;

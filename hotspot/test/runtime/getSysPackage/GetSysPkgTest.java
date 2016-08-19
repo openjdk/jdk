@@ -26,14 +26,16 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.loader
  *          java.desktop
- * @library /testlibrary
+ * @library /test/lib
  * @run main/othervm GetSysPkgTest
  */
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import jdk.test.lib.*;
+import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 // Test that JVM get_system_package() returns the module location for defined packages.
 public class GetSysPkgTest {
@@ -98,7 +100,7 @@ public class GetSysPkgTest {
             ClassFileInstaller.writeClassToDisk("GetSysPkg_package/GetSysClass", klassbuf);
 
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xbootclasspath/a:bl_dir",
-                "-XaddExports:java.base/jdk.internal.loader=ALL-UNNAMED", "-cp", "." + File.pathSeparator +
+                "--add-exports=java.base/jdk.internal.loader=ALL-UNNAMED", "-cp", "." + File.pathSeparator +
                 System.getProperty("test.classes"), "GetSysPkgTest", "do_tests");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);

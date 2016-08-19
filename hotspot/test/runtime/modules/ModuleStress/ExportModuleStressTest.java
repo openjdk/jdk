@@ -26,15 +26,15 @@
  * @bug 8156871
  * @summary package in the boot layer is repeatedly exported to unique module created in layers on top of the boot layer
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @compile ../CompilerUtils.java
- * @build ExportModuleStressTest
  * @run main/othervm ExportModuleStressTest
  */
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class ExportModuleStressTest {
 
@@ -62,8 +62,8 @@ public class ExportModuleStressTest {
         compiled = CompilerUtils.compile(
             SRC_DIR.resolve("jdk.translet"),
             MODS_DIR.resolve("jdk.translet"),
-            "-XaddExports:jdk.test/test=jdk.translet",
-            "-mp", MODS_DIR.toString());
+            "--add-exports=jdk.test/test=jdk.translet",
+            "-p", MODS_DIR.toString());
         if (!compiled) {
             throw new RuntimeException("Test failed to compile module jdk.translet");
         }
@@ -71,7 +71,7 @@ public class ExportModuleStressTest {
         // Sanity check that the test, jdk.test/test/Main.java
         // runs without error.
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-mp", MODS_DIR.toString(),
+            "-p", MODS_DIR.toString(),
             "-m", "jdk.test/test.Main");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("failed: 0")

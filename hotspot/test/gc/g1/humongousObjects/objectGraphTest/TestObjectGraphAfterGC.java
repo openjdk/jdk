@@ -24,7 +24,7 @@
 
 package gc.g1.humongousObjects.objectGraphTest;
 
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import sun.hotspot.WhiteBox;
 
 import java.io.File;
@@ -50,16 +50,9 @@ import java.util.stream.Collectors;
  * @summary Checks that objects' graph behave as expected after gc
  * @requires vm.gc.G1
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @modules java.management java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox
- *        gc.testlibrary.Helpers
- *        gc.g1.humongousObjects.objectGraphTest.GCTokens
- *        gc.g1.humongousObjects.objectGraphTest.ReferenceInfo
- *        gc.g1.humongousObjects.objectGraphTest.GC
- *        gc.g1.humongousObjects.objectGraphTest.ObjectGraph
- *        gc.g1.humongousObjects.objectGraphTest.TestObjectGraphAfterGC
- *
  * @ignore 8156755
  *
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

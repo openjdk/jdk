@@ -27,7 +27,7 @@
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm.annotation
- * @library /testlibrary /test/lib / ../patches
+ * @library /test/lib / ../patches
  * @requires vm.flavor != "minimal"
  *
  * @build sun.hotspot.WhiteBox

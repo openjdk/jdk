@@ -27,8 +27,6 @@ package jdk.javadoc.internal.doclets.toolkit;
 
 import java.io.*;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
@@ -50,7 +48,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Extern;
 import jdk.javadoc.internal.doclets.toolkit.util.Group;
-import jdk.javadoc.internal.doclets.toolkit.util.MessageRetriever;
 import jdk.javadoc.internal.doclets.toolkit.util.MetaKeywords;
 import jdk.javadoc.internal.doclets.toolkit.util.TypeElementCatalog;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
@@ -266,15 +263,6 @@ public abstract class Configuration {
     public TypeElementCatalog typeElementCatalog;
 
     /**
-     * Message Retriever for the doclet, to retrieve message from the resource
-     * file for this Configuration, which is common for 1.1 and standard
-     * doclets.
-     *
-     * TODO:  Make this private!!!
-     */
-    public MessageRetriever message = null;
-
-    /**
      * True if user wants to suppress time stamp in output.
      * Default is false.
      */
@@ -309,6 +297,9 @@ public abstract class Configuration {
 
     private List<GroupContainer> groups;
 
+    public abstract Messages getMessages();
+    public abstract Resources getResources();
+
     /**
      * Return the build date for the doclet.
      */
@@ -321,12 +312,6 @@ public abstract class Configuration {
      */
 
     public abstract boolean finishOptionSettings();
-
-    /**
-     * Return the doclet specific {@link MessageRetriever}
-     * @return the doclet specific MessageRetriever.
-     */
-    public abstract MessageRetriever getDocletSpecificMsg();
 
     public CommentUtils cmtUtils;
     public SortedSet<ModuleElement> modules;
@@ -354,11 +339,12 @@ public abstract class Configuration {
      */
     public Map<ModuleElement, Set<PackageElement>> modulePackages;
 
+    protected static final String sharedResourceBundleName =
+            "jdk.javadoc.internal.doclets.toolkit.resources.doclets";
     /**
      * Constructor. Constructs the message retriever with resource file.
      */
     public Configuration() {
-        message = new MessageRetriever(this, "jdk.javadoc.internal.doclets.toolkit.resources.doclets");
         excludedDocFileDirs = new HashSet<>();
         excludedQualifiers = new HashSet<>();
         setTabWidth(DocletConstants.DEFAULT_TAB_STOP_LENGTH);
@@ -578,7 +564,7 @@ public abstract class Configuration {
                         sourcetab = -1;
                     }
                     if (sourcetab <= 0) {
-                        message.warning("doclet.sourcetab_warning");
+                        getMessages().warning("doclet.sourcetab_warning");
                         setTabWidth(DocletConstants.DEFAULT_TAB_STOP_LENGTH);
                     }
                     return true;
@@ -696,7 +682,7 @@ public abstract class Configuration {
      */
     private void initTagletManager(Set<List<String>> customTagStrs) {
         tagletManager = tagletManager == null ?
-            new TagletManager(nosince, showversion, showauthor, javafx, message) :
+            new TagletManager(nosince, showversion, showauthor, javafx, this) :
             tagletManager;
         for (List<String> args : customTagStrs) {
             if (args.get(0).equals("-taglet")) {
@@ -721,7 +707,8 @@ public abstract class Configuration {
             } else if (tokens.size() >= 3) {
                 tagletManager.addNewSimpleCustomTag(tokens.get(0), tokens.get(2), tokens.get(1));
             } else {
-                message.error("doclet.Error_invalid_custom_tag_argument", args.get(1));
+                Messages messages = getMessages();
+                messages.error("doclet.Error_invalid_custom_tag_argument", args.get(1));
             }
         }
     }
@@ -893,123 +880,69 @@ public abstract class Configuration {
                 : utils.getFullyQualifiedName(te);
     }
 
-    public String getText(String key) {
-        // Check the doclet specific properties file.
-        MessageRetriever docletMessage = getDocletSpecificMsg();
-        if (docletMessage.containsKey(key)) {
-            return docletMessage.getText(key);
-        }
-        // Check the shared properties file.
-        return message.getText(key);
-    }
-
-    public String getText(String key, String a1) {
-        // Check the doclet specific properties file.
-        MessageRetriever docletMessage = getDocletSpecificMsg();
-        if (docletMessage.containsKey(key)) {
-            return docletMessage.getText(key, a1);
-        }
-        // Check the shared properties file.
-        return message.getText(key, a1);
-    }
-
-    public String getText(String key, String a1, String a2) {
-        // Check the doclet specific properties file.
-        MessageRetriever docletMessage = getDocletSpecificMsg();
-        if (docletMessage.containsKey(key)) {
-            return docletMessage.getText(key, a1, a2);
-        }
-        // Check the shared properties file.
-        return message.getText(key, a1, a2);
-    }
-
-    public String getText(String key, String a1, String a2, String a3) {
-        // Check the doclet specific properties file.
-        MessageRetriever docletMessage = getDocletSpecificMsg();
-        if (docletMessage.containsKey(key)) {
-            return docletMessage.getText(key, a1, a2, a3);
-        }
-        // Check the shared properties file.
-        return message.getText(key, a1, a2, a3);
-    }
-
-    public abstract Content newContent();
+    /**
+     * Convenience method to obtain a resource from the doclet's
+     * {@link Resources resources}.
+     * Equivalent to <code>getResources.getText(key);</code>.
+     * @param key the key for the desired string
+     * @return the string for the given key
+     * @throws MissingResourceException if the key is not found in either
+     *  bundle.
+     */
+    public abstract String getText(String key);
 
     /**
-     * Get the configuration string as a content.
+     * Convenience method to obtain a resource from the doclet's
+     * {@link Resources resources}.
+     * Equivalent to <code>getResources.getText(key, args);</code>.
+     * @param key the key for the desired string
+     * @param args values to be substituted into the resulting string
+     * @return the string for the given key
+     * @throws MissingResourceException if the key is not found in either
+     *  bundle.
+     */
+    public abstract String getText(String key, String... args);
+
+    /**
+     * Convenience method to obtain a resource from the doclet's
+     * {@link Resources resources} as a {@code Content} object.
      *
-     * @param key the key to look for in the configuration file
+     * @param key the key for the desired string
      * @return a content tree for the text
      */
-    public Content getResource(String key) {
-        Content c = newContent();
-        c.addContent(getText(key));
-        return c;
-    }
+    public abstract Content getContent(String key);
 
     /**
-     * Get the configuration string as a content.
+     * Convenience method to obtain a resource from the doclet's
+     * {@link Resources resources} as a {@code Content} object.
      *
-     * @param key the key to look for in the configuration file
+     * @param key the key for the desired string
      * @param o   string or content argument added to configuration text
      * @return a content tree for the text
      */
-    public Content getResource(String key, Object o) {
-        return getResource(key, o, null, null);
-    }
+    public abstract Content getContent(String key, Object o);
 
     /**
-     * Get the configuration string as a content.
+     * Convenience method to obtain a resource from the doclet's
+     * {@link Resources resources} as a {@code Content} object.
      *
-     * @param key the key to look for in the configuration file
+     * @param key the key for the desired string
      * @param o1 resource argument
      * @param o2 resource argument
      * @return a content tree for the text
      */
-    public Content getResource(String key, Object o1, Object o2) {
-        return getResource(key, o1, o2, null);
-    }
+    public abstract Content getContent(String key, Object o1, Object o2);
 
     /**
      * Get the configuration string as a content.
      *
-     * @param key the key to look for in the configuration file
+     * @param key the key for the desired string
      * @param o0  string or content argument added to configuration text
      * @param o1  string or content argument added to configuration text
      * @param o2  string or content argument added to configuration text
      * @return a content tree for the text
      */
-    public Content getResource(String key, Object o0, Object o1, Object o2) {
-        Content c = newContent();
-        Pattern p = Pattern.compile("\\{([012])\\}");
-        String text = getText(key);
-        Matcher m = p.matcher(text);
-        int start = 0;
-        while (m.find(start)) {
-            c.addContent(text.substring(start, m.start()));
-
-            Object o = null;
-            switch (m.group(1).charAt(0)) {
-                case '0': o = o0; break;
-                case '1': o = o1; break;
-                case '2': o = o2; break;
-            }
-
-            if (o == null) {
-                c.addContent("{" + m.group(1) + "}");
-            } else if (o instanceof String) {
-                c.addContent((String) o);
-            } else if (o instanceof Content) {
-                c.addContent((Content) o);
-            }
-
-            start = m.end();
-        }
-
-        c.addContent(text.substring(start));
-        return c;
-    }
-
+    public abstract Content getContent(String key, Object o0, Object o1, Object o2);
 
     /**
      * Return true if the TypeElement element is getting documented, depending upon
@@ -1084,14 +1017,13 @@ public abstract class Configuration {
         protected Option(Configuration config, String keyName, String name, int argCount) {
             c = config;
             this.name = name;
-            String key = keyName + "name";
-            String oname = getOptionsMessage(key);
-            if (oname.isEmpty()) {
-                this.parameters = "<MISSING KEY>";
+            String desc = getOptionsMessage(keyName + "description");
+            if (desc.isEmpty()) {
                 this.description = "<MISSING KEY>";
+                this.parameters = "<MISSING KEY>";
             } else {
+                this.description = desc;
                 this.parameters = getOptionsMessage(keyName + "parameters");
-                this.description = getOptionsMessage(keyName + "description");
             }
             this.argCount = argCount;
         }
@@ -1110,7 +1042,7 @@ public abstract class Configuration {
 
         private String getOptionsMessage(String key) {
             try {
-                return c.getDocletSpecificMsg().getText(key, (Object[]) null);
+                return c.getResources().getText(key);
             } catch (MissingResourceException ignore) {
                 return "";
             }
@@ -1143,10 +1075,8 @@ public abstract class Configuration {
         @Override
         public String toString() {
             String opt = name + (name.endsWith(":") ? "" : " ") + parameters;
-            int optlen = opt.length();
-            int spaces = 32 - optlen;
-            StringBuffer sb = new StringBuffer("  ").append(opt);
-            for (int i = 0; i < spaces; i++) {
+            StringBuffer sb = new StringBuffer("  ").append(opt).append(" ");
+            for (int i = opt.length(); i < 32; i++) {
                 sb.append(" ");
             }
             sb.append(description);

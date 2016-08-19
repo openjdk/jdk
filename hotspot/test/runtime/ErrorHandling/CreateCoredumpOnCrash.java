@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,18 @@
 
 /*
  * @test
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build jdk.test.lib.*
  * @run driver CreateCoredumpOnCrash
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
 import jdk.internal.misc.Unsafe;
 
 public class CreateCoredumpOnCrash {
@@ -56,7 +58,7 @@ public class CreateCoredumpOnCrash {
     public static OutputAnalyzer runTest(String option) throws Exception {
         return new OutputAnalyzer(
             ProcessTools.createJavaProcessBuilder(
-            "-Xmx64m", "-XX:-TransmitErrorReport", "-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED", option, Crasher.class.getName())
+            "-Xmx64m", "-XX:-TransmitErrorReport", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED", option, Crasher.class.getName())
             .start());
     }
 }

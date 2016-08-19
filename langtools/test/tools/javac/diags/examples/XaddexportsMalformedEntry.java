@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.xaddexports.malformed.entry
-// options: -XaddExports:jdk.compiler/com.sun.tools.javac.util
+// options: --add-exports jdk.compiler/com.sun.tools.javac.util
 
 public class XaddexportsMalformedEntry {
 }

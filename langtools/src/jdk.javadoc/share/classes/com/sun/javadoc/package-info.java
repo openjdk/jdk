@@ -150,5 +150,4 @@ producing output like:
 @see com.sun.javadoc.Doclet
 @see com.sun.javadoc.RootDoc
 */
-@Deprecated
 package com.sun.javadoc;

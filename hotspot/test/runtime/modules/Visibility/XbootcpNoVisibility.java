@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,15 @@
  * @test
  * @summary Ensure that a class defined within a java.base package can not
  *          be located via -Xbootclasspath/a
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm XbootcpNoVisibility
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class XbootcpNoVisibility {
     public static void main(String args[]) throws Exception {
@@ -50,7 +52,7 @@ public class XbootcpNoVisibility {
                         // Try loading a class within a named package in a module which has been defined
                         // to the boot loader. In this situation, the class should only be attempted
                         // to be loaded from the boot loader's module path which consists of:
-                        //   [-Xpatch]; exploded build | "modules" jimage
+                        //   [--patch-module]; exploded build | "modules" jimage
                         //
                         // Since the class is located on the boot loader's append path via
                         // -Xbootclasspath/a specification, it should not be found.

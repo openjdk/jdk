@@ -3184,11 +3184,13 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitAssignop(final JCAssignOp tree) {
-        JCTree lhsAccess = access(TreeInfo.skipParens(tree.lhs));
         final boolean boxingReq = !tree.lhs.type.isPrimitive() &&
             tree.operator.type.getReturnType().isPrimitive();
 
-        if (boxingReq || lhsAccess.hasTag(APPLY)) {
+        AssignopDependencyScanner depScanner = new AssignopDependencyScanner(tree);
+        depScanner.scan(tree.rhs);
+
+        if (boxingReq || depScanner.dependencyFound) {
             // boxing required; need to rewrite as x = (unbox typeof x)(x op y);
             // or if x == (typeof x)z then z = (unbox typeof x)((typeof x)z op y)
             // (but without recomputing x)
@@ -3235,6 +3237,41 @@ public class Lower extends TreeTranslator {
             result = app;
         } else {
             result = tree;
+        }
+    }
+
+    class AssignopDependencyScanner extends TreeScanner {
+
+        Symbol sym;
+        boolean dependencyFound = false;
+
+        AssignopDependencyScanner(JCAssignOp tree) {
+            this.sym = TreeInfo.symbol(tree.lhs);
+        }
+
+        @Override
+        public void scan(JCTree tree) {
+            if (tree != null && sym != null) {
+                tree.accept(this);
+            }
+        }
+
+        @Override
+        public void visitAssignop(JCAssignOp tree) {
+            if (TreeInfo.symbol(tree.lhs) == sym) {
+                dependencyFound = true;
+                return;
+            }
+            super.visitAssignop(tree);
+        }
+
+        @Override
+        public void visitUnary(JCUnary tree) {
+            if (TreeInfo.symbol(tree.arg) == sym) {
+                dependencyFound = true;
+                return;
+            }
+            super.visitUnary(tree);
         }
     }
 

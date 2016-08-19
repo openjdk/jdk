@@ -25,7 +25,7 @@
  * @test
  * @bug 8026949 8164091
  * @summary Test ensures correct VM output during startup
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
@@ -34,8 +34,8 @@
 
 package compiler.startup;
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class StartupOutput {
     public static void main(String[] args) throws Exception {

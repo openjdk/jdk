@@ -25,13 +25,15 @@
  * @test
  * @bug 6583051
  * @summary Give error if java.lang.Object has been incompatibly overridden on the bootpath
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main BootstrapRedefine
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class BootstrapRedefine {
 
@@ -48,7 +50,7 @@ public class BootstrapRedefine {
                                         "-Xmodule:java.base"),
                                         "mods/java.base");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xpatch:java.base=mods/java.base", "-version");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("--patch-module=java.base=mods/java.base", "-version");
         new OutputAnalyzer(pb.start())
             .shouldContain("Incompatible definition of java.lang.Object")
             .shouldHaveExitValue(1);

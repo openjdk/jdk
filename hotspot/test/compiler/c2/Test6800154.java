@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 6800154
  * @summary Add comments to long_by_long_mulhi() for better understandability
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  *
  * @run main/othervm -Xcomp
  *      -XX:CompileCommand=compileonly,compiler.c2.Test6800154::divcomp

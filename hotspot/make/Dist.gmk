@@ -46,15 +46,6 @@ else
 endif
 
 ################################################################################
-# Functions to setup copying of files for variants
-
-# Support macro for SetupDistLibFile
-define macosx_universalize
-	$(MKDIR) -p $(@D)
-	$(LIPO) -create -output $@ $<
-endef
-
-################################################################################
 # Setup make rules to copy a native library and associated data.
 #
 # Parameter 1 is the name of the rule. This name is used as variable prefix,
@@ -74,16 +65,9 @@ define SetupDistLibFileBody
   $1_LIB_NAME := $(LIBRARY_PREFIX)$$($1_NAME)
   $1_TARGET_DIR := $$(DIST_OUTPUTDIR)/$$(LIB_SUBDIR)/$$($1_VARIANT_TARGET_DIR)
 
-  ifeq ($(OPENJDK_TARGET_OS), macosx)
-    # We must use the 'universalize' macro to run lipo on shared libraries, at
-    # least until JDK-8069540 is fixed.
-    $1_MACRO := macosx_universalize
-  endif
-
   # Copy the the native library.
   $$(eval $$(call SetupCopyFiles, $1_COPY_LIB, \
       DEST := $$($1_TARGET_DIR), \
-      MACRO := $$($1_MACRO), \
       FILES := $$(wildcard \
           $$($1_SRC_DIR)/$$($1_LIB_NAME)$(SHARED_LIBRARY_SUFFIX)), \
   ))

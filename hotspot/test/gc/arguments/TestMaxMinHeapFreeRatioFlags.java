@@ -25,20 +25,18 @@
  * @test TestMaxMinHeapFreeRatioFlags
  * @key gc
  * @summary Verify that heap size changes according to max and min heap free ratios.
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestMaxMinHeapFreeRatioFlags
  * @run driver/timeout=240 TestMaxMinHeapFreeRatioFlags
  */
 
 import java.util.LinkedList;
 import java.util.Arrays;
 import java.util.Collections;
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
-import jdk.test.lib.HeapRegionUsageTool;
 import jdk.internal.misc.Unsafe;
 
 public class TestMaxMinHeapFreeRatioFlags {
@@ -88,7 +86,7 @@ public class TestMaxMinHeapFreeRatioFlags {
                 (useXmaxf ? "-Xmaxf" + maxRatio / 100.0 : "-XX:MaxHeapFreeRatio=" + maxRatio),
                 "-Xmx" + MAX_HEAP_SIZE,
                 "-Xms" + HEAP_SIZE,
-                "-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED",
+                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:NewSize=" + NEW_SIZE,
                 "-XX:MaxNewSize=" + MAX_NEW_SIZE,
                 "-XX:" + (shrinkHeapInSteps ? '+' : '-') + "ShrinkHeapInSteps",
@@ -120,7 +118,7 @@ public class TestMaxMinHeapFreeRatioFlags {
         Collections.addAll(vmOptions,
                 (useXminf ? "-Xminf" + minRatio / 100.0 : "-XX:MinHeapFreeRatio=" + minRatio),
                 (useXmaxf ? "-Xmaxf" + maxRatio / 100.0 : "-XX:MaxHeapFreeRatio=" + maxRatio),
-                "-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED",
+                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-version"
         );
         ProcessBuilder procBuilder = ProcessTools.createJavaProcessBuilder(vmOptions.toArray(new String[vmOptions.size()]));

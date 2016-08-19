@@ -31,8 +31,8 @@ import java.util.stream.Collectors;
 
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Platform;
-import jdk.test.lib.ProcessTools;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.Asserts;
@@ -42,16 +42,16 @@ import java.util.*;
 
 /*
  * @test
- * @library /test/lib/share/classes
- * @library /testlibrary
- * @build jdk.test.lib.*
- * @build jdk.test.lib.apps.*
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules jdk.hotspot.agent
  * @modules jdk.hotspot.agent/sun.jvm.hotspot
  * @modules jdk.hotspot.agent/sun.jvm.hotspot.utilities
  * @modules jdk.hotspot.agent/sun.jvm.hotspot.oops
- * @compile -XDignore.symbol.file=true -Xmodule:jdk.hotspot.agent TestInstanceKlassSize.java
+ * @compile -XDignore.symbol.file=true -Xmodule:jdk.hotspot.agent
+ *          -XaddExports:java.base/jdk.internal.misc=jdk.hotspot.agent
+ *          -XaddExports:java.management/java.lang.management=jdk.hotspot.agent
+ *          TestInstanceKlassSize.java
  * @run main/othervm  TestInstanceKlassSize
  */
 
@@ -113,9 +113,10 @@ public class TestInstanceKlassSize {
                                           };
             String[] toolArgs = {
                 "-XX:+UnlockDiagnosticVMOptions",
-                "-XaddExports:jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
-                "-XaddExports:jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED",
-                "-XaddExports:jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED",
+                "--add-modules=jdk.hotspot.agent",
+                "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
+                "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED",
+                "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED",
                 "TestInstanceKlassSize",
                 Long.toString(app.getPid())
             };

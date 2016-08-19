@@ -35,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -127,8 +128,9 @@ public class ModuleTestBase {
         tr.checkContains(actualProvides, moduleDescriptor.provides, "Lists of provides don't match");
     }
 
-    protected void compile(Path base) throws IOException {
+    protected void compile(Path base, String... options) throws IOException {
         new JavacTask(tb)
+                .options(options)
                 .files(findJavaFiles(base))
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
