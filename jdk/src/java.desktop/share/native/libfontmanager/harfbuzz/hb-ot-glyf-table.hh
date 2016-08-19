@@ -90,10 +90,10 @@ struct glyfGlyphHeader
                                          * greater than or equal to zero,
                                          * this is a simple glyph; if negative,
                                          * this is a composite glyph. */
-  SHORT         xMin;                   /* Minimum x for coordinate data. */
-  SHORT         yMin;                   /* Minimum y for coordinate data. */
-  SHORT         xMax;                   /* Maximum x for coordinate data. */
-  SHORT         yMax;                   /* Maximum y for coordinate data. */
+  FWORD         xMin;                   /* Minimum x for coordinate data. */
+  FWORD         yMin;                   /* Minimum y for coordinate data. */
+  FWORD         xMax;                   /* Maximum x for coordinate data. */
+  FWORD         yMax;                   /* Maximum y for coordinate data. */
 
   DEFINE_SIZE_STATIC (10);
 };

@@ -65,12 +65,12 @@ public class Track {
     // TODO: use arrays for faster access
 
     // the list containing the events
-    private ArrayList<MidiEvent> eventsList = new ArrayList<>();
+    private final ArrayList<MidiEvent> eventsList = new ArrayList<>();
 
     // use a hashset to detect duplicate events in add(MidiEvent)
-    private HashSet<MidiEvent> set = new HashSet<>();
+    private final HashSet<MidiEvent> set = new HashSet<>();
 
-    private MidiEvent eotEvent;
+    private final MidiEvent eotEvent;
 
     /**
      * Package-private constructor. Constructs a new, empty Track object, which
@@ -264,6 +264,7 @@ public class Track {
             data[2] = 0;
         }
 
+        @Override
         public void setMessage(int type, byte[] data, int length) throws InvalidMidiDataException {
             throw new InvalidMidiDataException("cannot modify end of track message");
         }

@@ -100,8 +100,8 @@ public final class MarlinCache implements MarlinConst {
     // per-thread renderer context
     final RendererContext rdrCtx;
 
-    // large cached touchedTile (dirty)
-    final int[] touchedTile_initial = new int[INITIAL_ARRAY]; // 1 tile line
+    // touchedTile ref (clean)
+    private final IntArrayCache.Reference touchedTile_ref;
 
     int tileMin, tileMax;
 
@@ -110,9 +110,10 @@ public final class MarlinCache implements MarlinConst {
     MarlinCache(final RendererContext rdrCtx) {
         this.rdrCtx = rdrCtx;
 
-        rowAAChunk = new OffHeapArray(rdrCtx.cleanerObj, INITIAL_CHUNK_ARRAY); // 64K
+        rowAAChunk = rdrCtx.newOffHeapArray(INITIAL_CHUNK_ARRAY); // 64K
 
-        touchedTile = touchedTile_initial;
+        touchedTile_ref = rdrCtx.newCleanIntArrayRef(INITIAL_ARRAY); // 1K = 1 tile line
+        touchedTile     = touchedTile_ref.initial;
 
         // tile used marks:
         tileMin = Integer.MAX_VALUE;
@@ -181,10 +182,9 @@ public final class MarlinCache implements MarlinConst {
 
         if (nxTiles > INITIAL_ARRAY) {
             if (DO_STATS) {
-                rdrCtx.stats.stat_array_marlincache_touchedTile
-                    .add(nxTiles);
+                rdrCtx.stats.stat_array_marlincache_touchedTile.add(nxTiles);
             }
-            touchedTile = rdrCtx.getIntArray(nxTiles);
+            touchedTile = touchedTile_ref.getArray(nxTiles);
         }
     }
 
@@ -196,11 +196,13 @@ public final class MarlinCache implements MarlinConst {
         // Reset touchedTile if needed:
         resetTileLine(0);
 
-        // Return arrays:
-        if (touchedTile != touchedTile_initial) {
-            rdrCtx.putIntArray(touchedTile, 0, 0); // already zero filled
-            touchedTile = touchedTile_initial;
+        if (DO_STATS) {
+            rdrCtx.stats.totalOffHeap += rowAAChunk.length;
         }
+
+        // Return arrays:
+        touchedTile = touchedTile_ref.putArray(touchedTile, 0, 0); // already zero filled
+
         // At last: resize back off-heap rowAA to initial size
         if (rowAAChunk.length != INITIAL_CHUNK_ARRAY) {
             // note: may throw OOME:
@@ -554,8 +556,7 @@ public final class MarlinCache implements MarlinConst {
         addr_off += SIZE_INT;
 
         if (DO_STATS) {
-            rdrCtx.stats.hist_tile_generator_encoding_runLen
-                .add(runLen);
+            rdrCtx.stats.hist_tile_generator_encoding_runLen.add(runLen);
         }
 
         long len = (addr_off - _rowAAChunk.address);
@@ -612,12 +613,12 @@ public final class MarlinCache implements MarlinConst {
 
     private void expandRowAAChunk(final long needSize) {
         if (DO_STATS) {
-            rdrCtx.stats.stat_array_marlincache_rowAAChunk
-                .add(needSize);
+            rdrCtx.stats.stat_array_marlincache_rowAAChunk.add(needSize);
         }
 
         // note: throw IOOB if neededSize > 2Gb:
-        final long newSize = ArrayCache.getNewLargeSize(rowAAChunk.length, needSize);
+        final long newSize = ArrayCacheConst.getNewLargeSize(rowAAChunk.length,
+                                                             needSize);
 
         rowAAChunk.resize(newSize);
     }
