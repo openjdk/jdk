@@ -23,6 +23,10 @@
  * questions.
  */
 
+/** Defines the implementation of the
+ *  {@link javax.tools.ToolProvider#getSystemJavaCompiler system Java compiler}
+ *  and its command line equivalent, <em>javac</em>, as well as <em>javah</em>.
+ */
 module jdk.compiler {
     requires public java.compiler;
 

@@ -41,6 +41,7 @@ import java.util.HashMap;
 import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.REF_invokeStatic;
 import static java.lang.invoke.MethodHandleStatics.*;
+import java.util.Objects;
 
 /**
  * The symbolic, non-executable form of a method handle's invocation semantics.
@@ -127,6 +128,7 @@ class LambdaForm {
     final MethodHandle customized;
     @Stable final Name[] names;
     final String debugName;
+    final Kind kind;
     MemberName vmentry;   // low-level behavior, or null if not yet prepared
     private boolean isCompiled;
 
@@ -266,12 +268,48 @@ class LambdaForm {
         }
     }
 
+    enum Kind {
+        GENERIC(""),
+        ZERO("zero"),
+        IDENTITY("identity"),
+        BOUND_REINVOKER("BMH.reinvoke"),
+        REINVOKER("MH.reinvoke"),
+        DELEGATE("MH.delegate"),
+        DIRECT_INVOKE_VIRTUAL("DMH.invokeVirtual"),
+        DIRECT_INVOKE_SPECIAL("DMH.invokeSpecial"),
+        DIRECT_INVOKE_STATIC("DMH.invokeStatic"),
+        DIRECT_NEW_INVOKE_SPECIAL("DMH.newInvokeSpecial"),
+        DIRECT_INVOKE_INTERFACE("DMH.invokeInterface"),
+        DIRECT_INVOKE_STATIC_INIT("DMH.invokeStaticInit");
+
+        final String defaultLambdaName;
+        final String methodName;
+
+        private Kind(String defaultLambdaName) {
+            this.defaultLambdaName = defaultLambdaName;
+            int p = defaultLambdaName.indexOf('.');
+            if (p > -1) {
+                this.methodName = defaultLambdaName.substring(p + 1);
+            } else {
+                this.methodName = defaultLambdaName;
+            }
+        }
+    }
+
     LambdaForm(String debugName,
                int arity, Name[] names, int result) {
-        this(debugName, arity, names, result, /*forceInline=*/true, /*customized=*/null);
+        this(debugName, arity, names, result, /*forceInline=*/true, /*customized=*/null, Kind.GENERIC);
+    }
+    LambdaForm(String debugName,
+               int arity, Name[] names, int result, Kind kind) {
+        this(debugName, arity, names, result, /*forceInline=*/true, /*customized=*/null, kind);
     }
     LambdaForm(String debugName,
                int arity, Name[] names, int result, boolean forceInline, MethodHandle customized) {
+        this(debugName, arity, names, result, forceInline, customized, Kind.GENERIC);
+    }
+    LambdaForm(String debugName,
+               int arity, Name[] names, int result, boolean forceInline, MethodHandle customized, Kind kind) {
         assert(namesOK(arity, names));
         this.arity = arity;
         this.result = fixResult(result, names);
@@ -279,6 +317,7 @@ class LambdaForm {
         this.debugName = fixDebugName(debugName);
         this.forceInline = forceInline;
         this.customized = customized;
+        this.kind = kind;
         int maxOutArity = normalize();
         if (maxOutArity > MethodType.MAX_MH_INVOKER_ARITY) {
             // Cannot use LF interpreter on very high arity expressions.
@@ -288,11 +327,15 @@ class LambdaForm {
     }
     LambdaForm(String debugName,
                int arity, Name[] names) {
-        this(debugName, arity, names, LAST_RESULT, /*forceInline=*/true, /*customized=*/null);
+        this(debugName, arity, names, LAST_RESULT, /*forceInline=*/true, /*customized=*/null, Kind.GENERIC);
     }
     LambdaForm(String debugName,
                int arity, Name[] names, boolean forceInline) {
-        this(debugName, arity, names, LAST_RESULT, forceInline, /*customized=*/null);
+        this(debugName, arity, names, LAST_RESULT, forceInline, /*customized=*/null, Kind.GENERIC);
+    }
+    LambdaForm(String debugName,
+               int arity, Name[] names, boolean forceInline, Kind kind) {
+        this(debugName, arity, names, LAST_RESULT, forceInline, /*customized=*/null, kind);
     }
     LambdaForm(String debugName,
                Name[] formals, Name[] temps, Name result) {
@@ -325,6 +368,7 @@ class LambdaForm {
         this.debugName = "LF.zero";
         this.forceInline = true;
         this.customized = null;
+        this.kind = Kind.GENERIC;
         assert(nameRefsAreLegal());
         assert(isEmpty());
         String sig = null;
@@ -395,7 +439,7 @@ class LambdaForm {
 
     /** Customize LambdaForm for a particular MethodHandle */
     LambdaForm customize(MethodHandle mh) {
-        LambdaForm customForm = new LambdaForm(debugName, arity, names, result, forceInline, mh);
+        LambdaForm customForm = new LambdaForm(debugName, arity, names, result, forceInline, mh, kind);
         if (COMPILE_THRESHOLD >= 0 && isCompiled) {
             // If shared LambdaForm has been compiled, compile customized version as well.
             customForm.compileToBytecode();
@@ -770,28 +814,6 @@ class LambdaForm {
             }
         } catch (Error | Exception e) {
             throw newInternalError(this.toString(), e);
-        }
-    }
-
-    /**
-     * Generate optimizable bytecode for this form after first looking for a
-     * pregenerated version in a specified class.
-     */
-    void compileToBytecode(Class<?> lookupClass) {
-        if (vmentry != null && isCompiled) {
-            return;  // already compiled somehow
-        }
-        MethodType invokerType = methodType();
-        assert(vmentry == null || vmentry.getMethodType().basicType().equals(invokerType));
-        int dot = debugName.indexOf('.');
-        String methodName = (dot > 0) ? debugName.substring(dot + 1) : debugName;
-        MemberName member = new MemberName(lookupClass, methodName, invokerType, REF_invokeStatic);
-        MemberName resolvedMember = MemberName.getFactory().resolveOrNull(REF_invokeStatic, member, lookupClass);
-        if (resolvedMember != null) {
-            vmentry = resolvedMember;
-            isCompiled = true;
-        } else {
-            compileToBytecode();
         }
     }
 
@@ -1828,7 +1850,7 @@ class LambdaForm {
         // bootstrap dependency on this method in case we're interpreting LFs
         if (isVoid) {
             Name[] idNames = new Name[] { argument(0, L_TYPE) };
-            idForm = new LambdaForm(idMem.getName(), 1, idNames, VOID_RESULT);
+            idForm = new LambdaForm(idMem.getName(), 1, idNames, VOID_RESULT, Kind.IDENTITY);
             idForm.compileToBytecode();
             idFun = new NamedFunction(idMem, SimpleMethodHandle.make(idMem.getInvocationType(), idForm));
 
@@ -1836,15 +1858,17 @@ class LambdaForm {
             zeFun = idFun;
         } else {
             Name[] idNames = new Name[] { argument(0, L_TYPE), argument(1, type) };
-            idForm = new LambdaForm(idMem.getName(), 2, idNames, 1);
+            idForm = new LambdaForm(idMem.getName(), 2, idNames, 1, Kind.IDENTITY);
             idForm.compileToBytecode();
-            idFun = new NamedFunction(idMem, SimpleMethodHandle.make(idMem.getInvocationType(), idForm));
+            idFun = new NamedFunction(idMem, MethodHandleImpl.makeIntrinsic(
+                    idMem.getInvocationType(), idForm, MethodHandleImpl.Intrinsic.IDENTITY));
 
             Object zeValue = Wrapper.forBasicType(btChar).zero();
             Name[] zeNames = new Name[] { argument(0, L_TYPE), new Name(idFun, zeValue) };
-            zeForm = new LambdaForm(zeMem.getName(), 1, zeNames, 1);
+            zeForm = new LambdaForm(zeMem.getName(), 1, zeNames, 1, Kind.ZERO);
             zeForm.compileToBytecode();
-            zeFun = new NamedFunction(zeMem, SimpleMethodHandle.make(zeMem.getInvocationType(), zeForm));
+            zeFun = new NamedFunction(zeMem, MethodHandleImpl.makeIntrinsic(
+                    zeMem.getInvocationType(), zeForm, MethodHandleImpl.Intrinsic.ZERO));
         }
 
         LF_zero[ord] = zeForm;
@@ -1901,7 +1925,16 @@ class LambdaForm {
         if (USE_PREDEFINED_INTERPRET_METHODS)
             computeInitialPreparedForms();
         NamedFunction.initializeInvokers();
+
+        // The Holder class will contain pre-generated forms resolved
+        // using MemberName.getFactory(). However, that doesn't initialize the
+        // class, which subtly breaks inlining etc. By forcing
+        // initialization of the Holder class we avoid these issues.
+        UNSAFE.ensureClassInitialized(Holder.class);
     }
+
+    /* Placeholder class for zero and identity forms generated ahead of time */
+    final class Holder {}
 
     // The following hack is necessary in order to suppress TRACE_INTERPRETER
     // during execution of the static initializes of this class.

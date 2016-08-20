@@ -24,8 +24,8 @@
 /**
  * @test
  * @bug 4033662
- * @library /java/text/testlib
  * @summary test for limit on Calendar
+ * @library /java/text/testlib
  * @run main CalendarLimitTest -verbose
  */
 
@@ -62,6 +62,12 @@ public class CalendarLimitTest extends IntlTest
     static long ORIGIN; // This is the *approximate* point at which BC switches to AD
 
     public static void main(String argv[]) throws Exception {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesGregorianCalendar(locale)) {
+            System.out.println("Skipping this test because locale is " + locale);
+            return;
+        }
+
         new CalendarLimitTest().run(argv);
     }
 

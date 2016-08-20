@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.security.Provider;
 public final class TestSecurityProvider extends Provider {
 
     public TestSecurityProvider() {
-        super("TEST", 1.0d, "Test Security provider");
+        super("TEST", "1.0", "Test Security provider");
         System.out.println(String.format("TEST Security provider loaded"
                 + " successfully : %s", this.toString()));
     }
@@ -38,7 +38,7 @@ public final class TestSecurityProvider extends Provider {
     @Override
     public String toString() {
         return "TestSecurityProvider [getName()=" + getName()
-                + ", getVersion()=" + getVersion() + ", getInfo()="
+                + ", getVersion()=" + getVersionStr() + ", getInfo()="
                 + getInfo() + ", toString()=" + super.toString() + "]";
     }
 

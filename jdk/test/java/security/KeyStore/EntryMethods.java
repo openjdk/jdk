@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test 1.5, 03/06/24
- * @bug 4850376 8130850
+ * @bug 4850376 8130850 8130181
  * @summary Provide generic storage KeyStore storage facilities
  */
 
@@ -65,7 +65,7 @@ public class EntryMethods
     public static class FooEntry implements KeyStore.Entry { }
 
     public EntryMethods() throws Exception {
-        super("EntryMethods", 0.0, "EntryMethods");
+        super("EntryMethods", "0.0", "EntryMethods");
 
         pre15fis = new FileInputStream
             (System.getProperty("test.src") + "/EntryMethods.pre15.keystore");

@@ -26,6 +26,7 @@
  * @bug 4409072
  * @summary tests for set(), add(), and roll() with various week parameters.
  * @library /java/text/testlib
+ * @run main bug4409072
  */
 
 import  java.util.*;
@@ -41,7 +42,9 @@ public class bug4409072 extends IntlTest {
      * (e.g. add(), roll(), set())
      */
     public void Test4409072() {
-        if (Locale.getDefault().equals(new Locale("th", "TH"))) {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesGregorianCalendar(locale)) {
+            logln("Skipping this test because locale is " + locale);
             return;
         }
 

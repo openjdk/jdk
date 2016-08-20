@@ -54,9 +54,9 @@ public class TestHiddenTag extends JavadocTester {
                 "<a name=\"visibleField\">",
                 "<a name=\"visibleMethod--\">",
                 "<dt>Direct Known Subclasses:</dt>\n" +
-                "<dd><a href=\"../pkg1/A.VisibleInner.html\" title=\"class in pkg1\">" +
-                "A.VisibleInner</a>, <a href=\"../pkg1/A.VisibleInnerExtendsInvisibleInner.html\" " +
-                "title=\"class in pkg1\">A.VisibleInnerExtendsInvisibleInner</a></dd>");
+                "<dd><code><a href=\"../pkg1/A.VisibleInner.html\" title=\"class in pkg1\">" +
+                "A.VisibleInner</a></code>, <code><a href=\"../pkg1/A.VisibleInnerExtendsInvisibleInner.html\" " +
+                "title=\"class in pkg1\">A.VisibleInnerExtendsInvisibleInner</a></code></dd>");
 
         checkOutput("pkg1/A.html", false,
                 "<a name=\"inVisibleField\">",

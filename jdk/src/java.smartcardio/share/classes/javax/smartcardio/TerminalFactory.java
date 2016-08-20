@@ -134,7 +134,7 @@ public final class TerminalFactory {
         private static final long serialVersionUID = 2745808869881593918L;
         final static Provider INSTANCE = new NoneProvider();
         private NoneProvider() {
-            super("None", 1.0d, "none");
+            super("None", "1.0", "none");
         }
     }
 

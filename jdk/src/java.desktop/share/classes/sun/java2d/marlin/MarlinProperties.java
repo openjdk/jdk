@@ -42,13 +42,27 @@ public final class MarlinProperties {
     }
 
     /**
+     * Return the initial edge capacity used to define initial arrays
+     * (edges, polystack, crossings)
+     *
+     * @return 256 < initial edges < 65536 (4096 by default)
+     */
+    public static int getInitialEdges() {
+        return align(
+            getInteger("sun.java2d.renderer.edges", 4096, 64, 64 * 1024),
+            64);
+    }
+
+    /**
      * Return the initial pixel size used to define initial arrays
      * (tile AA chunk, alpha line, buckets)
      *
      * @return 64 < initial pixel size < 32768 (2048 by default)
      */
     public static int getInitialImageSize() {
-        return getInteger("sun.java2d.renderer.pixelsize", 2048, 64, 32 * 1024);
+        return align(
+            getInteger("sun.java2d.renderer.pixelsize", 2048, 64, 32 * 1024),
+            64);
     }
 
     /**
@@ -182,4 +196,8 @@ public final class MarlinProperties {
         return value;
     }
 
+    static int align(final int val, final int norm) {
+        final int ceil = FloatMath.ceil_int( ((float)val) / norm);
+        return ceil * norm;
+    }
 }

@@ -49,7 +49,8 @@ public abstract class TIFFMetadataFormat implements IIOMetadataFormat {
         }
         try {
             ResourceBundle bundle =
-                ResourceBundle.getBundle(resourceBaseName, locale);
+                ResourceBundle.getBundle(resourceBaseName, locale,
+                                         this.getClass().getModule());
             return bundle.getString(key);
         } catch (MissingResourceException e) {
             return null;
