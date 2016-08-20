@@ -47,7 +47,38 @@ import sun.security.action.GetPropertyAction;
 public class MarlinRenderingEngine extends RenderingEngine
                                    implements MarlinConst
 {
-    private static enum NormMode {ON_WITH_AA, ON_NO_AA, OFF}
+    private static enum NormMode {
+        ON_WITH_AA {
+            @Override
+            PathIterator getNormalizingPathIterator(final RendererContext rdrCtx,
+                                                    final PathIterator src)
+            {
+                // NormalizingPathIterator NearestPixelCenter:
+                return rdrCtx.nPCPathIterator.init(src);
+            }
+        },
+        ON_NO_AA{
+            @Override
+            PathIterator getNormalizingPathIterator(final RendererContext rdrCtx,
+                                                    final PathIterator src)
+            {
+                // NearestPixel NormalizingPathIterator:
+                return rdrCtx.nPQPathIterator.init(src);
+            }
+        },
+        OFF{
+            @Override
+            PathIterator getNormalizingPathIterator(final RendererContext rdrCtx,
+                                                    final PathIterator src)
+            {
+                // return original path iterator if normalization is disabled:
+                return src;
+            }
+        };
+
+        abstract PathIterator getNormalizingPathIterator(RendererContext rdrCtx,
+                                                         PathIterator src);
+    }
 
     private static final float MIN_PEN_SIZE = 1f / NORM_SUBPIXELS;
 
@@ -91,13 +122,7 @@ public class MarlinRenderingEngine extends RenderingEngine
         final RendererContext rdrCtx = getRendererContext();
         try {
             // initialize a large copyable Path2D to avoid a lot of array growing:
-            final Path2D.Float p2d =
-                    (rdrCtx.p2d == null) ?
-                    (rdrCtx.p2d = new Path2D.Float(Path2D.WIND_NON_ZERO,
-                                                   INITIAL_MEDIUM_ARRAY))
-                    : rdrCtx.p2d;
-            // reset
-            p2d.reset();
+            final Path2D.Float p2d = rdrCtx.getPath2D();
 
             strokeTo(rdrCtx,
                      src,
@@ -274,7 +299,7 @@ public class MarlinRenderingEngine extends RenderingEngine
                         Shape src,
                         AffineTransform at,
                         float width,
-                        NormMode normalize,
+                        NormMode norm,
                         int caps,
                         int join,
                         float miterlimit,
@@ -338,13 +363,12 @@ public class MarlinRenderingEngine extends RenderingEngine
                     dashLen = dashes.length;
                     final float[] newDashes;
                     if (dashLen <= INITIAL_ARRAY) {
-                        newDashes = rdrCtx.dasher.dashes_initial;
+                        newDashes = rdrCtx.dasher.dashes_ref.initial;
                     } else {
                         if (DO_STATS) {
-                            rdrCtx.stats.stat_array_dasher_dasher
-                                .add(dashLen);
+                            rdrCtx.stats.stat_array_dasher_dasher.add(dashLen);
                         }
-                        newDashes = rdrCtx.getDirtyFloatArray(dashLen);
+                        newDashes = rdrCtx.dasher.dashes_ref.getArray(dashLen);
                     }
                     System.arraycopy(dashes, 0, newDashes, 0, dashLen);
                     dashes = newDashes;
@@ -400,8 +424,8 @@ public class MarlinRenderingEngine extends RenderingEngine
         }
         pc2d = transformerPC2D.inverseDeltaTransformConsumer(pc2d, strokerat);
 
-        final PathIterator pi = getNormalizingPathIterator(rdrCtx, normalize,
-                                    src.getPathIterator(at));
+        final PathIterator pi = norm.getNormalizingPathIterator(rdrCtx,
+                                         src.getPathIterator(at));
 
         pathTo(rdrCtx, pi, pc2d);
 
@@ -422,25 +446,6 @@ public class MarlinRenderingEngine extends RenderingEngine
 
     private static boolean nearZero(final double num) {
         return Math.abs(num) < 2.0 * Math.ulp(num);
-    }
-
-    PathIterator getNormalizingPathIterator(final RendererContext rdrCtx,
-                                            final NormMode mode,
-                                            final PathIterator src)
-    {
-        switch (mode) {
-            case ON_WITH_AA:
-                // NormalizingPathIterator NearestPixelCenter:
-                return rdrCtx.nPCPathIterator.init(src);
-            case ON_NO_AA:
-                // NearestPixel NormalizingPathIterator:
-                return rdrCtx.nPQPathIterator.init(src);
-            case OFF:
-                // return original path iterator if normalization is disabled:
-                return src;
-            default:
-                throw new InternalError("Unrecognized normalization mode");
-        }
     }
 
     abstract static class NormalizingPathIterator implements PathIterator {
@@ -792,8 +797,8 @@ public class MarlinRenderingEngine extends RenderingEngine
 
             if (bs == null) {
                 // fill shape:
-                final PathIterator pi = getNormalizingPathIterator(rdrCtx, norm,
-                                            s.getPathIterator(_at));
+                final PathIterator pi = norm.getNormalizingPathIterator(rdrCtx,
+                                                 s.getPathIterator(_at));
 
                 // note: Winding rule may be EvenOdd ONLY for fill operations !
                 r = rdrCtx.renderer.init(clip.getLoX(), clip.getLoY(),
@@ -1021,8 +1026,11 @@ public class MarlinRenderingEngine extends RenderingEngine
         logInfo("sun.java2d.renderer.useRef           = "
                 + refType);
 
+        logInfo("sun.java2d.renderer.edges            = "
+                + MarlinConst.INITIAL_EDGES_COUNT);
         logInfo("sun.java2d.renderer.pixelsize        = "
                 + MarlinConst.INITIAL_PIXEL_DIM);
+
         logInfo("sun.java2d.renderer.subPixel_log2_X  = "
                 + MarlinConst.SUBPIXEL_LG_POSITIONS_X);
         logInfo("sun.java2d.renderer.subPixel_log2_Y  = "
@@ -1075,6 +1083,11 @@ public class MarlinRenderingEngine extends RenderingEngine
         logInfo("CUB_DEC_BND  = " + Renderer.CUB_DEC_BND);
         logInfo("CUB_INC_BND  = " + Renderer.CUB_INC_BND);
         logInfo("QUAD_DEC_BND = " + Renderer.QUAD_DEC_BND);
+
+        logInfo("INITIAL_EDGES_CAPACITY               = "
+                + MarlinConst.INITIAL_EDGES_CAPACITY);
+        logInfo("INITIAL_CROSSING_COUNT               = "
+                + Renderer.INITIAL_CROSSING_COUNT);
 
         logInfo("=========================================================="
                 + "=====================");

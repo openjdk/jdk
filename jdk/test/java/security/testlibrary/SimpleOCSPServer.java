@@ -64,6 +64,8 @@ public class SimpleOCSPServer {
     private static final SimpleDateFormat utcDateFmt =
             new SimpleDateFormat("MMM dd yyyy, HH:mm:ss z");
 
+    static final int FREE_PORT = 0;
+
     // CertStatus values
     public static enum CertStatus {
         CERT_STATUS_GOOD,
@@ -88,7 +90,8 @@ public class SimpleOCSPServer {
     private volatile boolean started = false;
     private volatile boolean serverReady = false;
     private volatile boolean receivedShutdown = false;
-    private long delayMsec = 0;
+    private volatile boolean acceptConnections = true;
+    private volatile long delayMsec = 0;
 
     // Fields used in the generation of responses
     private long nextUpdateInterval = -1;
@@ -116,7 +119,7 @@ public class SimpleOCSPServer {
      */
     public SimpleOCSPServer(KeyStore ks, String password, String issuerAlias,
             String signerAlias) throws GeneralSecurityException, IOException {
-        this(null, 0, ks, password, issuerAlias, signerAlias);
+        this(null, FREE_PORT, ks, password, issuerAlias, signerAlias);
     }
 
     /**
@@ -230,6 +233,15 @@ public class SimpleOCSPServer {
                     while (!receivedShutdown) {
                         try {
                             Socket newConnection = servSocket.accept();
+                            if (!acceptConnections) {
+                                try {
+                                    log("Reject connection");
+                                    newConnection.close();
+                                } catch (IOException e) {
+                                    // ignore
+                                }
+                                continue;
+                            }
                             threadPool.submit(new OcspHandler(newConnection));
                         } catch (SocketTimeoutException timeout) {
                             // Nothing to do here.  If receivedShutdown
@@ -255,6 +267,23 @@ public class SimpleOCSPServer {
             }
         });
     }
+
+    /**
+     * Make the OCSP server reject incoming connections.
+     */
+    public synchronized void rejectConnections() {
+        log("Reject OCSP connections");
+        acceptConnections = false;
+    }
+
+    /**
+     * Make the OCSP server accept incoming connections.
+     */
+    public synchronized void acceptConnections() {
+        log("Accept OCSP connections");
+        acceptConnections = true;
+    }
+
 
     /**
      * Stop the OCSP server.
@@ -499,13 +528,11 @@ public class SimpleOCSPServer {
      * on the incoming request.
      */
     public void setDelay(long delayMillis) {
-        if (!started) {
-            delayMsec = delayMillis > 0 ? delayMillis : 0;
-            if (delayMsec > 0) {
-                log("OCSP latency set to " + delayMsec + " milliseconds.");
-            } else {
-                log("OCSP latency disabled");
-            }
+        delayMsec = delayMillis > 0 ? delayMillis : 0;
+        if (delayMsec > 0) {
+            log("OCSP latency set to " + delayMsec + " milliseconds.");
+        } else {
+            log("OCSP latency disabled");
         }
     }
 

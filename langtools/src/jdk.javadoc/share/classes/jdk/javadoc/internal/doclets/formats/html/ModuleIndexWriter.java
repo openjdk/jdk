@@ -88,7 +88,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      */
     public static void generate(ConfigurationImpl configuration) {
         ModuleIndexWriter mdlgen;
-        DocPath filename = DocPaths.OVERVIEW_SUMMARY;
+        DocPath filename = DocPaths.overviewSummary(configuration.frames);
         try {
             mdlgen = new ModuleIndexWriter(configuration, filename);
             mdlgen.buildModuleIndexFile("doclet.Window_Overview_Summary", true);

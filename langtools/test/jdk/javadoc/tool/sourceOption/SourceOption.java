@@ -92,7 +92,7 @@ public class SourceOption implements Doclet {
     }
 
     public boolean run(DocletEnvironment root) {
-        root.getIncludedClasses();         // force parser into action
+        root.getIncludedTypeElements();
         return true;
     }
 

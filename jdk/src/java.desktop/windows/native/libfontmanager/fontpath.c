@@ -263,6 +263,7 @@ static int CALLBACK EnumFamilyNamesW(
     jstring familyLC;
     size_t slen;
     LOGFONTW lfw;
+    jboolean mapHasKey;
 
     /* Exceptions indicate critical errors such that program cannot continue
      * with further execution. Henceforth, the function returns immediately
@@ -311,10 +312,10 @@ static int CALLBACK EnumFamilyNamesW(
     }
 
     /* check if already seen this family with a different charset */
-    jboolean mapHasKey = (*env)->CallBooleanMethod(env,
-                                                   fmi->familyToFontListMap,
-                                                   fmi->containsKeyMID,
-                                                   familyLC);
+    mapHasKey = (*env)->CallBooleanMethod(env,
+                                          fmi->familyToFontListMap,
+                                          fmi->containsKeyMID,
+                                          familyLC);
     if ((*env)->ExceptionCheck(env)) {
         /* Delete the created references before return */
         DeleteLocalReference(env, fmi->family);
@@ -535,6 +536,7 @@ Java_sun_awt_Win32FontManager_populateFontFileNameMap0
     jclass classIDString;
     jmethodID putMID;
     GdiFontMapInfo fmi;
+    LOGFONTW lfw;
 
     /* Check we were passed all the maps we need, and do lookup of
      * methods for JNI up-calls
@@ -598,7 +600,6 @@ Java_sun_awt_Win32FontManager_populateFontFileNameMap0
     }
 
     /* Enumerate fonts via GDI to build maps of fonts and families */
-    LOGFONTW lfw;
     memset(&lfw, 0, sizeof(lfw));
     lfw.lfCharSet = DEFAULT_CHARSET;  /* all charsets */
     wcscpy(lfw.lfFaceName, L"");      /* one face per family (CHECK) */

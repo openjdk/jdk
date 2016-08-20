@@ -399,7 +399,10 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * Calendar Elements in the Unicode Locale Data Markup Language
      * (LDML) specification</a> for more details.
      *
-     * @return the month strings.
+     * @return the month strings. Use
+     * {@link java.util.Calendar#JANUARY Calendar.JANUARY},
+     * {@link java.util.Calendar#FEBRUARY Calendar.FEBRUARY},
+     * etc. to index the result array.
      */
     public String[] getMonths() {
         return Arrays.copyOf(months, months.length);
@@ -407,7 +410,9 @@ public class DateFormatSymbols implements Serializable, Cloneable {
 
     /**
      * Sets month strings. For example: "January", "February", etc.
-     * @param newMonths the new month strings.
+     * @param newMonths the new month strings. The array should
+     * be indexed by {@link java.util.Calendar#JANUARY Calendar.JANUARY},
+     * {@link java.util.Calendar#FEBRUARY Calendar.FEBRUARY}, etc.
      */
     public void setMonths(String[] newMonths) {
         months = Arrays.copyOf(newMonths, newMonths.length);
@@ -427,7 +432,10 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * Calendar Elements in the Unicode Locale Data Markup Language
      * (LDML) specification</a> for more details.
      *
-     * @return the short month strings.
+     * @return the short month strings. Use
+     * {@link java.util.Calendar#JANUARY Calendar.JANUARY},
+     * {@link java.util.Calendar#FEBRUARY Calendar.FEBRUARY},
+     * etc. to index the result array.
      */
     public String[] getShortMonths() {
         return Arrays.copyOf(shortMonths, shortMonths.length);
@@ -435,7 +443,9 @@ public class DateFormatSymbols implements Serializable, Cloneable {
 
     /**
      * Sets short month strings. For example: "Jan", "Feb", etc.
-     * @param newShortMonths the new short month strings.
+     * @param newShortMonths the new short month strings. The array should
+     * be indexed by {@link java.util.Calendar#JANUARY Calendar.JANUARY},
+     * {@link java.util.Calendar#FEBRUARY Calendar.FEBRUARY}, etc.
      */
     public void setShortMonths(String[] newShortMonths) {
         shortMonths = Arrays.copyOf(newShortMonths, newShortMonths.length);
@@ -444,8 +454,10 @@ public class DateFormatSymbols implements Serializable, Cloneable {
 
     /**
      * Gets weekday strings. For example: "Sunday", "Monday", etc.
-     * @return the weekday strings. Use <code>Calendar.SUNDAY</code>,
-     * <code>Calendar.MONDAY</code>, etc. to index the result array.
+     * @return the weekday strings. Use
+     * {@link java.util.Calendar#SUNDAY Calendar.SUNDAY},
+     * {@link java.util.Calendar#MONDAY Calendar.MONDAY}, etc. to index
+     * the result array.
      */
     public String[] getWeekdays() {
         return Arrays.copyOf(weekdays, weekdays.length);
@@ -454,8 +466,8 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     /**
      * Sets weekday strings. For example: "Sunday", "Monday", etc.
      * @param newWeekdays the new weekday strings. The array should
-     * be indexed by <code>Calendar.SUNDAY</code>,
-     * <code>Calendar.MONDAY</code>, etc.
+     * be indexed by {@link java.util.Calendar#SUNDAY Calendar.SUNDAY},
+     * {@link java.util.Calendar#MONDAY Calendar.MONDAY}, etc.
      */
     public void setWeekdays(String[] newWeekdays) {
         weekdays = Arrays.copyOf(newWeekdays, newWeekdays.length);
@@ -464,8 +476,10 @@ public class DateFormatSymbols implements Serializable, Cloneable {
 
     /**
      * Gets short weekday strings. For example: "Sun", "Mon", etc.
-     * @return the short weekday strings. Use <code>Calendar.SUNDAY</code>,
-     * <code>Calendar.MONDAY</code>, etc. to index the result array.
+     * @return the short weekday strings. Use
+     * {@link java.util.Calendar#SUNDAY Calendar.SUNDAY},
+     * {@link java.util.Calendar#MONDAY Calendar.MONDAY}, etc. to index
+     * the result array.
      */
     public String[] getShortWeekdays() {
         return Arrays.copyOf(shortWeekdays, shortWeekdays.length);
@@ -474,8 +488,8 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     /**
      * Sets short weekday strings. For example: "Sun", "Mon", etc.
      * @param newShortWeekdays the new short weekday strings. The array should
-     * be indexed by <code>Calendar.SUNDAY</code>,
-     * <code>Calendar.MONDAY</code>, etc.
+     * be indexed by {@link java.util.Calendar#SUNDAY Calendar.SUNDAY},
+     * {@link java.util.Calendar#MONDAY Calendar.MONDAY}, etc.
      */
     public void setShortWeekdays(String[] newShortWeekdays) {
         shortWeekdays = Arrays.copyOf(newShortWeekdays, newShortWeekdays.length);

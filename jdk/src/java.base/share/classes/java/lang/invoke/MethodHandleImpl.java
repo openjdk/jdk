@@ -1718,10 +1718,19 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             }
 
             @Override
-            public byte[] generateDMHClassBytes(String className,
-            MethodType[] methodTypes, int[] types) {
+            public byte[] generateDirectMethodHandleHolderClassBytes(
+                    String className, MethodType[] methodTypes, int[] types) {
                 return GenerateJLIClassesHelper
-                        .generateDMHClassBytes(className, methodTypes, types);
+                        .generateDirectMethodHandleHolderClassBytes(
+                                className, methodTypes, types);
+            }
+
+            @Override
+            public byte[] generateDelegatingMethodHandleHolderClassBytes(
+                    String className, MethodType[] methodTypes) {
+                return GenerateJLIClassesHelper
+                        .generateDelegatingMethodHandleHolderClassBytes(
+                                className, methodTypes);
             }
 
             @Override
@@ -1729,6 +1738,12 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                     final String types) {
                 return GenerateJLIClassesHelper
                         .generateConcreteBMHClassBytes(types);
+            }
+
+            @Override
+            public byte[] generateBasicFormsClassBytes(final String className) {
+                return GenerateJLIClassesHelper
+                        .generateBasicFormsClassBytes(className);
             }
         });
     }
@@ -1925,7 +1940,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * @return whether the counter has reached the limit.
      */
     static boolean countedLoopPredicate(int counter, int limit) {
-        return counter <= limit;
+        return counter < limit;
     }
 
     /**

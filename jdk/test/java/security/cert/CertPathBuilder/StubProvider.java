@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,14 @@
 
 /*
  *
- * @bug 4408997
+ * @bug 4408997 8130181
  * Used by GetInstance test.
  */
 import java.security.Provider;
 
 public class StubProvider extends Provider {
     public StubProvider() {
-        super( "StubProvider", 1.1, "No Info");
+        super( "StubProvider", "1.1", "No Info");
         put("CertPathBuilder.PKIX", "StubProviderImpl");
     }
 }

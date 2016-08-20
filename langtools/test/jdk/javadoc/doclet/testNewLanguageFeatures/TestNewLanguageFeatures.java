@@ -186,22 +186,22 @@ public class TestNewLanguageFeatures extends JavadocTester {
         checkOutput("pkg/TypeParameters.html", true,
                 "<dl>\n"
                 + "<dt>All Implemented Interfaces:</dt>\n"
-                + "<dd><a href=\"../pkg/SubInterface.html\" title=\"interface in pkg\">"
-                + "SubInterface</a>&lt;E&gt;, <a href=\"../pkg/SuperInterface.html\" "
-                + "title=\"interface in pkg\">SuperInterface</a>&lt;E&gt;</dd>\n"
+                + "<dd><code><a href=\"../pkg/SubInterface.html\" title=\"interface in pkg\">"
+                + "SubInterface</a>&lt;E&gt;</code>, <code><a href=\"../pkg/SuperInterface.html\" "
+                + "title=\"interface in pkg\">SuperInterface</a>&lt;E&gt;</code></dd>\n"
                 + "</dl>");
 
         checkOutput("pkg/SuperInterface.html", true,
                 "<dl>\n"
                 + "<dt>All Known Subinterfaces:</dt>\n"
-                + "<dd><a href=\"../pkg/SubInterface.html\" title=\"interface in pkg\">"
-                + "SubInterface</a>&lt;V&gt;</dd>\n"
+                + "<dd><code><a href=\"../pkg/SubInterface.html\" title=\"interface in pkg\">"
+                + "SubInterface</a>&lt;V&gt;</code></dd>\n"
                 + "</dl>");
         checkOutput("pkg/SubInterface.html", true,
                 "<dl>\n"
                 + "<dt>All Superinterfaces:</dt>\n"
-                + "<dd><a href=\"../pkg/SuperInterface.html\" title=\"interface in pkg\">"
-                + "SuperInterface</a>&lt;V&gt;</dd>\n"
+                + "<dd><code><a href=\"../pkg/SuperInterface.html\" title=\"interface in pkg\">"
+                + "SuperInterface</a>&lt;V&gt;</code></dd>\n"
                 + "</dl>");
 
         //==============================================================

@@ -34,7 +34,12 @@
 public class Test {
     public static void main(String[] args) {
         // run javadoc on package p
-        if (jdk.javadoc.internal.tool.Main.execute("javadoc", "p.SourceOnly", "p") != 0)
+        String[] jdargs = {
+            "-doclet", "p.SourceOnly",
+            "-docletpath", System.getProperty("test.classes", "."),
+            "p"
+        };
+        if (jdk.javadoc.internal.tool.Main.execute(jdargs) != 0)
             throw new Error();
     }
 }

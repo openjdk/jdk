@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,20 @@ public class TestProviderLeak {
     // or throws out TimeoutException.
     private static final int RESERVATION = 3;
     // The maximum time, 5 seconds, to wait for each iteration.
-    private static final int TIME_OUT = 5;
+    private static final int TIME_OUT;
+    static {
+        int timeout = 5;
+        try {
+            double timeoutFactor = Double.parseDouble(
+                    System.getProperty("test.timeout.factor", "1.0"));
+            timeout = (int) (timeout * timeoutFactor);
+        } catch (Exception e) {
+            System.out.println("Warning: " + e);
+        }
+        TIME_OUT = timeout;
+        System.out.println("Timeout for each iteration is "
+                + TIME_OUT + " seconds");
+    }
 
     private static Deque<byte []> eatupMemory() throws Exception {
         dumpMemoryStats("Before memory allocation");
