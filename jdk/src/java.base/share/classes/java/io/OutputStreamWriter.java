@@ -233,22 +233,16 @@ public class OutputStreamWriter extends Writer {
 
     @Override
     public Writer append(CharSequence csq, int start, int end) throws IOException {
-        if (csq == null) {
-            write("null".subSequence(start, end).toString());
-            return this;
-        } else {
-            return append(csq.subSequence(start, end));
-        }
+        if (csq == null) csq = "null";
+        return append(csq.subSequence(start, end));
     }
 
     @Override
     public Writer append(CharSequence csq) throws IOException {
-        if (csq == null) {
-            se.write("null");
-        } else if (csq instanceof CharBuffer) {
+        if (csq instanceof CharBuffer) {
             se.write((CharBuffer) csq);
         } else {
-            se.write(csq.toString());
+            se.write(String.valueOf(csq));
         }
         return this;
     }

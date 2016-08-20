@@ -24,9 +24,8 @@
  */
 
 /**
- * java.base defines and exports the core APIs of the Java SE platform.
+ * Defines the foundational APIs of the Java SE Platform.
  */
-
 module java.base {
 
     exports java.io;

@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import javax.sound.sampled.Mixer;
@@ -29,7 +30,7 @@ import javax.sound.sampled.Mixer.Info;
 import javax.sound.sampled.spi.MixerProvider;
 
 /**
- * Provider for software audio mixer
+ * Provider for software audio mixer.
  *
  * @author Karl Helgason
  */
@@ -41,6 +42,7 @@ public final class SoftMixingMixerProvider extends MixerProvider {
 
     static final Object mutex = new Object();
 
+    @Override
     public Mixer getMixer(Info info) {
         if (!(info == null || info == SoftMixingMixer.info)) {
             throw new IllegalArgumentException("Mixer " + info.toString()
@@ -56,11 +58,10 @@ public final class SoftMixingMixerProvider extends MixerProvider {
                 globalmixer = new SoftMixingMixer();
             return globalmixer;
         }
-
     }
 
+    @Override
     public Info[] getMixerInfo() {
         return new Info[] { SoftMixingMixer.info };
     }
-
 }

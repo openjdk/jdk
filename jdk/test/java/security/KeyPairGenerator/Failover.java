@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4894125 7054918
+ * @bug 4894125 7054918 8130181
  * @library ../testlibrary
  * @summary test that failover for KeyPairGenerator works
  * @author Andreas Sterbenz
@@ -110,14 +110,14 @@ public class Failover {
 
     private static class ProviderPass extends Provider {
         ProviderPass() {
-            super("Pass", 1.0d, "Pass");
+            super("Pass", "1.0", "Pass");
             put("KeyPairGenerator.FOO" , "Failover$KeyPairGeneratorPass");
         }
     }
 
     private static class ProviderFail extends Provider {
         ProviderFail() {
-            super("Fail", 1.0d, "Fail");
+            super("Fail", "1.0", "Fail");
             put("KeyPairGenerator.FOO" , "Failover$KeyPairGeneratorFail");
             put("KeyPairGenerator.DSA" , "Failover$KeyPairGeneratorFail");
             put("KeyPairGenerator.RSA" , "Failover$KeyPairGeneratorFail");

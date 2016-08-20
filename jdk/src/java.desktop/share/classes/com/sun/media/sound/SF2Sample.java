@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.io.InputStream;
@@ -57,6 +58,7 @@ public final class SF2Sample extends SoundbankResource {
         super(null, null, AudioInputStream.class);
     }
 
+    @Override
     public Object getData() {
 
         AudioFormat format = getFormat();
@@ -146,6 +148,7 @@ public final class SF2Sample extends SoundbankResource {
     }
     */
 
+    @Override
     public String getName() {
         return name;
     }
@@ -210,6 +213,7 @@ public final class SF2Sample extends SoundbankResource {
         this.startLoop = startLoop;
     }
 
+    @Override
     public String toString() {
         return "Sample: " + name;
     }

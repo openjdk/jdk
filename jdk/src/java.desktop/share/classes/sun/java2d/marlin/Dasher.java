@@ -68,15 +68,13 @@ final class Dasher implements sun.awt.geom.PathConsumer2D, MarlinConst {
     // per-thread renderer context
     final RendererContext rdrCtx;
 
-    // dashes array (dirty)
-    final float[] dashes_initial = new float[INITIAL_ARRAY];
-
     // flag to recycle dash array copy
     boolean recycleDashes;
 
-    // per-thread initial arrays (large enough to satisfy most usages
-    // +1 to avoid recycling in Helpers.widenArray()
-    private final float[] firstSegmentsBuffer_initial = new float[INITIAL_ARRAY + 1];
+    // dashes ref (dirty)
+    final FloatArrayCache.Reference dashes_ref;
+    // firstSegmentsBuffer ref (dirty)
+    final FloatArrayCache.Reference firstSegmentsBuffer_ref;
 
     /**
      * Constructs a <code>Dasher</code>.
@@ -85,7 +83,10 @@ final class Dasher implements sun.awt.geom.PathConsumer2D, MarlinConst {
     Dasher(final RendererContext rdrCtx) {
         this.rdrCtx = rdrCtx;
 
-        firstSegmentsBuffer = firstSegmentsBuffer_initial;
+        dashes_ref = rdrCtx.newDirtyFloatArrayRef(INITIAL_ARRAY); // 1K
+
+        firstSegmentsBuffer_ref = rdrCtx.newDirtyFloatArrayRef(INITIAL_ARRAY); // 1K
+        firstSegmentsBuffer     = firstSegmentsBuffer_ref.initial;
 
         // we need curCurvepts to be able to contain 2 curves because when
         // dashing curves, we need to subdivide it
@@ -142,18 +143,12 @@ final class Dasher implements sun.awt.geom.PathConsumer2D, MarlinConst {
         if (DO_CLEAN_DIRTY) {
             // Force zero-fill dirty arrays:
             Arrays.fill(curCurvepts, 0f);
-            Arrays.fill(firstSegmentsBuffer, 0f);
         }
         // Return arrays:
-        if (recycleDashes && dash != dashes_initial) {
-            rdrCtx.putDirtyFloatArray(dash);
-            dash = null;
+        if (recycleDashes) {
+            dash = dashes_ref.putArray(dash);
         }
-
-        if (firstSegmentsBuffer != firstSegmentsBuffer_initial) {
-            rdrCtx.putDirtyFloatArray(firstSegmentsBuffer);
-            firstSegmentsBuffer = firstSegmentsBuffer_initial;
-        }
+        firstSegmentsBuffer = firstSegmentsBuffer_ref.putArray(firstSegmentsBuffer);
     }
 
     @Override
@@ -222,7 +217,8 @@ final class Dasher implements sun.awt.geom.PathConsumer2D, MarlinConst {
                             .add(segIdx + len);
                     }
                     firstSegmentsBuffer = buf
-                        = rdrCtx.widenDirtyFloatArray(buf, segIdx, segIdx + len);
+                        = firstSegmentsBuffer_ref.widenArray(buf, segIdx,
+                                                             segIdx + len);
                 }
                 buf[segIdx++] = type;
                 len--;

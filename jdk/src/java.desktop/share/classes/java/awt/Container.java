@@ -1109,17 +1109,18 @@ public class Container extends Component {
             }
             checkAddToSelf(comp);
             checkNotAWindow(comp);
+            /* Reparent the component and tidy up the tree's state. */
+            if (comp.parent != null) {
+                comp.parent.remove(comp);
+                if (index > component.size()) {
+                    throw new IllegalArgumentException("illegal component position");
+                }
+            }
             if (thisGC != null) {
                 comp.checkGD(thisGC.getDevice().getIDstring());
             }
 
-            /* Reparent the component and tidy up the tree's state. */
-            if (comp.parent != null) {
-                comp.parent.remove(comp);
-                    if (index > component.size()) {
-                        throw new IllegalArgumentException("illegal component position");
-                    }
-            }
+
 
             //index == -1 means add to the end.
             if (index == -1) {

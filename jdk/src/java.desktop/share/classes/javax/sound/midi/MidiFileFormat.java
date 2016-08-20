@@ -180,7 +180,7 @@ public class MidiFileFormat {
                           int resolution, int bytes,
                           long microseconds, Map<String, Object> properties) {
         this(type, divisionType, resolution, bytes, microseconds);
-        this.properties = new HashMap<String, Object>(properties);
+        this.properties = new HashMap<>(properties);
     }
 
     /**
@@ -257,7 +257,7 @@ public class MidiFileFormat {
     public Map<String,Object> properties() {
         Map<String,Object> ret;
         if (properties == null) {
-            ret = new HashMap<String,Object>(0);
+            ret = new HashMap<>(0);
         } else {
             ret = (Map<String,Object>) (properties.clone());
         }

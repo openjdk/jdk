@@ -246,10 +246,12 @@
         <condition property="idea.target.jdk" value="${langtools.jdk.home}" else = "$JDKPath$">
             <isset property="langtools.jdk.home"/>
         </condition>
-        <replace file=".idea/ant.xml" token="@IDEA_JTREG_HOME@" value="${idea.jtreg.home}"/>
         <replace file=".idea/ant.xml" token="@IDEA_TARGET_JDK@" value="${idea.target.jdk}"/>
         <replace dir=".idea/runConfigurations" token="@IDEA_TARGET_JDK@" value="${idea.target.jdk}"/>
         <replace dir=".idea/runConfigurations" token="@XPATCH@" value="${xpatch.cmd}"/>
+        <replace file=".idea/misc.xml" token="@IDEA_JTREG_HOME@" value="${idea.jtreg.home}"/>
+        <replace file=".idea/misc.xml" token="@IDEA_TARGET_JDK@" value="${idea.target.jdk}"/>
+        <replace file=".idea/misc.xml" token="@XPATCH@" value="${xpatch.cmd}"/>
         <mkdir dir=".idea/classes"/>
         <javac source="${javac.build.source}"
                target="${javac.build.target}"

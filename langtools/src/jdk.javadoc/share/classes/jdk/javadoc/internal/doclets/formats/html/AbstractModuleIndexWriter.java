@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.io.*;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
@@ -57,7 +58,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
     /**
      * Modules to be documented.
      */
-    protected Map<ModuleElement, Set<PackageElement>> modules;
+    protected SortedMap<ModuleElement, Set<PackageElement>> modules;
 
     /**
      * Constructor. Also initializes the modules variable.
@@ -142,7 +143,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      *
      * @param title the title of the window.
      * @param includeScript boolean set true if windowtitle script is to be included
-     * @param moduleName the name of the module being documented
+     * @param mdle the name of the module being documented
      */
     protected void buildModulePackagesIndexFile(String title,
             boolean includeScript, ModuleElement mdle) throws IOException {
