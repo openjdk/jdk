@@ -24,7 +24,7 @@
  */
 
 /**
-  * This is a test description for the module1 module.
+  * This is a test description for the module1 module. Search phrase {@index "search phrase" with description}.
   */
 module module1 {
     requires module2;

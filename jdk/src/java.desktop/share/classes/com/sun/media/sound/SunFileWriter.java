@@ -39,16 +39,13 @@ import javax.sound.sampled.spi.AudioFileWriter;
  */
 abstract class SunFileWriter extends AudioFileWriter {
 
-
     // buffer size for write
     protected static final int bufferSize = 16384;
 
     // buffer size for temporary input streams
     protected static final int bisBufferSize = 4096;
 
-
     final AudioFileFormat.Type types[];
-
 
     /**
      * Constructs a new SunParser object.
@@ -57,12 +54,9 @@ abstract class SunFileWriter extends AudioFileWriter {
         this.types = types;
     }
 
-
-
     // METHODS TO IMPLEMENT AudioFileWriter
 
-    // new, 10.27.99
-
+    @Override
     public final AudioFileFormat.Type[] getAudioFileTypes(){
         AudioFileFormat.Type[] localArray = new AudioFileFormat.Type[types.length];
         System.arraycopy(types, 0, localArray, 0, types.length);
@@ -70,7 +64,6 @@ abstract class SunFileWriter extends AudioFileWriter {
     }
 
     // HELPER METHODS
-
 
     /**
      * rllong
@@ -213,6 +206,5 @@ abstract class SunFileWriter extends AudioFileWriter {
         public boolean markSupported() {
             return in.markSupported();
         }
-
     }
 }

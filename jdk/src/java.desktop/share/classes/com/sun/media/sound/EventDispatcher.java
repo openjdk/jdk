@@ -35,8 +35,6 @@ import javax.sound.midi.ShortMessage;
 import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineListener;
 
-
-
 /**
  * EventDispatcher.  Used by various classes in the Java Sound implementation
  * to send events.
@@ -49,38 +47,34 @@ final class EventDispatcher implements Runnable {
 
     /**
      * time of inactivity until the auto closing clips
-     * are closed
+     * are closed.
      */
     private static final int AUTO_CLOSE_TIME = 5000;
 
-
     /**
-     * List of events
+     * List of events.
      */
     private final ArrayList<EventInfo> eventQueue = new ArrayList<>();
 
-
     /**
-     * Thread object for this EventDispatcher instance
+     * Thread object for this EventDispatcher instance.
      */
     private Thread thread = null;
-
 
     /*
      * support for auto-closing Clips
      */
-    private final ArrayList<ClipInfo> autoClosingClips = new ArrayList<ClipInfo>();
+    private final ArrayList<ClipInfo> autoClosingClips = new ArrayList<>();
 
     /*
      * support for monitoring data lines
      */
-    private final ArrayList<LineMonitor> lineMonitors = new ArrayList<LineMonitor>();
+    private final ArrayList<LineMonitor> lineMonitors = new ArrayList<>();
 
     /**
      * Approximate interval between calls to LineMonitor.checkLine
      */
     static final int LINE_MONITOR_TIME = 400;
-
 
     /**
      * This start() method starts an event thread if one is not already active.
@@ -95,7 +89,6 @@ final class EventDispatcher implements Runnable {
                                                     true); // doStart
         }
     }
-
 
     /**
      * Invoked when there is at least one event in the queue.
@@ -153,7 +146,6 @@ final class EventDispatcher implements Runnable {
         Printer.err("Unknown event type: " + eventInfo.getEvent());
     }
 
-
     /**
      * Wait until there is something in the event queue to process.  Then
      * dispatch the event to the listeners.The entire method does not
@@ -202,7 +194,6 @@ final class EventDispatcher implements Runnable {
         }
     }
 
-
     /**
      * Queue the given event in the event queue.
      */
@@ -211,10 +202,10 @@ final class EventDispatcher implements Runnable {
         notifyAll();
     }
 
-
     /**
      * A loop to dispatch events.
      */
+    @Override
     public void run() {
 
         while (true) {
@@ -225,7 +216,6 @@ final class EventDispatcher implements Runnable {
             }
         }
     }
-
 
     /**
      * Send audio and MIDI events.
@@ -242,7 +232,6 @@ final class EventDispatcher implements Runnable {
         EventInfo eventInfo = new EventInfo(event, listeners);
         postEvent(eventInfo);
     }
-
 
     /*
      * go through the list of registered auto-closing
@@ -291,7 +280,7 @@ final class EventDispatcher implements Runnable {
     }
 
     /**
-     * called from auto-closing clips when one of their open() method is called
+     * called from auto-closing clips when one of their open() method is called.
      */
     void autoClosingClipOpened(AutoClosingClip clip) {
         if (Printer.debug)Printer.debug("> EventDispatcher.autoClosingClipOpened ");
@@ -316,7 +305,7 @@ final class EventDispatcher implements Runnable {
     }
 
     /**
-     * called from auto-closing clips when their closed() method is called
+     * called from auto-closing clips when their closed() method is called.
      */
     void autoClosingClipClosed(AutoClosingClip clip) {
         // nothing to do -- is removed from arraylist above
@@ -340,9 +329,8 @@ final class EventDispatcher implements Runnable {
         if (Printer.debug)Printer.debug("< EventDispatcher.monitorLines("+lineMonitors.size()+" monitors)");
     }
 
-
     /**
-     * Add this LineMonitor instance to the list of monitors
+     * Add this LineMonitor instance to the list of monitors.
      */
     void addLineMonitor(LineMonitor lm) {
         if (Printer.trace)Printer.trace("> EventDispatcher.addLineMonitor("+lm+")");
@@ -362,7 +350,7 @@ final class EventDispatcher implements Runnable {
     }
 
     /**
-     * Remove this LineMonitor instance from the list of monitors
+     * Remove this LineMonitor instance from the list of monitors.
      */
     void removeLineMonitor(LineMonitor lm) {
         if (Printer.trace)Printer.trace("> EventDispatcher.removeLineMonitor("+lm+")");
@@ -376,8 +364,6 @@ final class EventDispatcher implements Runnable {
         }
         if (Printer.debug)Printer.debug("< EventDispatcher.removeLineMonitor finished -- now ("+lineMonitors.size()+" monitors)");
     }
-
-    // /////////////////////////////////// INNER CLASSES ////////////////////////////////////////// //
 
     /**
      * Container for an event and a set of listeners to deliver it to.
@@ -413,7 +399,7 @@ final class EventDispatcher implements Runnable {
 
 
     /**
-     * Container for a clip with its expiration time
+     * Container for a clip with its expiration time.
      */
     private class ClipInfo {
 
@@ -421,7 +407,7 @@ final class EventDispatcher implements Runnable {
         private final long expiration;
 
         /**
-         * Create a new instance of this clip Info class
+         * Create a new instance of this clip Info class.
          */
         ClipInfo(AutoClosingClip clip) {
             this.clip = clip;
@@ -440,13 +426,13 @@ final class EventDispatcher implements Runnable {
 
     /**
      * Interface that a class that wants to get regular
-     * line monitor events implements
+     * line monitor events implements.
      */
     interface LineMonitor {
         /**
-         * Called by event dispatcher in regular intervals
+         * Called by event dispatcher in regular intervals.
          */
-        public void checkLine();
+        void checkLine();
     }
 
 } // class EventDispatcher

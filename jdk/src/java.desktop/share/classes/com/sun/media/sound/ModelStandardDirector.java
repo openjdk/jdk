@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.util.Arrays;
@@ -52,9 +53,11 @@ public final class ModelStandardDirector implements ModelDirector {
         }
     }
 
+    @Override
     public void close() {
     }
 
+    @Override
     public void noteOff(int noteNumber, int velocity) {
         if (!noteOffUsed)
             return;
@@ -70,6 +73,7 @@ public final class ModelStandardDirector implements ModelDirector {
         }
     }
 
+    @Override
     public void noteOn(int noteNumber, int velocity) {
         if (!noteOnUsed)
             return;

@@ -1289,11 +1289,7 @@ public class MetalIconFactory implements Serializable {
                 else {
                     g.setColor(MetalLookAndFeel.getControl());
                 }
-                g.fillRect(2, 2, 8, 8);
-                g.fillRect(4, 1, 4, 1);
-                g.fillRect(4, 10, 4, 1);
-                g.fillRect(1, 4, 1, 4);
-                g.fillRect(10, 4, 1, 4);
+                g.fillOval(1, 1, 9, 9);
             }
 
             // draw Dark Circle (start at top, go clockwise)
@@ -1303,35 +1299,14 @@ public class MetalIconFactory implements Serializable {
             else {
                 g.setColor(MetalLookAndFeel.getControlDarkShadow());
             }
-            g.drawLine( 4, 0,  7, 0);
-            g.drawLine( 8, 1,  9, 1);
-            g.drawLine(10, 2, 10, 3);
-            g.drawLine(11, 4, 11, 7);
-            g.drawLine(10, 8, 10, 9);
-            g.drawLine( 9,10,  8,10);
-            g.drawLine( 7,11,  4,11);
-            g.drawLine( 3,10,  2,10);
-            g.drawLine( 1, 9,  1, 8);
-            g.drawLine( 0, 7,  0, 4);
-            g.drawLine( 1, 3,  1, 2);
-            g.drawLine( 2, 1,  3, 1);
+            g.drawOval(0, 0, 11, 11);
 
             if (pressed) {
-                g.fillRect(1, 4, 1, 4);
-                g.fillRect(2, 2, 1, 2);
-                g.fillRect(3, 2, 1, 1);
-                g.fillRect(4, 1, 4, 1);
+                g.drawArc(1, 1, 10, 10, 60, 160);
             }
             else if (rollover) {
                 g.setColor(MetalLookAndFeel.getPrimaryControl());
-                g.fillRect(4, 1, 4, 2);
-                g.fillRect(8, 2, 2, 2);
-                g.fillRect(9, 4, 2, 4);
-                g.fillRect(8, 8, 2, 2);
-                g.fillRect(4, 9, 4, 2);
-                g.fillRect(2, 8, 2, 2);
-                g.fillRect(1, 4, 2, 4);
-                g.fillRect(2, 2, 2, 2);
+                g.drawOval(2, 2, 7, 7);
             }
 
             // selected dot
@@ -1341,11 +1316,7 @@ public class MetalIconFactory implements Serializable {
                 } else {
                     g.setColor(MetalLookAndFeel.getControlDarkShadow());
                 }
-                g.fillRect( 4, 4,  4, 4);
-                g.drawLine( 4, 3,  7, 3);
-                g.drawLine( 8, 4,  8, 7);
-                g.drawLine( 7, 8,  4, 8);
-                g.drawLine( 3, 7,  3, 4);
+                g.fillOval(2, 2, 7, 7);
             }
 
             g.translate(-x, -y);

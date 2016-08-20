@@ -165,7 +165,7 @@ public class ModuleBuilder {
         if (!comment.isEmpty()) {
             sb.append("/**\n").append(comment.replace("\n", " *")).append(" */\n");
         }
-        sb.append("module ").append(name).append(" {");
+        sb.append("module ").append(name).append(" {\n");
         requires.forEach(r -> sb.append("    " + r + "\n"));
         exports.forEach(e -> sb.append("    " + e + "\n"));
         uses.forEach(u -> sb.append("    " + u + "\n"));

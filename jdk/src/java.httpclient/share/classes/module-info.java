@@ -23,6 +23,9 @@
  * questions.
  */
 
+/**
+ * Defines the high-level HTTP and WebSocket API.
+ */
 module java.httpclient {
     requires java.base;
     exports java.net.http;

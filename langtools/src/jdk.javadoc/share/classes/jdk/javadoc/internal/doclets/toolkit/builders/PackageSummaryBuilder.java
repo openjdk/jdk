@@ -175,7 +175,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         List<String> interfaceTableHeader = Arrays.asList(configuration.getText("doclet.Interface"),
         configuration.getText("doclet.Description"));
 
-        SortedSet<TypeElement> ilist = utils.isIncluded(packageElement)
+        SortedSet<TypeElement> ilist = utils.isSpecified(packageElement)
                         ? utils.getTypeElementsAsSortedSet(utils.getInterfaces(packageElement))
                         : configuration.typeElementCatalog.interfaces(packageElement);
         SortedSet<TypeElement> interfaces = utils.filterOutPrivateClasses(ilist, configuration.javafx);
@@ -200,7 +200,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                 configuration.getText("doclet.classes"));
         List<String> classTableHeader = Arrays.asList(configuration.getText("doclet.Class"),
                 configuration.getText("doclet.Description"));
-        SortedSet<TypeElement> clist = utils.isIncluded(packageElement)
+        SortedSet<TypeElement> clist = utils.isSpecified(packageElement)
             ? utils.getTypeElementsAsSortedSet(utils.getOrdinaryClasses(packageElement))
             : configuration.typeElementCatalog.ordinaryClasses(packageElement);
         SortedSet<TypeElement> classes = utils.filterOutPrivateClasses(clist, configuration.javafx);
@@ -225,7 +225,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                 configuration.getText("doclet.enums"));
         List<String> enumTableHeader = Arrays.asList(configuration.getText("doclet.Enum"),
                 configuration.getText("doclet.Description"));
-        SortedSet<TypeElement> elist = utils.isIncluded(packageElement)
+        SortedSet<TypeElement> elist = utils.isSpecified(packageElement)
             ? utils.getTypeElementsAsSortedSet(utils.getEnums(packageElement))
             : configuration.typeElementCatalog.enums(packageElement);
         SortedSet<TypeElement> enums = utils.filterOutPrivateClasses(elist, configuration.javafx);
@@ -251,7 +251,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         List<String> exceptionTableHeader = Arrays.asList(configuration.getText("doclet.Exception"),
                 configuration.getText("doclet.Description"));
         Set<TypeElement> iexceptions =
-            utils.isIncluded(packageElement)
+            utils.isSpecified(packageElement)
                 ? utils.getTypeElementsAsSortedSet(utils.getExceptions(packageElement))
                 : configuration.typeElementCatalog.exceptions(packageElement);
         SortedSet<TypeElement> exceptions = utils.filterOutPrivateClasses(iexceptions,
@@ -278,7 +278,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         List<String> errorTableHeader = Arrays.asList(configuration.getText("doclet.Error"),
                 configuration.getText("doclet.Description"));
         Set<TypeElement> ierrors =
-            utils.isIncluded(packageElement)
+            utils.isSpecified(packageElement)
                 ? utils.getTypeElementsAsSortedSet(utils.getErrors(packageElement))
                 : configuration.typeElementCatalog.errors(packageElement);
         SortedSet<TypeElement> errors = utils.filterOutPrivateClasses(ierrors, configuration.javafx);
@@ -305,7 +305,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                 configuration.getText("doclet.AnnotationType"),
                 configuration.getText("doclet.Description"));
         SortedSet<TypeElement> iannotationTypes =
-            utils.isIncluded(packageElement)
+            utils.isSpecified(packageElement)
                 ? utils.getTypeElementsAsSortedSet(utils.getAnnotationTypes(packageElement))
                 : configuration.typeElementCatalog.annotationTypes(packageElement);
         SortedSet<TypeElement> annotationTypes = utils.filterOutPrivateClasses(iannotationTypes,

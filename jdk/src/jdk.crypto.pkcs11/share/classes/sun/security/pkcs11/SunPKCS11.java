@@ -44,6 +44,7 @@ import javax.security.auth.callback.TextOutputCallback;
 
 import sun.security.util.Debug;
 import sun.security.util.ResourcesMgr;
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 import sun.security.pkcs11.Secmod.*;
 
@@ -89,7 +90,8 @@ public final class SunPKCS11 extends AuthProvider {
     }
 
     public SunPKCS11() {
-        super("SunPKCS11", 9.0d, "Unconfigured and unusable PKCS11 provider");
+        super("SunPKCS11", PROVIDER_VER,
+            "Unconfigured and unusable PKCS11 provider");
         p11 = null;
         config = null;
         slotID = 0;
@@ -132,7 +134,7 @@ public final class SunPKCS11 extends AuthProvider {
 
     // Used by Secmod
     SunPKCS11(Config c) {
-        super("SunPKCS11-" + c.getName(), 9.0d, c.getDescription());
+        super("SunPKCS11-" + c.getName(), PROVIDER_VER, c.getDescription());
         this.config = c;
 
         if (debug != null) {
@@ -816,6 +818,7 @@ public final class SunPKCS11 extends AuthProvider {
         }
         final TokenPoller poller = new TokenPoller(this);
         Thread t = new Thread(null, poller, "Poller " + getName(), 0, false);
+        t.setContextClassLoader(null);
         t.setDaemon(true);
         t.setPriority(Thread.MIN_PRIORITY);
         t.start();

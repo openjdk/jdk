@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6530336 6537997 8008577
+ * @library /java/text/testlib
  * @run main/othervm -Djava.locale.providers=COMPAT,SPI Bug6530336
  */
 
@@ -43,7 +44,6 @@ public class Bug6530336 {
 
         try {
             Locale locales[] = Locale.getAvailableLocales();
-            Locale locale_Japan = new Locale("ja", "JP", "JP");
             TimeZone timezone_LA = TimeZone.getTimeZone("America/Los_Angeles");
             TimeZone.setDefault(timezone_LA);
 
@@ -60,12 +60,12 @@ public class Bug6530336 {
             Date[] dates = new Date[2];
 
             for (int i = 0; i < locales.length; i++) {
-                if (locales[i].getLanguage().equals("th") ||
-                    locales[i].equals(locale_Japan)) {
+                Locale locale = locales[i];
+                if (!TestUtils.usesGregorianCalendar(locale)) {
                     continue;
                 }
 
-                Locale.setDefault(locales[i]);
+                Locale.setDefault(locale);
 
                 for (int j = 0; j < timezones.length; j++) {
                     Calendar cal = Calendar.getInstance(timezones[j]);
@@ -83,7 +83,7 @@ public class Bug6530336 {
 
                     if (!expected[j].equals(date_LA)) {
                         System.err.println("Got wrong Pacific time (" +
-                            date_LA + ") for (" + date + ") in " + locales[i] +
+                            date_LA + ") for (" + date + ") in " + locale +
                             " in " + timezones[j] +
                             ".\nExpected=" + expected[j]);
                         err = true;

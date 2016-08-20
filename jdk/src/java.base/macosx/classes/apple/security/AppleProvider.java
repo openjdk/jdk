@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package apple.security;
 
 import java.security.*;
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 /**
  * The Apple Security Provider.
@@ -74,7 +75,7 @@ public final class AppleProvider extends Provider {
 
     public AppleProvider() {
         /* We are the Apple provider */
-        super("Apple", 9.0d, info);
+        super("Apple", PROVIDER_VER, info);
 
         final Provider p = this;
         AccessController.doPrivileged(new PrivilegedAction<Void>() {

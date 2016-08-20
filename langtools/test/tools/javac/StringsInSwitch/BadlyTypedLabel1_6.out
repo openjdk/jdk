@@ -2,5 +2,6 @@
 - compiler.warn.option.obsolete.source: 1.6
 - compiler.warn.option.obsolete.suppression
 BadlyTypedLabel1.java:10:15: compiler.err.string.switch.not.supported.in.source: 1.6
-1 error
+BadlyTypedLabel1.java:13:14: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.String)
+2 errors
 3 warnings

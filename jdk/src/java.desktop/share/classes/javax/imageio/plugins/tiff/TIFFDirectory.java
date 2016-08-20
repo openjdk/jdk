@@ -204,44 +204,6 @@ public class TIFFDirectory implements Cloneable {
     }
 
     /**
-     * Converts a {@code TIFFDirectory} to a {@code TIFFIFD}.
-     */
-    private static TIFFIFD getDirectoryAsIFD(TIFFDirectory dir) {
-        if(dir instanceof TIFFIFD) {
-            return (TIFFIFD)dir;
-        }
-
-        TIFFIFD ifd = new TIFFIFD(Arrays.asList(dir.getTagSets()),
-                                  dir.getParentTag());
-        TIFFField[] fields = dir.getTIFFFields();
-        int numFields = fields.length;
-        for(int i = 0; i < numFields; i++) {
-            TIFFField f = fields[i];
-            TIFFTag tag = f.getTag();
-            if(tag.isIFDPointer()) {
-                TIFFDirectory subDir = null;
-                if (f.hasDirectory()) {
-                    subDir = f.getDirectory();
-                } else if (f.getData() instanceof TIFFDirectory) {
-                    subDir = (TIFFDirectory)f.getData();
-                }
-                if (subDir != null) {
-                    TIFFDirectory subIFD = getDirectoryAsIFD(subDir);
-                    f = new TIFFField(tag, f.getType(), (long)f.getCount(),
-                                      subIFD);
-                } else {
-                    f = null;
-                }
-            }
-            if (f != null) {
-                ifd.addTIFFField(f);
-            }
-        }
-
-        return ifd;
-    }
-
-    /**
      * Constructs a {@code TIFFDirectory} which is aware of a given
      * group of {@link TIFFTagSet}s. An optional parent {@link TIFFTag}
      * may also be specified.
@@ -459,7 +421,7 @@ public class TIFFDirectory implements Cloneable {
      * {@code TIFFDirectory}.
      */
     public IIOMetadata getAsMetadata() {
-        return new TIFFImageMetadata(getDirectoryAsIFD(this));
+        return new TIFFImageMetadata(TIFFIFD.getDirectoryAsIFD(this));
     }
 
     /**
