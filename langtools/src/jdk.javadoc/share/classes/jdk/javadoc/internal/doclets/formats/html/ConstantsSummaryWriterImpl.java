@@ -41,6 +41,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.ConstantsSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
@@ -379,7 +380,8 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     /**
      * {@inheritDoc}
      */
-    public void printDocument(Content contentTree) throws IOException {
+    @Override
+    public void printDocument(Content contentTree) throws DocFileIOException {
         printHtmlDocument(null, true, contentTree);
     }
 }

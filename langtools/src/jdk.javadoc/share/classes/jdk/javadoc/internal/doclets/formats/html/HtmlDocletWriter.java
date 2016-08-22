@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -55,8 +54,8 @@ import com.sun.source.doctree.DocTree.Kind;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
-import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.IndexTree;
+import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.SeeTree;
@@ -87,14 +86,15 @@ import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.taglets.DocRootTaglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
+import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.ImplementedMethods;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
-import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 
 import static com.sun.source.doctree.AttributeTree.ValueKind.*;
 import static com.sun.source.doctree.DocTree.Kind.*;
@@ -439,9 +439,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param includeScript true if printing windowtitle script
      *                      false for files that appear in the left-hand frames
      * @param body the body htmltree to be included in the document
+     * @throws DocFileIOException if there is a problem writing the file
      */
     public void printHtmlDocument(List<String> metakeywords, boolean includeScript,
-            Content body) throws IOException {
+            Content body) throws DocFileIOException {
         Content htmlDocType = configuration.isOutputHtml5()
                 ? DocType.HTML5
                 : DocType.TRANSITIONAL;
@@ -2180,8 +2181,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         head.addContent(javascript);
         if (configuration.createindex) {
             if (pathToRoot != null && script != null) {
-                String path = pathToRoot.isEmpty() ? "." : pathToRoot.getPath();
-                script.addContent(new RawHtml("var pathtoroot = \"" + path + "/\";loadScripts(document, \'script\');"));
+                String ptrPath = pathToRoot.isEmpty() ? "." : pathToRoot.getPath();
+                script.addContent(new RawHtml("var pathtoroot = \"" + ptrPath + "/\";loadScripts(document, \'script\');"));
             }
             addJQueryFile(head, DocPaths.JSZIP_MIN);
             addJQueryFile(head, DocPaths.JSZIPUTILS_MIN);
@@ -2615,6 +2616,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      *
      * @return the configuration for this doclet.
      */
+    @Override
     public Configuration configuration() {
         return configuration;
     }

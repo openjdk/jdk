@@ -26,13 +26,10 @@
 package jdk.javadoc.internal.doclets.toolkit.util;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 
@@ -68,8 +65,6 @@ public abstract class DocFile {
         return DocFileFactory.getFactory(configuration).createFileForOutput(path);
     }
 
-    private final Configuration configuration;
-
     /**
      * The location for this file. Maybe null if the file was created without
      * a location or path.
@@ -95,63 +90,85 @@ public abstract class DocFile {
     }
 
     /** Create a DocFile without a location or path */
-    protected DocFile(Configuration configuration) {
-        this.configuration = configuration;
+    protected DocFile() {
         this.location = null;
         this.path = null;
     }
 
     /** Create a DocFile for a given location and relative path. */
-    protected DocFile(Configuration configuration, Location location, DocPath path) {
-        this.configuration = configuration;
+    protected DocFile(Location location, DocPath path) {
         this.location = location;
         this.path = path;
     }
 
-    /** Open an input stream for the file. */
-    public abstract InputStream openInputStream() throws IOException;
+    /**
+     * Open an input stream for the file.
+     *
+     * @return an open input stream for the file
+     * @throws DocFileIOException if there is a problem opening the stream
+     */
+    public abstract InputStream openInputStream() throws DocFileIOException;
 
     /**
      * Open an output stream for the file.
      * The file must have been created with a location of
      * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT}
      * and a corresponding relative path.
+     *
+     * @return an open output stream for the file
+     * @throws DocFileIOException if there is a problem opening the stream
+     * @throws UnsupportedEncodingException if the configured encoding is not supported
      */
-    public abstract OutputStream openOutputStream() throws IOException, UnsupportedEncodingException;
+    public abstract OutputStream openOutputStream() throws DocFileIOException, UnsupportedEncodingException;
 
     /**
      * Open an writer for the file, using the encoding (if any) given in the
      * doclet configuration.
      * The file must have been created with a location of
      * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} and a corresponding relative path.
+     *
+     * @return an open output stream for the file
+     * @throws DocFileIOException if there is a problem opening the stream
+     * @throws UnsupportedEncodingException if the configured encoding is not supported
      */
-    public abstract Writer openWriter() throws IOException, UnsupportedEncodingException;
+    public abstract Writer openWriter() throws DocFileIOException, UnsupportedEncodingException;
 
     /**
      * Copy the contents of another file directly to this file.
+     *
+     * @param fromFile the file to be copied
+     * @throws DocFileIOException if there is a problem file copying the file
      */
-    public void copyFile(DocFile fromFile) throws IOException {
-        try (OutputStream output = openOutputStream();
-             InputStream input = fromFile.openInputStream()) {
-            byte[] bytearr = new byte[1024];
-            int len;
-            while ((len = input.read(bytearr)) != -1) {
-                output.write(bytearr, 0, len);
+    public void copyFile(DocFile fromFile) throws DocFileIOException {
+        try (OutputStream output = openOutputStream()) {
+            try (InputStream input = fromFile.openInputStream()) {
+                byte[] bytearr = new byte[1024];
+                int len;
+                while ((len = read(fromFile, input, bytearr)) != -1) {
+                    write(this, output, bytearr, len);
+                }
+            } catch (IOException e) {
+                throw new DocFileIOException(fromFile, DocFileIOException.Mode.READ, e);
             }
-        }
-        catch (FileNotFoundException | SecurityException exc) {
+        } catch (IOException e) {
+            throw new DocFileIOException(this, DocFileIOException.Mode.WRITE, e);
         }
     }
 
     /**
      * Copy the contents of a resource file to this file.
+     *
      * @param resource the path of the resource, relative to the package of this class
      * @param overwrite whether or not to overwrite the file if it already exists
      * @param replaceNewLine if false, the file is copied as a binary file;
      *     if true, the file is written line by line, using the platform line
      *     separator
+     *
+     * @throws DocFileIOException if there is a problem while writing the copy
+     * @throws ResourceIOException if there is a problem while reading the resource
      */
-    public void copyResource(DocPath resource, boolean overwrite, boolean replaceNewLine) {
+    public void copyResource(DocPath resource, boolean overwrite, boolean replaceNewLine)
+                throws DocFileIOException, ResourceIOException {
         if (exists() && !overwrite)
             return;
 
@@ -160,30 +177,35 @@ public abstract class DocFile {
             if (in == null)
                 return;
 
-            try (OutputStream out = openOutputStream()) {
-                if (!replaceNewLine) {
-                    byte[] buf = new byte[2048];
-                    int n;
-                    while ((n = in.read(buf)) > 0)
-                        out.write(buf, 0, n);
-                } else {
-                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-                         BufferedWriter writer = new BufferedWriter(configuration.docencoding == null
-                                                                    ? new OutputStreamWriter(out)
-                                                                    : new OutputStreamWriter(out, configuration.docencoding))) {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            writer.write(line);
-                            writer.write(DocletConstants.NL);
+            try {
+                if (replaceNewLine) {
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+                        try (Writer writer = openWriter()) {
+                            String line;
+                            while ((line = readResourceLine(resource, reader)) != null) {
+                                write(this, writer, line);
+                                write(this, writer, DocletConstants.NL);
+                            }
+                        } catch (IOException e) {
+                            throw new DocFileIOException(this, DocFileIOException.Mode.WRITE, e);
                         }
+                    }
+                } else {
+                    try (OutputStream out = openOutputStream()) {
+                        byte[] buf = new byte[2048];
+                        int n;
+                        while ((n = readResource(resource, in, buf)) > 0) {
+                            write(this, out, buf, n);
+                        }
+                    } catch (IOException e) {
+                        throw new DocFileIOException(this, DocFileIOException.Mode.WRITE, e);
                     }
                 }
             } finally {
                 in.close();
             }
         } catch (IOException e) {
-            e.printStackTrace(System.err);
-            throw new DocletAbortException(e);
+            throw new ResourceIOException(resource, e);
         }
     }
 
@@ -214,8 +236,12 @@ public abstract class DocFile {
     /** Return true if this file is the same as another. */
     public abstract boolean isSameFile(DocFile other);
 
-    /** If the file is a directory, list its contents. */
-    public abstract Iterable<DocFile> list() throws IOException;
+    /** If the file is a directory, list its contents.
+     *
+     * @return the contents of the directory
+     * @throws DocFileIOException if there is a problem while listing the directory
+     */
+    public abstract Iterable<DocFile> list() throws DocFileIOException;
 
     /** Create the file as a directory, including any parent directories. */
     public abstract boolean mkdirs();
@@ -242,4 +268,92 @@ public abstract class DocFile {
      * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} is supported.
      */
     public abstract DocFile resolveAgainst(Location locn);
+
+
+    /**
+     * Reads from an input stream opened from a given file into a given buffer.
+     * If an IOException occurs, it is wrapped in a DocFileIOException.
+     *
+     * @param inFile the file for the stream
+     * @param input the stream
+     * @param buf the buffer
+     * @return the number of bytes read, or -1 if at end of file
+     * @throws DocFileIOException if an exception occurred while reading the stream
+     */
+    private static int read(DocFile inFile, InputStream input, byte[] buf) throws DocFileIOException {
+        try {
+            return input.read(buf);
+        } catch (IOException e) {
+            throw new DocFileIOException(inFile, DocFileIOException.Mode.READ, e);
+        }
+    }
+
+    /**
+     * Writes to an output stream for a given file from a given buffer.
+     * If an IOException occurs, it is wrapped in a DocFileIOException.
+     *
+     * @param outFile the file for the stream
+     * @param out the stream
+     * @param buf the buffer
+     * @throws DocFileIOException if an exception occurred while writing the stream
+     */
+    private static void write(DocFile outFile, OutputStream out, byte[] buf, int len) throws DocFileIOException {
+        try {
+            out.write(buf, 0, len);
+        } catch (IOException e) {
+            throw new DocFileIOException(outFile, DocFileIOException.Mode.WRITE, e);
+        }
+    }
+
+    /**
+     * Writes text to an output stream for a given file from a given buffer.
+     * If an IOException occurs, it is wrapped in a DocFileIOException.
+     *
+     * @param outFile the file for the stream
+     * @param out the stream
+     * @param text the text to be written
+     * @throws DocFileIOException if an exception occurred while writing the stream
+     */
+    private static void write(DocFile outFile, Writer out, String text) throws DocFileIOException {
+        try {
+            out.write(text);
+        } catch (IOException e) {
+            throw new DocFileIOException(outFile, DocFileIOException.Mode.WRITE, e);
+        }
+    }
+
+    /**
+     * Reads from an input stream opened from a given resource into a given buffer.
+     * If an IOException occurs, it is wrapped in a ResourceIOException.
+     *
+     * @param resource the resource for the stream
+     * @param in the stream
+     * @param buf the buffer
+     * @return the number of bytes read, or -1 if at end of file
+     * @throws ResourceIOException if an exception occurred while reading the stream
+     */
+    private static int readResource(DocPath resource, InputStream in, byte[] buf) throws ResourceIOException {
+        try {
+            return in.read(buf);
+        } catch (IOException e) {
+            throw new ResourceIOException(resource, e);
+        }
+    }
+
+    /**
+     * Reads a line of characters from an input stream opened from a given resource.
+     * If an IOException occurs, it is wrapped in a ResourceIOException.
+     *
+     * @param resource the resource for the stream
+     * @param in the stream
+     * @return the line of text, or {@code null} if at end of stream
+     * @throws ResourceIOException if an exception occurred while reading the stream
+     */
+    private static String readResourceLine(DocPath docPath, BufferedReader in) throws ResourceIOException {
+        try {
+            return in.readLine();
+        } catch (IOException e) {
+            throw new ResourceIOException(docPath, e);
+        }
+    }
 }

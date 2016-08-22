@@ -33,6 +33,7 @@ import javax.lang.model.element.VariableElement;
 
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.FieldWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 
@@ -103,6 +104,7 @@ public class FieldBuilder extends AbstractMemberBuilder {
      * @param context  the build context.
      * @param typeElement the class whoses members are being documented.
      * @param writer the doclet specific writer.
+     * @return the new FieldBuilder
      */
     public static FieldBuilder getInstance(Context context,
             TypeElement typeElement,
@@ -140,7 +142,9 @@ public class FieldBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * summaryOrder.size()
+     * Returns whether or not there are members to document.
+     *
+     * @return whether or not there are members to document
      */
     @Override
     public boolean hasMembersToDocument() {
@@ -152,8 +156,9 @@ public class FieldBuilder extends AbstractMemberBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildFieldDoc(XMLNode node, Content memberDetailsTree) {
+    public void buildFieldDoc(XMLNode node, Content memberDetailsTree) throws DocletException {
         if (writer == null) {
             return;
         }
