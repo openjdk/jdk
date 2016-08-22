@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_X86_VM_ATOMIC_LINUX_X86_INLINE_HPP
-#define OS_CPU_LINUX_X86_VM_ATOMIC_LINUX_X86_INLINE_HPP
+#ifndef OS_CPU_BSD_X86_VM_ATOMIC_BSD_X86_HPP
+#define OS_CPU_BSD_X86_VM_ATOMIC_BSD_X86_HPP
 
-#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 
 // Implementation of class atomic
@@ -192,7 +191,7 @@ inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* des
 }
 
 extern "C" {
-  // defined in linux_x86.s
+  // defined in bsd_x86.s
   jlong _Atomic_cmpxchg_long(jlong, volatile jlong*, jlong, bool);
   void _Atomic_move_long(volatile jlong* src, volatile jlong* dst);
 }
@@ -225,4 +224,4 @@ inline void Atomic::store(jlong store_value, volatile jlong* dest) {
 
 #endif // AMD64
 
-#endif // OS_CPU_LINUX_X86_VM_ATOMIC_LINUX_X86_INLINE_HPP
+#endif // OS_CPU_BSD_X86_VM_ATOMIC_BSD_X86_HPP

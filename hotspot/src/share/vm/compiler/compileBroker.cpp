@@ -42,7 +42,7 @@
 #include "prims/nativeLookup.hpp"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"

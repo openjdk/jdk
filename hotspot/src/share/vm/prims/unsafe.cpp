@@ -32,7 +32,7 @@
 #include "prims/jni.h"
 #include "prims/jvm.h"
 #include "prims/unsafe.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/orderAccess.inline.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,11 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_PPC_VM_ATOMIC_LINUX_PPC_INLINE_HPP
-#define OS_CPU_LINUX_PPC_VM_ATOMIC_LINUX_PPC_INLINE_HPP
-
-#include "runtime/atomic.hpp"
-#include "runtime/os.hpp"
+#ifndef OS_CPU_LINUX_PPC_VM_ATOMIC_LINUX_PPC_HPP
+#define OS_CPU_LINUX_PPC_VM_ATOMIC_LINUX_PPC_HPP
 
 #ifndef PPC64
 #error "Atomic currently only implemented for PPC64"
@@ -479,4 +476,4 @@ inline void* Atomic::cmpxchg_ptr(void* exchange_value, volatile void* dest, void
 #undef strasm_nobarrier
 #undef strasm_nobarrier_clobber_memory
 
-#endif // OS_CPU_LINUX_PPC_VM_ATOMIC_LINUX_PPC_INLINE_HPP
+#endif // OS_CPU_LINUX_PPC_VM_ATOMIC_LINUX_PPC_HPP

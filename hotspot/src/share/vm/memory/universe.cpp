@@ -56,7 +56,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/commandLineFlagConstraintList.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fprofiler.hpp"
