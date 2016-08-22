@@ -128,7 +128,8 @@ public class InheritRuntimeEnvironmentTest extends ModuleTestBase {
         new TestCase(base)
                 .testOpts("--module-path", modules.toString(), "--limit-modules", "jdk.compiler")
                 .otherOpts("-XDrawDiagnostics",
-                        "--module-source-path", src.toString())
+                        "--module-source-path", src.toString(),
+                        "-classpath", "")
                 .files(findJavaFiles(src))
                 .expect(Task.Expect.FAIL, "compiler.err.module.not.found")
                 .run();
