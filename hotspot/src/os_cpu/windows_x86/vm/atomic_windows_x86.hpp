@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  *
  */
 
-#ifndef OS_CPU_WINDOWS_X86_VM_ATOMIC_WINDOWS_X86_INLINE_HPP
-#define OS_CPU_WINDOWS_X86_VM_ATOMIC_WINDOWS_X86_INLINE_HPP
+#ifndef OS_CPU_WINDOWS_X86_VM_ATOMIC_WINDOWS_X86_HPP
+#define OS_CPU_WINDOWS_X86_VM_ATOMIC_WINDOWS_X86_HPP
 
-#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 
 // The following alternative implementations are needed because
@@ -301,4 +300,4 @@ inline void Atomic::store(jlong store_value, jlong* dest) {
 
 #pragma warning(default: 4035) // Enables warnings reporting missing return statement
 
-#endif // OS_CPU_WINDOWS_X86_VM_ATOMIC_WINDOWS_X86_INLINE_HPP
+#endif // OS_CPU_WINDOWS_X86_VM_ATOMIC_WINDOWS_X86_HPP

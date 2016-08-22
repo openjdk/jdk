@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2011, 2015, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,10 +23,9 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_ZERO_VM_ATOMIC_LINUX_ZERO_INLINE_HPP
-#define OS_CPU_LINUX_ZERO_VM_ATOMIC_LINUX_ZERO_INLINE_HPP
+#ifndef OS_CPU_BSD_ZERO_VM_ATOMIC_BSD_ZERO_HPP
+#define OS_CPU_BSD_ZERO_VM_ATOMIC_BSD_ZERO_HPP
 
-#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 
 // Implementation of class atomic
@@ -161,10 +160,16 @@ static inline int arm_lock_test_and_set(volatile int *ptr, int newval) {
 #endif // ARM
 
 inline void Atomic::store(jint store_value, volatile jint* dest) {
+#if !defined(ARM) && !defined(M68K)
+  __sync_synchronize();
+#endif
   *dest = store_value;
 }
 
 inline void Atomic::store_ptr(intptr_t store_value, intptr_t* dest) {
+#if !defined(ARM) && !defined(M68K)
+  __sync_synchronize();
+#endif
   *dest = store_value;
 }
 
@@ -325,4 +330,4 @@ inline void Atomic::store(jlong store_value, volatile jlong* dest) {
   os::atomic_copy64((volatile jlong*)&store_value, dest);
 }
 
-#endif // OS_CPU_LINUX_ZERO_VM_ATOMIC_LINUX_ZERO_INLINE_HPP
+#endif // OS_CPU_BSD_ZERO_VM_ATOMIC_BSD_ZERO_HPP
