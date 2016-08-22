@@ -1196,6 +1196,11 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     fm.setLocationFromPaths(StandardLocation.SOURCE_PATH, sources);
                 } catch (IOException ex) {
                     proc.debug(ex, "SourceCodeAnalysisImpl.SourceCache.<init>(...)");
+                    try {
+                        fm.close();
+                    } catch (IOException closeEx) {
+                        proc.debug(closeEx, "SourceCodeAnalysisImpl.SourceCache.close()");
+                    }
                     fm = null;
                 }
                 this.fm = fm;
