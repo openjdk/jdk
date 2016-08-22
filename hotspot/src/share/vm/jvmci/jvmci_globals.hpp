@@ -88,6 +88,9 @@
   experimental(intx, JVMCINMethodSizeLimit, (80*K)*wordSize,                \
           "Maximum size of a compiled method.")                             \
                                                                             \
+  experimental(intx, MethodProfileWidth, 0,                                 \
+          "Number of methods to record in call profile")                    \
+                                                                            \
   develop(bool, TraceUncollectedSpeculations, false,                        \
           "Print message when a failed speculation was not collected")
 
