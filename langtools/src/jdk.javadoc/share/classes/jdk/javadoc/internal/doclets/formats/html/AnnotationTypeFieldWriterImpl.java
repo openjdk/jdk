@@ -111,7 +111,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
             memberDetailsTree.addContent(writer.getMarkerAnchor(
                     SectionName.ANNOTATION_TYPE_FIELD_DETAIL));
             Content heading = HtmlTree.HEADING(HtmlConstants.DETAILS_HEADING,
-                    writer.fieldDetailsLabel);
+                    contents.fieldDetailsLabel);
             memberDetailsTree.addContent(heading);
             writer.printedAnnotationFieldHeading = true;
         }
@@ -142,7 +142,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
                 writer.getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.MEMBER, getType(member)));
         pre.addContent(link);
-        pre.addContent(writer.getSpace());
+        pre.addContent(Contents.SPACE);
         if (configuration.linksource) {
             Content memberName = new StringContent(name(member));
             writer.addSrcLink(member, memberName, pre);
@@ -193,18 +193,11 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
     }
 
     /**
-     * Close the writer.
-     */
-    public void close() throws IOException {
-        writer.close();
-    }
-
-    /**
      * {@inheritDoc}
      */
     public void addSummaryLabel(Content memberTree) {
         Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
-                writer.getResource("doclet.Field_Summary"));
+                contents.fieldSummaryLabel);
         memberTree.addContent(label);
     }
 
@@ -221,7 +214,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public Content getCaption() {
-        return configuration.getResource("doclet.Fields");
+        return configuration.getContent("doclet.Fields");
     }
 
     /**
@@ -296,9 +289,9 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
         if (link) {
             return writer.getHyperLink(
                     SectionName.ANNOTATION_TYPE_FIELD_SUMMARY,
-                    writer.getResource("doclet.navField"));
+                    contents.navField);
         } else {
-            return writer.getResource("doclet.navField");
+            return contents.navField;
         }
     }
 
@@ -309,9 +302,9 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
         if (link) {
             liNav.addContent(writer.getHyperLink(
                     SectionName.ANNOTATION_TYPE_FIELD_DETAIL,
-                    writer.getResource("doclet.navField")));
+                    contents.navField));
         } else {
-            liNav.addContent(writer.getResource("doclet.navField"));
+            liNav.addContent(contents.navField);
         }
     }
     private TypeMirror getType(Element member) {

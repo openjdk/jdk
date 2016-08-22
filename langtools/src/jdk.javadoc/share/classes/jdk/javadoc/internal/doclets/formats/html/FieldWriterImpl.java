@@ -95,7 +95,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
         fieldDetailsTree.addContent(writer.getMarkerAnchor(
                 SectionName.FIELD_DETAIL));
         Content heading = HtmlTree.HEADING(HtmlConstants.DETAILS_HEADING,
-                writer.fieldDetailsLabel);
+                contents.fieldDetailsLabel);
         fieldDetailsTree.addContent(heading);
         return fieldDetailsTree;
     }
@@ -182,20 +182,12 @@ public class FieldWriterImpl extends AbstractMemberWriter
     }
 
     /**
-     * Close the writer.
-     */
-    @Override
-    public void close() throws IOException {
-        writer.close();
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
     public void addSummaryLabel(Content memberTree) {
         Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
-                writer.getResource("doclet.Field_Summary"));
+                contents.fieldSummaryLabel);
         memberTree.addContent(label);
     }
 
@@ -204,9 +196,9 @@ public class FieldWriterImpl extends AbstractMemberWriter
      */
     @Override
     public String getTableSummary() {
-        return configuration.getText("doclet.Member_Table_Summary",
-                configuration.getText("doclet.Field_Summary"),
-                configuration.getText("doclet.fields"));
+        return resources.getText("doclet.Member_Table_Summary",
+                resources.getText("doclet.Field_Summary"),
+                resources.getText("doclet.fields"));
     }
 
     /**
@@ -214,7 +206,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
      */
     @Override
     public Content getCaption() {
-        return configuration.getResource("doclet.Fields");
+        return contents.fields;
     }
 
     /**
@@ -223,9 +215,9 @@ public class FieldWriterImpl extends AbstractMemberWriter
     @Override
     public List<String> getSummaryTableHeader(Element member) {
         List<String> header = Arrays.asList(writer.getModifierTypeHeader(),
-            configuration.getText("doclet.0_and_1",
-                    configuration.getText("doclet.Field"),
-                    configuration.getText("doclet.Description")));
+            resources.getText("doclet.0_and_1",
+                    resources.getText("doclet.Field"),
+                    resources.getText("doclet.Description")));
         return header;
     }
 
@@ -259,7 +251,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
                 : configuration.getText("doclet.Fields_Inherited_From_Interface"));
         Content labelHeading = HtmlTree.HEADING(HtmlConstants.INHERITED_SUMMARY_HEADING,
                 label);
-        labelHeading.addContent(writer.getSpace());
+        labelHeading.addContent(Contents.SPACE);
         labelHeading.addContent(classLink);
         inheritedTree.addContent(labelHeading);
     }
@@ -312,14 +304,14 @@ public class FieldWriterImpl extends AbstractMemberWriter
             if (typeElement == null) {
                 return writer.getHyperLink(
                         SectionName.FIELD_SUMMARY,
-                        writer.getResource("doclet.navField"));
+                        contents.navField);
             } else {
                 return writer.getHyperLink(
                         SectionName.FIELDS_INHERITANCE,
-                        configuration.getClassName(typeElement), writer.getResource("doclet.navField"));
+                        configuration.getClassName(typeElement), contents.navField);
             }
         } else {
-            return writer.getResource("doclet.navField");
+            return contents.navField;
         }
     }
 
@@ -331,9 +323,9 @@ public class FieldWriterImpl extends AbstractMemberWriter
         if (link) {
             liNav.addContent(writer.getHyperLink(
                     SectionName.FIELD_DETAIL,
-                    writer.getResource("doclet.navField")));
+                    contents.navField));
         } else {
-            liNav.addContent(writer.getResource("doclet.navField"));
+            liNav.addContent(contents.navField);
         }
     }
 }

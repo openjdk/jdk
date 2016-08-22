@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4667976
+ * @bug 4667976 8130181
  * @modules java.base/com.sun.net.ssl
  * @compile JavaxSSLContextImpl.java ComSSLContextImpl.java
  *      JavaxTrustManagerFactoryImpl.java ComTrustManagerFactoryImpl.java
@@ -85,7 +85,7 @@ class MyProvider extends Provider {
 
     public MyProvider()
     {
-        super("BRAD", 1.0, info);
+        super("BRAD", "1.0", info);
 
         AccessController.doPrivileged(new java.security.PrivilegedAction() {
             public Object run() {

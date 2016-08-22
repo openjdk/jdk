@@ -78,7 +78,7 @@ public class ModuleFinderTest extends ModuleTestBase {
 
 
         String log = new JavacTask(tb, Task.Mode.CMDLINE)
-                .options("-XDrawDiagnostics", "-modulepath", modules.toString())
+                .options("-XDrawDiagnostics", "--module-path", modules.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src2))
                 .run(Task.Expect.FAIL)

@@ -197,11 +197,6 @@ public interface ClassWriter {
     public void printDocument(Content contentTree) throws IOException;
 
     /**
-     * Close the writer.
-     */
-    public void close() throws IOException;
-
-    /**
      * Return the TypeElement being documented.
      *
      * @return the TypeElement being documented.

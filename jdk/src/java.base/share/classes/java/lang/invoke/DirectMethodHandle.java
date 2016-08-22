@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import static java.lang.invoke.LambdaForm.*;
+import static java.lang.invoke.LambdaForm.Kind.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.newInternalError;
@@ -189,14 +190,15 @@ class DirectMethodHandle extends MethodHandle {
     static LambdaForm makePreparedLambdaForm(MethodType mtype, int which) {
         boolean needsInit = (which == LF_INVSTATIC_INIT);
         boolean doesAlloc = (which == LF_NEWINVSPECIAL);
-        String linkerName, lambdaName;
+        String linkerName;
+        LambdaForm.Kind kind;
         switch (which) {
-        case LF_INVVIRTUAL:    linkerName = "linkToVirtual";    lambdaName = "DMH.invokeVirtual";    break;
-        case LF_INVSTATIC:     linkerName = "linkToStatic";     lambdaName = "DMH.invokeStatic";     break;
-        case LF_INVSTATIC_INIT:linkerName = "linkToStatic";     lambdaName = "DMH.invokeStaticInit"; break;
-        case LF_INVSPECIAL:    linkerName = "linkToSpecial";    lambdaName = "DMH.invokeSpecial";    break;
-        case LF_INVINTERFACE:  linkerName = "linkToInterface";  lambdaName = "DMH.invokeInterface";  break;
-        case LF_NEWINVSPECIAL: linkerName = "linkToSpecial";    lambdaName = "DMH.newInvokeSpecial"; break;
+        case LF_INVVIRTUAL:    linkerName = "linkToVirtual";   kind = DIRECT_INVOKE_VIRTUAL;     break;
+        case LF_INVSTATIC:     linkerName = "linkToStatic";    kind = DIRECT_INVOKE_STATIC;      break;
+        case LF_INVSTATIC_INIT:linkerName = "linkToStatic";    kind = DIRECT_INVOKE_STATIC_INIT; break;
+        case LF_INVSPECIAL:    linkerName = "linkToSpecial";   kind = DIRECT_INVOKE_SPECIAL;     break;
+        case LF_INVINTERFACE:  linkerName = "linkToInterface"; kind = DIRECT_INVOKE_INTERFACE;   break;
+        case LF_NEWINVSPECIAL: linkerName = "linkToSpecial";   kind = DIRECT_NEW_INVOKE_SPECIAL; break;
         default:  throw new InternalError("which="+which);
         }
 
@@ -240,11 +242,11 @@ class DirectMethodHandle extends MethodHandle {
             result = NEW_OBJ;
         }
         names[LINKER_CALL] = new Name(linker, outArgs);
-        lambdaName += "_" + shortenSignature(basicTypeSignature(mtype));
-        LambdaForm lform = new LambdaForm(lambdaName, ARG_LIMIT, names, result);
+        String lambdaName = kind.defaultLambdaName + "_" + shortenSignature(basicTypeSignature(mtype));
+        LambdaForm lform = new LambdaForm(lambdaName, ARG_LIMIT, names, result, kind);
 
         // This is a tricky bit of code.  Don't send it through the LF interpreter.
-        lform.compileToBytecode(Holder.class);
+        lform.compileToBytecode();
         return lform;
     }
 
@@ -705,7 +707,7 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     static {
-        // The DMH class will contain pre-generated DirectMethodHandles resolved
+        // The Holder class will contain pre-generated DirectMethodHandles resolved
         // speculatively using MemberName.getFactory().resolveOrNull. However, that
         // doesn't initialize the class, which subtly breaks inlining etc. By forcing
         // initialization of the Holder class we avoid these issues.
@@ -713,5 +715,5 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     /* Placeholder class for DirectMethodHandles generated ahead of time */
-    private final class Holder {}
+    final class Holder {}
 }
