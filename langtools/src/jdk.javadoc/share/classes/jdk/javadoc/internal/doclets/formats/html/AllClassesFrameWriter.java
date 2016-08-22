@@ -35,6 +35,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
@@ -78,8 +79,7 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
      * @throws DocletAbortException
      */
     public AllClassesFrameWriter(ConfigurationImpl configuration,
-                                 DocPath filename, IndexBuilder indexbuilder)
-                              throws IOException {
+                                 DocPath filename, IndexBuilder indexbuilder) {
         super(configuration, filename);
         this.indexbuilder = indexbuilder;
     }
@@ -100,15 +100,13 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
             allclassgen = new AllClassesFrameWriter(configuration,
                                                     filename, indexbuilder);
             allclassgen.buildAllClassesFile(true);
-            allclassgen.close();
             filename = DocPaths.ALLCLASSES_NOFRAME;
             allclassgen = new AllClassesFrameWriter(configuration,
                                                     filename, indexbuilder);
             allclassgen.buildAllClassesFile(false);
-            allclassgen.close();
         } catch (IOException exc) {
-            configuration.standardmessage.
-                     error("doclet.exception_encountered",
+            Messages messages = configuration.getMessages();
+            messages.error("doclet.exception_encountered",
                            exc.toString(), filename);
             throw new DocletAbortException(exc);
         }
@@ -122,7 +120,7 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
         String label = configuration.getText("doclet.All_Classes");
         Content body = getBody(false, getWindowTitle(label));
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING,
-                HtmlStyle.bar, allclassesLabel);
+                HtmlStyle.bar, contents.allClassesLabel);
         body.addContent(heading);
         Content ul = new HtmlTree(HtmlTag.UL);
         // Generate the class links and add it to the tdFont tree.

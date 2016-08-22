@@ -24,10 +24,8 @@
  */
 
 /**
- * Provides interfaces and classes for transferring data between and
- * within applications.
+ * Defines an API for transferring data between and within applications.
  */
-
 module java.datatransfer {
     exports java.awt.datatransfer;
     exports sun.datatransfer to java.desktop;

@@ -40,23 +40,22 @@ import javax.tools.StandardLocation;
 
 import com.sun.source.util.DocTreePath;
 import com.sun.tools.doclint.DocLint;
-import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlVersion;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
-import jdk.javadoc.internal.doclets.toolkit.util.MessageRetriever;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 import static javax.tools.Diagnostic.Kind.*;
@@ -208,10 +207,7 @@ public class ConfigurationImpl extends Configuration {
      */
     public Map<Doclet.Option, String> doclintOpts = new LinkedHashMap<>();
 
-    /**
-     * Unique Resource Handler for this package.
-     */
-    public final MessageRetriever standardmessage;
+    public final Resources resources;
 
     /**
      * First file to appear in the right-hand frame in the generated
@@ -236,13 +232,21 @@ public class ConfigurationImpl extends Configuration {
 
     protected Set<Character> tagSearchIndexKeys;
 
+    protected Contents contents;
+
+    protected Messages messages;
+
     /**
      * Constructor. Initializes resource for the
      * {@link com.sun.tools.doclets.internal.toolkit.util.MessageRetriever MessageRetriever}.
      */
     public ConfigurationImpl() {
-        standardmessage = new MessageRetriever(this,
-            "jdk.javadoc.internal.doclets.formats.html.resources.standard");
+        resources = new Resources(this,
+                Configuration.sharedResourceBundleName,
+                "jdk.javadoc.internal.doclets.formats.html.resources.standard");
+
+        messages = new Messages(this);
+        contents = new Contents(this);
     }
 
     private final String versionRBName = "jdk.javadoc.internal.tool.resources.version";
@@ -267,6 +271,16 @@ public class ConfigurationImpl extends Configuration {
         } catch (MissingResourceException e) {
             return BUILD_DATE;
         }
+    }
+
+    @Override
+    public Resources getResources() {
+        return resources;
+    }
+
+    @Override
+    public Messages getMessages() {
+        return messages;
     }
 
     protected boolean validateOptions() {
@@ -393,14 +407,6 @@ public class ConfigurationImpl extends Configuration {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public MessageRetriever getDocletSpecificMsg() {
-        return standardmessage;
-    }
-
-    /**
      * Decide the page which will appear first in the right-hand frame. It will
      * be "overview-summary.html" if "-overview" option is used or no
      * "-overview" but the number of packages is more than one. It will be
@@ -479,10 +485,11 @@ public class ConfigurationImpl extends Configuration {
     }
 
     /**
-     * Return the path of the overview file and null if it does not exist.
+     * Return the path of the overview file or null if it does not exist.
      *
-     * @return the path of the overview file and null if it does not exist.
+     * @return the path of the overview file or null if it does not exist.
      */
+    @Override
     public JavaFileObject getOverviewPath() {
         if (overviewpath != null && getFileManager() instanceof StandardJavaFileManager) {
             StandardJavaFileManager fm = (StandardJavaFileManager) getFileManager();
@@ -510,9 +517,62 @@ public class ConfigurationImpl extends Configuration {
     }
 
     @Override
-    public Content newContent() {
-        return new ContentBuilder();
+    public String getText(String key) {
+        return resources.getText(key);
     }
+
+    @Override
+    public String getText(String key, String... args) {
+        return resources.getText(key, (Object[]) args);
+    }
+
+   /**
+     * {@inheritdoc}
+     */
+    @Override
+    public Content getContent(String key) {
+        return contents.getContent(key);
+    }
+
+    /**
+     * Get the configuration string as a content.
+     *
+     * @param key the key to look for in the configuration file
+     * @param o   string or content argument added to configuration text
+     * @return a content tree for the text
+     */
+    @Override
+    public Content getContent(String key, Object o) {
+        return contents.getContent(key, o);
+    }
+
+    /**
+     * Get the configuration string as a content.
+     *
+     * @param key the key to look for in the configuration file
+     * @param o1 resource argument
+     * @param o2 resource argument
+     * @return a content tree for the text
+     */
+    @Override
+    public Content getContent(String key, Object o1, Object o2) {
+        return contents.getContent(key, o1, o2);
+    }
+
+    /**
+     * Get the configuration string as a content.
+     *
+     * @param key the key to look for in the configuration file
+     * @param o0  string or content argument added to configuration text
+     * @param o1  string or content argument added to configuration text
+     * @param o2  string or content argument added to configuration text
+     * @return a content tree for the text
+     */
+    @Override
+    public Content getContent(String key, Object o0, Object o1, Object o2) {
+        return contents.getContent(key, o0, o1, o2);
+    }
+
 
     @Override
     public Location getLocationForPackage(PackageElement pd) {

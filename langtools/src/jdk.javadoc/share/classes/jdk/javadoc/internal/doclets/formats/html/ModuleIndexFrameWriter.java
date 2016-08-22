@@ -39,6 +39,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
@@ -79,10 +80,9 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
         try {
             modulegen = new ModuleIndexFrameWriter(configuration, filename);
             modulegen.buildModuleIndexFile("doclet.Window_Overview", false);
-            modulegen.close();
         } catch (IOException exc) {
-            configuration.standardmessage.error(
-                        "doclet.exception_encountered",
+            Messages messages = configuration.getMessages();
+            messages.error("doclet.exception_encountered",
                         exc.toString(), filename);
             throw new DocletAbortException(exc);
         }
@@ -94,12 +94,12 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
     protected void addModulesList(Map<ModuleElement, Set<PackageElement>> modules, String text,
             String tableSummary, Content body) {
         Content heading = HtmlTree.HEADING(HtmlConstants.MODULE_HEADING, true,
-                modulesLabel);
+                contents.modulesLabel);
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
                 ? HtmlTree.MAIN(HtmlStyle.indexContainer, heading)
                 : HtmlTree.DIV(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.setTitle(modulesLabel);
+        ul.setTitle(contents.modulesLabel);
         for (ModuleElement mdle: modules.keySet()) {
             ul.addContent(getModuleLink(mdle));
         }
@@ -150,7 +150,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
      */
     protected void addAllClassesLink(Content ul) {
         Content linkContent = getHyperLink(DocPaths.ALLCLASSES_FRAME,
-                allclassesLabel, "", "packageFrame");
+                contents.allClassesLabel, "", "packageFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);
     }
@@ -163,7 +163,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
      */
     protected void addAllPackagesLink(Content ul) {
         Content linkContent = getHyperLink(DocPaths.OVERVIEW_FRAME,
-                allpackagesLabel, "", "packageListFrame");
+                contents.allPackagesLabel, "", "packageListFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);
     }
@@ -172,7 +172,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
      * {@inheritDoc}
      */
     protected void addNavigationBarFooter(Content body) {
-        Content p = HtmlTree.P(getSpace());
+        Content p = HtmlTree.P(Contents.SPACE);
         body.addContent(p);
     }
 

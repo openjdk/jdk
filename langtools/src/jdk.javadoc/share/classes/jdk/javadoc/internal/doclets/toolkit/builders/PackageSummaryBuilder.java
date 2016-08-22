@@ -131,7 +131,6 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         buildChildren(node, contentTree);
         packageWriter.addPackageFooter(contentTree);
         packageWriter.printDocument(contentTree);
-        packageWriter.close();
         utils.copyDocFiles(packageElement);
     }
 

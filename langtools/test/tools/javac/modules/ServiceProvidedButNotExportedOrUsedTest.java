@@ -90,7 +90,7 @@ public class ServiceProvidedButNotExportedOrUsedTest extends ModuleTestBase {
         Files.createDirectories(modules);
 
         List<String> output = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
+                .options("-XDrawDiagnostics", "--module-source-path", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)

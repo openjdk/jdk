@@ -76,7 +76,7 @@ public class HelloWorldTest extends ModuleTestBase {
         new JavacTask(tb)
             .options("-source", "8",
                 "-target", "8",
-                "-bootclasspath", smallRtJar.toString())
+                "--boot-class-path", smallRtJar.toString())
             .outdir(classes)
             .files(src.resolve("HelloWorld.java"))
             .run();
@@ -131,7 +131,7 @@ public class HelloWorldTest extends ModuleTestBase {
         Files.createDirectories(classes);
 
         new JavacTask(tb)
-            .options("-modulesourcepath", src.toString())
+            .options("--module-source-path", src.toString())
             .outdir(classes)
             .files(src_m1.resolve("p/HelloWorld.java"))
             .run()

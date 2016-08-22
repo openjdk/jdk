@@ -53,6 +53,7 @@ var FileSystems = Java.type("java.nio.file.FileSystems");
 var Files = Java.type("java.nio.file.Files");
 var System = Java.type("java.lang.System");
 var URI = Java.type("java.net.URI");
+var Collections = Java.type("java.util.Collections");
 
 // JavaFX classes used
 var StackPane = Java.type("javafx.scene.layout.StackPane");
@@ -100,7 +101,7 @@ function getJrtFileSystem() {
             print("did you miss specifying jrt-fs.jar with -cp option?");
             usage();
         }
-        return FileSystems.newFileSystem(uri, null, cls.classLoader);
+        return FileSystems.newFileSystem(uri, Collections.emptyMap(), cls.classLoader);
     }
 }
 

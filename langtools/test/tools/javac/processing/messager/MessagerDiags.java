@@ -80,7 +80,6 @@ public class MessagerDiags extends AbstractProcessor {
     }
 
     public static void main(String... args) throws IOException {
-        final String bootPath = System.getProperty("sun.boot.class.path");
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         assert tool != null;
 

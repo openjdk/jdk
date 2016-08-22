@@ -28,7 +28,7 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
+ *          jdk.compiler/com.sun.tools.sjavac
  * @build Wrapper toolbox.ToolBox
  * @run main Wrapper PackagePathMismatch
  */

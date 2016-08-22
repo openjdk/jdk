@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 /*
  * @test
- * @bug 8014620
+ * @bug 8014620 8130181
  * @summary Signature.getAlgorithm return null in special case
  * @run main/othervm SignatureGetAlgorithm
  * @author youdwei
@@ -49,7 +49,7 @@ public class SignatureGetAlgorithm {
 
     public static class TestProvider extends Provider {
         TestProvider() {
-            super("testSignatureGetAlgorithm", 1.0, "test Signatures");
+            super("testSignatureGetAlgorithm", "1.0", "test Signatures");
             put("Signature.MySignatureAlg",
                 "SignatureGetAlgorithm$MySignatureAlg");
         }

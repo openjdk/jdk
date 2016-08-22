@@ -140,7 +140,6 @@ public class SerializedFormBuilder extends AbstractBuilder {
             throw new DocletAbortException(e);
         }
         build(layoutParser.parseXML(NAME), contentTree);
-        writer.close();
     }
 
     /**
@@ -162,7 +161,6 @@ public class SerializedFormBuilder extends AbstractBuilder {
         buildChildren(node, serializedTree);
         writer.addFooter(serializedTree);
         writer.printDocument(serializedTree);
-        writer.close();
     }
 
     /**
@@ -362,7 +360,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
                 && utils.getSerialDataTrees(method).isEmpty()) {
             if (configuration.serialwarn) {
                 TypeElement encl  = (TypeElement) method.getEnclosingElement();
-                configuration.getDocletSpecificMsg().warning(currentMember,
+                messages.warning(currentMember,
                         "doclet.MissingSerialDataTag", encl.getQualifiedName().toString(),
                         method.getSimpleName().toString());
             }
@@ -526,7 +524,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
         // Process default Serializable field.
         if ((utils.getSerialTrees(field).isEmpty()) /*&& ! field.isSynthetic()*/
                 && configuration.serialwarn) {
-            configuration.message.warning(field,
+            messages.warning(field,
                     "doclet.MissingSerialTag", utils.getFullyQualifiedName(te),
                     utils.getSimpleName(field));
         }

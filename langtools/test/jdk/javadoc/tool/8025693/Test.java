@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8025693
  * @summary javadoc should ignore <clinit> methods found in classes on classpath
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  */
 
 import java.io.*;
@@ -69,7 +69,7 @@ public class Test {
         PrintStream prev = System.err;
         System.setErr(ps);
         try {
-            int rc = com.sun.tools.javadoc.Main.execute(args);
+            int rc = jdk.javadoc.internal.tool.Main.execute(args);
         } finally {
             System.err.flush();
             System.setErr(prev);

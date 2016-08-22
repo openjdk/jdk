@@ -114,9 +114,4 @@ public interface MethodWriter {
      * @return content tree for the method documentation
      */
     public Content getMethodDoc(Content methodDocTree, boolean isLastContent);
-
-    /**
-     * Close the writer.
-     */
-    public void close() throws IOException;
 }

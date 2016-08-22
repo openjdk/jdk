@@ -80,7 +80,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         Content typeParameters = getTypeParameters(member);
         if (!typeParameters.isEmpty()) {
             htmltree.addContent(typeParameters);
-            htmltree.addContent(writer.getSpace());
+            htmltree.addContent(Contents.SPACE);
         }
     }
 
@@ -157,7 +157,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
                 param.asType()).varargs(isVarArg));
         tree.addContent(link);
         if(name(param).length() > 0) {
-            tree.addContent(writer.getSpace());
+            tree.addContent(Contents.SPACE);
             tree.addContent(name(param));
         }
     }
@@ -173,11 +173,11 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     protected void addReceiverAnnotations(ExecutableElement member, TypeMirror rcvrType,
             List<? extends AnnotationMirror> annotationMirrors, Content tree) {
         writer.addReceiverAnnotationInfo(member, rcvrType, annotationMirrors, tree);
-        tree.addContent(writer.getSpace());
+        tree.addContent(Contents.SPACE);
         tree.addContent(utils.getTypeName(rcvrType, false));
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration, RECEIVER_TYPE, rcvrType);
         tree.addContent(writer.getTypeParameterLinks(linkInfo));
-        tree.addContent(writer.getSpace());
+        tree.addContent(Contents.SPACE);
         tree.addContent("this");
     }
 
