@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
-import java.io.*;
 import java.lang.annotation.Documented;
 import java.lang.ref.SoftReference;
 import java.text.CollationKey;
@@ -78,6 +77,7 @@ import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentDuo;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.WorkArounds;
 
 import static javax.lang.model.element.ElementKind.*;
@@ -85,9 +85,6 @@ import static javax.lang.model.element.Modifier.*;
 import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
-
-import jdk.javadoc.internal.doclets.toolkit.Messages;
-
 import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
 
 
@@ -274,48 +271,52 @@ public class Utils {
      * {@link SourcePath} and if given directory is found in the source
      * directory structure, copy the entire directory, to the generated
      * documentation hierarchy.
-     * @param pe
+     *
+     * @param pe the package containing the doc files to be copied
+     * @throws DocFileIOException if there is a problem while copying the documentation files
      */
-    public void copyDocFiles(PackageElement pe) {
+    public void copyDocFiles(PackageElement pe) throws DocFileIOException {
         copyDocFiles(DocPath.forPackage(pe).resolve(DocPaths.DOC_FILES));
     }
 
-    public void copyDocFiles(DocPath dir) {
-        try {
-            boolean first = true;
-            for (DocFile f : DocFile.list(configuration, StandardLocation.SOURCE_PATH, dir)) {
-                if (!f.isDirectory()) {
-                    continue;
-                }
-                DocFile srcdir = f;
-                DocFile destdir = DocFile.createFileForOutput(configuration, dir);
-                if (srcdir.isSameFile(destdir)) {
-                    continue;
-                }
+    /**
+     * This method is obsolete, should not be used, and should be deleted.
+     * It does not take module locations into account!
+     *
+     * @throws DocFileIOException if there is a problem while copying the documentation files
+     */
+    public void copyDocFiles(DocPath dir) throws DocFileIOException {
+        boolean first = true;
+        for (DocFile f : DocFile.list(configuration, StandardLocation.SOURCE_PATH, dir)) {
+            if (!f.isDirectory()) {
+                continue;
+            }
+            DocFile srcdir = f;
+            DocFile destdir = DocFile.createFileForOutput(configuration, dir);
+            if (srcdir.isSameFile(destdir)) {
+                continue;
+            }
 
                 for (DocFile srcfile: srcdir.list()) {
-                    DocFile destfile = destdir.resolve(srcfile.getName());
-                    if (srcfile.isFile()) {
-                        if (destfile.exists() && !first) {
-                            messages.warning("doclet.Copy_Overwrite_warning",
-                                    srcfile.getPath(), destdir.getPath());
-                        } else {
-                            messages.notice("doclet.Copying_File_0_To_Dir_1",
-                                    srcfile.getPath(), destdir.getPath());
-                            destfile.copyFile(srcfile);
-                        }
-                    } else if (srcfile.isDirectory()) {
-                        if (configuration.copydocfilesubdirs
-                                && !configuration.shouldExcludeDocFileDir(srcfile.getName())) {
-                            copyDocFiles(dir.resolve(srcfile.getName()));
-                        }
+                DocFile destfile = destdir.resolve(srcfile.getName());
+                if (srcfile.isFile()) {
+                    if (destfile.exists() && !first) {
+                        messages.warning("doclet.Copy_Overwrite_warning",
+                                srcfile.getPath(), destdir.getPath());
+                    } else {
+                        messages.notice("doclet.Copying_File_0_To_Dir_1",
+                                srcfile.getPath(), destdir.getPath());
+                        destfile.copyFile(srcfile);
+                    }
+                } else if (srcfile.isDirectory()) {
+                    if (configuration.copydocfilesubdirs
+                            && !configuration.shouldExcludeDocFileDir(srcfile.getName())) {
+                        copyDocFiles(dir.resolve(srcfile.getName()));
                     }
                 }
-
-                first = false;
             }
-        } catch (SecurityException | IOException exc) {
-            throw new DocletAbortException(exc);
+
+            first = false;
         }
     }
 
@@ -1567,42 +1568,45 @@ public class Utils {
         return secondaryCollator.compare(s1, s2);
     }
 
-    public void copyDocFiles(Configuration configuration, Location locn, DocPath dir) {
-        try {
-            boolean first = true;
-            for (DocFile f : DocFile.list(configuration, locn, dir)) {
-                if (!f.isDirectory()) {
-                    continue;
-                }
-                DocFile srcdir = f;
-                DocFile destdir = DocFile.createFileForOutput(configuration, dir);
-                if (srcdir.isSameFile(destdir)) {
-                    continue;
-                }
+    /**
+     * @param configuration the configuration for this doclet
+     * @param locn the location from which to read files
+     * @param dir the path for the files to be copied
+     * @throws DocFileIOException if there is a problem copying the files
+     */
+    public void copyDocFiles(Configuration configuration, Location locn, DocPath dir)
+            throws DocFileIOException {
+        boolean first = true;
+        for (DocFile f : DocFile.list(configuration, locn, dir)) {
+            if (!f.isDirectory()) {
+                continue;
+            }
+            DocFile srcdir = f;
+            DocFile destdir = DocFile.createFileForOutput(configuration, dir);
+            if (srcdir.isSameFile(destdir)) {
+                continue;
+            }
 
-                for (DocFile srcfile: srcdir.list()) {
-                    DocFile destfile = destdir.resolve(srcfile.getName());
-                    if (srcfile.isFile()) {
-                        if (destfile.exists() && !first) {
-                            messages.warning("doclet.Copy_Overwrite_warning",
-                                    srcfile.getPath(), destdir.getPath());
-                        } else {
-                            messages.notice("doclet.Copying_File_0_To_Dir_1",
-                                    srcfile.getPath(), destdir.getPath());
-                            destfile.copyFile(srcfile);
-                        }
-                    } else if (srcfile.isDirectory()) {
-                        if (configuration.copydocfilesubdirs
-                                && !configuration.shouldExcludeDocFileDir(srcfile.getName())) {
-                            copyDocFiles(configuration, locn, dir.resolve(srcfile.getName()));
-                        }
+            for (DocFile srcfile: srcdir.list()) {
+                DocFile destfile = destdir.resolve(srcfile.getName());
+                if (srcfile.isFile()) {
+                    if (destfile.exists() && !first) {
+                        messages.warning("doclet.Copy_Overwrite_warning",
+                                srcfile.getPath(), destdir.getPath());
+                    } else {
+                        messages.notice("doclet.Copying_File_0_To_Dir_1",
+                                srcfile.getPath(), destdir.getPath());
+                        destfile.copyFile(srcfile);
+                    }
+                } else if (srcfile.isDirectory()) {
+                    if (configuration.copydocfilesubdirs
+                            && !configuration.shouldExcludeDocFileDir(srcfile.getName())) {
+                        copyDocFiles(configuration, locn, dir.resolve(srcfile.getName()));
                     }
                 }
-
-                first = false;
             }
-        } catch (SecurityException | IOException exc) {
-            throw new DocletAbortException(exc);
+
+            first = false;
         }
     }
 

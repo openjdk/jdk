@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.IOException;
 import java.util.Collection;
 
 import javax.lang.model.element.PackageElement;
@@ -37,10 +36,9 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 
 
 /**
@@ -62,32 +60,24 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      *
      * @param filename Name of the package index file to be generated.
      */
-    public PackageIndexFrameWriter(ConfigurationImpl configuration,
-                                   DocPath filename) throws IOException {
+    public PackageIndexFrameWriter(ConfigurationImpl configuration, DocPath filename) {
         super(configuration, filename);
     }
 
     /**
      * Generate the package index file named "overview-frame.html".
-     * @throws DocletAbortException
+     * @throws DocFileIOException
      */
-    public static void generate(ConfigurationImpl configuration) {
-        PackageIndexFrameWriter packgen;
+    public static void generate(ConfigurationImpl configuration) throws DocFileIOException {
         DocPath filename = DocPaths.OVERVIEW_FRAME;
-        try {
-            packgen = new PackageIndexFrameWriter(configuration, filename);
-            packgen.buildPackageIndexFile("doclet.Window_Overview", false);
-        } catch (IOException exc) {
-            Messages messages = configuration.getMessages();
-            messages.error("doclet.exception_encountered",
-                        exc.toString(), filename);
-            throw new DocletAbortException(exc);
-        }
+        PackageIndexFrameWriter packgen = new PackageIndexFrameWriter(configuration, filename);
+        packgen.buildPackageIndexFile("doclet.Window_Overview", false);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     protected void addPackagesList(Collection<PackageElement> packages, String text,
             String tableSummary, Content body) {
         Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
@@ -135,6 +125,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     /**
      * {@inheritDoc}
      */
+    @Override
     protected void addNavigationBarHeader(Content body) {
         Content headerContent;
         if (configuration.packagesheader.length() > 0) {
@@ -150,6 +141,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     /**
      * Do nothing as there is no overview information in this page.
      */
+    @Override
     protected void addOverviewHeader(Content body) {
     }
 
@@ -159,6 +151,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      *
      * @param ul the Content object to which the "All Classes" link should be added
      */
+    @Override
     protected void addAllClassesLink(Content ul) {
         Content linkContent = getHyperLink(DocPaths.ALLCLASSES_FRAME,
                 contents.allClassesLabel, "", "packageFrame");
@@ -172,6 +165,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      *
      * @param ul the Content object to which the "All Modules" link should be added
      */
+    @Override
     protected void addAllModulesLink(Content ul) {
         Content linkContent = getHyperLink(DocPaths.MODULE_OVERVIEW_FRAME,
                 contents.allModulesLabel, "", "packageListFrame");
@@ -182,6 +176,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     /**
      * {@inheritDoc}
      */
+    @Override
     protected void addNavigationBarFooter(Content body) {
         Content p = HtmlTree.P(Contents.SPACE);
         body.addContent(p);

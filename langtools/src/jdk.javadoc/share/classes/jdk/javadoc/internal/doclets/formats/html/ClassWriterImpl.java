@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.IOException;
 import java.util.*;
 
 import javax.lang.model.element.AnnotationMirror;
@@ -50,9 +49,9 @@ import jdk.javadoc.internal.doclets.toolkit.builders.MemberSummaryBuilder;
 import jdk.javadoc.internal.doclets.toolkit.taglets.ParamTaglet;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap.Kind;
@@ -91,11 +90,9 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      * @param prevClass the previous class that was documented.
      * @param nextClass the next class being documented.
      * @param classTree the class tree for the given class.
-     * @throws java.io.IOException
      */
     public ClassWriterImpl(ConfigurationImpl configuration, TypeElement typeElement,
-            TypeElement prevClass, TypeElement nextClass, ClassTree classTree)
-            throws IOException {
+            TypeElement prevClass, TypeElement nextClass, ClassTree classTree) {
         super(configuration, DocPath.forClass(configuration.utils, typeElement));
         this.typeElement = typeElement;
         configuration.currentTypeElement = typeElement;
@@ -272,7 +269,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      * {@inheritDoc}
      */
     @Override
-    public void printDocument(Content contentTree) throws IOException {
+    public void printDocument(Content contentTree) throws DocFileIOException {
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(typeElement),
                 true, contentTree);
     }
@@ -677,14 +674,11 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      *
      * @param subDiv the content tree to which the summary detail links will be added
      */
+    @Override
     protected void addSummaryDetailLinks(Content subDiv) {
-        try {
-            Content div = HtmlTree.DIV(getNavSummaryLinks());
-            div.addContent(getNavDetailLinks());
-            subDiv.addContent(div);
-        } catch (Exception e) {
-            throw new DocletAbortException(e);
-        }
+        Content div = HtmlTree.DIV(getNavSummaryLinks());
+        div.addContent(getNavDetailLinks());
+        subDiv.addContent(div);
     }
 
     /**
@@ -692,7 +686,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      *
      * @return the content tree for the navigation summary links
      */
-    protected Content getNavSummaryLinks() throws Exception {
+    protected Content getNavSummaryLinks() {
         Content li = HtmlTree.LI(contents.summaryLabel);
         li.addContent(Contents.SPACE);
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
@@ -727,9 +721,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      * Get detail links for the navigation bar.
      *
      * @return the content tree for the detail links
-     * @throws java.lang.Exception
      */
-    protected Content getNavDetailLinks() throws Exception {
+    protected Content getNavDetailLinks() {
         Content li = HtmlTree.LI(contents.detailLabel);
         li.addContent(Contents.SPACE);
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);

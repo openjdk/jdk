@@ -42,7 +42,6 @@ import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
 
@@ -107,8 +106,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
      * @param context       the build context.
      */
     public static MemberSummaryBuilder getInstance(
-            ClassWriter classWriter, Context context)
-            throws Exception {
+            ClassWriter classWriter, Context context) {
         MemberSummaryBuilder builder = new MemberSummaryBuilder(context,
                 classWriter.getTypeElement());
         WriterFactory wf = context.configuration.getWriterFactory();
@@ -129,8 +127,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
      * @param configuration the current configuration of the doclet.
      */
     public static MemberSummaryBuilder getInstance(
-            AnnotationTypeWriter annotationTypeWriter, Context context)
-            throws Exception {
+            AnnotationTypeWriter annotationTypeWriter, Context context) {
         MemberSummaryBuilder builder = new MemberSummaryBuilder(context,
                 annotationTypeWriter.getAnnotationTypeElement());
         WriterFactory wf = context.configuration.getWriterFactory();

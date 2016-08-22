@@ -31,7 +31,8 @@ import java.util.*;
 import javax.xml.parsers.*;
 
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
+import jdk.javadoc.internal.doclets.toolkit.util.SimpleDocletException;
 import org.xml.sax.*;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -53,7 +54,7 @@ public class LayoutParser extends DefaultHandler {
     /**
      * The map of XML elements that have been parsed.
      */
-    private Map<String,XMLNode> xmlElementsMap;
+    private final Map<String,XMLNode> xmlElementsMap;
     private XMLNode currentNode;
     private final Configuration configuration;
     private String currentRoot;
@@ -77,33 +78,38 @@ public class LayoutParser extends DefaultHandler {
     /**
      * Parse the XML specifying the layout of the documentation.
      *
+     * @param root the name of the desired node
      * @return the list of XML elements parsed.
+     * @throws DocFileIOException if there is a problem reading a user-supplied build file
+     * @throws SimpleDocletException if there is a problem reading the system build file
      */
-    public XMLNode parseXML(String root) {
-        if (xmlElementsMap.containsKey(root)) {
-            return xmlElementsMap.get(root);
+    public XMLNode parseXML(String root) throws DocFileIOException, SimpleDocletException {
+        if (!xmlElementsMap.containsKey(root)) {
+            try {
+                currentRoot = root;
+                isParsing = false;
+                SAXParserFactory factory = SAXParserFactory.newInstance();
+                SAXParser saxParser = factory.newSAXParser();
+                InputStream in = configuration.getBuilderXML();
+                saxParser.parse(in, this);
+            } catch (IOException | ParserConfigurationException | SAXException e) {
+                String message = (configuration.builderXMLPath == null)
+                        ? configuration.getResources().getText("doclet.exception.read.resource",
+                                Configuration.DEFAULT_BUILDER_XML, e)
+                        : configuration.getResources().getText("doclet.exception.read.file",
+                                configuration.builderXMLPath, e);
+                throw new SimpleDocletException(message, e);
+            }
         }
-        try {
-            currentRoot = root;
-            isParsing = false;
-            SAXParserFactory factory = SAXParserFactory.newInstance();
-            SAXParser saxParser = factory.newSAXParser();
-            InputStream in = configuration.getBuilderXML();
-            saxParser.parse(in, this);
-            return xmlElementsMap.get(root);
-        } catch (Throwable t) {
-            t.printStackTrace();
-            throw new DocletAbortException(t);
-        }
+        return xmlElementsMap.get(root);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void startElement(String namespaceURI, String sName, String qName,
-        Attributes attrs)
-    throws SAXException {
+    public void startElement(String namespaceURI, String sName, String qName, Attributes attrs)
+            throws SAXException {
         if (isParsing || qName.equals(currentRoot)) {
             isParsing = true;
             currentNode = new XMLNode(currentNode, qName);
