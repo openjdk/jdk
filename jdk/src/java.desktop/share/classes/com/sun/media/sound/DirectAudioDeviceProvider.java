@@ -28,15 +28,12 @@ package com.sun.media.sound;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.spi.MixerProvider;
 
-
 /**
  * DirectAudioDevice provider.
  *
  * @author Florian Bomers
  */
 public final class DirectAudioDeviceProvider extends MixerProvider {
-
-    // STATIC VARIABLES
 
     /**
      * Set of info objects for all port input devices on the system.
@@ -48,17 +45,10 @@ public final class DirectAudioDeviceProvider extends MixerProvider {
      */
     private static DirectAudioDevice[] devices;
 
-
-    // STATIC
-
     static {
         // initialize
         Platform.initialize();
     }
-
-
-    // CONSTRUCTOR
-
 
     /**
      * Required public no-arg constructor.
@@ -92,6 +82,7 @@ public final class DirectAudioDeviceProvider extends MixerProvider {
         }
     }
 
+    @Override
     public Mixer.Info[] getMixerInfo() {
         synchronized (DirectAudioDeviceProvider.class) {
             Mixer.Info[] localArray = new Mixer.Info[infos.length];
@@ -100,7 +91,7 @@ public final class DirectAudioDeviceProvider extends MixerProvider {
         }
     }
 
-
+    @Override
     public Mixer getMixer(Mixer.Info info) {
         synchronized (DirectAudioDeviceProvider.class) {
             // if the default device is asked, we provide the mixer
@@ -125,7 +116,6 @@ public final class DirectAudioDeviceProvider extends MixerProvider {
                 String.format("Mixer %s not supported by this provider", info));
     }
 
-
     private static Mixer getDevice(DirectAudioDeviceInfo info) {
         int index = info.getIndex();
         if (devices[index] == null) {
@@ -133,9 +123,6 @@ public final class DirectAudioDeviceProvider extends MixerProvider {
         }
         return devices[index];
     }
-
-    // INNER CLASSES
-
 
     /**
      * Info class for DirectAudioDevices.  Adds an index value and a string for
@@ -171,7 +158,6 @@ public final class DirectAudioDeviceProvider extends MixerProvider {
         }
     } // class DirectAudioDeviceInfo
 
-    // NATIVE METHODS
     private static native int nGetNumDevices();
     // index: [0..nGetNumDevices()-1]
     private static native DirectAudioDeviceInfo nNewDirectAudioDeviceInfo(int deviceIndex);

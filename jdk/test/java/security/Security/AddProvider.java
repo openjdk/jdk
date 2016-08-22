@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8001319
+ * @bug 8001319 8130181
  * @summary check that SecurityPermission insertProvider permission is enforced
  *          correctly
  * @run main/othervm/policy=AddProvider.policy.1 AddProvider 1
@@ -53,7 +53,7 @@ public class AddProvider {
 
     private static class TestProvider extends Provider {
         TestProvider(String name) {
-            super(name, 0.0, "Not for use in production systems!");
+            super(name, "0.0", "Not for use in production systems!");
         }
     }
 }

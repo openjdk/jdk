@@ -22,10 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.io.InputStream;
 import java.util.Arrays;
+
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.SoundbankResource;
 import javax.sound.sampled.AudioFormat;
@@ -60,6 +62,7 @@ public final class DLSSample extends SoundbankResource {
         return info;
     }
 
+    @Override
     public Object getData() {
         AudioFormat format = getFormat();
 
@@ -93,6 +96,7 @@ public final class DLSSample extends SoundbankResource {
         this.data = new ModelByteBuffer(data, offset, length);
     }
 
+    @Override
     public String getName() {
         return info.name;
     }
@@ -109,6 +113,7 @@ public final class DLSSample extends SoundbankResource {
         this.sampleoptions = sampleOptions;
     }
 
+    @Override
     public String toString() {
         return "Sample: " + info.name;
     }

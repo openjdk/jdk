@@ -38,6 +38,32 @@ import java.util.HashSet;
  */
 class GenerateJLIClassesHelper {
 
+    static byte[] generateBasicFormsClassBytes(String className) {
+        ArrayList<LambdaForm> forms = new ArrayList<>();
+        ArrayList<String> names = new ArrayList<>();
+        HashSet<String> dedupSet = new HashSet<>();
+        for (LambdaForm.BasicType type : LambdaForm.BasicType.values()) {
+            LambdaForm zero = LambdaForm.zeroForm(type);
+            String name = zero.kind.defaultLambdaName
+                   + "_" + zero.returnType().basicTypeChar();
+            if (dedupSet.add(name)) {
+                names.add(name);
+                forms.add(zero);
+            }
+
+            LambdaForm identity = LambdaForm.identityForm(type);
+            name = identity.kind.defaultLambdaName
+                   + "_" + identity.returnType().basicTypeChar();
+            if (dedupSet.add(name)) {
+                names.add(name);
+                forms.add(identity);
+            }
+        }
+        return generateCodeBytesForLFs(className,
+                names.toArray(new String[0]),
+                forms.toArray(new LambdaForm[0]));
+    }
+
     static byte[] generateDirectMethodHandleHolderClassBytes(String className,
             MethodType[] methodTypes, int[] types) {
         LambdaForm[] forms = new LambdaForm[methodTypes.length];

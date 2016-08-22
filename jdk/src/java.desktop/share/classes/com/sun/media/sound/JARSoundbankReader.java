@@ -69,11 +69,12 @@ public final class JARSoundbankReader extends SoundbankReader {
         return ok;
     }
 
+    @Override
     public Soundbank getSoundbank(URL url)
             throws InvalidMidiDataException, IOException {
         if (!isZIP(url))
             return null;
-        ArrayList<Soundbank> soundbanks = new ArrayList<Soundbank>();
+        ArrayList<Soundbank> soundbanks = new ArrayList<>();
         URLClassLoader ucl = URLClassLoader.newInstance(new URL[]{url});
         InputStream stream = ucl.getResourceAsStream(
                 "META-INF/services/javax.sound.midi.Soundbank");
@@ -114,12 +115,14 @@ public final class JARSoundbankReader extends SoundbankReader {
         return sbk;
     }
 
+    @Override
     public Soundbank getSoundbank(InputStream stream)
             throws InvalidMidiDataException, IOException {
         Objects.requireNonNull(stream);
         return null;
     }
 
+    @Override
     public Soundbank getSoundbank(File file)
             throws InvalidMidiDataException, IOException {
         return getSoundbank(file.toURI().toURL());

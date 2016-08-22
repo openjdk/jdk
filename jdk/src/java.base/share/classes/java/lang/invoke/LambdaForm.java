@@ -270,6 +270,8 @@ class LambdaForm {
 
     enum Kind {
         GENERIC(""),
+        ZERO("zero"),
+        IDENTITY("identity"),
         BOUND_REINVOKER("BMH.reinvoke"),
         REINVOKER("MH.reinvoke"),
         DELEGATE("MH.delegate"),
@@ -1848,7 +1850,7 @@ class LambdaForm {
         // bootstrap dependency on this method in case we're interpreting LFs
         if (isVoid) {
             Name[] idNames = new Name[] { argument(0, L_TYPE) };
-            idForm = new LambdaForm(idMem.getName(), 1, idNames, VOID_RESULT);
+            idForm = new LambdaForm(idMem.getName(), 1, idNames, VOID_RESULT, Kind.IDENTITY);
             idForm.compileToBytecode();
             idFun = new NamedFunction(idMem, SimpleMethodHandle.make(idMem.getInvocationType(), idForm));
 
@@ -1856,15 +1858,17 @@ class LambdaForm {
             zeFun = idFun;
         } else {
             Name[] idNames = new Name[] { argument(0, L_TYPE), argument(1, type) };
-            idForm = new LambdaForm(idMem.getName(), 2, idNames, 1);
+            idForm = new LambdaForm(idMem.getName(), 2, idNames, 1, Kind.IDENTITY);
             idForm.compileToBytecode();
-            idFun = new NamedFunction(idMem, SimpleMethodHandle.make(idMem.getInvocationType(), idForm));
+            idFun = new NamedFunction(idMem, MethodHandleImpl.makeIntrinsic(
+                    idMem.getInvocationType(), idForm, MethodHandleImpl.Intrinsic.IDENTITY));
 
             Object zeValue = Wrapper.forBasicType(btChar).zero();
             Name[] zeNames = new Name[] { argument(0, L_TYPE), new Name(idFun, zeValue) };
-            zeForm = new LambdaForm(zeMem.getName(), 1, zeNames, 1);
+            zeForm = new LambdaForm(zeMem.getName(), 1, zeNames, 1, Kind.ZERO);
             zeForm.compileToBytecode();
-            zeFun = new NamedFunction(zeMem, SimpleMethodHandle.make(zeMem.getInvocationType(), zeForm));
+            zeFun = new NamedFunction(zeMem, MethodHandleImpl.makeIntrinsic(
+                    zeMem.getInvocationType(), zeForm, MethodHandleImpl.Intrinsic.ZERO));
         }
 
         LF_zero[ord] = zeForm;
@@ -1921,7 +1925,16 @@ class LambdaForm {
         if (USE_PREDEFINED_INTERPRET_METHODS)
             computeInitialPreparedForms();
         NamedFunction.initializeInvokers();
+
+        // The Holder class will contain pre-generated forms resolved
+        // using MemberName.getFactory(). However, that doesn't initialize the
+        // class, which subtly breaks inlining etc. By forcing
+        // initialization of the Holder class we avoid these issues.
+        UNSAFE.ensureClassInitialized(Holder.class);
     }
+
+    /* Placeholder class for zero and identity forms generated ahead of time */
+    final class Holder {}
 
     // The following hack is necessary in order to suppress TRACE_INTERPRETER
     // during execution of the static initializes of this class.

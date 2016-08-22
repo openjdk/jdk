@@ -21,7 +21,7 @@
  * questions.
  */
 
-import sun.java2d.marlin.ArrayCache;
+import sun.java2d.marlin.ArrayCacheConst;
 
 /*
  * @test
@@ -72,7 +72,7 @@ public class ArrayCacheSizeTest {
     private static void testNewSize(final int curSize,
                                     final int needSize) {
 
-        int size = ArrayCache.getNewSize(curSize, needSize);
+        int size = ArrayCacheConst.getNewSize(curSize, needSize);
 
         System.out.println("getNewSize(" + curSize + ", " + needSize
             + ") = " + size);
@@ -118,7 +118,7 @@ public class ArrayCacheSizeTest {
     private static void testNewLargeSize(final long curSize,
                                          final long needSize) {
 
-        long size = ArrayCache.getNewLargeSize(curSize, needSize);
+        long size = ArrayCacheConst.getNewLargeSize(curSize, needSize);
 
         System.out.println("getNewLargeSize(" + curSize + ", " + needSize
             + ") = " + size);

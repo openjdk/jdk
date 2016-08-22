@@ -108,6 +108,11 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
         }
         try {
             this.prf = Mac.getInstance(prfAlgo);
+            // SunPKCS11 requires a non-empty PBE password
+            if (passwdBytes.length == 0 &&
+                this.prf.getProvider().getName().startsWith("SunPKCS11")) {
+                this.prf = Mac.getInstance(prfAlgo, SunJCE.getInstance());
+            }
         } catch (NoSuchAlgorithmException nsae) {
             // not gonna happen; re-throw just in case
             InvalidKeySpecException ike = new InvalidKeySpecException();
