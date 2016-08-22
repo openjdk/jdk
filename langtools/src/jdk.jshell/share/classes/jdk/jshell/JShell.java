@@ -503,10 +503,8 @@ public class JShell implements AutoCloseable {
     /**
      * Return all snippets.
      * @return the snippets for all current snippets in id order.
-     * @throws IllegalStateException if this JShell instance is closed.
      */
-    public Stream<Snippet> snippets() throws IllegalStateException {
-        checkIfAlive();
+    public Stream<Snippet> snippets() {
         return maps.snippetList().stream();
     }
 
@@ -517,9 +515,8 @@ public class JShell implements AutoCloseable {
      * {@code && snippet.kind() == Kind.VARIABLE}
      * and cast to {@code VarSnippet}.
      * @return the active declared variables.
-     * @throws IllegalStateException if this JShell instance is closed.
      */
-    public Stream<VarSnippet> variables() throws IllegalStateException {
+    public Stream<VarSnippet> variables() {
         return snippets()
                      .filter(sn -> status(sn).isActive() && sn.kind() == Snippet.Kind.VAR)
                      .map(sn -> (VarSnippet) sn);
@@ -532,9 +529,8 @@ public class JShell implements AutoCloseable {
      * {@code && snippet.kind() == Kind.METHOD}
      * and cast to MethodSnippet.
      * @return the active declared methods.
-     * @throws IllegalStateException if this JShell instance is closed.
      */
-    public Stream<MethodSnippet> methods() throws IllegalStateException {
+    public Stream<MethodSnippet> methods() {
         return snippets()
                      .filter(sn -> status(sn).isActive() && sn.kind() == Snippet.Kind.METHOD)
                      .map(sn -> (MethodSnippet)sn);
@@ -547,9 +543,8 @@ public class JShell implements AutoCloseable {
      * {@code && snippet.kind() == Kind.TYPE_DECL}
      * and cast to TypeDeclSnippet.
      * @return the active declared type declarations.
-     * @throws IllegalStateException if this JShell instance is closed.
      */
-    public Stream<TypeDeclSnippet> types() throws IllegalStateException {
+    public Stream<TypeDeclSnippet> types() {
         return snippets()
                 .filter(sn -> status(sn).isActive() && sn.kind() == Snippet.Kind.TYPE_DECL)
                 .map(sn -> (TypeDeclSnippet) sn);
@@ -562,9 +557,8 @@ public class JShell implements AutoCloseable {
      * {@code && snippet.kind() == Kind.IMPORT}
      * and cast to ImportSnippet.
      * @return the active declared import declarations.
-     * @throws IllegalStateException if this JShell instance is closed.
      */
-    public Stream<ImportSnippet> imports() throws IllegalStateException {
+    public Stream<ImportSnippet> imports() {
         return snippets()
                 .filter(sn -> status(sn).isActive() && sn.kind() == Snippet.Kind.IMPORT)
                 .map(sn -> (ImportSnippet) sn);
