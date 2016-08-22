@@ -21,7 +21,7 @@
  * questions.
  */
 
-package java.lang.reflect;
+import jdk.internal.loader.ClassLoaderValue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +34,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Functional and concurrency test for ClassLoaderValue
- *
+ * @test
+ * @bug 8152115
+ * @summary functional and concurrency test for ClassLoaderValue
+ * @modules java.base/jdk.internal.loader
  * @author Peter Levart
  */
 public class ClassLoaderValueTest {
