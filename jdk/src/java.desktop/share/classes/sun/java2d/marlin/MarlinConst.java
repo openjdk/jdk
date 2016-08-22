@@ -62,6 +62,8 @@ interface MarlinConst {
     // enable traces
     static final boolean DO_TRACE = ENABLE_LOGS && false;
 
+    // do flush stats
+    static final boolean DO_FLUSH_STATS = true;
     // do flush monitors
     static final boolean DO_FLUSH_MONITORS = true;
     // use one polling thread to dump statistics/monitors
@@ -78,7 +80,7 @@ interface MarlinConst {
     // flag to enable logs related bounds checks
     static final boolean DO_LOG_BOUNDS = ENABLE_LOGS && false;
 
-    // Initial Array sizing (initial context capacity) ~ 350K
+    // Initial Array sizing (initial context capacity) ~ 450K
 
     // 2048 pixel (width x height) for initial capacity
     static final int INITIAL_PIXEL_DIM
@@ -86,14 +88,17 @@ interface MarlinConst {
 
     // typical array sizes: only odd numbers allowed below
     static final int INITIAL_ARRAY        = 256;
-    static final int INITIAL_SMALL_ARRAY  = 1024;
-    static final int INITIAL_MEDIUM_ARRAY = 4096;
-    static final int INITIAL_LARGE_ARRAY  = 8192;
+
     // alpha row dimension
     static final int INITIAL_AA_ARRAY     = INITIAL_PIXEL_DIM;
 
-    // initial edges (24 bytes) = 24K [ints] = 96K
-    static final int INITIAL_EDGES_CAPACITY = 4096 * 24; // 6 ints per edges
+    // 4096 edges for initial capacity
+    static final int INITIAL_EDGES_COUNT = MarlinProperties.getInitialEdges();
+
+    // initial edges = 3/4 * edges count (4096)
+    // 6 ints per edges = 24 bytes
+    // edges capacity = 24 x initial edges = 18 * edges count (4096) = 72K
+    static final int INITIAL_EDGES_CAPACITY = INITIAL_EDGES_COUNT * 18;
 
     // zero value as byte
     static final byte BYTE_0 = (byte) 0;

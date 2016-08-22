@@ -72,4 +72,10 @@ public interface JavaLangInvokeAccess {
      */
     Map.Entry<String, byte[]> generateConcreteBMHClassBytes(
             final String types);
+
+    /**
+     * Returns a {@code byte[]} containing the bytecode for a class implementing
+     * the zero and identity forms of all {@code LambdaForm.BasicType}s.
+     */
+    byte[] generateBasicFormsClassBytes(final String className);
 }

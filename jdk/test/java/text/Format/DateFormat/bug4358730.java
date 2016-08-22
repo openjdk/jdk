@@ -47,23 +47,17 @@ public class bug4358730 extends IntlTest {
     };
     int[] year = {2, 20, 200, 2000};
 
-    SimpleDateFormat sdf = new SimpleDateFormat();
     int datasize = data.length;
     int nPatterns = data[0].length;
 
     public void Test4358730() {
-        Locale locale = Locale.getDefault();
-        if (locale.equals(new Locale("th", "TH")) ||
-            locale.equals(new Locale("hi", "IN"))) {
-            return;
-        }
-
         TimeZone saveZone = TimeZone.getDefault();
         Locale saveLocale = Locale.getDefault();
 
         try {
             TimeZone.setDefault(TimeZone.getTimeZone("PST"));
             Locale.setDefault(new Locale("en", "US"));
+            SimpleDateFormat sdf = new SimpleDateFormat();
 
             for (int i = 0; i < datasize; i++) {
                 Date d = new Date(year[i]-1900, 10, 15);

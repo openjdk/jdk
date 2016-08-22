@@ -100,7 +100,9 @@ public abstract class CachedPainter {
         }
     }
 
-    private Image getImage(Object key, Component c, int w, int h, Object... args) {
+    private Image getImage(Object key, Component c,
+                           int baseWidth, int baseHeight,
+                           int w, int h, Object... args) {
         GraphicsConfiguration config = getGraphicsConfiguration(c);
         ImageCache cache = getCache(key);
         Image image = cache.getImage(key, config, w, h, args);
@@ -127,8 +129,11 @@ public abstract class CachedPainter {
             }
             if (draw) {
                 // Render to the Image
-                Graphics g2 = image.getGraphics();
-                paintToImage(c, image, g2, w, h, args);
+                Graphics2D g2 = (Graphics2D) image.getGraphics();
+                if (w != baseWidth || h != baseHeight) {
+                    g2.scale((double) w / baseWidth, (double) h / baseHeight);
+                }
+                paintToImage(c, image, g2, baseWidth, baseHeight, args);
                 g2.dispose();
             }
 
@@ -149,14 +154,7 @@ public abstract class CachedPainter {
         Image image = cache.getImage(key, config, w, h, args);
 
         if (image == null) {
-            double sx = 1;
-            double sy = 1;
-            if (g instanceof Graphics2D) {
-                AffineTransform tx = ((Graphics2D) g).getTransform();
-                sx = tx.getScaleX();
-                sy = tx.getScaleY();
-            }
-            image = new PainterMultiResolutionCachedImage(sx, sy, w, h);
+            image = new PainterMultiResolutionCachedImage(w, h);
             cache.setImage(key, config, w, h, args, image);
         }
 
@@ -238,17 +236,12 @@ public abstract class CachedPainter {
 
     class PainterMultiResolutionCachedImage extends AbstractMultiResolutionImage {
 
-        private final double scaleX;
-        private final double scaleY;
         private final int baseWidth;
         private final int baseHeight;
         private Component c;
         private Object[] args;
 
-        public PainterMultiResolutionCachedImage(double scaleX, double scaleY,
-                                                 int baseWidth, int baseHeight) {
-            this.scaleX = scaleX;
-            this.scaleY = scaleY;
+        public PainterMultiResolutionCachedImage(int baseWidth, int baseHeight) {
             this.baseWidth = baseWidth;
             this.baseHeight = baseHeight;
         }
@@ -272,7 +265,7 @@ public abstract class CachedPainter {
         public Image getResolutionVariant(double destWidth, double destHeight) {
             int w = (int) Math.ceil(destWidth);
             int h = (int) Math.ceil(destHeight);
-            return getImage(this, c, w, h, args);
+            return getImage(this, c, baseWidth, baseHeight, w, h, args);
         }
 
         @Override
@@ -282,15 +275,7 @@ public abstract class CachedPainter {
 
         @Override
         public java.util.List<Image> getResolutionVariants() {
-
-            if (scaleX == 1 && scaleY == 1) {
-                return Arrays.asList(getResolutionVariant(baseWidth, baseHeight));
-            }
-
-            return Arrays.asList(
-                    getResolutionVariant(baseWidth, baseHeight),
-                    getResolutionVariant(scaleX * baseWidth, scaleY * baseHeight)
-            );
+            return Arrays.asList(getResolutionVariant(baseWidth, baseHeight));
         }
     }
 }

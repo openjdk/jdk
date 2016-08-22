@@ -25,10 +25,11 @@
 
 package com.sun.media.sound;
 
-import javax.sound.midi.*;
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.SysexMessage;
 
 /**
- * optimized FastSysexMessage that doesn't copy the array upon instantiation
+ * optimized FastSysexMessage that doesn't copy the array upon instantiation.
  *
  * @author Florian Bomers
  */
@@ -51,6 +52,7 @@ final class FastSysexMessage extends SysexMessage {
 
     // overwrite this method so that the original data array,
     // which is shared among all transmitters, cannot be modified
+    @Override
     public void setMessage(byte[] data, int length) throws InvalidMidiDataException {
         if ((data.length == 0) || (((data[0] & 0xFF) != 0xF0) && ((data[0] & 0xFF) != 0xF7))) {
             super.setMessage(data, data.length); // will throw Exception
