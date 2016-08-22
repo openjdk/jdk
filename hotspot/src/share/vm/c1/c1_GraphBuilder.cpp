@@ -683,6 +683,7 @@ GraphBuilder::ScopeData::ScopeData(ScopeData* parent)
   , _cleanup_block(NULL)
   , _cleanup_return_prev(NULL)
   , _cleanup_state(NULL)
+  , _ignore_return(false)
 {
   if (parent != NULL) {
     _max_inline_size = (intx) ((float) NestedInliningSizeRatio * (float) parent->max_inline_size() / 100.0f);
@@ -1445,7 +1446,7 @@ void GraphBuilder::call_register_finalizer() {
 }
 
 
-void GraphBuilder::method_return(Value x) {
+void GraphBuilder::method_return(Value x, bool ignore_return) {
   if (RegisterFinalizersAtInit &&
       method()->intrinsic_id() == vmIntrinsics::_Object_init) {
     call_register_finalizer();
@@ -1518,7 +1519,9 @@ void GraphBuilder::method_return(Value x) {
     int invoke_bci = state()->caller_state()->bci();
     set_state(state()->caller_state()->copy_for_parsing());
     if (x != NULL) {
-      state()->push(x->type(), x);
+      if (!ignore_return) {
+        state()->push(x->type(), x);
+      }
       if (profile_return() && x->type()->is_object_kind()) {
         ciMethod* caller = state()->scope()->method();
         ciMethodData* md = caller->method_data_or_null();
@@ -1563,6 +1566,7 @@ void GraphBuilder::method_return(Value x) {
       append(new MemBar(lir_membar_storestore));
   }
 
+  assert(!ignore_return, "Ignoring return value works only for inlining");
   append(new Return(x));
 }
 
@@ -1981,7 +1985,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
         code == Bytecodes::_invokedynamic) {
       ciMethod* inline_target = (cha_monomorphic_target != NULL) ? cha_monomorphic_target : target;
       // static binding => check if callee is ok
-      bool success = try_inline(inline_target, (cha_monomorphic_target != NULL) || (exact_target != NULL), code, better_receiver);
+      bool success = try_inline(inline_target, (cha_monomorphic_target != NULL) || (exact_target != NULL), false, code, better_receiver);
 
       CHECK_BAILOUT();
       clear_inline_bailout();
@@ -2611,6 +2615,8 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
     push_exception = true;
   }
 
+  bool ignore_return = scope_data()->ignore_return();
+
   while (!bailed_out() && last()->as_BlockEnd() == NULL &&
          (code = stream()->next()) != ciBytecodeStream::EOBC() &&
          (block_at(s.cur_bci()) == NULL || block_at(s.cur_bci()) == block())) {
@@ -2806,12 +2812,12 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
       case Bytecodes::_ret            : ret(s.get_index()); break;
       case Bytecodes::_tableswitch    : table_switch(); break;
       case Bytecodes::_lookupswitch   : lookup_switch(); break;
-      case Bytecodes::_ireturn        : method_return(ipop()); break;
-      case Bytecodes::_lreturn        : method_return(lpop()); break;
-      case Bytecodes::_freturn        : method_return(fpop()); break;
-      case Bytecodes::_dreturn        : method_return(dpop()); break;
-      case Bytecodes::_areturn        : method_return(apop()); break;
-      case Bytecodes::_return         : method_return(NULL  ); break;
+      case Bytecodes::_ireturn        : method_return(ipop(), ignore_return); break;
+      case Bytecodes::_lreturn        : method_return(lpop(), ignore_return); break;
+      case Bytecodes::_freturn        : method_return(fpop(), ignore_return); break;
+      case Bytecodes::_dreturn        : method_return(dpop(), ignore_return); break;
+      case Bytecodes::_areturn        : method_return(apop(), ignore_return); break;
+      case Bytecodes::_return         : method_return(NULL  , ignore_return); break;
       case Bytecodes::_getstatic      : // fall through
       case Bytecodes::_putstatic      : // fall through
       case Bytecodes::_getfield       : // fall through
@@ -3336,7 +3342,7 @@ int GraphBuilder::recursive_inline_level(ciMethod* cur_callee) const {
 }
 
 
-bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, Bytecodes::Code bc, Value receiver) {
+bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc, Value receiver) {
   const char* msg = NULL;
 
   // clear out any existing inline bailout condition
@@ -3351,7 +3357,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, Bytecodes::Co
 
   // method handle invokes
   if (callee->is_method_handle_intrinsic()) {
-    if (try_method_handle_inline(callee)) {
+    if (try_method_handle_inline(callee, ignore_return)) {
       if (callee->has_reserved_stack_access()) {
         compilation()->set_has_reserved_stack_access(true);
       }
@@ -3363,7 +3369,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, Bytecodes::Co
   // handle intrinsics
   if (callee->intrinsic_id() != vmIntrinsics::_none &&
       (CheckIntrinsics ? callee->intrinsic_candidate() : true)) {
-    if (try_inline_intrinsics(callee)) {
+    if (try_inline_intrinsics(callee, ignore_return)) {
       print_inlining(callee, "intrinsic");
       if (callee->has_reserved_stack_access()) {
         compilation()->set_has_reserved_stack_access(true);
@@ -3384,7 +3390,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, Bytecodes::Co
   if (bc == Bytecodes::_illegal) {
     bc = code();
   }
-  if (try_inline_full(callee, holder_known, bc, receiver)) {
+  if (try_inline_full(callee, holder_known, ignore_return, bc, receiver)) {
     if (callee->has_reserved_stack_access()) {
       compilation()->set_has_reserved_stack_access(true);
     }
@@ -3415,7 +3421,7 @@ const char* GraphBuilder::should_not_inline(ciMethod* callee) const {
   return NULL;
 }
 
-void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee) {
+void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_return) {
   vmIntrinsics::ID id = callee->intrinsic_id();
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
@@ -3509,14 +3515,16 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee) {
                                     vmIntrinsics::can_trap(id));
   // append instruction & push result
   Value value = append_split(result);
-  if (result_type != voidType) push(result_type, value);
+  if (result_type != voidType && !ignore_return) {
+    push(result_type, value);
+  }
 
   if (callee != method() && profile_return() && result_type->is_object_kind()) {
     profile_return_type(result, callee);
   }
 }
 
-bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
+bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
   // For calling is_intrinsic_available we need to transition to
   // the '_thread_in_vm' state because is_intrinsic_available()
   // accesses critical VM-internal data.
@@ -3536,7 +3544,7 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
       return false;
     }
   }
-  build_graph_for_intrinsic(callee);
+  build_graph_for_intrinsic(callee, ignore_return);
   return true;
 }
 
@@ -3691,7 +3699,7 @@ void GraphBuilder::fill_sync_handler(Value lock, BlockBegin* sync_handler, bool 
 }
 
 
-bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecodes::Code bc, Value receiver) {
+bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc, Value receiver) {
   assert(!callee->is_native(), "callee must not be native");
   if (CompilationPolicy::policy()->should_not_inline(compilation()->env(), callee)) {
     INLINE_BAILOUT("inlining prohibited by policy");
@@ -3889,6 +3897,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
 
   // Clear out bytecode stream
   scope_data()->set_stream(NULL);
+  scope_data()->set_ignore_return(ignore_return);
 
   CompileLog* log = compilation()->log();
   if (log != NULL) log->head("parse method='%d'", log->identify(callee));
@@ -3958,7 +3967,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
 }
 
 
-bool GraphBuilder::try_method_handle_inline(ciMethod* callee) {
+bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return) {
   ValueStack* state_before = copy_state_before();
   vmIntrinsics::ID iid = callee->intrinsic_id();
   switch (iid) {
@@ -3972,7 +3981,8 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee) {
         // We don't do CHA here so only inline static and statically bindable methods.
         if (target->is_static() || target->can_be_statically_bound()) {
           Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
-          if (try_inline(target, /*holder_known*/ true, bc)) {
+          ignore_return = ignore_return || (callee->return_type()->is_void() && !target->return_type()->is_void());
+          if (try_inline(target, /*holder_known*/ true, ignore_return, bc)) {
             return true;
           }
         } else {
@@ -3994,10 +4004,11 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee) {
       ValueType* type = apop()->type();
       if (type->is_constant()) {
         ciMethod* target = type->as_ObjectType()->constant_value()->as_member_name()->get_vmtarget();
+        ignore_return = ignore_return || (callee->return_type()->is_void() && !target->return_type()->is_void());
         // If the target is another method handle invoke, try to recursively get
         // a better target.
         if (target->is_method_handle_intrinsic()) {
-          if (try_method_handle_inline(target)) {
+          if (try_method_handle_inline(target, ignore_return)) {
             return true;
           }
         } else {
@@ -4032,7 +4043,7 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee) {
           // We don't do CHA here so only inline static and statically bindable methods.
           if (target->is_static() || target->can_be_statically_bound()) {
             Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
-            if (try_inline(target, /*holder_known*/ true, bc)) {
+            if (try_inline(target, /*holder_known*/ true, ignore_return, bc)) {
               return true;
             }
           } else {
