@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8130450 8158906
+ * @test 8130450 8158906 8154374
  * @summary simple regression test
  * @build KullaTesting TestingInputStream
  * @run testng SimpleRegressionTest
@@ -143,5 +143,10 @@ public class SimpleRegressionTest extends KullaTesting {
         assertEval("boolean b;",
                 ste(MAIN_SNIPPET, VALID, VALID, false, null),
                 ste(snv, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
+    }
+
+    public void testContextClassLoader() {
+        assertEval("class C {}");
+        assertEval("C.class.getClassLoader() == Thread.currentThread().getContextClassLoader()", "true");
     }
 }

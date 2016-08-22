@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953
+ * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347
  * @summary Tests for Basic tests for REPL tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -540,6 +540,13 @@ public class ToolBasicTest extends ReplToolTesting {
                 );
             }
         }
+    }
+
+    public void testVarsWithNotActive() {
+        test(
+                a -> assertVariable(a, "Blath", "x"),
+                a -> assertCommandOutputContains(a, "/var -all", "(not-active)")
+        );
     }
 
     public void testHistoryReference() {

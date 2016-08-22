@@ -1919,7 +1919,7 @@ public class JShellTool implements MessageHandler {
         {
             String val = state.status(vk) == Status.VALID
                     ? state.varValue(vk)
-                    : "jshell.msg.vars.not.active";
+                    : getResourceString("jshell.msg.vars.not.active");
             hard("  %s %s = %s", vk.typeName(), vk.name(), val);
         });
         return true;
