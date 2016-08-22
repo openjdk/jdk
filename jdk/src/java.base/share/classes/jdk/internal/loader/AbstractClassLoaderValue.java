@@ -21,12 +21,12 @@
  * questions.
  */
 
-package java.lang.reflect;
+package jdk.internal.loader;
 
-import jdk.internal.loader.BootLoader;
 import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.SharedSecrets;
 
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,7 +40,7 @@ import java.util.function.Supplier;
  * @param <CLV> the type of concrete ClassLoaderValue (this type)
  * @param <V>   the type of values associated with ClassLoaderValue
  */
-abstract class AbstractClassLoaderValue<CLV extends AbstractClassLoaderValue<CLV, V>, V> {
+public abstract class AbstractClassLoaderValue<CLV extends AbstractClassLoaderValue<CLV, V>, V> {
 
     /**
      * Sole constructor.
@@ -377,7 +377,7 @@ abstract class AbstractClassLoaderValue<CLV extends AbstractClassLoaderValue<CLV
      * @param <K> the type of {@link #key()} component contained in the
      *            sub-ClassLoaderValue.
      */
-    final class Sub<K> extends AbstractClassLoaderValue<Sub<K>, V> {
+    public final class Sub<K> extends AbstractClassLoaderValue<Sub<K>, V> {
 
         private final K key;
 

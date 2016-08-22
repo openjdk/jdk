@@ -21,7 +21,7 @@
  * questions.
  */
 
-package java.lang.reflect;
+package jdk.internal.loader;
 
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -74,7 +74,7 @@ import java.util.function.BiFunction;
  * @author Peter Levart
  * @since 9
  */
-final class ClassLoaderValue<V>
+public final class ClassLoaderValue<V>
     extends AbstractClassLoaderValue<ClassLoaderValue<V>, V> {
 
     /**
