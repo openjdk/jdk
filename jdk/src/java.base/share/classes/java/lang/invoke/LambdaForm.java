@@ -1860,13 +1860,15 @@ class LambdaForm {
             Name[] idNames = new Name[] { argument(0, L_TYPE), argument(1, type) };
             idForm = new LambdaForm(idMem.getName(), 2, idNames, 1, Kind.IDENTITY);
             idForm.compileToBytecode();
-            idFun = new NamedFunction(idMem, SimpleMethodHandle.make(idMem.getInvocationType(), idForm));
+            idFun = new NamedFunction(idMem, MethodHandleImpl.makeIntrinsic(
+                    idMem.getInvocationType(), idForm, MethodHandleImpl.Intrinsic.IDENTITY));
 
             Object zeValue = Wrapper.forBasicType(btChar).zero();
             Name[] zeNames = new Name[] { argument(0, L_TYPE), new Name(idFun, zeValue) };
             zeForm = new LambdaForm(zeMem.getName(), 1, zeNames, 1, Kind.ZERO);
             zeForm.compileToBytecode();
-            zeFun = new NamedFunction(zeMem, SimpleMethodHandle.make(zeMem.getInvocationType(), zeForm));
+            zeFun = new NamedFunction(zeMem, MethodHandleImpl.makeIntrinsic(
+                    zeMem.getInvocationType(), zeForm, MethodHandleImpl.Intrinsic.ZERO));
         }
 
         LF_zero[ord] = zeForm;

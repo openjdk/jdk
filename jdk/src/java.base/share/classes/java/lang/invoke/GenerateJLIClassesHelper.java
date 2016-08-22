@@ -43,8 +43,16 @@ class GenerateJLIClassesHelper {
         ArrayList<String> names = new ArrayList<>();
         HashSet<String> dedupSet = new HashSet<>();
         for (LambdaForm.BasicType type : LambdaForm.BasicType.values()) {
+            LambdaForm zero = LambdaForm.zeroForm(type);
+            String name = zero.kind.defaultLambdaName
+                   + "_" + zero.returnType().basicTypeChar();
+            if (dedupSet.add(name)) {
+                names.add(name);
+                forms.add(zero);
+            }
+
             LambdaForm identity = LambdaForm.identityForm(type);
-            String name = identity.kind.defaultLambdaName
+            name = identity.kind.defaultLambdaName
                    + "_" + identity.returnType().basicTypeChar();
             if (dedupSet.add(name)) {
                 names.add(name);
