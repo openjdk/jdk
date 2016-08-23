@@ -342,7 +342,7 @@ class ciMethod : public ciMetadata {
   void print_short_name(outputStream* st = tty);
 
 #if INCLUDE_TRACE
-  TraceStructCiMethod to_trace_struct() const;
+  TraceStructCalleeMethod to_trace_struct() const;
 #endif
 };
 
