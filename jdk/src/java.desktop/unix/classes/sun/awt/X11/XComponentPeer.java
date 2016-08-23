@@ -57,8 +57,6 @@ import java.awt.image.ImageProducer;
 import java.awt.image.VolatileImage;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.ContainerPeer;
-import java.lang.reflect.*;
-import java.security.*;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
@@ -241,46 +239,8 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         return false;
     }
 
-    private static Class<?> seClass;
-    private static Constructor<?> seCtor;
-
     static final AWTEvent wrapInSequenced(AWTEvent event) {
-        try {
-            if (seClass == null) {
-                seClass = Class.forName("java.awt.SequencedEvent");
-            }
-
-            if (seCtor == null) {
-                seCtor = AccessController.doPrivileged(new
-                    PrivilegedExceptionAction<Constructor<?>>() {
-                        public Constructor<?> run() throws Exception {
-                            Constructor<?> ctor = seClass.getConstructor(
-                                new Class<?>[] { AWTEvent.class });
-                            ctor.setAccessible(true);
-                            return ctor;
-                        }
-                    });
-            }
-
-            return (AWTEvent) seCtor.newInstance(new Object[] { event });
-        }
-        catch (ClassNotFoundException e) {
-            throw new NoClassDefFoundError("java.awt.SequencedEvent.");
-        }
-        catch (PrivilegedActionException ex) {
-            throw new NoClassDefFoundError("java.awt.SequencedEvent.");
-        }
-        catch (InstantiationException e) {
-            assert false;
-        }
-        catch (IllegalAccessException e) {
-            assert false;
-        }
-        catch (InvocationTargetException e) {
-            assert false;
-        }
-
-        return null;
+        return AWTAccessor.getSequencedEventAccessor().create(event);
     }
 
     // TODO: consider moving it to KeyboardFocusManagerPeerImpl
