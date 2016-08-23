@@ -37,6 +37,7 @@ import sun.awt.AWTAccessor;
 
 import javax.accessibility.*;
 import javax.swing.*;
+import sun.awt.AWTAccessor;
 
 class CAccessibility implements PropertyChangeListener {
     private static Set<String> ignoredRoles;
@@ -205,33 +206,12 @@ class CAccessibility implements PropertyChangeListener {
         }, c);
     }
 
-    static Field getAccessibleBundleKeyFieldWithReflection() {
-        try {
-            final Field fieldKey = AccessibleBundle.class.getDeclaredField("key");
-            fieldKey.setAccessible(true);
-            return fieldKey;
-        } catch (final SecurityException e) {
-            e.printStackTrace();
-        } catch (final NoSuchFieldException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-    private static final Field FIELD_KEY = getAccessibleBundleKeyFieldWithReflection();
-
     static String getAccessibleRoleFor(final Accessible a) {
         final AccessibleContext ac = a.getAccessibleContext();
         if (ac == null) return null;
 
         final AccessibleRole role = ac.getAccessibleRole();
-        try {
-            return (String)FIELD_KEY.get(role);
-        } catch (final IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (final IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return null;
+        return AWTAccessor.getAccessibleBundleAccessor().getKey(role);
     }
 
     public static String getAccessibleRole(final Accessible a, final Component c) {
