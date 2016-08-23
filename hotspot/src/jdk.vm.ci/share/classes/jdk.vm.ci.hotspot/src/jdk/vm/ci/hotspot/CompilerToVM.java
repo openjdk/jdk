@@ -352,6 +352,7 @@ final class CompilerToVM {
      *         [String name, Long value, ...] vmConstants,
      *         [String name, Long value, ...] vmAddresses,
      *         VMFlag[] vmFlags
+     *         VMIntrinsicMethod[] vmIntrinsics
      *     ]
      * </pre>
      *

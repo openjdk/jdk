@@ -83,8 +83,10 @@ class CompilerToVM {
     }
   };
 
- public:
   static JNINativeMethod methods[];
+
+  static objArrayHandle initialize_intrinsics(TRAPS);
+ public:
   static int methods_count();
 
   static inline Method* asMethod(jobject jvmci_method) {
