@@ -173,7 +173,7 @@ void SafepointSynchronize::begin() {
   //     block itself when it attempts transitions to a new state.
   //
   {
-    EventSafepointStateSync sync_event;
+    EventSafepointStateSynchronization sync_event;
     int initial_running = 0;
 
     _state            = _synchronizing;

@@ -1047,7 +1047,7 @@ UNSAFE_ENTRY(void, Unsafe_Park(JNIEnv *env, jobject unsafe, jboolean isAbsolute,
 
   if (event.should_commit()) {
     oop obj = thread->current_park_blocker();
-    event.set_klass((obj != NULL) ? obj->klass() : NULL);
+    event.set_parkedClass((obj != NULL) ? obj->klass() : NULL);
     event.set_timeout(time);
     event.set_address((obj != NULL) ? (TYPE_ADDRESS) cast_from_oop<uintptr_t>(obj) : 0);
     event.commit();
