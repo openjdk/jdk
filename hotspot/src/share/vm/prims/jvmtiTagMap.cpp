@@ -3119,6 +3119,11 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
             }
           }
 
+          // Follow oops from compiled nmethod
+          if (jvf->cb() != NULL && jvf->cb()->is_nmethod()) {
+            blk->set_context(thread_tag, tid, depth, method);
+            jvf->cb()->as_nmethod()->oops_do(blk);
+          }
         } else {
           blk->set_context(thread_tag, tid, depth, method);
           if (is_top_frame) {
