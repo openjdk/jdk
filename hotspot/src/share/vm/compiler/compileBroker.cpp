@@ -1755,7 +1755,7 @@ void CompileBroker::post_compile(CompilerThread* thread, CompileTask* task, Even
   assert(task->compile_id() != CICrashAt, "just as planned");
   if (event.should_commit()) {
     event.set_method(task->method());
-    event.set_compileID(task->compile_id());
+    event.set_compileId(task->compile_id());
     event.set_compileLevel(task->comp_level());
     event.set_succeded(task->is_success());
     event.set_isOsr(task->osr_bci() != CompileBroker::standard_entry_bci);
@@ -2399,4 +2399,3 @@ void CompileBroker::print_last_compile() {
     }
   }
 }
-
