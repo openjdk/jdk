@@ -87,6 +87,16 @@ public final class Utils {
      */
     public static final String TEST_SRC = System.getProperty("test.src", "").trim();
 
+    /*
+     * Returns the value of 'test.jdk' system property
+     */
+    public static final String TEST_JDK = System.getProperty("test.jdk");
+
+    /**
+     * Returns the value of 'test.classes' system property
+     */
+    public static final String TEST_CLASSES = System.getProperty("test.classes", ".");
+
     private static Unsafe unsafe = null;
 
     /**
