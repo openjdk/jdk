@@ -944,6 +944,10 @@ public class ServiceDialog extends JDialog implements ActionListener {
                  } catch (MalformedURLException ex) {
                      dstSupported = true;
                  }
+            } else {
+                if (psCurrent.isAttributeCategorySupported(dstCategory)) {
+                    dstSupported = true;
+                }
             }
             cbPrintToFile.setEnabled(dstSupported && dstAllowed);
             cbPrintToFile.setSelected(dstSelected && dstAllowed
