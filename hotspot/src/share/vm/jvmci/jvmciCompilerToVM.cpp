@@ -1266,10 +1266,23 @@ C2V_END
 
 C2V_VMENTRY(void, resolveInvokeHandleInPool, (JNIEnv*, jobject, jobject jvmci_constant_pool, jint index))
   constantPoolHandle cp = CompilerToVM::asConstantPool(jvmci_constant_pool);
-  CallInfo callInfo;
-  LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, Bytecodes::_invokehandle, CHECK);
-  ConstantPoolCacheEntry* cp_cache_entry = cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
-  cp_cache_entry->set_method_handle(cp, callInfo);
+  KlassHandle holder = cp->klass_ref_at(index, CHECK);
+  Symbol* name = cp->name_ref_at(index);
+  if (MethodHandles::is_signature_polymorphic_name(holder(), name)) {
+    CallInfo callInfo;
+    LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, Bytecodes::_invokehandle, CHECK);
+    ConstantPoolCacheEntry* cp_cache_entry = cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
+    cp_cache_entry->set_method_handle(cp, callInfo);
+  }
+C2V_END
+
+C2V_VMENTRY(jobject, getSignaturePolymorphicHolders, (JNIEnv*, jobject))
+  objArrayHandle holders = oopFactory::new_objArray(SystemDictionary::String_klass(), 2, CHECK_NULL);
+  Handle mh = java_lang_String::create_from_str("Ljava/lang/invoke/MethodHandle;", CHECK_NULL);
+  Handle vh = java_lang_String::create_from_str("Ljava/lang/invoke/VarHandle;", CHECK_NULL);
+  holders->obj_at_put(0, mh());
+  holders->obj_at_put(1, vh());
+  return JNIHandles::make_local(THREAD, holders());
 C2V_END
 
 C2V_VMENTRY(jboolean, shouldDebugNonSafepoints, (JNIEnv*, jobject))
@@ -1511,6 +1524,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "resolveInvokeDynamicInPool",                   CC "(" HS_CONSTANT_POOL "I)V",                                                        FN_PTR(resolveInvokeDynamicInPool)},
   {CC "resolveInvokeHandleInPool",                    CC "(" HS_CONSTANT_POOL "I)V",                                                        FN_PTR(resolveInvokeHandleInPool)},
   {CC "resolveMethod",                                CC "(" HS_RESOLVED_KLASS HS_RESOLVED_METHOD HS_RESOLVED_KLASS ")" HS_RESOLVED_METHOD, FN_PTR(resolveMethod)},
+  {CC "getSignaturePolymorphicHolders",               CC "()[" STRING,                                                                      FN_PTR(getSignaturePolymorphicHolders)},
   {CC "getVtableIndexForInterfaceMethod",             CC "(" HS_RESOLVED_KLASS HS_RESOLVED_METHOD ")I",                                     FN_PTR(getVtableIndexForInterfaceMethod)},
   {CC "getClassInitializer",                          CC "(" HS_RESOLVED_KLASS ")" HS_RESOLVED_METHOD,                                      FN_PTR(getClassInitializer)},
   {CC "hasFinalizableSubclass",                       CC "(" HS_RESOLVED_KLASS ")Z",                                                        FN_PTR(hasFinalizableSubclass)},
