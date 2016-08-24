@@ -150,26 +150,39 @@ inline void Atomic::dec(volatile size_t* dest) {
  * as well as defining VM_HAS_SPECIALIZED_CMPXCHG_BYTE. This will cause the platform specific
  * implementation to be used instead.
  */
-inline jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte *dest, jbyte comparand, cmpxchg_memory_order order)
-{
-  assert(sizeof(jbyte) == 1, "assumption.");
-  uintptr_t dest_addr = (uintptr_t)dest;
-  uintptr_t offset = dest_addr % sizeof(jint);
-  volatile jint* dest_int = (volatile jint*)(dest_addr - offset);
+inline jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest,
+                             jbyte compare_value, cmpxchg_memory_order order) {
+  STATIC_ASSERT(sizeof(jbyte) == 1);
+  volatile jint* dest_int =
+      static_cast<volatile jint*>(align_ptr_down(dest, sizeof(jint)));
+  size_t offset = pointer_delta(dest, dest_int, 1);
   jint cur = *dest_int;
-  jbyte* cur_as_bytes = (jbyte*)(&cur);
-  jint new_val = cur;
-  jbyte* new_val_as_bytes = (jbyte*)(&new_val);
-  new_val_as_bytes[offset] = exchange_value;
-  while (cur_as_bytes[offset] == comparand) {
-    jint res = cmpxchg(new_val, dest_int, cur, order);
-    if (res == cur) break;
+  jbyte* cur_as_bytes = reinterpret_cast<jbyte*>(&cur);
+
+  // current value may not be what we are looking for, so force it
+  // to that value so the initial cmpxchg will fail if it is different
+  cur_as_bytes[offset] = compare_value;
+
+  // always execute a real cmpxchg so that we get the required memory
+  // barriers even on initial failure
+  do {
+    // value to swap in matches current value ...
+    jint new_value = cur;
+    // ... except for the one jbyte we want to update
+    reinterpret_cast<jbyte*>(&new_value)[offset] = exchange_value;
+
+    jint res = cmpxchg(new_value, dest_int, cur, order);
+    if (res == cur) break; // success
+
+    // at least one jbyte in the jint changed value, so update
+    // our view of the current jint
     cur = res;
-    new_val = cur;
-    new_val_as_bytes[offset] = exchange_value;
-  }
+    // if our jbyte is still as cur we loop and try again
+  } while (cur_as_bytes[offset] == compare_value);
+
   return cur_as_bytes[offset];
 }
+
 #endif // VM_HAS_SPECIALIZED_CMPXCHG_BYTE
 
 inline unsigned Atomic::xchg(unsigned int exchange_value, volatile unsigned int* dest) {
