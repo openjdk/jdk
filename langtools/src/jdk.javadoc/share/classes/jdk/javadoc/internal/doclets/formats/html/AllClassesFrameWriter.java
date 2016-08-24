@@ -105,7 +105,6 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
         allclassgen.buildAllClassesFile(wantFrames);
         allclassgen = new AllClassesFrameWriter(configuration,
                                                 fileName, indexBuilder);
-        allclassgen.buildAllClassesFile(false);
     }
 
     /**
