@@ -3800,10 +3800,6 @@ int os::stat(const char *path, struct stat *sbuf) {
   return ::stat(pathbuf, sbuf);
 }
 
-bool os::check_heap(bool force) {
-  return true;
-}
-
 // Is a (classpath) directory empty?
 bool os::dir_is_empty(const char* path) {
   DIR *dir = NULL;
