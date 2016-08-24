@@ -31,7 +31,7 @@
  *          java.instrument
  *          jdk.jartool/sun.tools.jar
  * @run main RedefineClassHelper
- * @run main/othervm -javaagent:redefineagent.jar -XX:TraceRedefineClasses=0x600 RedefineRunningMethodsWithResolutionErrors
+ * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace RedefineRunningMethodsWithResolutionErrors
  */
 
 import jdk.internal.org.objectweb.asm.ClassWriter;
