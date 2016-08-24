@@ -629,6 +629,10 @@ class InvokerBytecodeGenerator {
                 name = name + "_" + form.returnType().basicTypeChar();
                 return resolveFrom(name, invokerType, LambdaForm.Holder.class);
             }
+            case EXACT_INVOKER:             // fall-through
+            case EXACT_LINKER:              // fall-through
+            case GENERIC_INVOKER:           // fall-through
+            case GENERIC_LINKER:            return resolveFrom(name, invokerType.basicType(), Invokers.Holder.class);
             case GET_OBJECT:                // fall-through
             case GET_BOOLEAN:               // fall-through
             case GET_BYTE:                  // fall-through

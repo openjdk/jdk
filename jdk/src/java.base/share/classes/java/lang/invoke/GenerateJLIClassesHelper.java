@@ -133,6 +133,34 @@ class GenerateJLIClassesHelper {
                 forms.toArray(new LambdaForm[0]));
     }
 
+    static byte[] generateInvokersHolderClassBytes(String className,
+            MethodType[] methodTypes) {
+
+        HashSet<MethodType> dedupSet = new HashSet<>();
+        ArrayList<LambdaForm> forms = new ArrayList<>();
+        ArrayList<String> names = new ArrayList<>();
+        int[] types = {
+            MethodTypeForm.LF_EX_LINKER,
+            MethodTypeForm.LF_EX_INVOKER,
+            MethodTypeForm.LF_GEN_LINKER,
+            MethodTypeForm.LF_GEN_INVOKER
+        };
+        for (int i = 0; i < methodTypes.length; i++) {
+            // generate methods representing invokers of the specified type
+            if (dedupSet.add(methodTypes[i])) {
+                for (int type : types) {
+                    LambdaForm invokerForm = Invokers.invokeHandleForm(methodTypes[i],
+                            /*customized*/false, type);
+                    forms.add(invokerForm);
+                    names.add(invokerForm.kind.defaultLambdaName);
+                }
+            }
+        }
+        return generateCodeBytesForLFs(className,
+                names.toArray(new String[0]),
+                forms.toArray(new LambdaForm[0]));
+    }
+
     /*
      * Generate customized code for a set of LambdaForms of specified types into
      * a class with a specified name.
