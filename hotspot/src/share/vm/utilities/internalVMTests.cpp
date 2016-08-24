@@ -60,7 +60,6 @@ void InternalVMTests::run() {
   run_unit_test(TestOldSize_test);
   run_unit_test(TestKlass_test);
   run_unit_test(TestBitMap_test);
-  run_unit_test(TestAsUtf8);
   run_unit_test(TestResourcehash_test);
   run_unit_test(ObjectMonitor_test);
   run_unit_test(Test_linked_list);
