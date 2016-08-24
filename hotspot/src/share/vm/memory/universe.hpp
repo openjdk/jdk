@@ -480,8 +480,7 @@ class Universe: AllStatic {
     Verify_ClassLoaderDataGraph = 64,
     Verify_MetaspaceAux = 128,
     Verify_JNIHandles = 256,
-    Verify_CHeap = 512,
-    Verify_CodeCacheOops = 1024,
+    Verify_CodeCacheOops = 512,
     Verify_All = -1
   };
   static void initialize_verify_flags();
