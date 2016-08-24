@@ -275,6 +275,10 @@ class LambdaForm {
         BOUND_REINVOKER("BMH.reinvoke"),
         REINVOKER("MH.reinvoke"),
         DELEGATE("MH.delegate"),
+        EXACT_LINKER("MH.invokeExact_MT"),
+        EXACT_INVOKER("MH.exactInvoker"),
+        GENERIC_LINKER("MH.invoke_MT"),
+        GENERIC_INVOKER("MH.invoker"),
         DIRECT_INVOKE_VIRTUAL("DMH.invokeVirtual"),
         DIRECT_INVOKE_SPECIAL("DMH.invokeSpecial"),
         DIRECT_INVOKE_STATIC("DMH.invokeStatic"),
@@ -364,6 +368,10 @@ class LambdaForm {
     LambdaForm(String debugName,
                int arity, Name[] names) {
         this(debugName, arity, names, LAST_RESULT, /*forceInline=*/true, /*customized=*/null, Kind.GENERIC);
+    }
+    LambdaForm(String debugName,
+               int arity, Name[] names, Kind kind) {
+        this(debugName, arity, names, LAST_RESULT, /*forceInline=*/true, /*customized=*/null, kind);
     }
     LambdaForm(String debugName,
                int arity, Name[] names, boolean forceInline) {
