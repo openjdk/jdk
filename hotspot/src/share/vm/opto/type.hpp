@@ -210,11 +210,11 @@ public:
   static int cmp( const Type *const t1, const Type *const t2 );
   // Test for higher or equal in lattice
   // Variant that drops the speculative part of the types
-  int higher_equal(const Type *t) const {
+  bool higher_equal(const Type *t) const {
     return !cmp(meet(t),t->remove_speculative());
   }
   // Variant that keeps the speculative part of the types
-  int higher_equal_speculative(const Type *t) const {
+  bool higher_equal_speculative(const Type *t) const {
     return !cmp(meet_speculative(t),t);
   }
 

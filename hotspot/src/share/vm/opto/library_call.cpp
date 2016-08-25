@@ -2309,25 +2309,27 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   if (_gvn.type(base)->isa_ptr() != TypePtr::NULL_PTR) {
     heap_base_oop = base;
   }
+
+  // Can base be NULL? Otherwise, always on-heap access.
+  bool can_access_non_heap = TypePtr::NULL_PTR->higher_equal(_gvn.type(heap_base_oop));
+
   val = is_store ? argument(4) : NULL;
 
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
-  // Try to categorize the address.  If it comes up as TypeJavaPtr::BOTTOM,
-  // there was not enough information to nail it down.
+  // Try to categorize the address.
   Compile::AliasType* alias_type = C->alias_type(adr_type);
   assert(alias_type->index() != Compile::AliasIdxBot, "no bare pointers here");
 
-  // Only field, array element or unknown locations are supported.
-  if (alias_type->adr_type() != TypeRawPtr::BOTTOM &&
-      alias_type->adr_type() != TypeOopPtr::BOTTOM &&
-      alias_type->basic_type() == T_ILLEGAL) {
-    return false;
+  if (alias_type->adr_type() == TypeInstPtr::KLASS ||
+      alias_type->adr_type() == TypeAryPtr::RANGE) {
+    return false; // not supported
   }
 
   bool mismatched = false;
   BasicType bt = alias_type->basic_type();
   if (bt != T_ILLEGAL) {
+    assert(alias_type->adr_type()->is_oopptr(), "should be on-heap access");
     if (bt == T_BYTE && adr_type->isa_aryptr()) {
       // Alias type doesn't differentiate between byte[] and boolean[]).
       // Use address type to get the element type.
@@ -2342,9 +2344,11 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
       return false;
     }
     mismatched = (bt != type);
-  } else if (alias_type->adr_type() == TypeOopPtr::BOTTOM) {
+  } else if (alias_type->adr_type()->isa_oopptr()) {
     mismatched = true; // conservatively mark all "wide" on-heap accesses as mismatched
   }
+
+  assert(!mismatched || alias_type->adr_type()->is_oopptr(), "off-heap access can't be mismatched");
 
   // First guess at the value type.
   const Type *value_type = Type::get_const_basic_type(type);
@@ -2357,7 +2361,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   bool need_mem_bar;
   switch (kind) {
       case Relaxed:
-          need_mem_bar = (alias_type->adr_type() == TypeOopPtr::BOTTOM);
+          need_mem_bar = mismatched || can_access_non_heap;
           break;
       case Opaque:
           // Opaque uses CPUOrder membars for protection against code movement.
@@ -2512,7 +2516,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
       (void) store_to_memory(control(), adr, val, type, adr_type, mo, requires_atomic_access, unaligned, mismatched);
     } else {
       // Possibly an oop being stored to Java heap or native memory
-      if (!TypePtr::NULL_PTR->higher_equal(_gvn.type(heap_base_oop))) {
+      if (!can_access_non_heap) {
         // oop to Java heap.
         (void) store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, type, mo, mismatched);
       } else {
