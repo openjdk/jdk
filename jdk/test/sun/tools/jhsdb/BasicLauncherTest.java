@@ -35,6 +35,7 @@ import static jdk.testlibrary.Asserts.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.InputStreamReader;
 import java.io.File;
 import java.util.ArrayList;
@@ -84,21 +85,34 @@ public class BasicLauncherTest {
             ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
             processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
             Process toolProcess = processBuilder.start();
-            toolProcess.getOutputStream().write("quit\n".getBytes());
-            toolProcess.getOutputStream().close();
+
+            try (OutputStream out = toolProcess.getOutputStream()) {
+                out.write("universe\n".getBytes());
+                out.write("quit\n".getBytes());
+            }
 
             // By default child process output stream redirected to pipe, so we are reading it in foreground.
-            BufferedReader reader = new BufferedReader(new InputStreamReader(toolProcess.getInputStream()));
+            Exception unexpected = null;
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(toolProcess.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    line = line.trim();
+                    System.out.println(line);
 
-            String line;
-            while ((line = reader.readLine()) != null) {
-                System.out.println(line.trim());
+                    if (line.contains("unknown subtype of CollectedHeap")) {
+                        unexpected = new RuntimeException("CollectedHeap type should be known.");
+                    }
+                }
             }
 
             toolProcess.waitFor();
 
             if (toolProcess.exitValue() != 0) {
                 throw new RuntimeException("FAILED CLHSDB terminated with non-zero exit code " + toolProcess.exitValue());
+            }
+
+            if (unexpected != null) {
+                throw unexpected;
             }
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
