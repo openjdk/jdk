@@ -1708,16 +1708,21 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
   const TypePtr* flat = flatten_alias_type(adr_type);
 
 #ifdef ASSERT
-  assert(flat == flatten_alias_type(flat), "idempotent");
-  assert(flat != TypePtr::BOTTOM,     "cannot alias-analyze an untyped ptr");
-  if (flat->isa_oopptr() && !flat->isa_klassptr()) {
-    const TypeOopPtr* foop = flat->is_oopptr();
-    // Scalarizable allocations have exact klass always.
-    bool exact = !foop->klass_is_exact() || foop->is_known_instance();
-    const TypePtr* xoop = foop->cast_to_exactness(exact)->is_ptr();
-    assert(foop == flatten_alias_type(xoop), "exactness must not affect alias type");
+  {
+    ResourceMark rm;
+    assert(flat == flatten_alias_type(flat), "not idempotent: adr_type = %s; flat = %s => %s",
+           Type::str(adr_type), Type::str(flat), Type::str(flatten_alias_type(flat)));
+    assert(flat != TypePtr::BOTTOM, "cannot alias-analyze an untyped ptr: adr_type = %s",
+           Type::str(adr_type));
+    if (flat->isa_oopptr() && !flat->isa_klassptr()) {
+      const TypeOopPtr* foop = flat->is_oopptr();
+      // Scalarizable allocations have exact klass always.
+      bool exact = !foop->klass_is_exact() || foop->is_known_instance();
+      const TypePtr* xoop = foop->cast_to_exactness(exact)->is_ptr();
+      assert(foop == flatten_alias_type(xoop), "exactness must not affect alias type: foop = %s; xoop = %s",
+             Type::str(foop), Type::str(xoop));
+    }
   }
-  assert(flat == flatten_alias_type(flat), "exact bit doesn't matter");
 #endif
 
   int idx = AliasIdxTop;
