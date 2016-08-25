@@ -88,7 +88,7 @@ public class ToolCommandOptionTest extends ReplToolTesting {
     }
 
     public void dropTest() {
-        test(false, new String[]{"-nostartup"},
+        test(false, new String[]{"--no-startup"},
                 (a) -> assertCommand(a, "int x = 5;",
                         "x ==> 5"),
                 (a) -> assertCommand(a, "x",

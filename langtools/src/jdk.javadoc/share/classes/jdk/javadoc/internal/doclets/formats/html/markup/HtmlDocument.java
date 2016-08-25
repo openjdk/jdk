@@ -30,7 +30,6 @@ import java.io.Writer;
 import java.util.*;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 
 /**
  * Class for generating an HTML document for javadoc output.
@@ -86,13 +85,11 @@ public class HtmlDocument extends Content {
      * This method is not supported by the class.
      *
      * @param stringContent string content that needs to be added
-     * @throws DocletAbortException this method will always throw a
-     *                              DocletAbortException because it
-     *                              is not supported.
+     * @throws UnsupportedOperationException always
      */
     @Override
     public void addContent(CharSequence stringContent) {
-        throw new DocletAbortException("not supported");
+        throw new UnsupportedOperationException();
     }
 
     /**
