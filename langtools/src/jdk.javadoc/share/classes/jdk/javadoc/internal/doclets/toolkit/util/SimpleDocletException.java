@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,38 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
-/**
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- */
-public class DocletAbortException extends RuntimeException {
-    private static final long serialVersionUID = -9131058909576418984L;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 
-    public DocletAbortException(String message) {
+
+/**
+ * An exception with a user-friendly detail message.
+ *
+ * <p><b>This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
+ */
+public class SimpleDocletException extends DocletException {
+
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * Creates an exception with a user-friendly detail message.
+     *
+     * @param message a localized detail message, suitable for direct presentation to the end user
+     */
+    public SimpleDocletException(String message) {
         super(message);
     }
 
-    public DocletAbortException(Throwable cause) {
-        super(cause);
+    /**
+     * Creates an exception with a user-friendly detail message, and underlying cause.
+     * The cause may be used for debugging but in normal use, should not be presented to the user.
+     *
+     * @param message a localized detail message, suitable for direct presentation to the end user
+     * @param cause the underlying cause for the exception
+     */
+    public SimpleDocletException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

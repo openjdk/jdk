@@ -58,7 +58,7 @@ public class CommandCompletionTest extends ReplToolTesting {
     }
 
     public void testList() {
-        test(false, new String[] {"-nostartup"},
+        test(false, new String[] {"--no-startup"},
                 a -> assertCompletion(a, "/l|", false, "/list "),
                 a -> assertCompletion(a, "/list |", false, "-all ", "-history ", "-start "),
                 a -> assertCompletion(a, "/list -h|", false, "-history "),
@@ -70,7 +70,7 @@ public class CommandCompletionTest extends ReplToolTesting {
     }
 
     public void testDrop() {
-        test(false, new String[] {"-nostartup"},
+        test(false, new String[] {"--no-startup"},
                 a -> assertCompletion(a, "/d|", false, "/drop "),
                 a -> assertClass(a, "class cTest {}", "class", "cTest"),
                 a -> assertMethod(a, "int mTest() { return 0; }", "()I", "mTest"),
@@ -81,7 +81,7 @@ public class CommandCompletionTest extends ReplToolTesting {
     }
 
     public void testEdit() {
-        test(false, new String[]{"-nostartup"},
+        test(false, new String[]{"--no-startup"},
                 a -> assertCompletion(a, "/e|", false, "/edit ", "/exit "),
                 a -> assertCompletion(a, "/ed|", false, "/edit "),
                 a -> assertClass(a, "class cTest {}", "class", "cTest"),

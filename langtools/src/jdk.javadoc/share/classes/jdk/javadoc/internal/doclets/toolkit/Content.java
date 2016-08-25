@@ -30,9 +30,6 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Objects;
 
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
-
-
 /**
  * A class to create content for javadoc output pages.
  *
@@ -57,7 +54,7 @@ public abstract class Content {
             write(out, true);
         } catch (IOException e) {
             // cannot happen from StringWriter
-            throw new DocletAbortException(e);
+            throw new AssertionError(e);
         }
         return out.toString();
     }

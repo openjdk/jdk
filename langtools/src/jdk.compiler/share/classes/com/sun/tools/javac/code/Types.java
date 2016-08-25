@@ -418,10 +418,15 @@ public class Types {
             final ListBuffer<Symbol> abstracts = new ListBuffer<>();
             for (Symbol sym : membersCache.getSymbols(new DescriptorFilter(origin))) {
                 Type mtype = memberType(origin.type, sym);
-                if (abstracts.isEmpty() ||
-                        (sym.name == abstracts.first().name &&
-                        overrideEquivalent(mtype, memberType(origin.type, abstracts.first())))) {
+                if (abstracts.isEmpty()) {
                     abstracts.append(sym);
+                } else if ((sym.name == abstracts.first().name &&
+                        overrideEquivalent(mtype, memberType(origin.type, abstracts.first())))) {
+                    if (!abstracts.stream().filter(msym -> msym.owner.isSubClass(sym.enclClass(), Types.this))
+                            .map(msym -> memberType(origin.type, msym))
+                            .anyMatch(abstractMType -> isSubSignature(abstractMType, mtype))) {
+                        abstracts.append(sym);
+                    }
                 } else {
                     //the target method(s) should be the only abstract members of t
                     throw failure("not.a.functional.intf.1",  origin,

@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
-import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 
@@ -33,8 +32,11 @@ import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
+import jdk.javadoc.internal.doclets.toolkit.Resources;
+import jdk.javadoc.internal.doclets.toolkit.util.InternalException;
+import jdk.javadoc.internal.doclets.toolkit.util.SimpleDocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 import static javax.tools.Diagnostic.Kind.*;
@@ -91,6 +93,7 @@ public abstract class AbstractBuilder {
     protected final Configuration configuration;
 
     protected final Messages messages;
+    protected final Resources resources;
     protected final Utils utils;
 
     /**
@@ -109,12 +112,12 @@ public abstract class AbstractBuilder {
 
     /**
      * Construct a Builder.
-     * @param configuration the configuration used in this run
-     *        of the doclet.
+     * @param c a context providing information used in this run of the doclet
      */
     public AbstractBuilder(Context c) {
         this.configuration = c.configuration;
         this.messages = configuration.getMessages();
+        this.resources = configuration.getResources();
         this.utils = configuration.utils;
         this.containingPackagesSeen = c.containingPackagesSeen;
         this.layoutParser = c.layoutParser;
@@ -130,39 +133,55 @@ public abstract class AbstractBuilder {
     /**
      * Build the documentation.
      *
-     * @throws IOException there was a problem writing the output.
+     * @throws DocletException if there is a problem building the documentation
      */
-    public abstract void build() throws IOException;
+    public abstract void build() throws DocletException;
 
     /**
      * Build the documentation, as specified by the given XML element.
      *
      * @param node the XML element that specifies which component to document.
      * @param contentTree content tree to which the documentation will be added
+     * @throws DocletException if there is a problem building the documentation
      */
-    protected void build(XMLNode node, Content contentTree) {
+    protected void build(XMLNode node, Content contentTree) throws DocletException {
         String component = node.name;
         try {
-            invokeMethod("build" + component,
-                    new Class<?>[]{XMLNode.class, Content.class},
-                    new Object[]{node, contentTree});
+            String methodName = "build" + component;
+            if (DEBUG) {
+                configuration.reporter.print(ERROR,
+                        "DEBUG: " + getClass().getName() + "." + methodName);
+            }
+            Method method = getClass().getMethod(methodName, XMLNode.class, Content.class);
+            method.invoke(this, node, contentTree);
+
         } catch (NoSuchMethodException e) {
-            e.printStackTrace(System.err);
-            configuration.reporter.print(ERROR, "Unknown element: " + component);
-            throw new DocletAbortException(e);
+            // Use SimpleDocletException instead of InternalException because there is nothing
+            // informative about about the place the exception occurred, here in this method.
+            // The problem is either a misconfigured doclet.xml file or a missing method in the
+            // user-supplied(?) doclet
+            String message = resources.getText("doclet.builder.unknown.component", component);
+            throw new SimpleDocletException(message, e);
+
         } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof DocletAbortException) {
-                throw (DocletAbortException) cause;
+            if (cause instanceof DocletException) {
+                throw (DocletException) cause;
             } else {
-                throw new DocletAbortException(e.getCause());
+                // use InternalException, so that a stacktrace showing the position of
+                // the internal exception is generated
+                String message = resources.getText("doclet.builder.exception.in.component", component,
+                        e.getCause());
+                throw new InternalException(message, e.getCause());
             }
-        } catch (Exception e) {
-            e.printStackTrace(System.err);
-            configuration.reporter.print(ERROR, "Exception " +
-                    e.getClass().getName() +
-                    " thrown while processing element: " + component);
-            throw new DocletAbortException(e);
+
+        } catch (ReflectiveOperationException e) {
+            // Use SimpleDocletException instead of InternalException because there is nothing
+            // informative about about the place the exception occurred, here in this method.
+            // The problem is specific to the method being invoked, such as illegal access
+            // or illegal argument.
+            String message = resources.getText("doclet.builder.exception.in.component", component, e);
+            throw new SimpleDocletException(message, e.getCause());
         }
     }
 
@@ -171,29 +190,10 @@ public abstract class AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document.
      * @param contentTree content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the children
      */
-    protected void buildChildren(XMLNode node, Content contentTree) {
+    protected void buildChildren(XMLNode node, Content contentTree) throws DocletException {
         for (XMLNode child : node.children)
             build(child, contentTree);
-    }
-
-    /**
-     * Given the name and parameters, invoke the method in the builder.  This
-     * method is required to invoke the appropriate build method as instructed
-     * by the builder XML file.
-     *
-     * @param methodName   the name of the method that we would like to invoke.
-     * @param paramClasses the types for each parameter.
-     * @param params       the parameters of the method.
-     */
-    protected void invokeMethod(String methodName, Class<?>[] paramClasses,
-            Object[] params)
-    throws Exception {
-        if (DEBUG) {
-            configuration.reporter.print(ERROR, "DEBUG: " +
-                    this.getClass().getName() + "." + methodName);
-        }
-        Method method = this.getClass().getMethod(methodName, paramClasses);
-        method.invoke(this, params);
     }
 }
