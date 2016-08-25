@@ -30,13 +30,13 @@
  * @run main ThrowException
  */
 
-import jdk.test.lib.Utils;
+import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.internal.misc.Unsafe;
 import static jdk.test.lib.Asserts.*;
 
 public class ThrowException {
     public static void main(String args[]) throws Exception {
-        Unsafe unsafe = Utils.getUnsafe();
+        Unsafe unsafe = UnsafeHelper.getUnsafe();
         try {
             unsafe.throwException(new TestException());
         } catch (Throwable t) {
