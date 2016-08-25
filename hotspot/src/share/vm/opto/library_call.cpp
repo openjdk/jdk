@@ -2242,8 +2242,8 @@ const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_
 
 #ifndef PRODUCT
     if (C->print_intrinsics() || C->print_inlining()) {
-      tty->print("  from base type: ");  adr_type->dump();
-      tty->print("  sharpened value: ");  tjp->dump();
+      tty->print("  from base type:  ");  adr_type->dump(); tty->cr();
+      tty->print("  sharpened value: ");  tjp->dump();      tty->cr();
     }
 #endif
     // Sharpen the value type.
@@ -2308,6 +2308,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   adr = make_unsafe_address(base, offset);
   if (_gvn.type(base)->isa_ptr() != TypePtr::NULL_PTR) {
     heap_base_oop = base;
+  } else if (type == T_OBJECT) {
+    return false; // off-heap oop accesses are not supported
   }
 
   // Can base be NULL? Otherwise, always on-heap access.
@@ -2512,34 +2514,10 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
       break;
     }
 
-    if (type != T_OBJECT) {
-      (void) store_to_memory(control(), adr, val, type, adr_type, mo, requires_atomic_access, unaligned, mismatched);
+    if (type == T_OBJECT) {
+      store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, type, mo, mismatched);
     } else {
-      // Possibly an oop being stored to Java heap or native memory
-      if (!can_access_non_heap) {
-        // oop to Java heap.
-        (void) store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, type, mo, mismatched);
-      } else {
-        // We can't tell at compile time if we are storing in the Java heap or outside
-        // of it. So we need to emit code to conditionally do the proper type of
-        // store.
-
-        IdealKit ideal(this);
-#define __ ideal.
-        // QQQ who knows what probability is here??
-        __ if_then(heap_base_oop, BoolTest::ne, null(), PROB_UNLIKELY(0.999)); {
-          // Sync IdealKit and graphKit.
-          sync_kit(ideal);
-          Node* st = store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, type, mo, mismatched);
-          // Update IdealKit memory.
-          __ sync_kit(this);
-        } __ else_(); {
-          __ store(__ ctrl(), adr, val, type, alias_type->index(), mo, requires_atomic_access, mismatched);
-        } __ end_if();
-        // Final sync IdealKit and GraphKit.
-        final_sync(ideal);
-#undef __
-      }
+      store_to_memory(control(), adr, val, type, adr_type, mo, requires_atomic_access, unaligned, mismatched);
     }
   }
 
