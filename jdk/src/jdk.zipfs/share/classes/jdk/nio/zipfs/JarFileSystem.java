@@ -165,8 +165,8 @@ class JarFileSystem extends ZipFileSystem {
             walk(inode.child, process);
         } else {
             process.accept(inode);
-            walk(inode.sibling, process);
         }
+        walk(inode.sibling, process);
     }
 
     /**
