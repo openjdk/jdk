@@ -26,10 +26,13 @@
 package jdk.javadoc.internal.tool;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
+
+import javax.lang.model.element.ElementKind;
 
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.main.OptionHelper;
@@ -44,6 +47,7 @@ import com.sun.tools.javac.util.Options;
  *  deletion without notice.</b>
  */
 public enum ToolOption {
+
     // ----- options for underlying compiler -----
 
     BOOTCLASSPATH("-bootclasspath", true) {
@@ -193,10 +197,16 @@ public enum ToolOption {
         }
     },
 
+    MODULE("--module", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.addToList(this, ",", arg);
+        }
+    },
+
     ENCODING("-encoding", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.encoding = arg;
             helper.setFileManagerOpt(Option.ENCODING, arg);
         }
     },
@@ -296,14 +306,14 @@ public enum ToolOption {
     SUBPACKAGES("-subpackages", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.addToList(helper.subPackages, arg);
+            helper.addToList(this, ":", arg);
         }
     },
 
     EXCLUDE("-exclude", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.addToList(helper.excludedPackages, arg);
+            helper.addToList(this, ":", arg);
         }
     },
 
@@ -312,28 +322,63 @@ public enum ToolOption {
     PACKAGE("-package") {
         @Override
         public void process(Helper helper) {
-            helper.setFilter("package");
+            helper.setSimpleFilter("package");
         }
     },
 
     PRIVATE("-private") {
         @Override
         public void process(Helper helper) {
-            helper.setFilter("private");
+            helper.setSimpleFilter("private");
         }
     },
 
     PROTECTED("-protected") {
         @Override
         public void process(Helper helper) {
-            helper.setFilter("protected");
+            helper.setSimpleFilter("protected");
         }
     },
 
     PUBLIC("-public") {
         @Override
         public void process(Helper helper) {
-            helper.setFilter("public");
+            helper.setSimpleFilter("public");
+        }
+    },
+
+    SHOW_MEMBERS("--show-members:") {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setFilter(this, arg);
+        }
+    },
+
+    SHOW_TYPES("--show-types:") {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setFilter(this, arg);
+        }
+    },
+
+    SHOW_PACKAGES("--show-packages:") {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setShowPackageAccess(SHOW_PACKAGES, helper.getOptionArgumentValue(arg));
+        }
+    },
+
+    SHOW_MODULE_CONTENTS("--show-module-contents:") {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setShowModuleContents(SHOW_MODULE_CONTENTS, helper.getOptionArgumentValue(arg));
+        }
+    },
+
+    EXPAND_REQUIRES("--expand-requires:") {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setExpandRequires(EXPAND_REQUIRES, helper.getOptionArgumentValue(arg));
         }
     },
 
@@ -350,7 +395,7 @@ public enum ToolOption {
     QUIET("-quiet") {
         @Override
         public void process(Helper helper) {
-            helper.quiet = true;
+            helper.jdtoolOpts.put(QUIET, true);
         }
     },
 
@@ -385,19 +430,10 @@ public enum ToolOption {
         }
     },
 
-    // the doclet consumes this
-    OVERVIEW("-overview", true) {
-        @Override
-        public void process(Helper helper, String arg) {
-            helper.setOverviewpath(arg);
-        }
-    },
-
     XCLASSES("-Xclasses") {
         @Override
         public void process(Helper helper) {
-            helper.docClasses = true;
-
+            helper.jdtoolOpts.put(XCLASSES, true);
         }
     },
 
@@ -452,14 +488,6 @@ public enum ToolOption {
     }
 
     static abstract class Helper {
-        /** List of decoded options. */
-        final List<List<String>> options = new ArrayList<>();
-
-        /** Selected packages, from -subpackages. */
-        final List<String> subPackages = new ArrayList<>();
-
-        /** Excluded packages, from -exclude. */
-        final List<String> excludedPackages = new ArrayList<>();
 
         // File manager options
         final Map<Option, String> fileManagerOpts = new LinkedHashMap<>();
@@ -467,17 +495,11 @@ public enum ToolOption {
         /** javac options, set by various options. */
         Options compOpts; // = Options.instance(context)
 
-        /* Encoding for javac, and files written? set by -encoding. */
-        String encoding = null;
+        /** Javadoc tool options */
+        final Map<ToolOption, Object> jdtoolOpts = new EnumMap<>(ToolOption.class);
 
         /** Set by -breakiterator. */
         boolean breakiterator = false;
-
-        /** Set by -quiet. */
-        boolean quiet = false;
-
-        /** Set by -Xclasses. */
-        boolean docClasses = false;
 
         /** Set by -Xwerror. */
         boolean rejectWarnings = false;
@@ -488,9 +510,9 @@ public enum ToolOption {
         /** Set by -locale. */
         String docLocale = "";
 
-        /** Set by -public, private, -protected, -package. */
-        String showAccess = null;
-        String overviewpath;
+        Helper() {
+            populateDefaultAccessMap();
+        }
 
         abstract void usage();
         abstract void Xusage();
@@ -498,33 +520,129 @@ public enum ToolOption {
         abstract void usageError(String msg, Object... args);
         abstract OptionHelper getOptionHelper();
 
-        void addToList(List<String> list, String str){
-            StringTokenizer st = new StringTokenizer(str, ":");
-            String current;
-            while(st.hasMoreTokens()){
-                current = st.nextToken();
-                list.add(current);
+        @SuppressWarnings("unchecked")
+        void addToList(ToolOption opt, String delimiter, String str) {
+            List<String> list = (List<String>) jdtoolOpts.computeIfAbsent(opt, v -> new ArrayList<>());
+            list.addAll(Arrays.asList(str.split(delimiter)));
+            jdtoolOpts.put(opt, list);
+        }
+
+        String getOptionArgumentValue(String in) {
+            String[] values = in.trim().split(":");
+            return values[1];
+        }
+
+        void setExpandRequires(ToolOption opt, String arg) {
+            switch (arg) {
+                case "public":
+                    jdtoolOpts.put(opt, AccessKind.PUBLIC);
+                    break;
+                case "all":
+                    jdtoolOpts.put(opt, AccessKind.PRIVATE);
+                    break;
+                default:
+                    usageError("main.illegal_option_value", arg);
             }
         }
 
-        void setFilter(String showAccess) {
-            if (showAccess != null) {
-                if (!"public".equals(showAccess)
-                        && !"protected".equals(showAccess)
-                        && !"private".equals(showAccess)
-                        && !"package".equals(showAccess)) {
-                    usageError("main.incompatible.access.flags");
-                }
-                this.showAccess = showAccess;
+        void setShowModuleContents(ToolOption opt, String arg) {
+            switch (arg) {
+                case "api":
+                    jdtoolOpts.put(opt, AccessKind.PUBLIC);
+                    break;
+                case "all":
+                    jdtoolOpts.put(opt, AccessKind.PRIVATE);
+                    break;
+                default:
+                    usageError("main.illegal_option_value", arg);
             }
+        }
+
+        void setShowPackageAccess(ToolOption opt, String arg) {
+            switch (arg) {
+                case "exported":
+                    jdtoolOpts.put(opt, AccessKind.PUBLIC);
+                    break;
+                case "all":
+                    jdtoolOpts.put(opt, AccessKind.PRIVATE);
+                    break;
+                default:
+                    usageError("main.illegal_option_value", arg);
+            }
+        }
+
+
+        void setFilter(ToolOption opt, String arg) {
+            jdtoolOpts.put(opt, getAccessValue(arg));
+        }
+
+        void setSimpleFilter(String arg) {
+            handleSimpleOption(arg);
         }
 
         void setFileManagerOpt(Option opt, String arg) {
             fileManagerOpts.put(opt, arg);
         }
 
-        private void setOverviewpath(String arg) {
-            this.overviewpath = arg;
+        void handleSimpleOption(String arg) {
+            populateSimpleAccessMap(getAccessValue(arg));
+        }
+
+        /*
+         * This method handles both the simple options -package,
+         * -private, so on, in addition to the new ones such as
+         * --show-types:public and so on.
+         */
+        private AccessKind getAccessValue(String arg) {
+            int colon = arg.indexOf(':');
+            String value = (colon > 0)
+                    ? arg.substring(colon + 1)
+                    : arg;
+            switch (value) {
+                case "public":
+                    return AccessKind.PUBLIC;
+                case "protected":
+                    return AccessKind.PROTECTED;
+                case "package":
+                    return AccessKind.PACKAGE;
+                case "private":
+                    return AccessKind.PRIVATE;
+                default:
+                    usageError("main.illegal_option_value", value);
+                    return null;
+            }
+        }
+
+        /*
+         * Sets the entire kind map to PROTECTED this is the default.
+         */
+        private void populateDefaultAccessMap() {
+            populateSimpleAccessMap(AccessKind.PROTECTED);
+        }
+
+        /*
+         * This sets access to all the allowed kinds in the
+         * access map.
+         */
+        void populateSimpleAccessMap(AccessKind accessValue) {
+            for (ElementKind kind : ElementsTable.ModifierFilter.ALLOWED_KINDS) {
+                switch (kind) {
+                    case METHOD:
+                        jdtoolOpts.put(SHOW_MEMBERS, accessValue);
+                        break;
+                    case CLASS:
+                        jdtoolOpts.put(SHOW_TYPES, accessValue);
+                        break;
+                    case PACKAGE:
+                        jdtoolOpts.put(SHOW_PACKAGES, accessValue);
+                        break;
+                    case MODULE:
+                        jdtoolOpts.put(SHOW_MODULE_CONTENTS, accessValue);
+                        break;
+                    default:
+                        throw new AssertionError("unknown element kind:" + kind);
+                }
+            }
         }
     }
 }

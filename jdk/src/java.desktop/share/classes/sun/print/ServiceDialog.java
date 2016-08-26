@@ -977,6 +977,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         private JFormattedTextField tfRangeFrom, tfRangeTo;
         private JLabel lblRangeTo;
         private boolean prSupported;
+        private boolean prPgRngSupported;
 
         public PrintRangePanel() {
             super();
@@ -1090,7 +1091,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         public void focusGained(FocusEvent e) {}
 
         private void setupRangeWidgets() {
-            boolean rangeEnabled = (rbPages.isSelected() && prSupported);
+            boolean rangeEnabled = (rbPages.isSelected() && prPgRngSupported);
             tfRangeFrom.setEnabled(rangeEnabled);
             tfRangeTo.setEnabled(rangeEnabled);
             lblRangeTo.setEnabled(rangeEnabled);
@@ -1136,6 +1137,9 @@ public class ServiceDialog extends JDialog implements ActionListener {
             if (psCurrent.isAttributeCategorySupported(prCategory) ||
                    isAWT) {
                 prSupported = true;
+                prPgRngSupported = psCurrent.isAttributeValueSupported(prAll,
+                                                                     docFlavor,
+                                                                     asCurrent);
             }
 
             SunPageSelection select = SunPageSelection.ALL;
@@ -1175,7 +1179,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             tfRangeFrom.setValue(min);
             tfRangeTo.setValue(max);
             rbAll.setEnabled(prSupported);
-            rbPages.setEnabled(prSupported);
+            rbPages.setEnabled(prPgRngSupported);
             setupRangeWidgets();
         }
     }

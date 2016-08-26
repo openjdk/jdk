@@ -25,12 +25,13 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
-import java.io.*;
 import java.util.*;
 
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 
 /**
  * The interface for writing constants summary output.
@@ -144,7 +145,8 @@ public interface ConstantsSummaryWriter {
      * Print the constants summary document.
      *
      * @param contentTree content tree which should be printed
+     * @throws DocFileIOException if there is a problem while writing the document
      */
-    public abstract void printDocument(Content contentTree) throws IOException;
+    public abstract void printDocument(Content contentTree) throws DocFileIOException;
 
 }

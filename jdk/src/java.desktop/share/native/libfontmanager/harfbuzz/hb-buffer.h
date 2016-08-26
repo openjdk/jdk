@@ -40,7 +40,27 @@
 
 HB_BEGIN_DECLS
 
-
+/**
+ * hb_glyph_info_t:
+ * @codepoint: either a Unicode code point (before shaping) or a glyph index
+ *             (after shaping).
+ * @mask:
+ * @cluster: the index of the character in the original text that corresponds
+ *           to this #hb_glyph_info_t, or whatever the client passes to
+ *           hb_buffer_add(). More than one #hb_glyph_info_t can have the same
+ *           @cluster value, if they resulted from the same character (e.g. one
+ *           to many glyph substitution), and when more than one character gets
+ *           merged in the same glyph (e.g. many to one glyph substitution) the
+ *           #hb_glyph_info_t will have the smallest cluster value of them.
+ *           By default some characters are merged into the same cluster
+ *           (e.g. combining marks have the same cluster as their bases)
+ *           even if they are separate glyphs, hb_buffer_set_cluster_level()
+ *           allow selecting more fine-grained cluster handling.
+ *
+ * The #hb_glyph_info_t is the structure that holds information about the
+ * glyphs and their relation to input text.
+ *
+ */
 typedef struct hb_glyph_info_t {
   hb_codepoint_t codepoint;
   hb_mask_t      mask;
@@ -51,6 +71,22 @@ typedef struct hb_glyph_info_t {
   hb_var_int_t   var2;
 } hb_glyph_info_t;
 
+/**
+ * hb_glyph_position_t:
+ * @x_advance: how much the line advances after drawing this glyph when setting
+ *             text in horizontal direction.
+ * @y_advance: how much the line advances after drawing this glyph when setting
+ *             text in vertical direction.
+ * @x_offset: how much the glyph moves on the X-axis before drawing it, this
+ *            should not affect how much the line advances.
+ * @y_offset: how much the glyph moves on the Y-axis before drawing it, this
+ *            should not affect how much the line advances.
+ *
+ * The #hb_glyph_position_t is the structure that holds the positions of the
+ * glyph in both horizontal and vertical directions. All positions in
+ * #hb_glyph_position_t are relative to the current point.
+ *
+ */
 typedef struct hb_glyph_position_t {
   hb_position_t  x_advance;
   hb_position_t  y_advance;
@@ -61,7 +97,16 @@ typedef struct hb_glyph_position_t {
   hb_var_int_t   var;
 } hb_glyph_position_t;
 
-
+/**
+ * hb_segment_properties_t:
+ * @direction: the #hb_direction_t of the buffer, see hb_buffer_set_direction().
+ * @script: the #hb_script_t of the buffer, see hb_buffer_set_script().
+ * @language: the #hb_language_t of the buffer, see hb_buffer_set_language().
+ *
+ * The structure that holds various text properties of an #hb_buffer_t. Can be
+ * set and retrieved using hb_buffer_set_segment_properties() and
+ * hb_buffer_get_segment_properties(), respectively.
+ */
 typedef struct hb_segment_properties_t {
   hb_direction_t  direction;
   hb_script_t     script;
@@ -77,101 +122,125 @@ typedef struct hb_segment_properties_t {
                                        NULL, \
                                        NULL}
 
-hb_bool_t
+HB_EXTERN hb_bool_t
 hb_segment_properties_equal (const hb_segment_properties_t *a,
                              const hb_segment_properties_t *b);
 
-unsigned int
+HB_EXTERN unsigned int
 hb_segment_properties_hash (const hb_segment_properties_t *p);
 
 
 
-/*
- * hb_buffer_t
+/**
+ * hb_buffer_t:
+ *
+ * The main structure holding the input text and its properties before shaping,
+ * and output glyphs and their information after shaping.
  */
 
 typedef struct hb_buffer_t hb_buffer_t;
 
-hb_buffer_t *
+HB_EXTERN hb_buffer_t *
 hb_buffer_create (void);
 
-hb_buffer_t *
+HB_EXTERN hb_buffer_t *
 hb_buffer_get_empty (void);
 
-hb_buffer_t *
+HB_EXTERN hb_buffer_t *
 hb_buffer_reference (hb_buffer_t *buffer);
 
-void
+HB_EXTERN void
 hb_buffer_destroy (hb_buffer_t *buffer);
 
-hb_bool_t
+HB_EXTERN hb_bool_t
 hb_buffer_set_user_data (hb_buffer_t        *buffer,
                          hb_user_data_key_t *key,
                          void *              data,
                          hb_destroy_func_t   destroy,
                          hb_bool_t           replace);
 
-void *
+HB_EXTERN void *
 hb_buffer_get_user_data (hb_buffer_t        *buffer,
                          hb_user_data_key_t *key);
 
-
+/**
+ * hb_buffer_content_type_t:
+ * @HB_BUFFER_CONTENT_TYPE_INVALID: Initial value for new buffer.
+ * @HB_BUFFER_CONTENT_TYPE_UNICODE: The buffer contains input characters (before shaping).
+ * @HB_BUFFER_CONTENT_TYPE_GLYPHS: The buffer contains output glyphs (after shaping).
+ */
 typedef enum {
   HB_BUFFER_CONTENT_TYPE_INVALID = 0,
   HB_BUFFER_CONTENT_TYPE_UNICODE,
   HB_BUFFER_CONTENT_TYPE_GLYPHS
 } hb_buffer_content_type_t;
 
-void
+HB_EXTERN void
 hb_buffer_set_content_type (hb_buffer_t              *buffer,
                             hb_buffer_content_type_t  content_type);
 
-hb_buffer_content_type_t
+HB_EXTERN hb_buffer_content_type_t
 hb_buffer_get_content_type (hb_buffer_t *buffer);
 
 
-void
+HB_EXTERN void
 hb_buffer_set_unicode_funcs (hb_buffer_t        *buffer,
                              hb_unicode_funcs_t *unicode_funcs);
 
-hb_unicode_funcs_t *
+HB_EXTERN hb_unicode_funcs_t *
 hb_buffer_get_unicode_funcs (hb_buffer_t        *buffer);
 
-void
+HB_EXTERN void
 hb_buffer_set_direction (hb_buffer_t    *buffer,
                          hb_direction_t  direction);
 
-hb_direction_t
+HB_EXTERN hb_direction_t
 hb_buffer_get_direction (hb_buffer_t *buffer);
 
-void
+HB_EXTERN void
 hb_buffer_set_script (hb_buffer_t *buffer,
                       hb_script_t  script);
 
-hb_script_t
+HB_EXTERN hb_script_t
 hb_buffer_get_script (hb_buffer_t *buffer);
 
-void
+HB_EXTERN void
 hb_buffer_set_language (hb_buffer_t   *buffer,
                         hb_language_t  language);
 
 
-hb_language_t
+HB_EXTERN hb_language_t
 hb_buffer_get_language (hb_buffer_t *buffer);
 
-void
+HB_EXTERN void
 hb_buffer_set_segment_properties (hb_buffer_t *buffer,
                                   const hb_segment_properties_t *props);
 
-void
+HB_EXTERN void
 hb_buffer_get_segment_properties (hb_buffer_t *buffer,
                                   hb_segment_properties_t *props);
 
-void
+HB_EXTERN void
 hb_buffer_guess_segment_properties (hb_buffer_t *buffer);
 
 
-/*
+/**
+ * hb_buffer_flags_t:
+ * @HB_BUFFER_FLAG_DEFAULT: the default buffer flag.
+ * @HB_BUFFER_FLAG_BOT: flag indicating that special handling of the beginning
+ *                      of text paragraph can be applied to this buffer. Should usually
+ *                      be set, unless you are passing to the buffer only part
+ *                      of the text without the full context.
+ * @HB_BUFFER_FLAG_EOT: flag indicating that special handling of the end of text
+ *                      paragraph can be applied to this buffer, similar to
+ *                      @HB_BUFFER_FLAG_EOT.
+ * @HB_BUFFER_FLAG_PRESERVE_DEFAULT_IGNORABLES:
+ *                      flag indication that character with Default_Ignorable
+ *                      Unicode property should use the corresponding glyph
+ *                      from the font, instead of hiding them (currently done
+ *                      by replacing them with the space glyph and zeroing the
+ *                      advance width.)
+ *
  * Since: 0.9.20
  */
 typedef enum { /*< flags >*/
@@ -181,11 +250,11 @@ typedef enum { /*< flags >*/
   HB_BUFFER_FLAG_PRESERVE_DEFAULT_IGNORABLES    = 0x00000004u
 } hb_buffer_flags_t;
 
-void
+HB_EXTERN void
 hb_buffer_set_flags (hb_buffer_t       *buffer,
                      hb_buffer_flags_t  flags);
 
-hb_buffer_flags_t
+HB_EXTERN hb_buffer_flags_t
 hb_buffer_get_flags (hb_buffer_t *buffer);
 
 /*
@@ -198,93 +267,92 @@ typedef enum {
   HB_BUFFER_CLUSTER_LEVEL_DEFAULT = HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES
 } hb_buffer_cluster_level_t;
 
-void
+HB_EXTERN void
 hb_buffer_set_cluster_level (hb_buffer_t               *buffer,
                              hb_buffer_cluster_level_t  cluster_level);
 
-hb_buffer_cluster_level_t
+HB_EXTERN hb_buffer_cluster_level_t
 hb_buffer_get_cluster_level (hb_buffer_t *buffer);
 
+/**
+ * HB_BUFFER_REPLACEMENT_CODEPOINT_DEFAULT:
+ *
+ * The default code point for replacing invalid characters in a given encoding.
+ * Set to U+FFFD REPLACEMENT CHARACTER.
+ *
+ * Since: 0.9.31
+ */
 #define HB_BUFFER_REPLACEMENT_CODEPOINT_DEFAULT 0xFFFDu
 
-/* Sets codepoint used to replace invalid UTF-8/16/32 entries.
- * Default is 0xFFFDu. */
-void
+HB_EXTERN void
 hb_buffer_set_replacement_codepoint (hb_buffer_t    *buffer,
                                      hb_codepoint_t  replacement);
 
-hb_codepoint_t
+HB_EXTERN hb_codepoint_t
 hb_buffer_get_replacement_codepoint (hb_buffer_t    *buffer);
 
 
-/* Resets the buffer.  Afterwards it's as if it was just created,
- * except that it has a larger buffer allocated perhaps... */
-void
+HB_EXTERN void
 hb_buffer_reset (hb_buffer_t *buffer);
 
-/* Like reset, but does NOT clear unicode_funcs and replacement_codepoint. */
-void
+HB_EXTERN void
 hb_buffer_clear_contents (hb_buffer_t *buffer);
 
-/* Returns false if allocation failed */
-hb_bool_t
+HB_EXTERN hb_bool_t
 hb_buffer_pre_allocate (hb_buffer_t  *buffer,
                         unsigned int  size);
 
 
-/* Returns false if allocation has failed before */
-hb_bool_t
+HB_EXTERN hb_bool_t
 hb_buffer_allocation_successful (hb_buffer_t  *buffer);
 
-void
+HB_EXTERN void
 hb_buffer_reverse (hb_buffer_t *buffer);
 
-void
+HB_EXTERN void
 hb_buffer_reverse_range (hb_buffer_t *buffer,
                          unsigned int start, unsigned int end);
 
-void
+HB_EXTERN void
 hb_buffer_reverse_clusters (hb_buffer_t *buffer);
 
 
 /* Filling the buffer in */
 
-void
+HB_EXTERN void
 hb_buffer_add (hb_buffer_t    *buffer,
                hb_codepoint_t  codepoint,
                unsigned int    cluster);
 
-void
+HB_EXTERN void
 hb_buffer_add_utf8 (hb_buffer_t  *buffer,
                     const char   *text,
                     int           text_length,
                     unsigned int  item_offset,
                     int           item_length);
 
-void
+HB_EXTERN void
 hb_buffer_add_utf16 (hb_buffer_t    *buffer,
                      const uint16_t *text,
                      int             text_length,
                      unsigned int    item_offset,
                      int             item_length);
 
-void
+HB_EXTERN void
 hb_buffer_add_utf32 (hb_buffer_t    *buffer,
                      const uint32_t *text,
                      int             text_length,
                      unsigned int    item_offset,
                      int             item_length);
 
-/* Allows only access to first 256 Unicode codepoints. */
-void
+HB_EXTERN void
 hb_buffer_add_latin1 (hb_buffer_t   *buffer,
                       const uint8_t *text,
                       int            text_length,
                       unsigned int   item_offset,
                       int            item_length);
 
-/* Like add_utf32 but does NOT check for invalid Unicode codepoints. */
-void
+HB_EXTERN void
 hb_buffer_add_codepoints (hb_buffer_t          *buffer,
                           const hb_codepoint_t *text,
                           int                   text_length,
@@ -292,32 +360,25 @@ hb_buffer_add_codepoints (hb_buffer_t          *buffer,
                           int                   item_length);
 
 
-/* Clears any new items added at the end */
-hb_bool_t
+HB_EXTERN hb_bool_t
 hb_buffer_set_length (hb_buffer_t  *buffer,
                       unsigned int  length);
 
-/* Return value valid as long as buffer not modified */
-unsigned int
+HB_EXTERN unsigned int
 hb_buffer_get_length (hb_buffer_t *buffer);
 
 /* Getting glyphs out of the buffer */
 
-/* Return value valid as long as buffer not modified */
-hb_glyph_info_t *
+HB_EXTERN hb_glyph_info_t *
 hb_buffer_get_glyph_infos (hb_buffer_t  *buffer,
                            unsigned int *length);
 
-/* Return value valid as long as buffer not modified */
-hb_glyph_position_t *
+HB_EXTERN hb_glyph_position_t *
 hb_buffer_get_glyph_positions (hb_buffer_t  *buffer,
                                unsigned int *length);
 
 
-/* Reorders a glyph buffer to have canonical in-cluster glyph order / position.
- * The resulting clusters should behave identical to pre-reordering clusters.
- * NOTE: This has nothing to do with Unicode normalization. */
-void
+HB_EXTERN void
 hb_buffer_normalize_glyphs (hb_buffer_t *buffer);
 
 
@@ -325,7 +386,16 @@ hb_buffer_normalize_glyphs (hb_buffer_t *buffer);
  * Serialize
  */
 
-/*
+/**
+ * hb_buffer_serialize_flags_t:
+ * @HB_BUFFER_SERIALIZE_FLAG_DEFAULT: serialize glyph names, clusters and positions.
+ * @HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS: do not serialize glyph cluster.
+ * @HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS: do not serialize glyph position information.
+ * @HB_BUFFER_SERIALIZE_FLAG_NO_GLYPH_NAMES: do no serialize glyph name.
+ * @HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS: serialize glyph extents.
+ *
+ * Flags that control what glyph information are serialized in hb_buffer_serialize_glyphs().
+ *
  * Since: 0.9.20
  */
 typedef enum { /*< flags >*/
@@ -336,41 +406,65 @@ typedef enum { /*< flags >*/
   HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS        = 0x00000008u
 } hb_buffer_serialize_flags_t;
 
+/**
+ * hb_buffer_serialize_format_t:
+ * @HB_BUFFER_SERIALIZE_FORMAT_TEXT: a human-readable, plain text format.
+ * @HB_BUFFER_SERIALIZE_FORMAT_JSON: a machine-readable JSON format.
+ * @HB_BUFFER_SERIALIZE_FORMAT_INVALID: invalid format.
+ *
+ * The buffer serialization and de-serialization format used in
+ * hb_buffer_serialize_glyphs() and hb_buffer_deserialize_glyphs().
+ *
+ * Since: 0.9.2
+ */
 typedef enum {
   HB_BUFFER_SERIALIZE_FORMAT_TEXT       = HB_TAG('T','E','X','T'),
   HB_BUFFER_SERIALIZE_FORMAT_JSON       = HB_TAG('J','S','O','N'),
   HB_BUFFER_SERIALIZE_FORMAT_INVALID    = HB_TAG_NONE
 } hb_buffer_serialize_format_t;
 
-/* len=-1 means str is NUL-terminated. */
-hb_buffer_serialize_format_t
+HB_EXTERN hb_buffer_serialize_format_t
 hb_buffer_serialize_format_from_string (const char *str, int len);
 
-const char *
+HB_EXTERN const char *
 hb_buffer_serialize_format_to_string (hb_buffer_serialize_format_t format);
 
-const char **
+HB_EXTERN const char **
 hb_buffer_serialize_list_formats (void);
 
-/* Returns number of items, starting at start, that were serialized. */
-unsigned int
+HB_EXTERN unsigned int
 hb_buffer_serialize_glyphs (hb_buffer_t *buffer,
                             unsigned int start,
                             unsigned int end,
                             char *buf,
                             unsigned int buf_size,
-                            unsigned int *buf_consumed, /* May be NULL */
-                            hb_font_t *font, /* May be NULL */
+                            unsigned int *buf_consumed,
+                            hb_font_t *font,
                             hb_buffer_serialize_format_t format,
                             hb_buffer_serialize_flags_t flags);
 
-hb_bool_t
+HB_EXTERN hb_bool_t
 hb_buffer_deserialize_glyphs (hb_buffer_t *buffer,
                               const char *buf,
-                              int buf_len, /* -1 means nul-terminated */
-                              const char **end_ptr, /* May be NULL */
-                              hb_font_t *font, /* May be NULL */
+                              int buf_len,
+                              const char **end_ptr,
+                              hb_font_t *font,
                               hb_buffer_serialize_format_t format);
+
+
+/*
+ * Debugging.
+ */
+
+typedef hb_bool_t       (*hb_buffer_message_func_t)     (hb_buffer_t *buffer,
+                                                         hb_font_t   *font,
+                                                         const char  *message,
+                                                         void        *user_data);
+
+HB_EXTERN void
+hb_buffer_set_message_func (hb_buffer_t *buffer,
+                            hb_buffer_message_func_t func,
+                            void *user_data, hb_destroy_func_t destroy);
 
 
 HB_END_DECLS

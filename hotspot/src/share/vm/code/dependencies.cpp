@@ -1082,12 +1082,11 @@ class ClassHierarchyWalker {
     if (!(m->is_public() || m->is_protected()))
       // The override story is complex when packages get involved.
       return true;  // Must punt the assertion to true.
-    Klass* k = ctxk;
-    Method* lm = k->lookup_method(m->name(), m->signature());
-    if (lm == NULL && k->is_instance_klass()) {
+    Method* lm = ctxk->lookup_method(m->name(), m->signature());
+    if (lm == NULL && ctxk->is_instance_klass()) {
       // It might be an interface method
-      lm = InstanceKlass::cast(k)->lookup_method_in_ordered_interfaces(m->name(),
-                                                                 m->signature());
+      lm = InstanceKlass::cast(ctxk)->lookup_method_in_ordered_interfaces(m->name(),
+                                                                          m->signature());
     }
     if (lm == m)
       // Method m is inherited into ctxk.
@@ -1101,11 +1100,19 @@ class ClassHierarchyWalker {
         // Static methods don't override non-static so punt
         return true;
       }
-      if (   !Dependencies::is_concrete_method(lm, k)
-          && !Dependencies::is_concrete_method(m, ctxk)
-          && lm->method_holder()->is_subtype_of(m->method_holder()))
-        // Method m is overridden by lm, but both are non-concrete.
-        return true;
+      if (!Dependencies::is_concrete_method(lm, ctxk) &&
+          !Dependencies::is_concrete_method(m, ctxk)) {
+        // They are both non-concrete
+        if (lm->method_holder()->is_subtype_of(m->method_holder())) {
+          // Method m is overridden by lm, but both are non-concrete.
+          return true;
+        }
+        if (lm->method_holder()->is_interface() && m->method_holder()->is_interface() &&
+            ctxk->is_subtype_of(m->method_holder()) && ctxk->is_subtype_of(lm->method_holder())) {
+          // Interface method defined in multiple super interfaces
+          return true;
+        }
+      }
     }
     ResourceMark rm;
     tty->print_cr("Dependency method not found in the associated context:");

@@ -2643,7 +2643,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* DEFAULT_CACHE_LINE_SIZE (globalDefinitions.hpp) */                   \
   /***************************************************/                   \
                                                                           \
-  declare_constant(DEFAULT_CACHE_LINE_SIZE)                               \
+  declare_preprocessor_constant("DEFAULT_CACHE_LINE_SIZE", DEFAULT_CACHE_LINE_SIZE) \
                                                                           \
   declare_constant(Deoptimization::Unpack_deopt)                          \
   declare_constant(Deoptimization::Unpack_exception)                      \

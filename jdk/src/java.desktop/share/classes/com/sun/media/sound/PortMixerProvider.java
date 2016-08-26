@@ -28,15 +28,12 @@ package com.sun.media.sound;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.spi.MixerProvider;
 
-
 /**
  * Port provider.
  *
  * @author Florian Bomers
  */
 public final class PortMixerProvider extends MixerProvider {
-
-    // STATIC VARIABLES
 
     /**
      * Set of info objects for all port input devices on the system.
@@ -48,17 +45,10 @@ public final class PortMixerProvider extends MixerProvider {
      */
     private static PortMixer[] devices;
 
-
-    // STATIC
-
     static {
         // initialize
         Platform.initialize();
     }
-
-
-    // CONSTRUCTOR
-
 
     /**
      * Required public no-arg constructor.
@@ -93,6 +83,7 @@ public final class PortMixerProvider extends MixerProvider {
         }
     }
 
+    @Override
     public Mixer.Info[] getMixerInfo() {
         synchronized (PortMixerProvider.class) {
             Mixer.Info[] localArray = new Mixer.Info[infos.length];
@@ -101,6 +92,7 @@ public final class PortMixerProvider extends MixerProvider {
         }
     }
 
+    @Override
     public Mixer getMixer(Mixer.Info info) {
         synchronized (PortMixerProvider.class) {
             for (int i = 0; i < infos.length; i++) {
@@ -113,7 +105,6 @@ public final class PortMixerProvider extends MixerProvider {
                 String.format("Mixer %s not supported by this provider", info));
     }
 
-
     private static Mixer getDevice(PortMixerInfo info) {
         int index = info.getIndex();
         if (devices[index] == null) {
@@ -121,9 +112,6 @@ public final class PortMixerProvider extends MixerProvider {
         }
         return devices[index];
     }
-
-    // INNER CLASSES
-
 
     /**
      * Info class for PortMixers.  Adds an index value for
@@ -144,7 +132,6 @@ public final class PortMixerProvider extends MixerProvider {
 
     } // class PortMixerInfo
 
-    // NATIVE METHODS
     private static native int nGetNumDevices();
     private static native PortMixerInfo nNewPortMixerInfo(int mixerIndex);
 }

@@ -46,16 +46,25 @@ public interface JavaLangInvokeAccess {
     boolean isNative(Object mname);
 
     /**
-     * Returns a {@code byte[]} containing the bytecode for a class implementing
+     * Returns a {@code byte[]} representation of a class implementing
      * DirectMethodHandle of each pairwise combination of {@code MethodType} and
      * an {@code int} representing method type.  Used by
      * GenerateJLIClassesPlugin to generate such a class during the jlink phase.
      */
-    byte[] generateDMHClassBytes(String className, MethodType[] methodTypes,
-            int[] types);
+    byte[] generateDirectMethodHandleHolderClassBytes(String className,
+            MethodType[] methodTypes, int[] types);
 
     /**
-     * Returns a {@code byte[]} containing the bytecode for a BoundMethodHandle
+     * Returns a {@code byte[]} representation of a class implementing
+     * DelegatingMethodHandles of each {@code MethodType} kind in the
+     * {@code methodTypes} argument.  Used by GenerateJLIClassesPlugin to
+     * generate such a class during the jlink phase.
+     */
+    byte[] generateDelegatingMethodHandleHolderClassBytes(String className,
+            MethodType[] methodTypes);
+
+    /**
+     * Returns a {@code byte[]} representation of {@code BoundMethodHandle}
      * species class implementing the signature defined by {@code types}. Used
      * by GenerateBMHClassesPlugin to enable generation of such classes during
      * the jlink phase. Should do some added validation since this string may be
@@ -63,4 +72,17 @@ public interface JavaLangInvokeAccess {
      */
     Map.Entry<String, byte[]> generateConcreteBMHClassBytes(
             final String types);
+
+    /**
+     * Returns a {@code byte[]} representation of a class implementing
+     * the zero and identity forms of all {@code LambdaForm.BasicType}s.
+     */
+    byte[] generateBasicFormsClassBytes(final String className);
+
+    /**
+     * Returns a {@code byte[]} representation of a class implementing
+     * the invoker forms for the set of supplied {@code methodTypes}.
+     */
+    byte[] generateInvokersHolderClassBytes(String className,
+            MethodType[] methodTypes);
 }

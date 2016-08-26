@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.io.IOException;
@@ -63,8 +64,7 @@ public final class SoftVoice extends VoiceStatus {
     private final SoftFilter filter_right;
     private final SoftProcess eg = new SoftEnvelopeGenerator();
     private final SoftProcess lfo = new SoftLowFrequencyOscillator();
-    Map<String, SoftControl> objects =
-            new HashMap<String, SoftControl>();
+    final Map<String, SoftControl> objects = new HashMap<>();
     SoftSynthesizer synthesizer;
     SoftInstrument instrument;
     SoftPerformer performer;
@@ -107,6 +107,7 @@ public final class SoftVoice extends VoiceStatus {
         double[] keynumber = co_noteon_keynumber;
         double[] velocity = co_noteon_velocity;
         double[] on = co_noteon_on;
+        @Override
         public double[] get(int instance, String name) {
             if (name == null)
                 return null;
@@ -126,12 +127,13 @@ public final class SoftVoice extends VoiceStatus {
     private final double[] co_mixer_reverb = new double[1];
     private final double[] co_mixer_chorus = new double[1];
     private final SoftControl co_mixer = new SoftControl() {
-        double[] active = co_mixer_active;
-        double[] gain = co_mixer_gain;
-        double[] pan = co_mixer_pan;
-        double[] balance = co_mixer_balance;
-        double[] reverb = co_mixer_reverb;
-        double[] chorus = co_mixer_chorus;
+        final double[] active = co_mixer_active;
+        final double[] gain = co_mixer_gain;
+        final double[] pan = co_mixer_pan;
+        final double[] balance = co_mixer_balance;
+        final double[] reverb = co_mixer_reverb;
+        final double[] chorus = co_mixer_chorus;
+        @Override
         public double[] get(int instance, String name) {
             if (name == null)
                 return null;
@@ -152,7 +154,8 @@ public final class SoftVoice extends VoiceStatus {
     };
     private final double[] co_osc_pitch = new double[1];
     private final SoftControl co_osc = new SoftControl() {
-        double[] pitch = co_osc_pitch;
+        final double[] pitch = co_osc_pitch;
+        @Override
         public double[] get(int instance, String name) {
             if (name == null)
                 return null;
@@ -165,9 +168,10 @@ public final class SoftVoice extends VoiceStatus {
     private final double[] co_filter_type = new double[1];
     private final double[] co_filter_q = new double[1];
     private final SoftControl co_filter = new SoftControl() {
-        double[] freq = co_filter_freq;
-        double[] ftype = co_filter_type;
-        double[] q = co_filter_q;
+        final double[] freq = co_filter_freq;
+        final double[] ftype = co_filter_type;
+        final double[] q = co_filter_q;
+        @Override
         public double[] get(int instance, String name) {
             if (name == null)
                 return null;
@@ -913,6 +917,5 @@ public final class SoftVoice extends VoiceStatus {
         if (out_mixer_end) {
             stopping = true;
         }
-
     }
 }

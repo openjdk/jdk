@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
-import java.io.*;
 import java.util.*;
 
 import javax.lang.model.element.Element;
@@ -35,6 +34,7 @@ import javax.lang.model.element.VariableElement;
 
 import jdk.javadoc.internal.doclets.toolkit.ConstantsSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 
 
@@ -116,6 +116,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      *
      * @param context       the build context.
      * @param writer        the writer for the summary.
+     * @return the new ConstantsSummaryBuilder
      */
     public static ConstantsSummaryBuilder getInstance(Context context,
             ConstantsSummaryWriter writer) {
@@ -124,9 +125,10 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
 
     /**
      * {@inheritDoc}
+     * @throws DocletException if there is a problem while building the documentation
      */
     @Override
-    public void build() throws IOException {
+    public void build() throws DocletException {
         if (writer == null) {
             //Doclet does not support this output.
             return;
@@ -147,8 +149,9 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param contentTree the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildConstantSummary(XMLNode node, Content contentTree) throws Exception {
+    public void buildConstantSummary(XMLNode node, Content contentTree) throws DocletException {
         contentTree = writer.getHeader();
         buildChildren(node, contentTree);
         writer.addFooter(contentTree);
@@ -177,8 +180,9 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param contentTree the tree to which the summaries will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildConstantSummaries(XMLNode node, Content contentTree) {
+    public void buildConstantSummaries(XMLNode node, Content contentTree) throws DocletException {
         printedPackageHeaders.clear();
         Content summariesTree = writer.getConstantSummaries();
         for (PackageElement aPackage : configuration.packages) {
@@ -211,8 +215,11 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param summariesTree the tree to which the class constant summary will be added
+     * @throws DocletException if there is a problem while building the documentation
+     *
      */
-    public void buildClassConstantSummary(XMLNode node, Content summariesTree) {
+    public void buildClassConstantSummary(XMLNode node, Content summariesTree)
+            throws DocletException {
         SortedSet<TypeElement> classes = !currentPackage.isUnnamed()
                 ? utils.getAllClasses(currentPackage)
                 : configuration.typeElementCatalog.allUnnamedClasses();

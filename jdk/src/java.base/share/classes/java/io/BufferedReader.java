@@ -560,7 +560,7 @@ public class BufferedReader extends Reader {
      * @since 1.8
      */
     public Stream<String> lines() {
-        Iterator<String> iter = new Iterator<String>() {
+        Iterator<String> iter = new Iterator<>() {
             String nextLine = null;
 
             @Override

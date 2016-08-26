@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.io.File;
@@ -81,9 +82,9 @@ public final class SF2Soundbank implements Soundbank {
     private ModelByteBuffer sampleData24 = null;
     private File sampleFile = null;
     private boolean largeFormat = false;
-    private final List<SF2Instrument> instruments = new ArrayList<SF2Instrument>();
-    private final List<SF2Layer> layers = new ArrayList<SF2Layer>();
-    private final List<SF2Sample> samples = new ArrayList<SF2Sample>();
+    private final List<SF2Instrument> instruments = new ArrayList<>();
+    private final List<SF2Layer> layers = new ArrayList<>();
+    private final List<SF2Sample> samples = new ArrayList<>();
 
     public SF2Soundbank() {
     }
@@ -224,19 +225,15 @@ public final class SF2Soundbank implements Soundbank {
 
     private void readPdtaChunk(RIFFReader riff) throws IOException {
 
-        List<SF2Instrument> presets = new ArrayList<SF2Instrument>();
-        List<Integer> presets_bagNdx = new ArrayList<Integer>();
-        List<SF2InstrumentRegion> presets_splits_gen
-                = new ArrayList<SF2InstrumentRegion>();
-        List<SF2InstrumentRegion> presets_splits_mod
-                = new ArrayList<SF2InstrumentRegion>();
+        List<SF2Instrument> presets = new ArrayList<>();
+        List<Integer> presets_bagNdx = new ArrayList<>();
+        List<SF2InstrumentRegion> presets_splits_gen = new ArrayList<>();
+        List<SF2InstrumentRegion> presets_splits_mod = new ArrayList<>();
 
-        List<SF2Layer> instruments = new ArrayList<SF2Layer>();
-        List<Integer> instruments_bagNdx = new ArrayList<Integer>();
-        List<SF2LayerRegion> instruments_splits_gen
-                = new ArrayList<SF2LayerRegion>();
-        List<SF2LayerRegion> instruments_splits_mod
-                = new ArrayList<SF2LayerRegion>();
+        List<SF2Layer> instruments = new ArrayList<>();
+        List<Integer> instruments_bagNdx = new ArrayList<>();
+        List<SF2LayerRegion> instruments_splits_gen = new ArrayList<>();
+        List<SF2LayerRegion> instruments_splits_mod = new ArrayList<>();
 
         while (riff.hasNextChunk()) {
             RIFFReader chunk = riff.nextChunk();
@@ -830,18 +827,22 @@ public final class SF2Soundbank implements Soundbank {
 
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getVersion() {
         return major + "." + minor;
     }
 
+    @Override
     public String getVendor() {
         return engineers;
     }
 
+    @Override
     public String getDescription() {
         return comments;
     }
@@ -858,6 +859,7 @@ public final class SF2Soundbank implements Soundbank {
         comments = s;
     }
 
+    @Override
     public SoundbankResource[] getResources() {
         SoundbankResource[] resources
                 = new SoundbankResource[layers.size() + samples.size()];
@@ -869,6 +871,7 @@ public final class SF2Soundbank implements Soundbank {
         return resources;
     }
 
+    @Override
     public SF2Instrument[] getInstruments() {
         SF2Instrument[] inslist_array
                 = instruments.toArray(new SF2Instrument[instruments.size()]);
@@ -884,6 +887,7 @@ public final class SF2Soundbank implements Soundbank {
         return samples.toArray(new SF2Sample[samples.size()]);
     }
 
+    @Override
     public Instrument getInstrument(Patch patch) {
         int program = patch.getProgram();
         int bank = patch.getBank();
@@ -972,11 +976,11 @@ public final class SF2Soundbank implements Soundbank {
 
     public void removeResource(SoundbankResource resource) {
         if (resource instanceof SF2Instrument)
-            instruments.remove((SF2Instrument)resource);
+            instruments.remove(resource);
         if (resource instanceof SF2Layer)
-            layers.remove((SF2Layer)resource);
+            layers.remove(resource);
         if (resource instanceof SF2Sample)
-            samples.remove((SF2Sample)resource);
+            samples.remove(resource);
     }
 
     public void addInstrument(SF2Instrument resource) {

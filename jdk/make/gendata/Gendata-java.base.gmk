@@ -34,7 +34,7 @@ include GendataTZDB.gmk
 
 include GendataBlacklistedCerts.gmk
 
-include GendataPolicyJars.gmk
+include GendataCryptoPolicy.gmk
 
 ################################################################################
 
@@ -64,13 +64,19 @@ TARGETS += $(GENDATA_CURDATA)
 GENDATA_JAVA_SECURITY_SRC := $(JDK_TOPDIR)/src/java.base/share/conf/security/java.security
 GENDATA_JAVA_SECURITY := $(SUPPORT_OUTPUTDIR)/modules_conf/java.base/security/java.security
 
+ifeq ($(UNLIMITED_CRYPTO), true)
+    CRYPTO.POLICY := unlimited
+else
+    CRYPTO.POLICY := limited
+endif
+
 # RESTRICTED_PKGS_SRC is optionally set in custom extension for this makefile
 
 $(GENDATA_JAVA_SECURITY): $(BUILD_TOOLS) $(GENDATA_JAVA_SECURITY_SRC) $(RESTRICTED_PKGS_SRC)
 	$(call LogInfo, Generating java.security)
 	$(call MakeDir, $(@D))
 	$(TOOL_MAKEJAVASECURITY) $(GENDATA_JAVA_SECURITY_SRC) $@ $(OPENJDK_TARGET_OS) \
-	    $(OPENJDK_TARGET_CPU_ARCH) $(RESTRICTED_PKGS_SRC)
+	    $(OPENJDK_TARGET_CPU_ARCH) $(CRYPTO.POLICY) $(RESTRICTED_PKGS_SRC)
 
 TARGETS += $(GENDATA_JAVA_SECURITY)
 

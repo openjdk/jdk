@@ -154,6 +154,12 @@ static const hb_script_t ucdn_script_translate[] =
     HB_SCRIPT_MULTANI,
     HB_SCRIPT_OLD_HUNGARIAN,
     HB_SCRIPT_SIGNWRITING,
+    HB_SCRIPT_ADLAM,
+    HB_SCRIPT_BHAIKSUKI,
+    HB_SCRIPT_MARCHEN,
+    HB_SCRIPT_NEWA,
+    HB_SCRIPT_OSAGE,
+    HB_SCRIPT_TANGUT,
 };
 
 static hb_unicode_combining_class_t

@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -46,8 +45,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.ModuleSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 
 /**
  * Class to generate file for each module contents in the right-hand
@@ -515,12 +514,8 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param subDiv the content tree to which the summary detail links will be added
      */
     protected void addSummaryDetailLinks(Content subDiv) {
-        try {
-            Content div = HtmlTree.DIV(getNavSummaryLinks());
-            subDiv.addContent(div);
-        } catch (Exception e) {
-            throw new DocletAbortException(e);
-        }
+        Content div = HtmlTree.DIV(getNavSummaryLinks());
+        subDiv.addContent(div);
     }
 
     /**
@@ -528,7 +523,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      *
      * @return the content tree for the navigation summary links
      */
-    protected Content getNavSummaryLinks() throws Exception {
+    protected Content getNavSummaryLinks() {
         Content li = HtmlTree.LI(contents.moduleSubNavLabel);
         li.addContent(Contents.SPACE);
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
@@ -591,7 +586,8 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     /**
      * {@inheritDoc}
      */
-    public void printDocument(Content contentTree) throws IOException {
+    @Override
+    public void printDocument(Content contentTree) throws DocFileIOException {
         printHtmlDocument(configuration.metakeywords.getMetaKeywordsForModule(mdle),
                 true, contentTree);
     }

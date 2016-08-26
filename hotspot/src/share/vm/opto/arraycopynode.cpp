@@ -630,6 +630,12 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
 }
 
 bool ArrayCopyNode::may_modify_helper(const TypeOopPtr *t_oop, Node* n, PhaseTransform *phase, ArrayCopyNode*& ac) {
+  if (n->Opcode() == Op_StoreCM ||
+      n->Opcode() == Op_StoreB) {
+    // Ignore card mark stores
+    n = n->in(MemNode::Memory);
+  }
+
   if (n->is_Proj()) {
     n = n->in(0);
     if (n->is_Call() && n->as_Call()->may_modify(t_oop, phase)) {
@@ -657,9 +663,6 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTra
           }
         }
       }
-    } else if (n->Opcode() == Op_StoreCM) {
-      // Ignore card mark stores
-      return may_modify_helper(t_oop, n->in(MemNode::Memory), phase, ac);
     }
   }
 

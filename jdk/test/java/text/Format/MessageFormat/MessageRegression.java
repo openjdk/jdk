@@ -28,6 +28,7 @@
  * 4142938 4169959 4232154 4293229
  * @summary Regression tests for MessageFormat and associated classes
  * @library /java/text/testlib
+ * @run main MessageRegression
  */
 /*
 (C) Copyright Taligent, Inc. 1996 - All Rights Reserved
@@ -121,13 +122,14 @@ public class MessageRegression extends IntlTest {
      * More robust message formats.
      */
     public void Test4031438() {
-        String pattern1 = "Impossible {1} has occurred -- status code is {0} and message is {2}.";
-        String pattern2 = "Double '' Quotes {0} test and quoted '{1}' test plus 'other {2} stuff'.";
-
-        // If the current locale is hi_IN, skip this test case.
-        if (Locale.getDefault().equals(new Locale("hi", "IN"))) {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesAsciiDigits(locale)) {
+            logln("Skipping this test because locale is " + locale);
             return;
         }
+
+        String pattern1 = "Impossible {1} has occurred -- status code is {0} and message is {2}.";
+        String pattern2 = "Double '' Quotes {0} test and quoted '{1}' test plus 'other {2} stuff'.";
 
         MessageFormat messageFormatter = new MessageFormat("");
 
