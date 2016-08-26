@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.io.ByteArrayInputStream;
@@ -60,12 +61,14 @@ public final class ModelByteBuffer {
             left = capacity();
         }
 
+        @Override
         public int available() throws IOException {
             if (left > Integer.MAX_VALUE)
                 return Integer.MAX_VALUE;
             return (int)left;
         }
 
+        @Override
         public synchronized void mark(int readlimit) {
             try {
                 mark = raf.getFilePointer();
@@ -75,15 +78,18 @@ public final class ModelByteBuffer {
             }
         }
 
+        @Override
         public boolean markSupported() {
             return true;
         }
 
+        @Override
         public synchronized void reset() throws IOException {
             raf.seek(mark);
             left = markleft;
         }
 
+        @Override
         public long skip(long n) throws IOException {
             if( n < 0)
                 return 0;
@@ -95,6 +101,7 @@ public final class ModelByteBuffer {
             return n;
         }
 
+        @Override
         public int read(byte b[], int off, int len) throws IOException {
             if (len > left)
                 len = (int)left;
@@ -107,6 +114,7 @@ public final class ModelByteBuffer {
             return len;
         }
 
+        @Override
         public int read(byte[] b) throws IOException {
             int len = b.length;
             if (len > left)
@@ -120,6 +128,7 @@ public final class ModelByteBuffer {
             return len;
         }
 
+        @Override
         public int read() throws IOException {
             if (left == 0)
                 return -1;
@@ -130,6 +139,7 @@ public final class ModelByteBuffer {
             return b;
         }
 
+        @Override
         public void close() throws IOException {
             raf.close();
         }

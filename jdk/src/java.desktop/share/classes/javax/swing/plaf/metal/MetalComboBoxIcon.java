@@ -52,13 +52,11 @@ public class MetalComboBoxIcon implements Icon, Serializable {
 
         g.translate( x, y );
 
-        g.setColor( component.isEnabled() ? MetalLookAndFeel.getControlInfo() : MetalLookAndFeel.getControlShadow() );
-        g.drawLine( 0, 0, iconWidth - 1, 0 );
-        g.drawLine( 1, 1, 1 + (iconWidth - 3), 1 );
-        g.drawLine( 2, 2, 2 + (iconWidth - 5), 2 );
-        g.drawLine( 3, 3, 3 + (iconWidth - 7), 3 );
-        g.drawLine( 4, 4, 4 + (iconWidth - 9), 4 );
-
+        g.setColor(component.isEnabled()
+                   ? MetalLookAndFeel.getControlInfo()
+                   : MetalLookAndFeel.getControlShadow());
+        g.fillPolygon(new int[]{0, 5, iconWidth - 5, iconWidth},
+                      new int[]{0, 5, 5, 0}, 4);
         g.translate( -x, -y );
     }
 

@@ -25,22 +25,19 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.util.*;
 
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 import jdk.javadoc.internal.doclets.toolkit.util.Group;
 
 /**
@@ -58,38 +55,35 @@ import jdk.javadoc.internal.doclets.toolkit.util.Group;
  */
 public class PackageIndexWriter extends AbstractPackageIndexWriter {
 
-    /**
-     * Root of the program structure. Used for "overview" documentation.
-     */
-    private DocletEnvironment docEnv;
 
     /**
      * Map representing the group of packages as specified on the command line.
      *
      * @see Group
      */
-    private Map<String, SortedSet<PackageElement>> groupPackageMap;
+    private final Map<String, SortedSet<PackageElement>> groupPackageMap;
 
     /**
      * List to store the order groups as specified on the command line.
      */
-    private List<String> groupList;
+    private final List<String> groupList;
 
     /**
      * HTML tree for main tag.
      */
-    private HtmlTree htmlTree = HtmlTree.MAIN();
+    private final HtmlTree htmlTree = HtmlTree.MAIN();
 
     /**
      * Construct the PackageIndexWriter. Also constructs the grouping
      * information as provided on the command line by "-group" option. Stores
      * the order of groups specified by the user.
      *
+     * @param configuration the configuration for this doclet
+     * @param filename the path of the page to be generated
      * @see Group
      */
-    public PackageIndexWriter(ConfigurationImpl configuration, DocPath filename) throws IOException {
+    public PackageIndexWriter(ConfigurationImpl configuration, DocPath filename) {
         super(configuration, filename);
-        this.docEnv = configuration.docEnv;
         groupPackageMap = configuration.group.groupPackages(packages);
         groupList = configuration.group.getGroupList();
     }
@@ -98,19 +92,12 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * Generate the package index page for the right-hand frame.
      *
      * @param configuration the current configuration of the doclet.
+     * @throws DocFileIOException if there is a problem generating the package index page
      */
-    public static void generate(ConfigurationImpl configuration) {
-        PackageIndexWriter packgen;
-        DocPath filename = DocPaths.OVERVIEW_SUMMARY;
-        try {
-            packgen = new PackageIndexWriter(configuration, filename);
-            packgen.buildPackageIndexFile("doclet.Window_Overview_Summary", true);
-        } catch (IOException exc) {
-            Messages messages = configuration.getMessages();
-            messages.error("doclet.exception_encountered",
-                        exc.toString(), filename);
-            throw new DocletAbortException(exc);
-        }
+    public static void generate(ConfigurationImpl configuration) throws DocFileIOException {
+        DocPath filename = DocPaths.overviewSummary(configuration.frames);
+        PackageIndexWriter packgen = new PackageIndexWriter(configuration, filename);
+        packgen.buildPackageIndexFile("doclet.Window_Overview_Summary", true);
     }
 
     /**
@@ -119,6 +106,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      *
      * @param body the documentation tree to which the index will be added
      */
+    @Override
     protected void addIndex(Content body) {
         for (String groupname : groupList) {
             SortedSet<PackageElement> list = groupPackageMap.get(groupname);
@@ -133,6 +121,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     /**
      * {@inheritDoc}
      */
+    @Override
     protected void addPackagesList(Collection<PackageElement> packages, String text,
             String tableSummary, Content body) {
         Content table = (configuration.isOutputHtml5())
@@ -183,6 +172,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      *
      * @param body the documentation tree to which the overview header will be added
      */
+    @Override
     protected void addOverviewHeader(Content body) {
         addConfigurationTitle(body);
         if (!utils.getBody(configuration.overviewElement).isEmpty()) {
@@ -227,7 +217,8 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      *
      * @param body the documentation tree to which the overview will be added
      */
-    protected void addOverview(Content body) throws IOException {
+    @Override
+    protected void addOverview(Content body) {
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.contentContainer);
         addOverviewComment(div);
@@ -246,6 +237,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      *
      * @param body the documentation tree to which the navigation bar header will be added
      */
+    @Override
     protected void addNavigationBarHeader(Content body) {
         Content htmlTree = (configuration.allowTag(HtmlTag.HEADER))
                 ? HtmlTree.HEADER()
@@ -263,6 +255,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      *
      * @param body the documentation tree to which the navigation bar footer will be added
      */
+    @Override
     protected void addNavigationBarFooter(Content body) {
         Content htmlTree = (configuration.allowTag(HtmlTag.FOOTER))
                 ? HtmlTree.FOOTER()

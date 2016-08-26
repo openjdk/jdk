@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -35,13 +34,11 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
+import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder.DeprElementKind;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
-
-import static jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder.*;
 
 /**
  * Generate File to list all the deprecated classes and class members with the
@@ -189,11 +186,11 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     /**
      * Constructor.
      *
-     * @param filename the file to be generated.
+     * @param configuration the configuration for this doclet
+     * @param filename the file to be generated
      */
 
-    public DeprecatedListWriter(ConfigurationImpl configuration,
-                                DocPath filename) throws IOException {
+    public DeprecatedListWriter(ConfigurationImpl configuration, DocPath filename) {
         super(configuration, filename);
         this.configuration = configuration;
         NestedClassWriterImpl classW = new NestedClassWriterImpl(this);
@@ -236,29 +233,23 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * Then instantiate DeprecatedListWriter and generate File.
      *
      * @param configuration the current configuration of the doclet.
+     * @throws DocFileIOException if there is a problem writing the deprecated list
      */
-    public static void generate(ConfigurationImpl configuration) {
+    public static void generate(ConfigurationImpl configuration) throws DocFileIOException {
         DocPath filename = DocPaths.DEPRECATED_LIST;
-        try {
-            DeprecatedListWriter depr =
-                   new DeprecatedListWriter(configuration, filename);
-            depr.generateDeprecatedListFile(
-                   new DeprecatedAPIListBuilder(configuration));
-        } catch (IOException exc) {
-            Messages messages = configuration.getMessages();
-            messages.error("doclet.exception_encountered",
-                        exc.toString(), filename);
-            throw new DocletAbortException(exc);
-        }
+        DeprecatedListWriter depr = new DeprecatedListWriter(configuration, filename);
+        depr.generateDeprecatedListFile(
+               new DeprecatedAPIListBuilder(configuration));
     }
 
     /**
      * Generate the deprecated API list.
      *
      * @param deprapi list of deprecated API built already.
+     * @throws DocFileIOException if there is a problem writing the deprecated list
      */
     protected void generateDeprecatedListFile(DeprecatedAPIListBuilder deprapi)
-            throws IOException {
+            throws DocFileIOException {
         HtmlTree body = getHeader();
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
                 ? HtmlTree.MAIN()
@@ -378,6 +369,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      *
      * @return a content tree for the deprecated label
      */
+    @Override
     protected Content getNavLinkDeprecated() {
         Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.deprecatedLabel);
         return li;

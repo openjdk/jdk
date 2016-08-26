@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,8 +143,8 @@ public abstract class LocaleProviderAdapter {
         defaultLocaleProviderAdapter = Type.CLDR;
         if (!typeList.isEmpty()) {
             // bona fide preference exists
-            if (!typeList.contains(Type.CLDR)) {
-                // Append FALLBACK as the last resort.
+            if (!(typeList.contains(Type.CLDR) || (typeList.contains(Type.JRE)))) {
+                // Append FALLBACK as the last resort when no ResourceBundleBasedAdapter is available.
                 typeList.add(Type.FALLBACK);
                 defaultLocaleProviderAdapter = Type.FALLBACK;
             }

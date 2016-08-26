@@ -25,8 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
-import java.io.*;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -36,6 +34,7 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 
 
@@ -104,8 +103,11 @@ public class PackageSummaryBuilder extends AbstractBuilder {
 
     /**
      * Build the package summary.
+     *
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void build() throws IOException {
+    @Override
+    public void build() throws DocletException {
         if (packageWriter == null) {
             //Doclet does not support this output.
             return;
@@ -116,6 +118,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getName() {
         return ROOT;
     }
@@ -125,8 +128,9 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param contentTree the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildPackageDoc(XMLNode node, Content contentTree) throws Exception {
+    public void buildPackageDoc(XMLNode node, Content contentTree) throws DocletException {
         contentTree = packageWriter.getPackageHeader(utils.getPackageName(packageElement));
         buildChildren(node, contentTree);
         packageWriter.addPackageFooter(contentTree);
@@ -140,8 +144,9 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      * @param node the XML element that specifies which components to document
      * @param contentTree the content tree to which the package contents
      *                    will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildContent(XMLNode node, Content contentTree) {
+    public void buildContent(XMLNode node, Content contentTree) throws DocletException {
         Content packageContentTree = packageWriter.getContentHeader();
         buildChildren(node, packageContentTree);
         packageWriter.addPackageContent(contentTree, packageContentTree);
@@ -153,8 +158,9 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      * @param node the XML element that specifies which components to document
      * @param packageContentTree the package content tree to which the summaries will
      *                           be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildSummary(XMLNode node, Content packageContentTree) {
+    public void buildSummary(XMLNode node, Content packageContentTree) throws DocletException {
         Content summaryContentTree = packageWriter.getSummaryHeader();
         buildChildren(node, summaryContentTree);
         packageContentTree.addContent(summaryContentTree);
@@ -175,7 +181,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         List<String> interfaceTableHeader = Arrays.asList(configuration.getText("doclet.Interface"),
         configuration.getText("doclet.Description"));
 
-        SortedSet<TypeElement> ilist = utils.isIncluded(packageElement)
+        SortedSet<TypeElement> ilist = utils.isSpecified(packageElement)
                         ? utils.getTypeElementsAsSortedSet(utils.getInterfaces(packageElement))
                         : configuration.typeElementCatalog.interfaces(packageElement);
         SortedSet<TypeElement> interfaces = utils.filterOutPrivateClasses(ilist, configuration.javafx);
@@ -200,7 +206,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                 configuration.getText("doclet.classes"));
         List<String> classTableHeader = Arrays.asList(configuration.getText("doclet.Class"),
                 configuration.getText("doclet.Description"));
-        SortedSet<TypeElement> clist = utils.isIncluded(packageElement)
+        SortedSet<TypeElement> clist = utils.isSpecified(packageElement)
             ? utils.getTypeElementsAsSortedSet(utils.getOrdinaryClasses(packageElement))
             : configuration.typeElementCatalog.ordinaryClasses(packageElement);
         SortedSet<TypeElement> classes = utils.filterOutPrivateClasses(clist, configuration.javafx);
@@ -225,7 +231,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                 configuration.getText("doclet.enums"));
         List<String> enumTableHeader = Arrays.asList(configuration.getText("doclet.Enum"),
                 configuration.getText("doclet.Description"));
-        SortedSet<TypeElement> elist = utils.isIncluded(packageElement)
+        SortedSet<TypeElement> elist = utils.isSpecified(packageElement)
             ? utils.getTypeElementsAsSortedSet(utils.getEnums(packageElement))
             : configuration.typeElementCatalog.enums(packageElement);
         SortedSet<TypeElement> enums = utils.filterOutPrivateClasses(elist, configuration.javafx);
@@ -251,7 +257,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         List<String> exceptionTableHeader = Arrays.asList(configuration.getText("doclet.Exception"),
                 configuration.getText("doclet.Description"));
         Set<TypeElement> iexceptions =
-            utils.isIncluded(packageElement)
+            utils.isSpecified(packageElement)
                 ? utils.getTypeElementsAsSortedSet(utils.getExceptions(packageElement))
                 : configuration.typeElementCatalog.exceptions(packageElement);
         SortedSet<TypeElement> exceptions = utils.filterOutPrivateClasses(iexceptions,
@@ -278,7 +284,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         List<String> errorTableHeader = Arrays.asList(configuration.getText("doclet.Error"),
                 configuration.getText("doclet.Description"));
         Set<TypeElement> ierrors =
-            utils.isIncluded(packageElement)
+            utils.isSpecified(packageElement)
                 ? utils.getTypeElementsAsSortedSet(utils.getErrors(packageElement))
                 : configuration.typeElementCatalog.errors(packageElement);
         SortedSet<TypeElement> errors = utils.filterOutPrivateClasses(ierrors, configuration.javafx);
@@ -305,7 +311,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                 configuration.getText("doclet.AnnotationType"),
                 configuration.getText("doclet.Description"));
         SortedSet<TypeElement> iannotationTypes =
-            utils.isIncluded(packageElement)
+            utils.isSpecified(packageElement)
                 ? utils.getTypeElementsAsSortedSet(utils.getAnnotationTypes(packageElement))
                 : configuration.typeElementCatalog.annotationTypes(packageElement);
         SortedSet<TypeElement> annotationTypes = utils.filterOutPrivateClasses(iannotationTypes,

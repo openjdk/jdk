@@ -374,10 +374,13 @@ Thread::~Thread() {
   delete handle_area();
   delete metadata_handles();
 
+  // SR_handler uses this as a termination indicator -
+  // needs to happen before os::free_thread()
+  delete _SR_lock;
+  _SR_lock = NULL;
+
   // osthread() can be NULL, if creation of thread failed.
   if (osthread() != NULL) os::free_thread(osthread());
-
-  delete _SR_lock;
 
   // clear Thread::current if thread is deleting itself.
   // Needed to ensure JNI correctly detects non-attached threads.

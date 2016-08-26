@@ -63,8 +63,7 @@ public interface Doclet {
     /**
      * Initializes this doclet with the given locale and error reporter.
      * This locale will be used by the reporter and the doclet components.
-     * It is recommended to call this as early as possible, for a
-     * uniform localized user experience,
+     *
      * @param locale the locale to be used
      * @param reporter the reporter to be used
      */
@@ -74,6 +73,7 @@ public interface Doclet {
      * Returns a name identifying the doclet. A name is a simple identifier
      * without white spaces, as defined in <cite>The Java&trade; Language Specification</cite>,
      * section 6.2 "Names and Identifiers".
+     *
      * @return name of the Doclet
      */
     public abstract String getName();
@@ -81,7 +81,7 @@ public interface Doclet {
     /**
      * Returns all the supported options.
      *
-     * @return a Set containing all the supported options, an empty set if none.
+     * @return a set containing all the supported options, an empty set if none
      */
     public Set<Option> getSupportedOptions();
 
@@ -90,7 +90,7 @@ public interface Doclet {
      * by this doclet.
      *
      * @return  the language version supported by this doclet, usually
-     * the latest version.
+     * the latest version
      */
     public SourceVersion getSupportedSourceVersion();
 

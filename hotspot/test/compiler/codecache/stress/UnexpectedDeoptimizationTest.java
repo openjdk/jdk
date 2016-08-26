@@ -24,6 +24,7 @@
 
 /*
  * @test UnexpectedDeoptimizationTest
+ * @key stress
  * @summary stressing code cache by forcing unexpected deoptimizations
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc

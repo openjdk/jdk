@@ -79,7 +79,7 @@ final class OptimisticTypesCalculator extends SimpleNodeVisitor {
 
     @Override
     public boolean enterPropertyNode(final PropertyNode propertyNode) {
-        if(propertyNode.getKeyName().equals(ScriptObject.PROTO_PROPERTY_NAME)) {
+        if(ScriptObject.PROTO_PROPERTY_NAME.equals(propertyNode.getKeyName())) {
             tagNeverOptimistic(propertyNode.getValue());
         }
         return super.enterPropertyNode(propertyNode);

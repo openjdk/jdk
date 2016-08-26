@@ -25,13 +25,12 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
-import java.io.*;
-
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 
 /**
  * The interface for writing serialized form output.
@@ -124,15 +123,17 @@ public interface SerializedFormWriter {
     public Content getClassContentHeader();
 
     /**
-     * Return an instance of a SerialFieldWriter.
+     * Return an instance of a SerialFieldWriter for a class.
      *
+     * @param typeElement the class
      * @return an instance of a SerialFieldWriter.
      */
     public SerialFieldWriter getSerialFieldWriter(TypeElement typeElement);
 
     /**
-     * Return an instance of a SerialMethodWriter.
+     * Return an instance of a SerialMethodWriter for a class.
      *
+     * @param typeElement the class
      * @return an instance of a SerialMethodWriter.
      */
     public SerialMethodWriter getSerialMethodWriter(TypeElement typeElement);
@@ -156,8 +157,9 @@ public interface SerializedFormWriter {
      * Print the serialized form document.
      *
      * @param serializedTree the content tree that will be printed
+     * @throws DocFileIOException if there is a problem while writing the document
      */
-    public abstract void printDocument(Content serializedTree) throws IOException;
+    public abstract void printDocument(Content serializedTree) throws DocFileIOException;
 
     /**
      * Write the serialized form for a given field.
@@ -199,7 +201,7 @@ public interface SerializedFormWriter {
         /**
          * Adds the description text for this member.
          *
-         * @param field the field to document.
+         * @param field the field to document
          * @param contentTree content tree to which the member description will be added
          */
         public void addMemberDescription(VariableElement field, Content contentTree);
@@ -207,7 +209,8 @@ public interface SerializedFormWriter {
         /**
          * Adds the description text for this member represented by the tag.
          *
-         * @param serialFieldTag the field to document (represented by tag).
+         * @param field the field to document
+         * @param serialFieldTag the field to document (represented by tag)
          * @param contentTree content tree to which the member description will be added
          */
         public void addMemberDescription(VariableElement field, DocTree serialFieldTag, Content contentTree);
@@ -215,7 +218,7 @@ public interface SerializedFormWriter {
         /**
          * Adds the tag information for this member.
          *
-         * @param field the field to document.
+         * @param field the field to document
          * @param contentTree content tree to which the member tags will be added
          */
         public void addMemberTags(VariableElement field, Content contentTree);
@@ -223,11 +226,11 @@ public interface SerializedFormWriter {
         /**
          * Adds the member header.
          *
-         * @param fieldType the type of the field.
+         * @param fieldType the type of the field
          * @param fieldTypeStr the type of the field in string format.  We will
-         * print this out if we can't link to the type.
-         * @param fieldDimensions the dimensions of the field.
-         * @param fieldName the name of the field.
+         * print this out if we can't link to the type
+         * @param fieldDimensions the dimensions of the field
+         * @param fieldName the name of the field
          * @param contentTree content tree to which the member header will be added
          */
         public void addMemberHeader(TypeElement fieldType, String fieldTypeStr,
@@ -239,7 +242,7 @@ public interface SerializedFormWriter {
          * for deprecation info, inline comment or tags,
          * do not print overview details.
          *
-         * @param field the field to check overview details for.
+         * @param field the field to check overview details for
          * @return true if overview details need to be printed
          */
         public boolean shouldPrintOverview(VariableElement field);

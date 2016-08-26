@@ -51,6 +51,7 @@ import static com.sun.tools.javac.parser.Tokens.TokenKind.GT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.IMPORT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.LT;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 
 /** The parser maps a token sequence into an abstract syntax
  *  tree. It operates by recursive descent, with code derived
@@ -2536,11 +2537,13 @@ public class JavacParser implements Parser {
                     finalizer = block();
                 }
             } else {
-                if (allowTWR) {
-                    if (resources.isEmpty())
+                if (resources.isEmpty()) {
+                    if (allowTWR) {
                         error(pos, "try.without.catch.finally.or.resource.decls");
-                } else
-                    error(pos, "try.without.catch.or.finally");
+                    } else {
+                        error(pos, "try.without.catch.or.finally");
+                    }
+                }
             }
             return F.at(pos).Try(resources, body, catchers.toList(), finalizer);
         }
@@ -3238,6 +3241,8 @@ public class JavacParser implements Parser {
                 accept(SEMI);
                 defs.append(toP(F.at(pos).Uses(service)));
             } else {
+                setErrorEndPos(pos);
+                reportSyntaxError(pos, "invalid.module.directive");
                 break;
             }
         }
@@ -4080,74 +4085,62 @@ public class JavacParser implements Parser {
 
     void checkDiamond() {
         if (!allowDiamond) {
-            error(token.pos, "diamond.not.supported.in.source", source.name);
-            allowDiamond = true;
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "diamond.not.supported.in.source", source.name);
         }
     }
     void checkMulticatch() {
         if (!allowMulticatch) {
-            error(token.pos, "multicatch.not.supported.in.source", source.name);
-            allowMulticatch = true;
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "multicatch.not.supported.in.source", source.name);
         }
     }
     void checkTryWithResources() {
         if (!allowTWR) {
-            error(token.pos, "try.with.resources.not.supported.in.source", source.name);
-            allowTWR = true;
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "try.with.resources.not.supported.in.source", source.name);
         }
     }
     void checkVariableInTryWithResources(int startPos) {
         if (!allowEffectivelyFinalVariablesInTWR) {
-            error(startPos, "var.in.try.with.resources.not.supported.in.source", source.name);
-            allowEffectivelyFinalVariablesInTWR = true;
+            log.error(DiagnosticFlag.SOURCE_LEVEL, startPos, "var.in.try.with.resources.not.supported.in.source", source.name);
         }
     }
     void checkLambda() {
         if (!allowLambda) {
-            log.error(token.pos, "lambda.not.supported.in.source", source.name);
-            allowLambda = true;
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "lambda.not.supported.in.source", source.name);
         }
     }
     void checkMethodReferences() {
         if (!allowMethodReferences) {
-            log.error(token.pos, "method.references.not.supported.in.source", source.name);
-            allowMethodReferences = true;
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "method.references.not.supported.in.source", source.name);
         }
     }
     void checkDefaultMethods() {
         if (!allowDefaultMethods) {
-            log.error(token.pos, "default.methods.not.supported.in.source", source.name);
-            allowDefaultMethods = true;
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "default.methods.not.supported.in.source", source.name);
         }
     }
     void checkIntersectionTypesInCast() {
         if (!allowIntersectionTypesInCast) {
-            log.error(token.pos, "intersection.types.in.cast.not.supported.in.source", source.name);
-            allowIntersectionTypesInCast = true;
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "intersection.types.in.cast.not.supported.in.source", source.name);
         }
     }
     void checkStaticInterfaceMethods() {
         if (!allowStaticInterfaceMethods) {
-            log.error(token.pos, "static.intf.methods.not.supported.in.source", source.name);
-            allowStaticInterfaceMethods = true;
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "static.intf.methods.not.supported.in.source", source.name);
         }
     }
     void checkTypeAnnotations() {
         if (!allowTypeAnnotations) {
-            log.error(token.pos, "type.annotations.not.supported.in.source", source.name);
-            allowTypeAnnotations = true;
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "type.annotations.not.supported.in.source", source.name);
         }
     }
     void checkPrivateInterfaceMethods() {
         if (!allowPrivateInterfaceMethods) {
-            log.error(token.pos, CompilerProperties.Errors.PrivateIntfMethodsNotSupportedInSource(source.name));
-            allowPrivateInterfaceMethods = true;
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, CompilerProperties.Errors.PrivateIntfMethodsNotSupportedInSource(source.name));
         }
     }
     protected void checkAnnotationsAfterTypeParams(int pos) {
         if (!allowAnnotationsAfterTypeParams) {
-            log.error(pos, "annotations.after.type.params.not.supported.in.source", source.name);
-            allowAnnotationsAfterTypeParams = true;
+            log.error(DiagnosticFlag.SOURCE_LEVEL, pos, "annotations.after.type.params.not.supported.in.source", source.name);
         }
     }
 

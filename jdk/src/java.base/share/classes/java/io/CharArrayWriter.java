@@ -165,7 +165,7 @@ class CharArrayWriter extends Writer {
      *
      * @param  csq
      *         The character sequence to append.  If {@code csq} is
-     *         {@code null}, then the four characters "{@code null}" are
+     *         {@code null}, then the four characters {@code "null"} are
      *         appended to this writer.
      *
      * @return  This writer
@@ -173,7 +173,7 @@ class CharArrayWriter extends Writer {
      * @since  1.5
      */
     public CharArrayWriter append(CharSequence csq) {
-        String s = (csq == null ? "null" : csq.toString());
+        String s = String.valueOf(csq);
         write(s, 0, s.length());
         return this;
     }
@@ -193,7 +193,7 @@ class CharArrayWriter extends Writer {
      *         The character sequence from which a subsequence will be
      *         appended.  If {@code csq} is {@code null}, then characters
      *         will be appended as if {@code csq} contained the four
-     *         characters "{@code null}".
+     *         characters {@code "null"}.
      *
      * @param  start
      *         The index of the first character in the subsequence
@@ -212,9 +212,8 @@ class CharArrayWriter extends Writer {
      * @since  1.5
      */
     public CharArrayWriter append(CharSequence csq, int start, int end) {
-        String s = (csq == null ? "null" : csq).subSequence(start, end).toString();
-        write(s, 0, s.length());
-        return this;
+        if (csq == null) csq = "null";
+        return append(csq.subSequence(start, end));
     }
 
     /**
@@ -251,7 +250,7 @@ class CharArrayWriter extends Writer {
      *
      * @return an array of chars copied from the input data.
      */
-    public char toCharArray()[] {
+    public char[] toCharArray() {
         synchronized (lock) {
             return Arrays.copyOf(buf, count);
         }

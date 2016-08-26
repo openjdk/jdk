@@ -218,11 +218,11 @@
 
             <sequential>
                 <java fork="true" jvm="${langtools.jdk.home}/bin/java" classname="@{mainclass}">
-                    <jvmarg line="-Xpatch:java.compiler=@{build.modules}/java.compiler"/>
-                    <jvmarg line="-Xpatch:jdk.compiler=@{build.modules}/jdk.compiler"/>
-                    <jvmarg line="-Xpatch:jdk.javadoc=@{build.modules}/jdk.javadoc"/>
-                    <jvmarg line="-Xpatch:jdk.jdeps=@{build.modules}/jdk.jdeps"/>
-                    <jvmarg line="-Xpatch:jdk.jshell=@{build.modules}/jdk.jshell"/>
+                    <jvmarg line="--patch-module=java.compiler=@{build.modules}/java.compiler"/>
+                    <jvmarg line="--patch-module=jdk.compiler=@{build.modules}/jdk.compiler"/>
+                    <jvmarg line="--patch-module=jdk.javadoc=@{build.modules}/jdk.javadoc"/>
+                    <jvmarg line="--patch-module=jdk.jdeps=@{build.modules}/jdk.jdeps"/>
+                    <jvmarg line="--patch-module=jdk.jshell=@{build.modules}/jdk.jshell"/>
                     <jvmarg line="@{jpda.jvmargs}"/>
                     <arg line="@{args}"/>
                 </java>

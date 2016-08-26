@@ -63,7 +63,9 @@ public class UsageThresholdExceededTest {
     public static void main(String[] args) {
         int iterationsCount = Integer.getInteger("jdk.test.lib.iterations", 1);
         for (BlobType btype : BlobType.getAvailable()) {
-            new UsageThresholdExceededTest(btype, iterationsCount).runTest();
+            if (CodeCacheUtils.isCodeHeapPredictable(btype)) {
+                new UsageThresholdExceededTest(btype, iterationsCount).runTest();
+            }
         }
     }
 

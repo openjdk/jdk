@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -157,7 +158,7 @@ public abstract class JavadocTester {
     private final Map<File,SoftReference<String>> fileContentCache = new HashMap<>();
 
     /** Stream used for logging messages. */
-    private final PrintStream out = System.out;
+    protected final PrintStream out = System.out;
 
     /** The directory containing the source code for the test. */
     public static final String testSrc = System.getProperty("test.src");
@@ -416,6 +417,17 @@ public abstract class JavadocTester {
      * @param paths the files to check, within the most recent output directory.
      * */
     public void checkFiles(boolean expectedFound, String... paths) {
+        checkFiles(expectedFound, Arrays.asList(paths));
+    }
+
+    /**
+     * Check for files in (or not in) the generated output.
+     * @param expectedFound true if all of the files are expected
+     *  to be found, or false if all of the files are expected to be
+     *  not found
+     * @param paths the files to check, within the most recent output directory.
+     * */
+    public void checkFiles(boolean expectedFound, Collection<String> paths) {
         for (String path: paths) {
 //            log.logCheckFile(path, expectedFound);
             checking("checkFile");
@@ -574,7 +586,7 @@ public abstract class JavadocTester {
                 return content;
 
             content = new String(Files.readAllBytes(file.toPath()));
-            fileContentCache.put(file, new SoftReference(content));
+            fileContentCache.put(file, new SoftReference<>(content));
             return content;
         } catch (FileNotFoundException e) {
             System.err.println(e);
@@ -613,16 +625,19 @@ public abstract class JavadocTester {
      * Print a summary of the test results.
      */
     protected void printSummary() {
-//        log.write();
+        String javadocRuns = (javadocRunNum <= 1) ? ""
+                : ", in " + javadocRunNum + " runs of javadoc";
+
         if (numTestsRun != 0 && numTestsPassed == numTestsRun) {
             // Test passed
             out.println();
-            out.println("All " + numTestsPassed + " subtests passed");
+            out.println("All " + numTestsPassed + " subtests passed" + javadocRuns);
         } else {
             // Test failed
             throw new Error((numTestsRun - numTestsPassed)
                     + " of " + (numTestsRun)
-                    + " subtests failed");
+                    + " subtests failed"
+                    + javadocRuns);
         }
     }
 
