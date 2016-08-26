@@ -78,3 +78,10 @@ tools/sjavac/ClasspathDependencies.java						8158002	   generic-all	  Requires i
 #
 # jdeps 
 
+###########################################################################
+#
+# jdeprscan
+
+tools/all/RunCodingRules.java                                                   8164836    generic-all    fix @DefinedBy
+tools/jdeprscan/tests/jdk/jdeprscan/TestLoad.java                               8164837    windows-all    probably line breaks or encoding
+tools/jdeprscan/tests/jdk/jdeprscan/TestScan.java                               8164837    windows-all    probably line breaks or encoding
