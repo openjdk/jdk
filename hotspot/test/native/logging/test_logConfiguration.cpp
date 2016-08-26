@@ -164,10 +164,17 @@ TEST_F(LogConfigurationTest, disable_logging) {
   // Add TestLogFileName as an output
   set_log_config(TestLogFileName, "logging=info");
 
+  // Add a second file output
+  char other_file_name[2 * K];
+  jio_snprintf(other_file_name, sizeof(other_file_name), "%s-other", TestLogFileName);
+  set_log_config(other_file_name, "logging=info");
+
   LogConfiguration::disable_logging();
 
-  // Verify TestLogFileName was disabled
+  // Verify that both file outputs were disabled
   EXPECT_FALSE(is_described(TestLogFileName));
+  EXPECT_FALSE(is_described(other_file_name));
+  delete_file(other_file_name);
 
   // Verify that no tagset has logging enabled
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
