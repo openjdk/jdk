@@ -25,17 +25,14 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
-
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 
 
 /**
@@ -67,7 +64,6 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      *
      * @param configuration for this run
      * @param filename File to be generated.
-     * @throws java.io.IOException
      */
     public FrameOutputWriter(ConfigurationImpl configuration, DocPath filename) {
         super(configuration, filename);
@@ -79,28 +75,20 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      * file which will have the description of all the frames in the
      * documentation. The name of the generated file is "index.html" which is
      * the default first file for Html documents.
-     * @throws DocletAbortException
+     * @param configuration the configuration for this doclet
+     * @throws DocFileIOException if there is a problem generating the frame file
      */
-    public static void generate(ConfigurationImpl configuration) {
-        FrameOutputWriter framegen;
-        DocPath filename = DocPath.empty;
-        try {
-            filename = DocPaths.INDEX;
-            framegen = new FrameOutputWriter(configuration, filename);
-            framegen.generateFrameFile();
-        } catch (IOException exc) {
-            Messages messages = configuration.getMessages();
-            messages.error("doclet.exception_encountered",
-                        exc.toString(), filename);
-            throw new DocletAbortException(exc);
-        }
+    public static void generate(ConfigurationImpl configuration) throws DocFileIOException {
+        FrameOutputWriter framegen = new FrameOutputWriter(configuration, DocPaths.INDEX);
+        framegen.generateFrameFile();
     }
 
     /**
      * Generate the constants in the "index.html" file. Print the frame details
      * as well as warning if browser is not supporting the Html frames.
+     * @throws DocFileIOException if there is a problem generating the frame file
      */
-    protected void generateFrameFile() throws IOException {
+    protected void generateFrameFile() throws DocFileIOException {
         Content frame = getFrameDetails();
         HtmlTree body = new HtmlTree(HtmlTag.BODY);
         body.addAttr(HtmlAttr.ONLOAD, "loadFrames()");

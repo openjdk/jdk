@@ -70,4 +70,3 @@ public class PublicFamilyTest {
         return catalogResolver("publicFamily.xml");
     }
 }
-

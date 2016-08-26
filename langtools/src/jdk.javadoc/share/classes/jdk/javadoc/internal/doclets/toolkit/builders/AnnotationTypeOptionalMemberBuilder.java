@@ -30,6 +30,7 @@ import javax.lang.model.element.TypeElement;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeOptionalMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeRequiredMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 
 
@@ -67,6 +68,7 @@ public class AnnotationTypeOptionalMemberBuilder extends AnnotationTypeRequiredM
      * @param context  the build context.
      * @param typeElement the class whose members are being documented.
      * @param writer the doclet specific writer.
+     * @return the new AnnotationTypeMemberBuilder
      */
     public static AnnotationTypeOptionalMemberBuilder getInstance(
             Context context, TypeElement typeElement,
@@ -88,8 +90,10 @@ public class AnnotationTypeOptionalMemberBuilder extends AnnotationTypeRequiredM
      *
      * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildAnnotationTypeOptionalMember(XMLNode node, Content memberDetailsTree) {
+    public void buildAnnotationTypeOptionalMember(XMLNode node, Content memberDetailsTree)
+                throws DocletException {
         buildAnnotationTypeMember(node, memberDetailsTree);
     }
 

@@ -88,18 +88,18 @@
         <dirset dir="${src.dir}" includes="*.*"/>
     </pathconvert>
 
-    <pathconvert property="xpatch.rest" pathsep=" -Xpatch:">
+    <pathconvert property="xpatch.rest" pathsep=" --patch-module=">
         <regexpmapper from="${file.separator}([^${file.separator}]+)$" to='\1="${build.modules}${file.separator}\1"' />
         <dirset dir="${src.dir}" includes="*.*"/>
     </pathconvert>
 
-    <pathconvert property="xpatch.noquotes.rest" pathsep=" -Xpatch:">
+    <pathconvert property="xpatch.noquotes.rest" pathsep=" --patch-module=">
         <regexpmapper from="${file.separator}([^${file.separator}]+)$" to="\1=${build.modules}${file.separator}\1" />
         <dirset dir="${src.dir}" includes="*.*"/>
     </pathconvert>
 
-    <property name="xpatch.cmd" value="-Xpatch:${xpatch.rest}"/>
-    <property name="xpatch.noquotes.cmd" value="-Xpatch:${xpatch.noquotes.rest}"/>
+    <property name="xpatch.cmd" value="--patch-module=${xpatch.rest}"/>
+    <property name="xpatch.noquotes.cmd" value="--patch-module=${xpatch.noquotes.rest}"/>
 
     <!-- java.marker is set to a marker file to check for within a Java install dir.
          The best file to check for across Solaris/Linux/Windows/MacOS is one of the
@@ -207,7 +207,7 @@
             <arg line="-source ${javac.source} -target ${javac.target}" />
             <arg value="-d" />
             <arg value="${build.modules}" />
-            <arg line="${javac.opts} -modulesourcepath ${src.dir}${file.separator}*${file.separator}share${file.separator}classes:${build.gensrc} -m ${modules.names}" />
+            <arg line="${javac.opts} --module-source-path ${src.dir}${file.separator}*${file.separator}share${file.separator}classes:${build.gensrc} -m ${modules.names}" />
         </exec>
         <delete>
             <fileset dir="${build.modules}" includes="**/module-info.class"/>

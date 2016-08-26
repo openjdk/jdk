@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.util.*;
 
 import javax.lang.model.element.ModuleElement;
@@ -42,6 +41,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
@@ -112,6 +112,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
+    @Override
     public Content getPackageHeader(String heading) {
         HtmlTree bodyTree = getBody(true, getWindowTitle(utils.getPackageName(packageElement)));
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
@@ -166,6 +167,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
+    @Override
     public Content getContentHeader() {
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.contentContainer);
@@ -198,6 +200,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
+    @Override
     public Content getSummaryHeader() {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.addStyle(HtmlStyle.blockList);
@@ -207,6 +210,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addClassesSummary(SortedSet<TypeElement> classes, String label,
             String tableSummary, List<String> tableHeader, Content summaryContentTree) {
         if(!classes.isEmpty()) {
@@ -252,6 +256,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addPackageDescription(Content packageContentTree) {
         if (!utils.getBody(packageElement).isEmpty()) {
             packageContentTree.addContent(
@@ -273,6 +278,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addPackageTags(Content packageContentTree) {
         Content htmlTree = (configuration.allowTag(HtmlTag.SECTION))
                 ? sectionTree
@@ -283,6 +289,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addPackageContent(Content contentTree, Content packageContentTree) {
         if (configuration.allowTag(HtmlTag.MAIN)) {
             packageContentTree.addContent(sectionTree);
@@ -296,6 +303,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addPackageFooter(Content contentTree) {
         Content htmlTree = (configuration.allowTag(HtmlTag.FOOTER))
                 ? HtmlTree.FOOTER()
@@ -310,7 +318,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
-    public void printDocument(Content contentTree) throws IOException {
+    @Override
+    public void printDocument(Content contentTree) throws DocFileIOException {
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(packageElement),
                 true, contentTree);
     }
@@ -320,6 +329,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      *
      * @return a content tree for the class use link
      */
+    @Override
     protected Content getNavLinkClassUse() {
         Content useLink = getHyperLink(DocPaths.PACKAGE_USE,
                 contents.useLabel, "", "");
@@ -332,6 +342,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      *
      * @return a content tree for the previous link
      */
+    @Override
     public Content getNavLinkPrevious() {
         Content li;
         if (prev == null) {
@@ -349,6 +360,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      *
      * @return a content tree for the next link
      */
+    @Override
     public Content getNavLinkNext() {
         Content li;
         if (next == null) {
@@ -367,6 +379,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      *
      * @return a content tree for the tree link
      */
+    @Override
     protected Content getNavLinkTree() {
         Content useLink = getHyperLink(DocPaths.PACKAGE_TREE,
                 contents.treeLabel, "", "");
@@ -392,6 +405,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      *
      * @return a content tree for the package link
      */
+    @Override
     protected Content getNavLinkPackage() {
         Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.packageLabel);
         return li;

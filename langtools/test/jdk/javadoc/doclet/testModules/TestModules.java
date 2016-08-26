@@ -160,8 +160,8 @@ public class TestModules extends JavadocTester {
     @Test
     void testModuleSummary() {
         javadoc("-d", "out-moduleSummary", "-use",
-                "-modulesourcepath", testSrc,
-                "-addmods", "module1,module2",
+                "--module-source-path", testSrc,
+                "--add-modules", "module1,module2",
                 "testpkgmdl1", "testpkgmdl2", "module2/testpkg2mdl2");
         checkExit(Exit.OK);
         checkModuleSummary();
@@ -174,8 +174,8 @@ public class TestModules extends JavadocTester {
     @Test
     void testModuleFilesAndLinks() {
         javadoc("-d", "out-modulelinks",
-                "-modulesourcepath", testSrc,
-                "-addmods", "module1",
+                "--module-source-path", testSrc,
+                "--add-modules", "module1",
                 "testpkgmdl1");
         checkExit(Exit.OK);
         checkModuleFilesAndLinks(true);

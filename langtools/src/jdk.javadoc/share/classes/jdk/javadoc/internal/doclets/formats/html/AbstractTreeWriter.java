@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.util.*;
 
 import javax.lang.model.element.TypeElement;
@@ -37,7 +36,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 
 
 /**
@@ -67,8 +65,6 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
      * @param configuration  The current configuration
      * @param filename   File to be generated.
      * @param classtree  Tree built by {@link ClassTree}.
-     * @throws IOException
-     * @throws DocletAbortException
      */
     protected AbstractTreeWriter(ConfigurationImpl configuration,
                                  DocPath filename, ClassTree classtree) {

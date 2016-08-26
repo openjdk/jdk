@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
-import java.io.*;
 import java.util.*;
 
 import javax.lang.model.element.Element;
@@ -37,9 +36,9 @@ import javax.lang.model.element.VariableElement;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SerialFieldTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -114,7 +113,9 @@ public class SerializedFormBuilder extends AbstractBuilder {
 
     /**
      * Construct a new SerializedFormBuilder.
+     *
      * @param context  the build context.
+     * @return the new SerializedFormBuilder
      */
     public static SerializedFormBuilder getInstance(Context context) {
         return new SerializedFormBuilder(context);
@@ -122,22 +123,21 @@ public class SerializedFormBuilder extends AbstractBuilder {
 
     /**
      * Build the serialized form.
+     *
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void build() throws IOException {
+    @Override
+    public void build() throws DocletException {
         SortedSet<TypeElement> rootclasses = new TreeSet<>(utils.makeGeneralPurposeComparator());
         rootclasses.addAll(configuration.docEnv.getIncludedTypeElements());
         if (!serialClassFoundToDocument(rootclasses)) {
             //Nothing to document.
             return;
         }
-        try {
-            writer = configuration.getWriterFactory().getSerializedFormWriter();
-            if (writer == null) {
-                //Doclet does not support this output.
-                return;
-            }
-        } catch (Exception e) {
-            throw new DocletAbortException(e);
+        writer = configuration.getWriterFactory().getSerializedFormWriter();
+        if (writer == null) {
+            //Doclet does not support this output.
+            return;
         }
         build(layoutParser.parseXML(NAME), contentTree);
     }
@@ -145,6 +145,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getName() {
         return NAME;
     }
@@ -154,8 +155,9 @@ public class SerializedFormBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param serializedTree content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildSerializedForm(XMLNode node, Content serializedTree) throws Exception {
+    public void buildSerializedForm(XMLNode node, Content serializedTree) throws DocletException {
         serializedTree = writer.getHeader(configuration.getText(
                 "doclet.Serialized_Form"));
         buildChildren(node, serializedTree);
@@ -168,8 +170,10 @@ public class SerializedFormBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param serializedTree content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildSerializedFormSummaries(XMLNode node, Content serializedTree) {
+    public void buildSerializedFormSummaries(XMLNode node, Content serializedTree)
+            throws DocletException {
         Content serializedSummariesTree = writer.getSerializedSummariesHeader();
         for (PackageElement pkg : configuration.packages) {
             currentPackage = pkg;
@@ -184,8 +188,9 @@ public class SerializedFormBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param serializedSummariesTree content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildPackageSerializedForm(XMLNode node, Content serializedSummariesTree) {
+    public void buildPackageSerializedForm(XMLNode node, Content serializedSummariesTree) throws DocletException {
         Content packageSerializedTree = writer.getPackageSerializedHeader();
         SortedSet<TypeElement> classes = utils.getAllClassesUnfiltered(currentPackage);
         if (classes.isEmpty()) {
@@ -217,8 +222,10 @@ public class SerializedFormBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param packageSerializedTree content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildClassSerializedForm(XMLNode node, Content packageSerializedTree) {
+    public void buildClassSerializedForm(XMLNode node, Content packageSerializedTree)
+            throws DocletException {
         Content classSerializedTree = writer.getClassSerializedHeader();
         SortedSet<TypeElement> typeElements = utils.getAllClassesUnfiltered(currentPackage);
         for (TypeElement typeElement : typeElements) {
@@ -262,8 +269,9 @@ public class SerializedFormBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param classTree content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildClassContent(XMLNode node, Content classTree) {
+    public void buildClassContent(XMLNode node, Content classTree) throws DocletException {
         Content classContentTree = writer.getClassContentHeader();
         buildChildren(node, classContentTree);
         classTree.addContent(classContentTree);
@@ -275,8 +283,9 @@ public class SerializedFormBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param classContentTree content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildSerializableMethods(XMLNode node, Content classContentTree) {
+    public void buildSerializableMethods(XMLNode node, Content classContentTree) throws DocletException {
         Content serializableMethodTree = methodWriter.getSerializableMethodsHeader();
         SortedSet<ExecutableElement> members = utils.serializationMethods(currentTypeElement);
         if (!members.isEmpty()) {
@@ -329,8 +338,9 @@ public class SerializedFormBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param methodsContentTree content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildMethodInfo(XMLNode node, Content methodsContentTree)  {
+    public void buildMethodInfo(XMLNode node, Content methodsContentTree) throws DocletException  {
         if(configuration.nocomment){
             return;
         }
@@ -411,8 +421,10 @@ public class SerializedFormBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param classContentTree content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildSerializableFields(XMLNode node, Content classContentTree) {
+    public void buildSerializableFields(XMLNode node, Content classContentTree)
+            throws DocletException {
         SortedSet<VariableElement> members = utils.serializableFields(currentTypeElement);
         if (!members.isEmpty()) {
             Content serializableFieldsTree = fieldWriter.getSerializableFieldsHeader();
@@ -533,10 +545,12 @@ public class SerializedFormBuilder extends AbstractBuilder {
     }
 
     /**
-     * Return true if the given Element should be included
+     * Returns true if the given Element should be included
      * in the serialized form.
      *
-     * @param element the Element object to check for serializability.
+     * @param utils the utils object
+     * @param element the Element object to check for serializability
+     * @return true if the element should be included in the serial form
      */
     public static boolean serialInclude(Utils utils, Element element) {
         if (element == null) {
@@ -548,7 +562,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
     }
 
     /**
-     * Return true if the given TypeElement should be included
+     * Returns true if the given TypeElement should be included
      * in the serialized form.
      *
      * @param te the TypeElement object to check for serializability.

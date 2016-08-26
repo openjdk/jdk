@@ -73,7 +73,7 @@ public class RemovedJDKInternals {
         // patch jdk.unsupported and set -cp to codec types
         assertTrue(CompilerUtils.compile(Paths.get(TEST_SRC, "src", "p"),
                                          CLASSES_DIR,
-                                         "-Xpatch:jdk.unsupported=" + patchDir,
+                                         "--patch-module", "jdk.unsupported=" + patchDir,
                                          "-cp", codecDest.toString()));
     }
 

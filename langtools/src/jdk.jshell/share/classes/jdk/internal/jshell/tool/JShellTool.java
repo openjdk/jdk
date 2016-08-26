@@ -94,12 +94,16 @@ import java.util.ResourceBundle;
 import java.util.Spliterators;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import jdk.internal.joptsimple.*;
 import jdk.internal.jshell.tool.Feedback.FormatAction;
 import jdk.internal.jshell.tool.Feedback.FormatCase;
 import jdk.internal.jshell.tool.Feedback.FormatErrors;
 import jdk.internal.jshell.tool.Feedback.FormatResolve;
 import jdk.internal.jshell.tool.Feedback.FormatUnresolved;
 import jdk.internal.jshell.tool.Feedback.FormatWhen;
+import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static jdk.jshell.Snippet.SubKind.VAR_VALUE_SUBKIND;
 import static java.util.stream.Collectors.toMap;
@@ -181,6 +185,7 @@ public class JShellTool implements MessageHandler {
     private String cmdlineClasspath = null;
     private String startup = null;
     private String[] editor = null;
+    private boolean editorWait = false;
 
     // Commands and snippets which should be replayed
     private List<String> replayableHistory;
@@ -477,6 +482,11 @@ public class JShellTool implements MessageHandler {
         if (editorString == null || editorString.isEmpty()) {
             editor = null;
         } else {
+            char waitMarker = editorString.charAt(0);
+            if (waitMarker == '-' || waitMarker == '*') {
+                editorWait = waitMarker == '-';
+                editorString = editorString.substring(1);
+            }
             editor = editorString.split(RECORD_SEPARATOR);
         }
 
@@ -515,82 +525,91 @@ public class JShellTool implements MessageHandler {
      * @return the list of files to be loaded
      */
     private List<String> processCommandArgs(String[] args) {
-        List<String> loadList = new ArrayList<>();
-        Iterator<String> ai = Arrays.asList(args).iterator();
-        while (ai.hasNext()) {
-            String arg = ai.next();
-            if (arg.startsWith("-")) {
-                switch (arg) {
-                    case "-classpath":
-                    case "-cp":
-                        if (cmdlineClasspath != null) {
-                            startmsg("jshell.err.opt.classpath.conflict");
-                            return null;
-                        }
-                        if (ai.hasNext()) {
-                            cmdlineClasspath = ai.next();
-                        } else {
-                            startmsg("jshell.err.opt.classpath.arg");
-                            return null;
-                        }
-                        break;
-                    case "-help":
-                        printUsage();
-                        return null;
-                    case "-version":
-                        cmdout.printf("jshell %s\n", version());
-                        return null;
-                    case "-fullversion":
-                        cmdout.printf("jshell %s\n", fullVersion());
-                        return null;
-                    case "-feedback":
-                        if (ai.hasNext()) {
-                            commandLineFeedbackMode = ai.next();
-                        } else {
-                            startmsg("jshell.err.opt.feedback.arg");
-                            return null;
-                        }
-                        break;
-                    case "-q":
-                        commandLineFeedbackMode = "concise";
-                        break;
-                    case "-qq":
-                        commandLineFeedbackMode = "silent";
-                        break;
-                    case "-v":
-                        commandLineFeedbackMode = "verbose";
-                        break;
-                    case "-startup":
-                        if (startup != null) {
-                            startmsg("jshell.err.opt.startup.one");
-                            return null;
-                        }
-                        startup = readFile(ai.hasNext()? ai.next() : null, "-startup");
-                        if (startup == null) {
-                            return null;
-                        }
-                        break;
-                    case "-nostartup":
-                        if (startup != null) {
-                            startmsg("jshell.err.opt.startup.one");
-                            return null;
-                        }
-                        startup = "";
-                        break;
-                    default:
-                        if (arg.startsWith("-R")) {
-                            remoteVMOptions.add(arg.substring(2));
-                            break;
-                        }
-                        startmsg("jshell.err.opt.unknown", arg);
-                        printUsage();
-                        return null;
-                }
+        OptionParser parser = new OptionParser();
+        OptionSpec<String> cp = parser.accepts("class-path").withRequiredArg();
+        OptionSpec<String> st = parser.accepts("startup").withRequiredArg();
+        parser.acceptsAll(asList("n", "no-startup"));
+        OptionSpec<String> fb = parser.accepts("feedback").withRequiredArg();
+        parser.accepts("q");
+        parser.accepts("s");
+        parser.accepts("v");
+        OptionSpec<String> r = parser.accepts("R").withRequiredArg();
+        parser.acceptsAll(asList("h", "help"));
+        parser.accepts("version");
+        parser.accepts("full-version");
+        NonOptionArgumentSpec<String> loadFileSpec = parser.nonOptions();
+
+        OptionSet options;
+        try {
+            options = parser.parse(args);
+        } catch (OptionException ex) {
+            if (ex.options().isEmpty()) {
+                startmsg("jshell.err.opt.invalid", stream(args).collect(joining(", ")));
             } else {
-                loadList.add(arg);
+                boolean isKnown = parser.recognizedOptions().containsKey(ex.options().iterator().next());
+                startmsg(isKnown
+                        ? "jshell.err.opt.arg"
+                        : "jshell.err.opt.unknown",
+                        ex.options()
+                        .stream()
+                        .collect(joining(", ")));
             }
+            return null;
         }
-        return loadList;
+
+        if (options.has("help")) {
+            printUsage();
+            return null;
+        }
+        if (options.has("version")) {
+            cmdout.printf("jshell %s\n", version());
+            return null;
+        }
+        if (options.has("full-version")) {
+            cmdout.printf("jshell %s\n", fullVersion());
+            return null;
+        }
+        if (options.has(cp)) {
+            List<String> cps = options.valuesOf(cp);
+            if (cps.size() > 1) {
+                startmsg("jshell.err.opt.one", "--class-path");
+                return null;
+            }
+            cmdlineClasspath = cps.get(0);
+        }
+        if (options.has(st)) {
+            List<String> sts = options.valuesOf(st);
+            if (sts.size() != 1 || options.has("no-startup")) {
+                startmsg("jshell.err.opt.startup.one");
+                return null;
+            }
+            startup = readFile(sts.get(0), "--startup");
+            if (startup == null) {
+                return null;
+            }
+        } else if (options.has("no-startup")) {
+            startup = "";
+        }
+        if ((options.valuesOf(fb).size() +
+                 (options.has("q") ? 1 : 0) +
+                 (options.has("s") ? 1 : 0) +
+                 (options.has("v") ? 1 : 0)) > 1) {
+            startmsg("jshell.err.opt.feedback.one");
+            return null;
+        } else if (options.has(fb)) {
+            commandLineFeedbackMode = options.valueOf(fb);
+        } else if (options.has("q")) {
+            commandLineFeedbackMode = "concise";
+        } else if (options.has("s")) {
+            commandLineFeedbackMode = "silent";
+        } else if (options.has("v")) {
+            commandLineFeedbackMode = "verbose";
+        }
+        if (options.has(r)) {
+            remoteVMOptions = options.valuesOf(r);
+        }
+
+        return options.valuesOf(loadFileSpec);
     }
 
     private void printUsage() {
@@ -686,7 +705,7 @@ public class JShellTool implements MessageHandler {
         }
         if (commandLineFeedbackMode != null) {
             // The feedback mode to use was specified on the command line, use it
-            if (!feedback.setFeedback(initmh, new ArgTokenizer("-feedback", commandLineFeedbackMode))) {
+            if (!feedback.setFeedback(initmh, new ArgTokenizer("--feedback", commandLineFeedbackMode))) {
                 regenerateOnDeath = false;
             }
             commandLineFeedbackMode = null;
@@ -1247,7 +1266,7 @@ public class JShellTool implements MessageHandler {
                 // retain editor setting
                 prefs.put(EDITOR_KEY, (editor == null)
                         ? ""
-                        : String.join(RECORD_SEPARATOR, editor));
+                        : (editorWait? "-" : "*") + String.join(RECORD_SEPARATOR, editor));
                 return true;
             case "start": {
                 if (!setStart(cmd, at, false)) {
@@ -1302,7 +1321,7 @@ public class JShellTool implements MessageHandler {
 
     // The sub-command:  /set editor <editor-command-line>>
     boolean setEditor(ArgTokenizer at, boolean argsRequired) {
-        at.allowedOptions("-default");
+        at.allowedOptions("-default", "-wait");
         String prog = at.next();
         List<String> ed = new ArrayList<>();
         while (at.val() != null) {
@@ -1313,14 +1332,20 @@ public class JShellTool implements MessageHandler {
             return false;
         }
         boolean defaultOption = at.hasOption("-default");
+        boolean waitOption = at.hasOption("-wait");
         if (prog != null) {
             if (defaultOption) {
                 errormsg("jshell.err.default.option.or.program", at.whole());
                 return false;
             }
             editor = ed.toArray(new String[ed.size()]);
+            editorWait = waitOption;
             fluffmsg("jshell.msg.set.editor.set", prog);
         } else if (defaultOption) {
+            if (waitOption) {
+                errormsg("jshell.err.wait.applies.to.external.editor", at.whole());
+                return false;
+            }
             editor = null;
         } else if (argsRequired) {
             errormsg("jshell.err.set.editor.arg");
@@ -1707,7 +1732,8 @@ public class JShellTool implements MessageHandler {
                 return false;
             }
         } else {
-            ExternalEditor.edit(editor, errorHandler, src, saveHandler, input);
+            ExternalEditor.edit(editor, errorHandler, src, saveHandler, input,
+                    editorWait, this::hardrb);
         }
         return true;
     }

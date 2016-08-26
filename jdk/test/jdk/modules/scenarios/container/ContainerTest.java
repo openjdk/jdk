@@ -26,6 +26,8 @@
  * @library /lib/testlibrary
  * @modules jdk.jartool/sun.tools.jar
  *          jdk.compiler
+ *          jdk.zipfs
+ *          java.se
  * @build ContainerTest CompilerUtils jdk.testlibrary.*
  * @run testng ContainerTest
  * @summary Starts a simple container that uses dynamic configurations
