@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4635454 6208022
+ * @bug 4635454 6208022 8130181
  * @summary Check pluggability of SSLContext class.
  */
 import java.security.*;
@@ -34,7 +34,7 @@ public class CheckSSLContextExport extends Provider {
     private static String info = "test provider for JSSE pluggability";
 
     public CheckSSLContextExport(String protocols[]) {
-        super("TestJSSEPluggability", 1.0, info);
+        super("TestJSSEPluggability", "1.0", info);
         for (int i=0; i<protocols.length; i++) {
             put("SSLContext." + protocols[i], "MySSLContextImpl");
         }

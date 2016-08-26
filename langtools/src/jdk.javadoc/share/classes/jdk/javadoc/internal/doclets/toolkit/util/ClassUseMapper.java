@@ -44,8 +44,6 @@ import javax.lang.model.util.SimpleElementVisitor9;
 import javax.lang.model.util.SimpleTypeVisitor9;
 import javax.lang.model.util.Types;
 
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.formats.html.ConfigurationImpl;
 
@@ -208,7 +206,7 @@ public class ClassUseMapper {
             implementingClasses(intfc);
         }
         // Map methods, fields, constructors using a class.
-        Set<TypeElement> classes = docEnv.getIncludedClasses();
+        Set<TypeElement> classes = docEnv.getIncludedTypeElements();
         for (TypeElement aClass : classes) {
             PackageElement pkg = elementUtils.getPackageOf(aClass);
             mapAnnotations(classToPackageAnnotations, pkg, pkg);
@@ -219,17 +217,17 @@ public class ClassUseMapper {
                 mapTypeParameters(classToFieldTypeParam, fd, fd);
                 mapAnnotations(annotationToField, fd, fd);
                 SimpleTypeVisitor9<Void, VariableElement> stv = new SimpleTypeVisitor9<Void, VariableElement>() {
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     public Void visitArray(ArrayType t, VariableElement p) {
                         return visit(t.getComponentType(), p);
                     }
 
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     public Void visitDeclared(DeclaredType t, VariableElement p) {
                         add(classToField, (TypeElement) t.asElement(), p);
                         return null;
                     }
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     public Void visitTypeVariable(TypeVariable t, VariableElement p) {
                         return visit(typeUtils.erasure(t), p);
                     }
@@ -249,7 +247,7 @@ public class ClassUseMapper {
                 mapTypeParameters(classToMethodTypeParam, method, method);
                 mapAnnotations(classToMethodAnnotations, method, method);
                 SimpleTypeVisitor9<Void, ExecutableElement> stv = new SimpleTypeVisitor9<Void, ExecutableElement>() {
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     public Void visitArray(ArrayType t, ExecutableElement p) {
                         TypeMirror componentType = t.getComponentType();
                         return visit(utils.isTypeVariable(componentType)
@@ -257,14 +255,14 @@ public class ClassUseMapper {
                                 : componentType, p);
                     }
 
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     public Void visitDeclared(DeclaredType t, ExecutableElement p) {
                         mapTypeParameters(classToMethodReturnTypeParam, t, p);
                         add(classToMethodReturn, (TypeElement) t.asElement(), p);
                         return null;
                     }
 
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     protected Void defaultAction(TypeMirror e, ExecutableElement p) {
                         return null;
                     }
@@ -349,12 +347,12 @@ public class ClassUseMapper {
                 // no duplicates please
                 if (classArgs.add(pType)) {
                     new SimpleTypeVisitor9<Void, ExecutableElement>() {
-                        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                        @Override
                         public Void visitArray(ArrayType t, ExecutableElement p) {
                             return visit(t.getComponentType(), p);
                         }
 
-                        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                        @Override
                         public Void visitDeclared(DeclaredType t, ExecutableElement p) {
                             add(isConstructor
                                     ? classToConstructorArgs
@@ -362,7 +360,7 @@ public class ClassUseMapper {
                                     (TypeElement) t.asElement(), p);
                             return null;
                         }
-                        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                        @Override
                         public Void visitTypeVariable(TypeVariable t, ExecutableElement p) {
                             visit(typeUtils.erasure(t), p);
                             return null;
@@ -383,27 +381,27 @@ public class ClassUseMapper {
         for (TypeMirror anException : ee.getThrownTypes()) {
             SimpleTypeVisitor9<Void, ExecutableElement> stv = new SimpleTypeVisitor9<Void, ExecutableElement>() {
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Void visitArray(ArrayType t, ExecutableElement p) {
                     super.visit(t.getComponentType(), p);
                     return null;
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Void visitDeclared(DeclaredType t, ExecutableElement p) {
                     add(isConstructor ? classToConstructorThrows : classToMethodThrows,
                             (TypeElement) t.asElement(), p);
                     return null;
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Void visitError(ErrorType t, ExecutableElement p) {
                     add(isConstructor ? classToConstructorThrows : classToMethodThrows,
                             (TypeElement) t.asElement(), p);
                     return null;
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 protected Void defaultAction(TypeMirror e, ExecutableElement p) {
                     throw new AssertionError("this should not happen");
                 }
@@ -488,7 +486,7 @@ public class ClassUseMapper {
                         }
                     }
 
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     public Void visitType(TypeElement e, Void p) {
                         for (TypeParameterElement param : e.getTypeParameters()) {
                             addParameters(param);
@@ -496,7 +494,7 @@ public class ClassUseMapper {
                         return null;
                     }
 
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     public Void visitExecutable(ExecutableElement e, Void p) {
                         for (TypeParameterElement param : e.getTypeParameters()) {
                             addParameters(param);
@@ -504,13 +502,13 @@ public class ClassUseMapper {
                         return null;
                     }
 
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     protected Void defaultAction(Element e, Void p) {
                         mapTypeParameters(map, e.asType(), holder);
                         return null;
                     }
 
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     public Void visitTypeParameter(TypeParameterElement e, Void p) {
                         addParameters(e);
                         return null;
@@ -524,7 +522,7 @@ public class ClassUseMapper {
 
         SimpleTypeVisitor9<Void, Void> tv = new SimpleTypeVisitor9<Void, Void>() {
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public Void visitWildcard(WildcardType t, Void p) {
                 TypeMirror bound = t.getExtendsBound();
                 if (bound != null) {
@@ -538,7 +536,7 @@ public class ClassUseMapper {
             }
 
             // ParameterizedType
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public Void visitDeclared(DeclaredType t, Void p) {
                 for (TypeMirror targ : t.getTypeArguments()) {
                     addTypeParameterToMap(map, targ, holder);
@@ -566,7 +564,7 @@ public class ClassUseMapper {
                 }
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public Void visitPackage(PackageElement e, Void p) {
                 for (AnnotationMirror a : e.getAnnotationMirrors()) {
                     refList(map, a.getAnnotationType().asElement()).add(holder);
@@ -574,7 +572,7 @@ public class ClassUseMapper {
                 return null;
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             protected Void defaultAction(Element e, Void p) {
                 addAnnotations(e);
                 return null;
@@ -586,12 +584,12 @@ public class ClassUseMapper {
             TypeMirror type, final T holder) {
         new SimpleTypeVisitor9<Void, Void>() {
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             protected Void defaultAction(TypeMirror e, Void p) {
                 return super.defaultAction(e, p);
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public Void visitDeclared(DeclaredType t, Void p) {
                 add(map, (TypeElement) t.asElement(), holder);
                 return null;

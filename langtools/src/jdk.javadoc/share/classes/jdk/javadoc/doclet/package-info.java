@@ -27,7 +27,7 @@
  * The Doclet API provides an environment which, in conjunction with
  * the Language Model API and Compiler Tree API, allows clients
  * to inspect the source-level structures of programs and
- * libraries, including javadoc comments embedded in the source.
+ * libraries, including API comments embedded in the source.
  *
  * <p style="font-style: italic">
  * <b>Note:</b> The declarations in this package supersede those
@@ -57,15 +57,58 @@
  * <a name="terminology"></a>
  * <h3>Terminology</h3>
  *
- * <a name="included"></a>
- * When calling javadoc, one can pass in package names and source file names --
- * these are called the <em>specified</em> PackageElements and TypeElements.
- * Javadoc options are also passed in; the <em>access control</em> Javadoc options
- * ({@code -public}, {@code -protected}, {@code -package},
- * and {@code -private}) are used to filter program elements, producing a
- * result set, called the <em>included</em> set, or "selected" set.
+ * <a name="specified"></a>
+ * Module, package and source file names can be provided as parameters to the
+ * javadoc tool -- these are called the <em>specified</em> set containing
+ * module elements, package elements and type elements.
  * <p>
-
+ * Javadoc <em>selection control</em> can be specified with
+ * {@code --show-members:value}, {@code --showtypes:value}, where value can be one of
+ * the following:
+ * <ul>
+ * <li> public    -- considers only public elements
+ * <li> protected -- considers public and protected elements
+ * <li> package   -- considers public, protected and package private elements
+ * <li> private   -- considers all elements
+ * </ul>
+ *
+ * The {@code --show-package:value} where a value of "exported" or "all" can be used to
+ * consider only exported packages or all packages within a module.
+ * <p>
+ * The {@code --expand-requires:value}, expands the "requires" directives of a
+ * module declaration, to create a module set to considered for documentation
+ * as follows:
+ * <ul>
+ * <li> public -- follows and expands  all "requires public" edges in the module graph
+ * <li> all    -- follows and expands  all "requires" edges in the module graph.
+ * By default, only the specified modules will be considered, without expansion
+ * of the module dependencies.
+ * </ul>
+ * <a name="included"></a>
+ * All of the above are used to select the elements, to produce the
+ * <em>included</em> or the <em>selected</em> set.
+ * <p>
+ * {@code --show-module-contents:value} can be used to specify the level at
+ * module declarations could be documented, a value of "api" indicates API
+ * level documentation, and "all" indicates detailed documentation.
+ * <p>
+ * <a name="legacy-interactions"></a>
+ * <h4>Interactions with older options.</h4>
+ *
+ * The new --show-* options provide a more detailed replacement for the older
+ * options -public, -protected, -package, -private.  Alternatively, the older
+ * options can continue to be used as shorter forms for combinations of the
+ * new options, as described below:
+ <table style="font-family: monospace" border=1>
+    <caption>Short form options mapping</caption>
+    <tr><th>Older option<th colspan="5">Equivalent to these values with the new option
+    <tr><th><th>--show-members<th>--show-types<th>--show-packages<th>--show-module-contents
+    <tr><td>-public<td>public<td>public<td>exported<td>api
+    <tr><td>-protected<td>protected<td>protected<td>exported<td>api
+    <tr><td>-package<td>package<td>package<td>all<td>all
+    <tr><td>-private<td>private<td>private<td>all<td>all
+  </table>
+ * <p>
  * <a name="qualified"></a>
  * A <em>qualified</em> element name is one that has its package
  * name prepended to it, such as {@code java.lang.String}.  A non-qualified
@@ -96,14 +139,14 @@
  *     }
  *
  *     &#64;Override
- *     public boolean run(RootDoc root) {
+ *     public boolean run(DocletEnvironment docEnv) {
  *         // cache the DocTrees utility class to access DocComments
- *         DocTrees docTrees = root.getDocTrees();
+ *         DocTrees docTrees = docEnv.getDocTrees();
  *
  *         // location of an element in the same directory as overview.html
  *         try {
  *             Element barElement = null;
- *             for (Element e : root.getIncludedClasses()) {
+ *             for (Element e : docEnv.getIncludedClasses()) {
  *                 if (e.getSimpleName().toString().equals("FooBar")) {
  *                     barElement = e;
  *                 }
@@ -118,7 +161,7 @@
  *             System.err.println("No overview.html found.");
  *         }
  *
- *         for (TypeElement t : root.getIncludedClasses()) {
+ *         for (TypeElement t : docEnv.getIncludedClasses()) {
  *             System.out.println(t.getKind() + ":" + t);
  *             for (Element e : t.getEnclosedElements()) {
  *                 DocCommentTree docCommentTree = docTrees.getDocCommentTree(e);

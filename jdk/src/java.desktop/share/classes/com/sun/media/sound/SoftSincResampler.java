@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 /**
@@ -76,14 +77,16 @@ public final class SoftSincResampler extends SoftAbstractResampler {
         return w;
     }
 
+    @Override
     public int getPadding() // must be at least half of sinc_table_size
     {
         return sinc_table_size / 2 + 2;
     }
 
+    @Override
     public void interpolate(float[] in, float[] in_offset, float in_end,
-            float[] startpitch, float pitchstep, float[] out, int[] out_offset,
-            int out_end) {
+                            float[] startpitch, float pitchstep, float[] out, int[] out_offset,
+                            int out_end) {
         float pitch = startpitch[0];
         float ix = in_offset[0];
         int ox = out_offset[0];
@@ -134,6 +137,5 @@ public final class SoftSincResampler extends SoftAbstractResampler {
         in_offset[0] = ix;
         out_offset[0] = ox;
         startpitch[0] = pitch;
-
     }
 }

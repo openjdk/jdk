@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.List;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -36,8 +37,6 @@ import javax.lang.model.util.SimpleElementVisitor9;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.IndexTree;
-import com.sun.tools.javac.util.DefinedBy;
-
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -113,7 +112,14 @@ public class TagletWriterImpl extends TagletWriter {
             si.setLabel(tagText);
             si.setDescription(desc);
             new SimpleElementVisitor9<Void, Void>() {
-                @Override @DefinedBy(DefinedBy.Api.LANGUAGE_MODEL)
+                @Override
+                public Void visitModule(ModuleElement e, Void p) {
+                    si.setUrl(DocPaths.moduleSummary(e).getPath() + "#" + anchorName);
+                    si.setHolder(utils.getSimpleName(element));
+                    return null;
+                }
+
+                @Override
                 public Void visitPackage(PackageElement e, Void p) {
                     si.setUrl(DocPath.forPackage(e).getPath()
                             + "/" + DocPaths.PACKAGE_SUMMARY.getPath() + "#" + anchorName);
@@ -121,14 +127,14 @@ public class TagletWriterImpl extends TagletWriter {
                     return null;
                 }
 
-                @Override @DefinedBy(DefinedBy.Api.LANGUAGE_MODEL)
+                @Override
                 public Void visitType(TypeElement e, Void p) {
                     si.setUrl(DocPath.forClass(utils, e).getPath() + "#" + anchorName);
                     si.setHolder(utils.getFullyQualifiedName(e));
                     return null;
                 }
 
-                @Override @DefinedBy(DefinedBy.Api.LANGUAGE_MODEL)
+                @Override
                 public Void visitVariable(VariableElement e, Void p) {
                     TypeElement te = utils.getEnclosingTypeElement(e);
                     si.setUrl(DocPath.forClass(utils, te).getPath() + "#" + anchorName);
@@ -136,7 +142,7 @@ public class TagletWriterImpl extends TagletWriter {
                     return null;
                 }
 
-                @Override @DefinedBy(DefinedBy.Api.LANGUAGE_MODEL)
+                @Override
                 protected Void defaultAction(Element e, Void p) {
                     TypeElement te = utils.getEnclosingTypeElement(e);
                     si.setUrl(DocPath.forClass(utils, te).getPath() + "#" + anchorName);

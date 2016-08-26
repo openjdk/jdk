@@ -46,7 +46,13 @@ if [ ! -f $TOOLSRC ]; then
 fi
 
 $JAVAC -d . $TOOLSRC
-$JAVA $TOOLNAME $TESTSRC/raw_java_security outfile solaris sparc $TESTSRC/more_restricted
+$JAVA $TOOLNAME \
+    $TESTSRC/raw_java_security \
+    outfile \
+    solaris \
+    sparc \
+    somepolicy \
+    $TESTSRC/more_restricted
 
 # On Windows, line end could be different. -b is a cross-platform option.
 diff -b outfile $TESTSRC/final_java_security

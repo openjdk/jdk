@@ -100,22 +100,22 @@ public class AudioFileFormat {
     /**
      * File type.
      */
-    private Type type;
+    private final Type type;
 
     /**
      * File length in bytes.
      */
-    private int byteLength;
+    private final int byteLength;
 
     /**
      * Format of the audio data contained in the file.
      */
-    private AudioFormat format;
+    private final AudioFormat format;
 
     /**
      * Audio data length in sample frames.
      */
-    private int frameLength;
+    private final int frameLength;
 
     /**
      * The set of properties.
@@ -176,7 +176,7 @@ public class AudioFileFormat {
     public AudioFileFormat(Type type, AudioFormat format,
                            int frameLength, Map<String, Object> properties) {
         this(type,AudioSystem.NOT_SPECIFIED,format,frameLength);
-        this.properties = new HashMap<String, Object>(properties);
+        this.properties = new HashMap<>(properties);
     }
 
     /**

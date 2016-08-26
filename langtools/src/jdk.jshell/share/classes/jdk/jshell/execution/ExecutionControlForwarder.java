@@ -44,6 +44,13 @@ import static jdk.jshell.execution.RemoteCodes.*;
  */
 class ExecutionControlForwarder {
 
+    /**
+     * Maximum number of characters for writeUTF().  Byte maximum is 65535, at
+     * maximum three bytes per character that is 65535 / 3 == 21845.  Minus one
+     * for safety.
+     */
+    private static final int MAX_UTF_CHARS = 21844;
+
     private final ExecutionControl ec;
     private final ObjectInput in;
     private final ObjectOutput out;
@@ -89,6 +96,9 @@ class ExecutionControlForwarder {
     private void writeUTF(String s) throws IOException {
         if (s == null) {
             s = "";
+        } else if (s.length() > MAX_UTF_CHARS) {
+            // Truncate extremely long strings to prevent writeUTF from crashing the VM
+            s = s.substring(0, MAX_UTF_CHARS);
         }
         out.writeUTF(s);
     }

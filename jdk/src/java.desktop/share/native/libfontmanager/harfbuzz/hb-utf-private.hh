@@ -146,11 +146,11 @@ struct hb_utf16_t
       return text;
     }
 
-    if (likely (hb_in_range (c, 0xD800u, 0xDBFFu)))
+    if (likely (c <= 0xDBFFu && text < end))
     {
       /* High-surrogate in c */
-      hb_codepoint_t l;
-      if (text < end && ((l = *text), likely (hb_in_range (l, 0xDC00u, 0xDFFFu))))
+      hb_codepoint_t l = *text;
+      if (likely (hb_in_range (l, 0xDC00u, 0xDFFFu)))
       {
         /* Low-surrogate in l */
         *unicode = (c << 10) + l - ((0xD800u << 10) - 0x10000u + 0xDC00u);
@@ -170,8 +170,7 @@ struct hb_utf16_t
         hb_codepoint_t *unicode,
         hb_codepoint_t replacement)
   {
-    const uint16_t *end = text--;
-    hb_codepoint_t c = *text;
+    hb_codepoint_t c = *--text;
 
     if (likely (!hb_in_range (c, 0xD800u, 0xDFFFu)))
     {
@@ -179,14 +178,22 @@ struct hb_utf16_t
       return text;
     }
 
-    if (likely (start < text && hb_in_range (c, 0xDC00u, 0xDFFFu)))
-      text--;
+    if (likely (c >= 0xDC00u && start < text))
+    {
+      /* Low-surrogate in c */
+      hb_codepoint_t h = text[-1];
+      if (likely (hb_in_range (h, 0xD800u, 0xDBFFu)))
+      {
+        /* High-surrogate in h */
+        *unicode = (h << 10) + c - ((0xD800u << 10) - 0x10000u + 0xDC00u);
+        text--;
+        return text;
+      }
+    }
 
-    if (likely (next (text, end, unicode, replacement) == end))
-      return text;
-
+    /* Lonely / out-of-order surrogate. */
     *unicode = replacement;
-    return end - 1;
+    return text;
   }
 
 
@@ -211,14 +218,9 @@ struct hb_utf32_t
         hb_codepoint_t *unicode,
         hb_codepoint_t replacement)
   {
-    hb_codepoint_t c = *text++;
-    if (validate && unlikely (c > 0x10FFFFu || hb_in_range (c, 0xD800u, 0xDFFFu)))
-      goto error;
-    *unicode = c;
-    return text;
-
-  error:
-    *unicode = replacement;
+    hb_codepoint_t c = *unicode = *text++;
+    if (validate && unlikely (c >= 0xD800u && (c <= 0xDFFFu || c > 0x10FFFFu)))
+      *unicode = replacement;
     return text;
   }
 
@@ -228,8 +230,10 @@ struct hb_utf32_t
         hb_codepoint_t *unicode,
         hb_codepoint_t replacement)
   {
-    next (text - 1, text, unicode, replacement);
-    return text - 1;
+    hb_codepoint_t c = *unicode = *--text;
+    if (validate && unlikely (c >= 0xD800u && (c <= 0xDFFFu || c > 0x10FFFFu)))
+      *unicode = replacement;
+    return text;
   }
 
   static inline unsigned int

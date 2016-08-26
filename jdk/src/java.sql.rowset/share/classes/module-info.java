@@ -23,6 +23,9 @@
  * questions.
  */
 
+/**
+ * Defines the JDBC RowSet API.
+ */
 module java.sql.rowset {
     requires public java.logging;
     requires public java.naming;

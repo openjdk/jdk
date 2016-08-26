@@ -124,10 +124,6 @@ java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 gen
 # jdk_lang
 
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
-java/lang/invoke/VarHandles/VarHandleTestMethodHandleAccessBoolean.java	8160690 generic-all
-java/lang/invoke/VarHandles/VarHandleTestMethodHandleAccessByte.java	8160690 generic-all
-java/lang/invoke/VarHandles/VarHandleTestMethodHandleAccessChar.java	8160690 generic-all
-java/lang/invoke/VarHandles/VarHandleTestMethodHandleAccessShort.java	8160690 generic-all
 
 ############################################################################
 

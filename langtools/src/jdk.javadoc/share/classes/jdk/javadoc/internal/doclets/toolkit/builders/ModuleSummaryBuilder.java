@@ -25,14 +25,12 @@
 
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
-import java.io.IOException;
-import java.util.Set;
-
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.tools.StandardLocation;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.ModuleSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
@@ -105,8 +103,11 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
 
     /**
      * Build the module summary.
+     *
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void build() throws IOException {
+    @Override
+    public void build() throws DocletException {
         if (moduleWriter == null) {
             //Doclet does not support this output.
             return;
@@ -117,6 +118,7 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getName() {
         return ROOT;
     }
@@ -126,17 +128,14 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param contentTree the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildModuleDoc(XMLNode node, Content contentTree) throws Exception {
+    public void buildModuleDoc(XMLNode node, Content contentTree) throws DocletException {
         contentTree = moduleWriter.getModuleHeader(mdle.getSimpleName().toString());
         buildChildren(node, contentTree);
         moduleWriter.addModuleFooter(contentTree);
         moduleWriter.printDocument(contentTree);
-        // TEMPORARY:
-        // The use of SOURCE_PATH on the next line is temporary. As we transition into the
-        // modules world, this should migrate into using a location for the appropriate module
-        // on the MODULE_SOURCE_PATH, or (in the old doclet) simply deleted.
-        utils.copyDocFiles(configuration, StandardLocation.SOURCE_PATH, DocPaths.moduleSummary(mdle));
+        utils.copyDirectory(mdle, DocPaths.moduleSummary(mdle));
     }
 
     /**
@@ -145,8 +144,9 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
      * @param node the XML element that specifies which components to document
      * @param contentTree the content tree to which the module contents
      *                    will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildContent(XMLNode node, Content contentTree) {
+    public void buildContent(XMLNode node, Content contentTree) throws DocletException {
         Content moduleContentTree = moduleWriter.getContentHeader();
         buildChildren(node, moduleContentTree);
         moduleWriter.addModuleContent(contentTree, moduleContentTree);
@@ -158,8 +158,9 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
      * @param node the XML element that specifies which components to document
      * @param moduleContentTree the module content tree to which the summaries will
      *                           be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildSummary(XMLNode node, Content moduleContentTree) {
+    public void buildSummary(XMLNode node, Content moduleContentTree) throws DocletException {
         Content summaryContentTree = moduleWriter.getSummaryHeader();
         buildChildren(node, summaryContentTree);
         moduleContentTree.addContent(moduleWriter.getSummaryTree(summaryContentTree));

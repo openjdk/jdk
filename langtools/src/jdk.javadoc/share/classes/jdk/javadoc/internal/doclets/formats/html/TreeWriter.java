@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.IOException;
 import java.util.SortedSet;
 
 import javax.lang.model.element.PackageElement;
@@ -36,11 +35,10 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 
 /**
  * Generate Class Hierarchy page for all the Classes in this run.  Use
@@ -67,7 +65,7 @@ public class TreeWriter extends AbstractTreeWriter {
      * True if there are no packages specified on the command line,
      * False otherwise.
      */
-    private boolean classesonly;
+    private final boolean classesOnly;
 
     /**
      * Constructor to construct TreeWriter object.
@@ -76,39 +74,33 @@ public class TreeWriter extends AbstractTreeWriter {
      * @param filename String filename
      * @param classtree the tree being built.
      */
-    public TreeWriter(ConfigurationImpl configuration,
-            DocPath filename, ClassTree classtree) throws IOException {
+    public TreeWriter(ConfigurationImpl configuration, DocPath filename, ClassTree classtree) {
         super(configuration, filename, classtree);
         packages = configuration.packages;
-        classesonly = packages.isEmpty();
+        classesOnly = packages.isEmpty();
     }
 
     /**
      * Create a TreeWriter object and use it to generate the
      * "overview-tree.html" file.
      *
+     * @param configuration the configuration for this doclet
      * @param classtree the class tree being documented.
-     * @throws  DocletAbortException
+     * @throws  DocFileIOException if there is a problem generating the overview tree page
      */
     public static void generate(ConfigurationImpl configuration,
-                                ClassTree classtree) {
-        TreeWriter treegen;
+                                ClassTree classtree) throws DocFileIOException {
         DocPath filename = DocPaths.OVERVIEW_TREE;
-        try {
-            treegen = new TreeWriter(configuration, filename, classtree);
-            treegen.generateTreeFile();
-        } catch (IOException exc) {
-            Messages messages = configuration.getMessages();
-            messages.error("doclet.exception_encountered",
-                        exc.toString(), filename);
-            throw new DocletAbortException(exc);
-        }
+        TreeWriter treegen = new TreeWriter(configuration, filename, classtree);
+        treegen.generateTreeFile();
     }
 
     /**
      * Generate the interface hierarchy and class hierarchy.
+     *
+     * @throws DocFileIOException if there is a problem generating the overview tree page
      */
-    public void generateTreeFile() throws IOException {
+    public void generateTreeFile() throws DocFileIOException {
         HtmlTree body = getTreeHeader();
         Content headContent = contents.hierarchyForAllPackages;
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, false,
@@ -152,7 +144,7 @@ public class TreeWriter extends AbstractTreeWriter {
         if (isUnnamedPackage()) {
             return;
         }
-        if (!classesonly) {
+        if (!classesOnly) {
             Content span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
                     contents.packageHierarchies);
             contentTree.addContent(span);

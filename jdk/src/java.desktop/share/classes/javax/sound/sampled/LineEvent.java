@@ -169,8 +169,7 @@ public class LineEvent extends EventObject {
         /**
          * Type name.
          */
-        // $$kk: 03.25.99: why can't this be final??
-        private /*final*/ String name;
+        private final String name;
 
         /**
          * Constructs a new event type.

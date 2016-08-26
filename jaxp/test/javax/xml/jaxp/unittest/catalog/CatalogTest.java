@@ -26,23 +26,37 @@ import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
 import static jaxp.library.JAXPTestUtilities.getSystemProperty;
 import static jaxp.library.JAXPTestUtilities.setSystemProperty;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FilePermission;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.nio.file.Paths;
 import java.util.PropertyPermission;
-
+import javax.xml.XMLConstants;
 import javax.xml.catalog.Catalog;
 import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogFeatures.Feature;
 import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
-import javax.xml.catalog.CatalogUriResolver;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Source;
-
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.sax.SAXSource;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 import jaxp.library.JAXPTestUtilities;
 
 import org.testng.Assert;
@@ -59,29 +73,235 @@ import org.xml.sax.ext.DefaultHandler2;
 
 /*
  * @test
- * @bug 8081248 8144966 8146606 8146237 8151154 8150969 8151162 8152527 8154220
+ * @bug 8081248 8144966 8146606 8146237 8151154 8150969 8151162 8152527 8154220 8163232
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true catalog.CatalogTest
  * @run testng/othervm catalog.CatalogTest
  * @summary Tests basic Catalog functions.
  */
 @Listeners({jaxp.library.FilePolicy.class})
-public class CatalogTest {
+public class CatalogTest extends CatalogSupportBase {
     static final String KEY_FILES = "javax.xml.catalog.files";
 
-    public String filepath;
 
     /*
      * Initializing fields
      */
     @BeforeClass
     public void setUpClass() throws Exception {
-        String file1 = getClass().getResource("first_cat.xml").getFile();
-        if (getSystemProperty("os.name").contains("Windows")) {
-            filepath = file1.substring(1, file1.lastIndexOf("/") + 1);
-        } else {
-            filepath = file1.substring(0, file1.lastIndexOf("/") + 1);
+        super.setUp();
+    }
+
+
+    /*
+     * @bug 8163232
+     * Verifies that the CatalogResolver supports the following XML Resolvers:
+          javax.xml.stream.XMLResolver
+          javax.xml.transform.URIResolver
+          org.w3c.dom.ls.LSResourceResolver
+          org.xml.sax.EntityResolver
+     *
+     * Plus, system and uri entries can equally be used.
+     */
+
+    /*
+     * Verifies the support for org.xml.sax.EntityResolver.
+     * Expected: the parser returns the expected string.
+    */
+    @Test(dataProvider = "supportXMLResolver")
+    public void supportEntityResolver(String catalogFile, String xml, String expected) throws Exception {
+        String xmlSource = getClass().getResource(xml).getFile();
+
+        CatalogResolver cr = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalogFile);
+        MyCatalogHandler handler = new MyCatalogHandler(cr, elementInSystem);
+        SAXParser parser = getSAXParser(false, true, null);
+        parser.parse(xmlSource, handler);
+
+        Assert.assertEquals(handler.getResult().trim(), expected);
+    }
+
+    /*
+     * Verifies the support for javax.xml.stream.XMLResolver.
+     * Expected: the parser returns the expected string.
+    */
+    @Test(dataProvider = "supportXMLResolver")
+    public void supportXMLResolver(String catalogFile, String xml, String expected) throws Exception {
+        String xmlSource = getClass().getResource(xml).getFile();
+
+        CatalogResolver cr = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalogFile);
+
+        XMLInputFactory xifactory = XMLInputFactory.newInstance();
+        xifactory.setProperty(XMLInputFactory.IS_COALESCING, true);
+        xifactory.setProperty(XMLInputFactory.RESOLVER, cr);
+        File file = new File(xmlSource);
+        String systemId = file.toURI().toString();
+        InputStream entityxml = new FileInputStream(file);
+        XMLStreamReader streamReader = xifactory.createXMLStreamReader(systemId, entityxml);
+        String result = null;
+        while (streamReader.hasNext()) {
+            int eventType = streamReader.next();
+            if (eventType == XMLStreamConstants.START_ELEMENT) {
+                eventType = streamReader.next();
+                if (eventType == XMLStreamConstants.CHARACTERS) {
+                    result = streamReader.getText();
+                }
+            }
         }
+        System.out.println(": expected [" + expected + "] <> actual [" + result.trim() + "]");
+
+        Assert.assertEquals(result.trim(), expected);
+    }
+
+    /*
+     * Verifies the support for org.w3c.dom.ls.LSResourceResolver by ShemaFactory.
+     * Success: parsing goes through with no error
+     * Fail: throws Exception if references are not resolved (by the CatalogResolver)
+    */
+    @Test(dataProvider = "supportLSResourceResolver")
+    public void supportLSResourceResolver(String catalogFile, Source schemaSource) throws SAXException {
+
+        CatalogResolver cr = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalogFile);
+
+        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        factory.setResourceResolver(cr);
+        Schema schema = factory.newSchema(schemaSource);
+
+    }
+
+    /*
+     * Verifies the support for org.w3c.dom.ls.LSResourceResolver by Validator.
+     * Success: parsing goes through with no error
+     * Fail: throws Exception if references are not resolved (by the CatalogResolver)
+    */
+    @Test(dataProvider = "supportLSResourceResolver1")
+    public void supportLSResourceResolver1(String catalogFile, Source source) throws Exception {
+
+        CatalogResolver cr = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalogFile);
+
+        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        Validator validator = factory.newSchema().newValidator();
+        validator.setResourceResolver(cr);
+        validator.validate(source);
+    }
+
+    /*
+     * Verifies the support for javax.xml.transform.URIResolver.
+     * Success: parsing goes through with no error
+     * Fail: throws Exception if references are not resolved (by the CatalogResolver)
+    */
+    @Test(dataProvider = "supportURIResolver")
+    public void supportURIResolver(String catalogFile, Source xsl, Source xml, String expected) throws Exception {
+
+        CatalogResolver cr = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalogFile);
+
+            TransformerFactory factory = TransformerFactory.newInstance();
+            factory.setURIResolver(cr);
+            Transformer transformer = factory.newTransformer(xsl);
+            StringWriter out = new StringWriter();
+            transformer.transform(xml, new StreamResult(out));
+            if (expected != null) {
+                Assert.assertTrue(out.toString().contains(expected), "supportURIResolver");
+            }
+    }
+
+    /*
+       DataProvider: used to verify the support of XML Resolvers.
+        Data columns:
+        catalog filepath, xml source file, expected result
+     */
+    @DataProvider(name = "supportXMLResolver")
+    public Object[][] supportXMLResolver() {
+        String catalogFile = getClass().getResource("catalog.xml").getFile();
+        String catalogFileUri = getClass().getResource("catalog_uri.xml").getFile();
+
+        return new Object[][]{
+            {catalogFile, "system.xml", "Test system entry"},
+            {catalogFile, "rewritesystem.xml", "Test rewritesystem entry"},
+            {catalogFile, "rewritesystem1.xml", "Test rewritesystem entry"},
+            {catalogFile, "systemsuffix.xml", "Test systemsuffix entry"},
+            {catalogFile, "delegatesystem.xml", "Test delegatesystem entry"},
+            {catalogFile, "public.xml", "Test public entry"},
+            {catalogFile, "delegatepublic.xml", "Test delegatepublic entry"},
+            // using uri entries
+            {catalogFileUri, "system.xml", "Test system entry"},
+            {catalogFileUri, "rewritesystem.xml", "Test rewritesystem entry"},
+            {catalogFileUri, "rewritesystem1.xml", "Test rewritesystem entry"},
+            {catalogFileUri, "systemsuffix.xml", "Test systemsuffix entry"},
+            {catalogFileUri, "delegateuri.xml", "Test delegateuri entry"},
+            {catalogFileUri, "public.xml", "Test public entry"},
+         };
+    }
+
+    /*
+       DataProvider: used to verify the support of LSResourceResolver by SchemaFactory.
+        Data columns:
+        catalog filepath, schema source file
+     */
+    @DataProvider(name = "supportLSResourceResolver")
+    public Object[][] supportLSResourceResolver() {
+        String catalogFile = getClass().getResource("CatalogSupport.xml").getFile();
+        String catalogFileUri = getClass().getResource("CatalogSupport_uri.xml").getFile();
+
+        /*
+         * XMLSchema.xsd has a reference to XMLSchema.dtd which in turn refers to
+         * datatypes.dtd
+        */
+        return new Object[][]{
+            {catalogFile, new StreamSource(new StringReader(xsd_xmlSchema))},
+            {catalogFile, new StreamSource(new StringReader(xsd_xmlSchema_import))},
+            {catalogFile, new StreamSource(new StringReader(xsd_include_company))},
+            {catalogFileUri, new StreamSource(new StringReader(xsd_xmlSchema))},
+            {catalogFileUri, new StreamSource(new StringReader(xsd_xmlSchema_import))},
+            {catalogFileUri, new StreamSource(new StringReader(xsd_include_company))},
+         };
+    }
+
+    /*
+       DataProvider: used to verify the support of LSResourceResolver by Validator.
+        Data columns:
+        catalog filepath, source file
+     */
+    @DataProvider(name = "supportLSResourceResolver1")
+    public Object[][] supportLSResourceResolver1() {
+        String catalogFile = getClass().getResource("CatalogSupport.xml").getFile();
+        String catalogFileUri = getClass().getResource("CatalogSupport_uri.xml").getFile();
+
+        /*
+         * val_test.xml has a reference to system.dtd and val_test.xsd
+        */
+        SAXSource ss = new SAXSource(new InputSource(xml_val_test));
+        ss.setSystemId(xml_val_test_id);
+
+        return new Object[][]{
+            {catalogFile, ss},
+            {catalogFileUri, ss},
+         };
+    }
+
+
+    /*
+       DataProvider: used to verify the support of LSResourceResolver by Validator.
+        Data columns:
+        catalog filepath, xsl source, xml source file
+     */
+    @DataProvider(name = "supportURIResolver")
+    public Object[][] supportURIResolver() {
+        String catalogFile = getClass().getResource("CatalogSupport.xml").getFile();
+        String catalogFileUri = getClass().getResource("CatalogSupport_uri.xml").getFile();
+        SAXSource xslSource = new SAXSource(new InputSource(new File(xsl_doc).toURI().toASCIIString()));
+
+        /*
+         * val_test.xml has a reference to system.dtd and val_test.xsd
+        */
+        SAXSource ss = new SAXSource(new InputSource(xml_val_test));
+        ss.setSystemId(xml_val_test_id);
+
+        return new Object[][]{
+            {catalogFile, new SAXSource(new InputSource(new File(xsl_doc).toURI().toASCIIString())),
+                new StreamSource(new File(xml_doc)), "Resolved by a catalog"},
+            {catalogFileUri, new SAXSource(new InputSource(new StringReader(xsl_include))),
+                new StreamSource(new StringReader(xml_xsl)), null},
+         };
     }
 
     /*
@@ -110,7 +330,7 @@ public class CatalogTest {
     @Test(dataProvider = "resolveUri")
     public void testMatch1(String cFile, String href, String expectedFile, String expectedUri, String msg) {
         String catalogFile = getClass().getResource(cFile).getFile();
-        CatalogUriResolver cur = CatalogManager.catalogUriResolver(CatalogFeatures.defaults(), catalogFile);
+        CatalogResolver cur = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalogFile);
         Source source = cur.resolve(href, null);
         Assert.assertNotNull(source, "Source returned is null");
         Assert.assertEquals(expectedUri, source.getSystemId(), msg);
@@ -275,7 +495,7 @@ public class CatalogTest {
 
         try {
 
-            CatalogUriResolver resolver = CatalogManager.catalogUriResolver(CatalogFeatures.defaults(), catalog);
+            CatalogResolver resolver = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalog);
             String actualSystemId = resolver.resolve("http://remote.com/import/import.xsl", null).getSystemId();
             Assert.assertTrue(!actualSystemId.contains("//"), "result contains duplicate slashes");
         } catch (Exception e) {
@@ -383,7 +603,7 @@ public class CatalogTest {
 
 
     /*
-        DataProvider: used to verify CatalogUriResolver's resolve function.
+        DataProvider: used to verify CatalogResolver's resolve function.
         Data columns:
         catalog, uri or publicId, expectedFile, expectedUri, msg
 
@@ -571,4 +791,3 @@ public class CatalogTest {
         }
     }
 }
-

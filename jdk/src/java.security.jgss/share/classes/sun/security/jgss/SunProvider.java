@@ -33,6 +33,7 @@ import java.security.InvalidParameterException;
 import java.security.ProviderException;
 import sun.security.jgss.krb5.Krb5MechFactory;
 import sun.security.jgss.spnego.SpNegoMechFactory;
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 /**
  * Defines the Sun JGSS provider.
@@ -99,7 +100,7 @@ public final class SunProvider extends Provider {
 
     public SunProvider() {
         /* We are the Sun JGSS provider */
-        super("SunJGSS", 9.0d, INFO);
+        super("SunJGSS", PROVIDER_VER, INFO);
 
         final Provider p = this;
         AccessController.doPrivileged(new PrivilegedAction<Void>() {

@@ -26,13 +26,11 @@
 package jdk.javadoc.internal.doclets.toolkit.util;
 
 import java.io.*;
-import java.util.*;
 
 import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
 
 
 /**
@@ -45,18 +43,19 @@ import jdk.javadoc.internal.doclets.toolkit.Messages;
  *
  * @author Atul M Dambalkar
  */
-public class PackageListWriter extends PrintWriter {
+public class PackageListWriter {
 
     private final Configuration configuration;
     private final Utils utils;
+    private final DocFile file;
 
     /**
      * Constructor.
      *
      * @param configuration the current configuration of the doclet.
      */
-    public PackageListWriter(Configuration configuration) throws IOException {
-        super(DocFile.createFileForOutput(configuration, DocPaths.PACKAGE_LIST).openWriter());
+    public PackageListWriter(Configuration configuration) {
+        file = DocFile.createFileForOutput(configuration, DocPaths.PACKAGE_LIST);
         this.configuration = configuration;
         this.utils = configuration.utils;
     }
@@ -65,32 +64,25 @@ public class PackageListWriter extends PrintWriter {
      * Generate the package index.
      *
      * @param configuration the current configuration of the doclet.
-     * @throws DocletAbortException
+     * @throws DocFileIOException if there is a problem writing the output
      */
-    public static void generate(Configuration configuration) {
-        PackageListWriter packgen;
-        try {
-            packgen = new PackageListWriter(configuration);
-            packgen.generatePackageListFile(configuration.docEnv);
-            packgen.close();
-        } catch (IOException exc) {
-            Messages messages = configuration.getMessages();
-            messages.error("doclet.exception_encountered",
-                exc.toString(), DocPaths.PACKAGE_LIST);
-            throw new DocletAbortException(exc);
-        }
+    public static void generate(Configuration configuration) throws DocFileIOException {
+        PackageListWriter packgen = new PackageListWriter(configuration);
+        packgen.generatePackageListFile(configuration.docEnv);
     }
 
-    protected void generatePackageListFile(DocletEnvironment root) {
-        ArrayList<PackageElement> names = new ArrayList<>();
-        for (PackageElement pkg : configuration.packages) {
-            // if the -nodeprecated option is set and the package is marked as
-            // deprecated, do not include it in the packages list.
-            if (!(configuration.nodeprecated && utils.isDeprecated(pkg)))
-                names.add(pkg);
+    protected void generatePackageListFile(DocletEnvironment docEnv) throws DocFileIOException {
+        try (BufferedWriter out = new BufferedWriter(file.openWriter())) {
+            for (PackageElement pkg : configuration.packages) {
+                // if the -nodeprecated option is set and the package is marked as
+                // deprecated, do not include it in the packages list.
+                if (!(configuration.nodeprecated && utils.isDeprecated(pkg))) {
+                    out.write(pkg.toString());
+                    out.newLine();
+                }
+            }
+        } catch (IOException e) {
+            throw new DocFileIOException(file, DocFileIOException.Mode.WRITE, e);
         }
-        names.stream().forEach((name) -> {
-            println(name);
-        });
     }
 }

@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.util.*;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
@@ -33,10 +32,9 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 
 
@@ -62,42 +60,37 @@ public class SingleIndexWriter extends AbstractIndexWriter {
      * Construct the SingleIndexWriter with filename "index-all.html" and the
      * {@link IndexBuilder}
      *
+     * @param configuration the configuration for this doclet
      * @param filename     Name of the index file to be generated.
      * @param indexbuilder Unicode based Index from {@link IndexBuilder}
      */
     public SingleIndexWriter(ConfigurationImpl configuration,
                              DocPath filename,
-                             IndexBuilder indexbuilder) throws IOException {
+                             IndexBuilder indexbuilder) {
         super(configuration, filename, indexbuilder);
     }
 
     /**
      * Generate single index file, for all Unicode characters.
      *
+     * @param configuration the configuration for this doclet
      * @param indexbuilder IndexBuilder built by {@link IndexBuilder}
-     * @throws DocletAbortException
+     * @throws DocFileIOException if there is a problem generating the index
      */
     public static void generate(ConfigurationImpl configuration,
-                                IndexBuilder indexbuilder) {
-        SingleIndexWriter indexgen;
+                                IndexBuilder indexbuilder) throws DocFileIOException {
         DocPath filename = DocPaths.INDEX_ALL;
-        try {
-            indexgen = new SingleIndexWriter(configuration,
-                                             filename, indexbuilder);
-            indexgen.generateIndexFile();
-        } catch (IOException exc) {
-            Messages messages = configuration.getMessages();
-            messages.error("doclet.exception_encountered",
-                        exc.toString(), filename);
-            throw new DocletAbortException(exc);
-        }
+        SingleIndexWriter indexgen = new SingleIndexWriter(configuration,
+                                         filename, indexbuilder);
+        indexgen.generateIndexFile();
     }
 
     /**
      * Generate the contents of each index file, with Header, Footer,
      * Member Field, Method and Constructor Description.
+     * @throws DocFileIOException if there is a problem generating the index
      */
-    protected void generateIndexFile() throws IOException {
+    protected void generateIndexFile() throws DocFileIOException {
         String title = configuration.getText("doclet.Window_Single_Index");
         HtmlTree body = getBody(true, getWindowTitle(title));
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))

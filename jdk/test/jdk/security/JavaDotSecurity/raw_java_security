@@ -44,6 +44,7 @@ foo.tbd=11
 #ifndef macosx-x64
 foo.tbd=12
 #endif
+crypto.policy=crypto.policydir-tbd
 
 package.access=sun.,\
 #ifdef solaris

@@ -25,7 +25,6 @@
  * @test
  * @bug 8130847 8156760
  * @summary Eliminated instance/array written to by an array copy variant must be correctly initialized when reallocated at a deopt
- * @ignore 8136818
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
  *                   compiler.arraycopy.TestEliminatedArrayCopyDeopt
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
