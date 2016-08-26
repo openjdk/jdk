@@ -1,5 +1,5 @@
-// Some countries have import limits on crypto strength. So this file
-// will be useful.
+// Some countries have import limits on crypto strength, but may allow for
+// these exemptions if the exemption mechanism is used.
 
 grant {
     // There is no restriction to any algorithms if KeyRecovery is enforced.
