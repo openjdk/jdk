@@ -25,10 +25,10 @@
  * @test TestRemsetLogging.java
  * @requires vm.gc.G1
  * @bug 8013895 8129977 8145534
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management/sun.management
- * @build TestRemsetLoggingTools TestRemsetLogging
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @summary Verify output of -Xlog:gc+remset*=trace

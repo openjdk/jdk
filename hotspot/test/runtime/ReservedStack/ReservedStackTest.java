@@ -23,10 +23,9 @@
 
 /*
  * @test ReservedStackTest
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.vm.annotation
- * @build jdk.test.lib.*
  * @run main/othervm -Xint ReservedStackTest
  * @run main/othervm -XX:-Inline -XX:CompileCommand=exclude,java/util/concurrent/locks/AbstractOwnableSynchronizer.setExclusiveOwnerThread ReservedStackTest
  */

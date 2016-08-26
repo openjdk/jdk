@@ -25,13 +25,13 @@
  * @key gc
  * @bug 8072725
  * @summary Test VerifySubSet option
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  */
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import java.util.ArrayList;
 import java.util.Collections;
 import jdk.test.lib.Utils;

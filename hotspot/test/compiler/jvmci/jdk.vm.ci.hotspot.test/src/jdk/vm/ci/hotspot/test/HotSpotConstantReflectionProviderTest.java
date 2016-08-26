@@ -29,7 +29,7 @@
  *          jdk.vm.ci/jdk.vm.ci.hotspot
  *          java.base/jdk.internal.vm.annotation
  *          java.base/jdk.internal.misc
- * @library /testlibrary /test/lib /compiler/jvmci/jdk.vm.ci.hotspot.test/src
+ * @library /test/lib /compiler/jvmci/jdk.vm.ci.hotspot.test/src
  * @build jdk.vm.ci.hotspot.test.DummyClass
  * @run driver ClassFileInstaller jdk.vm.ci.hotspot.test.DummyClass
  * @run testng/othervm/timeout=300 -Xbootclasspath/a:.

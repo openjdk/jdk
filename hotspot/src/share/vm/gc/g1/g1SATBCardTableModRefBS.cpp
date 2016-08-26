@@ -30,7 +30,7 @@
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/thread.inline.hpp"

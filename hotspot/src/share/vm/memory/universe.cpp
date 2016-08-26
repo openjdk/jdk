@@ -56,7 +56,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/commandLineFlagConstraintList.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fprofiler.hpp"
@@ -1129,8 +1129,6 @@ void Universe::initialize_verify_flags() {
       verify_flags |= Verify_MetaspaceAux;
     } else if (strcmp(token, "jni_handles") == 0) {
       verify_flags |= Verify_JNIHandles;
-    } else if (strcmp(token, "c-heap") == 0) {
-      verify_flags |= Verify_CHeap;
     } else if (strcmp(token, "codecache_oops") == 0) {
       verify_flags |= Verify_CodeCacheOops;
     } else {
@@ -1207,10 +1205,6 @@ void Universe::verify(VerifyOption option, const char* prefix) {
   if (should_verify_subset(Verify_JNIHandles)) {
     log_debug(gc, verify)("JNIHandles");
     JNIHandles::verify();
-  }
-  if (should_verify_subset(Verify_CHeap)) {
-    log_debug(gc, verify)("C-heap");
-    os::check_heap();
   }
   if (should_verify_subset(Verify_CodeCacheOops)) {
     log_debug(gc, verify)("CodeCache Oops");

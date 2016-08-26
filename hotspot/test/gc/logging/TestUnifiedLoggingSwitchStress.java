@@ -44,7 +44,7 @@ import java.util.Random;
  * @key gc
  * @key stress
  * @requires !vm.flightRecorder
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @modules java.management java.base/jdk.internal.misc
  *
  * @run main/othervm -Xmx256M -Xms256M

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test
  * @bug 8065896
  * @summary Synchronous signals during error reporting may terminate or hang VM process
- * @library /testlibrary
+ * @library /test/lib
  * @author Thomas Stuefe (SAP)
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -38,9 +38,9 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.regex.Pattern;
 
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 
 public class SecondaryErrorTest {
 

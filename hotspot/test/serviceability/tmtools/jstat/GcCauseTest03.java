@@ -28,11 +28,8 @@
  *          test forces debuggee application call System.gc(), runs jstat and checks that
  *          cause of last garbage collection displayed by jstat (LGCC) is 'System.gc()'.
  * @modules java.base/jdk.internal.misc
- * @library /test/lib/share/classes
+ * @library /test/lib
  * @library ../share
- * @build common.*
- * @build utils.*
- *
  * @run main/othervm -XX:+UsePerfData -Xmx128M -XX:MaxMetaspaceSize=128M GcCauseTest03
  */
 import utils.*;
