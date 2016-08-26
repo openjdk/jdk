@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,12 +46,11 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 
 /**
  * Generate class usage information.
@@ -112,12 +110,10 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * Constructor.
      *
      * @param filename the file to be generated.
-     * @throws IOException
-     * @throws DocletAbortException
      */
     public ClassUseWriter(ConfigurationImpl configuration,
                           ClassUseMapper mapper, DocPath filename,
-                          TypeElement typeElement) throws IOException {
+                          TypeElement typeElement) {
         super(configuration, filename);
         this.typeElement = typeElement;
         if (mapper.classToPackageAnnotations.containsKey(typeElement)) {
@@ -175,11 +171,14 @@ public class ClassUseWriter extends SubWriterHolderWriter {
 
     /**
      * Write out class use pages.
-     * @throws DocletAbortException
+     *
+     * @param configuration the configuration for this doclet
+     * @param classtree the class tree hierarchy
+     * @throws DocFileIOException if there is an error while generating the documentation
      */
-    public static void generate(ConfigurationImpl configuration, ClassTree classtree)  {
+    public static void generate(ConfigurationImpl configuration, ClassTree classtree) throws DocFileIOException  {
         ClassUseMapper mapper = new ClassUseMapper(configuration, classtree);
-        for (TypeElement aClass : configuration.docEnv.getIncludedClasses()) {
+        for (TypeElement aClass : configuration.docEnv.getIncludedTypeElements()) {
             // If -nodeprecated option is set and the containing package is marked
             // as deprecated, do not generate the class-use page. We will still generate
             // the class-use page if the class is marked as deprecated but the containing
@@ -217,28 +216,25 @@ public class ClassUseWriter extends SubWriterHolderWriter {
 
     /**
      * Generate a class page.
+     *
+     * @throws DocFileIOException if there is a problem while generating the documentation
      */
     public static void generate(ConfigurationImpl configuration, ClassUseMapper mapper,
-                                TypeElement typeElement) {
+                                TypeElement typeElement) throws DocFileIOException {
         ClassUseWriter clsgen;
         DocPath path = DocPath.forPackage(configuration.utils, typeElement)
                               .resolve(DocPaths.CLASS_USE)
                               .resolve(DocPath.forName(configuration.utils, typeElement));
-        try {
-            clsgen = new ClassUseWriter(configuration, mapper, path, typeElement);
-            clsgen.generateClassUseFile();
-        } catch (IOException exc) {
-            Messages messages = configuration.getMessages();
-            messages.error("doclet.exception_encountered",
-                    exc.toString(), path.getPath());
-            throw new DocletAbortException(exc);
-        }
+        clsgen = new ClassUseWriter(configuration, mapper, path, typeElement);
+        clsgen.generateClassUseFile();
     }
 
     /**
      * Generate the class use elements.
+     *
+     * @throws DocFileIOException if there is a problem while generating the documentation
      */
-    protected void generateClassUseFile() throws IOException {
+    protected void generateClassUseFile() throws DocFileIOException {
         HtmlTree body = getClassUseHeader();
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.classUseContainer);
@@ -270,7 +266,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      *
      * @param contentTree the content tree to which the class use information will be added
      */
-    protected void addClassUse(Content contentTree) throws IOException {
+    protected void addClassUse(Content contentTree) {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.addStyle(HtmlStyle.blockList);
         if (configuration.packages.size() > 1) {
@@ -286,7 +282,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      *
      * @param contentTree the content tree to which the packages elements will be added
      */
-    protected void addPackageList(Content contentTree) throws IOException {
+    protected void addPackageList(Content contentTree) {
         Content caption = getTableCaption(configuration.getContent(
                 "doclet.ClassUse_Packages.that.use.0",
                 getLink(new LinkInfoImpl(configuration,
@@ -314,7 +310,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      *
      * @param contentTree the content tree to which the package annotation elements will be added
      */
-    protected void addPackageAnnotationList(Content contentTree) throws IOException {
+    protected void addPackageAnnotationList(Content contentTree) {
         if (!utils.isAnnotationType(typeElement) ||
                 pkgToPackageAnnotations == null ||
                 pkgToPackageAnnotations.isEmpty()) {
@@ -352,7 +348,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      *
      * @param contentTree the content tree to which the class elements will be added
      */
-    protected void addClassList(Content contentTree) throws IOException {
+    protected void addClassList(Content contentTree) {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.addStyle(HtmlStyle.blockList);
         for (PackageElement pkg : pkgSet) {
@@ -383,7 +379,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @param pkg the package that uses the given class
      * @param contentTree the content tree to which the package use information will be added
      */
-    protected void addPackageUse(PackageElement pkg, Content contentTree) throws IOException {
+    protected void addPackageUse(PackageElement pkg, Content contentTree) {
         Content tdFirst = HtmlTree.TD(HtmlStyle.colFirst,
                 getHyperLink(getPackageAnchorName(pkg), new StringContent(utils.getPackageName(pkg))));
         contentTree.addContent(tdFirst);
@@ -399,7 +395,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @param pkg the package that uses the given class
      * @param contentTree the content tree to which the class use information will be added
      */
-    protected void addClassUse(PackageElement pkg, Content contentTree) throws IOException {
+    protected void addClassUse(PackageElement pkg, Content contentTree) {
         Content classLink = getLink(new LinkInfoImpl(configuration,
             LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement));
         Content pkgLink = getPackageLink(pkg, utils.getPackageName(pkg));

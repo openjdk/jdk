@@ -34,8 +34,6 @@ import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.internal.tool.Start;
 
 /**
@@ -68,14 +66,12 @@ public class JavadocTaskImpl implements DocumentationTask {
         setLocale(Locale.getDefault());
     }
 
-    @DefinedBy(Api.COMPILER)
     public void setLocale(Locale locale) {
         if (used.get())
             throw new IllegalStateException();
         this.locale = locale;
     }
 
-    @DefinedBy(Api.COMPILER)
     public Boolean call() {
         if (!used.getAndSet(true)) {
             initContext();

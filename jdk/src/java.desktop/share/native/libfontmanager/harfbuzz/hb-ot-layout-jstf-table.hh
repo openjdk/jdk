@@ -218,7 +218,7 @@ struct JSTF
   }
 
   protected:
-  FixedVersion  version;        /* Version of the JSTF table--initially set
+  FixedVersion<>version;        /* Version of the JSTF table--initially set
                                  * to 0x00010000u */
   RecordArrayOf<JstfScript>
                 scriptList;     /* Array of JstfScripts--listed

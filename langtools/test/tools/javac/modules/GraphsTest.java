@@ -194,7 +194,7 @@ public class GraphsTest extends ModuleTestBase {
                 .write(modSrc);
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", modSrc.toString())
+                        "--module-source-path", modSrc.toString())
                 .outdir(Files.createDirectories(base.resolve("negative")))
                 .files(findJavaFiles(modSrc))
                 .run(Task.Expect.FAIL)

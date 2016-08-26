@@ -41,6 +41,5 @@ public interface AutoConnectSequencer {
      * needs to re-connect itself to a suitable
      * device in open().
      */
-    public void setAutoConnect(Receiver autoConnectReceiver);
-
+    void setAutoConnect(Receiver autoConnectReceiver);
 }

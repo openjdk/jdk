@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,10 +40,9 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 
 /**
  * Generate the module package index for the left-hand frame in the generated output.
@@ -66,29 +64,20 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param configuration the configuration object
      * @param filename Name of the package index file to be generated.
      */
-    public ModulePackageIndexFrameWriter(ConfigurationImpl configuration,
-                                   DocPath filename) throws IOException {
+    public ModulePackageIndexFrameWriter(ConfigurationImpl configuration, DocPath filename)  {
         super(configuration, filename);
     }
 
     /**
      * Generate the module package index file.
-     * @throws DocletAbortException
+     * @throws DocFileIOException
      * @param configuration the configuration object
      * @param mdle the module being documented
      */
-    public static void generate(ConfigurationImpl configuration, ModuleElement mdle) {
-        ModulePackageIndexFrameWriter modpackgen;
+    public static void generate(ConfigurationImpl configuration, ModuleElement mdle) throws DocFileIOException {
         DocPath filename = DocPaths.moduleFrame(mdle);
-        try {
-            modpackgen = new ModulePackageIndexFrameWriter(configuration, filename);
-            modpackgen.buildModulePackagesIndexFile("doclet.Window_Overview", false, mdle);
-        } catch (IOException exc) {
-            Messages messages = configuration.getMessages();
-            messages.error("doclet.exception_encountered",
-                        exc.toString(), filename);
-            throw new DocletAbortException(exc);
-        }
+        ModulePackageIndexFrameWriter modpackgen = new ModulePackageIndexFrameWriter(configuration, filename);
+        modpackgen.buildModulePackagesIndexFile("doclet.Window_Overview", false, mdle);
     }
 
     /**

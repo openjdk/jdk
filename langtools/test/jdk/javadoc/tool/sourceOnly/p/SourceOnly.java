@@ -39,11 +39,12 @@ import jdk.javadoc.doclet.Reporter;
  */
 public class SourceOnly implements Doclet {
     NonSource dependency; // force a compilation error if not on classpath.
+
     @Override
     public boolean run(DocletEnvironment root) {
-        if (root.getIncludedClasses().size() != 1)
+        if (root.getIncludedTypeElements().size() != 1)
             throw new Error("wrong set of classes documented: " +
-                    Arrays.asList(root.getIncludedClasses()));
+                    Arrays.asList(root.getIncludedTypeElements()));
         return true;
     }
 

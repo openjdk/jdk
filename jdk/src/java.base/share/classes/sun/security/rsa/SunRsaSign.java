@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.*;
 import java.security.*;
 
 import sun.security.action.PutAllAction;
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 /**
  * Provider class for the RSA signature provider. Supports RSA keyfactory,
@@ -43,7 +44,7 @@ public final class SunRsaSign extends Provider {
     private static final long serialVersionUID = 866040293550393045L;
 
     public SunRsaSign() {
-        super("SunRsaSign", 9.0d, "Sun RSA signature provider");
+        super("SunRsaSign", PROVIDER_VER, "Sun RSA signature provider");
 
         // if there is no security manager installed, put directly into
         // the provider. Otherwise, create a temporary map and use a

@@ -340,25 +340,33 @@ abstract class P11Key implements Key, Length {
         } else {
             switch (algorithm) {
                 case "RSA":
-                    // XXX better test for RSA CRT keys (single getAttributes() call)
-                    // we need to determine whether this is a CRT key
-                    // see if we can obtain the public exponent
-                    // this should also be readable for sensitive/extractable keys
+                    // In order to decide if this is RSA CRT key, we first query
+                    // and see if all extra CRT attributes are available.
                     CK_ATTRIBUTE[] attrs2 = new CK_ATTRIBUTE[] {
                         new CK_ATTRIBUTE(CKA_PUBLIC_EXPONENT),
+                        new CK_ATTRIBUTE(CKA_PRIME_1),
+                        new CK_ATTRIBUTE(CKA_PRIME_2),
+                        new CK_ATTRIBUTE(CKA_EXPONENT_1),
+                        new CK_ATTRIBUTE(CKA_EXPONENT_2),
+                        new CK_ATTRIBUTE(CKA_COEFFICIENT),
                     };
                     boolean crtKey;
                     try {
                         session.token.p11.C_GetAttributeValue
                             (session.id(), keyID, attrs2);
-                        crtKey = (attrs2[0].pValue instanceof byte[]);
+                        crtKey = ((attrs2[0].pValue instanceof byte[]) &&
+                                  (attrs2[1].pValue instanceof byte[]) &&
+                                  (attrs2[2].pValue instanceof byte[]) &&
+                                  (attrs2[3].pValue instanceof byte[]) &&
+                                  (attrs2[4].pValue instanceof byte[]) &&
+                                  (attrs2[5].pValue instanceof byte[])) ;
                     } catch (PKCS11Exception e) {
                         // ignore, assume not available
                         crtKey = false;
                     }
                     if (crtKey) {
                         return new P11RSAPrivateKey
-                                (session, keyID, algorithm, keyLength, attributes);
+                                (session, keyID, algorithm, keyLength, attributes, attrs2);
                     } else {
                         return new P11RSAPrivateNonCRTKey
                                 (session, keyID, algorithm, keyLength, attributes);
@@ -475,8 +483,24 @@ abstract class P11Key implements Key, Length {
         private BigInteger n, e, d, p, q, pe, qe, coeff;
         private byte[] encoded;
         P11RSAPrivateKey(Session session, long keyID, String algorithm,
-                int keyLength, CK_ATTRIBUTE[] attributes) {
-            super(PRIVATE, session, keyID, algorithm, keyLength, attributes);
+                int keyLength, CK_ATTRIBUTE[] attrs, CK_ATTRIBUTE[] crtAttrs) {
+            super(PRIVATE, session, keyID, algorithm, keyLength, attrs);
+
+            for (CK_ATTRIBUTE a : crtAttrs) {
+                if (a.type == CKA_PUBLIC_EXPONENT) {
+                    e = a.getBigInteger();
+                } else if (a.type == CKA_PRIME_1) {
+                    p = a.getBigInteger();
+                } else if (a.type == CKA_PRIME_2) {
+                    q = a.getBigInteger();
+                } else if (a.type == CKA_EXPONENT_1) {
+                    pe = a.getBigInteger();
+                } else if (a.type == CKA_EXPONENT_2) {
+                    qe = a.getBigInteger();
+                } else if (a.type == CKA_COEFFICIENT) {
+                    coeff = a.getBigInteger();
+                }
+            }
         }
         private synchronized void fetchValues() {
             token.ensureValid();
@@ -485,24 +509,13 @@ abstract class P11Key implements Key, Length {
             }
             CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
                 new CK_ATTRIBUTE(CKA_MODULUS),
-                new CK_ATTRIBUTE(CKA_PUBLIC_EXPONENT),
                 new CK_ATTRIBUTE(CKA_PRIVATE_EXPONENT),
-                new CK_ATTRIBUTE(CKA_PRIME_1),
-                new CK_ATTRIBUTE(CKA_PRIME_2),
-                new CK_ATTRIBUTE(CKA_EXPONENT_1),
-                new CK_ATTRIBUTE(CKA_EXPONENT_2),
-                new CK_ATTRIBUTE(CKA_COEFFICIENT),
             };
             fetchAttributes(attributes);
             n = attributes[0].getBigInteger();
-            e = attributes[1].getBigInteger();
-            d = attributes[2].getBigInteger();
-            p = attributes[3].getBigInteger();
-            q = attributes[4].getBigInteger();
-            pe = attributes[5].getBigInteger();
-            qe = attributes[6].getBigInteger();
-            coeff = attributes[7].getBigInteger();
+            d = attributes[1].getBigInteger();
         }
+
         public String getFormat() {
             token.ensureValid();
             return "PKCS#8";
@@ -529,7 +542,6 @@ abstract class P11Key implements Key, Length {
             return n;
         }
         public BigInteger getPublicExponent() {
-            fetchValues();
             return e;
         }
         public BigInteger getPrivateExponent() {
@@ -537,23 +549,18 @@ abstract class P11Key implements Key, Length {
             return d;
         }
         public BigInteger getPrimeP() {
-            fetchValues();
             return p;
         }
         public BigInteger getPrimeQ() {
-            fetchValues();
             return q;
         }
         public BigInteger getPrimeExponentP() {
-            fetchValues();
             return pe;
         }
         public BigInteger getPrimeExponentQ() {
-            fetchValues();
             return qe;
         }
         public BigInteger getCrtCoefficient() {
-            fetchValues();
             return coeff;
         }
     }

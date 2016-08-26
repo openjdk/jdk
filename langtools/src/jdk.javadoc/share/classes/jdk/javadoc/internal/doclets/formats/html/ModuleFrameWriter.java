@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.util.*;
 
 import javax.lang.model.element.ModuleElement;
@@ -39,8 +38,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 
 
 /**
@@ -76,13 +75,12 @@ public class ModuleFrameWriter extends HtmlDocletWriter {
      * @param configuration the configuration of the doclet.
      * @param moduleElement moduleElement under consideration.
      */
-    public ModuleFrameWriter(ConfigurationImpl configuration, ModuleElement moduleElement)
-            throws IOException {
+    public ModuleFrameWriter(ConfigurationImpl configuration, ModuleElement moduleElement) {
         super(configuration, DocPaths.moduleTypeFrame(moduleElement));
         this.mdle = moduleElement;
-        if (utils.getSpecifiedPackages().isEmpty()) {
+        if (configuration.getSpecifiedPackages().isEmpty()) {
             documentedClasses = new TreeSet<>(utils.makeGeneralPurposeComparator());
-            documentedClasses.addAll(configuration.docEnv.getIncludedClasses());
+            documentedClasses.addAll(configuration.docEnv.getIncludedTypeElements());
         }
     }
 
@@ -91,35 +89,29 @@ public class ModuleFrameWriter extends HtmlDocletWriter {
      *
      * @param configuration the current configuration of the doclet.
      * @param moduleElement The package for which "module_name-type-frame.html" is to be generated.
+     * @throws DocFileIOException if there is a problem generating the module summary file
      */
-    public static void generate(ConfigurationImpl configuration, ModuleElement moduleElement) {
-        ModuleFrameWriter mdlgen;
-        try {
-            mdlgen = new ModuleFrameWriter(configuration, moduleElement);
-            String mdlName = moduleElement.getQualifiedName().toString();
-            Content mdlLabel = new StringContent(mdlName);
-            HtmlTree body = mdlgen.getBody(false, mdlgen.getWindowTitle(mdlName));
-            HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
-                    ? HtmlTree.MAIN()
-                    : body;
-            Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, HtmlStyle.bar,
-                    mdlgen.getHyperLink(DocPaths.moduleSummary(moduleElement), mdlLabel, "", "classFrame"));
-            htmlTree.addContent(heading);
-            HtmlTree div = new HtmlTree(HtmlTag.DIV);
-            div.addStyle(HtmlStyle.indexContainer);
-            mdlgen.addClassListing(div);
-            htmlTree.addContent(div);
-            if (configuration.allowTag(HtmlTag.MAIN)) {
-                body.addContent(htmlTree);
-            }
-            mdlgen.printHtmlDocument(
-                    configuration.metakeywords.getMetaKeywordsForModule(moduleElement), false, body);
-        } catch (IOException exc) {
-            configuration.messages.error(
-                    "doclet.exception_encountered",
-                    exc.toString(), DocPaths.moduleTypeFrame(moduleElement).getPath());
-            throw new DocletAbortException(exc);
+    public static void generate(ConfigurationImpl configuration, ModuleElement moduleElement)
+            throws DocFileIOException {
+        ModuleFrameWriter mdlgen = new ModuleFrameWriter(configuration, moduleElement);
+        String mdlName = moduleElement.getQualifiedName().toString();
+        Content mdlLabel = new StringContent(mdlName);
+        HtmlTree body = mdlgen.getBody(false, mdlgen.getWindowTitle(mdlName));
+        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
+                ? HtmlTree.MAIN()
+                : body;
+        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, HtmlStyle.bar,
+                mdlgen.getHyperLink(DocPaths.moduleSummary(moduleElement), mdlLabel, "", "classFrame"));
+        htmlTree.addContent(heading);
+        HtmlTree div = new HtmlTree(HtmlTag.DIV);
+        div.addStyle(HtmlStyle.indexContainer);
+        mdlgen.addClassListing(div);
+        htmlTree.addContent(div);
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            body.addContent(htmlTree);
         }
+        mdlgen.printHtmlDocument(
+                configuration.metakeywords.getMetaKeywordsForModule(moduleElement), false, body);
     }
 
     /**

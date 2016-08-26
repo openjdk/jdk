@@ -67,6 +67,7 @@ public class CustomPluginTest {
 
         testHelloProvider(helper, pluginModulePath);
         testCustomPlugins(helper, pluginModulePath);
+        testModuleVerification(helper, pluginModulePath);
     }
 
     private void testCustomPlugins(Helper helper, Path pluginModulePath) {
@@ -93,8 +94,7 @@ public class CustomPluginTest {
         String name = "customplugin";
         Path src = Paths.get(System.getProperty("test.src")).resolve(name);
         Path classes = helper.getJmodClassesDir().resolve(name);
-        JImageGenerator.compile(src, classes,
-                                "--add-exports", "jdk.jlink/jdk.tools.jlink.internal=customplugin");
+        JImageGenerator.compile(src, classes);
         return JImageGenerator.getJModTask()
                 .addClassPath(classes)
                 .jmod(helper.getJmodDir().resolve(name + ".jmod"))
@@ -134,6 +134,46 @@ public class CustomPluginTest {
 
         if (!Files.exists(pluginFile)) {
             throw new AssertionError("Custom plugin not called");
+        }
+    }
+
+    private void testModuleVerification(Helper helper, Path pluginModulePath) throws IOException {
+        {
+            // dependent module missing check
+            String moduleName = "bar"; // 8147491
+            Path jmodFoo = helper.generateDefaultJModule("foo").assertSuccess();
+            Path jmodBar = helper.generateDefaultJModule(moduleName, "foo").assertSuccess();
+            // rogue filter removes "foo" module resources which are
+            // required by "bar" module. Module checks after plugin
+            // application should detect and report error.
+            JImageGenerator.getJLinkTask()
+                .modulePath(helper.defaultModulePath())
+                .pluginModulePath(pluginModulePath)
+                .output(helper.createNewImageDir(moduleName))
+                .addMods(moduleName)
+                .option("--rogue-filter")
+                .option("/foo/")
+                .call()
+                .assertFailure("java.lang.module.ResolutionException");
+        }
+
+        {
+            // package exported by one module used as concealed package
+            // in another module. But, module-info.class is not updated!
+            String moduleName = "jdk.scripting.nashorn";
+            JImageGenerator.getJLinkTask()
+                .modulePath(helper.defaultModulePath())
+                .pluginModulePath(pluginModulePath)
+                .output(helper.createNewImageDir(moduleName))
+                .addMods(moduleName)
+                // "java.logging" includes a package 'javax.script'
+                // which is an exported package from "java.scripting" module!
+                // module-info.class of java.logging left "as is".
+                .option("--rogue-adder")
+                .option("/java.logging/javax/script/Foo.class")
+                .call()
+                .assertFailure(
+                    "Module java.logging's descriptor returns inconsistent package set");
         }
     }
 }

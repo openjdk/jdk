@@ -139,7 +139,7 @@ public class StringWriter extends Writer {
      *
      * @param  csq
      *         The character sequence to append.  If {@code csq} is
-     *         {@code null}, then the four characters "{@code null}" are
+     *         {@code null}, then the four characters {@code "null"} are
      *         appended to this writer.
      *
      * @return  This writer
@@ -147,10 +147,7 @@ public class StringWriter extends Writer {
      * @since  1.5
      */
     public StringWriter append(CharSequence csq) {
-        if (csq == null)
-            write("null");
-        else
-            write(csq.toString());
+        write(String.valueOf(csq));
         return this;
     }
 
@@ -170,7 +167,7 @@ public class StringWriter extends Writer {
      *         The character sequence from which a subsequence will be
      *         appended.  If {@code csq} is {@code null}, then characters
      *         will be appended as if {@code csq} contained the four
-     *         characters "{@code null}".
+     *         characters {@code "null"}.
      *
      * @param  start
      *         The index of the first character in the subsequence
@@ -189,9 +186,8 @@ public class StringWriter extends Writer {
      * @since  1.5
      */
     public StringWriter append(CharSequence csq, int start, int end) {
-        CharSequence cs = (csq == null ? "null" : csq);
-        write(cs.subSequence(start, end).toString());
-        return this;
+        if (csq == null) csq = "null";
+        return append(csq.subSequence(start, end));
     }
 
     /**

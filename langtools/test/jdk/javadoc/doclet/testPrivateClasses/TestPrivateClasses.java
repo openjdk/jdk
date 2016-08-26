@@ -77,8 +77,8 @@ public class TestPrivateClasses extends JavadocTester {
                 "<pre>public&nbsp;void&nbsp;methodInheritedFromParent(int&nbsp;p1)",
                 "<dl>\n"
                 + "<dt>All Implemented Interfaces:</dt>\n"
-                + "<dd><a href=\"../pkg/PublicInterface.html\" title=\"interface in pkg\">"
-                + "PublicInterface</a></dd>\n"
+                + "<dd><code><a href=\"../pkg/PublicInterface.html\" title=\"interface in pkg\">"
+                + "PublicInterface</a></code></dd>\n"
                 + "</dl>");
 
         checkOutput("pkg/PublicChild.html", false,
@@ -115,8 +115,8 @@ public class TestPrivateClasses extends JavadocTester {
                 //Make sure implemented interfaces from private superclass are inherited
                 "<dl>\n"
                 + "<dt>All Known Implementing Classes:</dt>\n"
-                + "<dd><a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">"
-                + "PublicChild</a></dd>\n"
+                + "<dd><code><a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">"
+                + "PublicChild</a></code></dd>\n"
                 + "</dl>");
 
         checkOutput("pkg/PublicInterface.html", false,
@@ -178,10 +178,10 @@ public class TestPrivateClasses extends JavadocTester {
                 "extends",
                 "<dl>\n"
                 + "<dt>All Implemented Interfaces:</dt>\n"
-                + "<dd><a href=\"../pkg/PrivateInterface.html\" title=\"interface in pkg\">"
-                + "PrivateInterface</a>, "
-                + "<a href=\"../pkg/PublicInterface.html\" title=\"interface in pkg\">"
-                + "PublicInterface</a></dd>\n"
+                + "<dd><code><a href=\"../pkg/PrivateInterface.html\" title=\"interface in pkg\">"
+                + "PrivateInterface</a></code>, "
+                + "<code><a href=\"../pkg/PublicInterface.html\" title=\"interface in pkg\">"
+                + "PublicInterface</a></code></dd>\n"
                 + "</dl>",
                 "<pre>public class <span class=\"typeNameLabel\">PublicChild</span>");
 
@@ -202,10 +202,10 @@ public class TestPrivateClasses extends JavadocTester {
                 //Make sure implemented interfaces from private superclass are inherited
                 "<dl>\n"
                 + "<dt>All Known Implementing Classes:</dt>\n"
-                + "<dd><a href=\"../pkg/PrivateParent.html\" title=\"class in pkg\">"
-                + "PrivateParent</a>, "
-                + "<a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">PublicChild"
-                + "</a></dd>\n"
+                + "<dd><code><a href=\"../pkg/PrivateParent.html\" title=\"class in pkg\">"
+                + "PrivateParent</a></code>, "
+                + "<code><a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">PublicChild"
+                + "</a></code></dd>\n"
                 + "</dl>");
 
         checkOutput("pkg/PrivateInterface.html", true,

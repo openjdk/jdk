@@ -64,7 +64,7 @@ import java.sql.Wrapper;
  * <P>
  * A driver that is accessed via a {@code DataSource} object does not
  * register itself with the {@code DriverManager}.  Rather, a
- * {@code DataSource} object is retrieved though a lookup operation
+ * {@code DataSource} object is retrieved through a lookup operation
  * and then used to create a {@code Connection} object.  With a basic
  * implementation, the connection obtained through a {@code DataSource}
  * object is identical to a connection obtained through the
@@ -108,6 +108,34 @@ public interface DataSource  extends CommonDataSource, Wrapper {
    */
   Connection getConnection(String username, String password)
     throws SQLException;
+
+  /**
+   * {@inheritDoc}
+   * @since 1.4
+   */
+  @Override
+  java.io.PrintWriter getLogWriter() throws SQLException;
+
+  /**
+   * {@inheritDoc}
+   * @since 1.4
+   */
+  @Override
+  void setLogWriter(java.io.PrintWriter out) throws SQLException;
+
+  /**
+   * {@inheritDoc}
+   * @since 1.4
+   */
+  @Override
+  void setLoginTimeout(int seconds) throws SQLException;
+
+  /**
+   * {@inheritDoc}
+   * @since 1.4
+   */
+  @Override
+  int getLoginTimeout() throws SQLException;
 
   // JDBC 4.3
 

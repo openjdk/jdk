@@ -128,9 +128,10 @@ public class MetalScrollButton extends BasicArrowButton
                 int startY = ((h+1) - arrowHeight) / 2;
                 int startX = (w / 2);
 
-                for (int line = 0; line < arrowHeight; line++) {
-                    g.drawLine( startX-line, startY+line, startX +line+1, startY+line);
-                }
+                g.translate(startX, startY);
+                g.fillPolygon(new int[]{0, 1, arrowHeight + 1, -arrowHeight},
+                              new int[]{0, 0, arrowHeight, arrowHeight}, 4);
+                g.translate(-startX, -startY);
 
                 if (isEnabled) {
                     g.setColor( highlightColor );
@@ -174,10 +175,10 @@ public class MetalScrollButton extends BasicArrowButton
 
                 int startY = (((h+1) - arrowHeight) / 2)+ arrowHeight-1;
                 int startX = (w / 2);
-
-                for (int line = 0; line < arrowHeight; line++) {
-                    g.drawLine( startX-line, startY-line, startX +line+1, startY-line);
-                }
+                g.translate(startX, startY);
+                g.fillPolygon(new int[]{0, 1, arrowHeight + 1, -arrowHeight},
+                              new int[]{0, 0, -arrowHeight, -arrowHeight}, 4);
+                g.translate(-startX, -startY);
 
                 if (isEnabled) {
                     g.setColor( highlightColor );
@@ -220,9 +221,10 @@ public class MetalScrollButton extends BasicArrowButton
                 int startX = (((w+1) - arrowHeight) / 2) + arrowHeight-1;
                 int startY = (h / 2);
 
-                for (int line = 0; line < arrowHeight; line++) {
-                    g.drawLine( startX-line, startY-line, startX -line, startY+line+1);
-                }
+                g.translate(startX, startY);
+                g.fillPolygon(new int[]{0, 0, -arrowHeight, -arrowHeight},
+                              new int[]{0, 1, arrowHeight + 1, -arrowHeight}, 4);
+                g.translate(-startX, -startY);
 
                 if (isEnabled) {
                     g.setColor( highlightColor );
@@ -262,10 +264,10 @@ public class MetalScrollButton extends BasicArrowButton
                 int startX = (((w+1) - arrowHeight) / 2);
                 int startY = (h / 2);
 
-
-                for (int line = 0; line < arrowHeight; line++) {
-                    g.drawLine( startX+line, startY-line, startX +line, startY+line+1);
-                }
+                g.translate(startX, startY);
+                g.fillPolygon(new int[]{0, 0, arrowHeight, arrowHeight},
+                              new int[]{0, 1, arrowHeight + 1, -arrowHeight}, 4);
+                g.translate(-startX, -startY);
 
                 if (isEnabled) {
                     g.setColor( highlightColor );

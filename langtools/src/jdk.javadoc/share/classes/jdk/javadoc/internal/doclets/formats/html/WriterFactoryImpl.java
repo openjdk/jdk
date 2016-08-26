@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.IOException;
 
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
@@ -69,7 +68,7 @@ public class WriterFactoryImpl implements WriterFactory {
      * {@inheritDoc}
      */
     @Override
-    public ConstantsSummaryWriter getConstantsSummaryWriter() throws Exception {
+    public ConstantsSummaryWriter getConstantsSummaryWriter() {
         return new ConstantsSummaryWriterImpl(configuration);
     }
 
@@ -78,7 +77,7 @@ public class WriterFactoryImpl implements WriterFactory {
      */
     @Override
     public PackageSummaryWriter getPackageSummaryWriter(PackageElement packageElement,
-            PackageElement prevPkg, PackageElement nextPkg) throws Exception {
+            PackageElement prevPkg, PackageElement nextPkg) {
         return new PackageWriterImpl(configuration, packageElement, prevPkg, nextPkg);
     }
 
@@ -86,7 +85,7 @@ public class WriterFactoryImpl implements WriterFactory {
      * {@inheritDoc}
      */
     public ModuleSummaryWriter getModuleSummaryWriter(ModuleElement mdle,
-        ModuleElement prevModule, ModuleElement nextModule) throws Exception {
+        ModuleElement prevModule, ModuleElement nextModule) {
         return new ModuleWriterImpl(configuration, mdle,
             prevModule, nextModule);
     }
@@ -96,7 +95,7 @@ public class WriterFactoryImpl implements WriterFactory {
      */
     @Override
     public ClassWriter getClassWriter(TypeElement typeElement, TypeElement prevClass,
-            TypeElement nextClass, ClassTree classTree) throws IOException {
+            TypeElement nextClass, ClassTree classTree) {
         return new ClassWriterImpl(configuration, typeElement, prevClass, nextClass, classTree);
     }
 
@@ -105,7 +104,7 @@ public class WriterFactoryImpl implements WriterFactory {
      */
     @Override
     public AnnotationTypeWriter getAnnotationTypeWriter(TypeElement annotationType,
-            TypeMirror prevType, TypeMirror nextType) throws Exception {
+            TypeMirror prevType, TypeMirror nextType) {
         return new AnnotationTypeWriterImpl(configuration, annotationType, prevType, nextType);
     }
 
@@ -113,8 +112,8 @@ public class WriterFactoryImpl implements WriterFactory {
      * {@inheritDoc}
      */
     @Override
-    public AnnotationTypeFieldWriter
-            getAnnotationTypeFieldWriter(AnnotationTypeWriter annotationTypeWriter) throws Exception {
+    public AnnotationTypeFieldWriter getAnnotationTypeFieldWriter(
+            AnnotationTypeWriter annotationTypeWriter) {
         TypeElement te = annotationTypeWriter.getAnnotationTypeElement();
         return new AnnotationTypeFieldWriterImpl(
             (SubWriterHolderWriter) annotationTypeWriter, te);
@@ -124,9 +123,8 @@ public class WriterFactoryImpl implements WriterFactory {
      * {@inheritDoc}
      */
     @Override
-    public AnnotationTypeOptionalMemberWriter
-            getAnnotationTypeOptionalMemberWriter(
-        AnnotationTypeWriter annotationTypeWriter) throws Exception {
+    public AnnotationTypeOptionalMemberWriter getAnnotationTypeOptionalMemberWriter(
+        AnnotationTypeWriter annotationTypeWriter) {
         TypeElement te = annotationTypeWriter.getAnnotationTypeElement();
         return new AnnotationTypeOptionalMemberWriterImpl(
             (SubWriterHolderWriter) annotationTypeWriter, te);
@@ -136,8 +134,8 @@ public class WriterFactoryImpl implements WriterFactory {
      * {@inheritDoc}
      */
     @Override
-    public AnnotationTypeRequiredMemberWriter
-            getAnnotationTypeRequiredMemberWriter(AnnotationTypeWriter annotationTypeWriter) throws Exception {
+    public AnnotationTypeRequiredMemberWriter getAnnotationTypeRequiredMemberWriter(
+            AnnotationTypeWriter annotationTypeWriter) {
         TypeElement te = annotationTypeWriter.getAnnotationTypeElement();
         return new AnnotationTypeRequiredMemberWriterImpl(
             (SubWriterHolderWriter) annotationTypeWriter, te);
@@ -147,8 +145,7 @@ public class WriterFactoryImpl implements WriterFactory {
      * {@inheritDoc}
      */
     @Override
-    public EnumConstantWriterImpl getEnumConstantWriter(ClassWriter classWriter)
-            throws Exception {
+    public EnumConstantWriterImpl getEnumConstantWriter(ClassWriter classWriter) {
         return new EnumConstantWriterImpl((SubWriterHolderWriter) classWriter,
                 classWriter.getTypeElement());
     }
@@ -157,8 +154,7 @@ public class WriterFactoryImpl implements WriterFactory {
      * {@inheritDoc}
      */
     @Override
-    public FieldWriterImpl getFieldWriter(ClassWriter classWriter)
-            throws Exception {
+    public FieldWriterImpl getFieldWriter(ClassWriter classWriter) {
         return new FieldWriterImpl((SubWriterHolderWriter) classWriter, classWriter.getTypeElement());
     }
 
@@ -166,8 +162,7 @@ public class WriterFactoryImpl implements WriterFactory {
      * {@inheritDoc}
      */
     @Override
-    public PropertyWriterImpl getPropertyWriter(ClassWriter classWriter)
-            throws Exception {
+    public PropertyWriterImpl getPropertyWriter(ClassWriter classWriter) {
         return new PropertyWriterImpl((SubWriterHolderWriter) classWriter,
                 classWriter.getTypeElement());
     }
@@ -176,8 +171,7 @@ public class WriterFactoryImpl implements WriterFactory {
      * {@inheritDoc}
      */
     @Override
-    public MethodWriterImpl getMethodWriter(ClassWriter classWriter)
-            throws Exception {
+    public MethodWriterImpl getMethodWriter(ClassWriter classWriter) {
         return new MethodWriterImpl((SubWriterHolderWriter) classWriter, classWriter.getTypeElement());
     }
 
@@ -185,8 +179,7 @@ public class WriterFactoryImpl implements WriterFactory {
      * {@inheritDoc}
      */
     @Override
-    public ConstructorWriterImpl getConstructorWriter(ClassWriter classWriter)
-            throws Exception {
+    public ConstructorWriterImpl getConstructorWriter(ClassWriter classWriter) {
         return new ConstructorWriterImpl((SubWriterHolderWriter) classWriter,
                 classWriter.getTypeElement());
     }
@@ -195,9 +188,8 @@ public class WriterFactoryImpl implements WriterFactory {
      * {@inheritDoc}
      */
     @Override
-    public MemberSummaryWriter getMemberSummaryWriter(
-            ClassWriter classWriter, VisibleMemberMap.Kind memberType)
-            throws Exception {
+    public MemberSummaryWriter getMemberSummaryWriter(ClassWriter classWriter,
+            VisibleMemberMap.Kind memberType) {
         switch (memberType) {
             case CONSTRUCTORS:
                 return getConstructorWriter(classWriter);
@@ -221,9 +213,8 @@ public class WriterFactoryImpl implements WriterFactory {
      * {@inheritDoc}
      */
     @Override
-    public MemberSummaryWriter getMemberSummaryWriter(
-        AnnotationTypeWriter annotationTypeWriter, VisibleMemberMap.Kind memberType)
-    throws Exception {
+    public MemberSummaryWriter getMemberSummaryWriter(AnnotationTypeWriter annotationTypeWriter,
+            VisibleMemberMap.Kind memberType) {
         switch (memberType) {
             case ANNOTATION_TYPE_FIELDS:
                 return (AnnotationTypeFieldWriterImpl)
@@ -243,7 +234,7 @@ public class WriterFactoryImpl implements WriterFactory {
      * {@inheritDoc}
      */
     @Override
-    public SerializedFormWriter getSerializedFormWriter() throws Exception {
+    public SerializedFormWriter getSerializedFormWriter() {
         return new SerializedFormWriterImpl(configuration);
     }
 }

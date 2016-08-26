@@ -36,7 +36,7 @@
  */
 
 /*
- * TODO: make it Inteferface<PE> ie. fix all ParameterTypes, likely should get
+ * TODO: make it Interface<PE> ie. fix all ParameterTypes, likely should get
  * fixed when Doc is replace by j.l.m, but meanwhile this test has been adjusted
  * take the current format this is better than @ignore because we can follow the
  * differences as the work progress.
@@ -69,17 +69,17 @@ public class TestInterface extends JavadocTester {
                 // Make sure known implementing class list is correct and omits type parameters.
                 "<dl>\n"
                 + "<dt>All Known Implementing Classes:</dt>\n"
-                + "<dd><a href=\"../pkg/Child.html\" title=\"class in pkg\">Child"
-                + "</a>, <a href=\"../pkg/Parent.html\" title=\"class in pkg\">Parent"
-                + "</a></dd>\n"
+                + "<dd><code><a href=\"../pkg/Child.html\" title=\"class in pkg\">Child"
+                + "</a></code>, <code><a href=\"../pkg/Parent.html\" title=\"class in pkg\">Parent"
+                + "</a></code></dd>\n"
                 + "</dl>");
 
         checkOutput("pkg/Child.html", true,
                 // Make sure "All Implemented Interfaces": has substituted type parameters
                 "<dl>\n"
                 + "<dt>All Implemented Interfaces:</dt>\n"
-                + "<dd><a href=\"../pkg/Interface.html\" title=\"interface in pkg\">"
-                + "Interface</a>&lt;CE&gt;</dd>\n"
+                + "<dd><code><a href=\"../pkg/Interface.html\" title=\"interface in pkg\">"
+                + "Interface</a>&lt;CE&gt;</code></dd>\n"
                 + "</dl>",
                 //Make sure Class Tree has substituted type parameters.
                 "<ul class=\"inheritance\">\n"
@@ -114,8 +114,8 @@ public class TestInterface extends JavadocTester {
                 //Make sure "Direct Know Subclasses" omits type parameters
                 "<dl>\n"
                 + "<dt>Direct Known Subclasses:</dt>\n"
-                + "<dd><a href=\"../pkg/Child.html\" title=\"class in pkg\">Child"
-                + "</a></dd>\n"
+                + "<dd><code><a href=\"../pkg/Child.html\" title=\"class in pkg\">Child"
+                + "</a></code></dd>\n"
                 + "</dl>");
 
         checkOutput("pkg/Interface.html", false,
