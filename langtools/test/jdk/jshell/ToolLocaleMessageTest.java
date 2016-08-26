@@ -44,7 +44,7 @@ import static org.testng.Assert.assertTrue;
 public class ToolLocaleMessageTest extends ReplToolTesting {
 
     void testLocale(ReplTest... tests) {
-        test(Locale.getDefault(), false, new String[]{"-nostartup"}, "", tests);
+        test(Locale.getDefault(), false, new String[]{"--no-startup"}, "", tests);
     }
 
     void assertCommandOK(boolean after, String cmd, String... contains) {

@@ -46,6 +46,7 @@ import java.util.Properties;
     static final boolean DUMP_CLASS_FILES;
     static final boolean TRACE_INTERPRETER;
     static final boolean TRACE_METHOD_LINKAGE;
+    static final boolean TRACE_RESOLVE;
     static final int COMPILE_THRESHOLD;
     static final boolean LOG_LF_COMPILATION_FAILURE;
     static final int DONT_INLINE_THRESHOLD;
@@ -65,6 +66,8 @@ import java.util.Properties;
                 props.getProperty("java.lang.invoke.MethodHandle.TRACE_INTERPRETER"));
         TRACE_METHOD_LINKAGE = Boolean.parseBoolean(
                 props.getProperty("java.lang.invoke.MethodHandle.TRACE_METHOD_LINKAGE"));
+        TRACE_RESOLVE = Boolean.parseBoolean(
+                props.getProperty("java.lang.invoke.MethodHandle.TRACE_RESOLVE"));
         COMPILE_THRESHOLD = Integer.parseInt(
                 props.getProperty("java.lang.invoke.MethodHandle.COMPILE_THRESHOLD", "0"));
         LOG_LF_COMPILATION_FAILURE = Boolean.parseBoolean(

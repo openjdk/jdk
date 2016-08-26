@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ public class NoLoopbackPackets {
 
         MulticastSocket msock = null;
         List<SocketAddress> failedGroups = new ArrayList<SocketAddress>();
+        Sender sender = null;
         try {
             msock = new MulticastSocket();
             int port = msock.getLocalPort();
@@ -80,9 +81,8 @@ public class NoLoopbackPackets {
             groups.add(new InetSocketAddress(InetAddress.getByName("::ffff:224.1.1.2"), port));
             groups.add(new InetSocketAddress(InetAddress.getByName("ff02::1:1"), port));
 
-            Thread sender = new Thread(new Sender(groups));
-            sender.setDaemon(true); // we want sender to stop when main thread exits
-            sender.start();
+            sender = new Sender(groups);
+            new Thread(sender).start();
 
             // Now try to receive multicast packets. we should not see any of them
             // since we disable loopback mode.
@@ -107,6 +107,9 @@ public class NoLoopbackPackets {
             }
         } finally {
             if (msock != null) try { msock.close(); } catch (Exception e) {}
+            if (sender != null) {
+                sender.stop();
+            }
         }
 
         if (failedGroups.size() > 0) {
@@ -119,6 +122,7 @@ public class NoLoopbackPackets {
 
     static class Sender implements Runnable {
         private List<SocketAddress> sendToGroups;
+        private volatile boolean stop;
 
         public Sender(List<SocketAddress> groups) {
             sendToGroups = groups;
@@ -136,7 +140,7 @@ public class NoLoopbackPackets {
 
                 MulticastSocket msock = new MulticastSocket();
                 msock.setLoopbackMode(true);    // disable loopback mode
-                for (;;) {
+                while (!stop) {
                     for (DatagramPacket packet : packets) {
                         msock.send(packet);
                     }
@@ -146,6 +150,10 @@ public class NoLoopbackPackets {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        void stop() {
+            stop = true;
         }
     }
 }

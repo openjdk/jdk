@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,19 +119,31 @@ public class Basic {
             ExecutorService pool = Executors.newCachedThreadPool();
             AsynchronousChannelGroup group = AsynchronousChannelGroup
                     .withCachedThreadPool(pool, rand.nextInt(10));
-            testShutdownWithChannels(pool, group);
+            try {
+                testShutdownWithChannels(pool, group);
+            } finally {
+                group.shutdown();
+            }
         }
         for (int i = 0; i < 100; i++) {
             int nThreads = 1 + rand.nextInt(8);
             AsynchronousChannelGroup group = AsynchronousChannelGroup
                     .withFixedThreadPool(nThreads, threadFactory);
-            testShutdownWithChannels(null, group);
+            try {
+                testShutdownWithChannels(null, group);
+            } finally {
+                group.shutdown();
+            }
         }
         for (int i = 0; i < 100; i++) {
             ExecutorService pool = Executors.newCachedThreadPool();
             AsynchronousChannelGroup group = AsynchronousChannelGroup
                     .withThreadPool(pool);
-            testShutdownWithChannels(pool, group);
+            try {
+                testShutdownWithChannels(pool, group);
+            } finally {
+                group.shutdown();
+            }
         }
     }
 
@@ -164,19 +176,31 @@ public class Basic {
             ExecutorService pool = pool = Executors.newCachedThreadPool();
             AsynchronousChannelGroup group = AsynchronousChannelGroup
                     .withCachedThreadPool(pool, rand.nextInt(5));
-            testShutdownNow(pool, group);
+            try {
+                testShutdownNow(pool, group);
+            } finally {
+                group.shutdown();
+            }
         }
         for (int i = 0; i < 10; i++) {
             int nThreads = 1 + rand.nextInt(8);
             AsynchronousChannelGroup group = AsynchronousChannelGroup
                     .withFixedThreadPool(nThreads, threadFactory);
-            testShutdownNow(null, group);
+            try {
+                testShutdownNow(null, group);
+            } finally {
+                group.shutdown();
+            }
         }
         for (int i = 0; i < 10; i++) {
             ExecutorService pool = Executors.newCachedThreadPool();
             AsynchronousChannelGroup group = AsynchronousChannelGroup
                     .withThreadPool(pool);
-            testShutdownNow(pool, group);
+            try {
+                testShutdownNow(pool, group);
+            } finally {
+                group.shutdown();
+            }
         }
     }
 
@@ -186,78 +210,78 @@ public class Basic {
         AsynchronousChannelGroup group =
             AsynchronousChannelGroup.withFixedThreadPool(1, threadFactory);
 
-        AsynchronousSocketChannel ch = AsynchronousSocketChannel.open(group);
-        AsynchronousServerSocketChannel listener = AsynchronousServerSocketChannel.open(group);
+        try (AsynchronousSocketChannel ch = AsynchronousSocketChannel.open(group);
+                AsynchronousServerSocketChannel listener =
+                    AsynchronousServerSocketChannel.open(group)) {
 
-        // initiate accept
-        listener.bind(new InetSocketAddress(0));
-        Future<AsynchronousSocketChannel> result = listener.accept();
+            // initiate accept
+            listener.bind(new InetSocketAddress(0));
+            Future<AsynchronousSocketChannel> result = listener.accept();
 
-        // shutdown group
-        group.shutdown();
-        if (!group.isShutdown())
-            throw new RuntimeException("Group should be shutdown");
+            // shutdown group
+            group.shutdown();
+            if (!group.isShutdown())
+                throw new RuntimeException("Group should be shutdown");
 
-        // attempt to create another channel
-        try {
-            AsynchronousSocketChannel.open(group);
-            throw new RuntimeException("ShutdownChannelGroupException expected");
-        } catch (ShutdownChannelGroupException x) {
+            // attempt to create another channel
+            try {
+                AsynchronousSocketChannel.open(group);
+                throw new RuntimeException("ShutdownChannelGroupException expected");
+            } catch (ShutdownChannelGroupException x) {
+            }
+            try {
+                AsynchronousServerSocketChannel.open(group);
+                throw new RuntimeException("ShutdownChannelGroupException expected");
+            } catch (ShutdownChannelGroupException x) {
+            }
+
+            // attempt to create another channel by connecting. This should cause
+            // the accept operation to fail.
+            InetAddress lh = InetAddress.getLocalHost();
+            int port = ((InetSocketAddress)listener.getLocalAddress()).getPort();
+            InetSocketAddress isa = new InetSocketAddress(lh, port);
+            ch.connect(isa).get();
+            try {
+                result.get();
+                throw new RuntimeException("Connection was accepted");
+            } catch (ExecutionException x) {
+                Throwable cause = x.getCause();
+                if (!(cause instanceof IOException))
+                    throw new RuntimeException("Cause should be IOException");
+                cause = cause.getCause();
+                if (!(cause instanceof ShutdownChannelGroupException))
+                    throw new RuntimeException("IOException cause should be ShutdownChannelGroupException");
+            }
+
+            // initiate another accept even though channel group is shutdown.
+            Future<AsynchronousSocketChannel> res = listener.accept();
+            try {
+                res.get(3, TimeUnit.SECONDS);
+                throw new RuntimeException("TimeoutException expected");
+            } catch (TimeoutException x) {
+            }
+            // connect to the listener which should cause the accept to complete
+            AsynchronousSocketChannel.open().connect(isa);
+            try {
+                res.get();
+                throw new RuntimeException("Connection was accepted");
+            } catch (ExecutionException x) {
+                Throwable cause = x.getCause();
+                if (!(cause instanceof IOException))
+                    throw new RuntimeException("Cause should be IOException");
+                cause = cause.getCause();
+                if (!(cause instanceof ShutdownChannelGroupException))
+                    throw new RuntimeException("IOException cause should be ShutdownChannelGroupException");
+            }
+
+            // group should *not* terminate as channels are open
+            boolean terminated = group.awaitTermination(3, TimeUnit.SECONDS);
+            if (terminated) {
+                throw new RuntimeException("Group should not have terminated");
+            }
+        } finally {
+            group.shutdown();
         }
-        try {
-            AsynchronousServerSocketChannel.open(group);
-            throw new RuntimeException("ShutdownChannelGroupException expected");
-        } catch (ShutdownChannelGroupException x) {
-        }
-
-        // attempt to create another channel by connecting. This should cause
-        // the accept operation to fail.
-        InetAddress lh = InetAddress.getLocalHost();
-        int port = ((InetSocketAddress)listener.getLocalAddress()).getPort();
-        InetSocketAddress isa = new InetSocketAddress(lh, port);
-        ch.connect(isa).get();
-        try {
-            result.get();
-            throw new RuntimeException("Connection was accepted");
-        } catch (ExecutionException x) {
-            Throwable cause = x.getCause();
-            if (!(cause instanceof IOException))
-                throw new RuntimeException("Cause should be IOException");
-            cause = cause.getCause();
-            if (!(cause instanceof ShutdownChannelGroupException))
-                throw new RuntimeException("IOException cause should be ShutdownChannelGroupException");
-        }
-
-        // initiate another accept even though channel group is shutdown.
-        Future<AsynchronousSocketChannel> res = listener.accept();
-        try {
-            res.get(3, TimeUnit.SECONDS);
-            throw new RuntimeException("TimeoutException expected");
-        } catch (TimeoutException x) {
-        }
-        // connect to the listener which should cause the accept to complete
-        AsynchronousSocketChannel.open().connect(isa);
-        try {
-            res.get();
-            throw new RuntimeException("Connection was accepted");
-        } catch (ExecutionException x) {
-            Throwable cause = x.getCause();
-            if (!(cause instanceof IOException))
-                throw new RuntimeException("Cause should be IOException");
-            cause = cause.getCause();
-            if (!(cause instanceof ShutdownChannelGroupException))
-                throw new RuntimeException("IOException cause should be ShutdownChannelGroupException");
-        }
-
-        // group should *not* terminate as channels are open
-        boolean terminated = group.awaitTermination(3, TimeUnit.SECONDS);
-        if (terminated)
-            throw new RuntimeException("Group should not have terminated");
-
-        // close channel; group should terminate quickly
-        ch.close();
-        listener.close();
-        awaitTermination(group);
     }
 
     static void miscTests() throws Exception {

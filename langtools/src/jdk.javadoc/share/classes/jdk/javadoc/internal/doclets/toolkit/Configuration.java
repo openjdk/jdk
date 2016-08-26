@@ -44,11 +44,12 @@ import jdk.javadoc.internal.doclets.toolkit.builders.BuilderFactory;
 import jdk.javadoc.internal.doclets.toolkit.taglets.TagletManager;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileFactory;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Extern;
 import jdk.javadoc.internal.doclets.toolkit.util.Group;
 import jdk.javadoc.internal.doclets.toolkit.util.MetaKeywords;
+import jdk.javadoc.internal.doclets.toolkit.util.SimpleDocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.TypeElementCatalog;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap.GetterSetter;
@@ -73,21 +74,6 @@ import static javax.tools.Diagnostic.Kind.*;
 public abstract class Configuration {
 
     /**
-     * Exception used to report a problem during setOptions.
-     */
-    public static class Fault extends Exception {
-        private static final long serialVersionUID = 0;
-
-        Fault(String msg) {
-            super(msg);
-        }
-
-        Fault(String msg, Exception cause) {
-            super(msg, cause);
-        }
-    }
-
-    /**
      * The factory for builders.
      */
     protected BuilderFactory builderFactory;
@@ -105,7 +91,7 @@ public abstract class Configuration {
     /**
      * The default path to the builder XML.
      */
-    private static final String DEFAULT_BUILDER_XML = "resources/doclet.xml";
+    public static final String DEFAULT_BUILDER_XML = "resources/doclet.xml";
 
     /**
      * The path to Taglets
@@ -302,13 +288,17 @@ public abstract class Configuration {
 
     /**
      * Return the build date for the doclet.
+     *
+     * @return the build date
      */
     public abstract String getDocletSpecificBuildDate();
 
     /**
-     * This method should be defined in all those doclets(configurations),
+     * This method should be defined in all those doclets (configurations),
      * which want to derive themselves from this Configuration. This method
      * can be used to finish up the options setup.
+     *
+     * @return true if successful and false otherwise
      */
 
     public abstract boolean finishOptionSettings();
@@ -638,8 +628,8 @@ public abstract class Configuration {
      * when this is called all the option have been set, this method,
      * initializes certain components before anything else is started.
      */
-    private void finishOptionSettings0() throws Fault {
-        ensureOutputDirExists();
+    private void finishOptionSettings0() throws DocletException {
+        initDestDirectory();
         if (urlForLink != null && pkglistUrlForLink != null)
             extern.link(urlForLink, pkglistUrlForLink, reporter, false);
         if (urlForLinkOffline != null && pkglistUrlForLinkOffline != null)
@@ -658,43 +648,42 @@ public abstract class Configuration {
      * Set the command line options supported by this configuration.
      *
      * @return true if the options are set successfully
-     * @throws DocletAbortException
+     * @throws DocletException if there is a problem while setting the options
      */
-    public boolean setOptions() throws Fault {
-        try {
-            initPackages();
-            initModules();
-            finishOptionSettings0();
-            if (!finishOptionSettings())
-                return false;
+    public boolean setOptions() throws DocletException {
+        initPackages();
+        initModules();
+        finishOptionSettings0();
+        if (!finishOptionSettings())
+            return false;
 
-        } catch (Fault f) {
-            throw new DocletAbortException(f.getMessage());
-        }
         return true;
     }
 
-    private void ensureOutputDirExists() throws Fault {
-        DocFile destDir = DocFile.createFileForDirectory(this, destDirName);
-        if (!destDir.exists()) {
-            //Create the output directory (in case it doesn't exist yet)
-            if (!destDirName.isEmpty())
+    private void initDestDirectory() throws DocletException {
+        if (!destDirName.isEmpty()) {
+            DocFile destDir = DocFile.createFileForDirectory(this, destDirName);
+            if (!destDir.exists()) {
+                //Create the output directory (in case it doesn't exist yet)
                 reporter.print(NOTE, getText("doclet.dest_dir_create", destDirName));
-            destDir.mkdirs();
-        } else if (!destDir.isDirectory()) {
-            throw new Fault(getText(
-                "doclet.destination_directory_not_directory_0",
-                destDir.getPath()));
-        } else if (!destDir.canWrite()) {
-            throw new Fault(getText(
-                "doclet.destination_directory_not_writable_0",
-                destDir.getPath()));
+                destDir.mkdirs();
+            } else if (!destDir.isDirectory()) {
+                throw new SimpleDocletException(getText(
+                        "doclet.destination_directory_not_directory_0",
+                        destDir.getPath()));
+            } else if (!destDir.canWrite()) {
+                throw new SimpleDocletException(getText(
+                        "doclet.destination_directory_not_writable_0",
+                        destDir.getPath()));
+            }
         }
+        DocFileFactory.getFactory(this).setDestDir(destDirName);
     }
 
     /**
      * Initialize the taglet manager.  The strings to initialize the simple custom tags should
      * be in the following format:  "[tag name]:[location str]:[heading]".
+     *
      * @param customTagStrs the set two dimensional arrays of strings.  These arrays contain
      * either -tag or -taglet arguments.
      */
@@ -819,7 +808,7 @@ public abstract class Configuration {
                 if (!checkOutputFileEncoding(docencoding)) {
                     return false;
                 }
-            };
+            }
         }
         if (!docencodingfound && (encoding != null && !encoding.isEmpty())) {
             if (!checkOutputFileEncoding(encoding)) {
@@ -858,6 +847,7 @@ public abstract class Configuration {
     /**
      * Return true if the given doc-file subdirectory should be excluded and
      * false otherwise.
+     *
      * @param docfilesubdir the doc-files subdirectory to check.
      * @return true if the directory is excluded.
      */
@@ -867,7 +857,9 @@ public abstract class Configuration {
 
     /**
      * Return true if the given qualifier should be excluded and false otherwise.
+     *
      * @param qualifier the qualifier to check.
+     * @return true if the qualifier should be excluded
      */
     public boolean shouldExcludeQualifier(String qualifier){
         if (excludedQualifiers.contains("all") ||
@@ -888,6 +880,7 @@ public abstract class Configuration {
     /**
      * Return the qualified name of the Element if its qualifier is not excluded.
      * Otherwise return the unqualified Element name.
+     *
      * @param te the TypeElement to check.
      * @return the class name
      */
@@ -931,6 +924,7 @@ public abstract class Configuration {
      * Convenience method to obtain a resource from the doclet's
      * {@link Resources resources}.
      * Equivalent to <code>getResources.getText(key);</code>.
+     *
      * @param key the key for the desired string
      * @return the string for the given key
      * @throws MissingResourceException if the key is not found in either
@@ -942,6 +936,7 @@ public abstract class Configuration {
      * Convenience method to obtain a resource from the doclet's
      * {@link Resources resources}.
      * Equivalent to <code>getResources.getText(key, args);</code>.
+     *
      * @param key the key for the desired string
      * @param args values to be substituted into the resulting string
      * @return the string for the given key
@@ -1009,6 +1004,7 @@ public abstract class Configuration {
 
     /**
      * Return the doclet specific instance of a writer factory.
+     *
      * @return the {@link WriterFactory} for the doclet.
      */
     public abstract WriterFactory getWriterFactory();
@@ -1017,9 +1013,9 @@ public abstract class Configuration {
      * Return the input stream to the builder XML.
      *
      * @return the input steam to the builder XML.
-     * @throws FileNotFoundException when the given XML file cannot be found.
+     * @throws DocFileIOException when the given XML file cannot be found or opened.
      */
-    public InputStream getBuilderXML() throws IOException {
+    public InputStream getBuilderXML() throws DocFileIOException {
         return builderXMLPath == null ?
             Configuration.class.getResourceAsStream(DEFAULT_BUILDER_XML) :
             DocFile.createFileForInput(this, builderXMLPath).openInputStream();
@@ -1027,6 +1023,7 @@ public abstract class Configuration {
 
     /**
      * Return the Locale for this document.
+     *
      * @return the current locale
      */
     public abstract Locale getLocale();
@@ -1040,6 +1037,7 @@ public abstract class Configuration {
 
     /**
      * Return the current file manager.
+     *
      * @return JavaFileManager
      */
     public abstract JavaFileManager getFileManager();

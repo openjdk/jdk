@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,8 @@ import java.util.*;
  *
  * 1. Adds additional packages to the package.access and
  *    package.definition security properties.
- * 2. Filter out platform-unrelated parts
+ * 2. Filter out platform-unrelated parts.
+ * 3. Set the JCE jurisdiction policy directory.
  *
  * In order to easily maintain platform-related entries, every item
  * (including the last line) in package.access and package.definition
@@ -50,12 +51,13 @@ public class MakeJavaSecurity {
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length < 4) {
+        if (args.length < 5) {
             System.err.println("Usage: java MakeJavaSecurity " +
                                "[input java.security file name] " +
                                "[output java.security file name] " +
                                "[openjdk target os] " +
                                "[openjdk target cpu architecture]" +
+                               "[JCE jurisdiction policy directory]" +
                                "[more restricted packages file name?]");
 
                     System.exit(1);
@@ -63,8 +65,8 @@ public class MakeJavaSecurity {
 
         // more restricted packages
         List<String> extraLines;
-        if (args.length == 5) {
-            extraLines = Files.readAllLines(Paths.get(args[4]));
+        if (args.length == 6) {
+            extraLines = Files.readAllLines(Paths.get(args[5]));
         } else {
             extraLines = Collections.emptyList();
         }
@@ -132,6 +134,16 @@ public class MakeJavaSecurity {
                 int n = count.getOrDefault(prefix, 1);
                 count.put(prefix, n+1);
                 lines.set(i, prefix + "." + n + line.substring(index+4));
+            }
+        }
+
+        // Set the JCE policy value
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+            int index = line.indexOf("crypto.policydir-tbd");
+            if (index >= 0) {
+                String prefix = line.substring(0, index);
+                lines.set(i, prefix + args[4]);
             }
         }
 
