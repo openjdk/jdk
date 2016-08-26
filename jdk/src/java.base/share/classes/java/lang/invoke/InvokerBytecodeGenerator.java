@@ -607,7 +607,10 @@ class InvokerBytecodeGenerator {
     private static MemberName resolveFrom(String name, MethodType type, Class<?> holder) {
         MemberName member = new MemberName(holder, name, type, REF_invokeStatic);
         MemberName resolvedMember = MemberName.getFactory().resolveOrNull(REF_invokeStatic, member, holder);
-
+        if (TRACE_RESOLVE) {
+            System.out.println("[LF_RESOLVE] " + holder.getName() + " " + name + " " +
+                    shortenSignature(basicTypeSignature(type)) + (resolvedMember != null ? " (success)" : " (fail)") );
+        }
         return resolvedMember;
     }
 
