@@ -44,7 +44,7 @@
 #include "prims/jvm_misc.hpp"
 #include "prims/privilegedStack.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/java.hpp"
@@ -596,8 +596,6 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   }
 #endif
 
-  NOT_PRODUCT(if (MallocVerifyInterval > 0) check_heap());
-
   // For the test flag -XX:MallocMaxTestWords
   if (has_reached_max_malloc_test_peak(size)) {
     return NULL;
@@ -658,7 +656,6 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   // NMT support
   void* membase = MemTracker::malloc_base(memblock);
   verify_memory(membase);
-  NOT_PRODUCT(if (MallocVerifyInterval > 0) check_heap());
   if (size == 0) {
     return NULL;
   }
@@ -695,7 +692,6 @@ void  os::free(void *memblock) {
   }
   void* membase = MemTracker::record_free(memblock);
   verify_memory(membase);
-  NOT_PRODUCT(if (MallocVerifyInterval > 0) check_heap());
 
   GuardedMemory guarded(membase);
   size_t size = guarded.get_user_size();

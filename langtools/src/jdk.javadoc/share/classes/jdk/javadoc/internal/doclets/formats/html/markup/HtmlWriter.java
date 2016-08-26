@@ -32,6 +32,7 @@ import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.MethodTypes;
@@ -147,9 +148,11 @@ public class HtmlWriter {
                 resources.getText("doclet.Type"));
     }
 
-    public void write(Content c) throws IOException {
+    public void write(Content c) throws DocFileIOException {
         try (Writer writer = docFile.openWriter()) {
             c.write(writer, true);
+        } catch (IOException e) {
+            throw new DocFileIOException(docFile, DocFileIOException.Mode.WRITE, e);
         }
     }
 

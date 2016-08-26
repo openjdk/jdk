@@ -492,7 +492,7 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     // Caching machinery for field accessors:
-    private static final byte
+    static final byte
             AF_GETFIELD        = 0,
             AF_PUTFIELD        = 1,
             AF_GETSTATIC       = 2,
@@ -502,7 +502,7 @@ class DirectMethodHandle extends MethodHandle {
             AF_LIMIT           = 6;
     // Enumerate the different field kinds using Wrapper,
     // with an extra case added for checked references.
-    private static final int
+    static final int
             FT_LAST_WRAPPER    = Wrapper.COUNT-1,
             FT_UNCHECKED_REF   = Wrapper.OBJECT.ordinal(),
             FT_CHECKED_REF     = FT_LAST_WRAPPER+1,
@@ -515,7 +515,7 @@ class DirectMethodHandle extends MethodHandle {
     @Stable
     private static final LambdaForm[] ACCESSOR_FORMS
             = new LambdaForm[afIndex(AF_LIMIT, false, 0)];
-    private static int ftypeKind(Class<?> ftype) {
+    static int ftypeKind(Class<?> ftype) {
         if (ftype.isPrimitive())
             return Wrapper.forPrimitiveType(ftype).ordinal();
         else if (VerifyType.isNullReferenceConversion(Object.class, ftype))
@@ -566,7 +566,64 @@ class DirectMethodHandle extends MethodHandle {
 
     private static final Wrapper[] ALL_WRAPPERS = Wrapper.values();
 
-    private static LambdaForm makePreparedFieldLambdaForm(byte formOp, boolean isVolatile, int ftypeKind) {
+    private static Kind getFieldKind(boolean isGetter, boolean isVolatile, Wrapper wrapper) {
+        if (isGetter) {
+            if (isVolatile) {
+                switch (wrapper) {
+                    case BOOLEAN: return GET_BOOLEAN_VOLATILE;
+                    case BYTE:    return GET_BYTE_VOLATILE;
+                    case SHORT:   return GET_SHORT_VOLATILE;
+                    case CHAR:    return GET_CHAR_VOLATILE;
+                    case INT:     return GET_INT_VOLATILE;
+                    case LONG:    return GET_LONG_VOLATILE;
+                    case FLOAT:   return GET_FLOAT_VOLATILE;
+                    case DOUBLE:  return GET_DOUBLE_VOLATILE;
+                    case OBJECT:  return GET_OBJECT_VOLATILE;
+                }
+            } else {
+                switch (wrapper) {
+                    case BOOLEAN: return GET_BOOLEAN;
+                    case BYTE:    return GET_BYTE;
+                    case SHORT:   return GET_SHORT;
+                    case CHAR:    return GET_CHAR;
+                    case INT:     return GET_INT;
+                    case LONG:    return GET_LONG;
+                    case FLOAT:   return GET_FLOAT;
+                    case DOUBLE:  return GET_DOUBLE;
+                    case OBJECT:  return GET_OBJECT;
+                }
+            }
+        } else {
+            if (isVolatile) {
+                switch (wrapper) {
+                    case BOOLEAN: return PUT_BOOLEAN_VOLATILE;
+                    case BYTE:    return PUT_BYTE_VOLATILE;
+                    case SHORT:   return PUT_SHORT_VOLATILE;
+                    case CHAR:    return PUT_CHAR_VOLATILE;
+                    case INT:     return PUT_INT_VOLATILE;
+                    case LONG:    return PUT_LONG_VOLATILE;
+                    case FLOAT:   return PUT_FLOAT_VOLATILE;
+                    case DOUBLE:  return PUT_DOUBLE_VOLATILE;
+                    case OBJECT:  return PUT_OBJECT_VOLATILE;
+                }
+            } else {
+                switch (wrapper) {
+                    case BOOLEAN: return PUT_BOOLEAN;
+                    case BYTE:    return PUT_BYTE;
+                    case SHORT:   return PUT_SHORT;
+                    case CHAR:    return PUT_CHAR;
+                    case INT:     return PUT_INT;
+                    case LONG:    return PUT_LONG;
+                    case FLOAT:   return PUT_FLOAT;
+                    case DOUBLE:  return PUT_DOUBLE;
+                    case OBJECT:  return PUT_OBJECT;
+                }
+            }
+        }
+        throw new AssertionError("Invalid arguments");
+    }
+
+    static LambdaForm makePreparedFieldLambdaForm(byte formOp, boolean isVolatile, int ftypeKind) {
         boolean isGetter  = (formOp & 1) == (AF_GETFIELD & 1);
         boolean isStatic  = (formOp >= AF_GETSTATIC);
         boolean needsInit = (formOp >= AF_GETSTATIC_INIT);
@@ -576,24 +633,14 @@ class DirectMethodHandle extends MethodHandle {
         assert(ftypeKind(needsCast ? String.class : ft) == ftypeKind);
 
         // getObject, putIntVolatile, etc.
-        StringBuilder nameBuilder = new StringBuilder();
-        if (isGetter) {
-            nameBuilder.append("get");
-        } else {
-            nameBuilder.append("put");
-        }
-        nameBuilder.append(fw.primitiveSimpleName());
-        nameBuilder.setCharAt(3, Character.toUpperCase(nameBuilder.charAt(3)));
-        if (isVolatile) {
-            nameBuilder.append("Volatile");
-        }
+        Kind kind = getFieldKind(isGetter, isVolatile, fw);
 
         MethodType linkerType;
         if (isGetter)
             linkerType = MethodType.methodType(ft, Object.class, long.class);
         else
             linkerType = MethodType.methodType(void.class, Object.class, long.class, ft);
-        MemberName linker = new MemberName(Unsafe.class, nameBuilder.toString(), linkerType, REF_invokeVirtual);
+        MemberName linker = new MemberName(Unsafe.class, kind.methodName, linkerType, REF_invokeVirtual);
         try {
             linker = IMPL_NAMES.resolveOrFail(REF_invokeVirtual, linker, null, NoSuchMethodException.class);
         } catch (ReflectiveOperationException ex) {
@@ -620,6 +667,7 @@ class DirectMethodHandle extends MethodHandle {
         final int F_HOLDER  = (isStatic ? nameCursor++ : -1);  // static base if any
         final int F_OFFSET  = nameCursor++;  // Either static offset or field offset.
         final int OBJ_CHECK = (OBJ_BASE >= 0 ? nameCursor++ : -1);
+        final int U_HOLDER  = nameCursor++;  // UNSAFE holder
         final int INIT_BAR  = (needsInit ? nameCursor++ : -1);
         final int PRE_CAST  = (needsCast && !isGetter ? nameCursor++ : -1);
         final int LINKER_CALL = nameCursor++;
@@ -632,7 +680,7 @@ class DirectMethodHandle extends MethodHandle {
             names[PRE_CAST] = new Name(NF_checkCast, names[DMH_THIS], names[SET_VALUE]);
         Object[] outArgs = new Object[1 + linkerType.parameterCount()];
         assert(outArgs.length == (isGetter ? 3 : 4));
-        outArgs[0] = UNSAFE;
+        outArgs[0] = names[U_HOLDER] = new Name(NF_UNSAFE);
         if (isStatic) {
             outArgs[1] = names[F_HOLDER]  = new Name(NF_staticBase, names[DMH_THIS]);
             outArgs[2] = names[F_OFFSET]  = new Name(NF_staticOffset, names[DMH_THIS]);
@@ -650,6 +698,7 @@ class DirectMethodHandle extends MethodHandle {
         for (Name n : names)  assert(n != null);
         // add some detail to the lambdaForm debugname,
         // significant only for debugging
+        StringBuilder nameBuilder = new StringBuilder(kind.methodName);
         if (isStatic) {
             nameBuilder.append("Static");
         } else {
@@ -657,7 +706,12 @@ class DirectMethodHandle extends MethodHandle {
         }
         if (needsCast)  nameBuilder.append("Cast");
         if (needsInit)  nameBuilder.append("Init");
-        return new LambdaForm(nameBuilder.toString(), ARG_LIMIT, names, RESULT);
+        if (needsCast || needsInit) {
+            // can't use the pre-generated form when casting and/or initializing
+            return new LambdaForm(nameBuilder.toString(), ARG_LIMIT, names, RESULT);
+        } else {
+            return new LambdaForm(nameBuilder.toString(), ARG_LIMIT, names, RESULT, kind);
+        }
     }
 
     /**
@@ -674,7 +728,8 @@ class DirectMethodHandle extends MethodHandle {
             NF_staticOffset,
             NF_checkCast,
             NF_allocateInstance,
-            NF_constructorMethod;
+            NF_constructorMethod,
+            NF_UNSAFE;
     static {
         try {
             NamedFunction nfs[] = {
@@ -697,7 +752,9 @@ class DirectMethodHandle extends MethodHandle {
                     NF_allocateInstance = new NamedFunction(DirectMethodHandle.class
                             .getDeclaredMethod("allocateInstance", Object.class)),
                     NF_constructorMethod = new NamedFunction(DirectMethodHandle.class
-                            .getDeclaredMethod("constructorMethod", Object.class))
+                            .getDeclaredMethod("constructorMethod", Object.class)),
+                    NF_UNSAFE = new NamedFunction(new MemberName(MethodHandleStatics.class
+                            .getDeclaredField("UNSAFE")))
             };
             // Each nf must be statically invocable or we get tied up in our bootstraps.
             assert(InvokerBytecodeGenerator.isStaticallyInvocable(nfs));

@@ -27,7 +27,7 @@
 #include "gc/parallel/psCompactionManager.inline.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/bitMap.inline.hpp"

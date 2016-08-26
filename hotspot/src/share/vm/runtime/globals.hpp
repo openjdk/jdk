@@ -2242,7 +2242,7 @@ public:
           "in a comma separated string. Sub-systems are: "                  \
           "threads, heap, symbol_table, string_table, codecache, "          \
           "dictionary, classloader_data_graph, metaspace, jni_handles, "    \
-          "c-heap, codecache_oops")                                         \
+          "codecache_oops")                                                 \
                                                                             \
   diagnostic(bool, GCParallelVerificationEnabled, true,                     \
           "Enable parallel memory system verification")                     \
@@ -3007,16 +3007,6 @@ public:
                                                                             \
   notproduct(intx, ZombieALotInterval,     5,                               \
           "Number of exits until ZombieALot kicks in")                      \
-                                                                            \
-  diagnostic(intx, MallocVerifyInterval,     0,                             \
-          "If non-zero, verify C heap after every N calls to "              \
-          "malloc/realloc/free")                                            \
-          range(0, max_intx)                                                \
-                                                                            \
-  diagnostic(intx, MallocVerifyStart,     0,                                \
-          "If non-zero, start verifying C heap after Nth call to "          \
-          "malloc/realloc/free")                                            \
-          range(0, max_intx)                                                \
                                                                             \
   diagnostic(uintx, MallocMaxTestWords,     0,                              \
           "If non-zero, maximum number of words that malloc/realloc can "   \

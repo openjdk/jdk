@@ -21,12 +21,15 @@
  * questions.
  */
 
+import java.lang.management.GarbageCollectorMXBean;
 import java.util.List;
 import java.util.ArrayList;
 
 import jdk.test.lib.ByteCodeLoader;
 import jdk.test.lib.InMemoryJavaCompiler;
 import jdk.test.lib.Platform;
+
+import sun.management.ManagementFactoryHelper;
 
 import static jdk.test.lib.Asserts.*;
 
@@ -38,7 +41,7 @@ import static jdk.test.lib.Asserts.*;
  *          space exists and works.
  * @modules java.base/jdk.internal.misc
  *          java.compiler
- *          java.management
+ *          java.management/sun.management
  *          jdk.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseSerialGC TestMetaspacePerfCounters
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseParallelGC -XX:+UseParallelOldGC TestMetaspacePerfCounters
@@ -51,6 +54,7 @@ import static jdk.test.lib.Asserts.*;
 public class TestMetaspacePerfCounters {
     public static Class fooClass = null;
     private static final String[] counterNames = {"minCapacity", "maxCapacity", "capacity", "used"};
+    private static final List<GarbageCollectorMXBean> gcBeans = ManagementFactoryHelper.getGarbageCollectorMXBeans();
 
     public static void main(String[] args) throws Exception {
         String metaspace = "sun.gc.metaspace";
@@ -68,10 +72,27 @@ public class TestMetaspacePerfCounters {
     }
 
     private static void checkPerfCounters(String ns) throws Exception {
-        long minCapacity = getMinCapacity(ns);
-        long maxCapacity = getMaxCapacity(ns);
-        long capacity = getCapacity(ns);
-        long used = getUsed(ns);
+        long gcCountBefore;
+        long gcCountAfter;
+        long minCapacity;
+        long maxCapacity;
+        long capacity;
+        long used;
+
+        // The perf counter values are updated during GC and to be able to
+        // do the assertions below we need to ensure that the values are from
+        // the same GC cycle.
+        do {
+            gcCountBefore = currentGCCount();
+
+            minCapacity = getMinCapacity(ns);
+            maxCapacity = getMaxCapacity(ns);
+            capacity = getCapacity(ns);
+            used = getUsed(ns);
+
+            gcCountAfter = currentGCCount();
+            assertGTE(gcCountAfter, gcCountBefore);
+        } while(gcCountAfter > gcCountBefore);
 
         assertGTE(minCapacity, 0L);
         assertGTE(used, minCapacity);
@@ -129,5 +150,13 @@ public class TestMetaspacePerfCounters {
 
     private static long getUsed(String ns) throws Exception {
         return PerfCounters.findByName(ns + ".used").longValue();
+    }
+
+    private static long currentGCCount() {
+        long gcCount = 0;
+        for (GarbageCollectorMXBean bean : gcBeans) {
+            gcCount += bean.getCollectionCount();
+        }
+        return gcCount;
     }
 }

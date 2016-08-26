@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.xml.catalog.CatalogResolver;
-import javax.xml.catalog.CatalogUriResolver;
 
 /*
  * This case tests if the properties FILES, DEFER, PREFER, RESOLVE in
@@ -96,7 +95,7 @@ public class PropertiesTest {
     }
 
     private static void testPropertiesOnUriResolver() {
-        CatalogUriResolver uriResolver = catalogUriResolver((String[]) null);
+        CatalogResolver uriResolver = catalogUriResolver((String[]) null);
         uriResolver.resolve("http://remote/uri/dtd/docDummy.dtd", null);
         "http://local/base/dtd/docURI.dtd".equals(uriResolver.resolve(
                 "http://remote/dtd/doc.dtd", null).getSystemId());

@@ -25,8 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
-import java.io.*;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -36,6 +34,7 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 
 
@@ -104,8 +103,11 @@ public class PackageSummaryBuilder extends AbstractBuilder {
 
     /**
      * Build the package summary.
+     *
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void build() throws IOException {
+    @Override
+    public void build() throws DocletException {
         if (packageWriter == null) {
             //Doclet does not support this output.
             return;
@@ -116,6 +118,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getName() {
         return ROOT;
     }
@@ -125,8 +128,9 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param contentTree the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildPackageDoc(XMLNode node, Content contentTree) throws Exception {
+    public void buildPackageDoc(XMLNode node, Content contentTree) throws DocletException {
         contentTree = packageWriter.getPackageHeader(utils.getPackageName(packageElement));
         buildChildren(node, contentTree);
         packageWriter.addPackageFooter(contentTree);
@@ -140,8 +144,9 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      * @param node the XML element that specifies which components to document
      * @param contentTree the content tree to which the package contents
      *                    will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildContent(XMLNode node, Content contentTree) {
+    public void buildContent(XMLNode node, Content contentTree) throws DocletException {
         Content packageContentTree = packageWriter.getContentHeader();
         buildChildren(node, packageContentTree);
         packageWriter.addPackageContent(contentTree, packageContentTree);
@@ -153,8 +158,9 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      * @param node the XML element that specifies which components to document
      * @param packageContentTree the package content tree to which the summaries will
      *                           be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildSummary(XMLNode node, Content packageContentTree) {
+    public void buildSummary(XMLNode node, Content packageContentTree) throws DocletException {
         Content summaryContentTree = packageWriter.getSummaryHeader();
         buildChildren(node, summaryContentTree);
         packageContentTree.addContent(summaryContentTree);

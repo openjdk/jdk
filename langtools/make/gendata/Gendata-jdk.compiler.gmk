@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,9 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
 
 ifeq ($(BOOT_JDK_MODULAR), true)
   COMPILECREATESYMBOLS_ADD_EXPORTS := \
-      -XaddExports:jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
-      -XaddExports:jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED \
-      -XaddExports:jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED
+      --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
+      --add-exports=jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED \
+      --add-exports=jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED
 endif
 
 $(SUPPORT_OUTPUTDIR)/symbols/ct.sym-files/_the.symbols: \

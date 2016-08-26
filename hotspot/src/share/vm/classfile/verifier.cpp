@@ -88,7 +88,7 @@ bool Verifier::should_verify_for(oop class_loader, bool should_verify_class) {
     BytecodeVerificationLocal : BytecodeVerificationRemote;
 }
 
-bool Verifier::relax_verify_for(oop loader) {
+bool Verifier::relax_access_for(oop loader) {
   bool trusted = java_lang_ClassLoader::is_trusted_loader(loader);
   bool need_verify =
     // verifyAll

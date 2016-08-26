@@ -42,7 +42,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @build Agent
  * @run main ClassFileInstaller Agent
  * @run main TestRedefineObject
- * @run main/othervm -javaagent:agent.jar -XX:TraceRedefineClasses=5 Agent
+ * @run main/othervm -javaagent:agent.jar -Xlog:redefine+class+load=debug,redefine+class+timer=info Agent
  */
 public class TestRedefineObject {
     public static void main(String[] args) throws Exception  {
