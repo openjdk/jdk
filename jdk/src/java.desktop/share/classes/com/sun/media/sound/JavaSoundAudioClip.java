@@ -25,30 +25,29 @@
 
 package com.sun.media.sound;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.applet.AudioClip;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
-import java.applet.AudioClip;
+import java.io.IOException;
+import java.io.InputStream;
 
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.SourceDataLine;
-import javax.sound.sampled.LineEvent;
-import javax.sound.sampled.LineListener;
-import javax.sound.sampled.UnsupportedAudioFileException;
-
-import javax.sound.midi.MidiSystem;
-import javax.sound.midi.MidiFileFormat;
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MetaEventListener;
 import javax.sound.midi.MetaMessage;
+import javax.sound.midi.MidiFileFormat;
+import javax.sound.midi.MidiSystem;
+import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.Sequencer;
-import javax.sound.midi.InvalidMidiDataException;
-import javax.sound.midi.MidiUnavailableException;
-import javax.sound.midi.MetaEventListener;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineEvent;
+import javax.sound.sampled.LineListener;
+import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.UnsupportedAudioFileException;
 
 /**
  * Java Sound audio clip;
@@ -56,7 +55,6 @@ import javax.sound.midi.MetaEventListener;
  * @author Arthur van Hoff, Kara Kytle, Jan Borgersen
  * @author Florian Bomers
  */
-
 public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, LineListener {
 
     private static final boolean DEBUG = false;
@@ -126,12 +124,12 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         }
     }
 
-
+    @Override
     public synchronized void play() {
         startImpl(false);
     }
 
-
+    @Override
     public synchronized void loop() {
         startImpl(true);
     }
@@ -205,6 +203,7 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         }
     }
 
+    @Override
     public synchronized void stop() {
 
         if (DEBUG || Printer.debug)Printer.debug("JavaSoundAudioClip->stop()");
@@ -248,13 +247,15 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
 
     // Event handlers (for debugging)
 
+    @Override
     public synchronized void update(LineEvent event) {
         if (DEBUG || Printer.debug) Printer.debug("line event received: "+event);
     }
 
     // handle MIDI track end meta events for looping
 
-    public synchronized void meta( MetaMessage message ) {
+    @Override
+    public synchronized void meta(MetaMessage message) {
 
         if (DEBUG || Printer.debug)Printer.debug("META EVENT RECEIVED!!!!! ");
 
@@ -269,12 +270,12 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         }
     }
 
-
+    @Override
     public String toString() {
         return getClass().toString();
     }
 
-
+    @Override
     protected void finalize() {
 
         if (clip != null) {
@@ -326,8 +327,6 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         return true;
     }
 
-
-
     private void readStream(AudioInputStream as, long byteLen) throws IOException {
         // arrays "only" max. 2GB
         int intLen;
@@ -370,7 +369,6 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         loadedAudio = baos.getInternalBuffer();
         loadedAudioByteLength = totalBytesRead;
     }
-
 
     // METHODS FOR CREATING THE DEVICE
 
@@ -464,7 +462,6 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         return true;
     }
 
-
     /*
      * private inner class representing a ByteArrayOutputStream
      * which allows retrieval of the internal array
@@ -479,5 +476,4 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         }
 
     } // class DirectBAOS
-
 }

@@ -60,11 +60,10 @@ enum indic_category_t {
   OT_Repha = 15, /* Atomically-encoded logical or visual repha. */
   OT_Ra = 16,
   OT_CM = 17,  /* Consonant-Medial. */
-  OT_Symbol = 18, /* Avagraha, etc that take marks (SM,A,VD). */
-  OT_CM2 = 31 /* Consonant-Medial, second slot. */
+  OT_Symbol = 18 /* Avagraha, etc that take marks (SM,A,VD). */
 };
 
-#define MEDIAL_FLAGS (FLAG (OT_CM) | FLAG (OT_CM2))
+#define MEDIAL_FLAGS (FLAG (OT_CM))
 
 /* Note:
  *
@@ -109,27 +108,31 @@ enum indic_syllabic_category_t {
 
   INDIC_SYLLABIC_CATEGORY_AVAGRAHA                      = OT_Symbol,
   INDIC_SYLLABIC_CATEGORY_BINDU                         = OT_SM,
-  INDIC_SYLLABIC_CATEGORY_BRAHMI_JOINING_NUMBER         = OT_PLACEHOLDER, /* TODO */
+  INDIC_SYLLABIC_CATEGORY_BRAHMI_JOINING_NUMBER         = OT_PLACEHOLDER, /* Don't care. */
   INDIC_SYLLABIC_CATEGORY_CANTILLATION_MARK             = OT_A,
   INDIC_SYLLABIC_CATEGORY_CONSONANT                     = OT_C,
   INDIC_SYLLABIC_CATEGORY_CONSONANT_DEAD                = OT_C,
   INDIC_SYLLABIC_CATEGORY_CONSONANT_FINAL               = OT_CM,
   INDIC_SYLLABIC_CATEGORY_CONSONANT_HEAD_LETTER         = OT_C,
+  INDIC_SYLLABIC_CATEGORY_CONSONANT_KILLER              = OT_M, /* U+17CD only. */
   INDIC_SYLLABIC_CATEGORY_CONSONANT_MEDIAL              = OT_CM,
   INDIC_SYLLABIC_CATEGORY_CONSONANT_PLACEHOLDER         = OT_PLACEHOLDER,
   INDIC_SYLLABIC_CATEGORY_CONSONANT_PRECEDING_REPHA     = OT_Repha,
+  INDIC_SYLLABIC_CATEGORY_CONSONANT_PREFIXED            = OT_X, /* Don't care. */
   INDIC_SYLLABIC_CATEGORY_CONSONANT_SUBJOINED           = OT_CM,
   INDIC_SYLLABIC_CATEGORY_CONSONANT_SUCCEEDING_REPHA    = OT_N,
+  INDIC_SYLLABIC_CATEGORY_CONSONANT_WITH_STACKER        = OT_Repha, /* TODO */
   INDIC_SYLLABIC_CATEGORY_GEMINATION_MARK               = OT_SM,
-  INDIC_SYLLABIC_CATEGORY_INVISIBLE_STACKER             = OT_H, /* TODO */
+  INDIC_SYLLABIC_CATEGORY_INVISIBLE_STACKER             = OT_Coeng,
   INDIC_SYLLABIC_CATEGORY_JOINER                        = OT_ZWJ,
   INDIC_SYLLABIC_CATEGORY_MODIFYING_LETTER              = OT_X,
   INDIC_SYLLABIC_CATEGORY_NON_JOINER                    = OT_ZWNJ,
   INDIC_SYLLABIC_CATEGORY_NUKTA                         = OT_N,
   INDIC_SYLLABIC_CATEGORY_NUMBER                        = OT_PLACEHOLDER,
-  INDIC_SYLLABIC_CATEGORY_NUMBER_JOINER                 = OT_PLACEHOLDER, /* TODO */
-  INDIC_SYLLABIC_CATEGORY_PURE_KILLER                   = OT_H, /* TODO */
+  INDIC_SYLLABIC_CATEGORY_NUMBER_JOINER                 = OT_PLACEHOLDER, /* Don't care. */
+  INDIC_SYLLABIC_CATEGORY_PURE_KILLER                   = OT_M, /* Is like a vowel matra. */
   INDIC_SYLLABIC_CATEGORY_REGISTER_SHIFTER              = OT_RS,
+  INDIC_SYLLABIC_CATEGORY_SYLLABLE_MODIFIER             = OT_M, /* Misc Khmer signs. */
   INDIC_SYLLABIC_CATEGORY_TONE_LETTER                   = OT_X,
   INDIC_SYLLABIC_CATEGORY_TONE_MARK                     = OT_N,
   INDIC_SYLLABIC_CATEGORY_VIRAMA                        = OT_H,
@@ -162,17 +165,23 @@ enum indic_matra_category_t {
 };
 
 #define INDIC_COMBINE_CATEGORIES(S,M) \
-  (ASSERT_STATIC_EXPR_ZERO (M == INDIC_MATRA_CATEGORY_NOT_APPLICABLE || \
-                            ( \
-                             S == INDIC_SYLLABIC_CATEGORY_CONSONANT_MEDIAL || \
-                             S == INDIC_SYLLABIC_CATEGORY_GEMINATION_MARK || \
-                             S == INDIC_SYLLABIC_CATEGORY_REGISTER_SHIFTER || \
-                             S == INDIC_SYLLABIC_CATEGORY_CONSONANT_SUCCEEDING_REPHA || \
-                             S == INDIC_SYLLABIC_CATEGORY_VIRAMA || \
-                             S == INDIC_SYLLABIC_CATEGORY_VOWEL_DEPENDENT || \
-                             false)) + \
-   ASSERT_STATIC_EXPR_ZERO (S < 255 && M < 255) + \
-   ((M << 8) | S))
+  ( \
+    ASSERT_STATIC_EXPR_ZERO (S < 255 && M < 255) + \
+    ( S | \
+     ( \
+      ( \
+       S == INDIC_SYLLABIC_CATEGORY_CONSONANT_MEDIAL || \
+       S == INDIC_SYLLABIC_CATEGORY_GEMINATION_MARK || \
+       S == INDIC_SYLLABIC_CATEGORY_REGISTER_SHIFTER || \
+       S == INDIC_SYLLABIC_CATEGORY_CONSONANT_SUCCEEDING_REPHA || \
+       S == INDIC_SYLLABIC_CATEGORY_VIRAMA || \
+       S == INDIC_SYLLABIC_CATEGORY_VOWEL_DEPENDENT || \
+       false \
+       ? M : INDIC_MATRA_CATEGORY_NOT_APPLICABLE \
+      ) << 8 \
+     ) \
+    ) \
+   )
 
 HB_INTERNAL INDIC_TABLE_ELEMENT_TYPE
 hb_indic_get_categories (hb_codepoint_t u);

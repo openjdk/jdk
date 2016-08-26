@@ -134,6 +134,7 @@ public interface MidiDevice extends AutoCloseable {
      * @see #open
      * @see #isOpen
      */
+    @Override
     void close();
 
     /**
@@ -252,22 +253,22 @@ public interface MidiDevice extends AutoCloseable {
         /**
          * The device's name.
          */
-        private String name;
+        private final String name;
 
         /**
          * The name of the company who provides the device.
          */
-        private String vendor;
+        private final String vendor;
 
         /**
          * A description of the device.
          */
-        private String description;
+        private final String description;
 
         /**
          * Device version.
          */
-        private String version;
+        private final String version;
 
         /**
          * Constructs a device info object.
@@ -294,6 +295,7 @@ public interface MidiDevice extends AutoCloseable {
          * @return {@code true} if this object is the same as the {@code obj}
          *         argument; {@code false} otherwise
          */
+        @Override
         public final boolean equals(Object obj) {
             return super.equals(obj);
         }
@@ -301,6 +303,7 @@ public interface MidiDevice extends AutoCloseable {
         /**
          * Finalizes the hashcode method.
          */
+        @Override
         public final int hashCode() {
             return super.hashCode();
         }
@@ -346,6 +349,7 @@ public interface MidiDevice extends AutoCloseable {
          *
          * @return a description of the info object
          */
+        @Override
         public final String toString() {
             return name;
         }

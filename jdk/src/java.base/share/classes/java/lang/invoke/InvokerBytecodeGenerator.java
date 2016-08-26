@@ -624,6 +624,33 @@ class InvokerBytecodeGenerator {
                 return resolveFrom(name, invokerType, DelegatingMethodHandle.Holder.class);
             }
             case DELEGATE:                  return resolveFrom(name, invokerType, DelegatingMethodHandle.Holder.class);
+            case ZERO:                      // fall-through
+            case IDENTITY: {
+                name = name + "_" + form.returnType().basicTypeChar();
+                return resolveFrom(name, invokerType, LambdaForm.Holder.class);
+            }
+            case EXACT_INVOKER:             // fall-through
+            case EXACT_LINKER:              // fall-through
+            case GENERIC_INVOKER:           // fall-through
+            case GENERIC_LINKER:            return resolveFrom(name, invokerType.basicType(), Invokers.Holder.class);
+            case GET_OBJECT:                // fall-through
+            case GET_BOOLEAN:               // fall-through
+            case GET_BYTE:                  // fall-through
+            case GET_CHAR:                  // fall-through
+            case GET_SHORT:                 // fall-through
+            case GET_INT:                   // fall-through
+            case GET_LONG:                  // fall-through
+            case GET_FLOAT:                 // fall-through
+            case GET_DOUBLE:                // fall-through
+            case PUT_OBJECT:                // fall-through
+            case PUT_BOOLEAN:               // fall-through
+            case PUT_BYTE:                  // fall-through
+            case PUT_CHAR:                  // fall-through
+            case PUT_SHORT:                 // fall-through
+            case PUT_INT:                   // fall-through
+            case PUT_LONG:                  // fall-through
+            case PUT_FLOAT:                 // fall-through
+            case PUT_DOUBLE:                // fall-through
             case DIRECT_INVOKE_INTERFACE:   // fall-through
             case DIRECT_INVOKE_SPECIAL:     // fall-through
             case DIRECT_INVOKE_STATIC:      // fall-through

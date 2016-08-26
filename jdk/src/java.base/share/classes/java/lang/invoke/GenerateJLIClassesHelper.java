@@ -28,9 +28,11 @@ package java.lang.invoke;
 import java.util.Map;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
-
 import java.util.ArrayList;
 import java.util.HashSet;
+import sun.invoke.util.Wrapper;
+
+import static java.lang.invoke.MethodHandleNatives.Constants.*;
 
 /**
  * Helper class to assist the GenerateJLIClassesPlugin to get access to
@@ -38,16 +40,66 @@ import java.util.HashSet;
  */
 class GenerateJLIClassesHelper {
 
+    static byte[] generateBasicFormsClassBytes(String className) {
+        ArrayList<LambdaForm> forms = new ArrayList<>();
+        ArrayList<String> names = new ArrayList<>();
+        HashSet<String> dedupSet = new HashSet<>();
+        for (LambdaForm.BasicType type : LambdaForm.BasicType.values()) {
+            LambdaForm zero = LambdaForm.zeroForm(type);
+            String name = zero.kind.defaultLambdaName
+                   + "_" + zero.returnType().basicTypeChar();
+            if (dedupSet.add(name)) {
+                names.add(name);
+                forms.add(zero);
+            }
+
+            LambdaForm identity = LambdaForm.identityForm(type);
+            name = identity.kind.defaultLambdaName
+                   + "_" + identity.returnType().basicTypeChar();
+            if (dedupSet.add(name)) {
+                names.add(name);
+                forms.add(identity);
+            }
+        }
+        return generateCodeBytesForLFs(className,
+                names.toArray(new String[0]),
+                forms.toArray(new LambdaForm[0]));
+    }
+
     static byte[] generateDirectMethodHandleHolderClassBytes(String className,
             MethodType[] methodTypes, int[] types) {
-        LambdaForm[] forms = new LambdaForm[methodTypes.length];
-        String[] names = new String[methodTypes.length];
-        for (int i = 0; i < forms.length; i++) {
-            forms[i] = DirectMethodHandle.makePreparedLambdaForm(methodTypes[i],
-                                                                 types[i]);
-            names[i] = forms[i].kind.defaultLambdaName;
+        ArrayList<LambdaForm> forms = new ArrayList<>();
+        ArrayList<String> names = new ArrayList<>();
+        for (int i = 0; i < methodTypes.length; i++) {
+            LambdaForm form = DirectMethodHandle
+                    .makePreparedLambdaForm(methodTypes[i], types[i]);
+            forms.add(form);
+            names.add(form.kind.defaultLambdaName);
         }
-        return generateCodeBytesForLFs(className, names, forms);
+        for (Wrapper wrapper : Wrapper.values()) {
+            if (wrapper == Wrapper.VOID) {
+                continue;
+            }
+            for (byte b = DirectMethodHandle.AF_GETFIELD; b < DirectMethodHandle.AF_LIMIT; b++) {
+                int ftype = DirectMethodHandle.ftypeKind(wrapper.primitiveType());
+                LambdaForm form = DirectMethodHandle
+                        .makePreparedFieldLambdaForm(b, /*isVolatile*/false, ftype);
+                if (form.kind != LambdaForm.Kind.GENERIC) {
+                    forms.add(form);
+                    names.add(form.kind.defaultLambdaName);
+                }
+                // volatile
+                form = DirectMethodHandle
+                        .makePreparedFieldLambdaForm(b, /*isVolatile*/true, ftype);
+                if (form.kind != LambdaForm.Kind.GENERIC) {
+                    forms.add(form);
+                    names.add(form.kind.defaultLambdaName);
+                }
+            }
+        }
+        return generateCodeBytesForLFs(className,
+                names.toArray(new String[0]),
+                forms.toArray(new LambdaForm[0]));
     }
 
     static byte[] generateDelegatingMethodHandleHolderClassBytes(String className,
@@ -74,6 +126,34 @@ class GenerateJLIClassesHelper {
                 LambdaForm delegate = makeDelegateFor(methodTypes[i]);
                 forms.add(delegate);
                 names.add(delegate.kind.defaultLambdaName);
+            }
+        }
+        return generateCodeBytesForLFs(className,
+                names.toArray(new String[0]),
+                forms.toArray(new LambdaForm[0]));
+    }
+
+    static byte[] generateInvokersHolderClassBytes(String className,
+            MethodType[] methodTypes) {
+
+        HashSet<MethodType> dedupSet = new HashSet<>();
+        ArrayList<LambdaForm> forms = new ArrayList<>();
+        ArrayList<String> names = new ArrayList<>();
+        int[] types = {
+            MethodTypeForm.LF_EX_LINKER,
+            MethodTypeForm.LF_EX_INVOKER,
+            MethodTypeForm.LF_GEN_LINKER,
+            MethodTypeForm.LF_GEN_INVOKER
+        };
+        for (int i = 0; i < methodTypes.length; i++) {
+            // generate methods representing invokers of the specified type
+            if (dedupSet.add(methodTypes[i])) {
+                for (int type : types) {
+                    LambdaForm invokerForm = Invokers.invokeHandleForm(methodTypes[i],
+                            /*customized*/false, type);
+                    forms.add(invokerForm);
+                    names.add(invokerForm.kind.defaultLambdaName);
+                }
             }
         }
         return generateCodeBytesForLFs(className,
@@ -140,4 +220,5 @@ class GenerateJLIClassesHelper {
                          BoundMethodHandle.Factory.generateConcreteBMHClassBytes(
                                  shortTypes, types, className));
     }
+
 }

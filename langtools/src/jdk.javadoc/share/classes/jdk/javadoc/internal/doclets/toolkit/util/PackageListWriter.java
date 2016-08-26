@@ -81,7 +81,7 @@ public class PackageListWriter extends PrintWriter {
         }
     }
 
-    protected void generatePackageListFile(DocletEnvironment root) {
+    protected void generatePackageListFile(DocletEnvironment docEnv) {
         ArrayList<PackageElement> names = new ArrayList<>();
         for (PackageElement pkg : configuration.packages) {
             // if the -nodeprecated option is set and the package is marked as

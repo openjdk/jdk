@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4208414
+ * @bug 4208414 8130181
  * @summary Providers should be removed "by-identity" - not "by-value"
  */
 
@@ -34,7 +34,7 @@ public class RemoveProviderByIdentity {
     public static void main(String[] args) throws Exception {
         String PROVIDER_NAME = "myprovider";
 
-        Security.addProvider(new MyProvider(PROVIDER_NAME, 1, "test"));
+        Security.addProvider(new MyProvider(PROVIDER_NAME, "1", "test"));
         if (Security.getProvider(PROVIDER_NAME) == null)
             throw new Exception("provider not registered");
 
@@ -45,7 +45,7 @@ public class RemoveProviderByIdentity {
 }
 
 class MyProvider extends Provider {
-    public MyProvider(String name, double version, String info) {
+    public MyProvider(String name, String version, String info) {
         super(name, version, info);
         put("Signature.sigalg", "sigimpl");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4856968 7054918
+ * @bug 4856968 7054918 8130181
  * @library ../testlibrary
  * @summary make sure add/insert/removeProvider() work correctly
  * @author Andreas Sterbenz
@@ -36,7 +36,7 @@ import java.security.*;
 public class ChangeProviders extends Provider {
 
     private ChangeProviders() {
-        super("Foo", 47.23d, "none");
+        super("Foo", "47.23", "none");
     }
 
     private static int plen() {

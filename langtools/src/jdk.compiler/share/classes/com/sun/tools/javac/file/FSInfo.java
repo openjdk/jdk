@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -118,4 +118,19 @@ public class FSInfo {
             return list;
         }
     }
+
+    private FileSystemProvider jarFSProvider;
+
+    public synchronized FileSystemProvider getJarFSProvider() {
+        if (jarFSProvider != null) {
+            return jarFSProvider;
+        }
+        for (FileSystemProvider provider: FileSystemProvider.installedProviders()) {
+            if (provider.getScheme().equals("jar")) {
+                return (jarFSProvider = provider);
+            }
+        }
+        return null;
+    }
+
 }

@@ -46,7 +46,6 @@ enum use_category_t {
   USE_O         = 0,    /* OTHER */
 
   USE_B         = 1,    /* BASE */
-  USE_IV        = 2,    /* BASE_VOWEL */
   USE_IND       = 3,    /* BASE_IND */
   USE_N         = 4,    /* BASE_NUM */
   USE_GB        = 5,    /* BASE_OTHER */

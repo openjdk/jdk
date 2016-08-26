@@ -1739,6 +1739,19 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 return GenerateJLIClassesHelper
                         .generateConcreteBMHClassBytes(types);
             }
+
+            @Override
+            public byte[] generateBasicFormsClassBytes(final String className) {
+                return GenerateJLIClassesHelper
+                        .generateBasicFormsClassBytes(className);
+            }
+
+            @Override
+            public byte[] generateInvokersHolderClassBytes(final String className,
+                    MethodType[] methodTypes) {
+                return GenerateJLIClassesHelper
+                        .generateInvokersHolderClassBytes(className, methodTypes);
+            }
         });
     }
 
@@ -1934,7 +1947,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * @return whether the counter has reached the limit.
      */
     static boolean countedLoopPredicate(int counter, int limit) {
-        return counter <= limit;
+        return counter < limit;
     }
 
     /**

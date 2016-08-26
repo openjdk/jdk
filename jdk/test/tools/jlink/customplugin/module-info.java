@@ -25,4 +25,6 @@ module customplugin {
     requires jdk.jlink;
     provides jdk.tools.jlink.plugin.Plugin with plugin.HelloPlugin;
     provides jdk.tools.jlink.plugin.Plugin with plugin.CustomPlugin;
+    provides jdk.tools.jlink.plugin.Plugin with plugin.RogueAdderPlugin;
+    provides jdk.tools.jlink.plugin.Plugin with plugin.RogueFilterPlugin;
 }

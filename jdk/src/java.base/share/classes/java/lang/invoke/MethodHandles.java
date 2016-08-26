@@ -4583,7 +4583,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *     // assume MH_decrement is a handle to x-1 of type int
      *     MethodHandle[]
      *         indexVar = {start, MH_increment}, // i = start; i = i+1
-     *         loopLimit = {end, null, MH_lessThan, returnVar }, // i<end
+     *         loopLimit = {end, null,
+     *                       filterArgument(MH_lessThan, 0, MH_decrement), returnVar}, // i-1<end
      *         bodyClause = {init,
      *                       filterArgument(dropArguments(body, 1, int.class), 0, MH_decrement}; // v = body(i-1, v)
      *     return loop(indexVar, loopLimit, bodyClause);
@@ -4619,12 +4620,12 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         MethodHandle actualBody = body == null ? dropArguments(defaultResultHandle, 0, int.class) : body;
         MethodHandle returnVar = dropArguments(defaultResultHandle, 0, int.class, int.class);
         MethodHandle actualEnd = end == null ? constant(int.class, 0) : end;
+        MethodHandle decr = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_decrementCounter);
         MethodHandle[] indexVar = {start, MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopStep)};
         MethodHandle[] loopLimit = {actualEnd, null,
-                MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopPred), returnVar};
-        MethodHandle[] bodyClause = {actualInit,
-                filterArgument(dropArguments(actualBody, 1, int.class), 0,
-                        MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_decrementCounter))};
+                filterArgument(MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopPred), 0, decr),
+                returnVar};
+        MethodHandle[] bodyClause = {actualInit, filterArgument(dropArguments(actualBody, 1, int.class), 0, decr)};
         return loop(indexVar, loopLimit, bodyClause);
     }
 

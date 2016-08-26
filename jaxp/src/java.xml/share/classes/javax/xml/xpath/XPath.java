@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,18 +34,20 @@ import org.xml.sax.InputSource;
  *
  * <a name="XPath-evaluation"></a>
  * <table border="1" cellpadding="2">
- *   <thead>
- *     <tr>
- *       <th colspan="2">Evaluation of XPath Expressions.</th>
- *     </tr>
- *   </thead>
- *     <tr>
- *       <td>context</td>
- *       <td>
- *         If a request is made to evaluate the expression in the absence
- * of a context item, an empty document node will be used for the context.
- * For the purposes of evaluating XPath expressions, a DocumentFragment
- * is treated like a Document node.
+ *    <thead>
+ *      <tr>
+ *        <th colspan="2">Evaluation of XPath Expressions.</th>
+ *      </tr>
+ *    </thead>
+ *    <tr>
+ *      <td>context</td>
+ *      <td>
+ *        The type of the context is implementation-dependent. If the value is
+ *        null, the operation must have no dependency on the context, otherwise
+ *        an XPathExpressionException will be thrown.
+ *
+ *        For the purposes of evaluating XPath expressions, a DocumentFragment
+ *        is treated like a Document node.
  *      </td>
  *    </tr>
  *    <tr>

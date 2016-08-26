@@ -32,6 +32,7 @@
  * 4652815 4652830 4740554 4936355 4738710 4633646 4846659 4822110 4960642
  * 4973919 4980088 4965624 5013094 5006864 8152077
  * @library /java/text/testlib
+ * @run main CalendarRegression
  */
 
 import java.lang.reflect.*;
@@ -531,6 +532,12 @@ public class CalendarRegression extends IntlTest {
     }
 
     public void Test4100311() {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesGregorianCalendar(locale)) {
+            logln("Skipping this test because locale is " + locale);
+            return;
+        }
+
         GregorianCalendar cal = (GregorianCalendar)Calendar.getInstance();
         cal.set(Calendar.YEAR, 1997);
         cal.set(Calendar.DAY_OF_YEAR, 1);
@@ -541,7 +548,9 @@ public class CalendarRegression extends IntlTest {
     }
 
     public void Test4103271() {
-        if (Locale.getDefault().equals(new Locale("th", "TH"))) {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesGregorianCalendar(locale)) {
+            logln("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -768,6 +777,12 @@ public class CalendarRegression extends IntlTest {
     }
 
     public void Test4114578() {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesGregorianCalendar(locale)) {
+            logln("Skipping this test because locale is " + locale);
+            return;
+        }
+
         int ONE_HOUR = 60*60*1000;
         TimeZone saveZone = TimeZone.getDefault();
         boolean fail = false;
@@ -847,6 +862,12 @@ public class CalendarRegression extends IntlTest {
      * Check isLeapYear for BC years.
      */
     public void Test4125881() {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesGregorianCalendar(locale)) {
+            logln("Skipping this test because locale is " + locale);
+            return;
+        }
+
         GregorianCalendar cal = (GregorianCalendar) Calendar.getInstance();
         DateFormat fmt = new SimpleDateFormat("MMMM d, yyyy G");
         cal.clear();
@@ -865,7 +886,9 @@ public class CalendarRegression extends IntlTest {
      * at 45 BC, and not have leap years before then).
      */
     public void Test4125892() {
-        if (Locale.getDefault().equals(new Locale("th", "TH"))) {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesGregorianCalendar(locale)) {
+            logln("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -1276,7 +1299,9 @@ public class CalendarRegression extends IntlTest {
      * This bug relies on the TimeZone bug 4173604 to also be fixed.
      */
     public void Test4173516() {
-        if (Locale.getDefault().equals(new Locale("th", "TH"))) {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesGregorianCalendar(locale)) {
+            logln("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -1755,7 +1780,10 @@ public class CalendarRegression extends IntlTest {
      * get(int) changes internal states of a Calendar.
      */
     public void Test4685354() {
-        if (Locale.getDefault().equals(new Locale("hi", "IN"))) {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesAsciiDigits(locale)
+                || !TestUtils.usesGregorianCalendar(locale)) {
+            logln("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -1860,8 +1888,9 @@ public class CalendarRegression extends IntlTest {
      * get(int) changes internal states of a Calendar.
      */
     public void Test4655637() {
-        // Skip this test case if it's Thai locale
-        if (Locale.getDefault().equals(new Locale("th", "TH"))) {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesGregorianCalendar(locale)) {
+            logln("Skipping this test because locale is " + locale);
             return;
         }
 
