@@ -34,7 +34,7 @@ import sun.hotspot.WhiteBox;
  *
  * @summary Stress G1 Remembered Set by creating a lot of cross region links
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

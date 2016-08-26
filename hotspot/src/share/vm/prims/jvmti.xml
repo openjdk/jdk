@@ -7152,15 +7152,19 @@ class C2 extends C1 implements I2 {
         returns <code>JNI_FALSE</code>) the class can be neither
         redefined nor retransformed.
         <p/>
-        Primitive classes (for example, <code>java.lang.Integer.TYPE</code>) 
-        and array classes are never modifiable. 
+        Primitive classes (for example, <code>java.lang.Integer.TYPE</code>),
+        array classes, and some implementation defined classes are never modifiable. 
         <p/>
       </description>
       <origin>new</origin>
       <capabilities>
         <capability id="can_redefine_any_class">
-          If possessed then all classes (except primitive and array classes) 
-          are modifiable.
+          If possessed then all classes (except primitive, array, and some implementation defined
+          classes) are modifiable (redefine or retransform).
+        </capability>
+        <capability id="can_retransform_any_class">
+          If possessed then all classes (except primitive, array, and some implementation defined
+          classes) are modifiable with <functionlink id="RetransformClasses"/>.
         </capability>
         <capability id="can_redefine_classes">
           No effect on the result of the function.
@@ -9900,7 +9904,7 @@ myInit() {
       </capabilityfield>
       <capabilityfield id="can_redefine_any_class">
 	<description>
-          Can modify (retransform or redefine) any non-primitive non-array class.
+          Can modify (retransform or redefine) any modifiable class.
           See <functionlink id="IsModifiableClass"/>.
 	</description>
       </capabilityfield>
@@ -10024,7 +10028,8 @@ myInit() {
       </capabilityfield>
       <capabilityfield id="can_retransform_any_class" since="1.1">
 	<description>
-          <functionlink id="RetransformClasses"/> can be called on any class 
+          <functionlink id="RetransformClasses"/> can be called on any modifiable class.
+          See <functionlink id="IsModifiableClass"/>.
           (<fieldlink id="can_retransform_classes" struct="jvmtiCapabilities"/>
           must also be set)
 	</description>
@@ -12494,8 +12499,8 @@ myInit() {
     Otherwise, this event may be sent before the VM is initialized (the start 
     <functionlink id="GetPhase">phase</functionlink>).
     Some classes might not be compatible
-    with the function (eg. ROMized classes) and this event will not be
-    generated for these classes.
+    with the function (eg. ROMized classes or implementation defined classes) and this event will
+    not be generated for these classes.
     <p/>
     The agent must allocate the space for the modified 
     class file data buffer
@@ -14497,6 +14502,10 @@ typedef void (JNICALL *jvmtiEventVMInit)
        - Allow CompiledMethodLoad events at start phase
        - Add new capability can_generate_early_class_hook_events
        - Add new function GetNamedModule
+  </change>
+  <change date="16 August 2016" version="9.0.0">
+      Clarified can_redefine_any_classes, can_retransform_any_classes and IsModifiableClass API to
+      disallow some implementation defined classes.
   </change>
 </changehistory>
 

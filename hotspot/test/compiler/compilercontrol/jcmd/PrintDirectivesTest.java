@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,10 @@
  * @bug 8137167
  * @summary Tests jcmd to be able to add a directive to compile only specified methods
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @requires vm.flavor != "minimal"
  *
- * @build compiler.compilercontrol.jcmd.PrintDirectivesTest
- *        compiler.compilercontrol.share.pool.sub.*
- *        compiler.compilercontrol.share.pool.subpack.*
- *        sun.hotspot.WhiteBox
- *        compiler.testlibrary.CompilerUtils
- *        compiler.compilercontrol.share.actions.*
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run driver compiler.compilercontrol.jcmd.PrintDirectivesTest

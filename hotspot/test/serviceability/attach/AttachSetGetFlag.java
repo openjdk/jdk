@@ -25,13 +25,12 @@
  * @test
  * @bug 8054823
  * @summary Tests the setFlag and printFlag attach command
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.attach/sun.tools.attach
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build jdk.test.lib.* AttachSetGetFlag
  * @run main AttachSetGetFlag
  */
 
@@ -47,7 +46,7 @@ import sun.tools.attach.HotSpotVirtualMachine;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 import com.sun.tools.attach.VirtualMachine;
 
 public class AttachSetGetFlag {

@@ -288,10 +288,10 @@ class MacroAssembler: public Assembler {
                            Register last_java_fp,
                            address last_java_pc);
 
-  void reset_last_Java_frame(Register thread, bool clear_fp, bool clear_pc);
+  void reset_last_Java_frame(Register thread, bool clear_fp);
 
   // thread in the default location (r15_thread on 64bit)
-  void reset_last_Java_frame(bool clear_fp, bool clear_pc);
+  void reset_last_Java_frame(bool clear_fp);
 
   // Stores
   void store_check(Register obj);                // store check for obj - register is destroyed afterwards

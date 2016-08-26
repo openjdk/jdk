@@ -26,15 +26,15 @@
  * @bug 8159262
  * @summary layers over the boot layer are repeatedly created, during this iteration, GCs are forced to verify correct walk of module and package lists.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @compile ../CompilerUtils.java
- * @build ModuleStressGC
  * @run main/othervm ModuleStressGC
  */
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class ModuleStressGC {
 

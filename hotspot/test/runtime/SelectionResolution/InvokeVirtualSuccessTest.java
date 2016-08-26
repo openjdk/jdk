@@ -27,7 +27,6 @@
  * generate InvokeVirtualSuccessTest
  * @modules java.base/jdk.internal.org.objectweb.asm
  * @library /runtime/SelectionResolution/classes
- * @build selectionresolution.*
  * @run main/othervm/timeout=400 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies InvokeVirtualSuccessTest
  */
 
