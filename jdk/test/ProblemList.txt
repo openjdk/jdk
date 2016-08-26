@@ -367,6 +367,8 @@ sun/tools/jcmd/TestJcmdSanity.java                              8031482 windows-
 
 sun/tools/jhsdb/BasicLauncherTest.java                          8160376 macosx-all
 
+sun/tools/jhsdb/HeapDumpTest.java                               8160376 macosx-all
+
 sun/tools/jhsdb/heapconfig/JMapHeapConfigTest.java              8160376 macosx-all
 
 sun/tools/jps/TestJpsJar.java                                   8160923 generic-all

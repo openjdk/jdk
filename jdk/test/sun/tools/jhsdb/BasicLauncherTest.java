@@ -31,13 +31,10 @@
  * @run main BasicLauncherTest
  */
 
-import static jdk.testlibrary.Asserts.assertTrue;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.InputStreamReader;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
@@ -197,21 +194,6 @@ public class BasicLauncherTest {
                                                        Arrays.asList(toolArgs));
     }
 
-    public static void testHeapDump() throws IOException {
-        File dump = new File("jhsdb.jmap.dump." +
-                             System.currentTimeMillis() + ".hprof");
-        if (dump.exists()) {
-            dump.delete();
-        }
-        dump.deleteOnExit();
-
-        launch("heap written to", null, "jmap",
-               "--binaryheap", "--dumpfile=" + dump.getAbsolutePath());
-
-        assertTrue(dump.exists() && dump.isFile(),
-                   "Could not create dump file " + dump.getAbsolutePath());
-    }
-
     public static void main(String[] args)
         throws IOException {
 
@@ -229,8 +211,6 @@ public class BasicLauncherTest {
         launch("Java System Properties",
                "System Properties info not available", "jinfo");
         launch("java.threads", null, "jsnap");
-
-        testHeapDump();
 
         // The test throws RuntimeException on error.
         // IOException is thrown if LingeredApp can't start because of some bad
