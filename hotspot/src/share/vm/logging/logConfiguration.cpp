@@ -243,6 +243,7 @@ void LogConfiguration::configure_output(size_t idx, const LogTagLevelExpression&
 }
 
 void LogConfiguration::disable_output(size_t idx) {
+  assert(idx < _n_outputs, "invalid index: " SIZE_FORMAT " (_n_outputs: " SIZE_FORMAT ")", idx, _n_outputs);
   LogOutput* out = _outputs[idx];
 
   // Remove the output from all tagsets.
@@ -253,7 +254,7 @@ void LogConfiguration::disable_output(size_t idx) {
 
   // Delete the output unless stdout/stderr
   if (out != LogOutput::Stderr && out != LogOutput::Stdout) {
-    delete_output(find_output(out->name()));
+    delete_output(idx);
   } else {
     out->set_config_string("all=off");
   }
@@ -261,8 +262,8 @@ void LogConfiguration::disable_output(size_t idx) {
 
 void LogConfiguration::disable_logging() {
   ConfigurationLock cl;
-  for (size_t i = 0; i < _n_outputs; i++) {
-    disable_output(i);
+  for (size_t i = _n_outputs; i > 0; i--) {
+    disable_output(i - 1);
   }
   notify_update_listeners();
 }
