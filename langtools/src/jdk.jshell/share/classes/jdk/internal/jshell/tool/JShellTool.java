@@ -185,6 +185,7 @@ public class JShellTool implements MessageHandler {
     private String cmdlineClasspath = null;
     private String startup = null;
     private String[] editor = null;
+    private boolean editorWait = false;
 
     // Commands and snippets which should be replayed
     private List<String> replayableHistory;
@@ -481,6 +482,11 @@ public class JShellTool implements MessageHandler {
         if (editorString == null || editorString.isEmpty()) {
             editor = null;
         } else {
+            char waitMarker = editorString.charAt(0);
+            if (waitMarker == '-' || waitMarker == '*') {
+                editorWait = waitMarker == '-';
+                editorString = editorString.substring(1);
+            }
             editor = editorString.split(RECORD_SEPARATOR);
         }
 
@@ -1260,7 +1266,7 @@ public class JShellTool implements MessageHandler {
                 // retain editor setting
                 prefs.put(EDITOR_KEY, (editor == null)
                         ? ""
-                        : String.join(RECORD_SEPARATOR, editor));
+                        : (editorWait? "-" : "*") + String.join(RECORD_SEPARATOR, editor));
                 return true;
             case "start": {
                 if (!setStart(cmd, at, false)) {
@@ -1315,7 +1321,7 @@ public class JShellTool implements MessageHandler {
 
     // The sub-command:  /set editor <editor-command-line>>
     boolean setEditor(ArgTokenizer at, boolean argsRequired) {
-        at.allowedOptions("-default");
+        at.allowedOptions("-default", "-wait");
         String prog = at.next();
         List<String> ed = new ArrayList<>();
         while (at.val() != null) {
@@ -1326,14 +1332,20 @@ public class JShellTool implements MessageHandler {
             return false;
         }
         boolean defaultOption = at.hasOption("-default");
+        boolean waitOption = at.hasOption("-wait");
         if (prog != null) {
             if (defaultOption) {
                 errormsg("jshell.err.default.option.or.program", at.whole());
                 return false;
             }
             editor = ed.toArray(new String[ed.size()]);
+            editorWait = waitOption;
             fluffmsg("jshell.msg.set.editor.set", prog);
         } else if (defaultOption) {
+            if (waitOption) {
+                errormsg("jshell.err.wait.applies.to.external.editor", at.whole());
+                return false;
+            }
             editor = null;
         } else if (argsRequired) {
             errormsg("jshell.err.set.editor.arg");
@@ -1720,7 +1732,8 @@ public class JShellTool implements MessageHandler {
                 return false;
             }
         } else {
-            ExternalEditor.edit(editor, errorHandler, src, saveHandler, input);
+            ExternalEditor.edit(editor, errorHandler, src, saveHandler, input,
+                    editorWait, this::hardrb);
         }
         return true;
     }
