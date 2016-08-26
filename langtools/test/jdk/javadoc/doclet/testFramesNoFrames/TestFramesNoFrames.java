@@ -204,7 +204,7 @@ public class TestFramesNoFrames extends JavadocTester {
     @Test
     void testModules(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws IOException {
         javadoc(base, fKind, oKind, hKind,
-            "-modulesourcepath", gensrcModules.toString(),
+            "--module-source-path", gensrcModules.toString(),
             "--module", "m1,m2,m3");
 
         new Checker(fKind, oKind, hKind)
