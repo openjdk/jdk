@@ -490,7 +490,7 @@ networkaddress.cache.negative.ttl=10
 # property is set then those two properties are ignored.
 #
 # Example,
-#   ocsp.responderCertSubjectName="CN=OCSP Responder, O=XYZ Corp"
+#   ocsp.responderCertSubjectName=CN=OCSP Responder, O=XYZ Corp
 
 #
 # Issuer name of the OCSP responder's certificate
@@ -505,7 +505,7 @@ networkaddress.cache.negative.ttl=10
 # property is ignored.
 #
 # Example,
-#   ocsp.responderCertIssuerName="CN=Enterprise CA, O=XYZ Corp"
+#   ocsp.responderCertIssuerName=CN=Enterprise CA, O=XYZ Corp
 
 #
 # Serial number of the OCSP responder's certificate
