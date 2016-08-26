@@ -23,20 +23,15 @@
 
 package catalog;
 
-import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
-import static jaxp.library.JAXPTestUtilities.setSystemProperty;
-
 import java.io.File;
 import java.io.StringReader;
-
-import javax.xml.catalog.CatalogFeatures.Feature;
 import javax.xml.transform.Source;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
-
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -44,68 +39,70 @@ import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /*
  * @test
- * @bug 8158084 8162438 8162442
+ * @bug 8158084 8163232
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true catalog.CatalogSupport1
- * @run testng/othervm catalog.CatalogSupport1
- * @summary extends CatalogSupport, verifies that the catalog file can be set
- * using the System property.
+ * @run testng/othervm -DrunSecMngr=true catalog.CatalogSupport5
+ * @run testng/othervm catalog.CatalogSupport5
+ * @summary extends CatalogSupport tests, verifies that when errors occur,
+ * relevant checked Exceptions are returned.
  */
-
 /**
- * The name of a System property in javax.xml.catalog is the same as that of the
- * property, and can be read through CatalogFeatures.Feature.
+ * The CatalogResolver will throw CatalogException when there is no match and
+ * the resolve property is strict. The Exception should be caught with the existing
+ * mechanisms so that the checked Exception corresponding to the process can be
+ * returned.
  *
  * @author huizhe.wang@oracle.com
  */
-@Listeners({jaxp.library.FilePolicy.class})
-public class CatalogSupport1 extends CatalogSupportBase {
+@Listeners({jaxp.library.FilePolicy.class, jaxp.library.NetAccessPolicy.class})
+public class CatalogSupport5 extends CatalogSupportBase {
+
     /*
      * Initializing fields
      */
     @BeforeClass
     public void setUpClass() throws Exception {
         setUp();
-        setSystemProperty(Feature.FILES.getPropertyName(), xml_catalog);
     }
 
-    @AfterClass
-    public void tearDownClass() throws Exception {
-        clearSystemProperty(Feature.FILES.getPropertyName());
-    }
 
     /*
        Verifies the Catalog support on SAXParser.
     */
-    @Test(dataProvider = "data_SAXC")
-    public void testSAXC(boolean setUseCatalog, boolean useCatalog, String catalog, String xml, MyHandler handler, String expected) throws Exception {
+    @Test(dataProvider = "data_SAXC", expectedExceptions = SAXException.class)
+    public void testSAXC(boolean setUseCatalog, boolean useCatalog, String catalog, String
+            xml, MyHandler handler, String expected) throws Exception {
         testSAX(setUseCatalog, useCatalog, catalog, xml, handler, expected);
     }
 
     /*
        Verifies the Catalog support on XMLReader.
     */
-    @Test(dataProvider = "data_SAXC")
-    public void testXMLReaderC(boolean setUseCatalog, boolean useCatalog, String catalog, String xml, MyHandler handler, String expected) throws Exception {
+    @Test(dataProvider = "data_SAXC", expectedExceptions = SAXException.class)
+    public void testXMLReaderC(boolean setUseCatalog, boolean useCatalog, String catalog,
+            String xml, MyHandler handler, String expected) throws Exception {
         testXMLReader(setUseCatalog, useCatalog, catalog, xml, handler, expected);
     }
 
     /*
        Verifies the Catalog support on XInclude.
     */
-    @Test(dataProvider = "data_XIC")
-    public void testXIncludeC(boolean setUseCatalog, boolean useCatalog, String catalog, String xml, MyHandler handler, String expected) throws Exception {
+    @Test(dataProvider = "data_XIC", expectedExceptions = SAXException.class)
+    public void testXIncludeC(boolean setUseCatalog, boolean useCatalog, String catalog,
+            String xml, MyHandler handler, String expected) throws Exception {
         testXInclude(setUseCatalog, useCatalog, catalog, xml, handler, expected);
     }
 
     /*
        Verifies the Catalog support on DOM parser.
     */
-    @Test(dataProvider = "data_DOMC")
-    public void testDOMC(boolean setUseCatalog, boolean useCatalog, String catalog, String xml, MyHandler handler, String expected) throws Exception {
+    @Test(dataProvider = "data_DOMC", expectedExceptions = SAXException.class)
+    public void testDOMC(boolean setUseCatalog, boolean useCatalog, String catalog,
+            String xml, MyHandler handler, String expected) throws Exception {
         testDOM(setUseCatalog, useCatalog, catalog, xml, handler, expected);
     }
 
@@ -113,19 +110,15 @@ public class CatalogSupport1 extends CatalogSupportBase {
        Verifies the Catalog support on resolving DTD, xsd import and include in
     Schema files.
     */
-    @Test(dataProvider = "data_SchemaC")
-    public void testValidationC(boolean setUseCatalog, boolean useCatalog, String catalog, String xsd, LSResourceResolver resolver)
+    @Test(dataProvider = "data_SchemaC", expectedExceptions = SAXException.class)
+    public void testValidationC(boolean setUseCatalog, boolean useCatalog, String catalog,
+            String xsd, LSResourceResolver resolver)
             throws Exception {
-
         testValidation(setUseCatalog, useCatalog, catalog, xsd, resolver) ;
     }
 
-    /*
-       @bug 8158084 8162438 these tests also verifies the fix for 8162438
-       Verifies the Catalog support on the Schema Validator.
-    */
-    @Test(dataProvider = "data_ValidatorC")
-    public void testValidatorA(boolean setUseCatalog1, boolean setUseCatalog2, boolean useCatalog,
+    @Test(dataProvider = "data_ValidatorC", expectedExceptions = SAXException.class)
+    public void testValidatorC(boolean setUseCatalog1, boolean setUseCatalog2, boolean useCatalog,
             Source source, LSResourceResolver resolver1, LSResourceResolver resolver2,
             String catalog1, String catalog2)
             throws Exception {
@@ -137,9 +130,9 @@ public class CatalogSupport1 extends CatalogSupportBase {
        Verifies the Catalog support on resolving DTD, xsl import and include in
     XSL files.
     */
-    @Test(dataProvider = "data_XSLC")
-    public void testXSLImportC(boolean setUseCatalog, boolean useCatalog, String catalog, SAXSource xsl, StreamSource xml,
-        URIResolver resolver, String expected) throws Exception {
+    @Test(dataProvider = "data_XSLC", expectedExceptions = TransformerException.class)
+    public void testXSLImportC(boolean setUseCatalog, boolean useCatalog, String catalog,
+            SAXSource xsl, StreamSource xml, URIResolver resolver, String expected) throws Exception {
 
         testXSLImport(setUseCatalog, useCatalog, catalog, xsl, xml, resolver, expected);
     }
@@ -149,9 +142,9 @@ public class CatalogSupport1 extends CatalogSupportBase {
        Verifies the Catalog support on resolving DTD, xsl import and include in
     XSL files.
     */
-    @Test(dataProvider = "data_XSLC")
-    public void testXSLImportWTemplatesC(boolean setUseCatalog, boolean useCatalog, String catalog, SAXSource xsl, StreamSource xml,
-        URIResolver resolver, String expected) throws Exception {
+    @Test(dataProvider = "data_XSLC", expectedExceptions = TransformerException.class)
+    public void testXSLImportWTemplatesC(boolean setUseCatalog, boolean useCatalog, String catalog,
+            SAXSource xsl, StreamSource xml, URIResolver resolver, String expected) throws Exception {
         testXSLImportWTemplates(setUseCatalog, useCatalog, catalog, xsl, xml, resolver, expected);
     }
 
@@ -162,7 +155,7 @@ public class CatalogSupport1 extends CatalogSupportBase {
     @DataProvider(name = "data_SAXC")
     public Object[][] getDataSAXC() {
         return new Object[][]{
-            {false, true, null, xml_system, new MyHandler(elementInSystem), expectedWCatalog}
+            {false, true, xml_bogus_catalog, xml_system, new MyHandler(elementInSystem), expectedWCatalog}
 
         };
     }
@@ -174,7 +167,7 @@ public class CatalogSupport1 extends CatalogSupportBase {
     @DataProvider(name = "data_XIC")
     public Object[][] getDataXIC() {
         return new Object[][]{
-            {false, true, null, xml_xInclude, new MyHandler(elementInXISimple), contentInUIutf8Catalog},
+            {false, true, xml_bogus_catalog, xml_xInclude, new MyHandler(elementInXISimple), contentInUIutf8Catalog},
         };
     }
 
@@ -185,7 +178,7 @@ public class CatalogSupport1 extends CatalogSupportBase {
     @DataProvider(name = "data_DOMC")
     public Object[][] getDataDOMC() {
         return new Object[][]{
-            {false, true, null, xml_system, new MyHandler(elementInSystem), expectedWCatalog}
+            {false, true, xml_bogus_catalog, xml_system, new MyHandler(elementInSystem), expectedWCatalog}
         };
     }
 
@@ -198,22 +191,22 @@ public class CatalogSupport1 extends CatalogSupportBase {
 
         return new Object[][]{
             // for resolving DTD in xsd
-            {false, true, null, xsd_xmlSchema, null},
+            {false, true, xml_bogus_catalog, xsd_xmlSchema, null},
             // for resolving xsd import
-            {false, true, null, xsd_xmlSchema_import, null},
+            {false, true, xml_bogus_catalog, xsd_xmlSchema_import, null},
             // for resolving xsd include
-            {false, true, null, xsd_include_company, null}
+            {false, true, xml_bogus_catalog, xsd_include_company, null}
         };
     }
 
-
     /*
        DataProvider: for testing Schema Validator
-       Data: source, resolver1, resolver2, catalog1, a catalog2
+       Data: setUseCatalog1, setUseCatalog2, useCatalog, source, resolver1, resolver2,
+             catalog1, catalog2
      */
     @DataProvider(name = "data_ValidatorC")
     public Object[][] getDataValidator() {
-        DOMSource ds = getDOMSource(xml_val_test, xml_val_test_id, false, true, null);
+        DOMSource ds = getDOMSource(xml_val_test, xml_val_test_id, true, true, xml_catalog);
 
         SAXSource ss = new SAXSource(new InputSource(xml_val_test));
         ss.setSystemId(xml_val_test_id);
@@ -223,28 +216,16 @@ public class CatalogSupport1 extends CatalogSupportBase {
 
         StreamSource source = new StreamSource(new File(xml_val_test));
 
-        String[] systemIds = {"system.dtd", "val_test.xsd"};
-        XmlInput[] returnValues = {new XmlInput(null, dtd_system, null), new XmlInput(null, xsd_val_test, null)};
-        LSResourceResolver resolver = new SourceResolver(null, systemIds, returnValues);
-
-        StAXSource stax2 = getStaxSource(xml_val_test, xml_val_test_id);
-        StAXSource stax3 = getStaxSource(xml_val_test, xml_val_test_id);
-
         return new Object[][]{
             // use catalog
-            {false, false, true, ds, null, null, null, null},
-            {false, false, true, ds, null, null, null, null},
-            {false, false, true, ss, null, null, null, null},
-            {false, false, true, ss, null, null, null, null},
-            {false, false, true, stax, null, null, null, null},
-            {false, false, true, stax1, null, null, null, null},
-            {false, false, true, source, null, null, null, null},
-            {false, false, true, source, null, null, null, null},
-            // use resolver
-            {false, false, true, ds, resolver, resolver, xml_bogus_catalog, xml_bogus_catalog},
-            {false, false, true, ss, resolver, resolver, xml_bogus_catalog, xml_bogus_catalog},
-            {false, false, true, stax2, resolver, resolver, xml_bogus_catalog, xml_bogus_catalog},
-            {false, false, true, source, resolver, resolver, xml_bogus_catalog, xml_bogus_catalog}
+            {false, false, true, ds, null, null, xml_bogus_catalog, null},
+            {false, false, true, ds, null, null, null, xml_bogus_catalog},
+            {false, false, true, ss, null, null, xml_bogus_catalog, null},
+            {false, false, true, ss, null, null, null, xml_bogus_catalog},
+            {false, false, true, stax, null, null, xml_bogus_catalog, null},
+            {false, false, true, stax1, null, null, null, xml_bogus_catalog},
+            {false, false, true, source, null, null, xml_bogus_catalog, null},
+            {false, false, true, source, null, null, null, xml_bogus_catalog},
         };
     }
 
@@ -261,10 +242,9 @@ public class CatalogSupport1 extends CatalogSupportBase {
         StreamSource xmlDocSource = new StreamSource(new File(xml_doc));
         return new Object[][]{
             // for resolving DTD, import and include in xsl
-            {false, true, null, xslSourceDTD, xmlSourceDTD, null, ""},
+            {false, true, xml_bogus_catalog, xslSourceDTD, xmlSourceDTD, null, ""},
             // for resolving reference by the document function
-            {false, true, null, xslDocSource, xmlDocSource, null, "Resolved by a catalog"},
+            {false, true, xml_bogus_catalog, xslDocSource, xmlDocSource, null, "Resolved by a catalog"},
         };
     }
-
 }

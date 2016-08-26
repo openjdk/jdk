@@ -86,4 +86,3 @@ public class DeferFeatureTest {
         return (int) method.invoke(catalog);
     }
 }
-

@@ -269,4 +269,3 @@ public class CatalogSupport4 extends CatalogSupportBase {
         };
     }
 }
-
