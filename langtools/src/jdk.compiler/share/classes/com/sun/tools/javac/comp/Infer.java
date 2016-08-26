@@ -61,6 +61,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.stream.Collectors;
 
 import com.sun.tools.javac.main.Option;
 
@@ -1475,16 +1476,11 @@ public class Infer {
                     //not a throws undet var
                     return false;
                 }
-                Infer infer = inferenceContext.infer;
-                for (Type db : t.getBounds(InferenceBound.UPPER)) {
-                    if (t.isInterface()) continue;
-                    if (infer.types.asSuper(infer.syms.runtimeExceptionType, db.tsym) == null) {
-                        //upper bound is not a supertype of RuntimeException - give up
-                        return false;
-                    }
-                }
-
-                return true;
+                Types types = inferenceContext.types;
+                Symtab syms = inferenceContext.infer.syms;
+                return t.getBounds(InferenceBound.UPPER).stream()
+                        .filter(b -> !inferenceContext.free(b))
+                        .allMatch(u -> types.isSubtype(syms.runtimeExceptionType, u));
             }
 
             @Override

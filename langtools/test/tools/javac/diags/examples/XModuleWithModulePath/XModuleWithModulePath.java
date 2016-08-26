@@ -22,6 +22,6 @@
  */
 
 // key: compiler.err.xmodule.no.module.sourcepath
-// options: -Xmodule:java.compiler -modulesourcepath src
+// options: -Xmodule:java.compiler --module-source-path src
 
 class XModuleWithModulePath {}

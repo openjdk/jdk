@@ -23,10 +23,15 @@
 
 package crules;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskEvent.Kind;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.DefinedBy;
@@ -44,7 +49,20 @@ public class DefinedByAnalyzer extends AbstractCodingRulesAnalyzer {
         eventKind = Kind.ANALYZE;
     }
 
+    //only java.compiler and jdk.compiler modules implement the APIs,
+    //so only these need the @DefinedBy annotation:
+    private static final Set<String> MODULE = new HashSet<>(Arrays.asList(
+        "java.compiler",
+        "jdk.compiler"
+    ));
+
     class DefinedByVisitor extends TreeScanner {
+        @Override
+        public void visitClassDef(JCClassDecl tree) {
+            if (MODULE.contains(tree.sym.packge().modle.name.toString())) {
+                super.visitClassDef(tree);
+            }
+        }
         @Override
         public void visitMethodDef(JCMethodDecl tree) {
             if (!isAPIPackage(packageName(tree.sym))) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class VersionOpt {
         // Test functions by comparing the version string from javac against
         // a "golden" version generated automatically from the underlying JVM.
         // As such, it is only effective in testing the "standard" compiler,
-        // and not any development version being tested via -Xpatch.
+        // and not any development version being tested via --patch-modules.
         // Check the version of the compiler being used, and let the test pass
         // automatically if is is a development version.
         Class<?> javacClass = com.sun.tools.javac.Main.class;

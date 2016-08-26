@@ -100,4 +100,3 @@ public class DelegatePublicTest {
         return catalogResolver("delegatePublic.xml");
     }
 }
-

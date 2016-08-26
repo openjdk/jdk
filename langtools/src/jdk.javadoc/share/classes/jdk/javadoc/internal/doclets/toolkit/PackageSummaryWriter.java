@@ -25,12 +25,12 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
-import java.io.*;
-
 import java.util.List;
 import java.util.SortedSet;
 
 import javax.lang.model.element.TypeElement;
+
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 
 /**
  * The interface for writing package summary output.
@@ -118,7 +118,8 @@ public interface PackageSummaryWriter {
      * Print the package summary document.
      *
      * @param contentTree the content tree that will be printed
+     * @throws DocFileIOException if there is a problem while writing the document
      */
-    public abstract void printDocument(Content contentTree) throws IOException;
+    public abstract void printDocument(Content contentTree) throws DocFileIOException;
 
 }

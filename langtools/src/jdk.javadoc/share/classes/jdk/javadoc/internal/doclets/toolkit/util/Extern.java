@@ -117,6 +117,7 @@ public class Extern {
         /**
          * String representation of "this" with packagename and the path.
          */
+        @Override
         public String toString() {
             return packageName + (relative? " -> " : " => ") + path;
         }
@@ -130,6 +131,7 @@ public class Extern {
      * Determine if a element item is externally documented.
      *
      * @param element an Element.
+     * @return true if the element is externally documented
      */
     public boolean isExternal(Element element) {
         if (packageToItemMap == null) {
@@ -176,8 +178,11 @@ public class Extern {
      *                   file.
      * @param reporter   The <code>DocErrorReporter</code> used to report errors.
      * @param linkoffline True if -linkoffline is used and false if -link is used.
+     * @return true if successful, false otherwise
+     * @throws DocFileIOException if there is a problem reading a package list file
      */
-    public boolean link(String url, String pkglisturl, Reporter reporter, boolean linkoffline) {
+    public boolean link(String url, String pkglisturl, Reporter reporter, boolean linkoffline)
+                throws DocFileIOException {
         this.linkoffline = linkoffline;
         try {
             url = adjustEndFileSeparator(url);
@@ -251,9 +256,11 @@ public class Extern {
      *
      * @param path URL or directory path to the packages.
      * @param pkgListPath Path to the local "package-list" file.
+     * @throws Fault if an error occurs that can be treated as a warning
+     * @throws DocFileIOException if there is a problem opening the package list file
      */
     private void readPackageListFromFile(String path, DocFile pkgListPath)
-            throws Fault {
+            throws Fault, DocFileIOException {
         DocFile file = pkgListPath.resolve(DocPaths.PACKAGE_LIST);
         if (! (file.isAbsolute() || linkoffline)){
             file = file.resolveAgainst(DocumentationTool.Location.DOCUMENTATION_OUTPUT);
@@ -279,35 +286,33 @@ public class Extern {
      * @param input    InputStream from the "package-list" file.
      * @param path     URL or the directory path to the packages.
      * @param relative Is path relative?
+     * @throws IOException if there is a problem reading or closing the stream
      */
     private void readPackageList(InputStream input, String path, boolean relative)
                          throws IOException {
-        BufferedReader in = new BufferedReader(new InputStreamReader(input));
-        StringBuilder strbuf = new StringBuilder();
-        try {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(input))) {
+            StringBuilder strbuf = new StringBuilder();
             int c;
             while ((c = in.read()) >= 0) {
-                char ch = (char)c;
+                char ch = (char) c;
                 if (ch == '\n' || ch == '\r') {
                     if (strbuf.length() > 0) {
                         String packname = strbuf.toString();
-                        String packpath = path +
-                                      packname.replace('.', '/') + '/';
-                        new Item(packname, packpath, relative);
+                        String packpath = path
+                                + packname.replace('.', '/') + '/';
+                        Item ignore = new Item(packname, packpath, relative);
                         strbuf.setLength(0);
                     }
                 } else {
                     strbuf.append(ch);
                 }
             }
-        } finally {
-            input.close();
         }
     }
 
     public boolean isUrl (String urlCandidate) {
         try {
-            new URL(urlCandidate);
+            URL ignore = new URL(urlCandidate);
             //No exception was thrown, so this must really be a URL.
             return true;
         } catch (MalformedURLException e) {

@@ -31,6 +31,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 
 /**
  * Factory for DocFile objects.
@@ -45,8 +46,11 @@ public abstract class DocFileFactory {
     /**
      * Get the appropriate factory, based on the file manager given in the
      * configuration.
+     *
+     * @param configuration the configuration for this doclet
+     * @return the factory associated with this configuration
      */
-    static synchronized DocFileFactory getFactory(Configuration configuration) {
+    public static synchronized DocFileFactory getFactory(Configuration configuration) {
         DocFileFactory f = configuration.docFileFactory;
         if (f == null) {
             JavaFileManager fm = configuration.getFileManager();
@@ -65,6 +69,8 @@ public abstract class DocFileFactory {
     protected DocFileFactory(Configuration configuration) {
         this.configuration = configuration;
     }
+
+    public abstract void setDestDir(String dir) throws DocletException;
 
     /** Create a DocFile for a directory. */
     abstract DocFile createFileForDirectory(String file);

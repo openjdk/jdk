@@ -36,11 +36,11 @@
 package compiler.intrinsics.unsafe;
 
 import jdk.internal.misc.Unsafe;
-import jdk.test.lib.Utils;
+import jdk.test.lib.unsafe.UnsafeHelper;
 
 public class TestUnsafeMismatchedArrayFieldAccess {
 
-    private static final Unsafe UNSAFE = Utils.getUnsafe();
+    private static final Unsafe UNSAFE = UnsafeHelper.getUnsafe();
 
     static {
         try {

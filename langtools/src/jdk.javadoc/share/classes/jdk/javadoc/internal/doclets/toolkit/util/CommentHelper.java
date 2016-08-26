@@ -67,8 +67,6 @@ import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.source.util.TreePath;
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
@@ -204,7 +202,7 @@ public class CommentHelper {
     private StringBuilder getText0(DocTree dt) {
         final StringBuilder sb = new StringBuilder();
         new SimpleDocTreeVisitor<Void, Void>() {
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Void visitAttribute(AttributeTree node, Void p) {
                 sb.append(SPACER).append(node.getName());
                 if (node.getValueKind() == ValueKind.EMPTY) {
@@ -232,7 +230,7 @@ public class CommentHelper {
                 return null;
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Void visitEndElement(EndElementTree node, Void p) {
                 sb.append("</")
                         .append(node.getName())
@@ -240,13 +238,13 @@ public class CommentHelper {
                 return null;
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Void visitEntity(EntityTree node, Void p) {
                 sb.append(node.toString());
                 return null;
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Void visitLink(LinkTree node, Void p) {
                 if (node.getReference() == null) {
                     return null;
@@ -259,7 +257,7 @@ public class CommentHelper {
                 return null;
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Void visitLiteral(LiteralTree node, Void p) {
                 if (node.getKind() == CODE) {
                     sb.append("<").append(node.getKind().tagName).append(">");
@@ -271,13 +269,13 @@ public class CommentHelper {
                 return null;
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Void visitReference(ReferenceTree node, Void p) {
                 sb.append(node.getSignature());
                 return null;
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Void visitSee(SeeTree node, Void p) {
                 node.getReference().stream().forEach((dt) -> {
                     dt.accept(this, null);
@@ -285,7 +283,7 @@ public class CommentHelper {
                 return null;
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Void visitSerial(SerialTree node, Void p) {
                 node.getDescription().stream().forEach((dt) -> {
                     dt.accept(this, null);
@@ -293,7 +291,7 @@ public class CommentHelper {
                 return null;
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Void visitStartElement(StartElementTree node, Void p) {
                 sb.append("<");
                 sb.append(node.getName());
@@ -304,13 +302,13 @@ public class CommentHelper {
                 return null;
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Void visitText(TextTree node, Void p) {
                 sb.append(node.getBody());
                 return null;
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Void visitUnknownBlockTag(UnknownBlockTagTree node, Void p) {
                 node.getContent().stream().forEach((dt) -> {
                     dt.accept(this, null);
@@ -318,12 +316,12 @@ public class CommentHelper {
                 return null;
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Void visitValue(ValueTree node, Void p) {
                 return node.getReference().accept(this, null);
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             protected Void defaultAction(DocTree node, Void p) {
                 sb.append(node.toString());
                 return null;
@@ -334,7 +332,7 @@ public class CommentHelper {
 
     public String getLabel(Configuration c, DocTree dtree) {
         return new SimpleDocTreeVisitor<String, Void>() {
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public String visitLink(LinkTree node, Void p) {
                 StringBuilder sb = new StringBuilder();
                 node.getLabel().stream().forEach((dt) -> {
@@ -343,7 +341,7 @@ public class CommentHelper {
                 return sb.toString();
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public String visitSee(SeeTree node, Void p) {
                 StringBuilder sb = new StringBuilder();
                 node.getReference().stream().filter((dt) -> (c.utils.isText(dt))).forEach((dt) -> {
@@ -352,7 +350,7 @@ public class CommentHelper {
                 return sb.toString();
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             protected String defaultAction(DocTree node, Void p) {
                 return "";
             }
@@ -429,7 +427,7 @@ public class CommentHelper {
 
     private Element getReferencedElement(Configuration c, DocTree dtree) {
         return new SimpleDocTreeVisitor<Element, Void>() {
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Element visitSee(SeeTree node, Void p) {
                 for (DocTree dt : node.getReference()) {
                     return visit(dt, null);
@@ -437,27 +435,27 @@ public class CommentHelper {
                 return null;
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Element visitLink(LinkTree node, Void p) {
                 return visit(node.getReference(), null);
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Element visitValue(ValueTree node, Void p) {
                 return visit(node.getReference(), null);
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Element visitReference(ReferenceTree node, Void p) {
                 return getElement(c, node);
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Element visitSerialField(SerialFieldTree node, Void p) {
                 return visit(node.getType(), null);
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             protected Element defaultAction(DocTree node, Void p) {
                return null;
             }
@@ -466,7 +464,7 @@ public class CommentHelper {
 
     public  String getReferencedSignature(DocTree dtree) {
         return new SimpleDocTreeVisitor<String, Void>() {
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public String visitSee(SeeTree node, Void p) {
                 for (DocTree dt : node.getReference()) {
                     return visit(dt, null);
@@ -474,27 +472,27 @@ public class CommentHelper {
                 return null;
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public String visitLink(LinkTree node, Void p) {
                 return visit(node.getReference(), null);
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public String visitValue(ValueTree node, Void p) {
                 return visit(node.getReference(), null);
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public String visitReference(ReferenceTree node, Void p) {
                 return node.getSignature();
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public String visitSerialField(SerialFieldTree node, Void p) {
                 return visit(node.getType(), null);
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             protected String defaultAction(DocTree node, Void p) {
                return null;
             }
@@ -530,87 +528,87 @@ public class CommentHelper {
                 return out;
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public List<? extends DocTree> visitAuthor(AuthorTree node, Void p) {
                 return node.getName();
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public List<? extends DocTree> visitComment(CommentTree node, Void p) {
                 return asList(node.getBody());
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public List<? extends DocTree> visitDeprecated(DeprecatedTree node, Void p) {
                 return node.getBody();
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public List<? extends DocTree> visitDocComment(DocCommentTree node, Void p) {
                 return node.getBody();
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public List<? extends DocTree> visitLiteral(LiteralTree node, Void p) {
                 return asList(node.getBody().getBody());
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public List<? extends DocTree> visitSince(SinceTree node, Void p) {
                 return node.getBody();
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public List<? extends DocTree> visitText(TextTree node, Void p) {
                 return asList(node.getBody());
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public List<? extends DocTree> visitVersion(VersionTree node, Void p) {
                 return node.getBody();
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public List<? extends DocTree> visitParam(ParamTree node, Void p) {
                return node.getDescription();
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public List<? extends DocTree> visitReturn(ReturnTree node, Void p) {
                 return node.getDescription();
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public List<? extends DocTree> visitSee(SeeTree node, Void p) {
                 return node.getReference();
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public List<? extends DocTree> visitSerial(SerialTree node, Void p) {
                 return node.getDescription();
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public List<? extends DocTree> visitSerialData(SerialDataTree node, Void p) {
                 return node.getDescription();
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public List<? extends DocTree> visitSerialField(SerialFieldTree node, Void p) {
                 return node.getDescription();
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public List<? extends DocTree> visitThrows(ThrowsTree node, Void p) {
                  return node.getDescription();
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public List<? extends DocTree> visitUnknownBlockTag(UnknownBlockTagTree node, Void p) {
                 return node.getContent();
             }
 
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             protected List<? extends DocTree> defaultAction(DocTree node, Void p) {
                return Collections.emptyList();
             }

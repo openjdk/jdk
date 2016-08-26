@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -75,7 +75,6 @@ import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
-import javax.xml.catalog.CatalogUriResolver;
 import javax.xml.transform.Source;
 import jdk.xml.internal.JdkXmlUtils;
 import org.xml.sax.InputSource;
@@ -371,7 +370,6 @@ public class XIncludeHandler
     private boolean fUseCatalog = true;
     CatalogFeatures fCatalogFeatures;
     CatalogResolver fCatalogResolver;
-    CatalogUriResolver fCatalogUriResolver;
 
     private String fCatalogFile;
     private String fDefer;
@@ -1638,10 +1636,10 @@ public class XIncludeHandler
                         */
                         Source source = null;
                         try {
-                            if (fCatalogUriResolver == null) {
-                                fCatalogUriResolver = CatalogManager.catalogUriResolver(fCatalogFeatures);
+                            if (fCatalogResolver == null) {
+                                fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
                             }
-                            source = fCatalogUriResolver.resolve(href, fCurrentBaseURI.getExpandedSystemId());
+                            source = fCatalogResolver.resolve(href, fCurrentBaseURI.getExpandedSystemId());
                         } catch (CatalogException e) {}
 
                         if (source != null && !source.isEmpty()) {
@@ -1669,7 +1667,7 @@ public class XIncludeHandler
                         includedSource.getBaseSystemId(), accept, acceptLanguage);
                 }
             }
-            catch (IOException e) {
+            catch (IOException | CatalogException e) {
                 reportResourceError(
                     "XMLResourceError",
                     new Object[] { href, e.getMessage()});

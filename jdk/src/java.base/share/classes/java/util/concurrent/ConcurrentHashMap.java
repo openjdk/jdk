@@ -4566,7 +4566,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             boolean modified = false;
             // Use (c instanceof Set) as a hint that lookup in c is as
             // efficient as this view
-            if (c instanceof Set<?> && c.size() > map.table.length) {
+            Node<K,V>[] t;
+            if ((t = map.table) == null) {
+                return false;
+            } else if (c instanceof Set<?> && c.size() > t.length) {
                 for (Iterator<?> it = iterator(); it.hasNext(); ) {
                     if (c.contains(it.next())) {
                         it.remove();
