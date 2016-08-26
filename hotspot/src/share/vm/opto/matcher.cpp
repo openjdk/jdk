@@ -2117,6 +2117,8 @@ void Matcher::find_shared( Node *n ) {
       case Op_StrInflatedCopy:
       case Op_StrCompressedCopy:
       case Op_EncodeISOArray:
+      case Op_FmaD:
+      case Op_FmaF:
         set_shared(n); // Force result into register (it will be anyways)
         break;
       case Op_ConP: {  // Convert pointers above the centerline to NUL
@@ -2303,6 +2305,15 @@ void Matcher::find_shared( Node *n ) {
         Node* pair = new BinaryNode(n->in(3), n->in(4));
         n->set_req(3, pair);
         n->del_req(4);
+        break;
+      }
+      case Op_FmaD:
+      case Op_FmaF: {
+        // Restructure into a binary tree for Matching.
+        Node* pair = new BinaryNode(n->in(1), n->in(2));
+        n->set_req(2, pair);
+        n->set_req(1, n->in(3));
+        n->del_req(3);
         break;
       }
       default:

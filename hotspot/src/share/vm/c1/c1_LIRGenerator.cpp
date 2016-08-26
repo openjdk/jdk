@@ -3147,6 +3147,9 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_dpow :          do_MathIntrinsic(x); break;
   case vmIntrinsics::_arraycopy:      do_ArrayCopy(x);     break;
 
+  case vmIntrinsics::_fmaD:           do_FmaIntrinsic(x); break;
+  case vmIntrinsics::_fmaF:           do_FmaIntrinsic(x); break;
+
   // java.nio.Buffer.checkIndex
   case vmIntrinsics::_checkIndex:     do_NIOCheckIndex(x); break;
 

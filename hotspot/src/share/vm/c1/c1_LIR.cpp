@@ -666,7 +666,9 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
 
 // LIR_Op3
     case lir_idiv:
-    case lir_irem: {
+    case lir_irem:
+    case lir_fmad:
+    case lir_fmaf: {
       assert(op->as_Op3() != NULL, "must be");
       LIR_Op3* op3= (LIR_Op3*)op;
 
@@ -1663,6 +1665,8 @@ const char * LIR_Op::name() const {
      // LIR_Op3
      case lir_idiv:                  s = "idiv";          break;
      case lir_irem:                  s = "irem";          break;
+     case lir_fmad:                  s = "fmad";          break;
+     case lir_fmaf:                  s = "fmaf";          break;
      // LIR_OpJavaCall
      case lir_static_call:           s = "static";        break;
      case lir_optvirtual_call:       s = "optvirtual";    break;

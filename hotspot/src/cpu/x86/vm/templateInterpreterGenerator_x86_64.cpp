@@ -369,8 +369,17 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   //        [ hi(arg) ]
   //
 
-
-  if (kind == Interpreter::java_lang_math_sqrt) {
+  if (kind == Interpreter::java_lang_math_fmaD) {
+    __ movdbl(xmm0, Address(rsp, wordSize));
+    __ movdbl(xmm1, Address(rsp, 3 * wordSize));
+    __ movdbl(xmm2, Address(rsp, 5 * wordSize));
+    __ fmad(xmm0, xmm1, xmm2, xmm0);
+  } else if (kind == Interpreter::java_lang_math_fmaF) {
+    __ movflt(xmm0, Address(rsp, wordSize));
+    __ movflt(xmm1, Address(rsp, 2 * wordSize));
+    __ movflt(xmm2, Address(rsp, 3 * wordSize));
+    __ fmaf(xmm0, xmm1, xmm2, xmm0);
+  } else if (kind == Interpreter::java_lang_math_sqrt) {
     __ sqrtsd(xmm0, Address(rsp, wordSize));
   } else if (kind == Interpreter::java_lang_math_exp) {
     __ movdbl(xmm0, Address(rsp, wordSize));
