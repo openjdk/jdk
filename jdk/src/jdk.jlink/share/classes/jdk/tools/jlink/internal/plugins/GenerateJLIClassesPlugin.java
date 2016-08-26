@@ -110,7 +110,7 @@ public final class GenerateJLIClassesPlugin implements Plugin {
      * A better long-term solution is to define and run a set of quick
      * generators and extracting this list as a step in the build process.
      */
-    private static List<String> defaultSpecies() {
+    public static List<String> defaultSpecies() {
         return List.of("LL", "L3", "L4", "L5", "L6", "L7", "L7I",
                 "L7II", "L7IIL", "L8", "L9", "L10", "L10I", "L10II", "L10IIL",
                 "L11", "L12", "L13", "LI", "D", "L3I", "LIL", "LLI", "LLIL",
