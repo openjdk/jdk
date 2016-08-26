@@ -43,7 +43,7 @@ import sun.misc.SignalHandler;
 
 /*
  * @test
- * @library /test/lib/share/classes
+ * @library /test/lib
  * @modules jdk.unsupported
  *          java.base/jdk.internal.misc
  * @build jdk.test.lib.Platform jdk.test.lib.Utils
