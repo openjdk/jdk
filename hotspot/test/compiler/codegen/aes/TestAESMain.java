@@ -25,6 +25,7 @@
 /**
  * @test
  * @bug 7184394
+ * @key stress
  * @summary add intrinsics to use AES instructions
  * @library /testlibrary /
  * @modules java.base/jdk.internal.misc

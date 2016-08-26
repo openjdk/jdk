@@ -48,14 +48,12 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     private static final String NAME = "generate-jli-classes";
 
     private static final String BMH_PARAM = "bmh";
-
     private static final String BMH_SPECIES_PARAM = "bmh-species";
-
-    private static final String DMH_PARAM = "dmh";
 
     private static final String DESCRIPTION = PluginsResourceBundle.getDescription(NAME);
 
-    private static final String DIRECT_METHOD_HANDLE = "java/lang/invoke/DirectMethodHandle$Holder";
+    private static final String DMH_PARAM = "dmh";
+    private static final String DIRECT_HOLDER = "java/lang/invoke/DirectMethodHandle$Holder";
     private static final String DMH_INVOKE_VIRTUAL = "invokeVirtual";
     private static final String DMH_INVOKE_STATIC = "invokeStatic";
     private static final String DMH_INVOKE_SPECIAL = "invokeSpecial";
@@ -63,14 +61,21 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     private static final String DMH_INVOKE_INTERFACE = "invokeInterface";
     private static final String DMH_INVOKE_STATIC_INIT = "invokeStaticInit";
 
-    private static final String DELEGATING_METHOD_HANDLE = "java/lang/invoke/DelegatingMethodHandle$Holder";
+    private static final String INVOKERS_PARAM = "invokers";
+
+    private static final String DELEGATING_HOLDER = "java/lang/invoke/DelegatingMethodHandle$Holder";
+    private static final String BASIC_FORMS_HOLDER = "java/lang/invoke/LambdaForm$Holder";
+    private static final String INVOKERS_HOLDER = "java/lang/invoke/Invokers$Holder";
 
     private static final JavaLangInvokeAccess JLIA
             = SharedSecrets.getJavaLangInvokeAccess();
 
     List<String> speciesTypes;
 
+    List<String> invokerTypes;
+
     Map<String, List<String>> dmhMethods;
+
 
     public GenerateJLIClassesPlugin() {
     }
@@ -115,6 +120,13 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     }
 
     /**
+     * @return the default invoker forms to generate.
+     */
+    public static List<String> defaultInvokers() {
+        return List.of("_L", "_I", "I_I", "LI_I", "ILL_I", "LIL_I", "L_L", "LL_V", "LLLL_L");
+    }
+
+    /**
      * @return the list of default DirectMethodHandle methods to generate.
      */
     public static Map<String, List<String>> defaultDMHMethods() {
@@ -151,12 +163,16 @@ public final class GenerateJLIClassesPlugin implements Plugin {
         // Enable by default
         boolean bmhEnabled = true;
         boolean dmhEnabled = true;
+        boolean invokersEnabled = true;
         if (mainArgument != null) {
             List<String> args = Arrays.asList(mainArgument.split(","));
             if (!args.contains(BMH_PARAM)) {
                 bmhEnabled = false;
             }
             if (!args.contains(DMH_PARAM)) {
+                dmhEnabled = false;
+            }
+            if (!args.contains(INVOKERS_PARAM)) {
                 dmhEnabled = false;
             }
         }
@@ -181,6 +197,21 @@ public final class GenerateJLIClassesPlugin implements Plugin {
                     .collect(Collectors.toList());
         }
 
+        if (!invokersEnabled) {
+            invokerTypes = List.of();
+        } else {
+            String args = config.get(INVOKERS_PARAM);
+            if (args != null && !args.isEmpty()) {
+                invokerTypes = Arrays.stream(args.split(","))
+                            .map(String::trim)
+                            .filter(s -> !s.isEmpty())
+                            .collect(Collectors.toList());
+                validateMethodTypes(invokerTypes);
+            } else {
+                invokerTypes = defaultInvokers();
+            }
+
+        }
         // DirectMethodHandles
         if (!dmhEnabled) {
             dmhMethods = Map.of();
@@ -194,23 +225,26 @@ public final class GenerateJLIClassesPlugin implements Plugin {
                             .filter(s -> !s.isEmpty())
                             .collect(Collectors.toList());
                     dmhMethods.put(dmhParam, dmhMethodTypes);
-                    // Validation check
-                    for (String type : dmhMethodTypes) {
-                        String[] typeParts = type.split("_");
-                        // check return type (second part)
-                        if (typeParts.length != 2 || typeParts[1].length() != 1
-                                || "LJIFDV".indexOf(typeParts[1].charAt(0)) == -1) {
-                            throw new PluginException(
-                                    "Method type signature must be of form [LJIFD]*_[LJIFDV]");
-                        }
-                        // expand and check arguments (first part)
-                        expandSignature(typeParts[0]);
-                    }
+                    validateMethodTypes(dmhMethodTypes);
                 }
             }
             if (dmhMethods.isEmpty()) {
                 dmhMethods = defaultDMHMethods();
             }
+        }
+    }
+
+    void validateMethodTypes(List<String> dmhMethodTypes) {
+        for (String type : dmhMethodTypes) {
+            String[] typeParts = type.split("_");
+            // check return type (second part)
+            if (typeParts.length != 2 || typeParts[1].length() != 1
+                    || "LJIFDV".indexOf(typeParts[1].charAt(0)) == -1) {
+                throw new PluginException(
+                        "Method type signature must be of form [LJIFD]*_[LJIFDV]");
+            }
+            // expand and check arguments (first part)
+            expandSignature(typeParts[0]);
         }
     }
 
@@ -226,15 +260,17 @@ public final class GenerateJLIClassesPlugin implements Plugin {
         // Copy all but DMH_ENTRY to out
         in.transformAndCopy(entry -> {
                 // filter out placeholder entries
-                if (entry.path().equals(DIRECT_METHOD_HANDLE_ENTRY) ||
-                    entry.path().equals(DELEGATING_METHOD_HANDLE_ENTRY)) {
+                if (entry.path().equals(DIRECT_METHOD_HOLDER_ENTRY) ||
+                    entry.path().equals(DELEGATING_METHOD_HOLDER_ENTRY) ||
+                    entry.path().equals(INVOKERS_HOLDER_ENTRY) ||
+                    entry.path().equals(BASIC_FORMS_HOLDER_ENTRY)) {
                     return null;
                 } else {
                     return entry;
                 }
             }, out);
         speciesTypes.forEach(types -> generateBMHClass(types, out));
-        generateDMHClass(out);
+        generateHolderClasses(out);
         return out.build();
     }
 
@@ -257,41 +293,58 @@ public final class GenerateJLIClassesPlugin implements Plugin {
         }
     }
 
-    private void generateDMHClass(ResourcePoolBuilder out) {
+    private void generateHolderClasses(ResourcePoolBuilder out) {
         int count = 0;
         for (List<String> entry : dmhMethods.values()) {
             count += entry.size();
         }
-        MethodType[] methodTypes = new MethodType[count];
+        MethodType[] directMethodTypes = new MethodType[count];
         int[] dmhTypes = new int[count];
         int index = 0;
         for (Map.Entry<String, List<String>> entry : dmhMethods.entrySet()) {
             String dmhType = entry.getKey();
             for (String type : entry.getValue()) {
-                methodTypes[index] = asMethodType(type);
+                directMethodTypes[index] = asMethodType(type);
                 dmhTypes[index] = DMH_METHOD_TYPE_MAP.get(dmhType);
                 index++;
             }
         }
+        MethodType[] invokerMethodTypes = new MethodType[this.invokerTypes.size()];
+        for (int i = 0; i < invokerTypes.size(); i++) {
+            invokerMethodTypes[i] = asMethodType(invokerTypes.get(i));
+        }
         try {
             byte[] bytes = JLIA.generateDirectMethodHandleHolderClassBytes(
-                    DIRECT_METHOD_HANDLE, methodTypes, dmhTypes);
+                    DIRECT_HOLDER, directMethodTypes, dmhTypes);
             ResourcePoolEntry ndata = ResourcePoolEntry
-                    .create(DIRECT_METHOD_HANDLE_ENTRY, bytes);
+                    .create(DIRECT_METHOD_HOLDER_ENTRY, bytes);
             out.add(ndata);
 
             bytes = JLIA.generateDelegatingMethodHandleHolderClassBytes(
-                    DELEGATING_METHOD_HANDLE, methodTypes);
-            ndata = ResourcePoolEntry.create(DELEGATING_METHOD_HANDLE_ENTRY, bytes);
+                    DELEGATING_HOLDER, directMethodTypes);
+            ndata = ResourcePoolEntry.create(DELEGATING_METHOD_HOLDER_ENTRY, bytes);
+            out.add(ndata);
+
+            bytes = JLIA.generateInvokersHolderClassBytes(INVOKERS_HOLDER,
+                    invokerMethodTypes);
+            ndata = ResourcePoolEntry.create(INVOKERS_HOLDER_ENTRY, bytes);
+            out.add(ndata);
+
+            bytes = JLIA.generateBasicFormsClassBytes(BASIC_FORMS_HOLDER);
+            ndata = ResourcePoolEntry.create(BASIC_FORMS_HOLDER_ENTRY, bytes);
             out.add(ndata);
         } catch (Exception ex) {
             throw new PluginException(ex);
         }
     }
-    private static final String DIRECT_METHOD_HANDLE_ENTRY =
-            "/java.base/" + DIRECT_METHOD_HANDLE + ".class";
-    private static final String DELEGATING_METHOD_HANDLE_ENTRY =
-            "/java.base/" + DELEGATING_METHOD_HANDLE + ".class";
+    private static final String DIRECT_METHOD_HOLDER_ENTRY =
+            "/java.base/" + DIRECT_HOLDER + ".class";
+    private static final String DELEGATING_METHOD_HOLDER_ENTRY =
+            "/java.base/" + DELEGATING_HOLDER + ".class";
+    private static final String BASIC_FORMS_HOLDER_ENTRY =
+            "/java.base/" + BASIC_FORMS_HOLDER + ".class";
+    private static final String INVOKERS_HOLDER_ENTRY =
+            "/java.base/" + INVOKERS_HOLDER + ".class";
 
     // Convert LL -> LL, L3 -> LLL
     private static String expandSignature(String signature) {

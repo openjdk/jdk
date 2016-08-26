@@ -34,6 +34,14 @@
 #include "hb-set-private.hh"
 
 
+#ifndef HB_MAX_NESTING_LEVEL
+#define HB_MAX_NESTING_LEVEL    6
+#endif
+#ifndef HB_MAX_CONTEXT_LENGTH
+#define HB_MAX_CONTEXT_LENGTH   64
+#endif
+
+
 namespace OT {
 
 
@@ -44,8 +52,6 @@ namespace OT {
 
 
 #define NOT_COVERED             ((unsigned int) -1)
-#define MAX_NESTING_LEVEL       6
-#define MAX_CONTEXT_LENGTH      64
 
 
 
@@ -539,6 +545,9 @@ struct Feature
           c->try_set (&featureParams, new_offset) &&
           !featureParams.sanitize (c, this, closure ? closure->tag : HB_TAG_NONE))
         return_trace (false);
+
+      if (c->edit_count > 1)
+        c->edit_count--; /* This was a "legitimate" edit; don't contribute to error count. */
     }
 
     return_trace (true);
@@ -572,6 +581,11 @@ struct LookupFlag : USHORT
   public:
   DEFINE_SIZE_STATIC (2);
 };
+
+} /* namespace OT */
+/* This has to be outside the namespace. */
+HB_MARK_AS_FLAG_T (OT::LookupFlag::Flags);
+namespace OT {
 
 struct Lookup
 {
@@ -756,7 +770,11 @@ struct CoverageFormat2
     TRACE_SERIALIZE (this);
     if (unlikely (!c->extend_min (*this))) return_trace (false);
 
-    if (unlikely (!num_glyphs)) return_trace (true);
+    if (unlikely (!num_glyphs))
+    {
+      rangeRecord.len.set (0);
+      return_trace (true);
+    }
 
     unsigned int num_ranges = 1;
     for (unsigned int i = 1; i < num_glyphs; i++)
@@ -1156,6 +1174,21 @@ struct Device
   inline hb_position_t get_y_delta (hb_font_t *font) const
   { return get_delta (font->y_ppem, font->y_scale); }
 
+  inline unsigned int get_size (void) const
+  {
+    unsigned int f = deltaFormat;
+    if (unlikely (f < 1 || f > 3 || startSize > endSize)) return 3 * USHORT::static_size;
+    return USHORT::static_size * (4 + ((endSize - startSize) >> (4 - f)));
+  }
+
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    return_trace (c->check_struct (this) && c->check_range (this, this->get_size ()));
+  }
+
+  private:
+
   inline int get_delta (unsigned int ppem, int scale) const
   {
     if (!ppem) return 0;
@@ -1166,8 +1199,6 @@ struct Device
 
     return (int) (pixels * (int64_t) scale / ppem);
   }
-
-
   inline int get_delta_pixels (unsigned int ppem_size) const
   {
     unsigned int f = deltaFormat;
@@ -1189,19 +1220,6 @@ struct Device
       delta -= mask + 1;
 
     return delta;
-  }
-
-  inline unsigned int get_size (void) const
-  {
-    unsigned int f = deltaFormat;
-    if (unlikely (f < 1 || f > 3 || startSize > endSize)) return 3 * USHORT::static_size;
-    return USHORT::static_size * (4 + ((endSize - startSize) >> (4 - f)));
-  }
-
-  inline bool sanitize (hb_sanitize_context_t *c) const
-  {
-    TRACE_SANITIZE (this);
-    return_trace (c->check_struct (this) && c->check_range (this, this->get_size ()));
   }
 
   protected:

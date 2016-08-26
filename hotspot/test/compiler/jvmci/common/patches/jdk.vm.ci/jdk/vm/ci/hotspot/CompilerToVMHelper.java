@@ -273,8 +273,8 @@ public class CompilerToVMHelper {
         return CTVM.getResolvedJavaMethod(base, displacement);
     }
 
-    public static HotSpotConstantPool getConstantPool(Object base, long displacement) {
-        return CTVM.getConstantPool(base, displacement);
+    public static HotSpotConstantPool getConstantPool(Object object) {
+        return CTVM.getConstantPool(object);
     }
 
     public static HotSpotResolvedObjectType getResolvedJavaType(Object base,

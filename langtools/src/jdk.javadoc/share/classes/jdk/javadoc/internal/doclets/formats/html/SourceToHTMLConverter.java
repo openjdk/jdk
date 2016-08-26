@@ -112,13 +112,13 @@ public class SourceToHTMLConverter {
         if (docEnv == null || outputdir == null) {
             return;
         }
-        for (PackageElement pkg : utils.getSpecifiedPackages()) {
+        for (PackageElement pkg : configuration.getSpecifiedPackages()) {
             // If -nodeprecated option is set and the package is marked as deprecated,
             // do not convert the package files to HTML.
             if (!(configuration.nodeprecated && utils.isDeprecated(pkg)))
                 convertPackage(pkg, outputdir);
         }
-        for (TypeElement te : utils.getSpecifiedClasses()) {
+        for (TypeElement te : configuration.getSpecifiedClasses()) {
             // If -nodeprecated option is set and the class is marked as deprecated
             // or the containing package is deprecated, do not convert the
             // package files to HTML.

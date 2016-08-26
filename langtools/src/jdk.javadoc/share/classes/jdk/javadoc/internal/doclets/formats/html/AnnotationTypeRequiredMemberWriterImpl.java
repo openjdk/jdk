@@ -105,7 +105,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public void addAnnotationDetailsTreeHeader(TypeElement classDoc,
+    public void addAnnotationDetailsTreeHeader(TypeElement te,
             Content memberDetailsTree) {
         if (!writer.printedAnnotationHeading) {
             memberDetailsTree.addContent(writer.getMarkerAnchor(

@@ -23,6 +23,10 @@
  * questions.
  */
 
+/** Defines the implementation of the
+ *  {@link javax.tools.ToolProvider#getSystemDocumentationTool system documentation tool}
+ *  and its command line equivalent, <em>javadoc</em>.
+ */
 module jdk.javadoc {
     requires public java.compiler;
     requires public jdk.compiler;

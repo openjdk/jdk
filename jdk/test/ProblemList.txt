@@ -124,10 +124,6 @@ java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 gen
 # jdk_lang
 
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
-java/lang/invoke/VarHandles/VarHandleTestMethodHandleAccessBoolean.java	8160690 generic-all
-java/lang/invoke/VarHandles/VarHandleTestMethodHandleAccessByte.java	8160690 generic-all
-java/lang/invoke/VarHandles/VarHandleTestMethodHandleAccessChar.java	8160690 generic-all
-java/lang/invoke/VarHandles/VarHandleTestMethodHandleAccessShort.java	8160690 generic-all
 
 ############################################################################
 
@@ -210,8 +206,6 @@ java/rmi/activation/Activatable/extLoadedImpl/ext.sh            8062724 generic-
 sun/rmi/rmic/newrmic/equivalence/run.sh                         8145980 generic-all
 
 java/rmi/transport/dgcDeadLock/DGCDeadLock.java                 8029360 macosx-all
-
-sun/rmi/runtime/Log/6409194/NoConsoleOutput.java                8164124 windows-all
 
 ############################################################################
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.Permission;
 import java.security.BasicPermission;
 import java.security.SecurityPermission;
 import java.security.AllPermission;
+import sun.security.action.GetPropertyAction;
 
 /**
  * Permission constants and string constants used to create permissions
@@ -145,4 +146,7 @@ public final class SecurityConstants {
     // java.lang.SecurityManager
     public static final SocketPermission LOCAL_LISTEN_PERMISSION =
         new SocketPermission("localhost:0", SOCKET_LISTEN_ACTION);
+
+    public static final String PROVIDER_VER =
+        GetPropertyAction.privilegedGetProperty("java.specification.version");
 }

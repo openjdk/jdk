@@ -3,10 +3,7 @@
   <component name="AntConfiguration">
     <buildFile url="file://$PROJECT_DIR$/.idea/build.xml">
       <properties>
-        <property name="jtreg.tests" value="$FilePath$" />
-        <property name="langtools.jdk.home" value="@IDEA_TARGET_JDK@" />
-        <property name="jtreg.home" value="@IDEA_JTREG_HOME@" />
-        <property name="jtreg.jpda.jvmargs" value="-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=5900" />
+	<property name="langtools.jdk.home" value="@IDEA_TARGET_JDK@" />
       </properties>
       <executeOn event="afterCompilation" target="post-make" />
     </buildFile>

@@ -62,7 +62,7 @@ public class NoStar implements Doclet
     }
 
     public boolean run(DocletEnvironment root) {
-        Set<TypeElement> classes = root.getIncludedClasses();
+        Set<TypeElement> classes = root.getIncludedTypeElements();
         if (classes.size() != 1)
             throw new Error("1 " + Arrays.asList(classes));
         TypeElement self = classes.iterator().next();

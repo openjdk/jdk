@@ -490,7 +490,7 @@ networkaddress.cache.negative.ttl=10
 # property is set then those two properties are ignored.
 #
 # Example,
-#   ocsp.responderCertSubjectName="CN=OCSP Responder, O=XYZ Corp"
+#   ocsp.responderCertSubjectName=CN=OCSP Responder, O=XYZ Corp
 
 #
 # Issuer name of the OCSP responder's certificate
@@ -505,7 +505,7 @@ networkaddress.cache.negative.ttl=10
 # property is ignored.
 #
 # Example,
-#   ocsp.responderCertIssuerName="CN=Enterprise CA, O=XYZ Corp"
+#   ocsp.responderCertIssuerName=CN=Enterprise CA, O=XYZ Corp
 
 #
 # Serial number of the OCSP responder's certificate
@@ -803,3 +803,44 @@ jdk.tls.legacyAlgorithms= \
 #       E485B576 625E7EC6 F44C42E9 A637ED6B 0BFF5CB6 F406B7ED \
 #       EE386BFB 5A899FA5 AE9F2411 7C4B1FE6 49286651 ECE65381 \
 #       FFFFFFFF FFFFFFFF, 2}
+
+#
+# The policy for the XML Signature secure validation mode. The mode is
+# enabled by setting the property "org.jcp.xml.dsig.secureValidation" to
+# true with the javax.xml.crypto.XMLCryptoContext.setProperty() method,
+# or by running the code with a SecurityManager.
+#
+#   Policy:
+#       Constraint {"," Constraint }
+#   Constraint:
+#       AlgConstraint | MaxTransformsConstraint | MaxReferencesConstraint |
+#       ReferenceUriSchemeConstraint | OtherConstraint
+#   AlgConstraint
+#       "disallowAlg" Uri
+#   MaxTransformsConstraint:
+#       "maxTransforms" Integer
+#   MaxReferencesConstraint:
+#       "maxReferences" Integer
+#   ReferenceUriSchemeConstraint:
+#       "disallowReferenceUriSchemes" String { String }
+#   OtherConstraint:
+#       "noDuplicateIds" | "noRetrievalMethodLoops"
+#
+# For AlgConstraint, Uri is the algorithm URI String that is not allowed.
+# See the XML Signature Recommendation for more information on algorithm
+# URI Identifiers. If the MaxTransformsConstraint or MaxReferencesConstraint is
+# specified more than once, only the last entry is enforced.
+#
+# Note: This property is currently used by the JDK Reference implementation. It
+# is not guaranteed to be examined and used by other implementations.
+#
+jdk.xml.dsig.secureValidationPolicy=\
+    disallowAlg http://www.w3.org/TR/1999/REC-xslt-19991116,\
+    disallowAlg http://www.w3.org/2001/04/xmldsig-more#rsa-md5,\
+    disallowAlg http://www.w3.org/2001/04/xmldsig-more#hmac-md5,\
+    disallowAlg http://www.w3.org/2001/04/xmldsig-more#md5,\
+    maxTransforms 5,\
+    maxReferences 30,\
+    disallowReferenceUriSchemes file http https,\
+    noDuplicateIds,\
+    noRetrievalMethodLoops
