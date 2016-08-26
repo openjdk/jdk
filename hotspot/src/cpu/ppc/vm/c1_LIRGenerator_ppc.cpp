@@ -1433,6 +1433,10 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
   }
 }
 
+void LIRGenerator::do_FmaIntrinsic(Intrinsic* x) {
+  fatal("FMA intrinsic is not implemented on this platform");
+}
+
 void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {
   fatal("vectorizedMismatch intrinsic is not implemented on this platform");
 }

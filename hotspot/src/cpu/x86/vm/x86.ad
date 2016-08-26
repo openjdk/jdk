@@ -3113,6 +3113,30 @@ instruct onspinwait() %{
   ins_pipe(pipe_slow);
 %}
 
+// a * b + c
+instruct fmaD_reg(regD a, regD b, regD c) %{
+  predicate(UseFMA);
+  match(Set c (FmaD  c (Binary a b)));
+  format %{ "fmasd $a,$b,$c\t# $c = $a * $b + $c" %}
+  ins_cost(150);
+  ins_encode %{
+    __ fmad($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// a * b + c
+instruct fmaF_reg(regF a, regF b, regF c) %{
+  predicate(UseFMA);
+  match(Set c (FmaF  c (Binary a b)));
+  format %{ "fmass $a,$b,$c\t# $c = $a * $b + $c" %}
+  ins_cost(150);
+  ins_encode %{
+    __ fmaf($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // ====================VECTOR INSTRUCTIONS=====================================
 
 // Load vectors (4 bytes long)

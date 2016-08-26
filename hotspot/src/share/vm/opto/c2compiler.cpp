@@ -416,6 +416,12 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_onSpinWait:
     if (!Matcher::match_rule_supported(Op_OnSpinWait)) return false;
     break;
+  case vmIntrinsics::_fmaD:
+    if (!UseFMA || !Matcher::match_rule_supported(Op_FmaD)) return false;
+    break;
+  case vmIntrinsics::_fmaF:
+    if (!UseFMA || !Matcher::match_rule_supported(Op_FmaF)) return false;
+    break;
   case vmIntrinsics::_hashCode:
   case vmIntrinsics::_identityHashCode:
   case vmIntrinsics::_getClass:
