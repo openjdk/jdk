@@ -89,7 +89,6 @@ void InternalVMTests::run() {
 #if INCLUDE_ALL_GCS
   run_unit_test(TestG1BiasedArray_test);
   run_unit_test(TestBufferingOopClosure_test);
-  run_unit_test(TestCodeCacheRemSet_test);
   if (UseG1GC) {
     run_unit_test(FreeRegionList_test);
     run_unit_test(IHOP_test);
