@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
+import java.io.IOException;
 import java.lang.annotation.Documented;
 import java.lang.ref.SoftReference;
 import java.text.CollationKey;
@@ -60,6 +61,7 @@ import javax.lang.model.util.SimpleTypeVisitor9;
 import javax.lang.model.util.TypeKindVisitor9;
 import javax.lang.model.util.Types;
 import javax.tools.FileObject;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
@@ -77,7 +79,9 @@ import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentDuo;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.WorkArounds;
 
 import static javax.lang.model.element.ElementKind.*;
@@ -265,29 +269,63 @@ public class Utils {
     }
 
     /**
-     * Copy the given directory contents from the source package directory
-     * to the generated documentation directory. For example for a package
-     * java.lang this method find out the source location of the package using
-     * {@link SourcePath} and if given directory is found in the source
-     * directory structure, copy the entire directory, to the generated
-     * documentation hierarchy.
+     * Copy doc-files directory and its contents from the source
+     * package directory to the generated documentation directory.
+     * For example, given a package java.lang, this method will copy
+     * the doc-files directory, found in the package directory to the
+     * generated documentation hierarchy.
      *
      * @param pe the package containing the doc files to be copied
-     * @throws DocFileIOException if there is a problem while copying the documentation files
+     * @throws DocFileIOException if there is a problem while copying
+     *         the documentation files
      */
     public void copyDocFiles(PackageElement pe) throws DocFileIOException {
-        copyDocFiles(DocPath.forPackage(pe).resolve(DocPaths.DOC_FILES));
+        Location sourceLoc = getLocationForPackage(pe);
+        copyDirectory(sourceLoc, DocPath.forPackage(pe).resolve(DocPaths.DOC_FILES));
     }
 
     /**
-     * This method is obsolete, should not be used, and should be deleted.
-     * It does not take module locations into account!
+     * Copy the given directory contents from the source package directory
+     * to the generated documentation directory. For example, given a package
+     * java.lang, this method will copy the entire directory, to the generated
+     * documentation hierarchy.
      *
-     * @throws DocFileIOException if there is a problem while copying the documentation files
+     * @param pe the package containing the directory to be copied
+     * @param dir the directory to be copied
+     * @throws DocFileIOException if there is a problem while copying
+     *         the documentation files
      */
-    public void copyDocFiles(DocPath dir) throws DocFileIOException {
+    public void copyDirectory(PackageElement pe, DocPath dir) throws DocFileIOException {
+        copyDirectory(getLocationForPackage(pe), dir);
+    }
+
+    /**
+     * Copy the given directory and its contents from the source
+     * module directory to the generated documentation directory.
+     * For example, given a package java.lang, this method will
+     * copy the entire directory, to the generated documentation
+     * hierarchy.
+     *
+     * @param mdle the module containing the directory to be copied
+     * @param dir the directory to be copied
+     * @throws DocFileIOException if there is a problem while copying
+     *         the documentation files
+     */
+    public void copyDirectory(ModuleElement mdle, DocPath dir) throws DocFileIOException  {
+        copyDirectory(getLocationForModule(mdle), dir);
+    }
+
+    /**
+     * Copy files from a doc path location to the output.
+     *
+     * @param locn the location from which to read files
+     * @param dir the directory to be copied
+     * @throws DocFileIOException if there is a problem
+     *         copying the files
+     */
+    public void copyDirectory(Location locn, DocPath dir)  throws DocFileIOException {
         boolean first = true;
-        for (DocFile f : DocFile.list(configuration, StandardLocation.SOURCE_PATH, dir)) {
+        for (DocFile f : DocFile.list(configuration, locn, dir)) {
             if (!f.isDirectory()) {
                 continue;
             }
@@ -297,7 +335,7 @@ public class Utils {
                 continue;
             }
 
-                for (DocFile srcfile: srcdir.list()) {
+            for (DocFile srcfile: srcdir.list()) {
                 DocFile destfile = destdir.resolve(srcfile.getName());
                 if (srcfile.isFile()) {
                     if (destfile.exists() && !first) {
@@ -311,13 +349,28 @@ public class Utils {
                 } else if (srcfile.isDirectory()) {
                     if (configuration.copydocfilesubdirs
                             && !configuration.shouldExcludeDocFileDir(srcfile.getName())) {
-                        copyDocFiles(dir.resolve(srcfile.getName()));
+                        copyDirectory(locn, dir.resolve(srcfile.getName()));
                     }
                 }
             }
 
             first = false;
         }
+    }
+
+    protected Location getLocationForPackage(PackageElement pd) {
+        return getLocationForModule(configuration.docEnv.getElementUtils().getModuleOf(pd));
+    }
+
+    protected Location getLocationForModule(ModuleElement mdle) {
+        Location loc = configuration.workArounds.getLocationForModule(mdle);
+        if (loc != null)
+            return loc;
+
+        JavaFileManager fm = configuration.docEnv.getJavaFileManager();
+        return fm.hasLocation(StandardLocation.SOURCE_PATH)
+                ? StandardLocation.SOURCE_PATH
+                : StandardLocation.CLASS_PATH;
     }
 
     public boolean isAnnotated(TypeMirror e) {
@@ -1566,48 +1619,6 @@ public class Utils {
             secondaryCollator = new DocCollator(configuration.locale, Collator.SECONDARY);
         }
         return secondaryCollator.compare(s1, s2);
-    }
-
-    /**
-     * @param configuration the configuration for this doclet
-     * @param locn the location from which to read files
-     * @param dir the path for the files to be copied
-     * @throws DocFileIOException if there is a problem copying the files
-     */
-    public void copyDocFiles(Configuration configuration, Location locn, DocPath dir)
-            throws DocFileIOException {
-        boolean first = true;
-        for (DocFile f : DocFile.list(configuration, locn, dir)) {
-            if (!f.isDirectory()) {
-                continue;
-            }
-            DocFile srcdir = f;
-            DocFile destdir = DocFile.createFileForOutput(configuration, dir);
-            if (srcdir.isSameFile(destdir)) {
-                continue;
-            }
-
-            for (DocFile srcfile: srcdir.list()) {
-                DocFile destfile = destdir.resolve(srcfile.getName());
-                if (srcfile.isFile()) {
-                    if (destfile.exists() && !first) {
-                        messages.warning("doclet.Copy_Overwrite_warning",
-                                srcfile.getPath(), destdir.getPath());
-                    } else {
-                        messages.notice("doclet.Copying_File_0_To_Dir_1",
-                                srcfile.getPath(), destdir.getPath());
-                        destfile.copyFile(srcfile);
-                    }
-                } else if (srcfile.isDirectory()) {
-                    if (configuration.copydocfilesubdirs
-                            && !configuration.shouldExcludeDocFileDir(srcfile.getName())) {
-                        copyDocFiles(configuration, locn, dir.resolve(srcfile.getName()));
-                    }
-                }
-            }
-
-            first = false;
-        }
     }
 
     private static class DocCollator {

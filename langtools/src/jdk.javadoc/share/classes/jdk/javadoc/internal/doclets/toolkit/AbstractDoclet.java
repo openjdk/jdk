@@ -204,7 +204,6 @@ public abstract class AbstractDoclet implements Doclet {
         ClassTree classtree = new ClassTree(configuration, configuration.nodeprecated);
 
         generateClassFiles(docEnv, classtree);
-        configuration.utils.copyDocFiles(DocPaths.DOC_FILES);
 
         PackageListWriter.generate(configuration);
         generatePackageFiles(classtree);
