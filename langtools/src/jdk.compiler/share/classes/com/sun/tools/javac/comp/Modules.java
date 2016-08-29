@@ -392,7 +392,6 @@ public class Modules extends JCTree.Visitor {
                             if (moduleOverride != null) {
                                 checkNoAllModulePath();
                                 defaultModule = moduleFinder.findModule(names.fromString(moduleOverride));
-                                defaultModule.sourceLocation = StandardLocation.SOURCE_PATH;
                             } else {
                                 // Question: why not do findAllModules and initVisiblePackages here?
                                 // i.e. body of unnamedModuleCompleter
@@ -433,9 +432,7 @@ public class Modules extends JCTree.Visitor {
 
             if (defaultModule != syms.unnamedModule) {
                 syms.unnamedModule.completer = getUnnamedModuleCompleter();
-                if (moduleOverride == null) {
-                    syms.unnamedModule.sourceLocation = StandardLocation.SOURCE_PATH;
-                }
+                syms.unnamedModule.sourceLocation = StandardLocation.SOURCE_PATH;
                 syms.unnamedModule.classLocation = StandardLocation.CLASS_PATH;
             }
 
