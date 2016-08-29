@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -157,7 +157,6 @@ public class ToolSimpleTest extends ReplToolTesting {
         );
     }
 
-    @Test(enabled = false) // TODO 8153897
     public void defineUnresolvedVar() {
         test(
                 (a) -> assertCommand(a, "undefined x",
