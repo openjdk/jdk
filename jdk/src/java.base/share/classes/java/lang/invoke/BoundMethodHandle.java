@@ -497,6 +497,10 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                         String shortTypes = LambdaForm.shortenSignature(types);
                         String className = SPECIES_CLASS_PREFIX + shortTypes;
                         Class<?> c = BootLoader.loadClassOrNull(className);
+                        if (TRACE_RESOLVE) {
+                            System.out.println("[BMH_RESOLVE] " + shortTypes +
+                                    (c != null ? " (success)" : " (fail)") );
+                        }
                         if (c != null) {
                             return c.asSubclass(BoundMethodHandle.class);
                         } else {

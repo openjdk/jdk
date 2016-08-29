@@ -42,6 +42,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.ProviderNotFoundException;
+import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -315,26 +316,30 @@ public class Locations {
 
             if (fsInfo.isFile(file)) {
                 /* File is an ordinary file. */
-                if (!isArchive(file)
-                        && !file.getFileName().toString().endsWith(".jmod")
-                        && !file.endsWith("modules")) {
-                    /* Not a recognized extension; open it to see if
-                     it looks like a valid zip file. */
-                    try {
-                        // TODO: use of ZipFile should be updated
-                        ZipFile z = new ZipFile(file.toFile());
-                        z.close();
-                        if (warn) {
-                            log.warning(Lint.LintCategory.PATH,
-                                    "unexpected.archive.file", file);
+                if (   !file.getFileName().toString().endsWith(".jmod")
+                    && !file.endsWith("modules")) {
+                    if (!isArchive(file)) {
+                        /* Not a recognized extension; open it to see if
+                         it looks like a valid zip file. */
+                        try {
+                            FileSystems.newFileSystem(file, null).close();
+                            if (warn) {
+                                log.warning(Lint.LintCategory.PATH,
+                                        "unexpected.archive.file", file);
+                            }
+                        } catch (IOException | ProviderNotFoundException e) {
+                            // FIXME: include e.getLocalizedMessage in warning
+                            if (warn) {
+                                log.warning(Lint.LintCategory.PATH,
+                                        "invalid.archive.file", file);
+                            }
+                            return;
                         }
-                    } catch (IOException e) {
-                        // FIXME: include e.getLocalizedMessage in warning
-                        if (warn) {
-                            log.warning(Lint.LintCategory.PATH,
-                                    "invalid.archive.file", file);
+                    } else {
+                        if (fsInfo.getJarFSProvider() == null) {
+                            log.error(Errors.NoZipfsForArchive(file));
+                            return ;
                         }
-                        return;
                     }
                 }
             }
@@ -1054,6 +1059,9 @@ public class Locations {
                     } catch (IOException e) {
                         log.error(Errors.LocnCantReadFile(p));
                         return null;
+                    } catch (ProviderNotFoundException e) {
+                        log.error(Errors.NoZipfsForArchive(p));
+                        return null;
                     }
 
                     //automatic module:
@@ -1105,13 +1113,9 @@ public class Locations {
                                     fs.close();
                             }
                         }
-                    } catch (ProviderNotFoundException e) {
-                        // will be thrown if the file is not a valid zip file
-                        log.error(Errors.LocnCantReadFile(p));
-                        return null;
                     } catch (ModuleNameReader.BadClassFile e) {
                         log.error(Errors.LocnBadModuleInfo(p));
-                    } catch (IOException e) {
+                    } catch (IOException | ProviderNotFoundException e) {
                         log.error(Errors.LocnCantReadFile(p));
                         return null;
                     }

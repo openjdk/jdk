@@ -25,7 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
+import java.io.IOException;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
@@ -89,25 +89,32 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
      * "allclasses-frame.html" file. Generate the file in the current or the
      * destination directory.
      *
-     * @param indexbuilder IndexBuilder object for all classes index.
+     * @param indexBuilder IndexBuilder object for all classes index.
      * @throws DocletAbortException
      */
     public static void generate(ConfigurationImpl configuration,
-                                IndexBuilder indexbuilder) {
-        AllClassesFrameWriter allclassgen;
-        DocPath filename = DocPaths.ALLCLASSES_FRAME;
+            IndexBuilder indexBuilder) {
+        if (configuration.frames) {
+            generate(configuration, indexBuilder, DocPaths.ALLCLASSES_FRAME, true);
+            generate(configuration, indexBuilder, DocPaths.ALLCLASSES_NOFRAME, false);
+        } else {
+            generate(configuration, indexBuilder, DocPaths.ALLCLASSES, false);
+        }
+    }
+
+    private static void generate(ConfigurationImpl configuration, IndexBuilder indexBuilder,
+            DocPath fileName, boolean wantFrames) {
         try {
+            AllClassesFrameWriter allclassgen = new AllClassesFrameWriter(configuration,
+                    fileName, indexBuilder);
+            allclassgen.buildAllClassesFile(wantFrames);
             allclassgen = new AllClassesFrameWriter(configuration,
-                                                    filename, indexbuilder);
-            allclassgen.buildAllClassesFile(true);
-            filename = DocPaths.ALLCLASSES_NOFRAME;
-            allclassgen = new AllClassesFrameWriter(configuration,
-                                                    filename, indexbuilder);
+                                                    fileName, indexBuilder);
             allclassgen.buildAllClassesFile(false);
         } catch (IOException exc) {
             Messages messages = configuration.getMessages();
             messages.error("doclet.exception_encountered",
-                           exc.toString(), filename);
+                           exc.toString(), fileName);
             throw new DocletAbortException(exc);
         }
     }

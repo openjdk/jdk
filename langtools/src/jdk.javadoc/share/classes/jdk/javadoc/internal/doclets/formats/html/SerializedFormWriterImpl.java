@@ -70,7 +70,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     public SerializedFormWriterImpl(ConfigurationImpl configuration)
             throws IOException {
         super(configuration, DocPaths.SERIALIZED_FORM);
-        visibleClasses = configuration.docEnv.getIncludedClasses();
+        visibleClasses = configuration.docEnv.getIncludedTypeElements();
     }
 
     /**

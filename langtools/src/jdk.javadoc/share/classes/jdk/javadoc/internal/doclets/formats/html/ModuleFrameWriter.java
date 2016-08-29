@@ -80,9 +80,9 @@ public class ModuleFrameWriter extends HtmlDocletWriter {
             throws IOException {
         super(configuration, DocPaths.moduleTypeFrame(moduleElement));
         this.mdle = moduleElement;
-        if (utils.getSpecifiedPackages().isEmpty()) {
+        if (configuration.getSpecifiedPackages().isEmpty()) {
             documentedClasses = new TreeSet<>(utils.makeGeneralPurposeComparator());
-            documentedClasses.addAll(configuration.docEnv.getIncludedClasses());
+            documentedClasses.addAll(configuration.docEnv.getIncludedTypeElements());
         }
     }
 

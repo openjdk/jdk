@@ -82,6 +82,7 @@ public class VersionCheck extends TestHelper {
         "jcmd",
         "jconsole",
         "jcontrol",
+        "jdeprscan",
         "jdeps",
         "jimage",
         "jinfo",

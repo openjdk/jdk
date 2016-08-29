@@ -32,8 +32,8 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.ElementFilter;
 import javax.tools.JavaFileManager;
-import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
 
 import com.sun.source.util.DocTreePath;
@@ -164,17 +164,17 @@ public abstract class Configuration {
     public final MetaKeywords metakeywords;
 
     /**
-     * The list of doc-file subdirectories to exclude
+     * The set of doc-file subdirectories to exclude
      */
     protected Set<String> excludedDocFileDirs;
 
     /**
-     * The list of qualifiers to exclude
+     * The set of qualifiers to exclude
      */
     protected Set<String> excludedQualifiers;
 
     /**
-     * The Root of the generated Program Structure from the Doclet API.
+     * The doclet environment.
      */
     public DocletEnvironment docEnv;
 
@@ -314,14 +314,13 @@ public abstract class Configuration {
     public abstract boolean finishOptionSettings();
 
     public CommentUtils cmtUtils;
-    public SortedSet<ModuleElement> modules;
 
     /**
      * A sorted set of packages specified on the command-line merged with a
      * collection of packages that contain the classes specified on the
      * command-line.
      */
-    public SortedSet<PackageElement> packages;
+    public SortedSet<PackageElement> packages = null;
 
     protected final List<Doclet.Option> optionsProcessed;
 
@@ -335,9 +334,14 @@ public abstract class Configuration {
     public DocFileFactory docFileFactory;
 
     /**
-     * A sorted set of modules containing the packages.
+     * A sorted map, giving the (specified|included|other) packages for each module.
      */
-    public Map<ModuleElement, Set<PackageElement>> modulePackages;
+    public SortedMap<ModuleElement, Set<PackageElement>> modulePackages;
+
+   /**
+    * The list of known modules, that should be documented.
+    */
+    public SortedSet<ModuleElement> modules;
 
     protected static final String sharedResourceBundleName =
             "jdk.javadoc.internal.doclets.toolkit.resources.doclets";
@@ -372,25 +376,39 @@ public abstract class Configuration {
 
     private void initModules() {
         // Build the modules structure used by the doclet
+        modules = new TreeSet<>(utils.makeModuleComparator());
+        modules.addAll(getSpecifiedModules());
+
         modulePackages = new TreeMap<>(utils.makeModuleComparator());
         for (PackageElement p: packages) {
             ModuleElement mdle = docEnv.getElementUtils().getModuleOf(p);
             if (mdle != null && !mdle.isUnnamed()) {
-                Set<PackageElement> s = modulePackages.get(mdle);
-                if (s == null)
-                    modulePackages.put(mdle, s = new TreeSet<>(utils.makePackageComparator()));
+                Set<PackageElement> s = modulePackages
+                        .computeIfAbsent(mdle, m -> new TreeSet<>(utils.makePackageComparator()));
                 s.add(p);
             }
         }
-        modules = new TreeSet<>(utils.makeModuleComparator());
+
+        for (PackageElement p: docEnv.getIncludedPackageElements()) {
+            ModuleElement mdle = docEnv.getElementUtils().getModuleOf(p);
+            if (mdle != null && !mdle.isUnnamed()) {
+                Set<PackageElement> s = modulePackages
+                        .computeIfAbsent(mdle, m -> new TreeSet<>(utils.makePackageComparator()));
+                s.add(p);
+            }
+        }
+
         modules.addAll(modulePackages.keySet());
-        showModules = (modulePackages.size() > 1);
+        showModules = !modules.isEmpty();
+        for (Set<PackageElement> pkgs : modulePackages.values()) {
+            packages.addAll(pkgs);
+        }
     }
 
     private void initPackages() {
         packages = new TreeSet<>(utils.makePackageComparator());
-        packages.addAll(utils.getSpecifiedPackages());
-        for (TypeElement aClass : utils.getSpecifiedClasses()) {
+        packages.addAll(getSpecifiedPackages());
+        for (TypeElement aClass : getSpecifiedClasses()) {
             packages.add(utils.containingPackage(aClass));
         }
     }
@@ -629,7 +647,7 @@ public abstract class Configuration {
         if (docencoding == null) {
             docencoding = encoding;
         }
-        typeElementCatalog = new TypeElementCatalog(utils.getSpecifiedClasses(), this);
+        typeElementCatalog = new TypeElementCatalog(getSpecifiedClasses(), this);
         initTagletManager(customTagStrs);
         groups.stream().forEach((grp) -> {
             group.checkPackageGroups(grp.value1, grp.value2);
@@ -878,6 +896,35 @@ public abstract class Configuration {
         return shouldExcludeQualifier(utils.getPackageName(pkg))
                 ? utils.getSimpleName(te)
                 : utils.getFullyQualifiedName(te);
+    }
+
+    // cache these, as they are repeatedly called.
+    private Set<TypeElement> specifiedClasses = null;
+    private Set<PackageElement> specifiedPackages = null;
+    private Set<ModuleElement> specifiedModules = null;
+
+    public Set<TypeElement> getSpecifiedClasses() {
+        if (specifiedClasses == null) {
+            specifiedClasses = new LinkedHashSet<>(
+                ElementFilter.typesIn(docEnv.getSpecifiedElements()));
+        }
+        return specifiedClasses;
+    }
+
+    public Set<PackageElement> getSpecifiedPackages() {
+        if (specifiedPackages == null) {
+            specifiedPackages = new LinkedHashSet<>(
+                    ElementFilter.packagesIn(docEnv.getSpecifiedElements()));
+        }
+        return specifiedPackages;
+    }
+
+    public Set<ModuleElement> getSpecifiedModules() {
+        if (specifiedModules == null) {
+            specifiedModules = new LinkedHashSet<>(
+                    ElementFilter.modulesIn(docEnv.getSpecifiedElements()));
+        }
+        return specifiedModules;
     }
 
     /**
@@ -1146,6 +1193,4 @@ public abstract class Configuration {
             this.value2 = value2;
         }
     }
-
-    public abstract Location getLocationForPackage(PackageElement pd);
 }
