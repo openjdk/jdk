@@ -90,11 +90,9 @@ public final class DefaultImageBuilder implements ImageBuilder {
 
         private static List<String> createArgs(Path home) {
             Objects.requireNonNull(home);
-            List<String> javaArgs = new ArrayList<>();
             Path binDir = home.resolve("bin");
             String java = Files.exists(binDir.resolve("java"))? "java" : "java.exe";
-            javaArgs.add(binDir.resolve(java).toString());
-            return Collections.unmodifiableList(javaArgs);
+            return List.of(binDir.resolve(java).toString());
         }
 
         @Override
@@ -170,6 +168,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
             // populate release properties up-front. targetOsName
             // field is assigned from there and used elsewhere.
             Properties release = releaseProperties(files);
+            Path bin = root.resolve("bin");
 
             files.entries().forEach(f -> {
                 if (!f.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)) {
@@ -191,7 +190,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
 
             if (Files.getFileStore(root).supportsFileAttributeView(PosixFileAttributeView.class)) {
                 // launchers in the bin directory need execute permission
-                Path bin = root.resolve("bin");
                 if (Files.isDirectory(bin)) {
                     Files.list(bin)
                             .filter(f -> !f.toString().endsWith(".diz"))
@@ -209,7 +207,11 @@ public final class DefaultImageBuilder implements ImageBuilder {
                 }
             }
 
-            prepareApplicationFiles(files, modules);
+            // If native files are stripped completely, <root>/bin dir won't exist!
+            // So, don't bother generating launcher scripts.
+            if (Files.isDirectory(bin)) {
+                 prepareApplicationFiles(files, modules);
+            }
         } catch (IOException ex) {
             throw new PluginException(ex);
         }
@@ -229,7 +231,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
 
         this.targetOsName = props.getProperty("OS_NAME");
         if (this.targetOsName == null) {
-            throw new RuntimeException("can't determine target OS from java.base descriptor");
+            throw new PluginException("TargetPlatform attribute is missing for java.base module");
         }
 
         Optional<ResourcePoolEntry> release = pool.findEntry("/java.base/release");
