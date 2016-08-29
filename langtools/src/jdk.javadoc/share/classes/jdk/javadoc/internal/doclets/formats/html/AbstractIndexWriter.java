@@ -37,7 +37,6 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.SimpleElementVisitor9;
 
 import com.sun.source.doctree.DocTree;
-import com.sun.tools.javac.util.DefinedBy;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -183,7 +182,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         SearchIndexItem si = new SearchIndexItem();
         new SimpleElementVisitor9<Void, Void>() {
 
-            @Override @DefinedBy(DefinedBy.Api.LANGUAGE_MODEL)
+            @Override
             public Void visitModule(ModuleElement e, Void p) {
                 if (configuration.showModules) {
                     addDescription(e, dl, si);
@@ -192,21 +191,21 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                 return null;
             }
 
-            @Override @DefinedBy(DefinedBy.Api.LANGUAGE_MODEL)
+            @Override
             public Void visitPackage(PackageElement e, Void p) {
                 addDescription(e, dl, si);
                 configuration.packageSearchIndex.add(si);
                 return null;
             }
 
-            @Override @DefinedBy(DefinedBy.Api.LANGUAGE_MODEL)
+            @Override
             public Void visitType(TypeElement e, Void p) {
                 addDescription(e, dl, si);
                 configuration.typeSearchIndex.add(si);
                 return null;
             }
 
-            @Override @DefinedBy(DefinedBy.Api.LANGUAGE_MODEL)
+            @Override
             protected Void defaultAction(Element e, Void p) {
                 addDescription(e, dl, si);
                 configuration.memberSearchIndex.add(si);

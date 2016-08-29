@@ -52,8 +52,6 @@ import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_FMGR;
 
@@ -103,7 +101,7 @@ class MemoryFileManager implements JavaFileManager {
             return origin;
         }
 
-        @Override @DefinedBy(Api.COMPILER)
+        @Override
         public CharSequence getCharContent(boolean ignoreEncodingErrors) {
             return src;
         }
@@ -146,7 +144,7 @@ class MemoryFileManager implements JavaFileManager {
             }
         }
 
-        @Override @DefinedBy(Api.COMPILER)
+        @Override
         public String getName() {
             return className;
         }
@@ -155,12 +153,12 @@ class MemoryFileManager implements JavaFileManager {
          * Will provide the compiler with an output stream that leads to our
          * byte array.
          */
-        @Override @DefinedBy(Api.COMPILER)
+        @Override
         public OutputStream openOutputStream() throws IOException {
             return bos;
         }
 
-        @Override @DefinedBy(Api.COMPILER)
+        @Override
         public InputStream openInputStream() throws IOException {
             return new ByteArrayInputStream(getBytes());
         }
@@ -187,7 +185,6 @@ class MemoryFileManager implements JavaFileManager {
     }
 
     // Make compatible with Jigsaw
-    @DefinedBy(Api.COMPILER)
     public String inferModuleName(Location location) {
         try {
             if (inferModuleNameMethod == null) {
@@ -206,7 +203,6 @@ class MemoryFileManager implements JavaFileManager {
     }
 
     // Make compatible with Jigsaw
-    @DefinedBy(Api.COMPILER)
     public Iterable<Set<Location>> listModuleLocations(Location location) throws IOException {
         try {
             if (listModuleLocationsMethod == null) {
@@ -241,7 +237,7 @@ class MemoryFileManager implements JavaFileManager {
      * @throws IllegalStateException if {@link #close} has been called
      * and this file manager cannot be reopened
      */
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public ClassLoader getClassLoader(JavaFileManager.Location location) {
         proc.debug(DBG_FMGR, "getClassLoader: location\n", location);
         return stdFileManager.getClassLoader(location);
@@ -267,7 +263,7 @@ class MemoryFileManager implements JavaFileManager {
      * @throws IllegalStateException if {@link #close} has been called
      * and this file manager cannot be reopened
      */
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public Iterable<JavaFileObject> list(JavaFileManager.Location location,
             String packageName,
             Set<JavaFileObject.Kind> kinds,
@@ -324,7 +320,7 @@ class MemoryFileManager implements JavaFileManager {
      * @throws IllegalStateException if {@link #close} has been called
      * and this file manager cannot be reopened
      */
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public String inferBinaryName(JavaFileManager.Location location, JavaFileObject file) {
         if (file instanceof OutputMemoryJavaFileObject) {
             OutputMemoryJavaFileObject ofo = (OutputMemoryJavaFileObject) file;
@@ -348,7 +344,7 @@ class MemoryFileManager implements JavaFileManager {
      * were created with another file manager and this file manager
      * does not support foreign file objects
      */
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public boolean isSameFile(FileObject a, FileObject b) {
         return stdFileManager.isSameFile(b, b);
     }
@@ -361,7 +357,7 @@ class MemoryFileManager implements JavaFileManager {
      * @return the number of arguments the given option takes or -1 if
      * the option is not supported
      */
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public int isSupportedOption(String option) {
         proc.debug(DBG_FMGR, "isSupportedOption: %s\n", option);
         return stdFileManager.isSupportedOption(option);
@@ -381,7 +377,7 @@ class MemoryFileManager implements JavaFileManager {
      * @throws IllegalStateException if {@link #close} has been called
      * and this file manager cannot be reopened
      */
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public boolean handleOption(String current, Iterator<String> remaining) {
         proc.debug(DBG_FMGR, "handleOption: current: %s\n", current +
                 ", remaining: " + remaining);
@@ -394,7 +390,7 @@ class MemoryFileManager implements JavaFileManager {
      * @param location a location
      * @return true if the location is known
      */
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public boolean hasLocation(JavaFileManager.Location location) {
         proc.debug(DBG_FMGR, "hasLocation: location: %s\n", location);
         return stdFileManager.hasLocation(location);
@@ -430,7 +426,7 @@ class MemoryFileManager implements JavaFileManager {
      * @throws IllegalStateException if {@link #close} has been called
      * and this file manager cannot be reopened
      */
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public JavaFileObject getJavaFileForInput(JavaFileManager.Location location,
             String className,
             JavaFileObject.Kind kind)
@@ -470,7 +466,7 @@ class MemoryFileManager implements JavaFileManager {
      * @throws IllegalStateException {@link #close} has been called
      * and this file manager cannot be reopened
      */
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public JavaFileObject getJavaFileForOutput(JavaFileManager.Location location,
             String className, Kind kind, FileObject sibling) throws IOException {
 
@@ -523,7 +519,7 @@ class MemoryFileManager implements JavaFileManager {
      * @throws IllegalStateException if {@link #close} has been called
      * and this file manager cannot be reopened
      */
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public FileObject getFileForInput(JavaFileManager.Location location,
             String packageName,
             String relativeName)
@@ -572,7 +568,7 @@ class MemoryFileManager implements JavaFileManager {
      * @throws IllegalStateException if {@link #close} has been called
      * and this file manager cannot be reopened
      */
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public FileObject getFileForOutput(JavaFileManager.Location location,
             String packageName,
             String relativeName,
@@ -592,7 +588,7 @@ class MemoryFileManager implements JavaFileManager {
      * @throws IOException if an I/O error occurred
      * @see #close
      */
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public void flush() throws IOException {
         // Nothing to flush
     }
@@ -608,7 +604,7 @@ class MemoryFileManager implements JavaFileManager {
      * @throws IOException if an I/O error occurred
      * @see #flush
      */
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public void close() throws IOException {
         // Nothing to close
     }

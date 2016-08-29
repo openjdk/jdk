@@ -36,8 +36,6 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleElementVisitor8;
 
 import com.sun.source.doctree.DocTree;
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -560,7 +558,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         if (outerClass == null)
             return;
         new SimpleElementVisitor8<Void, Void>() {
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public Void visitType(TypeElement e, Void p) {
                 Content label = utils.isInterface(e)
                         ? contents.enclosingInterfaceLabel
