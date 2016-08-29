@@ -28,7 +28,7 @@
  * @library /lib/testlibrary/java/util/jar
  * @build Compiler JarBuilder CreateMultiReleaseTestJars
  * @run testng MultiReleaseJarTest
- * @modules java.compiler
+ * @modules jdk.compiler
  *          jdk.jartool
  *          jdk.zipfs
  */

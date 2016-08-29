@@ -48,7 +48,6 @@ public class DupOk implements Doclet
         String path1 = new File(srcFile, "sp1").getPath();
         String path2 = new File(srcFile, "sp2").getPath();
         String[] aargs = {
-            "javadoc",
             "-docletpath",
             new File(System.getProperty("test.classes", ".")).getPath(),
             "-doclet",
@@ -63,7 +62,7 @@ public class DupOk implements Doclet
     }
 
     public boolean run(DocletEnvironment root) {
-        Set<TypeElement> classes = root.getIncludedClasses();
+        Set<TypeElement> classes = root.getIncludedTypeElements();
         if (classes.size() != 2)
             throw new Error("1 " + Arrays.asList(classes));
         for (TypeElement clazz : classes) {

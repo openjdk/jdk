@@ -55,7 +55,8 @@ void AdvancedThresholdPolicy::initialize() {
     // Simple log n seems to grow too slowly for tiered, try something faster: log n * log log n
     int log_cpu = log2_intptr(os::active_processor_count());
     int loglog_cpu = log2_intptr(MAX2(log_cpu, 1));
-    count = MAX2(log_cpu * loglog_cpu, 1) * 3 / 2;
+    count = MAX2(log_cpu * loglog_cpu * 3 / 2, 2);
+    FLAG_SET_ERGO(intx, CICompilerCount, count);
   }
 #else
   // On 32-bit systems, the number of compiler threads is limited to 3.
@@ -67,12 +68,18 @@ void AdvancedThresholdPolicy::initialize() {
   /// available to the VM and thus cause the VM to crash.
   if (FLAG_IS_DEFAULT(CICompilerCount)) {
     count = 3;
+    FLAG_SET_ERGO(intx, CICompilerCount, count);
   }
 #endif
 
-  set_c1_count(MAX2(count / 3, 1));
-  set_c2_count(MAX2(count - c1_count(), 1));
-  FLAG_SET_ERGO(intx, CICompilerCount, c1_count() + c2_count());
+  if (TieredStopAtLevel < CompLevel_full_optimization) {
+    // No C2 compiler thread required
+    set_c1_count(count);
+  } else {
+    set_c1_count(MAX2(count / 3, 1));
+    set_c2_count(MAX2(count - c1_count(), 1));
+  }
+  assert(count == c1_count() + c2_count(), "inconsistent compiler thread count");
 
   // Some inlining tuning
 #ifdef X86

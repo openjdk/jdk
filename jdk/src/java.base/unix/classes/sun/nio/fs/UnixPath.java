@@ -252,6 +252,21 @@ class UnixPath implements Path {
         return new UnixPath(getFileSystem(), new byte[0]);
     }
 
+
+    // return true if this path has "." or ".."
+    private boolean hasDotOrDotDot() {
+        int n = getNameCount();
+        for (int i=0; i<n; i++) {
+            byte[] bytes = getName(i).path;
+            if ((bytes.length == 1 && bytes[0] == '.'))
+                return true;
+            if ((bytes.length == 2 && bytes[0] == '.') && bytes[1] == '.') {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public UnixFileSystem getFileSystem() {
         return fs;
@@ -405,80 +420,94 @@ class UnixPath implements Path {
 
     @Override
     public UnixPath relativize(Path obj) {
-        UnixPath other = toUnixPath(obj);
-        if (other.equals(this))
+        UnixPath child = toUnixPath(obj);
+        if (child.equals(this))
             return emptyPath();
 
         // can only relativize paths of the same type
-        if (this.isAbsolute() != other.isAbsolute())
+        if (this.isAbsolute() != child.isAbsolute())
             throw new IllegalArgumentException("'other' is different type of Path");
 
         // this path is the empty path
         if (this.isEmpty())
-            return other;
+            return child;
 
-        int bn = this.getNameCount();
-        int cn = other.getNameCount();
+        UnixPath base = this;
+        if (base.hasDotOrDotDot() || child.hasDotOrDotDot()) {
+            base = base.normalize();
+            child = child.normalize();
+        }
+
+        int baseCount = base.getNameCount();
+        int childCount = child.getNameCount();
 
         // skip matching names
-        int n = (bn > cn) ? cn : bn;
+        int n = Math.min(baseCount, childCount);
         int i = 0;
         while (i < n) {
-            if (!this.getName(i).equals(other.getName(i)))
+            if (!base.getName(i).equals(child.getName(i)))
                 break;
             i++;
         }
 
-        int dotdots = bn - i;
-        if (i < cn) {
-            // remaining name components in other
-            UnixPath remainder = other.subpath(i, cn);
-            if (dotdots == 0)
-                return remainder;
-
-            // other is the empty path
-            boolean isOtherEmpty = other.isEmpty();
-
-            // result is a  "../" for each remaining name in base
-            // followed by the remaining names in other. If the remainder is
-            // the empty path then we don't add the final trailing slash.
-            int len = dotdots*3 + remainder.path.length;
-            if (isOtherEmpty) {
-                assert remainder.isEmpty();
-                len--;
-            }
-            byte[] result = new byte[len];
-            int pos = 0;
-            while (dotdots > 0) {
-                result[pos++] = (byte)'.';
-                result[pos++] = (byte)'.';
-                if (isOtherEmpty) {
-                    if (dotdots > 1) result[pos++] = (byte)'/';
-                } else {
-                    result[pos++] = (byte)'/';
-                }
-                dotdots--;
-            }
-            System.arraycopy(remainder.path, 0, result, pos, remainder.path.length);
-            return new UnixPath(getFileSystem(), result);
+        // remaining elements in child
+        UnixPath childRemaining;
+        boolean isChildEmpty;
+        if (i == childCount) {
+            childRemaining = emptyPath();
+            isChildEmpty = true;
         } else {
-            // no remaining names in other so result is simply a sequence of ".."
-            byte[] result = new byte[dotdots*3 - 1];
-            int pos = 0;
-            while (dotdots > 0) {
-                result[pos++] = (byte)'.';
-                result[pos++] = (byte)'.';
-                // no tailing slash at the end
-                if (dotdots > 1)
-                    result[pos++] = (byte)'/';
-                dotdots--;
-            }
-            return new UnixPath(getFileSystem(), result);
+            childRemaining = child.subpath(i, childCount);
+            isChildEmpty = childRemaining.isEmpty();
         }
+
+        // matched all of base
+        if (i == baseCount) {
+            return childRemaining;
+        }
+
+        // the remainder of base cannot contain ".."
+        UnixPath baseRemaining = base.subpath(i, baseCount);
+        if (baseRemaining.hasDotOrDotDot()) {
+            throw new IllegalArgumentException("Unable to compute relative "
+                    + " path from " + this + " to " + obj);
+        }
+        if (baseRemaining.isEmpty())
+            return childRemaining;
+
+        // number of ".." needed
+        int dotdots = baseRemaining.getNameCount();
+        if (dotdots == 0) {
+            return childRemaining;
+        }
+
+        // result is a  "../" for each remaining name in base followed by the
+        // remaining names in child. If the remainder is the empty path
+        // then we don't add the final trailing slash.
+        int len = dotdots*3 + childRemaining.path.length;
+        if (isChildEmpty) {
+            assert childRemaining.isEmpty();
+            len--;
+        }
+        byte[] result = new byte[len];
+        int pos = 0;
+        while (dotdots > 0) {
+            result[pos++] = (byte)'.';
+            result[pos++] = (byte)'.';
+            if (isChildEmpty) {
+                if (dotdots > 1) result[pos++] = (byte)'/';
+            } else {
+                result[pos++] = (byte)'/';
+            }
+            dotdots--;
+        }
+        System.arraycopy(childRemaining.path,0, result, pos,
+                             childRemaining.path.length);
+        return new UnixPath(getFileSystem(), result);
     }
 
     @Override
-    public Path normalize() {
+    public UnixPath normalize() {
         final int count = getNameCount();
         if (count == 0 || isEmpty())
             return this;
