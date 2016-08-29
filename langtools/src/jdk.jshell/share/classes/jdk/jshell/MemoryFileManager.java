@@ -71,8 +71,6 @@ class MemoryFileManager implements JavaFileManager {
 
     private ClassFileCreationListener classListener = null;
 
-    private final ClassLoader loader = new REPLClassLoader();
-
     private final JShell proc;
 
     // Upcoming Jigsaw
@@ -168,21 +166,6 @@ class MemoryFileManager implements JavaFileManager {
         }
     }
 
-    // For restoring process-local execution support
-    class REPLClassLoader extends ClassLoader {
-
-        @Override
-        protected Class<?> findClass(String name) throws ClassNotFoundException {
-            OutputMemoryJavaFileObject fo = classObjects.get(name);
-            proc.debug(DBG_FMGR, "findClass %s = %s\n", name, fo);
-            if (fo == null) {
-                throw new ClassNotFoundException("Not ours");
-            }
-            byte[] b = fo.getBytes();
-            return super.defineClass(name, b, 0, b.length, null);
-        }
-    }
-
     public MemoryFileManager(StandardJavaFileManager standardManager, JShell proc) {
         this.stdFileManager = standardManager;
         this.proc = proc;
@@ -197,33 +180,6 @@ class MemoryFileManager implements JavaFileManager {
         for (OutputMemoryJavaFileObject co : generatedClasses()) {
             co.dump();
         }
-    }
-
-    // For restoring process-local execution support
-    public Class<?> findGeneratedClass(String genClassFullName) throws ClassNotFoundException {
-        for (OutputMemoryJavaFileObject co : generatedClasses()) {
-            if (co.className.equals(genClassFullName)) {
-                Class<?> klass = loadClass(co.className);
-                proc.debug(DBG_FMGR, "Loaded %s\n", klass);
-                return klass;
-            }
-        }
-        return null;
-    }
-
-    // For restoring process-local execution support
-    public byte[] findGeneratedBytes(String genClassFullName) throws ClassNotFoundException {
-        for (OutputMemoryJavaFileObject co : generatedClasses()) {
-            if (co.className.equals(genClassFullName)) {
-                return co.getBytes();
-            }
-        }
-        return null;
-    }
-
-    // For restoring process-local execution support
-    public Class<?> loadClass(String name) throws ClassNotFoundException {
-        return getClassLoader(null).loadClass(name);
     }
 
     public JavaFileObject createSourceFileObject(Object origin, String name, String code) {
@@ -288,7 +244,7 @@ class MemoryFileManager implements JavaFileManager {
     @Override @DefinedBy(Api.COMPILER)
     public ClassLoader getClassLoader(JavaFileManager.Location location) {
         proc.debug(DBG_FMGR, "getClassLoader: location\n", location);
-        return loader;
+        return stdFileManager.getClassLoader(location);
     }
 
     /**
