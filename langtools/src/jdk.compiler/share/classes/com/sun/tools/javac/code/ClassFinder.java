@@ -119,6 +119,10 @@ public class ClassFinder {
      */
     final Name completionFailureName;
 
+    /** Module specified with -Xmodule:
+     */
+    final Name moduleOverride;
+
     /** Access to files
      */
     private final JavaFileManager fileManager;
@@ -205,6 +209,9 @@ public class ClassFinder {
             options.isSet("failcomplete")
             ? names.fromString(options.get("failcomplete"))
             : null;
+
+        moduleOverride = options.isSet(Option.XMODULE) ? names.fromString(options.get(Option.XMODULE))
+                                                : null;
 
         // Temporary, until more info is available from the module system.
         boolean useCtProps;
@@ -520,15 +527,16 @@ public class ClassFinder {
         if (msym == syms.noModule) {
             preferCurrent = false;
             if (userPathsFirst) {
-                scanUserPaths(p, true);
+                scanUserPaths(p);
                 preferCurrent = true;
                 scanPlatformPath(p);
             } else {
                 scanPlatformPath(p);
-                scanUserPaths(p, true);
+                scanUserPaths(p);
             }
         } else if (msym.classLocation == StandardLocation.CLASS_PATH) {
-            scanUserPaths(p, msym.sourceLocation == StandardLocation.SOURCE_PATH);
+            // assert p.modle.sourceLocation == StandardLocation.SOURCE_PATH);
+            scanUserPaths(p);
         } else {
             scanModulePaths(p, msym);
         }
@@ -553,6 +561,23 @@ public class ClassFinder {
 
         String packageName = p.fullname.toString();
 
+        if (msym.name == moduleOverride) {
+            if (wantClassFiles) {
+                fillIn(p, CLASS_PATH,
+                       fileManager.list(CLASS_PATH,
+                                        packageName,
+                                        classKinds,
+                                        false));
+            }
+            if (wantSourceFiles && fileManager.hasLocation(SOURCE_PATH)) {
+                fillIn(p, SOURCE_PATH,
+                        fileManager.list(SOURCE_PATH,
+                                        packageName,
+                                        sourceKinds,
+                                        false));
+            }
+        }
+
         Location classLocn = msym.classLocation;
         Location sourceLocn = msym.sourceLocation;
 
@@ -575,7 +600,7 @@ public class ClassFinder {
     /**
      * Scans class path and source path for files in given package.
      */
-    private void scanUserPaths(PackageSymbol p, boolean includeSourcePath) throws IOException {
+    private void scanUserPaths(PackageSymbol p) throws IOException {
         Set<JavaFileObject.Kind> kinds = getPackageFileKinds();
 
         Set<JavaFileObject.Kind> classKinds = EnumSet.copyOf(kinds);
@@ -586,7 +611,7 @@ public class ClassFinder {
         sourceKinds.remove(JavaFileObject.Kind.CLASS);
         boolean wantSourceFiles = !sourceKinds.isEmpty();
 
-        boolean haveSourcePath = includeSourcePath && fileManager.hasLocation(SOURCE_PATH);
+        boolean haveSourcePath = fileManager.hasLocation(SOURCE_PATH);
 
         if (verbose && verbosePath) {
             if (fileManager instanceof StandardJavaFileManager) {
