@@ -181,7 +181,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
                      .filter(name -> !name.endsWith("package-info.class"))
                      .filter(name -> !name.endsWith("module-info.class"))
                      .map(s -> s.replaceAll("\\.class$", ""))
-                     .map(s -> s.replace('/', '.'))
+                     .map(s -> s.replace(File.separatorChar, '.'))
                      .collect(toList()));
     }
 
