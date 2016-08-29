@@ -91,6 +91,7 @@ class LogFileOutput : public LogFileStreamOutput {
     return _name;
   }
 
+  static const char* Prefix;
   static void set_file_name_parameters(jlong start_time);
 };
 
