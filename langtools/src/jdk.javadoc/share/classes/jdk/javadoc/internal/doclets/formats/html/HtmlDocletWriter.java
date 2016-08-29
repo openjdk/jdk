@@ -62,8 +62,6 @@ import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -1835,7 +1833,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     return false;
                 }
 
-                @Override @DefinedBy(Api.COMPILER_TREE)
+                @Override
                 public Boolean visitAttribute(AttributeTree node, Content c) {
                     StringBuilder sb = new StringBuilder(SPACER).append(node.getName());
                     if (node.getValueKind() == ValueKind.EMPTY) {
@@ -1884,7 +1882,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     return false;
                 }
 
-                @Override @DefinedBy(Api.COMPILER_TREE)
+                @Override
                 public Boolean visitComment(CommentTree node, Content c) {
                     if (isFirstSentence && isFirst(node)) {
                         commentRemoved = true;
@@ -1902,7 +1900,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     return content;
                 }
 
-                @Override @DefinedBy(Api.COMPILER_TREE)
+                @Override
                 public Boolean visitDocRoot(DocRootTree node, Content c) {
                     Content docRootContent = TagletWriter.getInlineTagOutput(element,
                             configuration.tagletManager,
@@ -1917,20 +1915,20 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     return false;
                 }
 
-                @Override @DefinedBy(Api.COMPILER_TREE)
+                @Override
                 public Boolean visitEndElement(EndElementTree node, Content c) {
                     RawHtml rawHtml = new RawHtml("</" + node.getName() + ">");
                     result.addContent(rawHtml);
                     return false;
                 }
 
-                @Override @DefinedBy(Api.COMPILER_TREE)
+                @Override
                 public Boolean visitEntity(EntityTree node, Content c) {
                     result.addContent(new RawHtml(node.toString()));
                     return false;
                 }
 
-                @Override @DefinedBy(Api.COMPILER_TREE)
+                @Override
                 public Boolean visitErroneous(ErroneousTree node, Content c) {
                     messages.warning(ch.getDocTreePath(node),
                             "doclet.tag.invalid_usage", node);
@@ -1938,7 +1936,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     return false;
                 }
 
-                @Override @DefinedBy(Api.COMPILER_TREE)
+                @Override
                 public Boolean visitInheritDoc(InheritDocTree node, Content c) {
                     Content output = TagletWriter.getInlineTagOutput(element,
                             configuration.tagletManager, holderTag,
@@ -1948,7 +1946,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     return (isFirstSentence && !output.isEmpty());
                 }
 
-                @Override @DefinedBy(Api.COMPILER_TREE)
+                @Override
                 public Boolean visitIndex(IndexTree node, Content p) {
                     Content output = TagletWriter.getInlineTagOutput(element,
                             configuration.tagletManager, holderTag, tag,
@@ -1959,14 +1957,14 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     return false;
                 }
 
-                @Override @DefinedBy(Api.COMPILER_TREE)
+                @Override
                 public Boolean visitLink(LinkTree node, Content c) {
                     // we need to pass the DocTreeImpl here, so ignore node
                     result.addContent(seeTagToContent(element, tag));
                     return false;
                 }
 
-                @Override @DefinedBy(Api.COMPILER_TREE)
+                @Override
                 public Boolean visitLiteral(LiteralTree node, Content c) {
                     String s = node.getBody().toString();
                     Content content = new StringContent(utils.normalizeNewlines(s));
@@ -1976,14 +1974,14 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     return false;
                 }
 
-                @Override @DefinedBy(Api.COMPILER_TREE)
+                @Override
                 public Boolean visitSee(SeeTree node, Content c) {
                     // we need to pass the DocTreeImpl here, so ignore node
                     result.addContent(seeTagToContent(element, tag));
                     return false;
                 }
 
-                @Override @DefinedBy(Api.COMPILER_TREE)
+                @Override
                 public Boolean visitStartElement(StartElementTree node, Content c) {
                     String text = "<" + node.getName();
                     RawHtml rawHtml = new RawHtml(utils.normalizeNewlines(text));
@@ -2011,7 +2009,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     return utils.normalizeNewlines(text);
                 }
 
-                @Override @DefinedBy(Api.COMPILER_TREE)
+                @Override
                 public Boolean visitText(TextTree node, Content c) {
                     String text = node.getBody();
                     result.addContent(new RawHtml(textCleanup(text, isLast(node), commentRemoved)));
@@ -2019,7 +2017,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     return false;
                 }
 
-                @Override @DefinedBy(Api.COMPILER_TREE)
+                @Override
                 protected Boolean defaultAction(DocTree node, Content c) {
                     Content output = TagletWriter.getInlineTagOutput(element,
                             configuration.tagletManager, holderTag, tag,
@@ -2097,27 +2095,27 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         }
 
         DocPath redirectPathFromRoot = new SimpleElementVisitor9<DocPath, Void>() {
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public DocPath visitType(TypeElement e, Void p) {
                 return DocPath.forPackage(utils.containingPackage(e));
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public DocPath visitPackage(PackageElement e, Void p) {
                 return DocPath.forPackage(e);
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public DocPath visitVariable(VariableElement e, Void p) {
                 return DocPath.forPackage(utils.containingPackage(e));
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public DocPath visitExecutable(ExecutableElement e, Void p) {
                 return DocPath.forPackage(utils.containingPackage(e));
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             protected DocPath defaultAction(Element e, Void p) {
                 return null;
             }
@@ -2378,13 +2376,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     List<AnnotationValue> annotationTypeValues = new ArrayList<>();
 
                     new SimpleAnnotationValueVisitor9<Void, List<AnnotationValue>>() {
-                        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                        @Override
                         public Void visitArray(List<? extends AnnotationValue> vals, List<AnnotationValue> p) {
                             p.addAll(vals);
                             return null;
                         }
 
-                        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                        @Override
                         protected Void defaultAction(Object o, List<AnnotationValue> p) {
                             p.add(annotationValue);
                             return null;
@@ -2406,7 +2404,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     List<AnnotationValue> annotationTypeValues = new ArrayList<>();
                     for (AnnotationValue a :  pairs.values()) {
                         new SimpleAnnotationValueVisitor9<Void, List<AnnotationValue>>() {
-                            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                            @Override
                             public Void visitArray(List<? extends AnnotationValue> vals, List<AnnotationValue> annotationTypeValues) {
                                for (AnnotationValue av : vals) {
                                    annotationTypeValues.add(av);
@@ -2482,12 +2480,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 AnnotationValue annotationValue = map.get(element);
                 List<AnnotationValue> annotationTypeValues = new ArrayList<>();
                 new SimpleAnnotationValueVisitor9<Void, AnnotationValue>() {
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     public Void visitArray(List<? extends AnnotationValue> vals, AnnotationValue p) {
                         annotationTypeValues.addAll(vals);
                         return null;
                     }
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     protected Void defaultAction(Object o, AnnotationValue p) {
                         annotationTypeValues.add(p);
                         return null;
@@ -2520,13 +2518,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         for (ExecutableElement ee : pairs.keySet()) {
             annotationValue = pairs.get(ee);
             boolean rvalue = new SimpleAnnotationValueVisitor9<Boolean, Void>() {
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Boolean visitArray(List<? extends AnnotationValue> vals, Void p) {
                     if (vals.size() > 1) {
                         if (vals.get(0) instanceof AnnotationMirror) {
                             isContainerDocumented = true;
                             return new SimpleAnnotationValueVisitor9<Boolean, Void>() {
-                                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                                @Override
                                 public Boolean visitAnnotation(AnnotationMirror a, Void p) {
                                     isContainerDocumented = true;
                                     Element asElement = a.getAnnotationType().asElement();
@@ -2535,7 +2533,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                                     }
                                     return true;
                                 }
-                                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                                @Override
                                 protected Boolean defaultAction(Object o, Void p) {
                                     return false;
                                 }
@@ -2545,7 +2543,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     return false;
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 protected Boolean defaultAction(Object o, Void p) {
                     return false;
                 }
@@ -2560,10 +2558,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     private Content annotationValueToContent(AnnotationValue annotationValue) {
         return new SimpleAnnotationValueVisitor9<Content, Void>() {
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public Content visitType(TypeMirror t, Void p) {
                 return new SimpleTypeVisitor9<Content, Void>() {
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     public Content visitDeclared(DeclaredType t, Void p) {
                         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
                                 LinkInfoImpl.Kind.ANNOTATION, t);
@@ -2573,13 +2571,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                         linkInfo.label = new StringContent(name + utils.getDimension(t) + ".class");
                         return getLink(linkInfo);
                     }
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     protected Content defaultAction(TypeMirror e, Void p) {
                         return new StringContent(t + utils.getDimension(t) + ".class");
                     }
                 }.visit(t);
             }
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public Content visitAnnotation(AnnotationMirror a, Void p) {
                 List<Content> list = getAnnotations(0, a, false);
                 ContentBuilder buf = new ContentBuilder();
@@ -2588,12 +2586,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 }
                 return buf;
             }
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public Content visitEnumConstant(VariableElement c, Void p) {
                 return getDocLink(LinkInfoImpl.Kind.ANNOTATION,
                         c, c.getSimpleName(), false);
             }
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public Content visitArray(List<? extends AnnotationValue> vals, Void p) {
                 ContentBuilder buf = new ContentBuilder();
                 String sep = "";
@@ -2604,7 +2602,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 }
                 return buf;
             }
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             protected Content defaultAction(Object o, Void p) {
                 return new StringContent(annotationValue.toString());
             }
