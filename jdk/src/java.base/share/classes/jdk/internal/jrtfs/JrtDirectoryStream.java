@@ -47,8 +47,8 @@ final class JrtDirectoryStream implements DirectoryStream<Path> {
 
     private final JrtPath dir;
     private final DirectoryStream.Filter<? super Path> filter;
-    private volatile boolean isClosed;
-    private volatile Iterator<Path> itr;
+    private boolean isClosed;
+    private Iterator<Path> itr;
 
     JrtDirectoryStream(JrtPath dir,
             DirectoryStream.Filter<? super java.nio.file.Path> filter)
@@ -73,24 +73,22 @@ final class JrtDirectoryStream implements DirectoryStream<Path> {
             throw new IllegalStateException(e);
         }
         return new Iterator<Path>() {
-            private Path next;
             @Override
-            public synchronized boolean hasNext() {
-                if (isClosed)
-                    return false;
-                return itr.hasNext();
+            public boolean hasNext() {
+                synchronized (JrtDirectoryStream.this) {
+                    if (isClosed)
+                        return false;
+                    return itr.hasNext();
+                }
             }
 
             @Override
-            public synchronized Path next() {
-                if (isClosed)
-                    throw new NoSuchElementException();
-                return itr.next();
-            }
-
-            @Override
-            public void remove() {
-                throw new UnsupportedOperationException();
+            public Path next() {
+                synchronized (JrtDirectoryStream.this) {
+                    if (isClosed)
+                        throw new NoSuchElementException();
+                    return itr.next();
+                }
             }
         };
     }

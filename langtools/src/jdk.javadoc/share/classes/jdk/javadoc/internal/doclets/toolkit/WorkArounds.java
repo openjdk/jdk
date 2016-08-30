@@ -44,6 +44,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
+import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
 
 import com.sun.source.tree.CompilationUnitTree;
@@ -57,6 +58,7 @@ import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
@@ -287,6 +289,14 @@ public class WorkArounds {
     // TODO: investigate and reimplement without javac dependencies.
     public boolean shouldDocument(Element e) {
         return ((DocEnvImpl)(configuration.docEnv)).etable.shouldDocument(e);
+    }
+
+    // TODO: jx.l.m ?
+    public Location getLocationForModule(ModuleElement mdle) {
+        ModuleSymbol msym = (ModuleSymbol)mdle;
+        return msym.sourceLocation != null
+                ? msym.sourceLocation
+                : msym.classLocation;
     }
 
     //------------------Start of Serializable Implementation---------------------//

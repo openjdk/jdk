@@ -34,8 +34,6 @@ import com.sun.source.tree.PackageTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreeScanner;
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -67,7 +65,7 @@ class TreeDependencyScanner extends TreeScanner<Void, Set<String>> {
 
     // -- Differentiate declaration references from body references ---
 
-    @Override @DefinedBy(Api.COMPILER_TREE)
+    @Override
     public Void visitClass(ClassTree node, Set<String> p) {
         scan(node.getModifiers(), p);
         scan(node.getTypeParameters(), p);
@@ -77,7 +75,7 @@ class TreeDependencyScanner extends TreeScanner<Void, Set<String>> {
         return null;
     }
 
-    @Override @DefinedBy(Api.COMPILER_TREE)
+    @Override
     public Void visitMethod(MethodTree node, Set<String> p) {
         scan(node.getModifiers(), p);
         scan(node.getReturnType(), p);
@@ -90,7 +88,7 @@ class TreeDependencyScanner extends TreeScanner<Void, Set<String>> {
         return null;
     }
 
-    @Override @DefinedBy(Api.COMPILER_TREE)
+    @Override
     public Void visitVariable(VariableTree node, Set<String> p) {
         scan(node.getModifiers(), p);
         scan(node.getType(), p);
@@ -101,12 +99,12 @@ class TreeDependencyScanner extends TreeScanner<Void, Set<String>> {
 
     // --- Ignore these ---
 
-    @Override @DefinedBy(Api.COMPILER_TREE)
+    @Override
     public Void visitPackage(PackageTree node, Set<String> p) {
         return null;
     }
 
-    @Override @DefinedBy(Api.COMPILER_TREE)
+    @Override
     public Void visitImport(ImportTree node, Set<String> p) {
         return null;
     }
@@ -114,13 +112,13 @@ class TreeDependencyScanner extends TreeScanner<Void, Set<String>> {
 
     // -- Actual Symbol names ---
 
-    @Override @DefinedBy(Api.COMPILER_TREE)
+    @Override
     public Void visitMemberSelect(MemberSelectTree node, Set<String> p) {
         add(p, node.getIdentifier());
         return super.visitMemberSelect(node, p);
     }
 
-    @Override @DefinedBy(Api.COMPILER_TREE)
+    @Override
     public Void visitIdentifier(IdentifierTree node, Set<String> p) {
         add(p, node.getName());
         return super.visitIdentifier(node, p);

@@ -131,4 +131,3 @@ public class GroupTest {
         return catalogResolver(CATALOG_GROUP);
     }
 }
-

@@ -34,6 +34,7 @@ module jdk.jshell {
     requires java.prefs;
     requires jdk.compiler;
     requires jdk.internal.le;
+    requires jdk.internal.opt;
     requires jdk.jdi;
 
     exports jdk.jshell;

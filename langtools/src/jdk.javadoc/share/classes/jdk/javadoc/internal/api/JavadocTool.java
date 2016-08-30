@@ -49,8 +49,6 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Log;
 import jdk.javadoc.internal.tool.ToolOption;
 
@@ -64,7 +62,7 @@ import jdk.javadoc.internal.tool.ToolOption;
  * or deletion without notice.</b></p>
  */
 public class JavadocTool implements DocumentationTool {
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public DocumentationTask getTask(
             Writer out,
             JavaFileManager fileManager,
@@ -129,7 +127,7 @@ public class JavadocTool implements DocumentationTool {
     }
 
     // TODO: used shared static method in JavacFileManager
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public StandardJavaFileManager getStandardFileManager(
             DiagnosticListener<? super JavaFileObject> diagnosticListener,
             Locale locale,
@@ -145,7 +143,7 @@ public class JavadocTool implements DocumentationTool {
         return new JavacFileManager(context, true, charset);
     }
 
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public int run(InputStream in, OutputStream out, OutputStream err, String... arguments) {
         PrintWriter err_pw = new PrintWriter(err == null ? System.err : err, true);
         PrintWriter out_pw = new PrintWriter(out == null ? System.out : out);
@@ -157,13 +155,13 @@ public class JavadocTool implements DocumentationTool {
         }
     }
 
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public Set<SourceVersion> getSourceVersions() {
         return Collections.unmodifiableSet(
                 EnumSet.range(SourceVersion.RELEASE_3, SourceVersion.latest()));
     }
 
-    @Override @DefinedBy(Api.COMPILER)
+    @Override
     public int isSupportedOption(String option) {
         if (option == null)
             throw new NullPointerException();

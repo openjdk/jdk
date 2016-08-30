@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8162353
+ * @bug 8162353 8164747
  * @summary javadoc should provide a way to disable use of frames
  * @library /tools/lib ../lib
  * @modules
@@ -204,7 +204,7 @@ public class TestFramesNoFrames extends JavadocTester {
     @Test
     void testModules(Path base, FrameKind fKind, OverviewKind oKind, HtmlKind hKind) throws IOException {
         javadoc(base, fKind, oKind, hKind,
-            "-modulesourcepath", gensrcModules.toString(),
+            "--module-source-path", gensrcModules.toString(),
             "--module", "m1,m2,m3");
 
         new Checker(fKind, oKind, hKind)
@@ -283,6 +283,19 @@ public class TestFramesNoFrames extends JavadocTester {
             // this file is only generated when not in frames mode
             checkFiles(!frames,
                     "allclasses.html");
+
+            if (frames) {
+                checkOutput("allclasses-frame.html", true,
+                        classes.stream()
+                            .map(c -> "title=\"class in " + packagePart(c) + "\" target=\"classFrame\">" + classPart(c) + "</a>")
+                            .toArray(String[]::new));
+                checkOutput("allclasses-noframe.html", false,
+                            "target=\"classFrame\">");
+            } else {
+                checkOutput("allclasses.html", false,
+                            "target=\"classFrame\">");
+
+            }
         }
 
         private void checkFrameFiles() {
@@ -365,6 +378,11 @@ public class TestFramesNoFrames extends JavadocTester {
                 .map(name -> name.substring(0, name.lastIndexOf(".")))
                 .distinct()
                 .count();
+        }
+
+        private String classPart(String className) {
+            int lastDot = className.lastIndexOf(".");
+            return className.substring(lastDot + 1);
         }
 
         private String packagePart(String className) {

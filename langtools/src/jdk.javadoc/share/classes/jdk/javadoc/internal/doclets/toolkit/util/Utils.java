@@ -25,7 +25,7 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
-import java.io.*;
+import java.io.IOException;
 import java.lang.annotation.Documented;
 import java.lang.ref.SoftReference;
 import java.text.CollationKey;
@@ -61,6 +61,7 @@ import javax.lang.model.util.SimpleTypeVisitor9;
 import javax.lang.model.util.TypeKindVisitor9;
 import javax.lang.model.util.Types;
 import javax.tools.FileObject;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
@@ -74,10 +75,11 @@ import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentDuo;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.WorkArounds;
 
 import static javax.lang.model.element.ElementKind.*;
@@ -85,9 +87,6 @@ import static javax.lang.model.element.Modifier.*;
 import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
-
-import jdk.javadoc.internal.doclets.toolkit.Messages;
-
 import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
 
 
@@ -268,55 +267,108 @@ public class Utils {
     }
 
     /**
-     * Copy the given directory contents from the source package directory
-     * to the generated documentation directory. For example for a package
-     * java.lang this method find out the source location of the package using
-     * {@link SourcePath} and if given directory is found in the source
-     * directory structure, copy the entire directory, to the generated
-     * documentation hierarchy.
-     * @param pe
+     * Copy doc-files directory and its contents from the source
+     * package directory to the generated documentation directory.
+     * For example, given a package java.lang, this method will copy
+     * the doc-files directory, found in the package directory to the
+     * generated documentation hierarchy.
+     *
+     * @param pe the package containing the doc files to be copied
+     * @throws DocFileIOException if there is a problem while copying
+     *         the documentation files
      */
-    public void copyDocFiles(PackageElement pe) {
-        copyDocFiles(DocPath.forPackage(pe).resolve(DocPaths.DOC_FILES));
+    public void copyDocFiles(PackageElement pe) throws DocFileIOException {
+        Location sourceLoc = getLocationForPackage(pe);
+        copyDirectory(sourceLoc, DocPath.forPackage(pe).resolve(DocPaths.DOC_FILES));
     }
 
-    public void copyDocFiles(DocPath dir) {
-        try {
-            boolean first = true;
-            for (DocFile f : DocFile.list(configuration, StandardLocation.SOURCE_PATH, dir)) {
-                if (!f.isDirectory()) {
-                    continue;
-                }
-                DocFile srcdir = f;
-                DocFile destdir = DocFile.createFileForOutput(configuration, dir);
-                if (srcdir.isSameFile(destdir)) {
-                    continue;
-                }
+    /**
+     * Copy the given directory contents from the source package directory
+     * to the generated documentation directory. For example, given a package
+     * java.lang, this method will copy the entire directory, to the generated
+     * documentation hierarchy.
+     *
+     * @param pe the package containing the directory to be copied
+     * @param dir the directory to be copied
+     * @throws DocFileIOException if there is a problem while copying
+     *         the documentation files
+     */
+    public void copyDirectory(PackageElement pe, DocPath dir) throws DocFileIOException {
+        copyDirectory(getLocationForPackage(pe), dir);
+    }
 
-                for (DocFile srcfile: srcdir.list()) {
-                    DocFile destfile = destdir.resolve(srcfile.getName());
-                    if (srcfile.isFile()) {
-                        if (destfile.exists() && !first) {
-                            messages.warning("doclet.Copy_Overwrite_warning",
-                                    srcfile.getPath(), destdir.getPath());
-                        } else {
-                            messages.notice("doclet.Copying_File_0_To_Dir_1",
-                                    srcfile.getPath(), destdir.getPath());
-                            destfile.copyFile(srcfile);
-                        }
-                    } else if (srcfile.isDirectory()) {
-                        if (configuration.copydocfilesubdirs
-                                && !configuration.shouldExcludeDocFileDir(srcfile.getName())) {
-                            copyDocFiles(dir.resolve(srcfile.getName()));
-                        }
+    /**
+     * Copy the given directory and its contents from the source
+     * module directory to the generated documentation directory.
+     * For example, given a package java.lang, this method will
+     * copy the entire directory, to the generated documentation
+     * hierarchy.
+     *
+     * @param mdle the module containing the directory to be copied
+     * @param dir the directory to be copied
+     * @throws DocFileIOException if there is a problem while copying
+     *         the documentation files
+     */
+    public void copyDirectory(ModuleElement mdle, DocPath dir) throws DocFileIOException  {
+        copyDirectory(getLocationForModule(mdle), dir);
+    }
+
+    /**
+     * Copy files from a doc path location to the output.
+     *
+     * @param locn the location from which to read files
+     * @param dir the directory to be copied
+     * @throws DocFileIOException if there is a problem
+     *         copying the files
+     */
+    public void copyDirectory(Location locn, DocPath dir)  throws DocFileIOException {
+        boolean first = true;
+        for (DocFile f : DocFile.list(configuration, locn, dir)) {
+            if (!f.isDirectory()) {
+                continue;
+            }
+            DocFile srcdir = f;
+            DocFile destdir = DocFile.createFileForOutput(configuration, dir);
+            if (srcdir.isSameFile(destdir)) {
+                continue;
+            }
+
+            for (DocFile srcfile: srcdir.list()) {
+                DocFile destfile = destdir.resolve(srcfile.getName());
+                if (srcfile.isFile()) {
+                    if (destfile.exists() && !first) {
+                        messages.warning("doclet.Copy_Overwrite_warning",
+                                srcfile.getPath(), destdir.getPath());
+                    } else {
+                        messages.notice("doclet.Copying_File_0_To_Dir_1",
+                                srcfile.getPath(), destdir.getPath());
+                        destfile.copyFile(srcfile);
+                    }
+                } else if (srcfile.isDirectory()) {
+                    if (configuration.copydocfilesubdirs
+                            && !configuration.shouldExcludeDocFileDir(srcfile.getName())) {
+                        copyDirectory(locn, dir.resolve(srcfile.getName()));
                     }
                 }
-
-                first = false;
             }
-        } catch (SecurityException | IOException exc) {
-            throw new DocletAbortException(exc);
+
+            first = false;
         }
+    }
+
+    protected Location getLocationForPackage(PackageElement pd) {
+        return getLocationForModule(configuration.docEnv.getElementUtils().getModuleOf(pd));
+    }
+
+    protected Location getLocationForModule(ModuleElement mdle) {
+        Location loc = configuration.workArounds.getLocationForModule(mdle);
+        if (loc != null)
+            return loc;
+
+        JavaFileManager fm = configuration.docEnv.getJavaFileManager();
+        return fm.hasLocation(StandardLocation.SOURCE_PATH)
+                ? StandardLocation.SOURCE_PATH
+                : StandardLocation.CLASS_PATH;
     }
 
     public boolean isAnnotated(TypeMirror e) {
@@ -329,17 +381,17 @@ public class Utils {
 
     public boolean isAnnotationType(Element e) {
         return new SimpleElementVisitor9<Boolean, Void>() {
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public Boolean visitExecutable(ExecutableElement e, Void p) {
                 return visit(e.getEnclosingElement());
             }
 
-            @Override  @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public Boolean visitUnknown(Element e, Void p) {
                 return false;
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             protected Boolean defaultAction(Element e, Void p) {
                 return e.getKind() == ANNOTATION_TYPE;
             }
@@ -499,34 +551,34 @@ public class Utils {
                 }
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public String visitTypeAsInterface(TypeElement e, SortedSet<Modifier> p) {
                 addVisibilityModifier(p);
                 addStatic(p);
                 return finalString("interface");
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public String visitTypeAsEnum(TypeElement e, SortedSet<Modifier> p) {
                 addVisibilityModifier(p);
                 addStatic(p);
                 return finalString("enum");
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public String visitTypeAsAnnotationType(TypeElement e, SortedSet<Modifier> p) {
                 addVisibilityModifier(p);
                 addStatic(p);
                 return finalString("@interface");
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public String visitTypeAsClass(TypeElement e, SortedSet<Modifier> p) {
                 addModifers(p);
                 return finalString("class");
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             protected String defaultAction(Element e, SortedSet<Modifier> p) {
                 addModifers(p);
                 return sb.toString().trim();
@@ -572,19 +624,19 @@ public class Utils {
     public boolean isPrimitive(TypeMirror t) {
         return new SimpleTypeVisitor9<Boolean, Void>() {
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public Boolean visitNoType(NoType t, Void p) {
                 return t.getKind() == VOID;
             }
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public Boolean visitPrimitive(PrimitiveType t, Void p) {
                 return true;
             }
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public Boolean visitArray(ArrayType t, Void p) {
                 return visit(t.getComponentType());
             }
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             protected Boolean defaultAction(TypeMirror e, Void p) {
                 return false;
             }
@@ -672,7 +724,7 @@ public class Utils {
         return new SimpleTypeVisitor9<StringBuilder, Void>() {
             final StringBuilder sb = new StringBuilder();
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public StringBuilder visitArray(ArrayType t, Void p) {
                 TypeMirror componentType = t.getComponentType();
                 visit(componentType);
@@ -680,7 +732,7 @@ public class Utils {
                 return sb;
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public StringBuilder visitDeclared(DeclaredType t, Void p) {
                 Element e = t.asElement();
                 sb.append(qualifiedName ? getFullyQualifiedName(e) : getSimpleName(e));
@@ -701,14 +753,14 @@ public class Utils {
                 return sb;
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public StringBuilder visitTypeVariable(javax.lang.model.type.TypeVariable t, Void p) {
                 Element e = t.asElement();
                 sb.append(qualifiedName ? getFullyQualifiedName(e, false) : getSimpleName(e));
                 return sb;
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public StringBuilder visitWildcard(javax.lang.model.type.WildcardType t, Void p) {
                 sb.append("?");
                 TypeMirror upperBound = t.getExtendsBound();
@@ -724,7 +776,7 @@ public class Utils {
                 return sb;
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             protected StringBuilder defaultAction(TypeMirror e, Void p) {
                 return sb.append(e);
             }
@@ -1122,17 +1174,17 @@ public class Utils {
     public TypeElement asTypeElement(TypeMirror t) {
         return new SimpleTypeVisitor9<TypeElement, Void>() {
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public TypeElement visitDeclared(DeclaredType t, Void p) {
                 return (TypeElement) t.asElement();
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public TypeElement visitArray(ArrayType t, Void p) {
                 return visit(t.getComponentType());
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public TypeElement visitTypeVariable(javax.lang.model.type.TypeVariable t, Void p) {
                /*
                 * TODO: Check with JJG.
@@ -1145,17 +1197,17 @@ public class Utils {
                 return visit(typeUtils.erasure(t));
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public TypeElement visitWildcard(javax.lang.model.type.WildcardType t, Void p) {
                 return visit(typeUtils.erasure(t));
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public TypeElement visitError(ErrorType t, Void p) {
                 return (TypeElement)t.asElement();
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             protected TypeElement defaultAction(TypeMirror e, Void p) {
                 return super.defaultAction(e, p);
             }
@@ -1179,13 +1231,13 @@ public class Utils {
     public String getDimension(TypeMirror t) {
         return new SimpleTypeVisitor9<String, Void>() {
             StringBuilder dimension = new StringBuilder("");
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public String visitArray(ArrayType t, Void p) {
                 dimension.append("[]");
                 return visit(t.getComponentType());
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             protected String defaultAction(TypeMirror e, Void p) {
                 return dimension.toString();
             }
@@ -1290,12 +1342,12 @@ public class Utils {
     public String getTypeName(TypeMirror t, boolean fullyQualified) {
         return new SimpleTypeVisitor9<String, Void>() {
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public String visitArray(ArrayType t, Void p) {
                 return visit(t.getComponentType());
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public String visitDeclared(DeclaredType t, Void p) {
                 TypeElement te = asTypeElement(t);
                 return fullyQualified
@@ -1303,27 +1355,27 @@ public class Utils {
                         : getSimpleName(te);
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public String visitExecutable(ExecutableType t, Void p) {
                 return t.toString();
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public String visitPrimitive(PrimitiveType t, Void p) {
                 return t.toString();
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public String visitTypeVariable(javax.lang.model.type.TypeVariable t, Void p) {
                 return getSimpleName(t.asElement());
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public String visitWildcard(javax.lang.model.type.WildcardType t, Void p) {
                 return t.toString();
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             protected String defaultAction(TypeMirror e, Void p) {
                 return e.toString();
             }
@@ -1567,45 +1619,6 @@ public class Utils {
         return secondaryCollator.compare(s1, s2);
     }
 
-    public void copyDocFiles(Configuration configuration, Location locn, DocPath dir) {
-        try {
-            boolean first = true;
-            for (DocFile f : DocFile.list(configuration, locn, dir)) {
-                if (!f.isDirectory()) {
-                    continue;
-                }
-                DocFile srcdir = f;
-                DocFile destdir = DocFile.createFileForOutput(configuration, dir);
-                if (srcdir.isSameFile(destdir)) {
-                    continue;
-                }
-
-                for (DocFile srcfile: srcdir.list()) {
-                    DocFile destfile = destdir.resolve(srcfile.getName());
-                    if (srcfile.isFile()) {
-                        if (destfile.exists() && !first) {
-                            messages.warning("doclet.Copy_Overwrite_warning",
-                                    srcfile.getPath(), destdir.getPath());
-                        } else {
-                            messages.notice("doclet.Copying_File_0_To_Dir_1",
-                                    srcfile.getPath(), destdir.getPath());
-                            destfile.copyFile(srcfile);
-                        }
-                    } else if (srcfile.isDirectory()) {
-                        if (configuration.copydocfilesubdirs
-                                && !configuration.shouldExcludeDocFileDir(srcfile.getName())) {
-                            copyDocFiles(configuration, locn, dir.resolve(srcfile.getName()));
-                        }
-                    }
-                }
-
-                first = false;
-            }
-        } catch (SecurityException | IOException exc) {
-            throw new DocletAbortException(exc);
-        }
-    }
-
     private static class DocCollator {
         private final Map<String, CollationKey> keys;
         private final Collator instance;
@@ -1825,22 +1838,22 @@ public class Utils {
      */
     public String getQualifiedTypeName(TypeMirror t) {
         return new SimpleTypeVisitor9<String, Void>() {
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public String visitDeclared(DeclaredType t, Void p) {
                 return getFullyQualifiedName(t.asElement());
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public String visitArray(ArrayType t, Void p) {
                return visit(t.getComponentType());
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public String visitPrimitive(PrimitiveType t, Void p) {
                 return t.toString();
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public String visitTypeVariable(javax.lang.model.type.TypeVariable t, Void p) {
                 // The knee jerk reaction is to do this but don't!, as we would like
                 // it to be compatible with the old world, now if we decide to do so
@@ -1849,7 +1862,7 @@ public class Utils {
                 return t.toString();
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             protected String defaultAction(TypeMirror e, Void p) {
                 throw new UnsupportedOperationException("should not happen");
             }
@@ -1870,19 +1883,16 @@ public class Utils {
     public String getFullyQualifiedName(Element e, final boolean outer) {
         return new SimpleElementVisitor9<String, Void>() {
             @Override
-            @DefinedBy(Api.LANGUAGE_MODEL)
             public String visitPackage(PackageElement e, Void p) {
                 return e.getQualifiedName().toString();
             }
 
             @Override
-            @DefinedBy(Api.LANGUAGE_MODEL)
             public String visitType(TypeElement e, Void p) {
                 return e.getQualifiedName().toString();
             }
 
             @Override
-            @DefinedBy(Api.LANGUAGE_MODEL)
             protected String defaultAction(Element e, Void p) {
                 return outer ? visit(e.getEnclosingElement()) : e.getSimpleName().toString();
             }
@@ -1987,15 +1997,15 @@ public class Utils {
         private String getTypeCode(TypeMirror t) {
             return new SimpleTypeVisitor9<String, Void>() {
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public String visitPrimitive(PrimitiveType t, Void p) {
                     return "P";
                 }
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public String visitArray(ArrayType t, Void p) {
                     return visit(t.getComponentType());
                 }
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 protected String defaultAction(TypeMirror e, Void p) {
                     return "R";
                 }
@@ -2034,12 +2044,12 @@ public class Utils {
         }
         boolean hasParameters(Element e) {
             return new SimpleElementVisitor9<Boolean, Void>() {
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Boolean visitExecutable(ExecutableElement e, Void p) {
                     return true;
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 protected Boolean defaultAction(Element e, Void p) {
                     return false;
                 }
@@ -2057,29 +2067,29 @@ public class Utils {
          */
         private String getFullyQualifiedName(Element e) {
             return new SimpleElementVisitor9<String, Void>() {
-                @Override  @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public String visitModule(ModuleElement e, Void p) {
                     return e.getQualifiedName().toString();
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public String visitPackage(PackageElement e, Void p) {
                     return e.getQualifiedName().toString();
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public String visitExecutable(ExecutableElement e, Void p) {
                     // For backward compatibility
                     return getFullyQualifiedName(e.getEnclosingElement())
                             + "." + e.getSimpleName().toString();
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public String visitType(TypeElement e, Void p) {
                     return e.getQualifiedName().toString();
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 protected String defaultAction(Element e, Void p) {
                     return getEnclosingTypeElement(e).getQualifiedName().toString()
                             + "." + e.getSimpleName().toString();
@@ -2319,13 +2329,13 @@ public class Utils {
             return elements;
         return new SimpleElementVisitor9<List<Element>, Void>() {
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             public List<Element> visitPackage(PackageElement e, Void p) {
                 recursiveGetItems(elements, e, filter, select);
                 return elements;
             }
 
-            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            @Override
             protected List<Element> defaultAction(Element e0, Void p) {
                 return getItems0(e0, filter, select);
             }
@@ -2387,12 +2397,12 @@ public class Utils {
     private String getSimpleName0(Element e) {
         if (snvisitor == null) {
             snvisitor = new SimpleElementVisitor9<String, Void>() {
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public String visitModule(ModuleElement e, Void p) {
                     return e.getSimpleName().toString();
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public String visitType(TypeElement e, Void p) {
                     StringBuilder sb = new StringBuilder(e.getSimpleName());
                     Element enclosed = e.getEnclosingElement();
@@ -2404,7 +2414,7 @@ public class Utils {
                     return sb.toString();
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public String visitExecutable(ExecutableElement e, Void p) {
                     if (e.getKind() == CONSTRUCTOR || e.getKind() == STATIC_INIT) {
                         return e.getEnclosingElement().getSimpleName().toString();
@@ -2412,7 +2422,7 @@ public class Utils {
                     return e.getSimpleName().toString();
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 protected String defaultAction(Element e, Void p) {
                     return e.getSimpleName().toString();
                 }
@@ -2457,27 +2467,27 @@ public class Utils {
                  * and we should fix this by using getConstantValue and the visitor to
                  * address this in the future.
                  */
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public String visitPrimitiveAsBoolean(PrimitiveType t, Object val) {
                     return (int)val == 0 ? "false" : "true";
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public String visitPrimitiveAsDouble(PrimitiveType t, Object val) {
                     return sourceForm(((Double)val), 'd');
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public String visitPrimitiveAsFloat(PrimitiveType t, Object val) {
                     return sourceForm(((Float)val).doubleValue(), 'f');
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public String visitPrimitiveAsLong(PrimitiveType t, Object val) {
                     return val + "L";
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 protected String defaultAction(TypeMirror e, Object val) {
                     if (val == null)
                         return null;
@@ -2570,22 +2580,22 @@ public class Utils {
     public boolean isSpecified(Element e) {
         if (specifiedVisitor == null) {
             specifiedVisitor = new SimpleElementVisitor9<Boolean, Void>() {
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Boolean visitModule(ModuleElement e, Void p) {
                     return configuration.getSpecifiedModules().contains(e);
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Boolean visitPackage(PackageElement e, Void p) {
                     return configuration.getSpecifiedPackages().contains(e);
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Boolean visitType(TypeElement e, Void p) {
                     return configuration.getSpecifiedClasses().contains(e);
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 protected Boolean defaultAction(Element e, Void p) {
                     return false;
                 }

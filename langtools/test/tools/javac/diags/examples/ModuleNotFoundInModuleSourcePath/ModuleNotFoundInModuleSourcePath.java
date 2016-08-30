@@ -22,6 +22,6 @@
  */
 
 // key: compiler.err.module.not.found.in.module.source.path
-// options: -m m1 -modulesourcepath src
+// options: -m m1 --module-source-path src
 
 class ModuleNotFoundInModuleSourcePath {}

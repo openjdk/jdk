@@ -27,6 +27,7 @@
 # @build jdk.testlibrary.*
 # @compile -XDignore.symbol.file=true LookupTest.java
 # @run shell/timeout=50 lookup.sh
+# @key intermittent
 #
 
 OS=`uname -s`

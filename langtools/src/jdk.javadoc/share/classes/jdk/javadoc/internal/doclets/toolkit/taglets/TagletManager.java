@@ -39,8 +39,6 @@ import javax.tools.JavaFileManager;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.source.doctree.DocTree;
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -377,7 +375,7 @@ public class TagletManager {
                     return;
                 }
                 new SimpleElementVisitor9<Void, Void>() {
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     public Void visitModule(ModuleElement e, Void p) {
                         if (!taglet.inModule()) {
                             printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "module");
@@ -385,7 +383,7 @@ public class TagletManager {
                         return null;
                     }
 
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     public Void visitPackage(PackageElement e, Void p) {
                         if (!taglet.inPackage()) {
                             printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "package");
@@ -393,7 +391,7 @@ public class TagletManager {
                         return null;
                     }
 
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     public Void visitType(TypeElement e, Void p) {
                         if (!taglet.inType()) {
                             printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "class");
@@ -401,7 +399,7 @@ public class TagletManager {
                         return null;
                     }
 
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     public Void visitExecutable(ExecutableElement e, Void p) {
                         if (utils.isConstructor(e) && !taglet.inConstructor()) {
                             printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "constructor");
@@ -411,7 +409,7 @@ public class TagletManager {
                         return null;
                     }
 
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     public Void visitVariable(VariableElement e, Void p) {
                         if (utils.isField(e) && !taglet.inField()) {
                             printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "field");
@@ -419,7 +417,7 @@ public class TagletManager {
                         return null;
                     }
 
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     public Void visitUnknown(Element e, Void p) {
                         if (utils.isOverviewElement(e) && !taglet.inOverview()) {
                             printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "overview");
@@ -427,7 +425,7 @@ public class TagletManager {
                         return null;
                     }
 
-                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    @Override
                     protected Void defaultAction(Element e, Void p) {
                         return null;
                     }

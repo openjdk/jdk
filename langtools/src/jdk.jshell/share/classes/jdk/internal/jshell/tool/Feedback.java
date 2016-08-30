@@ -147,17 +147,17 @@ class Feedback {
     }
 
     {
-        for (FormatCase e : EnumSet.allOf(FormatCase.class))
+        for (FormatCase e : FormatCase.all)
             selectorMap.put(e.name().toLowerCase(Locale.US), e);
-        for (FormatAction e : EnumSet.allOf(FormatAction.class))
+        for (FormatAction e : FormatAction.all)
             selectorMap.put(e.name().toLowerCase(Locale.US), e);
-        for (FormatResolve e : EnumSet.allOf(FormatResolve.class))
+        for (FormatResolve e : FormatResolve.all)
             selectorMap.put(e.name().toLowerCase(Locale.US), e);
-        for (FormatUnresolved e : EnumSet.allOf(FormatUnresolved.class))
+        for (FormatUnresolved e : FormatUnresolved.all)
             selectorMap.put(e.name().toLowerCase(Locale.US), e);
-        for (FormatErrors e : EnumSet.allOf(FormatErrors.class))
+        for (FormatErrors e : FormatErrors.all)
             selectorMap.put(e.name().toLowerCase(Locale.US), e);
-        for (FormatWhen e : EnumSet.allOf(FormatWhen.class))
+        for (FormatWhen e : FormatWhen.all)
             selectorMap.put(e.name().toLowerCase(Locale.US), e);
     }
 
