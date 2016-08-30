@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,22 +21,29 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.toolkit.util;
+package jdk.deprcases.members;
 
-/**
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- */
-public class DocletAbortException extends RuntimeException {
-    private static final long serialVersionUID = -9131058909576418984L;
+public class ExampleClass {
+    public ExampleClass() { }
 
-    public DocletAbortException(String message) {
-        super(message);
-    }
+    @Deprecated
+    public ExampleClass(boolean deprecatedConstructor) { }
 
-    public DocletAbortException(Throwable cause) {
-        super(cause);
-    }
+    @Deprecated
+    public void method1() { }
+
+    @Deprecated
+    public void method2() { }
+
+    @Deprecated
+    public int field1 = 0;
+
+    @Deprecated
+    public int field2 = 0;
+
+    @Deprecated
+    public static void staticmethod1() { }
+
+    @Deprecated
+    public static int staticfield3 = 0;
 }

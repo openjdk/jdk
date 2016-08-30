@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.util.*;
 
 import javax.lang.model.element.TypeElement;
@@ -39,8 +38,8 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter.SerialFieldWriter;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter.SerialMethodWriter;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 
 /**
  * Generate the Serialized Form Information Page.
@@ -64,11 +63,8 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
 
     /**
      * @param configuration the configuration data for the doclet
-     * @throws IOException
-     * @throws DocletAbortException
      */
-    public SerializedFormWriterImpl(ConfigurationImpl configuration)
-            throws IOException {
+    public SerializedFormWriterImpl(ConfigurationImpl configuration) {
         super(configuration, DocPaths.SERIALIZED_FORM);
         visibleClasses = configuration.docEnv.getIncludedTypeElements();
     }
@@ -277,7 +273,8 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     /**
      * {@inheritDoc}
      */
-    public void printDocument(Content serializedTree) throws IOException {
+    @Override
+    public void printDocument(Content serializedTree) throws DocFileIOException {
         printHtmlDocument(null, true, serializedTree);
     }
 

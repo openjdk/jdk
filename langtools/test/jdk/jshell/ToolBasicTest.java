@@ -97,7 +97,7 @@ public class ToolBasicTest extends ReplToolTesting {
     public void testInterrupt() {
         ReplTest interrupt = (a) -> assertCommand(a, "\u0003", "");
         for (String s : new String[] { "", "\u0003" }) {
-            test(false, new String[]{"-nostartup"},
+            test(false, new String[]{"--no-startup"},
                     (a) -> assertCommand(a, "int a = 2 +" + s, ""),
                     interrupt,
                     (a) -> assertCommand(a, "int a\u0003", ""),
@@ -190,7 +190,7 @@ public class ToolBasicTest extends ReplToolTesting {
     }
 
     public void testRerun() {
-        test(false, new String[] {"-nostartup"},
+        test(false, new String[] {"--no-startup"},
                 (a) -> assertCommand(a, "/0", "|  No such command or snippet id: /0\n|  Type /help for help."),
                 (a) -> assertCommand(a, "/5", "|  No such command or snippet id: /5\n|  Type /help for help.")
         );
@@ -226,7 +226,7 @@ public class ToolBasicTest extends ReplToolTesting {
             tests.add((a) -> assertCommandCheckOutput(a, "/-" + (2 * finalI + 1), check));
         }
         tests.add((a) -> assertCommandCheckOutput(a, "/!", assertStartsWith("int a = 0;")));
-        test(false, new String[]{"-nostartup"},
+        test(false, new String[]{"--no-startup"},
                 tests.toArray(new ReplTest[tests.size()]));
     }
 
@@ -243,7 +243,7 @@ public class ToolBasicTest extends ReplToolTesting {
         Path startup = compiler.getPath("StartupFileOption/startup.txt");
         compiler.writeToFile(startup, "int assertionCount = 0;\n" + // id: s1
                 "void add(int n) { assertionCount += n; }");
-        test(new String[]{"-startup", startup.toString()},
+        test(new String[]{"--startup", startup.toString()},
                 (a) -> assertCommand(a, "add(1)", ""), // id: 1
                 (a) -> assertCommandCheckOutput(a, "add(ONE)", s -> assertEquals(s.split("\n")[0], "|  Error:")), // id: e1
                 (a) -> assertVariable(a, "int", "ONE", "1", "1"),
@@ -252,7 +252,7 @@ public class ToolBasicTest extends ReplToolTesting {
                 assertRerun.apply("/s1").apply("int assertionCount = 0;", 0), assertVariables
         );
 
-        test(false, new String[] {"-nostartup"},
+        test(false, new String[] {"--no-startup"},
                 (a) -> assertCommand(a, "/s1", "|  No such command or snippet id: /s1\n|  Type /help for help."),
                 (a) -> assertCommand(a, "/1", "|  No such command or snippet id: /1\n|  Type /help for help."),
                 (a) -> assertCommand(a, "/e1", "|  No such command or snippet id: /e1\n|  Type /help for help.")
@@ -268,10 +268,7 @@ public class ToolBasicTest extends ReplToolTesting {
                 (a) -> assertCommand(a, "/classpath " + classpath, String.format("|  Path '%s' added to classpath", classpath)),
                 (a) -> evaluateExpression(a, "pkg.A", "new pkg.A();", "A")
         );
-        test(new String[] { "-cp", classpath.toString() },
-                (a) -> evaluateExpression(a, "pkg.A", "new pkg.A();", "A")
-        );
-        test(new String[] { "-classpath", classpath.toString() },
+        test(new String[] { "--class-path", classpath.toString() },
                 (a) -> evaluateExpression(a, "pkg.A", "new pkg.A();", "A")
         );
     }
@@ -287,10 +284,7 @@ public class ToolBasicTest extends ReplToolTesting {
                 (a) -> assertCommand(a, "/classpath " + jarPath, String.format("|  Path '%s' added to classpath", jarPath)),
                 (a) -> evaluateExpression(a, "pkg.A", "new pkg.A();", "A")
         );
-        test(new String[] { "-cp", jarPath.toString() },
-                (a) -> evaluateExpression(a, "pkg.A", "new pkg.A();", "A")
-        );
-        test(new String[] { "-classpath", jarPath.toString() },
+        test(new String[] { "--class-path", jarPath.toString() },
                 (a) -> evaluateExpression(a, "pkg.A", "new pkg.A();", "A")
         );
     }
@@ -300,10 +294,10 @@ public class ToolBasicTest extends ReplToolTesting {
             Compiler compiler = new Compiler();
             Path startup = compiler.getPath("StartupFileOption/startup.txt");
             compiler.writeToFile(startup, "class A { public String toString() { return \"A\"; } }");
-            test(new String[]{"-startup", startup.toString()},
+            test(new String[]{"--startup", startup.toString()},
                     (a) -> evaluateExpression(a, "A", "new A()", "A")
             );
-            test(new String[]{"-nostartup"},
+            test(new String[]{"--no-startup"},
                     (a) -> assertCommandCheckOutput(a, "printf(\"\")", assertStartsWith("|  Error:\n|  cannot find symbol"))
             );
             test(
@@ -550,7 +544,7 @@ public class ToolBasicTest extends ReplToolTesting {
     }
 
     public void testHistoryReference() {
-        test(false, new String[]{"-nostartup"},
+        test(false, new String[]{"--no-startup"},
                 a -> assertCommand(a, "System.err.println(1)", "", "", null, "", "1\n"),
                 a -> assertCommand(a, "System.err.println(2)", "", "", null, "", "2\n"),
                 a -> assertCommand(a, "/-2", "System.err.println(1)", "", null, "", "1\n"),

@@ -34,6 +34,7 @@ import javax.lang.model.element.TypeElement;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.ConstructorWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 
 
@@ -112,6 +113,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
      * @param context  the build context.
      * @param typeElement the class whoses members are being documented.
      * @param writer the doclet specific writer.
+     * @return the new ConstructorBuilder
      */
     public static ConstructorBuilder getInstance(Context context,
             TypeElement typeElement, ConstructorWriter writer) {
@@ -139,6 +141,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
      * This information can be used for doclet specific documentation
      * generation.
      *
+     * @param typeElement the class
      * @return a list of constructors that will be documented.
      */
     public SortedSet<Element> members(TypeElement typeElement) {
@@ -159,8 +162,9 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
+     * @throws DocletException is there is a problem while building the documentation
      */
-    public void buildConstructorDoc(XMLNode node, Content memberDetailsTree) {
+    public void buildConstructorDoc(XMLNode node, Content memberDetailsTree) throws DocletException {
         if (writer == null) {
             return;
         }

@@ -203,7 +203,7 @@ public class ExternalEditorTest extends EditorTestBase {
 
     @Test(enabled = false) // TODO 8159229
     public void testRemoveTempFile() {
-        test(new String[]{"-nostartup"},
+        test(new String[]{"--no-startup"},
                 a -> assertCommandCheckOutput(a, "/set editor " + executionScript,
                         assertStartsWith("|  Editor set to: " + executionScript)),
                 a -> assertVariable(a, "int", "a", "0", "0"),

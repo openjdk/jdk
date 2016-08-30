@@ -33,6 +33,7 @@ import javax.lang.model.element.TypeElement;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeRequiredMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 
 
@@ -139,7 +140,8 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * summaryOrder.size()
+     * Returns whether or not there are members to document.
+     * @return whether or not there are members to document
      */
     @Override
     public boolean hasMembersToDocument() {
@@ -151,8 +153,10 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildAnnotationTypeRequiredMember(XMLNode node, Content memberDetailsTree) {
+    public void buildAnnotationTypeRequiredMember(XMLNode node, Content memberDetailsTree)
+            throws DocletException {
         buildAnnotationTypeMember(node, memberDetailsTree);
     }
 
@@ -162,7 +166,8 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
      * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
      */
-    public void buildAnnotationTypeMember(XMLNode node, Content memberDetailsTree) {
+    public void buildAnnotationTypeMember(XMLNode node, Content memberDetailsTree)
+            throws DocletException {
         if (writer == null) {
             return;
         }

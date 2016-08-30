@@ -92,4 +92,3 @@ public class SystemTest {
         return catalogResolver(CATALOG_SYSTEM);
     }
 }
-
