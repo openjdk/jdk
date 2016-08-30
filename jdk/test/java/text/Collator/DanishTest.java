@@ -26,6 +26,7 @@
  * @bug 4930708 4174436 5008498
  * @library /java/text/testlib
  * @summary test Danish Collation
+ * @modules jdk.localedata
  */
 /*
 (C) Copyright Taligent, Inc. 1996 - All Rights Reserved
