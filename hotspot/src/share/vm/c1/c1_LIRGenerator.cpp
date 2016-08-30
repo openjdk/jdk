@@ -2410,6 +2410,15 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
 #endif // INCLUDE_ALL_GCS
 
   if (x->is_volatile() && os::is_MP()) __ membar_acquire();
+
+  /* Normalize boolean value returned by unsafe operation, i.e., value  != 0 ? value = true : value false. */
+  if (type == T_BOOLEAN) {
+    LabelObj* equalZeroLabel = new LabelObj();
+    __ cmp(lir_cond_equal, value, 0);
+    __ branch(lir_cond_equal, T_BOOLEAN, equalZeroLabel->label());
+    __ move(LIR_OprFact::intConst(1), value);
+    __ branch_destination(equalZeroLabel->label());
+  }
 }
 
 
