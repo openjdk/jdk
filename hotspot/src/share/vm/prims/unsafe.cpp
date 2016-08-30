@@ -150,12 +150,21 @@ class MemoryAccess : StackObj {
   }
 
   template <typename T>
-  T normalize(T x) {
+  T normalize_for_write(T x) {
     return x;
   }
 
-  jboolean normalize(jboolean x) {
+  jboolean normalize_for_write(jboolean x) {
     return x & 1;
+  }
+
+  template <typename T>
+  T normalize_for_read(T x) {
+    return x;
+  }
+
+  jboolean normalize_for_read(jboolean x) {
+    return x != 0;
   }
 
   /**
@@ -196,7 +205,7 @@ public:
 
     T* p = (T*)addr();
 
-    T x = *p;
+    T x = normalize_for_read(*p);
 
     return x;
   }
@@ -207,7 +216,7 @@ public:
 
     T* p = (T*)addr();
 
-    *p = normalize(x);
+    *p = normalize_for_write(x);
   }
 
 
@@ -223,7 +232,7 @@ public:
 
     T x = OrderAccess::load_acquire((volatile T*)p);
 
-    return x;
+    return normalize_for_read(x);
   }
 
   template <typename T>
@@ -232,7 +241,7 @@ public:
 
     T* p = (T*)addr();
 
-    OrderAccess::release_store_fence((volatile T*)p, normalize(x));
+    OrderAccess::release_store_fence((volatile T*)p, normalize_for_write(x));
   }
 
 
@@ -256,7 +265,7 @@ public:
 
     jlong* p = (jlong*)addr();
 
-    Atomic::store(normalize(x),  p);
+    Atomic::store(normalize_for_write(x),  p);
   }
 #endif
 };
