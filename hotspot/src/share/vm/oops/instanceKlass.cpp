@@ -3370,6 +3370,7 @@ int InstanceKlass::_previous_version_count = 0;
 
 // Purge previous versions before adding new previous versions of the class.
 void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
+  assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
   if (ik->previous_versions() != NULL) {
     // This klass has previous versions so see what we can cleanup
     // while it is safe to do so.
@@ -3398,7 +3399,12 @@ void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
         // are executing.  Unlink this previous_version.
         // The previous version InstanceKlass is on the ClassLoaderData deallocate list
         // so will be deallocated during the next phase of class unloading.
-        log_trace(redefine, class, iklass, purge)("previous version " INTPTR_FORMAT " is dead", p2i(pv_node));
+        //
+        // Update count for class unloading.
+        _previous_version_count--;
+        log_trace(redefine, class, iklass, purge)
+          ("previous version " INTPTR_FORMAT " is dead.  previous_version_count = %d",
+           p2i(pv_node), _previous_version_count);
         // For debugging purposes.
         pv_node->set_is_scratch_class();
         pv_node->class_loader_data()->add_to_deallocate_list(pv_node);
@@ -3513,6 +3519,7 @@ void InstanceKlass::add_previous_version(instanceKlassHandle scratch_class,
                                          int emcp_method_count) {
   assert(Thread::current()->is_VM_thread(),
          "only VMThread can add previous versions");
+  assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
 
   ResourceMark rm;
   log_trace(redefine, class, iklass, add)
@@ -3536,8 +3543,6 @@ void InstanceKlass::add_previous_version(instanceKlassHandle scratch_class,
     // For debugging purposes.
     scratch_class->set_is_scratch_class();
     scratch_class->class_loader_data()->add_to_deallocate_list(scratch_class());
-    // Update count for class unloading.
-    _previous_version_count--;
     return;
   }
 
@@ -3565,12 +3570,14 @@ void InstanceKlass::add_previous_version(instanceKlassHandle scratch_class,
   }
 
   // Add previous version if any methods are still running.
-  log_trace(redefine, class, iklass, add)("scratch class added; one of its methods is on_stack");
+  // Update count for class unloading.
+  _previous_version_count++;
+  log_trace(redefine, class, iklass, add)
+    ("scratch class added; one of its methods is on_stack.  previous_version_count = %d",
+      _previous_version_count);
   assert(scratch_class->previous_versions() == NULL, "shouldn't have a previous version");
   scratch_class->link_previous_versions(previous_versions());
   link_previous_versions(scratch_class());
-  // Update count for class unloading.
-  _previous_version_count++;
 } // end add_previous_version()
 
 #endif // INCLUDE_JVMTI
