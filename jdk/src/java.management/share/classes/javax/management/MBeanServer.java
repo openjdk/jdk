@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -666,9 +666,10 @@ public interface MBeanServer extends MBeanServerConnection {
      * obtain the appropriate class loader for deserialization.
      */
     @Deprecated
-    public ObjectInputStream deserialize(ObjectName name, byte[] data)
-            throws InstanceNotFoundException, OperationsException;
-
+    default public ObjectInputStream deserialize(ObjectName name, byte[] data)
+            throws InstanceNotFoundException, OperationsException {
+        throw new UnsupportedOperationException("Not supported.");
+    }
 
     /**
      * <p>De-serializes a byte array in the context of a given MBean
@@ -693,8 +694,10 @@ public interface MBeanServer extends MBeanServerConnection {
      * class loader repository and use it to deserialize.
      */
     @Deprecated
-    public ObjectInputStream deserialize(String className, byte[] data)
-            throws OperationsException, ReflectionException;
+    default public ObjectInputStream deserialize(String className, byte[] data)
+            throws OperationsException, ReflectionException {
+        throw new UnsupportedOperationException("Not supported.");
+    }
 
 
     /**
@@ -724,11 +727,13 @@ public interface MBeanServer extends MBeanServerConnection {
      * the class loader for deserialization.
      */
     @Deprecated
-    public ObjectInputStream deserialize(String className,
+    default public ObjectInputStream deserialize(String className,
                                          ObjectName loaderName,
                                          byte[] data)
             throws InstanceNotFoundException, OperationsException,
-                   ReflectionException;
+                   ReflectionException {
+        throw new UnsupportedOperationException("Not supported.");
+    }
 
     /**
      * <p>Return the {@link java.lang.ClassLoader} that was used for
