@@ -175,7 +175,7 @@ void ConcurrentMarkThread::run_service() {
                                 TimeHelper::counter_to_millis(mark_end - mark_start));
 
           CMCheckpointRootsFinalClosure final_cl(_cm);
-          VM_CGC_Operation op(&final_cl, "Pause Remark", true /* needs_pll */);
+          VM_CGC_Operation op(&final_cl, "Pause Remark");
           VMThread::execute(&op);
         }
         if (cm()->restart_for_overflow()) {
@@ -199,7 +199,7 @@ void ConcurrentMarkThread::run_service() {
         delay_to_keep_mmu(g1_policy, false /* cleanup */);
 
         CMCleanUp cl_cl(_cm);
-        VM_CGC_Operation op(&cl_cl, "Pause Cleanup", false /* needs_pll */);
+        VM_CGC_Operation op(&cl_cl, "Pause Cleanup");
         VMThread::execute(&op);
       } else {
         // We don't want to update the marking status if a GC pause
