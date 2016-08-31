@@ -135,12 +135,12 @@ public class MultiReleaseJarTest {
     }
 
     @Test(dataProvider="modes")
-    // javac -d classes -release 8 -cp multi-release.jar Main.java -> succeeds
+    // javac -d classes --release 8 -cp multi-release.jar Main.java -> succeeds
     public void main1Release8(Task.Mode mode) throws Exception {
         tb.writeFile("Main.java", main1);
         Task.Result result = new JavacTask(tb, mode)
                 .outdir("classes")
-                .options("-release", "8")
+                .options("--release", "8")
                 .classpath("multi-release.jar")
                 .files("Main.java")
                 .run();
@@ -149,12 +149,12 @@ public class MultiReleaseJarTest {
     }
 
     @Test(dataProvider="modes")
-    // javac -d classes -release 9 -cp multi-release.jar Main.java -> fails
+    // javac -d classes --release 9 -cp multi-release.jar Main.java -> fails
     public void main1Release9(Task.Mode mode) throws Exception {
         tb.writeFile("Main.java", main1);
         Task.Result result = new JavacTask(tb, mode)
                 .outdir("classes")
-                .options("-release", "9")
+                .options("--release", "9")
                 .classpath("multi-release.jar")
                 .files("Main.java")
                 .run(Task.Expect.FAIL, 1);
@@ -177,12 +177,12 @@ public class MultiReleaseJarTest {
     }
 
     @Test(dataProvider="modes")
-    // javac -d classes -release 8 -cp multi-release.jar Main.java -> fails
+    // javac -d classes --release 8 -cp multi-release.jar Main.java -> fails
     public void main2Release8(Task.Mode mode) throws Exception {
         tb.writeFile("Main.java", main2);
         Task.Result result = new JavacTask(tb, mode)
                 .outdir("classes")
-                .options("-release", "8")
+                .options("--release", "8")
                 .classpath("multi-release.jar")
                 .files("Main.java")
                 .run(Task.Expect.FAIL, 1);
@@ -191,12 +191,12 @@ public class MultiReleaseJarTest {
     }
 
     @Test(dataProvider="modes")
-    // javac -d classes -release 9 -cp multi-release.jar Main.java -> succeeds
+    // javac -d classes --release 9 -cp multi-release.jar Main.java -> succeeds
     public void main2Release9(Task.Mode mode) throws Exception {
         tb.writeFile("Main.java", main2);
         Task.Result result = new JavacTask(tb, mode)
                 .outdir("classes")
-                .options("-release", "9")
+                .options("--release", "9")
                 .classpath("multi-release.jar")
                 .files("Main.java")
                 .run();
