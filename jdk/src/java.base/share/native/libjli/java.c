@@ -1497,6 +1497,7 @@ NewPlatformStringArray(JNIEnv *env, char **strv, int strc)
 
     NULL_CHECK0(cls = FindBootStrapClass(env, "java/lang/String"));
     NULL_CHECK0(ary = (*env)->NewObjectArray(env, strc, cls, 0));
+    CHECK_EXCEPTION_RETURN_VALUE(0);
     for (i = 0; i < strc; i++) {
         jstring str = NewPlatformString(env, *strv++);
         NULL_CHECK0(str);
