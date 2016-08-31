@@ -48,6 +48,10 @@ typedef struct JDKFontInfo_Struct {
 } JDKFontInfo;
 
 
+// Use 16.16 for better precision than 26.6
+#define FloatToFixedScale ((float)(1 << 16))
+#define FloatToFixed(f) ((unsigned int)((f) * FloatToFixedScale))
+
 /*
  * Note:
  *
