@@ -85,20 +85,52 @@ public class BasicLauncherTest {
 
             try (OutputStream out = toolProcess.getOutputStream()) {
                 out.write("universe\n".getBytes());
+                out.write("printmdo -a\n".getBytes());
                 out.write("quit\n".getBytes());
             }
 
             // By default child process output stream redirected to pipe, so we are reading it in foreground.
             Exception unexpected = null;
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(toolProcess.getInputStream()))) {
+            try (BufferedReader reader =
+                 new BufferedReader(new InputStreamReader(toolProcess.getInputStream()))) {
                 String line;
+                String unexpectedMsg =
+                   "One or more of 'VirtualCallData', 'CounterData', " +
+                   "'ReceiverTypeData', 'bci', 'MethodData' "  +
+                   "or 'java/lang/Object' not found";
+                boolean knownClassFound = false;
+                boolean knownProfileDataTypeFound = false;
+                boolean knownTokensFound = false;
+
                 while ((line = reader.readLine()) != null) {
                     line = line.trim();
                     System.out.println(line);
 
                     if (line.contains("unknown subtype of CollectedHeap")) {
                         unexpected = new RuntimeException("CollectedHeap type should be known.");
+                        break;
                     }
+                    else if (line.contains("missing reason for ")) {
+                        unexpected = new RuntimeException("missing reason for ");
+                        break;
+                    }
+                    if (line.contains("VirtualCallData")  ||
+                        line.contains("CounterData")      ||
+                        line.contains("ReceiverTypeData")) {
+                        knownProfileDataTypeFound = true;
+                    }
+                    if (line.contains("bci") ||
+                        line.contains("MethodData")) {
+                        knownTokensFound = true;
+                    }
+                    if (line.contains("java/lang/Object")) {
+                        knownClassFound = true;
+                    }
+                }
+                if ((knownClassFound           == false)  ||
+                    (knownTokensFound          == false)  ||
+                    (knownProfileDataTypeFound == false)) {
+                    unexpected = new RuntimeException(unexpectedMsg);
                 }
             }
 
