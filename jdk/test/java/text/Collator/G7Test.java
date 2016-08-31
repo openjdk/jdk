@@ -25,6 +25,7 @@
  * @test
  * @library /java/text/testlib
  * @summary test G7 Collation
+ * @modules jdk.localedata
  */
 /*
  *

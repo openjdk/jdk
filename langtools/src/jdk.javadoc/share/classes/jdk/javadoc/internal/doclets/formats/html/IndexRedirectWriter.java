@@ -25,8 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.IOException;
-
 import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.DocType;
@@ -37,10 +35,9 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 
 import static jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocWriter.CONTENT_TYPE;
 
@@ -53,28 +50,23 @@ import static jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocWriter.CON
  */
 public class IndexRedirectWriter extends HtmlDocletWriter {
 
-    public static void generate(ConfigurationImpl configuration) {
+    public static void generate(ConfigurationImpl configuration)
+            throws DocFileIOException {
         IndexRedirectWriter indexRedirect;
-        DocPath filename = DocPath.empty;
-        try {
-            filename = DocPaths.INDEX;
+        DocPath filename = DocPaths.INDEX;
             indexRedirect = new IndexRedirectWriter(configuration, filename);
             indexRedirect.generateIndexFile();
-        } catch (IOException exc) {
-            Messages messages = configuration.getMessages();
-            messages.error(
-                    "doclet.exception_encountered",
-                    exc.toString(), filename);
-            throw new DocletAbortException(exc);
-        }
     }
 
-    IndexRedirectWriter(ConfigurationImpl configuration, DocPath filename)
-            throws IOException {
+    IndexRedirectWriter(ConfigurationImpl configuration, DocPath filename) {
         super(configuration, filename);
     }
 
-    void generateIndexFile() throws IOException {
+    /**
+     * Generate an index file that redirects to an alternate file.
+     * @throws DocFileIOException if there is a problem generating the file
+     */
+    void generateIndexFile() throws DocFileIOException {
         Content htmlDocType = configuration.isOutputHtml5()
                 ? DocType.HTML5
                 : DocType.TRANSITIONAL;

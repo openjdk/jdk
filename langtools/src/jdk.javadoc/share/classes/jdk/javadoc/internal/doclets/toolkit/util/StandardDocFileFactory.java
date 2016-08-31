@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.tools.DocumentationTool;
@@ -72,32 +73,43 @@ class StandardDocFileFactory extends DocFileFactory {
         fileManager = (StandardJavaFileManager) configuration.getFileManager();
     }
 
-    private Path getDestDir() {
-        if (destDir == null) {
-            if (!configuration.destDirName.isEmpty()
-                    || !fileManager.hasLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT)) {
-                try {
-                    String dirName = configuration.destDirName.isEmpty() ? "." : configuration.destDirName;
-                    Path dir = Paths.get(dirName);
-                    fileManager.setLocationFromPaths(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(dir));
-                } catch (IOException e) {
-                    throw new DocletAbortException(e);
-                }
-            }
+    @Override
+    public void setDestDir(String destDirName) throws SimpleDocletException {
+        if (destDir != null)
+            throw new AssertionError("destDir already initialized: " + destDir);
 
-            destDir = fileManager.getLocationAsPaths(DocumentationTool.Location.DOCUMENTATION_OUTPUT).iterator().next();
+        if (!destDirName.isEmpty()
+                || !fileManager.hasLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT)) {
+            try {
+                String dirName = destDirName.isEmpty() ? "." : destDirName;
+                Path dir = Paths.get(dirName);
+                fileManager.setLocationFromPaths(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(dir));
+            } catch (IOException e) {
+                // generic IOException from file manager, setting location, e.g. file not a directory
+                String message = configuration.getResources().getText("doclet.error.initializing.dest.dir", e);
+                throw new SimpleDocletException(message, e);
+            }
         }
+
+        destDir = fileManager.getLocationAsPaths(DocumentationTool.Location.DOCUMENTATION_OUTPUT).iterator().next();
+    }
+
+    private Path getDestDir() {
+        Objects.requireNonNull(destDir, "destDir not initialized");
         return destDir;
     }
 
+    @Override
     public DocFile createFileForDirectory(String file) {
         return new StandardDocFile(Paths.get(file));
     }
 
+    @Override
     public DocFile createFileForInput(String file) {
         return new StandardDocFile(Paths.get(file));
     }
 
+    @Override
     public DocFile createFileForOutput(DocPath path) {
         return new StandardDocFile(DocumentationTool.Location.DOCUMENTATION_OUTPUT, path);
     }
@@ -125,38 +137,53 @@ class StandardDocFileFactory extends DocFileFactory {
     }
 
     class StandardDocFile extends DocFile {
-        private Path file;
+        private final Path file;
 
         /** Create a StandardDocFile for a given file. */
         private StandardDocFile(Path file) {
-            super(configuration);
             this.file = file;
         }
 
         /** Create a StandardDocFile for a given location and relative path. */
         private StandardDocFile(Location location, DocPath path) {
-            super(configuration, location, path);
+            super(location, path);
             Assert.check(location == DocumentationTool.Location.DOCUMENTATION_OUTPUT);
             this.file = newFile(getDestDir(), path.getPath());
         }
 
-        /** Open an input stream for the file. */
-        public InputStream openInputStream() throws IOException {
-            JavaFileObject fo = getJavaFileObjectForInput(file);
-            return new BufferedInputStream(fo.openInputStream());
+        /**
+         * Open an input stream for the file.
+         *
+         * @throws DocFileIOException if there is a problem while opening stream
+         */
+        @Override
+        public InputStream openInputStream() throws DocFileIOException {
+            try {
+                JavaFileObject fo = getJavaFileObjectForInput(file);
+                return new BufferedInputStream(fo.openInputStream());
+            } catch (IOException e) {
+                throw new DocFileIOException(this, DocFileIOException.Mode.READ, e);
+            }
         }
 
         /**
          * Open an output stream for the file.
          * The file must have been created with a location of
          * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} and a corresponding relative path.
+         *
+         * @throws DocFileIOException if there is a problem while opening stream
          */
-        public OutputStream openOutputStream() throws IOException, UnsupportedEncodingException {
+        @Override
+        public OutputStream openOutputStream() throws DocFileIOException {
             if (location != DocumentationTool.Location.DOCUMENTATION_OUTPUT)
                 throw new IllegalStateException();
 
-            OutputStream out = getFileObjectForOutput(path).openOutputStream();
-            return new BufferedOutputStream(out);
+            try {
+                OutputStream out = getFileObjectForOutput(path).openOutputStream();
+                return new BufferedOutputStream(out);
+            } catch (IOException e) {
+                throw new DocFileIOException(this, DocFileIOException.Mode.WRITE, e);
+            }
         }
 
         /**
@@ -164,60 +191,77 @@ class StandardDocFileFactory extends DocFileFactory {
          * doclet configuration.
          * The file must have been created with a location of
          * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} and a corresponding relative path.
+         *
+         * @throws DocFileIOException if there is a problem while opening stream
+         * @throws UnsupportedEncodingException if the configured encoding is not supported
          */
-        public Writer openWriter() throws IOException, UnsupportedEncodingException {
+        @Override
+        public Writer openWriter() throws DocFileIOException, UnsupportedEncodingException {
             if (location != DocumentationTool.Location.DOCUMENTATION_OUTPUT)
                 throw new IllegalStateException();
 
-            OutputStream out = getFileObjectForOutput(path).openOutputStream();
-            if (configuration.docencoding == null) {
-                return new BufferedWriter(new OutputStreamWriter(out));
-            } else {
-                return new BufferedWriter(new OutputStreamWriter(out, configuration.docencoding));
+            try {
+                OutputStream out = getFileObjectForOutput(path).openOutputStream();
+                if (configuration.docencoding == null) {
+                    return new BufferedWriter(new OutputStreamWriter(out));
+                } else {
+                    return new BufferedWriter(new OutputStreamWriter(out, configuration.docencoding));
+                }
+            } catch (IOException e) {
+                throw new DocFileIOException(this, DocFileIOException.Mode.WRITE, e);
             }
         }
 
         /** Return true if the file can be read. */
+        @Override
         public boolean canRead() {
             return Files.isReadable(file);
         }
 
         /** Return true if the file can be written. */
+        @Override
         public boolean canWrite() {
             return Files.isWritable(file);
         }
 
         /** Return true if the file exists. */
+        @Override
         public boolean exists() {
             return Files.exists(file);
         }
 
         /** Return the base name (last component) of the file name. */
+        @Override
         public String getName() {
             return file.getFileName().toString();
         }
 
         /** Return the file system path for this file. */
+        @Override
         public String getPath() {
             return file.toString();
         }
 
         /** Return true is file has an absolute path name. */
+        @Override
         public boolean isAbsolute() {
             return file.isAbsolute();
         }
 
         /** Return true is file identifies a directory. */
+        @Override
         public boolean isDirectory() {
             return Files.isDirectory(file);
         }
 
         /** Return true is file identifies a file. */
+        @Override
         public boolean isFile() {
             return Files.isRegularFile(file);
         }
 
         /** Return true if this file is the same as another. */
+        @Override
         public boolean isSameFile(DocFile other) {
             if (!(other instanceof StandardDocFile))
                 return false;
@@ -230,17 +274,21 @@ class StandardDocFileFactory extends DocFileFactory {
         }
 
         /** If the file is a directory, list its contents. */
-        public Iterable<DocFile> list() throws IOException {
-            List<DocFile> files = new ArrayList<DocFile>();
+        @Override
+        public Iterable<DocFile> list() throws DocFileIOException {
+            List<DocFile> files = new ArrayList<>();
             try (DirectoryStream<Path> ds = Files.newDirectoryStream(file)) {
                 for (Path f: ds) {
                     files.add(new StandardDocFile(f));
                 }
+            } catch (IOException e) {
+                throw new DocFileIOException(this, DocFileIOException.Mode.READ, e);
             }
             return files;
         }
 
         /** Create the file as a directory, including any parent directories. */
+        @Override
         public boolean mkdirs() {
             try {
                 Files.createDirectories(file);
@@ -256,6 +304,7 @@ class StandardDocFileFactory extends DocFileFactory {
          * If this file has a path set, the new file will have a corresponding
          * new path.
          */
+        @Override
         public DocFile resolve(DocPath p) {
             return resolve(p.getPath());
         }
@@ -266,6 +315,7 @@ class StandardDocFileFactory extends DocFileFactory {
          * If this file has a path set, the new file will have a corresponding
          * new path.
          */
+        @Override
         public DocFile resolve(String p) {
             if (location == null && path == null) {
                 return new StandardDocFile(file.resolve(p));
@@ -279,6 +329,7 @@ class StandardDocFileFactory extends DocFileFactory {
          * @param locn Currently, only
          * {@link DocumentationTool.Location.DOCUMENTATION_OUTPUT} is supported.
          */
+        @Override
         public DocFile resolveAgainst(Location locn) {
             if (locn != DocumentationTool.Location.DOCUMENTATION_OUTPUT)
                 throw new IllegalArgumentException();

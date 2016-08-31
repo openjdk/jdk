@@ -27,7 +27,6 @@
  * @summary Tests primarily the module graph computations.
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.api
- *      jdk.javadoc/jdk.javadoc.internal.doclets.standard
  *      jdk.javadoc/jdk.javadoc.internal.tool
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
@@ -58,7 +57,7 @@ public class Modules extends ModuleTestBase {
                 .classes("package pub; /** Klass A */ public class A {}")
                 .classes("package pro; /** Klass B */ public class B {}")
                 .write(src);
-        execTask("-modulesourcepath", src.toString(),
+        execTask("--module-source-path", src.toString(),
                  "--module", "m1");
         checkModulesSpecified("m1");
         checkPackagesIncluded("pub");
@@ -83,7 +82,7 @@ public class Modules extends ModuleTestBase {
                 .classes("package m2pub; /** Klass A */ public class A {}")
                 .classes("package m2pro; /** Klass B */ public class B {}")
                 .write(src);
-        execTask("-modulesourcepath", src.toString(),
+        execTask("--module-source-path", src.toString(),
             "--module", "m1,m2");
         checkModulesSpecified("m1", "m2");
         checkPackagesIncluded("m1pub", "m2pub");
@@ -109,7 +108,7 @@ public class Modules extends ModuleTestBase {
                 .classes("package m2pub; /** Klass A */ public class A {}")
                 .classes("package m2pro; /** Klass B */ public class B {}")
                 .write(src);
-        execTask("-modulesourcepath", src.toString(),
+        execTask("--module-source-path", src.toString(),
             "--module", "m1",
             "--module", "m2");
         checkModulesSpecified("m1", "m2");
@@ -152,7 +151,7 @@ public class Modules extends ModuleTestBase {
                 .classes("package p; public class Main { openO.O o; openN.N n; openL.L l; }")
                 .write(src);
 
-        execTask("-modulesourcepath", src.toString(),
+        execTask("--module-source-path", src.toString(),
                 "--module", "M");
 
         checkModulesSpecified("M");
@@ -176,7 +175,7 @@ public class Modules extends ModuleTestBase {
                 .classes("package p; public class Main { openO.O o; openN.N n; openL.L l; }")
                 .write(src);
 
-        execTask("-modulesourcepath", src.toString(),
+        execTask("--module-source-path", src.toString(),
                 "--module", "M",
                 "--expand-requires:public");
 
@@ -201,7 +200,7 @@ public class Modules extends ModuleTestBase {
                 .classes("package p; public class Main { openO.O o; openN.N n; openL.L l; }")
                 .write(src);
 
-        execTask("-modulesourcepath", src.toString(),
+        execTask("--module-source-path", src.toString(),
                 "--module", "M",
                 "--expand-requires:all");
 
@@ -229,7 +228,7 @@ public class Modules extends ModuleTestBase {
                 .classes("package p; public class Main { openO.O o; openN.N n; openL.L l; }")
                 .write(src);
 
-        execNegativeTask("-modulesourcepath", src.toString(),
+        execNegativeTask("--module-source-path", src.toString(),
                 "--module", "MIA",
                 "--expand-requires:all");
 
@@ -251,7 +250,7 @@ public class Modules extends ModuleTestBase {
                 .classes("package p; public class Main { openO.O o; openN.N n; openL.L l; }")
                 .write(src);
 
-        execNegativeTask("-modulesourcepath", src.toString(),
+        execNegativeTask("--module-source-path", src.toString(),
                 "--module", "M,N,L,MIA,O,P",
                 "--expand-requires:all");
 

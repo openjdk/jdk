@@ -26,6 +26,7 @@
  * @bug 4932968 5015215
  * @library /java/text/testlib
  * @summary test Vietnamese Collation
+ * @modules jdk.localedata
  */
 
 /*

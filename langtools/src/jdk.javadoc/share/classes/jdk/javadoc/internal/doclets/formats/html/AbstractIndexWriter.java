@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.io.*;
-import java.nio.file.*;
 import java.util.*;
 import java.util.zip.*;
 
@@ -38,7 +37,6 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.SimpleElementVisitor9;
 
 import com.sun.source.doctree.DocTree;
-import com.sun.tools.javac.util.DefinedBy;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -46,9 +44,9 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 
 /**
@@ -93,6 +91,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      *
      * @return a content tree for the tree label
      */
+    @Override
     protected Content getNavLinkIndex() {
         Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.indexLabel);
         return li;
@@ -183,7 +182,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         SearchIndexItem si = new SearchIndexItem();
         new SimpleElementVisitor9<Void, Void>() {
 
-            @Override @DefinedBy(DefinedBy.Api.LANGUAGE_MODEL)
+            @Override
             public Void visitModule(ModuleElement e, Void p) {
                 if (configuration.showModules) {
                     addDescription(e, dl, si);
@@ -192,21 +191,21 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                 return null;
             }
 
-            @Override @DefinedBy(DefinedBy.Api.LANGUAGE_MODEL)
+            @Override
             public Void visitPackage(PackageElement e, Void p) {
                 addDescription(e, dl, si);
                 configuration.packageSearchIndex.add(si);
                 return null;
             }
 
-            @Override @DefinedBy(DefinedBy.Api.LANGUAGE_MODEL)
+            @Override
             public Void visitType(TypeElement e, Void p) {
                 addDescription(e, dl, si);
                 configuration.typeSearchIndex.add(si);
                 return null;
             }
 
-            @Override @DefinedBy(DefinedBy.Api.LANGUAGE_MODEL)
+            @Override
             protected Void defaultAction(Element e, Void p) {
                 addDescription(e, dl, si);
                 configuration.memberSearchIndex.add(si);
@@ -242,6 +241,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      *
      * @param pkg the package to be documented
      * @param dlTree the content tree to which the description will be added
+     * @param si the search index item to be updated
      */
     protected void addDescription(PackageElement pkg, Content dlTree, SearchIndexItem si) {
         Content link = getPackageLink(pkg, new StringContent(utils.getPackageName(pkg)));
@@ -265,6 +265,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      *
      * @param typeElement the class being documented
      * @param dlTree the content tree to which the description will be added
+     * @param si the search index item to be updated
      */
     protected void addDescription(TypeElement typeElement, Content dlTree, SearchIndexItem si) {
         Content link = getLink(new LinkInfoImpl(configuration,
@@ -332,9 +333,9 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     }
 
     protected void addDescription(SearchIndexItem sii, Content dlTree) {
-        String path = pathToRoot.isEmpty() ? "" : pathToRoot.getPath() + "/";
-        path += sii.getUrl();
-        HtmlTree labelLink = HtmlTree.A(path, new StringContent(sii.getLabel()));
+        String siiPath = pathToRoot.isEmpty() ? "" : pathToRoot.getPath() + "/";
+        siiPath += sii.getUrl();
+        HtmlTree labelLink = HtmlTree.A(siiPath, new StringContent(sii.getLabel()));
         Content dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.searchTagLink, labelLink));
         dt.addContent(" - ");
         dt.addContent(contents.getContent("doclet.Search_tag_in", sii.getHolder()));
@@ -430,7 +431,10 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         return "I:" + getName(unicode);
     }
 
-    protected void createSearchIndexFiles() {
+    /**
+     * @throws DocFileIOException if there is a problem creating any of the search index files
+     */
+    protected void createSearchIndexFiles() throws DocFileIOException {
         if (configuration.showModules) {
             createSearchIndexFile(DocPaths.MODULE_SEARCH_INDEX_JSON, DocPaths.MODULE_SEARCH_INDEX_ZIP,
                     configuration.moduleSearchIndex);
@@ -445,54 +449,37 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                 configuration.tagSearchIndex);
     }
 
+    /**
+     * @throws DocFileIOException if there is a problem creating the search index file
+     */
     protected void createSearchIndexFile(DocPath searchIndexFile, DocPath searchIndexZip,
-            List<SearchIndexItem> searchIndex) {
+            List<SearchIndexItem> searchIndex) throws DocFileIOException {
         if (!searchIndex.isEmpty()) {
-            try {
-                StringBuilder searchVar = new StringBuilder("[");
-                boolean first = true;
-                DocFile searchFile = DocFile.createFileForOutput(configuration, searchIndexFile);
-                Path p = Paths.get(searchFile.getPath());
-                for (SearchIndexItem item : searchIndex) {
-                    if (first) {
-                        searchVar.append(item.toString());
-                        first = false;
-                    } else {
-                        searchVar.append(",").append(item.toString());
-                    }
+            StringBuilder searchVar = new StringBuilder("[");
+            boolean first = true;
+            for (SearchIndexItem item : searchIndex) {
+                if (first) {
+                    searchVar.append(item.toString());
+                    first = false;
+                } else {
+                    searchVar.append(",").append(item.toString());
                 }
-                searchVar.append("]");
-                Files.write(p, searchVar.toString().getBytes());
-                DocFile zipFile = DocFile.createFileForOutput(configuration, searchIndexZip);
-                try (FileOutputStream fos = new FileOutputStream(zipFile.getPath());
-                        ZipOutputStream zos = new ZipOutputStream(fos)) {
-                    zipFile(searchFile.getPath(), searchIndexFile, zos);
-                }
-                Files.delete(p);
-            } catch (IOException ie) {
-                throw new DocletAbortException(ie);
             }
-        }
-    }
+            searchVar.append("]");
 
-    protected void zipFile(String inputFile, DocPath file, ZipOutputStream zos) {
-        try {
-            try {
-                ZipEntry ze = new ZipEntry(file.getPath());
-                zos.putNextEntry(ze);
-                try (FileInputStream fis = new FileInputStream(new File(inputFile))) {
-                    byte[] buf = new byte[2048];
-                    int len = fis.read(buf);
-                    while (len > 0) {
-                        zos.write(buf, 0, len);
-                        len = fis.read(buf);
-                    }
+            DocFile zipFile = DocFile.createFileForOutput(configuration, searchIndexZip);
+            try (OutputStream fos = zipFile.openOutputStream();
+                    ZipOutputStream zos = new ZipOutputStream(fos)) {
+                try {
+                    ZipEntry ze = new ZipEntry(searchIndexFile.getPath());
+                    zos.putNextEntry(ze);
+                    zos.write(searchVar.toString().getBytes());
+                } finally {
+                    zos.closeEntry();
                 }
-            } finally {
-                zos.closeEntry();
+            } catch (IOException ie) {
+                throw new DocFileIOException(zipFile, DocFileIOException.Mode.WRITE, ie);
             }
-        } catch (IOException e) {
-            throw new DocletAbortException(e);
         }
     }
 }

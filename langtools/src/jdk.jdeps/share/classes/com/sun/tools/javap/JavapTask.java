@@ -68,8 +68,6 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
 import com.sun.tools.classfile.*;
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 
 /**
  *  "Main" class for javap, normally accessed from the command line
@@ -411,7 +409,6 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
     private DiagnosticListener<JavaFileObject> getDiagnosticListenerForWriter(Writer w) {
         final PrintWriter pw = getPrintWriterForWriter(w);
         return new DiagnosticListener<JavaFileObject> () {
-            @DefinedBy(Api.COMPILER)
             public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
                 switch (diagnostic.getKind()) {
                     case ERROR:
@@ -727,67 +724,54 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                 final URLConnection conn = url.openConnection();
                 conn.setUseCaches(false);
                 return new JavaFileObject() {
-                    @DefinedBy(Api.COMPILER)
                     public Kind getKind() {
                         return JavaFileObject.Kind.CLASS;
                     }
 
-                    @DefinedBy(Api.COMPILER)
                     public boolean isNameCompatible(String simpleName, Kind kind) {
                         throw new UnsupportedOperationException();
                     }
 
-                    @DefinedBy(Api.COMPILER)
                     public NestingKind getNestingKind() {
                         throw new UnsupportedOperationException();
                     }
 
-                    @DefinedBy(Api.COMPILER)
                     public Modifier getAccessLevel() {
                         throw new UnsupportedOperationException();
                     }
 
-                    @DefinedBy(Api.COMPILER)
                     public URI toUri() {
                         return uri;
                     }
 
-                    @DefinedBy(Api.COMPILER)
                     public String getName() {
                         return uri.toString();
                     }
 
-                    @DefinedBy(Api.COMPILER)
                     public InputStream openInputStream() throws IOException {
                         return conn.getInputStream();
                     }
 
-                    @DefinedBy(Api.COMPILER)
                     public OutputStream openOutputStream() throws IOException {
                         throw new UnsupportedOperationException();
                     }
 
-                    @DefinedBy(Api.COMPILER)
                     public Reader openReader(boolean ignoreEncodingErrors) throws IOException {
                         throw new UnsupportedOperationException();
                     }
 
-                    @DefinedBy(Api.COMPILER)
                     public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
                         throw new UnsupportedOperationException();
                     }
 
-                    @DefinedBy(Api.COMPILER)
                     public Writer openWriter() throws IOException {
                         throw new UnsupportedOperationException();
                     }
 
-                    @DefinedBy(Api.COMPILER)
                     public long getLastModified() {
                         return conn.getLastModified();
                     }
 
-                    @DefinedBy(Api.COMPILER)
                     public boolean delete() {
                         throw new UnsupportedOperationException();
                     }
@@ -1015,47 +999,38 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
     private Diagnostic<JavaFileObject> createDiagnostic(
             final Diagnostic.Kind kind, final String key, final Object... args) {
         return new Diagnostic<JavaFileObject>() {
-            @DefinedBy(Api.COMPILER)
             public Kind getKind() {
                 return kind;
             }
 
-            @DefinedBy(Api.COMPILER)
             public JavaFileObject getSource() {
                 return null;
             }
 
-            @DefinedBy(Api.COMPILER)
             public long getPosition() {
                 return Diagnostic.NOPOS;
             }
 
-            @DefinedBy(Api.COMPILER)
             public long getStartPosition() {
                 return Diagnostic.NOPOS;
             }
 
-            @DefinedBy(Api.COMPILER)
             public long getEndPosition() {
                 return Diagnostic.NOPOS;
             }
 
-            @DefinedBy(Api.COMPILER)
             public long getLineNumber() {
                 return Diagnostic.NOPOS;
             }
 
-            @DefinedBy(Api.COMPILER)
             public long getColumnNumber() {
                 return Diagnostic.NOPOS;
             }
 
-            @DefinedBy(Api.COMPILER)
             public String getCode() {
                 return key;
             }
 
-            @DefinedBy(Api.COMPILER)
             public String getMessage(Locale locale) {
                 return JavapTask.this.getMessage(locale, key, args);
             }

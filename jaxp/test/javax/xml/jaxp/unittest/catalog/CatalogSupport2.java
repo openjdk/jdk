@@ -270,4 +270,3 @@ public class CatalogSupport2 extends CatalogSupportBase {
         };
     }
 }
-

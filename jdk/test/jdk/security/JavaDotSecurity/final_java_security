@@ -10,6 +10,7 @@ foo.5=8
 foo.6=9a
 foo.7=10
 foo.8=12
+crypto.policy=somepolicy
 
 package.access=sun.,\
                solaris.,\

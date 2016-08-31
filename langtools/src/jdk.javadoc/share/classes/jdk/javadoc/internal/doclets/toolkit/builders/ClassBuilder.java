@@ -25,13 +25,13 @@
 
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
-import java.io.*;
-
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -105,11 +105,12 @@ public class ClassBuilder extends AbstractBuilder {
     }
 
     /**
-     * Construct a new ClassBuilder.
+     * Constructs a new ClassBuilder.
      *
      * @param context  the build context
      * @param typeElement the class being documented.
      * @param writer the doclet specific writer.
+     * @return the new ClassBuilder
      */
     public static ClassBuilder getInstance(Context context,
             TypeElement typeElement, ClassWriter writer) {
@@ -119,13 +120,15 @@ public class ClassBuilder extends AbstractBuilder {
     /**
      * {@inheritDoc}
      */
-    public void build() throws IOException {
+    @Override
+    public void build() throws DocletException {
         build(layoutParser.parseXML(ROOT), contentTree);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getName() {
         return ROOT;
     }
@@ -135,8 +138,9 @@ public class ClassBuilder extends AbstractBuilder {
       *
       * @param node the XML element that specifies which components to document
       * @param contentTree the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
       */
-     public void buildClassDoc(XMLNode node, Content contentTree) throws Exception {
+     public void buildClassDoc(XMLNode node, Content contentTree) throws DocletException {
          String key;
          if (isInterface) {
              key =  "doclet.Interface";
@@ -170,15 +174,16 @@ public class ClassBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param classContentTree the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildClassInfo(XMLNode node, Content classContentTree) {
+    public void buildClassInfo(XMLNode node, Content classContentTree) throws DocletException {
         Content classInfoTree = writer.getClassInfoTreeHeader();
         buildChildren(node, classInfoTree);
         classContentTree.addContent(writer.getClassInfo(classInfoTree));
     }
 
     /**
-     * Build the typeparameters of this class.
+     * Build the type parameters of this class.
      *
      * @param node the XML element that specifies which components to document
      * @param classInfoTree the content tree to which the documentation will be added
@@ -269,8 +274,10 @@ public class ClassBuilder extends AbstractBuilder {
 
     /**
      * Copy the doc files.
+     *
+     * @throws DocFileIOException if there is a problem while copying the files
      */
-     private void copyDocFiles() {
+     private void copyDocFiles() throws DocFileIOException {
         PackageElement containingPackage = utils.containingPackage(typeElement);
         if((configuration.packages == null ||
             !configuration.packages.contains(containingPackage)) &&
@@ -318,8 +325,9 @@ public class ClassBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param classContentTree the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildMemberSummary(XMLNode node, Content classContentTree) throws Exception {
+    public void buildMemberSummary(XMLNode node, Content classContentTree) throws DocletException {
         Content memberSummaryTree = writer.getMemberTreeHeader();
         configuration.getBuilderFactory().
                 getMemberSummaryBuilder(writer).buildChildren(node, memberSummaryTree);
@@ -331,8 +339,9 @@ public class ClassBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param classContentTree the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildMemberDetails(XMLNode node, Content classContentTree) {
+    public void buildMemberDetails(XMLNode node, Content classContentTree) throws DocletException {
         Content memberDetailsTree = writer.getMemberTreeHeader();
         buildChildren(node, memberDetailsTree);
         classContentTree.addContent(writer.getMemberDetailsTree(memberDetailsTree));
@@ -343,9 +352,10 @@ public class ClassBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
     public void buildEnumConstantsDetails(XMLNode node,
-            Content memberDetailsTree) throws Exception {
+            Content memberDetailsTree) throws DocletException {
         configuration.getBuilderFactory().
                 getEnumConstantsBuilder(writer).buildChildren(node, memberDetailsTree);
     }
@@ -355,9 +365,10 @@ public class ClassBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
     public void buildFieldDetails(XMLNode node,
-            Content memberDetailsTree) throws Exception {
+            Content memberDetailsTree) throws DocletException {
         configuration.getBuilderFactory().
                 getFieldBuilder(writer).buildChildren(node, memberDetailsTree);
     }
@@ -365,10 +376,12 @@ public class ClassBuilder extends AbstractBuilder {
     /**
      * Build the property documentation.
      *
-     * @param elements the XML elements that specify how a field is documented.
+     * @param node the XML element that specifies which components to document
+     * @param memberDetailsTree the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
     public void buildPropertyDetails(XMLNode node,
-            Content memberDetailsTree) throws Exception {
+            Content memberDetailsTree) throws DocletException {
         configuration.getBuilderFactory().
                 getPropertyBuilder(writer).buildChildren(node, memberDetailsTree);
     }
@@ -378,9 +391,10 @@ public class ClassBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
     public void buildConstructorDetails(XMLNode node,
-            Content memberDetailsTree) throws Exception {
+            Content memberDetailsTree) throws DocletException {
         configuration.getBuilderFactory().
                 getConstructorBuilder(writer).buildChildren(node, memberDetailsTree);
     }
@@ -390,9 +404,10 @@ public class ClassBuilder extends AbstractBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
     public void buildMethodDetails(XMLNode node,
-            Content memberDetailsTree) throws Exception {
+            Content memberDetailsTree) throws DocletException {
         configuration.getBuilderFactory().
                 getMethodBuilder(writer).buildChildren(node, memberDetailsTree);
     }

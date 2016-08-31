@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.Arrays;
+import java.util.Scanner;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
@@ -46,17 +47,22 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 public class ExternalEditor {
     private final Consumer<String> errorHandler;
     private final Consumer<String> saveHandler;
+    private final Consumer<String> printHandler;
     private final IOContext input;
+    private final boolean wait;
 
     private WatchService watcher;
     private Thread watchedThread;
     private Path dir;
     private Path tmpfile;
 
-    ExternalEditor(Consumer<String> errorHandler, Consumer<String> saveHandler, IOContext input) {
+    ExternalEditor(Consumer<String> errorHandler, Consumer<String> saveHandler,
+            IOContext input, boolean wait, Consumer<String> printHandler) {
         this.errorHandler = errorHandler;
         this.saveHandler = saveHandler;
+        this.printHandler = printHandler;
         this.input = input;
+        this.wait = wait;
     }
 
     private void edit(String[] cmd, String initialText) {
@@ -121,7 +127,16 @@ public class ExternalEditor {
         try {
             input.suspend();
             Process process = pb.start();
-            process.waitFor();
+            // wait to exit edit mode in one of these ways...
+            if (wait) {
+                // -wait option -- ignore process exit, wait for carriage-return
+                Scanner scanner = new Scanner(System.in);
+                printHandler.accept("jshell.msg.press.return.to.leave.edit.mode");
+                scanner.nextLine();
+            } else {
+                // wait for process to exit
+                process.waitFor();
+            }
         } catch (IOException ex) {
             errorHandler.accept("process IO failure: " + ex.getMessage());
         } catch (InterruptedException ex) {
@@ -148,8 +163,8 @@ public class ExternalEditor {
     }
 
     static void edit(String[] cmd, Consumer<String> errorHandler, String initialText,
-            Consumer<String> saveHandler, IOContext input) {
-        ExternalEditor ed = new ExternalEditor(errorHandler,  saveHandler, input);
+            Consumer<String> saveHandler, IOContext input, boolean wait, Consumer<String> printHandler) {
+        ExternalEditor ed = new ExternalEditor(errorHandler, saveHandler, input, wait, printHandler);
         ed.edit(cmd, initialText);
     }
 }

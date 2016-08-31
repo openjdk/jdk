@@ -60,9 +60,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import javax.xml.XMLConstants;
+import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
-import javax.xml.catalog.CatalogUriResolver;
+import javax.xml.catalog.CatalogResolver;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -224,7 +225,7 @@ public final class TransformerImpl extends Transformer
 
     // Catalog features
     CatalogFeatures _catalogFeatures;
-    CatalogUriResolver _catalogUriResolver;
+    CatalogResolver _catalogUriResolver;
 
     // Catalog is enabled by default
     boolean _useCatalog = true;
@@ -1337,7 +1338,7 @@ public final class TransformerImpl extends Transformer
             if (resolvedSource == null && _useCatalog &&
                     _catalogFeatures.get(CatalogFeatures.Feature.FILES) != null)  {
                 if (_catalogUriResolver == null) {
-                    _catalogUriResolver = CatalogManager.catalogUriResolver(_catalogFeatures);
+                    _catalogUriResolver = CatalogManager.catalogResolver(_catalogFeatures);
                 }
                 resolvedSource = _catalogUriResolver.resolve(href, baseURI);
             }
@@ -1350,7 +1351,7 @@ public final class TransformerImpl extends Transformer
 
             return getDOM(resolvedSource);
         }
-        catch (TransformerException e) {
+        catch (TransformerException | CatalogException e) {
             if (_errorListener != null)
                 postErrorToListener("File not found: " + e.getMessage());
             return(null);

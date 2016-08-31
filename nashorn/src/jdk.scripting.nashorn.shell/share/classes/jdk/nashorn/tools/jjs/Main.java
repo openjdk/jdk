@@ -172,7 +172,7 @@ public final class Main extends Shell {
                 final Consumer<String> evaluator = str -> {
                     // could be called from different thread (GUI), we need to handle Context set/reset
                     final Global _oldGlobal = Context.getGlobal();
-                    final boolean _globalChanged = (oldGlobal != global);
+                    final boolean _globalChanged = (_oldGlobal != global);
                     if (_globalChanged) {
                         Context.setGlobal(global);
                     }

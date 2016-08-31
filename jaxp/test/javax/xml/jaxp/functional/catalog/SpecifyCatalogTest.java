@@ -36,7 +36,6 @@ import static javax.xml.catalog.CatalogFeatures.Feature.FILES;
 
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogResolver;
-import javax.xml.catalog.CatalogUriResolver;
 
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
@@ -68,7 +67,7 @@ public class SpecifyCatalogTest {
     }
 
     /*
-     * CatalogUriResolver specifies catalog via feature javax.xml.catalog.files.
+     * CatalogResolver specifies catalog via feature javax.xml.catalog.files.
      */
     @Test
     public void specifyCatalogOnUriResolver() {
@@ -102,7 +101,7 @@ public class SpecifyCatalogTest {
         checkSysIdResolution(resolver, ID_SYS, matchedUri);
     }
 
-    private void checkResolutionOnUriResolver(CatalogUriResolver resolver,
+    private void checkResolutionOnUriResolver(CatalogResolver resolver,
             String matchedUri) {
         checkUriResolution(resolver, ID_URI, matchedUri);
     }
@@ -111,4 +110,3 @@ public class SpecifyCatalogTest {
         return builder().with(FILES, getCatalogPath(catalogName)).build();
     }
 }
-

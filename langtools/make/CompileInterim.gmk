@@ -32,7 +32,7 @@ include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
 
 ################################################################################
-# Setup the rules to build interim langtools, which is compiled by the boot 
+# Setup the rules to build interim langtools, which is compiled by the boot
 # javac and can be run on the boot jdk. This will be used to compile
 # the rest of the product. Each module is compiled separately to allow a modular
 # boot jdk to override system classes using -Xoverride:.
@@ -45,7 +45,8 @@ define SetupInterimModule
       DISABLE_SJAVAC := true, \
       SRC := $(LANGTOOLS_TOPDIR)/src/$(strip $1)/share/classes \
           $$(wildcard $(SUPPORT_OUTPUTDIR)/gensrc/$(strip $1)), \
-      EXCLUDES := sun com/sun/tools/jdeps com/sun/tools/javap, \
+      EXCLUDES := sun com/sun/tools/jdeps com/sun/tools/javap \
+          com/sun/tools/jdeprscan, \
       EXCLUDE_FILES := module-info.java, \
       COPY := .gif .png .xml .css .js javax.tools.JavaCompilerTool, \
       BIN := $(BUILDTOOLS_OUTPUTDIR)/override_modules/$(strip $1), \
