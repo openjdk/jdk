@@ -83,7 +83,7 @@ public class BuilderFactory {
      * Return the builder that builds the constant summary.
      * @return the builder that builds the constant summary.
      */
-    public AbstractBuilder getConstantsSummaryBuilder() throws Exception {
+    public AbstractBuilder getConstantsSummaryBuilder() {
         return ConstantsSummaryBuilder.getInstance(context,
             writerFactory.getConstantsSummaryWriter());
     }
@@ -97,7 +97,7 @@ public class BuilderFactory {
      * @return the builder that builds the constant summary.
      */
     public AbstractBuilder getPackageSummaryBuilder(PackageElement pkg, PackageElement prevPkg,
-            PackageElement nextPkg) throws Exception {
+            PackageElement nextPkg) {
         return PackageSummaryBuilder.getInstance(context, pkg,
             writerFactory.getPackageSummaryWriter(pkg, prevPkg, nextPkg));
     }
@@ -111,7 +111,7 @@ public class BuilderFactory {
      * @return the builder that builds the module summary.
      */
     public AbstractBuilder getModuleSummaryBuilder(ModuleElement mdle, ModuleElement prevModule,
-            ModuleElement nextModule) throws Exception {
+            ModuleElement nextModule) {
         return ModuleSummaryBuilder.getInstance(context, mdle,
             writerFactory.getModuleSummaryWriter(mdle, prevModule, nextModule));
     }
@@ -127,8 +127,7 @@ public class BuilderFactory {
      * writer is not supported by the doclet.
      */
     public AbstractBuilder getClassBuilder(TypeElement typeElement,
-            TypeElement prevClass, TypeElement nextClass, ClassTree classTree)
-            throws Exception {
+            TypeElement prevClass, TypeElement nextClass, ClassTree classTree) {
         return ClassBuilder.getInstance(context, typeElement,
             writerFactory.getClassWriter(typeElement, prevClass, nextClass, classTree));
     }
@@ -143,8 +142,7 @@ public class BuilderFactory {
      * writer is not supported by the doclet.
      */
     public AbstractBuilder getAnnotationTypeBuilder(
-        TypeElement annotationType, TypeMirror prevType, TypeMirror nextType)
-            throws Exception {
+        TypeElement annotationType, TypeMirror prevType, TypeMirror nextType) {
         return AnnotationTypeBuilder.getInstance(context, annotationType,
             writerFactory.getAnnotationTypeWriter(annotationType, prevType, nextType));
     }
@@ -154,8 +152,7 @@ public class BuilderFactory {
      *
      * @return an instance of the method builder for the given class.
      */
-    public AbstractBuilder getMethodBuilder(ClassWriter classWriter)
-           throws Exception {
+    public AbstractBuilder getMethodBuilder(ClassWriter classWriter) {
         return MethodBuilder.getInstance(context, classWriter.getTypeElement(),
             writerFactory.getMethodWriter(classWriter));
     }
@@ -168,8 +165,7 @@ public class BuilderFactory {
      *         annotation type.
      */
     public AbstractBuilder getAnnotationTypeFieldsBuilder(
-            AnnotationTypeWriter annotationTypeWriter)
-    throws Exception {
+            AnnotationTypeWriter annotationTypeWriter) {
         return AnnotationTypeFieldBuilder.getInstance(context,
                 annotationTypeWriter.getAnnotationTypeElement(),
                 writerFactory.getAnnotationTypeFieldWriter(annotationTypeWriter));
@@ -183,8 +179,7 @@ public class BuilderFactory {
      *         annotation type.
      */
     public AbstractBuilder getAnnotationTypeOptionalMemberBuilder(
-            AnnotationTypeWriter annotationTypeWriter)
-    throws Exception {
+            AnnotationTypeWriter annotationTypeWriter) {
         return AnnotationTypeOptionalMemberBuilder.getInstance(context,
             annotationTypeWriter.getAnnotationTypeElement(),
             writerFactory.getAnnotationTypeOptionalMemberWriter(annotationTypeWriter));
@@ -198,8 +193,7 @@ public class BuilderFactory {
      *         annotation type.
      */
     public AbstractBuilder getAnnotationTypeRequiredMemberBuilder(
-            AnnotationTypeWriter annotationTypeWriter)
-    throws Exception {
+            AnnotationTypeWriter annotationTypeWriter) {
         return AnnotationTypeRequiredMemberBuilder.getInstance(context,
             annotationTypeWriter.getAnnotationTypeElement(),
             writerFactory.getAnnotationTypeRequiredMemberWriter(annotationTypeWriter));
@@ -210,8 +204,7 @@ public class BuilderFactory {
      *
      * @return an instance of the enum constants builder for the given class.
      */
-    public AbstractBuilder getEnumConstantsBuilder(ClassWriter classWriter)
-            throws Exception {
+    public AbstractBuilder getEnumConstantsBuilder(ClassWriter classWriter) {
         return EnumConstantBuilder.getInstance(context, classWriter.getTypeElement(),
                 writerFactory.getEnumConstantWriter(classWriter));
     }
@@ -221,7 +214,7 @@ public class BuilderFactory {
      *
      * @return an instance of the field builder for the given class.
      */
-    public AbstractBuilder getFieldBuilder(ClassWriter classWriter) throws Exception {
+    public AbstractBuilder getFieldBuilder(ClassWriter classWriter) {
         return FieldBuilder.getInstance(context, classWriter.getTypeElement(),
             writerFactory.getFieldWriter(classWriter));
     }
@@ -231,7 +224,7 @@ public class BuilderFactory {
      *
      * @return an instance of the field builder for the given class.
      */
-    public AbstractBuilder getPropertyBuilder(ClassWriter classWriter) throws Exception {
+    public AbstractBuilder getPropertyBuilder(ClassWriter classWriter) {
         final PropertyWriter propertyWriter =
                 writerFactory.getPropertyWriter(classWriter);
         return PropertyBuilder.getInstance(context,
@@ -244,8 +237,7 @@ public class BuilderFactory {
      *
      * @return an instance of the constructor builder for the given class.
      */
-    public AbstractBuilder getConstructorBuilder(ClassWriter classWriter)
-            throws Exception {
+    public AbstractBuilder getConstructorBuilder(ClassWriter classWriter) {
         return ConstructorBuilder.getInstance(context, classWriter.getTypeElement(),
             writerFactory.getConstructorWriter(classWriter));
     }
@@ -255,8 +247,7 @@ public class BuilderFactory {
      *
      * @return an instance of the member summary builder for the given class.
      */
-    public AbstractBuilder getMemberSummaryBuilder(ClassWriter classWriter)
-            throws Exception {
+    public AbstractBuilder getMemberSummaryBuilder(ClassWriter classWriter) {
         return MemberSummaryBuilder.getInstance(classWriter, context);
     }
 
@@ -267,9 +258,7 @@ public class BuilderFactory {
      * @return an instance of the member summary builder for the given
      *         annotation type.
      */
-    public AbstractBuilder getMemberSummaryBuilder(
-            AnnotationTypeWriter annotationTypeWriter)
-    throws Exception {
+    public AbstractBuilder getMemberSummaryBuilder(AnnotationTypeWriter annotationTypeWriter) {
         return MemberSummaryBuilder.getInstance(annotationTypeWriter, context);
     }
 
@@ -278,8 +267,7 @@ public class BuilderFactory {
      *
      * @return the builder that builds the serialized form.
      */
-    public AbstractBuilder getSerializedFormBuilder()
-            throws Exception {
+    public AbstractBuilder getSerializedFormBuilder() {
         return SerializedFormBuilder.getInstance(context);
     }
 }

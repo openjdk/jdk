@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8157395 8157393 8157517
+ * @bug 8157395 8157393 8157517 8158738
  * @summary Tests of jshell comand options, and undoing operations
  * @modules jdk.jshell/jdk.internal.jshell.tool
  * @build ToolCommandOptionTest ReplToolTesting
@@ -88,7 +88,7 @@ public class ToolCommandOptionTest extends ReplToolTesting {
     }
 
     public void dropTest() {
-        test(false, new String[]{"-nostartup"},
+        test(false, new String[]{"--no-startup"},
                 (a) -> assertCommand(a, "int x = 5;",
                         "x ==> 5"),
                 (a) -> assertCommand(a, "x",
@@ -148,6 +148,8 @@ public class ToolCommandOptionTest extends ReplToolTesting {
                         "|  Unknown option: -furball -mattress -- /retain editor -furball -mattress"),
                 (a) -> assertCommand(a, "/retain editor -default prog",
                         "|  Specify -default option or program, not both -- /retain editor -default prog"),
+                (a) -> assertCommand(a, "/retain editor -default -wait",
+                        "|  -wait applies to external editors, cannot be used with -default"),
                 (a) -> assertCommand(a, "/retain editor prog",
                         "|  Editor set to: prog"),
                 (a) -> assertCommand(a, "/retain editor prog -default",

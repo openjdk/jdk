@@ -33,6 +33,7 @@ import javax.lang.model.element.VariableElement;
 
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.EnumConstantWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 
@@ -102,6 +103,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
      * @param context  the build context.
      * @param typeElement the class whoses members are being documented.
      * @param writer the doclet specific writer.
+     * @return the new EnumConstantsBuilder
      */
     public static EnumConstantBuilder getInstance(Context context,
             TypeElement typeElement, EnumConstantWriter writer) {
@@ -138,7 +140,9 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * summaryOrder.size()
+     * Returns whether or not there are members to document.
+     *
+     * @return whether or not there are members to document
      */
     @Override
     public boolean hasMembersToDocument() {
@@ -150,8 +154,9 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
+     * @throws DocletException is there is a problem while building the documentation
      */
-    public void buildEnumConstant(XMLNode node, Content memberDetailsTree) {
+    public void buildEnumConstant(XMLNode node, Content memberDetailsTree) throws DocletException {
         if (writer == null) {
             return;
         }

@@ -30,6 +30,7 @@ jdk/javadoc/tool/VerifyLocale.java                                              
 jdk/javadoc/tool/enum/docComments/Main.java                                     8152313    generic-all    convert to doclet test framework
 jdk/javadoc/tool/enum/enumType/Main.java                                        8152313    generic-all    convert to doclet test framework
 jdk/javadoc/tool/varArgs/Main.java                                              8152313    generic-all    convert to doclet test framework
+jdk/javadoc/doclet/testIOException/TestIOException.java                         8164597    windows-all
 
 ###########################################################################
 #
@@ -77,3 +78,9 @@ tools/sjavac/ClasspathDependencies.java						8158002	   generic-all	  Requires i
 #
 # jdeps 
 
+###########################################################################
+#
+# jdeprscan
+
+tools/jdeprscan/tests/jdk/jdeprscan/TestLoad.java                               8164837    windows-all    probably line breaks or encoding
+tools/jdeprscan/tests/jdk/jdeprscan/TestScan.java                               8164837    windows-all    probably line breaks or encoding

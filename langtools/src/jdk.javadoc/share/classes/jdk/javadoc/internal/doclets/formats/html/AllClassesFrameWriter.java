@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.IOException;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
@@ -35,10 +34,9 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 
 
@@ -75,8 +73,6 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
      * @param configuration  The current configuration
      * @param filename       Path to the file which is getting generated.
      * @param indexbuilder   Unicode based Index from {@link IndexBuilder}
-     * @throws IOException
-     * @throws DocletAbortException
      */
     public AllClassesFrameWriter(ConfigurationImpl configuration,
                                  DocPath filename, IndexBuilder indexbuilder) {
@@ -90,10 +86,10 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
      * destination directory.
      *
      * @param indexBuilder IndexBuilder object for all classes index.
-     * @throws DocletAbortException
+     * @throws DocFileIOException
      */
     public static void generate(ConfigurationImpl configuration,
-            IndexBuilder indexBuilder) {
+            IndexBuilder indexBuilder) throws DocFileIOException {
         if (configuration.frames) {
             generate(configuration, indexBuilder, DocPaths.ALLCLASSES_FRAME, true);
             generate(configuration, indexBuilder, DocPaths.ALLCLASSES_NOFRAME, false);
@@ -103,27 +99,19 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
     }
 
     private static void generate(ConfigurationImpl configuration, IndexBuilder indexBuilder,
-            DocPath fileName, boolean wantFrames) {
-        try {
-            AllClassesFrameWriter allclassgen = new AllClassesFrameWriter(configuration,
-                    fileName, indexBuilder);
-            allclassgen.buildAllClassesFile(wantFrames);
-            allclassgen = new AllClassesFrameWriter(configuration,
-                                                    fileName, indexBuilder);
-            allclassgen.buildAllClassesFile(false);
-        } catch (IOException exc) {
-            Messages messages = configuration.getMessages();
-            messages.error("doclet.exception_encountered",
-                           exc.toString(), fileName);
-            throw new DocletAbortException(exc);
-        }
+        DocPath fileName, boolean wantFrames) throws DocFileIOException {
+        AllClassesFrameWriter allclassgen = new AllClassesFrameWriter(configuration,
+                fileName, indexBuilder);
+        allclassgen.buildAllClassesFile(wantFrames);
+        allclassgen = new AllClassesFrameWriter(configuration,
+                                                fileName, indexBuilder);
     }
 
     /**
      * Print all the classes in the file.
      * @param wantFrames True if we want frames.
      */
-    protected void buildAllClassesFile(boolean wantFrames) throws IOException {
+    protected void buildAllClassesFile(boolean wantFrames) throws DocFileIOException {
         String label = configuration.getText("doclet.All_Classes");
         Content body = getBody(false, getWindowTitle(label));
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING,

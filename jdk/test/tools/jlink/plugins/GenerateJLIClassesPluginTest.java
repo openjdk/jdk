@@ -22,6 +22,7 @@
  */
 
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -73,50 +74,9 @@ public class GenerateJLIClassesPluginTest {
                     classFilesForSpecies(GenerateJLIClassesPlugin.defaultSpecies()),
                     List.of());
 
-
-        // Test a valid set of options
-        result = JImageGenerator.getJLinkTask()
-                .modulePath(helper.defaultModulePath())
-                .output(helper.createNewImageDir("generate-jli"))
-                .option("--generate-jli-classes=bmh:bmh-species=LL,L3")
-                .addMods("java.base")
-                .call();
-
-        image = result.assertSuccess();
-
-        JImageValidator.validate(
-                image.resolve("lib").resolve("modules"),
-                classFilesForSpecies(List.of("LL", "L3")),
-                classFilesForSpecies(List.of("L4")));
-
-
-        // Test disabling BMH species generation
-        result = JImageGenerator.getJLinkTask()
-                .modulePath(helper.defaultModulePath())
-                .output(helper.createNewImageDir("generate-jli"))
-                .option("--generate-jli-classes=not-bmh:bmh-species=LL,L3")
-                .addMods("java.base")
-                .call();
-
-        image = result.assertSuccess();
-        JImageValidator.validate(
-            image.resolve("lib").resolve("modules"),
-            List.of(),
-            classFilesForSpecies(List.of("LL", "L3", "L4")));
-
-
-        // Test an invalid set of options
-        result = JImageGenerator.getJLinkTask()
-                .modulePath(helper.defaultModulePath())
-                .output(helper.createNewImageDir("generate-jli"))
-                .option("--generate-jli-classes=bmh:bmh-species=LL,L7V")
-                .addMods("java.base")
-                .call();
-
-        result.assertFailure();
     }
 
-    private static List<String> classFilesForSpecies(List<String> species) {
+    private static List<String> classFilesForSpecies(Collection<String> species) {
         return species.stream()
                 .map(s -> "/java.base/java/lang/invoke/BoundMethodHandle$Species_" + s + ".class")
                 .collect(Collectors.toList());

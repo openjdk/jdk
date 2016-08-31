@@ -27,7 +27,6 @@
  * @summary Test modules with packages and subpackages filtering
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.api
- *      jdk.javadoc/jdk.javadoc.internal.doclets.standard
  *      jdk.javadoc/jdk.javadoc.internal.tool
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
@@ -52,8 +51,8 @@ public class PackageOptions extends ModuleTestBase {
 
     @Test
     public void testExportedNonQualifiedPackagesLegacyMode(Path base)  throws Exception {
-        execTask("-modulesourcepath", createSources(base.resolve("src")),
-                "-addmods", "m1",
+        execTask("--module-source-path", createSources(base.resolve("src")),
+                "--add-modules", "m1",
                 "m1pub");
 
         checkModulesNotSpecified("m1");
@@ -64,8 +63,8 @@ public class PackageOptions extends ModuleTestBase {
 
     @Test
     public void testExportedQualifiedPackagesLegacyMode(Path base)  throws Exception {
-        execTask("-modulesourcepath", createSources(base.resolve("src")),
-                "-addmods", "m1",
+        execTask("--module-source-path", createSources(base.resolve("src")),
+                "--add-modules", "m1",
                 "m1/m1pub");
 
         checkModulesNotSpecified("m1");
@@ -76,8 +75,8 @@ public class PackageOptions extends ModuleTestBase {
 
     @Test
     public void testNonExportedQualifedPackagesLegacyMode(Path base)  throws Exception {
-        execTask("-modulesourcepath", createSources(base.resolve("src")),
-                "-addmods", "m1",
+        execTask("--module-source-path", createSources(base.resolve("src")),
+                "--add-modules", "m1",
                 "m1/m1pro.pro1" /* not exported, therefore qualify with module */);
 
         checkModulesNotSpecified("m1");
@@ -92,8 +91,8 @@ public class PackageOptions extends ModuleTestBase {
     public void testTypesLegacyMode(Path base) throws Exception {
         Path srcPath = base.resolve("src");
         Path typPath = srcPath.resolve("m1/m1pub/A.java");
-        execTask("-modulesourcepath", createSources(srcPath),
-                "-addmods", "m1",
+        execTask("--module-source-path", createSources(srcPath),
+                "--add-modules", "m1",
                 typPath.toString());
         checkModulesNotSpecified("m1");
         checkModulesIncluded("m1");
@@ -109,8 +108,8 @@ public class PackageOptions extends ModuleTestBase {
     public void testSubclassedTypesLegacyMode(Path base) throws Exception {
         Path srcPath = base.resolve("src");
         Path typPath = srcPath.resolve("m1/m1pub/B.java");
-        execTask("-modulesourcepath", createSources(srcPath),
-                "-addmods", "m1",
+        execTask("--module-source-path", createSources(srcPath),
+                "--add-modules", "m1",
                 typPath.toString());
         checkModulesNotSpecified("m1");
         checkModulesIncluded("m1");
@@ -124,7 +123,7 @@ public class PackageOptions extends ModuleTestBase {
 
     @Test
     public void testDefaultPackages(Path base) throws Exception {
-        execTask("-modulesourcepath", createSources(base.resolve("src")),
+        execTask("--module-source-path", createSources(base.resolve("src")),
                 "--module", "m1");
 
         checkModulesSpecified("m1");
@@ -149,20 +148,20 @@ public class PackageOptions extends ModuleTestBase {
             // I/O error encounted during the iteration
             throw ex.getCause();
         }
-        execTask("-modulesourcepath", src.toString(),
+        execTask("--module-source-path", src.toString(),
                 "-subpackages", "m1/m1pro");
 
         checkPackagesSpecified("m1pro", "m1pro.pro1", "m1pro.pro2");
 
         // empty package directory should cause an error
-        execNegativeTask("-modulesourcepath", src.toString(),
+        execNegativeTask("--module-source-path", src.toString(),
                          "m1/m1pro");
 
     }
 
     @Test
     public void testExportedQualifiedSubpackageWithMultipleModules(Path base) throws Exception {
-        execTask("-modulesourcepath", createSources(base.resolve("src"), 2),
+        execTask("--module-source-path", createSources(base.resolve("src"), 2),
                 "--module", "m1",
                 "-subpackages", "m1/m1pro.pro1:m1/m1pro.pro2:m2/m2pub.pub1");
 
@@ -177,7 +176,7 @@ public class PackageOptions extends ModuleTestBase {
 
     @Test
     public void testUnexportedUnqualifiedSubpackages(Path base) throws Exception {
-        execNegativeTask("-modulesourcepath", createSources(base.resolve("src")),
+        execNegativeTask("--module-source-path", createSources(base.resolve("src")),
                          "--module", "m1",
                          "-subpackages", "m1pub.pub1:pro");
 
@@ -186,7 +185,7 @@ public class PackageOptions extends ModuleTestBase {
 
     @Test
     public void testUnexportedQualifiedPackage(Path base) throws Exception {
-        execTask("-modulesourcepath", createSources(base.resolve("src")),
+        execTask("--module-source-path", createSources(base.resolve("src")),
                 "--module", "m1",
                 "m1/m1pro");
 
@@ -201,7 +200,7 @@ public class PackageOptions extends ModuleTestBase {
 
     @Test
     public void testUnexportedQualifiedSubpackage(Path base) throws Exception {
-        execTask("-modulesourcepath", createSources(base.resolve("src")),
+        execTask("--module-source-path", createSources(base.resolve("src")),
                 "--module", "m1",
                 "-subpackages", "m1/m1pro");
 
@@ -216,7 +215,7 @@ public class PackageOptions extends ModuleTestBase {
 
     @Test
     public void testUnexportedQualifiedSubpackageExcludeQualified(Path base) throws Exception {
-        execTask("-modulesourcepath", createSources(base.resolve("src")),
+        execTask("--module-source-path", createSources(base.resolve("src")),
                 "--module", "m1",
                 "-subpackages", "m1/m1pro",
                 "-exclude", "m1/m1pro.pro1.pro11:m1/m1pro.pro2.pro21");
@@ -233,7 +232,7 @@ public class PackageOptions extends ModuleTestBase {
 
     @Test
     public void testUnexportedQualifiedSubpackageExcludeUnqualified(Path base) throws Exception {
-        execTask("-modulesourcepath", createSources(base.resolve("src")),
+        execTask("--module-source-path", createSources(base.resolve("src")),
                 "--module", "m1",
                 "-subpackages", "m1/m1pro",
                 "-exclude", "m1pro.pro1.pro11:m1pro.pro2.pro21");
@@ -250,7 +249,7 @@ public class PackageOptions extends ModuleTestBase {
 
     @Test
     public void testUnexportedQualifiedSubpackages(Path base) throws Exception {
-        execTask("-modulesourcepath", createSources(base.resolve("src")),
+        execTask("--module-source-path", createSources(base.resolve("src")),
                 "--module", "m1",
                 "-subpackages", "m1/m1pro.pro1:m1/m1pro.pro2");
 

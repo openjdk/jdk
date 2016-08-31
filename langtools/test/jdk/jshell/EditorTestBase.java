@@ -42,7 +42,7 @@ public abstract class EditorTestBase extends ReplToolTesting {
     public abstract void shutdownEditor();
 
     public void testEditor(ReplTest... tests) {
-        testEditor(false, new String[]{"-nostartup"}, tests);
+        testEditor(false, new String[]{"--no-startup"}, tests);
     }
 
     public void testEditor(boolean defaultStartup, String[] args, ReplTest... tests) {
@@ -71,7 +71,7 @@ public abstract class EditorTestBase extends ReplToolTesting {
     @Test
     public void testEditNegative() {
         for (String edit : new String[] {"/ed", "/edit"}) {
-            test(new String[]{"-nostartup"},
+            test(new String[]{"--no-startup"},
                     a -> assertCommandOutputStartsWith(a, edit + " 1",
                             "|  No such snippet: 1"),
                     a -> assertCommandOutputStartsWith(a, edit + " unknown",
