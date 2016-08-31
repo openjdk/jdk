@@ -54,7 +54,6 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationSpec.hpp"
-#include "gc/shared/referencePendingListLocker.hpp"
 #include "gc/shared/space.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/bytecodes.hpp"
@@ -1637,7 +1636,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
            declare_type(JavaThread, Thread)                               \
            declare_type(JvmtiAgentThread, JavaThread)                     \
            declare_type(ServiceThread, JavaThread)                        \
-           declare_type(ReferencePendingListLockerThread, JavaThread)     \
   declare_type(CompilerThread, JavaThread)                                \
   declare_type(CodeCacheSweeperThread, JavaThread)                        \
   declare_toplevel_type(OSThread)                                         \
