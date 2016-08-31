@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,23 @@
  * questions.
  */
 
-package jdk.internal.misc;
+#include "jvm.h"
+#include "java_lang_ref_Reference.h"
 
-public interface JavaLangRefAccess {
+JNIEXPORT jobject JNICALL
+Java_java_lang_ref_Reference_getAndClearReferencePendingList(JNIEnv *env, jclass ignore)
+{
+    return JVM_GetAndClearReferencePendingList(env);
+}
 
-    /**
-     * Wait for progress in {@link java.lang.ref.Reference}
-     * processing.  If there aren't any pending {@link
-     * java.lang.ref.Reference}s, return immediately.
-     *
-     * @return {@code true} if there were any pending
-     * {@link java.lang.ref.Reference}s, {@code false} otherwise.
-     */
-    boolean waitForReferenceProcessing() throws InterruptedException;
+JNIEXPORT jboolean JNICALL
+Java_java_lang_ref_Reference_hasReferencePendingList(JNIEnv *env, jclass ignore)
+{
+    return JVM_HasReferencePendingList(env);
+}
+
+JNIEXPORT void JNICALL
+Java_java_lang_ref_Reference_waitForReferencePendingList(JNIEnv *env, jclass ignore)
+{
+    JVM_WaitForReferencePendingList(env);
 }
