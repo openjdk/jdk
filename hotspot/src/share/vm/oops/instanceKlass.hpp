@@ -771,7 +771,10 @@ public:
   static int  _previous_version_count;
  public:
   static void purge_previous_versions(InstanceKlass* ik);
-  static bool has_previous_versions() { return _previous_version_count > 0; }
+  static bool has_previous_versions() {
+    assert(_previous_version_count >= 0, "count should never be negative");
+    return _previous_version_count > 0;
+  }
 
   // JVMTI: Support for caching a class file before it is modified by an agent that can do retransformation
   void set_cached_class_file(JvmtiCachedClassFileData *data) {
