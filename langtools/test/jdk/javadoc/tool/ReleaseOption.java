@@ -33,7 +33,7 @@ import jdk.javadoc.internal.tool.Main;
 /**
  * @test
  * @bug 8086737
- * @summary Test -release option in javadoc
+ * @summary Test --release option in javadoc
  * @run main ReleaseOption
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  */
@@ -43,10 +43,10 @@ public class ReleaseOption {
     }
 
     void run() {
-        doRunTest(0, out -> out.contains("compiler.err.doesnt.exist: java.util.stream"), "-release", "7");
-        doRunTest(0, out -> !out.contains("compiler.err.doesnt.exist: java.util.stream"), "-release", "8");
-        doRunTest(1, out -> true, "-release", "7", "-source", "7");
-        doRunTest(1, out -> true, "-release", "7", "-bootclasspath", "any");
+        doRunTest(0, out -> out.contains("compiler.err.doesnt.exist: java.util.stream"), "--release", "7");
+        doRunTest(0, out -> !out.contains("compiler.err.doesnt.exist: java.util.stream"), "--release", "8");
+        doRunTest(1, out -> true, "--release", "7", "-source", "7");
+        doRunTest(1, out -> true, "--release", "7", "-bootclasspath", "any");
     }
 
     void doRunTest(int expectedResult, Predicate<String> validate, String... args) {

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary tests for -upgrademodulepath
+ * @summary tests for --upgrade-module-path
  * @library /tools/lib
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
