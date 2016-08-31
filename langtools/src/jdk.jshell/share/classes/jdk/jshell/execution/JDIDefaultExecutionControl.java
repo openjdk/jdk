@@ -77,17 +77,19 @@ public class JDIDefaultExecutionControl extends JDIExecutionControl {
      * @return the generator
      */
     public static ExecutionControl.Generator launch() {
-        return env -> create(env, true);
+        return env -> create(env, true, null);
     }
 
     /**
      * Creates an ExecutionControl instance based on a JDI
      * {@code ListeningConnector}.
      *
+     * @param host explicit hostname to use, if null use discovered
+     * hostname, applies to listening only (!isLaunch)
      * @return the generator
      */
-    public static ExecutionControl.Generator listen() {
-        return env -> create(env, false);
+    public static ExecutionControl.Generator listen(String host) {
+        return env -> create(env, false, host);
     }
 
     /**
@@ -100,10 +102,15 @@ public class JDIDefaultExecutionControl extends JDIExecutionControl {
      *
      * @param env the context passed by
      * {@link jdk.jshell.spi.ExecutionControl#start(jdk.jshell.spi.ExecutionEnv) }
+     * @param isLaunch does JDI do the launch? That is, LaunchingConnector,
+     * otherwise we start explicitly and use ListeningConnector
+     * @param host explicit hostname to use, if null use discovered
+     * hostname, applies to listening only (!isLaunch)
      * @return the channel
      * @throws IOException if there are errors in set-up
      */
-    private static JDIDefaultExecutionControl create(ExecutionEnv env, boolean isLaunch) throws IOException {
+    private static JDIDefaultExecutionControl create(ExecutionEnv env,
+            boolean isLaunch, String host) throws IOException {
         try (final ServerSocket listener = new ServerSocket(0)) {
             // timeout after 60 seconds
             listener.setSoTimeout(60000);
@@ -111,7 +118,7 @@ public class JDIDefaultExecutionControl extends JDIExecutionControl {
 
             // Set-up the JDI connection
             JDIInitiator jdii = new JDIInitiator(port,
-                    env.extraRemoteVMOptions(), REMOTE_AGENT, isLaunch);
+                    env.extraRemoteVMOptions(), REMOTE_AGENT, isLaunch, host);
             VirtualMachine vm = jdii.vm();
             Process process = jdii.process();
 

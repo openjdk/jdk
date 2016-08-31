@@ -159,7 +159,7 @@ class MyExecutionControl extends JDIExecutionControl {
                     + System.getProperty("path.separator")
                     + System.getProperty("user.dir"));
             JDIInitiator jdii = new JDIInitiator(port,
-                    opts, REMOTE_AGENT, true);
+                    opts, REMOTE_AGENT, true, null);
             VirtualMachine vm = jdii.vm();
             Process process = jdii.process();
 
