@@ -79,7 +79,7 @@ public class NestedUnsafe {
             "            throw new RuntimeException(\"Exception: \" + ex.toString()); " +
             "        } " +
             "} } ",
-            "-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED");
+            "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
         Class klass2 = unsafe.defineAnonymousClass(NestedUnsafe.class, klassbuf2, new Object[0]);
         try {
             klass2.getMethod("doit").invoke(null);
