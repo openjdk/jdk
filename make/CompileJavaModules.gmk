@@ -504,7 +504,7 @@ $(eval $(call SetupJavaCompilation, $(MODULE), \
         $($(MODULE)_ADD_JAVAC_FLAGS) \
         --module-source-path $(MODULESOURCEPATH) \
         --module-path $(MODULEPATH) \
-        -system none, \
+        --system none, \
 ))
 
 TARGETS += $($(MODULE)) $($(MODULE)_COPY_EXTRA)
