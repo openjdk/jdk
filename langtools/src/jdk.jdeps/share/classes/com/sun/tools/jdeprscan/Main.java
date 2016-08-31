@@ -81,7 +81,7 @@ import javax.lang.model.element.TypeElement;
  *  - more rigorous GNU style option parsing; use joptsimple?
  *
  * FUTURES:
- *  - add module support: -addmods, -modulepath, module arg
+ *  - add module support: --add-modules, --module-path, module arg
  *  - load deprecation declarations from a designated class library instead
  *    of the JDK
  *  - load deprecation declarations from a module
@@ -331,7 +331,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
      * @throws IOException if an I/O error occurs
      */
     boolean processSelf(Collection<String> classes) throws IOException {
-        options.add("-addmods");
+        options.add("--add-modules");
         options.add("java.se.ee,jdk.xml.bind"); // TODO why jdk.xml.bind?
 
         if (classes.isEmpty()) {
@@ -360,7 +360,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
      * @return success value
      */
     boolean processRelease(String release, Collection<String> classes) throws IOException {
-        options.addAll(List.of("-release", release));
+        options.addAll(List.of("--release", release));
 
         if (release.equals("9")) {
             List<String> rootMods = List.of("java.se", "java.se.ee");
@@ -368,7 +368,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
             JavaCompiler.CompilationTask task =
                 compiler.getTask(null, fm, this,
                                  // options
-                                 List.of("-addmods", String.join(",", rootMods)),
+                                 List.of("--add-modules", String.join(",", rootMods)),
                                  // classes
                                  List.of("java.lang.Object"),
                                  null);
@@ -377,7 +377,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
                 return false;
             }
             Map<PackageElement, List<TypeElement>> types = proc.getPublicTypes();
-            options.add("-addmods");
+            options.add("--add-modules");
             options.add(String.join(",", rootMods));
             return doClassNames(
                 types.values().stream()
