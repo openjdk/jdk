@@ -2626,6 +2626,11 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_constant(Deoptimization::Reason_rtm_state_change)               \
   declare_constant(Deoptimization::Reason_unstable_if)                    \
   declare_constant(Deoptimization::Reason_unstable_fused_if)              \
+  NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_aliasing)))                       \
+  NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_transfer_to_interpreter)))        \
+  NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_not_compiled_exception_handler))) \
+  NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_unresolved)))                     \
+  NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_jsr_mismatch)))                   \
   declare_constant(Deoptimization::Reason_tenured)                        \
   declare_constant(Deoptimization::Reason_LIMIT)                          \
   declare_constant(Deoptimization::Reason_RECORDED_LIMIT)                 \
@@ -2750,7 +2755,13 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_constant(ConcreteRegisterImpl::number_of_registers)             \
   declare_preprocessor_constant("REG_COUNT", REG_COUNT)                \
   declare_c2_preprocessor_constant("SAVED_ON_ENTRY_REG_COUNT", SAVED_ON_ENTRY_REG_COUNT) \
-  declare_c2_preprocessor_constant("C_SAVED_ON_ENTRY_REG_COUNT", C_SAVED_ON_ENTRY_REG_COUNT)
+  declare_c2_preprocessor_constant("C_SAVED_ON_ENTRY_REG_COUNT", C_SAVED_ON_ENTRY_REG_COUNT) \
+                                                                          \
+  /****************/                                                      \
+  /* JVMCI */                                                             \
+  /****************/                                                      \
+                                                                          \
+  declare_preprocessor_constant("INCLUDE_JVMCI", INCLUDE_JVMCI)
 
 
 //--------------------------------------------------------------------------------
