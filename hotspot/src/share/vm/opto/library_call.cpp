@@ -254,6 +254,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_currentThread();
 
   bool inline_native_time_funcs(address method, const char* funcName);
+#ifdef TRACE_HAVE_INTRINSICS
+  bool inline_native_classID();
+#endif
   bool inline_native_isInterrupted();
   bool inline_native_Class_query(vmIntrinsics::ID id);
   bool inline_native_subtype_check();
@@ -708,6 +711,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
 #ifdef TRACE_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:              return inline_native_time_funcs(CAST_FROM_FN_PTR(address, TRACE_TIME_METHOD), "counterTime");
+  case vmIntrinsics::_getClassId:               return inline_native_classID();
 #endif
   case vmIntrinsics::_currentTimeMillis:        return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeMillis), "currentTimeMillis");
   case vmIntrinsics::_nanoTime:                 return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeNanos), "nanoTime");
@@ -3131,6 +3135,43 @@ bool LibraryCallKit::inline_native_time_funcs(address funcAddr, const char* func
   set_result(value);
   return true;
 }
+
+#ifdef TRACE_HAVE_INTRINSICS
+
+/*
+* oop -> myklass
+* myklass->trace_id |= USED
+* return myklass->trace_id & ~0x3
+*/
+bool LibraryCallKit::inline_native_classID() {
+  Node* cls = null_check(argument(0), T_OBJECT);
+  Node* kls = load_klass_from_mirror(cls, false, NULL, 0);
+  kls = null_check(kls, T_OBJECT);
+
+  ByteSize offset = TRACE_KLASS_TRACE_ID_OFFSET;
+  Node* insp = basic_plus_adr(kls, in_bytes(offset));
+  Node* tvalue = make_load(NULL, insp, TypeLong::LONG, T_LONG, MemNode::unordered);
+
+  Node* clsused = longcon(0x01l); // set the class bit
+  Node* orl = _gvn.transform(new OrLNode(tvalue, clsused));
+  const TypePtr *adr_type = _gvn.type(insp)->isa_ptr();
+  store_to_memory(control(), insp, orl, T_LONG, adr_type, MemNode::unordered);
+
+#ifdef TRACE_ID_META_BITS
+  Node* mbits = longcon(~TRACE_ID_META_BITS);
+  tvalue = _gvn.transform(new AndLNode(tvalue, mbits));
+#endif
+#ifdef TRACE_ID_CLASS_SHIFT
+  Node* cbits = intcon(TRACE_ID_CLASS_SHIFT);
+  tvalue = _gvn.transform(new URShiftLNode(tvalue, cbits));
+#endif
+
+  set_result(tvalue);
+  return true;
+
+}
+
+#endif
 
 //------------------------inline_native_currentThread------------------
 bool LibraryCallKit::inline_native_currentThread() {
