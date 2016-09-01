@@ -26,7 +26,6 @@
 package jdk.internal.jshell.tool;
 
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -142,11 +141,30 @@ public class JShellTool implements MessageHandler {
     /**
      * The constructor for the tool (used by tool launch via main and by test
      * harnesses to capture ins and outs.
+     * @param in command line input -- snippets, commands and user input
+     * @param cmdout command line output, feedback including errors
+     * @param cmderr start-up errors and debugging info
+     * @param console console control interaction
+     * @param userout code execution output  -- System.out.printf("hi")
+     * @param usererr code execution error stream  -- System.err.printf("Oops")
+     * @param prefs preferences to use
+     * @param locale locale to use
+     */
+    public JShellTool(InputStream in, PrintStream cmdout, PrintStream cmderr,
+            PrintStream console,
+            PrintStream userout, PrintStream usererr,
+            Preferences prefs, Locale locale) {
+        this(in, cmdout, cmderr, console, null, userout, usererr, prefs, locale);
+    }
+
+    /**
+     * The constructor for the tool (used by tool launch via main and by test
+     * harnesses to capture ins and outs.
      * @param cmdin command line input -- snippets and commands
      * @param cmdout command line output, feedback including errors
      * @param cmderr start-up errors and debugging info
      * @param console console control interaction
-     * @param userin code execution input (not yet functional)
+     * @param userin code execution input, or null to use IOContext
      * @param userout code execution output  -- System.out.printf("hi")
      * @param usererr code execution error stream  -- System.err.printf("Oops")
      * @param prefs preferences to use
@@ -160,7 +178,12 @@ public class JShellTool implements MessageHandler {
         this.cmdout = cmdout;
         this.cmderr = cmderr;
         this.console = console;
-        this.userin = userin;
+        this.userin = userin != null ? userin : new InputStream() {
+            @Override
+            public int read() throws IOException {
+                return input.readUserInput();
+            }
+        };
         this.userout = userout;
         this.usererr = usererr;
         this.prefs = prefs;
@@ -452,7 +475,7 @@ public class JShellTool implements MessageHandler {
      */
     public static void main(String[] args) throws Exception {
         new JShellTool(System.in, System.out, System.err, System.out,
-                 new ByteArrayInputStream(new byte[0]), System.out, System.err,
+                 System.out, System.err,
                  Preferences.userRoot().node("tool/JShell"),
                  Locale.getDefault())
                 .start(args);
@@ -2621,6 +2644,11 @@ class ScannerIOContext extends NonInteractiveIOContext {
     public void close() {
         scannerIn.close();
     }
+
+    @Override
+    public int readUserInput() {
+        return -1;
+    }
 }
 
 class FileScannerIOContext extends ScannerIOContext {
@@ -2658,5 +2686,10 @@ class ReloadIOContext extends NonInteractiveIOContext {
 
     @Override
     public void close() {
+    }
+
+    @Override
+    public int readUserInput() {
+        return -1;
     }
 }

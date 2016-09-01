@@ -25,9 +25,9 @@
 package jdk.jshell.execution;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -48,7 +48,7 @@ import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionEnv;
-import static jdk.jshell.execution.Util.remoteInput;
+import static jdk.jshell.execution.Util.remoteInputOutput;
 
 /**
  * The implementation of {@link jdk.jshell.spi.ExecutionControl} that the
@@ -109,7 +109,7 @@ public class JDIDefaultExecutionControl extends JDIExecutionControl {
      * @return the channel
      * @throws IOException if there are errors in set-up
      */
-    private static JDIDefaultExecutionControl create(ExecutionEnv env,
+    private static ExecutionControl create(ExecutionEnv env,
             boolean isLaunch, String host) throws IOException {
         try (final ServerSocket listener = new ServerSocket(0)) {
             // timeout after 60 seconds
@@ -121,10 +121,6 @@ public class JDIDefaultExecutionControl extends JDIExecutionControl {
                     env.extraRemoteVMOptions(), REMOTE_AGENT, isLaunch, host);
             VirtualMachine vm = jdii.vm();
             Process process = jdii.process();
-
-            // Forward input to the remote agent
-            Util.forwardInputToRemote(env.userIn(), process.getOutputStream(),
-                    ex -> debug(ex, "input forwarding failure"));
 
             List<Consumer<String>> deathListeners = new ArrayList<>();
             deathListeners.add(s -> env.closeDown());
@@ -138,12 +134,13 @@ public class JDIDefaultExecutionControl extends JDIExecutionControl {
             // output.
             Socket socket = listener.accept();
             // out before in -- match remote creation so we don't hang
-            ObjectOutput cmdout = new ObjectOutputStream(socket.getOutputStream());
-            Map<String, OutputStream> io = new HashMap<>();
-            io.put("out", env.userOut());
-            io.put("err", env.userErr());
-            ObjectInput cmdin = remoteInput(socket.getInputStream(), io);
-            return new JDIDefaultExecutionControl(cmdout, cmdin, vm, process, deathListeners);
+            OutputStream out = socket.getOutputStream();
+            Map<String, OutputStream> outputs = new HashMap<>();
+            outputs.put("out", env.userOut());
+            outputs.put("err", env.userErr());
+            Map<String, InputStream> input = new HashMap<>();
+            input.put("in", env.userIn());
+            return remoteInputOutput(socket.getInputStream(), out, outputs, input, (objIn, objOut) -> new JDIDefaultExecutionControl(objOut, objIn, vm, process, deathListeners));
         }
     }
 
