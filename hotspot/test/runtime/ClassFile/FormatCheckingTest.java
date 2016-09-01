@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,33 +23,23 @@
 
 /*
  * @test
- * Verify behaviour of Unsafe.get/putAddress and Unsafe.addressSize
+ * @bug 8148854
+ * @summary Ensure class name loaded by app class loader is format checked by default
  * @library /test/lib
+ * @compile BadHelloWorld.jcod
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main GetPutAddress
+ * @run main FormatCheckingTest
  */
 
-import jdk.test.lib.Platform;
-import jdk.test.lib.unsafe.UnsafeHelper;
-import jdk.internal.misc.Unsafe;
-import static jdk.test.lib.Asserts.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
-public class GetPutAddress {
-    public static void main(String args[]) throws Exception {
-        Unsafe unsafe = UnsafeHelper.getUnsafe();
-        int addressSize = unsafe.addressSize();
-        // Ensure the size returned from Unsafe.addressSize is correct
-        assertEquals(unsafe.addressSize(), Platform.is32bit() ? 4 : 8);
-
-        // Write the address, read it back and make sure it's the same value
-        long address = unsafe.allocateMemory(addressSize);
-        unsafe.putAddress(address, address);
-        long readAddress = unsafe.getAddress(address);
-        if (addressSize == 4) {
-          readAddress &= 0x00000000FFFFFFFFL;
-        }
-        assertEquals(address, readAddress);
-        unsafe.freeMemory(address);
+public class FormatCheckingTest {
+    public static void main(String args[]) throws Throwable {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("BadHelloWorld");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("java.lang.ClassFormatError: Illegal class name");
+        output.shouldHaveExitValue(1);
     }
 }
