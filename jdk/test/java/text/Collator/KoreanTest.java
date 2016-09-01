@@ -25,6 +25,7 @@
  * @test 1.1 02/09/12
  * @bug 4176141 4655819
  * @summary Regression tests for Korean Collation
+ * @modules jdk.localedata
  */
 
 import java.text.*;

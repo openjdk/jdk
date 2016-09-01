@@ -50,6 +50,8 @@ TARGETS += $(CLASSLIST_JAR)
 
 CLASSLIST_FILE := $(SUPPORT_OUTPUTDIR)/classlist/classlist
 
+JLI_TRACE_FILE := $(SUPPORT_OUTPUTDIR)/classlist/jli_trace.out
+
 # If an external buildjdk has been supplied, we don't build a separate interim
 # image, so just use the external build jdk instead.
 ifeq ($(EXTERNAL_BUILDJDK), true)
@@ -59,13 +61,11 @@ endif
 $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXE_SUFFIX) $(CLASSLIST_JAR)
 	$(call MakeDir, $(@D))
 	$(call LogInfo, Generating lib/classlist)
-	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -XX:DumpLoadedClassList=$@.tmp \
-	    -cp $(SUPPORT_OUTPUTDIR)/classlist.jar \
-	    build.tools.classlist.HelloClasslist $(LOG_DEBUG) 2>&1
-        # Filter out generated classes, remove after JDK-8149977
 	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -XX:DumpLoadedClassList=$@ \
-	    -Xshare:dump -XX:SharedClassListFile=$@.tmp $(LOG_DEBUG) 2>&1
-	$(RM) $@.tmp
+	    -Djava.lang.invoke.MethodHandle.TRACE_RESOLVE=true \
+	    -cp $(SUPPORT_OUTPUTDIR)/classlist.jar \
+	    build.tools.classlist.HelloClasslist \
+	    $(LOG_DEBUG) 2>&1 > $(JLI_TRACE_FILE)
 
 TARGETS += $(CLASSLIST_FILE)
 

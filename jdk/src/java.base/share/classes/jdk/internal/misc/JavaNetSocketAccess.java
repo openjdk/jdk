@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,12 +23,19 @@
  * questions.
  */
 
-package p2;
+package jdk.internal.misc;
 
-import p1.T2;
+import java.net.ServerSocket;
+import java.net.SocketImpl;
 
-import java.lang.invoke.MethodHandles;
+public interface JavaNetSocketAccess {
+    /**
+     * Creates a ServerSocket associated with the given SocketImpl.
+     */
+    ServerSocket newServerSocket(SocketImpl impl);
 
-public class T3 extends T2 {
-    public static MethodHandles.Lookup lookup() { return MethodHandles.lookup(); }
+    /*
+     * Constructs a SocketImpl instance of the given class.
+     */
+    SocketImpl newSocketImpl(Class<? extends SocketImpl> implClass);
 }

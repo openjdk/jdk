@@ -25,6 +25,7 @@
  * @test
  * @library /java/text/testlib
  * @summary test Thai Collation
+ * @modules jdk.localedata
  */
 /*
  * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.

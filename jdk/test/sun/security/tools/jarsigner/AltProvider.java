@@ -25,7 +25,7 @@
  * @test
  * @bug 4906940 8130302
  * @summary -providerPath, -providerClass, -addprovider, and -providerArg
- * @library /lib/testlibrary /test/lib/share/classes
+ * @library /lib/testlibrary /test/lib
  * @modules java.base/jdk.internal.misc
  */
 
