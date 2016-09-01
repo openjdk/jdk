@@ -108,9 +108,23 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_RELEASE));
 
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
+
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_RELEASE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_RELEASE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_RELEASE));
     }
 
 
@@ -266,7 +280,51 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            String o = (String) vh.getAndAddAcquire(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndAddRelease(recv, "foo");
+        });
+
+        checkUOE(() -> {
             String o = (String) vh.addAndGet(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseOr(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseOrAcquire(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseOrRelease(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseAnd(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseAndAcquire(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseAndRelease(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseXor(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseXorAcquire(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseXorRelease(recv, "foo");
         });
     }
 
@@ -321,7 +379,51 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            String o = (String) vh.getAndAddAcquire("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndAddRelease("foo");
+        });
+
+        checkUOE(() -> {
             String o = (String) vh.addAndGet("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseOr("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseOrAcquire("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseOrRelease("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseAnd("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseAndAcquire("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseAndRelease("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseXor("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseXorAcquire("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseXorRelease("foo");
         });
     }
 
@@ -457,11 +559,32 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
 
         // Compare set and get
         {
+            vh.set(recv, "foo");
+
             String o = (String) vh.getAndSet(recv, "bar");
             assertEquals(o, "foo", "getAndSet String");
             String x = (String) vh.get(recv);
             assertEquals(x, "bar", "getAndSet String value");
         }
+
+        {
+            vh.set(recv, "foo");
+
+            String o = (String) vh.getAndSetAcquire(recv, "bar");
+            assertEquals(o, "foo", "getAndSetAcquire String");
+            String x = (String) vh.get(recv);
+            assertEquals(x, "bar", "getAndSetAcquire String value");
+        }
+
+        {
+            vh.set(recv, "foo");
+
+            String o = (String) vh.getAndSetRelease(recv, "bar");
+            assertEquals(o, "foo", "getAndSetRelease String");
+            String x = (String) vh.get(recv);
+            assertEquals(x, "bar", "getAndSetRelease String value");
+        }
+
 
     }
 
@@ -472,7 +595,51 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            String o = (String) vh.getAndAddAcquire(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndAddRelease(recv, "foo");
+        });
+
+        checkUOE(() -> {
             String o = (String) vh.addAndGet(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseOr(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseOrAcquire(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseOrRelease(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseAnd(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseAndAcquire(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseAndRelease(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseXor(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseXorAcquire(recv, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseXorRelease(recv, "foo");
         });
     }
 
@@ -608,11 +775,32 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
 
         // Compare set and get
         {
+            vh.set("foo");
+
             String o = (String) vh.getAndSet("bar");
             assertEquals(o, "foo", "getAndSet String");
             String x = (String) vh.get();
             assertEquals(x, "bar", "getAndSet String value");
         }
+
+        {
+            vh.set("foo");
+
+            String o = (String) vh.getAndSetAcquire("bar");
+            assertEquals(o, "foo", "getAndSetAcquire String");
+            String x = (String) vh.get();
+            assertEquals(x, "bar", "getAndSetAcquire String value");
+        }
+
+        {
+            vh.set("foo");
+
+            String o = (String) vh.getAndSetRelease("bar");
+            assertEquals(o, "foo", "getAndSetRelease String");
+            String x = (String) vh.get();
+            assertEquals(x, "bar", "getAndSetRelease String value");
+        }
+
 
     }
 
@@ -623,7 +811,51 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            String o = (String) vh.getAndAddAcquire("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndAddRelease("foo");
+        });
+
+        checkUOE(() -> {
             String o = (String) vh.addAndGet("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseOr("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseOrAcquire("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseOrRelease("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseAnd("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseAndAcquire("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseAndRelease("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseXor("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseXorAcquire("foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseXorRelease("foo");
         });
     }
 
@@ -762,11 +994,32 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
 
             // Compare set and get
             {
+                vh.set(array, i, "foo");
+
                 String o = (String) vh.getAndSet(array, i, "bar");
                 assertEquals(o, "foo", "getAndSet String");
                 String x = (String) vh.get(array, i);
                 assertEquals(x, "bar", "getAndSet String value");
             }
+
+            {
+                vh.set(array, i, "foo");
+
+                String o = (String) vh.getAndSetAcquire(array, i, "bar");
+                assertEquals(o, "foo", "getAndSetAcquire String");
+                String x = (String) vh.get(array, i);
+                assertEquals(x, "bar", "getAndSetAcquire String value");
+            }
+
+            {
+                vh.set(array, i, "foo");
+
+                String o = (String) vh.getAndSetRelease(array, i, "bar");
+                assertEquals(o, "foo", "getAndSetRelease String");
+                String x = (String) vh.get(array, i);
+                assertEquals(x, "bar", "getAndSetRelease String value");
+            }
+
 
         }
     }
@@ -781,7 +1034,51 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            String o = (String) vh.getAndAddAcquire(array, i, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndAddRelease(array, i, "foo");
+        });
+
+        checkUOE(() -> {
             String o = (String) vh.addAndGet(array, i, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseOr(array, i, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseOrAcquire(array, i, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseOrRelease(array, i, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseAnd(array, i, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseAndAcquire(array, i, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseAndRelease(array, i, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseXor(array, i, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseXorAcquire(array, i, "foo");
+        });
+
+        checkUOE(() -> {
+            String o = (String) vh.getAndBitwiseXorRelease(array, i, "foo");
         });
     }
 
@@ -858,6 +1155,15 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             checkIOOBE(() -> {
                 String o = (String) vh.getAndSet(array, ci, "foo");
             });
+
+            checkIOOBE(() -> {
+                String o = (String) vh.getAndSetAcquire(array, ci, "foo");
+            });
+
+            checkIOOBE(() -> {
+                String o = (String) vh.getAndSetRelease(array, ci, "foo");
+            });
+
 
         }
     }

@@ -97,9 +97,23 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_RELEASE));
 
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
+
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_RELEASE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_RELEASE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_RELEASE));
     }
 
     @Test(dataProvider = "typesProvider")
@@ -221,11 +235,63 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
         });
 
         checkUOE(() -> {
+            char o = (char) vh.getAndSetAcquire(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            char o = (char) vh.getAndSetRelease(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
             char o = (char) vh.getAndAdd(array, ci, VALUE_1);
         });
 
         checkUOE(() -> {
+            char o = (char) vh.getAndAddAcquire(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            char o = (char) vh.getAndAddRelease(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
             char o = (char) vh.addAndGet(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            char o = (char) vh.getAndBitwiseOr(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            char o = (char) vh.getAndBitwiseOrAcquire(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            char o = (char) vh.getAndBitwiseOrRelease(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            char o = (char) vh.getAndBitwiseAnd(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            char o = (char) vh.getAndBitwiseAndAcquire(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            char o = (char) vh.getAndBitwiseAndRelease(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            char o = (char) vh.getAndBitwiseXor(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            char o = (char) vh.getAndBitwiseXorAcquire(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            char o = (char) vh.getAndBitwiseXorRelease(array, ci, VALUE_1);
         });
     }
 
@@ -290,11 +356,63 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
             });
 
             checkUOE(() -> {
+                char o = (char) vh.getAndSetAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndSetRelease(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
                 char o = (char) vh.getAndAdd(array, ci, VALUE_1);
             });
 
             checkUOE(() -> {
+                char o = (char) vh.getAndAddAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndAddRelease(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
                 char o = (char) vh.addAndGet(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseOr(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseOrAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseOrRelease(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseAnd(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseAndAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseAndRelease(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseXor(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseXorAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseXorRelease(array, ci, VALUE_1);
             });
         }
         else {
@@ -333,12 +451,63 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
             checkUOE(() -> {
                 char o = (char) vh.getAndSet(array, ci, VALUE_1);
             });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndSetAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndSetRelease(array, ci, VALUE_1);
+            });
             checkUOE(() -> {
                 char o = (char) vh.getAndAdd(array, ci, VALUE_1);
             });
 
             checkUOE(() -> {
+                char o = (char) vh.getAndAddAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndAddRelease(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
                 char o = (char) vh.addAndGet(array, ci, VALUE_1);
+            });
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseOr(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseOrAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseOrRelease(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseAnd(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseAndAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseAndRelease(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseXor(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseXorAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                char o = (char) vh.getAndBitwiseXorRelease(array, ci, VALUE_1);
             });
         }
     }
@@ -383,6 +552,7 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
             checkIOOBE(() -> {
                 vh.setOpaque(array, ci, VALUE_1);
             });
+
 
 
         }
@@ -432,6 +602,7 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
                 checkIOOBE(() -> {
                     vh.setOpaque(array, ci, VALUE_1);
                 });
+
 
 
             }
@@ -518,6 +689,7 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
                     });
 
 
+
                 }
             }
         }
@@ -564,6 +736,7 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
                     assertEquals(x, VALUE_2, "setOpaque char value");
                 }
 
+
             }
         }
     }
@@ -608,6 +781,7 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
                     char x = (char) vh.getOpaque(array, i);
                     assertEquals(x, VALUE_2, "setOpaque char value");
                 }
+
 
             }
         }

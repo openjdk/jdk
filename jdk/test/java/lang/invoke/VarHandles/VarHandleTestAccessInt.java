@@ -108,9 +108,23 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_RELEASE));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
+
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_RELEASE));
     }
 
 
@@ -261,6 +275,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         });
 
 
+
     }
 
 
@@ -307,6 +322,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         checkUOE(() -> {
             vh.setOpaque(0x89ABCDEF);
         });
+
 
 
     }
@@ -443,24 +459,147 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
 
         // Compare set and get
         {
+            vh.set(recv, 0x01234567);
+
             int o = (int) vh.getAndSet(recv, 0x89ABCDEF);
             assertEquals(o, 0x01234567, "getAndSet int");
             int x = (int) vh.get(recv);
             assertEquals(x, 0x89ABCDEF, "getAndSet int value");
         }
 
-        vh.set(recv, 0x01234567);
+        {
+            vh.set(recv, 0x01234567);
+
+            int o = (int) vh.getAndSetAcquire(recv, 0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndSetAcquire int");
+            int x = (int) vh.get(recv);
+            assertEquals(x, 0x89ABCDEF, "getAndSetAcquire int value");
+        }
+
+        {
+            vh.set(recv, 0x01234567);
+
+            int o = (int) vh.getAndSetRelease(recv, 0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndSetRelease int");
+            int x = (int) vh.get(recv);
+            assertEquals(x, 0x89ABCDEF, "getAndSetRelease int value");
+        }
 
         // get and add, add and get
         {
+            vh.set(recv, 0x01234567);
+
             int o = (int) vh.getAndAdd(recv, 0xCAFEBABE);
             assertEquals(o, 0x01234567, "getAndAdd int");
             int c = (int) vh.addAndGet(recv, 0xCAFEBABE);
             assertEquals(c, (int)(0x01234567 + 0xCAFEBABE + 0xCAFEBABE), "getAndAdd int value");
         }
+
+        {
+            vh.set(recv, 0x01234567);
+
+            int o = (int) vh.getAndAddAcquire(recv, 0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndAddAcquire int");
+            int x = (int) vh.get(recv);
+            assertEquals(x, (int)(0x01234567 + 0x89ABCDEF), "getAndAddAcquire int value");
+        }
+
+        {
+            vh.set(recv, 0x01234567);
+
+            int o = (int) vh.getAndAddRelease(recv, 0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndAddReleaseint");
+            int x = (int) vh.get(recv);
+            assertEquals(x, (int)(0x01234567 + 0x89ABCDEF), "getAndAddRelease int value");
+        }
+
+        // get and bitwise or
+        {
+            vh.set(recv, 0x01234567);
+
+            int o = (int) vh.getAndBitwiseOr(recv, 0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseOr int");
+            int x = (int) vh.get(recv);
+            assertEquals(x, (int)(0x01234567 | 0x89ABCDEF), "getAndBitwiseOr int value");
+        }
+
+        {
+            vh.set(recv, 0x01234567);
+
+            int o = (int) vh.getAndBitwiseOrAcquire(recv, 0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseOrAcquire int");
+            int x = (int) vh.get(recv);
+            assertEquals(x, (int)(0x01234567 | 0x89ABCDEF), "getAndBitwiseOrAcquire int value");
+        }
+
+        {
+            vh.set(recv, 0x01234567);
+
+            int o = (int) vh.getAndBitwiseOrRelease(recv, 0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseOrRelease int");
+            int x = (int) vh.get(recv);
+            assertEquals(x, (int)(0x01234567 | 0x89ABCDEF), "getAndBitwiseOrRelease int value");
+        }
+
+        // get and bitwise and
+        {
+            vh.set(recv, 0x01234567);
+
+            int o = (int) vh.getAndBitwiseAnd(recv, 0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseAnd int");
+            int x = (int) vh.get(recv);
+            assertEquals(x, (int)(0x01234567 & 0x89ABCDEF), "getAndBitwiseAnd int value");
+        }
+
+        {
+            vh.set(recv, 0x01234567);
+
+            int o = (int) vh.getAndBitwiseAndAcquire(recv, 0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseAndAcquire int");
+            int x = (int) vh.get(recv);
+            assertEquals(x, (int)(0x01234567 & 0x89ABCDEF), "getAndBitwiseAndAcquire int value");
+        }
+
+        {
+            vh.set(recv, 0x01234567);
+
+            int o = (int) vh.getAndBitwiseAndRelease(recv, 0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseAndRelease int");
+            int x = (int) vh.get(recv);
+            assertEquals(x, (int)(0x01234567 & 0x89ABCDEF), "getAndBitwiseAndRelease int value");
+        }
+
+        // get and bitwise xor
+        {
+            vh.set(recv, 0x01234567);
+
+            int o = (int) vh.getAndBitwiseXor(recv, 0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseXor int");
+            int x = (int) vh.get(recv);
+            assertEquals(x, (int)(0x01234567 ^ 0x89ABCDEF), "getAndBitwiseXor int value");
+        }
+
+        {
+            vh.set(recv, 0x01234567);
+
+            int o = (int) vh.getAndBitwiseXorAcquire(recv, 0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseXorAcquire int");
+            int x = (int) vh.get(recv);
+            assertEquals(x, (int)(0x01234567 ^ 0x89ABCDEF), "getAndBitwiseXorAcquire int value");
+        }
+
+        {
+            vh.set(recv, 0x01234567);
+
+            int o = (int) vh.getAndBitwiseXorRelease(recv, 0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseXorRelease int");
+            int x = (int) vh.get(recv);
+            assertEquals(x, (int)(0x01234567 ^ 0x89ABCDEF), "getAndBitwiseXorRelease int value");
+        }
     }
 
     static void testInstanceFieldUnsupported(VarHandleTestAccessInt recv, VarHandle vh) {
+
 
     }
 
@@ -596,24 +735,147 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
 
         // Compare set and get
         {
+            vh.set(0x01234567);
+
             int o = (int) vh.getAndSet(0x89ABCDEF);
             assertEquals(o, 0x01234567, "getAndSet int");
             int x = (int) vh.get();
             assertEquals(x, 0x89ABCDEF, "getAndSet int value");
         }
 
-        vh.set(0x01234567);
+        {
+            vh.set(0x01234567);
+
+            int o = (int) vh.getAndSetAcquire(0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndSetAcquire int");
+            int x = (int) vh.get();
+            assertEquals(x, 0x89ABCDEF, "getAndSetAcquire int value");
+        }
+
+        {
+            vh.set(0x01234567);
+
+            int o = (int) vh.getAndSetRelease(0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndSetRelease int");
+            int x = (int) vh.get();
+            assertEquals(x, 0x89ABCDEF, "getAndSetRelease int value");
+        }
 
         // get and add, add and get
         {
+            vh.set(0x01234567);
+
             int o = (int) vh.getAndAdd( 0xCAFEBABE);
             assertEquals(o, 0x01234567, "getAndAdd int");
             int c = (int) vh.addAndGet(0xCAFEBABE);
             assertEquals(c, (int)(0x01234567 + 0xCAFEBABE + 0xCAFEBABE), "getAndAdd int value");
         }
+
+        {
+            vh.set(0x01234567);
+
+            int o = (int) vh.getAndAddAcquire(0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndAddAcquire int");
+            int x = (int) vh.get();
+            assertEquals(x, (int)(0x01234567 + 0x89ABCDEF), "getAndAddAcquire int value");
+        }
+
+        {
+            vh.set(0x01234567);
+
+            int o = (int) vh.getAndAddRelease(0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndAddReleaseint");
+            int x = (int) vh.get();
+            assertEquals(x, (int)(0x01234567 + 0x89ABCDEF), "getAndAddRelease int value");
+        }
+
+        // get and bitwise or
+        {
+            vh.set(0x01234567);
+
+            int o = (int) vh.getAndBitwiseOr(0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseOr int");
+            int x = (int) vh.get();
+            assertEquals(x, (int)(0x01234567 | 0x89ABCDEF), "getAndBitwiseOr int value");
+        }
+
+        {
+            vh.set(0x01234567);
+
+            int o = (int) vh.getAndBitwiseOrAcquire(0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseOrAcquire int");
+            int x = (int) vh.get();
+            assertEquals(x, (int)(0x01234567 | 0x89ABCDEF), "getAndBitwiseOrAcquire int value");
+        }
+
+        {
+            vh.set(0x01234567);
+
+            int o = (int) vh.getAndBitwiseOrRelease(0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseOrRelease int");
+            int x = (int) vh.get();
+            assertEquals(x, (int)(0x01234567 | 0x89ABCDEF), "getAndBitwiseOrRelease int value");
+        }
+
+        // get and bitwise and
+        {
+            vh.set(0x01234567);
+
+            int o = (int) vh.getAndBitwiseAnd(0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseAnd int");
+            int x = (int) vh.get();
+            assertEquals(x, (int)(0x01234567 & 0x89ABCDEF), "getAndBitwiseAnd int value");
+        }
+
+        {
+            vh.set(0x01234567);
+
+            int o = (int) vh.getAndBitwiseAndAcquire(0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseAndAcquire int");
+            int x = (int) vh.get();
+            assertEquals(x, (int)(0x01234567 & 0x89ABCDEF), "getAndBitwiseAndAcquire int value");
+        }
+
+        {
+            vh.set(0x01234567);
+
+            int o = (int) vh.getAndBitwiseAndRelease(0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseAndRelease int");
+            int x = (int) vh.get();
+            assertEquals(x, (int)(0x01234567 & 0x89ABCDEF), "getAndBitwiseAndRelease int value");
+        }
+
+        // get and bitwise xor
+        {
+            vh.set(0x01234567);
+
+            int o = (int) vh.getAndBitwiseXor(0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseXor int");
+            int x = (int) vh.get();
+            assertEquals(x, (int)(0x01234567 ^ 0x89ABCDEF), "getAndBitwiseXor int value");
+        }
+
+        {
+            vh.set(0x01234567);
+
+            int o = (int) vh.getAndBitwiseXorAcquire(0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseXorAcquire int");
+            int x = (int) vh.get();
+            assertEquals(x, (int)(0x01234567 ^ 0x89ABCDEF), "getAndBitwiseXorAcquire int value");
+        }
+
+        {
+            vh.set(0x01234567);
+
+            int o = (int) vh.getAndBitwiseXorRelease(0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndBitwiseXorRelease int");
+            int x = (int) vh.get();
+            assertEquals(x, (int)(0x01234567 ^ 0x89ABCDEF), "getAndBitwiseXorRelease int value");
+        }
     }
 
     static void testStaticFieldUnsupported(VarHandle vh) {
+
 
     }
 
@@ -752,20 +1014,142 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
 
             // Compare set and get
             {
+                vh.set(array, i, 0x01234567);
+
                 int o = (int) vh.getAndSet(array, i, 0x89ABCDEF);
                 assertEquals(o, 0x01234567, "getAndSet int");
                 int x = (int) vh.get(array, i);
                 assertEquals(x, 0x89ABCDEF, "getAndSet int value");
             }
 
-            vh.set(array, i, 0x01234567);
+            {
+                vh.set(array, i, 0x01234567);
+
+                int o = (int) vh.getAndSetAcquire(array, i, 0x89ABCDEF);
+                assertEquals(o, 0x01234567, "getAndSetAcquire int");
+                int x = (int) vh.get(array, i);
+                assertEquals(x, 0x89ABCDEF, "getAndSetAcquire int value");
+            }
+
+            {
+                vh.set(array, i, 0x01234567);
+
+                int o = (int) vh.getAndSetRelease(array, i, 0x89ABCDEF);
+                assertEquals(o, 0x01234567, "getAndSetRelease int");
+                int x = (int) vh.get(array, i);
+                assertEquals(x, 0x89ABCDEF, "getAndSetRelease int value");
+            }
 
             // get and add, add and get
             {
+                vh.set(array, i, 0x01234567);
+
                 int o = (int) vh.getAndAdd(array, i, 0xCAFEBABE);
                 assertEquals(o, 0x01234567, "getAndAdd int");
                 int c = (int) vh.addAndGet(array, i, 0xCAFEBABE);
                 assertEquals(c, (int)(0x01234567 + 0xCAFEBABE + 0xCAFEBABE), "getAndAdd int value");
+            }
+
+            {
+                vh.set(array, i, 0x01234567);
+
+                int o = (int) vh.getAndAddAcquire(array, i, 0x89ABCDEF);
+                assertEquals(o, 0x01234567, "getAndAddAcquire int");
+                int x = (int) vh.get(array, i);
+                assertEquals(x, (int)(0x01234567 + 0x89ABCDEF), "getAndAddAcquire int value");
+            }
+
+            {
+                vh.set(array, i, 0x01234567);
+
+                int o = (int) vh.getAndAddRelease(array, i, 0x89ABCDEF);
+                assertEquals(o, 0x01234567, "getAndAddReleaseint");
+                int x = (int) vh.get(array, i);
+                assertEquals(x, (int)(0x01234567 + 0x89ABCDEF), "getAndAddRelease int value");
+            }
+
+            // get and bitwise or
+            {
+                vh.set(array, i, 0x01234567);
+
+                int o = (int) vh.getAndBitwiseOr(array, i, 0x89ABCDEF);
+                assertEquals(o, 0x01234567, "getAndBitwiseOr int");
+                int x = (int) vh.get(array, i);
+                assertEquals(x, (int)(0x01234567 | 0x89ABCDEF), "getAndBitwiseOr int value");
+            }
+
+            {
+                vh.set(array, i, 0x01234567);
+
+                int o = (int) vh.getAndBitwiseOrAcquire(array, i, 0x89ABCDEF);
+                assertEquals(o, 0x01234567, "getAndBitwiseOrAcquire int");
+                int x = (int) vh.get(array, i);
+                assertEquals(x, (int)(0x01234567 | 0x89ABCDEF), "getAndBitwiseOrAcquire int value");
+            }
+
+            {
+                vh.set(array, i, 0x01234567);
+
+                int o = (int) vh.getAndBitwiseOrRelease(array, i, 0x89ABCDEF);
+                assertEquals(o, 0x01234567, "getAndBitwiseOrRelease int");
+                int x = (int) vh.get(array, i);
+                assertEquals(x, (int)(0x01234567 | 0x89ABCDEF), "getAndBitwiseOrRelease int value");
+            }
+
+            // get and bitwise and
+            {
+                vh.set(array, i, 0x01234567);
+
+                int o = (int) vh.getAndBitwiseAnd(array, i, 0x89ABCDEF);
+                assertEquals(o, 0x01234567, "getAndBitwiseAnd int");
+                int x = (int) vh.get(array, i);
+                assertEquals(x, (int)(0x01234567 & 0x89ABCDEF), "getAndBitwiseAnd int value");
+            }
+
+            {
+                vh.set(array, i, 0x01234567);
+
+                int o = (int) vh.getAndBitwiseAndAcquire(array, i, 0x89ABCDEF);
+                assertEquals(o, 0x01234567, "getAndBitwiseAndAcquire int");
+                int x = (int) vh.get(array, i);
+                assertEquals(x, (int)(0x01234567 & 0x89ABCDEF), "getAndBitwiseAndAcquire int value");
+            }
+
+            {
+                vh.set(array, i, 0x01234567);
+
+                int o = (int) vh.getAndBitwiseAndRelease(array, i, 0x89ABCDEF);
+                assertEquals(o, 0x01234567, "getAndBitwiseAndRelease int");
+                int x = (int) vh.get(array, i);
+                assertEquals(x, (int)(0x01234567 & 0x89ABCDEF), "getAndBitwiseAndRelease int value");
+            }
+
+            // get and bitwise xor
+            {
+                vh.set(array, i, 0x01234567);
+
+                int o = (int) vh.getAndBitwiseXor(array, i, 0x89ABCDEF);
+                assertEquals(o, 0x01234567, "getAndBitwiseXor int");
+                int x = (int) vh.get(array, i);
+                assertEquals(x, (int)(0x01234567 ^ 0x89ABCDEF), "getAndBitwiseXor int value");
+            }
+
+            {
+                vh.set(array, i, 0x01234567);
+
+                int o = (int) vh.getAndBitwiseXorAcquire(array, i, 0x89ABCDEF);
+                assertEquals(o, 0x01234567, "getAndBitwiseXorAcquire int");
+                int x = (int) vh.get(array, i);
+                assertEquals(x, (int)(0x01234567 ^ 0x89ABCDEF), "getAndBitwiseXorAcquire int value");
+            }
+
+            {
+                vh.set(array, i, 0x01234567);
+
+                int o = (int) vh.getAndBitwiseXorRelease(array, i, 0x89ABCDEF);
+                assertEquals(o, 0x01234567, "getAndBitwiseXorRelease int");
+                int x = (int) vh.get(array, i);
+                assertEquals(x, (int)(0x01234567 ^ 0x89ABCDEF), "getAndBitwiseXorRelease int value");
             }
         }
     }
@@ -774,6 +1158,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         int[] array = new int[10];
 
         int i = 0;
+
 
     }
 
@@ -852,11 +1237,63 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                int o = (int) vh.getAndAdd(array, ci, 0xCAFEBABE);
+                int o = (int) vh.getAndSetAcquire(array, ci, 0x01234567);
             });
 
             checkIOOBE(() -> {
-                int o = (int) vh.addAndGet(array, ci, 0xCAFEBABE);
+                int o = (int) vh.getAndSetRelease(array, ci, 0x01234567);
+            });
+
+            checkIOOBE(() -> {
+                int o = (int) vh.getAndAdd(array, ci, 0x01234567);
+            });
+
+            checkIOOBE(() -> {
+                int o = (int) vh.getAndAddAcquire(array, ci, 0x01234567);
+            });
+
+            checkIOOBE(() -> {
+                int o = (int) vh.getAndAddRelease(array, ci, 0x01234567);
+            });
+
+            checkIOOBE(() -> {
+                int o = (int) vh.addAndGet(array, ci, 0x01234567);
+            });
+
+            checkIOOBE(() -> {
+                int o = (int) vh.getAndBitwiseOr(array, ci, 0x01234567);
+            });
+
+            checkIOOBE(() -> {
+                int o = (int) vh.getAndBitwiseOrAcquire(array, ci, 0x01234567);
+            });
+
+            checkIOOBE(() -> {
+                int o = (int) vh.getAndBitwiseOrRelease(array, ci, 0x01234567);
+            });
+
+            checkIOOBE(() -> {
+                int o = (int) vh.getAndBitwiseAnd(array, ci, 0x01234567);
+            });
+
+            checkIOOBE(() -> {
+                int o = (int) vh.getAndBitwiseAndAcquire(array, ci, 0x01234567);
+            });
+
+            checkIOOBE(() -> {
+                int o = (int) vh.getAndBitwiseAndRelease(array, ci, 0x01234567);
+            });
+
+            checkIOOBE(() -> {
+                int o = (int) vh.getAndBitwiseXor(array, ci, 0x01234567);
+            });
+
+            checkIOOBE(() -> {
+                int o = (int) vh.getAndBitwiseXorAcquire(array, ci, 0x01234567);
+            });
+
+            checkIOOBE(() -> {
+                int o = (int) vh.getAndBitwiseXorRelease(array, ci, 0x01234567);
             });
         }
     }

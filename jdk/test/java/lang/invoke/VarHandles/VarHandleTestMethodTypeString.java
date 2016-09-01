@@ -582,6 +582,65 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
             String x = (String) vh.getAndSet(recv, "foo", Void.class);
         });
 
+        // GetAndSetAcquire
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            String x = (String) vh.getAndSetAcquire(null, "foo");
+        });
+        checkCCE(() -> { // receiver reference class
+            String x = (String) vh.getAndSetAcquire(Void.class, "foo");
+        });
+        checkCCE(() -> { // value reference class
+            String x = (String) vh.getAndSetAcquire(recv, Void.class);
+        });
+        checkWMTE(() -> { // reciever primitive class
+            String x = (String) vh.getAndSetAcquire(0, "foo");
+        });
+        // Incorrect return type
+        checkCCE(() -> { // reference class
+            Void r = (Void) vh.getAndSetAcquire(recv, "foo");
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.getAndSetAcquire(recv, "foo");
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            String x = (String) vh.getAndSetAcquire();
+        });
+        checkWMTE(() -> { // >
+            String x = (String) vh.getAndSetAcquire(recv, "foo", Void.class);
+        });
+
+        // GetAndSetRelease
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            String x = (String) vh.getAndSetRelease(null, "foo");
+        });
+        checkCCE(() -> { // receiver reference class
+            String x = (String) vh.getAndSetRelease(Void.class, "foo");
+        });
+        checkCCE(() -> { // value reference class
+            String x = (String) vh.getAndSetRelease(recv, Void.class);
+        });
+        checkWMTE(() -> { // reciever primitive class
+            String x = (String) vh.getAndSetRelease(0, "foo");
+        });
+        // Incorrect return type
+        checkCCE(() -> { // reference class
+            Void r = (Void) vh.getAndSetRelease(recv, "foo");
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.getAndSetRelease(recv, "foo");
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            String x = (String) vh.getAndSetRelease();
+        });
+        checkWMTE(() -> { // >
+            String x = (String) vh.getAndSetRelease(recv, "foo", Void.class);
+        });
+
+
     }
 
     static void testInstanceFieldWrongMethodType(VarHandleTestMethodTypeString recv, Handles hs) throws Throwable {
@@ -758,6 +817,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
                     invokeExact(recv, "foo", Void.class);
             });
         }
+
 
     }
 
@@ -1049,6 +1109,49 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
             String x = (String) vh.getAndSet("foo", Void.class);
         });
 
+
+        // GetAndSetAcquire
+        // Incorrect argument types
+        checkCCE(() -> { // value reference class
+            String x = (String) vh.getAndSetAcquire(Void.class);
+        });
+        // Incorrect return type
+        checkCCE(() -> { // reference class
+            Void r = (Void) vh.getAndSetAcquire("foo");
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.getAndSetAcquire("foo");
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            String x = (String) vh.getAndSetAcquire();
+        });
+        checkWMTE(() -> { // >
+            String x = (String) vh.getAndSetAcquire("foo", Void.class);
+        });
+
+
+        // GetAndSetRelease
+        // Incorrect argument types
+        checkCCE(() -> { // value reference class
+            String x = (String) vh.getAndSetRelease(Void.class);
+        });
+        // Incorrect return type
+        checkCCE(() -> { // reference class
+            Void r = (Void) vh.getAndSetRelease("foo");
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.getAndSetRelease("foo");
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            String x = (String) vh.getAndSetRelease();
+        });
+        checkWMTE(() -> { // >
+            String x = (String) vh.getAndSetRelease("foo", Void.class);
+        });
+
+
     }
 
     static void testStaticFieldWrongMethodType(Handles hs) throws Throwable {
@@ -1162,6 +1265,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
                     invokeExact("foo", Void.class);
             });
         }
+
 
     }
 
@@ -1679,6 +1783,73 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
             String x = (String) vh.getAndSet(array, 0, "foo", Void.class);
         });
 
+
+        // GetAndSetAcquire
+        // Incorrect argument types
+        checkNPE(() -> { // null array
+            String x = (String) vh.getAndSetAcquire(null, 0, "foo");
+        });
+        checkCCE(() -> { // array reference class
+            String x = (String) vh.getAndSetAcquire(Void.class, 0, "foo");
+        });
+        checkCCE(() -> { // value reference class
+            String x = (String) vh.getAndSetAcquire(array, 0, Void.class);
+        });
+        checkWMTE(() -> { // reciarrayever primitive class
+            String x = (String) vh.getAndSetAcquire(0, 0, "foo");
+        });
+        checkWMTE(() -> { // index reference class
+            String x = (String) vh.getAndSetAcquire(array, Void.class, "foo");
+        });
+        // Incorrect return type
+        checkCCE(() -> { // reference class
+            Void r = (Void) vh.getAndSetAcquire(array, 0, "foo");
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.getAndSetAcquire(array, 0, "foo");
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            String x = (String) vh.getAndSetAcquire();
+        });
+        checkWMTE(() -> { // >
+            String x = (String) vh.getAndSetAcquire(array, 0, "foo", Void.class);
+        });
+
+
+        // GetAndSetRelease
+        // Incorrect argument types
+        checkNPE(() -> { // null array
+            String x = (String) vh.getAndSetRelease(null, 0, "foo");
+        });
+        checkCCE(() -> { // array reference class
+            String x = (String) vh.getAndSetRelease(Void.class, 0, "foo");
+        });
+        checkCCE(() -> { // value reference class
+            String x = (String) vh.getAndSetRelease(array, 0, Void.class);
+        });
+        checkWMTE(() -> { // reciarrayever primitive class
+            String x = (String) vh.getAndSetRelease(0, 0, "foo");
+        });
+        checkWMTE(() -> { // index reference class
+            String x = (String) vh.getAndSetRelease(array, Void.class, "foo");
+        });
+        // Incorrect return type
+        checkCCE(() -> { // reference class
+            Void r = (Void) vh.getAndSetRelease(array, 0, "foo");
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.getAndSetRelease(array, 0, "foo");
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            String x = (String) vh.getAndSetRelease();
+        });
+        checkWMTE(() -> { // >
+            String x = (String) vh.getAndSetRelease(array, 0, "foo", Void.class);
+        });
+
+
     }
 
     static void testArrayWrongMethodType(Handles hs) throws Throwable {
@@ -1879,6 +2050,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
                     invokeExact(array, 0, "foo", Void.class);
             });
         }
+
 
     }
 }

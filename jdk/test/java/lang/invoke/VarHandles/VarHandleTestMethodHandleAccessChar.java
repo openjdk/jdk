@@ -255,18 +255,121 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
             assertEquals(x, '\u4567', "getAndSet char value");
         }
 
-        hs.get(TestAccessMode.SET).invokeExact(recv, '\u0123');
-
         // get and add, add and get
         {
+            hs.get(TestAccessMode.SET).invokeExact(recv, '\u0123');
+
             char o = (char) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, '\u89AB');
             assertEquals(o, '\u0123', "getAndAdd char");
             char c = (char) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(recv, '\u89AB');
             assertEquals(c, (char)('\u0123' + '\u89AB' + '\u89AB'), "getAndAdd char value");
         }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_ADD_ACQUIRE).invokeExact(recv, '\u4567');
+            assertEquals(o, '\u0123', "getAndAddAcquire char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAddAcquire char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_ADD_RELEASE).invokeExact(recv, '\u4567');
+            assertEquals(o, '\u0123', "getAndAddRelease char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAddRelease char value");
+        }
+
+        // get and bitwise or
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_OR).invokeExact(recv, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseOr char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOr char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_OR_ACQUIRE).invokeExact(recv, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseOrAcquire char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOrAcquire char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_OR_RELEASE).invokeExact(recv, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseOrRelease char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOrRelease char value");
+        }
+
+        // get and bitwise and
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_AND).invokeExact(recv, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseAnd char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAnd char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_AND_ACQUIRE).invokeExact(recv, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseAndAcquire char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAndAcquire char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_AND_RELEASE).invokeExact(recv, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseAndRelease char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAndRelease char value");
+        }
+
+        // get and bitwise xor
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_XOR).invokeExact(recv, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseXor char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXor char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_ACQUIRE).invokeExact(recv, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseXorAcquire char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXorAcquire char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_RELEASE).invokeExact(recv, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseXorRelease char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXorRelease char value");
+        }
     }
 
     static void testInstanceFieldUnsupported(VarHandleTestMethodHandleAccessChar recv, Handles hs) throws Throwable {
+
 
     }
 
@@ -402,24 +505,149 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
 
         // Compare set and get
         {
-            char o = (char) hs.get(TestAccessMode.GET_AND_SET).invokeExact( '\u4567');
+            hs.get(TestAccessMode.SET).invokeExact('\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_SET).invokeExact('\u4567');
             assertEquals(o, '\u0123', "getAndSet char");
             char x = (char) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, '\u4567', "getAndSet char value");
         }
 
-        hs.get(TestAccessMode.SET).invokeExact('\u0123');
+        // Compare set and get
+        {
+            hs.get(TestAccessMode.SET).invokeExact('\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact('\u4567');
+            assertEquals(o, '\u0123', "getAndSetAcquire char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, '\u4567', "getAndSetAcquire char value");
+        }
+
+        // Compare set and get
+        {
+            hs.get(TestAccessMode.SET).invokeExact('\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact('\u4567');
+            assertEquals(o, '\u0123', "getAndSetRelease char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, '\u4567', "getAndSetRelease char value");
+        }
 
         // get and add, add and get
         {
-            char o = (char) hs.get(TestAccessMode.GET_AND_ADD).invokeExact( '\u89AB');
+            hs.get(TestAccessMode.SET).invokeExact('\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_ADD).invokeExact('\u89AB');
             assertEquals(o, '\u0123', "getAndAdd char");
             char c = (char) hs.get(TestAccessMode.ADD_AND_GET).invokeExact('\u89AB');
             assertEquals(c, (char)('\u0123' + '\u89AB' + '\u89AB'), "getAndAdd char value");
         }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact('\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_ADD_ACQUIRE).invokeExact('\u4567');
+            assertEquals(o, '\u0123', "getAndAddAcquire char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAddAcquire char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact('\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_ADD_RELEASE).invokeExact('\u4567');
+            assertEquals(o, '\u0123', "getAndAddRelease char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAddRelease char value");
+        }
+
+        // get and bitwise or
+        {
+            hs.get(TestAccessMode.SET).invokeExact('\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_OR).invokeExact('\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseOr char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOr char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact('\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_OR_ACQUIRE).invokeExact('\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseOrAcquire char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOrAcquire char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact('\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_OR_RELEASE).invokeExact('\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseOrRelease char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOrRelease char value");
+        }
+
+        // get and bitwise and
+        {
+            hs.get(TestAccessMode.SET).invokeExact('\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_AND).invokeExact('\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseAnd char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAnd char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact('\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_AND_ACQUIRE).invokeExact('\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseAndAcquire char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAndAcquire char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact('\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_AND_RELEASE).invokeExact('\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseAndRelease char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAndRelease char value");
+        }
+
+        // get and bitwise xor
+        {
+            hs.get(TestAccessMode.SET).invokeExact('\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_XOR).invokeExact('\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseXor char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXor char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact('\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_ACQUIRE).invokeExact('\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseXorAcquire char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXorAcquire char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact('\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_RELEASE).invokeExact('\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseXorRelease char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXorRelease char value");
+        }
     }
 
     static void testStaticFieldUnsupported(Handles hs) throws Throwable {
+
 
     }
 
@@ -558,21 +786,143 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
 
             // Compare set and get
             {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, '\u0123');
+
                 char o = (char) hs.get(TestAccessMode.GET_AND_SET).invokeExact(array, i, '\u4567');
                 assertEquals(o, '\u0123', "getAndSet char");
                 char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, '\u4567', "getAndSet char value");
             }
 
-            hs.get(TestAccessMode.SET).invokeExact(array, i, '\u0123');
+            {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, '\u0123');
+
+                char o = (char) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(array, i, '\u4567');
+                assertEquals(o, '\u0123', "getAndSetAcquire char");
+                char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, '\u4567', "getAndSetAcquire char value");
+            }
+
+            {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, '\u0123');
+
+                char o = (char) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(array, i, '\u4567');
+                assertEquals(o, '\u0123', "getAndSetRelease char");
+                char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, '\u4567', "getAndSetRelease char value");
+            }
 
             // get and add, add and get
             {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, '\u0123');
+
                 char o = (char) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, '\u89AB');
                 assertEquals(o, '\u0123', "getAndAdd char");
                 char c = (char) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(array, i, '\u89AB');
                 assertEquals(c, (char)('\u0123' + '\u89AB' + '\u89AB'), "getAndAdd char value");
             }
+
+            {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, '\u0123');
+
+                char o = (char) hs.get(TestAccessMode.GET_AND_ADD_ACQUIRE).invokeExact(array, i, '\u4567');
+                assertEquals(o, '\u0123', "getAndAddAcquire char");
+                char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAddAcquire char value");
+            }
+
+            {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, '\u0123');
+
+                char o = (char) hs.get(TestAccessMode.GET_AND_ADD_RELEASE).invokeExact(array, i, '\u4567');
+                assertEquals(o, '\u0123', "getAndAddRelease char");
+                char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAddRelease char value");
+            }
+
+        // get and bitwise or
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_OR).invokeExact(array, i, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseOr char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOr char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_OR_ACQUIRE).invokeExact(array, i, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseOrAcquire char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOrAcquire char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_OR_RELEASE).invokeExact(array, i, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseOrRelease char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOrRelease char value");
+        }
+
+        // get and bitwise and
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_AND).invokeExact(array, i, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseAnd char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAnd char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_AND_ACQUIRE).invokeExact(array, i, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseAndAcquire char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAndAcquire char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_AND_RELEASE).invokeExact(array, i, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseAndRelease char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAndRelease char value");
+        }
+
+        // get and bitwise xor
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_XOR).invokeExact(array, i, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseXor char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXor char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_ACQUIRE).invokeExact(array, i, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseXorAcquire char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXorAcquire char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_RELEASE).invokeExact(array, i, '\u4567');
+            assertEquals(o, '\u0123', "getAndBitwiseXorRelease char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXorRelease char value");
+        }
         }
     }
 
@@ -580,6 +930,7 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
         char[] array = new char[10];
 
         final int i = 0;
+
 
     }
 
@@ -620,6 +971,12 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
             }
 
             for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
+                checkIOOBE(am, () -> {
+                    char o = (char) hs.get(am).invokeExact(array, ci, '\u89AB');
+                });
+            }
+
+            for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_BITWISE)) {
                 checkIOOBE(am, () -> {
                     char o = (char) hs.get(am).invokeExact(array, ci, '\u89AB');
                 });

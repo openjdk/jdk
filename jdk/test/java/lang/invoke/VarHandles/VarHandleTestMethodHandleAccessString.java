@@ -255,11 +255,18 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
             assertEquals(x, "bar", "getAndSet String value");
         }
 
+
     }
 
     static void testInstanceFieldUnsupported(VarHandleTestMethodHandleAccessString recv, Handles hs) throws Throwable {
 
         for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
+            checkUOE(am, () -> {
+                String r = (String) hs.get(am).invokeExact(recv, "foo");
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_BITWISE)) {
             checkUOE(am, () -> {
                 String r = (String) hs.get(am).invokeExact(recv, "foo");
             });
@@ -398,17 +405,46 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
 
         // Compare set and get
         {
-            String o = (String) hs.get(TestAccessMode.GET_AND_SET).invokeExact( "bar");
+            hs.get(TestAccessMode.SET).invokeExact("foo");
+
+            String o = (String) hs.get(TestAccessMode.GET_AND_SET).invokeExact("bar");
             assertEquals(o, "foo", "getAndSet String");
             String x = (String) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, "bar", "getAndSet String value");
         }
+
+        // Compare set and get
+        {
+            hs.get(TestAccessMode.SET).invokeExact("foo");
+
+            String o = (String) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact("bar");
+            assertEquals(o, "foo", "getAndSetAcquire String");
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, "bar", "getAndSetAcquire String value");
+        }
+
+        // Compare set and get
+        {
+            hs.get(TestAccessMode.SET).invokeExact("foo");
+
+            String o = (String) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact("bar");
+            assertEquals(o, "foo", "getAndSetRelease String");
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, "bar", "getAndSetRelease String value");
+        }
+
 
     }
 
     static void testStaticFieldUnsupported(Handles hs) throws Throwable {
 
         for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
+            checkUOE(am, () -> {
+                String r = (String) hs.get(am).invokeExact("foo");
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_BITWISE)) {
             checkUOE(am, () -> {
                 String r = (String) hs.get(am).invokeExact("foo");
             });
@@ -550,11 +586,32 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
 
             // Compare set and get
             {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, "foo");
+
                 String o = (String) hs.get(TestAccessMode.GET_AND_SET).invokeExact(array, i, "bar");
                 assertEquals(o, "foo", "getAndSet String");
                 String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, "bar", "getAndSet String value");
             }
+
+            {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, "foo");
+
+                String o = (String) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(array, i, "bar");
+                assertEquals(o, "foo", "getAndSetAcquire String");
+                String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, "bar", "getAndSetAcquire String value");
+            }
+
+            {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, "foo");
+
+                String o = (String) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(array, i, "bar");
+                assertEquals(o, "foo", "getAndSetRelease String");
+                String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, "bar", "getAndSetRelease String value");
+            }
+
 
         }
     }
@@ -565,6 +622,12 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
         final int i = 0;
 
         for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
+            checkUOE(am, () -> {
+                String o = (String) hs.get(am).invokeExact(array, i, "foo");
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_BITWISE)) {
             checkUOE(am, () -> {
                 String o = (String) hs.get(am).invokeExact(array, i, "foo");
             });
@@ -606,6 +669,7 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
                     String o = (String) hs.get(am).invokeExact(array, ci, "foo");
                 });
             }
+
 
         }
     }
