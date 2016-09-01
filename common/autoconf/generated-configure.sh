@@ -5095,7 +5095,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1470863189
+DATE_WHEN_GENERATED=1472718471
 
 ###############################################################################
 #
@@ -15944,6 +15944,8 @@ $as_echo "$COMPILE_TYPE" >&6; }
     HOTSPOT_TARGET_CPU_DEFINE=S390
   elif test "x$OPENJDK_TARGET_CPU" = xs390x; then
     HOTSPOT_TARGET_CPU_DEFINE=S390
+  elif test "x$OPENJDK_TARGET_CPU" != x; then
+    HOTSPOT_TARGET_CPU_DEFINE=$(echo $OPENJDK_TARGET_CPU | tr a-z A-Z)
   fi
 
 
@@ -16117,6 +16119,8 @@ $as_echo "$COMPILE_TYPE" >&6; }
     HOTSPOT_BUILD_CPU_DEFINE=S390
   elif test "x$OPENJDK_BUILD_CPU" = xs390x; then
     HOTSPOT_BUILD_CPU_DEFINE=S390
+  elif test "x$OPENJDK_BUILD_CPU" != x; then
+    HOTSPOT_BUILD_CPU_DEFINE=$(echo $OPENJDK_BUILD_CPU | tr a-z A-Z)
   fi
 
 
