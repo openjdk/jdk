@@ -1496,7 +1496,7 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
             }
         } catch (CertPathValidatorException cpve) {
             throw new CertificateException(
-                "Certificates does not conform to algorithm constraints");
+                "Certificates do not conform to algorithm constraints", cpve);
         }
     }
 }
