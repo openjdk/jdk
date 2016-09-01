@@ -93,8 +93,8 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_PLAIN));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
@@ -105,8 +105,8 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_PLAIN));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
@@ -247,11 +247,11 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
         });
 
         checkUOE(() -> {
-            boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+            boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
         });
 
         checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
+            boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
         });
 
         checkUOE(() -> {
@@ -371,11 +371,11 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             });
 
             checkROBE(() -> {
-                boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+                boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
             });
 
             checkROBE(() -> {
-                boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
+                boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
             });
 
             checkROBE(() -> {
@@ -416,11 +416,11 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             });
 
             checkUOE(() -> {
-                boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+                boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
             });
 
             checkUOE(() -> {
-                boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
+                boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
             });
 
             checkUOE(() -> {
@@ -563,11 +563,11 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             });
 
             checkUOE(() -> {
-                boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+                boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
             });
 
             checkUOE(() -> {
-                boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
+                boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
             });
 
             checkUOE(() -> {
@@ -702,11 +702,11 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+                boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
+                boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
             });
 
             checkIOOBE(() -> {
@@ -848,11 +848,11 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                 });
 
                 checkIOOBE(() -> {
-                    boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+                    boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
                 });
 
                 checkIOOBE(() -> {
-                    boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
+                    boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
                 });
 
                 checkIOOBE(() -> {
@@ -985,11 +985,11 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                 });
 
                 checkISE(() -> {
-                    boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+                    boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
                 });
 
                 checkISE(() -> {
-                    boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
+                    boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
                 });
 
                 checkISE(() -> {
@@ -1124,11 +1124,11 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                     });
 
                     checkISE(() -> {
-                        boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+                        boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
                     });
 
                     checkISE(() -> {
-                        boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
+                        boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
                     });
 
                     checkISE(() -> {
@@ -1312,11 +1312,11 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                 {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                        success = vh.weakCompareAndSet(array, i, VALUE_1, VALUE_2);
+                        success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_2);
                     }
-                    assertEquals(success, true, "weakCompareAndSet $type$");
+                    assertEquals(success, true, "weakCompareAndSetPlain $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "weakCompareAndSet $type$ value");
+                    assertEquals(x, VALUE_2, "weakCompareAndSetPlain $type$ value");
                 }
 
                 {
@@ -1340,10 +1340,13 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                 }
 
                 {
-                    boolean r = vh.weakCompareAndSetVolatile(array, i, VALUE_2, VALUE_1);
-                    assertEquals(r, true, "weakCompareAndSetVolatile $type$");
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_1);
+                    }
+                    assertEquals(success, true, "weakCompareAndSet $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "weakCompareAndSetVolatile $type$ value");
+                    assertEquals(x, VALUE_1, "weakCompareAndSet $type$");
                 }
 
                 // Compare set and get
@@ -1598,11 +1601,11 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                 {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                        success = vh.weakCompareAndSet(array, i, VALUE_1, VALUE_2);
+                        success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_2);
                     }
-                    assertEquals(success, true, "weakCompareAndSet $type$");
+                    assertEquals(success, true, "weakCompareAndSetPlain $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "weakCompareAndSet $type$ value");
+                    assertEquals(x, VALUE_2, "weakCompareAndSetPlain $type$ value");
                 }
 
                 {
@@ -1626,10 +1629,13 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                 }
 
                 {
-                    boolean r = vh.weakCompareAndSetVolatile(array, i, VALUE_2, VALUE_1);
-                    assertEquals(r, true, "weakCompareAndSetVolatile $type$");
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_1);
+                    }
+                    assertEquals(success, true, "weakCompareAndSet $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "weakCompareAndSetVolatile $type$ value");
+                    assertEquals(x, VALUE_1, "weakCompareAndSet $type$");
                 }
 
                 // Compare set and get

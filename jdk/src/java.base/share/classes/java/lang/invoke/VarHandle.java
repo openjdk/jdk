@@ -134,8 +134,8 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * The set of corresponding access mode methods belonging to this group
  * consists of the methods
  * {@link #compareAndSet compareAndSet},
+ * {@link #weakCompareAndSetPlain weakCompareAndSetPlain},
  * {@link #weakCompareAndSet weakCompareAndSet},
- * {@link #weakCompareAndSetVolatile weakCompareAndSetVolatile},
  * {@link #weakCompareAndSetAcquire weakCompareAndSetAcquire},
  * {@link #weakCompareAndSetRelease weakCompareAndSetRelease},
  * {@link #compareAndExchangeAcquire compareAndExchangeAcquire},
@@ -834,8 +834,8 @@ public abstract class VarHandle {
      * <p>The method signature is of the form {@code (CT, T expectedValue, T newValue)boolean}.
      *
      * <p>The symbolic type descriptor at the call site of {@code
-     * weakCompareAndSet} must match the access mode type that is the result of
-     * calling {@code accessModeType(VarHandle.AccessMode.WEAK_COMPARE_AND_SET)}
+     * weakCompareAndSetPlain} must match the access mode type that is the result of
+     * calling {@code accessModeType(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_PLAIN)}
      * on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
@@ -856,7 +856,7 @@ public abstract class VarHandle {
     public final native
     @MethodHandle.PolymorphicSignature
     @HotSpotIntrinsicCandidate
-    boolean weakCompareAndSet(Object... args);
+    boolean weakCompareAndSetPlain(Object... args);
 
     /**
      * Possibly atomically sets the value of a variable to the {@code newValue}
@@ -871,8 +871,8 @@ public abstract class VarHandle {
      * <p>The method signature is of the form {@code (CT, T expectedValue, T newValue)boolean}.
      *
      * <p>The symbolic type descriptor at the call site of {@code
-     * weakCompareAndSetVolatile} must match the access mode type that is the
-     * result of calling {@code accessModeType(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE)}
+     * weakCompareAndSet} must match the access mode type that is the
+     * result of calling {@code accessModeType(VarHandle.AccessMode.WEAK_COMPARE_AND_SET)}
      * on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
@@ -893,7 +893,7 @@ public abstract class VarHandle {
     public final native
     @MethodHandle.PolymorphicSignature
     @HotSpotIntrinsicCandidate
-    boolean weakCompareAndSetVolatile(Object... args);
+    boolean weakCompareAndSet(Object... args);
 
     /**
      * Possibly atomically sets the value of a variable to the {@code newValue}
@@ -1658,15 +1658,15 @@ public abstract class VarHandle {
         /**
          * The access mode whose access is specified by the corresponding
          * method
-         * {@link VarHandle#weakCompareAndSet VarHandle.weakCompareAndSet}
+         * {@link VarHandle#weakCompareAndSetPlain VarHandle.weakCompareAndSetPlain}
          */
-        WEAK_COMPARE_AND_SET("weakCompareAndSet", AccessType.COMPARE_AND_SWAP),
+        WEAK_COMPARE_AND_SET_PLAIN("weakCompareAndSetPlain", AccessType.COMPARE_AND_SWAP),
         /**
          * The access mode whose access is specified by the corresponding
          * method
-         * {@link VarHandle#weakCompareAndSetVolatile VarHandle.weakCompareAndSetVolatile}
+         * {@link VarHandle#weakCompareAndSet VarHandle.weakCompareAndSet}
          */
-        WEAK_COMPARE_AND_SET_VOLATILE("weakCompareAndSetVolatile", AccessType.COMPARE_AND_SWAP),
+        WEAK_COMPARE_AND_SET("weakCompareAndSet", AccessType.COMPARE_AND_SWAP),
         /**
          * The access mode whose access is specified by the corresponding
          * method

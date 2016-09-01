@@ -103,8 +103,8 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_PLAIN));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
@@ -419,11 +419,11 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSet(recv, '\u0123', '\u4567');
+                success = vh.weakCompareAndSetPlain(recv, '\u0123', '\u4567');
             }
-            assertEquals(success, true, "weakCompareAndSet char");
+            assertEquals(success, true, "weakCompareAndSetPlain char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u4567', "weakCompareAndSet char value");
+            assertEquals(x, '\u4567', "weakCompareAndSetPlain char value");
         }
 
         {
@@ -449,11 +449,11 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetVolatile(recv, '\u4567', '\u0123');
+                success = vh.weakCompareAndSet(recv, '\u4567', '\u0123');
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile char");
+            assertEquals(success, true, "weakCompareAndSet char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u0123', "weakCompareAndSetVolatile char value");
+            assertEquals(x, '\u0123', "weakCompareAndSet char value");
         }
 
         // Compare set and get
@@ -695,11 +695,11 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSet('\u0123', '\u4567');
+                success = vh.weakCompareAndSetPlain('\u0123', '\u4567');
             }
-            assertEquals(success, true, "weakCompareAndSet char");
+            assertEquals(success, true, "weakCompareAndSetPlain char");
             char x = (char) vh.get();
-            assertEquals(x, '\u4567', "weakCompareAndSet char value");
+            assertEquals(x, '\u4567', "weakCompareAndSetPlain char value");
         }
 
         {
@@ -725,11 +725,11 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetRelease('\u4567', '\u0123');
+                success = vh.weakCompareAndSet('\u4567', '\u0123');
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile char");
+            assertEquals(success, true, "weakCompareAndSet char");
             char x = (char) vh.get();
-            assertEquals(x, '\u0123', "weakCompareAndSetVolatile char");
+            assertEquals(x, '\u0123', "weakCompareAndSet char");
         }
 
         // Compare set and get
@@ -974,11 +974,11 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSet(array, i, '\u0123', '\u4567');
+                    success = vh.weakCompareAndSetPlain(array, i, '\u0123', '\u4567');
                 }
-                assertEquals(success, true, "weakCompareAndSet char");
+                assertEquals(success, true, "weakCompareAndSetPlain char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u4567', "weakCompareAndSet char value");
+                assertEquals(x, '\u4567', "weakCompareAndSetPlain char value");
             }
 
             {
@@ -1004,11 +1004,11 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSetVolatile(array, i, '\u4567', '\u0123');
+                    success = vh.weakCompareAndSet(array, i, '\u4567', '\u0123');
                 }
-                assertEquals(success, true, "weakCompareAndSetVolatile char");
+                assertEquals(success, true, "weakCompareAndSet char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u0123', "weakCompareAndSetVolatile char");
+                assertEquals(x, '\u0123', "weakCompareAndSet char");
             }
 
             // Compare set and get
@@ -1216,11 +1216,11 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSet(array, ci, '\u0123', '\u4567');
+                boolean r = vh.weakCompareAndSetPlain(array, ci, '\u0123', '\u4567');
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSetVolatile(array, ci, '\u0123', '\u4567');
+                boolean r = vh.weakCompareAndSet(array, ci, '\u0123', '\u4567');
             });
 
             checkIOOBE(() -> {
