@@ -37,7 +37,7 @@ import jdk.testlibrary.ProcessTools;
  * @summary Unit test for jmap utility
  * @key intermittent
  * @library /lib/testlibrary
- * @library /test/lib/share/classes
+ * @library /test/lib
  * @build jdk.testlibrary.*
  * @build jdk.test.lib.hprof.*
  * @build jdk.test.lib.hprof.model.*
