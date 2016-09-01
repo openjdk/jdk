@@ -90,7 +90,7 @@ public class ToolReloadTest extends ReplToolTesting {
     }
 
     public void testReloadDrop() {
-        test(false, new String[]{"-nostartup"},
+        test(false, new String[]{"--no-startup"},
                 a -> assertVariable(a, "int", "a"),
                 a -> dropVariable(a, "/dr 1", "int a = 0", "|  dropped variable a"),
                 a -> assertMethod(a, "int b() { return 0; }", "()I", "b"),
@@ -113,7 +113,7 @@ public class ToolReloadTest extends ReplToolTesting {
     }
 
     public void testReloadQuiet() {
-        test(false, new String[]{"-nostartup"},
+        test(false, new String[]{"--no-startup"},
                 a -> assertVariable(a, "int", "a"),
                 a -> dropVariable(a, "/dr 1", "int a = 0", "|  dropped variable a"),
                 a -> assertMethod(a, "int b() { return 0; }", "()I", "b"),
@@ -130,7 +130,7 @@ public class ToolReloadTest extends ReplToolTesting {
     }
 
     public void testReloadRepeat() {
-        test(false, new String[]{"-nostartup"},
+        test(false, new String[]{"--no-startup"},
                 (a) -> assertVariable(a, "int", "c", "7", "7"),
                 (a) -> assertCommand(a, "++c", null),
                 (a) -> assertCommand(a, "/!", null),
@@ -150,7 +150,7 @@ public class ToolReloadTest extends ReplToolTesting {
     }
 
     public void testReloadIgnore() {
-        test(false, new String[]{"-nostartup"},
+        test(false, new String[]{"--no-startup"},
                 (a) -> assertCommand(a, "(-)", null),
                 (a) -> assertCommand(a, "/list", null),
                 (a) -> assertCommand(a, "/history", null),
@@ -201,13 +201,13 @@ public class ToolReloadTest extends ReplToolTesting {
     }
 
     public void testReloadExitRestore() {
-        test(false, new String[]{"-nostartup"},
+        test(false, new String[]{"--no-startup"},
                 (a) -> assertVariable(a, "int", "x", "5", "5"),
                 (a) -> assertMethod(a, "int m(int z) { return z * z; }",
                         "(int)int", "m"),
                 (a) -> evaluateExpression(a, "int", "m(x)", "25")
         );
-        test(false, new String[]{"-nostartup"},
+        test(false, new String[]{"--no-startup"},
                 (a) -> assertCommand(a, "/reload -restore",
                         "|  Restarting and restoring from previous state.\n" +
                         "-: int x = 5;\n" +

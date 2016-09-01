@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.Writer;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 /**
@@ -44,7 +43,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
  */
 public class StringContent extends Content {
 
-    private StringBuilder stringContent;
+    private final StringBuilder stringContent;
 
     /**
      * Constructor to construct StringContent object.
@@ -67,13 +66,11 @@ public class StringContent extends Content {
      * This method is not supported by the class.
      *
      * @param content content that needs to be added
-     * @throws DocletAbortException this method will always throw a
-     *                              DocletAbortException because it
-     *                              is not supported.
+     * @throws UnsupportedOperationException always
      */
     @Override
     public void addContent(Content content) {
-        throw new DocletAbortException("not supported");
+        throw new UnsupportedOperationException();
     }
 
     /**

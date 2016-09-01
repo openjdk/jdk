@@ -92,4 +92,3 @@ public class PreferTest {
         return catalogResolver("prefer.xml");
     }
 }
-

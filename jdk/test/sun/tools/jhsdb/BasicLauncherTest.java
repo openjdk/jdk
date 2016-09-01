@@ -143,6 +143,10 @@ public class BasicLauncherTest {
             if (unexpected != null) {
                 throw unexpected;
             }
+
+            if (unexpected != null) {
+                throw unexpected;
+            }
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
         } finally {

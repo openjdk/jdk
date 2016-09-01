@@ -100,7 +100,7 @@ public final class CompilerUtils {
         }
 
         Stream<String> opts = Arrays.stream(new String[] {
-            "-modulesourcepath", source.toString(), "-m", moduleName
+            "--module-source-path", source.toString(), "-m", moduleName
         });
         List<String> javacOpts = Stream.concat(opts, Arrays.stream(options))
                                         .collect(Collectors.toList());
