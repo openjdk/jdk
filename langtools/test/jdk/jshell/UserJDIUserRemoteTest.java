@@ -37,7 +37,6 @@ import static jdk.jshell.Snippet.Status.VALID;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +61,7 @@ import jdk.jshell.spi.ExecutionEnv;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 import static jdk.jshell.execution.Util.forwardExecutionControlAndIO;
-import static jdk.jshell.execution.Util.remoteInput;
+import static jdk.jshell.execution.Util.remoteInputOutput;
 
 @Test
 public class UserJDIUserRemoteTest extends ExecutionControlTestBase {
@@ -146,7 +145,7 @@ class MyExecutionControl extends JDIExecutionControl {
      * @return the channel
      * @throws IOException if there are errors in set-up
      */
-    static MyExecutionControl make(ExecutionEnv env, UserJDIUserRemoteTest test) throws IOException {
+    static ExecutionControl make(ExecutionEnv env, UserJDIUserRemoteTest test) throws IOException {
         try (final ServerSocket listener = new ServerSocket(0)) {
             // timeout after 60 seconds
             listener.setSoTimeout(60000);
@@ -175,13 +174,14 @@ class MyExecutionControl extends JDIExecutionControl {
             // output.
             Socket socket = listener.accept();
             // out before in -- match remote creation so we don't hang
-            ObjectOutput cmdout = new ObjectOutputStream(socket.getOutputStream());
-            Map<String, OutputStream> io = new HashMap<>();
-            io.put("out", env.userOut());
-            io.put("err", env.userErr());
-            io.put("aux", test.auxStream);
-            ObjectInput cmdin = remoteInput(socket.getInputStream(), io);
-            MyExecutionControl myec = new MyExecutionControl(cmdout, cmdin, vm, process, deathListeners);
+            OutputStream out = socket.getOutputStream();
+            Map<String, OutputStream> outputs = new HashMap<>();
+            outputs.put("out", env.userOut());
+            outputs.put("err", env.userErr());
+            outputs.put("aux", test.auxStream);
+            Map<String, InputStream> input = new HashMap<>();
+            input.put("in", env.userIn());
+            ExecutionControl myec = remoteInputOutput(socket.getInputStream(), out, outputs, input, (objIn, objOut) -> new MyExecutionControl(objOut, objIn, vm, process, deathListeners));
             test.currentEC = myec;
             return myec;
         }
@@ -255,11 +255,13 @@ class MyRemoteExecutionControl extends DirectExecutionControl implements Executi
             Socket socket = new Socket(loopBack, Integer.parseInt(args[0]));
             InputStream inStream = socket.getInputStream();
             OutputStream outStream = socket.getOutputStream();
-            Map<String, Consumer<OutputStream>> chans = new HashMap<>();
-            chans.put("out", st -> System.setOut(new PrintStream(st, true)));
-            chans.put("err", st -> System.setErr(new PrintStream(st, true)));
-            chans.put("aux", st -> { auxPrint = new PrintStream(st, true); });
-            forwardExecutionControlAndIO(new MyRemoteExecutionControl(), inStream, outStream, chans);
+            Map<String, Consumer<OutputStream>> outputs = new HashMap<>();
+            outputs.put("out", st -> System.setOut(new PrintStream(st, true)));
+            outputs.put("err", st -> System.setErr(new PrintStream(st, true)));
+            outputs.put("aux", st -> { auxPrint = new PrintStream(st, true); });
+            Map<String, Consumer<InputStream>> input = new HashMap<>();
+            input.put("in", st -> System.setIn(st));
+            forwardExecutionControlAndIO(new MyRemoteExecutionControl(), inStream, outStream, outputs, input);
         } catch (Throwable ex) {
             throw ex;
         }
