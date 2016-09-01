@@ -308,3 +308,30 @@ TEST_F(LogConfigurationTest, parse_invalid_tagset) {
   EXPECT_TRUE(string_contains_substring(msg, "No tag set matches selection(s):"));
   EXPECT_TRUE(string_contains_substring(msg, invalid_tagset));
 }
+
+TEST_F(LogConfigurationTest, output_name_normalization) {
+  const char* patterns[] = { "%s", "file=%s", "\"%s\"", "file=\"%s\"" };
+  char buf[1 * K];
+  for (size_t i = 0; i < ARRAY_SIZE(patterns); i++) {
+    int ret = jio_snprintf(buf, sizeof(buf), patterns[i], TestLogFileName);
+    ASSERT_NE(-1, ret);
+    set_log_config(buf, "logging=trace");
+    EXPECT_TRUE(is_described("#2: "));
+    EXPECT_TRUE(is_described(TestLogFileName));
+    EXPECT_FALSE(is_described("#3: "))
+        << "duplicate file output due to incorrect normalization for pattern: " << patterns[i];
+  }
+
+  // Make sure prefixes are ignored when used within quotes
+  // (this should create a log with "file=" in its filename)
+  int ret = jio_snprintf(buf, sizeof(buf), "\"file=%s\"", TestLogFileName);
+  ASSERT_NE(-1, ret);
+  set_log_config(buf, "logging=trace");
+  EXPECT_TRUE(is_described("#3: ")) << "prefix within quotes not ignored as it should be";
+  set_log_config(buf, "all=off");
+
+  // Remove the extra log file created
+  ret = jio_snprintf(buf, sizeof(buf), "file=%s", TestLogFileName);
+  ASSERT_NE(-1, ret);
+  delete_file(buf);
+}
