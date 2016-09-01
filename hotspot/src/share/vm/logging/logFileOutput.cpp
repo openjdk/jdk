@@ -31,6 +31,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/defaultStream.hpp"
 
+const char* LogFileOutput::Prefix = "file=";
 const char* LogFileOutput::FileOpenMode = "a";
 const char* LogFileOutput::PidFilenamePlaceholder = "%p";
 const char* LogFileOutput::TimestampFilenamePlaceholder = "%t";
@@ -45,7 +46,8 @@ LogFileOutput::LogFileOutput(const char* name)
       _file_name(NULL), _archive_name(NULL), _archive_name_len(0),
       _rotate_size(DefaultFileSize), _file_count(DefaultFileCount),
       _current_size(0), _current_file(0), _rotation_semaphore(1) {
-  _file_name = make_file_name(name, _pid_str, _vm_start_time_str);
+  assert(strstr(name, Prefix) == name, "invalid output name '%s': missing prefix: %s", name, Prefix);
+  _file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str);
 }
 
 void LogFileOutput::set_file_name_parameters(jlong vm_start_time) {
