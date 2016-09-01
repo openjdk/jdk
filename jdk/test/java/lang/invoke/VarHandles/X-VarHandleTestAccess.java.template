@@ -129,12 +129,10 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
 #else[AtomicAdd]
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
 #end[AtomicAdd]
 
 #if[Bitwise]
@@ -365,10 +363,6 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         checkUOE(() -> {
             $type$ o = ($type$) vh.getAndAddRelease(recv, $value1$);
         });
-
-        checkUOE(() -> {
-            $type$ o = ($type$) vh.addAndGet(recv, $value1$);
-        });
 #end[AtomicAdd]
 
 #if[!Bitwise]
@@ -512,10 +506,6 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
 
         checkUOE(() -> {
             $type$ o = ($type$) vh.getAndAddRelease($value1$);
-        });
-
-        checkUOE(() -> {
-            $type$ o = ($type$) vh.addAndGet($value1$);
         });
 #end[AtomicAdd]
 
@@ -723,10 +713,10 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         {
             vh.set(recv, $value1$);
 
-            $type$ o = ($type$) vh.getAndAdd(recv, $value3$);
+            $type$ o = ($type$) vh.getAndAdd(recv, $value2$);
             assertEquals(o, $value1$, "getAndAdd $type$");
-            $type$ c = ($type$) vh.addAndGet(recv, $value3$);
-            assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, ($type$)($value1$ + $value2$), "getAndAdd $type$ value");
         }
 
         {
@@ -893,10 +883,6 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
 
         checkUOE(() -> {
             $type$ o = ($type$) vh.getAndAddRelease(recv, $value1$);
-        });
-
-        checkUOE(() -> {
-            $type$ o = ($type$) vh.addAndGet(recv, $value1$);
         });
 #end[AtomicAdd]
 
@@ -1104,10 +1090,10 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         {
             vh.set($value1$);
 
-            $type$ o = ($type$) vh.getAndAdd( $value3$);
+            $type$ o = ($type$) vh.getAndAdd($value2$);
             assertEquals(o, $value1$, "getAndAdd $type$");
-            $type$ c = ($type$) vh.addAndGet($value3$);
-            assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, ($type$)($value1$ + $value2$), "getAndAdd $type$ value");
         }
 
         {
@@ -1274,10 +1260,6 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
 
         checkUOE(() -> {
             $type$ o = ($type$) vh.getAndAddRelease($value1$);
-        });
-
-        checkUOE(() -> {
-            $type$ o = ($type$) vh.addAndGet($value1$);
         });
 #end[AtomicAdd]
 
@@ -1488,10 +1470,10 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             {
                 vh.set(array, i, $value1$);
 
-                $type$ o = ($type$) vh.getAndAdd(array, i, $value3$);
+                $type$ o = ($type$) vh.getAndAdd(array, i, $value2$);
                 assertEquals(o, $value1$, "getAndAdd $type$");
-                $type$ c = ($type$) vh.addAndGet(array, i, $value3$);
-                assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, ($type$)($value1$ + $value2$), "getAndAdd $type$ value");
             }
 
             {
@@ -1663,10 +1645,6 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         checkUOE(() -> {
             $type$ o = ($type$) vh.getAndAddRelease(array, i, $value1$);
         });
-
-        checkUOE(() -> {
-            $type$ o = ($type$) vh.addAndGet(array, i, $value1$);
-        });
 #end[AtomicAdd]
 
 #if[!Bitwise]
@@ -1803,10 +1781,6 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
 
             checkIOOBE(() -> {
                 $type$ o = ($type$) vh.getAndAddRelease(array, ci, $value1$);
-            });
-
-            checkIOOBE(() -> {
-                $type$ o = ($type$) vh.addAndGet(array, ci, $value1$);
             });
 #end[AtomicAdd]
 

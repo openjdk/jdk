@@ -727,35 +727,6 @@ public class VarHandleTestMethodTypeLong extends VarHandleBaseTest {
             long x = (long) vh.getAndAddRelease(recv, 0x0123456789ABCDEFL, Void.class);
         });
 
-        // AddAndGet
-        // Incorrect argument types
-        checkNPE(() -> { // null receiver
-            long x = (long) vh.addAndGet(null, 0x0123456789ABCDEFL);
-        });
-        checkCCE(() -> { // receiver reference class
-            long x = (long) vh.addAndGet(Void.class, 0x0123456789ABCDEFL);
-        });
-        checkWMTE(() -> { // value reference class
-            long x = (long) vh.addAndGet(recv, Void.class);
-        });
-        checkWMTE(() -> { // reciever primitive class
-            long x = (long) vh.addAndGet(0, 0x0123456789ABCDEFL);
-        });
-        // Incorrect return type
-        checkWMTE(() -> { // reference class
-            Void r = (Void) vh.addAndGet(recv, 0x0123456789ABCDEFL);
-        });
-        checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.addAndGet(recv, 0x0123456789ABCDEFL);
-        });
-        // Incorrect arity
-        checkWMTE(() -> { // 0
-            long x = (long) vh.addAndGet();
-        });
-        checkWMTE(() -> { // >
-            long x = (long) vh.addAndGet(recv, 0x0123456789ABCDEFL, Void.class);
-        });
-
         // GetAndBitwiseOr
         // Incorrect argument types
         checkNPE(() -> { // null receiver
@@ -1666,27 +1637,6 @@ public class VarHandleTestMethodTypeLong extends VarHandleBaseTest {
         });
         checkWMTE(() -> { // >
             long x = (long) vh.getAndAddRelease(0x0123456789ABCDEFL, Void.class);
-        });
-
-
-        // AddAndGet
-        // Incorrect argument types
-        checkWMTE(() -> { // value reference class
-            long x = (long) vh.addAndGet(Void.class);
-        });
-        // Incorrect return type
-        checkWMTE(() -> { // reference class
-            Void r = (Void) vh.addAndGet(0x0123456789ABCDEFL);
-        });
-        checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.addAndGet(0x0123456789ABCDEFL);
-        });
-        // Incorrect arity
-        checkWMTE(() -> { // 0
-            long x = (long) vh.addAndGet();
-        });
-        checkWMTE(() -> { // >
-            long x = (long) vh.addAndGet(0x0123456789ABCDEFL, Void.class);
         });
 
         // GetAndBitwiseOr
@@ -2719,39 +2669,6 @@ public class VarHandleTestMethodTypeLong extends VarHandleBaseTest {
         });
         checkWMTE(() -> { // >
             long x = (long) vh.getAndAddRelease(array, 0, 0x0123456789ABCDEFL, Void.class);
-        });
-
-
-        // AddAndGet
-        // Incorrect argument types
-        checkNPE(() -> { // null array
-            long x = (long) vh.addAndGet(null, 0, 0x0123456789ABCDEFL);
-        });
-        checkCCE(() -> { // array reference class
-            long x = (long) vh.addAndGet(Void.class, 0, 0x0123456789ABCDEFL);
-        });
-        checkWMTE(() -> { // value reference class
-            long x = (long) vh.addAndGet(array, 0, Void.class);
-        });
-        checkWMTE(() -> { // array primitive class
-            long x = (long) vh.addAndGet(0, 0, 0x0123456789ABCDEFL);
-        });
-        checkWMTE(() -> { // index reference class
-            long x = (long) vh.addAndGet(array, Void.class, 0x0123456789ABCDEFL);
-        });
-        // Incorrect return type
-        checkWMTE(() -> { // reference class
-            Void r = (Void) vh.addAndGet(array, 0, 0x0123456789ABCDEFL);
-        });
-        checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.addAndGet(array, 0, 0x0123456789ABCDEFL);
-        });
-        // Incorrect arity
-        checkWMTE(() -> { // 0
-            long x = (long) vh.addAndGet();
-        });
-        checkWMTE(() -> { // >
-            long x = (long) vh.addAndGet(array, 0, 0x0123456789ABCDEFL, Void.class);
         });
 
         // GetAndBitwiseOr

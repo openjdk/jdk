@@ -262,10 +262,10 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, $value1$);
 
-            $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, $value3$);
+            $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, $value2$);
             assertEquals(o, $value1$, "getAndAdd $type$");
-            $type$ c = ($type$) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(recv, $value3$);
-            assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
+            $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, ($type$)($value1$ + $value2$), "getAndAdd $type$ value");
         }
 
         {
@@ -579,10 +579,10 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
-            $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD).invokeExact($value3$);
+            $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD).invokeExact($value2$);
             assertEquals(o, $value1$, "getAndAdd $type$");
-            $type$ c = ($type$) hs.get(TestAccessMode.ADD_AND_GET).invokeExact($value3$);
-            assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
+            $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, ($type$)($value1$ + $value2$), "getAndAdd $type$ value");
         }
 
         {
@@ -897,10 +897,10 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, $value1$);
 
-                $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, $value3$);
+                $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, $value2$);
                 assertEquals(o, $value1$, "getAndAdd $type$");
-                $type$ c = ($type$) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(array, i, $value3$);
-                assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
+                $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, ($type$)($value1$ + $value2$), "getAndAdd $type$ value");
             }
 
             {

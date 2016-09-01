@@ -259,10 +259,10 @@ public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, 0x0123456789ABCDEFL);
 
-            long o = (long) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, 0xDEADBEEFDEADBEEFL);
+            long o = (long) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, 0xCAFEBABECAFEBABEL);
             assertEquals(o, 0x0123456789ABCDEFL, "getAndAdd long");
-            long c = (long) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(recv, 0xDEADBEEFDEADBEEFL);
-            assertEquals(c, (long)(0x0123456789ABCDEFL + 0xDEADBEEFDEADBEEFL + 0xDEADBEEFDEADBEEFL), "getAndAdd long value");
+            long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (long)(0x0123456789ABCDEFL + 0xCAFEBABECAFEBABEL), "getAndAdd long value");
         }
 
         {
@@ -537,10 +537,10 @@ public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact(0x0123456789ABCDEFL);
 
-            long o = (long) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(0xDEADBEEFDEADBEEFL);
+            long o = (long) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(0xCAFEBABECAFEBABEL);
             assertEquals(o, 0x0123456789ABCDEFL, "getAndAdd long");
-            long c = (long) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(0xDEADBEEFDEADBEEFL);
-            assertEquals(c, (long)(0x0123456789ABCDEFL + 0xDEADBEEFDEADBEEFL + 0xDEADBEEFDEADBEEFL), "getAndAdd long value");
+            long x = (long) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (long)(0x0123456789ABCDEFL + 0xCAFEBABECAFEBABEL), "getAndAdd long value");
         }
 
         {
@@ -816,10 +816,10 @@ public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, 0x0123456789ABCDEFL);
 
-                long o = (long) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, 0xDEADBEEFDEADBEEFL);
+                long o = (long) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, 0xCAFEBABECAFEBABEL);
                 assertEquals(o, 0x0123456789ABCDEFL, "getAndAdd long");
-                long c = (long) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(array, i, 0xDEADBEEFDEADBEEFL);
-                assertEquals(c, (long)(0x0123456789ABCDEFL + 0xDEADBEEFDEADBEEFL + 0xDEADBEEFDEADBEEFL), "getAndAdd long value");
+                long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (long)(0x0123456789ABCDEFL + 0xCAFEBABECAFEBABEL), "getAndAdd long value");
             }
 
             {

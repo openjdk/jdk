@@ -729,35 +729,6 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkWMTE(() -> { // >
             $type$ x = ($type$) vh.getAndAddRelease(recv, $value1$, Void.class);
         });
-
-        // AddAndGet
-        // Incorrect argument types
-        checkNPE(() -> { // null receiver
-            $type$ x = ($type$) vh.addAndGet(null, $value1$);
-        });
-        checkCCE(() -> { // receiver reference class
-            $type$ x = ($type$) vh.addAndGet(Void.class, $value1$);
-        });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
-            $type$ x = ($type$) vh.addAndGet(recv, Void.class);
-        });
-        checkWMTE(() -> { // reciever primitive class
-            $type$ x = ($type$) vh.addAndGet(0, $value1$);
-        });
-        // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
-            Void r = (Void) vh.addAndGet(recv, $value1$);
-        });
-        checkWMTE(() -> { // primitive class
-            $wrong_primitive_type$ x = ($wrong_primitive_type$) vh.addAndGet(recv, $value1$);
-        });
-        // Incorrect arity
-        checkWMTE(() -> { // 0
-            $type$ x = ($type$) vh.addAndGet();
-        });
-        checkWMTE(() -> { // >
-            $type$ x = ($type$) vh.addAndGet(recv, $value1$, Void.class);
-        });
 #end[AtomicAdd]
 
 #if[Bitwise]
@@ -1681,27 +1652,6 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         });
         checkWMTE(() -> { // >
             $type$ x = ($type$) vh.getAndAddRelease($value1$, Void.class);
-        });
-
-
-        // AddAndGet
-        // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
-            $type$ x = ($type$) vh.addAndGet(Void.class);
-        });
-        // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
-            Void r = (Void) vh.addAndGet($value1$);
-        });
-        checkWMTE(() -> { // primitive class
-            $wrong_primitive_type$ x = ($wrong_primitive_type$) vh.addAndGet($value1$);
-        });
-        // Incorrect arity
-        checkWMTE(() -> { // 0
-            $type$ x = ($type$) vh.addAndGet();
-        });
-        checkWMTE(() -> { // >
-            $type$ x = ($type$) vh.addAndGet($value1$, Void.class);
         });
 #end[AtomicAdd]
 
@@ -2746,39 +2696,6 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         });
         checkWMTE(() -> { // >
             $type$ x = ($type$) vh.getAndAddRelease(array, 0, $value1$, Void.class);
-        });
-
-
-        // AddAndGet
-        // Incorrect argument types
-        checkNPE(() -> { // null array
-            $type$ x = ($type$) vh.addAndGet(null, 0, $value1$);
-        });
-        checkCCE(() -> { // array reference class
-            $type$ x = ($type$) vh.addAndGet(Void.class, 0, $value1$);
-        });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
-            $type$ x = ($type$) vh.addAndGet(array, 0, Void.class);
-        });
-        checkWMTE(() -> { // array primitive class
-            $type$ x = ($type$) vh.addAndGet(0, 0, $value1$);
-        });
-        checkWMTE(() -> { // index reference class
-            $type$ x = ($type$) vh.addAndGet(array, Void.class, $value1$);
-        });
-        // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
-            Void r = (Void) vh.addAndGet(array, 0, $value1$);
-        });
-        checkWMTE(() -> { // primitive class
-            $wrong_primitive_type$ x = ($wrong_primitive_type$) vh.addAndGet(array, 0, $value1$);
-        });
-        // Incorrect arity
-        checkWMTE(() -> { // 0
-            $type$ x = ($type$) vh.addAndGet();
-        });
-        checkWMTE(() -> { // >
-            $type$ x = ($type$) vh.addAndGet(array, 0, $value1$, Void.class);
         });
 #end[AtomicAdd]
 

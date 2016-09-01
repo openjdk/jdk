@@ -114,7 +114,6 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
@@ -489,10 +488,10 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
         {
             vh.set(recv, 0x0123456789ABCDEFL);
 
-            long o = (long) vh.getAndAdd(recv, 0xDEADBEEFDEADBEEFL);
+            long o = (long) vh.getAndAdd(recv, 0xCAFEBABECAFEBABEL);
             assertEquals(o, 0x0123456789ABCDEFL, "getAndAdd long");
-            long c = (long) vh.addAndGet(recv, 0xDEADBEEFDEADBEEFL);
-            assertEquals(c, (long)(0x0123456789ABCDEFL + 0xDEADBEEFDEADBEEFL + 0xDEADBEEFDEADBEEFL), "getAndAdd long value");
+            long x = (long) vh.get(recv);
+            assertEquals(x, (long)(0x0123456789ABCDEFL + 0xCAFEBABECAFEBABEL), "getAndAdd long value");
         }
 
         {
@@ -765,10 +764,10 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
         {
             vh.set(0x0123456789ABCDEFL);
 
-            long o = (long) vh.getAndAdd( 0xDEADBEEFDEADBEEFL);
+            long o = (long) vh.getAndAdd(0xCAFEBABECAFEBABEL);
             assertEquals(o, 0x0123456789ABCDEFL, "getAndAdd long");
-            long c = (long) vh.addAndGet(0xDEADBEEFDEADBEEFL);
-            assertEquals(c, (long)(0x0123456789ABCDEFL + 0xDEADBEEFDEADBEEFL + 0xDEADBEEFDEADBEEFL), "getAndAdd long value");
+            long x = (long) vh.get();
+            assertEquals(x, (long)(0x0123456789ABCDEFL + 0xCAFEBABECAFEBABEL), "getAndAdd long value");
         }
 
         {
@@ -1044,10 +1043,10 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
             {
                 vh.set(array, i, 0x0123456789ABCDEFL);
 
-                long o = (long) vh.getAndAdd(array, i, 0xDEADBEEFDEADBEEFL);
+                long o = (long) vh.getAndAdd(array, i, 0xCAFEBABECAFEBABEL);
                 assertEquals(o, 0x0123456789ABCDEFL, "getAndAdd long");
-                long c = (long) vh.addAndGet(array, i, 0xDEADBEEFDEADBEEFL);
-                assertEquals(c, (long)(0x0123456789ABCDEFL + 0xDEADBEEFDEADBEEFL + 0xDEADBEEFDEADBEEFL), "getAndAdd long value");
+                long x = (long) vh.get(array, i);
+                assertEquals(x, (long)(0x0123456789ABCDEFL + 0xCAFEBABECAFEBABEL), "getAndAdd long value");
             }
 
             {
@@ -1254,10 +1253,6 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
 
             checkIOOBE(() -> {
                 long o = (long) vh.getAndAddRelease(array, ci, 0x0123456789ABCDEFL);
-            });
-
-            checkIOOBE(() -> {
-                long o = (long) vh.addAndGet(array, ci, 0x0123456789ABCDEFL);
             });
 
             checkIOOBE(() -> {

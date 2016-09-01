@@ -259,10 +259,10 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, '\u0123');
 
-            char o = (char) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, '\u89AB');
+            char o = (char) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, '\u4567');
             assertEquals(o, '\u0123', "getAndAdd char");
-            char c = (char) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(recv, '\u89AB');
-            assertEquals(c, (char)('\u0123' + '\u89AB' + '\u89AB'), "getAndAdd char value");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAdd char value");
         }
 
         {
@@ -537,10 +537,10 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact('\u0123');
 
-            char o = (char) hs.get(TestAccessMode.GET_AND_ADD).invokeExact('\u89AB');
+            char o = (char) hs.get(TestAccessMode.GET_AND_ADD).invokeExact('\u4567');
             assertEquals(o, '\u0123', "getAndAdd char");
-            char c = (char) hs.get(TestAccessMode.ADD_AND_GET).invokeExact('\u89AB');
-            assertEquals(c, (char)('\u0123' + '\u89AB' + '\u89AB'), "getAndAdd char value");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAdd char value");
         }
 
         {
@@ -816,10 +816,10 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, '\u0123');
 
-                char o = (char) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, '\u89AB');
+                char o = (char) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, '\u4567');
                 assertEquals(o, '\u0123', "getAndAdd char");
-                char c = (char) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(array, i, '\u89AB');
-                assertEquals(c, (char)('\u0123' + '\u89AB' + '\u89AB'), "getAndAdd char value");
+                char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAdd char value");
             }
 
             {

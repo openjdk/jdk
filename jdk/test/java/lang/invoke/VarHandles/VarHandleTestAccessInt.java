@@ -114,7 +114,6 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
@@ -489,10 +488,10 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         {
             vh.set(recv, 0x01234567);
 
-            int o = (int) vh.getAndAdd(recv, 0xCAFEBABE);
+            int o = (int) vh.getAndAdd(recv, 0x89ABCDEF);
             assertEquals(o, 0x01234567, "getAndAdd int");
-            int c = (int) vh.addAndGet(recv, 0xCAFEBABE);
-            assertEquals(c, (int)(0x01234567 + 0xCAFEBABE + 0xCAFEBABE), "getAndAdd int value");
+            int x = (int) vh.get(recv);
+            assertEquals(x, (int)(0x01234567 + 0x89ABCDEF), "getAndAdd int value");
         }
 
         {
@@ -765,10 +764,10 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         {
             vh.set(0x01234567);
 
-            int o = (int) vh.getAndAdd( 0xCAFEBABE);
+            int o = (int) vh.getAndAdd(0x89ABCDEF);
             assertEquals(o, 0x01234567, "getAndAdd int");
-            int c = (int) vh.addAndGet(0xCAFEBABE);
-            assertEquals(c, (int)(0x01234567 + 0xCAFEBABE + 0xCAFEBABE), "getAndAdd int value");
+            int x = (int) vh.get();
+            assertEquals(x, (int)(0x01234567 + 0x89ABCDEF), "getAndAdd int value");
         }
 
         {
@@ -1044,10 +1043,10 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             {
                 vh.set(array, i, 0x01234567);
 
-                int o = (int) vh.getAndAdd(array, i, 0xCAFEBABE);
+                int o = (int) vh.getAndAdd(array, i, 0x89ABCDEF);
                 assertEquals(o, 0x01234567, "getAndAdd int");
-                int c = (int) vh.addAndGet(array, i, 0xCAFEBABE);
-                assertEquals(c, (int)(0x01234567 + 0xCAFEBABE + 0xCAFEBABE), "getAndAdd int value");
+                int x = (int) vh.get(array, i);
+                assertEquals(x, (int)(0x01234567 + 0x89ABCDEF), "getAndAdd int value");
             }
 
             {
@@ -1254,10 +1253,6 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
 
             checkIOOBE(() -> {
                 int o = (int) vh.getAndAddRelease(array, ci, 0x01234567);
-            });
-
-            checkIOOBE(() -> {
-                int o = (int) vh.addAndGet(array, ci, 0x01234567);
             });
 
             checkIOOBE(() -> {

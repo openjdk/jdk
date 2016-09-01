@@ -200,7 +200,7 @@ public class AtomicLongArray implements java.io.Serializable {
 
     /**
      * Atomically increments the value of the element at index {@code i},
-     * with memory effects as specified by {@link VarHandle#addAndGet}.
+     * with memory effects as specified by {@link VarHandle#getAndAdd}.
      *
      * <p>Equivalent to {@code addAndGet(i, 1)}.
      *
@@ -208,12 +208,12 @@ public class AtomicLongArray implements java.io.Serializable {
      * @return the updated value
      */
     public final long incrementAndGet(int i) {
-        return (long)AA.addAndGet(array, i, 1L);
+        return (long)AA.getAndAdd(array, i, 1L) + 1L;
     }
 
     /**
      * Atomically decrements the value of the element at index {@code i},
-     * with memory effects as specified by {@link VarHandle#addAndGet}.
+     * with memory effects as specified by {@link VarHandle#getAndAdd}.
      *
      * <p>Equivalent to {@code addAndGet(i, -1)}.
      *
@@ -221,19 +221,19 @@ public class AtomicLongArray implements java.io.Serializable {
      * @return the updated value
      */
     public final long decrementAndGet(int i) {
-        return (long)AA.addAndGet(array, i, -1L);
+        return (long)AA.getAndAdd(array, i, -1L) - 1L;
     }
 
     /**
      * Atomically adds the given value to the element at index {@code i},
-     * with memory effects as specified by {@link VarHandle#addAndGet}.
+     * with memory effects as specified by {@link VarHandle#getAndAdd}.
      *
      * @param i the index
      * @param delta the value to add
      * @return the updated value
      */
     public long addAndGet(int i, long delta) {
-        return (long)AA.addAndGet(array, i, delta);
+        return (long)AA.getAndAdd(array, i, delta) + delta;
     }
 
     /**

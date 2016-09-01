@@ -114,7 +114,6 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
@@ -489,10 +488,10 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         {
             vh.set(recv, '\u0123');
 
-            char o = (char) vh.getAndAdd(recv, '\u89AB');
+            char o = (char) vh.getAndAdd(recv, '\u4567');
             assertEquals(o, '\u0123', "getAndAdd char");
-            char c = (char) vh.addAndGet(recv, '\u89AB');
-            assertEquals(c, (char)('\u0123' + '\u89AB' + '\u89AB'), "getAndAdd char value");
+            char x = (char) vh.get(recv);
+            assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAdd char value");
         }
 
         {
@@ -765,10 +764,10 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         {
             vh.set('\u0123');
 
-            char o = (char) vh.getAndAdd( '\u89AB');
+            char o = (char) vh.getAndAdd('\u4567');
             assertEquals(o, '\u0123', "getAndAdd char");
-            char c = (char) vh.addAndGet('\u89AB');
-            assertEquals(c, (char)('\u0123' + '\u89AB' + '\u89AB'), "getAndAdd char value");
+            char x = (char) vh.get();
+            assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAdd char value");
         }
 
         {
@@ -1044,10 +1043,10 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             {
                 vh.set(array, i, '\u0123');
 
-                char o = (char) vh.getAndAdd(array, i, '\u89AB');
+                char o = (char) vh.getAndAdd(array, i, '\u4567');
                 assertEquals(o, '\u0123', "getAndAdd char");
-                char c = (char) vh.addAndGet(array, i, '\u89AB');
-                assertEquals(c, (char)('\u0123' + '\u89AB' + '\u89AB'), "getAndAdd char value");
+                char x = (char) vh.get(array, i);
+                assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAdd char value");
             }
 
             {
@@ -1254,10 +1253,6 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
 
             checkIOOBE(() -> {
                 char o = (char) vh.getAndAddRelease(array, ci, '\u0123');
-            });
-
-            checkIOOBE(() -> {
-                char o = (char) vh.addAndGet(array, ci, '\u0123');
             });
 
             checkIOOBE(() -> {

@@ -114,7 +114,6 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
 
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
@@ -559,10 +558,10 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         {
             vh.set(recv, 1.0f);
 
-            float o = (float) vh.getAndAdd(recv, 3.0f);
+            float o = (float) vh.getAndAdd(recv, 2.0f);
             assertEquals(o, 1.0f, "getAndAdd float");
-            float c = (float) vh.addAndGet(recv, 3.0f);
-            assertEquals(c, (float)(1.0f + 3.0f + 3.0f), "getAndAdd float value");
+            float x = (float) vh.get(recv);
+            assertEquals(x, (float)(1.0f + 2.0f), "getAndAdd float value");
         }
 
         {
@@ -787,10 +786,10 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         {
             vh.set(1.0f);
 
-            float o = (float) vh.getAndAdd( 3.0f);
+            float o = (float) vh.getAndAdd(2.0f);
             assertEquals(o, 1.0f, "getAndAdd float");
-            float c = (float) vh.addAndGet(3.0f);
-            assertEquals(c, (float)(1.0f + 3.0f + 3.0f), "getAndAdd float value");
+            float x = (float) vh.get();
+            assertEquals(x, (float)(1.0f + 2.0f), "getAndAdd float value");
         }
 
         {
@@ -1018,10 +1017,10 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             {
                 vh.set(array, i, 1.0f);
 
-                float o = (float) vh.getAndAdd(array, i, 3.0f);
+                float o = (float) vh.getAndAdd(array, i, 2.0f);
                 assertEquals(o, 1.0f, "getAndAdd float");
-                float c = (float) vh.addAndGet(array, i, 3.0f);
-                assertEquals(c, (float)(1.0f + 3.0f + 3.0f), "getAndAdd float value");
+                float x = (float) vh.get(array, i);
+                assertEquals(x, (float)(1.0f + 2.0f), "getAndAdd float value");
             }
 
             {
@@ -1180,10 +1179,6 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
 
             checkIOOBE(() -> {
                 float o = (float) vh.getAndAddRelease(array, ci, 1.0f);
-            });
-
-            checkIOOBE(() -> {
-                float o = (float) vh.addAndGet(array, ci, 1.0f);
             });
 
         }

@@ -114,7 +114,6 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
@@ -489,10 +488,10 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         {
             vh.set(recv, (short)0x0123);
 
-            short o = (short) vh.getAndAdd(recv, (short)0x89AB);
+            short o = (short) vh.getAndAdd(recv, (short)0x4567);
             assertEquals(o, (short)0x0123, "getAndAdd short");
-            short c = (short) vh.addAndGet(recv, (short)0x89AB);
-            assertEquals(c, (short)((short)0x0123 + (short)0x89AB + (short)0x89AB), "getAndAdd short value");
+            short x = (short) vh.get(recv);
+            assertEquals(x, (short)((short)0x0123 + (short)0x4567), "getAndAdd short value");
         }
 
         {
@@ -765,10 +764,10 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         {
             vh.set((short)0x0123);
 
-            short o = (short) vh.getAndAdd( (short)0x89AB);
+            short o = (short) vh.getAndAdd((short)0x4567);
             assertEquals(o, (short)0x0123, "getAndAdd short");
-            short c = (short) vh.addAndGet((short)0x89AB);
-            assertEquals(c, (short)((short)0x0123 + (short)0x89AB + (short)0x89AB), "getAndAdd short value");
+            short x = (short) vh.get();
+            assertEquals(x, (short)((short)0x0123 + (short)0x4567), "getAndAdd short value");
         }
 
         {
@@ -1044,10 +1043,10 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             {
                 vh.set(array, i, (short)0x0123);
 
-                short o = (short) vh.getAndAdd(array, i, (short)0x89AB);
+                short o = (short) vh.getAndAdd(array, i, (short)0x4567);
                 assertEquals(o, (short)0x0123, "getAndAdd short");
-                short c = (short) vh.addAndGet(array, i, (short)0x89AB);
-                assertEquals(c, (short)((short)0x0123 + (short)0x89AB + (short)0x89AB), "getAndAdd short value");
+                short x = (short) vh.get(array, i);
+                assertEquals(x, (short)((short)0x0123 + (short)0x4567), "getAndAdd short value");
             }
 
             {
@@ -1254,10 +1253,6 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
 
             checkIOOBE(() -> {
                 short o = (short) vh.getAndAddRelease(array, ci, (short)0x0123);
-            });
-
-            checkIOOBE(() -> {
-                short o = (short) vh.addAndGet(array, ci, (short)0x0123);
             });
 
             checkIOOBE(() -> {

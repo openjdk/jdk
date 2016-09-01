@@ -259,10 +259,10 @@ public class VarHandleTestMethodHandleAccessDouble extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, 1.0d);
 
-            double o = (double) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, 3.0d);
+            double o = (double) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, 2.0d);
             assertEquals(o, 1.0d, "getAndAdd double");
-            double c = (double) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(recv, 3.0d);
-            assertEquals(c, (double)(1.0d + 3.0d + 3.0d), "getAndAdd double value");
+            double x = (double) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (double)(1.0d + 2.0d), "getAndAdd double value");
         }
 
         {
@@ -459,10 +459,10 @@ public class VarHandleTestMethodHandleAccessDouble extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact(1.0d);
 
-            double o = (double) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(3.0d);
+            double o = (double) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(2.0d);
             assertEquals(o, 1.0d, "getAndAdd double");
-            double c = (double) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(3.0d);
-            assertEquals(c, (double)(1.0d + 3.0d + 3.0d), "getAndAdd double value");
+            double x = (double) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (double)(1.0d + 2.0d), "getAndAdd double value");
         }
 
         {
@@ -660,10 +660,10 @@ public class VarHandleTestMethodHandleAccessDouble extends VarHandleBaseTest {
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0d);
 
-                double o = (double) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, 3.0d);
+                double o = (double) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, 2.0d);
                 assertEquals(o, 1.0d, "getAndAdd double");
-                double c = (double) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(array, i, 3.0d);
-                assertEquals(c, (double)(1.0d + 3.0d + 3.0d), "getAndAdd double value");
+                double x = (double) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (double)(1.0d + 2.0d), "getAndAdd double value");
             }
 
             {

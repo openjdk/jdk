@@ -727,35 +727,6 @@ public class VarHandleTestMethodTypeByte extends VarHandleBaseTest {
             byte x = (byte) vh.getAndAddRelease(recv, (byte)0x01, Void.class);
         });
 
-        // AddAndGet
-        // Incorrect argument types
-        checkNPE(() -> { // null receiver
-            byte x = (byte) vh.addAndGet(null, (byte)0x01);
-        });
-        checkCCE(() -> { // receiver reference class
-            byte x = (byte) vh.addAndGet(Void.class, (byte)0x01);
-        });
-        checkWMTE(() -> { // value reference class
-            byte x = (byte) vh.addAndGet(recv, Void.class);
-        });
-        checkWMTE(() -> { // reciever primitive class
-            byte x = (byte) vh.addAndGet(0, (byte)0x01);
-        });
-        // Incorrect return type
-        checkWMTE(() -> { // reference class
-            Void r = (Void) vh.addAndGet(recv, (byte)0x01);
-        });
-        checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.addAndGet(recv, (byte)0x01);
-        });
-        // Incorrect arity
-        checkWMTE(() -> { // 0
-            byte x = (byte) vh.addAndGet();
-        });
-        checkWMTE(() -> { // >
-            byte x = (byte) vh.addAndGet(recv, (byte)0x01, Void.class);
-        });
-
         // GetAndBitwiseOr
         // Incorrect argument types
         checkNPE(() -> { // null receiver
@@ -1666,27 +1637,6 @@ public class VarHandleTestMethodTypeByte extends VarHandleBaseTest {
         });
         checkWMTE(() -> { // >
             byte x = (byte) vh.getAndAddRelease((byte)0x01, Void.class);
-        });
-
-
-        // AddAndGet
-        // Incorrect argument types
-        checkWMTE(() -> { // value reference class
-            byte x = (byte) vh.addAndGet(Void.class);
-        });
-        // Incorrect return type
-        checkWMTE(() -> { // reference class
-            Void r = (Void) vh.addAndGet((byte)0x01);
-        });
-        checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.addAndGet((byte)0x01);
-        });
-        // Incorrect arity
-        checkWMTE(() -> { // 0
-            byte x = (byte) vh.addAndGet();
-        });
-        checkWMTE(() -> { // >
-            byte x = (byte) vh.addAndGet((byte)0x01, Void.class);
         });
 
         // GetAndBitwiseOr
@@ -2719,39 +2669,6 @@ public class VarHandleTestMethodTypeByte extends VarHandleBaseTest {
         });
         checkWMTE(() -> { // >
             byte x = (byte) vh.getAndAddRelease(array, 0, (byte)0x01, Void.class);
-        });
-
-
-        // AddAndGet
-        // Incorrect argument types
-        checkNPE(() -> { // null array
-            byte x = (byte) vh.addAndGet(null, 0, (byte)0x01);
-        });
-        checkCCE(() -> { // array reference class
-            byte x = (byte) vh.addAndGet(Void.class, 0, (byte)0x01);
-        });
-        checkWMTE(() -> { // value reference class
-            byte x = (byte) vh.addAndGet(array, 0, Void.class);
-        });
-        checkWMTE(() -> { // array primitive class
-            byte x = (byte) vh.addAndGet(0, 0, (byte)0x01);
-        });
-        checkWMTE(() -> { // index reference class
-            byte x = (byte) vh.addAndGet(array, Void.class, (byte)0x01);
-        });
-        // Incorrect return type
-        checkWMTE(() -> { // reference class
-            Void r = (Void) vh.addAndGet(array, 0, (byte)0x01);
-        });
-        checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.addAndGet(array, 0, (byte)0x01);
-        });
-        // Incorrect arity
-        checkWMTE(() -> { // 0
-            byte x = (byte) vh.addAndGet();
-        });
-        checkWMTE(() -> { // >
-            byte x = (byte) vh.addAndGet(array, 0, (byte)0x01, Void.class);
         });
 
         // GetAndBitwiseOr

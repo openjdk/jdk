@@ -114,7 +114,6 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
@@ -489,10 +488,10 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         {
             vh.set(recv, (byte)0x01);
 
-            byte o = (byte) vh.getAndAdd(recv, (byte)0x45);
+            byte o = (byte) vh.getAndAdd(recv, (byte)0x23);
             assertEquals(o, (byte)0x01, "getAndAdd byte");
-            byte c = (byte) vh.addAndGet(recv, (byte)0x45);
-            assertEquals(c, (byte)((byte)0x01 + (byte)0x45 + (byte)0x45), "getAndAdd byte value");
+            byte x = (byte) vh.get(recv);
+            assertEquals(x, (byte)((byte)0x01 + (byte)0x23), "getAndAdd byte value");
         }
 
         {
@@ -765,10 +764,10 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         {
             vh.set((byte)0x01);
 
-            byte o = (byte) vh.getAndAdd( (byte)0x45);
+            byte o = (byte) vh.getAndAdd((byte)0x23);
             assertEquals(o, (byte)0x01, "getAndAdd byte");
-            byte c = (byte) vh.addAndGet((byte)0x45);
-            assertEquals(c, (byte)((byte)0x01 + (byte)0x45 + (byte)0x45), "getAndAdd byte value");
+            byte x = (byte) vh.get();
+            assertEquals(x, (byte)((byte)0x01 + (byte)0x23), "getAndAdd byte value");
         }
 
         {
@@ -1044,10 +1043,10 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             {
                 vh.set(array, i, (byte)0x01);
 
-                byte o = (byte) vh.getAndAdd(array, i, (byte)0x45);
+                byte o = (byte) vh.getAndAdd(array, i, (byte)0x23);
                 assertEquals(o, (byte)0x01, "getAndAdd byte");
-                byte c = (byte) vh.addAndGet(array, i, (byte)0x45);
-                assertEquals(c, (byte)((byte)0x01 + (byte)0x45 + (byte)0x45), "getAndAdd byte value");
+                byte x = (byte) vh.get(array, i);
+                assertEquals(x, (byte)((byte)0x01 + (byte)0x23), "getAndAdd byte value");
             }
 
             {
@@ -1254,10 +1253,6 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
 
             checkIOOBE(() -> {
                 byte o = (byte) vh.getAndAddRelease(array, ci, (byte)0x01);
-            });
-
-            checkIOOBE(() -> {
-                byte o = (byte) vh.addAndGet(array, ci, (byte)0x01);
             });
 
             checkIOOBE(() -> {

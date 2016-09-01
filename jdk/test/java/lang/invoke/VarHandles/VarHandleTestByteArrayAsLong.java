@@ -103,7 +103,6 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
@@ -285,10 +284,6 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
             });
 
             checkROBE(() -> {
-                long o = (long) vh.addAndGet(array, ci, VALUE_1);
-            });
-
-            checkROBE(() -> {
                 long o = (long) vh.getAndBitwiseOr(array, ci, VALUE_1);
             });
 
@@ -423,10 +418,6 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
 
             checkIOOBE(() -> {
                 long o = (long) vh.getAndAddRelease(array, ci, VALUE_1);
-            });
-
-            checkIOOBE(() -> {
-                long o = (long) vh.addAndGet(array, ci, VALUE_1);
             });
 
             checkIOOBE(() -> {
@@ -570,10 +561,6 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                 });
 
                 checkIOOBE(() -> {
-                    long o = (long) vh.addAndGet(array, ci, VALUE_1);
-                });
-
-                checkIOOBE(() -> {
                     long o = (long) vh.getAndBitwiseOr(array, ci, VALUE_1);
                 });
 
@@ -702,10 +689,6 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
 
                 checkISE(() -> {
                     long o = (long) vh.getAndAddRelease(array, ci, VALUE_1);
-                });
-
-                checkISE(() -> {
-                    long o = (long) vh.addAndGet(array, ci, VALUE_1);
                 });
 
                 checkISE(() -> {
@@ -839,10 +822,6 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
 
                     checkISE(() -> {
                         long o = (long) vh.getAndAddRelease(array, ci, VALUE_1);
-                    });
-
-                    checkISE(() -> {
-                        long o = (long) vh.addAndGet(array, ci, VALUE_1);
                     });
 
                     checkISE(() -> {
@@ -1054,10 +1033,10 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                 {
                     vh.set(array, i, VALUE_1);
 
-                    long o = (long) vh.getAndAdd(array, i, VALUE_3);
+                    long o = (long) vh.getAndAdd(array, i, VALUE_2);
                     assertEquals(o, VALUE_1, "getAndAdd long");
-                    long c = (long) vh.addAndGet(array, i, VALUE_3);
-                    assertEquals(c, VALUE_1 + VALUE_3 + VALUE_3, "getAndAdd long value");
+                    long x = (long) vh.get(array, i);
+                    assertEquals(x, VALUE_1 + VALUE_2, "getAndAdd long value");
                 }
 
                 {
@@ -1334,10 +1313,10 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                 {
                     vh.set(array, i, VALUE_1);
 
-                    long o = (long) vh.getAndAdd(array, i, VALUE_3);
+                    long o = (long) vh.getAndAdd(array, i, VALUE_2);
                     assertEquals(o, VALUE_1, "getAndAdd long");
-                    long c = (long) vh.addAndGet(array, i, VALUE_3);
-                    assertEquals(c, VALUE_1 + VALUE_3 + VALUE_3, "getAndAdd long value");
+                    long x = (long) vh.get(array, i);
+                    assertEquals(x, VALUE_1 + VALUE_2, "getAndAdd long value");
                 }
 
                 {

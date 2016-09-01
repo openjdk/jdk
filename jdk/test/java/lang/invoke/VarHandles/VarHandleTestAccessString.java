@@ -114,7 +114,6 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
 
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
@@ -288,10 +287,6 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            String o = (String) vh.addAndGet(recv, "foo");
-        });
-
-        checkUOE(() -> {
             String o = (String) vh.getAndBitwiseOr(recv, "foo");
         });
 
@@ -384,10 +379,6 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
 
         checkUOE(() -> {
             String o = (String) vh.getAndAddRelease("foo");
-        });
-
-        checkUOE(() -> {
-            String o = (String) vh.addAndGet("foo");
         });
 
         checkUOE(() -> {
@@ -603,10 +594,6 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            String o = (String) vh.addAndGet(recv, "foo");
-        });
-
-        checkUOE(() -> {
             String o = (String) vh.getAndBitwiseOr(recv, "foo");
         });
 
@@ -816,10 +803,6 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
 
         checkUOE(() -> {
             String o = (String) vh.getAndAddRelease("foo");
-        });
-
-        checkUOE(() -> {
-            String o = (String) vh.addAndGet("foo");
         });
 
         checkUOE(() -> {
@@ -1039,10 +1022,6 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
 
         checkUOE(() -> {
             String o = (String) vh.getAndAddRelease(array, i, "foo");
-        });
-
-        checkUOE(() -> {
-            String o = (String) vh.addAndGet(array, i, "foo");
         });
 
         checkUOE(() -> {

@@ -118,12 +118,10 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
 #else[AtomicAdd]
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
 #end[AtomicAdd]
 
 #if[Bitwise]
@@ -288,10 +286,6 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
 
         checkUOE(() -> {
             $type$ o = ($type$) vh.getAndAddRelease(array, ci, VALUE_1);
-        });
-
-        checkUOE(() -> {
-            $type$ o = ($type$) vh.addAndGet(array, ci, VALUE_1);
         });
 #end[AtomicAdd]
 
@@ -462,10 +456,6 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             checkROBE(() -> {
                 $type$ o = ($type$) vh.getAndAddRelease(array, ci, VALUE_1);
             });
-
-            checkROBE(() -> {
-                $type$ o = ($type$) vh.addAndGet(array, ci, VALUE_1);
-            });
 #else[AtomicAdd]
             checkUOE(() -> {
                 $type$ o = ($type$) vh.getAndAdd(array, ci, VALUE_1);
@@ -477,10 +467,6 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
 
             checkUOE(() -> {
                 $type$ o = ($type$) vh.getAndAddRelease(array, ci, VALUE_1);
-            });
-
-            checkUOE(() -> {
-                $type$ o = ($type$) vh.addAndGet(array, ci, VALUE_1);
             });
 #end[AtomicAdd]
 
@@ -615,10 +601,6 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
 
             checkUOE(() -> {
                 $type$ o = ($type$) vh.getAndAddRelease(array, ci, VALUE_1);
-            });
-
-            checkUOE(() -> {
-                $type$ o = ($type$) vh.addAndGet(array, ci, VALUE_1);
             });
 #end[AtomicAdd]
 #if[!Bitwise]
@@ -759,10 +741,6 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
 
             checkIOOBE(() -> {
                 $type$ o = ($type$) vh.getAndAddRelease(array, ci, VALUE_1);
-            });
-
-            checkIOOBE(() -> {
-                $type$ o = ($type$) vh.addAndGet(array, ci, VALUE_1);
             });
 #end[AtomicAdd]
 
@@ -910,10 +888,6 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                 checkIOOBE(() -> {
                     $type$ o = ($type$) vh.getAndAddRelease(array, ci, VALUE_1);
                 });
-
-                checkIOOBE(() -> {
-                    $type$ o = ($type$) vh.addAndGet(array, ci, VALUE_1);
-                });
 #end[AtomicAdd]
 
 #if[Bitwise]
@@ -1050,10 +1024,6 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
 
                 checkISE(() -> {
                     $type$ o = ($type$) vh.getAndAddRelease(array, ci, VALUE_1);
-                });
-
-                checkISE(() -> {
-                    $type$ o = ($type$) vh.addAndGet(array, ci, VALUE_1);
                 });
 #end[AtomicAdd]
 
@@ -1193,10 +1163,6 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
 
                     checkISE(() -> {
                         $type$ o = ($type$) vh.getAndAddRelease(array, ci, VALUE_1);
-                    });
-
-                    checkISE(() -> {
-                        $type$ o = ($type$) vh.addAndGet(array, ci, VALUE_1);
                     });
 #end[AtomicAdd]
 
@@ -1414,10 +1380,10 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                 {
                     vh.set(array, i, VALUE_1);
 
-                    $type$ o = ($type$) vh.getAndAdd(array, i, VALUE_3);
+                    $type$ o = ($type$) vh.getAndAdd(array, i, VALUE_2);
                     assertEquals(o, VALUE_1, "getAndAdd $type$");
-                    $type$ c = ($type$) vh.addAndGet(array, i, VALUE_3);
-                    assertEquals(c, VALUE_1 + VALUE_3 + VALUE_3, "getAndAdd $type$ value");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1 + VALUE_2, "getAndAdd $type$ value");
                 }
 
                 {
@@ -1700,10 +1666,10 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                 {
                     vh.set(array, i, VALUE_1);
 
-                    $type$ o = ($type$) vh.getAndAdd(array, i, VALUE_3);
+                    $type$ o = ($type$) vh.getAndAdd(array, i, VALUE_2);
                     assertEquals(o, VALUE_1, "getAndAdd $type$");
-                    $type$ c = ($type$) vh.addAndGet(array, i, VALUE_3);
-                    assertEquals(c, VALUE_1 + VALUE_3 + VALUE_3, "getAndAdd $type$ value");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1 + VALUE_2, "getAndAdd $type$ value");
                 }
 
                 {

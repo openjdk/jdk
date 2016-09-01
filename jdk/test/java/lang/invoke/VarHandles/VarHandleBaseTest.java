@@ -159,7 +159,6 @@ abstract class VarHandleBaseTest {
         GET_AND_ADD(TestAccessType.GET_AND_ADD),
         GET_AND_ADD_ACQUIRE(TestAccessType.GET_AND_ADD),
         GET_AND_ADD_RELEASE(TestAccessType.GET_AND_ADD),
-        ADD_AND_GET(TestAccessType.GET_AND_ADD),
         GET_AND_BITWISE_OR(TestAccessType.GET_AND_BITWISE),
         GET_AND_BITWISE_OR_ACQUIRE(TestAccessType.GET_AND_BITWISE),
         GET_AND_BITWISE_OR_RELEASE(TestAccessType.GET_AND_BITWISE),

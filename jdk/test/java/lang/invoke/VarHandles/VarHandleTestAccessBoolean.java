@@ -114,7 +114,6 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
@@ -287,10 +286,6 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
             boolean o = (boolean) vh.getAndAddRelease(recv, true);
         });
 
-        checkUOE(() -> {
-            boolean o = (boolean) vh.addAndGet(recv, true);
-        });
-
     }
 
 
@@ -349,10 +344,6 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean o = (boolean) vh.getAndAddRelease(true);
-        });
-
-        checkUOE(() -> {
-            boolean o = (boolean) vh.addAndGet(true);
         });
 
     }
@@ -615,10 +606,6 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
             boolean o = (boolean) vh.getAndAddRelease(recv, true);
         });
 
-        checkUOE(() -> {
-            boolean o = (boolean) vh.addAndGet(recv, true);
-        });
-
     }
 
 
@@ -877,10 +864,6 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean o = (boolean) vh.getAndAddRelease(true);
-        });
-
-        checkUOE(() -> {
-            boolean o = (boolean) vh.addAndGet(true);
         });
 
     }
@@ -1148,10 +1131,6 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean o = (boolean) vh.getAndAddRelease(array, i, true);
-        });
-
-        checkUOE(() -> {
-            boolean o = (boolean) vh.addAndGet(array, i, true);
         });
 
     }

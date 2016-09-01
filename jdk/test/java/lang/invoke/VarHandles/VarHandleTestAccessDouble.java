@@ -114,7 +114,6 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
 
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
@@ -559,10 +558,10 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
         {
             vh.set(recv, 1.0d);
 
-            double o = (double) vh.getAndAdd(recv, 3.0d);
+            double o = (double) vh.getAndAdd(recv, 2.0d);
             assertEquals(o, 1.0d, "getAndAdd double");
-            double c = (double) vh.addAndGet(recv, 3.0d);
-            assertEquals(c, (double)(1.0d + 3.0d + 3.0d), "getAndAdd double value");
+            double x = (double) vh.get(recv);
+            assertEquals(x, (double)(1.0d + 2.0d), "getAndAdd double value");
         }
 
         {
@@ -787,10 +786,10 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
         {
             vh.set(1.0d);
 
-            double o = (double) vh.getAndAdd( 3.0d);
+            double o = (double) vh.getAndAdd(2.0d);
             assertEquals(o, 1.0d, "getAndAdd double");
-            double c = (double) vh.addAndGet(3.0d);
-            assertEquals(c, (double)(1.0d + 3.0d + 3.0d), "getAndAdd double value");
+            double x = (double) vh.get();
+            assertEquals(x, (double)(1.0d + 2.0d), "getAndAdd double value");
         }
 
         {
@@ -1018,10 +1017,10 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
             {
                 vh.set(array, i, 1.0d);
 
-                double o = (double) vh.getAndAdd(array, i, 3.0d);
+                double o = (double) vh.getAndAdd(array, i, 2.0d);
                 assertEquals(o, 1.0d, "getAndAdd double");
-                double c = (double) vh.addAndGet(array, i, 3.0d);
-                assertEquals(c, (double)(1.0d + 3.0d + 3.0d), "getAndAdd double value");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, (double)(1.0d + 2.0d), "getAndAdd double value");
             }
 
             {
@@ -1180,10 +1179,6 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
 
             checkIOOBE(() -> {
                 double o = (double) vh.getAndAddRelease(array, ci, 1.0d);
-            });
-
-            checkIOOBE(() -> {
-                double o = (double) vh.addAndGet(array, ci, 1.0d);
             });
 
         }
