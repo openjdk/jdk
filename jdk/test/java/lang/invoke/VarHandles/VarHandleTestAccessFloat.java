@@ -103,8 +103,8 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_PLAIN));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
@@ -489,11 +489,11 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSet(recv, 1.0f, 2.0f);
+                success = vh.weakCompareAndSetPlain(recv, 1.0f, 2.0f);
             }
-            assertEquals(success, true, "weakCompareAndSet float");
+            assertEquals(success, true, "weakCompareAndSetPlain float");
             float x = (float) vh.get(recv);
-            assertEquals(x, 2.0f, "weakCompareAndSet float value");
+            assertEquals(x, 2.0f, "weakCompareAndSetPlain float value");
         }
 
         {
@@ -519,11 +519,11 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetVolatile(recv, 2.0f, 1.0f);
+                success = vh.weakCompareAndSet(recv, 2.0f, 1.0f);
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile float");
+            assertEquals(success, true, "weakCompareAndSet float");
             float x = (float) vh.get(recv);
-            assertEquals(x, 1.0f, "weakCompareAndSetVolatile float value");
+            assertEquals(x, 1.0f, "weakCompareAndSet float value");
         }
 
         // Compare set and get
@@ -717,11 +717,11 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSet(1.0f, 2.0f);
+                success = vh.weakCompareAndSetPlain(1.0f, 2.0f);
             }
-            assertEquals(success, true, "weakCompareAndSet float");
+            assertEquals(success, true, "weakCompareAndSetPlain float");
             float x = (float) vh.get();
-            assertEquals(x, 2.0f, "weakCompareAndSet float value");
+            assertEquals(x, 2.0f, "weakCompareAndSetPlain float value");
         }
 
         {
@@ -747,11 +747,11 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetRelease(2.0f, 1.0f);
+                success = vh.weakCompareAndSet(2.0f, 1.0f);
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile float");
+            assertEquals(success, true, "weakCompareAndSet float");
             float x = (float) vh.get();
-            assertEquals(x, 1.0f, "weakCompareAndSetVolatile float");
+            assertEquals(x, 1.0f, "weakCompareAndSet float");
         }
 
         // Compare set and get
@@ -948,11 +948,11 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSet(array, i, 1.0f, 2.0f);
+                    success = vh.weakCompareAndSetPlain(array, i, 1.0f, 2.0f);
                 }
-                assertEquals(success, true, "weakCompareAndSet float");
+                assertEquals(success, true, "weakCompareAndSetPlain float");
                 float x = (float) vh.get(array, i);
-                assertEquals(x, 2.0f, "weakCompareAndSet float value");
+                assertEquals(x, 2.0f, "weakCompareAndSetPlain float value");
             }
 
             {
@@ -978,11 +978,11 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSetVolatile(array, i, 2.0f, 1.0f);
+                    success = vh.weakCompareAndSet(array, i, 2.0f, 1.0f);
                 }
-                assertEquals(success, true, "weakCompareAndSetVolatile float");
+                assertEquals(success, true, "weakCompareAndSet float");
                 float x = (float) vh.get(array, i);
-                assertEquals(x, 1.0f, "weakCompareAndSetVolatile float");
+                assertEquals(x, 1.0f, "weakCompareAndSet float");
             }
 
             // Compare set and get
@@ -1142,11 +1142,11 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSet(array, ci, 1.0f, 2.0f);
+                boolean r = vh.weakCompareAndSetPlain(array, ci, 1.0f, 2.0f);
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSetVolatile(array, ci, 1.0f, 2.0f);
+                boolean r = vh.weakCompareAndSet(array, ci, 1.0f, 2.0f);
             });
 
             checkIOOBE(() -> {

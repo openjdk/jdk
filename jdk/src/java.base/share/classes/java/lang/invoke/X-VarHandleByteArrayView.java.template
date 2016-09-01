@@ -223,7 +223,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         }
 
         @ForceInline
-        static boolean weakCompareAndSet(ArrayHandle handle, Object oba, int index, $type$ expected, $type$ value) {
+        static boolean weakCompareAndSetPlain(ArrayHandle handle, Object oba, int index, $type$ expected, $type$ value) {
             byte[] ba = (byte[]) oba;
             return UNSAFE.weakCompareAndSwap$RawType$(
                     ba,
@@ -232,7 +232,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         }
 
         @ForceInline
-        static boolean weakCompareAndSetVolatile(ArrayHandle handle, Object oba, int index, $type$ expected, $type$ value) {
+        static boolean weakCompareAndSet(ArrayHandle handle, Object oba, int index, $type$ expected, $type$ value) {
             byte[] ba = (byte[]) oba;
             return UNSAFE.weakCompareAndSwap$RawType$Volatile(
                     ba,
@@ -662,7 +662,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         }
 
         @ForceInline
-        static boolean weakCompareAndSet(ByteBufferHandle handle, Object obb, int index, $type$ expected, $type$ value) {
+        static boolean weakCompareAndSetPlain(ByteBufferHandle handle, Object obb, int index, $type$ expected, $type$ value) {
             ByteBuffer bb = (ByteBuffer) obb;
             return UNSAFE.weakCompareAndSwap$RawType$(
                     UNSAFE.getObject(bb, BYTE_BUFFER_HB),
@@ -671,7 +671,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         }
 
         @ForceInline
-        static boolean weakCompareAndSetVolatile(ByteBufferHandle handle, Object obb, int index, $type$ expected, $type$ value) {
+        static boolean weakCompareAndSet(ByteBufferHandle handle, Object obb, int index, $type$ expected, $type$ value) {
             ByteBuffer bb = (ByteBuffer) obb;
             return UNSAFE.weakCompareAndSwap$RawType$Volatile(
                     UNSAFE.getObject(bb, BYTE_BUFFER_HB),

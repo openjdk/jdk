@@ -103,8 +103,8 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_PLAIN));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
@@ -419,11 +419,11 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSet(recv, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
+                success = vh.weakCompareAndSetPlain(recv, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
             }
-            assertEquals(success, true, "weakCompareAndSet long");
+            assertEquals(success, true, "weakCompareAndSetPlain long");
             long x = (long) vh.get(recv);
-            assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSet long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSetPlain long value");
         }
 
         {
@@ -449,11 +449,11 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetVolatile(recv, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+                success = vh.weakCompareAndSet(recv, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile long");
+            assertEquals(success, true, "weakCompareAndSet long");
             long x = (long) vh.get(recv);
-            assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSetVolatile long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSet long value");
         }
 
         // Compare set and get
@@ -695,11 +695,11 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSet(0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
+                success = vh.weakCompareAndSetPlain(0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
             }
-            assertEquals(success, true, "weakCompareAndSet long");
+            assertEquals(success, true, "weakCompareAndSetPlain long");
             long x = (long) vh.get();
-            assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSet long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSetPlain long value");
         }
 
         {
@@ -725,11 +725,11 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetRelease(0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+                success = vh.weakCompareAndSet(0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile long");
+            assertEquals(success, true, "weakCompareAndSet long");
             long x = (long) vh.get();
-            assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSetVolatile long");
+            assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSet long");
         }
 
         // Compare set and get
@@ -974,11 +974,11 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSet(array, i, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
+                    success = vh.weakCompareAndSetPlain(array, i, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
                 }
-                assertEquals(success, true, "weakCompareAndSet long");
+                assertEquals(success, true, "weakCompareAndSetPlain long");
                 long x = (long) vh.get(array, i);
-                assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSet long value");
+                assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSetPlain long value");
             }
 
             {
@@ -1004,11 +1004,11 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSetVolatile(array, i, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+                    success = vh.weakCompareAndSet(array, i, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
                 }
-                assertEquals(success, true, "weakCompareAndSetVolatile long");
+                assertEquals(success, true, "weakCompareAndSet long");
                 long x = (long) vh.get(array, i);
-                assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSetVolatile long");
+                assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSet long");
             }
 
             // Compare set and get
@@ -1216,11 +1216,11 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSet(array, ci, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
+                boolean r = vh.weakCompareAndSetPlain(array, ci, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSetVolatile(array, ci, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
+                boolean r = vh.weakCompareAndSet(array, ci, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
             });
 
             checkIOOBE(() -> {
