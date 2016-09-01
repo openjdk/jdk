@@ -259,10 +259,10 @@ public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, 0x01234567);
 
-            int o = (int) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, 0xCAFEBABE);
+            int o = (int) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, 0x89ABCDEF);
             assertEquals(o, 0x01234567, "getAndAdd int");
-            int c = (int) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(recv, 0xCAFEBABE);
-            assertEquals(c, (int)(0x01234567 + 0xCAFEBABE + 0xCAFEBABE), "getAndAdd int value");
+            int x = (int) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (int)(0x01234567 + 0x89ABCDEF), "getAndAdd int value");
         }
 
         {
@@ -537,10 +537,10 @@ public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact(0x01234567);
 
-            int o = (int) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(0xCAFEBABE);
+            int o = (int) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(0x89ABCDEF);
             assertEquals(o, 0x01234567, "getAndAdd int");
-            int c = (int) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(0xCAFEBABE);
-            assertEquals(c, (int)(0x01234567 + 0xCAFEBABE + 0xCAFEBABE), "getAndAdd int value");
+            int x = (int) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (int)(0x01234567 + 0x89ABCDEF), "getAndAdd int value");
         }
 
         {
@@ -816,10 +816,10 @@ public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, 0x01234567);
 
-                int o = (int) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, 0xCAFEBABE);
+                int o = (int) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, 0x89ABCDEF);
                 assertEquals(o, 0x01234567, "getAndAdd int");
-                int c = (int) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(array, i, 0xCAFEBABE);
-                assertEquals(c, (int)(0x01234567 + 0xCAFEBABE + 0xCAFEBABE), "getAndAdd int value");
+                int x = (int) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (int)(0x01234567 + 0x89ABCDEF), "getAndAdd int value");
             }
 
             {

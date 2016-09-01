@@ -103,7 +103,6 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
 
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
@@ -255,10 +254,6 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
         });
 
         checkUOE(() -> {
-            char o = (char) vh.addAndGet(array, ci, VALUE_1);
-        });
-
-        checkUOE(() -> {
             char o = (char) vh.getAndBitwiseOr(array, ci, VALUE_1);
         });
 
@@ -376,10 +371,6 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
             });
 
             checkUOE(() -> {
-                char o = (char) vh.addAndGet(array, ci, VALUE_1);
-            });
-
-            checkUOE(() -> {
                 char o = (char) vh.getAndBitwiseOr(array, ci, VALUE_1);
             });
 
@@ -469,10 +460,6 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
 
             checkUOE(() -> {
                 char o = (char) vh.getAndAddRelease(array, ci, VALUE_1);
-            });
-
-            checkUOE(() -> {
-                char o = (char) vh.addAndGet(array, ci, VALUE_1);
             });
             checkUOE(() -> {
                 char o = (char) vh.getAndBitwiseOr(array, ci, VALUE_1);

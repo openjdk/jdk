@@ -340,11 +340,6 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue + delta)));
             return expectedValue;
         }
-
-        @ForceInline
-        static $type$ addAndGet(ArrayHandle handle, Object oba, int index, $type$ delta) {
-            return getAndAdd(handle, oba, index, delta) + delta;
-        }
 #end[AtomicAdd]
 #if[Bitwise]
 
@@ -784,11 +779,6 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             } while (!UNSAFE.weakCompareAndSwap$RawType$Volatile(base, offset,
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue + delta)));
             return expectedValue;
-        }
-
-        @ForceInline
-        static $type$ addAndGet(ByteBufferHandle handle, Object obb, int index, $type$ delta) {
-            return getAndAdd(handle, obb, index, delta) + delta;
         }
 #end[AtomicAdd]
 #if[Bitwise]

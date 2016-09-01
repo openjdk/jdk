@@ -259,10 +259,10 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, (byte)0x01);
 
-            byte o = (byte) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, (byte)0x45);
+            byte o = (byte) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, (byte)0x23);
             assertEquals(o, (byte)0x01, "getAndAdd byte");
-            byte c = (byte) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(recv, (byte)0x45);
-            assertEquals(c, (byte)((byte)0x01 + (byte)0x45 + (byte)0x45), "getAndAdd byte value");
+            byte x = (byte) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (byte)((byte)0x01 + (byte)0x23), "getAndAdd byte value");
         }
 
         {
@@ -537,10 +537,10 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact((byte)0x01);
 
-            byte o = (byte) hs.get(TestAccessMode.GET_AND_ADD).invokeExact((byte)0x45);
+            byte o = (byte) hs.get(TestAccessMode.GET_AND_ADD).invokeExact((byte)0x23);
             assertEquals(o, (byte)0x01, "getAndAdd byte");
-            byte c = (byte) hs.get(TestAccessMode.ADD_AND_GET).invokeExact((byte)0x45);
-            assertEquals(c, (byte)((byte)0x01 + (byte)0x45 + (byte)0x45), "getAndAdd byte value");
+            byte x = (byte) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (byte)((byte)0x01 + (byte)0x23), "getAndAdd byte value");
         }
 
         {
@@ -816,10 +816,10 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, (byte)0x01);
 
-                byte o = (byte) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, (byte)0x45);
+                byte o = (byte) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, (byte)0x23);
                 assertEquals(o, (byte)0x01, "getAndAdd byte");
-                byte c = (byte) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(array, i, (byte)0x45);
-                assertEquals(c, (byte)((byte)0x01 + (byte)0x45 + (byte)0x45), "getAndAdd byte value");
+                byte x = (byte) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (byte)((byte)0x01 + (byte)0x23), "getAndAdd byte value");
             }
 
             {

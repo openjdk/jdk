@@ -1172,39 +1172,6 @@ public abstract class VarHandle {
     @HotSpotIntrinsicCandidate
     Object getAndAddRelease(Object... args);
 
-    /**
-     * Atomically adds the {@code value} to the current value of a variable with
-     * the memory semantics of {@link #setVolatile}, and returns the variable's
-     * current (updated) value, as accessed with the memory semantics of
-     * {@link #getVolatile}.
-     *
-     * <p>The method signature is of the form {@code (CT, T value)T}.
-     *
-     * <p>The symbolic type descriptor at the call site of {@code addAndGet}
-     * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.ADD_AND_GET)} on this
-     * VarHandle.
-     *
-     * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T value)}
-     * , statically represented using varargs.
-     * @return the signature-polymorphic result that is the current value of
-     * the variable
-     * , statically represented using {@code Object}.
-     * @throws UnsupportedOperationException if the access mode is unsupported
-     * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
-     * @see #setVolatile(Object...)
-     * @see #getVolatile(Object...)
-     */
-    public final native
-    @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
-    Object addAndGet(Object... args);
-
 
     // Bitwise operations
     // Throw UnsupportedOperationException for refs
@@ -1748,12 +1715,6 @@ public abstract class VarHandle {
          * {@link VarHandle#getAndAddRelease VarHandle.getAndAddRelease}
          */
         GET_AND_ADD_RELEASE("getAndAddRelease", AccessType.GET_AND_UPDATE),
-        /**
-         * The access mode whose access is specified by the corresponding
-         * method
-         * {@link VarHandle#addAndGet VarHandle.addAndGet}
-         */
-        ADD_AND_GET("addAndGet", AccessType.GET_AND_UPDATE),
         /**
          * The access mode whose access is specified by the corresponding
          * method

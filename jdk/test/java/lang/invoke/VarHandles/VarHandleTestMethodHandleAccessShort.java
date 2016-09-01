@@ -259,10 +259,10 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, (short)0x0123);
 
-            short o = (short) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, (short)0x89AB);
+            short o = (short) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, (short)0x4567);
             assertEquals(o, (short)0x0123, "getAndAdd short");
-            short c = (short) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(recv, (short)0x89AB);
-            assertEquals(c, (short)((short)0x0123 + (short)0x89AB + (short)0x89AB), "getAndAdd short value");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (short)((short)0x0123 + (short)0x4567), "getAndAdd short value");
         }
 
         {
@@ -537,10 +537,10 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact((short)0x0123);
 
-            short o = (short) hs.get(TestAccessMode.GET_AND_ADD).invokeExact((short)0x89AB);
+            short o = (short) hs.get(TestAccessMode.GET_AND_ADD).invokeExact((short)0x4567);
             assertEquals(o, (short)0x0123, "getAndAdd short");
-            short c = (short) hs.get(TestAccessMode.ADD_AND_GET).invokeExact((short)0x89AB);
-            assertEquals(c, (short)((short)0x0123 + (short)0x89AB + (short)0x89AB), "getAndAdd short value");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)((short)0x0123 + (short)0x4567), "getAndAdd short value");
         }
 
         {
@@ -816,10 +816,10 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, (short)0x0123);
 
-                short o = (short) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, (short)0x89AB);
+                short o = (short) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, (short)0x4567);
                 assertEquals(o, (short)0x0123, "getAndAdd short");
-                short c = (short) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(array, i, (short)0x89AB);
-                assertEquals(c, (short)((short)0x0123 + (short)0x89AB + (short)0x89AB), "getAndAdd short value");
+                short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (short)((short)0x0123 + (short)0x4567), "getAndAdd short value");
             }
 
             {

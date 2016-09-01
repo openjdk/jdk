@@ -259,10 +259,10 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, 1.0f);
 
-            float o = (float) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, 3.0f);
+            float o = (float) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, 2.0f);
             assertEquals(o, 1.0f, "getAndAdd float");
-            float c = (float) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(recv, 3.0f);
-            assertEquals(c, (float)(1.0f + 3.0f + 3.0f), "getAndAdd float value");
+            float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (float)(1.0f + 2.0f), "getAndAdd float value");
         }
 
         {
@@ -459,10 +459,10 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact(1.0f);
 
-            float o = (float) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(3.0f);
+            float o = (float) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(2.0f);
             assertEquals(o, 1.0f, "getAndAdd float");
-            float c = (float) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(3.0f);
-            assertEquals(c, (float)(1.0f + 3.0f + 3.0f), "getAndAdd float value");
+            float x = (float) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (float)(1.0f + 2.0f), "getAndAdd float value");
         }
 
         {
@@ -660,10 +660,10 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0f);
 
-                float o = (float) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, 3.0f);
+                float o = (float) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, 2.0f);
                 assertEquals(o, 1.0f, "getAndAdd float");
-                float c = (float) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(array, i, 3.0f);
-                assertEquals(c, (float)(1.0f + 3.0f + 3.0f), "getAndAdd float value");
+                float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (float)(1.0f + 2.0f), "getAndAdd float value");
             }
 
             {
