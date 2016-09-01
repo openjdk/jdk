@@ -28,7 +28,7 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- * @run main/othervm -limitmods jdk.compiler LimitedImage
+ * @run main/othervm --limit-modules jdk.compiler LimitedImage
  */
 
 import java.io.IOException;

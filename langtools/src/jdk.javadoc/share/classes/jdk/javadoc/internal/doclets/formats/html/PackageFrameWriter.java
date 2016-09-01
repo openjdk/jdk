@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.util.*;
 
 import javax.lang.model.element.PackageElement;
@@ -38,10 +37,9 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 
 
 /**
@@ -62,7 +60,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
     /**
      * The package being documented.
      */
-    private PackageElement packageElement;
+    private final PackageElement packageElement;
 
     /**
      * The classes to be documented.  Use this to filter out classes
@@ -96,35 +94,29 @@ public class PackageFrameWriter extends HtmlDocletWriter {
      *
      * @param configuration the current configuration of the doclet.
      * @param packageElement The package for which "pacakge-frame.html" is to be generated.
+     * @throws DocFileIOException if there is a problem generating the package summary page
      */
-    public static void generate(ConfigurationImpl configuration, PackageElement packageElement) {
-        PackageFrameWriter packgen;
-        try {
-            packgen = new PackageFrameWriter(configuration, packageElement);
-            String pkgName = configuration.utils.getPackageName(packageElement);
-            HtmlTree body = packgen.getBody(false, packgen.getWindowTitle(pkgName));
-            Content pkgNameContent = new StringContent(pkgName);
-            HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
-                    ? HtmlTree.MAIN()
-                    : body;
-            Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, HtmlStyle.bar,
-                    packgen.getTargetPackageLink(packageElement, "classFrame", pkgNameContent));
-            htmlTree.addContent(heading);
-            HtmlTree div = new HtmlTree(HtmlTag.DIV);
-            div.addStyle(HtmlStyle.indexContainer);
-            packgen.addClassListing(div);
-            htmlTree.addContent(div);
-            if (configuration.allowTag(HtmlTag.MAIN)) {
-                body.addContent(htmlTree);
-            }
-            packgen.printHtmlDocument(
-                    configuration.metakeywords.getMetaKeywords(packageElement), false, body);
-        } catch (IOException exc) {
-            Messages messages = configuration.getMessages();
-            messages.error("doclet.exception_encountered",
-                    exc.toString(), DocPaths.PACKAGE_FRAME.getPath());
-            throw new DocletAbortException(exc);
+    public static void generate(ConfigurationImpl configuration, PackageElement packageElement)
+            throws DocFileIOException {
+        PackageFrameWriter packgen = new PackageFrameWriter(configuration, packageElement);
+        String pkgName = configuration.utils.getPackageName(packageElement);
+        HtmlTree body = packgen.getBody(false, packgen.getWindowTitle(pkgName));
+        Content pkgNameContent = new StringContent(pkgName);
+        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
+                ? HtmlTree.MAIN()
+                : body;
+        Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, HtmlStyle.bar,
+                packgen.getTargetPackageLink(packageElement, "classFrame", pkgNameContent));
+        htmlTree.addContent(heading);
+        HtmlTree div = new HtmlTree(HtmlTag.DIV);
+        div.addStyle(HtmlStyle.indexContainer);
+        packgen.addClassListing(div);
+        htmlTree.addContent(div);
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            body.addContent(htmlTree);
         }
+        packgen.printHtmlDocument(
+                configuration.metakeywords.getMetaKeywords(packageElement), false, body);
     }
 
     /**
@@ -168,7 +160,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
     /**
      * Add specific class kind listing. Also add label to the listing.
      *
-     * @param arr Array of specific class kinds, namely Class or Interface or Exception or Error
+     * @param list list of specific class kinds, namely Class or Interface or Exception or Error
      * @param labelContent content tree of the label to be added
      * @param contentTree the content tree to which the class kind listing will be added
      */

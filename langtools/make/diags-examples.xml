@@ -80,12 +80,12 @@ By default, the reports will be generated in langtools/build/diags-examples/repo
             includeAntRuntime="no"
             debug="${javac.debug}"
             debuglevel="${javac.debuglevel}">
-            <compilerarg line="-XaddExports:jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED"/>
-            <compilerarg line="-XaddExports:jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED"/>
-            <compilerarg line="-XaddExports:jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED"/>
-            <compilerarg line="-XaddExports:jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED"/>
-            <compilerarg line="-XaddExports:jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED"/>
-            <compilerarg line="-XaddExports:jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"/>
+            <compilerarg line="--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED"/>
+            <compilerarg line="--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED"/>
+            <compilerarg line="--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED"/>
+            <compilerarg line="--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED"/>
+            <compilerarg line="--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED"/>
+            <compilerarg line="--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"/>
         </javac>
     </target>
 
@@ -111,12 +111,12 @@ By default, the reports will be generated in langtools/build/diags-examples/repo
                 <arg value="-showFiles"/>
                 <arg value="-title"/>
                 <arg value="Examples of javac diagnostics"/>
-                <jvmarg line="-XaddExports:jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED"/>
-                <jvmarg line="-XaddExports:jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED"/>
-                <jvmarg line="-XaddExports:jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED"/>
-                <jvmarg line="-XaddExports:jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED"/>
-                <jvmarg line="-XaddExports:jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED"/>
-                <jvmarg line="-XaddExports:jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"/>
+                <jvmarg line="--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED"/>
+                <jvmarg line="--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED"/>
+                <jvmarg line="--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED"/>
+                <jvmarg line="--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED"/>
+                <jvmarg line="--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED"/>
+                <jvmarg line="--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"/>
             </java>
             </sequential>
         </macrodef>

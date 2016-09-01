@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -39,6 +38,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 
 /**
@@ -123,8 +123,9 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      *
      * @param title the title of the window.
      * @param includeScript boolean set true if windowtitle script is to be included
+     * @throws DocFileIOException if there is a problem building the module index file
      */
-    protected void buildModuleIndexFile(String title, boolean includeScript) throws IOException {
+    protected void buildModuleIndexFile(String title, boolean includeScript) throws DocFileIOException {
         String windowOverview = configuration.getText(title);
         Content body = getBody(includeScript, getWindowTitle(windowOverview));
         addNavigationBarHeader(body);
@@ -144,9 +145,10 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      * @param title the title of the window.
      * @param includeScript boolean set true if windowtitle script is to be included
      * @param mdle the name of the module being documented
+     * @throws DocFileIOException if there is an exception building the module packages index file
      */
     protected void buildModulePackagesIndexFile(String title,
-            boolean includeScript, ModuleElement mdle) throws IOException {
+            boolean includeScript, ModuleElement mdle) throws DocFileIOException {
         String windowOverview = configuration.getText(title);
         Content body = getBody(includeScript, getWindowTitle(windowOverview));
         addNavigationBarHeader(body);
@@ -163,8 +165,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      *
      * @param body the document tree to which the overview will be added
      */
-    protected void addOverview(Content body) throws IOException {
-    }
+    protected void addOverview(Content body) { }
 
     /**
      * Adds the frame or non-frame module index to the documentation tree.
@@ -259,6 +260,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      *
      * @return a Content object to be added to the documentation tree
      */
+    @Override
     protected Content getNavLinkContents() {
         Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.overviewLabel);
         return li;
@@ -269,22 +271,19 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      *
      * @param div the document tree to which the all classes link will be added
      */
-    protected void addAllClassesLink(Content div) {
-    }
+    protected void addAllClassesLink(Content div) { }
 
     /**
      * Do nothing. This will be overridden in ModuleIndexFrameWriter.
      *
      * @param div the document tree to which the all packages link will be added
      */
-    protected void addAllPackagesLink(Content div) {
-    }
+    protected void addAllPackagesLink(Content div) { }
 
     /**
      * Do nothing. This will be overridden in ModulePackageIndexFrameWriter.
      *
      * @param div the document tree to which the all modules link will be added
      */
-    protected void addAllModulesLink(Content div) {
-    }
+    protected void addAllModulesLink(Content div) { }
 }

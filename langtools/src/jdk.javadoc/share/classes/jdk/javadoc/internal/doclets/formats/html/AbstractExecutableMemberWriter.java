@@ -39,8 +39,6 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.SimpleTypeVisitor9;
 
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -314,27 +312,27 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
             SimpleTypeVisitor9<Boolean, Void> stv = new SimpleTypeVisitor9<Boolean, Void>() {
                 boolean foundTypeVariable = false;
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Boolean visitArray(ArrayType t, Void p) {
                     visit(t.getComponentType());
                     buf.append(utils.getDimension(t));
                     return foundTypeVariable;
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Boolean visitTypeVariable(TypeVariable t, Void p) {
                     buf.append(utils.asTypeElement(t).getQualifiedName());
                     foundTypeVariable = true;
                     return foundTypeVariable;
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Boolean visitDeclared(DeclaredType t, Void p) {
                     buf.append(utils.getQualifiedTypeName(t));
                     return foundTypeVariable;
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 protected Boolean defaultAction(TypeMirror e, Void p) {
                     buf.append(e);
                     return foundTypeVariable;

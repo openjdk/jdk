@@ -22,9 +22,10 @@
  */
 
  /* @test
-   @bug 8057791 8160438
-   @summary Selection in JList is drawn with wrong colors in Nimbus L&F
-   @run main bug8057791
+    @key headful
+    @bug 8057791 8160438 8163161
+    @summary Selection in JList is drawn with wrong colors in Nimbus L&F
+    @run main/timeout=500 bug8057791
  */
 import java.awt.Color;
 import java.awt.Font;

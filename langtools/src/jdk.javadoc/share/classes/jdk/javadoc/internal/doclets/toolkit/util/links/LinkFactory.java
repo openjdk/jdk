@@ -42,8 +42,6 @@ import javax.lang.model.util.SimpleTypeVisitor9;
 import jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 
 /**
  * A factory that constructs links from given link information.
@@ -80,14 +78,14 @@ public abstract class LinkFactory {
                 Content link = newContent();
 
                 // handles primitives, no types and error types
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 protected Content defaultAction(TypeMirror type, LinkInfo linkInfo) {
                     link.addContent(utils.getTypeName(type, false));
                     return link;
                 }
 
                 int currentDepth = 0;
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Content visitArray(ArrayType type, LinkInfo linkInfo) {
                     // keep track of the dimension depth and replace the last dimension
                     // specifier with vararags, when the stack is fully unwound.
@@ -109,7 +107,7 @@ public abstract class LinkFactory {
                     return link;
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Content visitWildcard(WildcardType type, LinkInfo linkInfo) {
                     linkInfo.isTypeBound = true;
                     link.addContent("?");
@@ -128,7 +126,7 @@ public abstract class LinkFactory {
                     return link;
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Content visitTypeVariable(TypeVariable type, LinkInfo linkInfo) {
                     link.addContent(getTypeAnnotationLinks(linkInfo));
                     linkInfo.isTypeBound = true;
@@ -169,7 +167,7 @@ public abstract class LinkFactory {
                     return link;
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Content visitDeclared(DeclaredType type, LinkInfo linkInfo) {
                     if (linkInfo.isTypeBound && linkInfo.excludeTypeBoundsLinks) {
                         // Since we are excluding type parameter links, we should not

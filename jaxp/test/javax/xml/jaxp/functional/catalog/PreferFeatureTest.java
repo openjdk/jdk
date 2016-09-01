@@ -81,4 +81,3 @@ public class PreferFeatureTest {
                 "preferFeature.xml");
     }
 }
-

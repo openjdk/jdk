@@ -316,12 +316,8 @@ size_t G1Analytics::predict_pending_cards() const {
   return get_new_size_prediction(_pending_cards_seq);
 }
 
-double G1Analytics::oldest_known_gc_end_time_sec() const {
-  return _recent_prev_end_times_for_all_gcs_sec->oldest();
-}
-
 double G1Analytics::last_known_gc_end_time_sec() const {
-  return _recent_prev_end_times_for_all_gcs_sec->last();
+  return _recent_prev_end_times_for_all_gcs_sec->oldest();
 }
 
 void G1Analytics::update_recent_gc_times(double end_time_sec,
