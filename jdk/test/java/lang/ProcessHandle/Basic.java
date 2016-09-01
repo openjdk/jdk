@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @library /test/lib/share/classes
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.management
  * @run testng Basic
