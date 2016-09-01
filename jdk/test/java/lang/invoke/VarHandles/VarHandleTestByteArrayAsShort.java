@@ -97,9 +97,23 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_RELEASE));
 
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
+
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_RELEASE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_RELEASE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_RELEASE));
     }
 
     @Test(dataProvider = "typesProvider")
@@ -221,11 +235,63 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
         });
 
         checkUOE(() -> {
+            short o = (short) vh.getAndSetAcquire(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            short o = (short) vh.getAndSetRelease(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
             short o = (short) vh.getAndAdd(array, ci, VALUE_1);
         });
 
         checkUOE(() -> {
+            short o = (short) vh.getAndAddAcquire(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            short o = (short) vh.getAndAddRelease(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
             short o = (short) vh.addAndGet(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            short o = (short) vh.getAndBitwiseOr(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            short o = (short) vh.getAndBitwiseOrAcquire(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            short o = (short) vh.getAndBitwiseOrRelease(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            short o = (short) vh.getAndBitwiseAnd(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            short o = (short) vh.getAndBitwiseAndAcquire(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            short o = (short) vh.getAndBitwiseAndRelease(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            short o = (short) vh.getAndBitwiseXor(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            short o = (short) vh.getAndBitwiseXorAcquire(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            short o = (short) vh.getAndBitwiseXorRelease(array, ci, VALUE_1);
         });
     }
 
@@ -290,11 +356,63 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
             });
 
             checkUOE(() -> {
+                short o = (short) vh.getAndSetAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndSetRelease(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
                 short o = (short) vh.getAndAdd(array, ci, VALUE_1);
             });
 
             checkUOE(() -> {
+                short o = (short) vh.getAndAddAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndAddRelease(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
                 short o = (short) vh.addAndGet(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseOr(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseOrAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseOrRelease(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseAnd(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseAndAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseAndRelease(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseXor(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseXorAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseXorRelease(array, ci, VALUE_1);
             });
         }
         else {
@@ -333,12 +451,63 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
             checkUOE(() -> {
                 short o = (short) vh.getAndSet(array, ci, VALUE_1);
             });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndSetAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndSetRelease(array, ci, VALUE_1);
+            });
             checkUOE(() -> {
                 short o = (short) vh.getAndAdd(array, ci, VALUE_1);
             });
 
             checkUOE(() -> {
+                short o = (short) vh.getAndAddAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndAddRelease(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
                 short o = (short) vh.addAndGet(array, ci, VALUE_1);
+            });
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseOr(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseOrAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseOrRelease(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseAnd(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseAndAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseAndRelease(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseXor(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseXorAcquire(array, ci, VALUE_1);
+            });
+
+            checkUOE(() -> {
+                short o = (short) vh.getAndBitwiseXorRelease(array, ci, VALUE_1);
             });
         }
     }
@@ -383,6 +552,7 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
             checkIOOBE(() -> {
                 vh.setOpaque(array, ci, VALUE_1);
             });
+
 
 
         }
@@ -432,6 +602,7 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
                 checkIOOBE(() -> {
                     vh.setOpaque(array, ci, VALUE_1);
                 });
+
 
 
             }
@@ -518,6 +689,7 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
                     });
 
 
+
                 }
             }
         }
@@ -564,6 +736,7 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
                     assertEquals(x, VALUE_2, "setOpaque short value");
                 }
 
+
             }
         }
     }
@@ -608,6 +781,7 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
                     short x = (short) vh.getOpaque(array, i);
                     assertEquals(x, VALUE_2, "setOpaque short value");
                 }
+
 
             }
         }

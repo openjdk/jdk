@@ -255,19 +255,44 @@ public class VarHandleTestMethodHandleAccessDouble extends VarHandleBaseTest {
             assertEquals(x, 2.0d, "getAndSet double value");
         }
 
-        hs.get(TestAccessMode.SET).invokeExact(recv, 1.0d);
-
         // get and add, add and get
         {
+            hs.get(TestAccessMode.SET).invokeExact(recv, 1.0d);
+
             double o = (double) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, 3.0d);
             assertEquals(o, 1.0d, "getAndAdd double");
             double c = (double) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(recv, 3.0d);
             assertEquals(c, (double)(1.0d + 3.0d + 3.0d), "getAndAdd double value");
         }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, 1.0d);
+
+            double o = (double) hs.get(TestAccessMode.GET_AND_ADD_ACQUIRE).invokeExact(recv, 2.0d);
+            assertEquals(o, 1.0d, "getAndAddAcquire double");
+            double x = (double) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (double)(1.0d + 2.0d), "getAndAddAcquire double value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, 1.0d);
+
+            double o = (double) hs.get(TestAccessMode.GET_AND_ADD_RELEASE).invokeExact(recv, 2.0d);
+            assertEquals(o, 1.0d, "getAndAddRelease double");
+            double x = (double) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (double)(1.0d + 2.0d), "getAndAddRelease double value");
+        }
+
     }
 
     static void testInstanceFieldUnsupported(VarHandleTestMethodHandleAccessDouble recv, Handles hs) throws Throwable {
 
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_BITWISE)) {
+            checkUOE(am, () -> {
+                double r = (double) hs.get(am).invokeExact(recv, 1.0d);
+            });
+        }
     }
 
 
@@ -402,25 +427,72 @@ public class VarHandleTestMethodHandleAccessDouble extends VarHandleBaseTest {
 
         // Compare set and get
         {
-            double o = (double) hs.get(TestAccessMode.GET_AND_SET).invokeExact( 2.0d);
+            hs.get(TestAccessMode.SET).invokeExact(1.0d);
+
+            double o = (double) hs.get(TestAccessMode.GET_AND_SET).invokeExact(2.0d);
             assertEquals(o, 1.0d, "getAndSet double");
             double x = (double) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, 2.0d, "getAndSet double value");
         }
 
-        hs.get(TestAccessMode.SET).invokeExact(1.0d);
+        // Compare set and get
+        {
+            hs.get(TestAccessMode.SET).invokeExact(1.0d);
+
+            double o = (double) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(2.0d);
+            assertEquals(o, 1.0d, "getAndSetAcquire double");
+            double x = (double) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, 2.0d, "getAndSetAcquire double value");
+        }
+
+        // Compare set and get
+        {
+            hs.get(TestAccessMode.SET).invokeExact(1.0d);
+
+            double o = (double) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(2.0d);
+            assertEquals(o, 1.0d, "getAndSetRelease double");
+            double x = (double) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, 2.0d, "getAndSetRelease double value");
+        }
 
         // get and add, add and get
         {
-            double o = (double) hs.get(TestAccessMode.GET_AND_ADD).invokeExact( 3.0d);
+            hs.get(TestAccessMode.SET).invokeExact(1.0d);
+
+            double o = (double) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(3.0d);
             assertEquals(o, 1.0d, "getAndAdd double");
             double c = (double) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(3.0d);
             assertEquals(c, (double)(1.0d + 3.0d + 3.0d), "getAndAdd double value");
         }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(1.0d);
+
+            double o = (double) hs.get(TestAccessMode.GET_AND_ADD_ACQUIRE).invokeExact(2.0d);
+            assertEquals(o, 1.0d, "getAndAddAcquire double");
+            double x = (double) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (double)(1.0d + 2.0d), "getAndAddAcquire double value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(1.0d);
+
+            double o = (double) hs.get(TestAccessMode.GET_AND_ADD_RELEASE).invokeExact(2.0d);
+            assertEquals(o, 1.0d, "getAndAddRelease double");
+            double x = (double) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (double)(1.0d + 2.0d), "getAndAddRelease double value");
+        }
+
     }
 
     static void testStaticFieldUnsupported(Handles hs) throws Throwable {
 
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_BITWISE)) {
+            checkUOE(am, () -> {
+                double r = (double) hs.get(am).invokeExact(1.0d);
+            });
+        }
     }
 
 
@@ -558,21 +630,60 @@ public class VarHandleTestMethodHandleAccessDouble extends VarHandleBaseTest {
 
             // Compare set and get
             {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0d);
+
                 double o = (double) hs.get(TestAccessMode.GET_AND_SET).invokeExact(array, i, 2.0d);
                 assertEquals(o, 1.0d, "getAndSet double");
                 double x = (double) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, 2.0d, "getAndSet double value");
             }
 
-            hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0d);
+            {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0d);
+
+                double o = (double) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(array, i, 2.0d);
+                assertEquals(o, 1.0d, "getAndSetAcquire double");
+                double x = (double) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, 2.0d, "getAndSetAcquire double value");
+            }
+
+            {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0d);
+
+                double o = (double) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(array, i, 2.0d);
+                assertEquals(o, 1.0d, "getAndSetRelease double");
+                double x = (double) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, 2.0d, "getAndSetRelease double value");
+            }
 
             // get and add, add and get
             {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0d);
+
                 double o = (double) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, 3.0d);
                 assertEquals(o, 1.0d, "getAndAdd double");
                 double c = (double) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(array, i, 3.0d);
                 assertEquals(c, (double)(1.0d + 3.0d + 3.0d), "getAndAdd double value");
             }
+
+            {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0d);
+
+                double o = (double) hs.get(TestAccessMode.GET_AND_ADD_ACQUIRE).invokeExact(array, i, 2.0d);
+                assertEquals(o, 1.0d, "getAndAddAcquire double");
+                double x = (double) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (double)(1.0d + 2.0d), "getAndAddAcquire double value");
+            }
+
+            {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0d);
+
+                double o = (double) hs.get(TestAccessMode.GET_AND_ADD_RELEASE).invokeExact(array, i, 2.0d);
+                assertEquals(o, 1.0d, "getAndAddRelease double");
+                double x = (double) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (double)(1.0d + 2.0d), "getAndAddRelease double value");
+            }
+
         }
     }
 
@@ -581,6 +692,12 @@ public class VarHandleTestMethodHandleAccessDouble extends VarHandleBaseTest {
 
         final int i = 0;
 
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_BITWISE)) {
+            checkUOE(am, () -> {
+                double o = (double) hs.get(am).invokeExact(array, i, 1.0d);
+            });
+        }
     }
 
     static void testArrayIndexOutOfBounds(Handles hs) throws Throwable {
@@ -624,6 +741,7 @@ public class VarHandleTestMethodHandleAccessDouble extends VarHandleBaseTest {
                     double o = (double) hs.get(am).invokeExact(array, ci, 3.0d);
                 });
             }
+
         }
     }
 }
