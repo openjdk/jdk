@@ -35,14 +35,14 @@
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Utils;
+import jdk.test.lib.unsafe.UnsafeHelper;
 
 import jdk.internal.misc.Unsafe;
 
 public class ProblematicFrameTest {
     private static class Crasher {
         public static void main(String[] args) {
-            Utils.getUnsafe().getInt(0);
+            UnsafeHelper.getUnsafe().getInt(0);
         }
     }
 
