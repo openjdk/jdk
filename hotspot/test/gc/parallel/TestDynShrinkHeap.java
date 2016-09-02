@@ -28,7 +28,7 @@
  * @summary Verify that the heap shrinks after full GC according to the current values of the Min/MaxHeapFreeRatio flags
  * @modules java.base/jdk.internal.misc
  * @modules jdk.management
- * @library /testlibrary
+ * @library /test/lib
  * @run main/othervm -XX:+UseAdaptiveSizePolicyWithSystemGC -XX:+UseParallelGC -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 -Xmx1g -verbose:gc TestDynShrinkHeap
  */
 import jdk.test.lib.DynamicVMOption;

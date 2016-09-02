@@ -24,19 +24,11 @@
 /*
  * @test
  * @summary Test of diagnostic command GC.heap_dump -all=true
- * @library /testlibrary
- * @library /test/lib/share/classes
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build jdk.test.lib.*
- * @build jdk.test.lib.dcmd.*
- * @build jdk.test.lib.hprof.*
- * @build jdk.test.lib.hprof.model.*
- * @build jdk.test.lib.hprof.parser.*
- * @build jdk.test.lib.hprof.util.*
- * @build HeapDumpTest
  * @run testng HeapDumpAllTest
  */
 public class HeapDumpAllTest extends HeapDumpTest {

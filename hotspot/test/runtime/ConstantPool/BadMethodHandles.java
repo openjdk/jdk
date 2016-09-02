@@ -25,7 +25,6 @@
  * @test
  * @bug 8087223
  * @summary Adding constantTag to keep method call consistent with it.
- * @library /testlibrary
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  *          java.management

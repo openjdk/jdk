@@ -26,12 +26,13 @@
  * @bug 8145180
  * @summary Verify PrintGC, PrintGCDetails and -Xloggc
  * @key gc
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;

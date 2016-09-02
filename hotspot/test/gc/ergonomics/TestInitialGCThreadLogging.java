@@ -28,11 +28,11 @@
  * @requires vm.gc=="null"
  * @key gc
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  */
 
-import jdk.test.lib.ProcessTools;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestInitialGCThreadLogging {
   public static void main(String[] args) throws Exception {

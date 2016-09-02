@@ -32,11 +32,10 @@ import java.util.Arrays;
 import java.util.Scanner;
 
 import jdk.test.lib.Asserts;
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.Platform;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 /*
  * @test
@@ -46,12 +45,12 @@ import jdk.test.lib.ProcessTools;
  * Started failing on 2016.06.24 due to 8160376 on MacOS X so quarantine
  * it on that platform:
  * @requires os.family != "mac"
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management/sun.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build jdk.test.lib.* JMapHProfLargeHeapProc
+ * @build JMapHProfLargeHeapProc
  * @run main JMapHProfLargeHeapTest
  */
 

@@ -1,6 +1,6 @@
 package compiler.compilercontrol.share.pool;
 
-import jdk.test.lib.Pair;
+import jdk.test.lib.util.Pair;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
