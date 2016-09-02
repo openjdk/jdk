@@ -59,9 +59,15 @@ class LogTagLevelExpression : public StackObj {
     _ntags = 0;
   }
 
-  void add_tag(LogTagType tag) {
+  bool add_tag(LogTagType tag) {
     assert(_ntags < LogTag::MaxTags, "Can't have more tags than MaxTags!");
+    for (size_t i = 0; i < _ntags; i++) {
+      if (_tags[_ncombinations][i] == tag) {
+        return false;
+      }
+    }
     _tags[_ncombinations][_ntags++] = tag;
+    return true;
   }
 
   void set_level(LogLevelType level) {
