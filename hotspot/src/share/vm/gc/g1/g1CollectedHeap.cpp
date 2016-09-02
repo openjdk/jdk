@@ -4513,6 +4513,7 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
 #if defined(COMPILER2) || INCLUDE_JVMCI
   DerivedPointerTable::update_pointers();
 #endif
+  g1_policy()->print_age_table();
 }
 
 void G1CollectedHeap::record_obj_copy_mem_stats() {
