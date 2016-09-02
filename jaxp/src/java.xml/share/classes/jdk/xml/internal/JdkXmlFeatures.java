@@ -42,6 +42,9 @@ public class JdkXmlFeatures {
             ORACLE_JAXP_PROPERTY_PREFIX + "enableExtensionFunctions";
     public static final String SP_ENABLE_EXTENSION_FUNCTION =
             "javax.xml.enableExtensionFunctions";
+    // This is the correct name by the spec
+    public static final String SP_ENABLE_EXTENSION_FUNCTION_SPEC =
+            "jdk.xml.enableExtensionFunctions";
     public static final String CATALOG_FEATURES = "javax.xml.catalog.catalogFeatures";
 
     public final static String PROPERTY_USE_CATALOG = XMLConstants.USE_CATALOG;
@@ -49,11 +52,11 @@ public class JdkXmlFeatures {
     public static enum XmlFeature {
         /**
          * Feature enableExtensionFunctions
-         * FSP: extension function is enforced by FSP. When FSP is on, entension
+         * FSP: extension function is enforced by FSP. When FSP is on, extension
          * function is disabled.
          */
         ENABLE_EXTENSION_FUNCTION(ORACLE_ENABLE_EXTENSION_FUNCTION,
-                SP_ENABLE_EXTENSION_FUNCTION, true, false, true, true),
+                SP_ENABLE_EXTENSION_FUNCTION_SPEC, true, false, true, true),
         /**
          * The {@link javax.xml.XMLConstants.USE_CATALOG} feature.
          * FSP: USE_CATALOG is not enforced by FSP.
@@ -146,6 +149,30 @@ public class JdkXmlFeatures {
             return enforced;
         }
 
+    }
+
+    /**
+     * Maps old property names with the new ones. This map is used to keep track of
+     * name changes so that old or incorrect names continue to be supported for compatibility.
+     */
+    public static enum NameMap {
+
+        ENABLE_EXTENSION_FUNCTION(SP_ENABLE_EXTENSION_FUNCTION_SPEC, SP_ENABLE_EXTENSION_FUNCTION);
+
+        final String newName;
+        final String oldName;
+
+        NameMap(String newName, String oldName) {
+            this.newName = newName;
+            this.oldName = oldName;
+        }
+
+        String getOldName(String newName) {
+            if (newName.equals(this.newName)) {
+                return oldName;
+            }
+            return null;
+        }
     }
 
     /**
@@ -316,6 +343,15 @@ public class JdkXmlFeatures {
     private void readSystemProperties() {
         for (XmlFeature feature : XmlFeature.values()) {
             getSystemProperty(feature, feature.systemProperty());
+            if (!getSystemProperty(feature, feature.systemProperty())) {
+                //if system property is not found, try the older form if any
+                for (NameMap nameMap : NameMap.values()) {
+                    String oldName = nameMap.getOldName(feature.systemProperty());
+                    if (oldName != null) {
+                        getSystemProperty(feature, oldName);
+                    }
+                }
+            }
         }
     }
 
