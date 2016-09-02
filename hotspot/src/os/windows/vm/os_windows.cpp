@@ -3796,6 +3796,11 @@ void os::win32::initialize_system_info() {
   GlobalMemoryStatusEx(&ms);
   _physical_memory = ms.ullTotalPhys;
 
+  if (FLAG_IS_DEFAULT(MaxRAM)) {
+    // Adjust MaxRAM according to the maximum virtual address space available.
+    FLAG_SET_DEFAULT(MaxRAM, MIN2(MaxRAM, (uint64_t) ms.ullTotalVirtual));
+  }
+
   OSVERSIONINFOEX oi;
   oi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
   GetVersionEx((OSVERSIONINFO*)&oi);
