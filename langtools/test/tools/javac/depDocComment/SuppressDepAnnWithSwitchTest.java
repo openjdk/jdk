@@ -21,7 +21,14 @@
  * questions.
  */
 
-// key: compiler.err.processorpath.no.processormodulepath
-// options: --processor-module-path mods -processorpath mods
+/*
+ * @test
+ * @bug 8164073
+ * @summary Verify that -Xlint:-dep-ann suppresses warnings.
+ * @compile -Xlint:-dep-ann -Werror SuppressDepAnnWithSwitchTest.java
+ */
 
-class ProcessorPathNoProcessorModulePath {}
+public class SuppressDepAnnWithSwitchTest {
+    /** @deprecated */
+    int f;
+}

@@ -21,7 +21,24 @@
  * questions.
  */
 
-// key: compiler.err.processorpath.no.processormodulepath
-// options: --processor-module-path mods -processorpath mods
+/*
+ * @test
+ * @bug 8131023
+ * @summary Verify that the user's code can read System.in
+ * @build KullaTesting TestingInputStream
+ * @run testng UserInputTest
+ */
 
-class ProcessorPathNoProcessorModulePath {}
+import org.testng.annotations.Test;
+
+@Test
+public class UserInputTest extends KullaTesting {
+
+    public void testReadInput() {
+        setInput("AB\n");
+        assertEval("System.in.read()", "65");
+        setInput("BC\n");
+        assertEval("System.in.read()", "66");
+    }
+
+}

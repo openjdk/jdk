@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8072480
- * @summary Verify that javac can handle -release when invoked using the Compiler API
+ * @summary Verify that javac can handle --release when invoked using the Compiler API
  */
 
 import java.io.IOException;
@@ -50,7 +50,7 @@ public class ReleaseOptionThroughAPI {
              PrintWriter outWriter = new PrintWriter(out)) {
             Iterable<? extends JavaFileObject> input =
                     fm.getJavaFileObjects(System.getProperty("test.src") + "/ReleaseOption.java");
-            List<String> options = Arrays.asList("-release", "7", "-XDrawDiagnostics");
+            List<String> options = Arrays.asList("--release", "7", "-XDrawDiagnostics");
 
             compiler.getTask(outWriter, fm, null, options, null, input).call();
             String expected =
