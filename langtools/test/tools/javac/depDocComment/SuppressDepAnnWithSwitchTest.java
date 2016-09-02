@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,12 @@
 
 /*
  * @test
- * @bug 5086088
- * @summary check warnings generated when overriding deprecated methods
- *
- * @compile/ref=Test1I.out   -XDrawDiagnostics -Xlint:deprecation I.java
- * @compile/ref=Test1A.out  -XDrawDiagnostics -Xlint:deprecation A.java
- * @compile/ref=Test1B.out  -XDrawDiagnostics -Xlint:deprecation B.java
- * @compile/ref=Test1B2.out -XDrawDiagnostics -Xlint:deprecation B2.java
- * @compile/ref=Test1B3.out    -XDrawDiagnostics -Xlint:deprecation B3.java
- * @compile/ref=empty    -XDrawDiagnostics -Xlint:deprecation Test1.java
+ * @bug 8164073
+ * @summary Verify that -Xlint:-dep-ann suppresses warnings.
+ * @compile -Xlint:-dep-ann -Werror SuppressDepAnnWithSwitchTest.java
  */
 
-
-// class should compile with no deprecation warnings
-class Test1 extends B
-{
+public class SuppressDepAnnWithSwitchTest {
+    /** @deprecated */
+    int f;
 }
