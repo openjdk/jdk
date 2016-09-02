@@ -26,7 +26,7 @@
  * @bug 8144212
  * @summary Check for correct memory flow with the String compress/inflate intrinsics.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  *
  * @run main compiler.intrinsics.string.TestStringIntrinsicMemoryFlow
  */

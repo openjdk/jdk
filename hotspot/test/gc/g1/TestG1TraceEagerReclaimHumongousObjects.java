@@ -27,13 +27,13 @@
  * @summary Ensure that the output for a G1TraceEagerReclaimHumongousObjects
  * includes the expected necessary messages.
  * @key gc
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  */
 
-import jdk.test.lib.ProcessTools;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import java.util.LinkedList;
 
 public class TestG1TraceEagerReclaimHumongousObjects {

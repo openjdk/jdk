@@ -101,6 +101,7 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   // call a specialized frame constructor instead of this one.
   // Then we could use the assert below. However this assert is of somewhat dubious
   // value.
+  // UPDATE: this constructor is only used by trace_method_handle_stub() now.
   // assert(_pc != NULL, "no pc?");
 
   _cb = CodeCache::find_blob(_pc);

@@ -25,11 +25,12 @@
  * @test
  * @bug 8087154
  * @summary Uninitialized system property jdk.boot.class.path.append causes SIGSEGV
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 // Test that system property jdk.boot.class.path.append is initialized.  Otherwise,
 // -XX:+PrintCompilation does causes a SIGSEGV.

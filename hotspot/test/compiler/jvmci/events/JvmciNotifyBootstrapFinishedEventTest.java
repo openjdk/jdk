@@ -25,7 +25,7 @@
  * @test
  * @bug 8156034
  * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
- * @library / /testlibrary
+ * @library / /test/lib
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.org.objectweb.asm
@@ -37,7 +37,6 @@
  *
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.common.JVMCIHelpers
- *        compiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest
  * @run driver jdk.test.lib.FileInstaller ../common/services/ ./META-INF/services/
  * @run driver jdk.test.lib.FileInstaller ./JvmciNotifyBootstrapFinishedEventTest.config
  *     ./META-INF/services/jdk.vm.ci.hotspot.services.HotSpotVMEventListener
@@ -46,9 +45,6 @@
  *      compiler.jvmci.common.JVMCIHelpers$EmptyCompilerFactory
  *      compiler.jvmci.common.JVMCIHelpers$EmptyCompilationRequestResult
  *      compiler.jvmci.common.JVMCIHelpers$EmptyVMEventListener
- *      compiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest
- *      jdk.test.lib.Asserts
- *      jdk.test.lib.Utils
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *     -Djvmci.Compiler=EmptyCompiler -Xbootclasspath/a:.
  *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI

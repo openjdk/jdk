@@ -407,6 +407,11 @@ hotspot_runtime_tier2_platform_agnostic = \
   runtime/SelectionResolution \
  -:hotspot_fast_runtime
 
+hotspot_runtime_minimalvm = \
+  runtime/MinimalVM \
+  runtime/ErrorHandling \
+  runtime/logging
+  
 #All tests that depends on nashorn extension.
 #
 needs_nashorn = \

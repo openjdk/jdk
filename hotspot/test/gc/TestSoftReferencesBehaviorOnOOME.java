@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,9 @@
  * @test TestSoftReferencesBehaviorOnOOME
  * @key gc
  * @summary Tests that all SoftReferences has been cleared at time of OOM.
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestSoftReferencesBehaviorOnOOME
  * @run main/othervm -Xmx128m TestSoftReferencesBehaviorOnOOME 512 2k
  * @run main/othervm -Xmx128m TestSoftReferencesBehaviorOnOOME 128k 256k
  * @run main/othervm -Xmx128m TestSoftReferencesBehaviorOnOOME 2k 32k
