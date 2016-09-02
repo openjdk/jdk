@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,13 +101,17 @@ public class TIFFDeflateDecompressor extends TIFFDecompressor {
 
         if (predictor ==
             BaselineTIFFTagSet.PREDICTOR_HORIZONTAL_DIFFERENCING) {
+            int step = planar || samplesPerPixel == 1 ? 1 : samplesPerPixel;
+            int samplesPerRow = step * srcWidth;
 
+            int off = bufOffset + step;
             for (int j = 0; j < srcHeight; j++) {
-                int count = bufOffset + samplesPerPixel * (j * srcWidth + 1);
-                for (int i=samplesPerPixel; i<srcWidth*samplesPerPixel; i++) {
-                    buf[count] += buf[count - samplesPerPixel];
+                int count = off;
+                for (int i = step; i < samplesPerRow; i++) {
+                    buf[count] += buf[count - step];
                     count++;
                 }
+                off += samplesPerRow;
             }
         }
 
