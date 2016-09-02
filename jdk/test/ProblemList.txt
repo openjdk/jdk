@@ -330,9 +330,6 @@ com/sun/jdi/GetLocalVariables4Test.sh                           8067354 windows-
 
 com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-all
 
-com/sun/jdi/ClassesByName2Test.java				8160833 generic-all
-com/sun/jdi/RedefineCrossEvent.java				8160833 generic-all
-
 ############################################################################
 
 # jdk_time
