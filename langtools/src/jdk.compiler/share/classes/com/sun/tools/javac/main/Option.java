@@ -183,15 +183,15 @@ public enum Option {
 
     SOURCE_PATH("--source-path -sourcepath", "opt.arg.path", "opt.sourcepath", STANDARD, FILEMANAGER),
 
-    MODULE_SOURCE_PATH("--module-source-path -modulesourcepath", "opt.arg.mspath", "opt.modulesourcepath", STANDARD, FILEMANAGER),
+    MODULE_SOURCE_PATH("--module-source-path", "opt.arg.mspath", "opt.modulesourcepath", STANDARD, FILEMANAGER),
 
-    MODULE_PATH("--module-path -p -modulepath -mp", "opt.arg.path", "opt.modulepath", STANDARD, FILEMANAGER),
+    MODULE_PATH("--module-path -p", "opt.arg.path", "opt.modulepath", STANDARD, FILEMANAGER),
 
-    UPGRADE_MODULE_PATH("--upgrade-module-path -upgrademodulepath", "opt.arg.path", "opt.upgrademodulepath", STANDARD, FILEMANAGER),
+    UPGRADE_MODULE_PATH("--upgrade-module-path", "opt.arg.path", "opt.upgrademodulepath", STANDARD, FILEMANAGER),
 
-    SYSTEM("--system -system", "opt.arg.jdk", "opt.system", STANDARD, FILEMANAGER),
+    SYSTEM("--system", "opt.arg.jdk", "opt.system", STANDARD, FILEMANAGER),
 
-    PATCH_MODULE("--patch-module -Xpatch:", "opt.arg.patch", "opt.patch", EXTENDED, FILEMANAGER) {
+    PATCH_MODULE("--patch-module", "opt.arg.patch", "opt.patch", EXTENDED, FILEMANAGER) {
         // The deferred filemanager diagnostics mechanism assumes a single value per option,
         // but --patch-module can be used multiple times, once per module. Therefore we compose
         // a value for the option containing the last value specified for each module, and separate
@@ -273,7 +273,7 @@ public enum Option {
 
     PROCESSOR_PATH("--processor-path -processorpath", "opt.arg.path", "opt.processorpath", STANDARD, FILEMANAGER),
 
-    PROCESSOR_MODULE_PATH("--processor-module-path -processormodulepath", "opt.arg.path", "opt.processormodulepath", STANDARD, FILEMANAGER),
+    PROCESSOR_MODULE_PATH("--processor-module-path", "opt.arg.path", "opt.processormodulepath", STANDARD, FILEMANAGER),
 
     PARAMETERS("-parameters","opt.parameters", STANDARD, BASIC),
 
@@ -311,7 +311,7 @@ public enum Option {
         }
     },
 
-    RELEASE("--release -release", "opt.arg.release", "opt.release", STANDARD, BASIC) {
+    RELEASE("--release", "opt.arg.release", "opt.release", STANDARD, BASIC) {
         @Override
         protected void help(Log log) {
             Iterable<PlatformProvider> providers =
@@ -566,7 +566,7 @@ public enum Option {
         }
     },
 
-    ADD_EXPORTS("--add-exports -XaddExports:", "opt.arg.addExports", "opt.addExports", EXTENDED, BASIC) {
+    ADD_EXPORTS("--add-exports", "opt.arg.addExports", "opt.addExports", EXTENDED, BASIC) {
         @Override
         public boolean process(OptionHelper helper, String option, String arg) {
             String prev = helper.get(ADD_EXPORTS);
@@ -575,7 +575,7 @@ public enum Option {
         }
     },
 
-    ADD_READS("--add-reads -XaddReads:", "opt.arg.addReads", "opt.addReads", EXTENDED, BASIC) {
+    ADD_READS("--add-reads", "opt.arg.addReads", "opt.addReads", EXTENDED, BASIC) {
         @Override
         public boolean process(OptionHelper helper, String option, String arg) {
             String prev = helper.get(ADD_READS);
@@ -598,9 +598,9 @@ public enum Option {
 
     MODULE("--module -m", "opt.arg.m", "opt.m", STANDARD, BASIC),
 
-    ADD_MODULES("--add-modules -addmods", "opt.arg.addmods", "opt.addmods", STANDARD, BASIC),
+    ADD_MODULES("--add-modules", "opt.arg.addmods", "opt.addmods", STANDARD, BASIC),
 
-    LIMIT_MODULES("--limit-modules -limitmods", "opt.arg.limitmods", "opt.limitmods", STANDARD, BASIC),
+    LIMIT_MODULES("--limit-modules", "opt.arg.limitmods", "opt.limitmods", STANDARD, BASIC),
 
     // This option exists only for the purpose of documenting itself.
     // It's actually implemented by the CommandLine class.
@@ -645,7 +645,7 @@ public enum Option {
         }
     },
 
-    MULTIRELEASE("--multi-release -multi-release", "opt.arg.multi-release", "opt.multi-release", HIDDEN, FILEMANAGER),
+    MULTIRELEASE("--multi-release", "opt.arg.multi-release", "opt.multi-release", HIDDEN, FILEMANAGER),
 
     INHERIT_RUNTIME_ENVIRONMENT("--inherit-runtime-environment", "opt.inherit_runtime_environment",
             EXTENDED, BASIC) {

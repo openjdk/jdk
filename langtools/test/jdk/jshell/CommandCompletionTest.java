@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144095
+ * @bug 8144095 8164825
  * @summary Test Command Completion
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -40,6 +40,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
@@ -146,6 +147,80 @@ public class CommandCompletionTest extends ReplToolTesting {
                                  .collect(Collectors.toList());
         }
         assertCompletion("/classpath ~/|", false, completions.toArray(new String[completions.size()]));
+    }
+
+    public void testSet() throws IOException {
+        List<String> p1 = listFiles(Paths.get(""));
+        FileSystems.getDefault().getRootDirectories().forEach(s -> p1.add(s.toString()));
+        Collections.sort(p1);
+
+        String[] modes = {"concise ", "normal ", "silent ", "verbose "};
+        String[] options = {"-command", "-delete", "-quiet"};
+        String[] modesWithOptions = Stream.concat(Arrays.stream(options), Arrays.stream(modes)).sorted().toArray(String[]::new);
+        test(false, new String[] {"--no-startup"},
+                a -> assertCompletion(a, "/se|", false, "/set "),
+                a -> assertCompletion(a, "/set |", false, "editor ", "feedback ", "format ", "mode ", "prompt ", "start ", "truncation "),
+
+                // /set editor
+                a -> assertCompletion(a, "/set e|", false, "editor "),
+                a -> assertCompletion(a, "/set editor |", false, p1.toArray(new String[p1.size()])),
+
+                // /set feedback
+                a -> assertCompletion(a, "/set fe|", false, "feedback "),
+                a -> assertCompletion(a, "/set fe |", false, modes),
+
+                // /set format
+                a -> assertCompletion(a, "/set fo|", false, "format "),
+                a -> assertCompletion(a, "/set fo |", false, modes),
+
+                // /set mode
+                a -> assertCompletion(a, "/set mo|", false, "mode "),
+                a -> assertCompletion(a, "/set mo |", false),
+                a -> assertCompletion(a, "/set mo newmode |", false, modesWithOptions),
+                a -> assertCompletion(a, "/set mo newmode -|", false, options),
+                a -> assertCompletion(a, "/set mo newmode -command |", false),
+                a -> assertCompletion(a, "/set mo newmode normal |", false, options),
+
+                // /set prompt
+                a -> assertCompletion(a, "/set pro|", false, "prompt "),
+                a -> assertCompletion(a, "/set pro |", false, modes),
+
+                // /set start
+                a -> assertCompletion(a, "/set st|", false, "start "),
+                a -> assertCompletion(a, "/set st |", false, p1.toArray(new String[p1.size()])),
+
+                // /set truncation
+                a -> assertCompletion(a, "/set tr|", false, "truncation "),
+                a -> assertCompletion(a, "/set tr |", false, modes)
+        );
+    }
+
+    public void testRetain() throws IOException {
+        List<String> p1 = listFiles(Paths.get(""));
+        FileSystems.getDefault().getRootDirectories().forEach(s -> p1.add(s.toString()));
+        Collections.sort(p1);
+
+        String[] modes = {"concise ", "normal ", "silent ", "verbose "};
+        test(false, new String[] {"--no-startup"},
+                a -> assertCompletion(a, "/ret|", false, "/retain "),
+                a -> assertCompletion(a, "/retain |", false, "editor ", "feedback ", "mode ", "start "),
+
+                // /retain editor
+                a -> assertCompletion(a, "/retain e|", false, "editor "),
+                a -> assertCompletion(a, "/retain editor |", false, p1.toArray(new String[p1.size()])),
+
+                // /retain feedback
+                a -> assertCompletion(a, "/retain fe|", false, "feedback "),
+                a -> assertCompletion(a, "/retain fe |", false, modes),
+
+                // /retain mode
+                a -> assertCompletion(a, "/retain mo|", false, "mode "),
+                a -> assertCompletion(a, "/retain mo |", false, modes),
+
+                // /retain start
+                a -> assertCompletion(a, "/retain st|", false, "start "),
+                a -> assertCompletion(a, "/retain st |", false, p1.toArray(new String[p1.size()]))
+        );
     }
 
     private void createIfNeeded(Path file) throws IOException {

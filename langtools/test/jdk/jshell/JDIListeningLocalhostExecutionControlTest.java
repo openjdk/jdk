@@ -21,7 +21,26 @@
  * questions.
  */
 
-// key: compiler.err.processorpath.no.processormodulepath
-// options: --processor-module-path mods -processorpath mods
+/*
+ * @test
+ * @bug 8164518
+ * @summary Tests for alternate JDI connector -- listening to "localhost"
+ * @modules jdk.jshell/jdk.jshell.execution
+ * @build KullaTesting ExecutionControlTestBase
+ * @run testng JDIListeningLocalhostExecutionControlTest
+ */
 
-class ProcessorPathNoProcessorModulePath {}
+
+import org.testng.annotations.Test;
+import org.testng.annotations.BeforeMethod;
+import jdk.jshell.execution.JDIDefaultExecutionControl;
+
+@Test
+public class JDIListeningLocalhostExecutionControlTest extends ExecutionControlTestBase {
+
+    @BeforeMethod
+    @Override
+    public void setUp() {
+        setUp(builder -> builder.executionEngine(JDIDefaultExecutionControl.listen("localhost")));
+    }
+}

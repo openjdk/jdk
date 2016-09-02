@@ -21,7 +21,26 @@
  * questions.
  */
 
-// key: compiler.err.processorpath.no.processormodulepath
-// options: --processor-module-path mods -processorpath mods
+/*
+ * @test
+ * @bug 8164518
+ * @summary Tests for standard JDI connector (without failover) -- launching
+ * @modules jdk.jshell/jdk.jshell.execution
+ * @build KullaTesting ExecutionControlTestBase
+ * @run testng JDILaunchingExecutionControlTest
+ */
 
-class ProcessorPathNoProcessorModulePath {}
+
+import org.testng.annotations.Test;
+import org.testng.annotations.BeforeMethod;
+import jdk.jshell.execution.JDIDefaultExecutionControl;
+
+@Test
+public class JDILaunchingExecutionControlTest extends ExecutionControlTestBase {
+
+    @BeforeMethod
+    @Override
+    public void setUp() {
+        setUp(builder -> builder.executionEngine(JDIDefaultExecutionControl.launch()));
+    }
+}

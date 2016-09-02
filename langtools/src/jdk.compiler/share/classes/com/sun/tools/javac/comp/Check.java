@@ -3192,7 +3192,7 @@ public class Check {
     }
 
     void checkDeprecatedAnnotation(DiagnosticPosition pos, Symbol s) {
-        if (lint.isEnabled(LintCategory.DEP_ANN) &&
+        if (lint.isEnabled(LintCategory.DEP_ANN) && s.isDeprecatableViaAnnotation() &&
             (s.flags() & DEPRECATED) != 0 &&
             !syms.deprecatedType.isErroneous() &&
             s.attribute(syms.deprecatedType.tsym) == null) {
@@ -3200,18 +3200,10 @@ public class Check {
                     pos, "missing.deprecated.annotation");
         }
         // Note: @Deprecated has no effect on local variables, parameters and package decls.
-        if (lint.isEnabled(LintCategory.DEPRECATION)) {
+        if (lint.isEnabled(LintCategory.DEPRECATION) && !s.isDeprecatableViaAnnotation()) {
             if (!syms.deprecatedType.isErroneous() && s.attribute(syms.deprecatedType.tsym) != null) {
-                switch (s.getKind()) {
-                    case LOCAL_VARIABLE:
-                    case PACKAGE:
-                    case PARAMETER:
-                    case RESOURCE_VARIABLE:
-                    case EXCEPTION_PARAMETER:
-                        log.warning(LintCategory.DEPRECATION, pos,
-                                "deprecated.annotation.has.no.effect", Kinds.kindName(s));
-                        break;
-                }
+                log.warning(LintCategory.DEPRECATION, pos,
+                        "deprecated.annotation.has.no.effect", Kinds.kindName(s));
             }
         }
     }
