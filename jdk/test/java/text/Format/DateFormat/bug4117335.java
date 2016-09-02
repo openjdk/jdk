@@ -25,6 +25,7 @@
  * @test
  *
  * @bug 4117335 4432617
+ * @modules jdk.localedata
  */
 
 import java.text.DateFormatSymbols ;

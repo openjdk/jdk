@@ -134,21 +134,39 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * The set of corresponding access mode methods belonging to this group
  * consists of the methods
  * {@link #compareAndSet compareAndSet},
+ * {@link #weakCompareAndSetPlain weakCompareAndSetPlain},
  * {@link #weakCompareAndSet weakCompareAndSet},
- * {@link #weakCompareAndSetVolatile weakCompareAndSetVolatile},
  * {@link #weakCompareAndSetAcquire weakCompareAndSetAcquire},
  * {@link #weakCompareAndSetRelease weakCompareAndSetRelease},
  * {@link #compareAndExchangeAcquire compareAndExchangeAcquire},
  * {@link #compareAndExchange compareAndExchange},
  * {@link #compareAndExchangeRelease compareAndExchangeRelease},
- * {@link #getAndSet getAndSet}.
+ * {@link #getAndSet getAndSet},
+ * {@link #getAndSetAcquire getAndSetAcquire},
+ * {@link #getAndSetRelease getAndSetRelease}.
  * <li>numeric atomic update access modes that, for example, atomically get and
  * set with addition the value of a variable under specified memory ordering
  * effects.
  * The set of corresponding access mode methods belonging to this group
  * consists of the methods
  * {@link #getAndAdd getAndAdd},
+ * {@link #getAndAddAcquire getAndAddAcquire},
+ * {@link #getAndAddRelease getAndAddRelease},
  * {@link #addAndGet addAndGet}.
+ * <li>bitwise atomic update access modes that, for example, atomically get and
+ * bitwise OR the value of a variable under specified memory ordering
+ * effects.
+ * The set of corresponding access mode methods belonging to this group
+ * consists of the methods
+ * {@link #getAndBitwiseOr getAndBitwiseOr},
+ * {@link #getAndBitwiseOrAcquire getAndBitwiseOrAcquire},
+ * {@link #getAndBitwiseOrRelease getAndBitwiseOrRelease},
+ * {@link #getAndBitwiseAnd getAndBitwiseAnd},
+ * {@link #getAndBitwiseAndAcquire getAndBitwiseAndAcquire},
+ * {@link #getAndBitwiseAndRelease getAndBitwiseAndRelease},
+ * {@link #getAndBitwiseXor getAndBitwiseXor},
+ * {@link #getAndBitwiseXorAcquire getAndBitwiseXorAcquire},
+ * {@link #getAndBitwiseXorRelease getAndBitwiseXorRelease}.
  * </ul>
  *
  * <p>Factory methods that produce or {@link java.lang.invoke.MethodHandles.Lookup
@@ -163,8 +181,8 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * VarHandle instances and the corresponding method never throws
  * {@code UnsupportedOperationException}.
  * If a VarHandle references a read-only variable (for example a {@code final}
- * field) then write, atomic update and numeric atomic update access modes are
- * not supported and corresponding methods throw
+ * field) then write, atomic update, numeric atomic update, and bitwise atomic
+ * update access modes are not supported and corresponding methods throw
  * {@code UnsupportedOperationException}.
  * Read/write access modes (if supported), with the exception of
  * {@code get} and {@code set}, provide atomic access for
@@ -816,8 +834,8 @@ public abstract class VarHandle {
      * <p>The method signature is of the form {@code (CT, T expectedValue, T newValue)boolean}.
      *
      * <p>The symbolic type descriptor at the call site of {@code
-     * weakCompareAndSet} must match the access mode type that is the result of
-     * calling {@code accessModeType(VarHandle.AccessMode.WEAK_COMPARE_AND_SET)}
+     * weakCompareAndSetPlain} must match the access mode type that is the result of
+     * calling {@code accessModeType(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_PLAIN)}
      * on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
@@ -838,7 +856,7 @@ public abstract class VarHandle {
     public final native
     @MethodHandle.PolymorphicSignature
     @HotSpotIntrinsicCandidate
-    boolean weakCompareAndSet(Object... args);
+    boolean weakCompareAndSetPlain(Object... args);
 
     /**
      * Possibly atomically sets the value of a variable to the {@code newValue}
@@ -853,8 +871,8 @@ public abstract class VarHandle {
      * <p>The method signature is of the form {@code (CT, T expectedValue, T newValue)boolean}.
      *
      * <p>The symbolic type descriptor at the call site of {@code
-     * weakCompareAndSetVolatile} must match the access mode type that is the
-     * result of calling {@code accessModeType(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE)}
+     * weakCompareAndSet} must match the access mode type that is the
+     * result of calling {@code accessModeType(VarHandle.AccessMode.WEAK_COMPARE_AND_SET)}
      * on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
@@ -875,7 +893,7 @@ public abstract class VarHandle {
     public final native
     @MethodHandle.PolymorphicSignature
     @HotSpotIntrinsicCandidate
-    boolean weakCompareAndSetVolatile(Object... args);
+    boolean weakCompareAndSet(Object... args);
 
     /**
      * Possibly atomically sets the value of a variable to the {@code newValue}
@@ -986,6 +1004,71 @@ public abstract class VarHandle {
     @HotSpotIntrinsicCandidate
     Object getAndSet(Object... args);
 
+    /**
+     * Atomically sets the value of a variable to the {@code newValue} with the
+     * memory semantics of {@link #set} and returns the variable's
+     * previous value, as accessed with the memory semantics of
+     * {@link #getAcquire}.
+     *
+     * <p>The method signature is of the form {@code (CT, T newValue)T}.
+     *
+     * <p>The symbolic type descriptor at the call site of {@code getAndSetAcquire}
+     * must match the access mode type that is the result of calling
+     * {@code accessModeType(VarHandle.AccessMode.GET_AND_SET_ACQUIRE)} on this
+     * VarHandle.
+     *
+     * @param args the signature-polymorphic parameter list of the form
+     * {@code (CT, T newValue)}
+     * , statically represented using varargs.
+     * @return the signature-polymorphic result that is the previous value of
+     * the variable
+     * , statically represented using {@code Object}.
+     * @throws UnsupportedOperationException if the access mode is unsupported
+     * for this VarHandle.
+     * @throws WrongMethodTypeException if the access mode type is not
+     * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
+     * @see #setVolatile(Object...)
+     * @see #getVolatile(Object...)
+     */
+    public final native
+    @MethodHandle.PolymorphicSignature
+    @HotSpotIntrinsicCandidate
+    Object getAndSetAcquire(Object... args);
+
+    /**
+     * Atomically sets the value of a variable to the {@code newValue} with the
+     * memory semantics of {@link #setRelease} and returns the variable's
+     * previous value, as accessed with the memory semantics of
+     * {@link #get}.
+     *
+     * <p>The method signature is of the form {@code (CT, T newValue)T}.
+     *
+     * <p>The symbolic type descriptor at the call site of {@code getAndSetRelease}
+     * must match the access mode type that is the result of calling
+     * {@code accessModeType(VarHandle.AccessMode.GET_AND_SET_RELEASE)} on this
+     * VarHandle.
+     *
+     * @param args the signature-polymorphic parameter list of the form
+     * {@code (CT, T newValue)}
+     * , statically represented using varargs.
+     * @return the signature-polymorphic result that is the previous value of
+     * the variable
+     * , statically represented using {@code Object}.
+     * @throws UnsupportedOperationException if the access mode is unsupported
+     * for this VarHandle.
+     * @throws WrongMethodTypeException if the access mode type is not
+     * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
+     * @see #setVolatile(Object...)
+     * @see #getVolatile(Object...)
+     */
+    public final native
+    @MethodHandle.PolymorphicSignature
+    @HotSpotIntrinsicCandidate
+    Object getAndSetRelease(Object... args);
 
     // Primitive adders
     // Throw UnsupportedOperationException for refs
@@ -1025,21 +1108,21 @@ public abstract class VarHandle {
 
     /**
      * Atomically adds the {@code value} to the current value of a variable with
-     * the memory semantics of {@link #setVolatile}, and returns the variable's
-     * current (updated) value, as accessed with the memory semantics of
-     * {@link #getVolatile}.
+     * the memory semantics of {@link #set}, and returns the variable's
+     * previous value, as accessed with the memory semantics of
+     * {@link #getAcquire}.
      *
      * <p>The method signature is of the form {@code (CT, T value)T}.
      *
-     * <p>The symbolic type descriptor at the call site of {@code addAndGet}
+     * <p>The symbolic type descriptor at the call site of {@code getAndAddAcquire}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.ADD_AND_GET)} on this
+     * {@code accessModeType(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE)} on this
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT, T value)}
      * , statically represented using varargs.
-     * @return the signature-polymorphic result that is the current value of
+     * @return the signature-polymorphic result that is the previous value of
      * the variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
@@ -1054,7 +1137,378 @@ public abstract class VarHandle {
     public final native
     @MethodHandle.PolymorphicSignature
     @HotSpotIntrinsicCandidate
-    Object addAndGet(Object... args);
+    Object getAndAddAcquire(Object... args);
+
+    /**
+     * Atomically adds the {@code value} to the current value of a variable with
+     * the memory semantics of {@link #setRelease}, and returns the variable's
+     * previous value, as accessed with the memory semantics of
+     * {@link #get}.
+     *
+     * <p>The method signature is of the form {@code (CT, T value)T}.
+     *
+     * <p>The symbolic type descriptor at the call site of {@code getAndAddRelease}
+     * must match the access mode type that is the result of calling
+     * {@code accessModeType(VarHandle.AccessMode.GET_AND_ADD_RELEASE)} on this
+     * VarHandle.
+     *
+     * @param args the signature-polymorphic parameter list of the form
+     * {@code (CT, T value)}
+     * , statically represented using varargs.
+     * @return the signature-polymorphic result that is the previous value of
+     * the variable
+     * , statically represented using {@code Object}.
+     * @throws UnsupportedOperationException if the access mode is unsupported
+     * for this VarHandle.
+     * @throws WrongMethodTypeException if the access mode type is not
+     * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
+     * @see #setVolatile(Object...)
+     * @see #getVolatile(Object...)
+     */
+    public final native
+    @MethodHandle.PolymorphicSignature
+    @HotSpotIntrinsicCandidate
+    Object getAndAddRelease(Object... args);
+
+
+    // Bitwise operations
+    // Throw UnsupportedOperationException for refs
+
+    /**
+     * Atomically sets the value of a variable to the result of
+     * bitwise OR between the variable's current value and the {@code mask}
+     * with the memory semantics of {@link #setVolatile} and returns the
+     * variable's previous value, as accessed with the memory semantics of
+     * {@link #getVolatile}.
+     *
+     * <p>If the variable type is the non-integral {@code boolean} type then a
+     * logical OR is performed instead of a bitwise OR.
+     *
+     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     *
+     * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseOr}
+     * must match the access mode type that is the result of calling
+     * {@code accessModeType(VarHandle.AccessMode.GET_AND_BITWISE_OR)} on this
+     * VarHandle.
+     *
+     * @param args the signature-polymorphic parameter list of the form
+     * {@code (CT, T mask)}
+     * , statically represented using varargs.
+     * @return the signature-polymorphic result that is the previous value of
+     * the variable
+     * , statically represented using {@code Object}.
+     * @throws UnsupportedOperationException if the access mode is unsupported
+     * for this VarHandle.
+     * @throws WrongMethodTypeException if the access mode type is not
+     * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
+     * @see #setVolatile(Object...)
+     * @see #getVolatile(Object...)
+     */
+    public final native
+    @MethodHandle.PolymorphicSignature
+    @HotSpotIntrinsicCandidate
+    Object getAndBitwiseOr(Object... args);
+
+    /**
+     * Atomically sets the value of a variable to the result of
+     * bitwise OR between the variable's current value and the {@code mask}
+     * with the memory semantics of {@link #set} and returns the
+     * variable's previous value, as accessed with the memory semantics of
+     * {@link #getAcquire}.
+     *
+     * <p>If the variable type is the non-integral {@code boolean} type then a
+     * logical OR is performed instead of a bitwise OR.
+     *
+     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     *
+     * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseOrAcquire}
+     * must match the access mode type that is the result of calling
+     * {@code accessModeType(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE)} on this
+     * VarHandle.
+     *
+     * @param args the signature-polymorphic parameter list of the form
+     * {@code (CT, T mask)}
+     * , statically represented using varargs.
+     * @return the signature-polymorphic result that is the previous value of
+     * the variable
+     * , statically represented using {@code Object}.
+     * @throws UnsupportedOperationException if the access mode is unsupported
+     * for this VarHandle.
+     * @throws WrongMethodTypeException if the access mode type is not
+     * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
+     * @see #set(Object...)
+     * @see #getAcquire(Object...)
+     */
+    public final native
+    @MethodHandle.PolymorphicSignature
+    @HotSpotIntrinsicCandidate
+    Object getAndBitwiseOrAcquire(Object... args);
+
+    /**
+     * Atomically sets the value of a variable to the result of
+     * bitwise OR between the variable's current value and the {@code mask}
+     * with the memory semantics of {@link #setRelease} and returns the
+     * variable's previous value, as accessed with the memory semantics of
+     * {@link #get}.
+     *
+     * <p>If the variable type is the non-integral {@code boolean} type then a
+     * logical OR is performed instead of a bitwise OR.
+     *
+     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     *
+     * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseOrRelease}
+     * must match the access mode type that is the result of calling
+     * {@code accessModeType(VarHandle.AccessMode.GET_AND_BITWISE_OR_RELEASE)} on this
+     * VarHandle.
+     *
+     * @param args the signature-polymorphic parameter list of the form
+     * {@code (CT, T mask)}
+     * , statically represented using varargs.
+     * @return the signature-polymorphic result that is the previous value of
+     * the variable
+     * , statically represented using {@code Object}.
+     * @throws UnsupportedOperationException if the access mode is unsupported
+     * for this VarHandle.
+     * @throws WrongMethodTypeException if the access mode type is not
+     * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
+     * @see #setRelease(Object...)
+     * @see #get(Object...)
+     */
+    public final native
+    @MethodHandle.PolymorphicSignature
+    @HotSpotIntrinsicCandidate
+    Object getAndBitwiseOrRelease(Object... args);
+
+    /**
+     * Atomically sets the value of a variable to the result of
+     * bitwise AND between the variable's current value and the {@code mask}
+     * with the memory semantics of {@link #setVolatile} and returns the
+     * variable's previous value, as accessed with the memory semantics of
+     * {@link #getVolatile}.
+     *
+     * <p>If the variable type is the non-integral {@code boolean} type then a
+     * logical AND is performed instead of a bitwise AND.
+     *
+     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     *
+     * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseAnd}
+     * must match the access mode type that is the result of calling
+     * {@code accessModeType(VarHandle.AccessMode.GET_AND_BITWISE_AND)} on this
+     * VarHandle.
+     *
+     * @param args the signature-polymorphic parameter list of the form
+     * {@code (CT, T mask)}
+     * , statically represented using varargs.
+     * @return the signature-polymorphic result that is the previous value of
+     * the variable
+     * , statically represented using {@code Object}.
+     * @throws UnsupportedOperationException if the access mode is unsupported
+     * for this VarHandle.
+     * @throws WrongMethodTypeException if the access mode type is not
+     * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
+     * @see #setVolatile(Object...)
+     * @see #getVolatile(Object...)
+     */
+    public final native
+    @MethodHandle.PolymorphicSignature
+    @HotSpotIntrinsicCandidate
+    Object getAndBitwiseAnd(Object... args);
+
+    /**
+     * Atomically sets the value of a variable to the result of
+     * bitwise AND between the variable's current value and the {@code mask}
+     * with the memory semantics of {@link #set} and returns the
+     * variable's previous value, as accessed with the memory semantics of
+     * {@link #getAcquire}.
+     *
+     * <p>If the variable type is the non-integral {@code boolean} type then a
+     * logical AND is performed instead of a bitwise AND.
+     *
+     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     *
+     * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseAndAcquire}
+     * must match the access mode type that is the result of calling
+     * {@code accessModeType(VarHandle.AccessMode.GET_AND_BITWISE_AND_ACQUIRE)} on this
+     * VarHandle.
+     *
+     * @param args the signature-polymorphic parameter list of the form
+     * {@code (CT, T mask)}
+     * , statically represented using varargs.
+     * @return the signature-polymorphic result that is the previous value of
+     * the variable
+     * , statically represented using {@code Object}.
+     * @throws UnsupportedOperationException if the access mode is unsupported
+     * for this VarHandle.
+     * @throws WrongMethodTypeException if the access mode type is not
+     * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
+     * @see #set(Object...)
+     * @see #getAcquire(Object...)
+     */
+    public final native
+    @MethodHandle.PolymorphicSignature
+    @HotSpotIntrinsicCandidate
+    Object getAndBitwiseAndAcquire(Object... args);
+
+    /**
+     * Atomically sets the value of a variable to the result of
+     * bitwise AND between the variable's current value and the {@code mask}
+     * with the memory semantics of {@link #setRelease} and returns the
+     * variable's previous value, as accessed with the memory semantics of
+     * {@link #get}.
+     *
+     * <p>If the variable type is the non-integral {@code boolean} type then a
+     * logical AND is performed instead of a bitwise AND.
+     *
+     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     *
+     * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseAndRelease}
+     * must match the access mode type that is the result of calling
+     * {@code accessModeType(VarHandle.AccessMode.GET_AND_BITWISE_AND_RELEASE)} on this
+     * VarHandle.
+     *
+     * @param args the signature-polymorphic parameter list of the form
+     * {@code (CT, T mask)}
+     * , statically represented using varargs.
+     * @return the signature-polymorphic result that is the previous value of
+     * the variable
+     * , statically represented using {@code Object}.
+     * @throws UnsupportedOperationException if the access mode is unsupported
+     * for this VarHandle.
+     * @throws WrongMethodTypeException if the access mode type is not
+     * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
+     * @see #setRelease(Object...)
+     * @see #get(Object...)
+     */
+    public final native
+    @MethodHandle.PolymorphicSignature
+    @HotSpotIntrinsicCandidate
+    Object getAndBitwiseAndRelease(Object... args);
+
+    /**
+     * Atomically sets the value of a variable to the result of
+     * bitwise XOR between the variable's current value and the {@code mask}
+     * with the memory semantics of {@link #setVolatile} and returns the
+     * variable's previous value, as accessed with the memory semantics of
+     * {@link #getVolatile}.
+     *
+     * <p>If the variable type is the non-integral {@code boolean} type then a
+     * logical XOR is performed instead of a bitwise XOR.
+     *
+     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     *
+     * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseXor}
+     * must match the access mode type that is the result of calling
+     * {@code accessModeType(VarHandle.AccessMode.GET_AND_BITWISE_XOR)} on this
+     * VarHandle.
+     *
+     * @param args the signature-polymorphic parameter list of the form
+     * {@code (CT, T mask)}
+     * , statically represented using varargs.
+     * @return the signature-polymorphic result that is the previous value of
+     * the variable
+     * , statically represented using {@code Object}.
+     * @throws UnsupportedOperationException if the access mode is unsupported
+     * for this VarHandle.
+     * @throws WrongMethodTypeException if the access mode type is not
+     * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
+     * @see #setVolatile(Object...)
+     * @see #getVolatile(Object...)
+     */
+    public final native
+    @MethodHandle.PolymorphicSignature
+    @HotSpotIntrinsicCandidate
+    Object getAndBitwiseXor(Object... args);
+
+    /**
+     * Atomically sets the value of a variable to the result of
+     * bitwise XOR between the variable's current value and the {@code mask}
+     * with the memory semantics of {@link #set} and returns the
+     * variable's previous value, as accessed with the memory semantics of
+     * {@link #getAcquire}.
+     *
+     * <p>If the variable type is the non-integral {@code boolean} type then a
+     * logical XOR is performed instead of a bitwise XOR.
+     *
+     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     *
+     * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseXorAcquire}
+     * must match the access mode type that is the result of calling
+     * {@code accessModeType(VarHandle.AccessMode.GET_AND_BITWISE_XOR_ACQUIRE)} on this
+     * VarHandle.
+     *
+     * @param args the signature-polymorphic parameter list of the form
+     * {@code (CT, T mask)}
+     * , statically represented using varargs.
+     * @return the signature-polymorphic result that is the previous value of
+     * the variable
+     * , statically represented using {@code Object}.
+     * @throws UnsupportedOperationException if the access mode is unsupported
+     * for this VarHandle.
+     * @throws WrongMethodTypeException if the access mode type is not
+     * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
+     * @see #set(Object...)
+     * @see #getAcquire(Object...)
+     */
+    public final native
+    @MethodHandle.PolymorphicSignature
+    @HotSpotIntrinsicCandidate
+    Object getAndBitwiseXorAcquire(Object... args);
+
+    /**
+     * Atomically sets the value of a variable to the result of
+     * bitwise XOR between the variable's current value and the {@code mask}
+     * with the memory semantics of {@link #setRelease} and returns the
+     * variable's previous value, as accessed with the memory semantics of
+     * {@link #get}.
+     *
+     * <p>If the variable type is the non-integral {@code boolean} type then a
+     * logical XOR is performed instead of a bitwise XOR.
+     *
+     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     *
+     * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseXorRelease}
+     * must match the access mode type that is the result of calling
+     * {@code accessModeType(VarHandle.AccessMode.GET_AND_BITWISE_XOR_RELEASE)} on this
+     * VarHandle.
+     *
+     * @param args the signature-polymorphic parameter list of the form
+     * {@code (CT, T mask)}
+     * , statically represented using varargs.
+     * @return the signature-polymorphic result that is the previous value of
+     * the variable
+     * , statically represented using {@code Object}.
+     * @throws UnsupportedOperationException if the access mode is unsupported
+     * for this VarHandle.
+     * @throws WrongMethodTypeException if the access mode type is not
+     * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
+     * @see #setRelease(Object...)
+     * @see #get(Object...)
+     */
+    public final native
+    @MethodHandle.PolymorphicSignature
+    @HotSpotIntrinsicCandidate
+    Object getAndBitwiseXorRelease(Object... args);
+
 
     enum AccessType {
         GET(Object.class),
@@ -1204,15 +1658,15 @@ public abstract class VarHandle {
         /**
          * The access mode whose access is specified by the corresponding
          * method
-         * {@link VarHandle#weakCompareAndSet VarHandle.weakCompareAndSet}
+         * {@link VarHandle#weakCompareAndSetPlain VarHandle.weakCompareAndSetPlain}
          */
-        WEAK_COMPARE_AND_SET("weakCompareAndSet", AccessType.COMPARE_AND_SWAP),
+        WEAK_COMPARE_AND_SET_PLAIN("weakCompareAndSetPlain", AccessType.COMPARE_AND_SWAP),
         /**
          * The access mode whose access is specified by the corresponding
          * method
-         * {@link VarHandle#weakCompareAndSetVolatile VarHandle.weakCompareAndSetVolatile}
+         * {@link VarHandle#weakCompareAndSet VarHandle.weakCompareAndSet}
          */
-        WEAK_COMPARE_AND_SET_VOLATILE("weakCompareAndSetVolatile", AccessType.COMPARE_AND_SWAP),
+        WEAK_COMPARE_AND_SET("weakCompareAndSet", AccessType.COMPARE_AND_SWAP),
         /**
          * The access mode whose access is specified by the corresponding
          * method
@@ -1234,15 +1688,87 @@ public abstract class VarHandle {
         /**
          * The access mode whose access is specified by the corresponding
          * method
+         * {@link VarHandle#getAndSetAcquire VarHandle.getAndSetAcquire}
+         */
+        GET_AND_SET_ACQUIRE("getAndSetAcquire", AccessType.GET_AND_UPDATE),
+        /**
+         * The access mode whose access is specified by the corresponding
+         * method
+         * {@link VarHandle#getAndSetRelease VarHandle.getAndSetRelease}
+         */
+        GET_AND_SET_RELEASE("getAndSetRelease", AccessType.GET_AND_UPDATE),
+        /**
+         * The access mode whose access is specified by the corresponding
+         * method
          * {@link VarHandle#getAndAdd VarHandle.getAndAdd}
          */
         GET_AND_ADD("getAndAdd", AccessType.GET_AND_UPDATE),
         /**
          * The access mode whose access is specified by the corresponding
          * method
-         * {@link VarHandle#addAndGet VarHandle.addAndGet}
+         * {@link VarHandle#getAndAddAcquire VarHandle.getAndAddAcquire}
          */
-        ADD_AND_GET("addAndGet", AccessType.GET_AND_UPDATE),
+        GET_AND_ADD_ACQUIRE("getAndAddAcquire", AccessType.GET_AND_UPDATE),
+        /**
+         * The access mode whose access is specified by the corresponding
+         * method
+         * {@link VarHandle#getAndAddRelease VarHandle.getAndAddRelease}
+         */
+        GET_AND_ADD_RELEASE("getAndAddRelease", AccessType.GET_AND_UPDATE),
+        /**
+         * The access mode whose access is specified by the corresponding
+         * method
+         * {@link VarHandle#getAndBitwiseOr VarHandle.getAndBitwiseOr}
+         */
+        GET_AND_BITWISE_OR("getAndBitwiseOr", AccessType.GET_AND_UPDATE),
+        /**
+         * The access mode whose access is specified by the corresponding
+         * method
+         * {@link VarHandle#getAndBitwiseOrRelease VarHandle.getAndBitwiseOrRelease}
+         */
+        GET_AND_BITWISE_OR_RELEASE("getAndBitwiseOrRelease", AccessType.GET_AND_UPDATE),
+        /**
+         * The access mode whose access is specified by the corresponding
+         * method
+         * {@link VarHandle#getAndBitwiseOrAcquire VarHandle.getAndBitwiseOrAcquire}
+         */
+        GET_AND_BITWISE_OR_ACQUIRE("getAndBitwiseOrAcquire", AccessType.GET_AND_UPDATE),
+        /**
+         * The access mode whose access is specified by the corresponding
+         * method
+         * {@link VarHandle#getAndBitwiseAnd VarHandle.getAndBitwiseAnd}
+         */
+        GET_AND_BITWISE_AND("getAndBitwiseAnd", AccessType.GET_AND_UPDATE),
+        /**
+         * The access mode whose access is specified by the corresponding
+         * method
+         * {@link VarHandle#getAndBitwiseAndRelease VarHandle.getAndBitwiseAndRelease}
+         */
+        GET_AND_BITWISE_AND_RELEASE("getAndBitwiseAndRelease", AccessType.GET_AND_UPDATE),
+        /**
+         * The access mode whose access is specified by the corresponding
+         * method
+         * {@link VarHandle#getAndBitwiseAndAcquire VarHandle.getAndBitwiseAndAcquire}
+         */
+        GET_AND_BITWISE_AND_ACQUIRE("getAndBitwiseAndAcquire", AccessType.GET_AND_UPDATE),
+        /**
+         * The access mode whose access is specified by the corresponding
+         * method
+         * {@link VarHandle#getAndBitwiseXor VarHandle.getAndBitwiseXor}
+         */
+        GET_AND_BITWISE_XOR("getAndBitwiseXor", AccessType.GET_AND_UPDATE),
+        /**
+         * The access mode whose access is specified by the corresponding
+         * method
+         * {@link VarHandle#getAndBitwiseXorRelease VarHandle.getAndBitwiseXorRelease}
+         */
+        GET_AND_BITWISE_XOR_RELEASE("getAndBitwiseXorRelease", AccessType.GET_AND_UPDATE),
+        /**
+         * The access mode whose access is specified by the corresponding
+         * method
+         * {@link VarHandle#getAndBitwiseXorAcquire VarHandle.getAndBitwiseXorAcquire}
+         */
+        GET_AND_BITWISE_XOR_ACQUIRE("getAndBitwiseXorAcquire", AccessType.GET_AND_UPDATE),
         ;
 
         static final Map<String, AccessMode> methodNameToAccessMode;

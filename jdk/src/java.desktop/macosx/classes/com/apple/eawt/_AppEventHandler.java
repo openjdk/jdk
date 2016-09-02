@@ -171,7 +171,8 @@ class _AppEventHandler {
         currentQuitResponse = null;
 
         try {
-            if (defaultQuitAction == QuitStrategy.NORMAL_EXIT) System.exit(0);
+            if (defaultQuitAction == QuitStrategy.NORMAL_EXIT
+                    || _AppMiscHandlers.isSuddenTerminationEnbaled()) System.exit(0);
 
             if (defaultQuitAction != QuitStrategy.CLOSE_ALL_WINDOWS) {
                 throw new RuntimeException("Unknown quit action");
@@ -422,6 +423,10 @@ class _AppEventHandler {
         }
 
         void performUsing(final QuitHandler handler, final _NativeEvent event) {
+            if (_AppMiscHandlers.isSuddenTerminationEnbaled()) {
+                performDefaultAction(event);
+                return;
+            }
             final MacQuitResponse response = obtainQuitResponse(); // obtains the "current" quit response
             handler.handleQuitRequestWith(new QuitEvent(), response);
         }

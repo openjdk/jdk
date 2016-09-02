@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@
 #include "mlib_image.h"
 #include "mlib_SysMath.h"
 #include "mlib_ImageAffine.h"
+#include "safe_math.h"
+
 
 /***************************************************************/
 mlib_status mlib_AffineEdges(mlib_affine_param *param,
@@ -82,6 +84,12 @@ mlib_status mlib_AffineEdges(mlib_affine_param *param,
   srcYStride = mlib_ImageGetStride(src);
   dstYStride = mlib_ImageGetStride(dst);
   paddings = mlib_ImageGetPaddings(src);
+
+  /* All the transformation matrix parameters should be finite. if not, return failure */
+  if (!(IS_FINITE(a) && IS_FINITE(b) && IS_FINITE(c) && IS_FINITE(d) &&
+        IS_FINITE(tx) && IS_FINITE(ty))) {
+    return MLIB_FAILURE;
+  }
 
   if (srcWidth >= (1 << 15) || srcHeight >= (1 << 15)) {
     return MLIB_FAILURE;
@@ -288,6 +296,10 @@ mlib_status mlib_AffineEdges(mlib_affine_param *param,
     if (dY1 == dY2)
       continue;
 
+    if (!(IS_FINITE(slope))) {
+      continue;
+    }
+
     if (dY1 < 0.0)
       y1 = 0;
     else {
@@ -327,6 +339,10 @@ mlib_status mlib_AffineEdges(mlib_affine_param *param,
 
     if (dY1 == dY2)
       continue;
+
+    if (!(IS_FINITE(slope))) {
+      continue;
+    }
 
     if (dY1 < 0.0)
       y1 = 0;

@@ -22,13 +22,15 @@
  */
 /*
  * @test
- * @bug 5080098
+ * @bug 5080098 8164205
  * @summary Verify if PageRanges option is disabled for Non service-formatted
  *          flavors.
  * @run main/manual ServiceDlgPageRangeTest
  */
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import javax.print.DocFlavor;
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;

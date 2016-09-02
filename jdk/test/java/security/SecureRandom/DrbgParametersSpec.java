@@ -24,7 +24,7 @@
 /* @test
  * @bug 8051408 8158534
  * @summary Make sure DrbgParameters coded as specified
- * @library /test/lib/share/classes
+ * @library /test/lib
  */
 
 import jdk.test.lib.Asserts;
