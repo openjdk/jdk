@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,10 +75,10 @@ final class TerminalImpl extends CardTerminal {
             }
         }
         try {
-            card =  new CardImpl(this, protocol);
+            card = new CardImpl(this, protocol);
             return card;
         } catch (PCSCException e) {
-            if (e.code == SCARD_W_REMOVED_CARD) {
+            if (e.code == SCARD_W_REMOVED_CARD || e.code == SCARD_E_NO_SMARTCARD) {
                 throw new CardNotPresentException("No card present", e);
             } else {
                 throw new CardException("connect() failed", e);

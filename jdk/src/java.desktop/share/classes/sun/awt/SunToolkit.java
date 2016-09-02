@@ -372,26 +372,6 @@ public abstract class SunToolkit extends Toolkit
         cont.setFocusTraversalPolicy(defaultPolicy);
     }
 
-    private static FocusTraversalPolicy createLayoutPolicy() {
-        FocusTraversalPolicy policy = null;
-        try {
-            Class<?> layoutPolicyClass =
-                Class.forName("javax.swing.LayoutFocusTraversalPolicy");
-            policy = (FocusTraversalPolicy)layoutPolicyClass.newInstance();
-        }
-        catch (ClassNotFoundException e) {
-            assert false;
-        }
-        catch (InstantiationException e) {
-            assert false;
-        }
-        catch (IllegalAccessException e) {
-            assert false;
-        }
-
-        return policy;
-    }
-
     /*
      * Insert a mapping from target to AppContext, for later retrieval
      * via targetToAppContext() above.

@@ -25,7 +25,6 @@
 
 package apple.laf;
 
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 
 import java.lang.annotation.Native;
@@ -68,6 +67,21 @@ public final class JRSUIConstants {
             ptr = getPtrForConstant(constant);
             if (ptr != 0) return ptr;
             throw new RuntimeException("Constant not implemented in native: " + this);
+        }
+
+        private String getConstantName(Key hit) {
+            if (hit == VALUE) {
+                return "VALUE";
+            } else if (hit == THUMB_PROPORTION) {
+                return "THUMB_PROPORTION";
+            } else if (hit == THUMB_START) {
+                return "THUMB_START";
+            } else if (hit == WINDOW_TITLE_BAR_HEIGHT) {
+                return "WINDOW_TITLE_BAR_HEIGHT";
+            } else if (hit == THUMB_START) {
+                return "ANIMATION_FRAME";
+            }
+            return getClass().getSimpleName();
         }
 
         public String toString() {
@@ -138,7 +152,7 @@ public final class JRSUIConstants {
         }
 
         public String toString() {
-            return getConstantName(this);
+            return getClass().getSimpleName();
         }
     }
 
@@ -779,6 +793,17 @@ public final class JRSUIConstants {
             return hit > 0;
         }
 
+        private String getConstantName(Hit hit) {
+            if (hit == UNKNOWN) {
+                return "UNKNOWN";
+            } else if (hit == NONE) {
+                return "NONE";
+            } else if (hit == HIT) {
+                return "HIT";
+            }
+            return getClass().getSimpleName();
+        }
+
         public String toString() {
             return getConstantName(this);
         }
@@ -828,17 +853,5 @@ public final class JRSUIConstants {
                 return ScrollBarHit.ARROW_MIN_INSIDE;
         }
         return Hit.UNKNOWN;
-    }
-
-    static String getConstantName(final Object object) {
-        final Class<? extends Object> clazz = object.getClass();
-        try {
-            for (final Field field : clazz.getFields()) {
-                if (field.get(null) == object) {
-                    return field.getName();
-                }
-            }
-        } catch (final Exception e) {}
-        return clazz.getSimpleName();
     }
 }
