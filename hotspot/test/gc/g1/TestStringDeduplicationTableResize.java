@@ -26,6 +26,7 @@
  * @summary Test string deduplication table resize
  * @bug 8029075
  * @key gc
+ * @requires vm.gc.G1
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

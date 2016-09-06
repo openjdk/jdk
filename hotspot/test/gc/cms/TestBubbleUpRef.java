@@ -35,7 +35,7 @@ import java.util.ListIterator;
  *          stays nearly full.
  * @run main/othervm
  *  -XX:+UseConcMarkSweepGC -XX:-CMSYield -XX:-CMSPrecleanRefLists1
- *  -XX:CMSInitiatingOccupancyFraction=0 -Xmx8m TestBubbleUpRef 16000 50 10000
+ *  -XX:CMSInitiatingOccupancyFraction=0 -Xmx80m TestBubbleUpRef 16000 50 10000
  */
 
 /**
@@ -53,7 +53,7 @@ import java.util.ListIterator;
  * Do it again.
  *
  * Use the following VM options
- *     -Xmx8m -XX:-CMSYield [-XX:+UseConcMarkSweepGC] -XX:-CMSPrecleanRefLists1
+ *     -Xmx80m -XX:-CMSYield [-XX:+UseConcMarkSweepGC] -XX:-CMSPrecleanRefLists1
  *      -XX:CMSInitiatingOccupancyFraction=0
  *
  * Use parameter:

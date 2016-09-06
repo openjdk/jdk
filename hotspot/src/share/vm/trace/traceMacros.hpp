@@ -30,7 +30,6 @@ typedef u8 traceid;
 #define EVENT_THREAD_EXIT(thread)
 #define EVENT_THREAD_DESTRUCT(thread)
 #define TRACE_KLASS_CREATION(k, p, t)
-#define TRACE_KLASS_DEFINITION(k, t)
 
 #define TRACE_INIT_KLASS_ID(k)
 #define TRACE_REMOVE_KLASS_ID(k)

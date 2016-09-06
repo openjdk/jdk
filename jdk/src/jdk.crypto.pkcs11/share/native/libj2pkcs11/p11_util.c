@@ -558,7 +558,7 @@ void jStringToCKUTF8CharArray(JNIEnv *env, const jstring jArray, CK_UTF8CHAR_PTR
     pCharArray = (*env)->GetStringUTFChars(env, jArray, &isCopy);
     if (pCharArray == NULL) { return; }
 
-    *ckpLength = strlen(pCharArray);
+    *ckpLength = (CK_ULONG) strlen(pCharArray);
     *ckpArray = (CK_UTF8CHAR_PTR) malloc((*ckpLength + 1) * sizeof(CK_UTF8CHAR));
     if (*ckpArray == NULL) {
         (*env)->ReleaseStringUTFChars(env, (jstring) jArray, pCharArray);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,21 +66,30 @@ public class Restart {
         // group with fixed thread pool
         int nThreads = 1 + rand.nextInt(4);
         AsynchronousChannelGroup group =
-            AsynchronousChannelGroup.withFixedThreadPool(nThreads, factory);
-        testRestart(group, 100);
-        group.shutdown();
+                AsynchronousChannelGroup.withFixedThreadPool(nThreads, factory);
+        try {
+            testRestart(group, 100);
+        } finally {
+            group.shutdown();
+        }
 
         // group with cached thread pool
         ExecutorService pool = Executors.newCachedThreadPool(factory);
         group = AsynchronousChannelGroup.withCachedThreadPool(pool, rand.nextInt(5));
-        testRestart(group, 100);
-        group.shutdown();
+        try {
+            testRestart(group, 100);
+        } finally {
+            group.shutdown();
+        }
 
         // group with custom thread pool
-        group = AsynchronousChannelGroup
-                .withThreadPool(Executors.newFixedThreadPool(1+rand.nextInt(5), factory));
-        testRestart(group, 100);
-        group.shutdown();
+        group = AsynchronousChannelGroup.withThreadPool(
+                Executors.newFixedThreadPool(1+rand.nextInt(5), factory));
+        try {
+            testRestart(group, 100);
+        } finally {
+            group.shutdown();
+        }
 
         // give time for threads to terminate
         Thread.sleep(3000);
@@ -92,45 +101,43 @@ public class Restart {
     static void testRestart(AsynchronousChannelGroup group, int count)
         throws Exception
     {
-        AsynchronousServerSocketChannel listener =
-            AsynchronousServerSocketChannel.open(group)
-                .bind(new InetSocketAddress(0));
+        try (AsynchronousServerSocketChannel listener =
+                AsynchronousServerSocketChannel.open(group)) {
 
-        for (int i=0; i<count; i++) {
-            final CountDownLatch latch = new CountDownLatch(1);
+            listener.bind(new InetSocketAddress(0));
+            for (int i=0; i<count; i++) {
+                final CountDownLatch latch = new CountDownLatch(1);
 
-            listener.accept((Void)null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
-                public void completed(AsynchronousSocketChannel ch, Void att) {
-                    try {
-                        ch.close();
-                    } catch (IOException ignore) { }
+                listener.accept((Void)null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
+                    public void completed(AsynchronousSocketChannel ch, Void att) {
+                        try {
+                            ch.close();
+                        } catch (IOException ignore) { }
 
-                    latch.countDown();
+                        latch.countDown();
 
-                    // throw error or runtime exception
-                    if (rand.nextBoolean()) {
-                        throw new Error();
-                    } else {
-                        throw new RuntimeException();
+                        // throw error or runtime exception
+                        if (rand.nextBoolean()) {
+                            throw new Error();
+                        } else {
+                            throw new RuntimeException();
+                        }
                     }
-                }
-                public void failed(Throwable exc, Void att) {
-                }
-            });
+                    public void failed(Throwable exc, Void att) {
+                    }
+                });
 
-            // establish loopback connection which should cause completion
-            // handler to be invoked.
-            int port = ((InetSocketAddress)(listener.getLocalAddress())).getPort();
-            AsynchronousSocketChannel ch = AsynchronousSocketChannel.open();
-            InetAddress lh = InetAddress.getLocalHost();
-            ch.connect(new InetSocketAddress(lh, port)).get();
-            ch.close();
+                // establish loopback connection which should cause completion
+                // handler to be invoked.
+                int port = ((InetSocketAddress)(listener.getLocalAddress())).getPort();
+                try (AsynchronousSocketChannel ch = AsynchronousSocketChannel.open()) {
+                    InetAddress lh = InetAddress.getLocalHost();
+                    ch.connect(new InetSocketAddress(lh, port)).get();
+                }
 
-            // wait for handler to be invoked
-            latch.await();
+                // wait for handler to be invoked
+                latch.await();
+            }
         }
-
-        // clean-up
-        listener.close();
     }
 }

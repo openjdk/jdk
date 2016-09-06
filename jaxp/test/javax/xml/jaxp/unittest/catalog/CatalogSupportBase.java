@@ -35,9 +35,9 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
+import javax.xml.catalog.CatalogResolver;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -61,7 +61,6 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-
 import org.testng.Assert;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -677,6 +676,29 @@ public class CatalogSupportBase {
 
     }
 
+
+    /**
+     * Extends MyHandler and overrides resolveEntity with a CatalogResolver
+     */
+    class MyCatalogHandler extends MyHandler {
+        CatalogResolver cr;
+
+        public MyCatalogHandler(CatalogResolver cr, String elementName) {
+            super(elementName);
+            this.cr = cr;
+        }
+
+        @Override
+        public InputSource resolveEntity(String publicId, String systemId) {
+            return cr.resolveEntity(publicId, systemId);
+        }
+        @Override
+        public InputSource resolveEntity(String name, String publicId,
+                String baseURI, String systemId) {
+            return cr.resolveEntity(publicId, systemId);
+        }
+    }
+
     /**
      * Extends MyHandler and overrides resolveEntity
      */
@@ -935,4 +957,3 @@ public class CatalogSupportBase {
         }
     }
 }
-

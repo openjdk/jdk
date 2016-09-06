@@ -3780,11 +3780,6 @@ int os::compare_file_modified_times(const char* file1, const char* file2) {
   return diff;
 }
 
-
-bool os::check_heap(bool force) {
-  return true;
-}
-
 // Is a (classpath) directory empty?
 bool os::dir_is_empty(const char* path) {
   DIR *dir = NULL;

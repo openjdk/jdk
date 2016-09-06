@@ -163,26 +163,47 @@ static void logOption(const char* opt) {
 
 bool needs_module_property_warning = false;
 
-#define MODULE_PROPERTY_PREFIX "jdk.module"
-#define MODULE_PROPERTY_PREFIX_LEN 10
-#define MODULE_MAIN_PROPERTY "jdk.module.main"
-#define MODULE_MAIN_PROPERTY_LEN 15
+#define MODULE_PROPERTY_PREFIX "jdk.module."
+#define MODULE_PROPERTY_PREFIX_LEN 11
+#define ADDEXPORTS "addexports"
+#define ADDEXPORTS_LEN 10
+#define ADDREADS "addreads"
+#define ADDREADS_LEN 8
+#define PATCH "patch"
+#define PATCH_LEN 5
+#define ADDMODS "addmods"
+#define ADDMODS_LEN 7
+#define LIMITMODS "limitmods"
+#define LIMITMODS_LEN 9
+#define PATH "path"
+#define PATH_LEN 4
+#define UPGRADE_PATH "upgrade.path"
+#define UPGRADE_PATH_LEN 12
 
-// Return TRUE if option matches property, or property=, or property..
-static bool matches_property_prefix(const char* option, const char* property, size_t len) {
-  return (strncmp(option, property, len) == 0) &&
-          (option[len] == '=' || option[len] == '.' || option[len] == '\0');
+// Return TRUE if option matches 'property', or 'property=', or 'property.'.
+static bool matches_property_suffix(const char* option, const char* property, size_t len) {
+  return ((strncmp(option, property, len) == 0) &&
+          (option[len] == '=' || option[len] == '.' || option[len] == '\0'));
 }
 
-// Return true if the property is either "jdk.module" or starts with "jdk.module.",
-// but does not start with "jdk.module.main".
-// Return false if jdk.module.main because jdk.module.main and jdk.module.main.class
-// are valid non-internal system properties.
-// "property" should be passed without the leading "-D".
+// Return true if property starts with "jdk.module." and its ensuing chars match
+// any of the reserved module properties.
+// property should be passed without the leading "-D".
 bool Arguments::is_internal_module_property(const char* property) {
   assert((strncmp(property, "-D", 2) != 0), "Unexpected leading -D");
-  return (matches_property_prefix(property, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) &&
-          !matches_property_prefix(property, MODULE_MAIN_PROPERTY, MODULE_MAIN_PROPERTY_LEN));
+  if  (strncmp(property, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) == 0) {
+    const char* property_suffix = property + MODULE_PROPERTY_PREFIX_LEN;
+    if (matches_property_suffix(property_suffix, ADDEXPORTS, ADDEXPORTS_LEN) ||
+        matches_property_suffix(property_suffix, ADDREADS, ADDREADS_LEN) ||
+        matches_property_suffix(property_suffix, PATCH, PATCH_LEN) ||
+        matches_property_suffix(property_suffix, ADDMODS, ADDMODS_LEN) ||
+        matches_property_suffix(property_suffix, LIMITMODS, LIMITMODS_LEN) ||
+        matches_property_suffix(property_suffix, PATH, PATH_LEN) ||
+        matches_property_suffix(property_suffix, UPGRADE_PATH, UPGRADE_PATH_LEN)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Process java launcher properties.
@@ -4287,8 +4308,8 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   }
 
   if (needs_module_property_warning) {
-    warning("Ignoring system property options whose names start with '-Djdk.module'."
-            "  They are reserved for internal use.");
+    warning("Ignoring system property options whose names match the '-Djdk.module.*'."
+            " names that are reserved for internal use.");
   }
 
 #if defined(_ALLBSD_SOURCE) || defined(AIX)  // UseLargePages is not yet supported on BSD and AIX.

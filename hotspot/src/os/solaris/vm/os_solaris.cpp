@@ -4589,10 +4589,6 @@ void os::make_polling_page_readable(void) {
   }
 }
 
-// OS interface.
-
-bool os::check_heap(bool force) { return true; }
-
 // Is a (classpath) directory empty?
 bool os::dir_is_empty(const char* path) {
   DIR *dir = NULL;

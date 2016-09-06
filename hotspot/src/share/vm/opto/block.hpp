@@ -186,14 +186,13 @@ public:
   Block* lone_fall_through();   // Return lone fall-through Block or null
 
   Block* dom_lca(Block* that);  // Compute LCA in dominator tree.
-#ifdef ASSERT
+
   bool dominates(Block* that) {
     int dom_diff = this->_dom_depth - that->_dom_depth;
     if (dom_diff > 0)  return false;
     for (; dom_diff < 0; dom_diff++)  that = that->_idom;
     return this == that;
   }
-#endif
 
   // Report the alignment required by this block.  Must be a power of 2.
   // The previous block will insert nops to get this alignment.
@@ -481,9 +480,9 @@ class PhaseCFG : public Phase {
   MachNode* _goto;
 
   Block* insert_anti_dependences(Block* LCA, Node* load, bool verify = false);
-  void verify_anti_dependences(Block* LCA, Node* load) {
+  void verify_anti_dependences(Block* LCA, Node* load) const {
     assert(LCA == get_block_for_node(load), "should already be scheduled");
-    insert_anti_dependences(LCA, load, true);
+    const_cast<PhaseCFG*>(this)->insert_anti_dependences(LCA, load, true);
   }
 
   bool move_to_next(Block* bx, uint b_index);

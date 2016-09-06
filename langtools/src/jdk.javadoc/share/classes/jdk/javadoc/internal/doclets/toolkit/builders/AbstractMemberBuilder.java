@@ -26,7 +26,7 @@
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 
 /**
  * The superclass for all member builders.  Member builders are only executed
@@ -44,7 +44,7 @@ public abstract class AbstractMemberBuilder extends AbstractBuilder {
 
     /**
      * Construct a SubBuilder.
-     * @param configuration the configuration used in this run
+     * @param context a context object, providing information used in this run
      *        of the doclet.
      */
     public AbstractMemberBuilder(Context context) {
@@ -54,32 +54,33 @@ public abstract class AbstractMemberBuilder extends AbstractBuilder {
     /**
      * This method is not supported by sub-builders.
      *
-     * @throws DocletAbortException this method will always throw a
-     * DocletAbortException because it is not supported.
+     * @throws AssertionError always
      */
-    public void build() throws DocletAbortException {
-        //You may not call the build method in a subbuilder.
-        throw new DocletAbortException("not supported");
+    @Override
+    public void build() {
+        // You may not call the build method in a subbuilder.
+        throw new AssertionError();
     }
 
 
     /**
-     * Build the sub component if there is anything to document.
+     * Builds the sub component if there is anything to document.
      *
      * @param node the XML element that specifies which components to document.
      * @param contentTree content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
     @Override
-    public void build(XMLNode node, Content contentTree) {
+    public void build(XMLNode node, Content contentTree) throws DocletException {
         if (hasMembersToDocument()) {
             super.build(node, contentTree);
         }
     }
 
     /**
-     * Return true if this subbuilder has anything to document.
+     * Returns true if this subbuilder has anything to document.
      *
-     * @return true if this subbuilder has anything to document.
+     * @return true if this subbuilder has anything to document
      */
     public abstract boolean hasMembersToDocument();
 }

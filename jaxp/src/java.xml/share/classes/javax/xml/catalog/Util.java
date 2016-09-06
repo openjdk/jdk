@@ -55,6 +55,9 @@ class Util {
      * prefer "public": attempts to resolve with a system entry;
      *                  attempts to resolve with a public entry if no matching
      *                  system entry is found.
+     *
+     * If no match is found, continue searching uri entries
+     *
      * @param catalog the catalog
      * @param publicId the publicId
      * @param systemId the systemId
@@ -75,6 +78,10 @@ class Util {
 
         if (resolvedSystemId == null && publicId != null) {
             resolvedSystemId = catalog.matchPublic(publicId);
+        }
+
+        if (resolvedSystemId == null && systemId != null) {
+            resolvedSystemId = catalog.matchURI(systemId);
         }
 
         //mark the catalog as having been searched before trying alternatives

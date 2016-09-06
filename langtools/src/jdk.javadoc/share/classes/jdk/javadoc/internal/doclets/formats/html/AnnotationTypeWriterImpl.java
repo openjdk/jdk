@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.IOException;
 import java.util.List;
 
 import javax.lang.model.element.PackageElement;
@@ -42,9 +41,9 @@ import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.builders.MemberSummaryBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 
 /**
@@ -78,11 +77,9 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      * @param annotationType the annotation type being documented.
      * @param prevType the previous class that was documented.
      * @param nextType the next class being documented.
-     * @throws java.lang.Exception
      */
     public AnnotationTypeWriterImpl(ConfigurationImpl configuration,
-            TypeElement annotationType, TypeMirror prevType, TypeMirror nextType)
-            throws Exception {
+            TypeElement annotationType, TypeMirror prevType, TypeMirror nextType) {
         super(configuration, DocPath.forClass(configuration.utils, annotationType));
         this.annotationType = annotationType;
         configuration.currentTypeElement = annotationType;
@@ -243,7 +240,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      * {@inheritDoc}
      */
     @Override
-    public void printDocument(Content contentTree) throws IOException {
+    public void printDocument(Content contentTree) throws DocFileIOException {
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(annotationType),
                 true, contentTree);
     }
@@ -352,22 +349,17 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      */
     @Override
     protected void addSummaryDetailLinks(Content subDiv) {
-        try {
-            Content div = HtmlTree.DIV(getNavSummaryLinks());
-            div.addContent(getNavDetailLinks());
-            subDiv.addContent(div);
-        } catch (Exception e) {
-            throw new DocletAbortException(e);
-        }
+        Content div = HtmlTree.DIV(getNavSummaryLinks());
+        div.addContent(getNavDetailLinks());
+        subDiv.addContent(div);
     }
 
     /**
      * Get summary links for navigation bar.
      *
      * @return the content tree for the navigation summary links
-     * @throws java.lang.Exception
      */
-    protected Content getNavSummaryLinks() throws Exception {
+    protected Content getNavSummaryLinks() {
         Content li = HtmlTree.LI(contents.summaryLabel);
         li.addContent(Contents.SPACE);
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
@@ -417,9 +409,8 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      * Get detail links for the navigation bar.
      *
      * @return the content tree for the detail links
-     * @throws java.lang.Exception
      */
-    protected Content getNavDetailLinks() throws Exception {
+    protected Content getNavDetailLinks() {
         Content li = HtmlTree.LI(contents.detailLabel);
         li.addContent(Contents.SPACE);
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);

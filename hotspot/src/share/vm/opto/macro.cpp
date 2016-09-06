@@ -491,7 +491,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
   for (DUIterator_Fast kmax, k = region->fast_outs(kmax); k < kmax; k++) {
     Node* phi = region->fast_out(k);
     if (phi->is_Phi() && phi != mem &&
-        phi->as_Phi()->is_same_inst_field(phi_type, instance_id, alias_idx, offset)) {
+        phi->as_Phi()->is_same_inst_field(phi_type, (int)mem->_idx, instance_id, alias_idx, offset)) {
       return phi;
     }
   }
@@ -510,7 +510,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
   GrowableArray <Node *> values(length, length, NULL, false);
 
   // create a new Phi for the value
-  PhiNode *phi = new PhiNode(mem->in(0), phi_type, NULL, instance_id, alias_idx, offset);
+  PhiNode *phi = new PhiNode(mem->in(0), phi_type, NULL, mem->_idx, instance_id, alias_idx, offset);
   transform_later(phi);
   value_phis->push(phi, mem->_idx);
 

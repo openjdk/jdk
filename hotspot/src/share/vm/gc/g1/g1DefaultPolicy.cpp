@@ -604,7 +604,7 @@ void G1DefaultPolicy::record_collection_pause_end(double pause_time_ms, size_t c
     _analytics->report_alloc_rate_ms(alloc_rate_ms);
 
     double interval_ms =
-      (end_time_sec - _analytics->oldest_known_gc_end_time_sec()) * 1000.0;
+      (end_time_sec - _analytics->last_known_gc_end_time_sec()) * 1000.0;
     _analytics->update_recent_gc_times(end_time_sec, pause_time_ms);
     _analytics->compute_pause_time_ratio(interval_ms, pause_time_ms);
   }
@@ -885,6 +885,15 @@ bool G1DefaultPolicy::adaptive_young_list_length() const {
   return _young_gen_sizer.adaptive_young_list_length();
 }
 
+size_t G1DefaultPolicy::desired_survivor_size() const {
+  size_t const survivor_capacity = HeapRegion::GrainWords * _max_survivor_regions;
+  return (size_t)((((double)survivor_capacity) * TargetSurvivorRatio) / 100);
+}
+
+void G1DefaultPolicy::print_age_table() {
+  _survivors_age_table.print_age_table(_tenuring_threshold);
+}
+
 void G1DefaultPolicy::update_max_gc_locker_expansion() {
   uint expansion_region_num = 0;
   if (GCLockerEdenExpansionPercent > 0) {
@@ -908,8 +917,11 @@ void G1DefaultPolicy::update_survivors_policy() {
   // smaller than 1.0) we'll get 1.
   _max_survivor_regions = (uint) ceil(max_survivor_regions_d);
 
-  _tenuring_threshold = _survivors_age_table.compute_tenuring_threshold(
-      HeapRegion::GrainWords * _max_survivor_regions, _policy_counters);
+  _tenuring_threshold = _survivors_age_table.compute_tenuring_threshold(desired_survivor_size());
+  if (UsePerfData) {
+    _policy_counters->tenuring_threshold()->set_value(_tenuring_threshold);
+    _policy_counters->desired_survivor_size()->set_value(desired_survivor_size() * oopSize);
+  }
 }
 
 bool G1DefaultPolicy::force_initial_mark_if_outside_cycle(GCCause::Cause gc_cause) {

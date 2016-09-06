@@ -100,6 +100,9 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
     Instruction* _cleanup_return_prev; // Instruction before return instruction
     ValueStack*  _cleanup_state;       // State of that block (not yet pinned)
 
+    // When inlining do not push the result on the stack
+    bool         _ignore_return;
+
    public:
     ScopeData(ScopeData* parent);
 
@@ -163,6 +166,9 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
     BlockBegin*  inline_cleanup_block() const      { return _cleanup_block; }
     Instruction* inline_cleanup_return_prev() const{ return _cleanup_return_prev; }
     ValueStack*  inline_cleanup_state() const      { return _cleanup_state; }
+
+    bool ignore_return() const                     { return _ignore_return;          }
+    void set_ignore_return(bool ignore_return)     { _ignore_return = ignore_return; }
   };
 
   // for all GraphBuilders
@@ -246,7 +252,7 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   void ret(int local_index);
   void table_switch();
   void lookup_switch();
-  void method_return(Value x);
+  void method_return(Value x, bool ignore_return = false);
   void call_register_finalizer();
   void access_field(Bytecodes::Code code);
   void invoke(Bytecodes::Code code);
@@ -340,19 +346,19 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   void inline_sync_entry(Value lock, BlockBegin* sync_handler);
   void fill_sync_handler(Value lock, BlockBegin* sync_handler, bool default_handler = false);
 
-  void build_graph_for_intrinsic(ciMethod* callee);
+  void build_graph_for_intrinsic(ciMethod* callee, bool ignore_return);
 
   // inliners
-  bool try_inline(           ciMethod* callee, bool holder_known, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = NULL);
-  bool try_inline_intrinsics(ciMethod* callee);
-  bool try_inline_full(      ciMethod* callee, bool holder_known, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = NULL);
+  bool try_inline(           ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = NULL);
+  bool try_inline_intrinsics(ciMethod* callee, bool ignore_return = false);
+  bool try_inline_full(      ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = NULL);
   bool try_inline_jsr(int jsr_dest_bci);
 
   const char* check_can_parse(ciMethod* callee) const;
   const char* should_not_inline(ciMethod* callee) const;
 
   // JSR 292 support
-  bool try_method_handle_inline(ciMethod* callee);
+  bool try_method_handle_inline(ciMethod* callee, bool ignore_return);
 
   // helpers
   void inline_bailout(const char* msg);

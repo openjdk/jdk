@@ -35,7 +35,6 @@
 #include "compiler/compileTask.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
-#include "gc/shared/referencePendingListLocker.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -3717,14 +3716,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #if INCLUDE_MANAGEMENT
   Management::record_vm_init_completed();
 #endif // INCLUDE_MANAGEMENT
-
-  // Note that we do not use CHECK_0 here since we are inside an EXCEPTION_MARK and
-  // set_init_completed has just been called, causing exceptions not to be shortcut
-  // anymore. We call vm_exit_during_initialization directly instead.
-
-  // Initialize reference pending list locker
-  bool needs_locker_thread = Universe::heap()->needs_reference_pending_list_locker_thread();
-  ReferencePendingListLocker::initialize(needs_locker_thread, CHECK_JNI_ERR);
 
   // Signal Dispatcher needs to be started before VMInit event is posted
   os::signal_init();

@@ -168,7 +168,6 @@ needs_compact3 = \
   runtime/InternalApi/ThreadCpuTimesDeadlock.java \
   runtime/NMT/JcmdSummaryDiff.java \
   runtime/RedefineTests/RedefineAnnotations.java \
-  serviceability/sa/jmap-hashcode/Test8028623.java \
   serviceability/threads/TestFalseDeadLock.java \
   compiler/codecache/jmx \
   compiler/jsr292/RedefineMethodUsedByMultipleMethodHandles.java \
@@ -407,6 +406,11 @@ hotspot_runtime_tier2_platform_agnostic = \
   runtime/SelectionResolution \
  -:hotspot_fast_runtime
 
+hotspot_runtime_minimalvm = \
+  runtime/MinimalVM \
+  runtime/ErrorHandling \
+  runtime/logging
+  
 #All tests that depends on nashorn extension.
 #
 needs_nashorn = \
