@@ -324,6 +324,10 @@ UNSAFE_ENTRY(jobject, Unsafe_GetObjectVolatile(JNIEnv *env, jobject unsafe, jobj
 
   volatile oop v;
 
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    OrderAccess::fence();
+  }
+
   if (UseCompressedOops) {
     volatile narrowOop n = *(volatile narrowOop*) addr;
     (void)const_cast<oop&>(v = oopDesc::decode_heap_oop(n));
