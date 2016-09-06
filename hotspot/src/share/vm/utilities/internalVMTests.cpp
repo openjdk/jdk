@@ -56,12 +56,10 @@ void InternalVMTests::run() {
   run_unit_test(CollectedHeap_test);
   run_unit_test(QuickSort_test);
   run_unit_test(GuardedMemory_test);
-  run_unit_test(AltHashing_test);
   run_unit_test(TestNewSize_test);
   run_unit_test(TestOldSize_test);
   run_unit_test(TestKlass_test);
   run_unit_test(TestBitMap_test);
-  run_unit_test(TestAsUtf8);
   run_unit_test(TestResourcehash_test);
   run_unit_test(ObjectMonitor_test);
   run_unit_test(Test_linked_list);
@@ -89,16 +87,12 @@ void InternalVMTests::run() {
   run_unit_test(VMStructs_test);
 #endif
 #if INCLUDE_ALL_GCS
-  run_unit_test(TestOldFreeSpaceCalculation_test);
   run_unit_test(TestG1BiasedArray_test);
   run_unit_test(TestBufferingOopClosure_test);
-  run_unit_test(TestCodeCacheRemSet_test);
   if (UseG1GC) {
     run_unit_test(FreeRegionList_test);
     run_unit_test(IHOP_test);
   }
-  run_unit_test(test_memset_with_concurrent_readers);
-  run_unit_test(TestPredictions_test);
   run_unit_test(WorkerDataArray_test);
   run_unit_test(ParallelCompact_test);
 #endif

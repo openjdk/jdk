@@ -210,11 +210,11 @@ public:
   static int cmp( const Type *const t1, const Type *const t2 );
   // Test for higher or equal in lattice
   // Variant that drops the speculative part of the types
-  int higher_equal(const Type *t) const {
+  bool higher_equal(const Type *t) const {
     return !cmp(meet(t),t->remove_speculative());
   }
   // Variant that keeps the speculative part of the types
-  int higher_equal_speculative(const Type *t) const {
+  bool higher_equal_speculative(const Type *t) const {
     return !cmp(meet_speculative(t),t);
   }
 
@@ -359,6 +359,8 @@ public:
   }
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
   static  void dump_stats();
+
+  static const char* str(const Type* t);
 #endif
   void typerr(const Type *t) const; // Mixing types error
 
@@ -963,7 +965,7 @@ protected:
 
   // If not InstanceTop or InstanceBot, indicates that this is
   // a particular instance of this type which is distinct.
-  // This is the the node index of the allocation node creating this instance.
+  // This is the node index of the allocation node creating this instance.
   int           _instance_id;
 
   static const TypeOopPtr* make_from_klass_common(ciKlass* klass, bool klass_change, bool try_for_exact);

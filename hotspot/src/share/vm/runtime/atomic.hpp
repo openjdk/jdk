@@ -76,6 +76,7 @@ class Atomic : AllStatic {
 
   // Atomically add to a location. Returns updated value. add*() provide:
   // <fence> add-value-to-dest <membar StoreLoad|StoreStore>
+  inline static jshort   add    (jshort   add_value, volatile jshort*   dest);
   inline static jint     add    (jint     add_value, volatile jint*     dest);
   inline static size_t   add    (size_t   add_value, volatile size_t*   dest);
   inline static intptr_t add_ptr(intptr_t add_value, volatile intptr_t* dest);
@@ -150,26 +151,39 @@ inline void Atomic::dec(volatile size_t* dest) {
  * as well as defining VM_HAS_SPECIALIZED_CMPXCHG_BYTE. This will cause the platform specific
  * implementation to be used instead.
  */
-inline jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte *dest, jbyte comparand, cmpxchg_memory_order order)
-{
-  assert(sizeof(jbyte) == 1, "assumption.");
-  uintptr_t dest_addr = (uintptr_t)dest;
-  uintptr_t offset = dest_addr % sizeof(jint);
-  volatile jint* dest_int = (volatile jint*)(dest_addr - offset);
+inline jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest,
+                             jbyte compare_value, cmpxchg_memory_order order) {
+  STATIC_ASSERT(sizeof(jbyte) == 1);
+  volatile jint* dest_int =
+      static_cast<volatile jint*>(align_ptr_down(dest, sizeof(jint)));
+  size_t offset = pointer_delta(dest, dest_int, 1);
   jint cur = *dest_int;
-  jbyte* cur_as_bytes = (jbyte*)(&cur);
-  jint new_val = cur;
-  jbyte* new_val_as_bytes = (jbyte*)(&new_val);
-  new_val_as_bytes[offset] = exchange_value;
-  while (cur_as_bytes[offset] == comparand) {
-    jint res = cmpxchg(new_val, dest_int, cur, order);
-    if (res == cur) break;
+  jbyte* cur_as_bytes = reinterpret_cast<jbyte*>(&cur);
+
+  // current value may not be what we are looking for, so force it
+  // to that value so the initial cmpxchg will fail if it is different
+  cur_as_bytes[offset] = compare_value;
+
+  // always execute a real cmpxchg so that we get the required memory
+  // barriers even on initial failure
+  do {
+    // value to swap in matches current value ...
+    jint new_value = cur;
+    // ... except for the one jbyte we want to update
+    reinterpret_cast<jbyte*>(&new_value)[offset] = exchange_value;
+
+    jint res = cmpxchg(new_value, dest_int, cur, order);
+    if (res == cur) break; // success
+
+    // at least one jbyte in the jint changed value, so update
+    // our view of the current jint
     cur = res;
-    new_val = cur;
-    new_val_as_bytes[offset] = exchange_value;
-  }
+    // if our jbyte is still as cur we loop and try again
+  } while (cur_as_bytes[offset] == compare_value);
+
   return cur_as_bytes[offset];
 }
+
 #endif // VM_HAS_SPECIALIZED_CMPXCHG_BYTE
 
 inline unsigned Atomic::xchg(unsigned int exchange_value, volatile unsigned int* dest) {
@@ -195,10 +209,11 @@ inline jlong Atomic::add(jlong    add_value, volatile jlong*    dest) {
   return old;
 }
 
-inline void Atomic::inc(volatile short* dest) {
-  // Most platforms do not support atomic increment on a 2-byte value. However,
+inline jshort Atomic::add(jshort add_value, volatile jshort* dest) {
+  // Most platforms do not support atomic add on a 2-byte value. However,
   // if the value occupies the most significant 16 bits of an aligned 32-bit
-  // word, then we can do this with an atomic add of 0x10000 to the 32-bit word.
+  // word, then we can do this with an atomic add of (add_value << 16)
+  // to the 32-bit word.
   //
   // The least significant parts of this 32-bit word will never be affected, even
   // in case of overflow/underflow.
@@ -206,21 +221,20 @@ inline void Atomic::inc(volatile short* dest) {
   // Use the ATOMIC_SHORT_PAIR macro (see macros.hpp) to get the desired alignment.
 #ifdef VM_LITTLE_ENDIAN
   assert((intx(dest) & 0x03) == 0x02, "wrong alignment");
-  (void)Atomic::add(0x10000, (volatile int*)(dest-1));
+  jint new_value = Atomic::add(add_value << 16, (volatile jint*)(dest-1));
 #else
   assert((intx(dest) & 0x03) == 0x00, "wrong alignment");
-  (void)Atomic::add(0x10000, (volatile int*)(dest));
+  jint new_value = Atomic::add(add_value << 16, (volatile jint*)(dest));
 #endif
+  return (jshort)(new_value >> 16); // preserves sign
 }
 
-inline void Atomic::dec(volatile short* dest) {
-#ifdef VM_LITTLE_ENDIAN
-  assert((intx(dest) & 0x03) == 0x02, "wrong alignment");
-  (void)Atomic::add(-0x10000, (volatile int*)(dest-1));
-#else
-  assert((intx(dest) & 0x03) == 0x00, "wrong alignment");
-  (void)Atomic::add(-0x10000, (volatile int*)(dest));
-#endif
+inline void Atomic::inc(volatile jshort* dest) {
+  (void)add(1, dest);
+}
+
+inline void Atomic::dec(volatile jshort* dest) {
+  (void)add(-1, dest);
 }
 
 #endif // SHARE_VM_RUNTIME_ATOMIC_HPP

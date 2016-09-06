@@ -35,7 +35,7 @@ import java.security.ProtectionDomain;
 import java.io.InputStream;
 import java.lang.*;
 import jdk.test.lib.InMemoryJavaCompiler;
-import jdk.test.lib.Utils;
+import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.internal.misc.Unsafe;
 import static jdk.test.lib.Asserts.*;
 
@@ -50,7 +50,7 @@ public class NestedUnsafe {
         " } } ");
 
     public static void main(String args[]) throws Exception {
-        Unsafe unsafe = Utils.getUnsafe();
+        Unsafe unsafe = UnsafeHelper.getUnsafe();
 
         Class klass = unsafe.defineAnonymousClass(NestedUnsafe.class, klassbuf, new Object[0]);
         unsafe.ensureClassInitialized(klass);
@@ -80,7 +80,7 @@ public class NestedUnsafe {
             "            throw new RuntimeException(\"Exception: \" + ex.toString()); " +
             "        } " +
             "} } ",
-            "-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED");
+            "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
         Class klass2 = unsafe.defineAnonymousClass(NestedUnsafe.class, klassbuf2, new Object[0]);
         try {
             klass2.getMethod("doit").invoke(null);

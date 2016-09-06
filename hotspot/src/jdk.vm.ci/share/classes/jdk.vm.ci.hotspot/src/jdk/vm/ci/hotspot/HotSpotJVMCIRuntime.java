@@ -497,6 +497,9 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
         for (Map.Entry<String, Long> e : typeSizes.entrySet()) {
             printConfigLine(vm, "[vmconfig:type size] %s = %d%n", e.getKey(), e.getValue());
         }
+        for (VMIntrinsicMethod e : store.getIntrinsics()) {
+            printConfigLine(vm, "[vmconfig:intrinsic] %d = %s.%s %s%n", e.id, e.declaringClass, e.name, e.descriptor);
+        }
     }
 
     public OutputStream getLogStream() {

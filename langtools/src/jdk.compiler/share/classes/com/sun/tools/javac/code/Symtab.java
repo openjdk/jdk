@@ -369,6 +369,7 @@ public class Symtab {
                 }
             };
         addRootPackageFor(unnamedModule);
+        unnamedModule.enclosedPackages = unnamedModule.enclosedPackages.prepend(unnamedModule.unnamedPackage);
 
         errModule = new ModuleSymbol(names.empty, null) { };
         addRootPackageFor(errModule);

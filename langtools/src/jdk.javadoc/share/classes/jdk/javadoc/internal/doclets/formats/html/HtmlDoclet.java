@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.util.*;
 
 import javax.lang.model.element.ModuleElement;
@@ -36,14 +35,14 @@ import jdk.javadoc.doclet.Doclet.Option;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.internal.doclets.toolkit.AbstractDoclet;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.builders.AbstractBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 
 /**
@@ -92,25 +91,27 @@ public class HtmlDoclet extends AbstractDoclet {
      * Create the configuration instance.
      * Override this method to use a different
      * configuration.
+     * @return the configuration for this doclet
      */
     @Override // defined by AbstractDoclet
-    public Configuration configuration() {
+    public ConfigurationImpl configuration() {
         return configuration;
     }
 
     /**
      * Start the generation of files. Call generate methods in the individual
-     * writers, which will in turn genrate the documentation files. Call the
+     * writers, which will in turn generate the documentation files. Call the
      * TreeWriter generation first to ensure the Class Hierarchy is built
      * first and then can be used in the later generation.
      *
      * For new format.
      *
+     * @throws DocletException if there is a problem while writing the other files
      * @see jdk.doclet.DocletEnvironment
      */
     @Override // defined by AbstractDoclet
     protected void generateOtherFiles(DocletEnvironment docEnv, ClassTree classtree)
-            throws Exception {
+            throws DocletException {
         super.generateOtherFiles(docEnv, classtree);
         if (configuration.linksource) {
             SourceToHTMLConverter.convertRoot(configuration,
@@ -191,7 +192,7 @@ public class HtmlDoclet extends AbstractDoclet {
         }
     }
 
-    protected void copyJqueryFiles() {
+    protected void copyJqueryFiles() throws DocletException {
         List<String> files = Arrays.asList(
                 "jquery-1.10.2.js",
                 "jquery-ui.js",
@@ -232,7 +233,8 @@ public class HtmlDoclet extends AbstractDoclet {
      * {@inheritDoc}
      */
     @Override // defined by AbstractDoclet
-    protected void generateClassFiles(SortedSet<TypeElement> arr, ClassTree classtree) {
+    protected void generateClassFiles(SortedSet<TypeElement> arr, ClassTree classtree)
+            throws DocletException {
         List<TypeElement> list = new ArrayList<>(arr);
         ListIterator<TypeElement> iterator = list.listIterator();
         TypeElement klass = null;
@@ -241,32 +243,24 @@ public class HtmlDoclet extends AbstractDoclet {
             klass = iterator.next();
             TypeElement next = iterator.nextIndex() == list.size()
                     ? null : list.get(iterator.nextIndex());
+
             if (utils.isHidden(klass) ||
                     !(configuration.isGeneratedDoc(klass) && utils.isIncluded(klass))) {
                 continue;
             }
-            try {
-                if (utils.isAnnotationType(klass)) {
-                    AbstractBuilder annotationTypeBuilder =
-                        configuration.getBuilderFactory()
-                            .getAnnotationTypeBuilder(klass,
-                                prev == null ? null : prev.asType(),
-                                next == null ? null : next.asType());
-                    annotationTypeBuilder.build();
-                } else {
-                    AbstractBuilder classBuilder =
-                        configuration.getBuilderFactory().getClassBuilder(klass,
-                                prev, next, classtree);
-                    classBuilder.build();
-                }
-            } catch (IOException e) {
-                throw new DocletAbortException(e);
-            } catch (DocletAbortException de) {
-                de.printStackTrace();
-                throw de;
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw new DocletAbortException(e);
+
+            if (utils.isAnnotationType(klass)) {
+                AbstractBuilder annotationTypeBuilder =
+                    configuration.getBuilderFactory()
+                        .getAnnotationTypeBuilder(klass,
+                            prev == null ? null : prev.asType(),
+                            next == null ? null : next.asType());
+                annotationTypeBuilder.build();
+            } else {
+                AbstractBuilder classBuilder =
+                    configuration.getBuilderFactory().getClassBuilder(klass,
+                            prev, next, classtree);
+                classBuilder.build();
             }
         }
     }
@@ -275,7 +269,7 @@ public class HtmlDoclet extends AbstractDoclet {
      * {@inheritDoc}
      */
     @Override // defined by AbstractDoclet
-    protected void generateModuleFiles() throws Exception {
+    protected void generateModuleFiles() throws DocletException {
         if (configuration.showModules) {
             if (configuration.frames) {
                 ModuleIndexFrameWriter.generate(configuration);
@@ -313,7 +307,7 @@ public class HtmlDoclet extends AbstractDoclet {
      * {@inheritDoc}
      */
     @Override // defined by AbstractDoclet
-    protected void generatePackageFiles(ClassTree classtree) throws Exception {
+    protected void generatePackageFiles(ClassTree classtree) throws DocletException {
         Set<PackageElement> packages = configuration.packages;
         if (packages.size() > 1 && configuration.frames) {
             PackageIndexFrameWriter.generate(configuration);
@@ -356,24 +350,18 @@ public class HtmlDoclet extends AbstractDoclet {
         return configuration.getSupportedOptions();
     }
 
-    private void performCopy(String filename) {
+    private void performCopy(String filename) throws DocFileIOException {
         if (filename.isEmpty())
             return;
 
-        try {
-            DocFile fromfile = DocFile.createFileForInput(configuration, filename);
-            DocPath path = DocPath.create(fromfile.getName());
-            DocFile toFile = DocFile.createFileForOutput(configuration, path);
-            if (toFile.isSameFile(fromfile))
-                return;
+        DocFile fromfile = DocFile.createFileForInput(configuration, filename);
+        DocPath path = DocPath.create(fromfile.getName());
+        DocFile toFile = DocFile.createFileForOutput(configuration, path);
+        if (toFile.isSameFile(fromfile))
+            return;
 
-            messages.notice("doclet.Copying_File_0_To_File_1",
-                    fromfile.toString(), path.getPath());
-            toFile.copyFile(fromfile);
-        } catch (IOException exc) {
-            messages.error("doclet.perform_copy_exception_encountered",
-                    exc.toString());
-            throw new DocletAbortException(exc);
-        }
+        messages.notice("doclet.Copying_File_0_To_File_1",
+                fromfile.toString(), path.getPath());
+        toFile.copyFile(fromfile);
     }
 }

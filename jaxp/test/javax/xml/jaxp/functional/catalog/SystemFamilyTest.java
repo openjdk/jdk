@@ -84,4 +84,3 @@ public class SystemFamilyTest {
         return catalogResolver("systemFamily.xml");
     }
 }
-

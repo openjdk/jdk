@@ -27,7 +27,6 @@
  * @summary Tests elements filtering options
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.api
- *      jdk.javadoc/jdk.javadoc.internal.doclets.standard
  *      jdk.javadoc/jdk.javadoc.internal.tool
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
@@ -60,7 +59,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testDefault(Path base) throws Exception {
-        execTask("-modulesourcepath", src, "--module", "m1");
+        execTask("--module-source-path", src, "--module", "m1");
 
         checkModulesSpecified("m1");
         checkModulesIncluded("m1");
@@ -70,7 +69,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testModuleModeApi(Path base) throws Exception {
-        execTask("-modulesourcepath", src,
+        execTask("--module-source-path", src,
                 "--module", "m1", "--show-module-contents:api");
 
         checkModuleMode("API");
@@ -78,7 +77,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testModuleModeAll(Path base) throws Exception {
-        execTask("-modulesourcepath", src,
+        execTask("--module-source-path", src,
                 "--module", "m1", "--show-module-contents:all");
 
         checkModuleMode("ALL");
@@ -86,7 +85,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testShowPackagesExported(Path base)  throws Exception {
-        execTask("-modulesourcepath", src,
+        execTask("--module-source-path", src,
                 "--module", "m1",
                 "--show-packages:exported"); // default
 
@@ -98,7 +97,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testShowPackagesAll(Path base) throws Exception {
-        execTask("-modulesourcepath", src,
+        execTask("--module-source-path", src,
                 "--module", "m1",
                 "--show-packages:all");
         checkModulesSpecified("m1");
@@ -111,7 +110,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testShowTypesPrivate(Path base) throws Exception {
-        execTask("-modulesourcepath", src,
+        execTask("--module-source-path", src,
                 "--module", "m1",
                 "--show-types:private");
 
@@ -128,7 +127,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testShowTypesPackage(Path base) throws Exception {
-        execTask("-modulesourcepath", src,
+        execTask("--module-source-path", src,
                 "--module", "m1",
                 "--show-types:package");
 
@@ -144,7 +143,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testShowTypesProtected(Path base) throws Exception {
-        execTask("-modulesourcepath", src,
+        execTask("--module-source-path", src,
                 "--module", "m1",
                 "--show-types:protected");
 
@@ -161,7 +160,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testShowTypesPublic(Path base) throws Exception {
-        execTask("-modulesourcepath", src,
+        execTask("--module-source-path", src,
                 "--module", "m1",
                 "--show-types:public");
 
@@ -178,7 +177,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testShowMembersPrivate(Path base) throws Exception {
-        execTask("-modulesourcepath", src,
+        execTask("--module-source-path", src,
                 "--module", "m1",
                 "--show-members:private");
 
@@ -187,7 +186,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testShowMembersPackage(Path base) throws Exception {
-        execTask("-modulesourcepath", src,
+        execTask("--module-source-path", src,
                 "--module", "m1",
                 "--show-members:package");
 
@@ -196,7 +195,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testShowMembersProtected(Path base) throws Exception {
-        execTask("-modulesourcepath", src,
+        execTask("--module-source-path", src,
                 "--module", "m1",
                 "--show-members:protected");
 
@@ -205,7 +204,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testShowMembersPublic(Path base) throws Exception {
-        execTask("-modulesourcepath", src,
+        execTask("--module-source-path", src,
                 "--module", "m1",
                 "--show-members:public");
 
@@ -214,7 +213,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testLegacyPublic(Path base) throws Exception {
-        execTask("-modulesourcepath", src,
+        execTask("--module-source-path", src,
                 "--module", "m1",
                 "-public");
 
@@ -229,7 +228,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testLegacyDefault(Path base) throws Exception {
-        execTask("-modulesourcepath", src,
+        execTask("--module-source-path", src,
                 "--module", "m1");
 
         checkModuleMode("API");
@@ -243,7 +242,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testLegacyProtected(Path base) throws Exception {
-        execTask("-modulesourcepath", src,
+        execTask("--module-source-path", src,
                 "--module", "m1",
                 "-protected");
 
@@ -258,7 +257,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testLegacyPackage(Path base) throws Exception {
-        execTask("-modulesourcepath", src,
+        execTask("--module-source-path", src,
                 "--module", "m1",
                 "-package");
 
@@ -277,7 +276,7 @@ public class FilterOptions extends ModuleTestBase {
 
     @Test
     public void testLegacyPrivate(Path base) throws Exception {
-        execTask("-modulesourcepath", src,
+        execTask("--module-source-path", src,
                 "--module", "m1",
                 "-private");
 

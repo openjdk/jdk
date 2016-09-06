@@ -119,6 +119,9 @@ class JProjNode : public ProjNode {
 // input in slot 0.
 class PhiNode : public TypeNode {
   const TypePtr* const _adr_type; // non-null only for Type::MEMORY nodes.
+  // The following fields are only used for data PhiNodes to indicate
+  // that the PhiNode represents the value of a known instance field.
+        int _inst_mem_id; // Instance memory id (node index of the memory Phi)
   const int _inst_id;     // Instance id of the memory slice.
   const int _inst_index;  // Alias index of the instance memory slice.
   // Array elements references have the same alias_idx but different offset.
@@ -138,11 +141,13 @@ public:
   };
 
   PhiNode( Node *r, const Type *t, const TypePtr* at = NULL,
+           const int imid = -1,
            const int iid = TypeOopPtr::InstanceTop,
            const int iidx = Compile::AliasIdxTop,
            const int ioffs = Type::OffsetTop )
     : TypeNode(t,r->req()),
       _adr_type(at),
+      _inst_mem_id(imid),
       _inst_id(iid),
       _inst_index(iidx),
       _inst_offset(ioffs)
@@ -194,11 +199,14 @@ public:
   virtual bool pinned() const { return in(0) != 0; }
   virtual const TypePtr *adr_type() const { verify_adr_type(true); return _adr_type; }
 
+  void  set_inst_mem_id(int inst_mem_id) { _inst_mem_id = inst_mem_id; }
+  const int inst_mem_id() const { return _inst_mem_id; }
   const int inst_id()     const { return _inst_id; }
   const int inst_index()  const { return _inst_index; }
   const int inst_offset() const { return _inst_offset; }
-  bool is_same_inst_field(const Type* tp, int id, int index, int offset) {
+  bool is_same_inst_field(const Type* tp, int mem_id, int id, int index, int offset) {
     return type()->basic_type() == tp->basic_type() &&
+           inst_mem_id() == mem_id &&
            inst_id()     == id     &&
            inst_index()  == index  &&
            inst_offset() == offset &&

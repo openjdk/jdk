@@ -324,6 +324,10 @@ UNSAFE_ENTRY(jobject, Unsafe_GetObjectVolatile(JNIEnv *env, jobject unsafe, jobj
 
   volatile oop v;
 
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    OrderAccess::fence();
+  }
+
   if (UseCompressedOops) {
     volatile narrowOop n = *(volatile narrowOop*) addr;
     (void)const_cast<oop&>(v = oopDesc::decode_heap_oop(n));
@@ -1047,7 +1051,7 @@ UNSAFE_ENTRY(void, Unsafe_Park(JNIEnv *env, jobject unsafe, jboolean isAbsolute,
 
   if (event.should_commit()) {
     oop obj = thread->current_park_blocker();
-    event.set_klass((obj != NULL) ? obj->klass() : NULL);
+    event.set_parkedClass((obj != NULL) ? obj->klass() : NULL);
     event.set_timeout(time);
     event.set_address((obj != NULL) ? (TYPE_ADDRESS) cast_from_oop<uintptr_t>(obj) : 0);
     event.commit();

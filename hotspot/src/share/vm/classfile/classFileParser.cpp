@@ -5407,6 +5407,17 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   debug_only(ik->verify();)
 }
 
+static bool relax_format_check_for(ClassLoaderData* loader_data) {
+  bool trusted = (loader_data->is_the_null_class_loader_data() ||
+                  SystemDictionary::is_platform_class_loader(loader_data->class_loader()));
+  bool need_verify =
+    // verifyAll
+    (BytecodeVerificationLocal && BytecodeVerificationRemote) ||
+    // verifyRemote
+    (!BytecodeVerificationLocal && BytecodeVerificationRemote && !trusted);
+  return !need_verify;
+}
+
 ClassFileParser::ClassFileParser(ClassFileStream* stream,
                                  Symbol* name,
                                  ClassLoaderData* loader_data,
@@ -5495,7 +5506,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
 
   // Check if verification needs to be relaxed for this class file
   // Do not restrict it to jdk1.0 or jdk1.1 to maintain backward compatibility (4982376)
-  _relax_verify = Verifier::relax_verify_for(_loader_data->class_loader());
+  _relax_verify = relax_format_check_for(_loader_data);
 
   parse_stream(stream, CHECK);
 

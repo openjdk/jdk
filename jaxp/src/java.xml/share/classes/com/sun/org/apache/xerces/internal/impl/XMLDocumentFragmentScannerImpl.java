@@ -511,7 +511,8 @@ public class XMLDocumentFragmentScannerImpl
                     //fDocumentHandler.endElement(getElementQName(),null);
                     break;
                 default :
-                    throw new InternalError("processing event: " + event);
+                    // Errors should have already been handled by the Scanner
+                    return false;
 
             }
             //System.out.println("here in before calling next");
