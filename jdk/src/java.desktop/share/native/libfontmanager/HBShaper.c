@@ -80,7 +80,7 @@ jboolean storeGVData(JNIEnv* env,
     int i, needToGrow;
     float x=0, y=0;
     float startX, startY, advX, advY;
-    float scale = 1.0f / FloatToFixedScale / devScale;
+    float scale = 1.0f / HBFloatToFixedScale / devScale;
     unsigned int* glyphs;
     float* positions;
     int initialCount, glyphArrayLen, posArrayLen, maxGlyphs, storeadv, maxStore;
