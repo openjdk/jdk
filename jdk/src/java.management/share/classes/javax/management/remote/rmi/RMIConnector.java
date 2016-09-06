@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.stream.Collectors;
@@ -1851,8 +1852,11 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
     private static final class ObjectInputStreamWithLoader
             extends ObjectInputStream {
         ObjectInputStreamWithLoader(InputStream in, ClassLoader cl)
-        throws IOException {
+        throws IOException, IllegalArgumentException {
             super(in);
+            if (cl == null ) {
+              throw new IllegalArgumentException("class loader is null");
+            }
             this.loader = cl;
         }
 
@@ -1861,7 +1865,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 throws IOException, ClassNotFoundException {
             String name = classDesc.getName();
             ReflectUtil.checkPackageAccess(name);
-            return Class.forName(name, false, loader);
+            return Class.forName(name, false, Objects.requireNonNull(loader));
         }
 
         private final ClassLoader loader;
