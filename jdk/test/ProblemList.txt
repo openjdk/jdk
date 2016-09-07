@@ -360,6 +360,8 @@ sun/tools/jhsdb/HeapDumpTest.java                               8160376 macosx-a
 
 sun/tools/jhsdb/heapconfig/JMapHeapConfigTest.java              8160376 macosx-all
 
+sun/tools/jps/TestJpsJar.java                                   8165500 generic-all
+
 sun/tools/jps/TestJpsJarRelative.java                           6456333 generic-all
 
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    8057732 generic-all
