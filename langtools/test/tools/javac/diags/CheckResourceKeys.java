@@ -260,8 +260,8 @@ public class CheckResourceKeys {
                 // ignore debug flag names
                 if (cs.startsWith("debug."))
                     continue;
-                // ignore shouldstop flag names
-                if (cs.startsWith("shouldstop."))
+                // ignore should-stop flag names
+                if (cs.startsWith("should-stop."))
                     continue;
                 // ignore diagsformat flag names
                 if (cs.startsWith("diags."))

@@ -122,7 +122,7 @@ public class TestLambdaToMethodStats extends ComboInstance<TestLambdaToMethodSta
     @Override
     public void doWork() throws IOException {
         check(newCompilationTask()
-                .withOption("-Xdebug:dumpLambdaToMethodStats")
+                .withOption("--debug:dumpLambdaToMethodStats")
                 .withSourceFromTemplate(template)
                 .generate());
     }
