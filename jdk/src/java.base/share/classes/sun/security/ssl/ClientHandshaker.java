@@ -1185,7 +1185,7 @@ final class ClientHandshaker extends Handshaker {
         /*
          * FOURTH, if we sent a Certificate, we need to send a signed
          * CertificateVerify (unless the key in the client's certificate
-         * was a Diffie-Hellman key).).
+         * was a Diffie-Hellman key).
          *
          * This uses a hash of the previous handshake messages ... either
          * a nonfinal one (if the particular implementation supports it)
