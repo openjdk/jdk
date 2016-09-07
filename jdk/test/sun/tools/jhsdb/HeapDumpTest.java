@@ -25,10 +25,8 @@
  * @test
  * @bug 8163346
  * @summary Test hashing of extended characters in Serviceability Agent.
- * @library /test/lib/share/classes
+ * @library /test/lib
  * @library /lib/testlibrary
- * @build jdk.testlibrary.*
- * @build jdk.test.lib.apps.*
  * @compile -encoding utf8 HeapDumpTest.java
  * @run main/timeout=240 HeapDumpTest
  */
