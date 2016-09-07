@@ -619,8 +619,8 @@ class InstanceKlass: public Klass {
   objArrayOop signers() const;
 
   // host class
-  Klass* host_klass() const              {
-    Klass** hk = (Klass**)adr_host_klass();
+  InstanceKlass* host_klass() const              {
+    InstanceKlass** hk = adr_host_klass();
     if (hk == NULL) {
       return NULL;
     } else {
@@ -628,9 +628,9 @@ class InstanceKlass: public Klass {
       return *hk;
     }
   }
-  void set_host_klass(const Klass* host) {
+  void set_host_klass(const InstanceKlass* host) {
     assert(is_anonymous(), "not anonymous");
-    const Klass** addr = (const Klass**)adr_host_klass();
+    const InstanceKlass** addr = (const InstanceKlass **)adr_host_klass();
     assert(addr != NULL, "no reversed space");
     if (addr != NULL) {
       *addr = host;
@@ -1057,13 +1057,13 @@ public:
     }
   };
 
-  Klass** adr_host_klass() const {
+  InstanceKlass** adr_host_klass() const {
     if (is_anonymous()) {
-      Klass** adr_impl = adr_implementor();
+      InstanceKlass** adr_impl = (InstanceKlass **)adr_implementor();
       if (adr_impl != NULL) {
         return adr_impl + 1;
       } else {
-        return end_of_nonstatic_oop_maps();
+        return (InstanceKlass **)end_of_nonstatic_oop_maps();
       }
     } else {
       return NULL;
