@@ -899,6 +899,8 @@ void ParNewGeneration::collect(bool   full,
                                                workers->active_workers(),
                                                Threads::number_of_non_daemon_threads());
   active_workers = workers->update_active_workers(active_workers);
+  log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers->total_workers());
+
   _old_gen = gch->old_gen();
 
   // If the next generation is too full to accommodate worst-case promotion
