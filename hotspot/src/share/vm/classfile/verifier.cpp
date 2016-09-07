@@ -2786,7 +2786,7 @@ void ClassVerifier::verify_invoke_instructions(
       // direct interface relative to the host class
       have_imr_indirect = (have_imr_indirect &&
                            !is_same_or_direct_interface(
-                             InstanceKlass::cast(current_class()->host_klass()),
+                             current_class()->host_klass(),
                              host_klass_type, ref_class_type));
     }
     if (!subtype) {

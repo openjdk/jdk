@@ -72,7 +72,7 @@ class KlassFactory : AllStatic {
                                                 Symbol* name,
                                                 ClassLoaderData* loader_data,
                                                 Handle protection_domain,
-                                                const Klass* host_klass,
+                                                const InstanceKlass* host_klass,
                                                 GrowableArray<Handle>* cp_patches,
                                                 TRAPS);
 };
