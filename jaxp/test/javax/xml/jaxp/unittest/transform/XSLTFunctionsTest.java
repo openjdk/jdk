@@ -23,9 +23,12 @@
 
 package transform;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -54,8 +57,39 @@ import static jaxp.library.JAXPTestUtilities.getSystemProperty;
  * @summary This class contains tests for XSLT functions.
  */
 
-@Listeners({jaxp.library.BasePolicy.class})
+@Listeners({jaxp.library.FilePolicy.class})
 public class XSLTFunctionsTest {
+    /**
+     * @bug 8165116
+     * Verifies that redirect works properly when extension function is enabled
+     *
+     * @param xml the XML source
+     * @param xsl the stylesheet that redirect output to a file
+     * @param output the output file
+     * @param redirect the redirect file
+     * @throws Exception if the test fails
+     **/
+    @Test(dataProvider = "redirect")
+    public void testRedirect(String xml, String xsl, String output, String redirect) throws Exception {
+
+        TransformerFactory tf = TransformerFactory.newInstance();
+        tf.setFeature(ORACLE_ENABLE_EXTENSION_FUNCTION, true);
+        Transformer t = tf.newTransformer(new StreamSource(new StringReader(xsl)));
+
+        //Transform the xml
+        t.transform(new StreamSource(new StringReader(xml)), new StreamResult(new StringWriter()));
+
+        // Verifies that the output is redirected successfully
+        String userDir = getSystemProperty("user.dir");
+        Path pathOutput = Paths.get(userDir, output);
+        Path pathRedirect = Paths.get(userDir, redirect);
+        Assert.assertTrue(Files.exists(pathOutput));
+        Assert.assertTrue(Files.exists(pathRedirect));
+        System.out.println("Output to " + pathOutput + " successful.");
+        System.out.println("Redirect to " + pathRedirect + " successful.");
+        Files.deleteIfExists(pathOutput);
+        Files.deleteIfExists(pathRedirect);
+    }
 
     /**
      * @bug 8161454
@@ -177,6 +211,13 @@ public class XSLTFunctionsTest {
         };
     }
 
+    @DataProvider(name = "redirect")
+    public static Object[][] getData() {
+        return new Object[][] {
+            {documentTestXml, xslRedirect, "testoutput.xml", "testredirect.xml"},
+        };
+    }
+
     static final String documentTestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Test>Doc</Test>";
 
     static final String documentTestExternalDoc = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Test>External Doc</Test>";
@@ -196,6 +237,23 @@ public class XSLTFunctionsTest {
 
     static final String documentTesteExpectedResult = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                                                     + "<root>[Test:Doc][Test:External Doc]</root>";
+
+    static String xslRedirect = " <xsl:stylesheet \n"
+            + "   xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"\n"
+            + "   xmlns:xsltc=\"http://xml.apache.org/xalan/xsltc\"\n"
+            + "   xmlns:redirect=\"http://xml.apache.org/xalan/redirect\"\n"
+            + "   extension-element-prefixes=\"xsltc redirect\"\n"
+            + "   version=\"1.0\">\n"
+            + "   <xsl:template match=\"/\">\n"
+            + "     <xsl:text>This goes to standard output</xsl:text>\n"
+            + "     <xsltc:output file=\"testoutput.xml\">\n"
+            + "       <xsl:text>This ends up in the file 'testoutput.xml'</xsl:text>\n"
+            + "     </xsltc:output>\n"
+            + "     <redirect:write file=\"testredirect.xml\">\n"
+            + "       <xsl:text>This ends up in the file 'testredirect.xml'</xsl:text>\n"
+            + "     </redirect:write>\n"
+            + "   </xsl:template>\n"
+            + "</xsl:stylesheet>";
 
     public static final String ORACLE_JAXP_PROPERTY_PREFIX =
         "http://www.oracle.com/xml/jaxp/properties/";
