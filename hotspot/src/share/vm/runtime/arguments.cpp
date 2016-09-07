@@ -33,8 +33,9 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "logging/log.hpp"
-#include "logging/logTag.hpp"
 #include "logging/logConfiguration.hpp"
+#include "logging/logStream.hpp"
+#include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -4176,7 +4177,10 @@ bool Arguments::handle_deprecated_print_gc_flags() {
   if (_gc_log_filename != NULL) {
     // -Xloggc was used to specify a filename
     const char* gc_conf = PrintGCDetails ? "gc*" : "gc";
-    return  LogConfiguration::parse_log_arguments(_gc_log_filename, gc_conf, NULL, NULL, NULL);
+
+    LogTarget(Error, logging) target;
+    LogStreamCHeap errstream(target);
+    return LogConfiguration::parse_log_arguments(_gc_log_filename, gc_conf, NULL, NULL, &errstream);
   } else if (PrintGC || PrintGCDetails) {
     LogConfiguration::configure_stdout(LogLevel::Info, !PrintGCDetails, LOG_TAGS(gc));
   }

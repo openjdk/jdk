@@ -385,6 +385,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
                                            const char* decoratorstr,
                                            const char* output_options,
                                            outputStream* errstream) {
+  assert(errstream != NULL, "errstream can not be NULL");
   if (outputstr == NULL || strlen(outputstr) == 0) {
     outputstr = "stdout";
   }
