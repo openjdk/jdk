@@ -1245,6 +1245,7 @@ bool InstructForm::check_branch_variant(ArchDesc &AD, InstructForm *short_branch
       this != short_branch &&   // Don't match myself
       !is_short_branch() &&     // Don't match another short branch variant
       reduce_result() != NULL &&
+      strstr(_ident, "restoreMask") == NULL && // Don't match side effects
       strcmp(reduce_result(), short_branch->reduce_result()) == 0 &&
       _matrule->equivalent(AD.globalNames(), short_branch->_matrule)) {
     // The instructions are equivalent.
