@@ -62,8 +62,8 @@ public class T6731573 extends ToolTester {
 
     enum SourceLine {
         STANDARD(null),
-        ENABLED("-diags:showSource=true"),
-        DISABLED("-diags:showSource=false");
+        ENABLED("--diags:showSource=true"),
+        DISABLED("--diags:showSource=false");
 
         String optValue;
 
