@@ -66,4 +66,3 @@ public class Bug4966143 {
         Assert.assertTrue(type.isDerivedFrom("testNS", "Test", 0));
     }
 }
-

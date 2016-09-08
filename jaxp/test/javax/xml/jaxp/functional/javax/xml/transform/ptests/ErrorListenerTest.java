@@ -104,5 +104,3 @@ public class ErrorListenerTest implements ErrorListener {
         this.status = ListenerStatus.FATAL;
     }
 }
-
-

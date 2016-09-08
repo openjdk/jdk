@@ -59,4 +59,3 @@ public class Bug6608841 {
     public class MyHandler extends DefaultHandler {
     }
 }
-

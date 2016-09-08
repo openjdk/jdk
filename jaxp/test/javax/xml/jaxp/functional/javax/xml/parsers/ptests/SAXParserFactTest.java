@@ -229,5 +229,3 @@ public class SAXParserFactTest {
         assertFalse(spf.getFeature(EXTERNAL_P_ENTITIES));
     }
 }
-
-

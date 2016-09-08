@@ -116,5 +116,3 @@ public class SAXParserTest03 {
     }
 
 }
-
-

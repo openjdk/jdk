@@ -59,4 +59,3 @@ public class Issue44Test {
         }
     }
 }
-

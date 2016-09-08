@@ -74,5 +74,3 @@ public class AttributesNSTest {
         assertTrue(compareWithGold(goldFile, outputFile));
     }
 }
-
-

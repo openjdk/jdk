@@ -33,4 +33,3 @@ public class DocumentExtFunc {
         return "["+node.getNodeName() + ":" + node.getTextContent()+"]";
     }
 }
-
