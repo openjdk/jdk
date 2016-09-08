@@ -1167,17 +1167,7 @@ public abstract class ClassLoader {
     protected final Class<?> findSystemClass(String name)
         throws ClassNotFoundException
     {
-        ClassLoader system = getSystemClassLoader();
-        if (system == null) {
-            if (!checkName(name))
-                throw new ClassNotFoundException(name);
-            Class<?> cls = findBootstrapClass(name);
-            if (cls == null) {
-                throw new ClassNotFoundException(name);
-            }
-            return cls;
-        }
-        return system.loadClass(name);
+        return getSystemClassLoader().loadClass(name);
     }
 
     /**
@@ -1437,11 +1427,7 @@ public abstract class ClassLoader {
      * @since  1.1
      */
     public static URL getSystemResource(String name) {
-        ClassLoader system = getSystemClassLoader();
-        if (system == null) {
-            return BootLoader.findResource(name);
-        }
-        return system.getResource(name);
+        return getSystemClassLoader().getResource(name);
     }
 
     /**
@@ -1464,17 +1450,13 @@ public abstract class ClassLoader {
      *
      * @throws  IOException
      *          If I/O errors occur
-
+     *
      * @since  1.2
      */
     public static Enumeration<URL> getSystemResources(String name)
         throws IOException
     {
-        ClassLoader system = getSystemClassLoader();
-        if (system == null) {
-            return BootLoader.findResources(name);
-        }
-        return system.getResources(name);
+        return getSystemClassLoader().getResources(name);
     }
 
     /**
@@ -1631,8 +1613,7 @@ public abstract class ClassLoader {
      * this method during startup should take care not to cache the return
      * value until the system is fully initialized.
      *
-     * @return  The system <tt>ClassLoader</tt> for delegation, or
-     *          <tt>null</tt> if none
+     * @return  The system <tt>ClassLoader</tt> for delegation
      *
      * @throws  SecurityException
      *          If a security manager is present, and the caller's class loader
