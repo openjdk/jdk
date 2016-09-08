@@ -60,7 +60,6 @@ void InternalVMTests::run() {
   run_unit_test(TestBitMap_test);
   run_unit_test(ObjectMonitor_test);
   run_unit_test(Test_logtarget);
-  run_unit_test(Test_logstream);
   run_unit_test(Test_loghandle);
   run_unit_test(Test_logtargethandle);
   run_unit_test(Test_configure_stdout);
