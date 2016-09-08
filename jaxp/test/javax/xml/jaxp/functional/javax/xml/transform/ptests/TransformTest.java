@@ -384,5 +384,3 @@ public class TransformTest {
     private Document xmlDoc;
 
 }
-
-

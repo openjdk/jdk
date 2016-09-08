@@ -200,4 +200,3 @@ public class XPathAnyTypeTest extends XPathTestBase {
         verifyResult(result, "Customer");
     }
 }
-

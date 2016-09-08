@@ -70,4 +70,3 @@ public class Bug4674384_MAX_OCCURS_Test {
         System.out.println("Success: File " + XML_FILE_NAME + " was parsed with a large value of maxOccurs.");
     }
 }
-

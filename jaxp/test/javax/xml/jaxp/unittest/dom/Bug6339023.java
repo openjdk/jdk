@@ -139,4 +139,3 @@ public class Bug6339023 {
     }
 
 }
-

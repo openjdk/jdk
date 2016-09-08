@@ -70,4 +70,3 @@ public class XMLReaderTest {
         XMLReaderAdapter adapter = new XMLReaderAdapter();
     }
 }
-

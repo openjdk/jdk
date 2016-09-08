@@ -148,4 +148,3 @@ public class ValidatorHandlerTest {
     private Schema schema;
 
 }
-

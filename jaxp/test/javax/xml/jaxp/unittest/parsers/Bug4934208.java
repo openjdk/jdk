@@ -74,4 +74,3 @@ public class Bug4934208 {
         r.parse(is);
     }
 }
-
