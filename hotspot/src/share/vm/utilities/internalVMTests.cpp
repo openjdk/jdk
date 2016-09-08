@@ -64,7 +64,6 @@ void InternalVMTests::run() {
   run_unit_test(Test_logstream);
   run_unit_test(Test_loghandle);
   run_unit_test(Test_logtargethandle);
-  run_unit_test(Test_log_gctracetime);
   run_unit_test(Test_configure_stdout);
   run_unit_test(Test_logconfiguration_subscribe);
   run_unit_test(Test_log_prefix);
