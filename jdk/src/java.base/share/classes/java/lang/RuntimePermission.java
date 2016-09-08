@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -323,11 +323,9 @@ import java.util.StringTokenizer;
  *   <td>usePolicy</td>
  *   <td>Granting this permission disables the Java Plug-In's default
  *   security prompting behavior.</td>
- *   <td>For more information, refer to Java Plug-In's guides, <a href=
- *   "../../../technotes/guides/plugin/developer_guide/security.html">
- *   Applet Security Basics</a> and <a href=
- *   "../../../technotes/guides/plugin/developer_guide/rsa_how.html#use">
- *   usePolicy Permission</a>.</td>
+ *   <td>For more information, refer to the <a href=
+ *   "../../../technotes/guides/deploy/index.html">deployment guide</a>.
+ *   </td>
  * </tr>
  * <tr>
  *   <td>manageProcess</td>
