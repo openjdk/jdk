@@ -59,13 +59,6 @@ void InternalVMTests::run() {
   run_unit_test(TestOldSize_test);
   run_unit_test(TestBitMap_test);
   run_unit_test(ObjectMonitor_test);
-  run_unit_test(Test_logtarget);
-  run_unit_test(Test_loghandle);
-  run_unit_test(Test_logtargethandle);
-  run_unit_test(Test_configure_stdout);
-  run_unit_test(Test_logconfiguration_subscribe);
-  run_unit_test(Test_log_prefix);
-  run_unit_test(Test_log_big);
   run_unit_test(DirectivesParser_test);
 #if INCLUDE_VM_STRUCTS
   run_unit_test(VMStructs_test);
