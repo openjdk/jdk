@@ -59,7 +59,6 @@ void InternalVMTests::run() {
   run_unit_test(TestOldSize_test);
   run_unit_test(TestBitMap_test);
   run_unit_test(ObjectMonitor_test);
-  run_unit_test(Test_log_tag_combinations_limit);
   run_unit_test(Test_logtarget);
   run_unit_test(Test_logstream);
   run_unit_test(Test_loghandle);
@@ -68,8 +67,6 @@ void InternalVMTests::run() {
   run_unit_test(Test_logconfiguration_subscribe);
   run_unit_test(Test_log_prefix);
   run_unit_test(Test_log_big);
-  run_unit_test(Test_logtagset_duplicates);
-  run_unit_test(Test_logtagset_descriptions);
   run_unit_test(Test_log_file_startup_rotation);
   run_unit_test(Test_log_file_startup_truncation);
   run_unit_test(Test_invalid_log_file);

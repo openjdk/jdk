@@ -50,13 +50,6 @@
 #define assert_char_not_in(c, s) \
   assert(strchr(s, c) == NULL, "Expected '%s' to *not* contain character '%c'", s, c)
 
-void Test_log_tag_combinations_limit() {
-  assert(LogTagLevelExpression::MaxCombinations > LogTagSet::ntagsets(),
-      "Combination limit (" SIZE_FORMAT ") not sufficient "
-      "for configuring all available tag sets (" SIZE_FORMAT ")",
-      LogTagLevelExpression::MaxCombinations, LogTagSet::ntagsets());
-}
-
 // Read a complete line from fp and return it as a resource allocated string.
 // Returns NULL on EOF.
 static char* read_line(FILE* fp) {
@@ -627,51 +620,6 @@ void Test_log_big() {
   fclose(fp);
 }
 
-void Test_logtagset_duplicates() {
-  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
-    char ts_name[512];
-    ts->label(ts_name, sizeof(ts_name), ",");
-
-    // verify that NO_TAG is never followed by a real tag
-    for (size_t i = 0; i < LogTag::MaxTags; i++) {
-      if (ts->tag(i) == LogTag::__NO_TAG) {
-        for (i++; i < LogTag::MaxTags; i++) {
-          assert(ts->tag(i) == LogTag::__NO_TAG,
-                 "NO_TAG was followed by a real tag (%s) in tagset %s",
-                 LogTag::name(ts->tag(i)), ts_name);
-        }
-      }
-    }
-
-    // verify that there are no duplicate tagsets (same tags in different order)
-    for (LogTagSet* other = ts->next(); other != NULL; other = other->next()) {
-      if (ts->ntags() != other->ntags()) {
-        continue;
-      }
-      bool equal = true;
-      for (size_t i = 0; i < ts->ntags(); i++) {
-        LogTagType tag = ts->tag(i);
-        if (!other->contains(tag)) {
-          equal = false;
-          break;
-        }
-      }
-      // Since tagsets are implemented using template arguments, using both of
-      // the (logically equivalent) tagsets (t1, t2) and (t2, t1) somewhere will
-      // instantiate two different LogTagSetMappings. This causes multiple
-      // tagset instances to be created for the same logical set. We want to
-      // avoid this to save time, memory and prevent any confusion around it.
-      if (equal) {
-        char other_name[512];
-        other->label(other_name, sizeof(other_name), ",");
-        assert(false, "duplicate LogTagSets found: '%s' vs '%s' "
-               "(tags must always be specified in the same order for each tagset)",
-               ts_name, other_name);
-      }
-    }
-  }
-}
-
 #define Test_logtarget_string_literal "First line"
 
 
@@ -953,28 +901,4 @@ void Test_invalid_log_file() {
   remove(target_name);
 }
 
-// Ensure -Xlog:help and LogConfiguration::describe contain tagset descriptions
-void Test_logtagset_descriptions() {
-  for (LogTagSetDescription* d = tagset_descriptions; d->tagset != NULL; d++) {
-    char expected[1024];
-    d->tagset->label(expected, sizeof(expected), "+");
-    jio_snprintf(expected + strlen(expected),
-                 sizeof(expected) - strlen(expected),
-                 ": %s", d->descr);
-
-    ResourceMark rm;
-    stringStream ss;
-    LogConfiguration::describe(&ss);
-    assert(strstr(ss.as_string(), expected) != NULL,
-           "missing log tag set descriptions in LogConfiguration::describe");
-
-    TestLogFile file("log_tagset_descriptions");
-    FILE* fp = fopen(file.name(), "w+");
-    assert(fp != NULL, "File open error");
-    LogConfiguration::print_command_line_help(fp);
-    fclose(fp);
-    assert(number_of_lines_with_substring_in_file(file.name(), expected) > 0,
-           "missing log tag set descriptions in -Xlog:help output");
-  }
-}
 #endif // PRODUCT
