@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8141092 8153761
+ * @bug 8131025 8141092 8153761
  * @summary Test Completion
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -609,5 +609,27 @@ public class CompletionSuggestionTest extends KullaTesting {
         Field keepParameterNames = getAnalysis().getClass().getDeclaredField("keepParameterNames");
         keepParameterNames.setAccessible(true);
         keepParameterNames.set(getAnalysis(), new String[0]);
+    }
+
+    public void testBrokenClassFile2() throws IOException {
+        Path broken = outDir.resolve("broken");
+        compiler.compile(broken,
+                "package p;\n" +
+                "public class BrokenA {\n" +
+                "}",
+                "package p.q;\n" +
+                "public class BrokenB {\n" +
+                "}",
+                "package p;\n" +
+                "public class BrokenC {\n" +
+                "}");
+        Path cp = compiler.getPath(broken);
+        Path target = cp.resolve("p").resolve("BrokenB.class");
+        Files.deleteIfExists(target);
+        Files.move(cp.resolve("p").resolve("q").resolve("BrokenB.class"), target);
+        addToClasspath(cp);
+
+        assertEval("import p.*;");
+        assertCompletion("Broke|", "BrokenA", "BrokenC");
     }
 }
