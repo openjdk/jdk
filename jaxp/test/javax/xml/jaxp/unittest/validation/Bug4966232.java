@@ -75,4 +75,3 @@ public class Bug4966232 {
         Assert.assertNotNull(s);
     }
 }
-

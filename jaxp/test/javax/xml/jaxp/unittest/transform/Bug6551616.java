@@ -68,4 +68,3 @@ public class Bug6551616 {
         // if it doesn't blow up, it succeeded.
     }
 }
-

@@ -246,5 +246,3 @@ public class XMLFilterTest {
         }
     }
 }
-
-
