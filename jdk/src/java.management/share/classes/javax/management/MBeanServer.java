@@ -655,6 +655,8 @@ public interface MBeanServer extends MBeanServerConnection {
      * used for the de-serialization.
      * @param data The byte array to be de-sererialized.
      *
+     * @implSpec This method throws {@link UnsupportedOperationException} by default.
+     *
      * @return The de-serialized object stream.
      *
      * @exception InstanceNotFoundException The MBean specified is not
@@ -665,7 +667,7 @@ public interface MBeanServer extends MBeanServerConnection {
      * @deprecated Use {@link #getClassLoaderFor getClassLoaderFor} to
      * obtain the appropriate class loader for deserialization.
      */
-    @Deprecated
+    @Deprecated(since="1.5")
     default public ObjectInputStream deserialize(ObjectName name, byte[] data)
             throws InstanceNotFoundException, OperationsException {
         throw new UnsupportedOperationException("Not supported.");
@@ -683,6 +685,8 @@ public interface MBeanServer extends MBeanServerConnection {
      * used for the de-serialization.
      * @param data The byte array to be de-sererialized.
      *
+     * @implSpec This method throws {@link UnsupportedOperationException} by default.
+     *
      * @return  The de-serialized object stream.
      *
      * @exception OperationsException Any of the usual Input/Output
@@ -693,7 +697,7 @@ public interface MBeanServer extends MBeanServerConnection {
      * @deprecated Use {@link #getClassLoaderRepository} to obtain the
      * class loader repository and use it to deserialize.
      */
-    @Deprecated
+    @Deprecated(since="1.5")
     default public ObjectInputStream deserialize(String className, byte[] data)
             throws OperationsException, ReflectionException {
         throw new UnsupportedOperationException("Not supported.");
@@ -714,6 +718,8 @@ public interface MBeanServer extends MBeanServerConnection {
      * loading the specified class.  If null, the MBean Server's class
      * loader will be used.
      *
+     * @implSpec This method throws {@link UnsupportedOperationException} by default.
+     *
      * @return  The de-serialized object stream.
      *
      * @exception InstanceNotFoundException The specified class loader
@@ -726,7 +732,7 @@ public interface MBeanServer extends MBeanServerConnection {
      * @deprecated Use {@link #getClassLoader getClassLoader} to obtain
      * the class loader for deserialization.
      */
-    @Deprecated
+    @Deprecated(since="1.5")
     default public ObjectInputStream deserialize(String className,
                                          ObjectName loaderName,
                                          byte[] data)
