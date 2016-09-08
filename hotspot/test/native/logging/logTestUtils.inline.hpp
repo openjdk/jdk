@@ -48,6 +48,26 @@ static inline void delete_file(const char* filename) {
       << os::strerror(errno) << " (" << errno << ")";
 }
 
+static inline void create_directory(const char* name) {
+  assert(!file_exists(name), "can't create directory: %s already exists", name);
+  bool failed;
+#ifdef _WINDOWS
+  failed = !CreateDirectory(name, NULL);
+#else
+  failed = mkdir(name, 0777);
+#endif
+  assert(!failed, "failed to create directory %s", name);
+}
+
+static inline void init_log_file(const char* filename, const char* options = "") {
+  LogStreamHandle(Error, logging) stream;
+  bool success = LogConfiguration::parse_log_arguments(filename, "logging=trace", "", options, &stream);
+  guarantee(success, "Failed to initialize log file '%s' with options '%s'", filename, options);
+  log_debug(logging)("%s", LOG_TEST_STRING_LITERAL);
+  success = LogConfiguration::parse_log_arguments(filename, "all=off", "", "", &stream);
+  guarantee(success, "Failed to disable logging to file '%s'", filename);
+}
+
 // Read a complete line from fp and return it as a resource allocated string.
 // Returns NULL on EOF.
 static inline char* read_line(FILE* fp) {
