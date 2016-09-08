@@ -28,6 +28,7 @@
  * @bug 8152817
  * @summary Make sure that resource bundles in the jdk.localedata module are
  *          loaded under a security manager.
+ * @modules jdk.localedata
  * @run main/othervm -Djava.locale.providers=COMPAT
  *      -Djava.security.debug=access,failure,codebase=jrt:/jdk.localedata Bug8152817
  */
