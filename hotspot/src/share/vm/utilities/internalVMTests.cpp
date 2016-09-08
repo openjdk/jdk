@@ -67,9 +67,6 @@ void InternalVMTests::run() {
   run_unit_test(Test_logconfiguration_subscribe);
   run_unit_test(Test_log_prefix);
   run_unit_test(Test_log_big);
-  run_unit_test(Test_log_file_startup_rotation);
-  run_unit_test(Test_log_file_startup_truncation);
-  run_unit_test(Test_invalid_log_file);
   run_unit_test(DirectivesParser_test);
 #if INCLUDE_VM_STRUCTS
   run_unit_test(VMStructs_test);
