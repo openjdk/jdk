@@ -296,6 +296,81 @@ TEST_VM_F(LogConfigurationTest, parse_log_arguments) {
   }
 }
 
+TEST_F(LogConfigurationTest, configure_stdout) {
+  // Start out with all logging disabled
+  LogConfiguration::disable_logging();
+
+  // Enable 'logging=info', verifying it has been set
+  LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(logging));
+  EXPECT_TRUE(log_is_enabled(Info, logging));
+  EXPECT_FALSE(log_is_enabled(Debug, logging));
+  EXPECT_FALSE(log_is_enabled(Info, gc));
+  LogTagSet* logging_ts = &LogTagSetMapping<LOG_TAGS(logging)>::tagset();
+  EXPECT_EQ(LogLevel::Info, logging_ts->level_for(LogOutput::Stdout));
+
+  // Enable 'gc=debug' (no wildcard), verifying no other tags are enabled
+  LogConfiguration::configure_stdout(LogLevel::Debug, true, LOG_TAGS(gc));
+  EXPECT_TRUE(log_is_enabled(Debug, gc));
+  EXPECT_TRUE(log_is_enabled(Info, logging));
+  EXPECT_FALSE(log_is_enabled(Debug, gc, heap));
+  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    if (ts->contains(PREFIX_LOG_TAG(gc))) {
+      if (ts->ntags() == 1) {
+        EXPECT_EQ(LogLevel::Debug, ts->level_for(LogOutput::Stdout));
+      } else {
+        EXPECT_EQ(LogLevel::Off, ts->level_for(LogOutput::Stdout));
+      }
+    }
+  }
+
+  // Enable 'gc*=trace' (with wildcard), verifying that all tag combinations with gc are enabled (gc+...)
+  LogConfiguration::configure_stdout(LogLevel::Trace, false, LOG_TAGS(gc));
+  EXPECT_TRUE(log_is_enabled(Trace, gc));
+  EXPECT_TRUE(log_is_enabled(Trace, gc, heap));
+  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    if (ts->contains(PREFIX_LOG_TAG(gc))) {
+      EXPECT_EQ(LogLevel::Trace, ts->level_for(LogOutput::Stdout));
+    } else if (ts == logging_ts) {
+      // Previous setting for 'logging' should remain
+      EXPECT_EQ(LogLevel::Info, ts->level_for(LogOutput::Stdout));
+    } else {
+      EXPECT_EQ(LogLevel::Off, ts->level_for(LogOutput::Stdout));
+    }
+  }
+
+  // Disable 'gc*' and 'logging', verifying all logging is properly disabled
+  LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(logging));
+  EXPECT_FALSE(log_is_enabled(Error, logging));
+  LogConfiguration::configure_stdout(LogLevel::Off, false, LOG_TAGS(gc));
+  EXPECT_FALSE(log_is_enabled(Error, gc));
+  EXPECT_FALSE(log_is_enabled(Error, gc, heap));
+  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    EXPECT_EQ(LogLevel::Off, ts->level_for(LogOutput::Stdout));
+  }
+}
+
+static int Test_logconfiguration_subscribe_triggered = 0;
+static void Test_logconfiguration_subscribe_helper() {
+  Test_logconfiguration_subscribe_triggered++;
+}
+
+TEST_F(LogConfigurationTest, subscribe) {
+  ResourceMark rm;
+  Log(logging) log;
+  set_log_config("stdout", "logging*=trace");
+
+  LogConfiguration::register_update_listener(&Test_logconfiguration_subscribe_helper);
+
+  LogConfiguration::parse_log_arguments("stdout", "logging=trace", NULL, NULL, log.error_stream());
+  ASSERT_EQ(1, Test_logconfiguration_subscribe_triggered);
+
+  LogConfiguration::configure_stdout(LogLevel::Debug, true, LOG_TAGS(gc));
+  ASSERT_EQ(2, Test_logconfiguration_subscribe_triggered);
+
+  LogConfiguration::disable_logging();
+  ASSERT_EQ(3, Test_logconfiguration_subscribe_triggered);
+}
+
 TEST_VM_F(LogConfigurationTest, parse_invalid_tagset) {
   static const char* invalid_tagset = "logging+start+exit+safepoint+gc"; // Must not exist for test to function.
 
