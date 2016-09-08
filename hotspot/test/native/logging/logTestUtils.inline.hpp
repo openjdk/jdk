@@ -21,6 +21,10 @@
  * questions.
  *
  */
+#include "logging/log.hpp"
+#include "logging/logConfiguration.hpp"
+#include "logging/logStream.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
@@ -42,4 +46,55 @@ static inline void delete_file(const char* filename) {
   int ret = remove(filename);
   EXPECT_TRUE(ret == 0 || errno == ENOENT) << "failed to remove file '" << filename << "': "
       << os::strerror(errno) << " (" << errno << ")";
+}
+
+// Read a complete line from fp and return it as a resource allocated string.
+// Returns NULL on EOF.
+static inline char* read_line(FILE* fp) {
+  assert(fp != NULL, "invalid fp");
+  int buflen = 512;
+  char* buf = NEW_RESOURCE_ARRAY(char, buflen);
+  long pos = ftell(fp);
+
+  char* ret = fgets(buf, buflen, fp);
+  while (ret != NULL && buf[strlen(buf) - 1] != '\n' && !feof(fp)) {
+    // retry with a larger buffer
+    buf = REALLOC_RESOURCE_ARRAY(char, buf, buflen, buflen * 2);
+    buflen *= 2;
+    // rewind to beginning of line
+    fseek(fp, pos, SEEK_SET);
+    // retry read with new buffer
+    ret = fgets(buf, buflen, fp);
+  }
+  return ret;
+}
+
+static bool file_contains_substrings_in_order(const char* filename, const char* substrs[]) {
+  FILE* fp = fopen(filename, "r");
+  assert(fp != NULL, "error opening file %s: %s", filename, strerror(errno));
+
+  size_t idx = 0;
+  while (substrs[idx] != NULL) {
+    ResourceMark rm;
+    char* line = read_line(fp);
+    if (line == NULL) {
+      break;
+    }
+    for (char* match = strstr(line, substrs[idx]); match != NULL;) {
+      size_t match_len = strlen(substrs[idx]);
+      idx++;
+      if (substrs[idx] == NULL) {
+        break;
+      }
+      match = strstr(match + match_len, substrs[idx]);
+    }
+  }
+
+  fclose(fp);
+  return substrs[idx] == NULL;
+}
+
+static inline bool file_contains_substring(const char* filename, const char* substr) {
+  const char* strs[] = {substr, NULL};
+  return file_contains_substrings_in_order(filename, strs);
 }
