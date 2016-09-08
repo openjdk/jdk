@@ -205,4 +205,3 @@ public class Bug6467424Test {
         }
     }
 }
-

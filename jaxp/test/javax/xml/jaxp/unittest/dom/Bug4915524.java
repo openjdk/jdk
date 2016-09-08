@@ -81,4 +81,3 @@ public class Bug4915524 {
         return docBuilder.parse(source);
     }
 }
-
