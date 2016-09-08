@@ -82,6 +82,14 @@ ifeq ($(MODULE), java.base)
   endif
 endif
 
+ifeq ($(MODULE), jdk.scripting.nashorn.shell)
+  JMOD_FLAGS += --main-class jdk.nashorn.tools.jjs.Main
+endif
+
+ifeq ($(MODULE), jdk.scripting.nashorn)
+  JMOD_FLAGS += --main-class jdk.nashorn.tools.Shell
+endif
+
 # Changes to the jmod tool itself should also trigger a rebuild of all jmods.
 # The variable JMOD_CMD could contain an environment variable assignment before
 # the actual command. Filter that out using wildcard before adding to DEPS.
