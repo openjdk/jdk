@@ -22,51 +22,32 @@
  *
  */
 
-/**
- * @test
- * @bug 6869327
- * @summary Test that C2 flag UseCountedLoopSafepoints ensures a safepoint is kept in a CountedLoop
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- * @ignore 8146096
- * @run driver compiler.loopopts.UseCountedLoopSafepoints
- */
-
 package compiler.loopopts;
 
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
-
-import java.util.concurrent.atomic.AtomicLong;
+import java.lang.reflect.Method;
+import sun.hotspot.WhiteBox;
+import jdk.test.lib.Asserts;
+import compiler.whitebox.CompilerWhiteBoxTest;
 
 public class UseCountedLoopSafepoints {
-    private static final AtomicLong _num = new AtomicLong(0);
+    private static final WhiteBox WB = WhiteBox.getWhiteBox();
+    private static final String METHOD_NAME = "testMethod";
 
-    // Uses the fact that an EnableBiasedLocking vmop will be started
-    // after 500ms, while we are still in the loop. If there is a
-    // safepoint in the counted loop, then we will reach safepoint
-    // very quickly. Otherwise SafepointTimeout will be hit.
+    private long accum = 0;
+
     public static void main (String args[]) throws Exception {
-        if (args.length == 1) {
-            final int loops = Integer.parseInt(args[0]);
-            for (int i = 0; i < loops; i++) {
-                _num.addAndGet(1);
-            }
-        } else {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                    "-XX:+IgnoreUnrecognizedVMOptions",
-                    "-XX:-TieredCompilation",
-                    "-XX:+UseBiasedLocking",
-                    "-XX:BiasedLockingStartupDelay=500",
-                    "-XX:+SafepointTimeout",
-                    "-XX:SafepointTimeoutDelay=2000",
-                    "-XX:+UseCountedLoopSafepoints",
-                    UseCountedLoopSafepoints.class.getName(),
-                    "2000000000"
-                    );
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldNotContain("Timeout detected");
-            output.shouldHaveExitValue(0);
+        new UseCountedLoopSafepoints().testMethod();
+        Method m = UseCountedLoopSafepoints.class.getDeclaredMethod(METHOD_NAME);
+        String directive = "[{ match: \"" + UseCountedLoopSafepoints.class.getName().replace('.', '/')
+                + "." + METHOD_NAME + "\", " + "BackgroundCompilation: false }]";
+        Asserts.assertTrue(WB.addCompilerDirective(directive) == 1, "Can't add compiler directive");
+        Asserts.assertTrue(WB.enqueueMethodForCompilation(m,
+                CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION), "Can't enqueue method");
+    }
+
+    private void testMethod() {
+        for (int i = 0; i < 100; i++) {
+            accum += accum << 5 + accum >> 4 - accum >>> 5;
         }
     }
 }
