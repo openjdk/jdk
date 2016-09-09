@@ -3210,14 +3210,14 @@ void LIRGenerator::profile_arguments(ProfileCall* x) {
       Bytecodes::Code bc = x->method()->java_code_at_bci(bci);
       int start = 0;
       int stop = data->is_CallTypeData() ? ((ciCallTypeData*)data)->number_of_arguments() : ((ciVirtualCallTypeData*)data)->number_of_arguments();
-      if (x->inlined() && x->callee()->is_static() && Bytecodes::has_receiver(bc)) {
+      if (x->callee()->is_loaded() && x->callee()->is_static() && Bytecodes::has_receiver(bc)) {
         // first argument is not profiled at call (method handle invoke)
         assert(x->method()->raw_code_at_bci(bci) == Bytecodes::_invokehandle, "invokehandle expected");
         start = 1;
       }
       ciSignature* callee_signature = x->callee()->signature();
       // method handle call to virtual method
-      bool has_receiver = x->inlined() && !x->callee()->is_static() && !Bytecodes::has_receiver(bc);
+      bool has_receiver = x->callee()->is_loaded() && !x->callee()->is_static() && !Bytecodes::has_receiver(bc);
       ciSignatureStream callee_signature_stream(callee_signature, has_receiver ? x->callee()->holder() : NULL);
 
       bool ignored_will_link;
