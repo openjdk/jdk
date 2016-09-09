@@ -1922,9 +1922,14 @@ public abstract class ClassLoader {
      * @return The {@code Package} of the given name defined by this class loader,
      *         or {@code null} if not found
      *
+     * @throws  NullPointerException
+     *          if {@code name} is {@code null}.
+     *
      * @since  9
      */
     public final Package getDefinedPackage(String name) {
+        Objects.requireNonNull(name, "name cannot be null");
+
         NamedPackage p = packages.get(name);
         if (p == null)
             return null;
@@ -1961,6 +1966,9 @@ public abstract class ClassLoader {
      *
      * @return The {@code Package} corresponding to the given name defined by
      *         this class loader or its ancestors, or {@code null} if not found.
+     *
+     * @throws  NullPointerException
+     *          if {@code name} is {@code null}.
      *
      * @deprecated
      * If multiple class loaders delegate to each other and define classes
