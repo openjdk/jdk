@@ -4215,7 +4215,7 @@ jint os::init_2(void) {
   min_stack_allowed = align_size_up(min_stack_allowed, os::vm_page_size());
 
   if (actual_reserve_size < min_stack_allowed) {
-    tty->print_cr("\nThe stack size specified is too small, "
+    tty->print_cr("\nThe Java thread stack size specified is too small. "
                   "Specify at least %dk",
                   min_stack_allowed / K);
     return JNI_ERR;
