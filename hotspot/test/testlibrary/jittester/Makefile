@@ -56,7 +56,6 @@ BUILD_DIR = build
 CLASSES_DIR = $(BUILD_DIR)/classes
 SRC_DIR = src
 TEST_DIR = test
-DRIVER_DIR = $(TESTBASE_DIR)/jdk/test/lib/jittester/jtreg
 MANIFEST = manifest.mf
 APPLICATION_ARGS += \
     --property-file $(PROPERTY_FILE) \
@@ -118,19 +117,18 @@ cleantmp:
 	@rm filelist
 	@rm -rf $(CLASSES_DIR)
 
-copytestlibrary: $(DRIVER_DIR)
-	@cp -r src/jdk/test/lib/jittester/jtreg/*.java $(DRIVER_DIR)
+copytestlibrary: $(TESTBASE_DIR)/jdk/test/lib/jittester/jtreg
+	@cp -r src/jdk/test/lib/jittester/jtreg/*.java $(TESTBASE_DIR)/jdk/test/lib/jittester/jtreg
+	@cp -r $(TESTLIBRARY_SRC_DIR) $(TESTBASE_DIR)/jdk/test/
 
 testgroup: $(TESTBASE_DIR)
 	@echo 'jittester_all = \\' > $(TESTGROUP_FILE)
 	@echo '	/' >> $(TESTGROUP_FILE)
 	@echo '' >> $(TESTGROUP_FILE)
-	@echo 'main = \\' >> $(TESTGROUP_FILE)
-	@echo '	Test_0.java' >> $(TESTGROUP_FILE)
 
 testroot: $(TESTBASE_DIR)
 	@echo 'groups=TEST.groups' > $(TESTROOT_FILE)
 
-$(TESTBASE_DIR) $(DIST_DIR) $(DRIVER_DIR):
+$(TESTBASE_DIR) $(DIST_DIR) $(TESTBASE_DIR)/jdk/test/lib/jittester/jtreg:
 	$(shell if [ ! -d $@ ]; then mkdir -p $@; fi)
 

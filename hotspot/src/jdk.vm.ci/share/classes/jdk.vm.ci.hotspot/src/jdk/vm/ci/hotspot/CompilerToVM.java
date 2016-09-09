@@ -366,8 +366,8 @@ final class CompilerToVM {
      * {@code exactReceiver}.
      *
      * @param caller the caller or context type used to perform access checks
-     * @return the link-time resolved method (might be abstract) or {@code 0} if it can not be
-     *         linked
+     * @return the link-time resolved method (might be abstract) or {@code null} if it is either a
+     *         signature polymorphic method or can not be linked.
      */
     native HotSpotResolvedJavaMethodImpl resolveMethod(HotSpotResolvedObjectTypeImpl exactReceiver, HotSpotResolvedJavaMethodImpl method, HotSpotResolvedObjectTypeImpl caller);
 
