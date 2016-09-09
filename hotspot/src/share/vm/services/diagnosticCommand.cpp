@@ -277,11 +277,12 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
 
   char *suffix = strrchr(_libpath.value(), '.');
   bool is_java_agent = (suffix != NULL) && (strncmp(".jar", suffix, 4) == 0);
+  jint result = JNI_ERR;
 
   if (is_java_agent) {
     if (_option.value() == NULL) {
-      JvmtiExport::load_agent_library("instrument", "false",
-                                      _libpath.value(), output());
+      result = JvmtiExport::load_agent_library("instrument", "false",
+                                                _libpath.value(), output());
     } else {
       size_t opt_len = strlen(_libpath.value()) + strlen(_option.value()) + 2;
       if (opt_len > 4096) {
@@ -298,14 +299,18 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
       }
 
       jio_snprintf(opt, opt_len, "%s=%s", _libpath.value(), _option.value());
-      JvmtiExport::load_agent_library("instrument", "false", opt, output());
+      result = JvmtiExport::load_agent_library("instrument", "false",
+                                                opt, output());
 
       os::free(opt);
     }
   } else {
-    JvmtiExport::load_agent_library(_libpath.value(), "true",
-                                    _option.value(), output());
+    result = JvmtiExport::load_agent_library(_libpath.value(), "true",
+                                             _option.value(), output());
   }
+
+  output()->print_cr("JVMTI agent attach %s.",
+                                  (result == JNI_OK) ? "succeeded" : "failed");
 }
 
 int JVMTIAgentLoadDCmd::num_arguments() {
