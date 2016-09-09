@@ -75,6 +75,7 @@ public class OverflowCodeCacheTest {
         System.out.printf("type %s%n", type);
         System.out.println("allocating till possible...");
         ArrayList<Long> blobs = new ArrayList<>();
+        int compilationActivityMode = -1;
         try {
             long addr;
             int size = (int) (getHeapSize() >> 7);
@@ -88,13 +89,16 @@ public class OverflowCodeCacheTest {
                             type + " doesn't allow using " + actualType + " when overflow");
                 }
             }
-            Asserts.assertNotEquals(WHITE_BOX.getCompilationActivityMode(), 1 /* run_compilation*/,
-                    "Compilation must be disabled when CodeCache(CodeHeap) overflows");
+            /* now, remember compilationActivityMode to check it later, after freeing, since we
+               possibly have no free cache for futher work */
+            compilationActivityMode = WHITE_BOX.getCompilationActivityMode();
         } finally {
             for (Long blob : blobs) {
                 WHITE_BOX.freeCodeBlob(blob);
             }
         }
+        Asserts.assertNotEquals(compilationActivityMode, 1 /* run_compilation*/,
+                "Compilation must be disabled when CodeCache(CodeHeap) overflows");
     }
 
     private long getHeapSize() {

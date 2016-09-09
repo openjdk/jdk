@@ -2475,6 +2475,28 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
       // load value
       switch (type) {
       case T_BOOLEAN:
+      {
+        // Normalize the value returned by getBoolean in the following cases
+        if (mismatched ||
+            heap_base_oop == top() ||                            // - heap_base_oop is NULL or
+            (can_access_non_heap && alias_type->field() == NULL) // - heap_base_oop is potentially NULL
+                                                                 //   and the unsafe access is made to large offset
+                                                                 //   (i.e., larger than the maximum offset necessary for any
+                                                                 //   field access)
+            ) {
+          IdealKit ideal = IdealKit(this);
+#define __ ideal.
+          IdealVariable normalized_result(ideal);
+          __ declarations_done();
+          __ set(normalized_result, p);
+          __ if_then(p, BoolTest::ne, ideal.ConI(0));
+          __ set(normalized_result, ideal.ConI(1));
+          ideal.end_if();
+          final_sync(ideal);
+          p = __ value(normalized_result);
+#undef __
+        }
+      }
       case T_CHAR:
       case T_BYTE:
       case T_SHORT:
