@@ -27,6 +27,7 @@ package java.lang;
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -46,12 +47,16 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.Stack;
 import java.util.NoSuchElementException;
 import java.util.Vector;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.module.ServicesCatalog;
@@ -1341,6 +1346,57 @@ public abstract class ClassLoader {
         tmp[1] = findResources(name);
 
         return new CompoundEnumeration<>(tmp);
+    }
+
+    /**
+     * Returns a stream whose elements are the URLs of all the resources with
+     * the given name. A resource is some data (images, audio, text, etc) that
+     * can be accessed by class code in a way that is independent of the
+     * location of the code.
+     *
+     * Resources in a named module are private to that module. This method does
+     * not find resources in named modules.
+     *
+     * <p> The name of a resource is a {@code /}-separated path name that
+     * identifies the resource.
+     *
+     * <p> The search order is described in the documentation for {@link
+     * #getResource(String)}.
+     *
+     * <p> The resources will be located when the returned stream is evaluated.
+     * If the evaluation results in an {@code IOException} then the I/O
+     * exception is wrapped in an {@link UncheckedIOException} that is then
+     * thrown.
+     *
+     * @apiNote When overriding this method it is recommended that an
+     * implementation ensures that any delegation is consistent with the {@link
+     * #getResource(java.lang.String) getResource(String)} method. This should
+     * ensure that the first element returned by the stream is the same
+     * resource that the {@code getResource(String)} method would return.
+     *
+     * @param  name
+     *         The resource name
+     *
+     * @return  A stream of resource {@link java.net.URL URL} objects. If no
+     *          resources could  be found, the stream will be empty.  Resources
+     *          that the class loader doesn't have access to will not be in the
+     *          stream.
+     *
+     * @see  #findResources(String)
+     *
+     * @since  9
+     */
+    public Stream<URL> resources(String name) {
+        int characteristics = Spliterator.NONNULL | Spliterator.IMMUTABLE;
+        Supplier<Spliterator<URL>> si = () -> {
+            try {
+                return Spliterators.spliteratorUnknownSize(
+                    getResources(name).asIterator(), characteristics);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        };
+        return StreamSupport.stream(si, characteristics, false);
     }
 
     /**
