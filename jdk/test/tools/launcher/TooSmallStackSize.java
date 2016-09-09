@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,11 @@
  * stack size for the platform (as provided by the JVM error message when a very
  * small stack is used), and then verify that the JVM can be launched with that stack
  * size without a crash or any error messages.
+ *
+ * Note: The '-Xss<size>' and '-XX:ThreadStackSize=<k-bytes>' options
+ * both control Java thread stack size. This repo's version of the test
+ * exercises the '-Xss' option. The hotspot repo's version of the test
+ * exercises the '-XX:ThreadStackSize' VM option.
  */
 
 public class TooSmallStackSize extends TestHelper {
@@ -59,7 +64,7 @@ public class TooSmallStackSize extends TestHelper {
     static String getMinStackAllowed(TestResult tr) {
         /*
          * The JVM output will contain in one of the lines:
-         *   "The stack size specified is too small, Specify at least 100k"
+         *   "The Java thread stack size specified is too small. Specify at least 100k"
          * Although the actual size will vary. We need to extract this size
          * string from the output and return it.
          */
@@ -73,6 +78,9 @@ public class TooSmallStackSize extends TestHelper {
             }
         }
 
+        System.out.println("Expect='" + matchStr + "'");
+        System.out.println("Actual:");
+        printTestOutput(tr);
         System.out.println("FAILED: Could not get the stack size from the output");
         throw new RuntimeException("test fails");
     }
@@ -96,11 +104,15 @@ public class TooSmallStackSize extends TestHelper {
             System.out.println("PASSED: got no error message with stack size of " + stackSize);
             min_stack_allowed = stackSize;
         } else {
-            if (tr.contains("The stack size specified is too small")) {
+            String matchStr = "The Java thread stack size specified is too small";
+            if (tr.contains(matchStr)) {
                 System.out.println("PASSED: got expected error message with stack size of " + stackSize);
                 min_stack_allowed = getMinStackAllowed(tr);
             } else {
                 // Likely a crash
+                System.out.println("Expect='" + matchStr + "'");
+                System.out.println("Actual:");
+                printTestOutput(tr);
                 System.out.println("FAILED: Did not get expected error message with stack size of " + stackSize);
                 throw new RuntimeException("test fails");
             }
@@ -123,6 +135,8 @@ public class TooSmallStackSize extends TestHelper {
             System.out.println("PASSED: VM launched with minimum allowed stack size of " + stackSize);
         } else {
             // Likely a crash
+            System.out.println("Test output:");
+            printTestOutput(tr);
             System.out.println("FAILED: VM failed to launch with minimum allowed stack size of " + stackSize);
             throw new RuntimeException("test fails");
         }
