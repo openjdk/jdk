@@ -630,6 +630,19 @@ final class ProcessImpl extends Process {
         return !hasExited;
     }
 
+    /**
+     * The {@code toString} method returns a string consisting of
+     * the native process ID of the process and the exit value of the process.
+     *
+     * @return a string representation of the object.
+     */
+    @Override
+    public String toString() {
+        return new StringBuilder("Process[pid=").append(pid)
+                .append(", exitValue=").append(hasExited ? exitcode : "\"not exited\"")
+                .append("]").toString();
+    }
+
     private static native void init();
 
     static {

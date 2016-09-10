@@ -25,7 +25,7 @@
 // key: compiler.note.verbose.resolve.multi
 // key: compiler.note.deferred.method.inst
 // key: compiler.misc.partial.inst.sig
-// options: -Xdebug:verboseResolution=applicable,success,deferred-inference
+// options: --debug:verboseResolution=applicable,success,deferred-inference
 
 class DeferredMethodInst {
 

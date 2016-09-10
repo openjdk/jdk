@@ -145,7 +145,7 @@ public class TreeEndPosTest {
             options.add(tempDir.getPath());
             options.add("-d");
             options.add(tempDir.getPath());
-            options.add("-Xshouldstop:at=GENERATE");
+            options.add("--should-stop:at=GENERATE");
 
             List<JavaFileObject> sources = new ArrayList<>();
             sources.add(src);

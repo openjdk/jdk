@@ -89,4 +89,3 @@ public class Issue47Test {
         }
     }
 }
-

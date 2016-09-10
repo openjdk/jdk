@@ -22,11 +22,15 @@
  */
 
 /*
- *@test
- *@bug 8007572 8008161
- *@summary Test whether the TimeZone generated from JSR310 tzdb is the same
- *as the one from the tz data from javazic
+ * @test
+ * @bug 8007572 8008161 8157792
+ * @summary Test whether the TimeZone generated from JSR310 tzdb is the same
+ * as the one from the tz data from javazic
  * @modules java.base/sun.util.calendar
+ * @build BackEnd Checksum DayOfWeek Gen GenDoc Main Mappings Month
+ *        Rule RuleDay RuleRec Simple TestZoneInfo310 Time Timezone
+ *        TzIDOldMapping Zone ZoneInfoFile ZoneInfoOld ZoneRec Zoneinfo
+ * @run main TestZoneInfo310
  */
 
 import java.io.File;
@@ -164,10 +168,6 @@ public class TestZoneInfo310 {
         }
 
         for (String zid : zids_new) {
-            if (zid.equals("Asia/Oral") || zid.equals("Asia/Qyzylorda")) {
-                // JDK-8157792 tracking this issue
-                continue;
-            }
             ZoneInfoOld zi = toZoneInfoOld(TimeZone.getTimeZone(zid));
             ZoneInfoOld ziOLD = (ZoneInfoOld)ZoneInfoOld.getTimeZone(zid);
             if (! zi.equalsTo(ziOLD)) {

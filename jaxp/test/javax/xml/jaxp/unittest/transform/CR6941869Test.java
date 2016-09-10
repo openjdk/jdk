@@ -76,4 +76,3 @@ public class CR6941869Test {
         }
     }
 }
-

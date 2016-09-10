@@ -319,7 +319,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
 
     // -- attach timeout support
 
-    private static long defaultAttachTimeout = 5000;
+    private static long defaultAttachTimeout = 10000;
     private volatile long attachTimeout;
 
     /*

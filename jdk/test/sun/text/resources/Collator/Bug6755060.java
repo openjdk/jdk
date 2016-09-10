@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,13 @@
 /*
  * @test
  * @bug 6755060
+ * @modules jdk.localedata
  * @summary updating collation tables for thai to make it consistent with CLDR 1.9
  */
 
-import java.text.*;
-import java.util.*;
+import java.text.Collator;
+import java.util.Arrays;
+import java.util.Locale;
 
 public class Bug6755060 {
 

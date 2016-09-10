@@ -215,4 +215,3 @@ public class DOMResultTest {
     }
 
 }
-

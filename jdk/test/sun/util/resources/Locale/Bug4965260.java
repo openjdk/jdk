@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,11 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/**
- *@test
- *@bug 4965260 8008577
- *@summary Verifies the language name of "nl" for supported locales
- *@run main/othervm -Djava.locale.providers=JRE,SPI Bug4965260
+/*
+ * @test
+ * @bug 4965260 8008577
+ * @modules jdk.localedata
+ * @summary Verifies the language name of "nl" for supported locales
+ * @run main/othervm -Djava.locale.providers=JRE,SPI Bug4965260
  */
 
 import java.util.Locale;

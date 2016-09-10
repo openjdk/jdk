@@ -882,19 +882,23 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *                                 .toString();
      * }</pre>
      *
-     * @param <R> type of the result
-     * @param supplier a function that creates a new result container. For a
-     *                 parallel execution, this function may be called
+     * @param <R> the type of the mutable result container
+     * @param supplier a function that creates a new mutable result container.
+     *                 For a parallel execution, this function may be called
      *                 multiple times and must return a fresh value each time.
      * @param accumulator an <a href="package-summary.html#Associativity">associative</a>,
      *                    <a href="package-summary.html#NonInterference">non-interfering</a>,
      *                    <a href="package-summary.html#Statelessness">stateless</a>
-     *                    function for incorporating an additional element into a result
+     *                    function that must fold an element into a result
+     *                    container.
      * @param combiner an <a href="package-summary.html#Associativity">associative</a>,
      *                    <a href="package-summary.html#NonInterference">non-interfering</a>,
      *                    <a href="package-summary.html#Statelessness">stateless</a>
-     *                    function for combining two values, which must be
-     *                    compatible with the accumulator function
+     *                    function that accepts two partial result containers
+     *                    and merges them, which must be compatible with the
+     *                    accumulator function.  The combiner function must fold
+     *                    the elements from the second result container into the
+     *                    first result container.
      * @return the result of the reduction
      */
     <R> R collect(Supplier<R> supplier,
@@ -1194,6 +1198,12 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * {@code n}, will be the result of applying the function {@code f} to the
      * element at position {@code n - 1}.
      *
+     * <p>The action of applying {@code f} for one element
+     * <a href="../concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
+     * the action of applying {@code f} for subsequent elements.  For any given
+     * element the action may be performed in whatever thread the library
+     * chooses.
+     *
      * @param <T> the type of stream elements
      * @param seed the initial element
      * @param f a function to be applied to the previous element to produce
@@ -1226,38 +1236,45 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
 
     /**
      * Returns a sequential ordered {@code Stream} produced by iterative
-     * application of a function to an initial element, conditioned on
-     * satisfying the supplied predicate.  The stream terminates as soon as
-     * the predicate returns false.
+     * application of the given {@code next} function to an initial element,
+     * conditioned on satisfying the given {@code hasNext} predicate.  The
+     * stream terminates as soon as the {@code hasNext} predicate returns false.
      *
-     * <p>
-     * {@code Stream.iterate} should produce the same sequence of elements as
+     * <p>{@code Stream.iterate} should produce the same sequence of elements as
      * produced by the corresponding for-loop:
      * <pre>{@code
-     *     for (T index=seed; predicate.test(index); index = f.apply(index)) {
+     *     for (T index=seed; hasNext.test(index); index = next.apply(index)) {
      *         ...
      *     }
      * }</pre>
      *
-     * <p>
-     * The resulting sequence may be empty if the predicate does not hold on
-     * the seed value.  Otherwise the first element will be the supplied seed
-     * value, the next element (if present) will be the result of applying the
-     * function f to the seed value, and so on iteratively until the predicate
-     * indicates that the stream should terminate.
+     * <p>The resulting sequence may be empty if the {@code hasNext} predicate
+     * does not hold on the seed value.  Otherwise the first element will be the
+     * supplied {@code seed} value, the next element (if present) will be the
+     * result of applying the {@code next} function to the {@code seed} value,
+     * and so on iteratively until the {@code hasNext} predicate indicates that
+     * the stream should terminate.
+     *
+     * <p>The action of applying the {@code hasNext} predicate to an element
+     * <a href="../concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
+     * the action of applying the {@code next} function to that element.  The
+     * action of applying the {@code next} function for one element
+     * <i>happens-before</i> the action of applying the {@code hasNext}
+     * predicate for subsequent elements.  For any given element an action may
+     * be performed in whatever thread the library chooses.
      *
      * @param <T> the type of stream elements
      * @param seed the initial element
-     * @param predicate a predicate to apply to elements to determine when the
-     *          stream must terminate.
-     * @param f a function to be applied to the previous element to produce
-     *          a new element
+     * @param hasNext a predicate to apply to elements to determine when the
+     *                stream must terminate.
+     * @param next a function to be applied to the previous element to produce
+     *             a new element
      * @return a new sequential {@code Stream}
      * @since 9
      */
-    public static<T> Stream<T> iterate(T seed, Predicate<? super T> predicate, UnaryOperator<T> f) {
-        Objects.requireNonNull(f);
-        Objects.requireNonNull(predicate);
+    public static<T> Stream<T> iterate(T seed, Predicate<? super T> hasNext, UnaryOperator<T> next) {
+        Objects.requireNonNull(next);
+        Objects.requireNonNull(hasNext);
         Spliterator<T> spliterator = new Spliterators.AbstractSpliterator<>(Long.MAX_VALUE,
                Spliterator.ORDERED | Spliterator.IMMUTABLE) {
             T prev;
@@ -1270,12 +1287,12 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
                     return false;
                 T t;
                 if (started)
-                    t = f.apply(prev);
+                    t = next.apply(prev);
                 else {
                     t = seed;
                     started = true;
                 }
-                if (!predicate.test(t)) {
+                if (!hasNext.test(t)) {
                     prev = null;
                     finished = true;
                     return false;
@@ -1290,11 +1307,11 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
                 if (finished)
                     return;
                 finished = true;
-                T t = started ? f.apply(prev) : seed;
+                T t = started ? next.apply(prev) : seed;
                 prev = null;
-                while (predicate.test(t)) {
+                while (hasNext.test(t)) {
                     action.accept(t);
-                    t = f.apply(t);
+                    t = next.apply(t);
                 }
             }
         };

@@ -53,13 +53,11 @@ import java.beans.Transient;
 import java.awt.im.InputContext;
 import java.awt.im.InputMethodRequests;
 import java.awt.dnd.DropTarget;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.AccessControlContext;
 import javax.accessibility.*;
 import java.applet.Applet;
+import javax.swing.JComponent;
 
 import sun.awt.ComponentFactory;
 import sun.security.action.GetPropertyAction;
@@ -81,6 +79,7 @@ import sun.java2d.pipe.hw.ExtendedBufferCapabilities;
 import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.*;
 import sun.awt.RequestFocusController;
 import sun.java2d.SunGraphicsEnvironment;
+import sun.swing.SwingAccessor;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -8695,6 +8694,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * the Swing package private method {@code compWriteObjectNotify}.
      */
     private void doSwingSerialization() {
+        if (!(this instanceof JComponent)) {
+            return;
+        }
         @SuppressWarnings("deprecation")
         Package swingPackage = Package.getPackage("javax.swing");
         // For Swing serialization to correctly work Swing needs to
@@ -8707,36 +8709,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
                    klass = klass.getSuperclass()) {
             if (klass.getPackage() == swingPackage &&
                       klass.getClassLoader() == null) {
-                final Class<?> swingClass = klass;
-                // Find the first override of the compWriteObjectNotify method
-                Method[] methods = AccessController.doPrivileged(
-                                                                 new PrivilegedAction<Method[]>() {
-                                                                     public Method[] run() {
-                                                                         return swingClass.getDeclaredMethods();
-                                                                     }
-                                                                 });
-                for (int counter = methods.length - 1; counter >= 0;
-                     counter--) {
-                    final Method method = methods[counter];
-                    if (method.getName().equals("compWriteObjectNotify")){
-                        // We found it, use doPrivileged to make it accessible
-                        // to use.
-                        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                                public Void run() {
-                                    method.setAccessible(true);
-                                    return null;
-                                }
-                            });
-                        // Invoke the method
-                        try {
-                            method.invoke(this, (Object[]) null);
-                        } catch (IllegalAccessException iae) {
-                        } catch (InvocationTargetException ite) {
-                        }
-                        // We're done, bail.
-                        return;
-                    }
-                }
+
+                SwingAccessor.getJComponentAccessor()
+                        .compWriteObjectNotify((JComponent) this);
+                return;
             }
         }
     }

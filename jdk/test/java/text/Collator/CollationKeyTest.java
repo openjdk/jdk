@@ -29,6 +29,7 @@
  *          RuleBasedCollationKey. This test basically tests on the two features:
  *          1. Existing code using CollationKey works (backward compatiblility)
  *          2. CollationKey can be extended by its subclass.
+ * @modules jdk.localedata
  */
 
 

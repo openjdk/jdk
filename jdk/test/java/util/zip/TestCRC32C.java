@@ -1,6 +1,3 @@
-
-import java.util.zip.CRC32C;
-
 /*
  * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -23,6 +20,8 @@ import java.util.zip.CRC32C;
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+import java.util.zip.CRC32C;
 
 /**
  * @test @summary Check that CRC-32C returns the expected CRC value for the
