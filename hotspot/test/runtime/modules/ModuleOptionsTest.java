@@ -27,10 +27,11 @@
  * @summary Test that the VM only recognizes the last specified --add-modules
  *          and --list-modules options
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 // Test that the VM behaves correctly when processing module related options.
 public class ModuleOptionsTest {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test TestEmptyBootstrapMethodsAttr
  * @bug 8041918
- * @library /testlibrary
+ * @library /test/lib
  * @summary Test empty bootstrap_methods table within BootstrapMethods attribute
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -33,7 +33,9 @@
  */
 
 import java.io.File;
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.JDKToolFinder;
 
 public class TestEmptyBootstrapMethodsAttr {
 

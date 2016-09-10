@@ -28,7 +28,7 @@
 #include "gc/shared/workerManager.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.inline.hpp"

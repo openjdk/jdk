@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8072480
- * @summary Verify option clash between -release and -source is reported correctly.
+ * @summary Verify option clash between --release and -source is reported correctly.
  * @modules jdk.compiler/com.sun.tools.javac.util
  */
 
@@ -62,7 +62,7 @@ public class ReleaseOptionClashes {
         useRawMessages.setBoolean(null, true);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         List<String> options = new ArrayList<>();
-        options.addAll(Arrays.asList("-release", "7"));
+        options.addAll(Arrays.asList("--release", "7"));
         options.addAll(Arrays.asList(args));
         options.add(System.getProperty("test.src") + File.separator + "ReleaseOptionClashes.java");
         compiler.run(null, null, out, options.toArray(new String[0]));

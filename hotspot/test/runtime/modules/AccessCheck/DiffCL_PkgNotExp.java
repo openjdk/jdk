@@ -28,11 +28,10 @@
  * @summary Test that if module m1 can read module m2, but package p2 in m2 is not
  *          exported, then class p1.c1 in m1 can not read p2.c2 in m2.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @compile myloaders/MyDiffClassLoader.java
  * @compile p2/c2.java
  * @compile p1/c1.java
- * @build DiffCL_PkgNotExp
  * @run main/othervm -Xbootclasspath/a:. DiffCL_PkgNotExp
  */
 

@@ -25,12 +25,14 @@
  * @test
  * @summary Make sure --patch-module works with multiple directories.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  * @compile PatchModule2DirsMain.java
  * @run main PatchModule2Dirs
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import java.io.File;
 
 public class PatchModule2Dirs {

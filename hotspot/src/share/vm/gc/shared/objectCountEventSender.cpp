@@ -40,7 +40,7 @@ void ObjectCountEventSender::send(const KlassInfoEntry* entry, const Ticks& time
 
   EventObjectCountAfterGC event(UNTIMED);
   event.set_gcId(GCId::current());
-  event.set_class(entry->klass());
+  event.set_objectClass(entry->klass());
   event.set_count(entry->count());
   event.set_totalSize(entry->words() * BytesPerWord);
   event.set_endtime(timestamp);

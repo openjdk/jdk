@@ -24,8 +24,8 @@
 /*
  * @test
  * bug 8139474
- * @summary -release 7 -verbose causes Javac exception
- * @compile -release 7 -verbose DashRelease7DashVerboseTest.java
+ * @summary --release 7 -verbose causes Javac exception
+ * @compile --release 7 -verbose DashRelease7DashVerboseTest.java
 */
 
 public class DashRelease7DashVerboseTest {}

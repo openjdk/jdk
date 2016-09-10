@@ -1203,7 +1203,7 @@ public class SubmissionPublisher<T> implements Flow.Publisher<T>,
                     } catch (RuntimeException | Error ex) { // back out
                         do {} while (((c = ctl) & DISABLED) == 0 &&
                                      (c & ACTIVE) != 0 &&
-                                     !CTL.weakCompareAndSetVolatile
+                                     !CTL.weakCompareAndSet
                                      (this, c, c & ~ACTIVE));
                         throw ex;
                     }

@@ -85,13 +85,7 @@ public enum Option {
                 helper.modulepath(paths);
         }
     },
-    MODULEPATH("-modulepath", "An alias for -modulepath") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            MODULE_PATH.processMatching(iter, helper);
-        }
-    },
-    P("-p", "An alias for -modulepath") {
+    P("-p", "An alias for --module-path") {
         @Override
         protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
             MODULE_PATH.processMatching(iter, helper);

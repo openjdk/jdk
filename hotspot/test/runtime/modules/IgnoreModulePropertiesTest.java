@@ -26,10 +26,11 @@
  * @bug 8136930
  * @summary Test that the VM ignores explicitly specified module internal properties.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 // Test that the VM ignores module related properties such as "jdk.module.addmods"
 // and jdk.module.addreads.0" that can only be set using module options.

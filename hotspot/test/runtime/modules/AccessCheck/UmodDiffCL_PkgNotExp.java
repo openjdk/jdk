@@ -29,10 +29,9 @@
  *          Access is denied since even though unnamed module can read all modules, p2
  *          in module m2 is not exported at all.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @compile myloaders/MyDiffClassLoader.java
  * @compile p1/c1.java
- * @build UmodDiffCL_PkgNotExp
  * @run main/othervm -Xbootclasspath/a:. UmodDiffCL_PkgNotExp
  */
 

@@ -419,9 +419,9 @@ public class CompletionSuggestionTest extends KullaTesting {
     public void testUncompletedDeclaration() {
         assertCompletion("class Clazz { Claz|", "Clazz");
         assertCompletion("class Clazz { class A extends Claz|", "Clazz");
-        assertCompletion("class Clazz { Clazz clazz; Object o = cla|", "clazz");
-        assertCompletion("class Clazz { static Clazz clazz; Object o = cla|", "clazz");
-        assertCompletion("class Clazz { Clazz clazz; static Object o = cla|", true);
+        assertCompletion("class Clazz { Clazz clazz; Object o = claz|", "clazz");
+        assertCompletion("class Clazz { static Clazz clazz; Object o = claz|", "clazz");
+        assertCompletion("class Clazz { Clazz clazz; static Object o = claz|", true);
         assertCompletion("class Clazz { void method(Claz|", "Clazz");
         assertCompletion("class A { int method() { return 0; } int a = meth|", "method()");
         assertCompletion("class A { int field = 0; int method() { return fiel|", "field");

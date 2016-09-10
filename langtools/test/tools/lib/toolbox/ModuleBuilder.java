@@ -205,7 +205,7 @@ public class ModuleBuilder {
                 .collect(Collectors.joining(File.pathSeparator));
         new JavacTask(tb)
                 .outdir(Files.createDirectories(modules.resolve(name)))
-                .options("-mp", mp)
+                .options("--module-path", mp)
                 .files(tb.findJavaFiles(moduleSrc))
                 .run()
                 .writeAll();
