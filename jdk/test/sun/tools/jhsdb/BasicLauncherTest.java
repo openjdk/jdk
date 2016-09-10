@@ -31,12 +31,10 @@
  * @run main BasicLauncherTest
  */
 
-import static jdk.testlibrary.Asserts.assertTrue;
-
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.InputStreamReader;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
@@ -84,21 +82,70 @@ public class BasicLauncherTest {
             ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
             processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
             Process toolProcess = processBuilder.start();
-            toolProcess.getOutputStream().write("quit\n".getBytes());
-            toolProcess.getOutputStream().close();
+
+            try (OutputStream out = toolProcess.getOutputStream()) {
+                out.write("universe\n".getBytes());
+                out.write("printmdo -a\n".getBytes());
+                out.write("quit\n".getBytes());
+            }
 
             // By default child process output stream redirected to pipe, so we are reading it in foreground.
-            BufferedReader reader = new BufferedReader(new InputStreamReader(toolProcess.getInputStream()));
+            Exception unexpected = null;
+            try (BufferedReader reader =
+                 new BufferedReader(new InputStreamReader(toolProcess.getInputStream()))) {
+                String line;
+                String unexpectedMsg =
+                   "One or more of 'VirtualCallData', 'CounterData', " +
+                   "'ReceiverTypeData', 'bci', 'MethodData' "  +
+                   "or 'java/lang/Object' not found";
+                boolean knownClassFound = false;
+                boolean knownProfileDataTypeFound = false;
+                boolean knownTokensFound = false;
 
-            String line;
-            while ((line = reader.readLine()) != null) {
-                System.out.println(line.trim());
+                while ((line = reader.readLine()) != null) {
+                    line = line.trim();
+                    System.out.println(line);
+
+                    if (line.contains("unknown subtype of CollectedHeap")) {
+                        unexpected = new RuntimeException("CollectedHeap type should be known.");
+                        break;
+                    }
+                    else if (line.contains("missing reason for ")) {
+                        unexpected = new RuntimeException("missing reason for ");
+                        break;
+                    }
+                    if (line.contains("VirtualCallData")  ||
+                        line.contains("CounterData")      ||
+                        line.contains("ReceiverTypeData")) {
+                        knownProfileDataTypeFound = true;
+                    }
+                    if (line.contains("bci") ||
+                        line.contains("MethodData")) {
+                        knownTokensFound = true;
+                    }
+                    if (line.contains("java/lang/Object")) {
+                        knownClassFound = true;
+                    }
+                }
+                if ((knownClassFound           == false)  ||
+                    (knownTokensFound          == false)  ||
+                    (knownProfileDataTypeFound == false)) {
+                    unexpected = new RuntimeException(unexpectedMsg);
+                }
             }
 
             toolProcess.waitFor();
 
             if (toolProcess.exitValue() != 0) {
                 throw new RuntimeException("FAILED CLHSDB terminated with non-zero exit code " + toolProcess.exitValue());
+            }
+
+            if (unexpected != null) {
+                throw unexpected;
+            }
+
+            if (unexpected != null) {
+                throw unexpected;
             }
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
@@ -183,21 +230,6 @@ public class BasicLauncherTest {
                                                        Arrays.asList(toolArgs));
     }
 
-    public static void testHeapDump() throws IOException {
-        File dump = new File("jhsdb.jmap.dump." +
-                             System.currentTimeMillis() + ".hprof");
-        if (dump.exists()) {
-            dump.delete();
-        }
-        dump.deleteOnExit();
-
-        launch("heap written to", null, "jmap",
-               "--binaryheap", "--dumpfile=" + dump.getAbsolutePath());
-
-        assertTrue(dump.exists() && dump.isFile(),
-                   "Could not create dump file " + dump.getAbsolutePath());
-    }
-
     public static void main(String[] args)
         throws IOException {
 
@@ -215,8 +247,6 @@ public class BasicLauncherTest {
         launch("Java System Properties",
                "System Properties info not available", "jinfo");
         launch("java.threads", null, "jsnap");
-
-        testHeapDump();
 
         // The test throws RuntimeException on error.
         // IOException is thrown if LingeredApp can't start because of some bad
