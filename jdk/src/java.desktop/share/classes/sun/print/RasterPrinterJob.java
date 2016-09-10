@@ -1001,6 +1001,10 @@ public abstract class RasterPrinterJob extends PrinterJob {
         // temporarily add an attribute pointing back to this job.
         PrinterJobWrapper jobWrapper = new PrinterJobWrapper(this);
         attributes.add(jobWrapper);
+        PageRanges pgRng = (PageRanges)attributes.get(PageRanges.class);
+        if (pgRng == null && mDocument.getNumberOfPages() > 1) {
+            attributes.add(new PageRanges(1, mDocument.getNumberOfPages()));
+        }
         try {
             newService =
             ServiceUI.printDialog(gc, x, y,
