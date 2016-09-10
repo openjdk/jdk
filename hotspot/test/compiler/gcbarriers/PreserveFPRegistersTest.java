@@ -26,7 +26,7 @@
  * @test
  * @bug 8148175
  * @requires vm.gc=="G1" | vm.gc=="null"
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @run main/bootclasspath/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions
  *      -XX:+WhiteBoxAPI -Xmx300m -XX:+UseG1GC
  *      compiler.gcbarriers.PreserveFPRegistersTest

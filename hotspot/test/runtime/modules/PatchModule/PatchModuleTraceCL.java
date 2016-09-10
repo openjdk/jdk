@@ -27,13 +27,15 @@
  * @summary Make sure -Xlog:classload=info works properly with "modules" jimage,
             --patch-module, and with -Xbootclasspath/a
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  * @compile PatchModuleMain.java
  * @run main PatchModuleTraceCL
  */
 
 import java.io.File;
-import jdk.test.lib.*;
+import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class PatchModuleTraceCL {
 

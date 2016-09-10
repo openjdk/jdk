@@ -31,7 +31,7 @@
 #include "logging/logConfiguration.hpp"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"

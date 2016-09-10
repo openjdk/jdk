@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary tests on constant folding of unsafe get operations from stable arrays
- * @library /testlibrary
+ * @library /test/lib
  *
  * @requires vm.flavor == "server"
  *

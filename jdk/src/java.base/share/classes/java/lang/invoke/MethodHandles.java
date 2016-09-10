@@ -1207,11 +1207,16 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * the following conditions:
          * <ul>
          * <li>if the field is declared {@code final}, then the write, atomic
-         *     update, and numeric atomic update access modes are unsupported.
+         *     update, numeric atomic update, and bitwise atomic update access
+         *     modes are unsupported.
          * <li>if the field type is anything other than {@code byte},
-         *     {@code short}, {@code char}, {@code int} or {@code long},
+         *     {@code short}, {@code char}, {@code int}, {@code long},
          *     {@code float}, or {@code double} then numeric atomic update
          *     access modes are unsupported.
+         * <li>if the field type is anything other than {@code boolean},
+         *     {@code byte}, {@code short}, {@code char}, {@code int} or
+         *     {@code long} then bitwise atomic update access modes are
+         *     unsupported.
          * </ul>
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
@@ -1326,11 +1331,16 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * the following conditions:
          * <ul>
          * <li>if the field is declared {@code final}, then the write, atomic
-         *     update, and numeric atomic update access modes are unsupported.
+         *     update, numeric atomic update, and bitwise atomic update access
+         *     modes are unsupported.
          * <li>if the field type is anything other than {@code byte},
-         *     {@code short}, {@code char}, {@code int} or {@code long},
+         *     {@code short}, {@code char}, {@code int}, {@code long},
          *     {@code float}, or {@code double}, then numeric atomic update
          *     access modes are unsupported.
+         * <li>if the field type is anything other than {@code boolean},
+         *     {@code byte}, {@code short}, {@code char}, {@code int} or
+         *     {@code long} then bitwise atomic update access modes are
+         *     unsupported.
          * </ul>
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
@@ -1631,11 +1641,16 @@ return mh1;
          * the following conditions:
          * <ul>
          * <li>if the field is declared {@code final}, then the write, atomic
-         *     update, and numeric atomic update access modes are unsupported.
+         *     update, numeric atomic update, and bitwise atomic update access
+         *     modes are unsupported.
          * <li>if the field type is anything other than {@code byte},
-         *     {@code short}, {@code char}, {@code int} or {@code long},
+         *     {@code short}, {@code char}, {@code int}, {@code long},
          *     {@code float}, or {@code double} then numeric atomic update
          *     access modes are unsupported.
+         * <li>if the field type is anything other than {@code boolean},
+         *     {@code byte}, {@code short}, {@code char}, {@code int} or
+         *     {@code long} then bitwise atomic update access modes are
+         *     unsupported.
          * </ul>
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
@@ -2353,9 +2368,13 @@ return mh1;
      * the following conditions:
      * <ul>
      * <li>if the component type is anything other than {@code byte},
-     *     {@code short}, {@code char}, {@code int} or {@code long},
+     *     {@code short}, {@code char}, {@code int}, {@code long},
      *     {@code float}, or {@code double} then numeric atomic update access
      *     modes are unsupported.
+     * <li>if the field type is anything other than {@code boolean},
+     *     {@code byte}, {@code short}, {@code char}, {@code int} or
+     *     {@code long} then bitwise atomic update access modes are
+     *     unsupported.
      * </ul>
      * <p>
      * If the component type is {@code float} or {@code double} then numeric
@@ -2426,12 +2445,17 @@ return mh1;
      * If access is aligned then following access modes are supported and are
      * guaranteed to support atomic access:
      * <ul>
-     * <li>read write access modes for all {@code T};
+     * <li>read write access modes for all {@code T}, with the exception of
+     *     access modes {@code get} and {@code set} for {@code long} and
+     *     {@code double} on 32-bit platforms.
      * <li>atomic update access modes for {@code int}, {@code long},
      *     {@code float} or {@code double}.
      *     (Future major platform releases of the JDK may support additional
      *     types for certain currently unsupported access modes.)
      * <li>numeric atomic update access modes for {@code int} and {@code long}.
+     *     (Future major platform releases of the JDK may support additional
+     *     numeric types for certain currently unsupported access modes.)
+     * <li>bitwise atomic update access modes for {@code int} and {@code long}.
      *     (Future major platform releases of the JDK may support additional
      *     numeric types for certain currently unsupported access modes.)
      * </ul>
@@ -2508,12 +2532,17 @@ return mh1;
      * If access is aligned then following access modes are supported and are
      * guaranteed to support atomic access:
      * <ul>
-     * <li>read write access modes for all {@code T};
+     * <li>read write access modes for all {@code T}, with the exception of
+     *     access modes {@code get} and {@code set} for {@code long} and
+     *     {@code double} on 32-bit platforms.
      * <li>atomic update access modes for {@code int}, {@code long},
      *     {@code float} or {@code double}.
      *     (Future major platform releases of the JDK may support additional
      *     types for certain currently unsupported access modes.)
      * <li>numeric atomic update access modes for {@code int} and {@code long}.
+     *     (Future major platform releases of the JDK may support additional
+     *     numeric types for certain currently unsupported access modes.)
+     * <li>bitwise atomic update access modes for {@code int} and {@code long}.
      *     (Future major platform releases of the JDK may support additional
      *     numeric types for certain currently unsupported access modes.)
      * </ul>

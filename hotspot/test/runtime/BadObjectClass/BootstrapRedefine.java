@@ -25,13 +25,15 @@
  * @test
  * @bug 6583051
  * @summary Give error if java.lang.Object has been incompatibly overridden on the bootpath
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main BootstrapRedefine
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class BootstrapRedefine {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,10 @@
  * questions.
  */
 import java.io.PrintWriter;
-import jdk.test.lib.*;
+
+import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * Test to redefine java/lang/Object and verify that it doesn't crash on vtable
@@ -32,14 +35,14 @@ import jdk.test.lib.*;
  * @test
  * @bug 8005056
  * @bug 8009728
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.instrument
  *          java.management
  * @build Agent
  * @run main ClassFileInstaller Agent
  * @run main TestRedefineObject
- * @run main/othervm -javaagent:agent.jar -XX:TraceRedefineClasses=5 Agent
+ * @run main/othervm -javaagent:agent.jar -Xlog:redefine+class+load=debug,redefine+class+timer=info Agent
  */
 public class TestRedefineObject {
     public static void main(String[] args) throws Exception  {

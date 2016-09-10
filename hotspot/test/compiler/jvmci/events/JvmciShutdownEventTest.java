@@ -25,7 +25,7 @@
  * @test
  * @bug 8136421
  * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
- * @library /testlibrary /
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules jdk.vm.ci/jdk.vm.ci.hotspot
  *          jdk.vm.ci/jdk.vm.ci.code
@@ -34,7 +34,6 @@
  *
  * @build compiler.jvmci.common.JVMCIHelpers
  *        compiler.jvmci.events.JvmciShutdownEventListener
- *        compiler.jvmci.events.JvmciShutdownEventTest
  * @run driver jdk.test.lib.FileInstaller ../common/services/ ./META-INF/services/
  * @run driver jdk.test.lib.FileInstaller ./JvmciShutdownEventTest.config
  *     ./META-INF/services/jdk.vm.ci.hotspot.services.HotSpotVMEventListener
@@ -49,7 +48,7 @@
 
 package compiler.jvmci.events;
 
-import jdk.test.lib.ExitCode;
+import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.cli.CommandLineOptionTest;
 
 public class JvmciShutdownEventTest {
