@@ -27,6 +27,7 @@
  * @summary Ensure the output for a minor GC with G1
  * includes the expected necessary messages.
  * @key gc
+ * @requires vm.gc.G1
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

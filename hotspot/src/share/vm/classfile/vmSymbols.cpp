@@ -366,6 +366,7 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   switch(id) {
 #ifdef TRACE_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
+  case vmIntrinsics::_getClassId:
 #endif
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:

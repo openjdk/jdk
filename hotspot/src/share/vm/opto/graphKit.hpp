@@ -664,7 +664,10 @@ class GraphKit : public Phase {
   // callee (with all arguments still on the stack).
   Node* null_check_receiver_before_call(ciMethod* callee) {
     assert(!callee->is_static(), "must be a virtual method");
-    const int nargs = callee->arg_size();
+    // Callsite signature can be different from actual method being called (i.e _linkTo* sites).
+    // Use callsite signature always.
+    ciMethod* declared_method = method()->get_method_at_bci(bci());
+    const int nargs = declared_method->arg_size();
     inc_sp(nargs);
     Node* n = null_check_receiver();
     dec_sp(nargs);

@@ -53,7 +53,7 @@ import compiler.jvmci.compilerToVM.ConstantPoolTestsHelper.DummyClasses;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
+import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.meta.ConstantPool;
@@ -69,7 +69,7 @@ import static compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes.CON
  */
 public class ResolveFieldInPoolTest {
 
-    private static final Unsafe UNSAFE = Utils.getUnsafe();
+    private static final Unsafe UNSAFE = UnsafeHelper.getUnsafe();
 
     public static void main(String[] args) throws Exception {
         Map<ConstantTypes, Validator> typeTests = new HashMap<>();

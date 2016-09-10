@@ -24,9 +24,9 @@
 /*
  * @test HeapChangeLogging.java
  * @bug 8027440
+ * @requires vm.gc.Serial
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- *          java.management
  * @summary Allocate to get a promotion failure and verify that that heap change logging is present.
  * @run main HeapChangeLogging
  */
