@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "memory/allocation.hpp"
 
 class CodeBlobClosure;
-class CodeRootSetTable;
+class G1CodeRootSetTable;
 class HeapRegion;
 class nmethod;
 
@@ -42,8 +42,8 @@ class G1CodeRootSet VALUE_OBJ_CLASS_SPEC {
   const static size_t Threshold = 24;
   const static size_t LargeSize = 512;
 
-  CodeRootSetTable* _table;
-  CodeRootSetTable* load_acquire_table();
+  G1CodeRootSetTable* _table;
+  G1CodeRootSetTable* load_acquire_table();
 
   size_t _length;
 

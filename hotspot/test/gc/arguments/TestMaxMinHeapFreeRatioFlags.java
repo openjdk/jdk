@@ -37,6 +37,7 @@ import java.util.Collections;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
+import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.internal.misc.Unsafe;
 
 public class TestMaxMinHeapFreeRatioFlags {
@@ -133,7 +134,7 @@ public class TestMaxMinHeapFreeRatioFlags {
      */
     public static class RatioVerifier {
 
-        private static final Unsafe unsafe = Utils.getUnsafe();
+        private static final Unsafe unsafe = UnsafeHelper.getUnsafe();
 
         // Size of byte array that will be allocated
         public static final int CHUNK_SIZE = 1024;

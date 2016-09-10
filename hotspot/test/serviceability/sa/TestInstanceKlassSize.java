@@ -23,6 +23,7 @@
 
 import sun.jvm.hotspot.HotSpotAgent;
 import sun.jvm.hotspot.utilities.SystemDictionaryHelper;
+import sun.jvm.hotspot.oops.InstanceKlass;
 import sun.jvm.hotspot.debugger.*;
 
 import java.util.ArrayList;
@@ -44,15 +45,19 @@ import java.util.*;
  * @test
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @modules jdk.hotspot.agent
- * @modules jdk.hotspot.agent/sun.jvm.hotspot
- * @modules jdk.hotspot.agent/sun.jvm.hotspot.utilities
- * @modules jdk.hotspot.agent/sun.jvm.hotspot.oops
- * @compile -XDignore.symbol.file=true -Xmodule:jdk.hotspot.agent
- *          -XaddExports:java.base/jdk.internal.misc=jdk.hotspot.agent
- *          -XaddExports:java.management/java.lang.management=jdk.hotspot.agent
+ * @compile -XDignore.symbol.file=true
+ *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED
+ *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED
+ *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED
+ *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED
  *          TestInstanceKlassSize.java
- * @run main/othervm  TestInstanceKlassSize
+ * @run main/othervm
+ *          --add-modules=jdk.hotspot.agent
+ *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED
+ *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED
+ *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED
+ *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED
+ *          TestInstanceKlassSize
  */
 
 public class TestInstanceKlassSize {
@@ -112,11 +117,11 @@ public class TestInstanceKlassSize {
                                               " java.lang.Byte",
                                           };
             String[] toolArgs = {
-                "-XX:+UnlockDiagnosticVMOptions",
                 "--add-modules=jdk.hotspot.agent",
                 "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
                 "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED",
                 "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED",
+                "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED",
                 "TestInstanceKlassSize",
                 Long.toString(app.getPid())
             };
@@ -136,6 +141,8 @@ public class TestInstanceKlassSize {
                 String jcmdInstanceKlassSize = getJcmdInstanceKlassSize(
                                                       jcmdOutput,
                                                       instanceKlassName);
+                Asserts.assertNotNull(jcmdInstanceKlassSize,
+                    "Could not get the instance klass size from the jcmd output");
                 for (String s : output.asLines()) {
                     if (s.contains(instanceKlassName)) {
                        Asserts.assertTrue(
@@ -165,10 +172,12 @@ public class TestInstanceKlassSize {
         }
 
         for (String SAInstanceKlassName : SAInstanceKlassNames) {
-            Long size = SystemDictionaryHelper.findInstanceKlass(
-                            SAInstanceKlassName).getSize();
+            InstanceKlass ik = SystemDictionaryHelper.findInstanceKlass(
+                               SAInstanceKlassName);
+            Asserts.assertNotNull(ik,
+                String.format("Unable to find instance klass for %s", ik));
             System.out.println("SA: The size of " + SAInstanceKlassName +
-                               " is " + size);
+                               " is " + ik.getSize());
         }
         agent.detach();
     }

@@ -27,6 +27,7 @@
  * @summary Ensure that the output for a G1TraceEagerReclaimHumongousObjects
  * includes the expected necessary messages.
  * @key gc
+ * @requires vm.gc.G1
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

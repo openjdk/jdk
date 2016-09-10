@@ -183,11 +183,8 @@ size_t ClassLoadingService::compute_class_size(InstanceKlass* k) {
 bool ClassLoadingService::set_verbose(bool verbose) {
   MutexLocker m(Management_lock);
   // verbose will be set to the previous value
-  if (verbose) {
-    LogConfiguration::parse_log_arguments("stdout", "class+load=info", NULL, NULL, NULL);
-  } else {
-    LogConfiguration::parse_log_arguments("stdout", "class+load=off", NULL, NULL, NULL);
-  }
+  LogLevelType level = verbose ? LogLevel::Info : LogLevel::Off;
+  LogConfiguration::configure_stdout(level, false, LOG_TAGS(class, load));
   reset_trace_class_unloading();
   return verbose;
 }
@@ -196,11 +193,8 @@ bool ClassLoadingService::set_verbose(bool verbose) {
 void ClassLoadingService::reset_trace_class_unloading() {
   assert(Management_lock->owned_by_self(), "Must own the Management_lock");
   bool value = MemoryService::get_verbose() || ClassLoadingService::get_verbose();
-  if (value) {
-    LogConfiguration::parse_log_arguments("stdout", "class+unload=info", NULL, NULL, NULL);
-  } else {
-    LogConfiguration::parse_log_arguments("stdout", "class+unload=off", NULL, NULL, NULL);
-  }
+  LogLevelType level = value ? LogLevel::Info : LogLevel::Off;
+  LogConfiguration::configure_stdout(level, false, LOG_TAGS(class, unload));
 }
 
 GrowableArray<KlassHandle>* LoadedClassesEnumerator::_loaded_classes = NULL;
