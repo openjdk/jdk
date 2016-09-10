@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,9 @@ JNIEXPORT jboolean JNICALL JAWT_GetAWT
         return JNI_FALSE;
     }
 
-    if (awt->version != (JAWT_VERSION_1_4 | JAWT_MACOSX_USE_CALAYER) &&
-        awt->version != JAWT_VERSION_1_7)
+    if (awt->version != (JAWT_VERSION_1_4 | JAWT_MACOSX_USE_CALAYER)
+        && awt->version != JAWT_VERSION_1_7
+        && awt->version != JAWT_VERSION_9)
     {
         return JNI_FALSE;
     }
@@ -58,6 +59,11 @@ JNIEXPORT jboolean JNICALL JAWT_GetAWT
         awt->Lock = awt_Lock;
         awt->Unlock = awt_Unlock;
         awt->GetComponent = awt_GetComponent;
+        if (awt->version >= JAWT_VERSION_9) {
+            awt->CreateEmbeddedFrame = awt_CreateEmbeddedFrame;
+            awt->SetBounds = awt_SetBounds;
+            awt->SynthesizeWindowActivation = awt_SynthesizeWindowActivation;
+        }
     }
 
     return JNI_TRUE;

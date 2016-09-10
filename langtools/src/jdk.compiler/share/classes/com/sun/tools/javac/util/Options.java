@@ -26,6 +26,8 @@
 package com.sun.tools.javac.util;
 
 import java.util.*;
+
+import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.main.Option;
 import static com.sun.tools.javac.main.Option.*;
 
@@ -176,7 +178,17 @@ public class Options {
         // disabled
         return
             isSet(XLINT_CUSTOM, s) ||
-            (isSet(XLINT) || isSet(XLINT_CUSTOM, "all")) &&
+            (isSet(XLINT) || isSet(XLINT_CUSTOM, "all") || (s.equals("dep-ann") && depAnnOnByDefault())) &&
                 isUnset(XLINT_CUSTOM, "-" + s);
     }
+        // where
+        private boolean depAnnOnByDefault() {
+            String sourceName = get(Option.SOURCE);
+            Source source = null;
+            if (sourceName != null)
+                source = Source.lookup(sourceName);
+            if (source == null)
+                source = Source.DEFAULT;
+            return source.compareTo(Source.JDK1_9) >= 0;
+        }
 }

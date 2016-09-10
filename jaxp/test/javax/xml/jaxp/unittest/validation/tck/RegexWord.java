@@ -63,4 +63,3 @@ public class RegexWord {
         validator.validate(new StreamSource(RegexWord.class.getResourceAsStream("reZ003vExc23082309.xml")));
     }
 }
-

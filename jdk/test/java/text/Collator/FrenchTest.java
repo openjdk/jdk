@@ -25,6 +25,7 @@
  * @test
  * @library /java/text/testlib
  * @summary test French Collation
+ * @modules jdk.localedata
  */
 /*
 (C) Copyright Taligent, Inc. 1996 - All Rights Reserved

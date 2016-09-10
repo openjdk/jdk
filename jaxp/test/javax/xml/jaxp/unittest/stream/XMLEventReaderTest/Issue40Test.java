@@ -100,4 +100,3 @@ public class Issue40Test {
     }
 
 }
-

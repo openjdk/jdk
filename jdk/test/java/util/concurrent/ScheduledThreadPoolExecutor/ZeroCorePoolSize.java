@@ -33,7 +33,6 @@
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import jdk.testlibrary.Utils;
 
 /**

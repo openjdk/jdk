@@ -31,8 +31,6 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-import java.util.concurrent.atomic.AtomicLong;
-
 /**
  * Misc utilities in JSR166 performance tests
  */

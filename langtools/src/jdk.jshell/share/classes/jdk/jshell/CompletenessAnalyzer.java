@@ -46,6 +46,8 @@ import com.sun.source.tree.Tree;
 import static jdk.jshell.CompletenessAnalyzer.TK.*;
 import jdk.jshell.TaskFactory.ParseTask;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Low level scanner to determine completeness of input.
@@ -81,13 +83,13 @@ class CompletenessAnalyzer {
 
     CaInfo scan(String s) {
         try {
-            Scanner scanner = scannerFactory.newScanner(s, false);
-            Matched in = new Matched(scanner);
-            Parser parser = new Parser(in, proc, s);
+            Parser parser = new Parser(
+                    () -> new Matched(scannerFactory.newScanner(s, false)),
+                    () -> proc.taskFactory.new ParseTask(s));
             Completeness stat = parser.parseUnit();
             int endPos = stat == Completeness.UNKNOWN
                     ? s.length()
-                    : in.prevCT.endPos;
+                    : parser.endPos();
             return new CaInfo(stat, endPos);
         } catch (SyntaxException ex) {
             return new CaInfo(error(), s.length());
@@ -188,7 +190,7 @@ class CompletenessAnalyzer {
         ERROR(TokenKind.ERROR, XERRO),  //
         IDENTIFIER(TokenKind.IDENTIFIER, XEXPR1|XDECL1|XTERM),  //
         UNDERSCORE(TokenKind.UNDERSCORE, XERRO),  //  _
-        CLASS(TokenKind.CLASS, XEXPR|XDECL1|XTERM),  //  class decl and .class
+        CLASS(TokenKind.CLASS, XEXPR|XDECL1),  //  class decl (MAPPED: DOTCLASS)
         MONKEYS_AT(TokenKind.MONKEYS_AT, XEXPR|XDECL1),  //  @
         IMPORT(TokenKind.IMPORT, XDECL1|XSTART),  //  import -- consider declaration
         SEMI(TokenKind.SEMI, XSTMT1|XTERM|XSTART),  //  ;
@@ -206,15 +208,15 @@ class CompletenessAnalyzer {
         THROWS(TokenKind.THROWS, XDECL),  //  throws
 
         // Primarive type names
-        BOOLEAN(TokenKind.BOOLEAN, XEXPR|XDECL1),  //  boolean
-        BYTE(TokenKind.BYTE, XEXPR|XDECL1),  //  byte
-        CHAR(TokenKind.CHAR, XEXPR|XDECL1),  //  char
-        DOUBLE(TokenKind.DOUBLE, XEXPR|XDECL1),  //  double
-        FLOAT(TokenKind.FLOAT, XEXPR|XDECL1),  //  float
-        INT(TokenKind.INT, XEXPR|XDECL1),  //  int
-        LONG(TokenKind.LONG, XEXPR|XDECL1),  //  long
-        SHORT(TokenKind.SHORT, XEXPR|XDECL1),  //  short
-        VOID(TokenKind.VOID, XEXPR|XDECL1),  //  void
+        BOOLEAN(TokenKind.BOOLEAN, XEXPR1|XDECL1),  //  boolean
+        BYTE(TokenKind.BYTE, XEXPR1|XDECL1),  //  byte
+        CHAR(TokenKind.CHAR, XEXPR1|XDECL1),  //  char
+        DOUBLE(TokenKind.DOUBLE, XEXPR1|XDECL1),  //  double
+        FLOAT(TokenKind.FLOAT, XEXPR1|XDECL1),  //  float
+        INT(TokenKind.INT, XEXPR1|XDECL1),  //  int
+        LONG(TokenKind.LONG, XEXPR1|XDECL1),  //  long
+        SHORT(TokenKind.SHORT, XEXPR1|XDECL1),  //  short
+        VOID(TokenKind.VOID, XEXPR1|XDECL1),  //  void
 
         // Modifiers keywords
         ABSTRACT(TokenKind.ABSTRACT, XDECL1),  //  abstract
@@ -230,7 +232,7 @@ class CompletenessAnalyzer {
 
         // Declarations and type parameters (thus expressions)
         EXTENDS(TokenKind.EXTENDS, XEXPR|XDECL),  //  extends
-        COMMA(TokenKind.COMMA, XEXPR|XDECL),  //  ,
+        COMMA(TokenKind.COMMA, XEXPR|XDECL|XTERM),  //  ,
         AMP(TokenKind.AMP, XEXPR|XDECL),  //  &
         GT(TokenKind.GT, XEXPR|XDECL),  //  >
         LT(TokenKind.LT, XEXPR|XDECL1),  //  <
@@ -239,7 +241,7 @@ class CompletenessAnalyzer {
         GTGTGT(TokenKind.GTGTGT, XEXPR|XDECL),  //  >>>
         QUES(TokenKind.QUES, XEXPR|XDECL),  //  ?
         DOT(TokenKind.DOT, XEXPR|XDECL),  //  .
-        STAR(TokenKind.STAR, XEXPR|XDECL|XTERM),  //  * -- import foo.* //TODO handle these case separately, XTERM
+        STAR(TokenKind.STAR, XEXPR),  //  * (MAPPED: DOTSTAR)
 
         // Statement keywords
         ASSERT(TokenKind.ASSERT, XSTMT1|XSTART),  //  assert
@@ -280,7 +282,7 @@ class CompletenessAnalyzer {
 
         // Expressions cannot terminate
         INSTANCEOF(TokenKind.INSTANCEOF, XEXPR),  //  instanceof
-        NEW(TokenKind.NEW, XEXPR1),  //  new
+        NEW(TokenKind.NEW, XEXPR1),  //  new (MAPPED: COLCOLNEW)
         SUPER(TokenKind.SUPER, XEXPR1|XDECL),  //  super -- shouldn't see as rec. But in type parameters
         ARROW(TokenKind.ARROW, XEXPR),  //  ->
         COLCOL(TokenKind.COLCOL, XEXPR),  //  ::
@@ -323,24 +325,29 @@ class CompletenessAnalyzer {
         UNMATCHED(XERRO),
         PARENS(XEXPR1|XDECL|XSTMT|XTERM),
         BRACKETS(XEXPR|XDECL|XTERM),
-        BRACES(XSTMT1|XEXPR|XTERM);
+        BRACES(XSTMT1|XEXPR|XTERM),
+        DOTSTAR(XDECL|XTERM),  // import foo.*
+        COLCOLNEW(XEXPR|XTERM),  //  :: new
+        DOTCLASS(XEXPR|XTERM),  //  class decl and .class
+        ;
 
         static final EnumMap<TokenKind,TK> tokenKindToTKMap = new EnumMap<>(TokenKind.class);
 
         final TokenKind tokenKind;
         final int belongs;
+        Function<TK,TK> mapping;
 
         TK(int b) {
-            this.tokenKind = null;
-            this.belongs = b;
+            this(null, b);
         }
 
         TK(TokenKind tokenKind, int b) {
             this.tokenKind = tokenKind;
             this.belongs = b;
+            this.mapping = null;
         }
 
-        private static TK tokenKindToTK(TokenKind kind) {
+        private static TK tokenKindToTK(TK prev, TokenKind kind) {
             TK tk = tokenKindToTKMap.get(kind);
             if (tk == null) {
                 System.err.printf("No corresponding %s for %s: %s\n",
@@ -349,7 +356,9 @@ class CompletenessAnalyzer {
                         kind);
                 throw new InternalError("No corresponding TK for TokenKind: " + kind);
             }
-            return tk;
+            return tk.mapping != null
+                    ? tk.mapping.apply(prev)
+                    : tk;
         }
 
         boolean isOkToTerminate() {
@@ -383,8 +392,12 @@ class CompletenessAnalyzer {
                 }
             }
             for (TokenKind kind : TokenKind.values()) {
-                tokenKindToTK(kind); // assure they can be retrieved without error
+                tokenKindToTK(null, kind); // assure they can be retrieved without error
             }
+            // Mappings of disambiguated contexts
+            STAR.mapping  = prev -> prev == DOT ? DOTSTAR : STAR;
+            NEW.mapping   = prev -> prev == COLCOL ? COLCOLNEW : NEW;
+            CLASS.mapping = prev -> prev == DOT ? DOTCLASS : CLASS;
         }
     }
 
@@ -520,7 +533,7 @@ class CompletenessAnalyzer {
                         ct = match(BRACKETS, TokenKind.LBRACKET);
                         break;
                     default:
-                        ct = new CT(TK.tokenKindToTK(current.kind), advance());
+                        ct = new CT(TK.tokenKindToTK(prevTK, current.kind), advance());
                         break;
                 }
                 if (ct.kind.isStart() && !prevTK.isOkToTerminate()) {
@@ -539,21 +552,21 @@ class CompletenessAnalyzer {
      */
     private static class Parser {
 
-        final Matched in;
-        CT token;
-        Completeness checkResult;
+        private final Supplier<Matched> matchedFactory;
+        private final Supplier<ParseTask> parseFactory;
+        private Matched in;
+        private CT token;
+        private Completeness checkResult;
 
-        final JShell proc;
-        final String scannedInput;
+        Parser(Supplier<Matched> matchedFactory, Supplier<ParseTask> parseFactory) {
+            this.matchedFactory = matchedFactory;
+            this.parseFactory = parseFactory;
+            resetInput();
+        }
 
-
-
-        Parser(Matched in, JShell proc, String scannedInput) {
-            this.in = in;
+        final void resetInput() {
+            this.in = matchedFactory.get();
             nextToken();
-
-            this.proc = proc;
-            this.scannedInput = scannedInput;
         }
 
         final void nextToken() {
@@ -596,6 +609,10 @@ class CompletenessAnalyzer {
         boolean shouldAbort(Completeness flags) {
             checkResult = flags;
             return flags != Completeness.COMPLETE;
+        }
+
+        public int endPos() {
+            return in.prevCT.endPos;
         }
 
         public Completeness parseUnit() {
@@ -651,11 +668,11 @@ class CompletenessAnalyzer {
                         case IDENTIFIER:
                         case BRACKETS:
                             return Completeness.COMPLETE_WITH_SEMI;
-                        case STAR:
+                        case DOTSTAR:
                             if (isImport) {
                                 return Completeness.COMPLETE_WITH_SEMI;
                             } else {
-                                return Completeness.DEFINITELY_INCOMPLETE;
+                                return Completeness.UNKNOWN;
                             }
                         default:
                             return Completeness.DEFINITELY_INCOMPLETE;
@@ -667,7 +684,7 @@ class CompletenessAnalyzer {
 
         public Completeness disambiguateDeclarationVsExpression() {
             // String folding messes up position information.
-            ParseTask pt = proc.taskFactory.new ParseTask(scannedInput);
+            ParseTask pt = parseFactory.get();
             List<? extends Tree> units = pt.units();
             if (units.isEmpty()) {
                 return error();
@@ -679,7 +696,7 @@ class CompletenessAnalyzer {
                 case LABELED_STATEMENT:
                     if (shouldAbort(IDENTIFIER))  return checkResult;
                     if (shouldAbort(COLON))  return checkResult;
-                    return parseStatement();
+                return parseStatement();
                 case VARIABLE:
                 case IMPORT:
                 case CLASS:
@@ -692,51 +709,6 @@ class CompletenessAnalyzer {
                     return error();
             }
         }
-
-//        public Status parseExpressionOrDeclaration() {
-//            if (token.kind == IDENTIFIER) {
-//                nextToken();
-//                switch (token.kind) {
-//                    case IDENTIFIER:
-//                        return parseDeclaration();
-//                }
-//            }
-//            while (token.kind.isExpressionOrDeclaration()) {
-//                if (!token.kind.isExpression()) {
-//                    return parseDeclaration();
-//                }
-//                if (!token.kind.isDeclaration()) {
-//                    // Expression not declaration
-//                    if (token.kind == EQ) {
-//                        // Check for array initializer
-//                        nextToken();
-//                        if (token.kind == BRACES) {
-//                            nextToken();
-//                            return lastly(SEMI);
-//                        }
-//                    }
-//                    return parseExpressionStatement();
-//                }
-//                nextToken();
-//            }
-//            switch (token.kind) {
-//                case BRACES:
-//                case SEMI:
-//                    nextToken();
-//                    return Status.COMPLETE;
-//                case UNMATCHED:
-//                    nextToken();
-//                    return Status.DEFINITELY_INCOMPLETE;
-//                case EOF:
-//                    if (in.prevCT.kind.isOkToTerminate()) {
-//                        return Status.COMPLETE_WITH_SEMI;
-//                    } else {
-//                        return Status.DEFINITELY_INCOMPLETE;
-//                    }
-//                default:
-//                    return error();
-//            }
-//        }
 
         public Completeness parseExpressionStatement() {
             if (shouldAbort(parseExpression()))  return checkResult;

@@ -68,7 +68,7 @@ package java.util.concurrent;
  *   private boolean subscribed; // true after first subscribe
  *   public synchronized void subscribe(Subscriber<? super Boolean> subscriber) {
  *     if (subscribed)
- *        subscriber.onError(new IllegalStateException()); // only one allowed
+ *       subscriber.onError(new IllegalStateException()); // only one allowed
  *     else {
  *       subscribed = true;
  *       subscriber.onSubscribe(new OneShotSubscription(subscriber, executor));

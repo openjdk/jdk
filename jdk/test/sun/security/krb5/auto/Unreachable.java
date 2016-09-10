@@ -23,31 +23,108 @@
 
 /*
  * @test
- * @bug 7162687
+ * @bug 7162687 8015595
  * @key intermittent
  * @summary enhance KDC server availability detection
  * @compile -XDignore.symbol.file Unreachable.java
- * @run main/othervm/timeout=10 Unreachable
+ * @run main/othervm Unreachable
  */
-
-import java.io.File;
+import java.net.PortUnreachableException;
+import java.net.SocketTimeoutException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.Executors;
 import javax.security.auth.login.LoginException;
 import sun.security.krb5.Config;
 
 public class Unreachable {
 
-    public static void main(String[] args) throws Exception {
-        File f = new File(
-                System.getProperty("test.src", "."), "unreachable.krb5.conf");
-        System.setProperty("java.security.krb5.conf", f.getPath());
-        Config.refresh();
+    // Wait for 20 second until unreachable KDC throws PortUnreachableException.
+    private static final int TIMEOUT = 20;
+    private static final String REALM = "RABBIT.HOLE";
+    private static final String HOST = "127.0.0.1";
+    private static final int PORT = 13434;
+    private static final String KRB_CONF = "unreachable.krb5.conf";
 
-        // If PortUnreachableException is not received, the login will consume
-        // about 3*3*30 seconds and the test will timeout.
-        try {
-            Context.fromUserPass("name", "pass".toCharArray(), true);
-        } catch (LoginException le) {
-            // This is OK
+    public static void main(String[] args) throws Exception {
+
+        // - Only PortUnreachableException will allow to continue execution.
+        // - SocketTimeoutException may occur on Mac because it will not throw
+        // PortUnreachableException for unreachable port in which case the Test
+        // execution will be skipped.
+        // - For Reachable port, the Test execution will get skipped.
+        // - Any other Exception will be treated as Test failure.
+        if (!findPortUnreachableExc()) {
+            System.out.println(String.format("WARNING: Either a reachable "
+                    + "connection found to %s:%s or SocketTimeoutException "
+                    + "occured which means PortUnreachableException not thrown"
+                    + " by the platform.", HOST, PORT));
+            return;
         }
+        KDC kdc = KDC.existing(REALM, HOST, PORT);
+        KDC.saveConfig(KRB_CONF, kdc);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<Exception> future = executor.submit(new Callable<Exception>() {
+            @Override
+            public Exception call() {
+                System.setProperty("java.security.krb5.conf", KRB_CONF);
+                try {
+                    Config.refresh();
+                    // If PortUnreachableException is not received, the login
+                    // will consume about 3*3*30 seconds and the test will
+                    // timeout.
+                    try {
+                        Context.fromUserPass("name", "pass".toCharArray(), true);
+                    } catch (LoginException le) {
+                        // This is OK
+                    }
+                    System.out.println("Execution successful.");
+                } catch (Exception e) {
+                    return e;
+                }
+                return null;
+            }
+        });
+        try {
+            Exception ex = null;
+            if ((ex = future.get(TIMEOUT, TimeUnit.SECONDS)) != null) {
+                throw new RuntimeException(ex);
+            }
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            throw new RuntimeException("PortUnreachableException not thrown.");
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    /**
+     * If the remote destination to which the socket is connected does not
+     * exist, or is otherwise unreachable, and if an ICMP destination unreachable
+     * packet has been received for that address, then a subsequent call to
+     * send or receive may throw a PortUnreachableException. Note, there is no
+     * guarantee that the exception will be thrown.
+     */
+    private static boolean findPortUnreachableExc() throws Exception {
+        try {
+            InetSocketAddress iaddr = new InetSocketAddress(HOST, PORT);
+            DatagramSocket dgSocket = new DatagramSocket();
+            dgSocket.setSoTimeout(5000);
+            dgSocket.connect(iaddr);
+            byte[] data = new byte[]{};
+            dgSocket.send(new DatagramPacket(data, data.length, iaddr));
+            dgSocket.receive(new DatagramPacket(data, data.length));
+        } catch (PortUnreachableException e) {
+            return true;
+        } catch (SocketTimeoutException e) {
+            return false;
+        }
+        return false;
     }
 }
