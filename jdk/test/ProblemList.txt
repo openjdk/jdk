@@ -328,9 +328,6 @@ com/sun/jdi/GetLocalVariables4Test.sh                           8067354 windows-
 
 com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-all
 
-com/sun/jdi/ClassesByName2Test.java				8160833 generic-all
-com/sun/jdi/RedefineCrossEvent.java				8160833 generic-all
-
 ############################################################################
 
 # jdk_time
@@ -357,9 +354,11 @@ sun/tools/jcmd/TestJcmdSanity.java                              8031482 windows-
 
 sun/tools/jhsdb/BasicLauncherTest.java                          8160376 macosx-all
 
+sun/tools/jhsdb/HeapDumpTest.java                               8160376 macosx-all
+
 sun/tools/jhsdb/heapconfig/JMapHeapConfigTest.java              8160376 macosx-all
 
-sun/tools/jps/TestJpsJar.java                                   8160923 generic-all
+sun/tools/jps/TestJpsJar.java                                   8165500 generic-all
 
 sun/tools/jps/TestJpsJarRelative.java                           6456333 generic-all
 
