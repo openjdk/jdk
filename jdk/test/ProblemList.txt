@@ -314,6 +314,8 @@ tools/launcher/FXLauncherTest.java                              8068049 linux-al
 
 tools/pack200/Pack200Props.java                                 8155857 generic-all
 
+tools/launcher/VersionCheck.java                                8165772 generic-all
+
 ############################################################################
 
 # jdk_jdi
