@@ -2407,7 +2407,9 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
         delete agent_lib;
       }
 
+      // Agent_OnAttach executed so completion status is JNI_OK
       st->print_cr("%d", result);
+      result = JNI_OK;
     }
   }
   return result;
