@@ -2278,6 +2278,24 @@ public final class Unsafe {
         return v;
     }
 
+    @ForceInline
+    public final int getAndAddIntRelease(Object o, long offset, int delta) {
+        int v;
+        do {
+            v = getInt(o, offset);
+        } while (!weakCompareAndSwapIntRelease(o, offset, v, v + delta));
+        return v;
+    }
+
+    @ForceInline
+    public final int getAndAddIntAcquire(Object o, long offset, int delta) {
+        int v;
+        do {
+            v = getIntAcquire(o, offset);
+        } while (!weakCompareAndSwapIntAcquire(o, offset, v, v + delta));
+        return v;
+    }
+
     /**
      * Atomically adds the given value to the current value of a field
      * or array element within the given object {@code o}
@@ -2298,12 +2316,48 @@ public final class Unsafe {
         return v;
     }
 
+    @ForceInline
+    public final long getAndAddLongRelease(Object o, long offset, long delta) {
+        long v;
+        do {
+            v = getLong(o, offset);
+        } while (!weakCompareAndSwapLongRelease(o, offset, v, v + delta));
+        return v;
+    }
+
+    @ForceInline
+    public final long getAndAddLongAcquire(Object o, long offset, long delta) {
+        long v;
+        do {
+            v = getLongAcquire(o, offset);
+        } while (!weakCompareAndSwapLongAcquire(o, offset, v, v + delta));
+        return v;
+    }
+
     @HotSpotIntrinsicCandidate
     public final byte getAndAddByte(Object o, long offset, byte delta) {
         byte v;
         do {
             v = getByteVolatile(o, offset);
         } while (!weakCompareAndSwapByteVolatile(o, offset, v, (byte) (v + delta)));
+        return v;
+    }
+
+    @ForceInline
+    public final byte getAndAddByteRelease(Object o, long offset, byte delta) {
+        byte v;
+        do {
+            v = getByte(o, offset);
+        } while (!weakCompareAndSwapByteRelease(o, offset, v, (byte) (v + delta)));
+        return v;
+    }
+
+    @ForceInline
+    public final byte getAndAddByteAcquire(Object o, long offset, byte delta) {
+        byte v;
+        do {
+            v = getByteAcquire(o, offset);
+        } while (!weakCompareAndSwapByteAcquire(o, offset, v, (byte) (v + delta)));
         return v;
     }
 
@@ -2317,8 +2371,36 @@ public final class Unsafe {
     }
 
     @ForceInline
+    public final short getAndAddShortRelease(Object o, long offset, short delta) {
+        short v;
+        do {
+            v = getShort(o, offset);
+        } while (!weakCompareAndSwapShortRelease(o, offset, v, (short) (v + delta)));
+        return v;
+    }
+
+    @ForceInline
+    public final short getAndAddShortAcquire(Object o, long offset, short delta) {
+        short v;
+        do {
+            v = getShortAcquire(o, offset);
+        } while (!weakCompareAndSwapShortAcquire(o, offset, v, (short) (v + delta)));
+        return v;
+    }
+
+    @ForceInline
     public final char getAndAddChar(Object o, long offset, char delta) {
         return (char) getAndAddShort(o, offset, (short) delta);
+    }
+
+    @ForceInline
+    public final char getAndAddCharRelease(Object o, long offset, char delta) {
+        return (char) getAndAddShortRelease(o, offset, (short) delta);
+    }
+
+    @ForceInline
+    public final char getAndAddCharAcquire(Object o, long offset, char delta) {
+        return (char) getAndAddShortAcquire(o, offset, (short) delta);
     }
 
     @ForceInline
@@ -2337,6 +2419,36 @@ public final class Unsafe {
     }
 
     @ForceInline
+    public final float getAndAddFloatRelease(Object o, long offset, float delta) {
+        int expectedBits;
+        float v;
+        do {
+            // Load and CAS with the raw bits to avoid issues with NaNs and
+            // possible bit conversion from signaling NaNs to quiet NaNs that
+            // may result in the loop not terminating.
+            expectedBits = getInt(o, offset);
+            v = Float.intBitsToFloat(expectedBits);
+        } while (!weakCompareAndSwapIntRelease(o, offset,
+                                               expectedBits, Float.floatToRawIntBits(v + delta)));
+        return v;
+    }
+
+    @ForceInline
+    public final float getAndAddFloatAcquire(Object o, long offset, float delta) {
+        int expectedBits;
+        float v;
+        do {
+            // Load and CAS with the raw bits to avoid issues with NaNs and
+            // possible bit conversion from signaling NaNs to quiet NaNs that
+            // may result in the loop not terminating.
+            expectedBits = getIntAcquire(o, offset);
+            v = Float.intBitsToFloat(expectedBits);
+        } while (!weakCompareAndSwapIntAcquire(o, offset,
+                                               expectedBits, Float.floatToRawIntBits(v + delta)));
+        return v;
+    }
+
+    @ForceInline
     public final double getAndAddDouble(Object o, long offset, double delta) {
         long expectedBits;
         double v;
@@ -2348,6 +2460,36 @@ public final class Unsafe {
             v = Double.longBitsToDouble(expectedBits);
         } while (!weakCompareAndSwapLongVolatile(o, offset,
                                                  expectedBits, Double.doubleToRawLongBits(v + delta)));
+        return v;
+    }
+
+    @ForceInline
+    public final double getAndAddDoubleRelease(Object o, long offset, double delta) {
+        long expectedBits;
+        double v;
+        do {
+            // Load and CAS with the raw bits to avoid issues with NaNs and
+            // possible bit conversion from signaling NaNs to quiet NaNs that
+            // may result in the loop not terminating.
+            expectedBits = getLong(o, offset);
+            v = Double.longBitsToDouble(expectedBits);
+        } while (!weakCompareAndSwapLongRelease(o, offset,
+                                                expectedBits, Double.doubleToRawLongBits(v + delta)));
+        return v;
+    }
+
+    @ForceInline
+    public final double getAndAddDoubleAcquire(Object o, long offset, double delta) {
+        long expectedBits;
+        double v;
+        do {
+            // Load and CAS with the raw bits to avoid issues with NaNs and
+            // possible bit conversion from signaling NaNs to quiet NaNs that
+            // may result in the loop not terminating.
+            expectedBits = getLongAcquire(o, offset);
+            v = Double.longBitsToDouble(expectedBits);
+        } while (!weakCompareAndSwapLongAcquire(o, offset,
+                                                expectedBits, Double.doubleToRawLongBits(v + delta)));
         return v;
     }
 
@@ -2371,6 +2513,24 @@ public final class Unsafe {
         return v;
     }
 
+    @ForceInline
+    public final int getAndSetIntRelease(Object o, long offset, int newValue) {
+        int v;
+        do {
+            v = getInt(o, offset);
+        } while (!weakCompareAndSwapIntRelease(o, offset, v, newValue));
+        return v;
+    }
+
+    @ForceInline
+    public final int getAndSetIntAcquire(Object o, long offset, int newValue) {
+        int v;
+        do {
+            v = getIntAcquire(o, offset);
+        } while (!weakCompareAndSwapIntAcquire(o, offset, v, newValue));
+        return v;
+    }
+
     /**
      * Atomically exchanges the given value with the current value of
      * a field or array element within the given object {@code o}
@@ -2388,6 +2548,24 @@ public final class Unsafe {
         do {
             v = getLongVolatile(o, offset);
         } while (!weakCompareAndSwapLongVolatile(o, offset, v, newValue));
+        return v;
+    }
+
+    @ForceInline
+    public final long getAndSetLongRelease(Object o, long offset, long newValue) {
+        long v;
+        do {
+            v = getLong(o, offset);
+        } while (!weakCompareAndSwapLongRelease(o, offset, v, newValue));
+        return v;
+    }
+
+    @ForceInline
+    public final long getAndSetLongAcquire(Object o, long offset, long newValue) {
+        long v;
+        do {
+            v = getLongAcquire(o, offset);
+        } while (!weakCompareAndSwapLongAcquire(o, offset, v, newValue));
         return v;
     }
 
@@ -2411,6 +2589,24 @@ public final class Unsafe {
         return v;
     }
 
+    @ForceInline
+    public final Object getAndSetObjectRelease(Object o, long offset, Object newValue) {
+        Object v;
+        do {
+            v = getObject(o, offset);
+        } while (!weakCompareAndSwapObjectRelease(o, offset, v, newValue));
+        return v;
+    }
+
+    @ForceInline
+    public final Object getAndSetObjectAcquire(Object o, long offset, Object newValue) {
+        Object v;
+        do {
+            v = getObjectAcquire(o, offset);
+        } while (!weakCompareAndSwapObjectAcquire(o, offset, v, newValue));
+        return v;
+    }
+
     @HotSpotIntrinsicCandidate
     public final byte getAndSetByte(Object o, long offset, byte newValue) {
         byte v;
@@ -2421,8 +2617,36 @@ public final class Unsafe {
     }
 
     @ForceInline
+    public final byte getAndSetByteRelease(Object o, long offset, byte newValue) {
+        byte v;
+        do {
+            v = getByte(o, offset);
+        } while (!weakCompareAndSwapByteRelease(o, offset, v, newValue));
+        return v;
+    }
+
+    @ForceInline
+    public final byte getAndSetByteAcquire(Object o, long offset, byte newValue) {
+        byte v;
+        do {
+            v = getByteAcquire(o, offset);
+        } while (!weakCompareAndSwapByteAcquire(o, offset, v, newValue));
+        return v;
+    }
+
+    @ForceInline
     public final boolean getAndSetBoolean(Object o, long offset, boolean newValue) {
         return byte2bool(getAndSetByte(o, offset, bool2byte(newValue)));
+    }
+
+    @ForceInline
+    public final boolean getAndSetBooleanRelease(Object o, long offset, boolean newValue) {
+        return byte2bool(getAndSetByteRelease(o, offset, bool2byte(newValue)));
+    }
+
+    @ForceInline
+    public final boolean getAndSetBooleanAcquire(Object o, long offset, boolean newValue) {
+        return byte2bool(getAndSetByteAcquire(o, offset, bool2byte(newValue)));
     }
 
     @HotSpotIntrinsicCandidate
@@ -2435,8 +2659,36 @@ public final class Unsafe {
     }
 
     @ForceInline
+    public final short getAndSetShortRelease(Object o, long offset, short newValue) {
+        short v;
+        do {
+            v = getShort(o, offset);
+        } while (!weakCompareAndSwapShortRelease(o, offset, v, newValue));
+        return v;
+    }
+
+    @ForceInline
+    public final short getAndSetShortAcquire(Object o, long offset, short newValue) {
+        short v;
+        do {
+            v = getShortAcquire(o, offset);
+        } while (!weakCompareAndSwapShortAcquire(o, offset, v, newValue));
+        return v;
+    }
+
+    @ForceInline
     public final char getAndSetChar(Object o, long offset, char newValue) {
         return s2c(getAndSetShort(o, offset, c2s(newValue)));
+    }
+
+    @ForceInline
+    public final char getAndSetCharRelease(Object o, long offset, char newValue) {
+        return s2c(getAndSetShortRelease(o, offset, c2s(newValue)));
+    }
+
+    @ForceInline
+    public final char getAndSetCharAcquire(Object o, long offset, char newValue) {
+        return s2c(getAndSetShortAcquire(o, offset, c2s(newValue)));
     }
 
     @ForceInline
@@ -2446,10 +2698,518 @@ public final class Unsafe {
     }
 
     @ForceInline
+    public final float getAndSetFloatRelease(Object o, long offset, float newValue) {
+        int v = getAndSetIntRelease(o, offset, Float.floatToRawIntBits(newValue));
+        return Float.intBitsToFloat(v);
+    }
+
+    @ForceInline
+    public final float getAndSetFloatAcquire(Object o, long offset, float newValue) {
+        int v = getAndSetIntAcquire(o, offset, Float.floatToRawIntBits(newValue));
+        return Float.intBitsToFloat(v);
+    }
+
+    @ForceInline
     public final double getAndSetDouble(Object o, long offset, double newValue) {
         long v = getAndSetLong(o, offset, Double.doubleToRawLongBits(newValue));
         return Double.longBitsToDouble(v);
     }
+
+    @ForceInline
+    public final double getAndSetDoubleRelease(Object o, long offset, double newValue) {
+        long v = getAndSetLongRelease(o, offset, Double.doubleToRawLongBits(newValue));
+        return Double.longBitsToDouble(v);
+    }
+
+    @ForceInline
+    public final double getAndSetDoubleAcquire(Object o, long offset, double newValue) {
+        long v = getAndSetLongAcquire(o, offset, Double.doubleToRawLongBits(newValue));
+        return Double.longBitsToDouble(v);
+    }
+
+
+    // The following contain CAS-based Java implementations used on
+    // platforms not supporting native instructions
+
+    @ForceInline
+    public final boolean getAndBitwiseOrBoolean(Object o, long offset, boolean mask) {
+        return byte2bool(getAndBitwiseOrByte(o, offset, bool2byte(mask)));
+    }
+
+    @ForceInline
+    public final boolean getAndBitwiseOrBooleanRelease(Object o, long offset, boolean mask) {
+        return byte2bool(getAndBitwiseOrByteRelease(o, offset, bool2byte(mask)));
+    }
+
+    @ForceInline
+    public final boolean getAndBitwiseOrBooleanAcquire(Object o, long offset, boolean mask) {
+        return byte2bool(getAndBitwiseOrByteAcquire(o, offset, bool2byte(mask)));
+    }
+
+    @ForceInline
+    public final boolean getAndBitwiseAndBoolean(Object o, long offset, boolean mask) {
+        return byte2bool(getAndBitwiseAndByte(o, offset, bool2byte(mask)));
+    }
+
+    @ForceInline
+    public final boolean getAndBitwiseAndBooleanRelease(Object o, long offset, boolean mask) {
+        return byte2bool(getAndBitwiseAndByteRelease(o, offset, bool2byte(mask)));
+    }
+
+    @ForceInline
+    public final boolean getAndBitwiseAndBooleanAcquire(Object o, long offset, boolean mask) {
+        return byte2bool(getAndBitwiseAndByteAcquire(o, offset, bool2byte(mask)));
+    }
+
+    @ForceInline
+    public final boolean getAndBitwiseXorBoolean(Object o, long offset, boolean mask) {
+        return byte2bool(getAndBitwiseXorByte(o, offset, bool2byte(mask)));
+    }
+
+    @ForceInline
+    public final boolean getAndBitwiseXorBooleanRelease(Object o, long offset, boolean mask) {
+        return byte2bool(getAndBitwiseXorByteRelease(o, offset, bool2byte(mask)));
+    }
+
+    @ForceInline
+    public final boolean getAndBitwiseXorBooleanAcquire(Object o, long offset, boolean mask) {
+        return byte2bool(getAndBitwiseXorByteAcquire(o, offset, bool2byte(mask)));
+    }
+
+
+    @ForceInline
+    public final byte getAndBitwiseOrByte(Object o, long offset, byte mask) {
+        byte current;
+        do {
+            current = getByteVolatile(o, offset);
+        } while (!weakCompareAndSwapByteVolatile(o, offset,
+                                                  current, (byte) (current | mask)));
+        return current;
+    }
+
+    @ForceInline
+    public final byte getAndBitwiseOrByteRelease(Object o, long offset, byte mask) {
+        byte current;
+        do {
+            current = getByte(o, offset);
+        } while (!weakCompareAndSwapByteRelease(o, offset,
+                                                 current, (byte) (current | mask)));
+        return current;
+    }
+
+    @ForceInline
+    public final byte getAndBitwiseOrByteAcquire(Object o, long offset, byte mask) {
+        byte current;
+        do {
+            // Plain read, the value is a hint, the acquire CAS does the work
+            current = getByte(o, offset);
+        } while (!weakCompareAndSwapByteAcquire(o, offset,
+                                                 current, (byte) (current | mask)));
+        return current;
+    }
+
+    @ForceInline
+    public final byte getAndBitwiseAndByte(Object o, long offset, byte mask) {
+        byte current;
+        do {
+            current = getByteVolatile(o, offset);
+        } while (!weakCompareAndSwapByteVolatile(o, offset,
+                                                  current, (byte) (current & mask)));
+        return current;
+    }
+
+    @ForceInline
+    public final byte getAndBitwiseAndByteRelease(Object o, long offset, byte mask) {
+        byte current;
+        do {
+            current = getByte(o, offset);
+        } while (!weakCompareAndSwapByteRelease(o, offset,
+                                                 current, (byte) (current & mask)));
+        return current;
+    }
+
+    @ForceInline
+    public final byte getAndBitwiseAndByteAcquire(Object o, long offset, byte mask) {
+        byte current;
+        do {
+            // Plain read, the value is a hint, the acquire CAS does the work
+            current = getByte(o, offset);
+        } while (!weakCompareAndSwapByteAcquire(o, offset,
+                                                 current, (byte) (current & mask)));
+        return current;
+    }
+
+    @ForceInline
+    public final byte getAndBitwiseXorByte(Object o, long offset, byte mask) {
+        byte current;
+        do {
+            current = getByteVolatile(o, offset);
+        } while (!weakCompareAndSwapByteVolatile(o, offset,
+                                                  current, (byte) (current ^ mask)));
+        return current;
+    }
+
+    @ForceInline
+    public final byte getAndBitwiseXorByteRelease(Object o, long offset, byte mask) {
+        byte current;
+        do {
+            current = getByte(o, offset);
+        } while (!weakCompareAndSwapByteRelease(o, offset,
+                                                 current, (byte) (current ^ mask)));
+        return current;
+    }
+
+    @ForceInline
+    public final byte getAndBitwiseXorByteAcquire(Object o, long offset, byte mask) {
+        byte current;
+        do {
+            // Plain read, the value is a hint, the acquire CAS does the work
+            current = getByte(o, offset);
+        } while (!weakCompareAndSwapByteAcquire(o, offset,
+                                                 current, (byte) (current ^ mask)));
+        return current;
+    }
+
+
+    @ForceInline
+    public final char getAndBitwiseOrChar(Object o, long offset, char mask) {
+        return s2c(getAndBitwiseOrShort(o, offset, c2s(mask)));
+    }
+
+    @ForceInline
+    public final char getAndBitwiseOrCharRelease(Object o, long offset, char mask) {
+        return s2c(getAndBitwiseOrShortRelease(o, offset, c2s(mask)));
+    }
+
+    @ForceInline
+    public final char getAndBitwiseOrCharAcquire(Object o, long offset, char mask) {
+        return s2c(getAndBitwiseOrShortAcquire(o, offset, c2s(mask)));
+    }
+
+    @ForceInline
+    public final char getAndBitwiseAndChar(Object o, long offset, char mask) {
+        return s2c(getAndBitwiseAndShort(o, offset, c2s(mask)));
+    }
+
+    @ForceInline
+    public final char getAndBitwiseAndCharRelease(Object o, long offset, char mask) {
+        return s2c(getAndBitwiseAndShortRelease(o, offset, c2s(mask)));
+    }
+
+    @ForceInline
+    public final char getAndBitwiseAndCharAcquire(Object o, long offset, char mask) {
+        return s2c(getAndBitwiseAndShortAcquire(o, offset, c2s(mask)));
+    }
+
+    @ForceInline
+    public final char getAndBitwiseXorChar(Object o, long offset, char mask) {
+        return s2c(getAndBitwiseXorShort(o, offset, c2s(mask)));
+    }
+
+    @ForceInline
+    public final char getAndBitwiseXorCharRelease(Object o, long offset, char mask) {
+        return s2c(getAndBitwiseXorShortRelease(o, offset, c2s(mask)));
+    }
+
+    @ForceInline
+    public final char getAndBitwiseXorCharAcquire(Object o, long offset, char mask) {
+        return s2c(getAndBitwiseXorShortAcquire(o, offset, c2s(mask)));
+    }
+
+
+    @ForceInline
+    public final short getAndBitwiseOrShort(Object o, long offset, short mask) {
+        short current;
+        do {
+            current = getShortVolatile(o, offset);
+        } while (!weakCompareAndSwapShortVolatile(o, offset,
+                                                current, (short) (current | mask)));
+        return current;
+    }
+
+    @ForceInline
+    public final short getAndBitwiseOrShortRelease(Object o, long offset, short mask) {
+        short current;
+        do {
+            current = getShort(o, offset);
+        } while (!weakCompareAndSwapShortRelease(o, offset,
+                                               current, (short) (current | mask)));
+        return current;
+    }
+
+    @ForceInline
+    public final short getAndBitwiseOrShortAcquire(Object o, long offset, short mask) {
+        short current;
+        do {
+            // Plain read, the value is a hint, the acquire CAS does the work
+            current = getShort(o, offset);
+        } while (!weakCompareAndSwapShortAcquire(o, offset,
+                                               current, (short) (current | mask)));
+        return current;
+    }
+
+    @ForceInline
+    public final short getAndBitwiseAndShort(Object o, long offset, short mask) {
+        short current;
+        do {
+            current = getShortVolatile(o, offset);
+        } while (!weakCompareAndSwapShortVolatile(o, offset,
+                                                current, (short) (current & mask)));
+        return current;
+    }
+
+    @ForceInline
+    public final short getAndBitwiseAndShortRelease(Object o, long offset, short mask) {
+        short current;
+        do {
+            current = getShort(o, offset);
+        } while (!weakCompareAndSwapShortRelease(o, offset,
+                                               current, (short) (current & mask)));
+        return current;
+    }
+
+    @ForceInline
+    public final short getAndBitwiseAndShortAcquire(Object o, long offset, short mask) {
+        short current;
+        do {
+            // Plain read, the value is a hint, the acquire CAS does the work
+            current = getShort(o, offset);
+        } while (!weakCompareAndSwapShortAcquire(o, offset,
+                                               current, (short) (current & mask)));
+        return current;
+    }
+
+    @ForceInline
+    public final short getAndBitwiseXorShort(Object o, long offset, short mask) {
+        short current;
+        do {
+            current = getShortVolatile(o, offset);
+        } while (!weakCompareAndSwapShortVolatile(o, offset,
+                                                current, (short) (current ^ mask)));
+        return current;
+    }
+
+    @ForceInline
+    public final short getAndBitwiseXorShortRelease(Object o, long offset, short mask) {
+        short current;
+        do {
+            current = getShort(o, offset);
+        } while (!weakCompareAndSwapShortRelease(o, offset,
+                                               current, (short) (current ^ mask)));
+        return current;
+    }
+
+    @ForceInline
+    public final short getAndBitwiseXorShortAcquire(Object o, long offset, short mask) {
+        short current;
+        do {
+            // Plain read, the value is a hint, the acquire CAS does the work
+            current = getShort(o, offset);
+        } while (!weakCompareAndSwapShortAcquire(o, offset,
+                                               current, (short) (current ^ mask)));
+        return current;
+    }
+
+
+    @ForceInline
+    public final int getAndBitwiseOrInt(Object o, long offset, int mask) {
+        int current;
+        do {
+            current = getIntVolatile(o, offset);
+        } while (!weakCompareAndSwapIntVolatile(o, offset,
+                                                current, current | mask));
+        return current;
+    }
+
+    @ForceInline
+    public final int getAndBitwiseOrIntRelease(Object o, long offset, int mask) {
+        int current;
+        do {
+            current = getInt(o, offset);
+        } while (!weakCompareAndSwapIntRelease(o, offset,
+                                               current, current | mask));
+        return current;
+    }
+
+    @ForceInline
+    public final int getAndBitwiseOrIntAcquire(Object o, long offset, int mask) {
+        int current;
+        do {
+            // Plain read, the value is a hint, the acquire CAS does the work
+            current = getInt(o, offset);
+        } while (!weakCompareAndSwapIntAcquire(o, offset,
+                                               current, current | mask));
+        return current;
+    }
+
+    /**
+     * Atomically replaces the current value of a field or array element within
+     * the given object with the result of bitwise AND between the current value
+     * and mask.
+     *
+     * @param o object/array to update the field/element in
+     * @param offset field/element offset
+     * @param mask the mask value
+     * @return the previous value
+     * @since 1.9
+     */
+    @ForceInline
+    public final int getAndBitwiseAndInt(Object o, long offset, int mask) {
+        int current;
+        do {
+            current = getIntVolatile(o, offset);
+        } while (!weakCompareAndSwapIntVolatile(o, offset,
+                                                current, current & mask));
+        return current;
+    }
+
+    @ForceInline
+    public final int getAndBitwiseAndIntRelease(Object o, long offset, int mask) {
+        int current;
+        do {
+            current = getInt(o, offset);
+        } while (!weakCompareAndSwapIntRelease(o, offset,
+                                               current, current & mask));
+        return current;
+    }
+
+    @ForceInline
+    public final int getAndBitwiseAndIntAcquire(Object o, long offset, int mask) {
+        int current;
+        do {
+            // Plain read, the value is a hint, the acquire CAS does the work
+            current = getInt(o, offset);
+        } while (!weakCompareAndSwapIntAcquire(o, offset,
+                                               current, current & mask));
+        return current;
+    }
+
+    @ForceInline
+    public final int getAndBitwiseXorInt(Object o, long offset, int mask) {
+        int current;
+        do {
+            current = getIntVolatile(o, offset);
+        } while (!weakCompareAndSwapIntVolatile(o, offset,
+                                                current, current ^ mask));
+        return current;
+    }
+
+    @ForceInline
+    public final int getAndBitwiseXorIntRelease(Object o, long offset, int mask) {
+        int current;
+        do {
+            current = getInt(o, offset);
+        } while (!weakCompareAndSwapIntRelease(o, offset,
+                                               current, current ^ mask));
+        return current;
+    }
+
+    @ForceInline
+    public final int getAndBitwiseXorIntAcquire(Object o, long offset, int mask) {
+        int current;
+        do {
+            // Plain read, the value is a hint, the acquire CAS does the work
+            current = getInt(o, offset);
+        } while (!weakCompareAndSwapIntAcquire(o, offset,
+                                               current, current ^ mask));
+        return current;
+    }
+
+
+    @ForceInline
+    public final long getAndBitwiseOrLong(Object o, long offset, long mask) {
+        long current;
+        do {
+            current = getLongVolatile(o, offset);
+        } while (!weakCompareAndSwapLongVolatile(o, offset,
+                                                current, current | mask));
+        return current;
+    }
+
+    @ForceInline
+    public final long getAndBitwiseOrLongRelease(Object o, long offset, long mask) {
+        long current;
+        do {
+            current = getLong(o, offset);
+        } while (!weakCompareAndSwapLongRelease(o, offset,
+                                               current, current | mask));
+        return current;
+    }
+
+    @ForceInline
+    public final long getAndBitwiseOrLongAcquire(Object o, long offset, long mask) {
+        long current;
+        do {
+            // Plain read, the value is a hint, the acquire CAS does the work
+            current = getLong(o, offset);
+        } while (!weakCompareAndSwapLongAcquire(o, offset,
+                                               current, current | mask));
+        return current;
+    }
+
+    @ForceInline
+    public final long getAndBitwiseAndLong(Object o, long offset, long mask) {
+        long current;
+        do {
+            current = getLongVolatile(o, offset);
+        } while (!weakCompareAndSwapLongVolatile(o, offset,
+                                                current, current & mask));
+        return current;
+    }
+
+    @ForceInline
+    public final long getAndBitwiseAndLongRelease(Object o, long offset, long mask) {
+        long current;
+        do {
+            current = getLong(o, offset);
+        } while (!weakCompareAndSwapLongRelease(o, offset,
+                                               current, current & mask));
+        return current;
+    }
+
+    @ForceInline
+    public final long getAndBitwiseAndLongAcquire(Object o, long offset, long mask) {
+        long current;
+        do {
+            // Plain read, the value is a hint, the acquire CAS does the work
+            current = getLong(o, offset);
+        } while (!weakCompareAndSwapLongAcquire(o, offset,
+                                               current, current & mask));
+        return current;
+    }
+
+    @ForceInline
+    public final long getAndBitwiseXorLong(Object o, long offset, long mask) {
+        long current;
+        do {
+            current = getLongVolatile(o, offset);
+        } while (!weakCompareAndSwapLongVolatile(o, offset,
+                                                current, current ^ mask));
+        return current;
+    }
+
+    @ForceInline
+    public final long getAndBitwiseXorLongRelease(Object o, long offset, long mask) {
+        long current;
+        do {
+            current = getLong(o, offset);
+        } while (!weakCompareAndSwapLongRelease(o, offset,
+                                               current, current ^ mask));
+        return current;
+    }
+
+    @ForceInline
+    public final long getAndBitwiseXorLongAcquire(Object o, long offset, long mask) {
+        long current;
+        do {
+            // Plain read, the value is a hint, the acquire CAS does the work
+            current = getLong(o, offset);
+        } while (!weakCompareAndSwapLongAcquire(o, offset,
+                                               current, current ^ mask));
+        return current;
+    }
+
+
 
     /**
      * Ensures that loads before the fence will not be reordered with loads and

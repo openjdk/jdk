@@ -25,10 +25,11 @@
  * @test
  * @summary Module system initialization exception results if a module is specificed twice to --patch-module.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class PatchModuleDupModule {
 

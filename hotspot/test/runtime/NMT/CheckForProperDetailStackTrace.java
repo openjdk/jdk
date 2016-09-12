@@ -25,12 +25,14 @@
  * @test
  * @key nmt
  * @summary Running with NMT detail should produce expected stack traces.
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.Platform;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

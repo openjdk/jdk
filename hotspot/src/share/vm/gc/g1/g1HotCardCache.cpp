@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 
 G1HotCardCache::G1HotCardCache(G1CollectedHeap *g1h):
   _g1h(g1h), _hot_cache(NULL), _use_cache(false), _card_counts(g1h) {}

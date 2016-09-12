@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1193,18 +1193,21 @@ class PackageReader extends BandStructure {
         cls.visitRefs(VRM_CLASSIC, cpRefs);
 
         ArrayList<BootstrapMethodEntry> bsms = new ArrayList<>();
-        /*
-         * BootstrapMethod(BSMs) are added here before InnerClasses(ICs),
-         * so as to ensure the order. Noting that the BSMs  may be
-         * removed if they are not found in the CP, after the ICs expansion.
-         */
-        cls.addAttribute(Package.attrBootstrapMethodsEmpty.canonicalInstance());
-
         // flesh out the local constant pool
         ConstantPool.completeReferencesIn(cpRefs, true, bsms);
 
+        // add the bsm and references as required
+        if (!bsms.isEmpty()) {
+            cls.addAttribute(Package.attrBootstrapMethodsEmpty.canonicalInstance());
+            cpRefs.add(Package.getRefString("BootstrapMethods"));
+            Collections.sort(bsms);
+            cls.setBootstrapMethods(bsms);
+        }
+
         // Now that we know all our local class references,
         // compute the InnerClasses attribute.
+        // An InnerClasses attribute usually gets added here,
+        // although it might already have been present.
         int changed = cls.expandLocalICs();
 
         if (changed != 0) {
@@ -1219,16 +1222,6 @@ class PackageReader extends BandStructure {
 
             // flesh out the local constant pool, again
             ConstantPool.completeReferencesIn(cpRefs, true, bsms);
-        }
-
-        // remove the attr previously set, otherwise add the bsm and
-        // references as required
-        if (bsms.isEmpty()) {
-            cls.attributes.remove(Package.attrBootstrapMethodsEmpty.canonicalInstance());
-        } else {
-            cpRefs.add(Package.getRefString("BootstrapMethods"));
-            Collections.sort(bsms);
-            cls.setBootstrapMethods(bsms);
         }
 
         // construct a local constant pool

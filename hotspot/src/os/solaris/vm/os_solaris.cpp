@@ -42,7 +42,7 @@
 #include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -4588,10 +4588,6 @@ void os::make_polling_page_readable(void) {
     fatal("Could not enable polling page");
   }
 }
-
-// OS interface.
-
-bool os::check_heap(bool force) { return true; }
 
 // Is a (classpath) directory empty?
 bool os::dir_is_empty(const char* path) {

@@ -25,10 +25,9 @@
  * @test
  * @bug 8015436
  * @summary the IK _initial_method_idnum value must be adjusted if overpass methods are added
- * @library /test/lib/share/classes /
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @build compiler.runtime.cr8015436.Test8015436
- *        compiler.runtime.cr8015436.Driver8015436
  *
  * @run driver compiler.runtime.cr8015436.Driver8015436
  */

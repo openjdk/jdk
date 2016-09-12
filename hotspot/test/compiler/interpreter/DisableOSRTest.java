@@ -26,7 +26,7 @@
  * @bug 8159620
  * @summary testing that -XX:-UseOnStackReplacement works with both -XX:(+/-)TieredCompilation
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  *
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

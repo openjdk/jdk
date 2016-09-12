@@ -93,7 +93,7 @@ public class BasicModularXMLParserTest {
      */
     public void testWithOneProvider() throws Exception {
         int exitValue
-            = executeTestJava("-mp", MOD_DIR1.toString(),
+            = executeTestJava("--module-path", MOD_DIR1.toString(),
                               "-cp", CLASSES_DIR.toString(),
                               "Main", "xmlprovider1")
                 .outputTo(System.out)
@@ -108,7 +108,7 @@ public class BasicModularXMLParserTest {
      */
     public void testWithTwoProvider() throws Exception {
         int exitValue
-            = executeTestJava("-mp", MOD_DIR1.toString() + File.pathSeparator + MOD_DIR2.toString(),
+            = executeTestJava("--module-path", MOD_DIR1.toString() + File.pathSeparator + MOD_DIR2.toString(),
                               "-cp", CLASSES_DIR.toString(),
                               "Main", "xmlprovider1", "xmlprovider2")
                 .outputTo(System.out)

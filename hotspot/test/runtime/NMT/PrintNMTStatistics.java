@@ -27,10 +27,11 @@
  * @bug 8005936 8058606
  * @summary Verify PrintNMTStatistics on normal JVM exit for detail and summary tracking level
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class PrintNMTStatistics {
 

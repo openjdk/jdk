@@ -30,7 +30,7 @@
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/space.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 
 inline HeapWord* G1ContiguousSpace::allocate_impl(size_t min_word_size,
                                                   size_t desired_word_size,

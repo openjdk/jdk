@@ -564,19 +564,23 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      * <p>This is a <a href="package-summary.html#StreamOps">terminal
      * operation</a>.
      *
-     * @param <R> type of the result
-     * @param supplier a function that creates a new result container. For a
-     *                 parallel execution, this function may be called
+     * @param <R> the type of the mutable result container
+     * @param supplier a function that creates a new mutable result container.
+     *                 For a parallel execution, this function may be called
      *                 multiple times and must return a fresh value each time.
      * @param accumulator an <a href="package-summary.html#Associativity">associative</a>,
      *                    <a href="package-summary.html#NonInterference">non-interfering</a>,
      *                    <a href="package-summary.html#Statelessness">stateless</a>
-     *                    function for incorporating an additional element into a result
+     *                    function that must fold an element into a result
+     *                    container.
      * @param combiner an <a href="package-summary.html#Associativity">associative</a>,
      *                    <a href="package-summary.html#NonInterference">non-interfering</a>,
      *                    <a href="package-summary.html#Statelessness">stateless</a>
-     *                    function for combining two values, which must be
-     *                    compatible with the accumulator function
+     *                    function that accepts two partial result containers
+     *                    and merges them, which must be compatible with the
+     *                    accumulator function.  The combiner function must fold
+     *                    the elements from the second result container into the
+     *                    first result container.
      * @return the result of the reduction
      * @see Stream#collect(Supplier, BiConsumer, BiConsumer)
      */
@@ -877,6 +881,12 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      * {@code n}, will be the result of applying the function {@code f} to the
      * element at position {@code n - 1}.
      *
+     * <p>The action of applying {@code f} for one element
+     * <a href="../concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
+     * the action of applying {@code f} for subsequent elements.  For any given
+     * element the action may be performed in whatever thread the library
+     * chooses.
+     *
      * @param seed the initial element
      * @param f a function to be applied to the previous element to produce
      *          a new element
@@ -908,37 +918,44 @@ public interface LongStream extends BaseStream<Long, LongStream> {
 
     /**
      * Returns a sequential ordered {@code LongStream} produced by iterative
-     * application of a function to an initial element, conditioned on
-     * satisfying the supplied predicate.  The stream terminates as soon as
-     * the predicate returns false.
+     * application of the given {@code next} function to an initial element,
+     * conditioned on satisfying the given {@code hasNext} predicate.  The
+     * stream terminates as soon as the {@code hasNext} predicate returns false.
      *
-     * <p>
-     * {@code LongStream.iterate} should produce the same sequence of elements
-     * as produced by the corresponding for-loop:
+     * <p>{@code LongStream.iterate} should produce the same sequence of elements as
+     * produced by the corresponding for-loop:
      * <pre>{@code
-     *     for (long index=seed; predicate.test(index); index = f.applyAsLong(index)) {
+     *     for (long index=seed; hasNext.test(index); index = next.applyAsLong(index)) {
      *         ...
      *     }
      * }</pre>
      *
-     * <p>
-     * The resulting sequence may be empty if the predicate does not hold on
-     * the seed value.  Otherwise the first element will be the supplied seed
-     * value, the next element (if present) will be the result of applying the
-     * function f to the seed value, and so on iteratively until the predicate
-     * indicates that the stream should terminate.
+     * <p>The resulting sequence may be empty if the {@code hasNext} predicate
+     * does not hold on the seed value.  Otherwise the first element will be the
+     * supplied {@code seed} value, the next element (if present) will be the
+     * result of applying the {@code next} function to the {@code seed} value,
+     * and so on iteratively until the {@code hasNext} predicate indicates that
+     * the stream should terminate.
+     *
+     * <p>The action of applying the {@code hasNext} predicate to an element
+     * <a href="../concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
+     * the action of applying the {@code next} function to that element.  The
+     * action of applying the {@code next} function for one element
+     * <i>happens-before</i> the action of applying the {@code hasNext}
+     * predicate for subsequent elements.  For any given element an action may
+     * be performed in whatever thread the library chooses.
      *
      * @param seed the initial element
-     * @param predicate a predicate to apply to elements to determine when the
-     *          stream must terminate.
-     * @param f a function to be applied to the previous element to produce
-     *          a new element
+     * @param hasNext a predicate to apply to elements to determine when the
+     *                stream must terminate.
+     * @param next a function to be applied to the previous element to produce
+     *             a new element
      * @return a new sequential {@code LongStream}
      * @since 9
      */
-    public static LongStream iterate(long seed, LongPredicate predicate, LongUnaryOperator f) {
-        Objects.requireNonNull(f);
-        Objects.requireNonNull(predicate);
+    public static LongStream iterate(long seed, LongPredicate hasNext, LongUnaryOperator next) {
+        Objects.requireNonNull(next);
+        Objects.requireNonNull(hasNext);
         Spliterator.OfLong spliterator = new Spliterators.AbstractLongSpliterator(Long.MAX_VALUE,
                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL) {
             long prev;
@@ -951,12 +968,12 @@ public interface LongStream extends BaseStream<Long, LongStream> {
                     return false;
                 long t;
                 if (started)
-                    t = f.applyAsLong(prev);
+                    t = next.applyAsLong(prev);
                 else {
                     t = seed;
                     started = true;
                 }
-                if (!predicate.test(t)) {
+                if (!hasNext.test(t)) {
                     finished = true;
                     return false;
                 }
@@ -970,10 +987,10 @@ public interface LongStream extends BaseStream<Long, LongStream> {
                 if (finished)
                     return;
                 finished = true;
-                long t = started ? f.applyAsLong(prev) : seed;
-                while (predicate.test(t)) {
+                long t = started ? next.applyAsLong(prev) : seed;
+                while (hasNext.test(t)) {
                     action.accept(t);
-                    t = f.applyAsLong(t);
+                    t = next.applyAsLong(t);
                 }
             }
         };

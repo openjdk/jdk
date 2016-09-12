@@ -975,8 +975,8 @@ template<class E, class T>
 static void trace_flag_changed(const char* name, const T old_value, const T new_value, const Flag::Flags origin) {
   E e;
   e.set_name(name);
-  e.set_old_value(old_value);
-  e.set_new_value(new_value);
+  e.set_oldValue(old_value);
+  e.set_newValue(new_value);
   e.set_origin(origin);
   e.commit();
 }

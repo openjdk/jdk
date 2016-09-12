@@ -34,7 +34,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import jdk.testlibrary.Utils;
 
 public class TimeOutShrink {

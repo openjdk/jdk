@@ -28,11 +28,9 @@ import utils.*;
  * @summary Test checks the consistency of the output
  * displayed with jstat -gccapacity.
  * @modules java.base/jdk.internal.misc
- * @library /test/lib/share/classes
+ * @library /test/lib
  * @library ../share
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
- * @build common.*
- * @build utils.*
  * @run main/othervm -XX:+UsePerfData -Xmx128M GcCapacityTest
  */
 public class GcCapacityTest {

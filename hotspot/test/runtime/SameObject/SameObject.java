@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import jdk.test.lib.Asserts;
  *          Fixed in JDK1.3.1_10
  *          Fixed in JDK1.4.1_07
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  * @run main/othervm/native -Xcheck:jni SameObject
  */
 public class SameObject {

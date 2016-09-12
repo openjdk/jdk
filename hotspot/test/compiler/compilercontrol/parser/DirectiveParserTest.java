@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8137167
  * @summary Tests directive json parser
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  *
  * @run driver compiler.compilercontrol.parser.DirectiveParserTest
  */
@@ -35,7 +35,7 @@ package compiler.compilercontrol.parser;
 
 import compiler.compilercontrol.share.JSONFile;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
 
 public class DirectiveParserTest {

@@ -94,7 +94,8 @@ import java.util.function.UnaryOperator;
  *
  * <ul>
  * <li>They are <em>structurally immutable</em>. Elements cannot be added, removed,
- * or replaced. Attempts to do so result in {@code UnsupportedOperationException}.
+ * or replaced. Calling any mutator method will always cause
+ * {@code UnsupportedOperationException} to be thrown.
  * However, if the contained elements are themselves mutable,
  * this may cause the List's contents to appear to change.
  * <li>They disallow {@code null} elements. Attempts to create them with

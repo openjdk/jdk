@@ -48,6 +48,9 @@ class GroupEntry extends BaseEntry {
     //Value of the prefer attribute
     boolean isPreferPublic = true;
 
+    //The parent of the catalog instance
+    CatalogImpl parent = null;
+
     //The catalog instance this group belongs to
     CatalogImpl catalog;
 
@@ -55,10 +58,10 @@ class GroupEntry extends BaseEntry {
     List<BaseEntry> entries = new ArrayList<>();
 
     //loaded delegated catalog by system id
-    Map<String, Catalog> delegateCatalogs = new HashMap<>();
+    Map<String, CatalogImpl> delegateCatalogs = new HashMap<>();
 
     //A list of all loaded Catalogs, including this, and next catalogs
-    Map<String, Catalog> loadedCatalogs = new HashMap<>();
+    Map<String, CatalogImpl> loadedCatalogs = new HashMap<>();
 
     /*
      A list of Catalog Ids that have already been searched in a matching
@@ -136,8 +139,9 @@ class GroupEntry extends BaseEntry {
      *
      * @param type The type of the entry
      */
-    public GroupEntry(CatalogEntryType type) {
+    public GroupEntry(CatalogEntryType type, CatalogImpl parent) {
         super(type);
+        this.parent = parent;
     }
 
     /**
@@ -163,7 +167,7 @@ class GroupEntry extends BaseEntry {
     }
     /**
      * Constructs a group entry.
-     * @param catalog The parent catalog
+     * @param catalog The catalog this GroupEntry belongs
      * @param base The baseURI attribute
      * @param attributes The attributes
      */
@@ -445,13 +449,14 @@ class GroupEntry extends BaseEntry {
      * @param catalogId the catalog Id
      */
     Catalog loadCatalog(URI catalogURI) {
-        Catalog delegateCatalog = null;
+        CatalogImpl delegateCatalog = null;
         if (catalogURI != null) {
             String catalogId = catalogURI.toASCIIString();
             delegateCatalog = getLoadedCatalog(catalogId);
             if (delegateCatalog == null) {
                 if (verifyCatalogFile(catalogURI)) {
                     delegateCatalog = new CatalogImpl(catalog, features, catalogId);
+                    delegateCatalog.load();
                     delegateCatalogs.put(catalogId, delegateCatalog);
                 }
             }
@@ -467,8 +472,8 @@ class GroupEntry extends BaseEntry {
      * @return a Catalog object previously loaded, or null if none in the saved
      * list
      */
-    Catalog getLoadedCatalog(String catalogId) {
-        Catalog c = null;
+    CatalogImpl getLoadedCatalog(String catalogId) {
+        CatalogImpl c = null;
 
         //checl delegate Catalogs
         c = delegateCatalogs.get(catalogId);
@@ -504,7 +509,7 @@ class GroupEntry extends BaseEntry {
         }
 
         String catalogId = catalogURI.toASCIIString();
-        if (catalogsSearched.contains(catalogId)) {
+        if (catalogsSearched.contains(catalogId) || isCircular(catalogId)) {
             CatalogMessages.reportRunTimeError(CatalogMessages.ERR_CIRCULAR_REFERENCE,
                     new Object[]{CatalogMessages.sanitize(catalogId)});
         }
@@ -512,4 +517,20 @@ class GroupEntry extends BaseEntry {
         return true;
     }
 
+    /**
+     * Checks whether the catalog is circularly referenced
+     * @param systemId the system identifier of the catalog to be loaded
+     * @return true if is circular, false otherwise
+     */
+    boolean isCircular(String systemId) {
+        if (parent == null) {
+            return false;
+        }
+
+        if (parent.systemId.equals(systemId)) {
+            return true;
+        }
+
+        return parent.isCircular(systemId);
+    }
 }

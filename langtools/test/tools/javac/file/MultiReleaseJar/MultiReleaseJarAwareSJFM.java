@@ -174,7 +174,7 @@ public class MultiReleaseJarAwareSJFM {
         jfm.setLocation(jloc, List.of(new File("multi-release.jar")));
 
         if (version.length() > 0) {
-            jfm.handleOption("-multi-release", List.of(version).iterator());
+            jfm.handleOption("--multi-release", List.of(version).iterator());
         }
 
         CustomClassLoader cldr = new CustomClassLoader(jfm);

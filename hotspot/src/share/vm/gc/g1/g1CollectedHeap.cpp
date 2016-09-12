@@ -74,7 +74,7 @@
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/vmThread.hpp"
