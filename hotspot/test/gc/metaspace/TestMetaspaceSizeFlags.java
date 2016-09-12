@@ -22,15 +22,15 @@
  */
 
 import jdk.test.lib.Asserts;
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test TestMetaspaceSizeFlags
  * @key gc
  * @bug 8024650
  * @summary Test that metaspace size flags can be set correctly
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  */

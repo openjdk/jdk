@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_UTILITIES_BITMAP_INLINE_HPP
 #define SHARE_VM_UTILITIES_BITMAP_INLINE_HPP
 
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/bitMap.hpp"
 
 inline void BitMap::set_bit(idx_t bit) {

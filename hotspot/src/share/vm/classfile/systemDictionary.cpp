@@ -1641,7 +1641,6 @@ void SystemDictionary::define_instance_class(instanceKlassHandle k, TRAPS) {
       JvmtiExport::post_class_load((JavaThread *) THREAD, k());
 
   }
-  TRACE_KLASS_DEFINITION(k, THREAD);
   class_define_event(k);
 }
 

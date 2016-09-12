@@ -25,19 +25,19 @@
  * @test
  * @bug 8050167
  * @summary Test that error is not occurred during printing problematic frame
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build jdk.test.lib.*
  * @run driver ProblematicFrameTest
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Utils;
 
 import jdk.internal.misc.Unsafe;
-import jdk.test.lib.Utils;
 
 public class ProblematicFrameTest {
     private static class Crasher {

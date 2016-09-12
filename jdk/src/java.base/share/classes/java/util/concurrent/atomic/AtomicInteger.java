@@ -193,7 +193,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
 
     /**
      * Atomically increments the current value,
-     * with memory effects as specified by {@link VarHandle#addAndGet}.
+     * with memory effects as specified by {@link VarHandle#getAndAdd}.
      *
      * <p>Equivalent to {@code addAndGet(1)}.
      *
@@ -205,7 +205,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
 
     /**
      * Atomically decrements the current value,
-     * with memory effects as specified by {@link VarHandle#addAndGet}.
+     * with memory effects as specified by {@link VarHandle#getAndAdd}.
      *
      * <p>Equivalent to {@code addAndGet(-1)}.
      *

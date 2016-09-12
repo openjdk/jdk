@@ -494,7 +494,7 @@ void AttachListener::vm_start() {
   if (ret == 0) {
     ret = ::unlink(fn);
     if (ret == -1) {
-      debug_only(warning("failed to remove stale attach pid file at %s", fn));
+      log_debug(attach)("Failed to remove stale attach pid file at %s", fn);
     }
   }
 }
@@ -537,16 +537,23 @@ bool AttachListener::is_init_trigger() {
   struct stat64 st;
   RESTARTABLE(::stat64(fn, &st), ret);
   if (ret == -1) {
+    log_trace(attach)("Failed to find attach file: %s, trying alternate", fn);
     snprintf(fn, sizeof(fn), "%s/.attach_pid%d",
              os::get_temp_directory(), os::current_process_id());
     RESTARTABLE(::stat64(fn, &st), ret);
+    if (ret == -1) {
+      log_debug(attach)("Failed to find attach file: %s", fn);
+    }
   }
   if (ret == 0) {
     // simple check to avoid starting the attach mechanism when
     // a bogus user creates the file
     if (st.st_uid == geteuid()) {
       init();
+      log_trace(attach)("Attach trigerred by %s", fn);
       return true;
+    } else {
+      log_debug(attach)("File %s has wrong user id %d (vs %d). Attach is not triggered", fn, st.st_uid, geteuid());
     }
   }
   return false;

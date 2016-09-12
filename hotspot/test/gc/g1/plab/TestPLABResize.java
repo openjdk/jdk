@@ -27,15 +27,10 @@
  * @summary Test for PLAB resizing
  * @requires vm.gc.G1
  * @requires !vm.flightRecorder
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management
- * @build ClassFileInstaller
- *        sun.hotspot.WhiteBox
- *        gc.g1.plab.lib.LogParser
- *        gc.g1.plab.lib.MemoryConsumer
- *        gc.g1.plab.lib.PLABUtils
- *        gc.g1.plab.lib.AppPLABResize
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main gc.g1.plab.TestPLABResize
@@ -52,8 +47,8 @@ import gc.g1.plab.lib.PLABUtils;
 import gc.g1.plab.lib.AppPLABResize;
 import gc.g1.plab.lib.PlabReport;
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 /**
  * Test for PLAB resizing.

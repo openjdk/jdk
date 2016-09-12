@@ -29,14 +29,15 @@
  * @requires (sun.arch.data.model != "32") & (os.family != "windows")
  * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @requires vm.gc.G1
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build SharedStringsWb SharedStrings ClassFileInstaller sun.hotspot.WhiteBox
+ * @build SharedStringsWb sun.hotspot.WhiteBox
  * @run main ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run main SharedStrings
  */
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class SharedStrings {
     public static void main(String[] args) throws Exception {

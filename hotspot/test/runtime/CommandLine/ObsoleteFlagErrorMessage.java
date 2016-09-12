@@ -26,10 +26,11 @@
  * @bug 8060449 8073989
  * @summary Newly obsolete command line options should still give useful error messages when used improperly.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class ObsoleteFlagErrorMessage {
   public static void main(String[] args) throws Exception {

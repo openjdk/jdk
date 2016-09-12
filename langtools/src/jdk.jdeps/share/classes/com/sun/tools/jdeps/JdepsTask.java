@@ -313,7 +313,7 @@ class JdepsTask {
             }
         },
 
-        // Another alternative to list modules in -addmods option
+        // Another alternative to list modules in --add-modules option
         new HiddenOption(true, "--include-system-modules") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 task.options.includeSystemModulePattern = Pattern.compile(arg);
