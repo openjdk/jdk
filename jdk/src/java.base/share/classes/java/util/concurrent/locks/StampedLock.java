@@ -154,13 +154,13 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  *     long stamp = sl.tryOptimisticRead();
  *     double currentX = x, currentY = y;
  *     if (!sl.validate(stamp)) {
- *        stamp = sl.readLock();
- *        try {
- *          currentX = x;
- *          currentY = y;
- *        } finally {
- *           sl.unlockRead(stamp);
- *        }
+ *       stamp = sl.readLock();
+ *       try {
+ *         currentX = x;
+ *         currentY = y;
+ *       } finally {
+ *         sl.unlockRead(stamp);
+ *       }
  *     }
  *     return Math.sqrt(currentX * currentX + currentY * currentY);
  *   }
