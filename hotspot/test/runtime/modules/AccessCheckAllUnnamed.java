@@ -27,7 +27,7 @@ import static jdk.test.lib.Asserts.*;
 /*
  * @test
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib /compiler/whitebox ..
+ * @library /test/lib ..
  * @compile p2/c2.java
  * @compile p1/c1.java
  * @build sun.hotspot.WhiteBox

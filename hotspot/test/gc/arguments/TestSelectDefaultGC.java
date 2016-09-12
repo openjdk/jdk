@@ -26,14 +26,17 @@
  * @summary Test selection of GC when no GC option is specified
  * @bug 8068582
  * @key gc
- * @library /testlibrary
+ * @library /test/lib
  * @requires vm.gc=="null"
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver TestSelectDefaultGC
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.Platform;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
 import java.util.regex.*;
 
 public class TestSelectDefaultGC {

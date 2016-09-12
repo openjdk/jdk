@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,11 @@
  */
 
 /*
- *@test
- *@bug 6377794
- *@summary Test case for tzdata2005r support for 9 locales
- *@run main/othervm -Djava.locale.providers=JRE,SPI Bug6377794
+ * @test
+ * @bug 6377794
+ * @modules jdk.localedata
+ * @summary Test case for tzdata2005r support for 9 locales
+ * @run main/othervm -Djava.locale.providers=JRE,SPI Bug6377794
  */
 
 import java.util.Locale;

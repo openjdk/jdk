@@ -210,11 +210,11 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(recv, (short)0x0123, (short)0x4567);
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(recv, (short)0x0123, (short)0x4567);
             }
-            assertEquals(success, true, "weakCompareAndSet short");
+            assertEquals(success, true, "weakCompareAndSetPlain short");
             short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, (short)0x4567, "weakCompareAndSet short value");
+            assertEquals(x, (short)0x4567, "weakCompareAndSetPlain short value");
         }
 
         {
@@ -240,11 +240,11 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_VOLATILE).invokeExact(recv, (short)0x4567, (short)0x0123);
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(recv, (short)0x4567, (short)0x0123);
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile short");
+            assertEquals(success, true, "weakCompareAndSet short");
             short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, (short)0x0123, "weakCompareAndSetVolatile short");
+            assertEquals(x, (short)0x0123, "weakCompareAndSet short");
         }
 
         // Compare set and get
@@ -255,18 +255,121 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
             assertEquals(x, (short)0x4567, "getAndSet short value");
         }
 
-        hs.get(TestAccessMode.SET).invokeExact(recv, (short)0x0123);
-
         // get and add, add and get
         {
-            short o = (short) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, (short)0x89AB);
+            hs.get(TestAccessMode.SET).invokeExact(recv, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, (short)0x4567);
             assertEquals(o, (short)0x0123, "getAndAdd short");
-            short c = (short) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(recv, (short)0x89AB);
-            assertEquals(c, (short)((short)0x0123 + (short)0x89AB + (short)0x89AB), "getAndAdd short value");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (short)((short)0x0123 + (short)0x4567), "getAndAdd short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_ADD_ACQUIRE).invokeExact(recv, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndAddAcquire short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (short)((short)0x0123 + (short)0x4567), "getAndAddAcquire short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_ADD_RELEASE).invokeExact(recv, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndAddRelease short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (short)((short)0x0123 + (short)0x4567), "getAndAddRelease short value");
+        }
+
+        // get and bitwise or
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_OR).invokeExact(recv, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseOr short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (short)((short)0x0123 | (short)0x4567), "getAndBitwiseOr short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_OR_ACQUIRE).invokeExact(recv, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseOrAcquire short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (short)((short)0x0123 | (short)0x4567), "getAndBitwiseOrAcquire short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_OR_RELEASE).invokeExact(recv, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseOrRelease short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (short)((short)0x0123 | (short)0x4567), "getAndBitwiseOrRelease short value");
+        }
+
+        // get and bitwise and
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_AND).invokeExact(recv, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseAnd short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (short)((short)0x0123 & (short)0x4567), "getAndBitwiseAnd short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_AND_ACQUIRE).invokeExact(recv, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseAndAcquire short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (short)((short)0x0123 & (short)0x4567), "getAndBitwiseAndAcquire short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_AND_RELEASE).invokeExact(recv, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseAndRelease short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (short)((short)0x0123 & (short)0x4567), "getAndBitwiseAndRelease short value");
+        }
+
+        // get and bitwise xor
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_XOR).invokeExact(recv, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseXor short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (short)((short)0x0123 ^ (short)0x4567), "getAndBitwiseXor short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_ACQUIRE).invokeExact(recv, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseXorAcquire short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (short)((short)0x0123 ^ (short)0x4567), "getAndBitwiseXorAcquire short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_RELEASE).invokeExact(recv, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseXorRelease short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (short)((short)0x0123 ^ (short)0x4567), "getAndBitwiseXorRelease short value");
         }
     }
 
     static void testInstanceFieldUnsupported(VarHandleTestMethodHandleAccessShort recv, Handles hs) throws Throwable {
+
 
     }
 
@@ -363,11 +466,11 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact((short)0x0123, (short)0x4567);
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact((short)0x0123, (short)0x4567);
             }
-            assertEquals(success, true, "weakCompareAndSet short");
+            assertEquals(success, true, "weakCompareAndSetPlain short");
             short x = (short) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, (short)0x4567, "weakCompareAndSet short value");
+            assertEquals(x, (short)0x4567, "weakCompareAndSetPlain short value");
         }
 
         {
@@ -393,33 +496,158 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_VOLATILE).invokeExact((short)0x4567, (short)0x0123);
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact((short)0x4567, (short)0x0123);
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile short");
+            assertEquals(success, true, "weakCompareAndSet short");
             short x = (short) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, (short)0x0123, "weakCompareAndSetVolatile short");
+            assertEquals(x, (short)0x0123, "weakCompareAndSet short");
         }
 
         // Compare set and get
         {
-            short o = (short) hs.get(TestAccessMode.GET_AND_SET).invokeExact( (short)0x4567);
+            hs.get(TestAccessMode.SET).invokeExact((short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_SET).invokeExact((short)0x4567);
             assertEquals(o, (short)0x0123, "getAndSet short");
             short x = (short) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, (short)0x4567, "getAndSet short value");
         }
 
-        hs.get(TestAccessMode.SET).invokeExact((short)0x0123);
+        // Compare set and get
+        {
+            hs.get(TestAccessMode.SET).invokeExact((short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact((short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndSetAcquire short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)0x4567, "getAndSetAcquire short value");
+        }
+
+        // Compare set and get
+        {
+            hs.get(TestAccessMode.SET).invokeExact((short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact((short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndSetRelease short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)0x4567, "getAndSetRelease short value");
+        }
 
         // get and add, add and get
         {
-            short o = (short) hs.get(TestAccessMode.GET_AND_ADD).invokeExact( (short)0x89AB);
+            hs.get(TestAccessMode.SET).invokeExact((short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_ADD).invokeExact((short)0x4567);
             assertEquals(o, (short)0x0123, "getAndAdd short");
-            short c = (short) hs.get(TestAccessMode.ADD_AND_GET).invokeExact((short)0x89AB);
-            assertEquals(c, (short)((short)0x0123 + (short)0x89AB + (short)0x89AB), "getAndAdd short value");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)((short)0x0123 + (short)0x4567), "getAndAdd short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact((short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_ADD_ACQUIRE).invokeExact((short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndAddAcquire short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)((short)0x0123 + (short)0x4567), "getAndAddAcquire short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact((short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_ADD_RELEASE).invokeExact((short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndAddRelease short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)((short)0x0123 + (short)0x4567), "getAndAddRelease short value");
+        }
+
+        // get and bitwise or
+        {
+            hs.get(TestAccessMode.SET).invokeExact((short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_OR).invokeExact((short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseOr short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)((short)0x0123 | (short)0x4567), "getAndBitwiseOr short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact((short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_OR_ACQUIRE).invokeExact((short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseOrAcquire short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)((short)0x0123 | (short)0x4567), "getAndBitwiseOrAcquire short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact((short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_OR_RELEASE).invokeExact((short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseOrRelease short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)((short)0x0123 | (short)0x4567), "getAndBitwiseOrRelease short value");
+        }
+
+        // get and bitwise and
+        {
+            hs.get(TestAccessMode.SET).invokeExact((short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_AND).invokeExact((short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseAnd short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)((short)0x0123 & (short)0x4567), "getAndBitwiseAnd short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact((short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_AND_ACQUIRE).invokeExact((short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseAndAcquire short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)((short)0x0123 & (short)0x4567), "getAndBitwiseAndAcquire short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact((short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_AND_RELEASE).invokeExact((short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseAndRelease short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)((short)0x0123 & (short)0x4567), "getAndBitwiseAndRelease short value");
+        }
+
+        // get and bitwise xor
+        {
+            hs.get(TestAccessMode.SET).invokeExact((short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_XOR).invokeExact((short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseXor short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)((short)0x0123 ^ (short)0x4567), "getAndBitwiseXor short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact((short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_ACQUIRE).invokeExact((short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseXorAcquire short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)((short)0x0123 ^ (short)0x4567), "getAndBitwiseXorAcquire short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact((short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_RELEASE).invokeExact((short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseXorRelease short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)((short)0x0123 ^ (short)0x4567), "getAndBitwiseXorRelease short value");
         }
     }
 
     static void testStaticFieldUnsupported(Handles hs) throws Throwable {
+
 
     }
 
@@ -519,11 +747,11 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(array, i, (short)0x0123, (short)0x4567);
+                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(array, i, (short)0x0123, (short)0x4567);
                 }
-                assertEquals(success, true, "weakCompareAndSet short");
+                assertEquals(success, true, "weakCompareAndSetPlain short");
                 short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, (short)0x4567, "weakCompareAndSet short value");
+                assertEquals(x, (short)0x4567, "weakCompareAndSetPlain short value");
             }
 
             {
@@ -549,30 +777,152 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_VOLATILE).invokeExact(array, i, (short)0x4567, (short)0x0123);
+                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(array, i, (short)0x4567, (short)0x0123);
                 }
-                assertEquals(success, true, "weakCompareAndSetVolatile short");
+                assertEquals(success, true, "weakCompareAndSet short");
                 short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, (short)0x0123, "weakCompareAndSetVolatile short");
+                assertEquals(x, (short)0x0123, "weakCompareAndSet short");
             }
 
             // Compare set and get
             {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, (short)0x0123);
+
                 short o = (short) hs.get(TestAccessMode.GET_AND_SET).invokeExact(array, i, (short)0x4567);
                 assertEquals(o, (short)0x0123, "getAndSet short");
                 short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, (short)0x4567, "getAndSet short value");
             }
 
-            hs.get(TestAccessMode.SET).invokeExact(array, i, (short)0x0123);
+            {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, (short)0x0123);
+
+                short o = (short) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(array, i, (short)0x4567);
+                assertEquals(o, (short)0x0123, "getAndSetAcquire short");
+                short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (short)0x4567, "getAndSetAcquire short value");
+            }
+
+            {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, (short)0x0123);
+
+                short o = (short) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(array, i, (short)0x4567);
+                assertEquals(o, (short)0x0123, "getAndSetRelease short");
+                short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (short)0x4567, "getAndSetRelease short value");
+            }
 
             // get and add, add and get
             {
-                short o = (short) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, (short)0x89AB);
+                hs.get(TestAccessMode.SET).invokeExact(array, i, (short)0x0123);
+
+                short o = (short) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, (short)0x4567);
                 assertEquals(o, (short)0x0123, "getAndAdd short");
-                short c = (short) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(array, i, (short)0x89AB);
-                assertEquals(c, (short)((short)0x0123 + (short)0x89AB + (short)0x89AB), "getAndAdd short value");
+                short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (short)((short)0x0123 + (short)0x4567), "getAndAdd short value");
             }
+
+            {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, (short)0x0123);
+
+                short o = (short) hs.get(TestAccessMode.GET_AND_ADD_ACQUIRE).invokeExact(array, i, (short)0x4567);
+                assertEquals(o, (short)0x0123, "getAndAddAcquire short");
+                short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (short)((short)0x0123 + (short)0x4567), "getAndAddAcquire short value");
+            }
+
+            {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, (short)0x0123);
+
+                short o = (short) hs.get(TestAccessMode.GET_AND_ADD_RELEASE).invokeExact(array, i, (short)0x4567);
+                assertEquals(o, (short)0x0123, "getAndAddRelease short");
+                short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (short)((short)0x0123 + (short)0x4567), "getAndAddRelease short value");
+            }
+
+        // get and bitwise or
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_OR).invokeExact(array, i, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseOr short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (short)((short)0x0123 | (short)0x4567), "getAndBitwiseOr short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_OR_ACQUIRE).invokeExact(array, i, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseOrAcquire short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (short)((short)0x0123 | (short)0x4567), "getAndBitwiseOrAcquire short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_OR_RELEASE).invokeExact(array, i, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseOrRelease short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (short)((short)0x0123 | (short)0x4567), "getAndBitwiseOrRelease short value");
+        }
+
+        // get and bitwise and
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_AND).invokeExact(array, i, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseAnd short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (short)((short)0x0123 & (short)0x4567), "getAndBitwiseAnd short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_AND_ACQUIRE).invokeExact(array, i, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseAndAcquire short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (short)((short)0x0123 & (short)0x4567), "getAndBitwiseAndAcquire short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_AND_RELEASE).invokeExact(array, i, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseAndRelease short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (short)((short)0x0123 & (short)0x4567), "getAndBitwiseAndRelease short value");
+        }
+
+        // get and bitwise xor
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_XOR).invokeExact(array, i, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseXor short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (short)((short)0x0123 ^ (short)0x4567), "getAndBitwiseXor short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_ACQUIRE).invokeExact(array, i, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseXorAcquire short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (short)((short)0x0123 ^ (short)0x4567), "getAndBitwiseXorAcquire short value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(array, i, (short)0x0123);
+
+            short o = (short) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_RELEASE).invokeExact(array, i, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndBitwiseXorRelease short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+            assertEquals(x, (short)((short)0x0123 ^ (short)0x4567), "getAndBitwiseXorRelease short value");
+        }
         }
     }
 
@@ -580,6 +930,7 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
         short[] array = new short[10];
 
         final int i = 0;
+
 
     }
 
@@ -620,6 +971,12 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
             }
 
             for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
+                checkIOOBE(am, () -> {
+                    short o = (short) hs.get(am).invokeExact(array, ci, (short)0x89AB);
+                });
+            }
+
+            for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_BITWISE)) {
                 checkIOOBE(am, () -> {
                     short o = (short) hs.get(am).invokeExact(array, ci, (short)0x89AB);
                 });

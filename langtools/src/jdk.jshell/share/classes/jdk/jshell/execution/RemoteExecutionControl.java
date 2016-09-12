@@ -61,10 +61,12 @@ public class RemoteExecutionControl extends DirectExecutionControl implements Ex
         Socket socket = new Socket(loopBack, Integer.parseInt(args[0]));
         InputStream inStream = socket.getInputStream();
         OutputStream outStream = socket.getOutputStream();
-        Map<String, Consumer<OutputStream>> chans = new HashMap<>();
-        chans.put("out", st -> System.setOut(new PrintStream(st, true)));
-        chans.put("err", st -> System.setErr(new PrintStream(st, true)));
-        forwardExecutionControlAndIO(new RemoteExecutionControl(), inStream, outStream, chans);
+        Map<String, Consumer<OutputStream>> outputs = new HashMap<>();
+        outputs.put("out", st -> System.setOut(new PrintStream(st, true)));
+        outputs.put("err", st -> System.setErr(new PrintStream(st, true)));
+        Map<String, Consumer<InputStream>> input = new HashMap<>();
+        input.put("in", st -> System.setIn(st));
+        forwardExecutionControlAndIO(new RemoteExecutionControl(), inStream, outStream, outputs, input);
     }
 
     // These three variables are used by the main JShell process in interrupting

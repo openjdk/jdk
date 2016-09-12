@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Testing -Xbootclasspath/a support for CDS
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
@@ -32,7 +32,7 @@
  * @compile javax/sound/sampled/MyClass.jasm
  * @compile org/omg/CORBA/Context.jasm
  * @compile nonjdk/myPackage/MyClass.java
- * @build jdk.test.lib.* LoadClass ClassFileInstaller
+ * @build LoadClass
  * @run main/othervm BootAppendTests
  */
 
@@ -44,8 +44,8 @@ import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import jdk.test.lib.ProcessTools;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class BootAppendTests {
     private static final String APP_CLASS = "LoadClass";

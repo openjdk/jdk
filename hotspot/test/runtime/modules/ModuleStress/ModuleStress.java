@@ -28,16 +28,17 @@
  * @bug 8159262
  * @summary Test differing scenarios where a module's readability list and a package's exportability list should be walked
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @compile ../AccessCheck/ModuleLibrary.java
  * @compile ModuleSameCLMain.java
  * @compile ModuleNonBuiltinCLMain.java
  * @compile CustomSystemClassLoader.java
- * @build ModuleStress
  * @run main/othervm ModuleStress
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.InMemoryJavaCompiler;
 import java.io.File;
 
 public class ModuleStress {

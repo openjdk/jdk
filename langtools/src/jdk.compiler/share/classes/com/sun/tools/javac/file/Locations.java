@@ -810,7 +810,7 @@ public class Locations {
      * SYSTEM_MODULES and MODULE_PATH.
      *
      * The Location can be specified to accept overriding classes from the
-     * {@code -Xpatch:<module>=<path> } parameter.
+     * {@code --patch-module <module>=<path> } parameter.
      */
     private class ModuleLocationHandler extends LocationHandler implements Location {
         protected final String name;

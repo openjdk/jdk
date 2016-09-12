@@ -28,11 +28,9 @@
  * @requires vm.gc.G1
  * @requires !vm.flightRecorder
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
- * @library /testlibrary /
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management
- * @build gc.g1.ihop.TestIHOPStatic
- *        gc.g1.ihop.lib.IhopUtils
  * @run driver/timeout=240 gc.g1.ihop.TestIHOPStatic
  */
 package gc.g1.ihop;
@@ -41,8 +39,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
 
 import gc.g1.ihop.lib.IhopUtils;

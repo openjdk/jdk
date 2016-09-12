@@ -62,10 +62,9 @@ public:
     _last_Java_sp = src->_last_Java_sp;
   }
 
-  // Always walkable
-  bool walkable(void) { return true; }
-  // Never any thing to do since we are always walkable and can find address of return addresses
-  void make_walkable(JavaThread* thread) { }
+  bool walkable(void)                            { return _last_Java_sp != NULL && _last_Java_pc != NULL; }
+  void make_walkable(JavaThread* thread);
+  void capture_last_Java_pc(void);
 
   intptr_t* last_Java_sp(void) const             { return _last_Java_sp; }
 

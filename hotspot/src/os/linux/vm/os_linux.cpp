@@ -42,7 +42,7 @@
 #include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -5172,10 +5172,6 @@ int os::stat(const char *path, struct stat *sbuf) {
   }
   os::native_path(strcpy(pathbuf, path));
   return ::stat(pathbuf, sbuf);
-}
-
-bool os::check_heap(bool force) {
-  return true;
 }
 
 // Is a (classpath) directory empty?

@@ -90,6 +90,7 @@ class klassVtable : public ResourceObj {
                                                    const Klass* super,
                                                    Array<Method*>* methods,
                                                    AccessFlags class_flags,
+                                                   u2 major_version,
                                                    Handle classloader,
                                                    Symbol* classname,
                                                    Array<Klass*>* local_interfaces,
@@ -115,8 +116,14 @@ class klassVtable : public ResourceObj {
 
  protected:
   friend class vtableEntry;
- private:
+
+ public:
+  // Transitive overridng rules for class files < JDK1_7 use the older JVMS rules.
+  // Overriding is determined as we create the vtable, so we use the class file version
+  // of the class whose vtable we are calculating.
   enum { VTABLE_TRANSITIVE_OVERRIDE_VERSION = 51 } ;
+
+ private:
   void copy_vtable_to(vtableEntry* start);
   int  initialize_from_super(KlassHandle super);
   int  index_of(Method* m, int len) const; // same as index_of, but search only up to len
@@ -126,6 +133,7 @@ class klassVtable : public ResourceObj {
                                      Handle classloader,
                                      Symbol* classname,
                                      AccessFlags access_flags,
+                                     u2 major_version,
                                      TRAPS);
 
   bool update_inherited_vtable(InstanceKlass* klass, methodHandle target_method, int super_vtable_len, int default_index, bool checkconstraints, TRAPS);
