@@ -25,12 +25,12 @@
  * @test TestConMarkCycleWB
  * @bug 8065579
  * @requires vm.gc.G1
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build ClassFileInstaller jdk.test.lib.* sun.hotspot.WhiteBox TestConcMarkCycleWB
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC TestConcMarkCycleWB

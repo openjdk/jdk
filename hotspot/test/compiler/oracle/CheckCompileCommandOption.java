@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test CheckCompileCommandOption
  * @summary Checks parsing of -XX:CompileCommand=option
  * @bug 8055286 8056964 8059847 8069035
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver compiler.oracle.CheckCompileCommandOption
@@ -33,8 +33,8 @@
 
 package compiler.oracle;
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
 

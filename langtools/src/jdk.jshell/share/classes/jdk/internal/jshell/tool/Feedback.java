@@ -35,9 +35,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toMap;
+import static jdk.internal.jshell.tool.ContinuousCompletionProvider.PERFECT_MATCHER;
+import jdk.internal.jshell.tool.JShellTool.CompletionProvider;
+import static jdk.internal.jshell.tool.JShellTool.EMPTY_COMPLETION_PROVIDER;
 
 /**
  * Feedback customization support
@@ -144,6 +149,17 @@ class Feedback {
     public void markModesReadOnly() {
         modeMap.values().stream()
                 .forEach(m -> m.readOnly = true);
+    }
+
+    JShellTool.CompletionProvider modeCompletions() {
+        return modeCompletions(EMPTY_COMPLETION_PROVIDER);
+    }
+
+    JShellTool.CompletionProvider modeCompletions(CompletionProvider successor) {
+        return new ContinuousCompletionProvider(
+                () -> modeMap.keySet().stream()
+                        .collect(toMap(Function.identity(), m -> successor)),
+                PERFECT_MATCHER);
     }
 
     {

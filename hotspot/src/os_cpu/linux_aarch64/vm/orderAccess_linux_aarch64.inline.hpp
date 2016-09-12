@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,7 @@
 #ifndef OS_CPU_LINUX_AARCH64_VM_ORDERACCESS_LINUX_AARCH64_INLINE_HPP
 #define OS_CPU_LINUX_AARCH64_VM_ORDERACCESS_LINUX_AARCH64_INLINE_HPP
 
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "vm_version_aarch64.hpp"

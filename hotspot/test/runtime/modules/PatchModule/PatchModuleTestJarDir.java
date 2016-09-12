@@ -24,17 +24,18 @@
 /*
  * @test
  * @summary Make sure --patch-module works when a jar file and a directory is specified for a module
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
- * @build BasicJarBuilder
  * @compile PatchModule2DirsMain.java
  * @run main PatchModuleTestJarDir
  */
 
 import java.io.File;
 import java.nio.file.Files;
-import jdk.test.lib.*;
+import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class PatchModuleTestJarDir {
     private static String moduleJar;

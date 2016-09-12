@@ -106,24 +106,10 @@ public enum ToolOption {
         }
     },
 
-    MODULESOURCEPATH("-modulesourcepath", true) {
-        @Override
-        public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.MODULE_SOURCE_PATH, arg);
-        }
-    },
-
     MODULE_SOURCE_PATH("--module-source-path", true) {
         @Override
         public void process(Helper helper, String arg) {
             helper.setFileManagerOpt(Option.MODULE_SOURCE_PATH, arg);
-        }
-    },
-
-    UPGRADEMODULEPATH("-upgrademodulepath", true) {
-        @Override
-        public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.UPGRADE_MODULE_PATH, arg);
         }
     },
 
@@ -134,24 +120,10 @@ public enum ToolOption {
         }
     },
 
-    SYSTEM("-system", true) {
+    SYSTEM("--system", true) {
         @Override
         public void process(Helper helper, String arg) {
             helper.setFileManagerOpt(Option.SYSTEM, arg);
-        }
-    },
-
-    SYSTEM_("--system", true) {
-        @Override
-        public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.SYSTEM, arg);
-        }
-    },
-
-    MODULEPATH("-modulepath", true) {
-        @Override
-        public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.MODULE_PATH, arg);
         }
     },
 
@@ -169,24 +141,10 @@ public enum ToolOption {
         }
     },
 
-    ADDMODS("-addmods", true) {
-        @Override
-        public void process(Helper helper, String arg) {
-            Option.ADD_MODULES.process(helper.getOptionHelper(), opt, arg);
-        }
-    },
-
     ADD_MODULES("--add-modules", true) {
         @Override
         public void process(Helper helper, String arg) {
             Option.ADD_MODULES.process(helper.getOptionHelper(), opt, arg);
-        }
-    },
-
-    LIMITMODS("-limitmods", true) {
-        @Override
-        public void process(Helper helper, String arg) {
-            Option.LIMIT_MODULES.process(helper.getOptionHelper(), opt, arg);
         }
     },
 
@@ -218,13 +176,6 @@ public enum ToolOption {
         }
     },
 
-    RELEASE_OLD("-release", true) {
-        @Override
-        public void process(Helper helper, String arg) {
-            Option.RELEASE.process(helper.getOptionHelper(), opt, arg);
-        }
-    },
-
     SOURCE("-source", true) {
         @Override
         public void process(Helper helper, String arg) {
@@ -246,24 +197,10 @@ public enum ToolOption {
         }
     },
 
-    XADDREADS("-XaddReads:", false) {
-        @Override
-        public void process(Helper helper, String arg) {
-            Option.ADD_READS.process(helper.getOptionHelper(), arg);
-        }
-    },
-
     ADD_READS("--add-reads", true) {
         @Override
         public void process(Helper helper, String arg) {
             Option.ADD_READS.process(helper.getOptionHelper(), opt, arg);
-        }
-    },
-
-    ADDEXPORTS("-XaddExports:", false) {
-        @Override
-        public void process(Helper helper, String arg) {
-            Option.ADD_EXPORTS.process(helper.getOptionHelper(), arg);
         }
     },
 
@@ -275,13 +212,6 @@ public enum ToolOption {
     },
 
     XMODULE("-Xmodule:", false) {
-        @Override
-        public void process(Helper helper, String arg) {
-            Option.XMODULE.process(helper.getOptionHelper(), arg);
-        }
-    },
-
-    XPATCH("-Xpatch:", false) {
         @Override
         public void process(Helper helper, String arg) {
             Option.XMODULE.process(helper.getOptionHelper(), arg);

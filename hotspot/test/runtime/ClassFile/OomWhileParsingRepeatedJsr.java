@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,15 +33,17 @@
  * @bug 7037122
  * @bug 7123945
  * @bug 8016029
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.desktop
  *          java.management
  * @run main OomWhileParsingRepeatedJsr
  */
 
-import jdk.test.lib.*;
-
+import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.Platform;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class OomWhileParsingRepeatedJsr {
 

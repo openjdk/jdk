@@ -152,7 +152,6 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * {@link #getAndAdd getAndAdd},
  * {@link #getAndAddAcquire getAndAddAcquire},
  * {@link #getAndAddRelease getAndAddRelease},
- * {@link #addAndGet addAndGet}.
  * <li>bitwise atomic update access modes that, for example, atomically get and
  * bitwise OR the value of a variable under specified memory ordering
  * effects.

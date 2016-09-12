@@ -30,7 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/markOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -1819,7 +1819,7 @@ static void post_monitor_inflate_event(EventJavaMonitorInflate& event,
                                        const ObjectSynchronizer::InflateCause cause) {
 #if INCLUDE_TRACE
   assert(event.should_commit(), "check outside");
-  event.set_klass(obj->klass());
+  event.set_monitorClass(obj->klass());
   event.set_address((TYPE_ADDRESS)(uintptr_t)(void*)obj);
   event.set_cause((u1)cause);
   event.commit();

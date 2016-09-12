@@ -63,7 +63,6 @@ public class StartOptionTest {
                 new PrintStream(cmdout),
                 new PrintStream(cmderr),
                 new PrintStream(console),
-                new TestingInputStream(),
                 new PrintStream(userout),
                 new PrintStream(usererr),
                 new ReplToolTesting.MemoryPreferences(),

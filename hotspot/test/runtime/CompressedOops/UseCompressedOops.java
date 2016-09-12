@@ -25,7 +25,7 @@
  * @test
  * @bug 8022865
  * @summary Tests for different combination of UseCompressedOops options
- * @library /testlibrary
+ * @library /test/lib
  * @ignore 8079353
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -33,7 +33,9 @@
  */
 import java.util.ArrayList;
 import java.util.Collections;
-import jdk.test.lib.*;
+import jdk.test.lib.Platform;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class UseCompressedOops {
 

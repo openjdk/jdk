@@ -101,7 +101,7 @@ public class PlatformProviderTest implements PlatformProvider {
                            "-J--add-exports=jdk.compiler/com.sun.tools.javac.platform=ALL-UNNAMED",
                            "-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
                            "-XDrawDiagnostics",
-                           "-release",
+                           "--release",
                            platformSpec,
                            System.getProperty("test.src") + "/PlatformProviderTestSource.java")
                   .run();
@@ -135,7 +135,7 @@ public class PlatformProviderTest implements PlatformProvider {
                   .options("-J--class-path=" + System.getProperty("test.classes"),
                            "-J--add-exports=jdk.compiler/com.sun.tools.javac.platform=ALL-UNNAMED",
                            "-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
-                           "-release",
+                           "--release",
                            "fail",
                            System.getProperty("test.src") + "/PlatformProviderTestSource.java")
                   .run(Task.Expect.FAIL);

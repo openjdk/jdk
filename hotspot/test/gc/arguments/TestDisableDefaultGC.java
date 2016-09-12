@@ -26,15 +26,15 @@
  * @summary Test that the VM complains when the default GC is disabled and no other GC is specified
  * @bug 8068579
  * @key gc
- * @library /testlibrary
+ * @library /test/lib
  * @requires vm.gc=="null"
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver TestDisableDefaultGC
  */
 
-import jdk.test.lib.ProcessTools;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestDisableDefaultGC {
     public static void main(String[] args) throws Exception {

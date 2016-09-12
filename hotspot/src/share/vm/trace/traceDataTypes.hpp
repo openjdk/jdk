@@ -32,7 +32,6 @@
 enum {
   CONTENT_TYPE_NONE             = 0,
   CONTENT_TYPE_CLASS            = 20,
-  CONTENT_TYPE_UTF8             = 21,
   CONTENT_TYPE_THREAD           = 22,
   CONTENT_TYPE_STACKTRACE       = 23,
   CONTENT_TYPE_BYTES            = 24,

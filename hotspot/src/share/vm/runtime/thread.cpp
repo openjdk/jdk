@@ -57,7 +57,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/privilegedStack.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/commandLineFlagConstraintList.hpp"
 #include "runtime/commandLineFlagWriteableList.hpp"
