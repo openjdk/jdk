@@ -90,6 +90,13 @@ public class CreateMultiReleaseTestJars {
     public void buildMultiReleaseJar() throws IOException {
         JarBuilder jb = customMultiReleaseJar("multi-release.jar", "true");
         addEntries(jb);
+        jb.addEntry("META-INF/versions/9/version/Version.class", version9Classes.get("version.Version"));
+        jb.build();
+    }
+
+    public void buildShortMultiReleaseJar() throws IOException {
+        JarBuilder jb = customMultiReleaseJar("short-multi-release.jar", "true");
+        addEntries(jb);
         jb.build();
     }
 
@@ -118,7 +125,6 @@ public class CreateMultiReleaseTestJars {
         jb.addEntry("META-INF/versions/9/README", readme9.getBytes());
         jb.addEntry("META-INF/versions/9/version/Version.java", java9.getBytes());
         jb.addEntry("META-INF/versions/9/version/PackagePrivate.java", ppjava9.getBytes());
-        jb.addEntry("META-INF/versions/9/version/Version.class", version9Classes.get("version.Version"));
         jb.addEntry("META-INF/versions/9/version/PackagePrivate.class", version9Classes.get("version.PackagePrivate"));
         jb.addEntry("META-INF/versions/10/README", readme10.getBytes());
         jb.addEntry("META-INF/versions/10/version/Version.java", java10.getBytes());
