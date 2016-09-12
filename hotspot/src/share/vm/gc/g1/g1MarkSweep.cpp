@@ -132,9 +132,16 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
   MarkingCodeBlobClosure follow_code_closure(&GenMarkSweep::follow_root_closure, !CodeBlobToOopClosure::FixRelocations);
   {
     G1RootProcessor root_processor(g1h, 1);
-    root_processor.process_strong_roots(&GenMarkSweep::follow_root_closure,
-                                        &GenMarkSweep::follow_cld_closure,
-                                        &follow_code_closure);
+    if (ClassUnloading) {
+      root_processor.process_strong_roots(&GenMarkSweep::follow_root_closure,
+                                          &GenMarkSweep::follow_cld_closure,
+                                          &follow_code_closure);
+    } else {
+      root_processor.process_all_roots_no_string_table(
+                                          &GenMarkSweep::follow_root_closure,
+                                          &GenMarkSweep::follow_cld_closure,
+                                          &follow_code_closure);
+    }
   }
 
   {
@@ -157,7 +164,7 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
   // This is the point where the entire marking should have completed.
   assert(GenMarkSweep::_marking_stack.is_empty(), "Marking should have completed");
 
-  {
+  if (ClassUnloading) {
     GCTraceTime(Debug, gc, phases) trace("Class Unloading", gc_timer());
 
     // Unload classes and purge the SystemDictionary.
