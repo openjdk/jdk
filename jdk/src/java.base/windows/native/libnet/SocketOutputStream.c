@@ -92,66 +92,69 @@ Java_java_net_SocketOutputStream_socketWrite0(JNIEnv *env, jobject this,
         int retry = 0;
 
         (*env)->GetByteArrayRegion(env, data, off, chunkLen, (jbyte *)bufP);
-
-        while(llen > 0) {
-            int n = send(fd, bufP + loff, llen, 0);
-            if (n > 0) {
-                llen -= n;
-                loff += n;
-                continue;
-            }
-
-            /*
-             * Due to a bug in Windows Sockets (observed on NT and Windows
-             * 2000) it may be necessary to retry the send. The issue is that
-             * on blocking sockets send/WSASend is supposed to block if there
-             * is insufficient buffer space available. If there are a large
-             * number of threads blocked on write due to congestion then it's
-             * possile to hit the NT/2000 bug whereby send returns WSAENOBUFS.
-             * The workaround we use is to retry the send. If we have a
-             * large buffer to send (>2k) then we retry with a maximum of
-             * 2k buffer. If we hit the issue with <=2k buffer then we backoff
-             * for 1 second and retry again. We repeat this up to a reasonable
-             * limit before bailing out and throwing an exception. In load
-             * conditions we've observed that the send will succeed after 2-3
-             * attempts but this depends on network buffers associated with
-             * other sockets draining.
-             */
-            if (WSAGetLastError() == WSAENOBUFS) {
-                if (llen > MAX_BUFFER_LEN) {
-                    buflen = MAX_BUFFER_LEN;
-                    chunkLen = MAX_BUFFER_LEN;
-                    llen = MAX_BUFFER_LEN;
+        if ((*env)->ExceptionCheck(env)) {
+            break;
+        } else {
+            while(llen > 0) {
+                int n = send(fd, bufP + loff, llen, 0);
+                if (n > 0) {
+                    llen -= n;
+                    loff += n;
                     continue;
                 }
-                if (retry >= 30) {
-                    JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
-                        "No buffer space available - exhausted attempts to queue buffer");
-                    if (bufP != BUF) {
-                        free(bufP);
-                    }
-                    return;
-                }
-                Sleep(1000);
-                retry++;
-                continue;
-            }
 
-            /*
-             * Send failed - can be caused by close or write error.
-             */
-            if (WSAGetLastError() == WSAENOTSOCK) {
-                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
-            } else {
-                NET_ThrowCurrent(env, "socket write error");
+                /*
+                 * Due to a bug in Windows Sockets (observed on NT and Windows
+                 * 2000) it may be necessary to retry the send. The issue is that
+                 * on blocking sockets send/WSASend is supposed to block if there
+                 * is insufficient buffer space available. If there are a large
+                 * number of threads blocked on write due to congestion then it's
+                 * possile to hit the NT/2000 bug whereby send returns WSAENOBUFS.
+                 * The workaround we use is to retry the send. If we have a
+                 * large buffer to send (>2k) then we retry with a maximum of
+                 * 2k buffer. If we hit the issue with <=2k buffer then we backoff
+                 * for 1 second and retry again. We repeat this up to a reasonable
+                 * limit before bailing out and throwing an exception. In load
+                 * conditions we've observed that the send will succeed after 2-3
+                 * attempts but this depends on network buffers associated with
+                 * other sockets draining.
+                 */
+                if (WSAGetLastError() == WSAENOBUFS) {
+                    if (llen > MAX_BUFFER_LEN) {
+                        buflen = MAX_BUFFER_LEN;
+                        chunkLen = MAX_BUFFER_LEN;
+                        llen = MAX_BUFFER_LEN;
+                        continue;
+                    }
+                    if (retry >= 30) {
+                        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+                            "No buffer space available - exhausted attempts to queue buffer");
+                        if (bufP != BUF) {
+                            free(bufP);
+                        }
+                        return;
+                    }
+                    Sleep(1000);
+                    retry++;
+                    continue;
+                }
+
+                /*
+                 * Send failed - can be caused by close or write error.
+                 */
+                if (WSAGetLastError() == WSAENOTSOCK) {
+                    JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
+                } else {
+                    NET_ThrowCurrent(env, "socket write error");
+                }
+                if (bufP != BUF) {
+                    free(bufP);
+                }
+                return;
             }
-            if (bufP != BUF) {
-                free(bufP);
-            }
-            return;
+            len -= chunkLen;
+            off += chunkLen;
         }
-        len -= chunkLen;
-        off += chunkLen;
     }
 
     if (bufP != BUF) {
