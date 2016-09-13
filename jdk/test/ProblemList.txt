@@ -312,8 +312,6 @@ tools/pack200/CommandLineTests.java                             7143279,8059906 
 
 tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
 
-tools/pack200/Pack200Props.java                                 8155857 generic-all
-
 ############################################################################
 
 # jdk_jdi
