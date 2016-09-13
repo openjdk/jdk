@@ -189,12 +189,12 @@ public final class DefaultImageBuilder implements ImageBuilder {
             storeFiles(modules, release);
 
             if (Files.getFileStore(root).supportsFileAttributeView(PosixFileAttributeView.class)) {
-                // launchers in the bin directory need execute permission
+                // launchers in the bin directory need execute permission.
+                // On Windows, "bin" also subdirectories containing jvm.dll.
                 if (Files.isDirectory(bin)) {
-                    Files.list(bin)
-                            .filter(f -> !f.toString().endsWith(".diz"))
-                            .filter(f -> Files.isRegularFile(f))
-                            .forEach(this::setExecutable);
+                    Files.find(bin, 2, (path, attrs) -> {
+                        return attrs.isRegularFile() && !path.toString().endsWith(".diz");
+                    }).forEach(this::setExecutable);
                 }
 
                 // jspawnhelper is in lib or lib/<arch>

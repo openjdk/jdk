@@ -129,4 +129,3 @@ public class DomImplementationTest {
         assertEquals(documentType.getName(), name);
     }
 }
-

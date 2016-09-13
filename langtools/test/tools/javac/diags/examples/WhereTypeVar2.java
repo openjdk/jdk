@@ -25,7 +25,7 @@
 // key: compiler.misc.where.description.typevar
 // key: compiler.misc.where.typevar
 // key: compiler.err.prob.found.req
-// options: -diags:formatterOptions=where
+// options: --diags:formatterOptions=where
 // run: simple
 
 class WhereTypeVar2 {

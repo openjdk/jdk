@@ -182,4 +182,3 @@ public class DocumentLSTest {
         return dbf.newDocumentBuilder();
     }
 }
-

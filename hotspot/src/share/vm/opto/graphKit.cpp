@@ -2172,10 +2172,9 @@ Node* GraphKit::record_profiled_receiver_for_speculation(Node* n) {
       java_bc() == Bytecodes::_instanceof ||
       java_bc() == Bytecodes::_aastore) {
     ciProfileData* data = method()->method_data()->bci_to_data(bci());
-    bool maybe_null = data == NULL ? true : data->as_BitData()->null_seen();
+    maybe_null = data == NULL ? true : data->as_BitData()->null_seen();
   }
   return record_profile_for_speculation(n, exact_kls, maybe_null);
-  return n;
 }
 
 /**

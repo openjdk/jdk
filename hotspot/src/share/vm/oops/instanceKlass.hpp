@@ -619,8 +619,8 @@ class InstanceKlass: public Klass {
   objArrayOop signers() const;
 
   // host class
-  Klass* host_klass() const              {
-    Klass** hk = (Klass**)adr_host_klass();
+  InstanceKlass* host_klass() const              {
+    InstanceKlass** hk = adr_host_klass();
     if (hk == NULL) {
       return NULL;
     } else {
@@ -628,9 +628,9 @@ class InstanceKlass: public Klass {
       return *hk;
     }
   }
-  void set_host_klass(const Klass* host) {
+  void set_host_klass(const InstanceKlass* host) {
     assert(is_anonymous(), "not anonymous");
-    const Klass** addr = (const Klass**)adr_host_klass();
+    const InstanceKlass** addr = (const InstanceKlass **)adr_host_klass();
     assert(addr != NULL, "no reversed space");
     if (addr != NULL) {
       *addr = host;
@@ -709,6 +709,7 @@ class InstanceKlass: public Klass {
 
   // RedefineClasses() support for previous versions:
   void add_previous_version(instanceKlassHandle ikh, int emcp_method_count);
+  void purge_previous_version_list();
 
   InstanceKlass* previous_versions() const { return _previous_versions; }
 #else
@@ -768,13 +769,15 @@ public:
   }
 
  private:
-  static int  _previous_version_count;
+  static bool  _has_previous_versions;
  public:
-  static void purge_previous_versions(InstanceKlass* ik);
-  static bool has_previous_versions() {
-    assert(_previous_version_count >= 0, "count should never be negative");
-    return _previous_version_count > 0;
+  static void purge_previous_versions(InstanceKlass* ik) {
+    if (ik->has_been_redefined()) {
+      ik->purge_previous_version_list();
+    }
   }
+
+  static bool has_previous_versions_and_reset();
 
   // JVMTI: Support for caching a class file before it is modified by an agent that can do retransformation
   void set_cached_class_file(JvmtiCachedClassFileData *data) {
@@ -795,7 +798,7 @@ public:
 #else // INCLUDE_JVMTI
 
   static void purge_previous_versions(InstanceKlass* ik) { return; };
-  static bool has_previous_versions() { return false; }
+  static bool has_previous_versions_and_reset() { return false; }
 
   void set_cached_class_file(JvmtiCachedClassFileData *data) {
     assert(data == NULL, "unexpected call with JVMTI disabled");
@@ -1060,13 +1063,13 @@ public:
     }
   };
 
-  Klass** adr_host_klass() const {
+  InstanceKlass** adr_host_klass() const {
     if (is_anonymous()) {
-      Klass** adr_impl = adr_implementor();
+      InstanceKlass** adr_impl = (InstanceKlass **)adr_implementor();
       if (adr_impl != NULL) {
         return adr_impl + 1;
       } else {
-        return end_of_nonstatic_oop_maps();
+        return (InstanceKlass **)end_of_nonstatic_oop_maps();
       }
     } else {
       return NULL;

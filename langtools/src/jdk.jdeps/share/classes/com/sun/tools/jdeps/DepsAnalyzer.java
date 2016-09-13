@@ -56,7 +56,7 @@ import static java.util.stream.Collectors.*;
  * 1. archives specified in the command line arguments
  * 2. observable modules matching the source filter
  * 3. classpath archives matching the source filter or target filter
- * 4. -addmods and -m root modules
+ * 4. --add-modules and -m root modules
  */
 public class DepsAnalyzer {
     final JdepsConfiguration configuration;

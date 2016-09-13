@@ -617,6 +617,9 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         /** Per-thread task counter */
         volatile long completedTasks;
 
+        // TODO: switch to AbstractQueuedLongSynchronizer and move
+        // completedTasks into the lock word.
+
         /**
          * Creates with given first task and thread from ThreadFactory.
          * @param firstTask the first task (null if none)

@@ -57,6 +57,8 @@ import jdk.internal.jline.console.ConsoleReader;
 import jdk.internal.jline.console.KeyMap;
 import jdk.internal.jline.console.UserInterruptException;
 import jdk.internal.jline.console.completer.Completer;
+import jdk.internal.jline.console.history.History;
+import jdk.internal.jline.console.history.MemoryHistory;
 import jdk.internal.jline.extra.EditingHistory;
 import jdk.internal.jshell.tool.StopDetectingInputStream.State;
 
@@ -68,6 +70,7 @@ class ConsoleIOContext extends IOContext {
     final StopDetectingInputStream input;
     final ConsoleReader in;
     final EditingHistory history;
+    final MemoryHistory userInputHistory = new MemoryHistory();
 
     String prefix = "";
 
@@ -299,6 +302,9 @@ class ConsoleIOContext extends IOContext {
     }
 
     public void beforeUserCode() {
+        synchronized (this) {
+            inputBytes = null;
+        }
         input.setState(State.BUFFER);
     }
 
@@ -378,6 +384,36 @@ class ConsoleIOContext extends IOContext {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+    }
+
+    private byte[] inputBytes;
+    private int inputBytesPointer;
+
+    @Override
+    public synchronized int readUserInput() {
+        while (inputBytes == null || inputBytes.length <= inputBytesPointer) {
+            boolean prevHandleUserInterrupt = in.getHandleUserInterrupt();
+            History prevHistory = in.getHistory();
+
+            try {
+                input.setState(State.WAIT);
+                in.setHandleUserInterrupt(true);
+                in.setHistory(userInputHistory);
+                inputBytes = (in.readLine("") + System.getProperty("line.separator")).getBytes();
+                inputBytesPointer = 0;
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                return -1;
+            } catch (UserInterruptException ex) {
+                repl.state.stop();
+                return -1;
+            } finally {
+                in.setHistory(prevHistory);
+                in.setHandleUserInterrupt(prevHandleUserInterrupt);
+                input.setState(State.BUFFER);
+            }
+        }
+        return inputBytes[inputBytesPointer++];
     }
 
     /**
