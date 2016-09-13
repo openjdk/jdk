@@ -237,7 +237,7 @@ public class VerifyErroneousAnnotationsAttributed {
         JavacTask task = tool.getTask(null,
                                       fm,
                                       devNull,
-                                      Arrays.asList("-Xshouldstop:at=FLOW"),
+                                      Arrays.asList("--should-stop:at=FLOW"),
                                       null,
                                       Arrays.asList(new MyFileObject(code)));
 

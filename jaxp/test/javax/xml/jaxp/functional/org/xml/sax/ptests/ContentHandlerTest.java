@@ -264,5 +264,3 @@ class MyContentHandler extends XMLFilterImpl implements AutoCloseable {
             bWriter.close();
     }
 }
-
-

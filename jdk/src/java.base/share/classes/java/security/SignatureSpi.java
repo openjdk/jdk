@@ -38,7 +38,7 @@ import sun.security.jca.JCAUtil;
  * for the {@code Signature} class, which is used to provide the
  * functionality of a digital signature algorithm. Digital signatures are used
  * for authentication and integrity assurance of digital data.
- *.
+ *
  * <p> All the abstract methods in this class must be implemented by each
  * cryptographic service provider who wishes to supply the implementation
  * of a particular signature algorithm.

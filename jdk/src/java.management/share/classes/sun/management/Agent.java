@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,17 +31,19 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -53,6 +55,7 @@ import sun.management.jmxremote.ConnectorBootstrap;
 import sun.management.jdp.JdpController;
 import sun.management.jdp.JdpException;
 import jdk.internal.vm.VMSupport;
+import sun.management.spi.AgentProvider;
 
 /**
  * This Agent is started by the VM when -Dcom.sun.management.snmp or
@@ -248,8 +251,8 @@ public class Agent {
             "com.sun.management.enableThreadContentionMonitoring";
     private static final String LOCAL_CONNECTOR_ADDRESS_PROP =
             "com.sun.management.jmxremote.localConnectorAddress";
-    private static final String SNMP_ADAPTOR_BOOTSTRAP_CLASS_NAME =
-            "sun.management.snmp.AdaptorBootstrap";
+    private static final String SNMP_AGENT_NAME =
+            "SnmpAgent";
 
     private static final String JDP_DEFAULT_ADDRESS = "224.0.23.178";
     private static final int JDP_DEFAULT_PORT = 7095;
@@ -429,7 +432,7 @@ public class Agent {
 
         try {
             if (snmpPort != null) {
-                loadSnmpAgent(snmpPort, props);
+                loadSnmpAgent(props);
             }
 
             /*
@@ -554,28 +557,24 @@ public class Agent {
         return mgmtProps;
     }
 
-    private static void loadSnmpAgent(String snmpPort, Properties props) {
-        try {
-            // invoke the following through reflection:
-            //     AdaptorBootstrap.initialize(snmpPort, props);
-            final Class<?> adaptorClass =
-                    Class.forName(SNMP_ADAPTOR_BOOTSTRAP_CLASS_NAME, true, null);
-            final Method initializeMethod =
-                    adaptorClass.getMethod("initialize",
-                    String.class, Properties.class);
-            initializeMethod.invoke(null, snmpPort, props);
-        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException x) {
-            // snmp runtime doesn't exist - initialization fails
-            throw new UnsupportedOperationException("Unsupported management property: " + SNMP_PORT, x);
-        } catch (InvocationTargetException x) {
-            final Throwable cause = x.getCause();
-            if (cause instanceof RuntimeException) {
-                throw (RuntimeException) cause;
-            } else if (cause instanceof Error) {
-                throw (Error) cause;
-            }
-            // should not happen...
-            throw new UnsupportedOperationException("Unsupported management property: " + SNMP_PORT, cause);
+    private static void loadSnmpAgent(Properties props) {
+        /*
+         * Load the jdk.snmp service
+         */
+        AgentProvider provider = AccessController.doPrivileged(
+            (PrivilegedAction<AgentProvider>) () -> {
+                for(AgentProvider aProvider : ServiceLoader.loadInstalled(AgentProvider.class)) {
+                    if(aProvider.getName().equals(SNMP_AGENT_NAME))
+                        return aProvider;
+                }
+                return null;
+            },  null
+        );
+
+        if (provider != null) {
+            provider.startAgent(props);
+         } else { // snmp runtime doesn't exist - initialization fails
+            throw new UnsupportedOperationException("Unsupported management property: " + SNMP_PORT);
         }
     }
 

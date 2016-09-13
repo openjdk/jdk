@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import com.sun.management.HotSpotDiagnosticMXBean;
  * @bug 6455258
  * @summary Sanity test for com.sun.management.HotSpotDiagnosticMXBean.dumpHeap method
  * @library /lib/testlibrary
- * @library /test/lib/share/classes
+ * @library /test/lib
  * @build jdk.testlibrary.*
  * @build jdk.test.lib.hprof.*
  * @build jdk.test.lib.hprof.model.*

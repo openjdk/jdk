@@ -218,4 +218,3 @@ public class Bug7157608Test {
         boolean validating = false;
     }
 }
-

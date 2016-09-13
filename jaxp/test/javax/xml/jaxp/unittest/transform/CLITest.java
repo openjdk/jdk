@@ -50,4 +50,3 @@ public class CLITest {
         }, new PropertyPermission("*", "read,write"));
     }
 }
-

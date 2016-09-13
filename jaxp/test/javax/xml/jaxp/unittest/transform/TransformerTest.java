@@ -439,4 +439,3 @@ public class TransformerTest {
         Assert.assertNull(document.getElementsByTagName("test6").item(0).getNamespaceURI(), "unexpected namespace for test6");
     }
 }
-

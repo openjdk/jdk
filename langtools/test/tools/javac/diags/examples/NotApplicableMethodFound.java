@@ -26,7 +26,7 @@
 // key: compiler.err.cant.apply.symbol
 // key: compiler.misc.no.conforming.assignment.exists
 // key: compiler.misc.inconvertible.types
-// options: -Xdebug:verboseResolution=inapplicable,failure
+// options: --debug:verboseResolution=inapplicable,failure
 
 class NotApplicableMethodFound {
 

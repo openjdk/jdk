@@ -65,10 +65,10 @@ define_pd_global(intx, InlineSmallCode,          1000);
 #ifdef AMD64
 // Very large C++ stack frames using solaris-amd64 optimized builds
 // due to lack of optimization caused by C++ compiler bugs
-#define DEFAULT_STACK_SHADOW_PAGES (NOT_WIN64(20) WIN64_ONLY(6) DEBUG_ONLY(+2))
+#define DEFAULT_STACK_SHADOW_PAGES (NOT_WIN64(20) WIN64_ONLY(7) DEBUG_ONLY(+2))
 // For those clients that do not use write socket, we allow
 // the min range value to be below that of the default
-#define MIN_STACK_SHADOW_PAGES (NOT_WIN64(10) WIN64_ONLY(6) DEBUG_ONLY(+2))
+#define MIN_STACK_SHADOW_PAGES (NOT_WIN64(10) WIN64_ONLY(7) DEBUG_ONLY(+2))
 #else
 #define DEFAULT_STACK_SHADOW_PAGES (4 DEBUG_ONLY(+5))
 #define MIN_STACK_SHADOW_PAGES DEFAULT_STACK_SHADOW_PAGES

@@ -282,21 +282,17 @@ bool os::is_allocatable(size_t bytes) {
 ///////////////////////////////////////////////////////////////////////////////
 // thread stack
 
-size_t os::Bsd::min_stack_allowed = 64 * K;
+size_t os::Posix::_compiler_thread_min_stack_allowed = 64 * K;
+size_t os::Posix::_java_thread_min_stack_allowed = 64 * K;
+size_t os::Posix::_vm_internal_thread_min_stack_allowed = 64 * K;
 
-size_t os::Bsd::default_stack_size(os::ThreadType thr_type) {
+size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 #ifdef _LP64
   size_t s = (thr_type == os::compiler_thread ? 4 * M : 1 * M);
 #else
   size_t s = (thr_type == os::compiler_thread ? 2 * M : 512 * K);
 #endif // _LP64
   return s;
-}
-
-size_t os::Bsd::default_guard_size(os::ThreadType thr_type) {
-  // Only enable glibc guard pages for non-Java threads
-  // (Java threads have HotSpot guard pages)
-  return (thr_type == java_thread ? 0 : page_size());
 }
 
 static void current_stack_region(address *bottom, size_t *size) {

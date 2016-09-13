@@ -33,7 +33,7 @@ TEST(LogTagLevelExpression, parse) {
   const char* invalid_substr[] = {
     "=", "+", " ", "+=", "+=*", "*+", " +", "**", "++", ".", ",", ",," ",+",
     " *", "all+", "all*", "+all", "+all=Warning", "==Info", "=InfoWarning",
-    "BadTag+", "logging++", "logging*+", ",=", "gc+gc+gc+gc+gc+gc"
+    "BadTag+", "logging++", "logging*+", ",=", "gc+gc+"
   };
   const char* valid_expression[] = {
     "all", "gc", "gc,logging", "gc+logging", "logging+gc", "logging+gc,gc", "logging+gc*", "gc=trace",

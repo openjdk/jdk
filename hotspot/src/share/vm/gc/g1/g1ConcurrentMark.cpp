@@ -1035,6 +1035,8 @@ void G1ConcurrentMark::mark_from_roots() {
   // worker threads may currently exist and more may not be
   // available.
   active_workers = _parallel_workers->update_active_workers(active_workers);
+  log_info(gc, task)("Using %u workers of %u for marking", active_workers, _parallel_workers->total_workers());
+
   // Parallel task terminator is set in "set_concurrency_and_phase()"
   set_concurrency_and_phase(active_workers, true /* concurrent */);
 
@@ -1902,7 +1904,8 @@ G1ConcurrentMark::claim_region(uint worker_id) {
     assert(_g1h->is_in_g1_reserved(finger), "invariant");
 
     HeapRegion* curr_region = _g1h->heap_region_containing(finger);
-
+    // Make sure that the reads below do not float before loading curr_region.
+    OrderAccess::loadload();
     // Above heap_region_containing may return NULL as we always scan claim
     // until the end of the heap. In this case, just jump to the next region.
     HeapWord* end = curr_region != NULL ? curr_region->end() : finger + HeapRegion::GrainWords;

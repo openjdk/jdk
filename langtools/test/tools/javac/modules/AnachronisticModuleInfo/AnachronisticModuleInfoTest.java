@@ -78,7 +78,7 @@ public class AnachronisticModuleInfoTest extends TestRunner {
 
         String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-upgrademodulepath", modulePath)
+                        "--upgrade-module-path", modulePath)
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
                 .writeAll()

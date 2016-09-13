@@ -278,6 +278,18 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
         return getStrike(font, DEFAULT_FRC);
     }
 
+    public boolean equals(Object o) {
+         if (!super.equals(o)) {
+             return false;
+         }
+
+         return ((Font2D)o).getStyle() == this.getStyle();
+    }
+
+    public int hashCode() {
+        return super.hashCode() ^ this.getStyle();
+    }
+
     public String toString() {
         return "CFont { fullName: " + fullName +
             ",  familyName: " + familyName + ", style: " + style +

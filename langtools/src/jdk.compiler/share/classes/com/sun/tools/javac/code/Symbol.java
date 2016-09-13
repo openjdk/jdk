@@ -359,6 +359,19 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         return (flags_field & DEPRECATED) != 0;
     }
 
+    public boolean isDeprecatableViaAnnotation() {
+        switch (getKind()) {
+            case LOCAL_VARIABLE:
+            case PACKAGE:
+            case PARAMETER:
+            case RESOURCE_VARIABLE:
+            case EXCEPTION_PARAMETER:
+                return false;
+            default:
+                return true;
+        }
+    }
+
     public boolean isStatic() {
         return
             (flags() & STATIC) != 0 ||
@@ -913,11 +926,6 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             info.members_field = WriteableScope.create(info);
             msym.module_info = info;
             return msym;
-        }
-
-        public ModuleSymbol() {
-            super(MDL, 0, null, null, null);
-            this.type = new ModuleType(this);
         }
 
         public ModuleSymbol(Name name, Symbol owner) {

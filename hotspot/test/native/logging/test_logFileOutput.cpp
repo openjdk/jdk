@@ -29,7 +29,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
-static const char* name = "testlog.pid%p.%t.log";
+static const char* name = "file=testlog.pid%p.%t.log";
 
 // Test parsing a bunch of valid file output options
 TEST(LogFileOutput, parse_valid) {

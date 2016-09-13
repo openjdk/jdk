@@ -164,7 +164,14 @@ bool LogTagLevelExpression::parse(const char* str, outputStream* errstream) {
         success = false;
         break;
       }
-      add_tag(tag);
+      if (!add_tag(tag)) {
+        if (errstream != NULL) {
+          errstream->print_cr("Tag combination have duplicate tag '%s' in what-expression.",
+                              cur_tag);
+        }
+        success = false;
+        break;
+      }
       cur_tag = plus_pos + 1;
     } while (plus_pos != NULL);
 

@@ -22,6 +22,6 @@
  */
 
 // key: compiler.err.processorpath.no.processormodulepath
-// options: -processormodulepath mods -processorpath mods
+// options: --processor-module-path mods -processorpath mods
 
 class ProcessorPathNoProcessorModulePath {}
