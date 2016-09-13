@@ -1072,4 +1072,3 @@ public abstract class XMLGregorianCalendar
     @Override
     public abstract Object clone();
 }
-

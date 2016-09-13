@@ -41,8 +41,6 @@ import jdk.internal.loader.ClassLoaders;
 
 import sun.awt.AppContext;
 
-import sun.lwawt.macosx.CImage;
-import sun.lwawt.macosx.CImage.Creator;
 import sun.lwawt.macosx.CPlatformWindow;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.action.GetPropertyAction;
@@ -50,6 +48,7 @@ import sun.swing.SwingUtilities2;
 
 import com.apple.laf.AquaImageFactory.SlicedImageControl;
 import sun.awt.image.MultiResolutionCachedImage;
+import sun.swing.SwingAccessor;
 
 final class AquaUtils {
 
@@ -78,63 +77,43 @@ final class AquaUtils {
         }
     }
 
-    private static Creator getCImageCreatorInternal() {
-        return AccessController.doPrivileged(new PrivilegedAction<Creator>() {
-            @Override
-            public Creator run() {
-                try {
-                    final Method getCreatorMethod = CImage.class.getDeclaredMethod(
-                                "getCreator", new Class<?>[] {});
-                    getCreatorMethod.setAccessible(true);
-                    return (Creator)getCreatorMethod.invoke(null, new Object[] {});
-                } catch (final Exception ignored) {
-                    return null;
-                }
-            }
-        });
-    }
-
-    private static final RecyclableSingleton<Creator> cImageCreator = new RecyclableSingleton<Creator>() {
-        @Override
-        protected Creator getInstance() {
-            return getCImageCreatorInternal();
-        }
-    };
-    static Creator getCImageCreator() {
-        return cImageCreator.get();
-    }
-
     static Image generateSelectedDarkImage(final Image image) {
-        final ImageProducer prod = new FilteredImageSource(image.getSource(), new IconImageFilter() {
+        final ImageFilter filter =  new IconImageFilter() {
             @Override
             int getGreyFor(final int gray) {
                 return gray * 75 / 100;
             }
-        });
-        return Toolkit.getDefaultToolkit().createImage(prod);
+        };
+        return map(image, filter);
     }
 
     static Image generateDisabledImage(final Image image) {
-        final ImageProducer prod = new FilteredImageSource(image.getSource(), new IconImageFilter() {
+        final ImageFilter filter = new IconImageFilter() {
             @Override
             int getGreyFor(final int gray) {
                 return 255 - ((255 - gray) * 65 / 100);
             }
-        });
-        return Toolkit.getDefaultToolkit().createImage(prod);
+        };
+        return map(image, filter);
     }
 
     static Image generateLightenedImage(final Image image, final int percent) {
         final GrayFilter filter = new GrayFilter(true, percent);
-        return (image instanceof MultiResolutionCachedImage)
-                ? ((MultiResolutionCachedImage) image).map(
-                        rv -> generateLightenedImage(rv, filter))
-                : generateLightenedImage(image, filter);
+        return map(image, filter);
     }
 
-    static Image generateLightenedImage(Image image, ImageFilter filter) {
+    static Image generateFilteredImage(Image image, ImageFilter filter) {
         final ImageProducer prod = new FilteredImageSource(image.getSource(), filter);
         return Toolkit.getDefaultToolkit().createImage(prod);
+    }
+
+    private static Image map(Image image, ImageFilter filter) {
+        if (image instanceof MultiResolutionImage) {
+            return MultiResolutionCachedImage
+                    .map((MultiResolutionImage) image,
+                         (img) -> generateFilteredImage(img, filter));
+        }
+        return generateFilteredImage(image, filter);
     }
 
     private abstract static class IconImageFilter extends RGBImageFilter {
@@ -399,15 +378,9 @@ final class AquaUtils {
         }
     };
 
-    private static final Integer OPAQUE_SET_FLAG = 24; // private int JComponent.OPAQUE_SET
+    private static final int OPAQUE_SET_FLAG = 24; // private int JComponent.OPAQUE_SET
     static boolean hasOpaqueBeenExplicitlySet(final JComponent c) {
-        final Method method = getJComponentGetFlagMethod.get();
-        if (method == null) return false;
-        try {
-            return Boolean.TRUE.equals(method.invoke(c, OPAQUE_SET_FLAG));
-        } catch (final Throwable ignored) {
-            return false;
-        }
+        return SwingAccessor.getJComponentAccessor().getFlag(c, OPAQUE_SET_FLAG);
     }
 
     private static boolean isWindowTextured(final Component c) {

@@ -71,27 +71,36 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         } catch (FileNotFoundException fnf1) {
             File f = createAttachFile(pid);
             try {
-                // kill -QUIT will tickle target VM to check for the
-                // attach file.
                 sigquit(pid);
 
                 // give the target VM time to start the attach mechanism
-                int i = 0;
-                long delay = 200;
-                int retries = (int)(attachTimeout() / delay);
+                final int delay_step = 100;
+                final long timeout = attachTimeout();
+                long time_spend = 0;
+                long delay = 0;
                 do {
+                    // Increase timeout on each attempt to reduce polling
+                    delay += delay_step;
                     try {
                         Thread.sleep(delay);
                     } catch (InterruptedException x) { }
                     try {
                         fd = openDoor(pid);
-                    } catch (FileNotFoundException fnf2) { }
-                    i++;
-                } while (i <= retries && fd == -1);
-                if (fd == -1) {
+                    } catch (FileNotFoundException fnf2) {
+                        // pass
+                    }
+
+                    time_spend += delay;
+                    if (time_spend > timeout/2 && fd == -1) {
+                        // Send QUIT again to give target VM the last chance to react
+                        sigquit(pid);
+                    }
+                } while (time_spend <= timeout && fd == -1);
+                if (fd  == -1) {
                     throw new AttachNotSupportedException(
-                        "Unable to open door: target process not responding or " +
-                        "HotSpot VM not loaded");
+                        String.format("Unable to open door %s: " +
+                          "target process %d doesn't respond within %dms " +
+                          "or HotSpot VM not loaded", f.getPath(), pid, time_spend));
                 }
             } finally {
                 f.delete();

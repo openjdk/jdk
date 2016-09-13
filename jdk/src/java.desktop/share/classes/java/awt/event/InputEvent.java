@@ -302,6 +302,12 @@ public abstract class InputEvent extends ComponentEvent {
                 public boolean canAccessSystemClipboard(InputEvent event) {
                     return event.canAccessSystemClipboard;
                 }
+
+                @Override
+                public void setCanAccessSystemClipboard(InputEvent event,
+                        boolean canAccessSystemClipboard) {
+                    event.canAccessSystemClipboard = canAccessSystemClipboard;
+                }
             });
     }
 

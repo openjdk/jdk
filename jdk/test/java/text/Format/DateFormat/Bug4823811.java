@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 4823811 8008577
  * @summary Confirm that text which includes numbers with a trailing minus sign is parsed correctly.
+ * @modules jdk.localedata
  * @run main/othervm -Duser.timezone=GMT+09:00 -Djava.locale.providers=JRE,SPI Bug4823811
  */
 

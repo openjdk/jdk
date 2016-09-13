@@ -142,4 +142,3 @@ public class IssueTracker56Test {
 
     }
 }
-

@@ -200,13 +200,13 @@ void G1NewTracer::send_g1_young_gc_event() {
   }
 }
 
-void G1MMUTracer::send_g1_mmu_event(double timeSlice, double gcTime, double maxTime) {
+void G1MMUTracer::send_g1_mmu_event(double time_slice_ms, double gc_time_ms, double max_time_ms) {
   EventG1MMU e;
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
-    e.set_timeSlice(timeSlice);
-    e.set_gcTime(gcTime);
-    e.set_maxGcTime(maxTime);
+    e.set_timeSlice(time_slice_ms);
+    e.set_gcTime(gc_time_ms);
+    e.set_pauseTarget(max_time_ms);
     e.commit();
   }
 }
@@ -281,10 +281,10 @@ void G1NewTracer::send_basic_ihop_statistics(size_t threshold,
     evt.set_targetOccupancy(target_occupancy);
     evt.set_thresholdPercentage(target_occupancy > 0 ? ((double)threshold / target_occupancy) : 0.0);
     evt.set_currentOccupancy(current_occupancy);
-    evt.set_lastAllocationSize(last_allocation_size);
-    evt.set_lastAllocationDuration(last_allocation_duration);
-    evt.set_lastAllocationRate(last_allocation_duration != 0.0 ? last_allocation_size / last_allocation_duration : 0.0);
-    evt.set_lastMarkingLength(last_marking_length);
+    evt.set_recentMutatorAllocationSize(last_allocation_size);
+    evt.set_recentMutatorDuration(last_allocation_duration * MILLIUNITS);
+    evt.set_recentAllocationRate(last_allocation_duration != 0.0 ? last_allocation_size / last_allocation_duration : 0.0);
+    evt.set_lastMarkingDuration(last_marking_length * MILLIUNITS);
     evt.commit();
   }
 }
@@ -301,11 +301,11 @@ void G1NewTracer::send_adaptive_ihop_statistics(size_t threshold,
     evt.set_gcId(GCId::current());
     evt.set_threshold(threshold);
     evt.set_thresholdPercentage(internal_target_occupancy > 0 ? ((double)threshold / internal_target_occupancy) : 0.0);
-    evt.set_internalTargetOccupancy(internal_target_occupancy);
+    evt.set_ihopTargetOccupancy(internal_target_occupancy);
     evt.set_currentOccupancy(current_occupancy);
     evt.set_additionalBufferSize(additional_buffer_size);
     evt.set_predictedAllocationRate(predicted_allocation_rate);
-    evt.set_predictedMarkingLength(predicted_marking_length);
+    evt.set_predictedMarkingDuration(predicted_marking_length * MILLIUNITS);
     evt.set_predictionActive(prediction_active);
     evt.commit();
   }

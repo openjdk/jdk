@@ -555,9 +555,11 @@ class Eval {
                             : "";
                 } catch (ResolutionException ex) {
                     DeclarationSnippet sn = (DeclarationSnippet) state.maps.getSnippetDeadOrAlive(ex.id());
-                    exception = new UnresolvedReferenceException(sn, ex.getStackTrace());
+                    exception = new UnresolvedReferenceException(sn, translateExceptionStack(ex));
                 } catch (UserException ex) {
-                    exception = translateExecutionException(ex);
+                    exception = new EvalException(translateExceptionMessage(ex),
+                            ex.causeExceptionClass(),
+                            translateExceptionStack(ex));
                 } catch (RunException ex) {
                     // StopException - no-op
                 } catch (InternalException ex) {
@@ -732,7 +734,7 @@ class Eval {
         }
     }
 
-    private EvalException translateExecutionException(UserException ex) {
+    private StackTraceElement[] translateExceptionStack(Exception ex) {
         StackTraceElement[] raw = ex.getStackTrace();
         int last = raw.length;
         do {
@@ -759,11 +761,14 @@ class Eval {
                 elems[i] = r;
             }
         }
+        return elems;
+    }
+
+    private String translateExceptionMessage(Exception ex) {
         String msg = ex.getMessage();
-        if (msg.equals("<none>")) {
-            msg = null;
-        }
-        return new EvalException(msg, ex.causeExceptionClass(), elems);
+        return msg.equals("<none>")
+                ? null
+                : msg;
     }
 
     private boolean isWrap(StackTraceElement ste) {

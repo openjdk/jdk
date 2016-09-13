@@ -26,6 +26,7 @@ package javax.swing;
 
 import java.awt.*;
 import java.awt.image.*;
+import sun.awt.image.MultiResolutionCachedImage;
 
 /**
  * An image filter that "disables" an image by turning
@@ -48,7 +49,16 @@ public class GrayFilter extends RGBImageFilter {
      * @param i  an {@code Image} to be created as disabled
      * @return  the new grayscale image created from {@code i}
      */
-    public static Image createDisabledImage (Image i) {
+    public static Image createDisabledImage(Image i) {
+        if (i instanceof MultiResolutionImage) {
+            return MultiResolutionCachedImage
+                    .map((MultiResolutionImage) i,
+                         (img) -> createDisabledImageImpl(img));
+        }
+        return createDisabledImageImpl(i);
+    }
+
+    private static Image createDisabledImageImpl(Image i) {
         GrayFilter filter = new GrayFilter(true, 50);
         ImageProducer prod = new FilteredImageSource(i.getSource(), filter);
         Image grayImage = Toolkit.getDefaultToolkit().createImage(prod);

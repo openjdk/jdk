@@ -171,4 +171,3 @@ public class XPathAPITest {
         return new InputSource(filenameToURL(ASTROCAT));
     }
 }
-

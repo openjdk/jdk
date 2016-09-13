@@ -784,4 +784,3 @@ public class WriterTest {
         }
     }
 }
-

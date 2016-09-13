@@ -51,8 +51,6 @@ import jdk.jshell.spi.ExecutionControl.EngineTerminationException;
 import jdk.jshell.spi.ExecutionControl.ExecutionControlException;
 import jdk.jshell.spi.ExecutionEnv;
 import static jdk.jshell.execution.Util.failOverExecutionControlGenerator;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
 import static jdk.jshell.Util.expunge;
 
 /**
@@ -120,7 +118,8 @@ public class JShell implements AutoCloseable {
         this.executionControlGenerator = b.executionControlGenerator==null
                 ? failOverExecutionControlGenerator(
                         JDIDefaultExecutionControl.launch(),
-                        JDIDefaultExecutionControl.listen())
+                        JDIDefaultExecutionControl.listen("localhost"),
+                        JDIDefaultExecutionControl.listen(null))
                 : b.executionControlGenerator;
 
         this.maps = new SnippetMaps(this);
