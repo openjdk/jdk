@@ -125,14 +125,14 @@ public class AtomicReference<V> implements java.io.Serializable {
     /**
      * Possibly atomically sets the value to {@code newValue}
      * if the current value {@code == expectedValue},
-     * with memory effects as specified by {@link VarHandle#weakCompareAndSet}.
+     * with memory effects as specified by {@link VarHandle#weakCompareAndSetPlain}.
      *
      * @param expectedValue the expected value
      * @param newValue the new value
      * @return {@code true} if successful
      */
     public final boolean weakCompareAndSet(V expectedValue, V newValue) {
-        return VALUE.weakCompareAndSet(this, expectedValue, newValue);
+        return VALUE.weakCompareAndSetPlain(this, expectedValue, newValue);
     }
 
     /**
@@ -370,7 +370,7 @@ public class AtomicReference<V> implements java.io.Serializable {
      * Possibly atomically sets the value to {@code newValue}
      * if the current value {@code == expectedValue},
      * with memory effects as specified by
-     * {@link VarHandle#weakCompareAndSetVolatile}.
+     * {@link VarHandle#weakCompareAndSet}.
      *
      * @param expectedValue the expected value
      * @param newValue the new value
@@ -378,7 +378,7 @@ public class AtomicReference<V> implements java.io.Serializable {
      * @since 9
      */
     public final boolean weakCompareAndSetVolatile(V expectedValue, V newValue) {
-        return VALUE.weakCompareAndSetVolatile(this, expectedValue, newValue);
+        return VALUE.weakCompareAndSet(this, expectedValue, newValue);
     }
 
     /**

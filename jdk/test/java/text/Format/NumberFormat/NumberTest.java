@@ -27,6 +27,7 @@
  * @summary test NumberFormat
  * @library /java/text/testlib
  * @modules java.base/sun.util.resources
+ *          jdk.localedata
  * @compile -XDignore.symbol.file NumberTest.java
  * @run main/othervm -Djava.locale.providers=COMPAT,SPI NumberTest
  */

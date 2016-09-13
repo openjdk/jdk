@@ -40,6 +40,7 @@ import javax.print.attribute.AttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.Fidelity;
+import sun.print.DialogOwner;
 
 import sun.print.ServiceDialog;
 import sun.print.SunAlternateMedia;
@@ -187,9 +188,8 @@ public class ServiceUI {
             defaultIndex = 0;
         }
 
-        // For now we set owner to null. In the future, it may be passed
-        // as an argument.
-        Window owner = null;
+        DialogOwner dlgOwner = (DialogOwner)attributes.get(DialogOwner.class);
+        Window owner = (dlgOwner != null) ? dlgOwner.getOwner() : null;
 
         Rectangle gcBounds = (gc == null) ?  GraphicsEnvironment.
             getLocalGraphicsEnvironment().getDefaultScreenDevice().

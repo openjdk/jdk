@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import javax.sound.sampled.*;
 
@@ -54,13 +56,13 @@ public class GetInputStream {
         test_byte_array = new byte[testarray.length*2];
         AudioFloatConverter.getConverter(format).toByteArray(testarray, test_byte_array);
         test_file = File.createTempFile("test", ".raw");
-        FileOutputStream fos = new FileOutputStream(test_file);
-        fos.write(test_byte_array);
+        try (FileOutputStream fos = new FileOutputStream(test_file)) {
+            fos.write(test_byte_array);
+        }
     }
 
     static void tearDown() throws Exception {
-        if(!test_file.delete())
-            test_file.deleteOnExit();
+        Files.delete(Paths.get(test_file.getAbsolutePath()));
     }
 
     public static void main(String[] args) throws Exception {
@@ -76,7 +78,9 @@ public class GetInputStream {
                     buff = new ModelByteBuffer(test_byte_array);
 
                 byte[] b = new byte[test_byte_array.length];
-                buff.getInputStream().read(b);
+                try (InputStream is = buff.getInputStream()) {
+                    is.read(b);
+                }
                 for (int j = 0; j < b.length; j++)
                     if(b[i] != test_byte_array[i])
                          throw new RuntimeException("Byte array compare fails!");

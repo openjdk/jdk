@@ -132,7 +132,8 @@ abstract class VarHandleBaseTest {
         COMPARE_AND_SET,
         COMPARE_AND_EXCHANGE,
         GET_AND_SET,
-        GET_AND_ADD;
+        GET_AND_ADD,
+        GET_AND_BITWISE;
     }
 
     enum TestAccessMode {
@@ -148,13 +149,26 @@ abstract class VarHandleBaseTest {
         COMPARE_AND_EXCHANGE(TestAccessType.COMPARE_AND_EXCHANGE),
         COMPARE_AND_EXCHANGE_ACQUIRE(TestAccessType.COMPARE_AND_EXCHANGE),
         COMPARE_AND_EXCHANGE_RELEASE(TestAccessType.COMPARE_AND_EXCHANGE),
+        WEAK_COMPARE_AND_SET_PLAIN(TestAccessType.COMPARE_AND_SET),
         WEAK_COMPARE_AND_SET(TestAccessType.COMPARE_AND_SET),
-        WEAK_COMPARE_AND_SET_VOLATILE(TestAccessType.COMPARE_AND_SET),
         WEAK_COMPARE_AND_SET_ACQUIRE(TestAccessType.COMPARE_AND_SET),
         WEAK_COMPARE_AND_SET_RELEASE(TestAccessType.COMPARE_AND_SET),
         GET_AND_SET(TestAccessType.GET_AND_SET),
+        GET_AND_SET_ACQUIRE(TestAccessType.GET_AND_SET),
+        GET_AND_SET_RELEASE(TestAccessType.GET_AND_SET),
         GET_AND_ADD(TestAccessType.GET_AND_ADD),
-        ADD_AND_GET(TestAccessType.GET_AND_ADD),;
+        GET_AND_ADD_ACQUIRE(TestAccessType.GET_AND_ADD),
+        GET_AND_ADD_RELEASE(TestAccessType.GET_AND_ADD),
+        GET_AND_BITWISE_OR(TestAccessType.GET_AND_BITWISE),
+        GET_AND_BITWISE_OR_ACQUIRE(TestAccessType.GET_AND_BITWISE),
+        GET_AND_BITWISE_OR_RELEASE(TestAccessType.GET_AND_BITWISE),
+        GET_AND_BITWISE_AND(TestAccessType.GET_AND_BITWISE),
+        GET_AND_BITWISE_AND_ACQUIRE(TestAccessType.GET_AND_BITWISE),
+        GET_AND_BITWISE_AND_RELEASE(TestAccessType.GET_AND_BITWISE),
+        GET_AND_BITWISE_XOR(TestAccessType.GET_AND_BITWISE),
+        GET_AND_BITWISE_XOR_ACQUIRE(TestAccessType.GET_AND_BITWISE),
+        GET_AND_BITWISE_XOR_RELEASE(TestAccessType.GET_AND_BITWISE),
+        ;
 
         final TestAccessType at;
         final boolean isPolyMorphicInReturnType;

@@ -89,4 +89,3 @@ public class Bug6613059Test {
         }
     }
 }
-

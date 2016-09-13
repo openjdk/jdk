@@ -106,5 +106,3 @@ public class StreamResultTest {
         });
     }
 }
-
-

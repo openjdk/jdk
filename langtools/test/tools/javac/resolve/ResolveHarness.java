@@ -132,8 +132,8 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
 
     protected void check() throws Exception {
         String[] options = {
-            "-Xshouldstop:at=ATTR",
-            "-Xdebug:verboseResolution=success,failure,applicable,inapplicable,deferred-inference,predef"
+            "--should-stop:at=ATTR",
+            "--debug:verboseResolution=success,failure,applicable,inapplicable,deferred-inference,predef"
         };
 
         AbstractProcessor[] processors = { new ResolveCandidateFinder(), null };

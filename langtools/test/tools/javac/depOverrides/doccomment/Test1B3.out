@@ -1,0 +1,8 @@
+B3.java:32:36: compiler.warn.missing.deprecated.annotation
+B3.java:35:36: compiler.warn.missing.deprecated.annotation
+B3.java:38:36: compiler.warn.missing.deprecated.annotation
+B3.java:41:36: compiler.warn.missing.deprecated.annotation
+B3.java:44:36: compiler.warn.missing.deprecated.annotation
+B3.java:47:36: compiler.warn.missing.deprecated.annotation
+B3.java:31:10: compiler.warn.missing.deprecated.annotation
+7 warnings

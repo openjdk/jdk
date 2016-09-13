@@ -44,6 +44,10 @@ define GenerateVarHandle
     $1_ARGS += -KAtomicAdd
   endif
 
+  ifneq ($$(findstring $$($1_Type), Boolean Byte Short Char Int Long), )
+    $1_ARGS += -KBitwise
+  endif
+
   ifneq ($$(findstring $$($1_Type), Byte Short Char), )
     $1_ARGS += -KShorterThanInt
   endif
@@ -101,6 +105,7 @@ define GenerateVarHandleByteArray
 
     $1_ARGS += -KCAS
     $1_ARGS += -KAtomicAdd
+    $1_ARGS += -KBitwise
   endif
 
   ifeq ($$($1_Type), Long)
@@ -113,6 +118,7 @@ define GenerateVarHandleByteArray
 
     $1_ARGS += -KCAS
     $1_ARGS += -KAtomicAdd
+    $1_ARGS += -KBitwise
   endif
 
   ifeq ($$($1_Type), Float)

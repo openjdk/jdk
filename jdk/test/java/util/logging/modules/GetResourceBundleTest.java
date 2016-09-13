@@ -37,6 +37,7 @@ import static org.testng.Assert.*;
  * @bug 8129126 8136802 8137316 8137317 8136804 8139350
  * @library /lib/testlibrary
  * @modules jdk.compiler
+ *          java.logging
  * @build GetResourceBundleTest CompilerUtils jdk.testlibrary.ProcessTools
  * @run testng GetResourceBundleTest
  * @summary Tests Logger.getLogger + logger.getResourceBundle in an named/unnamed module,

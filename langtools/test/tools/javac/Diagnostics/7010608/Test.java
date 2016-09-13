@@ -46,9 +46,9 @@ public class Test {
         try {
             test(Arrays.<String>asList(),
                     "myfo://test:1: error: cannot find symbol");
-            test(Arrays.asList("-diags:layout=OLD"),
+            test(Arrays.asList("--diags:layout=OLD"),
                     "myfo://test:1: cannot find symbol");
-            test(Arrays.asList("-diags:legacy"),
+            test(Arrays.asList("--diags:legacy"),
                     "myfo://test:1: cannot find symbol");
         } finally {
             Locale.setDefault(prev);

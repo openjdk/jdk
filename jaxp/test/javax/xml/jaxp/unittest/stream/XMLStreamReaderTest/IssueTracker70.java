@@ -76,4 +76,3 @@ public class IssueTracker70 {
         Assert.assertNotNull(value, "should have attribute value");
     }
 }
-

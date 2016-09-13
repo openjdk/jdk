@@ -78,4 +78,3 @@ public class Bug4966254 {
         return s;
     }
 }
-

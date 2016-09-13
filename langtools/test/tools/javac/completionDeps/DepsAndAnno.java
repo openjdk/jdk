@@ -47,7 +47,7 @@ public class DepsAndAnno {
     public static void main(String[] args) {
         ToolBox toolBox = new ToolBox();
         new JavacTask(toolBox, Task.Mode.CMDLINE)
-               .options("-Xdebug:completionDeps")
+               .options("--debug:completionDeps")
                .outdir(".")
                .files(ToolBox.testSrc + "/DepsAndAnno.java")
                .run();

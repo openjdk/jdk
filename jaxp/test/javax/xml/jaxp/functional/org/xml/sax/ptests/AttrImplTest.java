@@ -202,5 +202,3 @@ public class AttrImplTest {
         attr.removeAttribute(1);
     }
 }
-
-
