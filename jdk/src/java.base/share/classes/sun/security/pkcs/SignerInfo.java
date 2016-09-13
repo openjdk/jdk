@@ -55,6 +55,7 @@ import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 import sun.security.util.DisabledAlgorithmConstraints;
 import sun.security.util.HexDumpEncoder;
+import sun.security.util.KeyUtil;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X500Name;
@@ -399,7 +400,9 @@ public class SignerInfo implements DerEncoder {
             // check if the public key is restricted
             if (!JAR_DISABLED_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
                 throw new SignatureException("Public key check failed. " +
-                        "Disabled algorithm used: " + key.getAlgorithm());
+                        "Disabled key used: " +
+                        KeyUtil.getKeySize(key) + " bit " +
+                        key.getAlgorithm());
             }
 
             if (cert.hasUnsupportedCriticalExtension()) {
