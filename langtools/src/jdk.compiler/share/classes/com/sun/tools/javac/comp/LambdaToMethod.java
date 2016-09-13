@@ -2256,6 +2256,12 @@ public class LambdaToMethod extends TreeTranslator {
                               types.erasure(owner.enclClass().asType()));
             }
 
+            boolean isProtectedInSuperClassOfEnclosingClassInOtherPackage() {
+                return ((tree.sym.flags() & PROTECTED) != 0 &&
+                        tree.sym.packge() != owner.packge() &&
+                        !owner.enclClass().isSubClass(tree.sym.owner, types));
+            }
+
             /**
              * Signature polymorphic methods need special handling.
              * e.g. MethodHandle.invoke() MethodHandle.invokeExact()
@@ -2293,6 +2299,7 @@ public class LambdaToMethod extends TreeTranslator {
                         needsVarArgsConversion() ||
                         isArrayOp() ||
                         isPrivateInOtherClass() ||
+                        isProtectedInSuperClassOfEnclosingClassInOtherPackage() ||
                         !receiverAccessible() ||
                         (tree.getMode() == ReferenceMode.NEW &&
                           tree.kind != ReferenceKind.ARRAY_CTOR &&
