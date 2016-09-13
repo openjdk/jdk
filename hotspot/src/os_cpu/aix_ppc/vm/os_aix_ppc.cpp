@@ -192,8 +192,10 @@ frame os::current_frame() {
   intptr_t* csp = (intptr_t*) *((intptr_t*) os::current_stack_pointer());
   // hack.
   frame topframe(csp, (address)0x8);
-  // return sender of current topframe which hopefully has pc != NULL.
-  return os::get_sender_for_C_frame(&topframe);
+  // Return sender of sender of current topframe which hopefully
+  // both have pc != NULL.
+  frame tmp = os::get_sender_for_C_frame(&topframe);
+  return os::get_sender_for_C_frame(&tmp);
 }
 
 // Utility functions
