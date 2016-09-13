@@ -720,7 +720,7 @@ jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
 # Note: The algorithm restrictions do not apply to trust anchors or
 # self-signed certificates.
 #
-# Note: This property is currently used by Oracle's JSSE implementation.
+# Note: This property is currently used by the JDK Reference implementation.
 # It is not guaranteed to be examined and used by other implementations.
 #
 # Example:
@@ -740,7 +740,7 @@ jdk.tls.disabledAlgorithms=SSLv3, RC4, MD5withRSA, DH keySize < 1024, \
 # During SSL/TLS security parameters negotiation, legacy algorithms will
 # not be negotiated unless there are no other candidates.
 #
-# The syntax of the disabled algorithm string is described as this Java
+# The syntax of the legacy algorithms string is described as this Java
 # BNF-style:
 #   LegacyAlgorithms:
 #       " LegacyAlgorithm { , LegacyAlgorithm } "
@@ -776,7 +776,7 @@ jdk.tls.disabledAlgorithms=SSLv3, RC4, MD5withRSA, DH keySize < 1024, \
 # javax.net.ssl.SSLParameters.setAlgorithmConstraints()),
 # then the algorithm is completely disabled and will not be negotiated.
 #
-# Note: This property is currently used by Oracle's JSSE implementation.
+# Note: This property is currently used by the JDK Reference implementation.
 # It is not guaranteed to be examined and used by other implementations.
 # There is no guarantee the property will continue to exist or be of the
 # same syntax in future releases.
@@ -789,7 +789,8 @@ jdk.tls.legacyAlgorithms= \
         DHE_DSS_EXPORT, DHE_RSA_EXPORT, DH_anon_EXPORT, DH_DSS_EXPORT, \
         DH_RSA_EXPORT, RSA_EXPORT, \
         DH_anon, ECDH_anon, \
-        RC4_128, RC4_40, DES_CBC, DES40_CBC
+        RC4_128, RC4_40, DES_CBC, DES40_CBC, \
+        3DES_EDE_CBC
 
 # The pre-defined default finite field Diffie-Hellman ephemeral (DHE)
 # parameters for Transport Layer Security (SSL/TLS/DTLS) processing.
