@@ -159,8 +159,8 @@ public class TextField extends TextComponent {
      * @param      text       the text to be displayed. If
      *             {@code text} is {@code null}, the empty
      *             string {@code ""} will be displayed.
-     *             If {@code text} contains EOL character, then
-     *             it will be replaced by space character.
+     *             If {@code text} contains EOL and/or LF characters, then
+     *             each will be replaced by space character.
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
@@ -192,8 +192,8 @@ public class TextField extends TextComponent {
      * @param      text       the text to be displayed. If
      *             {@code text} is {@code null}, the empty
      *             string {@code ""} will be displayed.
-     *             If {@code text} contains EOL character, then
-     *             it will be replaced by space character.
+     *             If {@code text} contains EOL and/or LF characters, then
+     *             each will be replaced by space character.
      * @param      columns     the number of columns.  If
      *             {@code columns} is less than {@code 0},
      *             {@code columns} is set to {@code 0}.
@@ -300,8 +300,8 @@ public class TextField extends TextComponent {
      * @param      t       the new text. If
      *             {@code t} is {@code null}, the empty
      *             string {@code ""} will be displayed.
-     *             If {@code t} contains EOL character, then
-     *             it will be replaced by space character.
+     *             If {@code t} contains EOL and/or LF characters, then
+     *             each will be replaced by space character.
      * @see         java.awt.TextComponent#getText
      */
     public void setText(String t) {
