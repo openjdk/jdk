@@ -24,7 +24,7 @@
 /* @test
  * @summary Test getGlyphCharIndex() results from layout
  * @bug 8152680
- *
+ */
 
 import java.awt.Font;
 import java.awt.font.FontRenderContext;
