@@ -30,7 +30,7 @@
 import java.io.*;
 import java.util.*;
 
-// Simple test of -Xshouldstop:at.
+// Simple test of --should-stop:at.
 // For each of the permissable values, we compile a file with an error in it,
 // then using -XDverboseCompilePolicy we check that the compilation gets as
 // far as expected, but no further.
@@ -83,7 +83,7 @@ public class Test {
         args.add("-d");
         args.add(".");
         if (ssp.needOption)
-            args.add("-Xshouldstop:at=" + ssp);
+            args.add("--should-stop:at=" + ssp);
         args.add(new File(System.getProperty("test.src", "."), "A.java").getPath());
 
         StringWriter sw = new StringWriter();

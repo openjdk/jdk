@@ -584,4 +584,3 @@ public class LSParserTCKTest {
     }
 
 }
-

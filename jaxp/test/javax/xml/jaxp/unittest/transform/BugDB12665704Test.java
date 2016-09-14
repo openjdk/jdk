@@ -157,4 +157,3 @@ public class BugDB12665704Test {
         return sb.toString();
     }
 }
-

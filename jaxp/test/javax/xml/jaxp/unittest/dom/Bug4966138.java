@@ -69,4 +69,3 @@ public class Bug4966138 {
         Assert.assertTrue(typeNs.length() != 0, "returned typeNamespace shouldn't be empty");
     }
 }
-

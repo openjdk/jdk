@@ -54,7 +54,7 @@ public class AfterMethodTypeParams {
             String test = TEMPLATE.replace("CONTENT", tc.snippet);
             List<JavaFileObject> files = Arrays.asList(new MyFileObject(test));
             StringWriter out = new StringWriter();
-            List<String> options = Arrays.asList("-XDrawDiagnostics", "-Xshouldstop:at=FLOW");
+            List<String> options = Arrays.asList("-XDrawDiagnostics", "--should-stop:at=FLOW");
             JavacTask task = (JavacTask) compiler.getTask(out, null, null, options, null, files);
 
             new TreePathScanner<Void, Void>() {
