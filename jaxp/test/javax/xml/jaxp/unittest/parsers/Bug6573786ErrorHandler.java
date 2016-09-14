@@ -45,4 +45,3 @@ public class Bug6573786ErrorHandler extends DefaultHandler {
         System.out.println(e.getMessage());
     } // warning ()
 }
-

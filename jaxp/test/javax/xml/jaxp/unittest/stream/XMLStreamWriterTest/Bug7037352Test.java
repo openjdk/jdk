@@ -65,4 +65,3 @@ public class Bug7037352Test {
     }
 
 }
-

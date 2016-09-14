@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,13 +21,33 @@
  * questions.
  */
 
-package sun.text.resources;
-
-import java.util.spi.ResourceBundleProvider;
-
 /**
- * An interface for the internal locale data provider for which {@code ResourceBundle}
- * searches.
+ * JDK-8077149: __noSuchProperty__ and __noSuchMethod__ invocations are not properly guarded
+ *
+ * @test
+ * @run
  */
-public interface BreakIteratorRulesProvider extends ResourceBundleProvider {
+
+var o = {};
+
+function invoke() {
+    return o._();
 }
+
+Object.prototype.__noSuchProperty__ = function() {
+    return function() { return "no such property" };
+};
+
+Assert.assertEquals(invoke(), "no such property");
+
+Object.prototype.__noSuchMethod__ = function() {
+    return "no such method";
+};
+
+Assert.assertEquals(invoke(), "no such method");
+
+Object.prototype._ = function() {
+    return "underscore method";
+};
+
+Assert.assertEquals(invoke(), "underscore method");

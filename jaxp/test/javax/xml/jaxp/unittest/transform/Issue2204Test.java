@@ -67,4 +67,3 @@ public class Issue2204Test {
         }
     }
 }
-

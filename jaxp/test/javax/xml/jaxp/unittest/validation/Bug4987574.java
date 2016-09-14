@@ -60,4 +60,3 @@ public class Bug4987574 {
         schemaFactory.newSchema(tmpFile);
     }
 }
-

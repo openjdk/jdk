@@ -58,4 +58,3 @@ public class Bug6380870 {
         }
     }
 }
-

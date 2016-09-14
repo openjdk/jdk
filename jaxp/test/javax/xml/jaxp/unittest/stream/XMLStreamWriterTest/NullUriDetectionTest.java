@@ -54,4 +54,3 @@ public class NullUriDetectionTest {
         w.writeCharacters("---");
     }
 }
-

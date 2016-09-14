@@ -29,7 +29,7 @@
 // key: compiler.misc.where.description.intersection
 // key: compiler.misc.where.intersection
 // key: compiler.err.prob.found.req
-// options: -diags:formatterOptions=where
+// options: --diags:formatterOptions=where
 // run: simple
 
 class WhereIntersection2 {

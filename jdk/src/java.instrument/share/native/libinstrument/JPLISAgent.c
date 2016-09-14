@@ -272,6 +272,7 @@ initializeJPLISAgent(   JPLISAgent *    agent,
     agent->mNativeMethodPrefixAdded                  = JNI_FALSE;
     agent->mAgentClassName                           = NULL;
     agent->mOptionsString                            = NULL;
+    agent->mJarfile                                  = NULL;
 
     /* make sure we can recover either handle in either direction.
      * the agent has a ref to the jvmti; make it mutual

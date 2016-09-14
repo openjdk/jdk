@@ -130,7 +130,7 @@ import java.util.concurrent.locks.LockSupport;
  * </table>
  *
  * <p>The common pool is by default constructed with default
- * parameters, but these may be controlled by setting three
+ * parameters, but these may be controlled by setting the following
  * {@linkplain System#getProperty system properties}:
  * <ul>
  * <li>{@code java.util.concurrent.ForkJoinPool.common.parallelism}
@@ -3241,7 +3241,7 @@ public class ForkJoinPool extends AbstractExecutorService {
          * An ACC to restrict permissions for the factory itself.
          * The constructed workers have no permissions set.
          */
-        private static final AccessControlContext innocuousAcc;
+        private static final AccessControlContext INNOCUOUS_ACC;
         static {
             Permissions innocuousPerms = new Permissions();
             innocuousPerms.add(modifyThreadPermission);
@@ -3249,7 +3249,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                                    "enableContextClassLoaderOverride"));
             innocuousPerms.add(new RuntimePermission(
                                    "modifyThreadGroup"));
-            innocuousAcc = new AccessControlContext(new ProtectionDomain[] {
+            INNOCUOUS_ACC = new AccessControlContext(new ProtectionDomain[] {
                     new ProtectionDomain(null, innocuousPerms)
                 });
         }
@@ -3260,7 +3260,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                     public ForkJoinWorkerThread run() {
                         return new ForkJoinWorkerThread.
                             InnocuousForkJoinWorkerThread(pool);
-                    }}, innocuousAcc);
+                    }}, INNOCUOUS_ACC);
         }
     }
 
