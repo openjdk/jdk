@@ -30,13 +30,12 @@
 
 import static jdk.test.lib.Asserts.*;
 
-import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.internal.misc.Unsafe;
 
 public class GetUncompressedObject {
 
     public static void main(String args[]) throws Exception {
-        Unsafe unsafe = UnsafeHelper.getUnsafe();
+        Unsafe unsafe = Unsafe.getUnsafe();
 
         // Allocate some memory and fill it with non-zero values.
         final int size = 32;
