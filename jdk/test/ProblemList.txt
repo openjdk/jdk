@@ -159,7 +159,6 @@ javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java 8042215 
 
 # jdk_net
 
-
 java/net/MulticastSocket/NoLoopbackPackets.java                 7122846 macosx-all
 java/net/MulticastSocket/SetLoopbackMode.java                   7122846 macosx-all
 
@@ -172,6 +171,8 @@ java/net/httpclient/SplitResponse.java                          8157533 generic-
 java/net/httpclient/http2/BasicTest.java                        8157408 linux-all
 java/net/httpclient/http2/ErrorTest.java                        8158127 solaris-all,windows-all
 java/net/httpclient/http2/TLSConnection.java                    8157482 macosx-all
+
+sun/net/www/protocol/jar/JarURLConnectionUseCaches.java         8165988 windows-all
 
 ############################################################################
 
