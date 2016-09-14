@@ -793,7 +793,7 @@ public class BigDecimalFormat extends IntlTest {
         formatted.setLength(0);
         from = "123456789";
         to   = sep_zero.substring(0, 399) + ",123,456,789";
-        nf.format(new Long(from), formatted, new FieldPosition(0));
+        nf.format(123456789L, formatted, new FieldPosition(0));
         checkFormat(from, formatted, to, ((DecimalFormat)nf).getMultiplier());
 
         /* ------------------------------------------------------------------ */
@@ -810,7 +810,7 @@ public class BigDecimalFormat extends IntlTest {
         from = "123456789";
         to   = "-" + nonsep_zero.substring(0, 300) + "123456789." +
                nonsep_zero.substring(0, 340);
-        nf.format(new Long(from), formatted, new FieldPosition(0));
+        nf.format(123456789L, formatted, new FieldPosition(0));
         checkFormat(from, formatted, to, ((DecimalFormat)nf).getMultiplier());
 
         /* ------------------------------------------------------------------ */
@@ -827,7 +827,7 @@ public class BigDecimalFormat extends IntlTest {
         from = Long.toString(Long.MAX_VALUE);
         to   = sep_zero.substring(0, 373) +
                "19,807,040,619,342,712,359,383,728,129";
-        nf.format(new Long(from), formatted, new FieldPosition(0));
+        nf.format(Long.MAX_VALUE, formatted, new FieldPosition(0));
         checkFormat(from, formatted, to, ((DecimalFormat)nf).getMultiplier());
 
         /* ------------------------------------------------------------------ */
@@ -844,7 +844,7 @@ public class BigDecimalFormat extends IntlTest {
         from = Long.toString(Long.MAX_VALUE);
         to   = "-1.9807040628566084396238503936" +
                nonsep_zero.substring(0, 312) + "E28";
-        nf.format(new Long(from), formatted, new FieldPosition(0));
+        nf.format(Long.MAX_VALUE, formatted, new FieldPosition(0));
         checkFormat(from, formatted, to, ((DecimalFormat)nf).getMultiplier());
 
         /* ------------------------------------------------------------------ */
@@ -862,7 +862,7 @@ public class BigDecimalFormat extends IntlTest {
         to   = "-19807040619342712361531211776" +
                nonsep_zero.substring(0, 280) + "." +
                nonsep_zero.substring(0, 340) + "E-280";
-        nf.format(new Long(from), formatted, new FieldPosition(0));
+        nf.format(Long.MIN_VALUE, formatted, new FieldPosition(0));
         checkFormat(from, formatted, to, ((DecimalFormat)nf).getMultiplier());
 
         /* ------------------------------------------------------------------ */
@@ -880,7 +880,7 @@ public class BigDecimalFormat extends IntlTest {
         to   = sep_zero.substring(0, 373) +
                "19,807,040,628,566,084,398,385,987,584." +
                nonsep_zero.substring(0, 340);
-        nf.format(new Long(from), formatted, new FieldPosition(0));
+        nf.format(Long.MIN_VALUE, formatted, new FieldPosition(0));
         checkFormat(from, formatted, to, ((DecimalFormat)nf).getMultiplier());
     }
 

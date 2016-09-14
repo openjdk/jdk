@@ -685,8 +685,8 @@ public class Bug4823811 {
         testNumberFormatFormatting(nfEG, -456, "456-", "ar_EG");
 
         System.out.println("*** DecimalFormat.parse test in ar_EG");
-        testNumberFormatParsing(nfEG, "123-", new Long(-123), "ar_EG");
-        testNumberFormatParsing(nfEG, "123--", new Long(-123), "ar_EG");
+        testNumberFormatParsing(nfEG, "123-", -123L, "ar_EG");
+        testNumberFormatParsing(nfEG, "123--",-123L, "ar_EG");
         testNumberFormatParsingCheckException(nfEG, "-123", 0, "ar_EG");
 
         System.out.println("*** DecimalFormat.format test in en_US");
@@ -694,8 +694,8 @@ public class Bug4823811 {
         testNumberFormatFormatting(nfUS, -456, "-456", "en_US");
 
         System.out.println("*** DecimalFormat.parse test in en_US");
-        testNumberFormatParsing(nfUS, "123-", new Long(123), "en_US");
-        testNumberFormatParsing(nfUS, "-123", new Long(-123), "en_US");
+        testNumberFormatParsing(nfUS, "123-", 123L, "en_US");
+        testNumberFormatParsing(nfUS, "-123",-123L, "en_US");
         testNumberFormatParsingCheckException(nfUS, "--123", 0, "en_US");
     }
 
