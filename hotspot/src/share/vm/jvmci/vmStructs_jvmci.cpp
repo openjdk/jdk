@@ -327,8 +327,11 @@
   declare_constant(JVM_ACC_FIELD_INTERNAL)                                \
   declare_constant(JVM_ACC_FIELD_STABLE)                                  \
   declare_constant(JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE)                   \
+  declare_preprocessor_constant("JVM_ACC_VARARGS", JVM_ACC_VARARGS)       \
+  declare_preprocessor_constant("JVM_ACC_BRIDGE", JVM_ACC_BRIDGE)         \
+  declare_preprocessor_constant("JVM_ACC_ANNOTATION", JVM_ACC_ANNOTATION) \
+  declare_preprocessor_constant("JVM_ACC_ENUM", JVM_ACC_ENUM)             \
   declare_preprocessor_constant("JVM_ACC_SYNTHETIC", JVM_ACC_SYNTHETIC)   \
-  declare_preprocessor_constant("JVM_RECOGNIZED_FIELD_MODIFIERS", JVM_RECOGNIZED_FIELD_MODIFIERS) \
                                                                           \
   declare_constant(JVM_CONSTANT_Utf8)                                     \
   declare_constant(JVM_CONSTANT_Unicode)                                  \
