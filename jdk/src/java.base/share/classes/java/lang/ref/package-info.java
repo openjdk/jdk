@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,7 @@
  * implementing memory-sensitive caches, weak references are for
  * implementing canonicalizing mappings that do not prevent their keys
  * (or values) from being reclaimed, and phantom references are for
- * scheduling pre-mortem cleanup actions in a more flexible way than
- * is possible with the Java finalization mechanism.
+ * scheduling post-mortem cleanup actions.
  * Post-mortem cleanup actions can be registered and managed by a
  * {@link java.lang.ref.Cleaner}.
  *

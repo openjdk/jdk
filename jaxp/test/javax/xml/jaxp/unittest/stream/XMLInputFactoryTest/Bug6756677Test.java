@@ -113,4 +113,3 @@ public class Bug6756677Test {
         Assert.assertTrue(xif instanceof XMLInputFactory, "xif should be an instance of XMLInputFactory");
     }
 }
-

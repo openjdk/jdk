@@ -107,5 +107,3 @@ public class SAXParserNSTableTest {
         assertTrue(compareWithGold(goldFile, outputFile));
     }
 }
-
-

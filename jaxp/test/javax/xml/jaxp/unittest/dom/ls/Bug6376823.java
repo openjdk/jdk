@@ -121,4 +121,3 @@ public class Bug6376823 {
         return src;
     }
 }
-
