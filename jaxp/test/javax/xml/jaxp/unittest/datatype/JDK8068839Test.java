@@ -51,4 +51,3 @@ public class JDK8068839Test {
     }
 
 }
-

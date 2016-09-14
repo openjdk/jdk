@@ -56,4 +56,3 @@ public class Bug4991946 {
         parser.parse(Bug4991946.class.getResource("Bug4991946.xml").toExternalForm(), new util.DraconianErrorHandler());
     }
 }
-

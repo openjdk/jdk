@@ -557,4 +557,3 @@ public class BaseStAXUT implements XMLStreamConstants {
         System.err.println("Skipping " + clsName + "#" + method + ": entity expansion does not seem to be functioning properly" + msg + ".");
     }
 }
-

@@ -136,9 +136,9 @@ import java.util.function.Supplier;
  * }}</pre>
  *
  * @author Doug Lea
- * @since 1.8
  * @param <T> The result type returned by this future's {@code join}
  * and {@code get} methods
+ * @since 1.8
  */
 public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
 

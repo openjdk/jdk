@@ -108,4 +108,3 @@ public class Bug5011500 {
         validator.validate(xmlSource);
     }
 }
-

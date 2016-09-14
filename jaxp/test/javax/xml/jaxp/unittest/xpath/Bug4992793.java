@@ -83,4 +83,3 @@ public class Bug4992793 {
         return xpath;
     }
 }
-

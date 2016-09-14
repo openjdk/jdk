@@ -119,7 +119,7 @@ public class AddLimitMods extends ModuleTestBase {
         //real test
         new JavacTask(tb)
                 .options("--module-path", modulePath.toString(),
-                         "-Xshouldstop:ifNoError=FLOW",
+                         "--should-stop:ifNoError=FLOW",
                          "--limit-modules", "java.base")
                 .outdir(modulePath)
                 .files(findJavaFiles(m1))
@@ -128,7 +128,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("--module-path", modulePath.toString(),
-                         "-Xshouldstop:ifNoError=FLOW",
+                         "--should-stop:ifNoError=FLOW",
                          "--limit-modules", "java.base",
                          "--add-modules", "m2")
                 .outdir(modulePath)
@@ -138,7 +138,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("--module-path", modulePath.toString(),
-                         "-Xshouldstop:ifNoError=FLOW",
+                         "--should-stop:ifNoError=FLOW",
                          "--limit-modules", "java.base",
                          "--add-modules", "m2,m3")
                 .outdir(modulePath)
@@ -148,7 +148,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("--module-path", modulePath.toString(),
-                         "-Xshouldstop:ifNoError=FLOW",
+                         "--should-stop:ifNoError=FLOW",
                          "--limit-modules", "m2")
                 .outdir(modulePath)
                 .files(findJavaFiles(m1))
@@ -157,7 +157,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("--module-path", modulePath.toString(),
-                         "-Xshouldstop:ifNoError=FLOW",
+                         "--should-stop:ifNoError=FLOW",
                          "--limit-modules", "m3")
                 .outdir(modulePath)
                 .files(findJavaFiles(m1))
@@ -166,7 +166,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("--module-path", modulePath.toString(),
-                         "-Xshouldstop:ifNoError=FLOW",
+                         "--should-stop:ifNoError=FLOW",
                          "--limit-modules", "m3",
                          "--add-modules", "m2")
                 .outdir(modulePath)
@@ -473,7 +473,7 @@ public class AddLimitMods extends ModuleTestBase {
                                            auxOptions,
                                            "--module-path", modulePath.toString(),
                                            "--class-path", classpathOut.toString(),
-                                           "-Xshouldstop:ifNoError=FLOW"))
+                                           "--should-stop:ifNoError=FLOW"))
                    .outdir(modulePath)
                    .files(findJavaFiles(m2))
                    .run(success ? Task.Expect.SUCCESS : Task.Expect.FAIL)

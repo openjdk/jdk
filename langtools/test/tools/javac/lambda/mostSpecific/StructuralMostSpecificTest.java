@@ -210,7 +210,7 @@ public class StructuralMostSpecificTest extends ComboInstance<StructuralMostSpec
     public void doWork() throws Throwable {
         check(newCompilationTask()
                 .withSourceFromTemplate(sourceTemplate)
-                .withOption("-Xdebug:verboseResolution=all,-predef,-internal,-object-init")
+                .withOption("--debug:verboseResolution=all,-predef,-internal,-object-init")
                 .analyze());
     }
 
