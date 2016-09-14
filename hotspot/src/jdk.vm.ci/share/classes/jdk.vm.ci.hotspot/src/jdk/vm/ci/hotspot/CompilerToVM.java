@@ -26,8 +26,7 @@ package jdk.vm.ci.hotspot;
 import static jdk.vm.ci.common.InitTimer.timer;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
+import java.lang.reflect.Executable;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.InstalledCode;
@@ -385,10 +384,9 @@ final class CompilerToVM {
     native boolean hasFinalizableSubclass(HotSpotResolvedObjectTypeImpl type);
 
     /**
-     * Gets the method corresponding to {@code holder} and slot number {@code slot} (i.e.
-     * {@link Method#slot} or {@link Constructor#slot}).
+     * Gets the method corresponding to {@code executable}.
      */
-    native HotSpotResolvedJavaMethodImpl getResolvedJavaMethodAtSlot(Class<?> holder, int slot);
+    native HotSpotResolvedJavaMethodImpl asResolvedJavaMethod(Executable executable);
 
     /**
      * Gets the maximum absolute offset of a PC relative call to {@code address} from any position
@@ -616,4 +614,9 @@ final class CompilerToVM {
      */
     native int interpreterFrameSize(BytecodeFrame frame);
 
+    /**
+     * Invokes non-public method {@code java.lang.invoke.LambdaForm.compileToBytecode()} on
+     * {@code lambdaForm} (which must be a {@code java.lang.invoke.LambdaForm} instance).
+     */
+    native void compileToBytecode(Object lambdaForm);
 }
