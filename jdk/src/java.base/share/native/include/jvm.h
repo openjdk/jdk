@@ -179,6 +179,7 @@ JVM_GetStackTraceElements(JNIEnv *env, jobject throwable, jobjectArray elements)
  */
 enum {
   JVM_STACKWALK_FILL_CLASS_REFS_ONLY       = 0x2,
+  JVM_STACKWALK_GET_CALLER_CLASS           = 0x04,
   JVM_STACKWALK_SHOW_HIDDEN_FRAMES         = 0x20,
   JVM_STACKWALK_FILL_LIVE_STACK_FRAMES     = 0x100
 };
