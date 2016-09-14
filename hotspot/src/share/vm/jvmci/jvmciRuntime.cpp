@@ -817,16 +817,6 @@ JVM_ENTRY(void, JVM_RegisterJVMCINatives(JNIEnv *env, jclass c2vmClass))
   }
 JVM_END
 
-#define CHECK_WARN_ABORT_(message) THREAD); \
-  if (HAS_PENDING_EXCEPTION) { \
-    warning(message); \
-    char buf[512]; \
-    jio_snprintf(buf, 512, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
-    JVMCIRuntime::abort_on_pending_exception(PENDING_EXCEPTION, buf); \
-    return; \
-  } \
-  (void)(0
-
 void JVMCIRuntime::shutdown(TRAPS) {
   if (_HotSpotJVMCIRuntime_instance != NULL) {
     _shutdown_called = true;
