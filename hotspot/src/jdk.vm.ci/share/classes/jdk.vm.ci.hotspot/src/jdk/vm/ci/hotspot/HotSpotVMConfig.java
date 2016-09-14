@@ -117,8 +117,12 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int jvmAccFieldHasGenericSignature = getConstant("JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE", Integer.class);
     final int jvmAccIsCloneableFast = getConstant("JVM_ACC_IS_CLONEABLE_FAST", Integer.class);
 
-    // Modifier.SYNTHETIC is not public so we get it via vmStructs.
+    // These modifiers are not public in Modifier so we get them via vmStructs.
     final int jvmAccSynthetic = getConstant("JVM_ACC_SYNTHETIC", Integer.class);
+    final int jvmAccAnnotation = getConstant("JVM_ACC_ANNOTATION", Integer.class);
+    final int jvmAccBridge = getConstant("JVM_ACC_BRIDGE", Integer.class);
+    final int jvmAccVarargs = getConstant("JVM_ACC_VARARGS", Integer.class);
+    final int jvmAccEnum = getConstant("JVM_ACC_ENUM", Integer.class);
 
     // This is only valid on AMD64.
     final int runtimeCallStackSize = getConstant("frame::arg_reg_save_area_bytes", Integer.class, osArch.equals("amd64") ? null : 0);
