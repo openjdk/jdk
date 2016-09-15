@@ -3165,7 +3165,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
         assert(_verifier->check_cset_fast_test(), "Inconsistency in the InCSetState table.");
 
-        _cm->note_start_of_gc();
         // We call this after finalize_cset() to
         // ensure that the CSet has been finalized.
         _cm->verify_no_cset_oops();
@@ -3251,7 +3250,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // We redo the verification but now wrt to the new CSet which
         // has just got initialized after the previous CSet was freed.
         _cm->verify_no_cset_oops();
-        _cm->note_end_of_gc();
 
         // This timing is only used by the ergonomics to handle our pause target.
         // It is unclear why this should not include the full pause. We will
