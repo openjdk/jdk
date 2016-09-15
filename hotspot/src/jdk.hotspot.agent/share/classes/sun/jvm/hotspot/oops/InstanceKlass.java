@@ -68,6 +68,7 @@ public class InstanceKlass extends Klass {
     Type type            = db.lookupType("InstanceKlass");
     arrayKlasses         = new MetadataField(type.getAddressField("_array_klasses"), 0);
     methods              = type.getAddressField("_methods");
+    defaultMethods       = type.getAddressField("_default_methods");
     methodOrdering       = type.getAddressField("_method_ordering");
     localInterfaces      = type.getAddressField("_local_interfaces");
     transitiveInterfaces = type.getAddressField("_transitive_interfaces");
@@ -128,6 +129,7 @@ public class InstanceKlass extends Klass {
 
   private static MetadataField arrayKlasses;
   private static AddressField  methods;
+  private static AddressField  defaultMethods;
   private static AddressField  methodOrdering;
   private static AddressField  localInterfaces;
   private static AddressField  transitiveInterfaces;
@@ -335,6 +337,20 @@ public class InstanceKlass extends Klass {
   // Accessors for declared fields
   public Klass     getArrayKlasses()        { return (Klass)        arrayKlasses.getValue(this); }
   public MethodArray  getMethods()              { return new MethodArray(methods.getValue(getAddress())); }
+
+  public MethodArray  getDefaultMethods() {
+    if (defaultMethods != null) {
+      Address addr = defaultMethods.getValue(getAddress());
+      if ((addr != null) && (addr.getAddressAt(0) != null)) {
+        return new MethodArray(addr);
+      } else {
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
+
   public KlassArray   getLocalInterfaces()      { return new KlassArray(localInterfaces.getValue(getAddress())); }
   public KlassArray   getTransitiveInterfaces() { return new KlassArray(transitiveInterfaces.getValue(getAddress())); }
   public int       getJavaFieldsCount()     { return                (int) javaFieldsCount.getValue(this); }
