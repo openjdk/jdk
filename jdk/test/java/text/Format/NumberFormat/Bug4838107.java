@@ -71,47 +71,47 @@ public class Bug4838107 extends IntlTest {
         dfs = df.getDecimalFormatSymbols();
 
         /* Test with default pattern */
-        test(new Double(1234),    "1,234");
-        test(new Double(0.1234),  "0.123");     // rounded
-        test(new Double(-1234),   "-1,234");
-        test(new Double(-0.1234), "-0.123");    // rounded
+        test(1234D,    "1,234");
+        test(0.1234,  "0.123");     // rounded
+        test(-1234D,   "-1,234");
+        test(-0.1234, "-0.123");    // rounded
 
-        test(new Double(Double.POSITIVE_INFINITY), "\u221e");
-        test(new Double(Double.NEGATIVE_INFINITY), "-\u221e");
-        test(new Double(Double.NaN), "\ufffd"); // without prefix and suffix
-        test(new Double(0.0),  "0");
-        test(new Double(-0.0), "-0");   // with the minus sign
+        test(Double.POSITIVE_INFINITY, "\u221e");
+        test(Double.NEGATIVE_INFINITY, "-\u221e");
+        test(Double.NaN, "\ufffd"); // without prefix and suffix
+        test(0.0,  "0");
+        test(-0.0, "-0");   // with the minus sign
 
         /* Specify a pattern and the minus sign. */
         prepareFormatter("<P>#.###E00<S>", 'm');
-        test(new Double(1234),    "<P>1.234E03<S>");
-        test(new Double(0.1234),  "<P>1.234Em01<S>");
-        test(new Double(-1234),   "m<P>1.234E03<S>");
-        test(new Double(-0.1234), "m<P>1.234Em01<S>");
+        test(1234D,    "<P>1.234E03<S>");
+        test(0.1234,  "<P>1.234Em01<S>");
+        test(-1234D,   "m<P>1.234E03<S>");
+        test(-0.1234, "m<P>1.234Em01<S>");
 
         prepareFormatter("<P>#.###E00<S>;#.###E00", 'm');
-        test(new Double(1234),    "<P>1.234E03<S>");
-        test(new Double(0.1234),  "<P>1.234Em01<S>");
-        test(new Double(-1234),   "1.234E03");
-        test(new Double(-0.1234), "1.234Em01");
+        test(1234D,    "<P>1.234E03<S>");
+        test(0.1234,  "<P>1.234Em01<S>");
+        test(-1234D,   "1.234E03");
+        test(-0.1234, "1.234Em01");
 
         prepareFormatter("#.###E00;<P>#.###E00<S>", 'm');
-        test(new Double(1234),    "1.234E03");
-        test(new Double(0.1234),  "1.234Em01");
-        test(new Double(-1234),   "<P>1.234E03<S>");
-        test(new Double(-0.1234), "<P>1.234Em01<S>");
+        test(1234D,    "1.234E03");
+        test(0.1234,  "1.234Em01");
+        test(-1234D,   "<P>1.234E03<S>");
+        test(-0.1234, "<P>1.234Em01<S>");
 
         prepareFormatter("<P>#.###E00<S>;<p>-#.###E00<s>", 'm');
-        test(new Double(1234),    "<P>1.234E03<S>");
-        test(new Double(0.1234),  "<P>1.234Em01<S>");
-        test(new Double(-1234),   "<p>m1.234E03<s>");
-        test(new Double(-0.1234), "<p>m1.234Em01<s>");
+        test(1234D,    "<P>1.234E03<S>");
+        test(0.1234,  "<P>1.234Em01<S>");
+        test(-1234D,   "<p>m1.234E03<s>");
+        test(-0.1234, "<p>m1.234Em01<s>");
 
-        test(new Double(Double.POSITIVE_INFINITY), "<P>\u221e<S>");
-        test(new Double(Double.NEGATIVE_INFINITY), "<p>m\u221e<s>");
-        test(new Double(Double.NaN), "\ufffd"); // without prefix and suffix
-        test(new Double(0.0),  "<P>0E00<S>");
-        test(new Double(-0.0), "<p>m0E00<s>");  // with the minus sign
+        test(Double.POSITIVE_INFINITY, "<P>\u221e<S>");
+        test(Double.NEGATIVE_INFINITY, "<p>m\u221e<s>");
+        test(Double.NaN, "\ufffd"); // without prefix and suffix
+        test(0.0,  "<P>0E00<S>");
+        test(-0.0, "<p>m0E00<s>");  // with the minus sign
     }
 
     static void test_BigDecimal() {
@@ -151,19 +151,19 @@ public class Bug4838107 extends IntlTest {
         dfs = df.getDecimalFormatSymbols();
 
         /* Test with default pattern */
-        test(new Long(123456789),  "123,456,789");
-        test(new Long(-123456789), "-123,456,789");
+        test(123456789L,  "123,456,789");
+        test(-123456789L, "-123,456,789");
 
-        test(new Long(0), "0");
-        test(new Long(-0), "0");
+        test(0L, "0");
+        test(-0L, "0");
 
         /* Specify a pattern and the minus sign. */
         prepareFormatter("<P>#,###<S>;<p>-#,###<s>", 'm');
-        test(new Long(123456789),  "<P>123,456,789<S>");
-        test(new Long(-123456789), "<p>m123,456,789<s>");
+        test(123456789L,  "<P>123,456,789<S>");
+        test(-123456789L, "<p>m123,456,789<s>");
 
-        test(new Long(0), "<P>0<S>");
-        test(new Long(-0), "<P>0<S>");
+        test(0L, "<P>0<S>");
+        test(-0L, "<P>0<S>");
     }
 
     static void test_BigInteger() {

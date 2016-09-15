@@ -21,12 +21,13 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4917233 6461727 6490213 6720456
  * @summary test the KeyGenerator
  * @author Andreas Sterbenz
  * @library ..
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestKeyGenerator
  * @run main/othervm TestKeyGenerator sm
  */

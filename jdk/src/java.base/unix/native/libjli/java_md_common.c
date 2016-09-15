@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,49 @@
 #include "java.h"
 
 /*
- * If app is "/foo/bin/javac", or "/foo/bin/sparcv9/javac" then put
- * "/foo" into buf.
+ * Find the last occurrence of a string
+ */
+char* findLastPathComponent(char *buffer, const char *comp) {
+    char* t = buffer;
+    char* p = NULL;
+    size_t l = JLI_StrLen(comp);
+    t = JLI_StrStr(t, comp);
+
+    while (t != NULL) {
+        p = t;
+        t += l;
+        t = JLI_StrStr(t, comp);
+    }
+    return p;
+}
+
+/*
+ * Removes the trailing file name and any intermediate platform
+ * directories, if any, and its enclosing directory.
+ * Ex: if a buffer contains "/foo/bin/javac" or "/foo/bin/x64/javac", the
+ * truncated resulting buffer will contain "/foo".
+ */
+jboolean
+TruncatePath(char *buf)
+{
+    // try bin directory, maybe an executable
+    char *p = findLastPathComponent(buf, "/bin/");
+    if (p != NULL) {
+        *p = '\0';
+        return JNI_TRUE;
+    }
+    // try lib directory, maybe a library
+    p = findLastPathComponent(buf, "/lib/");
+    if (p != NULL) {
+        *p = '\0';
+        return JNI_TRUE;
+    }
+    return JNI_FALSE;
+}
+
+/*
+ * Retrieves the path to the JRE home by locating the executable file
+ * of the current process and then truncating the path to the executable
  */
 jboolean
 GetApplicationHome(char *buf, jint bufsize)
@@ -38,26 +79,27 @@ GetApplicationHome(char *buf, jint bufsize)
     } else {
         return JNI_FALSE;
     }
-
-    if (JLI_StrRChr(buf, '/') == 0) {
-        buf[0] = '\0';
-        return JNI_FALSE;
-    }
-    *(JLI_StrRChr(buf, '/')) = '\0';    /* executable file      */
-    if (JLI_StrLen(buf) < 4 || JLI_StrRChr(buf, '/') == 0) {
-        buf[0] = '\0';
-        return JNI_FALSE;
-    }
-    if (JLI_StrCmp("/bin", buf + JLI_StrLen(buf) - 4) != 0)
-        *(JLI_StrRChr(buf, '/')) = '\0';        /* sparcv9 or amd64     */
-    if (JLI_StrLen(buf) < 4 || JLI_StrCmp("/bin", buf + JLI_StrLen(buf) - 4) != 0) {
-        buf[0] = '\0';
-        return JNI_FALSE;
-    }
-    *(JLI_StrRChr(buf, '/')) = '\0';    /* bin                  */
-
-    return JNI_TRUE;
+    return TruncatePath(buf);
 }
+
+/*
+ * Retrieves the path to the JRE home by locating the
+ * shared library and then truncating the path to it.
+ */
+jboolean
+GetApplicationHomeFromDll(char *buf, jint bufsize)
+{
+    /* try to find ourselves instead */
+    Dl_info info;
+    if (dladdr((void*)&GetApplicationHomeFromDll, &info) != 0) {
+        char *path = realpath(info.dli_fname, buf);
+        if (path == buf) {
+            return TruncatePath(buf);
+        }
+    }
+    return JNI_FALSE;
+}
+
 /*
  * Return true if the named program exists
  */

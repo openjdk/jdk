@@ -21,12 +21,13 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6298106 6275523 6420252 8059627
  * @summary make sure we can access the NSS trust anchor module
  * @author Andreas Sterbenz
  * @library ..
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TrustAnchors
  * @run main/othervm TrustAnchors sm policy
  */
