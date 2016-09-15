@@ -172,8 +172,6 @@ java/net/httpclient/http2/BasicTest.java                        8157408 linux-al
 java/net/httpclient/http2/ErrorTest.java                        8158127 solaris-all,windows-all
 java/net/httpclient/http2/TLSConnection.java                    8157482 macosx-all
 
-sun/net/www/protocol/jar/JarURLConnectionUseCaches.java         8165988 windows-all
-
 ############################################################################
 
 # jdk_nio
