@@ -136,13 +136,7 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
     }
 
     name_max = pathconf(dir, _PC_NAME_MAX);
-    // If pathconf did not work, fall back to NAME_MAX.
-    if (name_max < 0) {
-        name_max = NAME_MAX;
-    }
-    // Some older System V systems have a very small NAME_MAX size of 14; as
-    // there is no way to tell readdir_r the output buffer size, lets enforce
-    // a mimimum buffer size.
+    // If pathconf did not work, fall back to a mimimum buffer size.
     if (name_max < 1024) {
         name_max = 1024;
     }
