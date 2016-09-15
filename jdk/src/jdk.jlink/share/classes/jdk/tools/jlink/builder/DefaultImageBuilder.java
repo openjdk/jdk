@@ -189,7 +189,8 @@ public final class DefaultImageBuilder implements ImageBuilder {
 
             storeFiles(modules, release);
 
-            if (Files.getFileStore(root).supportsFileAttributeView(PosixFileAttributeView.class)) {
+            if (root.getFileSystem().supportedFileAttributeViews()
+                    .contains("posix")) {
                 // launchers in the bin directory need execute permission.
                 // On Windows, "bin" also subdirectories containing jvm.dll.
                 if (Files.isDirectory(bin)) {
@@ -302,8 +303,8 @@ public final class DefaultImageBuilder implements ImageBuilder {
                         StandardOpenOption.CREATE_NEW)) {
                     writer.write(sb.toString());
                 }
-                if (Files.getFileStore(root.resolve("bin"))
-                        .supportsFileAttributeView(PosixFileAttributeView.class)) {
+                if (root.resolve("bin").getFileSystem()
+                        .supportedFileAttributeViews().contains("posix")) {
                     setExecutable(cmd);
                 }
                 // generate .bat file for Windows
