@@ -23,6 +23,15 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8134708
+ * @summary Check if LDAP resources from CRLDP and AIA extensions can be loaded
+ * @run main/othervm ExtensionsWithLDAP CRLDP ldap.host.for.crldp
+ * @modules jdk.security.auth
+ * @run main/othervm ExtensionsWithLDAP AIA ldap.host.for.aia
+ */
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -45,13 +54,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
-/*
- * @test
- * @bug 8134708
- * @summary Check if LDAP resources from CRLDP and AIA extensions can be loaded
- * @run main/othervm ExtensionsWithLDAP CRLDP ldap.host.for.crldp
- * @run main/othervm ExtensionsWithLDAP AIA ldap.host.for.aia
- */
 public class ExtensionsWithLDAP {
 
     /*
