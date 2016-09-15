@@ -41,14 +41,22 @@
 // Inline allocation implementations.
 
 void CollectedHeap::post_allocation_setup_common(KlassHandle klass,
-                                                 HeapWord* obj) {
-  post_allocation_setup_no_klass_install(klass, obj);
-  post_allocation_install_obj_klass(klass, oop(obj));
+                                                 HeapWord* obj_ptr) {
+  post_allocation_setup_no_klass_install(klass, obj_ptr);
+  oop obj = (oop)obj_ptr;
+#if ! INCLUDE_ALL_GCS
+  obj->set_klass(klass());
+#else
+  // Need a release store to ensure array/class length, mark word, and
+  // object zeroing are visible before setting the klass non-NULL, for
+  // concurrent collectors.
+  obj->release_set_klass(klass());
+#endif
 }
 
 void CollectedHeap::post_allocation_setup_no_klass_install(KlassHandle klass,
-                                                           HeapWord* objPtr) {
-  oop obj = (oop)objPtr;
+                                                           HeapWord* obj_ptr) {
+  oop obj = (oop)obj_ptr;
 
   assert(obj != NULL, "NULL object pointer");
   if (UseBiasedLocking && (klass() != NULL)) {
@@ -57,18 +65,6 @@ void CollectedHeap::post_allocation_setup_no_klass_install(KlassHandle klass,
     // May be bootstrapping
     obj->set_mark(markOopDesc::prototype());
   }
-}
-
-void CollectedHeap::post_allocation_install_obj_klass(KlassHandle klass,
-                                                   oop obj) {
-  // These asserts are kind of complicated because of klassKlass
-  // and the beginning of the world.
-  assert(klass() != NULL || !Universe::is_fully_initialized(), "NULL klass");
-  assert(klass() == NULL || klass()->is_klass(), "not a klass");
-  assert(obj != NULL, "NULL object pointer");
-  obj->set_klass(klass());
-  assert(!Universe::is_fully_initialized() || obj->klass() != NULL,
-         "missing klass");
 }
 
 // Support for jvmti and dtrace
@@ -88,25 +84,26 @@ inline void post_allocation_notify(KlassHandle klass, oop obj, int size) {
 }
 
 void CollectedHeap::post_allocation_setup_obj(KlassHandle klass,
-                                              HeapWord* obj,
+                                              HeapWord* obj_ptr,
                                               int size) {
-  post_allocation_setup_common(klass, obj);
+  post_allocation_setup_common(klass, obj_ptr);
+  oop obj = (oop)obj_ptr;
   assert(Universe::is_bootstrapping() ||
-         !((oop)obj)->is_array(), "must not be an array");
+         !obj->is_array(), "must not be an array");
   // notify jvmti and dtrace
-  post_allocation_notify(klass, (oop)obj, size);
+  post_allocation_notify(klass, obj, size);
 }
 
 void CollectedHeap::post_allocation_setup_class(KlassHandle klass,
-                                                HeapWord* obj,
+                                                HeapWord* obj_ptr,
                                                 int size) {
-  // Set oop_size field before setting the _klass field
-  // in post_allocation_setup_common() because the klass field
-  // indicates that the object is parsable by concurrent GC.
-  oop new_cls = (oop)obj;
+  // Set oop_size field before setting the _klass field because a
+  // non-NULL _klass field indicates that the object is parsable by
+  // concurrent GC.
+  oop new_cls = (oop)obj_ptr;
   assert(size > 0, "oop_size must be positive.");
   java_lang_Class::set_oop_size(new_cls, size);
-  post_allocation_setup_common(klass, obj);
+  post_allocation_setup_common(klass, obj_ptr);
   assert(Universe::is_bootstrapping() ||
          !new_cls->is_array(), "must not be an array");
   // notify jvmti and dtrace
@@ -114,15 +111,15 @@ void CollectedHeap::post_allocation_setup_class(KlassHandle klass,
 }
 
 void CollectedHeap::post_allocation_setup_array(KlassHandle klass,
-                                                HeapWord* obj,
+                                                HeapWord* obj_ptr,
                                                 int length) {
-  // Set array length before setting the _klass field
-  // in post_allocation_setup_common() because the klass field
-  // indicates that the object is parsable by concurrent GC.
+  // Set array length before setting the _klass field because a
+  // non-NULL klass field indicates that the object is parsable by
+  // concurrent GC.
   assert(length >= 0, "length should be non-negative");
-  ((arrayOop)obj)->set_length(length);
-  post_allocation_setup_common(klass, obj);
-  oop new_obj = (oop)obj;
+  ((arrayOop)obj_ptr)->set_length(length);
+  post_allocation_setup_common(klass, obj_ptr);
+  oop new_obj = (oop)obj_ptr;
   assert(new_obj->is_array(), "must be an array");
   // notify jvmti and dtrace (must be after length is set for dtrace)
   post_allocation_notify(klass, new_obj, new_obj->size());
