@@ -491,6 +491,8 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
   uint current_idx = 0; // The current new node ID. Incremented after every assignment.
   for (uint i = 0; i < _useful.size(); i++) {
     Node* n = _useful.at(i);
+    // Sanity check that fails if we ever decide to execute this phase after EA
+    assert(!n->is_Phi() || n->as_Phi()->inst_mem_id() == -1, "should not be linked to data Phi");
     const Type* type = gvn->type_or_null(n);
     new_type_array.map(current_idx, type);
 
@@ -1446,6 +1448,18 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
       }
     }
     i -= num_edges;    // we deleted 1 or more copies of this edge
+  }
+
+  // Search for instance field data PhiNodes in the same region pointing to the old
+  // memory PhiNode and update their instance memory ids to point to the new node.
+  if (old->is_Phi() && old->as_Phi()->type()->has_memory() && old->in(0) != NULL) {
+    Node* region = old->in(0);
+    for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
+      PhiNode* phi = region->fast_out(i)->isa_Phi();
+      if (phi != NULL && phi->inst_mem_id() == (int)old->_idx) {
+        phi->set_inst_mem_id((int)nn->_idx);
+      }
+    }
   }
 
   // Smash all inputs to 'old', isolating him completely
