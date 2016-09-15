@@ -61,9 +61,19 @@ import com.sun.org.apache.xml.internal.resolver.readers.SAXCatalogReader;
  * catalog resolution outside of a parsing context. It may be shared
  * between several parsers and the application.</p>
  *
+ * @deprecated This class and the JDK internal Catalog API in package
+ * {@code com.sun.org.apache.xml.internal.resolver}
+ * is encapsulated in JDK 9. The entire implementation under the package is now
+ * deprecated and subject to removal in a future release. Users of the API should
+ * migrate to the {@linkplain javax.xml.catalog new public API}.
+ * <p>
+ * The new Catalog API is supported throughout the JDK XML Processors, which allows
+ * the use of Catalog by simply setting a path to a Catalog file as a property.
+ *
  * @author Michael Glavassevich, IBM
  *
  */
+@Deprecated(since="9", forRemoval=true)
 public class XMLCatalogResolver
     implements XMLEntityResolver, EntityResolver2, LSResourceResolver {
 
