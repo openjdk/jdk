@@ -25,7 +25,7 @@
  * @test
  * @bug 6947916
  * @summary  JarURLConnection does not handle useCaches correctly
- * @run main JarURLConnectionUseCaches
+ * @run main/othervm JarURLConnectionUseCaches
  */
 
 import java.io.*;
