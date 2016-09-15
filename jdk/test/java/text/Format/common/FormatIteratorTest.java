@@ -37,6 +37,7 @@ import java.text.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.text.AttributedCharacterIterator.Attribute;
 
 /**
  * FormatTester creates Formats, and tests the resulting FieldPositions
@@ -94,7 +95,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * Any lines starting with {@code '#'} are comment lines and ignored.
  */
 public class FormatIteratorTest extends IntlTest {
-    private static HashMap attrs;
     private Format format;
     private Object value;
     private String text;
@@ -143,30 +143,31 @@ public class FormatIteratorTest extends IntlTest {
                        "dateFormat.props"));
     }
 
+    @SuppressWarnings("unchecked")
     private void _test(File file) {
         try {
-            attrs = new HashMap();
             logln("testing: " + file);
             PParser parser = new PParser();
-            Hashtable contents = parser.parse(new BufferedReader(
+            Map<String,Object> contents = parser.parse(new BufferedReader(
                 new FileReader(file)));
-            Vector test = (Vector)contents.get("tests");
+            List<Object> test = (List)contents.get("tests");
 
             for (int counter = 0; counter < test.size(); counter++) {
                 logln("creating: " + (counter / 2));
 
                 AttributedCharacterIterator iterator =
-                    create((Hashtable)test.get(counter));
+                    create((Map)test.get(counter));
 
                 logln("verifying: " + (counter / 2));
-                verify(iterator, (Hashtable)test.get(++counter));
+                verify(iterator, (Map)test.get(++counter));
             }
         } catch (IOException ioe) {
             errln("Error reading: " + ioe);
         }
     }
 
-    public void verify(AttributedCharacterIterator iterator,Hashtable table) {
+    @SuppressWarnings("unchecked")
+    public void verify(AttributedCharacterIterator iterator,Map<String,Object> table) {
         int length = Integer.parseInt((String)table.get("length"));
 
         // Verify the text
@@ -185,10 +186,10 @@ public class FormatIteratorTest extends IntlTest {
         for (int counter = 0; counter < length; counter++) {
             iterator.setIndex(counter);
             if (!verifyAttributes(iterator.getAttributes().keySet(),
-                    makeAttributes((Vector)table.get(Integer.
+                    makeAttributes((List)table.get(Integer.
                                                       toString(counter))))) {
                 errln("Attributes don't match at " + counter + " expecting " +
-                      makeAttributes((Vector)table.get(Integer.toString
+                      makeAttributes((List)table.get(Integer.toString
                                                        (counter))) + " got " +
                       iterator.getAttributes().keySet());
             }
@@ -196,10 +197,10 @@ public class FormatIteratorTest extends IntlTest {
         for (int counter = length - 1; counter >= 0; counter--) {
             iterator.setIndex(counter);
             if (!verifyAttributes(iterator.getAttributes().keySet(),
-                    makeAttributes((Vector)table.get(Integer.
+                    makeAttributes((List)table.get(Integer.
                                                       toString(counter))))) {
                 errln("Attributes don't match at " + counter + " expecting " +
-                      makeAttributes((Vector)table.get(Integer.toString
+                      makeAttributes((List)table.get(Integer.toString
                                                        (counter))) + " got " +
                       iterator.getAttributes().keySet());
             }
@@ -207,31 +208,33 @@ public class FormatIteratorTest extends IntlTest {
         verifyLimits(iterator, table);
 
         text = escapeIfNecessary((String)table.get("text"));
-        Vector fps = (Vector)table.get("fieldPositions");
+        List<Object> fps = (List)table.get("fieldPositions");
 
         if (fps != null) {
             for (int counter = 0; counter < fps.size(); counter++) {
-                verifyFieldPosition(counter, (Hashtable)fps.get(counter));
+                verifyFieldPosition(counter,(Map)fps.get(counter));
             }
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void verifyLimits(AttributedCharacterIterator iterator,
-                              Hashtable table) {
-        Vector limits = (Vector)table.get("limits");
+                              Map<String,Object> table) {
+        List<Object> limits = (List)table.get("limits");
 
         if (limits != null) {
             for (int counter = 0; counter < limits.size(); counter++) {
-                verifyLimit(iterator, (Hashtable)limits.get(counter));
+                verifyLimit(iterator, (Map)limits.get(counter));
             }
         }
     }
 
     private void verifyLimit(AttributedCharacterIterator iterator,
-                             Hashtable table) {
+                             Map<String,Object> table) {
         int begin = Integer.parseInt((String)table.get("begin"));
         int end = Integer.parseInt((String)table.get("end"));
-        Set attrs = makeAttributes((Vector)table.get("attributes"));
+        @SuppressWarnings("unchecked")
+        Set<Attribute> attrs = makeAttributes((List)table.get("attributes"));
         String begin2S = (String)table.get("begin2");
         int begin2 = (begin2S != null) ? Integer.parseInt(begin2S) : begin;
         String end2S = (String)table.get("end2");
@@ -262,9 +265,9 @@ public class FormatIteratorTest extends IntlTest {
         }
     }
 
-    private boolean verifyAttributes(Set a, Set b) {
-        boolean aEmpty = (a.size() == 0);
-        boolean bEmpty = (b.size() == 0);
+    private boolean verifyAttributes(Set<Attribute> a, Set<Attribute> b) {
+        boolean aEmpty = a.isEmpty();
+        boolean bEmpty = b.isEmpty();
 
         if (aEmpty && bEmpty) {
             return true;
@@ -284,14 +287,14 @@ public class FormatIteratorTest extends IntlTest {
         return buffer.toString();
     }
 
-    private void verifyFieldPosition(int index, Hashtable table) {
+    private void verifyFieldPosition(int index, Map<String,Object> table) {
         Object o = table.get("field");
         int begin = Integer.parseInt((String)table.get("begin"));
         int end = Integer.parseInt((String)table.get("end"));
 
         if (o != null) {
             FieldPosition fp = new FieldPosition(((Integer)
-                                          lookupField((String)o)).intValue());
+                                          lookupField((String)o)));
 
             verifyFieldPosition(fp, begin, end, index);
         }
@@ -322,11 +325,11 @@ public class FormatIteratorTest extends IntlTest {
         }
     }
 
-    public AttributedCharacterIterator create(Hashtable table) {
+    public AttributedCharacterIterator create(Map<String,Object> table) {
         format = (Format)createInstance((String)table.get("class"),
-                                        ((Vector)table.get("args")).toArray());
+                                        ((List)table.get("args")).toArray());
         value = createInstance((String)table.get("valueClass"),
-                               ((Vector)table.get("valueArgs")).toArray());
+                               ((List)table.get("valueArgs")).toArray());
 
         logln("Created format: " + format + " value " + value);
         AttributedCharacterIterator aci = format.
@@ -343,11 +346,12 @@ public class FormatIteratorTest extends IntlTest {
     private Object createInstance(String className, Object[] args) {
         if (className.equals("java.lang.reflect.Array")) {
             for (int counter = 0; counter < args.length; counter++) {
-                if (args[counter] instanceof Vector) {
-                    Vector v = (Vector)args[counter];
+                if (args[counter] instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<Object> v = (List<Object>)args[counter];
 
                     args[counter] = createInstance((String)v.get(0),
-                                               ((Vector)v.get(1)).toArray());
+                                               ((List)v.get(1)).toArray());
                 }
             }
             return args;
@@ -361,9 +365,9 @@ public class FormatIteratorTest extends IntlTest {
             } else if (className.equals("java.util.concurrent.atomic.AtomicLong")) {
                 return new AtomicLong(Long.valueOf((String)args[0]));
             } else {
-                Class klass = lookupClass(className);
-                Constructor cons = klass.getConstructor(
-                    new Class[] { String.class });
+                Class<?> klass = lookupClass(className);
+                Constructor<?> cons = klass.getConstructor(
+                    new Class<?>[] { String.class });
                 Object value = cons.newInstance(args);
 
                 return value;
@@ -374,20 +378,20 @@ public class FormatIteratorTest extends IntlTest {
         }
     }
 
-    private Class lookupClass(String name) throws ClassNotFoundException {
+    private  Class<?> lookupClass(String name) throws ClassNotFoundException {
         try {
-            Class klass = Class.forName(name);
+            Class<?> klass = Class.forName(name);
 
             return klass;
         } catch (ClassNotFoundException e1) {}
 
         try {
-            Class klass = Class.forName("java.lang." + name);
+            Class<?> klass = Class.forName("java.lang." + name);
 
             return klass;
         } catch (ClassNotFoundException e1) {}
 
-        Class klass = Class.forName("java.text." + name);
+        Class<?> klass = Class.forName("java.text." + name);
 
         return klass;
     }
@@ -397,7 +401,7 @@ public class FormatIteratorTest extends IntlTest {
 
         try {
             int dotIndex = name.indexOf('.');
-            Class klass = lookupClass(name.substring(0, dotIndex));
+            Class<?> klass = lookupClass(name.substring(0, dotIndex));
             String fieldName = name.substring(dotIndex + 1);
             Field[] fields = klass.getFields();
 
@@ -429,8 +433,8 @@ public class FormatIteratorTest extends IntlTest {
         return string;
     }
 
-    public Set makeAttributes(Vector names) {
-        HashSet set = new HashSet(Math.max(1, names.size()));
+    public Set<Attribute> makeAttributes(List<Object> names) {
+        Set<Attribute> set = new HashSet<>(Math.max(1, names.size()));
 
         for (int counter = 0; counter < names.size(); counter++) {
             set.add(makeAttribute((String)names.get(counter)));
