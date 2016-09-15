@@ -30,6 +30,7 @@
 import java.text.*;
 import java.util.*;
 
+@SuppressWarnings("deprecation")
 public class Bug4736959 {
     /**
      * 4736959: JSpinner won't work for AM/PM field

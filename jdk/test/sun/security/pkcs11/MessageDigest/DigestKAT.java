@@ -21,12 +21,13 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4856966
  * @summary Basic known-answer-test for all our MessageDigest algorithms
  * @author Andreas Sterbenz
  * @library ..
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm DigestKAT
  * @run main/othervm DigestKAT sm
  */

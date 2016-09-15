@@ -57,6 +57,7 @@ public class SerializationSaveTest {
     }
 }
 
+@SuppressWarnings("serial")
 class CheckDecimalFormat implements Serializable
 {
     DecimalFormat _decFormat = (DecimalFormat)NumberFormat.getInstance();
@@ -68,6 +69,7 @@ class CheckDecimalFormat implements Serializable
     }
 }
 
+@SuppressWarnings("serial")
 class CheckDecimalFormatSymbols implements Serializable
 {
     DecimalFormatSymbols _decFormatSymbols = new DecimalFormatSymbols();
