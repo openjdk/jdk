@@ -30,6 +30,22 @@
  *
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                                 -XX:-TieredCompilation -Xbatch
+ *                                 -XX:+UseCompressedOops -XX:+UseCompressedClassPointers
+ *                                 -XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*
+ *                                 compiler.unsafe.OpaqueAccesses
+ * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
+ *                                 -XX:-TieredCompilation -Xbatch
+ *                                 -XX:+UseCompressedOops -XX:-UseCompressedClassPointers
+ *                                 -XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*
+ *                                 compiler.unsafe.OpaqueAccesses
+ * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
+ *                                 -XX:-TieredCompilation -Xbatch
+ *                                 -XX:-UseCompressedOops -XX:+UseCompressedClassPointers
+ *                                 -XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*
+ *                                 compiler.unsafe.OpaqueAccesses
+ * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
+ *                                 -XX:-TieredCompilation -Xbatch
+ *                                 -XX:-UseCompressedOops -XX:-UseCompressedClassPointers
  *                                 -XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*
  *                                 compiler.unsafe.OpaqueAccesses
  */
@@ -61,6 +77,7 @@ public class OpaqueAccesses {
     }
 
     private Object f = new Object();
+    private long l1, l2;
 
     static Object testFixedOffsetField(Object o) {
         return UNSAFE.getObject(o, F_OFFSET);
@@ -72,6 +89,22 @@ public class OpaqueAccesses {
 
     static int testFixedOffsetHeader4(Object o) {
         return UNSAFE.getInt(o, 4);
+    }
+
+    static int testFixedOffsetHeader8(Object o) {
+        return UNSAFE.getInt(o, 8);
+    }
+
+    static int testFixedOffsetHeader12(Object o) {
+        return UNSAFE.getInt(o, 12);
+    }
+
+    static int testFixedOffsetHeader16(Object o) {
+        return UNSAFE.getInt(o, 16);
+    }
+
+    static int testFixedOffsetHeader17(Object o) {
+        return UNSAFE.getIntUnaligned(o, 17);
     }
 
     static Object testFixedBase(long off) {
@@ -88,6 +121,22 @@ public class OpaqueAccesses {
 
     static int testFixedOffsetHeaderArray4(Object[] arr) {
         return UNSAFE.getInt(arr, 4);
+    }
+
+    static int testFixedOffsetHeaderArray8(Object[] arr) {
+        return UNSAFE.getInt(arr, 8);
+    }
+
+    static int testFixedOffsetHeaderArray12(Object[] arr) {
+        return UNSAFE.getInt(arr, 12);
+    }
+
+    static int testFixedOffsetHeaderArray16(Object[] arr) {
+        return UNSAFE.getInt(arr, 16);
+    }
+
+    static int testFixedOffsetHeaderArray17(Object[] arr) {
+        return UNSAFE.getIntUnaligned(arr, 17);
     }
 
     static Object testFixedOffsetArray(Object[] arr) {
@@ -118,6 +167,10 @@ public class OpaqueAccesses {
             testFixedOffsetField(INSTANCE);
             testFixedOffsetHeader0(INSTANCE);
             testFixedOffsetHeader4(INSTANCE);
+            testFixedOffsetHeader8(INSTANCE);
+            testFixedOffsetHeader12(INSTANCE);
+            testFixedOffsetHeader16(INSTANCE);
+            testFixedOffsetHeader17(INSTANCE);
             testFixedBase(F_OFFSET);
             testOpaque(INSTANCE, F_OFFSET);
             testMixedAccess();
@@ -125,6 +178,10 @@ public class OpaqueAccesses {
             // Array
             testFixedOffsetHeaderArray0(ARRAY);
             testFixedOffsetHeaderArray4(ARRAY);
+            testFixedOffsetHeaderArray8(ARRAY);
+            testFixedOffsetHeaderArray12(ARRAY);
+            testFixedOffsetHeaderArray16(ARRAY);
+            testFixedOffsetHeaderArray17(ARRAY);
             testFixedOffsetArray(ARRAY);
             testFixedBaseArray(E_OFFSET);
             testOpaqueArray(ARRAY, E_OFFSET);

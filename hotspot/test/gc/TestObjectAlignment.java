@@ -28,7 +28,6 @@
  * @summary G1: Concurrent marking crashes with -XX:ObjectAlignmentInBytes>=32 in 64bit VMs
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- *          java.management
  * @run main/othervm TestObjectAlignment -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=8
  * @run main/othervm TestObjectAlignment -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=16
  * @run main/othervm TestObjectAlignment -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=32

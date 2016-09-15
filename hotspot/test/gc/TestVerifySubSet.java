@@ -27,7 +27,6 @@
  * @summary Test VerifySubSet option
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- *          java.management
  */
 
 import jdk.test.lib.process.ProcessTools;

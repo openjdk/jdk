@@ -30,8 +30,9 @@
  * @modules java.base/jdk.internal.misc
  * @modules jdk.vm.ci/jdk.vm.ci.hotspot
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
+ * @build compiler.jvmci.compilerToVM.ReadConfigurationTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *                   compiler.jvmci.compilerToVM.InitializeConfigurationTest
+ *                   compiler.jvmci.compilerToVM.ReadConfigurationTest
  */
 
 package compiler.jvmci.compilerToVM;
@@ -40,16 +41,27 @@ import jdk.test.lib.Asserts;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
+import jdk.vm.ci.hotspot.VMIntrinsicMethod;
 
-public class InitializeConfigurationTest {
+public class ReadConfigurationTest {
     public static void main(String args[]) {
-        new InitializeConfigurationTest().runTest();
+        new ReadConfigurationTest().runTest();
     }
 
     private void runTest() {
         TestHotSpotVMConfig config = new TestHotSpotVMConfig(HotSpotJVMCIRuntime.runtime().getConfigStore());
         Asserts.assertNE(config.codeCacheHighBound, 0L, "Got null address");
         Asserts.assertNE(config.stubRoutineJintArrayCopy, 0L, "Got null address");
+
+        for (VMIntrinsicMethod m : config.getStore().getIntrinsics()) {
+            Asserts.assertNotNull(m);
+            Asserts.assertNotNull(m.declaringClass);
+            Asserts.assertFalse(m.declaringClass.contains("."),
+                "declaringClass should be in class file format: " + m.declaringClass);
+            Asserts.assertNotNull(m.name);
+            Asserts.assertNotNull(m.descriptor);
+            Asserts.assertTrue(m.id > 0);
+        }
     }
 
     private static class TestHotSpotVMConfig extends HotSpotVMConfigAccess {

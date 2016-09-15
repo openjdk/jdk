@@ -95,7 +95,6 @@
 #define JAVA_6_VERSION                    50
 
 // Used for backward compatibility reasons:
-// - to check NameAndType_info signatures more aggressively
 // - to disallow argument and require ACC_STATIC for <clinit> methods
 #define JAVA_7_VERSION                    51
 
@@ -564,7 +563,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
         break;
       }
       case JVM_CONSTANT_NameAndType: {
-        if (_need_verify && _major_version >= JAVA_7_VERSION) {
+        if (_need_verify) {
           const int sig_index = cp->signature_ref_index_at(index);
           const int name_index = cp->name_ref_index_at(index);
           const Symbol* const name = cp->symbol_at(name_index);
@@ -572,9 +571,17 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           guarantee_property(sig->utf8_length() != 0,
             "Illegal zero length constant pool entry at %d in class %s",
             sig_index, CHECK);
+          guarantee_property(name->utf8_length() != 0,
+            "Illegal zero length constant pool entry at %d in class %s",
+            name_index, CHECK);
+
           if (sig->byte_at(0) == JVM_SIGNATURE_FUNC) {
+            // Format check method name and signature
+            verify_legal_method_name(name, CHECK);
             verify_legal_method_signature(name, sig, CHECK);
           } else {
+            // Format check field name and signature
+            verify_legal_field_name(name, CHECK);
             verify_legal_field_signature(name, sig, CHECK);
           }
         }
@@ -595,42 +602,32 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
         const Symbol* const name = cp->symbol_at(name_ref_index);
         const Symbol* const signature = cp->symbol_at(signature_ref_index);
         if (tag == JVM_CONSTANT_Fieldref) {
-          verify_legal_field_name(name, CHECK);
-          if (_need_verify && _major_version >= JAVA_7_VERSION) {
-            // Signature is verified above, when iterating NameAndType_info.
-            // Need only to be sure it's non-zero length and the right type.
+          if (_need_verify) {
+            // Field name and signature are verified above, when iterating NameAndType_info.
+            // Need only to be sure signature is non-zero length and the right type.
             if (signature->utf8_length() == 0 ||
                 signature->byte_at(0) == JVM_SIGNATURE_FUNC) {
-              throwIllegalSignature(
-                "Field", name, signature, CHECK);
+              throwIllegalSignature("Field", name, signature, CHECK);
             }
-          } else {
-            verify_legal_field_signature(name, signature, CHECK);
           }
         } else {
-          verify_legal_method_name(name, CHECK);
-          if (_need_verify && _major_version >= JAVA_7_VERSION) {
-            // Signature is verified above, when iterating NameAndType_info.
-            // Need only to be sure it's non-zero length and the right type.
+          if (_need_verify) {
+            // Method name and signature are verified above, when iterating NameAndType_info.
+            // Need only to be sure signature is non-zero length and the right type.
             if (signature->utf8_length() == 0 ||
                 signature->byte_at(0) != JVM_SIGNATURE_FUNC) {
-              throwIllegalSignature(
-                "Method", name, signature, CHECK);
+              throwIllegalSignature("Method", name, signature, CHECK);
             }
-          } else {
-            verify_legal_method_signature(name, signature, CHECK);
           }
-          if (tag == JVM_CONSTANT_Methodref) {
-            // 4509014: If a class method name begins with '<', it must be "<init>".
-            assert(name != NULL, "method name in constant pool is null");
-            const unsigned int name_len = name->utf8_length();
-            if (name_len != 0 && name->byte_at(0) == '<') {
-              if (name != vmSymbols::object_initializer_name()) {
-                classfile_parse_error(
-                  "Bad method name at constant pool index %u in class file %s",
-                  name_ref_index, CHECK);
-              }
-            }
+          // 4509014: If a class method name begins with '<', it must be "<init>"
+          const unsigned int name_len = name->utf8_length();
+          if (tag == JVM_CONSTANT_Methodref &&
+              name_len != 0 &&
+              name->byte_at(0) == '<' &&
+              name != vmSymbols::object_initializer_name()) {
+            classfile_parse_error(
+              "Bad method name at constant pool index %u in class file %s",
+              name_ref_index, CHECK);
           }
         }
         break;
@@ -4843,19 +4840,28 @@ const char* ClassFileParser::skip_over_field_signature(const char* signature,
         }
       }
       else {
-        // 4900761: For class version > 48, any unicode is allowed in class name.
+        // Skip leading 'L' and ignore first appearance of ';'
         length--;
         signature++;
-        while (length > 0 && signature[0] != ';') {
-          if (signature[0] == '.') {
-            classfile_parse_error("Class name contains illegal character '.' in descriptor in class file %s", CHECK_0);
-          }
-          length--;
-          signature++;
-        }
-        if (signature[0] == ';') { return signature + 1; }
-      }
+        char* c = strchr((char*) signature, ';');
+        // Format check signature
+        if (c != NULL) {
+          ResourceMark rm(THREAD);
+          int newlen = c - (char*) signature;
+          char* sig = NEW_RESOURCE_ARRAY(char, newlen + 1);
+          strncpy(sig, signature, newlen);
+          sig[newlen] = '\0';
 
+          bool legal = verify_unqualified_name(sig, newlen, LegalClass);
+          if (!legal) {
+            classfile_parse_error("Class name contains illegal character "
+                                  "in descriptor in class file %s",
+                                  CHECK_0);
+            return NULL;
+          }
+          return signature + newlen + 1;
+        }
+      }
       return NULL;
     }
     case JVM_SIGNATURE_ARRAY:
@@ -4869,7 +4875,6 @@ const char* ClassFileParser::skip_over_field_signature(const char* signature,
       length--;
       void_ok = false;
       break;
-
     default:
       return NULL;
     }
@@ -5402,11 +5407,75 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   debug_only(ik->verify();)
 }
 
+// For an anonymous class that is in the unnamed package, move it to its host class's
+// package by prepending its host class's package name to its class name and setting
+// its _class_name field.
+void ClassFileParser::prepend_host_package_name(const InstanceKlass* host_klass, TRAPS) {
+  ResourceMark rm(THREAD);
+  assert(strrchr(_class_name->as_C_string(), '/') == NULL,
+         "Anonymous class should not be in a package");
+  const char* host_pkg_name =
+    ClassLoader::package_from_name(host_klass->name()->as_C_string(), NULL);
+
+  if (host_pkg_name != NULL) {
+    size_t host_pkg_len = strlen(host_pkg_name);
+    int class_name_len = _class_name->utf8_length();
+    char* new_anon_name =
+      NEW_RESOURCE_ARRAY(char, host_pkg_len + 1 + class_name_len);
+    // Copy host package name and trailing /.
+    strncpy(new_anon_name, host_pkg_name, host_pkg_len);
+    new_anon_name[host_pkg_len] = '/';
+    // Append anonymous class name. The anonymous class name can contain odd
+    // characters.  So, do a strncpy instead of using sprintf("%s...").
+    strncpy(new_anon_name + host_pkg_len + 1, (char *)_class_name->base(), class_name_len);
+
+    // Create a symbol and update the anonymous class name.
+    _class_name = SymbolTable::new_symbol(new_anon_name,
+                                          (int)host_pkg_len + 1 + class_name_len,
+                                          CHECK);
+  }
+}
+
+// If the host class and the anonymous class are in the same package then do
+// nothing.  If the anonymous class is in the unnamed package then move it to its
+// host's package.  If the classes are in different packages then throw an IAE
+// exception.
+void ClassFileParser::fix_anonymous_class_name(TRAPS) {
+  assert(_host_klass != NULL, "Expected an anonymous class");
+
+  const jbyte* anon_last_slash = UTF8::strrchr(_class_name->base(),
+                                               _class_name->utf8_length(), '/');
+  if (anon_last_slash == NULL) {  // Unnamed package
+    prepend_host_package_name(_host_klass, CHECK);
+  } else {
+    if (!InstanceKlass::is_same_class_package(_host_klass->class_loader(),
+                                              _host_klass->name(),
+                                              _host_klass->class_loader(),
+                                              _class_name)) {
+      ResourceMark rm(THREAD);
+      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+        err_msg("Host class %s and anonymous class %s are in different packages",
+        _host_klass->name()->as_C_string(), _class_name->as_C_string()));
+    }
+  }
+}
+
+static bool relax_format_check_for(ClassLoaderData* loader_data) {
+  bool trusted = (loader_data->is_the_null_class_loader_data() ||
+                  SystemDictionary::is_platform_class_loader(loader_data->class_loader()));
+  bool need_verify =
+    // verifyAll
+    (BytecodeVerificationLocal && BytecodeVerificationRemote) ||
+    // verifyRemote
+    (!BytecodeVerificationLocal && BytecodeVerificationRemote && !trusted);
+  return !need_verify;
+}
+
 ClassFileParser::ClassFileParser(ClassFileStream* stream,
                                  Symbol* name,
                                  ClassLoaderData* loader_data,
                                  Handle protection_domain,
-                                 const Klass* host_klass,
+                                 const InstanceKlass* host_klass,
                                  GrowableArray<Handle>* cp_patches,
                                  Publicity pub_level,
                                  TRAPS) :
@@ -5490,7 +5559,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
 
   // Check if verification needs to be relaxed for this class file
   // Do not restrict it to jdk1.0 or jdk1.1 to maintain backward compatibility (4982376)
-  _relax_verify = Verifier::relax_verify_for(_loader_data->class_loader());
+  _relax_verify = relax_format_check_for(_loader_data);
 
   parse_stream(stream, CHECK);
 
@@ -5679,6 +5748,13 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
       _requested_name != NULL ? _requested_name->as_C_string() : "NoName"
     );
     return;
+  }
+
+  // if this is an anonymous class fix up its name if it's in the unnamed
+  // package.  Otherwise, throw IAE if it is in a different package than
+  // its host class.
+  if (_host_klass != NULL) {
+    fix_anonymous_class_name(CHECK);
   }
 
   // Verification prevents us from creating names with dots in them, this

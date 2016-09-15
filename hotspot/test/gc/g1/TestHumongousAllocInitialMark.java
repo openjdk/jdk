@@ -25,6 +25,7 @@
  * @test TestHumongousAllocInitialMark
  * @bug 7168848
  * @summary G1: humongous object allocations should initiate marking cycles when necessary
+ * @requires vm.gc.G1
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

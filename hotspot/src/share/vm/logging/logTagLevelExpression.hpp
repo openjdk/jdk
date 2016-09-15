@@ -59,9 +59,15 @@ class LogTagLevelExpression : public StackObj {
     _ntags = 0;
   }
 
-  void add_tag(LogTagType tag) {
+  bool add_tag(LogTagType tag) {
     assert(_ntags < LogTag::MaxTags, "Can't have more tags than MaxTags!");
+    for (size_t i = 0; i < _ntags; i++) {
+      if (_tags[_ncombinations][i] == tag) {
+        return false;
+      }
+    }
     _tags[_ncombinations][_ntags++] = tag;
+    return true;
   }
 
   void set_level(LogLevelType level) {
@@ -83,6 +89,11 @@ class LogTagLevelExpression : public StackObj {
 
   bool parse(const char* str, outputStream* errstream = NULL);
   LogLevelType level_for(const LogTagSet& ts) const;
+
+  // Verify the tagsets/selections mentioned in this expression.
+  // Returns false if some invalid tagset was found. If given an outputstream,
+  // this function will list all the invalid selections on the stream.
+  bool verify_tagsets(outputStream* out = NULL) const;
 };
 
 #endif // SHARE_VM_LOGGING_LOGTAGLEVELEXPRESSION_HPP
