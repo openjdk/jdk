@@ -130,11 +130,11 @@ public class NumberRoundTrip extends IntlTest {
     }
 
     public void doTest(NumberFormat fmt, double value) {
-        doTest(fmt, new Double(value));
+        doTest(fmt, Double.valueOf(value));
     }
 
     public void doTest(NumberFormat fmt, long value) {
-        doTest(fmt, new Long(value));
+        doTest(fmt, Long.valueOf(value));
     }
 
     static double proportionalError(Number a, Number b) {

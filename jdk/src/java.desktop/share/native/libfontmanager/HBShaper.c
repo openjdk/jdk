@@ -40,6 +40,7 @@ static jfieldID gvdFlagsFID = 0;
 static jfieldID gvdGlyphsFID = 0;
 static jfieldID gvdPositionsFID = 0;
 static jfieldID gvdIndicesFID = 0;
+static jmethodID gvdGrowMID = 0;
 static int jniInited = 0;
 
 static void getFloat(JNIEnv* env, jobject pt, jfloat *x, jfloat *y) {
@@ -63,73 +64,88 @@ static int init_JNI_IDs(JNIEnv *env) {
     CHECK_NULL_RETURN(gvdGlyphsFID = (*env)->GetFieldID(env, gvdClass, "_glyphs", "[I"), 0);
     CHECK_NULL_RETURN(gvdPositionsFID = (*env)->GetFieldID(env, gvdClass, "_positions", "[F"), 0);
     CHECK_NULL_RETURN(gvdIndicesFID = (*env)->GetFieldID(env, gvdClass, "_indices", "[I"), 0);
+    CHECK_NULL_RETURN(gvdGrowMID = (*env)->GetMethodID(env, gvdClass, "grow", "()V"), 0);
     jniInited = 1;
     return jniInited;
 }
 
 // gmask is the composite font slot mask
 // baseindex is to be added to the character (code point) index.
-int storeGVData(JNIEnv* env,
-               jobject gvdata, jint slot, jint baseIndex, jobject startPt,
-               int glyphCount, hb_glyph_info_t *glyphInfo,
-               hb_glyph_position_t *glyphPos, hb_direction_t direction,
-               float devScale) {
+jboolean storeGVData(JNIEnv* env,
+                     jobject gvdata, jint slot,
+                     jint baseIndex, int offset, jobject startPt,
+                     int charCount, int glyphCount, hb_glyph_info_t *glyphInfo,
+                     hb_glyph_position_t *glyphPos, float devScale) {
 
-    int i;
+    int i, needToGrow;
     float x=0, y=0;
-    float startX, startY;
-    float scale = 1.0f/64.0f/devScale;
+    float startX, startY, advX, advY;
+    float scale = 1.0f / HBFloatToFixedScale / devScale;
     unsigned int* glyphs;
     float* positions;
-    int initialCount, glyphArrayLen, posArrayLen, maxGlyphs, storeadv;
+    int initialCount, glyphArrayLen, posArrayLen, maxGlyphs, storeadv, maxStore;
     unsigned int* indices;
     jarray glyphArray, posArray, inxArray;
 
     if (!init_JNI_IDs(env)) {
-        return 0;
+        return JNI_FALSE;
     }
 
     initialCount = (*env)->GetIntField(env, gvdata, gvdCountFID);
-    glyphArray =
-       (jarray)(*env)->GetObjectField(env, gvdata, gvdGlyphsFID);
-    posArray =
-        (jarray)(*env)->GetObjectField(env, gvdata, gvdPositionsFID);
-
-    if (glyphArray == NULL || posArray == NULL)
-    {
-        JNU_ThrowArrayIndexOutOfBoundsException(env, "");
-        return 0;
-    }
-
-    // The Java code catches the IIOBE and expands the storage
-    // and re-invokes layout. I suppose this is expected to be rare
-    // because at least in a single threaded case there should be
-    // re-use of the same container, but it is a little wasteful/distateful.
-    glyphArrayLen = (*env)->GetArrayLength(env, glyphArray);
-    posArrayLen = (*env)->GetArrayLength(env, posArray);
-    maxGlyphs = glyphCount + initialCount;
-    if ((maxGlyphs >  glyphArrayLen) ||
-        (maxGlyphs * 2 + 2 >  posArrayLen))
-    {
-        JNU_ThrowArrayIndexOutOfBoundsException(env, "");
-        return 0;
-    }
+    do {
+        glyphArray = (jarray)(*env)->GetObjectField(env, gvdata, gvdGlyphsFID);
+        posArray = (jarray)(*env)->GetObjectField(env, gvdata, gvdPositionsFID);
+        inxArray = (jarray)(*env)->GetObjectField(env, gvdata, gvdIndicesFID);
+        if (glyphArray == NULL || posArray == NULL || inxArray == NULL) {
+            JNU_ThrowArrayIndexOutOfBoundsException(env, "");
+            return JNI_FALSE;
+        }
+        glyphArrayLen = (*env)->GetArrayLength(env, glyphArray);
+        posArrayLen = (*env)->GetArrayLength(env, posArray);
+        maxGlyphs = (charCount > glyphCount) ? charCount : glyphCount;
+        maxStore = maxGlyphs + initialCount;
+        needToGrow = (maxStore > glyphArrayLen) ||
+                     (maxStore * 2 + 2 >  posArrayLen);
+        if (needToGrow) {
+            (*env)->CallVoidMethod(env, gvdata, gvdGrowMID);
+            if ((*env)->ExceptionCheck(env)) {
+                return JNI_FALSE;
+            }
+        }
+    } while (needToGrow);
 
     getFloat(env, startPt, &startX, &startY);
 
     glyphs =
         (unsigned int*)(*env)->GetPrimitiveArrayCritical(env, glyphArray, NULL);
+    if (glyphs == NULL) {
+        return JNI_FALSE;
+    }
     positions = (jfloat*)(*env)->GetPrimitiveArrayCritical(env, posArray, NULL);
+    if (positions == NULL) {
+        (*env)->ReleasePrimitiveArrayCritical(env, glyphArray, glyphs, 0);
+        return JNI_FALSE;
+    }
+    indices =
+        (unsigned int*)(*env)->GetPrimitiveArrayCritical(env, inxArray, NULL);
+    if (indices == NULL) {
+        (*env)->ReleasePrimitiveArrayCritical(env, glyphArray, glyphs, 0);
+        (*env)->ReleasePrimitiveArrayCritical(env, posArray, positions, 0);
+        return JNI_FALSE;
+    }
+
     for (i = 0; i < glyphCount; i++) {
         int storei = i + initialCount;
-        int index = glyphInfo[i].codepoint | slot;
-        if (i<glyphCount)glyphs[storei] = (unsigned int)index;
-        positions[(storei*2)] = startX + x + glyphPos[i].x_offset * scale;
-        positions[(storei*2)+1] = startY + y - glyphPos[i].y_offset * scale;
+        int cluster = glyphInfo[i].cluster - offset;
+        indices[storei] = baseIndex + cluster;
+        glyphs[storei] = (unsigned int)(glyphInfo[i].codepoint | slot);
+        positions[storei*2] = startX + x + glyphPos[i].x_offset * scale;
+        positions[(storei*2)+1] = startY + y + glyphPos[i].y_offset * scale;
         x += glyphPos[i].x_advance * scale;
         y += glyphPos[i].y_advance * scale;
+        storei++;
     }
-    storeadv = initialCount+glyphCount;
+    storeadv = initialCount + glyphCount;
     // The final slot in the positions array is important
     // because when the GlyphVector is created from this
     // data it determines the overall advance of the glyphvector
@@ -137,30 +153,17 @@ int storeGVData(JNIEnv* env,
     // during rendering where text is broken into runs.
     // We also need to report it back into "pt", so layout can
     // pass it back down for that next run in this code.
-    positions[(storeadv*2)] = startX + x;
-    positions[(storeadv*2)+1] = startY + y;
+    advX = startX + x;
+    advY = startY + y;
+    positions[(storeadv*2)] = advX;
+    positions[(storeadv*2)+1] = advY;
     (*env)->ReleasePrimitiveArrayCritical(env, glyphArray, glyphs, 0);
     (*env)->ReleasePrimitiveArrayCritical(env, posArray, positions, 0);
-    putFloat(env, startPt,positions[(storeadv*2)],positions[(storeadv*2)+1] );
-    inxArray =
-        (jarray)(*env)->GetObjectField(env, gvdata, gvdIndicesFID);
-    indices =
-        (unsigned int*)(*env)->GetPrimitiveArrayCritical(env, inxArray, NULL);
-    for (i = 0; i < glyphCount; i++) {
-        int cluster = glyphInfo[i].cluster;
-        if (direction == HB_DIRECTION_LTR) {
-            // I need to understand what hb does when processing a substring
-            // I expected the cluster index to be from the start of the text
-            // to process.
-            // Instead it appears to be from the start of the whole thing.
-            indices[i+initialCount] = cluster;
-        } else {
-            indices[i+initialCount] = baseIndex + glyphCount -1 -i;
-        }
-    }
     (*env)->ReleasePrimitiveArrayCritical(env, inxArray, indices, 0);
-    (*env)->SetIntField(env, gvdata, gvdCountFID, initialCount+glyphCount);
-    return initialCount+glyphCount;
+    putFloat(env, startPt, advX, advY);
+    (*env)->SetIntField(env, gvdata, gvdCountFID, storeadv);
+
+    return JNI_TRUE;
 }
 
 static float euclidianDistance(float a, float b)
@@ -226,7 +229,9 @@ JDKFontInfo*
 }
 
 
-#define TYPO_RTL 0x80000000
+#define TYPO_KERN 0x00000001
+#define TYPO_LIGA 0x00000002
+#define TYPO_RTL  0x80000000
 
 JNIEXPORT jboolean JNICALL Java_sun_font_SunLayoutEngine_shape
     (JNIEnv *env, jclass cls,
@@ -255,10 +260,11 @@ JNIEXPORT jboolean JNICALL Java_sun_font_SunLayoutEngine_shape
      hb_glyph_info_t *glyphInfo;
      hb_glyph_position_t *glyphPos;
      hb_direction_t direction = HB_DIRECTION_LTR;
-     hb_feature_t *features =  NULL;
+     hb_feature_t *features = NULL;
      int featureCount = 0;
-
-     int i;
+     char* kern = (flags & TYPO_KERN) ? "kern" : "-kern";
+     char* liga = (flags & TYPO_LIGA) ? "liga" : "-liga";
+     jboolean ret;
      unsigned int buflen;
 
      JDKFontInfo *jdkFontInfo =
@@ -281,6 +287,8 @@ JNIEXPORT jboolean JNICALL Java_sun_font_SunLayoutEngine_shape
          direction = HB_DIRECTION_RTL;
      }
      hb_buffer_set_direction(buffer, direction);
+     hb_buffer_set_cluster_level(buffer,
+                                 HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS);
 
      chars = (*env)->GetCharArrayElements(env, text, NULL);
      if ((*env)->ExceptionCheck(env)) {
@@ -293,36 +301,26 @@ JNIEXPORT jboolean JNICALL Java_sun_font_SunLayoutEngine_shape
 
      hb_buffer_add_utf16(buffer, chars, len, offset, limit-offset);
 
+     features = calloc(2, sizeof(hb_feature_t));
+     if (features) {
+         hb_feature_from_string(kern, -1, &features[featureCount++]);
+         hb_feature_from_string(liga, -1, &features[featureCount++]);
+     }
+
      hb_shape_full(hbfont, buffer, features, featureCount, 0);
      glyphCount = hb_buffer_get_length(buffer);
      glyphInfo = hb_buffer_get_glyph_infos(buffer, 0);
      glyphPos = hb_buffer_get_glyph_positions(buffer, &buflen);
-     for (i = 0; i < glyphCount; i++) {
-         int index = glyphInfo[i].codepoint;
-         int xadv = (glyphPos[i].x_advance);
-         int yadv = (glyphPos[i].y_advance);
-     }
-     // On "input" HB assigns a cluster index to each character in UTF-16.
-     // On output where a sequence of characters have been mapped to
-     // a glyph they are all mapped to the cluster index of the first character.
-     // The next cluster index will be that of the first character in the
-     // next cluster. So cluster indexes may 'skip' on output.
-     // This can also happen if there are supplementary code-points
-     // such that two UTF-16 characters are needed to make one codepoint.
-     // In RTL text you need to count down.
-     // So the following code tries to build the reverse map as expected
-     // by calling code.
 
-     storeGVData(env, gvdata, slot, baseIndex, startPt,
-                 glyphCount, glyphInfo, glyphPos, direction,
-                 jdkFontInfo->devScale);
+     ret = storeGVData(env, gvdata, slot, baseIndex, offset, startPt,
+                       limit - offset, glyphCount, glyphInfo, glyphPos,
+                       jdkFontInfo->devScale);
 
      hb_buffer_destroy (buffer);
      hb_font_destroy(hbfont);
      free((void*)jdkFontInfo);
      if (features != NULL) free(features);
      (*env)->ReleaseCharArrayElements(env, text, chars, JNI_ABORT);
-
-     return JNI_TRUE;
+     return ret;
 }
 

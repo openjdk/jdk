@@ -21,13 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6316539
  * @summary Known-answer-test for TlsKeyMaterial generator
  * @author Andreas Sterbenz
  * @library ..
  * @modules java.base/sun.security.internal.spec
+ *          jdk.crypto.pkcs11
  * @run main/othervm TestKeyMaterial
  * @run main/othervm TestKeyMaterial sm policy
  */

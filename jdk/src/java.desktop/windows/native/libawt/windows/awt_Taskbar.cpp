@@ -108,7 +108,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WTaskbarPeer_setProgressState
 JNIEXPORT void JNICALL Java_sun_awt_windows_WTaskbarPeer_flashWindow
   (JNIEnv *, jobject, jlong window)
 {
-    AwtWindow::FlashWindowEx((HWND) window, 3, 0, FLASHW_TIMERNOFG);
+    ::FlashWindow((HWND) window, TRUE);
 }
 
 /*

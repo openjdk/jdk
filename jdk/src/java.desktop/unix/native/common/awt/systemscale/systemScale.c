@@ -148,7 +148,7 @@ static double getDesktopScale(char *output_name) {
                         void *scale = fp_g_variant_get_child_value(entry, 1);
                         if (screen && scale) {
                             char *name = fp_g_variant_get_string(screen, NULL);
-                            if (name && strcmp(name, output_name)) {
+                            if (name && !strcmp(name, output_name)) {
                                 result = fp_g_variant_get_int32(scale) / 8.;
                             }
                             fp_g_variant_unref(screen);

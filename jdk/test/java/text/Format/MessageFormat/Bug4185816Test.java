@@ -98,7 +98,7 @@ public class Bug4185816Test extends IntlTest {
             final InputStream is = HexDumpReader.getStreamFromHexDump(fileName + ".txt");
             final ObjectInputStream in = new ObjectInputStream(is);
             final MessageFormat form = (MessageFormat)in.readObject();
-            final Object[] testArgs = {new Long(12373), "MyDisk"};
+            final Object[] testArgs = {12373L, "MyDisk"};
             final String result = form.format(testArgs);
             in.close();
         } catch (Exception e) {

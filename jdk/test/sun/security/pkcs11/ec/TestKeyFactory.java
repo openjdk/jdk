@@ -21,12 +21,13 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6405536
  * @summary Test the P11ECKeyFactory
  * @author Andreas Sterbenz
  * @library ..
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestKeyFactory
  * @run main/othervm TestKeyFactory sm
  */

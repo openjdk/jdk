@@ -78,6 +78,7 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.JDK9Wrappers.Configuration;
 import com.sun.tools.javac.util.JDK9Wrappers.Layer;
 import com.sun.tools.javac.util.JDK9Wrappers.ModuleFinder;
+import com.sun.tools.javac.util.JDK9Wrappers.Module;
 import com.sun.tools.javac.util.JDK9Wrappers.ServiceLoaderHelper;
 
 import static java.nio.file.FileVisitOption.FOLLOW_LINKS;
@@ -957,6 +958,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     public <S> ServiceLoader<S> getServiceLoader(Location location, Class<S> service) throws IOException {
         nullCheck(location);
         nullCheck(service);
+        Module.getModule(getClass()).addUses(service);
         if (location.isModuleLocation()) {
             Collection<Path> paths = locations.getLocation(location);
             ModuleFinder finder = ModuleFinder.of(paths.toArray(new Path[paths.size()]));

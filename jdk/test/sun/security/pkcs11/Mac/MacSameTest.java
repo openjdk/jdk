@@ -21,6 +21,18 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8048603
+ * @summary Check if doFinal and update operation result in same Mac
+ * @author Yu-Ching Valerie Peng, Bill Situ, Alexander Fomin
+ * @library ..
+ * @modules jdk.crypto.pkcs11
+ * @run main/othervm MacSameTest
+ * @run main/othervm MacSameTest sm
+ * @key randomness
+ */
+
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -30,16 +42,6 @@ import java.util.List;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-/**
- * @test
- * @bug 8048603
- * @summary Check if doFinal and update operation result in same Mac
- * @author Yu-Ching Valerie Peng, Bill Situ, Alexander Fomin
- * @library ..
- * @run main/othervm MacSameTest
- * @run main/othervm MacSameTest sm
- * @key randomness
- */
 public class MacSameTest extends PKCS11Test {
 
     private static final int MESSAGE_SIZE = 25;
