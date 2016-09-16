@@ -48,4 +48,3 @@ public class CommentTest extends AbstractCharacterDataTest {
         return document.createComment(text);
     }
 }
-

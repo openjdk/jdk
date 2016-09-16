@@ -54,4 +54,3 @@ public class DOMXPathTest {
         Assert.assertEquals(domImpl.getFeature("+XPath", "3.0"), null);
     }
 }
-

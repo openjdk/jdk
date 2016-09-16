@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,22 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4921802
  * @summary Test that the SunPKCS11 provider can be serialized
  * @author Andreas Sterbenz
  * @library ..
+ * @modules jdk.crypto.pkcs11
  */
 
-import java.io.*;
-import java.util.*;
-
-import java.security.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.security.Provider;
+import java.security.Security;
 
 public class SerializeProvider extends PKCS11Test {
 

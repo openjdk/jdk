@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,15 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8076221
+ * @summary Check if weak cipher suites are disabled
+ * @modules jdk.crypto.ec
+ * @run main/othervm DisabledAlgorithms default
+ * @run main/othervm DisabledAlgorithms empty
+ */
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -36,13 +45,6 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-/**
- * @test
- * @bug 8076221
- * @summary Check if weak cipher suites are disabled
- * @run main/othervm DisabledAlgorithms default
- * @run main/othervm DisabledAlgorithms empty
- */
 public class DisabledAlgorithms {
 
     private static final String pathToStores = "../etc";

@@ -95,24 +95,6 @@ class ReplParser extends JavacParser {
             mods = modifiersOpt();
         }
 
-        if (token.kind == PACKAGE) {
-            int packagePos = token.pos;
-            List<JCAnnotation> annotations = List.nil();
-            seenPackage = true;
-            if (mods != null) {
-                checkNoMods(mods.flags);
-                annotations = mods.annotations;
-                mods = null;
-            }
-            nextToken();
-            JCExpression pid = qualident(false);
-            accept(SEMI);
-            JCPackageDecl pd = F.at(packagePos).PackageDecl(annotations, pid);
-            attach(pd, firstToken.comment(CommentStyle.JAVADOC));
-            storeEnd(pd, token.pos);
-            defs.append(pd);
-        }
-
         boolean firstTypeDecl = true;
         while (token.kind != EOF) {
             if (token.pos > 0 && token.pos <= endPosTable.errorEndPos) {

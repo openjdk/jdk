@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,13 @@
  * @summary Testing that try to enable unsupported ciphers
  *          causes IllegalArgumentException.
  * @library /sun/security/krb5/auto /javax/net/ssl/TLSCommon
+ * @modules java.security.jgss
+ *          java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal.crypto
+ *          java.security.jgss/sun.security.krb5.internal.ccache
+ *          java.security.jgss/sun.security.krb5.internal
+ *          java.security.jgss/sun.security.krb5.internal.ktab
+ *          java.base/sun.security.util
  * @run main/othervm -Dtest.security.protocol=DTLS DTLSUnsupportedCiphersTest
  */
 
