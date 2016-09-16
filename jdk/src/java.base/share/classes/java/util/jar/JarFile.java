@@ -536,19 +536,6 @@ class JarFile extends ZipFile {
      * @return an ordered {@code Stream} of entries in this jar file
      * @throws IllegalStateException if the jar file has been closed
      * @since 1.8
-     *
-     * @apiNote  A versioned view of the stream obtained from a {@code JarFile}
-     * configured to process a multi-release jar file can be created with code
-     * similar to the following:
-     * <pre>
-     * {@code
-     *     Stream<JarEntry> versionedStream(JarFile jf) {
-     *         return jf.stream().map(JarEntry::getName)
-     *                  .filter(name -> !name.startsWith("META-INF/versions/"))
-     *                  .map(jf::getJarEntry);
-     *     }
-     * }
-     * </pre>
      */
     public Stream<JarEntry> stream() {
         return StreamSupport.stream(Spliterators.spliterator(
@@ -571,7 +558,7 @@ class JarFile extends ZipFile {
 
     private ZipEntry getVersionedEntry(ZipEntry ze) {
         ZipEntry vze = null;
-        if (BASE_VERSION_MAJOR < versionMajor && !ze.isDirectory()) {
+        if (BASE_VERSION_MAJOR < versionMajor) {
             String name = ze.getName();
             if (!name.startsWith(META_INF)) {
                 vze = searchForVersionedEntry(versionMajor, name);

@@ -55,6 +55,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 import jdk.tools.jlink.internal.BasicImageWriter;
 import jdk.tools.jlink.internal.plugins.FileCopierPlugin.SymImageFile;
 import jdk.tools.jlink.internal.ExecutableImage;
@@ -159,7 +160,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
             }
             i++;
         }
-        props.setProperty("MODULES", builder.toString());
+        props.setProperty("MODULES", quote(builder.toString()));
     }
 
     @Override
@@ -188,7 +189,8 @@ public final class DefaultImageBuilder implements ImageBuilder {
 
             storeFiles(modules, release);
 
-            if (Files.getFileStore(root).supportsFileAttributeView(PosixFileAttributeView.class)) {
+            if (root.getFileSystem().supportedFileAttributeViews()
+                    .contains("posix")) {
                 // launchers in the bin directory need execute permission.
                 // On Windows, "bin" also subdirectories containing jvm.dll.
                 if (Files.isDirectory(bin)) {
@@ -217,19 +219,38 @@ public final class DefaultImageBuilder implements ImageBuilder {
         }
     }
 
+    // Parse version string and return a string that includes only version part
+    // leaving "pre", "build" information. See also: java.lang.Runtime.Version.
+    private static String parseVersion(String str) {
+        return Runtime.Version.parse(str).
+            version().
+            stream().
+            map(Object::toString).
+            collect(Collectors.joining("."));
+    }
+
+    private static String quote(String str) {
+        return "\"" + str + "\"";
+    }
+
     private Properties releaseProperties(ResourcePool pool) throws IOException {
         Properties props = new Properties();
         Optional<ResourcePoolModule> javaBase = pool.moduleView().findModule("java.base");
         javaBase.ifPresent(mod -> {
             // fill release information available from transformed "java.base" module!
             ModuleDescriptor desc = mod.descriptor();
-            desc.osName().ifPresent(s -> props.setProperty("OS_NAME", s));
-            desc.osVersion().ifPresent(s -> props.setProperty("OS_VERSION", s));
-            desc.osArch().ifPresent(s -> props.setProperty("OS_ARCH", s));
-            props.setProperty("JAVA_VERSION", System.getProperty("java.version"));
+            desc.osName().ifPresent(s -> {
+                props.setProperty("OS_NAME", quote(s));
+                this.targetOsName = s;
+            });
+            desc.osVersion().ifPresent(s -> props.setProperty("OS_VERSION", quote(s)));
+            desc.osArch().ifPresent(s -> props.setProperty("OS_ARCH", quote(s)));
+            desc.version().ifPresent(s -> props.setProperty("JAVA_VERSION",
+                    quote(parseVersion(s.toString()))));
+            desc.version().ifPresent(s -> props.setProperty("JAVA_FULL_VERSION",
+                    quote(s.toString())));
         });
 
-        this.targetOsName = props.getProperty("OS_NAME");
         if (this.targetOsName == null) {
             throw new PluginException("TargetPlatform attribute is missing for java.base module");
         }
@@ -282,8 +303,8 @@ public final class DefaultImageBuilder implements ImageBuilder {
                         StandardOpenOption.CREATE_NEW)) {
                     writer.write(sb.toString());
                 }
-                if (Files.getFileStore(root.resolve("bin"))
-                        .supportsFileAttributeView(PosixFileAttributeView.class)) {
+                if (root.resolve("bin").getFileSystem()
+                        .supportedFileAttributeViews().contains("posix")) {
                     setExecutable(cmd);
                 }
                 // generate .bat file for Windows

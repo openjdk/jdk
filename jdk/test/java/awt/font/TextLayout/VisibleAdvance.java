@@ -29,7 +29,7 @@ import java.text.*;
 
 /* @test
  * @summary verify TextLine advance
- * @bug 6582460
+ * @bug 6582460 8164818
  */
 
 /*

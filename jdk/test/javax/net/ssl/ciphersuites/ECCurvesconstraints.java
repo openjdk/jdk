@@ -32,24 +32,29 @@
  * @test
  * @bug 8148516
  * @summary Improve the default strength of EC in JDK
+ * @modules jdk.crypyo.ec
  * @run main/othervm ECCurvesconstraints PKIX
  * @run main/othervm ECCurvesconstraints SunX509
  */
 
-import java.net.*;
-import java.util.*;
-import java.io.*;
-import javax.net.ssl.*;
-import java.security.Security;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.KeyStore;
 import java.security.KeyFactory;
 import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateFactory;
-import java.security.spec.*;
-import java.security.interfaces.*;
+import java.security.interfaces.ECPrivateKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
-
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 
 public class ECCurvesconstraints {
 
