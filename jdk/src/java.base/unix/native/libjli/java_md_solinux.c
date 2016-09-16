@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -666,6 +666,7 @@ static jboolean
 GetJREPath(char *path, jint pathsize, const char * arch, jboolean speculative)
 {
     char libjava[MAXPATHLEN];
+    struct stat s;
 
     if (GetApplicationHome(path, pathsize)) {
         /* Is JRE co-located with the application? */
@@ -683,6 +684,14 @@ GetJREPath(char *path, jint pathsize, const char * arch, jboolean speculative)
         JLI_Snprintf(libjava, sizeof(libjava), "%s/jre/lib/%s/" JAVA_DLL, path, arch);
         if (access(libjava, F_OK) == 0) {
             JLI_StrCat(path, "/jre");
+            JLI_TraceLauncher("JRE path is %s\n", path);
+            return JNI_TRUE;
+        }
+    }
+
+    if (GetApplicationHomeFromDll(path, pathsize)) {
+        JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/%s/" JAVA_DLL, path, arch);
+        if (stat(libjava, &s) == 0) {
             JLI_TraceLauncher("JRE path is %s\n", path);
             return JNI_TRUE;
         }

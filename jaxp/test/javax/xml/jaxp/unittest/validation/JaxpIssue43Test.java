@@ -84,4 +84,3 @@ public class JaxpIssue43Test {
         return list.toArray(new Source[list.size()]);
     }
 }
-

@@ -404,4 +404,3 @@ public class SchemaFactoryTest {
     private Document xsdDoc2;
     private byte[] xml;
 }
-

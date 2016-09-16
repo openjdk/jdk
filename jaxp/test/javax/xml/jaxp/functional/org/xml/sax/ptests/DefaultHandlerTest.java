@@ -272,5 +272,3 @@ class MyDefaultHandler extends DefaultHandler {
         }
     }
 }
-
-

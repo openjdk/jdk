@@ -211,4 +211,3 @@ public class NodeTest {
         transformer.transform(domSource, streamResult);
     }
 }
-

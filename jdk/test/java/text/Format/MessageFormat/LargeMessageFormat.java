@@ -56,18 +56,19 @@ public class LargeMessageFormat {
 
     private static void testFormat() {
         // construct large argument array
+        @SuppressWarnings("deprecation")
         Object[] sample = {
-                new Integer(0), // replace with running count below
+                 0, // replace with running count below
                 "hello",
                 new Date(89, 10, 9),
-                new Integer(567890),
-                new Double(1234.50)
+                567890,
+                1234.50
         };
         int samples = sample.length;
         Object[] arguments = new Object[REPEATS * (samples + 1)];
         for (int i = 0; i < REPEATS; i++) {
             System.arraycopy(sample, 0, arguments, i * samples, samples);
-            arguments[i * samples] = new Integer(i);
+            arguments[i * samples] = i;
         }
 
         // construct large template
