@@ -53,7 +53,6 @@ package compiler.jvmci.compilerToVM;
 
 import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
@@ -154,7 +153,7 @@ public class GetResolvedJavaTypeTest {
         abstract HotSpotResolvedObjectType getResolvedJavaType();
     }
 
-    private static final Unsafe UNSAFE = UnsafeHelper.getUnsafe();
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
     private static final Class TEST_CLASS = GetResolvedJavaTypeTest.class;
     /* a compressed parameter for tested method is set to false because

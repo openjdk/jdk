@@ -1487,6 +1487,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ set(_thread_in_Java, G3_scratch);
   __ st(G3_scratch, thread_state);
 
+  if (CheckJNICalls) {
+    // clear_pending_jni_exception_check
+    __ st_ptr(G0, G2_thread, JavaThread::pending_jni_exception_check_fn_offset());
+  }
+
   // reset handle block
   __ ld_ptr(G2_thread, JavaThread::active_handles_offset(), G3_scratch);
   __ st(G0, G3_scratch, JNIHandleBlock::top_offset_in_bytes());
