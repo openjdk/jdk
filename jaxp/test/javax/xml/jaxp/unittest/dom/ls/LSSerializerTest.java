@@ -319,4 +319,3 @@ public class LSSerializerTest {
         Assert.assertEquals(XML11_DOCUMENT_OUTPUT, defaultSerialization, "Invalid serialization of XML 1.1 document: ");
     }
 }
-

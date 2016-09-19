@@ -22,7 +22,7 @@
  */
 
 // key: compiler.note.mref.stat.1
-// options: -Xdebug:dumpLambdaToMethodStats
+// options: --debug:dumpLambdaToMethodStats
 
 class MrefStat1 {
 

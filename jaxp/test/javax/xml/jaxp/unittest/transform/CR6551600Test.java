@@ -94,4 +94,3 @@ public class CR6551600Test {
                 : new FilePermission("///tmp/test.xml", "read,write,delete"));
     }
 }
-

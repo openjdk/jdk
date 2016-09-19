@@ -143,5 +143,3 @@ class MyEntityResolver extends XMLFilterImpl implements AutoCloseable {
         }
     }
 }
-
-

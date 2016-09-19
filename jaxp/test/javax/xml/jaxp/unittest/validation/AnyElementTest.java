@@ -85,4 +85,3 @@ public class AnyElementTest {
 
     private Validator validator;
 }
-

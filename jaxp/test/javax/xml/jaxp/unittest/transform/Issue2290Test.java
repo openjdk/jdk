@@ -96,4 +96,3 @@ public class Issue2290Test {
 
     }
 }
-

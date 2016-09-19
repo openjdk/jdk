@@ -51,20 +51,20 @@ public class Bug4833877 {
         /*
          * Test for double/Double
          */
-        checkFormat(new Double(252.5252525252525), "1,010.10101010101");
-        checkParse("-1,010.10101010101", new Double(-252.5252525252525));
+        checkFormat(252.5252525252525, "1,010.10101010101");
+        checkParse("-1,010.10101010101", -252.5252525252525);
 
-        checkFormat(new Double(-2222.2222), "-8,888.8888");
-        checkParse("8888.8888", new Double(2222.2222));
+        checkFormat(-2222.2222, "-8,888.8888");
+        checkParse("8888.8888", 2222.2222);
 
         /*
          * Test for long/Long
          */
-        checkFormat(new Long(1000), "4,000");
-        checkParse("-4,000", new Long(-1000));
+        checkFormat(1000L, "4,000");
+        checkParse("-4,000", -1000L);
 
-        checkFormat(new Long(-250), "-1,000");
-        checkParse("1000", new Long(250));
+        checkFormat(-250L, "-1,000");
+        checkParse("1000", 250L);
 
         /* ---------------------------------------------------------------- */
 
@@ -104,20 +104,20 @@ public class Bug4833877 {
         /*
          * Test for double/Double
          */
-        checkFormat(new Double(252.5252525252525), "-1,010.10101010101");
-        checkParse("-1,010.10101010101", new Double(252.5252525252525));
+        checkFormat(252.5252525252525, "-1,010.10101010101");
+        checkParse("-1,010.10101010101", 252.5252525252525);
 
-        checkFormat(new Double(-2222.2222), "8,888.8888");
-        checkParse("8888.8888", new Double(-2222.2222));
+        checkFormat(-2222.2222, "8,888.8888");
+        checkParse("8888.8888", -2222.2222);
 
         /*
          * Test for long/Long
          */
-        checkFormat(new Long(1000), "-4,000");
-        checkParse("-4,000", new Long(1000));
+        checkFormat(1000L, "-4,000");
+        checkParse("-4,000", 1000L);
 
-        checkFormat(new Long(-250), "1,000");
-        checkParse("1000", new Long(-250));
+        checkFormat(-250L, "1,000");
+        checkParse("1000", -250L);
 
         /* ---------------------------------------------------------------- */
 
@@ -157,30 +157,30 @@ public class Bug4833877 {
         /*
          * Test for double/Double
          */
-        checkFormat(new Double(3333.3333333), "-9,999.9999999");
-        checkParse("-10,000.00000000000", new Double(3333.3333333333335));// rounding error
+        checkFormat(3333.3333333, "-9,999.9999999");
+        checkParse("-10,000.00000000000", 3333.3333333333335);// rounding error
 
         df.setParseIntegerOnly(true);
-        checkFormat(new Double(-3333.3333333), "9,999.9999999");
-        checkParse("10,000.00000000000", new Long(-3333));
+        checkFormat(-3333.3333333, "9,999.9999999");
+        checkParse("10,000.00000000000", -3333L);
         df.setParseIntegerOnly(false);
-        checkFormat(new Double(-3333.3333333), "9,999.9999999");
-        checkParse("10,000.00000000000", new Double(-3333.3333333333335));// rounding error
+        checkFormat(-3333.3333333, "9,999.9999999");
+        checkParse("10,000.00000000000", -3333.3333333333335);// rounding error
 
         /*
          * Test for long/Long
          */
-        checkFormat(new Long(3333), "-9,999");
+        checkFormat(3333L, "-9,999");
         df.setParseIntegerOnly(true);
-        checkParse("-10,000", new Long(3333));
+        checkParse("-10,000", 3333L);
         df.setParseIntegerOnly(false);
-        checkParse("-10000", new Double(3333.3333333333335));// rounding error
+        checkParse("-10000", 3333.3333333333335);// rounding error
 
-        checkFormat(new Long(-3333), "9,999");
+        checkFormat(-3333L, "9,999");
         df.setParseIntegerOnly(true);
-        checkParse("10,000", new Long(-3333));
+        checkParse("10,000", -3333L);
         df.setParseIntegerOnly(false);
-        checkParse("10000", new Double(-3333.3333333333335));// rounding error
+        checkParse("10000", -3333.3333333333335);// rounding error
 
         /* ---------------------------------------------------------------- */
 
@@ -225,20 +225,20 @@ public class Bug4833877 {
         /*
          * Test for double/Double
          */
-        checkFormat(new Double(252.5252525252525), "1.01010101010101E3");
-        checkParse("-1.01010101010101E3", new Double(-2.525252525252525E2));
+        checkFormat(252.5252525252525, "1.01010101010101E3");
+        checkParse("-1.01010101010101E3", -2.525252525252525E2);
 
-        checkFormat(new Double(-2222.2222), "-8.8888888E3");
-        checkParse("8888.8888", new Double(2.2222222E3));
+        checkFormat(-2222.2222, "-8.8888888E3");
+        checkParse("8888.8888", 2.2222222E3);
 
         /*
          * Test for long/Long
          */
-        checkFormat(new Long(1000), "4E3");
-        checkParse("-4E3", new Long(-1000));
+        checkFormat(1000L, "4E3");
+        checkParse("-4E3", -1000L);
 
-        checkFormat(new Long(-250), "-1E3");
-        checkParse("1000", new Long(250));
+        checkFormat(-250L, "-1E3");
+        checkParse("1000", 250L);
 
         /* ---------------------------------------------------------------- */
 
@@ -279,20 +279,20 @@ public class Bug4833877 {
         /*
          * Test for double/Double
          */
-        checkFormat(new Double(252.5252525252525), "-1.01010101010101E3");
-        checkParse("-1.01010101010101E3", new Double(2.525252525252525E2));
+        checkFormat(252.5252525252525, "-1.01010101010101E3");
+        checkParse("-1.01010101010101E3", 2.525252525252525E2);
 
-        checkFormat(new Double(-2222.2222), "8.8888888E3");
-        checkParse("8888.8888", new Double(-2.2222222E3));
+        checkFormat(-2222.2222, "8.8888888E3");
+        checkParse("8888.8888", -2.2222222E3);
 
         /*
          * Test for long/Long
          */
-        checkFormat(new Long(1000), "-4E3");
-        checkParse("-4E3", new Long(1000));
+        checkFormat(1000L, "-4E3");
+        checkParse("-4E3", 1000L);
 
-        checkFormat(new Long(-250), "1E3");
-        checkParse("1000", new Long(-250));
+        checkFormat(-250L, "1E3");
+        checkParse("1000", -250L);
 
         /* ---------------------------------------------------------------- */
 
@@ -333,30 +333,30 @@ public class Bug4833877 {
         /*
          * Test for double/Double
          */
-        checkFormat(new Double(3333.3333333), "-9.9999999999E3");
-        checkParse("-1.00000000000000E3", new Double(3.33333333333333333E2));
+        checkFormat(3333.3333333, "-9.9999999999E3");
+        checkParse("-1.00000000000000E3", 3.33333333333333333E2);
 
         df.setParseIntegerOnly(true);
-        checkFormat(new Double(-3333.3333333), "9.9999999999E3");
-        checkParse("10.00000000000000E3", new Long(-3));
+        checkFormat(-3333.3333333, "9.9999999999E3");
+        checkParse("10.00000000000000E3",-3L);
         df.setParseIntegerOnly(false);
-        checkFormat(new Double(-3333.3333333), "9.9999999999E3");
-        checkParse("10.00000000000000E3", new Double(-3.33333333333333333E3));
+        checkFormat(-3333.3333333, "9.9999999999E3");
+        checkParse("10.00000000000000E3", -3.33333333333333333E3);
 
         /*
          * Test for long/Long
          */
-        checkFormat(new Long(3333), "-9.999E3");
+        checkFormat(3333L, "-9.999E3");
         df.setParseIntegerOnly(true);
-        checkParse("-1.0E4", new Long(0));
+        checkParse("-1.0E4", 0L);
         df.setParseIntegerOnly(false);
-        checkParse("-1.0E4", new Double(3333.3333333333335));
+        checkParse("-1.0E4", 3333.3333333333335);
 
-        checkFormat(new Long(-3333), "9.999E3");
+        checkFormat(-3333L, "9.999E3");
         df.setParseIntegerOnly(true);
-        checkParse("10.0E4", new Long(-3));
+        checkParse("10.0E4", -3L);
         df.setParseIntegerOnly(false);
-        checkParse("10.0E4", new Double(-33333.3333333333336));
+        checkParse("10.0E4", -33333.3333333333336);
 
         /* ---------------------------------------------------------------- */
 

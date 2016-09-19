@@ -21,13 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4898479
  * @summary Verify that the parity bits are set correctly
  * @author Andreas Sterbenz
  * @library ..
  * @key randomness
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm DESParity
  * @run main/othervm DESParity sm
  */

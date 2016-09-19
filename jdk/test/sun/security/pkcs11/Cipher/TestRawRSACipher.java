@@ -21,13 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6994008
  * @summary basic test for RSA/ECB/NoPadding cipher
  * @author Valerie Peng
  * @library ..
  * @key randomness
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestRawRSACipher
  * @run main/othervm TestRawRSACipher sm
  */

@@ -30,8 +30,6 @@ SUNWprivate_1.1 {
 	    Java_sun_tools_attach_VirtualMachineImpl_checkPermissions;
 	    Java_sun_tools_attach_VirtualMachineImpl_close;
 	    Java_sun_tools_attach_VirtualMachineImpl_connect;
-	    Java_sun_tools_attach_VirtualMachineImpl_getLinuxThreadsManager;
-	    Java_sun_tools_attach_VirtualMachineImpl_isLinuxThreads;
 	    Java_sun_tools_attach_VirtualMachineImpl_open;
 	    Java_sun_tools_attach_VirtualMachineImpl_sendQuitTo;
             Java_sun_tools_attach_VirtualMachineImpl_sendQuitToChildrenOf;
