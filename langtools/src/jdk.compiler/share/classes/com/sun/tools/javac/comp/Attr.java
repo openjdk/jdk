@@ -921,13 +921,11 @@ public class Attr extends JCTree.Visitor {
                 c.complete();
 
                 // If this class appears as an anonymous class
-                // in a superclass constructor call where
-                // no explicit outer instance is given,
+                // in a superclass constructor call
                 // disable implicit outer instance from being passed.
                 // (This would be an illegal access to "this before super").
                 if (env.info.isSelfCall &&
-                        env.tree.hasTag(NEWCLASS) &&
-                        ((JCNewClass)env.tree).encl == null) {
+                        env.tree.hasTag(NEWCLASS)) {
                     c.flags_field |= NOOUTERTHIS;
                 }
                 attribClass(tree.pos(), c);
@@ -2329,6 +2327,9 @@ public class Attr extends JCTree.Visitor {
     /** Make an attributed null check tree.
      */
     public JCExpression makeNullCheck(JCExpression arg) {
+        // optimization: new Outer() can never be null; skip null check
+        if (arg.getTag() == NEWCLASS)
+            return arg;
         // optimization: X.this is never null; skip null check
         Name name = TreeInfo.name(arg);
         if (name == names._this || name == names._super) return arg;
