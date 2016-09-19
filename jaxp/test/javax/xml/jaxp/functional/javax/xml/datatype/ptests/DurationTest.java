@@ -587,4 +587,3 @@ public class DurationTest {
     private final BigInteger one = BigInteger.ONE;
 
 }
-

@@ -1628,4 +1628,3 @@ public class DOMConfigurationTest {
 
     }
 }
-

@@ -198,4 +198,3 @@ public class SAX2DOMTest {
         }
     }
 }
-

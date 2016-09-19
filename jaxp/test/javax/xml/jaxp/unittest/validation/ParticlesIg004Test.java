@@ -57,4 +57,3 @@ public class ParticlesIg004Test {
         }
     }
 }
-

@@ -22,7 +22,7 @@
  */
 
 // key: compiler.note.lambda.stat
-// options: -Xdebug:dumpLambdaToMethodStats
+// options: --debug:dumpLambdaToMethodStats
 
 class LambdaStat {
     Runnable r = ()->{};

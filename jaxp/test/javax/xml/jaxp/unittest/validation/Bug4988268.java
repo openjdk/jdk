@@ -46,4 +46,3 @@ public class Bug4988268 {
         schemaFactory.newSchema(Bug4988268.class.getResource("Bug4988268.xsd"));
     }
 }
-

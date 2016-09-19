@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6405536 6414980 8051972
  * @summary Make sure that we can parse certificates using various named curves
@@ -29,6 +29,7 @@
  * @author Andreas Sterbenz
  * @library ..
  * @library ../../../../java/security/testlibrary
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm ReadCertificates
  * @run main/othervm ReadCertificates sm policy
  */

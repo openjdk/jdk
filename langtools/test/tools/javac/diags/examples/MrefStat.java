@@ -22,7 +22,7 @@
  */
 
 // key: compiler.note.mref.stat
-// options: -Xdebug:dumpLambdaToMethodStats
+// options: --debug:dumpLambdaToMethodStats
 
 class MrefStat {
     Runnable r = MrefStat::m;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,19 @@
  * questions.
  */
 
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.List;
-import javax.net.ssl.SSLContext;
-
 /*
  * @test
  * @bug 8049432 8069038
  * @summary New tests for TLS property jdk.tls.client.protocols
  * @summary javax/net/ssl/TLS/TLSClientPropertyTest.java needs to be
  *     updated for JDK-8061210
+ * @modules java.security.jgss
+ *          java.security.jgss/sun.security.krb5.internal.crypto
+ *          java.security.jgss/sun.security.krb5.internal.ktab
+ *          java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal.ccache
+ *          java.security.jgss/sun.security.krb5.internal
+ *          java.base/sun.security.util
  * @run main/othervm TLSClientPropertyTest NoProperty
  * @run main/othervm TLSClientPropertyTest SSLv3
  * @run main/othervm TLSClientPropertyTest TLSv1
@@ -40,6 +41,12 @@ import javax.net.ssl.SSLContext;
  * @run main/othervm TLSClientPropertyTest TLSv12
  * @run main/othervm TLSClientPropertyTest WrongProperty
  */
+
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.List;
+import javax.net.ssl.SSLContext;
 
 /**
  * Sets the property jdk.tls.client.protocols to one of this protocols:
