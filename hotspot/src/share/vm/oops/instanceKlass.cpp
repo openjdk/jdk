@@ -41,6 +41,7 @@
 #include "memory/heapInspection.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/fieldStreams.hpp"
@@ -1972,11 +1973,6 @@ void InstanceKlass::remove_unshareable_info() {
     m->remove_unshareable_info();
   }
 
-  // cached_class_file might be pointing to a malloc'ed buffer allocated by
-  // event-based tracing code at CDS dump time. It's not usable at runtime
-  // so let's clear it.
-  set_cached_class_file(NULL);
-
   // do array classes also.
   array_klasses_do(remove_unshareable_in_class);
 }
@@ -2070,6 +2066,7 @@ void InstanceKlass::release_C_heap_structures(InstanceKlass* ik) {
 }
 
 void InstanceKlass::release_C_heap_structures() {
+  assert(!this->is_shared(), "should not be called for a shared class");
 
   // Can't release the constant pool here because the constant pool can be
   // deallocated separately from the InstanceKlass for default methods and
@@ -3653,6 +3650,15 @@ Method* InstanceKlass::method_with_orig_idnum(int idnum, int version) {
 }
 
 #if INCLUDE_JVMTI
+JvmtiCachedClassFileData* InstanceKlass::get_cached_class_file() {
+  if (MetaspaceShared::is_in_shared_space(_cached_class_file)) {
+    // Ignore the archived class stream data
+    return NULL;
+  } else {
+    return _cached_class_file;
+  }
+}
+
 jint InstanceKlass::get_cached_class_file_len() {
   return VM_RedefineClasses::get_cached_class_file_len(_cached_class_file);
 }
@@ -3660,4 +3666,15 @@ jint InstanceKlass::get_cached_class_file_len() {
 unsigned char * InstanceKlass::get_cached_class_file_bytes() {
   return VM_RedefineClasses::get_cached_class_file_bytes(_cached_class_file);
 }
+
+#if INCLUDE_CDS
+JvmtiCachedClassFileData* InstanceKlass::get_archived_class_data() {
+  assert(this->is_shared(), "class should be shared");
+  if (MetaspaceShared::is_in_shared_space(_cached_class_file)) {
+    return _cached_class_file;
+  } else {
+    return NULL;
+  }
+}
+#endif
 #endif

@@ -25,11 +25,84 @@
 #include "precompiled.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderData.inline.hpp"
 #include "classfile/klassFactory.hpp"
+#include "classfile/sharedClassUtil.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiEnvBase.hpp"
+#include "prims/jvmtiRedefineClasses.hpp"
 #include "trace/traceMacros.hpp"
+
+// called during initial loading of a shared class
+instanceKlassHandle KlassFactory::check_shared_class_file_load_hook(
+                                          instanceKlassHandle ik,
+                                          Symbol* class_name,
+                                          Handle class_loader,
+                                          Handle protection_domain, TRAPS) {
+#if INCLUDE_CDS && INCLUDE_JVMTI
+  assert(ik.not_null(), "sanity");
+  assert(ik()->is_shared(), "expecting a shared class");
+
+  if (JvmtiExport::should_post_class_file_load_hook()) {
+    assert(THREAD->is_Java_thread(), "must be JavaThread");
+
+    // Post the CFLH
+    JvmtiCachedClassFileData* cached_class_file = NULL;
+    JvmtiCachedClassFileData* archived_class_data = ik->get_archived_class_data();
+    assert(archived_class_data != NULL, "shared class has no archived class data");
+    unsigned char* ptr =
+        VM_RedefineClasses::get_cached_class_file_bytes(archived_class_data);
+    unsigned char* end_ptr =
+        ptr + VM_RedefineClasses::get_cached_class_file_len(archived_class_data);
+    unsigned char* old_ptr = ptr;
+    JvmtiExport::post_class_file_load_hook(class_name,
+                                           class_loader,
+                                           protection_domain,
+                                           &ptr,
+                                           &end_ptr,
+                                           &cached_class_file);
+    if (old_ptr != ptr) {
+      // JVMTI agent has modified class file data.
+      // Set new class file stream using JVMTI agent modified class file data.
+      ClassLoaderData* loader_data =
+        ClassLoaderData::class_loader_data(class_loader());
+      int path_index = ik->shared_classpath_index();
+      SharedClassPathEntry* ent =
+        (SharedClassPathEntry*)FileMapInfo::shared_classpath(path_index);
+      ClassFileStream* stream = new ClassFileStream(ptr,
+                                                    end_ptr - ptr,
+                                                    ent->_name,
+                                                    ClassFileStream::verify);
+      ClassFileParser parser(stream,
+                             class_name,
+                             loader_data,
+                             protection_domain,
+                             NULL,
+                             NULL,
+                             ClassFileParser::BROADCAST, // publicity level
+                             CHECK_NULL);
+      instanceKlassHandle new_ik = parser.create_instance_klass(true /* changed_by_loadhook */,
+                                                                CHECK_NULL);
+      if (cached_class_file != NULL) {
+        new_ik->set_cached_class_file(cached_class_file);
+      }
+
+      if (class_loader.is_null()) {
+        ResourceMark rm;
+        ClassLoader::add_package(class_name->as_C_string(), path_index, THREAD);
+      }
+
+      return new_ik;
+    }
+  }
+#endif
+
+  return NULL;
+}
+
 
 static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
                                                    Symbol* name,
@@ -97,7 +170,6 @@ instanceKlassHandle KlassFactory::create_from_stream(ClassFileStream* stream,
                                                      const InstanceKlass* host_klass,
                                                      GrowableArray<Handle>* cp_patches,
                                                      TRAPS) {
-
   assert(stream != NULL, "invariant");
   assert(loader_data != NULL, "invariant");
   assert(THREAD->is_Java_thread(), "must be a JavaThread");
@@ -141,6 +213,28 @@ instanceKlassHandle KlassFactory::create_from_stream(ClassFileStream* stream,
   }
 
   TRACE_KLASS_CREATION(result, parser, THREAD);
+
+#if INCLUDE_CDS && INCLUDE_JVMTI
+  if (DumpSharedSpaces) {
+    assert(cached_class_file == NULL, "Sanity");
+    // Archive the class stream data into the optional data section
+    JvmtiCachedClassFileData *p;
+    int len;
+    const unsigned char *bytes;
+    // event based tracing might set cached_class_file
+    if ((bytes = result->get_cached_class_file_bytes()) != NULL) {
+      len = result->get_cached_class_file_len();
+    } else {
+      len = stream->length();
+      bytes = stream->buffer();
+    }
+    p = (JvmtiCachedClassFileData*)MetaspaceShared::optional_data_space_alloc(
+                    offset_of(JvmtiCachedClassFileData, data) + len);
+    p->length = len;
+    memcpy(p->data, bytes, len);
+    result->set_archived_class_data(p);
+  }
+#endif
 
   return result;
 }
