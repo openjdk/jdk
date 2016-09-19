@@ -152,7 +152,7 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
   assert(base->is_register(), "must be");
   if (index->is_constant()) {
     return new LIR_Address(base,
-                           (index->as_constant_ptr()->as_jint() << shift) + disp,
+                           ((intx)(index->as_constant_ptr()->as_jint()) << shift) + disp,
                            type);
   } else {
     return new LIR_Address(base, index, (LIR_Address::Scale)shift, disp, type);
@@ -168,7 +168,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
   if (index_opr->is_constant()) {
     int elem_size = type2aelembytes(type);
     addr = new LIR_Address(array_opr,
-                           offset_in_bytes + index_opr->as_jint() * elem_size, type);
+                           offset_in_bytes + (intx)(index_opr->as_jint()) * elem_size, type);
   } else {
 #ifdef _LP64
     if (index_opr->type() == T_INT) {
