@@ -25,88 +25,30 @@
 
 package com.sun.tools.javac.util;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import com.sun.tools.javac.util.JDK9Wrappers.Module;
 
 public class ModuleHelper {
-    /** The context key for the module helper. */
-    protected static final Context.Key<ModuleHelper> moduleHelperKey = new Context.Key<>();
 
-    /** Get the JavaCompiler instance for this context. */
-    public static ModuleHelper instance(Context context) {
-        ModuleHelper instance = context.get(moduleHelperKey);
-        if (instance == null)
-            instance = new ModuleHelper(context);
-        return instance;
-    }
+    private static final String[] javacInternalPackages = new String[] {
+            "com.sun.tools.javac.api",
+            "com.sun.tools.javac.code",
+            "com.sun.tools.javac.comp",
+            "com.sun.tools.javac.file",
+            "com.sun.tools.javac.jvm",
+            "com.sun.tools.javac.main",
+            "com.sun.tools.javac.model",
+            "com.sun.tools.javac.parser",
+            "com.sun.tools.javac.platform",
+            "com.sun.tools.javac.processing",
+            "com.sun.tools.javac.tree",
+            "com.sun.tools.javac.util",
 
-    public ModuleHelper(Context context) {
-        context.put(moduleHelperKey, this);
-        Options options = Options.instance(context);
-        allowAccessToInternalAPI = options.isSet("accessInternalAPI");
-    }
-
-    final boolean allowAccessToInternalAPI;
-
-    private void exportPackageToModule(String packageName, Object target)
-            throws ClassNotFoundException, NoSuchMethodException, IllegalArgumentException,
-                   InvocationTargetException, IllegalAccessException {
-        if (addExportsMethod == null) {
-            Class<?> moduleClass = Class.forName("java.lang.reflect.Module");
-            addExportsMethod = moduleClass.getDeclaredMethod("addExports",
-                    new Class<?>[] { String.class, moduleClass });
-        }
-        addExportsMethod.invoke(from, new Object[] { packageName, target });
-    }
-
-    static final String[] javacInternalPackages = new String[] {
-        "com.sun.tools.javac.api",
-        "com.sun.tools.javac.code",
-        "com.sun.tools.javac.comp",
-        "com.sun.tools.javac.file",
-        "com.sun.tools.javac.jvm",
-        "com.sun.tools.javac.main",
-        "com.sun.tools.javac.model",
-        "com.sun.tools.javac.parser",
-        "com.sun.tools.javac.platform",
-        "com.sun.tools.javac.processing",
-        "com.sun.tools.javac.tree",
-        "com.sun.tools.javac.util",
-
-        "com.sun.tools.doclint",
+            "com.sun.tools.doclint",
     };
 
-    public void addExports(ClassLoader classLoader) {
-        try {
-            if (allowAccessToInternalAPI) {
-                if (from == null) {
-                    if (getModuleMethod == null) {
-                        getModuleMethod = Class.class.getDeclaredMethod("getModule", new Class<?>[0]);
-                    }
-                    from = getModuleMethod.invoke(getClass(), new Object[0]);
-                }
-                if (getUnnamedModuleMethod == null) {
-                    getUnnamedModuleMethod = ClassLoader.class.getDeclaredMethod("getUnnamedModule", new Class<?>[0]);
-                }
-                Object target = getUnnamedModuleMethod.invoke(classLoader, new Object[0]);
-                for (String pack: javacInternalPackages) {
-                    exportPackageToModule(pack, target);
-                }
-            }
-        } catch (Exception e) {
-            // do nothing
+    public static void addExports(Module from, Module to) {
+        for (String pack: javacInternalPackages) {
+            from.addExports(pack, to);
         }
     }
-
-    // a module instance
-    private Object from = null;
-
-    // on java.lang.reflect.Module
-    private static Method addExportsMethod = null;
-
-    // on java.lang.ClassLoader
-    private static Method getUnnamedModuleMethod = null;
-
-    // on java.lang.Class
-    private static Method getModuleMethod = null;
 }
