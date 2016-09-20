@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   bool supports_inline_contig_alloc() const { return !UseNUMA; }
 
-  HeapWord** top_addr() const { return !UseNUMA ? young_gen()->top_addr() : (HeapWord**)-1; }
+  HeapWord* volatile* top_addr() const { return !UseNUMA ? young_gen()->top_addr() : (HeapWord* volatile*)-1; }
   HeapWord** end_addr() const { return !UseNUMA ? young_gen()->end_addr() : (HeapWord**)-1; }
 
   void ensure_parsability(bool retire_tlabs);
