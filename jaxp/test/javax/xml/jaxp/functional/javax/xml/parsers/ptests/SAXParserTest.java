@@ -502,5 +502,3 @@ public class SAXParserTest {
         }
     }
 }
-
-

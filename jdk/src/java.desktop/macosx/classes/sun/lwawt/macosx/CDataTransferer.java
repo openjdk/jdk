@@ -36,7 +36,7 @@ import java.nio.charset.Charset;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.util.*;
-
+import java.util.regex.*;
 import java.awt.datatransfer.*;
 import sun.awt.datatransfer.*;
 
@@ -129,12 +129,21 @@ public class CDataTransferer extends DataTransferer {
                                  long format, Transferable transferable) throws IOException {
 
         if (format == CF_URL && URL.class.equals(flavor.getRepresentationClass())) {
-            String[] strings = dragQueryFile(bytes);
-            if(strings == null || strings.length == 0) {
-                return null;
+            String charset = Charset.defaultCharset().name();
+            if (transferable != null && transferable.isDataFlavorSupported(javaTextEncodingFlavor)) {
+                try {
+                    charset = new String((byte[]) transferable.getTransferData(javaTextEncodingFlavor), "UTF-8");
+                } catch (UnsupportedFlavorException cannotHappen) {
+                }
             }
-            return new URL(strings[0]);
-        } else if(isUriListFlavor(flavor)) {
+
+            String xml = new String(bytes, charset);
+            // macosx pasteboard returns a property list that consists of one URL
+            // let's extract it.
+            return new URL(extractURL(xml));
+        }
+
+        if(isUriListFlavor(flavor) && format == CF_FILE) {
             // dragQueryFile works fine with files and url,
             // it parses and extracts values from property list.
             // maxosx always returns property list for
@@ -154,6 +163,16 @@ public class CDataTransferer extends DataTransferer {
         }
 
         return super.translateBytes(bytes, flavor, format, transferable);
+    }
+
+    private String extractURL(String xml) {
+       Pattern urlExtractorPattern = Pattern.compile("<string>(.*)</string>");
+        Matcher matcher = urlExtractorPattern.matcher(xml);
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return null;
+        }
     }
 
     @Override

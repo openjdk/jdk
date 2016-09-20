@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -749,6 +749,10 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         checkIndex(imageIndex);
         clearAbortRequest();
         processImageStarted(imageIndex);
+        if (abortRequested()) {
+            processReadAborted();
+            return bi;
+        }
 
         if (param == null)
             param = getDefaultReadParam();
@@ -1005,9 +1009,6 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
             int j = isBottomUp ? (height -1)*bytesPerScanline : 0;
 
             for (int i=0; i<height; i++) {
-                if (abortRequested()) {
-                    break;
-                }
                 iis.readFully(bdata, j, bytesPerScanline);
                 iis.skipBytes(padding);
                 j += isBottomUp ? -bytesPerScanline : bytesPerScanline;
@@ -1015,6 +1016,9 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                                    destinationRegion.width, 1, 1, 1,
                                    new int[]{0});
                 processImageProgress(100.0F * i/destinationRegion.height);
+                if (abortRequested()) {
+                    break;
+                }
             }
         } else {
             byte[] buf = new byte[lineLength];
@@ -1051,9 +1055,6 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
 
             for (int j = 0, y = sourceRegion.y;
                  j < destinationRegion.height; j++, y+=scaleY) {
-
-                if (abortRequested())
-                    break;
                 iis.read(buf, 0, lineLength);
                 for (int i = 0; i < destinationRegion.width; i++) {
                     //get the bit and assign to the data buffer of the raster
@@ -1067,6 +1068,9 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                                    destinationRegion.width, 1, 1, 1,
                                    new int[]{0});
                 processImageProgress(100.0F*j/destinationRegion.height);
+                if (abortRequested()) {
+                    break;
+                }
             }
         }
     }
@@ -1087,9 +1091,6 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
             int j = isBottomUp ? (height -1) * bytesPerScanline : 0;
 
             for (int i=0; i<height; i++) {
-                if (abortRequested()) {
-                    break;
-                }
                 iis.readFully(bdata, j, bytesPerScanline);
                 iis.skipBytes(padding);
                 j += isBottomUp ? -bytesPerScanline : bytesPerScanline;
@@ -1097,6 +1098,9 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                                    destinationRegion.width, 1, 1, 1,
                                    new int[]{0});
                 processImageProgress(100.0F * i/destinationRegion.height);
+                if (abortRequested()) {
+                    break;
+                }
             }
         } else {
             byte[] buf = new byte[lineLength];
@@ -1133,9 +1137,6 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
 
             for (int j = 0, y = sourceRegion.y;
                  j < destinationRegion.height; j++, y+=scaleY) {
-
-                if (abortRequested())
-                    break;
                 iis.read(buf, 0, lineLength);
                 for (int i = 0; i < destinationRegion.width; i++) {
                     //get the bit and assign to the data buffer of the raster
@@ -1149,6 +1150,9 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                                    destinationRegion.width, 1, 1, 1,
                                    new int[]{0});
                 processImageProgress(100.0F*j/destinationRegion.height);
+                if (abortRequested()) {
+                    break;
+                }
             }
         }
     }
@@ -1168,9 +1172,6 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
             int j = isBottomUp ? (height -1) * width : 0;
 
             for (int i=0; i<height; i++) {
-                if (abortRequested()) {
-                    break;
-                }
                 iis.readFully(bdata, j, width);
                 iis.skipBytes(padding);
                 j += isBottomUp ? -width : width;
@@ -1178,6 +1179,9 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                                    destinationRegion.width, 1, 1, 1,
                                    new int[]{0});
                 processImageProgress(100.0F * i/destinationRegion.height);
+                if (abortRequested()) {
+                    break;
+                }
             }
         } else {
             byte[] buf = new byte[lineLength];
@@ -1200,9 +1204,6 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
 
             for (int j = 0, y = sourceRegion.y;
                  j < destinationRegion.height; j++, y+=scaleY) {
-
-                if (abortRequested())
-                    break;
                 iis.read(buf, 0, lineLength);
                 for (int i = 0, m = sourceRegion.x;
                      i < destinationRegion.width; i++, m += scaleX) {
@@ -1216,6 +1217,9 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                                    destinationRegion.width, 1, 1, 1,
                                    new int[]{0});
                 processImageProgress(100.0F*j/destinationRegion.height);
+                if (abortRequested()) {
+                    break;
+                }
             }
         }
     }
@@ -1235,9 +1239,6 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
             int j = isBottomUp ? (height -1) * width * 3 : 0;
 
             for (int i=0; i<height; i++) {
-                if (abortRequested()) {
-                    break;
-                }
                 iis.readFully(bdata, j, lineStride);
                 iis.skipBytes(padding);
                 j += isBottomUp ? -lineStride : lineStride;
@@ -1245,6 +1246,9 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                                    destinationRegion.width, 1, 1, 1,
                                    new int[]{0});
                 processImageProgress(100.0F * i/destinationRegion.height);
+                if (abortRequested()) {
+                    break;
+                }
             }
         } else {
             byte[] buf = new byte[lineLength];
@@ -1267,9 +1271,6 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
 
             for (int j = 0, y = sourceRegion.y;
                  j < destinationRegion.height; j++, y+=scaleY) {
-
-                if (abortRequested())
-                    break;
                 iis.read(buf, 0, lineLength);
                 for (int i = 0, m = 3 * sourceRegion.x;
                      i < destinationRegion.width; i++, m += 3 * scaleX) {
@@ -1285,6 +1286,9 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                                    destinationRegion.width, 1, 1, 1,
                                    new int[]{0});
                 processImageProgress(100.0F*j/destinationRegion.height);
+                if (abortRequested()) {
+                    break;
+                }
             }
         }
     }
@@ -1302,10 +1306,6 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         if (noTransform) {
             int j = isBottomUp ? (height -1) * width : 0;
             for (int i=0; i<height; i++) {
-                if (abortRequested()) {
-                    break;
-                }
-
                 iis.readFully(sdata, j, width);
                 iis.skipBytes(padding);
 
@@ -1314,6 +1314,9 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                                    destinationRegion.width, 1, 1, 1,
                                    new int[]{0});
                 processImageProgress(100.0F * i/destinationRegion.height);
+                if (abortRequested()) {
+                    break;
+                }
             }
         } else {
             short[] buf = new short[lineLength];
@@ -1336,9 +1339,6 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
 
             for (int j = 0, y = sourceRegion.y;
                  j < destinationRegion.height; j++, y+=scaleY) {
-
-                if (abortRequested())
-                    break;
                 iis.readFully(buf, 0, lineLength);
                 for (int i = 0, m = sourceRegion.x;
                      i < destinationRegion.width; i++, m += scaleX) {
@@ -1352,6 +1352,9 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                                    destinationRegion.width, 1, 1, 1,
                                    new int[]{0});
                 processImageProgress(100.0F*j/destinationRegion.height);
+                if (abortRequested()) {
+                    break;
+                }
             }
         }
     }
@@ -1361,15 +1364,15 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
             int j = isBottomUp ? (height -1) * width : 0;
 
             for (int i=0; i<height; i++) {
-                if (abortRequested()) {
-                    break;
-                }
                 iis.readFully(idata, j, width);
                 j += isBottomUp ? -width : width;
                 processImageUpdate(bi, 0, i,
                                    destinationRegion.width, 1, 1, 1,
                                    new int[]{0});
                 processImageProgress(100.0F * i/destinationRegion.height);
+                if (abortRequested()) {
+                    break;
+                }
             }
         } else {
             int[] buf = new int[width];
@@ -1392,9 +1395,6 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
 
             for (int j = 0, y = sourceRegion.y;
                  j < destinationRegion.height; j++, y+=scaleY) {
-
-                if (abortRequested())
-                    break;
                 iis.readFully(buf, 0, width);
                 for (int i = 0, m = sourceRegion.x;
                      i < destinationRegion.width; i++, m += scaleX) {
@@ -1408,6 +1408,9 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                                    destinationRegion.width, 1, 1, 1,
                                    new int[]{0});
                 processImageProgress(100.0F*j/destinationRegion.height);
+                if (abortRequested()) {
+                    break;
+                }
             }
         }
     }

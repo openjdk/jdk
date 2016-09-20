@@ -23,7 +23,7 @@
 
 // key: compiler.misc.applicable.method.found
 // key: compiler.note.verbose.resolve.multi
-// options: -Xdebug:verboseResolution=applicable,success
+// options: --debug:verboseResolution=applicable,success
 
 class VerboseResolveMulti {
 

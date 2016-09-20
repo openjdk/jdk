@@ -78,5 +78,3 @@ public class SAXFactoryNewInstanceTest {
     }
 
 }
-
-

@@ -47,7 +47,7 @@ public class Bug6278616 {
         NumberFormat nf = NumberFormat.getInstance();
 
         for (int j = 0; j < ints.length; j++) {
-            String s_i = nf.format(new Integer(ints[j]));
+            String s_i = nf.format(ints[j]);
             String s_ai = nf.format(new AtomicInteger(ints[j]));
             if (!s_i.equals(s_ai)) {
                 throw new RuntimeException("format(AtomicInteger " + s_ai +
@@ -57,7 +57,7 @@ public class Bug6278616 {
         }
 
         for (int j = 0; j < longs.length; j++) {
-            String s_l = nf.format(new Long(longs[j]));
+            String s_l = nf.format(longs[j]);
             String s_al = nf.format(new AtomicLong(longs[j]));
             if (!s_l.equals(s_al)) {
                 throw new RuntimeException("format(AtomicLong " + s_al +

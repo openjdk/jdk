@@ -31,12 +31,12 @@
 #include "prims/jvmtiEnvBase.hpp"
 #include "trace/traceMacros.hpp"
 
-static ClassFileStream* prologue(ClassFileStream* stream,
-                                 Symbol* name,
-                                 ClassLoaderData* loader_data,
-                                 Handle protection_domain,
-                                 JvmtiCachedClassFileData** cached_class_file,
-                                 TRAPS) {
+static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
+                                                   Symbol* name,
+                                                   ClassLoaderData* loader_data,
+                                                   Handle protection_domain,
+                                                   JvmtiCachedClassFileData** cached_class_file,
+                                                   TRAPS) {
 
   assert(stream != NULL, "invariant");
 
@@ -94,15 +94,13 @@ instanceKlassHandle KlassFactory::create_from_stream(ClassFileStream* stream,
                                                      Symbol* name,
                                                      ClassLoaderData* loader_data,
                                                      Handle protection_domain,
-                                                     const Klass* host_klass,
+                                                     const InstanceKlass* host_klass,
                                                      GrowableArray<Handle>* cp_patches,
                                                      TRAPS) {
 
   assert(stream != NULL, "invariant");
   assert(loader_data != NULL, "invariant");
   assert(THREAD->is_Java_thread(), "must be a JavaThread");
-
-  bool changed_by_loadhook = false;
 
   ResourceMark rm;
   HandleMark hm;
@@ -111,12 +109,15 @@ instanceKlassHandle KlassFactory::create_from_stream(ClassFileStream* stream,
 
   ClassFileStream* old_stream = stream;
 
-  stream = prologue(stream,
-                    name,
-                    loader_data,
-                    protection_domain,
-                    &cached_class_file,
-                    CHECK_NULL);
+  // Skip this processing for VM anonymous classes
+  if (host_klass == NULL) {
+    stream = check_class_file_load_hook(stream,
+                                        name,
+                                        loader_data,
+                                        protection_domain,
+                                        &cached_class_file,
+                                        CHECK_NULL);
+  }
 
   ClassFileParser parser(stream,
                          name,

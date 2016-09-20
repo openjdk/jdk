@@ -181,6 +181,9 @@ public:
   virtual void note_stop_adding_survivor_regions() = 0;
 
   virtual void record_age_table(AgeTable* age_table) = 0;
+  virtual void print_age_table() = 0;
+protected:
+  virtual size_t desired_survivor_size() const = 0;
 };
 
 #endif // SHARE_VM_GC_G1_G1POLICY_HPP

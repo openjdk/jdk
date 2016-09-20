@@ -28,10 +28,10 @@
  * @summary Tests argument processing for initial and maximum heap size for the
  * parallel collectors.
  * @requires vm.gc=="null"
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestParallelHeapSizeFlags TestMaxHeapSizeTools
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm TestParallelHeapSizeFlags

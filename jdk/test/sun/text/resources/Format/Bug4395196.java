@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,18 @@
  */
 
 /*
- *@test
- *@bug 4395196 4930708 4900884 4890240 8008577
- *@summary verify the ko DateFormat
- *@run main/othervm -Djava.locale.providers=JRE,SPI Bug4395196
-*/
+ * @test
+ * @bug 4395196 4930708 4900884 4890240 8008577
+ * @modules jdk.localedata
+ * @summary verify the ko DateFormat
+ * @run main/othervm -Djava.locale.providers=JRE,SPI Bug4395196
+ */
 
-import java.io.*;
-import java.text.*;
-import java.util.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 public class Bug4395196
 {

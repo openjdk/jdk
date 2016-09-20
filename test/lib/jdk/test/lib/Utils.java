@@ -94,7 +94,6 @@ public final class Utils {
      * Returns the value of 'test.classes' system property
      */
     public static final String TEST_CLASSES = System.getProperty("test.classes", ".");
-
     /**
      * Defines property name for seed value.
      */

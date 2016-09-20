@@ -28,11 +28,10 @@
  * @summary Test that if module m1 can not read module m2, then class p1.c1
  *          in module m1 can not access p2.c2 in module m2.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @compile myloaders/MyDiffClassLoader.java
  * @compile p2/c2.java
  * @compile p1/c1.java
- * @build DiffCL_CheckRead
  * @run main/othervm -Xbootclasspath/a:. DiffCL_CheckRead
  */
 

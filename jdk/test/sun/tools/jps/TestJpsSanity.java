@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import jdk.test.lib.apps.LingeredApp;
  * @test
  * @summary This test verifies jps usage and checks that appropriate error message is shown
  *          when running jps with illegal arguments.
- * @library /lib/testlibrary /test/lib/share/classes
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.jartool/sun.tools.jar
  *          java.management
  *          java.base/jdk.internal.misc

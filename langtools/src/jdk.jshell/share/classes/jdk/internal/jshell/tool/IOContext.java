@@ -54,6 +54,8 @@ abstract class IOContext implements AutoCloseable {
 
     public abstract void replaceLastHistoryEntry(String source);
 
+    public abstract int readUserInput();
+
     class InputInterruptedException extends Exception {
         private static final long serialVersionUID = 1L;
     }

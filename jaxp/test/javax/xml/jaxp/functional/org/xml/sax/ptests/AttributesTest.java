@@ -76,5 +76,3 @@ public class AttributesTest {
         assertTrue(compareWithGold(goldFile, outputFile));
     }
 }
-
-

@@ -30,10 +30,8 @@ import utils.*;
  *          collection runs jstat. jstat should show that after garbage collection number of GC events and garbage
  *          collection time increase.
  * @modules java.base/jdk.internal.misc
- * @library /test/lib/share/classes
+ * @library /test/lib
  * @library ../share
- * @build common.*
- * @build utils.*
  * @run main/othervm -XX:+UsePerfData -Xmx128M GcNewTest
  */
 

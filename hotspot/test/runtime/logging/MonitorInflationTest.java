@@ -25,15 +25,14 @@
  * @test
  * @bug 8133885
  * @summary monitorinflation=debug should have logging from each of the statements in the code
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
  * @run driver MonitorInflationTest
  */
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class MonitorInflationTest {
     static void analyzeOutputOn(ProcessBuilder pb) throws Exception {

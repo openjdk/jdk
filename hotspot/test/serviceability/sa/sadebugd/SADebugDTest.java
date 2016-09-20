@@ -26,7 +26,7 @@
  * @summary Checks that the jshdb debugd utility sucessfully starts
  *          and tries to attach to a running process
  * @modules java.base/jdk.internal.misc
- * @library /test/lib/share/classes
+ * @library /test/lib
  *
  * @ignore 8163805
  * @run main/othervm SADebugDTest

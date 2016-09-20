@@ -27,15 +27,14 @@
  * @summary Verify that option TargetSurvivorRatio affects survivor space occupancy after minor GC.
  * @requires (vm.opt.ExplicitGCInvokesConcurrent == null) | (vm.opt.ExplicitGCInvokesConcurrent == false)
  * @requires (vm.opt.UseJVMCICompiler == null) | (vm.opt.UseJVMCICompiler == false)
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestTargetSurvivorRatioFlag
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver TestTargetSurvivorRatioFlag
  */
 
-import jdk.test.lib.AllocationHelper;
 import java.lang.management.GarbageCollectorMXBean;
 import java.util.Arrays;
 import java.util.Collections;
@@ -43,11 +42,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import jdk.test.lib.HeapRegionUsageTool;
 import jdk.internal.misc.Unsafe;
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
+import jdk.test.lib.unsafe.UnsafeHelper;
 import sun.hotspot.WhiteBox;
 
 /* In order to test that TargetSurvivorRatio affects survivor space occupancy
@@ -250,7 +249,7 @@ public class TestTargetSurvivorRatioFlag {
     public static class TargetSurvivorRatioVerifier {
 
         static final WhiteBox wb = WhiteBox.getWhiteBox();
-        static final Unsafe unsafe = Utils.getUnsafe();
+        static final Unsafe unsafe = UnsafeHelper.getUnsafe();
 
         // Desired size of memory allocated at once
         public static final int CHUNK_SIZE = 1024;

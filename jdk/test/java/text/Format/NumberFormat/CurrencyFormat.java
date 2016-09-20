@@ -25,6 +25,7 @@
  * @test
  * @bug 4290801 4942982 5102005 8008577 8021121
  * @summary Basic tests for currency formatting.
+ * @modules jdk.localedata
  * @run main/othervm -Djava.locale.providers=JRE,SPI CurrencyFormat
  */
 

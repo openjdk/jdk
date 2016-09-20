@@ -27,7 +27,7 @@
  * @bug 8048052
  * @summary Test a series of methods which requires "setFactory" runtime permission
  * @modules java.rmi
- * @run main SetFactoryPermission success
+ * @run main/othervm SetFactoryPermission success
  * @run main/othervm/policy=policy.fail SetFactoryPermission fail
  * @run main/othervm/policy=policy.success SetFactoryPermission success
  */

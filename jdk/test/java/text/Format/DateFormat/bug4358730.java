@@ -60,6 +60,7 @@ public class bug4358730 extends IntlTest {
             SimpleDateFormat sdf = new SimpleDateFormat();
 
             for (int i = 0; i < datasize; i++) {
+                @SuppressWarnings("deprecation")
                 Date d = new Date(year[i]-1900, 10, 15);
                 for (int j = 0; j < nPatterns; j++) {
                     sdf.applyPattern(patterns[j]);

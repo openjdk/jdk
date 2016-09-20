@@ -1027,7 +1027,7 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
                                       Handle class_loader,
                                       Handle protection_domain,
                                       ClassFileStream* st,
-                                      const Klass* host_klass,
+                                      const InstanceKlass* host_klass,
                                       GrowableArray<Handle>* cp_patches,
                                       TRAPS) {
 
@@ -1641,7 +1641,6 @@ void SystemDictionary::define_instance_class(instanceKlassHandle k, TRAPS) {
       JvmtiExport::post_class_load((JavaThread *) THREAD, k());
 
   }
-  TRACE_KLASS_DEFINITION(k, THREAD);
   class_define_event(k);
 }
 

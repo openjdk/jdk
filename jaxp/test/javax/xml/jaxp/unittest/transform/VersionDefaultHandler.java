@@ -62,4 +62,3 @@ public class VersionDefaultHandler extends DefaultHandler {
         return encoding;
     }
 }
-

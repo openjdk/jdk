@@ -103,14 +103,27 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_PLAIN));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_RELEASE));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
+
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_RELEASE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_RELEASE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_RELEASE));
     }
 
 
@@ -261,6 +274,42 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         });
 
 
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseOr(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseOrAcquire(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseOrRelease(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseAnd(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseAndAcquire(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseAndRelease(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseXor(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseXorAcquire(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseXorRelease(recv, 1.0f);
+        });
     }
 
 
@@ -309,6 +358,42 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         });
 
 
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseOr(1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseOrAcquire(1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseOrRelease(1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseAnd(1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseAndAcquire(1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseAndRelease(1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseXor(1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseXorAcquire(1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseXorRelease(1.0f);
+        });
     }
 
 
@@ -404,11 +489,11 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSet(recv, 1.0f, 2.0f);
+                success = vh.weakCompareAndSetPlain(recv, 1.0f, 2.0f);
             }
-            assertEquals(success, true, "weakCompareAndSet float");
+            assertEquals(success, true, "weakCompareAndSetPlain float");
             float x = (float) vh.get(recv);
-            assertEquals(x, 2.0f, "weakCompareAndSet float value");
+            assertEquals(x, 2.0f, "weakCompareAndSetPlain float value");
         }
 
         {
@@ -434,34 +519,109 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetVolatile(recv, 2.0f, 1.0f);
+                success = vh.weakCompareAndSet(recv, 2.0f, 1.0f);
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile float");
+            assertEquals(success, true, "weakCompareAndSet float");
             float x = (float) vh.get(recv);
-            assertEquals(x, 1.0f, "weakCompareAndSetVolatile float value");
+            assertEquals(x, 1.0f, "weakCompareAndSet float value");
         }
 
         // Compare set and get
         {
+            vh.set(recv, 1.0f);
+
             float o = (float) vh.getAndSet(recv, 2.0f);
             assertEquals(o, 1.0f, "getAndSet float");
             float x = (float) vh.get(recv);
             assertEquals(x, 2.0f, "getAndSet float value");
         }
 
-        vh.set(recv, 1.0f);
+        {
+            vh.set(recv, 1.0f);
+
+            float o = (float) vh.getAndSetAcquire(recv, 2.0f);
+            assertEquals(o, 1.0f, "getAndSetAcquire float");
+            float x = (float) vh.get(recv);
+            assertEquals(x, 2.0f, "getAndSetAcquire float value");
+        }
+
+        {
+            vh.set(recv, 1.0f);
+
+            float o = (float) vh.getAndSetRelease(recv, 2.0f);
+            assertEquals(o, 1.0f, "getAndSetRelease float");
+            float x = (float) vh.get(recv);
+            assertEquals(x, 2.0f, "getAndSetRelease float value");
+        }
 
         // get and add, add and get
         {
-            float o = (float) vh.getAndAdd(recv, 3.0f);
+            vh.set(recv, 1.0f);
+
+            float o = (float) vh.getAndAdd(recv, 2.0f);
             assertEquals(o, 1.0f, "getAndAdd float");
-            float c = (float) vh.addAndGet(recv, 3.0f);
-            assertEquals(c, (float)(1.0f + 3.0f + 3.0f), "getAndAdd float value");
+            float x = (float) vh.get(recv);
+            assertEquals(x, (float)(1.0f + 2.0f), "getAndAdd float value");
         }
+
+        {
+            vh.set(recv, 1.0f);
+
+            float o = (float) vh.getAndAddAcquire(recv, 2.0f);
+            assertEquals(o, 1.0f, "getAndAddAcquire float");
+            float x = (float) vh.get(recv);
+            assertEquals(x, (float)(1.0f + 2.0f), "getAndAddAcquire float value");
+        }
+
+        {
+            vh.set(recv, 1.0f);
+
+            float o = (float) vh.getAndAddRelease(recv, 2.0f);
+            assertEquals(o, 1.0f, "getAndAddReleasefloat");
+            float x = (float) vh.get(recv);
+            assertEquals(x, (float)(1.0f + 2.0f), "getAndAddRelease float value");
+        }
+
     }
 
     static void testInstanceFieldUnsupported(VarHandleTestAccessFloat recv, VarHandle vh) {
 
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseOr(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseOrAcquire(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseOrRelease(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseAnd(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseAndAcquire(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseAndRelease(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseXor(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseXorAcquire(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseXorRelease(recv, 1.0f);
+        });
     }
 
 
@@ -557,11 +717,11 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSet(1.0f, 2.0f);
+                success = vh.weakCompareAndSetPlain(1.0f, 2.0f);
             }
-            assertEquals(success, true, "weakCompareAndSet float");
+            assertEquals(success, true, "weakCompareAndSetPlain float");
             float x = (float) vh.get();
-            assertEquals(x, 2.0f, "weakCompareAndSet float value");
+            assertEquals(x, 2.0f, "weakCompareAndSetPlain float value");
         }
 
         {
@@ -587,34 +747,109 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetRelease(2.0f, 1.0f);
+                success = vh.weakCompareAndSet(2.0f, 1.0f);
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile float");
+            assertEquals(success, true, "weakCompareAndSet float");
             float x = (float) vh.get();
-            assertEquals(x, 1.0f, "weakCompareAndSetVolatile float");
+            assertEquals(x, 1.0f, "weakCompareAndSet float");
         }
 
         // Compare set and get
         {
+            vh.set(1.0f);
+
             float o = (float) vh.getAndSet(2.0f);
             assertEquals(o, 1.0f, "getAndSet float");
             float x = (float) vh.get();
             assertEquals(x, 2.0f, "getAndSet float value");
         }
 
-        vh.set(1.0f);
+        {
+            vh.set(1.0f);
+
+            float o = (float) vh.getAndSetAcquire(2.0f);
+            assertEquals(o, 1.0f, "getAndSetAcquire float");
+            float x = (float) vh.get();
+            assertEquals(x, 2.0f, "getAndSetAcquire float value");
+        }
+
+        {
+            vh.set(1.0f);
+
+            float o = (float) vh.getAndSetRelease(2.0f);
+            assertEquals(o, 1.0f, "getAndSetRelease float");
+            float x = (float) vh.get();
+            assertEquals(x, 2.0f, "getAndSetRelease float value");
+        }
 
         // get and add, add and get
         {
-            float o = (float) vh.getAndAdd( 3.0f);
+            vh.set(1.0f);
+
+            float o = (float) vh.getAndAdd(2.0f);
             assertEquals(o, 1.0f, "getAndAdd float");
-            float c = (float) vh.addAndGet(3.0f);
-            assertEquals(c, (float)(1.0f + 3.0f + 3.0f), "getAndAdd float value");
+            float x = (float) vh.get();
+            assertEquals(x, (float)(1.0f + 2.0f), "getAndAdd float value");
         }
+
+        {
+            vh.set(1.0f);
+
+            float o = (float) vh.getAndAddAcquire(2.0f);
+            assertEquals(o, 1.0f, "getAndAddAcquire float");
+            float x = (float) vh.get();
+            assertEquals(x, (float)(1.0f + 2.0f), "getAndAddAcquire float value");
+        }
+
+        {
+            vh.set(1.0f);
+
+            float o = (float) vh.getAndAddRelease(2.0f);
+            assertEquals(o, 1.0f, "getAndAddReleasefloat");
+            float x = (float) vh.get();
+            assertEquals(x, (float)(1.0f + 2.0f), "getAndAddRelease float value");
+        }
+
     }
 
     static void testStaticFieldUnsupported(VarHandle vh) {
 
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseOr(1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseOrAcquire(1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseOrRelease(1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseAnd(1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseAndAcquire(1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseAndRelease(1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseXor(1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseXorAcquire(1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseXorRelease(1.0f);
+        });
     }
 
 
@@ -713,11 +948,11 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSet(array, i, 1.0f, 2.0f);
+                    success = vh.weakCompareAndSetPlain(array, i, 1.0f, 2.0f);
                 }
-                assertEquals(success, true, "weakCompareAndSet float");
+                assertEquals(success, true, "weakCompareAndSetPlain float");
                 float x = (float) vh.get(array, i);
-                assertEquals(x, 2.0f, "weakCompareAndSet float value");
+                assertEquals(x, 2.0f, "weakCompareAndSetPlain float value");
             }
 
             {
@@ -743,30 +978,69 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSetVolatile(array, i, 2.0f, 1.0f);
+                    success = vh.weakCompareAndSet(array, i, 2.0f, 1.0f);
                 }
-                assertEquals(success, true, "weakCompareAndSetVolatile float");
+                assertEquals(success, true, "weakCompareAndSet float");
                 float x = (float) vh.get(array, i);
-                assertEquals(x, 1.0f, "weakCompareAndSetVolatile float");
+                assertEquals(x, 1.0f, "weakCompareAndSet float");
             }
 
             // Compare set and get
             {
+                vh.set(array, i, 1.0f);
+
                 float o = (float) vh.getAndSet(array, i, 2.0f);
                 assertEquals(o, 1.0f, "getAndSet float");
                 float x = (float) vh.get(array, i);
                 assertEquals(x, 2.0f, "getAndSet float value");
             }
 
-            vh.set(array, i, 1.0f);
+            {
+                vh.set(array, i, 1.0f);
+
+                float o = (float) vh.getAndSetAcquire(array, i, 2.0f);
+                assertEquals(o, 1.0f, "getAndSetAcquire float");
+                float x = (float) vh.get(array, i);
+                assertEquals(x, 2.0f, "getAndSetAcquire float value");
+            }
+
+            {
+                vh.set(array, i, 1.0f);
+
+                float o = (float) vh.getAndSetRelease(array, i, 2.0f);
+                assertEquals(o, 1.0f, "getAndSetRelease float");
+                float x = (float) vh.get(array, i);
+                assertEquals(x, 2.0f, "getAndSetRelease float value");
+            }
 
             // get and add, add and get
             {
-                float o = (float) vh.getAndAdd(array, i, 3.0f);
+                vh.set(array, i, 1.0f);
+
+                float o = (float) vh.getAndAdd(array, i, 2.0f);
                 assertEquals(o, 1.0f, "getAndAdd float");
-                float c = (float) vh.addAndGet(array, i, 3.0f);
-                assertEquals(c, (float)(1.0f + 3.0f + 3.0f), "getAndAdd float value");
+                float x = (float) vh.get(array, i);
+                assertEquals(x, (float)(1.0f + 2.0f), "getAndAdd float value");
             }
+
+            {
+                vh.set(array, i, 1.0f);
+
+                float o = (float) vh.getAndAddAcquire(array, i, 2.0f);
+                assertEquals(o, 1.0f, "getAndAddAcquire float");
+                float x = (float) vh.get(array, i);
+                assertEquals(x, (float)(1.0f + 2.0f), "getAndAddAcquire float value");
+            }
+
+            {
+                vh.set(array, i, 1.0f);
+
+                float o = (float) vh.getAndAddRelease(array, i, 2.0f);
+                assertEquals(o, 1.0f, "getAndAddReleasefloat");
+                float x = (float) vh.get(array, i);
+                assertEquals(x, (float)(1.0f + 2.0f), "getAndAddRelease float value");
+            }
+
         }
     }
 
@@ -775,6 +1049,42 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
 
         int i = 0;
 
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseOr(array, i, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseOrAcquire(array, i, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseOrRelease(array, i, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseAnd(array, i, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseAndAcquire(array, i, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseAndRelease(array, i, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseXor(array, i, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseXorAcquire(array, i, 1.0f);
+        });
+
+        checkUOE(() -> {
+            float o = (float) vh.getAndBitwiseXorRelease(array, i, 1.0f);
+        });
     }
 
     static void testArrayIndexOutOfBounds(VarHandle vh) throws Throwable {
@@ -832,11 +1142,11 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSet(array, ci, 1.0f, 2.0f);
+                boolean r = vh.weakCompareAndSetPlain(array, ci, 1.0f, 2.0f);
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSetVolatile(array, ci, 1.0f, 2.0f);
+                boolean r = vh.weakCompareAndSet(array, ci, 1.0f, 2.0f);
             });
 
             checkIOOBE(() -> {
@@ -852,12 +1162,25 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                float o = (float) vh.getAndAdd(array, ci, 3.0f);
+                float o = (float) vh.getAndSetAcquire(array, ci, 1.0f);
             });
 
             checkIOOBE(() -> {
-                float o = (float) vh.addAndGet(array, ci, 3.0f);
+                float o = (float) vh.getAndSetRelease(array, ci, 1.0f);
             });
+
+            checkIOOBE(() -> {
+                float o = (float) vh.getAndAdd(array, ci, 1.0f);
+            });
+
+            checkIOOBE(() -> {
+                float o = (float) vh.getAndAddAcquire(array, ci, 1.0f);
+            });
+
+            checkIOOBE(() -> {
+                float o = (float) vh.getAndAddRelease(array, ci, 1.0f);
+            });
+
         }
     }
 }

@@ -41,14 +41,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.util.Vector;
 
 import javax.print.CancelablePrintJob;
 import javax.print.Doc;
 import javax.print.DocFlavor;
-import javax.print.DocPrintJob;
 import javax.print.PrintService;
 import javax.print.PrintException;
 import javax.print.event.PrintJobEvent;
@@ -56,7 +54,6 @@ import javax.print.event.PrintJobListener;
 import javax.print.event.PrintJobAttributeListener;
 
 import javax.print.attribute.Attribute;
-import javax.print.attribute.AttributeSet;
 import javax.print.attribute.AttributeSetUtilities;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.HashPrintJobAttributeSet;
@@ -65,7 +62,6 @@ import javax.print.attribute.PrintJobAttribute;
 import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttribute;
 import javax.print.attribute.PrintRequestAttributeSet;
-import javax.print.attribute.PrintServiceAttributeSet;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.DocumentName;
@@ -77,13 +73,17 @@ import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.OrientationRequested;
-import javax.print.attribute.standard.PrinterName;
 import javax.print.attribute.standard.RequestingUserName;
 import javax.print.attribute.standard.NumberUp;
 import javax.print.attribute.standard.Sides;
 import javax.print.attribute.standard.PrinterIsAcceptingJobs;
 
-import java.awt.print.*;
+import java.awt.print.PageFormat;
+import java.awt.print.PrinterJob;
+import java.awt.print.Pageable;
+import java.awt.print.Paper;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
 
 
 
@@ -370,7 +370,7 @@ public class UnixPrintJob implements CancelablePrintJob {
                  customTray instanceof CustomMediaTray) {
                  String choice = customTray.getChoiceName();
                  if (choice != null) {
-                     mOptions += " media="+choice;
+                     mOptions += " InputSlot="+choice;
                  }
              }
 

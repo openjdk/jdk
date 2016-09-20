@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,25 +28,21 @@
  * @modules jdk.vm.ci/jdk.vm.ci.meta
  *          jdk.vm.ci/jdk.vm.ci.runtime
  *          java.base/jdk.internal.misc
- * @build jdk.vm.ci.runtime.test.TestResolvedJavaMethod
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI jdk.vm.ci.runtime.test.TestResolvedJavaMethod
  */
 
 package jdk.vm.ci.runtime.test;
 
-import jdk.vm.ci.meta.ConstantPool;
-import jdk.vm.ci.meta.ExceptionHandler;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -58,10 +54,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Assert;
+import org.junit.Test;
+
+import jdk.vm.ci.meta.ConstantPool;
+import jdk.vm.ci.meta.ExceptionHandler;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
  * Tests for {@link ResolvedJavaMethod}.
@@ -406,20 +405,6 @@ public class TestResolvedJavaMethod extends MethodUniverse {
                 assertFalse(m.isJavaLangObjectInit());
             }
         }
-    }
-
-    @Test
-    public void isSignaturePolymorphicTest() {
-        ResolvedJavaType methodHandleType = metaAccess.lookupJavaType(MethodHandle.class);
-        assertTrue(ResolvedJavaMethod.isSignaturePolymorphic(methodHandleType, "invokeExact", metaAccess));
-        assertTrue(ResolvedJavaMethod.isSignaturePolymorphic(methodHandleType, "invoke", metaAccess));
-        assertTrue(ResolvedJavaMethod.isSignaturePolymorphic(methodHandleType, "invokeBasic", metaAccess));
-        assertTrue(ResolvedJavaMethod.isSignaturePolymorphic(methodHandleType, "linkToVirtual", metaAccess));
-        assertTrue(ResolvedJavaMethod.isSignaturePolymorphic(methodHandleType, "linkToStatic", metaAccess));
-        assertTrue(ResolvedJavaMethod.isSignaturePolymorphic(methodHandleType, "linkToSpecial", metaAccess));
-        assertTrue(ResolvedJavaMethod.isSignaturePolymorphic(methodHandleType, "linkToInterface", metaAccess));
-        assertFalse(ResolvedJavaMethod.isSignaturePolymorphic(methodHandleType, "type", metaAccess));
-        assertFalse(ResolvedJavaMethod.isSignaturePolymorphic(metaAccess.lookupJavaType(Object.class), "toString", metaAccess));
     }
 
     /**

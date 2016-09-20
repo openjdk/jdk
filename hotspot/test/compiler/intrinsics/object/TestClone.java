@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 8033626
  * @summary assert(ex_map->jvms()->same_calls_as(_exceptions->jvms())) failed: all collected exceptions must come from the same place
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  *
  * @run main/othervm -XX:-TieredCompilation -Xbatch
  *      -XX:CompileCommand=compileonly,compiler.intrinsics.object.TestClone::f

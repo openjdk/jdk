@@ -283,7 +283,7 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
       return JVMTI_ERROR_INVALID_CLASS;
     }
 
-    if (java_lang_Class::is_primitive(k_mirror)) {
+    if (!VM_RedefineClasses::is_modifiable_class(k_mirror)) {
       return JVMTI_ERROR_UNMODIFIABLE_CLASS;
     }
 
@@ -293,9 +293,6 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
     jint status = klass->jvmti_class_status();
     if (status & (JVMTI_CLASS_STATUS_ERROR)) {
       return JVMTI_ERROR_INVALID_CLASS;
-    }
-    if (status & (JVMTI_CLASS_STATUS_ARRAY)) {
-      return JVMTI_ERROR_UNMODIFIABLE_CLASS;
     }
 
     instanceKlassHandle ikh(current_thread, k_oop);
@@ -652,18 +649,14 @@ JvmtiEnv::GetErrorName(jvmtiError error, char** name_ptr) {
 
 jvmtiError
 JvmtiEnv::SetVerboseFlag(jvmtiVerboseFlag flag, jboolean value) {
+  LogLevelType level = value == 0 ? LogLevel::Off : LogLevel::Info;
   switch (flag) {
   case JVMTI_VERBOSE_OTHER:
     // ignore
     break;
   case JVMTI_VERBOSE_CLASS:
-    if (value == 0) {
-      LogConfiguration::parse_log_arguments("stdout", "class+unload=off", NULL, NULL, NULL);
-      LogConfiguration::parse_log_arguments("stdout", "class+load=off", NULL, NULL, NULL);
-    } else {
-      LogConfiguration::parse_log_arguments("stdout", "class+load=info", NULL, NULL, NULL);
-      LogConfiguration::parse_log_arguments("stdout", "class+unload=info", NULL, NULL, NULL);
-    }
+    LogConfiguration::configure_stdout(level, false, LOG_TAGS(class, unload));
+    LogConfiguration::configure_stdout(level, false, LOG_TAGS(class, load));
     break;
   case JVMTI_VERBOSE_GC:
     if (value == 0) {
