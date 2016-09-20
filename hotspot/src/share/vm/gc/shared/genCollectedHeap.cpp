@@ -721,7 +721,7 @@ bool GenCollectedHeap::supports_inline_contig_alloc() const {
   return _young_gen->supports_inline_contig_alloc();
 }
 
-HeapWord** GenCollectedHeap::top_addr() const {
+HeapWord* volatile* GenCollectedHeap::top_addr() const {
   return _young_gen->top_addr();
 }
 
