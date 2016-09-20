@@ -2474,8 +2474,16 @@ size_t G1CollectedHeap::max_capacity() const {
 }
 
 jlong G1CollectedHeap::millis_since_last_gc() {
-  // assert(false, "NYI");
-  return 0;
+  // See the notes in GenCollectedHeap::millis_since_last_gc()
+  // for more information about the implementation.
+  jlong ret_val = (os::javaTimeNanos() / NANOSECS_PER_MILLISEC) -
+    _g1_policy->collection_pause_end_millis();
+  if (ret_val < 0) {
+    log_warning(gc)("millis_since_last_gc() would return : " JLONG_FORMAT
+      ". returning zero instead.", ret_val);
+    return 0;
+  }
+  return ret_val;
 }
 
 void G1CollectedHeap::prepare_for_verify() {
