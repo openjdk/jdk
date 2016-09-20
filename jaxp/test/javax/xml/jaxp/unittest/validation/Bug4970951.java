@@ -126,4 +126,3 @@ public class Bug4970951 {
         parse(xmlReader, XML);
     }
 }
-

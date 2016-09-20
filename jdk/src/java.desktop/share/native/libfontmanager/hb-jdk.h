@@ -43,9 +43,14 @@ typedef struct JDKFontInfo_Struct {
     float ptSize;
     float xPtSize;
     float yPtSize;
+    float devScale; // How much applying the full glyph tx scales x distance.
     jboolean aat;
 } JDKFontInfo;
 
+
+// Use 16.16 for better precision than 26.6
+#define HBFloatToFixedScale ((float)(1 << 16))
+#define HBFloatToFixed(f) ((unsigned int)((f) * HBFloatToFixedScale))
 
 /*
  * Note:

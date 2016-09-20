@@ -66,4 +66,3 @@ public class OpenJDK100017Test {
         }
     }
 }
-

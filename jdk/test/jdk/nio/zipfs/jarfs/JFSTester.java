@@ -26,6 +26,7 @@
  * @bug 8164389
  * @summary walk entries in a jdk.nio.zipfs.JarFileSystem
  * @modules jdk.jartool/sun.tools.jar
+ *          jdk.zipfs
  * @run testng JFSTester
  */
 

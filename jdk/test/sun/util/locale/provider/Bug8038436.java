@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,25 @@
  * @summary Test for changes in 8038436
  * @modules java.base/sun.util.locale.provider
  *          java.base/sun.util.spi
+ *          jdk.localedata
  * @compile -XDignore.symbol.file Bug8038436.java
  * @run main/othervm  --limit-modules java.base      Bug8038436  security
  * @run main/othervm  -Djava.locale.providers=COMPAT Bug8038436  availlocs
  */
 
-import java.security.*;
-import java.util.*;
-import java.util.stream.*;
-import sun.util.locale.provider.*;
+import java.security.CodeSource;
+import java.security.Permission;
+import java.security.PermissionCollection;
+import java.security.Permissions;
+import java.security.Policy;
+import java.security.ProtectionDomain;
+import java.util.Arrays;
+import java.util.Formatter;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
+import sun.util.locale.provider.LocaleProviderAdapter;
 
 public class Bug8038436 {
     public static void main(String[] args) {

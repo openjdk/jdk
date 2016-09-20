@@ -25,7 +25,7 @@
 
 package com.sun.tools.javac.platform;
 
-/** A collection of platform descriptions that can be selected using {@code -release name}
+/** A collection of platform descriptions that can be selected using {@code --release name}
  *  command line option.
  *  Register in {@code META-INF/services/com.sun.tools.javac.platform.PlatformProvider}.
  *
@@ -36,7 +36,7 @@ package com.sun.tools.javac.platform;
  */
 public interface PlatformProvider {
 
-    /**Names of platforms supported by this provider. Each returned name can be used as the key for -release.
+    /**Names of platforms supported by this provider. Each returned name can be used as the key for --release.
      *
      * @return the platform keys
      */

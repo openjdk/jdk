@@ -281,10 +281,6 @@ public:
     return UseConcMarkSweepGC;
   }
 
-  virtual bool needs_reference_pending_list_locker_thread() const {
-    return UseConcMarkSweepGC;
-  }
-
   // We don't need barriers for stores to objects in the
   // young gen and, a fortiori, for initializing stores to
   // objects therein. This applies to DefNew+Tenured and ParNew+CMS

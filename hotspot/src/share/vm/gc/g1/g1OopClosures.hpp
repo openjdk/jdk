@@ -34,7 +34,6 @@ class G1RemSet;
 class G1ConcurrentMark;
 class DirtyCardToOopClosure;
 class G1CMBitMap;
-class G1CMMarkStack;
 class G1ParScanThreadState;
 class G1CMTask;
 class ReferenceProcessor;

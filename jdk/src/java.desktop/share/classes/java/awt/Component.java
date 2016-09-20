@@ -53,13 +53,11 @@ import java.beans.Transient;
 import java.awt.im.InputContext;
 import java.awt.im.InputMethodRequests;
 import java.awt.dnd.DropTarget;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.AccessControlContext;
 import javax.accessibility.*;
 import java.applet.Applet;
+import javax.swing.JComponent;
 
 import sun.awt.ComponentFactory;
 import sun.security.action.GetPropertyAction;
@@ -81,6 +79,7 @@ import sun.java2d.pipe.hw.ExtendedBufferCapabilities;
 import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.*;
 import sun.awt.RequestFocusController;
 import sun.java2d.SunGraphicsEnvironment;
+import sun.swing.SwingAccessor;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -844,32 +843,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 return new Rectangle(comp.x, comp.y, comp.width, comp.height);
             }
             public void setMixingCutoutShape(Component comp, Shape shape) {
-                Region region = shape == null ?  null :
-                    Region.getInstance(shape, null);
-
-                synchronized (comp.getTreeLock()) {
-                    boolean needShowing = false;
-                    boolean needHiding = false;
-
-                    if (!comp.isNonOpaqueForMixing()) {
-                        needHiding = true;
-                    }
-
-                    comp.mixingCutoutRegion = region;
-
-                    if (!comp.isNonOpaqueForMixing()) {
-                        needShowing = true;
-                    }
-
-                    if (comp.isMixingNeeded()) {
-                        if (needHiding) {
-                            comp.mixOnHiding(comp.isLightweight());
-                        }
-                        if (needShowing) {
-                            comp.mixOnShowing();
-                        }
-                    }
-                }
+                comp.setMixingCutoutShape(shape);
             }
 
             public void setGraphicsConfiguration(Component comp,
@@ -8695,6 +8669,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * the Swing package private method {@code compWriteObjectNotify}.
      */
     private void doSwingSerialization() {
+        if (!(this instanceof JComponent)) {
+            return;
+        }
         @SuppressWarnings("deprecation")
         Package swingPackage = Package.getPackage("javax.swing");
         // For Swing serialization to correctly work Swing needs to
@@ -8707,36 +8684,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
                    klass = klass.getSuperclass()) {
             if (klass.getPackage() == swingPackage &&
                       klass.getClassLoader() == null) {
-                final Class<?> swingClass = klass;
-                // Find the first override of the compWriteObjectNotify method
-                Method[] methods = AccessController.doPrivileged(
-                                                                 new PrivilegedAction<Method[]>() {
-                                                                     public Method[] run() {
-                                                                         return swingClass.getDeclaredMethods();
-                                                                     }
-                                                                 });
-                for (int counter = methods.length - 1; counter >= 0;
-                     counter--) {
-                    final Method method = methods[counter];
-                    if (method.getName().equals("compWriteObjectNotify")){
-                        // We found it, use doPrivileged to make it accessible
-                        // to use.
-                        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                                public Void run() {
-                                    method.setAccessible(true);
-                                    return null;
-                                }
-                            });
-                        // Invoke the method
-                        try {
-                            method.invoke(this, (Object[]) null);
-                        } catch (IllegalAccessException iae) {
-                        } catch (InvocationTargetException ite) {
-                        }
-                        // We're done, bail.
-                        return;
-                    }
-                }
+
+                SwingAccessor.getJComponentAccessor()
+                        .compWriteObjectNotify((JComponent) this);
+                return;
             }
         }
     }
@@ -10260,6 +10211,71 @@ public abstract class Component implements ImageObserver, MenuContainer,
             return false;
         }
         return true;
+    }
+
+    /**
+     * Sets a 'mixing-cutout' shape for the given component.
+     *
+     * By default a lightweight component is treated as an opaque rectangle for
+     * the purposes of the Heavyweight/Lightweight Components Mixing feature.
+     * This method enables developers to set an arbitrary shape to be cut out
+     * from heavyweight components positioned underneath the lightweight
+     * component in the z-order.
+     * <p>
+     * The {@code shape} argument may have the following values:
+     * <ul>
+     * <li>{@code null} - reverts the default cutout shape (the rectangle equal
+     * to the component's {@code getBounds()})
+     * <li><i>empty-shape</i> - does not cut out anything from heavyweight
+     * components. This makes the given lightweight component effectively
+     * transparent. Note that descendants of the lightweight component still
+     * affect the shapes of heavyweight components.  An example of an
+     * <i>empty-shape</i> is {@code new Rectangle()}.
+     * <li><i>non-empty-shape</i> - the given shape will be cut out from
+     * heavyweight components.
+     * </ul>
+     * <p>
+     * The most common example when the 'mixing-cutout' shape is needed is a
+     * glass pane component. The {@link JRootPane#setGlassPane()} method
+     * automatically sets the <i>empty-shape</i> as the 'mixing-cutout' shape
+     * for the given glass pane component.  If a developer needs some other
+     * 'mixing-cutout' shape for the glass pane (which is rare), this must be
+     * changed manually after installing the glass pane to the root pane.
+     * <p>
+     * Note that the 'mixing-cutout' shape neither affects painting, nor the
+     * mouse events handling for the given component. It is used exclusively
+     * for the purposes of the Heavyweight/Lightweight Components Mixing
+     * feature.
+     *
+     * @param shape the new 'mixing-cutout' shape
+     * @since 9
+     */
+    void setMixingCutoutShape(Shape shape) {
+        Region region = shape == null ? null : Region.getInstance(shape, null);
+
+        synchronized (getTreeLock()) {
+            boolean needShowing = false;
+            boolean needHiding = false;
+
+            if (!isNonOpaqueForMixing()) {
+                needHiding = true;
+            }
+
+            mixingCutoutRegion = region;
+
+            if (!isNonOpaqueForMixing()) {
+                needShowing = true;
+            }
+
+            if (isMixingNeeded()) {
+                if (needHiding) {
+                    mixOnHiding(isLightweight());
+                }
+                if (needShowing) {
+                    mixOnShowing();
+                }
+            }
+        }
     }
 
     // ****************** END OF MIXING CODE ********************************

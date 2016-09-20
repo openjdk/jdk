@@ -82,5 +82,3 @@ public class XPathFunctionResolverTest {
         assertEquals(xpath.evaluate(null, "5"), "2");
     }
 }
-
-

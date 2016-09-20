@@ -271,7 +271,8 @@ enum SharedSpaceType {
   SharedReadOnly,
   SharedReadWrite,
   SharedMiscData,
-  SharedMiscCode
+  SharedMiscCode,
+  SharedOptional
 };
 
 void report_out_of_shared_space(SharedSpaceType space_type);

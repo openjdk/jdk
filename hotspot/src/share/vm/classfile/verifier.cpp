@@ -67,12 +67,12 @@ static void* volatile _verify_byte_codes_fn = NULL;
 static volatile jint _is_new_verify_byte_codes_fn = (jint) true;
 
 static void* verify_byte_codes_fn() {
-  if (_verify_byte_codes_fn == NULL) {
+  if (OrderAccess::load_ptr_acquire(&_verify_byte_codes_fn) == NULL) {
     void *lib_handle = os::native_java_library();
     void *func = os::dll_lookup(lib_handle, "VerifyClassCodesForMajorVersion");
     OrderAccess::release_store_ptr(&_verify_byte_codes_fn, func);
     if (func == NULL) {
-      OrderAccess::release_store(&_is_new_verify_byte_codes_fn, false);
+      _is_new_verify_byte_codes_fn = false;
       func = os::dll_lookup(lib_handle, "VerifyClassCodes");
       OrderAccess::release_store_ptr(&_verify_byte_codes_fn, func);
     }
@@ -2786,7 +2786,7 @@ void ClassVerifier::verify_invoke_instructions(
       // direct interface relative to the host class
       have_imr_indirect = (have_imr_indirect &&
                            !is_same_or_direct_interface(
-                             InstanceKlass::cast(current_class()->host_klass()),
+                             current_class()->host_klass(),
                              host_klass_type, ref_class_type));
     }
     if (!subtype) {

@@ -42,15 +42,10 @@ import java.security.AccessControlContext;
 import java.security.Permissions;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.CountedCompleter;
-import java.util.concurrent.ForkJoinTask;
-import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -135,7 +130,7 @@ import java.util.concurrent.locks.LockSupport;
  * </table>
  *
  * <p>The common pool is by default constructed with default
- * parameters, but these may be controlled by setting three
+ * parameters, but these may be controlled by setting the following
  * {@linkplain System#getProperty system properties}:
  * <ul>
  * <li>{@code java.util.concurrent.ForkJoinPool.common.parallelism}
@@ -1413,7 +1408,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         }
         if (phase != QUIET) {                         // else pre-adjusted
             long c;                                   // decrement counts
-            do {} while (!CTL.weakCompareAndSetVolatile
+            do {} while (!CTL.weakCompareAndSet
                          (this, c = ctl, ((RC_MASK & (c - RC_UNIT)) |
                                           (TC_MASK & (c - TC_UNIT)) |
                                           (SP_MASK & c))));
@@ -1608,7 +1603,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                     do {
                         w.stackPred = (int)(c = ctl);
                         nc = ((c - RC_UNIT) & UC_MASK) | (SP_MASK & np);
-                    } while (!CTL.weakCompareAndSetVolatile(this, c, nc));
+                    } while (!CTL.weakCompareAndSet(this, c, nc));
                 }
                 else {                                  // already queued
                     int pred = w.stackPred;
@@ -3246,7 +3241,7 @@ public class ForkJoinPool extends AbstractExecutorService {
          * An ACC to restrict permissions for the factory itself.
          * The constructed workers have no permissions set.
          */
-        private static final AccessControlContext innocuousAcc;
+        private static final AccessControlContext INNOCUOUS_ACC;
         static {
             Permissions innocuousPerms = new Permissions();
             innocuousPerms.add(modifyThreadPermission);
@@ -3254,7 +3249,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                                    "enableContextClassLoaderOverride"));
             innocuousPerms.add(new RuntimePermission(
                                    "modifyThreadGroup"));
-            innocuousAcc = new AccessControlContext(new ProtectionDomain[] {
+            INNOCUOUS_ACC = new AccessControlContext(new ProtectionDomain[] {
                     new ProtectionDomain(null, innocuousPerms)
                 });
         }
@@ -3265,7 +3260,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                     public ForkJoinWorkerThread run() {
                         return new ForkJoinWorkerThread.
                             InnocuousForkJoinWorkerThread(pool);
-                    }}, innocuousAcc);
+                    }}, INNOCUOUS_ACC);
         }
     }
 

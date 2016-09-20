@@ -61,4 +61,3 @@ public class Bug4966142 {
         Assert.assertFalse(type.isDerivedFrom("testNS", "Test", TypeInfo.DERIVATION_UNION));
     }
 }
-

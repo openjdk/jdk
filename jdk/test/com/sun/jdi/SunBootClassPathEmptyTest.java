@@ -32,7 +32,7 @@ import jdk.test.lib.Asserts;
  * @summary Verifies that PathSearchingVirtualMachine.bootClassPath()
  *          returns an empty list in case no bootclass path specified
  *          regardless of sun.boot.class.path option, which is now obsolete
- * @library /test/lib/share/classes
+ * @library /test/lib
  * @compile TestClass.java
  * @compile SunBootClassPathEmptyTest.java
  * @run main/othervm SunBootClassPathEmptyTest

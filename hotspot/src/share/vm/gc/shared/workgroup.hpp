@@ -62,7 +62,12 @@ class AbstractGangTask VALUE_OBJ_CLASS_SPEC {
   AbstractGangTask(const char* name) :
     _name(name),
     _gc_id(GCId::current_raw())
- {}
+  {}
+
+  AbstractGangTask(const char* name, const uint gc_id) :
+    _name(name),
+    _gc_id(gc_id)
+  {}
 
   // The abstract work method.
   // The argument tells you which member of the gang you are.
@@ -162,7 +167,7 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
     _active_workers = MIN2(v, _total_workers);
     add_workers(false /* exit_on_failure */);
     assert(v != 0, "Trying to set active workers to 0");
-    log_info(gc, task)("GC Workers: using %d out of %d", _active_workers, _total_workers);
+    log_trace(gc, task)("%s: using %d out of %d workers", name(), _active_workers, _total_workers);
     return _active_workers;
   }
 

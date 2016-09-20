@@ -324,7 +324,7 @@ class os: AllStatic {
   // to make the OS back the memory range with actual memory.
   // Current implementation may not touch the last page if unaligned addresses
   // are passed.
-  static void   pretouch_memory(void* start, void* end);
+  static void   pretouch_memory(void* start, void* end, size_t page_size = vm_page_size());
 
   enum ProtType { MEM_PROT_NONE, MEM_PROT_READ, MEM_PROT_RW, MEM_PROT_RWX };
   static bool   protect_memory(char* addr, size_t bytes, ProtType prot,
@@ -443,7 +443,7 @@ class os: AllStatic {
 
   static bool create_thread(Thread* thread,
                             ThreadType thr_type,
-                            size_t stack_size = 0);
+                            size_t req_stack_size = 0);
   static bool create_main_thread(JavaThread* thread);
   static bool create_attached_thread(JavaThread* thread);
   static void pd_start_thread(Thread* thread);

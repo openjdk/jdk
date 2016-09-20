@@ -111,6 +111,9 @@ public abstract class AbstractTranslet implements Translet {
 
     private boolean _useServicesMechanism;
 
+    // The OutputStream for redirect function
+    private FileOutputStream output = null;
+
     /**
      * protocols allowed for external references set by the stylesheet processing instruction, Document() function, Import and Include element.
      */
@@ -567,9 +570,10 @@ public abstract class AbstractTranslet implements Translet {
                dir.mkdirs();
             }
 
+            output = new FileOutputStream(filename, append);
             factory.setEncoding(_encoding);
             factory.setOutputMethod(_method);
-            factory.setOutputStream(new BufferedOutputStream(new FileOutputStream(filename, append)));
+            factory.setOutputStream(new BufferedOutputStream(output));
             factory.setOutputType(TransletOutputHandlerFactory.STREAM);
 
             final SerializationHandler handler
@@ -594,6 +598,9 @@ public abstract class AbstractTranslet implements Translet {
         try {
             handler.endDocument();
             handler.close();
+            if (output != null) {
+                output.close();
+            }
         }
         catch (Exception e) {
             // what can you do?

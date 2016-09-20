@@ -1333,9 +1333,9 @@ JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeGetTopmostPlatformWindowUnde
 /*
  * Class:     sun_lwawt_macosx_CPlatformWindow
  * Method:    nativeSynthesizeMouseEnteredExitedEvents
- * Signature: (J)V
+ * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSynthesizeMouseEnteredExitedEvents
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSynthesizeMouseEnteredExitedEvents__
 (JNIEnv *env, jclass clazz)
 {
     JNF_COCOA_ENTER(env);
@@ -1345,6 +1345,29 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSynthesizeMou
     }];
 
     JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CPlatformWindow
+ * Method:    nativeSynthesizeMouseEnteredExitedEvents
+ * Signature: (JI)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSynthesizeMouseEnteredExitedEvents__JI
+(JNIEnv *env, jclass clazz, jlong windowPtr, jint eventType)
+{
+JNF_COCOA_ENTER(env);
+
+    if (eventType == NSMouseEntered || eventType == NSMouseExited) {
+        NSWindow *nsWindow = OBJC(windowPtr);
+
+        [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
+            [AWTWindow synthesizeMouseEnteredExitedEvents:nsWindow withType:eventType];
+        }];
+    } else {
+        [JNFException raise:env as:kIllegalArgumentException reason:"unknown event type"];
+    }
+    
+JNF_COCOA_EXIT(env);
 }
 
 /*

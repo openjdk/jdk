@@ -72,9 +72,15 @@ class KlassFactory : AllStatic {
                                                 Symbol* name,
                                                 ClassLoaderData* loader_data,
                                                 Handle protection_domain,
-                                                const Klass* host_klass,
+                                                const InstanceKlass* host_klass,
                                                 GrowableArray<Handle>* cp_patches,
                                                 TRAPS);
+ public:
+  static instanceKlassHandle check_shared_class_file_load_hook(
+                                          instanceKlassHandle ik,
+                                          Symbol* class_name,
+                                          Handle class_loader,
+                                          Handle protection_domain, TRAPS);
 };
 
 #endif // SHARE_VM_CLASSFILE_KLASSFACTORY_HPP

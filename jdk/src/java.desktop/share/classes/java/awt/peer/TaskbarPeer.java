@@ -49,9 +49,7 @@ public interface TaskbarPeer {
     default void requestUserAttention(boolean enabled, final boolean critical) {}
 
     /**
-     * Requests user attention to the specified window until it is activated.
-     *
-     * On an already active window requesting attention does nothing.
+     * Requests user attention to the specified window.
      *
      * @param w window
      */

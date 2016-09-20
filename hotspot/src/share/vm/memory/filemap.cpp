@@ -649,7 +649,7 @@ ReservedSpace FileMapInfo::reserve_shared_memory() {
 
 // Memory map a region in the address space.
 static const char* shared_region_name[] = { "ReadOnly", "ReadWrite", "MiscData", "MiscCode",
-                                            "String1", "String2" };
+                                            "String1", "String2", "OptionalData" };
 
 char* FileMapInfo::map_region(int i) {
   assert(!MetaspaceShared::is_string_region(i), "sanity");

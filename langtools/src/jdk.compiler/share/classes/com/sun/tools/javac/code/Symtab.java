@@ -27,6 +27,7 @@ package com.sun.tools.javac.code;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -363,6 +364,17 @@ public class Symtab {
 
         // create the basic builtin symbols
         unnamedModule = new ModuleSymbol(names.empty, null) {
+                {
+                    directives = List.nil();
+                    exports = List.nil();
+                    provides = List.nil();
+                    uses = List.nil();
+                    ModuleSymbol java_base = enterModule(names.java_base);
+                    com.sun.tools.javac.code.Directive.RequiresDirective d =
+                            new com.sun.tools.javac.code.Directive.RequiresDirective(java_base,
+                                    EnumSet.of(com.sun.tools.javac.code.Directive.RequiresFlag.MANDATED));
+                    requires = List.of(d);
+                }
                 @Override
                 public String toString() {
                     return messages.getLocalizedString("compiler.misc.unnamed.module");
