@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,20 @@
 /*
  * @test
  * @summary Verifies behaviour of Unsafe.copyMemory
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main CopyMemory
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.internal.misc.Unsafe;
 import static jdk.test.lib.Asserts.*;
 
 public class CopyMemory {
     final static int LENGTH = 8;
     public static void main(String args[]) throws Exception {
-        Unsafe unsafe = Utils.getUnsafe();
+        Unsafe unsafe = UnsafeHelper.getUnsafe();
         long src = unsafe.allocateMemory(LENGTH);
         long dst = unsafe.allocateMemory(LENGTH);
         assertNotEquals(src, 0L);

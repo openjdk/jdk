@@ -2226,6 +2226,33 @@ public class Basic {
                     reader.join();
                 }
             }
+
+            //----------------------------------------------------------------
+            // Check the Process toString() method
+            //----------------------------------------------------------------
+            {
+                List<String> childArgs = new ArrayList<String>(javaChildArgs);
+                childArgs.add("testIO");
+                ProcessBuilder pb = new ProcessBuilder(childArgs);
+                pb.redirectInput(Redirect.PIPE);
+                pb.redirectOutput(DISCARD);
+                pb.redirectError(DISCARD);
+                final Process p = pb.start();
+                // Child process waits until it gets input
+                String s = p.toString();
+                check(s.contains("not exited"));
+                check(s.contains("pid=" + p.getPid() + ","));
+
+                new PrintStream(p.getOutputStream()).print("standard input");
+                p.getOutputStream().close();
+
+                // Check the toString after it exits
+                int exitValue = p.waitFor();
+                s = p.toString();
+                check(s.contains("pid=" + p.getPid() + ","));
+                check(s.contains("exitValue=" + exitValue) &&
+                        !s.contains("not exited"));
+            }
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------

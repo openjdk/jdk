@@ -23,10 +23,10 @@
 
 /**
  * @test
- * @bug 8147648
+ * @bug 8147648 8163160
  * @summary [hidpi] multiresolution image: wrong resolution variant is used as
  * icon in the Unity panel
- * @run main/othervm -Dsun.java2d.uiScale=2 IconTest
+ * @run main/manual/othervm -Dsun.java2d.uiScale=2 IconTest
  */
 import java.awt.Color;
 import java.awt.Graphics;
@@ -67,7 +67,7 @@ public class IconTest {
             if (g != null) {
                 g.setColor(c);
                 g.fillRect(0, 0, x, x);
-                g.setColor(Color.YELLOW);
+                g.setColor(Color.GREEN);
                 g.drawRect(0, 0, x-1, x-1);
             }
         } finally {
@@ -91,7 +91,8 @@ public class IconTest {
                 GridBagConstraints gbc = new GridBagConstraints();
                 String instructions
                         = "<html>INSTRUCTIONS:<br>"
-                        + "Check if test button and unity icons are both blue with yellow border.<br><br>"
+                        + "Check if test button icon and unity icon are both "
+                        + "blue with green border.<br><br>"
                         + "If Icon color is blue press pass"
                         + " else press fail.<br><br></html>";
 

@@ -753,10 +753,15 @@ JNIEXPORT jobject JNICALL Java_sun_awt_windows_ThemeReader_getPosition
 }
 
 void rescale(SIZE *size) {
-    HWND hWnd = ::GetDesktopWindow();
-    HDC hDC = ::GetDC(hWnd);
-    int dpiX = ::GetDeviceCaps(hDC, LOGPIXELSX);
-    int dpiY = ::GetDeviceCaps(hDC, LOGPIXELSY);
+    static int dpiX = -1;
+    static int dpiY = -1;
+    if (dpiX == -1 || dpiY == -1) {
+        HWND hWnd = ::GetDesktopWindow();
+        HDC hDC = ::GetDC(hWnd);
+        dpiX = ::GetDeviceCaps(hDC, LOGPIXELSX);
+        dpiY = ::GetDeviceCaps(hDC, LOGPIXELSY);
+        ::ReleaseDC(hWnd, hDC);
+    }
 
     if (dpiX !=0 && dpiX != 96) {
         float invScaleX = 96.0f / dpiX;
@@ -766,7 +771,6 @@ void rescale(SIZE *size) {
         float invScaleY = 96.0f / dpiY;
         size->cy = ROUND_TO_INT(size->cy * invScaleY);
     }
-    ::ReleaseDC(hWnd, hDC);
 }
 
 /*

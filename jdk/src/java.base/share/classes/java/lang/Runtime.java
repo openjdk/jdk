@@ -733,6 +733,7 @@ public class Runtime {
      * @deprecated
      * This method was intended to control instruction tracing.
      * It has been superseded by JVM-specific tracing mechanisms.
+     * This method is subject to removal in a future version of Java SE.
      *
      * @param on ignored
      */
@@ -745,6 +746,7 @@ public class Runtime {
      * @deprecated
      * This method was intended to control method call tracing.
      * It has been superseded by JVM-specific tracing mechanisms.
+     * This method is subject to removal in a future version of Java SE.
      *
      * @param on ignored
      */

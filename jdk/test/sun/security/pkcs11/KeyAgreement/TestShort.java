@@ -21,12 +21,13 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4942494 7146728
  * @summary KAT test for DH (normal and with secret that has leading a 0x00 byte)
  * @author Andreas Sterbenz
  * @library ..
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestShort
  * @run main/othervm TestShort sm
  */

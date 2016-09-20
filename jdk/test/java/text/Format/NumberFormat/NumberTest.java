@@ -27,6 +27,7 @@
  * @summary test NumberFormat
  * @library /java/text/testlib
  * @modules java.base/sun.util.resources
+ *          jdk.localedata
  * @compile -XDignore.symbol.file NumberTest.java
  * @run main/othervm -Djava.locale.providers=COMPAT,SPI NumberTest
  */
@@ -402,7 +403,7 @@ public class NumberTest extends IntlTest
         float[] parseExpected = { 0, 0, 12345, -12345 };
 
         for (int i = 0; i < parseInput.length; i++) {
-            float result = ((Number) format.parse(parseInput[i])).floatValue();
+            float result = format.parse(parseInput[i]).floatValue();
             if (result != parseExpected[i]) {
                 errln("FAIL: Expected " + parseExpected[i] + ", got " + result);
             }

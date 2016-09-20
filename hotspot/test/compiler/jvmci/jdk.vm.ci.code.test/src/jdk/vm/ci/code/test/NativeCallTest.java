@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
- * @library /test/lib /testlibrary /
+ * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9") & os.arch != "aarch64"
+ * @library /test/lib /
  * @modules jdk.vm.ci/jdk.vm.ci.hotspot
  *          jdk.vm.ci/jdk.vm.ci.code
  *          jdk.vm.ci/jdk.vm.ci.code.site

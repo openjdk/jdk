@@ -25,19 +25,19 @@
  * @test
  * @requires vm.compMode != "Xcomp"
  * @bug 8058897
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:MallocMaxTestWords=100m Reallocate
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.internal.misc.Unsafe;
 import static jdk.test.lib.Asserts.*;
 
 public class Reallocate {
     public static void main(String args[]) throws Exception {
-        Unsafe unsafe = Utils.getUnsafe();
+        Unsafe unsafe = UnsafeHelper.getUnsafe();
 
         long address = unsafe.allocateMemory(1);
         assertNotEquals(address, 0L);

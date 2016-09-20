@@ -27,7 +27,6 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/referencePendingListLocker.hpp"
 #include "memory/heapInspection.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.hpp"
@@ -70,9 +69,6 @@
 //
 
 class VM_GC_Operation: public VM_Operation {
- private:
-  ReferencePendingListLocker _pending_list_locker;
-
  protected:
   uint           _gc_count_before;         // gc count before acquiring PLL
   uint           _full_gc_count_before;    // full gc count before acquiring PLL
@@ -82,10 +78,6 @@ class VM_GC_Operation: public VM_Operation {
   bool           _gc_locked;               // will be set if gc was locked
 
   virtual bool skip_operation() const;
-
-  // java.lang.ref.Reference support
-  void acquire_pending_list_lock();
-  void release_and_notify_pending_list_lock();
 
  public:
   VM_GC_Operation(uint gc_count_before,

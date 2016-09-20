@@ -63,7 +63,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
     private SunDisplayChanger topLevels = new SunDisplayChanger();
     private DisplayMode origDisplayMode;
     private boolean shutdownHookRegistered;
-    private final int scale;
+    private int scale;
 
     public X11GraphicsDevice(int screennum) {
         this.screen = screennum;
@@ -488,6 +488,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
      * X11GraphicsEnvironment when the display mode has been changed.
      */
     public synchronized void displayChanged() {
+        scale = initScaleFactor();
         // On X11 the visuals do not change, and therefore we don't need
         // to reset the defaultConfig, config, doubleBufferVisuals,
         // neither do we need to reset the native data.

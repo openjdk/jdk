@@ -27,7 +27,7 @@
  * @bug 8136421
  * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
  * @summary Testing compiler.jvmci.CompilerToVM.lookupKlassInPool method
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.reflect
@@ -37,9 +37,7 @@
  *          jdk.vm.ci/jdk.vm.ci.runtime
  *          jdk.vm.ci/jdk.vm.ci.meta
  *
- * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
- * @build sun.hotspot.WhiteBox
- *        compiler.jvmci.compilerToVM.LookupKlassInPoolTest
+ * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,22 +110,6 @@ public abstract class Reference<T> {
     private transient Reference<T> discovered;  /* used by VM */
 
 
-    /* Object used to synchronize with the garbage collector.  The collector
-     * must acquire this lock at the beginning of each collection cycle.  It is
-     * therefore critical that any code holding this lock complete as quickly
-     * as possible, allocate no new objects, and avoid calling user code.
-     */
-    private static class Lock { }
-    private static Lock lock = new Lock();
-
-
-    /* List of References waiting to be enqueued.  The collector adds
-     * References to this list, while the Reference-handler thread removes
-     * them.  This list is protected by the above lock object. The
-     * list uses the discovered field to link its elements.
-     */
-    private static Reference<Object> pending = null;
-
     /* High-priority thread to enqueue pending References
      */
     private static class ReferenceHandler extends Thread {
@@ -139,10 +123,9 @@ public abstract class Reference<T> {
         }
 
         static {
-            // pre-load and initialize InterruptedException and Cleaner classes
-            // so that we don't get into trouble later in the run loop if there's
-            // memory shortage while loading/initializing them lazily.
-            ensureClassInitialized(InterruptedException.class);
+            // pre-load and initialize Cleaner class so that we don't
+            // get into trouble later in the run loop if there's
+            // memory shortage while loading/initializing it lazily.
             ensureClassInitialized(Cleaner.class);
         }
 
@@ -152,72 +135,80 @@ public abstract class Reference<T> {
 
         public void run() {
             while (true) {
-                tryHandlePending(true);
+                processPendingReferences();
             }
         }
     }
 
-    /**
-     * Try handle pending {@link Reference} if there is one.<p>
-     * Return {@code true} as a hint that there might be another
-     * {@link Reference} pending or {@code false} when there are no more pending
-     * {@link Reference}s at the moment and the program can do some other
-     * useful work instead of looping.
-     *
-     * @param waitForNotify if {@code true} and there was no pending
-     *                      {@link Reference}, wait until notified from VM
-     *                      or interrupted; if {@code false}, return immediately
-     *                      when there is no pending {@link Reference}.
-     * @return {@code true} if there was a {@link Reference} pending and it
-     *         was processed, or we waited for notification and either got it
-     *         or thread was interrupted before being notified;
-     *         {@code false} otherwise.
+    /* Atomically get and clear (set to null) the VM's pending list.
      */
-    static boolean tryHandlePending(boolean waitForNotify) {
-        Reference<Object> r;
-        Cleaner c;
-        try {
-            synchronized (lock) {
-                if (pending != null) {
-                    r = pending;
-                    // 'instanceof' might throw OutOfMemoryError sometimes
-                    // so do this before un-linking 'r' from the 'pending' chain...
-                    c = r instanceof Cleaner ? (Cleaner) r : null;
-                    // unlink 'r' from 'pending' chain
-                    pending = r.discovered;
-                    r.discovered = null;
-                } else {
-                    // The waiting on the lock may cause an OutOfMemoryError
-                    // because it may try to allocate exception objects.
-                    if (waitForNotify) {
-                        lock.wait();
-                    }
-                    // retry if waited
-                    return waitForNotify;
+    private static native Reference<Object> getAndClearReferencePendingList();
+
+    /* Test whether the VM's pending list contains any entries.
+     */
+    private static native boolean hasReferencePendingList();
+
+    /* Wait until the VM's pending list may be non-null.
+     */
+    private static native void waitForReferencePendingList();
+
+    private static final Object processPendingLock = new Object();
+    private static boolean processPendingActive = false;
+
+    private static void processPendingReferences() {
+        // Only the singleton reference processing thread calls
+        // waitForReferencePendingList() and getAndClearReferencePendingList().
+        // These are separate operations to avoid a race with other threads
+        // that are calling waitForReferenceProcessing().
+        waitForReferencePendingList();
+        Reference<Object> pendingList;
+        synchronized (processPendingLock) {
+            pendingList = getAndClearReferencePendingList();
+            processPendingActive = true;
+        }
+        while (pendingList != null) {
+            Reference<Object> ref = pendingList;
+            pendingList = ref.discovered;
+            ref.discovered = null;
+
+            if (ref instanceof Cleaner) {
+                ((Cleaner)ref).clean();
+                // Notify any waiters that progress has been made.
+                // This improves latency for nio.Bits waiters, which
+                // are the only important ones.
+                synchronized (processPendingLock) {
+                    processPendingLock.notifyAll();
                 }
+            } else {
+                ReferenceQueue<? super Object> q = ref.queue;
+                if (q != ReferenceQueue.NULL) q.enqueue(ref);
             }
-        } catch (OutOfMemoryError x) {
-            // Give other threads CPU time so they hopefully drop some live references
-            // and GC reclaims some space.
-            // Also prevent CPU intensive spinning in case 'r instanceof Cleaner' above
-            // persistently throws OOME for some time...
-            Thread.yield();
-            // retry
-            return true;
-        } catch (InterruptedException x) {
-            // retry
-            return true;
         }
-
-        // Fast path for cleaners
-        if (c != null) {
-            c.clean();
-            return true;
+        // Notify any waiters of completion of current round.
+        synchronized (processPendingLock) {
+            processPendingActive = false;
+            processPendingLock.notifyAll();
         }
+    }
 
-        ReferenceQueue<? super Object> q = r.queue;
-        if (q != ReferenceQueue.NULL) q.enqueue(r);
-        return true;
+    // Wait for progress in reference processing.
+    //
+    // Returns true after waiting (for notification from the reference
+    // processing thread) if either (1) the VM has any pending
+    // references, or (2) the reference processing thread is
+    // processing references. Otherwise, returns false immediately.
+    private static boolean waitForReferenceProcessing()
+        throws InterruptedException
+    {
+        synchronized (processPendingLock) {
+            if (processPendingActive || hasReferencePendingList()) {
+                // Wait for progress, not necessarily completion.
+                processPendingLock.wait();
+                return true;
+            } else {
+                return false;
+            }
+        }
     }
 
     static {
@@ -236,8 +227,10 @@ public abstract class Reference<T> {
         // provide access in SharedSecrets
         SharedSecrets.setJavaLangRefAccess(new JavaLangRefAccess() {
             @Override
-            public boolean tryHandlePendingReference() {
-                return tryHandlePending(false);
+            public boolean waitForReferenceProcessing()
+                throws InterruptedException
+            {
+                return Reference.waitForReferenceProcessing();
             }
         });
     }

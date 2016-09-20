@@ -26,14 +26,16 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.loader
  *          java.desktop
- * @library /testlibrary
+ * @library /test/lib
  * @run main/othervm GetSysPkgTest
  */
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import jdk.test.lib.*;
+import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 // Test that JVM get_system_package() returns the module location for defined packages.
 public class GetSysPkgTest {

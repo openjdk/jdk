@@ -1207,11 +1207,16 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * the following conditions:
          * <ul>
          * <li>if the field is declared {@code final}, then the write, atomic
-         *     update, and numeric atomic update access modes are unsupported.
+         *     update, numeric atomic update, and bitwise atomic update access
+         *     modes are unsupported.
          * <li>if the field type is anything other than {@code byte},
-         *     {@code short}, {@code char}, {@code int} or {@code long},
+         *     {@code short}, {@code char}, {@code int}, {@code long},
          *     {@code float}, or {@code double} then numeric atomic update
          *     access modes are unsupported.
+         * <li>if the field type is anything other than {@code boolean},
+         *     {@code byte}, {@code short}, {@code char}, {@code int} or
+         *     {@code long} then bitwise atomic update access modes are
+         *     unsupported.
          * </ul>
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
@@ -1326,11 +1331,16 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * the following conditions:
          * <ul>
          * <li>if the field is declared {@code final}, then the write, atomic
-         *     update, and numeric atomic update access modes are unsupported.
+         *     update, numeric atomic update, and bitwise atomic update access
+         *     modes are unsupported.
          * <li>if the field type is anything other than {@code byte},
-         *     {@code short}, {@code char}, {@code int} or {@code long},
+         *     {@code short}, {@code char}, {@code int}, {@code long},
          *     {@code float}, or {@code double}, then numeric atomic update
          *     access modes are unsupported.
+         * <li>if the field type is anything other than {@code boolean},
+         *     {@code byte}, {@code short}, {@code char}, {@code int} or
+         *     {@code long} then bitwise atomic update access modes are
+         *     unsupported.
          * </ul>
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
@@ -1631,11 +1641,16 @@ return mh1;
          * the following conditions:
          * <ul>
          * <li>if the field is declared {@code final}, then the write, atomic
-         *     update, and numeric atomic update access modes are unsupported.
+         *     update, numeric atomic update, and bitwise atomic update access
+         *     modes are unsupported.
          * <li>if the field type is anything other than {@code byte},
-         *     {@code short}, {@code char}, {@code int} or {@code long},
+         *     {@code short}, {@code char}, {@code int}, {@code long},
          *     {@code float}, or {@code double} then numeric atomic update
          *     access modes are unsupported.
+         * <li>if the field type is anything other than {@code boolean},
+         *     {@code byte}, {@code short}, {@code char}, {@code int} or
+         *     {@code long} then bitwise atomic update access modes are
+         *     unsupported.
          * </ul>
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
@@ -2353,9 +2368,13 @@ return mh1;
      * the following conditions:
      * <ul>
      * <li>if the component type is anything other than {@code byte},
-     *     {@code short}, {@code char}, {@code int} or {@code long},
+     *     {@code short}, {@code char}, {@code int}, {@code long},
      *     {@code float}, or {@code double} then numeric atomic update access
      *     modes are unsupported.
+     * <li>if the field type is anything other than {@code boolean},
+     *     {@code byte}, {@code short}, {@code char}, {@code int} or
+     *     {@code long} then bitwise atomic update access modes are
+     *     unsupported.
      * </ul>
      * <p>
      * If the component type is {@code float} or {@code double} then numeric
@@ -2426,12 +2445,17 @@ return mh1;
      * If access is aligned then following access modes are supported and are
      * guaranteed to support atomic access:
      * <ul>
-     * <li>read write access modes for all {@code T};
+     * <li>read write access modes for all {@code T}, with the exception of
+     *     access modes {@code get} and {@code set} for {@code long} and
+     *     {@code double} on 32-bit platforms.
      * <li>atomic update access modes for {@code int}, {@code long},
      *     {@code float} or {@code double}.
      *     (Future major platform releases of the JDK may support additional
      *     types for certain currently unsupported access modes.)
      * <li>numeric atomic update access modes for {@code int} and {@code long}.
+     *     (Future major platform releases of the JDK may support additional
+     *     numeric types for certain currently unsupported access modes.)
+     * <li>bitwise atomic update access modes for {@code int} and {@code long}.
      *     (Future major platform releases of the JDK may support additional
      *     numeric types for certain currently unsupported access modes.)
      * </ul>
@@ -2508,12 +2532,17 @@ return mh1;
      * If access is aligned then following access modes are supported and are
      * guaranteed to support atomic access:
      * <ul>
-     * <li>read write access modes for all {@code T};
+     * <li>read write access modes for all {@code T}, with the exception of
+     *     access modes {@code get} and {@code set} for {@code long} and
+     *     {@code double} on 32-bit platforms.
      * <li>atomic update access modes for {@code int}, {@code long},
      *     {@code float} or {@code double}.
      *     (Future major platform releases of the JDK may support additional
      *     types for certain currently unsupported access modes.)
      * <li>numeric atomic update access modes for {@code int} and {@code long}.
+     *     (Future major platform releases of the JDK may support additional
+     *     numeric types for certain currently unsupported access modes.)
+     * <li>bitwise atomic update access modes for {@code int} and {@code long}.
      *     (Future major platform releases of the JDK may support additional
      *     numeric types for certain currently unsupported access modes.)
      * </ul>
@@ -3914,6 +3943,33 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         return rtype;
     }
 
+    private static Class<?> foldArgumentChecks(int foldPos, MethodType targetType, MethodType combinerType, int ... argPos) {
+        int foldArgs = combinerType.parameterCount();
+        if (argPos.length != foldArgs) {
+            throw newIllegalArgumentException("combiner and argument map must be equal size", combinerType, argPos.length);
+        }
+        Class<?> rtype = combinerType.returnType();
+        int foldVals = rtype == void.class ? 0 : 1;
+        boolean ok = true;
+        for (int i = 0; i < foldArgs; i++) {
+            int arg = argPos[i];
+            if (arg < 0 || arg > targetType.parameterCount()) {
+                throw newIllegalArgumentException("arg outside of target parameterRange", targetType, arg);
+            }
+            if (combinerType.parameterType(i) != targetType.parameterType(arg)) {
+                throw newIllegalArgumentException("target argument type at position " + arg
+                        + " must match combiner argument type at index " + i + ": " + targetType
+                        + " -> " + combinerType + ", map: " + Arrays.toString(argPos));
+            }
+        }
+        if (ok && foldVals != 0 && combinerType.returnType() != targetType.parameterType(foldPos)) {
+            ok = false;
+        }
+        if (!ok)
+            throw misMatchedTypes("target and combiner types", targetType, combinerType);
+        return rtype;
+    }
+
     /**
      * Makes a method handle which adapts a target method handle,
      * by guarding it with a test, a boolean-valued method handle.
@@ -4920,6 +4976,27 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         return result;
     }
 
+    /**
+     * As {@see foldArguments(MethodHandle, int, MethodHandle)}, but with the
+     * added capability of selecting the arguments from the targets parameters
+     * to call the combiner with. This allows us to avoid some simple cases of
+     * permutations and padding the combiner with dropArguments to select the
+     * right argument, which may ultimately produce fewer intermediaries.
+     */
+    static MethodHandle foldArguments(MethodHandle target, int pos, MethodHandle combiner, int ... argPositions) {
+        MethodType targetType = target.type();
+        MethodType combinerType = combiner.type();
+        Class<?> rtype = foldArgumentChecks(pos, targetType, combinerType, argPositions);
+        BoundMethodHandle result = target.rebind();
+        boolean dropResult = rtype == void.class;
+        LambdaForm lform = result.editor().foldArgumentsForm(1 + pos, dropResult, combinerType.basicType(), argPositions);
+        MethodType newType = targetType;
+        if (!dropResult) {
+            newType = newType.dropParameterTypes(pos, pos + 1);
+        }
+        result = result.copyWithExtendL(newType, lform, combiner);
+        return result;
+    }
 
     private static void checkLoop0(MethodHandle[][] clauses) {
         if (clauses == null || clauses.length == 0) {

@@ -25,19 +25,19 @@
  * @test
  * @requires vm.compMode != "Xcomp"
  * @summary Verifies behaviour of Unsafe.allocateMemory
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:MallocMaxTestWords=100m AllocateMemory
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.internal.misc.Unsafe;
 import static jdk.test.lib.Asserts.*;
 
 public class AllocateMemory {
     public static void main(String args[]) throws Exception {
-        Unsafe unsafe = Utils.getUnsafe();
+        Unsafe unsafe = UnsafeHelper.getUnsafe();
 
         // Allocate a byte, write to the location and read back the value
         long address = unsafe.allocateMemory(1);

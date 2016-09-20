@@ -1410,11 +1410,11 @@ void ciMethod::print_impl(outputStream* st) {
 }
 
 #if INCLUDE_TRACE
-TraceStructCiMethod ciMethod::to_trace_struct() const {
-  TraceStructCiMethod result;
-  result.set_class(holder()->name()->as_utf8());
+TraceStructCalleeMethod ciMethod::to_trace_struct() const {
+  TraceStructCalleeMethod result;
+  result.set_type(holder()->name()->as_utf8());
   result.set_name(name()->as_utf8());
-  result.set_signature(signature()->as_symbol()->as_utf8());
+  result.set_descriptor(signature()->as_symbol()->as_utf8());
   return result;
 }
 #endif

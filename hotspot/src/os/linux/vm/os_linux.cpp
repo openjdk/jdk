@@ -42,7 +42,7 @@
 #include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -2875,7 +2875,7 @@ void os::Linux::rebuild_cpu_to_node_map() {
                               // in the library.
   const size_t BitsPerCLong = sizeof(long) * CHAR_BIT;
 
-  size_t cpu_num = os::active_processor_count();
+  size_t cpu_num = processor_count();
   size_t cpu_map_size = NCPUS / BitsPerCLong;
   size_t cpu_map_valid_size =
     MIN2((cpu_num + BitsPerCLong - 1) / BitsPerCLong, cpu_map_size);
@@ -5172,10 +5172,6 @@ int os::stat(const char *path, struct stat *sbuf) {
   }
   os::native_path(strcpy(pathbuf, path));
   return ::stat(pathbuf, sbuf);
-}
-
-bool os::check_heap(bool force) {
-  return true;
 }
 
 // Is a (classpath) directory empty?

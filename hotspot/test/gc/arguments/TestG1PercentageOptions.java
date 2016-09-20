@@ -27,13 +27,14 @@
  * @bug 8068942
  * @requires vm.gc.G1
  * @summary Test argument processing of various percentage options
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver TestG1PercentageOptions
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class TestG1PercentageOptions {
 

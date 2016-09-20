@@ -31,7 +31,6 @@ import jdk.internal.misc.Unsafe;
  * @test PrimitiveHostClass
  * @bug 8140665
  * @summary Throws IllegalArgumentException if host class is a primitive class.
- * @library /testlibrary
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  * @compile -XDignore.symbol.file PrimitiveHostClass.java

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,11 @@ package javax.swing;
 
 import java.awt.Component;
 import java.awt.Container;
-import java.awt.Window;
 import java.util.*;
 import java.awt.FocusTraversalPolicy;
 import sun.util.logging.PlatformLogger;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import sun.security.action.GetPropertyAction;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * A FocusTraversalPolicy that determines traversal order by sorting the
@@ -100,27 +96,10 @@ public class SortingFocusTraversalPolicy
      * See: JDK-8048887
      */
     private static final boolean legacySortingFTPEnabled;
-    private static final Method legacyMergeSortMethod;
 
     static {
         legacySortingFTPEnabled = "true".equals(AccessController.doPrivileged(
             new GetPropertyAction("swing.legacySortingFTPEnabled", "true")));
-        legacyMergeSortMethod = legacySortingFTPEnabled ?
-            AccessController.doPrivileged(new PrivilegedAction<Method>() {
-                public Method run() {
-                    try {
-                        Method m = java.util.Arrays.class.getDeclaredMethod("legacyMergeSort",
-                                                                            new Class<?>[]{Object[].class,
-                                                                                    Comparator.class});
-                        m.setAccessible(true);
-                        return m;
-                    } catch (NoSuchMethodException e) {
-                        // using default sorting algo
-                        return null;
-                    }
-                }
-            }) :
-            null;
     }
 
     /**
@@ -169,30 +148,25 @@ public class SortingFocusTraversalPolicy
     private void enumerateAndSortCycle(Container focusCycleRoot, List<Component> cycle) {
         if (focusCycleRoot.isShowing()) {
             enumerateCycle(focusCycleRoot, cycle);
-            if (!legacySortingFTPEnabled ||
-                !legacySort(cycle, comparator))
-            {
-                Collections.sort(cycle, comparator);
+            if (legacySortingFTPEnabled) {
+                legacySort(cycle, comparator);
+            } else {
+                cycle.sort(comparator);
             }
         }
     }
 
-    private boolean legacySort(List<Component> l, Comparator<? super Component> c) {
-        if (legacyMergeSortMethod == null)
-            return false;
-
-        Object[] a = l.toArray();
-        try {
-            legacyMergeSortMethod.invoke(null, a, c);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            return false;
+    private void legacySort(List<Component> l,
+                                              Comparator<? super Component> c) {
+        if (c != null && l.size() > 1) {
+            Component[] a = l.toArray(new Component[l.size()]);
+            mergeSort(a.clone(), a, 0, a.length, 0, c);
+            ListIterator<Component> i = l.listIterator();
+            for (Component e : a) {
+                i.next();
+                i.set(e);
+            }
         }
-        ListIterator<Component> i = l.listIterator();
-        for (Object e : a) {
-            i.next();
-            i.set((Component)e);
-        }
-        return true;
     }
 
     @SuppressWarnings("deprecation")
@@ -664,6 +638,48 @@ public class SortingFocusTraversalPolicy
      */
     protected boolean accept(Component aComponent) {
         return fitnessTestPolicy.accept(aComponent);
+    }
+
+    // merge sort implementation copied from java.utils.Arrays
+    private <T> void mergeSort(T[] src, T[] dest,
+                               int low, int high, int off,
+                               Comparator<? super T> c) {
+        int length = high - low;
+
+        // Insertion sort on smallest arrays
+        if (length < 7) {
+            for (int i=low; i<high; i++)
+                for (int j=i; j>low && c.compare(dest[j-1], dest[j])>0; j--) {
+                    T t = dest[j];
+                    dest[j] = dest[j-1];
+                    dest[j-1] = t;
+                }
+            return;
+        }
+
+        // Recursively sort halves of dest into src
+        int destLow  = low;
+        int destHigh = high;
+        low  += off;
+        high += off;
+        int mid = (low + high) >>> 1;
+        mergeSort(dest, src, low, mid, -off, c);
+        mergeSort(dest, src, mid, high, -off, c);
+
+        // If list is already sorted, just copy from src to dest.  This is an
+        // optimization that results in faster sorts for nearly ordered lists.
+        if (c.compare(src[mid-1], src[mid]) <= 0) {
+            System.arraycopy(src, low, dest, destLow, length);
+            return;
+        }
+
+        // Merge sorted halves (now in src) into dest
+        for(int i = destLow, p = low, q = mid; i < destHigh; i++) {
+            if (q >= high || p < mid && c.compare(src[p], src[q]) <= 0)
+                dest[i] = src[p++];
+            else
+                dest[i] = src[q++];
+        }
     }
 }
 

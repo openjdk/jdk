@@ -1,10 +1,11 @@
 /**
  * @test  /nodynamiccopyright/
- * @bug 4216683 4346296 4656556 4785453
+ * @bug 4216683 4346296 4656556 4785453 8164073
  * @summary New rules for when deprecation messages are suppressed
  * @author gafter
  *
  * @compile/ref=SuppressDeprecation.out -Xlint:deprecation -XDrawDiagnostics SuppressDeprecation.java
+ * @compile/ref=SuppressDeprecation8.out -source 8 -Xlint:deprecation -XDrawDiagnostics SuppressDeprecation.java
  */
 
 /* Test for the contexts in which deprecations warnings should

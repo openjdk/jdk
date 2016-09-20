@@ -24,7 +24,9 @@
  */
 package jdk.jshell.execution;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  *
@@ -39,7 +41,10 @@ class PipeInputStream extends InputStream {
     private boolean closed;
 
     @Override
-    public synchronized int read() {
+    public synchronized int read() throws IOException {
+        if (start == end) {
+            inputNeeded();
+        }
         while (start == end) {
             if (closed) {
                 return -1;
@@ -57,7 +62,9 @@ class PipeInputStream extends InputStream {
         }
     }
 
-    public synchronized void write(int b) {
+    protected void inputNeeded() throws IOException {}
+
+    private synchronized void write(int b) {
         if (closed) {
             throw new IllegalStateException("Already closed.");
         }
@@ -83,6 +90,24 @@ class PipeInputStream extends InputStream {
     public synchronized void close() {
         closed = true;
         notifyAll();
+    }
+
+    public OutputStream createOutput() {
+        return new OutputStream() {
+            @Override public void write(int b) throws IOException {
+                PipeInputStream.this.write(b);
+            }
+            @Override
+            public void write(byte[] b, int off, int len) throws IOException {
+                for (int i = 0 ; i < len ; i++) {
+                    write(Byte.toUnsignedInt(b[off + i]));
+                }
+            }
+            @Override
+            public void close() throws IOException {
+                PipeInputStream.this.close();
+            }
+        };
     }
 
 }

@@ -199,15 +199,15 @@ public class BigDecimalParse extends IntlTest {
 
         // From: 1000.000
         // To:   Double.POSITIVE_INFINITY
-        check("1000.000", new Double(Double.POSITIVE_INFINITY));
+        check("1000.000", Double.POSITIVE_INFINITY);
 
         // From: -1000
         // To:   Double.NEGATIVE_INFINITY
-        check("-1000", new Double(Double.NEGATIVE_INFINITY));
+        check("-1000", Double.NEGATIVE_INFINITY);
 
         // From: -0.00
         // To:   Double.NaN
-        check("-0.00", new Double(Double.NaN));
+        check("-0.00", Double.NaN);
     }
 
     /**
@@ -220,31 +220,31 @@ public class BigDecimalParse extends IntlTest {
 
         // From: 1000.000
         // To:   Double.POSITIVE_INFINITY
-        check("1000.000", new Double(Double.POSITIVE_INFINITY));
+        check("1000.000", Double.POSITIVE_INFINITY);
 
         // From: -1000.000
         // To:   Double.NEGATIVE_INFINITY
-        check("-1000.000", new Double(Double.NEGATIVE_INFINITY));
+        check("-1000.000", Double.NEGATIVE_INFINITY);
 
         // From: 0.0
         // To:   Double.NaN
-        check("0.0", new Double(Double.NaN));
+        check("0.0", Double.NaN);
 
         // From: -0.0 (Double)
         // To:   Double.NaN
-        check("-0.0", new Double(Double.NaN));
+        check("-0.0", Double.NaN);
 
         // From: Double.NaN
         // To:   Double.NaN
-        check("\ufffd", new Double(Double.NaN));
+        check("\ufffd", Double.NaN);
 
         // From: Double.POSITIVE_INFINITY
         // To:   Double.NaN
-        check("\u221e", new Double(Double.POSITIVE_INFINITY));
+        check("\u221e", Double.POSITIVE_INFINITY);
 
         // From: Double.NEGATIVE_INFINITY
         // To:   Double.NaN
-        check("-\u221e", new Double(Double.NEGATIVE_INFINITY));
+        check("-\u221e", Double.NEGATIVE_INFINITY);
     }
 
     /**
@@ -257,15 +257,15 @@ public class BigDecimalParse extends IntlTest {
 
         // From: 1000
         // To:   Double.POSITIVE_INFINITY
-        check("1000", new Double(Double.POSITIVE_INFINITY));
+        check("1000", Double.POSITIVE_INFINITY);
 
         // From: -1000
         // To:   Double.NEGATIVE_INFINITY
-        check("-1000", new Double(Double.NEGATIVE_INFINITY));
+        check("-1000", Double.NEGATIVE_INFINITY);
 
         // From: -000 (Long)
         // To:   Double.NaN
-        check("-000", new Double(Double.NaN));
+        check("-000", Double.NaN);
     }
 
     /**
@@ -350,20 +350,20 @@ public class BigDecimalParse extends IntlTest {
             {
                 new BigDecimal("0"), new BigDecimal("0.0"), new BigDecimal("5"),
                 new BigDecimal("5.0"), new BigDecimal("5.1"),
-                new Double(Double.POSITIVE_INFINITY), new Double(Double.NaN),
+                Double.POSITIVE_INFINITY, Double.NaN,
                 new BigDecimal("0"), new BigDecimal("0.0"),
                 new BigDecimal("-5"), new BigDecimal("-5.0"),
                 new BigDecimal("-5.1"),
-                new Double(Double.NEGATIVE_INFINITY), new Double(Double.NaN),
+                Double.NEGATIVE_INFINITY, Double.NaN,
             },
             {
                 new BigDecimal("0"), new BigDecimal("0.0"),
                 new BigDecimal("-5"), new BigDecimal("-5.0"),
                 new BigDecimal("-5.1"),
-                new Double(Double.NEGATIVE_INFINITY), new Double(Double.NaN),
+                Double.NEGATIVE_INFINITY, Double.NaN,
                 new BigDecimal("0"), new BigDecimal("0.0"), new BigDecimal("5"),
                 new BigDecimal("5.0"), new BigDecimal("5.1"),
-                new Double(Double.POSITIVE_INFINITY),
+                Double.POSITIVE_INFINITY,
             },
         };
 

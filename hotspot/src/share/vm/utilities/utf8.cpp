@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,30 +547,3 @@ template int UNICODE::quoted_ascii_length<jbyte>(jbyte* base, int length);
 template int UNICODE::quoted_ascii_length<jchar>(jchar* base, int length);
 template void UNICODE::as_quoted_ascii<jbyte>(const jbyte* base, int length, char* buf, int buflen);
 template void UNICODE::as_quoted_ascii<jchar>(const jchar* base, int length, char* buf, int buflen);
-
-
-#ifndef PRODUCT
-void TestAsUtf8() {
-  char res[60];
-  jchar str[20];
-
-  for (int i = 0; i < 20; i++) {
-    str[i] = 0x0800; // char that is 2B in UTF-16 but 3B in UTF-8
-  }
-  str[19] = (jchar)'\0';
-
-  // The resulting string in UTF-8 is 3*19 bytes long, but should be truncated
-  UNICODE::as_utf8(str, 19, res, 10);
-  assert(strlen(res) == 9, "string should be truncated here");
-
-  UNICODE::as_utf8(str, 19, res, 18);
-  assert(strlen(res) == 15, "string should be truncated here");
-
-  UNICODE::as_utf8(str, 19, res, 20);
-  assert(strlen(res) == 18, "string should be truncated here");
-
-  // Test with an "unbounded" buffer
-  UNICODE::as_utf8(str, 19, res, INT_MAX);
-  assert(strlen(res) == 3*19, "string should end here");
-}
-#endif

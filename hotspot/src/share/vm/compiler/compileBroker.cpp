@@ -32,7 +32,6 @@
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
-#include "gc/shared/referencePendingListLocker.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -42,7 +41,7 @@
 #include "prims/nativeLookup.hpp"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -890,15 +889,6 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     // ongoing compiles. Note that in this case we'll need a protocol
     // for freeing the associated compile tasks. [Or we could have
     // a single static monitor on which all these waiters sleep.]
-    return;
-  }
-
-  // If the requesting thread is holding the pending list lock
-  // then we just return. We can't risk blocking while holding
-  // the pending list lock or a 3-way deadlock may occur
-  // between the reference handler thread, a GC (instigated
-  // by a compiler thread), and compiled method registration.
-  if (ReferencePendingListLocker::is_locked_by_self()) {
     return;
   }
 
@@ -1755,7 +1745,7 @@ void CompileBroker::post_compile(CompilerThread* thread, CompileTask* task, Even
   assert(task->compile_id() != CICrashAt, "just as planned");
   if (event.should_commit()) {
     event.set_method(task->method());
-    event.set_compileID(task->compile_id());
+    event.set_compileId(task->compile_id());
     event.set_compileLevel(task->comp_level());
     event.set_succeded(task->is_success());
     event.set_isOsr(task->osr_bci() != CompileBroker::standard_entry_bci);
@@ -2399,4 +2389,3 @@ void CompileBroker::print_last_compile() {
     }
   }
 }
-

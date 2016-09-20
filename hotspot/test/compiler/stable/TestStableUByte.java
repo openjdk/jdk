@@ -26,11 +26,10 @@
 /*
  * @test TestStableUByte
  * @summary tests on stable fields and arrays
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.vm.annotation
  * @build sun.hotspot.WhiteBox
- * @build compiler.stable.TestStableUByte
  *
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
  *                                 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp

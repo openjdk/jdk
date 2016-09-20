@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,9 +28,9 @@
  * @summary Verify that the Montgomery multiply and square intrinsic works and correctly checks their arguments.
  * @requires vm.flavor == "server"
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  *
- * @build compiler.intrinsics.bigInteger.MontgomeryMultiplyTest
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI

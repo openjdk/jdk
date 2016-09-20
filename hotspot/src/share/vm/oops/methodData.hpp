@@ -30,6 +30,9 @@
 #include "oops/method.hpp"
 #include "oops/oop.hpp"
 #include "runtime/orderAccess.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci_globals.hpp"
+#endif
 
 class BytecodeStream;
 class KlassSizeStats;

@@ -21,12 +21,13 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6572331 6994008
  * @summary basic test for RSA cipher key wrapping functionality
  * @author Valerie Peng
  * @library ..
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestRSACipherWrap
  * @run main/othervm TestRSACipherWrap sm
  */

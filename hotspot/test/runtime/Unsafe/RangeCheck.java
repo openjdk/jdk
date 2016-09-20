@@ -25,12 +25,16 @@
  * @test
  * @bug 8001071
  * @summary Add simple range check into VM implemenation of Unsafe access methods
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Platform;
+import jdk.test.lib.unsafe.UnsafeHelper;
+
 import jdk.internal.misc.Unsafe;
 
 public class RangeCheck {
@@ -56,7 +60,7 @@ public class RangeCheck {
 
     public static class DummyClassWithMainRangeCheck {
         public static void main(String args[]) throws Exception {
-            Unsafe unsafe = Utils.getUnsafe();
+            Unsafe unsafe = UnsafeHelper.getUnsafe();
             unsafe.getObject(new DummyClassWithMainRangeCheck(), Short.MAX_VALUE);
         }
     }

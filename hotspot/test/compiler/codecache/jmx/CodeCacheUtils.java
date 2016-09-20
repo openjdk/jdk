@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,28 @@ public final class CodeCacheUtils {
             Asserts.assertGTE(newValue, oldValue, msg);
         }
     }
+
+    /**
+     * Verifies that 'newValue' is equal to 'oldValue' if usage of the
+     * corresponding code heap is predictable. Checks the weaker condition
+     * 'newValue <= oldValue' if usage is not predictable because intermediate
+     * allocations may happen.
+     *
+     * @param btype BlobType of the code heap to be checked
+     * @param newValue New value to be verified
+     * @param oldValue Old value to be verified
+     * @param msg Error message if verification fails
+     */
+    public static void assertEQorLTE(BlobType btype, long newValue, long oldValue, String msg) {
+        if (CodeCacheUtils.isCodeHeapPredictable(btype)) {
+            // Usage is predictable, check strong == condition
+            Asserts.assertEQ(newValue, oldValue, msg);
+        } else {
+            // Usage is not predictable, check weaker <= condition
+            Asserts.assertLTE(newValue, oldValue, msg);
+        }
+    }
+
 
     public static void disableCollectionUsageThresholds() {
         BlobType.getAvailable().stream()

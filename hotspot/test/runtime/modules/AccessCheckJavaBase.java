@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib /compiler/whitebox ..
+ * @library /test/lib ..
  * @compile p2/c2.java
  * @build sun.hotspot.WhiteBox
  * @compile/module=java.base java/lang/reflect/ModuleHelper.java

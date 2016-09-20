@@ -493,6 +493,7 @@
   declare_constant(Method::_force_inline)                                 \
   declare_constant(Method::_dont_inline)                                  \
   declare_constant(Method::_hidden)                                       \
+  declare_constant(Method::_intrinsic_candidate)                          \
   declare_constant(Method::_reserved_stack_access)                        \
                                                                           \
   declare_constant(Method::nonvirtual_vtable_index)                       \

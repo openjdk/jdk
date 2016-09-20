@@ -105,12 +105,12 @@ public class MutableFieldsAnalyzer extends AbstractCodingRulesAnalyzer {
                 "configurationClass", "resolveRequiresAndUsesMethod");
         ignoreFields("com.sun.tools.javac.util.JDK9Wrappers$Layer",
                 "layerClass", "bootMethod", "defineModulesWithOneLoaderMethod", "configurationMethod");
+        ignoreFields("com.sun.tools.javac.util.JDK9Wrappers$Module",
+                "addExportsMethod", "addUsesMethod", "getModuleMethod", "getUnnamedModuleMethod");
         ignoreFields("com.sun.tools.javac.util.JDK9Wrappers$ServiceLoaderHelper",
                 "loadMethod");
         ignoreFields("com.sun.tools.javac.util.JDK9Wrappers$VMHelper",
                 "vmClass", "getRuntimeArgumentsMethod");
-        ignoreFields("com.sun.tools.javac.util.ModuleHelper",
-                "addExportsMethod", "getUnnamedModuleMethod", "getModuleMethod");
     }
 
 }

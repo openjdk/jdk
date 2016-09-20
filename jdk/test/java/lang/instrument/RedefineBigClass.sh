@@ -70,7 +70,7 @@ else
 fi
 
 "${JAVA}" ${TESTVMOPTS} \
-    -XX:TraceRedefineClasses=3 ${NMT} \
+    -Xlog:redefine+class+load=debug,redefine+class+load+exceptions=info ${NMT} \
     -javaagent:RedefineBigClassAgent.jar=BigClass.class \
     -classpath "${TESTCLASSES}" RedefineBigClassApp \
     > output.log 2>&1 

@@ -46,7 +46,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/thread.inline.hpp"
@@ -564,9 +564,18 @@ HeapWord* DefNewGeneration::expand_and_allocate(size_t size,
 
 void DefNewGeneration::adjust_desired_tenuring_threshold() {
   // Set the desired survivor size to half the real survivor space
-  GCPolicyCounters* gc_counters = GenCollectedHeap::heap()->gen_policy()->counters();
-  _tenuring_threshold =
-    age_table()->compute_tenuring_threshold(to()->capacity()/HeapWordSize, gc_counters);
+  size_t const survivor_capacity = to()->capacity() / HeapWordSize;
+  size_t const desired_survivor_size = (size_t)((((double)survivor_capacity) * TargetSurvivorRatio) / 100);
+
+  _tenuring_threshold = age_table()->compute_tenuring_threshold(desired_survivor_size);
+
+  if (UsePerfData) {
+    GCPolicyCounters* gc_counters = GenCollectedHeap::heap()->gen_policy()->counters();
+    gc_counters->tenuring_threshold()->set_value(_tenuring_threshold);
+    gc_counters->desired_survivor_size()->set_value(desired_survivor_size * oopSize);
+  }
+
+  age_table()->print_age_table(_tenuring_threshold);
 }
 
 void DefNewGeneration::collect(bool   full,

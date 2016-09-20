@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8058744
  * @summary Invalid pattern-matching of address computations in raw unsafe
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm -Xbatch compiler.unsafe.UnsafeRaw
@@ -35,6 +35,7 @@ package compiler.unsafe;
 
 import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Utils;
+import jdk.test.lib.unsafe.UnsafeHelper;
 
 import java.util.Random;
 
@@ -81,7 +82,7 @@ public class UnsafeRaw {
   }
 
   public static void main(String[] args) throws Exception {
-    Unsafe unsafe = Utils.getUnsafe();
+    Unsafe unsafe = UnsafeHelper.getUnsafe();
     final int array_size = 128;
     final int element_size = 4;
     final int magic = 0x12345678;

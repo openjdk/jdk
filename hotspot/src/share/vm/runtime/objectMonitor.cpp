@@ -27,7 +27,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/markOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -390,7 +390,7 @@ void ObjectMonitor::enter(TRAPS) {
   }
 
   if (event.should_commit()) {
-    event.set_klass(((oop)this->object())->klass());
+    event.set_monitorClass(((oop)this->object())->klass());
     event.set_previousOwner((TYPE_THREAD)_previous_owner_tid);
     event.set_address((TYPE_ADDRESS)(uintptr_t)(this->object_addr()));
     event.commit();
@@ -1381,7 +1381,7 @@ void ObjectMonitor::post_monitor_wait_event(EventJavaMonitorWait* event,
                                             jlong timeout,
                                             bool timedout) {
   assert(event != NULL, "invariant");
-  event->set_klass(((oop)this->object())->klass());
+  event->set_monitorClass(((oop)this->object())->klass());
   event->set_timeout(timeout);
   event->set_address((TYPE_ADDRESS)this->object_addr());
   event->set_notifier(notifier_tid);

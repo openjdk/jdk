@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,18 @@
 /*
  * @test
  * @summary Verifies the behaviour of Unsafe.allocateInstance
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main AllocateInstance
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.internal.misc.Unsafe;
 import static jdk.test.lib.Asserts.*;
 
 public class AllocateInstance {
-    static final Unsafe UNSAFE = Utils.getUnsafe();
+    static final Unsafe UNSAFE = UnsafeHelper.getUnsafe();
 
     class TestClass {
         public boolean calledConstructor = false;

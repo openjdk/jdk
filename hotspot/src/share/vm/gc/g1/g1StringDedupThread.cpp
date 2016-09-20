@@ -31,7 +31,7 @@
 #include "gc/g1/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 
 G1StringDedupThread* G1StringDedupThread::_thread = NULL;
 

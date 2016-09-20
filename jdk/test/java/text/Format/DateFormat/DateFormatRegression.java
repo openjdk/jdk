@@ -41,7 +41,7 @@ public class DateFormatRegression extends IntlTest {
     }
 
     public void Test4029195() {
-
+        @SuppressWarnings("deprecation")
         Date today = new Date();
 
         logln("today: " + today);
@@ -74,19 +74,20 @@ public class DateFormatRegression extends IntlTest {
     public void Test4052408() {
         DateFormat fmt = DateFormat.getDateTimeInstance(DateFormat.SHORT,
                                                         DateFormat.SHORT, Locale.US);
+        @SuppressWarnings("deprecation")
         Date date = new Date(97, Calendar.MAY, 3, 8, 55);
         String str;
         logln(str = fmt.format(date));
 
         if (!str.equals("5/3/97 8:55 AM"))
             errln("Fail: Test broken; Want 5/3/97 8:55 AM Got " + str);
-        Hashtable expected = new Hashtable();
-        expected.put(new Integer(DateFormat.MONTH_FIELD), "5");
-        expected.put(new Integer(DateFormat.DATE_FIELD), "3");
-        expected.put(new Integer(DateFormat.YEAR_FIELD), "97");
-        expected.put(new Integer(DateFormat.HOUR1_FIELD), "8");
-        expected.put(new Integer(DateFormat.MINUTE_FIELD), "55");
-        expected.put(new Integer(DateFormat.AM_PM_FIELD), "AM");
+        Map<Integer,String> expected = new HashMap<>();
+        expected.put(DateFormat.MONTH_FIELD, "5");
+        expected.put(DateFormat.DATE_FIELD, "3");
+        expected.put(DateFormat.YEAR_FIELD, "97");
+        expected.put(DateFormat.HOUR1_FIELD, "8");
+        expected.put(DateFormat.MINUTE_FIELD, "55");
+        expected.put(DateFormat.AM_PM_FIELD, "AM");
 
         StringBuffer buf = new StringBuffer();
         String fieldNames[] = {
@@ -120,7 +121,7 @@ public class DateFormatRegression extends IntlTest {
                              ", \"" + str + "\", " +
                              pos.getBeginIndex() + ", " +
                              pos.getEndIndex());
-            String exp = (String) expected.get(new Integer(i));
+            String exp = expected.get(i);
             if ((exp == null && str.length() == 0) ||
                 str.equals(exp))
                 logln(" ok");
@@ -135,6 +136,7 @@ public class DateFormatRegression extends IntlTest {
     /**
      * Verify the function of the [s|g]et2DigitYearStart() API.
      */
+    @SuppressWarnings("deprecation")
     public void Test4056591() {
         try {
             SimpleDateFormat fmt = new SimpleDateFormat("yyMMdd", Locale.US);
@@ -255,6 +257,7 @@ public class DateFormatRegression extends IntlTest {
         if (!ok) errln("Fail: Lenient not working");
     }
 
+    @SuppressWarnings("deprecation")
     public void Test4065240() {
         Date curDate;
         DateFormat shortdate, fulldate;
@@ -297,6 +300,7 @@ public class DateFormatRegression extends IntlTest {
 
       Currently this bug breaks MessageFormat.toPattern
       */
+    @SuppressWarnings("deprecation")
     public void Test4071441() {
         DateFormat fmtA = DateFormat.getInstance();
         DateFormat fmtB = DateFormat.getInstance();
@@ -488,6 +492,7 @@ public class DateFormatRegression extends IntlTest {
     public void Test4101483() {
         SimpleDateFormat sdf = new SimpleDateFormat("z", Locale.US);
         FieldPosition fp = new FieldPosition(DateFormat.TIMEZONE_FIELD);
+        @SuppressWarnings("deprecation")
         Date d= new Date(9234567890L);
         StringBuffer buf = new StringBuffer("");
         logln(sdf.format(d, buf, fp).toString());
@@ -508,6 +513,7 @@ public class DateFormatRegression extends IntlTest {
     public void Test4103340() {
         // choose a date that is the FIRST of some month
         // and some arbitrary time
+        @SuppressWarnings("deprecation")
         Date d=new Date(97, 3, 1, 1, 1, 1);
         SimpleDateFormat df=new SimpleDateFormat("MMMM", Locale.US);
 
@@ -538,6 +544,7 @@ public class DateFormatRegression extends IntlTest {
         sdf.applyPattern(pattern);
         logln("pattern: \"" + pattern + "\"");
 
+        @SuppressWarnings("deprecation")
         Object[] DATA = {
             "time 10:30", new ParsePosition(10), new Date(70, Calendar.JANUARY, 1, 10, 30),
             "time 10:x", new ParsePosition(0), null,
@@ -698,6 +705,7 @@ public class DateFormatRegression extends IntlTest {
         String pattern = "'TO_DATE('''dd'-'MM'-'yyyy HH:mm:ss''' , ''DD-MM-YYYY HH:MI:SS'')'";
         logln("pattern=" + pattern);
         SimpleDateFormat format = new SimpleDateFormat(pattern, Locale.US);
+        @SuppressWarnings("deprecation")
         String result = format.format(new Date(1998-1900, Calendar.JUNE, 30, 13, 30, 0));
         if (!result.equals("TO_DATE('30-06-1998 13:30:00' , 'DD-MM-YYYY HH:MI:SS')")) {
             errln("Fail: result=" + result);
@@ -711,6 +719,7 @@ public class DateFormatRegression extends IntlTest {
      * 'z' at end of date format throws index exception in SimpleDateFormat
      * CANNOT REPRODUCE THIS BUG ON 1.2FCS
      */
+    @SuppressWarnings("deprecation")
     public void Test4151706() {
         SimpleDateFormat fmt =
             new SimpleDateFormat("EEEE, dd-MMM-yy HH:mm:ss z", Locale.US);
@@ -755,6 +764,7 @@ public class DateFormatRegression extends IntlTest {
      * Confirm that "EST"(GMT-5:00) and "CST"(GMT-6:00) are used in US
      * as "EST" or "CST", not Australian "EST" and "CST".
      */
+    @SuppressWarnings("deprecation")
     public void Test4406615() {
       Locale savedLocale = Locale.getDefault();
       TimeZone savedTimeZone = TimeZone.getDefault();
@@ -823,6 +833,7 @@ public class DateFormatRegression extends IntlTest {
          * greater than "99", are treated as literal years.  So "1/2/3456"
          * becomes 3456 AD.  Likewise, "1/2/-3" becomes -3 AD == 2 BC.
          */
+        @SuppressWarnings("deprecation")
         Object[] DATA = {
             "02/29/00",   new Date(2000-1900, Calendar.FEBRUARY, 29),
             "01/23/01",   new Date(2001-1900, Calendar.JANUARY,  23),
@@ -878,6 +889,7 @@ public class DateFormatRegression extends IntlTest {
         DateFormat fmt = new SimpleDateFormat(pattern,
                                               DateFormatSymbols.getInstance(Locale.US));
         fmt.getCalendar().setLenient(false);
+        @SuppressWarnings("deprecation")
         Date d = new Date(2000-1900, Calendar.FEBRUARY, 29);
         String s = fmt.format(d);
         logln(d + " x " + pattern + " => " + s);
@@ -957,6 +969,7 @@ public class DateFormatRegression extends IntlTest {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public void Test4253490() throws ParseException {
         SimpleDateFormat fmt = new SimpleDateFormat("S", Locale.US);
 
@@ -1026,6 +1039,7 @@ public class DateFormatRegression extends IntlTest {
     public void Test4250359() {
         DateFormat df = DateFormat.getTimeInstance(DateFormat.SHORT,
                                                    Locale.US);
+        @SuppressWarnings("deprecation")
         Date d = new Date(1999-1900, Calendar.DECEMBER, 25,
                           1, 2, 3);
         String s = df.format(d);
@@ -1052,6 +1066,7 @@ public class DateFormatRegression extends IntlTest {
         // pick up another time zone when L10N is done to that file.
         TimeZone.setDefault(TimeZone.getTimeZone("PST"));
         SimpleDateFormat fmt = new SimpleDateFormat("yy/MM/dd hh:ss zzz", Locale.JAPAN);
+        @SuppressWarnings("deprecation")
         String result = fmt.format(new Date(1999, 0, 1));
         logln("format()=>" + result);
         if (!result.endsWith("PST")) {

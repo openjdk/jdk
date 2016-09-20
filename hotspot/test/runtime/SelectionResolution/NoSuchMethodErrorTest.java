@@ -27,7 +27,6 @@
  * generate NoSuchMethodError
  * @modules java.base/jdk.internal.org.objectweb.asm
  * @library /runtime/SelectionResolution/classes
- * @build selectionresolution.*
  * @run main NoSuchMethodErrorTest
  */
 

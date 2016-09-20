@@ -26,13 +26,14 @@
  * @test ClassLoadUnloadTest
  * @bug 8142506
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /runtime/testlibrary
+ * @library /test/lib /runtime/testlibrary
  * @library classes
- * @build ClassUnloadCommon test.Empty jdk.test.lib.* jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
+ * @build test.Empty
  * @run driver ClassLoadUnloadTest
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.ArrayList;

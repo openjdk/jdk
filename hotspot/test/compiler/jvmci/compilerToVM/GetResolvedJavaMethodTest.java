@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
  * @test
  * @bug 8136421
  * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
- * @library / /testlibrary /test/lib
+ * @library / /test/lib
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
  * @modules jdk.vm.ci/jdk.vm.ci.hotspot
  *
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  *        jdk.vm.ci/jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject
- * @build compiler.jvmci.compilerToVM.GetResolvedJavaMethodTest
+ *        sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:.
@@ -45,7 +45,7 @@ package compiler.jvmci.compilerToVM;
 
 import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
+import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject;
@@ -114,7 +114,7 @@ public class GetResolvedJavaMethodTest {
         abstract HotSpotResolvedJavaMethod getResolvedJavaMethod();
     }
 
-    private static final Unsafe UNSAFE = Utils.getUnsafe();
+    private static final Unsafe UNSAFE = UnsafeHelper.getUnsafe();
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
     private static final Field METASPACE_METHOD_FIELD;
     private static final Class<?> TEST_CLASS = GetResolvedJavaMethodTest.class;

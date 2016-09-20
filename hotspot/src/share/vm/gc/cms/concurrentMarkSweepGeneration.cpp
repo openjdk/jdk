@@ -61,7 +61,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -3511,6 +3511,7 @@ bool CMSCollector::do_marking_mt() {
                                                                   conc_workers()->active_workers(),
                                                                   Threads::number_of_non_daemon_threads());
   num_workers = conc_workers()->update_active_workers(num_workers);
+  log_info(gc,task)("Using %u workers of %u for marking", num_workers, conc_workers()->total_workers());
 
   CompactibleFreeListSpace* cms_space  = _cmsGen->cmsSpace();
 

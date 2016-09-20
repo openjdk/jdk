@@ -99,19 +99,18 @@ public class IdGeneratorTest {
         }
     }
 
-    @Test(enabled = false) // TODO 8133507
     public void testIdInException() {
         JShell.Builder builder = getBuilder().idGenerator(((snippet, id) -> "custom" + id));
         try (JShell jShell = builder.build()) {
             EvalException evalException = (EvalException) jShell.eval("throw new Error();").get(0).exception();
             for (StackTraceElement ste : evalException.getStackTrace()) {
-                assertTrue(ste.getFileName().startsWith("custom"), "Not started with \"custom\": "
+                assertTrue(ste.getFileName().startsWith("#custom"), "Not started with \"#custom\": "
                         + ste.getFileName());
             }
             jShell.eval("void f() { g(); }");
             UnresolvedReferenceException unresolvedException = (UnresolvedReferenceException) jShell.eval("f();").get(0).exception();
             for (StackTraceElement ste : unresolvedException.getStackTrace()) {
-                assertTrue(ste.getFileName().startsWith("custom"), "Not started with \"custom\": "
+                assertTrue(ste.getFileName().startsWith("#custom"), "Not started with \"#custom\": "
                         + ste.getFileName());
             }
         }
