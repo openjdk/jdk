@@ -270,7 +270,8 @@ jzentry * ZIP_GetEntry(jzfile *zip, char *name, jint ulen);
 void ZIP_Lock(jzfile *zip);
 void ZIP_Unlock(jzfile *zip);
 jint ZIP_Read(jzfile *zip, jzentry *entry, jlong pos, void *buf, jint len);
-void ZIP_FreeEntry(jzfile *zip, jzentry *ze);
+void JNICALL
+ZIP_FreeEntry(jzfile *zip, jzentry *ze);
 jlong ZIP_GetEntryDataOffset(jzfile *zip, jzentry *entry);
 jzentry * ZIP_GetEntry2(jzfile *zip, char *name, jint ulen, jboolean addSlash);
 
