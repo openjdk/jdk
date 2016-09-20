@@ -1451,7 +1451,7 @@ public class Attr extends JCTree.Visitor {
             try {
                 close = rs.resolveQualifiedMethod(pos,
                         env,
-                        resource,
+                        types.skipTypeVars(resource, false),
                         names.close,
                         List.<Type>nil(),
                         List.<Type>nil());
