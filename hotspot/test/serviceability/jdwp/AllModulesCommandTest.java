@@ -30,7 +30,7 @@ import static jdk.test.lib.Asserts.assertTrue;
 
 /**
  * @test
- * @summary Tests the modules-related JDWP commands
+ * @summary Tests AllModules JDWP command
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @compile AllModulesCommandTestDebuggee.java
@@ -87,12 +87,8 @@ public class AllModulesCommandTest implements DebuggeeLauncher.Listener {
             assertReply(reply);
             for (int i = 0; i < reply.getModulesCount(); ++i) {
                 long modId = reply.getModuleId(i);
-                // For each module reported by JDWP get its name using the JDWP NAME command
-                // and store the reply
-                String modName = getModuleName(modId);
-                if (modName != null) { // JDWP reports unnamed modules, ignore them
-                    jdwpModuleNames.add(modName);
-                }
+                // For each module reported by JDWP get its name using the JDWP  NAME command
+                getModuleName(modId);
                 // Assert the JDWP CANREAD and CLASSLOADER commands
                 assertCanRead(modId);
                 assertClassLoader(modId);
@@ -118,10 +114,14 @@ public class AllModulesCommandTest implements DebuggeeLauncher.Listener {
         }
     }
 
-    private String getModuleName(long modId) throws IOException {
+    private void getModuleName(long modId) throws IOException {
+        // Send out the JDWP NAME command and store the reply
         JdwpModNameReply reply = new JdwpModNameCmd(modId).send(channel);
         assertReply(reply);
-        return reply.getModuleName();
+        String modName = reply.getModuleName();
+        if (modName != null) { // JDWP reports unnamed modules, ignore them
+            jdwpModuleNames.add(modName);
+        }
     }
 
     private void assertReply(JdwpReply reply) {
@@ -139,39 +139,11 @@ public class AllModulesCommandTest implements DebuggeeLauncher.Listener {
     }
 
     private void assertClassLoader(long modId) throws IOException {
-        // Verify that the module classloader id is valid
+        // Simple assert for the CLASSLOADER command
         JdwpClassLoaderReply reply = new JdwpClassLoaderCmd(modId).send(channel);
         assertReply(reply);
-        long moduleClassLoader = reply.getClassLoaderId();
-        assertTrue(moduleClassLoader >= 0, "bad classloader refId " + moduleClassLoader + " for module id " + modId);
-
-        String clsModName = getModuleName(modId);
-        if ("java.base".equals(clsModName)) {
-            // For the java.base module, because there will be some loaded classes, we can verify
-            // that some of the loaded classes do report the java.base module as the module they belong to
-            assertGetModule(moduleClassLoader, modId);
-        }
-    }
-
-    private void assertGetModule(long moduleClassLoader, long modId) throws IOException {
-        // Get all the visible classes for the module classloader
-        JdwpVisibleClassesReply visibleClasses = new JdwpVisibleClassesCmd(moduleClassLoader).send(channel);
-        assertReply(visibleClasses);
-
-        boolean moduleFound = false;
-        for (long clsId : visibleClasses.getVisibleClasses()) {
-            // For each visible class get the module the class belongs to
-            JdwpModuleReply modReply = new JdwpModuleCmd(clsId).send(channel);
-            assertReply(modReply);
-            long clsModId = modReply.getModuleId();
-
-            // At least one of the visible classes should belong to our module
-            if (modId == clsModId) {
-                moduleFound = true;
-                break;
-            }
-        }
-        assertTrue(moduleFound, "None of the visible classes for the classloader of the module " + getModuleName(modId) + " reports the module as its own");
+        long clId = reply.getClassLoaderId();
+        assertTrue(clId >= 0, "bad classloader refId " + clId + " for module id " + modId);
     }
 
 }

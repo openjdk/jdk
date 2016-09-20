@@ -92,7 +92,7 @@ bool ModuleEntry::can_read(ModuleEntry* m) const {
   // read java.base.  If either of these conditions
   // hold, readability has been established.
   if (!this->is_named() ||
-      (m == ModuleEntryTable::javabase_module())) {
+      (m == ModuleEntryTable::javabase_moduleEntry())) {
     return true;
   }
 
@@ -358,16 +358,27 @@ void ModuleEntryTable::finalize_javabase(Handle module_handle, Symbol* version, 
   }
 
   // Set java.lang.reflect.Module, version and location for java.base
-  ModuleEntry* jb_module = javabase_module();
+  ModuleEntry* jb_module = javabase_moduleEntry();
   assert(jb_module != NULL, "java.base ModuleEntry not defined");
-  jb_module->set_module(boot_loader_data->add_handle(module_handle));
   jb_module->set_version(version);
   jb_module->set_location(location);
+  // Once java.base's ModuleEntry _module field is set with the known
+  // java.lang.reflect.Module, java.base is considered "defined" to the VM.
+  jb_module->set_module(boot_loader_data->add_handle(module_handle));
+
   // Store pointer to the ModuleEntry for java.base in the java.lang.reflect.Module object.
   java_lang_reflect_Module::set_module_entry(module_handle(), jb_module);
+
+  // Patch any previously loaded classes' module field with java.base's java.lang.reflect.Module.
+  patch_javabase_entries(module_handle);
 }
 
+// Within java.lang.Class instances there is a java.lang.reflect.Module field
+// that must be set with the defining module.  During startup, prior to java.base's
+// definition, classes needing their module field set are added to the fixup_module_list.
+// Their module field is set once java.base's java.lang.reflect.Module is known to the VM.
 void ModuleEntryTable::patch_javabase_entries(Handle module_handle) {
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
   if (module_handle.is_null()) {
     fatal("Unable to patch the module field of classes loaded prior to java.base's definition, invalid java.lang.reflect.Module");
   }
@@ -389,9 +400,7 @@ void ModuleEntryTable::patch_javabase_entries(Handle module_handle) {
   for (int i = 0; i < list_length; i++) {
     Klass* k = list->at(i);
     assert(k->is_klass(), "List should only hold classes");
-    Thread* THREAD = Thread::current();
-    KlassHandle kh(THREAD, k);
-    java_lang_Class::fixup_module_field(kh, module_handle);
+    java_lang_Class::fixup_module_field(KlassHandle(k), module_handle);
     k->class_loader_data()->dec_keep_alive();
   }
 

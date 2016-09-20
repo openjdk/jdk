@@ -773,6 +773,41 @@ void java_lang_Class::initialize_mirror_fields(KlassHandle k,
   InstanceKlass::cast(k())->do_local_static_fields(&initialize_static_field, mirror, CHECK);
 }
 
+// Set the java.lang.reflect.Module module field in the java_lang_Class mirror
+void java_lang_Class::set_mirror_module_field(KlassHandle k, Handle mirror, Handle module, TRAPS) {
+  if (module.is_null()) {
+    // During startup, the module may be NULL only if java.base has not been defined yet.
+    // Put the class on the fixup_module_list to patch later when the java.lang.reflect.Module
+    // for java.base is known.
+    assert(!Universe::is_module_initialized(), "Incorrect java.lang.reflect.Module pre module system initialization");
+    MutexLocker m1(Module_lock, THREAD);
+    // Keep list of classes needing java.base module fixup
+    if (!ModuleEntryTable::javabase_defined()) {
+      if (fixup_module_field_list() == NULL) {
+        GrowableArray<Klass*>* list =
+          new (ResourceObj::C_HEAP, mtModule) GrowableArray<Klass*>(500, true);
+        set_fixup_module_field_list(list);
+      }
+      k->class_loader_data()->inc_keep_alive();
+      fixup_module_field_list()->push(k());
+    } else {
+      // java.base was defined at some point between calling create_mirror()
+      // and obtaining the Module_lock, patch this particular class with java.base.
+      ModuleEntry *javabase_entry = ModuleEntryTable::javabase_moduleEntry();
+      assert(javabase_entry != NULL && javabase_entry->module() != NULL,
+             "Setting class module field, java.base should be defined");
+      Handle javabase_handle(THREAD, JNIHandles::resolve(javabase_entry->module()));
+      set_module(mirror(), javabase_handle());
+    }
+  } else {
+    assert(Universe::is_module_initialized() ||
+           (ModuleEntryTable::javabase_defined() &&
+            (module() == JNIHandles::resolve(ModuleEntryTable::javabase_moduleEntry()->module()))),
+           "Incorrect java.lang.reflect.Module specification while creating mirror");
+    set_module(mirror(), module());
+  }
+}
+
 void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
                                     Handle module, Handle protection_domain, TRAPS) {
   assert(k->java_mirror() == NULL, "should only assign mirror once");
@@ -835,24 +870,12 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
     set_class_loader(mirror(), class_loader());
 
     // set the module field in the java_lang_Class instance
-    // This may be null during bootstrap but will get fixed up later on.
-    set_module(mirror(), module());
+    set_mirror_module_field(k, mirror, module, THREAD);
 
     // Setup indirection from klass->mirror last
     // after any exceptions can happen during allocations.
     if (!k.is_null()) {
       k->set_java_mirror(mirror());
-    }
-
-    // Keep list of classes needing java.base module fixup.
-    if (!ModuleEntryTable::javabase_defined()) {
-      if (fixup_module_field_list() == NULL) {
-        GrowableArray<Klass*>* list =
-          new (ResourceObj::C_HEAP, mtModule) GrowableArray<Klass*>(500, true);
-        set_fixup_module_field_list(list);
-      }
-      k->class_loader_data()->inc_keep_alive();
-      fixup_module_field_list()->push(k());
     }
   } else {
     if (fixup_mirror_list() == NULL) {
