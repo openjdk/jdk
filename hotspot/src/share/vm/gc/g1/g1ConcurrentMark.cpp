@@ -285,7 +285,7 @@ bool G1CMMarkStack::par_push_chunk(oop* ptr_arr) {
     return false;
   }
 
-  Copy::conjoint_oops_atomic(ptr_arr, new_chunk->data, OopsPerChunk);
+  Copy::conjoint_memory_atomic(ptr_arr, new_chunk->data, OopsPerChunk * sizeof(oop));
 
   add_chunk_to_chunk_list(new_chunk);
 
@@ -299,7 +299,7 @@ bool G1CMMarkStack::par_pop_chunk(oop* ptr_arr) {
     return false;
   }
 
-  Copy::conjoint_oops_atomic(cur->data, ptr_arr, OopsPerChunk);
+  Copy::conjoint_memory_atomic(cur->data, ptr_arr, OopsPerChunk * sizeof(oop));
 
   add_chunk_to_free_list(cur);
   return true;
