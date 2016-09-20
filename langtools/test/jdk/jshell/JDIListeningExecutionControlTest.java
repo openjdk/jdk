@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131029 8159935 8160127
+ * @bug 8131029 8159935 8160127 8164518
  * @summary Tests for alternate JDI connector -- listening
  * @modules jdk.jshell/jdk.jshell.execution
  * @build KullaTesting ExecutionControlTestBase
@@ -41,6 +41,6 @@ public class JDIListeningExecutionControlTest extends ExecutionControlTestBase {
     @BeforeMethod
     @Override
     public void setUp() {
-        setUp(builder -> builder.executionEngine(JDIDefaultExecutionControl.listen()));
+        setUp(builder -> builder.executionEngine(JDIDefaultExecutionControl.listen(null)));
     }
 }

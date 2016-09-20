@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8146156 8159548
+ * @modules jdk.localedata
  * @summary test whether uppercasing follows Locale.Category.FORMAT locale.
  * @run main/othervm FormatLocale
  */

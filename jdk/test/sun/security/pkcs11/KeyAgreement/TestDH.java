@@ -21,12 +21,13 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4921804 6324825
  * @summary Verify that DH works properly
  * @author Andreas Sterbenz
  * @library ..
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestDH
  * @run main/othervm TestDH sm
  */

@@ -247,7 +247,6 @@ public class ReplToolTesting {
                 new PrintStream(cmdout),
                 new PrintStream(cmderr),
                 new PrintStream(console),
-                userin,
                 new PrintStream(userout),
                 new PrintStream(usererr),
                 prefs,
@@ -463,7 +462,7 @@ public class ReplToolTesting {
 
     private List<String> computeCompletions(String code, boolean isSmart) {
         JShellTool js = this.repl != null ? this.repl
-                                      : new JShellTool(null, null, null, null, null, null, null, prefs, Locale.ROOT);
+                                      : new JShellTool(null, null, null, null, null, null, prefs, Locale.ROOT);
         int cursor =  code.indexOf('|');
         code = code.replace("|", "");
         assertTrue(cursor > -1, "'|' not found: " + code);

@@ -274,7 +274,7 @@ public class TestMetafactoryBridges {
             sourcefiles.add(new JavaSource(ck));
         }
         JavacTask ct = (JavacTask)tool.getTask(debugWriter, null, diagChecker,
-                    Arrays.asList("-Xdebug:dumpLambdaToMethodStats", "-d", outDir.getAbsolutePath(),
+                    Arrays.asList("--debug:dumpLambdaToMethodStats", "-d", outDir.getAbsolutePath(),
                                   "-sourcepath", srcDir.getAbsolutePath(),
                                   "-classpath", classesDir.getAbsolutePath(),
                                   pp.preferOpt), null, sourcefiles);

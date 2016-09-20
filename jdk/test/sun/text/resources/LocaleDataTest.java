@@ -37,9 +37,10 @@
  *      7003124 7085757 7028073 7171028 7189611 8000983 7195759 8004489 8006509
  *      7114053 7074882 7040556 8008577 8013836 8021121 6192407 6931564 8027695
  *      8017142 8037343 8055222 8042126 8074791 8075173 8080774 8129361 8134916
- *      8145136
+ *      8145136 8145952 8164784
  * @summary Verify locale data
  * @modules java.base/sun.util.resources
+ * @modules jdk.localedata
  * @run main LocaleDataTest
  * @run main LocaleDataTest -cldr
  *
@@ -145,12 +146,20 @@
  *    this test against the new version of the data.
  */
 
-import java.io.*;
-import java.text.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FilterReader;
+import java.io.FilterWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.ResourceBundle.Control;
 import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import sun.util.resources.LocaleData;
 
 public class LocaleDataTest

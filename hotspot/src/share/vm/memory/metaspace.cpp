@@ -3172,36 +3172,28 @@ void Metaspace::global_initialize() {
       address cds_address = NULL;
       FileMapInfo* mapinfo = new FileMapInfo();
 
-      if (JvmtiExport::should_post_class_file_load_hook()) {
-        // Currently CDS does not support JVMTI CFLH when loading shared class.
-        // If JvmtiExport::should_post_class_file_load_hook is already enabled,
-        // just disable UseSharedSpaces.
-        FileMapInfo::fail_continue("Tool agent requires sharing to be disabled.");
-        delete mapinfo;
-      } else {
-        // Open the shared archive file, read and validate the header. If
-        // initialization fails, shared spaces [UseSharedSpaces] are
-        // disabled and the file is closed.
-        // Map in spaces now also
-        if (mapinfo->initialize() && MetaspaceShared::map_shared_spaces(mapinfo)) {
-          cds_total = FileMapInfo::shared_spaces_size();
-          cds_address = (address)mapinfo->header()->region_addr(0);
+      // Open the shared archive file, read and validate the header. If
+      // initialization fails, shared spaces [UseSharedSpaces] are
+      // disabled and the file is closed.
+      // Map in spaces now also
+      if (mapinfo->initialize() && MetaspaceShared::map_shared_spaces(mapinfo)) {
+        cds_total = FileMapInfo::shared_spaces_size();
+        cds_address = (address)mapinfo->header()->region_addr(0);
 #ifdef _LP64
-          if (using_class_space()) {
-            char* cds_end = (char*)(cds_address + cds_total);
-            cds_end = (char *)align_ptr_up(cds_end, _reserve_alignment);
-            // If UseCompressedClassPointers is set then allocate the metaspace area
-            // above the heap and above the CDS area (if it exists).
-            allocate_metaspace_compressed_klass_ptrs(cds_end, cds_address);
-            // Map the shared string space after compressed pointers
-            // because it relies on compressed class pointers setting to work
-            mapinfo->map_string_regions();
-          }
-#endif // _LP64
-        } else {
-          assert(!mapinfo->is_open() && !UseSharedSpaces,
-                 "archive file not closed or shared spaces not disabled.");
+        if (using_class_space()) {
+          char* cds_end = (char*)(cds_address + cds_total);
+          cds_end = (char *)align_ptr_up(cds_end, _reserve_alignment);
+          // If UseCompressedClassPointers is set then allocate the metaspace area
+          // above the heap and above the CDS area (if it exists).
+          allocate_metaspace_compressed_klass_ptrs(cds_end, cds_address);
+          // Map the shared string space after compressed pointers
+          // because it relies on compressed class pointers setting to work
+          mapinfo->map_string_regions();
         }
+#endif // _LP64
+      } else {
+        assert(!mapinfo->is_open() && !UseSharedSpaces,
+               "archive file not closed or shared spaces not disabled.");
       }
     }
 #endif // INCLUDE_CDS

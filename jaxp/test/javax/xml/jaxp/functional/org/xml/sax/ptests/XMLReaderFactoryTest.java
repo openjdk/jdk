@@ -76,5 +76,3 @@ public class XMLReaderFactoryTest {
         XMLReaderFactory.createXMLReader("org.apache.crimson.parser.ABCD");
     }
 }
-
-

@@ -21,12 +21,13 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4856966
  * @summary Test KeyFactory of the new RSA provider
  * @author Andreas Sterbenz
  * @library ..
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestKeyFactory
  * @run main/othervm TestKeyFactory sm rsakeys.ks.policy
  */

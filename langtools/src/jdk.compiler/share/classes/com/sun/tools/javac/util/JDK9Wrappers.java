@@ -130,6 +130,85 @@ public class JDK9Wrappers {
     }
 
     /**
+     * Wrapper class for java.lang.reflect.Module. To materialize a handle use the static factory
+     * methods Module#getModule(Class<?>) or Module#getUnnamedModule(ClassLoader).
+     */
+    public static class Module {
+
+        private final Object theRealModule;
+
+        private Module(Object module) {
+            this.theRealModule = module;
+            init();
+        }
+
+        public static Module getModule(Class<?> clazz) {
+            try {
+                init();
+                Object result = getModuleMethod.invoke(clazz, new Object[0]);
+                return new Module(result);
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
+                    | SecurityException ex) {
+                throw new Abort(ex);
+            }
+        }
+
+        public static Module getUnnamedModule(ClassLoader classLoader) {
+            try {
+                init();
+                Object result = getUnnamedModuleMethod.invoke(classLoader, new Object[0]);
+                return new Module(result);
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
+                    | SecurityException ex) {
+                throw new Abort(ex);
+            }
+        }
+
+        public Module addExports(String pn, Module other) {
+            try {
+                addExportsMethod.invoke(theRealModule, new Object[] { pn, other.theRealModule});
+            } catch (IllegalAccessException | InvocationTargetException ex) {
+                throw new Abort(ex);
+            }
+            return this;
+        }
+
+        public Module addUses(Class<?> st) {
+            try {
+                addUsesMethod.invoke(theRealModule, new Object[] { st });
+            } catch (IllegalAccessException | InvocationTargetException ex) {
+                throw new Abort(ex);
+            }
+            return this;
+        }
+
+        // -----------------------------------------------------------------------------------------
+        // on java.lang.reflect.Module
+        private static Method addExportsMethod = null;
+        // on java.lang.reflect.Module
+        private static Method addUsesMethod = null;
+        // on java.lang.Class
+        private static Method getModuleMethod;
+        // on java.lang.ClassLoader
+        private static Method getUnnamedModuleMethod;
+
+        private static void init() {
+            if (addExportsMethod == null) {
+                try {
+                    Class<?> moduleClass = Class.forName("java.lang.reflect.Module", false, null);
+                    addUsesMethod = moduleClass.getDeclaredMethod("addUses", new Class<?>[] { Class.class });
+                    addExportsMethod = moduleClass.getDeclaredMethod("addExports",
+                                                        new Class<?>[] { String.class, moduleClass });
+                    getModuleMethod = Class.class.getDeclaredMethod("getModule", new Class<?>[0]);
+                    getUnnamedModuleMethod = ClassLoader.class.getDeclaredMethod("getUnnamedModule", new Class<?>[0]);
+                } catch (ClassNotFoundException | NoSuchMethodException | SecurityException ex) {
+                    throw new Abort(ex);
+                }
+            }
+        }
+    }
+
+    /**
      * Wrapper class for java.lang.module.Configuration.
      */
     public static final class Configuration {

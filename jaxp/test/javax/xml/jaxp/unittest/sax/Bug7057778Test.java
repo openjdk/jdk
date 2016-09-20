@@ -199,4 +199,3 @@ public class Bug7057778Test {
 
     }
 }
-

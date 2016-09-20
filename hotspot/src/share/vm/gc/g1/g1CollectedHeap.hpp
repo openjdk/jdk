@@ -557,7 +557,7 @@ public:
   // Returns true if the heap was expanded by the requested amount;
   // false otherwise.
   // (Rounds up to a HeapRegion boundary.)
-  bool expand(size_t expand_bytes, double* expand_time_ms = NULL);
+  bool expand(size_t expand_bytes, WorkGang* pretouch_workers = NULL, double* expand_time_ms = NULL);
 
   // Returns the PLAB statistics for a given destination.
   inline G1EvacStats* alloc_buffer_stats(InCSetState dest);
@@ -1270,12 +1270,6 @@ public:
   }
 
   virtual bool card_mark_must_follow_store() const {
-    return true;
-  }
-
-  // The reference pending list lock is acquired from from the
-  // ConcurrentMarkThread.
-  virtual bool needs_reference_pending_list_locker_thread() const {
     return true;
   }
 

@@ -26,7 +26,6 @@
 package jdk.internal.jshell.tool;
 
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -112,6 +111,7 @@ import static jdk.internal.jshell.debug.InternalDebugControl.DBG_DEP;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_EVNT;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_FMGR;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
+import static jdk.internal.jshell.tool.ContinuousCompletionProvider.STARTSWITH_MATCHER;
 
 /**
  * Command line REPL tool for Java using the JShell API.
@@ -141,11 +141,30 @@ public class JShellTool implements MessageHandler {
     /**
      * The constructor for the tool (used by tool launch via main and by test
      * harnesses to capture ins and outs.
+     * @param in command line input -- snippets, commands and user input
+     * @param cmdout command line output, feedback including errors
+     * @param cmderr start-up errors and debugging info
+     * @param console console control interaction
+     * @param userout code execution output  -- System.out.printf("hi")
+     * @param usererr code execution error stream  -- System.err.printf("Oops")
+     * @param prefs preferences to use
+     * @param locale locale to use
+     */
+    public JShellTool(InputStream in, PrintStream cmdout, PrintStream cmderr,
+            PrintStream console,
+            PrintStream userout, PrintStream usererr,
+            Preferences prefs, Locale locale) {
+        this(in, cmdout, cmderr, console, null, userout, usererr, prefs, locale);
+    }
+
+    /**
+     * The constructor for the tool (used by tool launch via main and by test
+     * harnesses to capture ins and outs.
      * @param cmdin command line input -- snippets and commands
      * @param cmdout command line output, feedback including errors
      * @param cmderr start-up errors and debugging info
      * @param console console control interaction
-     * @param userin code execution input (not yet functional)
+     * @param userin code execution input, or null to use IOContext
      * @param userout code execution output  -- System.out.printf("hi")
      * @param usererr code execution error stream  -- System.err.printf("Oops")
      * @param prefs preferences to use
@@ -159,7 +178,12 @@ public class JShellTool implements MessageHandler {
         this.cmdout = cmdout;
         this.cmderr = cmderr;
         this.console = console;
-        this.userin = userin;
+        this.userin = userin != null ? userin : new InputStream() {
+            @Override
+            public int read() throws IOException {
+                return input.readUserInput();
+            }
+        };
         this.userout = userout;
         this.usererr = usererr;
         this.prefs = prefs;
@@ -451,7 +475,7 @@ public class JShellTool implements MessageHandler {
      */
     public static void main(String[] args) throws Exception {
         new JShellTool(System.in, System.out, System.err, System.out,
-                 new ByteArrayInputStream(new byte[0]), System.out, System.err,
+                 System.out, System.err,
                  Preferences.userRoot().node("tool/JShell"),
                  Locale.getDefault())
                 .start(args);
@@ -909,6 +933,7 @@ public class JShellTool implements MessageHandler {
 
     interface CompletionProvider {
         List<Suggestion> completionSuggestions(String input, int cursor, int[] anchor);
+
     }
 
     enum CommandKind {
@@ -953,14 +978,31 @@ public class JShellTool implements MessageHandler {
 
     }
 
-    private static final CompletionProvider EMPTY_COMPLETION_PROVIDER = new FixedCompletionProvider();
+    static final CompletionProvider EMPTY_COMPLETION_PROVIDER = new FixedCompletionProvider();
     private static final CompletionProvider KEYWORD_COMPLETION_PROVIDER = new FixedCompletionProvider("-all ", "-start ", "-history ");
     private static final CompletionProvider RELOAD_OPTIONS_COMPLETION_PROVIDER = new FixedCompletionProvider("-restore", "-quiet");
+    private static final CompletionProvider SET_MODE_OPTIONS_COMPLETION_PROVIDER = new FixedCompletionProvider("-command", "-quiet", "-delete");
     private static final CompletionProvider FILE_COMPLETION_PROVIDER = fileCompletions(p -> true);
     private final Map<String, Command> commands = new LinkedHashMap<>();
     private void registerCommand(Command cmd) {
         commands.put(cmd.command, cmd);
     }
+
+    private static CompletionProvider skipWordThenCompletion(CompletionProvider completionProvider) {
+        return (input, cursor, anchor) -> {
+            List<Suggestion> result = Collections.emptyList();
+
+            int space = input.indexOf(' ');
+            if (space != -1) {
+                String rest = input.substring(space + 1);
+                result = completionProvider.completionSuggestions(rest, cursor - space - 1, anchor);
+                anchor[0] += space + 1;
+            }
+
+            return result;
+        };
+    }
+
     private static CompletionProvider fileCompletions(Predicate<Path> accept) {
         return (code, cursor, anchor) -> {
             int lastSlash = code.lastIndexOf('/');
@@ -1034,6 +1076,31 @@ public class JShellTool implements MessageHandler {
             result.addAll(RELOAD_OPTIONS_COMPLETION_PROVIDER.completionSuggestions(code.substring(pastSpace), cursor - pastSpace, anchor));
             anchor[0] += pastSpace;
             return result;
+        };
+    }
+
+    private static CompletionProvider orMostSpecificCompletion(
+            CompletionProvider left, CompletionProvider right) {
+        return (code, cursor, anchor) -> {
+            int[] leftAnchor = {-1};
+            int[] rightAnchor = {-1};
+
+            List<Suggestion> leftSuggestions = left.completionSuggestions(code, cursor, leftAnchor);
+            List<Suggestion> rightSuggestions = right.completionSuggestions(code, cursor, rightAnchor);
+
+            List<Suggestion> suggestions = new ArrayList<>();
+
+            if (leftAnchor[0] >= rightAnchor[0]) {
+                anchor[0] = leftAnchor[0];
+                suggestions.addAll(leftSuggestions);
+            }
+
+            if (leftAnchor[0] <= rightAnchor[0]) {
+                anchor[0] = rightAnchor[0];
+                suggestions.addAll(rightSuggestions);
+            }
+
+            return suggestions;
         };
     }
 
@@ -1123,10 +1190,26 @@ public class JShellTool implements MessageHandler {
                 EMPTY_COMPLETION_PROVIDER));
         registerCommand(new Command("/set",
                 arg -> cmdSet(arg),
-                new FixedCompletionProvider(SET_SUBCOMMANDS)));
+                new ContinuousCompletionProvider(Map.of(
+                        // need more completion for format for usability
+                        "format", feedback.modeCompletions(),
+                        "truncation", feedback.modeCompletions(),
+                        "feedback", feedback.modeCompletions(),
+                        "mode", skipWordThenCompletion(orMostSpecificCompletion(
+                                feedback.modeCompletions(SET_MODE_OPTIONS_COMPLETION_PROVIDER),
+                                SET_MODE_OPTIONS_COMPLETION_PROVIDER)),
+                        "prompt", feedback.modeCompletions(),
+                        "editor", fileCompletions(Files::isExecutable),
+                        "start", FILE_COMPLETION_PROVIDER),
+                        STARTSWITH_MATCHER)));
         registerCommand(new Command("/retain",
                 arg -> cmdRetain(arg),
-                new FixedCompletionProvider(RETAIN_SUBCOMMANDS)));
+                new ContinuousCompletionProvider(Map.of(
+                        "feedback", feedback.modeCompletions(),
+                        "mode", feedback.modeCompletions(),
+                        "editor", fileCompletions(Files::isExecutable),
+                        "start", FILE_COMPLETION_PROVIDER),
+                        STARTSWITH_MATCHER)));
         registerCommand(new Command("/?",
                 "help.quest",
                 arg -> cmdHelp(arg),
@@ -1151,36 +1234,18 @@ public class JShellTool implements MessageHandler {
         registerCommand(new Command("shortcuts",
                 "help.shortcuts",
                 CommandKind.HELP_SUBJECT));
+
+        commandCompletions = new ContinuousCompletionProvider(
+                commands.values().stream()
+                        .filter(c -> c.kind.shouldSuggestCompletions)
+                        .collect(toMap(c -> c.command, c -> c.completions)),
+                STARTSWITH_MATCHER);
     }
 
+    private ContinuousCompletionProvider commandCompletions;
+
     public List<Suggestion> commandCompletionSuggestions(String code, int cursor, int[] anchor) {
-        String prefix = code.substring(0, cursor);
-        int space = prefix.indexOf(' ');
-        Stream<Suggestion> result;
-
-        if (space == (-1)) {
-            result = commands.values()
-                             .stream()
-                             .distinct()
-                             .filter(cmd -> cmd.kind.shouldSuggestCompletions)
-                             .map(cmd -> cmd.command)
-                             .filter(key -> key.startsWith(prefix))
-                             .map(key -> new ArgSuggestion(key + " "));
-            anchor[0] = 0;
-        } else {
-            String arg = prefix.substring(space + 1);
-            String cmd = prefix.substring(0, space);
-            Command[] candidates = findCommand(cmd, c -> true);
-            if (candidates.length == 1) {
-                result = candidates[0].completions.completionSuggestions(arg, cursor - space, anchor).stream();
-                anchor[0] += space + 1;
-            } else {
-                result = Stream.empty();
-            }
-        }
-
-        return result.sorted((s1, s2) -> s1.continuation().compareTo(s2.continuation()))
-                     .collect(Collectors.toList());
+        return commandCompletions.completionSuggestions(code, cursor, anchor);
     }
 
     public String commandDocumentation(String code, int cursor) {
@@ -2484,7 +2549,7 @@ public class JShellTool implements MessageHandler {
         }
     }
 
-    private static class ArgSuggestion implements Suggestion {
+    static class ArgSuggestion implements Suggestion {
 
         private final String continuation;
 
@@ -2579,6 +2644,11 @@ class ScannerIOContext extends NonInteractiveIOContext {
     public void close() {
         scannerIn.close();
     }
+
+    @Override
+    public int readUserInput() {
+        return -1;
+    }
 }
 
 class FileScannerIOContext extends ScannerIOContext {
@@ -2616,5 +2686,10 @@ class ReloadIOContext extends NonInteractiveIOContext {
 
     @Override
     public void close() {
+    }
+
+    @Override
+    public int readUserInput() {
+        return -1;
     }
 }

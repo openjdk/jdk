@@ -36,6 +36,7 @@ import sun.jvm.hotspot.utilities.*;
 public class MethodData extends Metadata implements MethodDataInterface<Klass,Method> {
   static int TypeProfileWidth = 2;
   static int BciProfileWidth = 2;
+  static int MethodProfileWidth = 0;
   static int CompileThreshold;
 
   static int Reason_many;                 // indicates presence of several reasons
@@ -142,6 +143,8 @@ public class MethodData extends Metadata implements MethodDataInterface<Klass,Me
         TypeProfileWidth = (int)flag.getIntx();
       } else if (flag.getName().equals("BciProfileWidth")) {
         BciProfileWidth = (int)flag.getIntx();
+      } else if (flag.getName().equals("MethodProfileWidth")) {
+        MethodProfileWidth = (int)flag.getIntx();
       } else if (flag.getName().equals("CompileThreshold")) {
         CompileThreshold = (int)flag.getIntx();
       }
@@ -154,7 +157,7 @@ public class MethodData extends Metadata implements MethodDataInterface<Klass,Me
 
     parametersTypeDataDi = new CIntField(type.getCIntegerField("_parameters_type_data_di"), 0);
 
-    sizeofMethodDataOopDesc = (int)type.getSize();;
+    sizeofMethodDataOopDesc = (int)type.getSize();
 
     Reason_many            = db.lookupIntConstant("Deoptimization::Reason_many").intValue();
     Reason_none            = db.lookupIntConstant("Deoptimization::Reason_none").intValue();
@@ -257,7 +260,7 @@ public class MethodData extends Metadata implements MethodDataInterface<Klass,Me
 
   ParametersTypeData<Klass,Method> parametersTypeData() {
     int di = (int)parametersTypeDataDi.getValue(getAddress());
-    if (di == -1) {
+    if (di == -1 || di == -2) {
       return null;
     }
     DataLayout dataLayout = new DataLayout(this, di + (int)data.getOffset());

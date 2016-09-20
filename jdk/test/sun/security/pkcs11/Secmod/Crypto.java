@@ -21,12 +21,13 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6329006
  * @summary verify that NSS no-db mode works correctly
  * @author Andreas Sterbenz
  * @library ..
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm Crypto
  * @run main/othervm Crypto sm policy
  */

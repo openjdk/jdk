@@ -106,12 +106,12 @@ public class DetectMutableStaticFields {
         // The following static fields are used for caches of information obtained
         // by reflective lookup, to avoid explicit references that are not available
         // when running javac on JDK 8.
-        ignore("com/sun/tools/javac/util/ModuleHelper",
-                "addExportsMethod", "getModuleMethod", "getUnnamedModuleMethod");
         ignore("com/sun/tools/javac/util/JDK9Wrappers$Configuration",
                 "resolveRequiresAndUsesMethod", "configurationClass");
         ignore("com/sun/tools/javac/util/JDK9Wrappers$Layer",
                 "bootMethod", "defineModulesWithOneLoaderMethod", "configurationMethod", "layerClass");
+        ignore("com/sun/tools/javac/util/JDK9Wrappers$Module",
+                "addExportsMethod", "addUsesMethod", "getModuleMethod", "getUnnamedModuleMethod");
         ignore("com/sun/tools/javac/util/JDK9Wrappers$ModuleFinder",
                 "moduleFinderClass", "ofMethod");
         ignore("com/sun/tools/javac/util/JDK9Wrappers$ServiceLoaderHelper",

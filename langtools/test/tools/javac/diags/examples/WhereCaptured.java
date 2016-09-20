@@ -28,7 +28,7 @@
 // key: compiler.err.cant.apply.symbol
 // key: compiler.misc.incompatible.eq.bounds
 // key: compiler.misc.captured.type
-// options: -diags:formatterOptions=where,simpleNames
+// options: --diags:formatterOptions=where,simpleNames
 // run: simple
 
 import java.util.*;

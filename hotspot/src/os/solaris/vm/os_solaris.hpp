@@ -292,10 +292,6 @@ class Solaris {
   static          jint  _os_thread_limit;
   static volatile jint  _os_thread_count;
 
-  // Minimum stack size a thread can be created with (allowing
-  // the VM to completely create the thread and enter user code)
-
-  static size_t min_stack_allowed;
 
   // Stack overflow handling
 

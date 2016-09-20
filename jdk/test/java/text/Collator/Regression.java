@@ -29,6 +29,7 @@
  *      4133509 4139572 4141640 4179126 4179686 4244884 4663220
  * @library /java/text/testlib
  * @summary Regression tests for Collation and associated classes
+ * @modules jdk.localedata
  */
 /*
 (C) Copyright Taligent, Inc. 1996 - All Rights Reserved

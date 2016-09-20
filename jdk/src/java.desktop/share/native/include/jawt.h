@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ extern "C" {
 #endif
 
 /*
- * AWT native interface (new in JDK 1.3)
+ * AWT native interface.
  *
  * The AWT native interface allows a native C or C++ application a means
  * by which to access native structures in AWT.  This is to facilitate moving
@@ -279,6 +279,50 @@ typedef struct jawt {
      */
     jobject (JNICALL *GetComponent)(JNIEnv* env, void* platformInfo);
 
+    /**
+     * Since 9
+     * Creates a java.awt.Frame placed in a native container. Container is
+     * referenced by the native platform handle. For example on Windows this
+     * corresponds to an HWND. For other platforms, see the appropriate
+     * machine-dependent header file for a description. The reference returned
+     * by this function is a local reference that is only valid in this
+     * environment. This function returns a NULL reference if no frame could be
+     * created with matching platform information.
+     */
+    jobject (JNICALL *CreateEmbeddedFrame) (JNIEnv *env, void* platformInfo);
+
+    /**
+     * Since 9
+     * Moves and resizes the embedded frame. The new location of the top-left
+     * corner is specified by x and y parameters relative to the native parent
+     * component. The new size is specified by width and height.
+     *
+     * The embedded frame should be created by CreateEmbeddedFrame() method, or
+     * this function will not have any effect.
+     *
+     * java.awt.Component.setLocation() and java.awt.Component.setBounds() for
+     * EmbeddedFrame really don't move it within the native parent. These
+     * methods always locate the embedded frame at (0, 0) for backward
+     * compatibility. To allow moving embedded frames this method was
+     * introduced, and it works just the same way as setLocation() and
+     * setBounds() for usual, non-embedded components.
+     *
+     * Using usual get/setLocation() and get/setBounds() together with this new
+     * method is not recommended.
+     */
+    void (JNICALL *SetBounds) (JNIEnv *env, jobject embeddedFrame,
+            jint x, jint y, jint w, jint h);
+    /**
+     * Since 9
+     * Synthesize a native message to activate or deactivate an EmbeddedFrame
+     * window depending on the value of parameter doActivate, if "true"
+     * activates the window; otherwise, deactivates the window.
+     *
+     * The embedded frame should be created by CreateEmbeddedFrame() method, or
+     * this function will not have any effect.
+     */
+    void (JNICALL *SynthesizeWindowActivation) (JNIEnv *env,
+            jobject embeddedFrame, jboolean doActivate);
 } JAWT;
 
 /*
@@ -291,6 +335,7 @@ jboolean JNICALL JAWT_GetAWT(JNIEnv* env, JAWT* awt);
 #define JAWT_VERSION_1_3 0x00010003
 #define JAWT_VERSION_1_4 0x00010004
 #define JAWT_VERSION_1_7 0x00010007
+#define JAWT_VERSION_9 0x00090000
 
 #ifdef __cplusplus
 } /* extern "C" */

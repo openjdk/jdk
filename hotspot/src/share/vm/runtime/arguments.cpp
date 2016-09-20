@@ -33,8 +33,9 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "logging/log.hpp"
-#include "logging/logTag.hpp"
 #include "logging/logConfiguration.hpp"
+#include "logging/logStream.hpp"
+#include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -163,26 +164,47 @@ static void logOption(const char* opt) {
 
 bool needs_module_property_warning = false;
 
-#define MODULE_PROPERTY_PREFIX "jdk.module"
-#define MODULE_PROPERTY_PREFIX_LEN 10
-#define MODULE_MAIN_PROPERTY "jdk.module.main"
-#define MODULE_MAIN_PROPERTY_LEN 15
+#define MODULE_PROPERTY_PREFIX "jdk.module."
+#define MODULE_PROPERTY_PREFIX_LEN 11
+#define ADDEXPORTS "addexports"
+#define ADDEXPORTS_LEN 10
+#define ADDREADS "addreads"
+#define ADDREADS_LEN 8
+#define PATCH "patch"
+#define PATCH_LEN 5
+#define ADDMODS "addmods"
+#define ADDMODS_LEN 7
+#define LIMITMODS "limitmods"
+#define LIMITMODS_LEN 9
+#define PATH "path"
+#define PATH_LEN 4
+#define UPGRADE_PATH "upgrade.path"
+#define UPGRADE_PATH_LEN 12
 
-// Return TRUE if option matches property, or property=, or property..
-static bool matches_property_prefix(const char* option, const char* property, size_t len) {
-  return (strncmp(option, property, len) == 0) &&
-          (option[len] == '=' || option[len] == '.' || option[len] == '\0');
+// Return TRUE if option matches 'property', or 'property=', or 'property.'.
+static bool matches_property_suffix(const char* option, const char* property, size_t len) {
+  return ((strncmp(option, property, len) == 0) &&
+          (option[len] == '=' || option[len] == '.' || option[len] == '\0'));
 }
 
-// Return true if the property is either "jdk.module" or starts with "jdk.module.",
-// but does not start with "jdk.module.main".
-// Return false if jdk.module.main because jdk.module.main and jdk.module.main.class
-// are valid non-internal system properties.
-// "property" should be passed without the leading "-D".
+// Return true if property starts with "jdk.module." and its ensuing chars match
+// any of the reserved module properties.
+// property should be passed without the leading "-D".
 bool Arguments::is_internal_module_property(const char* property) {
   assert((strncmp(property, "-D", 2) != 0), "Unexpected leading -D");
-  return (matches_property_prefix(property, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) &&
-          !matches_property_prefix(property, MODULE_MAIN_PROPERTY, MODULE_MAIN_PROPERTY_LEN));
+  if  (strncmp(property, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) == 0) {
+    const char* property_suffix = property + MODULE_PROPERTY_PREFIX_LEN;
+    if (matches_property_suffix(property_suffix, ADDEXPORTS, ADDEXPORTS_LEN) ||
+        matches_property_suffix(property_suffix, ADDREADS, ADDREADS_LEN) ||
+        matches_property_suffix(property_suffix, PATCH, PATCH_LEN) ||
+        matches_property_suffix(property_suffix, ADDMODS, ADDMODS_LEN) ||
+        matches_property_suffix(property_suffix, LIMITMODS, LIMITMODS_LEN) ||
+        matches_property_suffix(property_suffix, PATH, PATH_LEN) ||
+        matches_property_suffix(property_suffix, UPGRADE_PATH, UPGRADE_PATH_LEN)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Process java launcher properties.
@@ -1286,35 +1308,13 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
   return true;
 }
 
-// sets or adds a module name to the jdk.module.addmods property
-bool Arguments::append_to_addmods_property(const char* module_name) {
-  const char* key = "jdk.module.addmods";
-  const char* old_value = Arguments::get_property(key);
-  size_t buf_len = strlen(key) + strlen(module_name) + 2;
-  if (old_value != NULL) {
-    buf_len += strlen(old_value) + 1;
-  }
-  char* new_value = AllocateHeap(buf_len, mtArguments);
-  if (new_value == NULL) {
-    return false;
-  }
-  if (old_value == NULL) {
-    jio_snprintf(new_value, buf_len, "%s=%s", key, module_name);
-  } else {
-    jio_snprintf(new_value, buf_len, "%s=%s,%s", key, old_value, module_name);
-  }
-  bool added = add_property(new_value, UnwriteableProperty, InternalProperty);
-  FreeHeap(new_value);
-  return added;
-}
-
 #if INCLUDE_CDS
 void Arguments::check_unsupported_dumping_properties() {
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
   const char* unsupported_properties[5] = { "jdk.module.main",
                                            "jdk.module.path",
                                            "jdk.module.upgrade.path",
-                                           "jdk.module.addmods",
+                                           "jdk.module.addmods.0",
                                            "jdk.module.limitmods" };
   const char* unsupported_options[5] = { "-m",
                                         "--module-path",
@@ -1665,11 +1665,6 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     CompactibleFreeListSpaceLAB::modify_initialization(OldPLABSize, OldPLABWeight);
   }
 
-  if (!ClassUnloading) {
-    FLAG_SET_CMDLINE(bool, CMSClassUnloadingEnabled, false);
-    FLAG_SET_CMDLINE(bool, ExplicitGCInvokesConcurrentAndUnloadsClasses, false);
-  }
-
   log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
 }
 #endif // INCLUDE_ALL_GCS
@@ -1996,6 +1991,13 @@ void Arguments::set_gc_specific_flags() {
   if (MinHeapFreeRatio == 100) {
     // Keeping the heap 100% free is hard ;-) so limit it to 99%.
     FLAG_SET_ERGO(uintx, MinHeapFreeRatio, 99);
+  }
+
+  // If class unloading is disabled, also disable concurrent class unloading.
+  if (!ClassUnloading) {
+    FLAG_SET_CMDLINE(bool, CMSClassUnloadingEnabled, false);
+    FLAG_SET_CMDLINE(bool, ClassUnloadingWithConcurrentMark, false);
+    FLAG_SET_CMDLINE(bool, ExplicitGCInvokesConcurrentAndUnloadsClasses, false);
   }
 #endif // INCLUDE_ALL_GCS
 }
@@ -2544,8 +2546,8 @@ bool Arguments::parse_uintx(const char* value,
 
 unsigned int addreads_count = 0;
 unsigned int addexports_count = 0;
+unsigned int addmods_count = 0;
 unsigned int patch_mod_count = 0;
-const char* add_modules_value = NULL;
 
 bool Arguments::create_property(const char* prop_name, const char* prop_value, PropertyInternal internal) {
   size_t prop_len = strlen(prop_name) + strlen(prop_value) + 2;
@@ -2799,7 +2801,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_ENOMEM;
       }
     } else if (match_option(option, "--add-modules=", &tail)) {
-      add_modules_value = tail;
+      if (!create_numbered_property("jdk.module.addmods", tail, addmods_count++)) {
+        return JNI_ENOMEM;
+      }
     } else if (match_option(option, "--limit-modules=", &tail)) {
       if (!create_property("jdk.module.limitmods", tail, InternalProperty)) {
         return JNI_ENOMEM;
@@ -2851,7 +2855,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         char *options = strcpy(NEW_C_HEAP_ARRAY(char, strlen(tail) + 1, mtArguments), tail);
         add_init_agent("instrument", options, false);
         // java agents need module java.instrument
-        if (!Arguments::append_to_addmods_property("java.instrument")) {
+        if (!create_numbered_property("jdk.module.addmods", "java.instrument", addmods_count++)) {
           return JNI_ENOMEM;
         }
       }
@@ -3127,7 +3131,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           return JNI_EINVAL;
         }
         // management agent in module java.management
-        if (!Arguments::append_to_addmods_property("java.management")) {
+        if (!create_numbered_property("jdk.module.addmods", "java.management", addmods_count++)) {
           return JNI_ENOMEM;
         }
 #else
@@ -3538,15 +3542,6 @@ jint Arguments::finalize_vm_init_args() {
     return JNI_ERR;
   }
 
-  // Append the value of the last --add-modules option specified on the command line.
-  // This needs to be done here, to prevent overwriting possible values written
-  // to the jdk.module.addmods property by -javaagent and other options.
-  if (add_modules_value != NULL) {
-    if (!append_to_addmods_property(add_modules_value)) {
-      return JNI_ENOMEM;
-    }
-  }
-
   // This must be done after all arguments have been processed.
   // java_compiler() true means set to "NONE" or empty.
   if (java_compiler() && !xdebug_mode()) {
@@ -3595,7 +3590,8 @@ jint Arguments::finalize_vm_init_args() {
 #endif
 
 #if INCLUDE_JVMCI
-  if (EnableJVMCI && !append_to_addmods_property("jdk.vm.ci")) {
+  if (EnableJVMCI &&
+      !create_numbered_property("jdk.module.addmods", "jdk.vm.ci", addmods_count++)) {
     return JNI_ENOMEM;
   }
 #endif
@@ -4155,7 +4151,10 @@ bool Arguments::handle_deprecated_print_gc_flags() {
   if (_gc_log_filename != NULL) {
     // -Xloggc was used to specify a filename
     const char* gc_conf = PrintGCDetails ? "gc*" : "gc";
-    return  LogConfiguration::parse_log_arguments(_gc_log_filename, gc_conf, NULL, NULL, NULL);
+
+    LogTarget(Error, logging) target;
+    LogStreamCHeap errstream(target);
+    return LogConfiguration::parse_log_arguments(_gc_log_filename, gc_conf, NULL, NULL, &errstream);
   } else if (PrintGC || PrintGCDetails) {
     LogConfiguration::configure_stdout(LogLevel::Info, !PrintGCDetails, LOG_TAGS(gc));
   }
@@ -4287,8 +4286,8 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   }
 
   if (needs_module_property_warning) {
-    warning("Ignoring system property options whose names start with '-Djdk.module'."
-            "  They are reserved for internal use.");
+    warning("Ignoring system property options whose names match the '-Djdk.module.*'."
+            " names that are reserved for internal use.");
   }
 
 #if defined(_ALLBSD_SOURCE) || defined(AIX)  // UseLargePages is not yet supported on BSD and AIX.

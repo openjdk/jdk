@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test 8080352
  * @summary Tests for hard errors, like syntax errors
  * @build KullaTesting
  * @run testng RejectedFailedTest
@@ -81,6 +81,7 @@ public class RejectedFailedTest extends KullaTesting {
                 " a b c",
                 ")",
                 "class interface A",
+                "package foo;"
         };
         checkByKind(inputsErroneous, Kind.ERRONEOUS);
     }

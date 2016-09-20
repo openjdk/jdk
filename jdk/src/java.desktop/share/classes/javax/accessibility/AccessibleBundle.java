@@ -31,6 +31,7 @@ import java.util.Vector;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import sun.awt.AWTAccessor;
 
 /**
  * <p>Base class used to maintain a strongly typed enumeration.  This is
@@ -52,6 +53,17 @@ public abstract class AccessibleBundle {
     private static Hashtable<Locale, Hashtable<String, Object>> table = new Hashtable<>();
     private final String defaultResourceBundleName
         = "com.sun.accessibility.internal.resources.accessibility";
+
+    static {
+        AWTAccessor.setAccessibleBundleAccessor(
+                new AWTAccessor.AccessibleBundleAccessor() {
+
+                    @Override
+                    public String getKey(AccessibleBundle accessibleBundle) {
+                        return accessibleBundle.key;
+                    }
+                });
+    }
 
     /**
      * Construct an {@code AccessibleBundle}.

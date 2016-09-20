@@ -30,6 +30,8 @@ import static jaxp.library.JAXPTestUtilities.setSystemProperty;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import javax.xml.stream.XMLResolver;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
@@ -50,7 +52,7 @@ import org.xml.sax.SAXParseException;
 
 /*
  * @test
- * @bug 8158084 8162438 8162442 8163535
+ * @bug 8158084 8162438 8162442 8163535 8166220
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true catalog.CatalogSupport2
  * @run testng/othervm catalog.CatalogSupport2
@@ -126,6 +128,15 @@ public class CatalogSupport2 extends CatalogSupportBase {
     public void testDOMC(boolean setUseCatalog, boolean useCatalog, String catalog,
             String xml, MyHandler handler, String expected) throws Exception {
         testDOM(setUseCatalog, useCatalog, catalog, xml, handler, expected);
+    }
+
+    /*
+       Verifies the Catalog support on XMLStreamReader.
+    */
+    @Test(dataProvider = "data_StAXC")
+    public void testStAXC(boolean setUseCatalog, boolean useCatalog, String catalog,
+            String xml, XMLResolver resolver, String expected) throws Exception {
+        testStAXNegative(setUseCatalog, useCatalog, catalog, xml, resolver, expected);
     }
 
     /*
@@ -205,6 +216,17 @@ public class CatalogSupport2 extends CatalogSupportBase {
     }
 
     /*
+       DataProvider: for testing the StAX parser
+       Data: set use_catalog, use_catalog, catalog file, xml file, handler, expected result string
+     */
+    @DataProvider(name = "data_StAXC")
+    public Object[][] getDataStAX() {
+        return new Object[][]{
+            {false, true, xml_catalog, xml_system, null, "null"},
+        };
+    }
+
+    /*
        DataProvider: for testing Schema validation
        Data: set use_catalog, use_catalog, catalog file, xsd file, a LSResourceResolver
      */
@@ -233,8 +255,8 @@ public class CatalogSupport2 extends CatalogSupportBase {
         SAXSource ss = new SAXSource(new InputSource(xml_val_test));
         ss.setSystemId(xml_val_test_id);
 
-        StAXSource stax = getStaxSource(xml_val_test, xml_val_test_id);
-        StAXSource stax1 = getStaxSource(xml_val_test, xml_val_test_id);
+        StAXSource stax = getStaxSource(xml_val_test, xml_val_test_id, false, true, xml_catalog);
+        StAXSource stax1 = getStaxSource(xml_val_test, xml_val_test_id, false, true, xml_catalog);
 
         StreamSource source = new StreamSource(new File(xml_val_test));
 
