@@ -27,9 +27,9 @@
 <!DOCTYPE relation_decls SYSTEM "trace.dtd">
 
 <relation_decls>
-  <relation_decl id="GC_ID" uri="vm/gc/id"/>
-  <relation_decl id="COMP_ID" uri="vm/compiler/id"/>
-  <relation_decl id="SWEEP_ID" uri="vm/code_sweeper/id"/>
-  <relation_decl id="JAVA_MONITOR_ADDRESS" uri="java/monitor/address"/>
-  <relation_decl id="SAFEPOINT_ID" uri="vm/runtime/safepoint/id"/>
+  <relation_decl id="GcId" uri="vm/gc/id"/>
+  <relation_decl id="CompileId" uri="vm/compiler/id"/>
+  <relation_decl id="SweepId" uri="vm/code_sweeper/id"/>
+  <relation_decl id="JavaMonitorAddress" uri="java/monitor/address"/>
+  <relation_decl id="SafepointId" uri="vm/runtime/safepoint/id"/>
 </relation_decls>

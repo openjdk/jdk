@@ -55,8 +55,6 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Pair;
@@ -534,7 +532,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         TreePath[] deepest = new TreePath[1];
 
         new TreePathScanner<Void, Void>() {
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Void scan(Tree tree, Void p) {
                 if (tree == null)
                     return null;
@@ -552,7 +550,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
                 return null;
             }
-            @Override @DefinedBy(Api.COMPILER_TREE)
+            @Override
             public Void visitErroneous(ErroneousTree node, Void p) {
                 return scan(node.getErrorTrees(), null);
             }
@@ -840,8 +838,31 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     }
 
     private Stream<Element> localElements(Scope scope) {
-        @SuppressWarnings("unchecked")
-        Stream<Element> elements = Util.stream((Iterable<Element>)scope.getLocalElements());
+        //workaround for: JDK-8024687
+        Iterable<Element> elementsIt = () -> new Iterator<Element>() {
+            Iterator<? extends Element> it = scope.getLocalElements().iterator();
+            @Override
+            public boolean hasNext() {
+                while (true) {
+                    try {
+                        return it.hasNext();
+                    } catch (CompletionFailure cf) {
+                        //ignore...
+                    }
+                }
+            }
+            @Override
+            public Element next() {
+                while (true) {
+                    try {
+                        return it.next();
+                    } catch (CompletionFailure cf) {
+                        //ignore...
+                    }
+                }
+            }
+        };
+        Stream<Element> elements = Util.stream(elementsIt);
 
         if (scope.getEnclosingScope() != null &&
             scope.getEnclosingClass() != scope.getEnclosingScope().getEnclosingClass()) {
@@ -1250,7 +1271,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             Trees trees = Trees.instance(source.fst);
 
             new TreePathScanner<Void, Void>() {
-                @Override @DefinedBy(Api.COMPILER_TREE)
+                @Override
                 public Void visitMethod(MethodTree node, Void p) {
                     Element currentMethod = trees.getElement(getCurrentPath());
 

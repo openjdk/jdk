@@ -25,7 +25,7 @@
  * @test
  * @bug 8078389
  * @summary Make sure there is no interference between completionDeps and doclint
- * @compile -Xdebug:completionDeps -Xdoclint DepsAndDocLint.java
+ * @compile --debug:completionDeps -Xdoclint DepsAndDocLint.java
  */
 
 public class DepsAndDocLint {

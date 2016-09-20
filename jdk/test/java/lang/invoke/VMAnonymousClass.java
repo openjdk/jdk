@@ -57,9 +57,9 @@ public class VMAnonymousClass {
     @Test public void testJavaLangInvoke()  throws Throwable { test("java/lang/invoke");  }
     @Test public void testProhibitedJavaPkg() throws Throwable {
        try {
-          test("java/prohibited");
-       } catch (SecurityException e) {
-         return;
+           test("java/prohibited");
+       } catch (IllegalArgumentException e) {
+           return;
        }
        throw new RuntimeException("Expected SecurityException");
      }
@@ -72,10 +72,17 @@ public class VMAnonymousClass {
         if (pkg.equals("java/prohibited")) {
             VMAnonymousClass sampleclass = new VMAnonymousClass();
             host_class = (Class)sampleclass.getClass();
+        } else if (pkg.equals("java/lang")) {
+          host_class = Object.class;
+        } else if (pkg.equals("java/util")) {
+            host_class = java.util.ArrayList.class;
+        } else if (pkg.equals("jdk/internal/misc")) {
+            host_class = jdk.internal.misc.Signal.class;
+        } else if (pkg.equals("java/lang/invoke")) {
+            host_class = java.lang.invoke.CallSite.class;
         } else {
-            host_class = Object.class;
+            throw new RuntimeException("Unexpected pkg: " + pkg);
         }
-
         // Define VM anonymous class
         Class anonClass = unsafe.defineAnonymousClass(host_class, bytes, null);
 

@@ -285,5 +285,3 @@ class MyXMLFilter extends XMLFilterImpl implements AutoCloseable {
             bWriter.close();
     }
 }
-
-

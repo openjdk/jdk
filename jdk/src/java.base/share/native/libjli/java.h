@@ -112,6 +112,9 @@ GetXUsagePath(char *buf, jint bufsize);
 jboolean
 GetApplicationHome(char *buf, jint bufsize);
 
+jboolean
+GetApplicationHomeFromDll(char *buf, jint bufsize);
+
 #define GetArch() GetArchPath(CURRENT_DATA_MODEL)
 
 /*
@@ -252,6 +255,13 @@ typedef struct {
 
 #define NULL_CHECK(NC_check_pointer) \
     NULL_CHECK_RETURN_VALUE(NC_check_pointer, )
+
+#define CHECK_EXCEPTION_RETURN_VALUE(CER_value) \
+    do { \
+        if ((*env)->ExceptionOccurred(env)) { \
+            return CER_value; \
+        } \
+    } while (JNI_FALSE)
 
 #define CHECK_EXCEPTION_RETURN() \
     do { \

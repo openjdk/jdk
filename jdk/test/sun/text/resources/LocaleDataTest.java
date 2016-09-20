@@ -40,6 +40,7 @@
  *      8145136
  * @summary Verify locale data
  * @modules java.base/sun.util.resources
+ * @modules jdk.localedata
  * @run main LocaleDataTest
  * @run main LocaleDataTest -cldr
  *
@@ -145,12 +146,20 @@
  *    this test against the new version of the data.
  */
 
-import java.io.*;
-import java.text.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FilterReader;
+import java.io.FilterWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.ResourceBundle.Control;
 import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import sun.util.resources.LocaleData;
 
 public class LocaleDataTest

@@ -26,24 +26,24 @@
 # Define public interface.
 
 SUNWprivate_1.1 {
-	global:
-		Java_java_awt_SplashScreen__1update;
-		Java_java_awt_SplashScreen__1isVisible;
-		Java_java_awt_SplashScreen__1getBounds;
-		Java_java_awt_SplashScreen__1getInstance;
-		Java_java_awt_SplashScreen__1close;
-                Java_java_awt_SplashScreen__1getImageFileName;
-                Java_java_awt_SplashScreen__1getImageJarName;
-                Java_java_awt_SplashScreen__1setImageData;
-                Java_java_awt_SplashScreen__1getScaleFactor;
+    global:
+        Java_java_awt_SplashScreen__1update;
+        Java_java_awt_SplashScreen__1isVisible;
+        Java_java_awt_SplashScreen__1getBounds;
+        Java_java_awt_SplashScreen__1getInstance;
+        Java_java_awt_SplashScreen__1close;
+        Java_java_awt_SplashScreen__1getImageFileName;
+        Java_java_awt_SplashScreen__1getImageJarName;
+        Java_java_awt_SplashScreen__1setImageData;
+        Java_java_awt_SplashScreen__1getScaleFactor;
 
-		SplashLoadMemory;
-		SplashLoadFile;
-		SplashInit;
-		SplashClose;
-                SplashSetFileJarName;
-                SplashSetScaleFactor;
-                SplashGetScaledImageName;
-	local:
-		*;
+        SplashLoadMemory;
+        SplashLoadFile;
+        SplashInit;
+        SplashClose;
+        SplashSetFileJarName;
+        SplashSetScaleFactor;
+        SplashGetScaledImageName;
+    local:
+        *;
 };

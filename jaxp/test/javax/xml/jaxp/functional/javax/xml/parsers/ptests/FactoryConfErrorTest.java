@@ -86,5 +86,3 @@ public class FactoryConfErrorTest {
         DocumentBuilderFactory.newInstance();
     }
 }
-
-

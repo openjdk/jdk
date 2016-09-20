@@ -35,8 +35,6 @@ import javax.lang.model.element.ElementVisitor;
 import javax.lang.model.element.Name;
 import javax.lang.model.type.TypeMirror;
 
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.doclet.DocletEnvironment;
 
 /**
@@ -56,52 +54,52 @@ public class OverviewElement implements Element {
         this.docEnv = docEnv;
     }
 
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    @Override
     public TypeMirror asType() {
         throw new UnsupportedOperationException("Unsupported method");
     }
 
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    @Override
     public ElementKind getKind() {
         return ElementKind.OTHER;
     }
 
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    @Override
     public Set<javax.lang.model.element.Modifier> getModifiers() {
         throw new UnsupportedOperationException("Unsupported method");
     }
 
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    @Override
     public Name getSimpleName() {
         throw new UnsupportedOperationException("Unsupported method");
     }
 
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    @Override
     public Element getEnclosingElement() {
         throw new UnsupportedOperationException("Unsupported method");
     }
 
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    @Override
     public java.util.List<? extends Element> getEnclosedElements() {
         throw new UnsupportedOperationException("Unsupported method");
     }
 
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    @Override
     public java.util.List<? extends AnnotationMirror> getAnnotationMirrors() {
         throw new UnsupportedOperationException("Unsupported method");
     }
 
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    @Override
     public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
         throw new UnsupportedOperationException("Unsupported method");
     }
 
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    @Override
     public <R, P> R accept(ElementVisitor<R, P> v, P p) {
         return v.visitUnknown(this, p);
     }
 
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    @Override
     public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
         throw new UnsupportedOperationException("Unsupported method");
     }

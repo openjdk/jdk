@@ -35,6 +35,7 @@ import javax.lang.model.type.TypeMirror;
 import jdk.javadoc.internal.doclets.formats.html.ConfigurationImpl;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.MethodWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
@@ -156,8 +157,9 @@ public class MethodBuilder extends AbstractMemberBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildMethodDoc(XMLNode node, Content memberDetailsTree) {
+    public void buildMethodDoc(XMLNode node, Content memberDetailsTree) throws DocletException {
         if (writer == null) {
             return;
         }

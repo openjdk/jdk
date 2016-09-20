@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.util.stream.Stream;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
-import javax.xml.catalog.CatalogUriResolver;
 
 import jaxp.library.JAXPTestUtilities;
 
@@ -101,18 +100,18 @@ final class CatalogTestUtils {
     /*
      * Creates catalogUriResolver with a set of catalogs.
      */
-    static CatalogUriResolver catalogUriResolver(String... catalogName) {
+    static CatalogResolver catalogUriResolver(String... catalogName) {
         return catalogUriResolver(CatalogFeatures.defaults(), catalogName);
     }
 
     /*
      * Creates catalogUriResolver with a feature and a set of catalogs.
      */
-    static CatalogUriResolver catalogUriResolver(
+    static CatalogResolver catalogUriResolver(
             CatalogFeatures features, String... catalogName) {
         return (catalogName == null) ?
-                CatalogManager.catalogUriResolver(features) :
-                CatalogManager.catalogUriResolver(features, getCatalogPaths(catalogName));
+                CatalogManager.catalogResolver(features) :
+                CatalogManager.catalogResolver(features, getCatalogPaths(catalogName));
     }
 
     // Gets the paths of the specified catalogs.

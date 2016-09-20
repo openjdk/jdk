@@ -189,7 +189,6 @@ jdk_security3 = \
     -sun/security/krb5 \
     -sun/security/jgss \
     javax/net \
-    sun/net/www/protocol/https \
     com/sun/net/ssl \
     lib/security
 

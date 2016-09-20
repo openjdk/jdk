@@ -705,9 +705,6 @@ void TemplateTable::aload_0_internal(RewriteControl rc) {
     // get next byte
     __ ldub(at_bcp(Bytecodes::length_for(Bytecodes::_aload_0)), G3_scratch);
 
-    // do actual aload_0
-    aload(0);
-
     // if _getfield then wait with rewrite
     __ cmp_and_br_short(G3_scratch, (int)Bytecodes::_getfield, Assembler::equal, Assembler::pn, done);
 
@@ -738,9 +735,10 @@ void TemplateTable::aload_0_internal(RewriteControl rc) {
     __ bind(rewrite);
     patch_bytecode(Bytecodes::_aload_0, G4_scratch, G3_scratch, false);
     __ bind(done);
-  } else {
-    aload(0);
   }
+
+  // Do actual aload_0 (must do this after patch_bytecode which might call VM and GC might change oop).
+  aload(0);
 }
 
 void TemplateTable::istore() {

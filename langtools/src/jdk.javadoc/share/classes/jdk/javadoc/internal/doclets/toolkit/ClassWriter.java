@@ -25,9 +25,9 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
-import java.io.*;
-
 import javax.lang.model.element.TypeElement;
+
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 
 /**
  * The interface for writing class output.
@@ -193,8 +193,9 @@ public interface ClassWriter {
      * Print the document.
      *
      * @param contentTree content tree that will be printed as a document
+     * @throws DocFileIOException if there is a problem while writing the document
      */
-    public void printDocument(Content contentTree) throws IOException;
+    public void printDocument(Content contentTree) throws DocFileIOException;
 
     /**
      * Return the TypeElement being documented.

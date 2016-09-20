@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html.markup;
 
-import java.io.*;
 import java.util.*;
 
 import javax.lang.model.element.ModuleElement;
@@ -38,6 +37,7 @@ import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -66,6 +66,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * Constructor. Initializes the destination file name through the super
      * class HtmlWriter.
      *
+     * @param configuration the configuration for this doclet
      * @param filename String file name.
      */
     public HtmlDocWriter(Configuration configuration, DocPath filename) {
@@ -78,6 +79,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
 
     /**
      * Accessor for configuration.
+     * @return the configuration for this doclet
      */
     public abstract Configuration configuration();
 
@@ -289,13 +291,9 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         DocLink mtFrameLink = new DocLink(DocPaths.moduleTypeFrame(mdle));
         DocLink cFrameLink = new DocLink(DocPaths.moduleSummary(mdle));
         HtmlTree anchor = HtmlTree.A(mdlLink.toString(), label);
-        StringBuilder onclickStr = new StringBuilder("updateModuleFrame('")
-                .append(mtFrameLink.toString())
-                .append("','")
-                .append(cFrameLink.toString())
-                .append("');");
+        String onclickStr = "updateModuleFrame('" + mtFrameLink + "','" + cFrameLink + "');";
         anchor.addAttr(HtmlAttr.TARGET, target);
-        anchor.addAttr(HtmlAttr.ONCLICK, onclickStr.toString());
+        anchor.addAttr(HtmlAttr.ONCLICK, onclickStr);
         return anchor;
     }
 
@@ -318,9 +316,10 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param title Title of this HTML document
      * @param configuration the configuration object
      * @param body the body content tree to be added to the HTML document
+     * @throws DocFileIOException if there is an error writing the frames document
      */
     public void printFramesDocument(String title, ConfigurationImpl configuration,
-            HtmlTree body) throws IOException {
+            HtmlTree body) throws DocFileIOException {
         Content htmlDocType = configuration.isOutputHtml5()
                 ? DocType.HTML5
                 : DocType.TRANSITIONAL;
@@ -345,6 +344,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
     /**
      * Returns a link to the stylesheet file.
      *
+     * @param configuration the configuration for this doclet
      * @return an HtmlTree for the lINK tag which provides the stylesheet location
      */
     public HtmlTree getStyleSheetProperties(ConfigurationImpl configuration) {

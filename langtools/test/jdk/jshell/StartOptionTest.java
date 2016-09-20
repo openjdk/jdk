@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8151754 8080883
+ * @test 8151754 8080883 8160089
  * @summary Testing start-up options.
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -63,7 +63,6 @@ public class StartOptionTest {
                 new PrintStream(cmdout),
                 new PrintStream(cmderr),
                 new PrintStream(console),
-                new TestingInputStream(),
                 new PrintStream(userout),
                 new PrintStream(usererr),
                 new ReplToolTesting.MemoryPreferences(),
@@ -106,53 +105,68 @@ public class StartOptionTest {
 
     @Test
     public void testUsage() throws Exception {
-        start(s -> {
-            assertTrue(s.split("\n").length >= 7, "Not enough usage lines: " + s);
-            assertTrue(s.startsWith("Usage:   jshell <options>"), "Unexpect usage start: " + s);
-        },  null, "-help");
+        for (String opt : new String[]{"-h", "--help"}) {
+            start(s -> {
+                assertTrue(s.split("\n").length >= 7, "Not enough usage lines: " + s);
+                assertTrue(s.startsWith("Usage:   jshell <options>"), "Unexpect usage start: " + s);
+            }, null, opt);
+        }
     }
 
     @Test
     public void testUnknown() throws Exception {
-        start(s -> {
-            assertTrue(s.split("\n").length >= 7, "Not enough usage lines (unknown): " + s);
-            assertTrue(s.startsWith("Usage:   jshell <options>"), "Unexpect usage start (unknown): " + s);
-        }, s -> assertEquals(s.trim(), "Unknown option: -unknown"), "-unknown");
+        start(s -> { },
+              s -> assertEquals(s.trim(), "Unknown option: u"), "-unknown");
+        start(s -> { },
+              s -> assertEquals(s.trim(), "Unknown option: unknown"), "--unknown");
     }
 
     public void testStartup() throws Exception {
         Compiler compiler = new Compiler();
         Path p = compiler.getPath("file.txt");
         compiler.writeToFile(p);
-        start("", "'-startup' requires a filename argument.", "-startup");
-        start("", "Only one -startup or -nostartup option may be used.", "-startup", p.toString(), "-startup", p.toString());
-        start("", "Only one -startup or -nostartup option may be used.", "-nostartup", "-startup", p.toString());
-        start("", "Only one -startup or -nostartup option may be used.", "-startup", p.toString(), "-nostartup");
-        start("", "Only one -startup or -nostartup option may be used.", "-nostartup", "-nostartup");
-        start("", "Only one -startup or -nostartup option may be used.", "-nostartup", "-startup");
+        start("", "Argument to startup missing.", "--startup");
+        start("", "Only one --startup or --no-startup option may be used.", "--startup", p.toString(), "--startup", p.toString());
+        start("", "Only one --startup or --no-startup option may be used.", "--no-startup", "--startup", p.toString());
+        start("", "Only one --startup or --no-startup option may be used.", "--startup", p.toString(), "--no-startup");
+        start("", "Argument to startup missing.", "--no-startup", "--startup");
     }
 
     public void testStartupUnknown() throws Exception {
-        start("", "File 'UNKNOWN' for '-startup' is not found.", "-startup", "UNKNOWN");
+        start("", "File 'UNKNOWN' for '--startup' is not found.", "--startup", "UNKNOWN");
     }
 
     @Test
     public void testClasspath() throws Exception {
-        for (String cp : new String[] {"-cp", "-classpath"}) {
-            start("", "Conflicting -classpath option.", cp, ".", "-classpath", ".");
-            start("", "Argument to -classpath missing.", cp);
+        for (String cp : new String[] {"--class-path"}) {
+            start("", "Only one --class-path option may be used.", cp, ".", "--class-path", ".");
+            start("", "Argument to class-path missing.", cp);
         }
     }
 
     @Test
+    public void testFeedbackOptionConflict() throws Exception {
+        start("", "Only one feedback option (--feedback, -q, -s, or -v) may be used.",
+                "--feedback", "concise", "--feedback", "verbose");
+        start("", "Only one feedback option (--feedback, -q, -s, or -v) may be used.", "--feedback", "concise", "-s");
+        start("", "Only one feedback option (--feedback, -q, -s, or -v) may be used.", "--feedback", "verbose", "-q");
+        start("", "Only one feedback option (--feedback, -q, -s, or -v) may be used.", "--feedback", "concise", "-v");
+        start("", "Only one feedback option (--feedback, -q, -s, or -v) may be used.", "-v", "--feedback", "concise");
+        start("", "Only one feedback option (--feedback, -q, -s, or -v) may be used.", "-q", "-v");
+        start("", "Only one feedback option (--feedback, -q, -s, or -v) may be used.", "-s", "-v");
+        start("", "Only one feedback option (--feedback, -q, -s, or -v) may be used.", "-v", "-q");
+        start("", "Only one feedback option (--feedback, -q, -s, or -v) may be used.", "-q", "-s");
+    }
+
+    @Test
     public void testNegFeedbackOption() throws Exception {
-        start("", "Argument to -feedback missing. Mode required.", "-feedback");
-        start("", "Does not match any current feedback mode: blorp -- -feedback blorp", "-feedback", "blorp");
+        start("", "Argument to feedback missing.", "--feedback");
+        start("", "Does not match any current feedback mode: blorp -- --feedback blorp", "--feedback", "blorp");
     }
 
     @Test
     public void testVersion() throws Exception {
-        start(s -> assertTrue(s.startsWith("jshell"), "unexpected version: " + s), null, "-version");
+        start(s -> assertTrue(s.startsWith("jshell"), "unexpected version: " + s), null, "--version");
     }
 
     @AfterMethod

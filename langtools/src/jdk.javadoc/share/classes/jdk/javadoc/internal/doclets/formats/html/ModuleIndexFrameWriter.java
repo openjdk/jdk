@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,10 +38,9 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 
 /**
  * Generate the module index for the left-hand frame in the generated output.
@@ -65,27 +63,19 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param filename Name of the module index file to be generated.
      */
     public ModuleIndexFrameWriter(ConfigurationImpl configuration,
-                                   DocPath filename) throws IOException {
+                                   DocPath filename) {
         super(configuration, filename);
     }
 
     /**
      * Generate the module index file named "module-overview-frame.html".
-     * @throws DocletAbortException
+     * @throws DocFileIOException
      * @param configuration the configuration object
      */
-    public static void generate(ConfigurationImpl configuration) {
-        ModuleIndexFrameWriter modulegen;
+    public static void generate(ConfigurationImpl configuration) throws DocFileIOException {
         DocPath filename = DocPaths.MODULE_OVERVIEW_FRAME;
-        try {
-            modulegen = new ModuleIndexFrameWriter(configuration, filename);
-            modulegen.buildModuleIndexFile("doclet.Window_Overview", false);
-        } catch (IOException exc) {
-            Messages messages = configuration.getMessages();
-            messages.error("doclet.exception_encountered",
-                        exc.toString(), filename);
-            throw new DocletAbortException(exc);
-        }
+        ModuleIndexFrameWriter modulegen = new ModuleIndexFrameWriter(configuration, filename);
+        modulegen.buildModuleIndexFile("doclet.Window_Overview", false);
     }
 
     /**

@@ -25,11 +25,10 @@
  * @test UsageThresholdIncreasedTest
  * @summary verifying that threshold hasn't been hit after allocation smaller
  *     than threshold value and that threshold value can be changed
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- *
- * @build compiler.codecache.jmx.UsageThresholdIncreasedTest
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions

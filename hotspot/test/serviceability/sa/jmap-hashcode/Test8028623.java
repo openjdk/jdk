@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  */
 
 import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.OutputBuffer;
+import jdk.test.lib.process.OutputBuffer;
 import jdk.test.lib.Platform;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
 
@@ -32,12 +32,11 @@ import java.io.File;
  * @test
  * @bug 8028623
  * @summary Test hashing of extended characters in Serviceability Agent.
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build jdk.test.lib.*
  * @compile -encoding utf8 Test8028623.java
  * @run main/othervm -XX:+UsePerfData Test8028623
  */

@@ -22,6 +22,12 @@ do
       ;;
   esac
 
+  case $type in
+    boolean|byte|short|char|int|long)
+      args="$args -KBitwise"
+      ;;
+  esac
+
   wrong_primitive_type=boolean
 
   case $type in
@@ -106,6 +112,12 @@ do
   case $type in
     int|long)
       args="$args -KAtomicAdd"
+      ;;
+  esac
+
+  case $type in
+    int|long)
+      args="$args -KBitwise"
       ;;
   esac
 

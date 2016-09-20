@@ -40,15 +40,14 @@ import java.util.Map;
 class DemultiplexInput extends Thread {
 
     private final DataInputStream delegate;
-    private final PipeInputStream command;
     private final Map<String, OutputStream> io;
+    private final Iterable<OutputStream> closeList;
 
-    DemultiplexInput(InputStream input, PipeInputStream command,
-            Map<String, OutputStream> io) {
+    DemultiplexInput(InputStream input, Map<String, OutputStream> io, Iterable<OutputStream> closeList) {
         super("output reader");
         this.delegate = new DataInputStream(input);
-        this.command = command;
         this.io = io;
+        this.closeList = closeList;
     }
 
     @Override
@@ -65,23 +64,23 @@ class DemultiplexInput extends Thread {
                 byte[] data = new byte[dataLen];
                 DemultiplexInput.this.delegate.readFully(data);
                 String chan = new String(name, "UTF-8");
-                if (chan.equals("command")) {
-                    for (byte b : data) {
-                        command.write(Byte.toUnsignedInt(b));
-                    }
+                OutputStream out = io.get(chan);
+                if (out == null) {
+                    debug("Unexpected channel name: %s", chan);
                 } else {
-                    OutputStream out = io.get(chan);
-                    if (out == null) {
-                        debug("Unexpected channel name: %s", chan);
-                    } else {
-                        out.write(data);
-                    }
+                    out.write(data);
                 }
             }
         } catch (IOException ex) {
             debug(ex, "Failed reading output");
         } finally {
-            command.close();
+            for (OutputStream out : closeList) {
+                try {
+                    out.close();
+                } catch (IOException ex) {
+                    debug(ex, "Failed reading output");
+                }
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,7 +233,7 @@ public final class HttpCookie implements Cloneable {
         // if not specify max-age, this cookie should be
         // discarded when user agent is to be closed, but
         // it is not expired.
-        if (maxAge == MAX_AGE_UNSPECIFIED) return false;
+        if (maxAge < 0) return false;
 
         long deltaSecond = (System.currentTimeMillis() - whenCreated) / 1000;
         if (deltaSecond > maxAge)
@@ -952,7 +952,8 @@ public final class HttpCookie implements Cloneable {
                                    String attrName,
                                    String attrValue) {
                     if (cookie.getMaxAge() == MAX_AGE_UNSPECIFIED) {
-                        cookie.setMaxAge(cookie.expiryDate2DeltaSeconds(attrValue));
+                        long delta = cookie.expiryDate2DeltaSeconds(attrValue);
+                        cookie.setMaxAge(delta > 0 ? delta : 0);
                     }
                 }
             });

@@ -28,12 +28,12 @@
  * @summary Regression test for attach issue where stale pid files in /tmp lead to connection issues
  * @modules java.base/jdk.internal.misc
  * @modules jdk.attach/sun.tools.attach
- * @library /testlibrary
- * @build jdk.test.lib.* AttachWithStalePidFileTarget
+ * @library /test/lib
  * @run main AttachWithStalePidFile
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.Platform;
+import jdk.test.lib.process.ProcessTools;
 import com.sun.tools.attach.VirtualMachine;
 import sun.tools.attach.HotSpotVirtualMachine;
 import java.lang.reflect.Field;

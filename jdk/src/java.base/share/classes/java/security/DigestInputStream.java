@@ -52,7 +52,7 @@ import java.io.ByteArrayInputStream;
  * {@link MessageDigest}),
  * so that in order to compute intermediate digests, a caller should
  * retain a handle onto the digest object, and clone it for each
- * digest to be computed, leaving the orginal digest untouched.
+ * digest to be computed, leaving the original digest untouched.
  *
  * @see MessageDigest
  *

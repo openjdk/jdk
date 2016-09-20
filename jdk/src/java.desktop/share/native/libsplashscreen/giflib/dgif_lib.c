@@ -114,7 +114,7 @@ DGifOpenFileHandle(int FileHandle, int *Error)
     GifFile->SavedImages = NULL;
     GifFile->SColorMap = NULL;
 
-    Private = (GifFilePrivateType *)malloc(sizeof(GifFilePrivateType));
+    Private = (GifFilePrivateType *)calloc(1, sizeof(GifFilePrivateType));
     if (Private == NULL) {
         if (Error != NULL)
             *Error = D_GIF_ERR_NOT_ENOUGH_MEM;
@@ -122,6 +122,9 @@ DGifOpenFileHandle(int FileHandle, int *Error)
         free((char *)GifFile);
         return NULL;
     }
+
+    /*@i1@*/memset(Private, '\0', sizeof(GifFilePrivateType));
+
 #ifdef _WIN32
     _setmode(FileHandle, O_BINARY);    /* Make sure it is in binary mode. */
 #endif /* _WIN32 */
@@ -197,13 +200,14 @@ DGifOpen(void *userData, InputFunc readFunc, int *Error)
     GifFile->SavedImages = NULL;
     GifFile->SColorMap = NULL;
 
-    Private = (GifFilePrivateType *)malloc(sizeof(GifFilePrivateType));
+    Private = (GifFilePrivateType *)calloc(1, sizeof(GifFilePrivateType));
     if (!Private) {
         if (Error != NULL)
             *Error = D_GIF_ERR_NOT_ENOUGH_MEM;
         free((char *)GifFile);
         return NULL;
     }
+    /*@i1@*/memset(Private, '\0', sizeof(GifFilePrivateType));
 
     GifFile->Private = (void *)Private;
     Private->FileHandle = 0;
@@ -417,8 +421,8 @@ DGifGetImageDesc(GifFileType *GifFile)
 
     if (GifFile->SavedImages) {
         SavedImage* new_saved_images =
-            (SavedImage *)realloc(GifFile->SavedImages,
-                            sizeof(SavedImage) * (GifFile->ImageCount + 1));
+            (SavedImage *)reallocarray(GifFile->SavedImages,
+                            (GifFile->ImageCount + 1), sizeof(SavedImage));
         if (new_saved_images == NULL) {
             GifFile->Error = D_GIF_ERR_NOT_ENOUGH_MEM;
             return GIF_ERROR;
@@ -788,6 +792,12 @@ DGifSetupDecompress(GifFileType *GifFile)
     }
     BitsPerPixel = CodeSize;
 
+    /* this can only happen on a severely malformed GIF */
+    if (BitsPerPixel > 8) {
+        GifFile->Error = D_GIF_ERR_READ_FAILED;    /* somewhat bogus error code */
+        return GIF_ERROR;    /* Failed to read Code size. */
+    }
+
     Private->Buf[0] = 0;    /* Input Buffer empty. */
     Private->BitsPerPixel = BitsPerPixel;
     Private->ClearCode = (1 << BitsPerPixel);
@@ -1123,7 +1133,7 @@ DGifSlurp(GifFileType *GifFile)
               if (ImageSize > (SIZE_MAX / sizeof(GifPixelType))) {
                   return GIF_ERROR;
               }
-              sp->RasterBits = (unsigned char *)malloc(ImageSize *
+              sp->RasterBits = (unsigned char *)reallocarray(NULL, ImageSize,
                       sizeof(GifPixelType));
 
               if (sp->RasterBits == NULL) {

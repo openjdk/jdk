@@ -68,8 +68,6 @@ import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
@@ -874,22 +872,22 @@ public class ElementsTable {
         if (shouldDocumentVisitor == null) {
             shouldDocumentVisitor = new SimpleElementVisitor9<Boolean, Void>() {
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Boolean visitType(TypeElement e, Void p) {
                     return shouldDocument((ClassSymbol) e);
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Boolean visitVariable(VariableElement e, Void p) {
                     return shouldDocument((VarSymbol) e);
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Boolean visitExecutable(ExecutableElement e, Void p) {
                     return shouldDocument((MethodSymbol) e);
                 }
 
-                @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                @Override
                 public Boolean visitPackage(PackageElement e, Void p) {
                     return accessFilter.checkModifier(e);
                 }
@@ -947,19 +945,19 @@ public class ElementsTable {
             includedCache = new LinkedHashSet<>();
         }
 
-        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        @Override
         public Boolean visitModule(ModuleElement e, Void p) {
             // deduced by specified and/or requires expansion
             return includedModuleElements.contains(e);
         }
 
-        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        @Override
         public Boolean visitPackage(PackageElement e, Void p) {
             // deduced by specified or downward expansions
             return includedPackageElements.contains(e);
         }
 
-        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        @Override
         public Boolean visitType(TypeElement e, Void p) {
             if (includedTypeElements.contains(e)) {
                 return true;
@@ -988,7 +986,7 @@ public class ElementsTable {
         }
 
         // members
-        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        @Override
         public Boolean defaultAction(Element e, Void p) {
             if (includedCache.contains(e))
                 return true;
@@ -1006,7 +1004,7 @@ public class ElementsTable {
             return false;
         }
 
-        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        @Override
         public Boolean visitUnknown(Element e, Void p) {
             throw new AssertionError("unknown element: " + e);
         }

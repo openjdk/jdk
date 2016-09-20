@@ -84,4 +84,3 @@ public class Issue58Test {
     }
 
 }
-

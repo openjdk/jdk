@@ -29,7 +29,7 @@
 // key: compiler.misc.incompatible.eq.bounds
 // key: compiler.misc.captured.type
 // key: compiler.misc.type.null
-// options: -diags:formatterOptions=where,simpleNames
+// options: --diags:formatterOptions=where,simpleNames
 // run: simple
 
 import java.util.*;

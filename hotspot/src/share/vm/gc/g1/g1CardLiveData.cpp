@@ -30,7 +30,7 @@
 #include "gc/shared/workgroup.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/bitMap.inline.hpp"

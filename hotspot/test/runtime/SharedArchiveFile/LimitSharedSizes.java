@@ -23,14 +23,16 @@
 
 /* @test LimitSharedSizes
  * @summary Test handling of limits on shared space size
- * @library /testlibrary /runtime/CommandLine/OptionsValidation/common
+ * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.attach/sun.tools.attach
  * @run main LimitSharedSizes
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Platform;
 import optionsvalidation.JVMOptionsUtils;
 
 public class LimitSharedSizes {

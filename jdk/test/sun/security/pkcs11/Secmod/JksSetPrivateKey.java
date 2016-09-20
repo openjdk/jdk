@@ -21,12 +21,13 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6269847
  * @summary store a NSS PKCS11 PrivateKeyEntry to JKS KeyStore throws confusing NPE
  * @author Wang Weijun
  * @library ..
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm JksSetPrivateKey
  * @run main/othervm JksSetPrivateKey sm policy
  */

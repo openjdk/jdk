@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6405536 8042967
  * @summary basic test of SHA1withECDSA and NONEwithECDSA signing/verifying
@@ -29,6 +29,7 @@
  * @library ..
  * @library ../../../../java/security/testlibrary
  * @key randomness
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestECDSA
  * @run main/othervm TestECDSA sm policy
  */

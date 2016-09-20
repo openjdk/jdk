@@ -21,13 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4856966
  * @summary basic test of SHA1withDSA and RawDSA signing/verifying
  * @author Andreas Sterbenz
  * @library ..
  * @key randomness
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestDSA
  * @run main/othervm TestDSA sm
  */
