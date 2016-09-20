@@ -55,6 +55,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 import jdk.tools.jlink.internal.BasicImageWriter;
 import jdk.tools.jlink.internal.plugins.FileCopierPlugin.SymImageFile;
 import jdk.tools.jlink.internal.ExecutableImage;
@@ -78,28 +79,21 @@ public final class DefaultImageBuilder implements ImageBuilder {
         private final List<String> args;
         private final Set<String> modules;
 
-        public DefaultExecutableImage(Path home, Set<String> modules) {
-            this(home, modules, createArgs(home));
-        }
-
-        private DefaultExecutableImage(Path home, Set<String> modules,
-                List<String> args) {
+        DefaultExecutableImage(Path home, Set<String> modules) {
             Objects.requireNonNull(home);
-            Objects.requireNonNull(args);
             if (!Files.exists(home)) {
                 throw new IllegalArgumentException("Invalid image home");
             }
             this.home = home;
             this.modules = Collections.unmodifiableSet(modules);
-            this.args = Collections.unmodifiableList(args);
+            this.args = createArgs(home);
         }
 
         private static List<String> createArgs(Path home) {
             Objects.requireNonNull(home);
-            List<String> javaArgs = new ArrayList<>();
-            javaArgs.add(home.resolve("bin").
-                    resolve(getJavaProcessName()).toString());
-            return javaArgs;
+            Path binDir = home.resolve("bin");
+            String java = Files.exists(binDir.resolve("java"))? "java" : "java.exe";
+            return List.of(binDir.resolve(java).toString());
         }
 
         @Override
@@ -130,6 +124,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
     private final Path root;
     private final Path mdir;
     private final Set<String> modules = new HashSet<>();
+    private String targetOsName;
 
     /**
      * Default image builder constructor.
@@ -165,12 +160,17 @@ public final class DefaultImageBuilder implements ImageBuilder {
             }
             i++;
         }
-        props.setProperty("MODULES", builder.toString());
+        props.setProperty("MODULES", quote(builder.toString()));
     }
 
     @Override
     public void storeFiles(ResourcePool files) {
         try {
+            // populate release properties up-front. targetOsName
+            // field is assigned from there and used elsewhere.
+            Properties release = releaseProperties(files);
+            Path bin = root.resolve("bin");
+
             files.entries().forEach(f -> {
                 if (!f.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)) {
                     try {
@@ -186,16 +186,17 @@ public final class DefaultImageBuilder implements ImageBuilder {
                     modules.add(m.name());
                 }
             });
-            storeFiles(modules, releaseProperties(files));
 
-            if (Files.getFileStore(root).supportsFileAttributeView(PosixFileAttributeView.class)) {
-                // launchers in the bin directory need execute permission
-                Path bin = root.resolve("bin");
+            storeFiles(modules, release);
+
+            if (root.getFileSystem().supportedFileAttributeViews()
+                    .contains("posix")) {
+                // launchers in the bin directory need execute permission.
+                // On Windows, "bin" also subdirectories containing jvm.dll.
                 if (Files.isDirectory(bin)) {
-                    Files.list(bin)
-                            .filter(f -> !f.toString().endsWith(".diz"))
-                            .filter(f -> Files.isRegularFile(f))
-                            .forEach(this::setExecutable);
+                    Files.find(bin, 2, (path, attrs) -> {
+                        return attrs.isRegularFile() && !path.toString().endsWith(".diz");
+                    }).forEach(this::setExecutable);
                 }
 
                 // jspawnhelper is in lib or lib/<arch>
@@ -208,10 +209,28 @@ public final class DefaultImageBuilder implements ImageBuilder {
                 }
             }
 
-            prepareApplicationFiles(files, modules);
+            // If native files are stripped completely, <root>/bin dir won't exist!
+            // So, don't bother generating launcher scripts.
+            if (Files.isDirectory(bin)) {
+                 prepareApplicationFiles(files, modules);
+            }
         } catch (IOException ex) {
             throw new PluginException(ex);
         }
+    }
+
+    // Parse version string and return a string that includes only version part
+    // leaving "pre", "build" information. See also: java.lang.Runtime.Version.
+    private static String parseVersion(String str) {
+        return Runtime.Version.parse(str).
+            version().
+            stream().
+            map(Object::toString).
+            collect(Collectors.joining("."));
+    }
+
+    private static String quote(String str) {
+        return "\"" + str + "\"";
     }
 
     private Properties releaseProperties(ResourcePool pool) throws IOException {
@@ -220,11 +239,21 @@ public final class DefaultImageBuilder implements ImageBuilder {
         javaBase.ifPresent(mod -> {
             // fill release information available from transformed "java.base" module!
             ModuleDescriptor desc = mod.descriptor();
-            desc.osName().ifPresent(s -> props.setProperty("OS_NAME", s));
-            desc.osVersion().ifPresent(s -> props.setProperty("OS_VERSION", s));
-            desc.osArch().ifPresent(s -> props.setProperty("OS_ARCH", s));
-            props.setProperty("JAVA_VERSION", System.getProperty("java.version"));
+            desc.osName().ifPresent(s -> {
+                props.setProperty("OS_NAME", quote(s));
+                this.targetOsName = s;
+            });
+            desc.osVersion().ifPresent(s -> props.setProperty("OS_VERSION", quote(s)));
+            desc.osArch().ifPresent(s -> props.setProperty("OS_ARCH", quote(s)));
+            desc.version().ifPresent(s -> props.setProperty("JAVA_VERSION",
+                    quote(parseVersion(s.toString()))));
+            desc.version().ifPresent(s -> props.setProperty("JAVA_FULL_VERSION",
+                    quote(s.toString())));
         });
+
+        if (this.targetOsName == null) {
+            throw new PluginException("TargetPlatform attribute is missing for java.base module");
+        }
 
         Optional<ResourcePoolEntry> release = pool.findEntry("/java.base/release");
         if (release.isPresent()) {
@@ -274,8 +303,8 @@ public final class DefaultImageBuilder implements ImageBuilder {
                         StandardOpenOption.CREATE_NEW)) {
                     writer.write(sb.toString());
                 }
-                if (Files.getFileStore(root.resolve("bin"))
-                        .supportsFileAttributeView(PosixFileAttributeView.class)) {
+                if (root.resolve("bin").getFileSystem()
+                        .supportedFileAttributeViews().contains("posix")) {
                     setExecutable(cmd);
                 }
                 // generate .bat file for Windows
@@ -373,7 +402,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
         Files.createLink(dstFile, target);
     }
 
-    private static String nativeDir(String filename) {
+    private String nativeDir(String filename) {
         if (isWindows()) {
             if (filename.endsWith(".dll") || filename.endsWith(".diz")
                     || filename.endsWith(".pdb") || filename.endsWith(".map")) {
@@ -386,8 +415,8 @@ public final class DefaultImageBuilder implements ImageBuilder {
         }
     }
 
-    private static boolean isWindows() {
-        return System.getProperty("os.name").startsWith("Windows");
+    private boolean isWindows() {
+        return targetOsName.startsWith("Windows");
     }
 
     /**
@@ -452,12 +481,10 @@ public final class DefaultImageBuilder implements ImageBuilder {
         }
     }
 
-    private static String getJavaProcessName() {
-        return isWindows() ? "java.exe" : "java";
-    }
-
     public static ExecutableImage getExecutableImage(Path root) {
-        if (Files.exists(root.resolve("bin").resolve(getJavaProcessName()))) {
+        Path binDir = root.resolve("bin");
+        if (Files.exists(binDir.resolve("java")) ||
+            Files.exists(binDir.resolve("java.exe"))) {
             return new DefaultExecutableImage(root, retrieveModules(root));
         }
         return null;

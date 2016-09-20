@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -476,7 +476,8 @@ class Package {
             } else if (localICs.isEmpty()) {
                 // It was a non-empty diff, but the local ICs were absent.
                 actualICs = null;
-                changed = 0;  // [] => null, no tuple change
+                // [] => null, no tuple change, but attribute deletion.
+                changed = -1;
             } else {
                 // Non-trivial diff was transmitted.
                 actualICs = computeICdiff();

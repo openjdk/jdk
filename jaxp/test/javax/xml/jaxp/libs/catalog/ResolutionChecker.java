@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package catalog;
 
 import javax.xml.catalog.CatalogResolver;
-import javax.xml.catalog.CatalogUriResolver;
 
 import org.testng.Assert;
 
@@ -65,7 +64,7 @@ class ResolutionChecker {
      * Checks the resolution result for specified URI references
      * with the specified base location.
      */
-    static void checkUriResolution(CatalogUriResolver resolver,
+    static void checkUriResolution(CatalogResolver resolver,
             String href, String base, String matchedUri) {
         Assert.assertEquals(resolver.resolve(href, base).getSystemId(),
                 matchedUri);
@@ -74,7 +73,7 @@ class ResolutionChecker {
     /*
      * Checks the resolution result for specified URI references.
      */
-    static void checkUriResolution(CatalogUriResolver resolver,
+    static void checkUriResolution(CatalogResolver resolver,
             String href, String matchedUri) {
         checkUriResolution(resolver, href, null, matchedUri);
     }
@@ -92,9 +91,9 @@ class ResolutionChecker {
 
     /*
      * With strict resolution, if no match is found,
-     * CatalogUriResolver should throw CatalogException.
+     * CatalogResolver should throw CatalogException.
      */
-    static void checkNoMatch(CatalogUriResolver resolver) {
+    static void checkNoUriMatch(CatalogResolver resolver) {
         resolver.resolve("http://uri/noMatch/docNoMatch.dtd", getNotSpecified(null));
     }
 
@@ -139,7 +138,7 @@ class ResolutionChecker {
      * URI reference with a specified base location.
      */
     static <T extends Throwable> void expectExceptionOnUri(
-            CatalogUriResolver resolver, String href, String base,
+            CatalogResolver resolver, String href, String base,
             Class<T> expectedExceptionClass) {
         expectThrows(expectedExceptionClass, () -> {
             resolver.resolve(href, base);
@@ -151,7 +150,7 @@ class ResolutionChecker {
      * URI reference without any specified base location.
      */
     static <T extends Throwable> void expectExceptionOnUri(
-            CatalogUriResolver resolver, String href,
+            CatalogResolver resolver, String href,
             Class<T> expectedExceptionClass) {
         expectExceptionOnUri(resolver, href, null, expectedExceptionClass);
     }

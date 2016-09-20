@@ -119,7 +119,8 @@ import java.io.Serializable;
  *
  * <ul>
  * <li>They are <em>structurally immutable</em>. Keys and values cannot be added,
- * removed, or updated. Attempts to do so result in {@code UnsupportedOperationException}.
+ * removed, or updated. Calling any mutator method will always cause
+ * {@code UnsupportedOperationException} to be thrown.
  * However, if the contained keys or values are themselves mutable, this may cause the
  * Map to behave inconsistently or its contents to appear to change.
  * <li>They disallow {@code null} keys and values. Attempts to create them with

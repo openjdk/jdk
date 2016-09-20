@@ -25,10 +25,7 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
-import java.io.*;
-import java.util.Set;
-
-import javax.lang.model.element.PackageElement;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 
 /**
  * The interface for writing module summary output.
@@ -130,6 +127,7 @@ public interface ModuleSummaryWriter {
      * Print the module summary document.
      *
      * @param contentTree the content tree that will be printed
+     * @throws DocFileIOException if there is a problem while writing the document
      */
-    public abstract void printDocument(Content contentTree) throws IOException;
+    public abstract void printDocument(Content contentTree) throws DocFileIOException;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,10 +190,8 @@ DEF_Agent_OnLoad(JavaVM *vm, char *tail, void * reserved) {
             return JNI_ERR;
         }
 
-        /*
-         * Add to the jarfile
-         */
-        appendClassPath(agent, jarfile);
+        /* Save the jarfile name */
+        agent->mJarfile = jarfile;
 
         /*
          * The value of the Premain-Class attribute becomes the agent
@@ -241,7 +239,6 @@ DEF_Agent_OnLoad(JavaVM *vm, char *tail, void * reserved) {
         /*
          * Clean-up
          */
-        free(jarfile);
         if (options != NULL) free(options);
         freeAttributes(attributes);
         free(premainClass);
@@ -459,7 +456,23 @@ eventHandlerVMInit( jvmtiEnv *      jvmtienv,
 
     /* process the premain calls on the all the JPL agents */
     if ( environment != NULL ) {
-        jthrowable outstandingException = preserveThrowable(jnienv);
+        jthrowable outstandingException = NULL;
+        /*
+         * Add the jarfile to the system class path
+         */
+        JPLISAgent * agent = environment->mAgent;
+        if (appendClassPath(agent, agent->mJarfile)) {
+            fprintf(stderr, "Unable to add %s to system class path - "
+                    "the system class loader does not define the "
+                    "appendToClassPathForInstrumentation method or the method failed\n",
+                    agent->mJarfile);
+            free((void *)agent->mJarfile);
+            abortJVM(jnienv, JPLIS_ERRORMESSAGE_CANNOTSTART);
+        }
+        free((void *)agent->mJarfile);
+        agent->mJarfile = NULL;
+
+        outstandingException = preserveThrowable(jnienv);
         success = processJavaStart( environment->mAgent,
                                     jnienv);
         restoreThrowable(jnienv, outstandingException);
@@ -631,32 +644,19 @@ appendClassPath( JPLISAgent* agent,
     jvmtierr = (*jvmtienv)->AddToSystemClassLoaderSearch(jvmtienv, jarfile);
     check_phase_ret_1(jvmtierr);
 
-    if (jvmtierr == JVMTI_ERROR_NONE) {
-        return 0;
-    } else {
-        jvmtiPhase phase;
-        jvmtiError err;
-
-        err = (*jvmtienv)->GetPhase(jvmtienv, &phase);
-        /* can be called from any phase */
-        jplis_assert(err == JVMTI_ERROR_NONE);
-
-        if (phase == JVMTI_PHASE_LIVE) {
-            switch (jvmtierr) {
-                case JVMTI_ERROR_CLASS_LOADER_UNSUPPORTED :
-                    fprintf(stderr, "System class loader does not support adding "
-                        "JAR file to system class path during the live phase!\n");
-                        break;
-                default:
-                    fprintf(stderr, "Unexpected error (%d) returned by "
-                        "AddToSystemClassLoaderSearch\n", jvmtierr);
-                    break;
-            }
-            return -1;
-        }
-        jplis_assert(0);
+    switch (jvmtierr) {
+        case JVMTI_ERROR_NONE :
+            return 0;
+        case JVMTI_ERROR_CLASS_LOADER_UNSUPPORTED :
+            fprintf(stderr, "System class loader does not define "
+                "the appendToClassPathForInstrumentation method\n");
+            break;
+        default:
+            fprintf(stderr, "Unexpected error (%d) returned by "
+                "AddToSystemClassLoaderSearch\n", jvmtierr);
+            break;
     }
-    return -2;
+    return -1;
 }
 
 

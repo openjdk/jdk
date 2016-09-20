@@ -104,30 +104,58 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_PLAIN));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_RELEASE));
 #else[CAS]
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_PLAIN));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_RELEASE));
 #end[CAS]
 
 #if[AtomicAdd]
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
 #else[AtomicAdd]
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
 #end[AtomicAdd]
+
+#if[Bitwise]
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_RELEASE));
+#else[Bitwise]
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_RELEASE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_RELEASE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_RELEASE));
+#end[Bitwise]
     }
 
 
@@ -295,11 +323,11 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            boolean r = vh.weakCompareAndSet(recv, $value1$, $value2$);
+            boolean r = vh.weakCompareAndSetPlain(recv, $value1$, $value2$);
         });
 
         checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetVolatile(recv, $value1$, $value2$);
+            boolean r = vh.weakCompareAndSet(recv, $value1$, $value2$);
         });
 
         checkUOE(() -> {
@@ -313,6 +341,14 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         checkUOE(() -> {
             $type$ r = ($type$) vh.getAndSet(recv, $value1$);
         });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSetAcquire(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSetRelease(recv, $value1$);
+        });
 #end[CAS]
 
 #if[!AtomicAdd]
@@ -321,9 +357,51 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            $type$ o = ($type$) vh.addAndGet(recv, $value1$);
+            $type$ o = ($type$) vh.getAndAddAcquire(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndAddRelease(recv, $value1$);
         });
 #end[AtomicAdd]
+
+#if[!Bitwise]
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseOr(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseOrAcquire(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseOrRelease(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseAnd(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseAndAcquire(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseAndRelease(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseXor(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseXorAcquire(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseXorRelease(recv, $value1$);
+        });
+#end[Bitwise]
     }
 
 
@@ -389,11 +467,11 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            boolean r = vh.weakCompareAndSet($value1$, $value2$);
+            boolean r = vh.weakCompareAndSetPlain($value1$, $value2$);
         });
 
         checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetVolatile($value1$, $value2$);
+            boolean r = vh.weakCompareAndSet($value1$, $value2$);
         });
 
         checkUOE(() -> {
@@ -407,6 +485,14 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         checkUOE(() -> {
             $type$ r = ($type$) vh.getAndSet($value1$);
         });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSetAcquire($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSetRelease($value1$);
+        });
 #end[CAS]
 
 #if[!AtomicAdd]
@@ -415,9 +501,51 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            $type$ o = ($type$) vh.addAndGet($value1$);
+            $type$ o = ($type$) vh.getAndAddAcquire($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndAddRelease($value1$);
         });
 #end[AtomicAdd]
+
+#if[!Bitwise]
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseOr($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseOrAcquire($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseOrRelease($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseAnd($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseAndAcquire($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseAndRelease($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseXor($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseXorAcquire($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseXorRelease($value1$);
+        });
+#end[Bitwise]
     }
 
 
@@ -514,11 +642,11 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSet(recv, $value1$, $value2$);
+                success = vh.weakCompareAndSetPlain(recv, $value1$, $value2$);
             }
-            assertEquals(success, true, "weakCompareAndSet $type$");
+            assertEquals(success, true, "weakCompareAndSetPlain $type$");
             $type$ x = ($type$) vh.get(recv);
-            assertEquals(x, $value2$, "weakCompareAndSet $type$ value");
+            assertEquals(x, $value2$, "weakCompareAndSetPlain $type$ value");
         }
 
         {
@@ -544,33 +672,157 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetVolatile(recv, $value2$, $value1$);
+                success = vh.weakCompareAndSet(recv, $value2$, $value1$);
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile $type$");
+            assertEquals(success, true, "weakCompareAndSet $type$");
             $type$ x = ($type$) vh.get(recv);
-            assertEquals(x, $value1$, "weakCompareAndSetVolatile $type$ value");
+            assertEquals(x, $value1$, "weakCompareAndSet $type$ value");
         }
 
         // Compare set and get
         {
+            vh.set(recv, $value1$);
+
             $type$ o = ($type$) vh.getAndSet(recv, $value2$);
             assertEquals(o, $value1$, "getAndSet $type$");
             $type$ x = ($type$) vh.get(recv);
             assertEquals(x, $value2$, "getAndSet $type$ value");
         }
+
+        {
+            vh.set(recv, $value1$);
+
+            $type$ o = ($type$) vh.getAndSetAcquire(recv, $value2$);
+            assertEquals(o, $value1$, "getAndSetAcquire $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value2$, "getAndSetAcquire $type$ value");
+        }
+
+        {
+            vh.set(recv, $value1$);
+
+            $type$ o = ($type$) vh.getAndSetRelease(recv, $value2$);
+            assertEquals(o, $value1$, "getAndSetRelease $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value2$, "getAndSetRelease $type$ value");
+        }
 #end[CAS]
 
 #if[AtomicAdd]
-        vh.set(recv, $value1$);
-
         // get and add, add and get
         {
-            $type$ o = ($type$) vh.getAndAdd(recv, $value3$);
+            vh.set(recv, $value1$);
+
+            $type$ o = ($type$) vh.getAndAdd(recv, $value2$);
             assertEquals(o, $value1$, "getAndAdd $type$");
-            $type$ c = ($type$) vh.addAndGet(recv, $value3$);
-            assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, ($type$)($value1$ + $value2$), "getAndAdd $type$ value");
+        }
+
+        {
+            vh.set(recv, $value1$);
+
+            $type$ o = ($type$) vh.getAndAddAcquire(recv, $value2$);
+            assertEquals(o, $value1$, "getAndAddAcquire $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, ($type$)($value1$ + $value2$), "getAndAddAcquire $type$ value");
+        }
+
+        {
+            vh.set(recv, $value1$);
+
+            $type$ o = ($type$) vh.getAndAddRelease(recv, $value2$);
+            assertEquals(o, $value1$, "getAndAddRelease$type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, ($type$)($value1$ + $value2$), "getAndAddRelease $type$ value");
         }
 #end[AtomicAdd]
+
+#if[Bitwise]
+        // get and bitwise or
+        {
+            vh.set(recv, $value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseOr(recv, $value2$);
+            assertEquals(o, $value1$, "getAndBitwiseOr $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOr $type$ value");
+        }
+
+        {
+            vh.set(recv, $value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseOrAcquire(recv, $value2$);
+            assertEquals(o, $value1$, "getAndBitwiseOrAcquire $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOrAcquire $type$ value");
+        }
+
+        {
+            vh.set(recv, $value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseOrRelease(recv, $value2$);
+            assertEquals(o, $value1$, "getAndBitwiseOrRelease $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOrRelease $type$ value");
+        }
+
+        // get and bitwise and
+        {
+            vh.set(recv, $value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseAnd(recv, $value2$);
+            assertEquals(o, $value1$, "getAndBitwiseAnd $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAnd $type$ value");
+        }
+
+        {
+            vh.set(recv, $value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseAndAcquire(recv, $value2$);
+            assertEquals(o, $value1$, "getAndBitwiseAndAcquire $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAndAcquire $type$ value");
+        }
+
+        {
+            vh.set(recv, $value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseAndRelease(recv, $value2$);
+            assertEquals(o, $value1$, "getAndBitwiseAndRelease $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAndRelease $type$ value");
+        }
+
+        // get and bitwise xor
+        {
+            vh.set(recv, $value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseXor(recv, $value2$);
+            assertEquals(o, $value1$, "getAndBitwiseXor $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXor $type$ value");
+        }
+
+        {
+            vh.set(recv, $value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseXorAcquire(recv, $value2$);
+            assertEquals(o, $value1$, "getAndBitwiseXorAcquire $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXorAcquire $type$ value");
+        }
+
+        {
+            vh.set(recv, $value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseXorRelease(recv, $value2$);
+            assertEquals(o, $value1$, "getAndBitwiseXorRelease $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXorRelease $type$ value");
+        }
+#end[Bitwise]
     }
 
     static void testInstanceFieldUnsupported(VarHandleTestAccess$Type$ recv, VarHandle vh) {
@@ -592,11 +844,11 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            boolean r = vh.weakCompareAndSet(recv, $value1$, $value2$);
+            boolean r = vh.weakCompareAndSetPlain(recv, $value1$, $value2$);
         });
 
         checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetVolatile(recv, $value1$, $value2$);
+            boolean r = vh.weakCompareAndSet(recv, $value1$, $value2$);
         });
 
         checkUOE(() -> {
@@ -610,6 +862,14 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         checkUOE(() -> {
             $type$ r = ($type$) vh.getAndSet(recv, $value1$);
         });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSetAcquire(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSetRelease(recv, $value1$);
+        });
 #end[CAS]
 
 #if[!AtomicAdd]
@@ -618,9 +878,51 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            $type$ o = ($type$) vh.addAndGet(recv, $value1$);
+            $type$ o = ($type$) vh.getAndAddAcquire(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndAddRelease(recv, $value1$);
         });
 #end[AtomicAdd]
+
+#if[!Bitwise]
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseOr(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseOrAcquire(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseOrRelease(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseAnd(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseAndAcquire(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseAndRelease(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseXor(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseXorAcquire(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseXorRelease(recv, $value1$);
+        });
+#end[Bitwise]
     }
 
 
@@ -717,11 +1019,11 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSet($value1$, $value2$);
+                success = vh.weakCompareAndSetPlain($value1$, $value2$);
             }
-            assertEquals(success, true, "weakCompareAndSet $type$");
+            assertEquals(success, true, "weakCompareAndSetPlain $type$");
             $type$ x = ($type$) vh.get();
-            assertEquals(x, $value2$, "weakCompareAndSet $type$ value");
+            assertEquals(x, $value2$, "weakCompareAndSetPlain $type$ value");
         }
 
         {
@@ -747,33 +1049,157 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetRelease($value2$, $value1$);
+                success = vh.weakCompareAndSet($value2$, $value1$);
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile $type$");
+            assertEquals(success, true, "weakCompareAndSet $type$");
             $type$ x = ($type$) vh.get();
-            assertEquals(x, $value1$, "weakCompareAndSetVolatile $type$");
+            assertEquals(x, $value1$, "weakCompareAndSet $type$");
         }
 
         // Compare set and get
         {
+            vh.set($value1$);
+
             $type$ o = ($type$) vh.getAndSet($value2$);
             assertEquals(o, $value1$, "getAndSet $type$");
             $type$ x = ($type$) vh.get();
             assertEquals(x, $value2$, "getAndSet $type$ value");
         }
+
+        {
+            vh.set($value1$);
+
+            $type$ o = ($type$) vh.getAndSetAcquire($value2$);
+            assertEquals(o, $value1$, "getAndSetAcquire $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value2$, "getAndSetAcquire $type$ value");
+        }
+
+        {
+            vh.set($value1$);
+
+            $type$ o = ($type$) vh.getAndSetRelease($value2$);
+            assertEquals(o, $value1$, "getAndSetRelease $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value2$, "getAndSetRelease $type$ value");
+        }
 #end[CAS]
 
 #if[AtomicAdd]
-        vh.set($value1$);
-
         // get and add, add and get
         {
-            $type$ o = ($type$) vh.getAndAdd( $value3$);
+            vh.set($value1$);
+
+            $type$ o = ($type$) vh.getAndAdd($value2$);
             assertEquals(o, $value1$, "getAndAdd $type$");
-            $type$ c = ($type$) vh.addAndGet($value3$);
-            assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, ($type$)($value1$ + $value2$), "getAndAdd $type$ value");
+        }
+
+        {
+            vh.set($value1$);
+
+            $type$ o = ($type$) vh.getAndAddAcquire($value2$);
+            assertEquals(o, $value1$, "getAndAddAcquire $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, ($type$)($value1$ + $value2$), "getAndAddAcquire $type$ value");
+        }
+
+        {
+            vh.set($value1$);
+
+            $type$ o = ($type$) vh.getAndAddRelease($value2$);
+            assertEquals(o, $value1$, "getAndAddRelease$type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, ($type$)($value1$ + $value2$), "getAndAddRelease $type$ value");
         }
 #end[AtomicAdd]
+
+#if[Bitwise]
+        // get and bitwise or
+        {
+            vh.set($value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseOr($value2$);
+            assertEquals(o, $value1$, "getAndBitwiseOr $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOr $type$ value");
+        }
+
+        {
+            vh.set($value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseOrAcquire($value2$);
+            assertEquals(o, $value1$, "getAndBitwiseOrAcquire $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOrAcquire $type$ value");
+        }
+
+        {
+            vh.set($value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseOrRelease($value2$);
+            assertEquals(o, $value1$, "getAndBitwiseOrRelease $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOrRelease $type$ value");
+        }
+
+        // get and bitwise and
+        {
+            vh.set($value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseAnd($value2$);
+            assertEquals(o, $value1$, "getAndBitwiseAnd $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAnd $type$ value");
+        }
+
+        {
+            vh.set($value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseAndAcquire($value2$);
+            assertEquals(o, $value1$, "getAndBitwiseAndAcquire $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAndAcquire $type$ value");
+        }
+
+        {
+            vh.set($value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseAndRelease($value2$);
+            assertEquals(o, $value1$, "getAndBitwiseAndRelease $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAndRelease $type$ value");
+        }
+
+        // get and bitwise xor
+        {
+            vh.set($value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseXor($value2$);
+            assertEquals(o, $value1$, "getAndBitwiseXor $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXor $type$ value");
+        }
+
+        {
+            vh.set($value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseXorAcquire($value2$);
+            assertEquals(o, $value1$, "getAndBitwiseXorAcquire $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXorAcquire $type$ value");
+        }
+
+        {
+            vh.set($value1$);
+
+            $type$ o = ($type$) vh.getAndBitwiseXorRelease($value2$);
+            assertEquals(o, $value1$, "getAndBitwiseXorRelease $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXorRelease $type$ value");
+        }
+#end[Bitwise]
     }
 
     static void testStaticFieldUnsupported(VarHandle vh) {
@@ -795,11 +1221,11 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            boolean r = vh.weakCompareAndSet($value1$, $value2$);
+            boolean r = vh.weakCompareAndSetPlain($value1$, $value2$);
         });
 
         checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetVolatile($value1$, $value2$);
+            boolean r = vh.weakCompareAndSet($value1$, $value2$);
         });
 
         checkUOE(() -> {
@@ -813,6 +1239,14 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         checkUOE(() -> {
             $type$ r = ($type$) vh.getAndSet($value1$);
         });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSetAcquire($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSetRelease($value1$);
+        });
 #end[CAS]
 
 #if[!AtomicAdd]
@@ -821,9 +1255,51 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            $type$ o = ($type$) vh.addAndGet($value1$);
+            $type$ o = ($type$) vh.getAndAddAcquire($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndAddRelease($value1$);
         });
 #end[AtomicAdd]
+
+#if[!Bitwise]
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseOr($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseOrAcquire($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseOrRelease($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseAnd($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseAndAcquire($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseAndRelease($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseXor($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseXorAcquire($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseXorRelease($value1$);
+        });
+#end[Bitwise]
     }
 
 
@@ -923,11 +1399,11 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSet(array, i, $value1$, $value2$);
+                    success = vh.weakCompareAndSetPlain(array, i, $value1$, $value2$);
                 }
-                assertEquals(success, true, "weakCompareAndSet $type$");
+                assertEquals(success, true, "weakCompareAndSetPlain $type$");
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals(x, $value2$, "weakCompareAndSet $type$ value");
+                assertEquals(x, $value2$, "weakCompareAndSetPlain $type$ value");
             }
 
             {
@@ -953,33 +1429,157 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSetVolatile(array, i, $value2$, $value1$);
+                    success = vh.weakCompareAndSet(array, i, $value2$, $value1$);
                 }
-                assertEquals(success, true, "weakCompareAndSetVolatile $type$");
+                assertEquals(success, true, "weakCompareAndSet $type$");
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals(x, $value1$, "weakCompareAndSetVolatile $type$");
+                assertEquals(x, $value1$, "weakCompareAndSet $type$");
             }
 
             // Compare set and get
             {
+                vh.set(array, i, $value1$);
+
                 $type$ o = ($type$) vh.getAndSet(array, i, $value2$);
                 assertEquals(o, $value1$, "getAndSet $type$");
                 $type$ x = ($type$) vh.get(array, i);
                 assertEquals(x, $value2$, "getAndSet $type$ value");
             }
+
+            {
+                vh.set(array, i, $value1$);
+
+                $type$ o = ($type$) vh.getAndSetAcquire(array, i, $value2$);
+                assertEquals(o, $value1$, "getAndSetAcquire $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value2$, "getAndSetAcquire $type$ value");
+            }
+
+            {
+                vh.set(array, i, $value1$);
+
+                $type$ o = ($type$) vh.getAndSetRelease(array, i, $value2$);
+                assertEquals(o, $value1$, "getAndSetRelease $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value2$, "getAndSetRelease $type$ value");
+            }
 #end[CAS]
 
 #if[AtomicAdd]
-            vh.set(array, i, $value1$);
-
             // get and add, add and get
             {
-                $type$ o = ($type$) vh.getAndAdd(array, i, $value3$);
+                vh.set(array, i, $value1$);
+
+                $type$ o = ($type$) vh.getAndAdd(array, i, $value2$);
                 assertEquals(o, $value1$, "getAndAdd $type$");
-                $type$ c = ($type$) vh.addAndGet(array, i, $value3$);
-                assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, ($type$)($value1$ + $value2$), "getAndAdd $type$ value");
+            }
+
+            {
+                vh.set(array, i, $value1$);
+
+                $type$ o = ($type$) vh.getAndAddAcquire(array, i, $value2$);
+                assertEquals(o, $value1$, "getAndAddAcquire $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, ($type$)($value1$ + $value2$), "getAndAddAcquire $type$ value");
+            }
+
+            {
+                vh.set(array, i, $value1$);
+
+                $type$ o = ($type$) vh.getAndAddRelease(array, i, $value2$);
+                assertEquals(o, $value1$, "getAndAddRelease$type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, ($type$)($value1$ + $value2$), "getAndAddRelease $type$ value");
             }
 #end[AtomicAdd]
+
+#if[Bitwise]
+            // get and bitwise or
+            {
+                vh.set(array, i, $value1$);
+
+                $type$ o = ($type$) vh.getAndBitwiseOr(array, i, $value2$);
+                assertEquals(o, $value1$, "getAndBitwiseOr $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOr $type$ value");
+            }
+
+            {
+                vh.set(array, i, $value1$);
+
+                $type$ o = ($type$) vh.getAndBitwiseOrAcquire(array, i, $value2$);
+                assertEquals(o, $value1$, "getAndBitwiseOrAcquire $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOrAcquire $type$ value");
+            }
+
+            {
+                vh.set(array, i, $value1$);
+
+                $type$ o = ($type$) vh.getAndBitwiseOrRelease(array, i, $value2$);
+                assertEquals(o, $value1$, "getAndBitwiseOrRelease $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOrRelease $type$ value");
+            }
+
+            // get and bitwise and
+            {
+                vh.set(array, i, $value1$);
+
+                $type$ o = ($type$) vh.getAndBitwiseAnd(array, i, $value2$);
+                assertEquals(o, $value1$, "getAndBitwiseAnd $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAnd $type$ value");
+            }
+
+            {
+                vh.set(array, i, $value1$);
+
+                $type$ o = ($type$) vh.getAndBitwiseAndAcquire(array, i, $value2$);
+                assertEquals(o, $value1$, "getAndBitwiseAndAcquire $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAndAcquire $type$ value");
+            }
+
+            {
+                vh.set(array, i, $value1$);
+
+                $type$ o = ($type$) vh.getAndBitwiseAndRelease(array, i, $value2$);
+                assertEquals(o, $value1$, "getAndBitwiseAndRelease $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAndRelease $type$ value");
+            }
+
+            // get and bitwise xor
+            {
+                vh.set(array, i, $value1$);
+
+                $type$ o = ($type$) vh.getAndBitwiseXor(array, i, $value2$);
+                assertEquals(o, $value1$, "getAndBitwiseXor $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXor $type$ value");
+            }
+
+            {
+                vh.set(array, i, $value1$);
+
+                $type$ o = ($type$) vh.getAndBitwiseXorAcquire(array, i, $value2$);
+                assertEquals(o, $value1$, "getAndBitwiseXorAcquire $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXorAcquire $type$ value");
+            }
+
+            {
+                vh.set(array, i, $value1$);
+
+                $type$ o = ($type$) vh.getAndBitwiseXorRelease(array, i, $value2$);
+                assertEquals(o, $value1$, "getAndBitwiseXorRelease $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXorRelease $type$ value");
+            }
+#end[Bitwise]
         }
     }
 
@@ -1005,11 +1605,11 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            boolean r = vh.weakCompareAndSet(array, i, $value1$, $value2$);
+            boolean r = vh.weakCompareAndSetPlain(array, i, $value1$, $value2$);
         });
 
         checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetVolatile(array, i, $value1$, $value2$);
+            boolean r = vh.weakCompareAndSet(array, i, $value1$, $value2$);
         });
 
         checkUOE(() -> {
@@ -1023,6 +1623,14 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         checkUOE(() -> {
             $type$ r = ($type$) vh.getAndSet(array, i, $value1$);
         });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSetAcquire(array, i, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSetRelease(array, i, $value1$);
+        });
 #end[CAS]
 
 #if[!AtomicAdd]
@@ -1031,9 +1639,51 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            $type$ o = ($type$) vh.addAndGet(array, i, $value1$);
+            $type$ o = ($type$) vh.getAndAddAcquire(array, i, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndAddRelease(array, i, $value1$);
         });
 #end[AtomicAdd]
+
+#if[!Bitwise]
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseOr(array, i, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseOrAcquire(array, i, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseOrRelease(array, i, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseAnd(array, i, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseAndAcquire(array, i, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseAndRelease(array, i, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseXor(array, i, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseXorAcquire(array, i, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndBitwiseXorRelease(array, i, $value1$);
+        });
+#end[Bitwise]
     }
 
     static void testArrayIndexOutOfBounds(VarHandle vh) throws Throwable {
@@ -1092,11 +1742,11 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSet(array, ci, $value1$, $value2$);
+                boolean r = vh.weakCompareAndSetPlain(array, ci, $value1$, $value2$);
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSetVolatile(array, ci, $value1$, $value2$);
+                boolean r = vh.weakCompareAndSet(array, ci, $value1$, $value2$);
             });
 
             checkIOOBE(() -> {
@@ -1110,17 +1760,67 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             checkIOOBE(() -> {
                 $type$ o = ($type$) vh.getAndSet(array, ci, $value1$);
             });
+
+            checkIOOBE(() -> {
+                $type$ o = ($type$) vh.getAndSetAcquire(array, ci, $value1$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ o = ($type$) vh.getAndSetRelease(array, ci, $value1$);
+            });
 #end[CAS]
 
 #if[AtomicAdd]
             checkIOOBE(() -> {
-                $type$ o = ($type$) vh.getAndAdd(array, ci, $value3$);
+                $type$ o = ($type$) vh.getAndAdd(array, ci, $value1$);
             });
 
             checkIOOBE(() -> {
-                $type$ o = ($type$) vh.addAndGet(array, ci, $value3$);
+                $type$ o = ($type$) vh.getAndAddAcquire(array, ci, $value1$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ o = ($type$) vh.getAndAddRelease(array, ci, $value1$);
             });
 #end[AtomicAdd]
+
+#if[Bitwise]
+            checkIOOBE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseOr(array, ci, $value1$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseOrAcquire(array, ci, $value1$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseOrRelease(array, ci, $value1$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseAnd(array, ci, $value1$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseAndAcquire(array, ci, $value1$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseAndRelease(array, ci, $value1$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseXor(array, ci, $value1$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseXorAcquire(array, ci, $value1$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseXorRelease(array, ci, $value1$);
+            });
+#end[Bitwise]
         }
     }
 }

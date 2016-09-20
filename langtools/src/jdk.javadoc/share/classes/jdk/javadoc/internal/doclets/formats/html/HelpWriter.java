@@ -25,18 +25,15 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
-
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 
 
 /**
@@ -68,27 +65,21 @@ public class HelpWriter extends HtmlDocletWriter {
      * file. The name of the generated file is "help-doc.html". The help file
      * will get generated if and only if "-helpfile" and "-nohelp" is not used
      * on the command line.
-     * @throws DocletAbortException
+     *
+     * @throws DocFileIOException if there is a problem while generating the documentation
      */
-    public static void generate(ConfigurationImpl configuration) {
-        HelpWriter helpgen;
-        DocPath filename = DocPath.empty;
-        try {
-            filename = DocPaths.HELP_DOC;
-            helpgen = new HelpWriter(configuration, filename);
-            helpgen.generateHelpFile();
-        } catch (IOException exc) {
-            Messages messages = configuration.getMessages();
-            messages.error("doclet.exception_encountered",
-                        exc.toString(), filename);
-            throw new DocletAbortException(exc);
-        }
+    public static void generate(ConfigurationImpl configuration) throws DocFileIOException {
+        DocPath filename = DocPaths.HELP_DOC;
+        HelpWriter helpgen = new HelpWriter(configuration, filename);
+        helpgen.generateHelpFile();
     }
 
     /**
      * Generate the help file contents.
+     *
+     * @throws DocFileIOException if there is a problem while generating the documentation
      */
-    protected void generateHelpFile() throws IOException {
+    protected void generateHelpFile() throws DocFileIOException {
         String title = configuration.getText("doclet.Window_Help_title");
         HtmlTree body = getBody(true, getWindowTitle(title));
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,32 +93,6 @@ public interface MBeanServerInterceptor extends MBeanServer {
             Object[] params, String[] signature)
             throws ReflectionException, MBeanException,
             InstanceNotFoundException;
-
-    /**
-     * This method should never be called.
-     * Usually throws UnsupportedOperationException.
-     */
-    @Deprecated
-    public ObjectInputStream deserialize(ObjectName name, byte[] data)
-            throws InstanceNotFoundException, OperationsException;
-
-    /**
-     * This method should never be called.
-     * Usually throws UnsupportedOperationException.
-     */
-    @Deprecated
-    public ObjectInputStream deserialize(String className, byte[] data)
-            throws OperationsException, ReflectionException;
-
-    /**
-     * This method should never be called.
-     * Usually hrows UnsupportedOperationException.
-     */
-    @Deprecated
-    public ObjectInputStream deserialize(String className,
-            ObjectName loaderName, byte[] data)
-            throws InstanceNotFoundException, OperationsException,
-            ReflectionException;
 
     /**
      * This method should never be called.

@@ -25,13 +25,11 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.util.*;
 
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -39,10 +37,9 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 import jdk.javadoc.internal.doclets.toolkit.util.Group;
 
 /**
@@ -68,15 +65,14 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
     /**
      * HTML tree for main tag.
      */
-    private HtmlTree htmlTree = HtmlTree.MAIN();
+    private final HtmlTree htmlTree = HtmlTree.MAIN();
 
     /**
      * Construct the ModuleIndexWriter.
      * @param configuration the configuration object
      * @param filename the name of the generated file
-     * @throws java.io.IOException
      */
-    public ModuleIndexWriter(ConfigurationImpl configuration, DocPath filename) throws IOException {
+    public ModuleIndexWriter(ConfigurationImpl configuration, DocPath filename) {
         super(configuration, filename);
         modules = configuration.modules;
     }
@@ -85,20 +81,12 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      * Generate the module index page for the right-hand frame.
      *
      * @param configuration the current configuration of the doclet.
+     * @throws DocFileIOException if there is a problem generating the module index page
      */
-    public static void generate(ConfigurationImpl configuration) {
-        ModuleIndexWriter mdlgen;
+    public static void generate(ConfigurationImpl configuration) throws DocFileIOException {
         DocPath filename = DocPaths.overviewSummary(configuration.frames);
-        try {
-            mdlgen = new ModuleIndexWriter(configuration, filename);
-            mdlgen.buildModuleIndexFile("doclet.Window_Overview_Summary", true);
-        } catch (IOException exc) {
-            Messages messages = configuration.getMessages();
-            messages.error(
-                        "doclet.exception_encountered",
-                        exc.toString(), filename);
-            throw new DocletAbortException(exc);
-        }
+        ModuleIndexWriter mdlgen = new ModuleIndexWriter(configuration, filename);
+        mdlgen.buildModuleIndexFile("doclet.Window_Overview_Summary", true);
     }
 
     /**
@@ -106,6 +94,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      *
      * @param body the documentation tree to which the index will be added
      */
+    @Override
     protected void addIndex(Content body) {
         if (modules != null && !modules.isEmpty()) {
             addIndexContents(configuration.getText("doclet.Modules"),
@@ -190,6 +179,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      *
      * @param body the documentation tree to which the overview header will be added
      */
+    @Override
     protected void addOverviewHeader(Content body) {
         addConfigurationTitle(body);
         if (!utils.getBody(configuration.overviewElement).isEmpty()) {
@@ -233,9 +223,9 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      * "-overview" option on the command line.
      *
      * @param body the documentation tree to which the overview will be added
-     * @throws java.io.IOException
      */
-    protected void addOverview(Content body) throws IOException {
+    @Override
+    protected void addOverview(Content body) {
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.contentContainer);
         addOverviewComment(div);
@@ -254,6 +244,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      *
      * @param body the documentation tree to which the navigation bar header will be added
      */
+    @Override
     protected void addNavigationBarHeader(Content body) {
         Content htmlTree = (configuration.allowTag(HtmlTag.HEADER))
                 ? HtmlTree.HEADER()
@@ -271,6 +262,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      *
      * @param body the documentation tree to which the navigation bar footer will be added
      */
+    @Override
     protected void addNavigationBarFooter(Content body) {
         Content htmltree = (configuration.allowTag(HtmlTag.FOOTER))
                 ? HtmlTree.FOOTER()
@@ -282,10 +274,12 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
         }
     }
 
+    @Override
     protected void addModulePackagesList(Map<ModuleElement, Set<PackageElement>> modules, String text,
             String tableSummary, Content body, ModuleElement mdle) {
     }
 
+    @Override
     protected void addModulesList(Map<ModuleElement, Set<PackageElement>> modules, String text,
             String tableSummary, Content body) {
     }

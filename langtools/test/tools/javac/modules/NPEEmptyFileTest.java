@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @summary NPE while compiling empty javafile with -modulesourcepath option
+ * @summary NPE while compiling empty source file with --module-source-path option
  * @library /tools/lib
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api

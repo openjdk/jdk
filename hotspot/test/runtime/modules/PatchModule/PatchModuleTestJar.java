@@ -24,15 +24,16 @@
 /*
  * @test
  * @summary Make sure --patch-module works when a jar file is specified for a module
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
- * @build BasicJarBuilder
  * @compile PatchModuleMain.java
  * @run main PatchModuleTestJar
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class PatchModuleTestJar {
     private static String moduleJar;

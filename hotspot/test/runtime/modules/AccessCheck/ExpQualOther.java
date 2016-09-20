@@ -29,11 +29,10 @@
  *          is exported specifically to module m3, then class p1.c1 in m1 can not
  *          access p2.c2 in m2.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @compile myloaders/MySameClassLoader.java
  * @compile p2/c2.java
  * @compile p1/c1.java
- * @build ExpQualOther
  * @run main/othervm -Xbootclasspath/a:. ExpQualOther
  */
 

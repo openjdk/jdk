@@ -28,11 +28,10 @@
  * @summary class p1.c1 defined in m1 tries to access p2.c2 defined in m2.
  *          Access allowed since m1 can read m2 and package p2 is exported to m1.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @compile myloaders/MyDiffClassLoader.java
  * @compile p2/c2.java
  * @compile p1/c1.java
- * @build DiffCL_ExpQualToM1
  * @run main/othervm -Xbootclasspath/a:. DiffCL_ExpQualToM1
  */
 

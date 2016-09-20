@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,11 +200,13 @@ public final class ModelByteBuffer {
 
     public void writeTo(OutputStream out) throws IOException {
         if (root.file != null && root.buffer == null) {
-            InputStream is = getInputStream();
-            byte[] buff = new byte[1024];
-            int ret;
-            while ((ret = is.read(buff)) != -1)
-                out.write(buff, 0, ret);
+            try (InputStream is = getInputStream()) {
+                byte[] buff = new byte[1024];
+                int ret;
+                while ((ret = is.read(buff)) != -1) {
+                    out.write(buff, 0, ret);
+                }
+            }
         } else
             out.write(array(), (int) arrayOffset(), (int) capacity());
     }

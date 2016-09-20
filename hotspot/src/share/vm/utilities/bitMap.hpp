@@ -284,18 +284,9 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   bool set_difference_with_result(const BitMap& bits);
   bool set_intersection_with_result(const BitMap& bits);
 
-  // Requires the submap of "bits" starting at offset to be at least as
-  // large as "this".  Modifies "this" to be the intersection of its
-  // current contents and the submap of "bits" starting at "offset" of the
-  // same length as "this."
-  // (For expedience, currently requires the offset to be aligned to the
-  // bitsize of a uintptr_t.  This should go away in the future though it
-  // will probably remain a good case to optimize.)
-  void set_intersection_at_offset(const BitMap& bits, idx_t offset);
-
   void set_from(const BitMap& bits);
 
-  bool is_same(const BitMap& bits);
+  bool is_same(const BitMap& bits) const;
 
   // Test if all bits are set or cleared
   bool is_full() const;

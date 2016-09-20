@@ -431,5 +431,3 @@ public class SAXTFactoryTest {
         assertTrue(compareWithGold(goldFile, outputFile));
     }
 }
-
-

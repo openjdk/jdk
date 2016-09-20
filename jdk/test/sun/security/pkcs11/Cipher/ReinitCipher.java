@@ -21,13 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4856966
  * @summary
  * @author Andreas Sterbenz
  * @library ..
  * @key randomness
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm ReinitCipher
  * @run main/othervm ReinitCipher sm
  */
