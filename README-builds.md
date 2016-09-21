@@ -560,8 +560,7 @@ Some of the more commonly used `configure` options are:
 
 >  The Common UNIX Printing System (CUPS) Headers are required for building the
    OpenJDK on Solaris and Linux. The Solaris header files can be obtained by
-   installing the package **SFWcups** from the Solaris Software Companion
-   CD/DVD, these often will be installed into the directory `/opt/sfw/cups`.
+   installing the package **print/cups**.
 
 >  The CUPS header files can always be downloaded from
    [www.cups.org](http://www.cups.org).
