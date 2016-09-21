@@ -5095,7 +5095,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1472718471
+DATE_WHEN_GENERATED=1474459654
 
 ###############################################################################
 #
@@ -56909,23 +56909,6 @@ fi
 
 done
 
-    fi
-    if test "x$CUPS_FOUND" = xno; then
-      # Getting nervous now? Lets poke around for standard Solaris third-party
-      # package installation locations.
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cups headers" >&5
-$as_echo_n "checking for cups headers... " >&6; }
-      if test -s $SYSROOT/opt/sfw/cups/include/cups/cups.h; then
-        # An SFW package seems to be installed!
-        CUPS_FOUND=yes
-        CUPS_CFLAGS="-I$SYSROOT/opt/sfw/cups/include"
-      elif test -s $SYSROOT/opt/csw/include/cups/cups.h; then
-        # A CSW package seems to be installed!
-        CUPS_FOUND=yes
-        CUPS_CFLAGS="-I$SYSROOT/opt/csw/include"
-      fi
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CUPS_FOUND" >&5
-$as_echo "$CUPS_FOUND" >&6; }
     fi
     if test "x$CUPS_FOUND" = xno; then
 
