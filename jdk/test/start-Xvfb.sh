@@ -59,9 +59,6 @@ else
   /usr/bin/nohup /usr/bin/X11/Xvfb -fbdir ${currentDir} -pixdepths 8 16 24 32 ${DISPLAY} > ${currentDir}/nohup.$$ 2>&1 &
 fi
 WM="/usr/bin/X11/fvwm2"
-if [ ! -x ${WM} ] ; then
-  WM="/opt/sfw/bin/fvwm2"
-fi
 #
 # Wait for Xvfb to initialize:
 sleep 5
