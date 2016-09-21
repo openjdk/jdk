@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,27 +26,28 @@
  * @bug     4530538
  * @summary Basic unit test of ThreadInfo.getLockName()
  *          and ThreadInfo.getLockOwnerName()
+ * @library /lib/testlibrary
  * @author  Mandy Chung
  * @author  Jaroslav Bachorik
  *
- * @library /lib/testlibrary
  * @modules java.management
  * @build jdk.testlibrary.*
  * @run main/othervm Locks
  */
-
 import java.lang.management.*;
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.Phaser;
+import java.util.function.Predicate;
 import jdk.testlibrary.LockFreeLogManager;
 
 public class Locks {
-    private static final Object objA = new Object();
-    private static final Object objB = new Object();
-    private static final Object objC = new Object();
-    private static final ThreadMXBean tm = ManagementFactory.getThreadMXBean();
-    private static final LockFreeLogManager logger = new LockFreeLogManager();
 
-    private static boolean testFailed = false;
+    private static final Object OBJA = new Object();
+    private static final Object OBJB = new Object();
+    private static final EnhancedWaiter OBJC = new EnhancedWaiter();
+    private static final ThreadMXBean TM = ManagementFactory.getThreadMXBean();
+    private static final LockFreeLogManager LOGGER = new LockFreeLogManager();
 
     private static String getLockName(Object lock) {
         if (lock == null) return null;
@@ -56,67 +57,103 @@ public class Locks {
     }
 
     private static void assertNoLock(Thread t) {
-        long tid = t.getId();
-        ThreadInfo info = tm.getThreadInfo(tid);
-        String result = info.getLockName();
-
-        if (result != null) {
-            throw new RuntimeException("Thread " + t.getName() + " is not supposed to hold any lock. " +
-                                       "Currently owning lock: " + result);
+        if (t == null) {
+            return;
+        }
+        Optional<ThreadInfo> result = Arrays.asList(
+                TM.getThreadInfo(TM.getAllThreadIds(), true, true)).
+                stream().
+                filter(tInfo -> (tInfo != null && tInfo.getLockOwnerName() != null)
+                        ? tInfo.getLockOwnerName().equals(t.getName()) : false).
+                findAny();
+        if (result.isPresent()) {
+            throw new RuntimeException("Thread " + t.getName() + " is not "
+                    + "supposed to be hold any lock. Currently owning lock : "
+                    + result.get().getLockName());
         }
     }
 
-    private static void checkBlockedObject(Thread t, Object lock, Thread owner,
-                                           Thread.State expectedState) {
-        long tid = t.getId();
-        ThreadInfo info = tm.getThreadInfo(tid);
-        String result = info.getLockName();
-        String expectedLock = (lock != null ? getLockName(lock) : null);
-        String expectedOwner = (owner != null ? owner.getName() : null);
+   /*
+    * Handy debug function to check if error condition is because of test code or not.
+    */
+    private static void printStackTrace(Thread thread) {
+        if (thread == null) {
+            return;
+        }
+        StackTraceElement[] stackTrace = thread.getStackTrace();
+        log("Stack dump : Thread -> " + thread.getName());
+        for (StackTraceElement stackTraceEl : stackTrace) {
+            log("\t" + stackTraceEl.toString());
+        }
+    }
 
-        if (lock != null) {
-            if (expectedState == Thread.State.BLOCKED) {
-                int retryCount=0;
-                while(info.getThreadState() != Thread.State.BLOCKED) {
-                    if (retryCount++ > 500) {
-                        throw new RuntimeException("Thread " + t.getName() +
-                                " is expected to block on " + expectedLock +
-                                " but got " + result +
-                                " Thread.State = " + info.getThreadState());
-                    }
-                    goSleep(100);
-                    info = tm.getThreadInfo(tid);
-                    result = info.getLockName();
+    private static void assertThreadState(Thread t, Thread.State expectedState) {
+        long tid = t.getId();
+        if (expectedState == Thread.State.BLOCKED
+                && TM.getThreadInfo(tid).getThreadState() != Thread.State.BLOCKED) {
+            int retryCount = 0;
+            printStackTrace(t);
+            while (TM.getThreadInfo(tid).getThreadState() != Thread.State.BLOCKED) {
+                if (retryCount++ > 500) {
+                    printStackTrace(t);
+                    throw new RuntimeException("Thread " + t.getName() + " is at "
+                            + TM.getThreadInfo(tid).getThreadState() + " state but is expected to "
+                            + "be in Thread.State = " + expectedState);
                 }
-            }
-            if (expectedState == Thread.State.WAITING &&
-                    info.getThreadState() != Thread.State.WAITING) {
-                throw new RuntimeException("Thread " + t.getName() +
-                        " is expected to wait on " + expectedLock +
-                        " but got " + result +
-                        " Thread.State = " + info.getThreadState());
+                goSleep(100);
             }
         }
-
-        if ((result != null && !result.equals(expectedLock)) ||
-                (result == null && expectedLock != null)) {
-            throw new RuntimeException("Thread " + t.getName() + " is blocked on " +
-                    expectedLock + " but got " + result);
-        }
-        result = info.getLockOwnerName();
-        if ((result != null && !result.equals(expectedOwner)) ||
-                (result == null && expectedOwner != null)) {
-            throw new RuntimeException("Owner of " + lock + " should be " +
-                    expectedOwner + " but got " + result);
+        if (!TM.getThreadInfo(tid).getThreadState().equals(expectedState)) {
+            printStackTrace(t);
+            throw new RuntimeException("Thread " + t.getName() + " is at "
+                    + TM.getThreadInfo(tid).getThreadState() + " state but is expected to "
+                    + "be in Thread.State = " + expectedState);
         }
     }
 
-    private static void goSleep(long ms) {
+   /*
+    * Do slow check if thread is blocked on a lock. It is possible that last thread
+    * to come out of Phaser might still be in Phaser call stack (Unsafe.park) and
+    * hence might eventually acquire expected lock.
+    */
+    private static void checkBlockedObject(Thread t, Object lock, Thread owner) {
+        long tid = t.getId();
+        String result = TM.getThreadInfo(tid).getLockName();
+        final String expectedLock = (lock != null ? getLockName(lock) : null);
+        Predicate<String> p = (res) -> ((res != null && !res.equals(expectedLock))
+                || (res == null && expectedLock != null));
+
+        if (p.test(result)) {
+            printStackTrace(t);
+            int retryCount = 0;
+            while (p.test(result)) {
+                if (retryCount++ > 500) {
+                    printStackTrace(t);
+                    throw new RuntimeException("Thread " + t.getName() + " is blocked on "
+                            + expectedLock + " but got " + result);
+                }
+                goSleep(100);
+                result = TM.getThreadInfo(tid).getLockName();
+            }
+        }
+
+        result = TM.getThreadInfo(tid).getLockOwnerName();
+        final String expectedOwner = (owner != null ? owner.getName() : null);
+
+        p = (res) -> ((res != null && !res.equals(expectedOwner))
+                || (res == null && expectedOwner != null));
+        if (p.test(result)) {
+            printStackTrace(t);
+            throw new RuntimeException("Owner of " + lock + " should be "
+                    + expectedOwner + " but got " + result);
+        }
+    }
+
+    private static void goSleep(long ms){
         try {
             Thread.sleep(ms);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            testFailed = true;
+        } catch (InterruptedException ex) {
+            throw new RuntimeException(ex);
         }
     }
 
@@ -128,14 +165,15 @@ public class Locks {
             super("LockAThread");
             this.p = p;
         }
+        @Override
         public void run() {
-            synchronized(objA) {
-                // stop here  for LockBThread to hold objB
-                log("LockAThread about to block on objB");
+            synchronized(OBJA) {
+                // block here while LockBThread holds OBJB
+                log("LockAThread about to block on OBJB");
                 p.arriveAndAwaitAdvance(); // Phase 1 (blocking)
-                synchronized(objB) {
+                synchronized(OBJB) {
                     dummyCounter++;
-                };
+                }
             }
             p.arriveAndAwaitAdvance(); // Phase 2 (blocking)
             log("LockAThread about to exit");
@@ -150,14 +188,15 @@ public class Locks {
             super("LockBThread");
             this.p = p;
         }
+        @Override
         public void run() {
-            synchronized(objB) {
-                log("LockBThread about to block on objC");
+            synchronized(OBJB) {
+                log("LockBThread about to block on OBJC");
                 p.arriveAndAwaitAdvance(); // Phase 1 (blocking)
-                // Signal main thread about to block on objC
-                synchronized(objC) {
+                // Signal main thread about to block on OBJC
+                synchronized(OBJC) {
                     dummyCounter++;
-                };
+                }
             }
             p.arriveAndAwaitAdvance(); // Phase 2 (blocking)
             log("LockBThread about to exit");
@@ -166,9 +205,30 @@ public class Locks {
         }
     }
 
+   /*
+    * Must be invoked from within a synchronized context
+    */
+    private static class EnhancedWaiter {
+
+        boolean isNotified = false;
+
+        public void doWait() throws InterruptedException {
+            while (!isNotified) {
+                wait();
+            }
+            isNotified = false;
+        }
+
+        public void doNotify() {
+            isNotified = true;
+            notify();
+        }
+    }
+
     private static WaitingThread waiter;
     private static final Object ready = new Object();
     private static CheckerThread checker;
+
     static class WaitingThread extends Thread {
         private final Phaser p;
 
@@ -180,17 +240,16 @@ public class Locks {
         }
         @Override
         public void run() {
-            synchronized(objC) {
-                log("WaitingThread about to wait on objC");
+            synchronized(OBJC) {
+                log("WaitingThread about to wait on OBJC");
                 try {
-                    // Signal checker thread, about to wait on objC.
+                    // Signal checker thread, about to wait on OBJC.
                     waiting = false;
                     p.arriveAndAwaitAdvance(); // Phase 1 (waiting)
                     waiting = true;
-                    objC.wait();
+                    OBJC.doWait();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    testFailed = true;
+                    throw new RuntimeException(e); // Do not continue test
                 }
 
                 // block until CheckerThread finishes checking
@@ -202,19 +261,18 @@ public class Locks {
                     dummyCounter++;
                 }
             }
-            synchronized(objC) {
+            synchronized(OBJC) {
                 try {
-                    // signal checker thread, about to wait on objC
+                    // signal checker thread, about to wait on OBJC
                     waiting = false;
                     p.arriveAndAwaitAdvance(); // Phase 3 (waiting)
                     waiting = true;
-                    objC.wait();
+                    OBJC.doWait();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    testFailed = true;
+                    throw new RuntimeException(e);
                 }
             }
-            log("WaitingThread about to exit waiting on objC 2");
+            log("WaitingThread about to exit waiting on OBJC 2");
         }
 
         public void waitForWaiting() {
@@ -241,85 +299,87 @@ public class Locks {
             super("CheckerThread");
         }
 
+        @Override
         public void run() {
-            synchronized (ready) {
-                // wait until WaitingThread about to wait for objC
+            synchronized(ready) {
+                // wait until WaitingThread about to wait for OBJC
                 waiter.waitForWaiting(); // Phase 1 (waiting)
-                checkBlockedObject(waiter, objC, null, Thread.State.WAITING);
+                assertThreadState(waiter, Thread.State.WAITING);
+                checkBlockedObject(waiter, OBJC, null);
 
-                synchronized (objC) {
-                    objC.notify();
+                synchronized(OBJC) {
+                    OBJC.doNotify();
                 }
-
                 // wait for waiter thread to about to enter
                 // synchronized object ready.
                 waiter.waitForBlocked(); // Phase 2 (waiting)
-                checkBlockedObject(waiter, ready, this, Thread.State.BLOCKED);
+                assertThreadState(waiter, Thread.State.BLOCKED);
+                checkBlockedObject(waiter, ready, this);
             }
 
             // wait for signal from waiting thread that it is about
-            // wait for objC.
+            // wait for OBJC.
             waiter.waitForWaiting(); // Phase 3 (waiting)
-            synchronized(objC) {
-                checkBlockedObject(waiter, objC, Thread.currentThread(), Thread.State.WAITING);
-                objC.notify();
+            synchronized(OBJC) {
+                assertThreadState(waiter, Thread.State.WAITING);
+                checkBlockedObject(waiter, OBJC, Thread.currentThread());
+                OBJC.doNotify();
             }
-
         }
     }
 
     public static void main(String args[]) throws Exception {
-        Thread mainThread = Thread.currentThread();
-
-        // Test uncontested case
-        LockAThread t1;
-        LockBThread t2;
-
-        Phaser p = new Phaser(3);
-        synchronized(objC) {
-            // Make sure the main thread is not holding any lock
-            assertNoLock(mainThread);
-
-            // Test deadlock case
-            // t1 holds lockA and attempts to lock B
-            // t2 holds lockB and attempts to lock C
-
-            t1 = new LockAThread(p);
-            t1.start();
-
-            t2 = new LockBThread(p);
-            t2.start();
-
-            p.arriveAndAwaitAdvance(); // Phase 1 (blocking)
-            checkBlockedObject(t2, objC, mainThread, Thread.State.BLOCKED);
-            checkBlockedObject(t1, objB, t2, Thread.State.BLOCKED);
-
-            long[] expectedThreads = new long[3];
-            expectedThreads[0] = t1.getId(); // blocked on lockB
-            expectedThreads[1] = t2.getId(); // owner of lockB blocking on lockC
-            expectedThreads[2] = mainThread.getId(); // owner of lockC
-            findThreadsBlockedOn(objB, expectedThreads);
-        }
-        p.arriveAndAwaitAdvance(); // Phase 2 (blocking)
-
-        p = new Phaser(2);
-        // Test Object.wait() case
-        waiter = new WaitingThread(p);
-        waiter.start();
-
-        checker = new CheckerThread();
-        checker.start();
-
         try {
-            waiter.join();
-            checker.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            testFailed = true;
-        }
+            Thread mainThread = Thread.currentThread();
 
-        if (testFailed) {
-            throw new RuntimeException("TEST FAILED.");
+            // Test uncontested case
+            LockAThread t1;
+            LockBThread t2;
+
+            Phaser p = new Phaser(3);
+            synchronized(OBJC) {
+                // Make sure the main thread is not holding any lock
+                assertNoLock(mainThread);
+
+                // Test deadlock case
+                // t1 holds lockA and attempts to lock B
+                // t2 holds lockB and attempts to lock C
+                t1 = new LockAThread(p);
+                t1.start();
+
+                t2 = new LockBThread(p);
+                t2.start();
+
+                p.arriveAndAwaitAdvance(); // Phase 1 (blocking)
+                assertThreadState(t2, Thread.State.BLOCKED);
+                checkBlockedObject(t2, OBJC, mainThread);
+                assertThreadState(t1, Thread.State.BLOCKED);
+                checkBlockedObject(t1, OBJB, t2);
+
+                long[] expectedThreads = new long[3];
+                expectedThreads[0] = t1.getId(); // blocked on lockB
+                expectedThreads[1] = t2.getId(); // owner of lockB blocking on lockC
+                expectedThreads[2] = mainThread.getId(); // owner of lockC
+                findThreadsBlockedOn(OBJB, expectedThreads);
+            }
+            p.arriveAndAwaitAdvance(); // Phase 2 (blocking)
+
+            p = new Phaser(2);
+            // Test Object.wait() case
+            waiter = new WaitingThread(p);
+            waiter.start();
+
+            checker = new CheckerThread();
+            checker.start();
+
+            try {
+                waiter.join();
+                checker.join();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        } finally { // log all the messages to STDOUT
+            System.out.println(LOGGER.toString());
         }
         System.out.println("Test passed.");
     }
@@ -335,9 +395,9 @@ public class Locks {
                     throw new RuntimeException("TEST FAILED: " +
                             lock + " expected to have owner");
                 }
-                for (int j = 0; j < infos.length; j++) {
-                    if (infos[j].getThreadId() == threadId) {
-                        ownerInfo = infos[j];
+                for (ThreadInfo info1 : infos) {
+                    if (info1.getThreadId() == threadId) {
+                        ownerInfo = info1;
                         break;
                     }
                 }
@@ -349,11 +409,11 @@ public class Locks {
             throws Exception {
         String lock = getLockName(o);
         // Check with ThreadInfo with no stack trace (i.e. no safepoint)
-        ThreadInfo[] infos = tm.getThreadInfo(tm.getAllThreadIds());
+        ThreadInfo[] infos = TM.getThreadInfo(TM.getAllThreadIds());
         doCheck(infos, lock, expectedThreads);
 
         // Check with ThreadInfo with stack trace
-        infos = tm.getThreadInfo(tm.getAllThreadIds(), 1);
+        infos = TM.getThreadInfo(TM.getAllThreadIds(), 1);
         doCheck(infos, lock, expectedThreads);
     }
 
@@ -376,7 +436,7 @@ public class Locks {
         long[] threads = new long[10];
         int count = 0;
         threads[count++] = ownerInfo.getThreadId();
-        while (ownerInfo != null && ownerInfo.getThreadState() == Thread.State.BLOCKED) {
+        while (ownerInfo.getThreadState() == Thread.State.BLOCKED) {
             ownerInfo = findOwnerInfo(infos, lock);
             threads[count++] = ownerInfo.getThreadId();
             log(" Owner = %s  id = %d",
@@ -407,6 +467,6 @@ public class Locks {
     }
 
     private static void log(String format, Object ... args) {
-        logger.log(format + "%n", args);
+        LOGGER.log(format + "%n", args);
     }
 }

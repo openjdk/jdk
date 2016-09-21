@@ -23,7 +23,7 @@
 
 /* @test
  * @key headful
- * @bug 8129940 8132770 8161470
+ * @bug 8129940 8132770 8161470 8163169
  * @summary JRadioButton should run custom FocusTraversalKeys for all LaFs
  * @run main FocusTraversal
  */
@@ -61,6 +61,7 @@ public class FocusTraversal {
     public static void main(String[] args) throws Exception {
 
         robot = new Robot();
+        robot.setAutoDelay(100);
         robot.waitForIdle();
         UIManager.LookAndFeelInfo[] lookAndFeelArray
                 = UIManager.getInstalledLookAndFeels();

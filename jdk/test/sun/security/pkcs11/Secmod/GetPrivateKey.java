@@ -21,13 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6273877 6322208 6275523
  * @summary make sure we can access the NSS softtoken KeyStore
  *          and use a private key
  * @author Andreas Sterbenz
  * @library ..
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm GetPrivateKey
  * @run main/othervm GetPrivateKey sm policy
  */

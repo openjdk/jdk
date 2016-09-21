@@ -92,6 +92,7 @@ public class Annotate {
 
     private final Attribute theUnfinishedDefaultValue;
     private final boolean allowRepeatedAnnos;
+    private final String sourceName;
 
     protected Annotate(Context context) {
         context.put(annotateKey, this);
@@ -114,6 +115,7 @@ public class Annotate {
 
         Source source = Source.instance(context);
         allowRepeatedAnnos = source.allowRepeatedAnnotations();
+        sourceName = source.name;
     }
 
     /** Semaphore to delay annotation processing */
@@ -322,7 +324,7 @@ public class Annotate {
 
             if (annotated.containsKey(a.type.tsym)) {
                 if (!allowRepeatedAnnos) {
-                    log.error(DiagnosticFlag.SOURCE_LEVEL, a.pos(), "repeatable.annotations.not.supported.in.source");
+                    log.error(DiagnosticFlag.SOURCE_LEVEL, a.pos(), "repeatable.annotations.not.supported.in.source", sourceName);
                 }
                 ListBuffer<T> l = annotated.get(a.type.tsym);
                 l = l.append(c);

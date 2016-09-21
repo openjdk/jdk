@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6405536
  * @summary Verify that we can parse ECPrivateKeys from PKCS#12 and use them
@@ -29,6 +29,7 @@
  * @library ..
  * @library ../../../../java/security/testlibrary
  * @key randomness
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm ReadPKCS12
  * @run main/othervm ReadPKCS12 sm policy
  */

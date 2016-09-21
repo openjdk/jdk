@@ -99,6 +99,16 @@ public abstract class AccessibleContext {
             public AppContext getAppContext(AccessibleContext accessibleContext) {
                 return accessibleContext.targetAppContext;
             }
+
+            @Override
+            public Object getNativeAXResource(AccessibleContext accessibleContext) {
+                return accessibleContext.nativeAXResource;
+            }
+
+            @Override
+            public void setNativeAXResource(AccessibleContext accessibleContext, Object value) {
+                accessibleContext.nativeAXResource = value;
+            }
         });
     }
 

@@ -179,4 +179,3 @@ public class EntityTest {
         return true;
     }
 }
-

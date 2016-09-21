@@ -724,12 +724,12 @@ class CMSCollector: public CHeapObj<mtGC> {
   // Support for parallelizing young gen rescan in CMS remark phase
   ParNewGeneration* _young_gen;
 
-  HeapWord** _top_addr;    // ... Top of Eden
-  HeapWord** _end_addr;    // ... End of Eden
-  Mutex*     _eden_chunk_lock;
-  HeapWord** _eden_chunk_array; // ... Eden partitioning array
-  size_t     _eden_chunk_index; // ... top (exclusive) of array
-  size_t     _eden_chunk_capacity;  // ... max entries in array
+  HeapWord* volatile* _top_addr;    // ... Top of Eden
+  HeapWord**          _end_addr;    // ... End of Eden
+  Mutex*              _eden_chunk_lock;
+  HeapWord**          _eden_chunk_array; // ... Eden partitioning array
+  size_t              _eden_chunk_index; // ... top (exclusive) of array
+  size_t              _eden_chunk_capacity;  // ... max entries in array
 
   // Support for parallelizing survivor space rescan
   HeapWord** _survivor_chunk_array;

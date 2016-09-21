@@ -105,6 +105,10 @@ method is not invoked.
 The agent class will be loaded by the system class loader
 (see {@link java.lang.ClassLoader#getSystemClassLoader ClassLoader.getSystemClassLoader}). This is
 the class loader which typically loads the class containing the application <code>main</code> method.
+The system class loader must support a mechanism to add an agent JAR file to the system class path.
+If it is a custom system class loader then it must define the
+<code>appendToClassPathForInstrumentation</code> method as specified in
+{@link Instrumentation#appendToSystemClassLoaderSearch appendToSystemClassLoaderSearch}.
 The <code>premain</code> methods will be run under the same security and classloader 
 rules as the application <code>main</code> method.
 There are no modeling restrictions on what the agent <code>premain</code> method may do.
@@ -140,7 +144,10 @@ supports the starting of agents after the VM has started the following applies:
 
   <li><p>The system class loader (
       {@link java.lang.ClassLoader#getSystemClassLoader ClassLoader.getSystemClassLoader}) must
-      support a mechanism to add an agent JAR file to the system class path.</li>
+      support a mechanism to add an agent JAR file to the system class path.
+      If it is a custom system class loader then it must define the
+      <code>appendToClassPathForInstrumentation</code> method as specified in
+      {@link Instrumentation#appendToSystemClassLoaderSearch appendToSystemClassLoaderSearch}.</li>
 </ol>  
 
 <P>

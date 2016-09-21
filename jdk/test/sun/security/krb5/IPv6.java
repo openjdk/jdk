@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,16 @@
  * @test
  * @bug 6877357 6885166
  * @run main/othervm IPv6
+ * @modules jdk.security.auth
  * @summary IPv6 address does not work
  */
 
 import com.sun.security.auth.module.Krb5LoginModule;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
+import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;

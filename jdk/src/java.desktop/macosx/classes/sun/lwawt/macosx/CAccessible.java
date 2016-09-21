@@ -28,7 +28,6 @@ package sun.lwawt.macosx;
 import java.awt.Component;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.lang.reflect.Field;
 
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
@@ -41,36 +40,23 @@ import static javax.accessibility.AccessibleContext.ACCESSIBLE_ACTIVE_DESCENDANT
 import static javax.accessibility.AccessibleContext.ACCESSIBLE_CARET_PROPERTY;
 import static javax.accessibility.AccessibleContext.ACCESSIBLE_SELECTION_PROPERTY;
 import static javax.accessibility.AccessibleContext.ACCESSIBLE_TEXT_PROPERTY;
+import sun.awt.AWTAccessor;
 
 
 class CAccessible extends CFRetainedResource implements Accessible {
-    static Field getNativeAXResourceField() {
-        try {
-            final Field field = AccessibleContext.class.getDeclaredField("nativeAXResource");
-            field.setAccessible(true);
-            return field;
-        } catch (final Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private static Field nativeAXResourceField = getNativeAXResourceField();
 
     public static CAccessible getCAccessible(final Accessible a) {
         if (a == null) return null;
         AccessibleContext context = a.getAccessibleContext();
-        try {
-            final CAccessible cachedCAX = (CAccessible) nativeAXResourceField.get(context);
-            if (cachedCAX != null) return cachedCAX;
-
-            final CAccessible newCAX = new CAccessible(a);
-            nativeAXResourceField.set(context, newCAX);
-            return newCAX;
-        }  catch (final Exception e) {
-            e.printStackTrace();
-            return null;
+        AWTAccessor.AccessibleContextAccessor accessor
+                = AWTAccessor.getAccessibleContextAccessor();
+        final CAccessible cachedCAX = (CAccessible) accessor.getNativeAXResource(context);
+        if (cachedCAX != null) {
+            return cachedCAX;
         }
+        final CAccessible newCAX = new CAccessible(a);
+        accessor.setNativeAXResource(context, newCAX);
+        return newCAX;
     }
 
     private static native void unregisterFromCocoaAXSystem(long ptr);

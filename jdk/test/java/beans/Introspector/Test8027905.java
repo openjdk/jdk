@@ -28,6 +28,7 @@ import java.beans.PropertyDescriptor;
  * @bug 8027905
  * @summary Tests that GC does not affect a property type
  * @author Sergey Malenkov
+ * @run main/othervm -mx16m Test8027905
  */
 
 public class Test8027905 {

@@ -21,11 +21,12 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 7146728
  * @summary Interop test for DH with secret that has a leading 0x00 byte
  * @library ..
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestInterop
  * @run main/othervm TestInterop sm
  */

@@ -192,8 +192,10 @@ frame os::current_frame() {
   intptr_t* csp = (intptr_t*) *((intptr_t*) os::current_stack_pointer());
   // hack.
   frame topframe(csp, (address)0x8);
-  // return sender of current topframe which hopefully has pc != NULL.
-  return os::get_sender_for_C_frame(&topframe);
+  // Return sender of sender of current topframe which hopefully
+  // both have pc != NULL.
+  frame tmp = os::get_sender_for_C_frame(&topframe);
+  return os::get_sender_for_C_frame(&tmp);
 }
 
 // Utility functions
@@ -533,21 +535,15 @@ void os::Aix::init_thread_fpu_state(void) {
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 
-size_t os::Aix::min_stack_allowed = 128*K;
+size_t os::Posix::_compiler_thread_min_stack_allowed = 128 * K;
+size_t os::Posix::_java_thread_min_stack_allowed = 128 * K;
+size_t os::Posix::_vm_internal_thread_min_stack_allowed = 128 * K;
 
 // return default stack size for thr_type
-size_t os::Aix::default_stack_size(os::ThreadType thr_type) {
+size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
   // default stack size (compiler thread needs larger stack)
-  // Notice that the setting for compiler threads here have no impact
-  // because of the strange 'fallback logic' in os::create_thread().
-  // Better set CompilerThreadStackSize in globals_<os_cpu>.hpp if you want to
-  // specify a different stack size for compiler threads!
   size_t s = (thr_type == os::compiler_thread ? 4 * M : 1 * M);
   return s;
-}
-
-size_t os::Aix::default_guard_size(os::ThreadType thr_type) {
-  return 2 * page_size();
 }
 
 /////////////////////////////////////////////////////////////////////////////

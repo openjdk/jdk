@@ -48,4 +48,3 @@ public class Bug4970400 {
         validatorHandler.setFeature("http://xml.org/sax/features/namespace-prefixes", true);
     }
 }
-

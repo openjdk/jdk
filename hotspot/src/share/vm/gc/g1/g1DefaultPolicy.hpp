@@ -64,6 +64,8 @@ class G1DefaultPolicy: public G1Policy {
 
   double _full_collection_start_sec;
 
+  jlong _collection_pause_end_millis;
+
   uint _young_list_target_length;
   uint _young_list_fixed_length;
 
@@ -236,6 +238,8 @@ public:
   uint calc_max_old_cset_length() const;
 
   double reclaimable_bytes_perc(size_t reclaimable_bytes) const;
+
+  jlong collection_pause_end_millis() { return _collection_pause_end_millis; }
 
 private:
   // Sets up marking if proper conditions are met.

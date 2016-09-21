@@ -284,35 +284,6 @@ public abstract class AWTEvent extends EventObject {
             });
     }
 
-    private static synchronized Field get_InputEvent_CanAccessSystemClipboard() {
-        if (inputEvent_CanAccessSystemClipboard_Field == null) {
-            inputEvent_CanAccessSystemClipboard_Field =
-                java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Field>() {
-                            public Field run() {
-                                Field field = null;
-                                try {
-                                    field = InputEvent.class.
-                                        getDeclaredField("canAccessSystemClipboard");
-                                    field.setAccessible(true);
-                                    return field;
-                                } catch (SecurityException e) {
-                                    if (log.isLoggable(PlatformLogger.Level.FINE)) {
-                                        log.fine("AWTEvent.get_InputEvent_CanAccessSystemClipboard() got SecurityException ", e);
-                                    }
-                                } catch (NoSuchFieldException e) {
-                                    if (log.isLoggable(PlatformLogger.Level.FINE)) {
-                                        log.fine("AWTEvent.get_InputEvent_CanAccessSystemClipboard() got NoSuchFieldException ", e);
-                                    }
-                                }
-                                return null;
-                            }
-                        });
-        }
-
-        return inputEvent_CanAccessSystemClipboard_Field;
-    }
-
     /**
      * Initialize JNI field and method IDs for fields that may be
      * accessed from C.
@@ -593,33 +564,20 @@ public abstract class AWTEvent extends EventObject {
         that.bdata = this.bdata;
         // Copy canAccessSystemClipboard value from this into that.
         if (this instanceof InputEvent && that instanceof InputEvent) {
-            Field field = get_InputEvent_CanAccessSystemClipboard();
-            if (field != null) {
-                try {
-                    boolean b = field.getBoolean(this);
-                    field.setBoolean(that, b);
-                } catch(IllegalAccessException e) {
-                    if (log.isLoggable(PlatformLogger.Level.FINE)) {
-                        log.fine("AWTEvent.copyPrivateDataInto() got IllegalAccessException ", e);
-                    }
-                }
-            }
+
+            AWTAccessor.InputEventAccessor accessor
+                    = AWTAccessor.getInputEventAccessor();
+
+            boolean b = accessor.canAccessSystemClipboard((InputEvent) this);
+            accessor.setCanAccessSystemClipboard((InputEvent) that, b);
         }
         that.isSystemGenerated = this.isSystemGenerated;
     }
 
     void dispatched() {
         if (this instanceof InputEvent) {
-            Field field = get_InputEvent_CanAccessSystemClipboard();
-            if (field != null) {
-                try {
-                    field.setBoolean(this, false);
-                } catch(IllegalAccessException e) {
-                    if (log.isLoggable(PlatformLogger.Level.FINE)) {
-                        log.fine("AWTEvent.dispatched() got IllegalAccessException ", e);
-                    }
-                }
-            }
+            AWTAccessor.getInputEventAccessor().
+                    setCanAccessSystemClipboard((InputEvent) this, false);
         }
     }
 } // class AWTEvent

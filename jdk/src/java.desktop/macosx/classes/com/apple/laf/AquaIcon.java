@@ -37,6 +37,7 @@ import apple.laf.*;
 
 import com.apple.laf.AquaUtilControlSize.*;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
+import sun.lwawt.macosx.CImage;
 
 public class AquaIcon {
     interface InvertableIcon extends Icon {
@@ -226,7 +227,7 @@ public class AquaIcon {
         }
 
         Image createImage() {
-            return AquaUtils.getCImageCreator().createImageOfFile(file.getAbsolutePath(), getIconWidth(), getIconHeight());
+            return CImage.createImageOfFile(file.getAbsolutePath(), getIconWidth(), getIconHeight());
         }
     }
 
@@ -299,7 +300,7 @@ public class AquaIcon {
         }
 
         Image createImage() {
-            return AquaUtils.getCImageCreator().createSystemImageFromSelector(
+            return CImage.createSystemImageFromSelector(
                     selector, getIconWidth(), getIconHeight());
         }
     }

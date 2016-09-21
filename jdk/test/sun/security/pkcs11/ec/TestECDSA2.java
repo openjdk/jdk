@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6405536
  * @summary basic test of ECDSA signatures for P-256 and P-384 from the
@@ -29,6 +29,7 @@
  * @library ..
  * @library ../../../../java/security/testlibrary
  * @modules java.base/sun.security.util
+ *          jdk.crypto.pkcs11
  * @compile -XDignore.symbol.file TestECDSA2.java
  * @run main/othervm TestECDSA2
  * @run main/othervm TestECDSA2 sm

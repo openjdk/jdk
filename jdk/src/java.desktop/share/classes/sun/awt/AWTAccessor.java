@@ -34,6 +34,7 @@ import java.awt.dnd.DragSourceContext;
 import java.awt.dnd.DropTargetContext;
 import java.awt.dnd.peer.DragSourceContextPeer;
 import java.awt.dnd.peer.DropTargetContextPeer;
+import java.awt.event.AWTEventListener;
 import java.awt.event.InputEvent;
 import java.awt.event.InvocationEvent;
 import java.awt.event.KeyEvent;
@@ -48,6 +49,7 @@ import java.security.AccessControlContext;
 import java.io.File;
 import java.util.ResourceBundle;
 import java.util.Vector;
+import javax.accessibility.AccessibleBundle;
 
 /**
  * The AWTAccessor utility class.
@@ -406,6 +408,8 @@ public final class AWTAccessor {
          * Accessor for InputEvent.canAccessSystemClipboard field
          */
         boolean canAccessSystemClipboard(InputEvent event);
+        void setCanAccessSystemClipboard(InputEvent event,
+                boolean canAccessSystemClipboard);
     }
 
     /*
@@ -453,6 +457,11 @@ public final class AWTAccessor {
          * Removes the last focus request for the heavyweight from the queue.
          */
         void removeLastFocusRequest(Component heavyweight);
+
+        /**
+         * Gets the most recent focus owner in the window.
+         */
+        Component getMostRecentFocusOwner(Window window);
 
         /**
          * Sets the most recent focus owner in the window.
@@ -708,6 +717,11 @@ public final class AWTAccessor {
          * Gets original source for KeyEvent
          */
         Component getOriginalSource(KeyEvent ev);
+
+        /**
+         * Gets isProxyActive field for KeyEvent
+         */
+        boolean isProxyActive(KeyEvent ev);
     }
 
     /**
@@ -758,6 +772,11 @@ public final class AWTAccessor {
          * Returns true if the event is an instances of SequencedEvent.
          */
         boolean isSequencedEvent(AWTEvent event);
+
+        /*
+         * Creates SequencedEvent with the given nested event
+         */
+        AWTEvent create(AWTEvent event);
     }
 
     /*
@@ -787,6 +806,15 @@ public final class AWTAccessor {
     public interface AccessibleContextAccessor {
         void setAppContext(AccessibleContext accessibleContext, AppContext appContext);
         AppContext getAppContext(AccessibleContext accessibleContext);
+        Object getNativeAXResource(AccessibleContext accessibleContext);
+        void setNativeAXResource(AccessibleContext accessibleContext, Object value);
+    }
+
+    /*
+     * An accessor object for the AccessibleContext class
+     */
+    public interface AccessibleBundleAccessor {
+        String getKey(AccessibleBundle accessibleBundle);
     }
 
     /*
@@ -845,6 +873,7 @@ public final class AWTAccessor {
     private static InvocationEventAccessor invocationEventAccessor;
     private static SystemColorAccessor systemColorAccessor;
     private static AccessibleContextAccessor accessibleContextAccessor;
+    private static AccessibleBundleAccessor accessibleBundleAccessor;
     private static DragSourceContextAccessor dragSourceContextAccessor;
     private static DropTargetContextAccessor dropTargetContextAccessor;
 
@@ -1235,9 +1264,13 @@ public final class AWTAccessor {
      * Get the accessor object for the java.awt.SequencedEvent class.
      */
     public static SequencedEventAccessor getSequencedEventAccessor() {
-        // The class is not public. So we can't ensure it's initialized.
-        // Null returned value means it's not initialized
-        // (so not a single instance of the event has been created).
+        if (sequencedEventAccessor == null) {
+            try {
+                unsafe.ensureClassInitialized(
+                        Class.forName("java.awt.SequencedEvent"));
+            } catch (ClassNotFoundException ignore) {
+            }
+        }
         return sequencedEventAccessor;
     }
 
@@ -1299,6 +1332,23 @@ public final class AWTAccessor {
             unsafe.ensureClassInitialized(AccessibleContext.class);
         }
         return accessibleContextAccessor;
+    }
+
+   /*
+    * Set the accessor object for the javax.accessibility.AccessibleBundle class.
+    */
+    public static void setAccessibleBundleAccessor(AccessibleBundleAccessor accessor) {
+        AWTAccessor.accessibleBundleAccessor = accessor;
+    }
+
+    /*
+     * Get the accessor object for the javax.accessibility.AccessibleBundle class.
+     */
+    public static AccessibleBundleAccessor getAccessibleBundleAccessor() {
+        if (accessibleBundleAccessor == null) {
+            unsafe.ensureClassInitialized(AccessibleBundle.class);
+        }
+        return accessibleBundleAccessor;
     }
 
    /*

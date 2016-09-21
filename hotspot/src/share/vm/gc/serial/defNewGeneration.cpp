@@ -512,7 +512,7 @@ size_t DefNewGeneration::contiguous_available() const {
 }
 
 
-HeapWord** DefNewGeneration::top_addr() const { return eden()->top_addr(); }
+HeapWord* volatile* DefNewGeneration::top_addr() const { return eden()->top_addr(); }
 HeapWord** DefNewGeneration::end_addr() const { return eden()->end_addr(); }
 
 void DefNewGeneration::object_iterate(ObjectClosure* blk) {

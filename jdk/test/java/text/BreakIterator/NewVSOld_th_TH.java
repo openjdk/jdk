@@ -22,9 +22,10 @@
  */
 
 /*
-    @test
-    @summary test Comparison of New Collators against Old Collators in the en_US locale
-*/
+ * @test
+ * @summary test Comparison of New Collators against Old Collators in the en_US locale
+ * @modules jdk.localedata
+ */
 
 import java.io.*;
 import java.util.Enumeration;

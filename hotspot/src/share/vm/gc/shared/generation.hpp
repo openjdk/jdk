@@ -263,7 +263,7 @@ class Generation: public CHeapObj<mtGC> {
   // These functions return the addresses of the fields that define the
   // boundaries of the contiguous allocation area.  (These fields should be
   // physically near to one another.)
-  virtual HeapWord** top_addr() const { return NULL; }
+  virtual HeapWord* volatile* top_addr() const { return NULL; }
   virtual HeapWord** end_addr() const { return NULL; }
 
   // Thread-local allocation buffers

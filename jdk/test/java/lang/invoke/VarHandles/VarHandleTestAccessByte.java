@@ -103,14 +103,27 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_PLAIN));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_RELEASE));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
+
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_RELEASE));
     }
 
 
@@ -261,6 +274,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         });
 
 
+
     }
 
 
@@ -307,6 +321,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         checkUOE(() -> {
             vh.setOpaque((byte)0x23);
         });
+
 
 
     }
@@ -404,11 +419,11 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSet(recv, (byte)0x01, (byte)0x23);
+                success = vh.weakCompareAndSetPlain(recv, (byte)0x01, (byte)0x23);
             }
-            assertEquals(success, true, "weakCompareAndSet byte");
+            assertEquals(success, true, "weakCompareAndSetPlain byte");
             byte x = (byte) vh.get(recv);
-            assertEquals(x, (byte)0x23, "weakCompareAndSet byte value");
+            assertEquals(x, (byte)0x23, "weakCompareAndSetPlain byte value");
         }
 
         {
@@ -434,33 +449,156 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetVolatile(recv, (byte)0x23, (byte)0x01);
+                success = vh.weakCompareAndSet(recv, (byte)0x23, (byte)0x01);
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile byte");
+            assertEquals(success, true, "weakCompareAndSet byte");
             byte x = (byte) vh.get(recv);
-            assertEquals(x, (byte)0x01, "weakCompareAndSetVolatile byte value");
+            assertEquals(x, (byte)0x01, "weakCompareAndSet byte value");
         }
 
         // Compare set and get
         {
+            vh.set(recv, (byte)0x01);
+
             byte o = (byte) vh.getAndSet(recv, (byte)0x23);
             assertEquals(o, (byte)0x01, "getAndSet byte");
             byte x = (byte) vh.get(recv);
             assertEquals(x, (byte)0x23, "getAndSet byte value");
         }
 
-        vh.set(recv, (byte)0x01);
+        {
+            vh.set(recv, (byte)0x01);
+
+            byte o = (byte) vh.getAndSetAcquire(recv, (byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndSetAcquire byte");
+            byte x = (byte) vh.get(recv);
+            assertEquals(x, (byte)0x23, "getAndSetAcquire byte value");
+        }
+
+        {
+            vh.set(recv, (byte)0x01);
+
+            byte o = (byte) vh.getAndSetRelease(recv, (byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndSetRelease byte");
+            byte x = (byte) vh.get(recv);
+            assertEquals(x, (byte)0x23, "getAndSetRelease byte value");
+        }
 
         // get and add, add and get
         {
-            byte o = (byte) vh.getAndAdd(recv, (byte)0x45);
+            vh.set(recv, (byte)0x01);
+
+            byte o = (byte) vh.getAndAdd(recv, (byte)0x23);
             assertEquals(o, (byte)0x01, "getAndAdd byte");
-            byte c = (byte) vh.addAndGet(recv, (byte)0x45);
-            assertEquals(c, (byte)((byte)0x01 + (byte)0x45 + (byte)0x45), "getAndAdd byte value");
+            byte x = (byte) vh.get(recv);
+            assertEquals(x, (byte)((byte)0x01 + (byte)0x23), "getAndAdd byte value");
+        }
+
+        {
+            vh.set(recv, (byte)0x01);
+
+            byte o = (byte) vh.getAndAddAcquire(recv, (byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndAddAcquire byte");
+            byte x = (byte) vh.get(recv);
+            assertEquals(x, (byte)((byte)0x01 + (byte)0x23), "getAndAddAcquire byte value");
+        }
+
+        {
+            vh.set(recv, (byte)0x01);
+
+            byte o = (byte) vh.getAndAddRelease(recv, (byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndAddReleasebyte");
+            byte x = (byte) vh.get(recv);
+            assertEquals(x, (byte)((byte)0x01 + (byte)0x23), "getAndAddRelease byte value");
+        }
+
+        // get and bitwise or
+        {
+            vh.set(recv, (byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseOr(recv, (byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseOr byte");
+            byte x = (byte) vh.get(recv);
+            assertEquals(x, (byte)((byte)0x01 | (byte)0x23), "getAndBitwiseOr byte value");
+        }
+
+        {
+            vh.set(recv, (byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseOrAcquire(recv, (byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseOrAcquire byte");
+            byte x = (byte) vh.get(recv);
+            assertEquals(x, (byte)((byte)0x01 | (byte)0x23), "getAndBitwiseOrAcquire byte value");
+        }
+
+        {
+            vh.set(recv, (byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseOrRelease(recv, (byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseOrRelease byte");
+            byte x = (byte) vh.get(recv);
+            assertEquals(x, (byte)((byte)0x01 | (byte)0x23), "getAndBitwiseOrRelease byte value");
+        }
+
+        // get and bitwise and
+        {
+            vh.set(recv, (byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseAnd(recv, (byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseAnd byte");
+            byte x = (byte) vh.get(recv);
+            assertEquals(x, (byte)((byte)0x01 & (byte)0x23), "getAndBitwiseAnd byte value");
+        }
+
+        {
+            vh.set(recv, (byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseAndAcquire(recv, (byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseAndAcquire byte");
+            byte x = (byte) vh.get(recv);
+            assertEquals(x, (byte)((byte)0x01 & (byte)0x23), "getAndBitwiseAndAcquire byte value");
+        }
+
+        {
+            vh.set(recv, (byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseAndRelease(recv, (byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseAndRelease byte");
+            byte x = (byte) vh.get(recv);
+            assertEquals(x, (byte)((byte)0x01 & (byte)0x23), "getAndBitwiseAndRelease byte value");
+        }
+
+        // get and bitwise xor
+        {
+            vh.set(recv, (byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseXor(recv, (byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseXor byte");
+            byte x = (byte) vh.get(recv);
+            assertEquals(x, (byte)((byte)0x01 ^ (byte)0x23), "getAndBitwiseXor byte value");
+        }
+
+        {
+            vh.set(recv, (byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseXorAcquire(recv, (byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseXorAcquire byte");
+            byte x = (byte) vh.get(recv);
+            assertEquals(x, (byte)((byte)0x01 ^ (byte)0x23), "getAndBitwiseXorAcquire byte value");
+        }
+
+        {
+            vh.set(recv, (byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseXorRelease(recv, (byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseXorRelease byte");
+            byte x = (byte) vh.get(recv);
+            assertEquals(x, (byte)((byte)0x01 ^ (byte)0x23), "getAndBitwiseXorRelease byte value");
         }
     }
 
     static void testInstanceFieldUnsupported(VarHandleTestAccessByte recv, VarHandle vh) {
+
 
     }
 
@@ -557,11 +695,11 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSet((byte)0x01, (byte)0x23);
+                success = vh.weakCompareAndSetPlain((byte)0x01, (byte)0x23);
             }
-            assertEquals(success, true, "weakCompareAndSet byte");
+            assertEquals(success, true, "weakCompareAndSetPlain byte");
             byte x = (byte) vh.get();
-            assertEquals(x, (byte)0x23, "weakCompareAndSet byte value");
+            assertEquals(x, (byte)0x23, "weakCompareAndSetPlain byte value");
         }
 
         {
@@ -587,33 +725,156 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetRelease((byte)0x23, (byte)0x01);
+                success = vh.weakCompareAndSet((byte)0x23, (byte)0x01);
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile byte");
+            assertEquals(success, true, "weakCompareAndSet byte");
             byte x = (byte) vh.get();
-            assertEquals(x, (byte)0x01, "weakCompareAndSetVolatile byte");
+            assertEquals(x, (byte)0x01, "weakCompareAndSet byte");
         }
 
         // Compare set and get
         {
+            vh.set((byte)0x01);
+
             byte o = (byte) vh.getAndSet((byte)0x23);
             assertEquals(o, (byte)0x01, "getAndSet byte");
             byte x = (byte) vh.get();
             assertEquals(x, (byte)0x23, "getAndSet byte value");
         }
 
-        vh.set((byte)0x01);
+        {
+            vh.set((byte)0x01);
+
+            byte o = (byte) vh.getAndSetAcquire((byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndSetAcquire byte");
+            byte x = (byte) vh.get();
+            assertEquals(x, (byte)0x23, "getAndSetAcquire byte value");
+        }
+
+        {
+            vh.set((byte)0x01);
+
+            byte o = (byte) vh.getAndSetRelease((byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndSetRelease byte");
+            byte x = (byte) vh.get();
+            assertEquals(x, (byte)0x23, "getAndSetRelease byte value");
+        }
 
         // get and add, add and get
         {
-            byte o = (byte) vh.getAndAdd( (byte)0x45);
+            vh.set((byte)0x01);
+
+            byte o = (byte) vh.getAndAdd((byte)0x23);
             assertEquals(o, (byte)0x01, "getAndAdd byte");
-            byte c = (byte) vh.addAndGet((byte)0x45);
-            assertEquals(c, (byte)((byte)0x01 + (byte)0x45 + (byte)0x45), "getAndAdd byte value");
+            byte x = (byte) vh.get();
+            assertEquals(x, (byte)((byte)0x01 + (byte)0x23), "getAndAdd byte value");
+        }
+
+        {
+            vh.set((byte)0x01);
+
+            byte o = (byte) vh.getAndAddAcquire((byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndAddAcquire byte");
+            byte x = (byte) vh.get();
+            assertEquals(x, (byte)((byte)0x01 + (byte)0x23), "getAndAddAcquire byte value");
+        }
+
+        {
+            vh.set((byte)0x01);
+
+            byte o = (byte) vh.getAndAddRelease((byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndAddReleasebyte");
+            byte x = (byte) vh.get();
+            assertEquals(x, (byte)((byte)0x01 + (byte)0x23), "getAndAddRelease byte value");
+        }
+
+        // get and bitwise or
+        {
+            vh.set((byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseOr((byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseOr byte");
+            byte x = (byte) vh.get();
+            assertEquals(x, (byte)((byte)0x01 | (byte)0x23), "getAndBitwiseOr byte value");
+        }
+
+        {
+            vh.set((byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseOrAcquire((byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseOrAcquire byte");
+            byte x = (byte) vh.get();
+            assertEquals(x, (byte)((byte)0x01 | (byte)0x23), "getAndBitwiseOrAcquire byte value");
+        }
+
+        {
+            vh.set((byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseOrRelease((byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseOrRelease byte");
+            byte x = (byte) vh.get();
+            assertEquals(x, (byte)((byte)0x01 | (byte)0x23), "getAndBitwiseOrRelease byte value");
+        }
+
+        // get and bitwise and
+        {
+            vh.set((byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseAnd((byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseAnd byte");
+            byte x = (byte) vh.get();
+            assertEquals(x, (byte)((byte)0x01 & (byte)0x23), "getAndBitwiseAnd byte value");
+        }
+
+        {
+            vh.set((byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseAndAcquire((byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseAndAcquire byte");
+            byte x = (byte) vh.get();
+            assertEquals(x, (byte)((byte)0x01 & (byte)0x23), "getAndBitwiseAndAcquire byte value");
+        }
+
+        {
+            vh.set((byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseAndRelease((byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseAndRelease byte");
+            byte x = (byte) vh.get();
+            assertEquals(x, (byte)((byte)0x01 & (byte)0x23), "getAndBitwiseAndRelease byte value");
+        }
+
+        // get and bitwise xor
+        {
+            vh.set((byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseXor((byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseXor byte");
+            byte x = (byte) vh.get();
+            assertEquals(x, (byte)((byte)0x01 ^ (byte)0x23), "getAndBitwiseXor byte value");
+        }
+
+        {
+            vh.set((byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseXorAcquire((byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseXorAcquire byte");
+            byte x = (byte) vh.get();
+            assertEquals(x, (byte)((byte)0x01 ^ (byte)0x23), "getAndBitwiseXorAcquire byte value");
+        }
+
+        {
+            vh.set((byte)0x01);
+
+            byte o = (byte) vh.getAndBitwiseXorRelease((byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndBitwiseXorRelease byte");
+            byte x = (byte) vh.get();
+            assertEquals(x, (byte)((byte)0x01 ^ (byte)0x23), "getAndBitwiseXorRelease byte value");
         }
     }
 
     static void testStaticFieldUnsupported(VarHandle vh) {
+
 
     }
 
@@ -713,11 +974,11 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSet(array, i, (byte)0x01, (byte)0x23);
+                    success = vh.weakCompareAndSetPlain(array, i, (byte)0x01, (byte)0x23);
                 }
-                assertEquals(success, true, "weakCompareAndSet byte");
+                assertEquals(success, true, "weakCompareAndSetPlain byte");
                 byte x = (byte) vh.get(array, i);
-                assertEquals(x, (byte)0x23, "weakCompareAndSet byte value");
+                assertEquals(x, (byte)0x23, "weakCompareAndSetPlain byte value");
             }
 
             {
@@ -743,29 +1004,151 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSetVolatile(array, i, (byte)0x23, (byte)0x01);
+                    success = vh.weakCompareAndSet(array, i, (byte)0x23, (byte)0x01);
                 }
-                assertEquals(success, true, "weakCompareAndSetVolatile byte");
+                assertEquals(success, true, "weakCompareAndSet byte");
                 byte x = (byte) vh.get(array, i);
-                assertEquals(x, (byte)0x01, "weakCompareAndSetVolatile byte");
+                assertEquals(x, (byte)0x01, "weakCompareAndSet byte");
             }
 
             // Compare set and get
             {
+                vh.set(array, i, (byte)0x01);
+
                 byte o = (byte) vh.getAndSet(array, i, (byte)0x23);
                 assertEquals(o, (byte)0x01, "getAndSet byte");
                 byte x = (byte) vh.get(array, i);
                 assertEquals(x, (byte)0x23, "getAndSet byte value");
             }
 
-            vh.set(array, i, (byte)0x01);
+            {
+                vh.set(array, i, (byte)0x01);
+
+                byte o = (byte) vh.getAndSetAcquire(array, i, (byte)0x23);
+                assertEquals(o, (byte)0x01, "getAndSetAcquire byte");
+                byte x = (byte) vh.get(array, i);
+                assertEquals(x, (byte)0x23, "getAndSetAcquire byte value");
+            }
+
+            {
+                vh.set(array, i, (byte)0x01);
+
+                byte o = (byte) vh.getAndSetRelease(array, i, (byte)0x23);
+                assertEquals(o, (byte)0x01, "getAndSetRelease byte");
+                byte x = (byte) vh.get(array, i);
+                assertEquals(x, (byte)0x23, "getAndSetRelease byte value");
+            }
 
             // get and add, add and get
             {
-                byte o = (byte) vh.getAndAdd(array, i, (byte)0x45);
+                vh.set(array, i, (byte)0x01);
+
+                byte o = (byte) vh.getAndAdd(array, i, (byte)0x23);
                 assertEquals(o, (byte)0x01, "getAndAdd byte");
-                byte c = (byte) vh.addAndGet(array, i, (byte)0x45);
-                assertEquals(c, (byte)((byte)0x01 + (byte)0x45 + (byte)0x45), "getAndAdd byte value");
+                byte x = (byte) vh.get(array, i);
+                assertEquals(x, (byte)((byte)0x01 + (byte)0x23), "getAndAdd byte value");
+            }
+
+            {
+                vh.set(array, i, (byte)0x01);
+
+                byte o = (byte) vh.getAndAddAcquire(array, i, (byte)0x23);
+                assertEquals(o, (byte)0x01, "getAndAddAcquire byte");
+                byte x = (byte) vh.get(array, i);
+                assertEquals(x, (byte)((byte)0x01 + (byte)0x23), "getAndAddAcquire byte value");
+            }
+
+            {
+                vh.set(array, i, (byte)0x01);
+
+                byte o = (byte) vh.getAndAddRelease(array, i, (byte)0x23);
+                assertEquals(o, (byte)0x01, "getAndAddReleasebyte");
+                byte x = (byte) vh.get(array, i);
+                assertEquals(x, (byte)((byte)0x01 + (byte)0x23), "getAndAddRelease byte value");
+            }
+
+            // get and bitwise or
+            {
+                vh.set(array, i, (byte)0x01);
+
+                byte o = (byte) vh.getAndBitwiseOr(array, i, (byte)0x23);
+                assertEquals(o, (byte)0x01, "getAndBitwiseOr byte");
+                byte x = (byte) vh.get(array, i);
+                assertEquals(x, (byte)((byte)0x01 | (byte)0x23), "getAndBitwiseOr byte value");
+            }
+
+            {
+                vh.set(array, i, (byte)0x01);
+
+                byte o = (byte) vh.getAndBitwiseOrAcquire(array, i, (byte)0x23);
+                assertEquals(o, (byte)0x01, "getAndBitwiseOrAcquire byte");
+                byte x = (byte) vh.get(array, i);
+                assertEquals(x, (byte)((byte)0x01 | (byte)0x23), "getAndBitwiseOrAcquire byte value");
+            }
+
+            {
+                vh.set(array, i, (byte)0x01);
+
+                byte o = (byte) vh.getAndBitwiseOrRelease(array, i, (byte)0x23);
+                assertEquals(o, (byte)0x01, "getAndBitwiseOrRelease byte");
+                byte x = (byte) vh.get(array, i);
+                assertEquals(x, (byte)((byte)0x01 | (byte)0x23), "getAndBitwiseOrRelease byte value");
+            }
+
+            // get and bitwise and
+            {
+                vh.set(array, i, (byte)0x01);
+
+                byte o = (byte) vh.getAndBitwiseAnd(array, i, (byte)0x23);
+                assertEquals(o, (byte)0x01, "getAndBitwiseAnd byte");
+                byte x = (byte) vh.get(array, i);
+                assertEquals(x, (byte)((byte)0x01 & (byte)0x23), "getAndBitwiseAnd byte value");
+            }
+
+            {
+                vh.set(array, i, (byte)0x01);
+
+                byte o = (byte) vh.getAndBitwiseAndAcquire(array, i, (byte)0x23);
+                assertEquals(o, (byte)0x01, "getAndBitwiseAndAcquire byte");
+                byte x = (byte) vh.get(array, i);
+                assertEquals(x, (byte)((byte)0x01 & (byte)0x23), "getAndBitwiseAndAcquire byte value");
+            }
+
+            {
+                vh.set(array, i, (byte)0x01);
+
+                byte o = (byte) vh.getAndBitwiseAndRelease(array, i, (byte)0x23);
+                assertEquals(o, (byte)0x01, "getAndBitwiseAndRelease byte");
+                byte x = (byte) vh.get(array, i);
+                assertEquals(x, (byte)((byte)0x01 & (byte)0x23), "getAndBitwiseAndRelease byte value");
+            }
+
+            // get and bitwise xor
+            {
+                vh.set(array, i, (byte)0x01);
+
+                byte o = (byte) vh.getAndBitwiseXor(array, i, (byte)0x23);
+                assertEquals(o, (byte)0x01, "getAndBitwiseXor byte");
+                byte x = (byte) vh.get(array, i);
+                assertEquals(x, (byte)((byte)0x01 ^ (byte)0x23), "getAndBitwiseXor byte value");
+            }
+
+            {
+                vh.set(array, i, (byte)0x01);
+
+                byte o = (byte) vh.getAndBitwiseXorAcquire(array, i, (byte)0x23);
+                assertEquals(o, (byte)0x01, "getAndBitwiseXorAcquire byte");
+                byte x = (byte) vh.get(array, i);
+                assertEquals(x, (byte)((byte)0x01 ^ (byte)0x23), "getAndBitwiseXorAcquire byte value");
+            }
+
+            {
+                vh.set(array, i, (byte)0x01);
+
+                byte o = (byte) vh.getAndBitwiseXorRelease(array, i, (byte)0x23);
+                assertEquals(o, (byte)0x01, "getAndBitwiseXorRelease byte");
+                byte x = (byte) vh.get(array, i);
+                assertEquals(x, (byte)((byte)0x01 ^ (byte)0x23), "getAndBitwiseXorRelease byte value");
             }
         }
     }
@@ -774,6 +1157,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         byte[] array = new byte[10];
 
         int i = 0;
+
 
     }
 
@@ -832,11 +1216,11 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSet(array, ci, (byte)0x01, (byte)0x23);
+                boolean r = vh.weakCompareAndSetPlain(array, ci, (byte)0x01, (byte)0x23);
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSetVolatile(array, ci, (byte)0x01, (byte)0x23);
+                boolean r = vh.weakCompareAndSet(array, ci, (byte)0x01, (byte)0x23);
             });
 
             checkIOOBE(() -> {
@@ -852,11 +1236,59 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                byte o = (byte) vh.getAndAdd(array, ci, (byte)0x45);
+                byte o = (byte) vh.getAndSetAcquire(array, ci, (byte)0x01);
             });
 
             checkIOOBE(() -> {
-                byte o = (byte) vh.addAndGet(array, ci, (byte)0x45);
+                byte o = (byte) vh.getAndSetRelease(array, ci, (byte)0x01);
+            });
+
+            checkIOOBE(() -> {
+                byte o = (byte) vh.getAndAdd(array, ci, (byte)0x01);
+            });
+
+            checkIOOBE(() -> {
+                byte o = (byte) vh.getAndAddAcquire(array, ci, (byte)0x01);
+            });
+
+            checkIOOBE(() -> {
+                byte o = (byte) vh.getAndAddRelease(array, ci, (byte)0x01);
+            });
+
+            checkIOOBE(() -> {
+                byte o = (byte) vh.getAndBitwiseOr(array, ci, (byte)0x01);
+            });
+
+            checkIOOBE(() -> {
+                byte o = (byte) vh.getAndBitwiseOrAcquire(array, ci, (byte)0x01);
+            });
+
+            checkIOOBE(() -> {
+                byte o = (byte) vh.getAndBitwiseOrRelease(array, ci, (byte)0x01);
+            });
+
+            checkIOOBE(() -> {
+                byte o = (byte) vh.getAndBitwiseAnd(array, ci, (byte)0x01);
+            });
+
+            checkIOOBE(() -> {
+                byte o = (byte) vh.getAndBitwiseAndAcquire(array, ci, (byte)0x01);
+            });
+
+            checkIOOBE(() -> {
+                byte o = (byte) vh.getAndBitwiseAndRelease(array, ci, (byte)0x01);
+            });
+
+            checkIOOBE(() -> {
+                byte o = (byte) vh.getAndBitwiseXor(array, ci, (byte)0x01);
+            });
+
+            checkIOOBE(() -> {
+                byte o = (byte) vh.getAndBitwiseXorAcquire(array, ci, (byte)0x01);
+            });
+
+            checkIOOBE(() -> {
+                byte o = (byte) vh.getAndBitwiseXorRelease(array, ci, (byte)0x01);
             });
         }
     }

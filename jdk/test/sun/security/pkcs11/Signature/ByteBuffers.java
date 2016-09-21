@@ -21,13 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4856966
  * @summary Test the Signature.update(ByteBuffer) method
  * @author Andreas Sterbenz
  * @library ..
  * @key randomness
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm ByteBuffers
  * @run main/othervm ByteBuffers sm
  */

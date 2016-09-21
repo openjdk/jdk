@@ -50,13 +50,7 @@ class MultiplexingOutputStream extends OutputStream {
 
     @Override
     public void write(int b) throws IOException {
-        synchronized (delegate) {
-            delegate.write(name.length); //assuming the len is small enough to fit into byte
-            delegate.write(name);
-            delegate.write(1);
-            delegate.write(b);
-            delegate.flush();
-        }
+        write(new byte[] {(byte) b});
     }
 
     @Override
@@ -65,10 +59,12 @@ class MultiplexingOutputStream extends OutputStream {
             int i = 0;
             while (len > 0) {
                 int size = Math.min(PACKET_SIZE, len);
-                delegate.write(name.length); //assuming the len is small enough to fit into byte
-                delegate.write(name);
-                delegate.write(size);
-                delegate.write(b, off + i, size);
+                byte[] data = new byte[name.length + 1 + size + 1];
+                data[0] = (byte) name.length; //assuming the len is small enough to fit into byte
+                System.arraycopy(name, 0, data, 1, name.length);
+                data[name.length + 1] = (byte) size;
+                System.arraycopy(b, off + i, data, name.length + 2, size);
+                delegate.write(data);
                 i += size;
                 len -= size;
             }
