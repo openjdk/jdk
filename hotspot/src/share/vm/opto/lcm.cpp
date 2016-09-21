@@ -240,6 +240,14 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       continue;
     }
 
+    // Check that node's control edge is not-null block's head or dominates it,
+    // otherwise we can't hoist it because there are other control dependencies.
+    Node* ctrl = mach->in(0);
+    if (ctrl != NULL && !(ctrl == not_null_block->head() ||
+        get_block_for_node(ctrl)->dominates(not_null_block))) {
+      continue;
+    }
+
     // check if the offset is not too high for implicit exception
     {
       intptr_t offset = 0;
@@ -379,9 +387,12 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
   block->add_inst(best);
   map_node_to_block(best, block);
 
-  // Move the control dependence
-  if (best->in(0) && best->in(0) == old_block->head())
-    best->set_req(0, block->head());
+  // Move the control dependence if it is pinned to not-null block.
+  // Don't change it in other cases: NULL or dominating control.
+  if (best->in(0) == not_null_block->head()) {
+    // Set it to control edge of null check.
+    best->set_req(0, proj->in(0)->in(0));
+  }
 
   // Check for flag-killing projections that also need to be hoisted
   // Should be DU safe because no edge updates.
@@ -437,6 +448,18 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
 
   latency_from_uses(nul_chk);
   latency_from_uses(best);
+
+  // insert anti-dependences to defs in this block
+  if (! best->needs_anti_dependence_check()) {
+    for (uint k = 1; k < block->number_of_nodes(); k++) {
+      Node *n = block->get_node(k);
+      if (n->needs_anti_dependence_check() &&
+          n->in(LoadNode::Memory) == best->in(StoreNode::Memory)) {
+        // Found anti-dependent load
+        insert_anti_dependences(block, n);
+      }
+    }
+  }
 }
 
 

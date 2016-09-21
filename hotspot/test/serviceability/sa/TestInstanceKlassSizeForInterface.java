@@ -38,15 +38,20 @@ import jdk.test.lib.Asserts;
  * @test
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @modules jdk.hotspot.agent
- * @modules jdk.hotspot.agent/sun.jvm.hotspot
- * @modules jdk.hotspot.agent/sun.jvm.hotspot.utilities
- * @modules jdk.hotspot.agent/sun.jvm.hotspot.oops
- * @compile -XDignore.symbol.file=true -Xmodule:jdk.hotspot.agent
- *          -XaddExports:java.base/jdk.internal.misc=jdk.hotspot.agent
- *          -XaddExports:java.management/java.lang.management=jdk.hotspot.agent
+ * @compile -XDignore.symbol.file=true
+ *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED
+ *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED
+ *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED
+ *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED
  *          TestInstanceKlassSizeForInterface.java
- * @run main/othervm TestInstanceKlassSizeForInterface
+ * @run main/othervm
+ *          -XX:+UnlockDiagnosticVMOptions
+ *          --add-modules=jdk.hotspot.agent
+ *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED
+ *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED
+ *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED
+ *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED
+ *          TestInstanceKlassSizeForInterface
  */
 
 interface Language {
@@ -80,6 +85,8 @@ public class TestInstanceKlassSizeForInterface {
         for (String instanceKlassName : instanceKlassNames) {
             InstanceKlass iKlass = SystemDictionaryHelper.findInstanceKlass(
                                        instanceKlassName);
+            Asserts.assertNotNull(iKlass,
+                String.format("Unable to find instance klass for %s", instanceKlassName));
             System.out.println("SA: The size of " + instanceKlassName +
                                " is " + iKlass.getSize());
         }
@@ -106,11 +113,11 @@ public class TestInstanceKlassSizeForInterface {
 
         // Grab the pid from the current java process and pass it
         String[] toolArgs = {
-            "-XX:+UnlockDiagnosticVMOptions",
             "--add-modules=jdk.hotspot.agent",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED",
+            "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED",
             "TestInstanceKlassSizeForInterface",
             Long.toString(ProcessTools.getProcessId())
         };
@@ -138,6 +145,8 @@ public class TestInstanceKlassSizeForInterface {
             String jcmdInstanceKlassSize = getJcmdInstanceKlassSize(
                                                       jcmdOutput,
                                                       instanceKlassName);
+            Asserts.assertNotNull(jcmdInstanceKlassSize,
+                "Could not get the instance klass size from the jcmd output");
             for (String s : SAOutput.asLines()) {
                 if (s.contains(instanceKlassName)) {
                    Asserts.assertTrue(
@@ -162,7 +171,7 @@ public class TestInstanceKlassSizeForInterface {
             return;
         }
 
-        if ( args == null || args.length == 0 ) {
+        if (args == null || args.length == 0) {
             ParselTongue lang = new ParselTongue();
 
             Language ventro = new Language() {

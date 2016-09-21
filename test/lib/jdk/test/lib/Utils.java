@@ -25,7 +25,6 @@ package jdk.test.lib;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
@@ -51,7 +50,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import jdk.internal.misc.Unsafe;
 
 import static jdk.test.lib.Asserts.assertTrue;
 import jdk.test.lib.process.ProcessTools;
@@ -87,8 +85,15 @@ public final class Utils {
      */
     public static final String TEST_SRC = System.getProperty("test.src", "").trim();
 
-    private static Unsafe unsafe = null;
+    /*
+     * Returns the value of 'test.jdk' system property
+     */
+    public static final String TEST_JDK = System.getProperty("test.jdk");
 
+    /**
+     * Returns the value of 'test.classes' system property
+     */
+    public static final String TEST_CLASSES = System.getProperty("test.classes", ".");
     /**
      * Defines property name for seed value.
      */
@@ -373,21 +378,6 @@ public final class Utils {
         return new String(Files.readAllBytes(filePath));
     }
 
-    /**
-     * @return Unsafe instance.
-     */
-    public static synchronized Unsafe getUnsafe() {
-        if (unsafe == null) {
-            try {
-                Field f = Unsafe.class.getDeclaredField("theUnsafe");
-                f.setAccessible(true);
-                unsafe = (Unsafe) f.get(null);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new RuntimeException("Unable to get Unsafe instance.", e);
-            }
-        }
-        return unsafe;
-    }
     private static final char[] hexArray = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
     /**

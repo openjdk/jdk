@@ -29,7 +29,6 @@
 #include "ci/ciKlass.hpp"
 #include "ci/ciUtilities.hpp"
 #include "compiler/compileBroker.hpp"
-#include "gc/shared/referencePendingListLocker.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -577,9 +576,7 @@ class CompileReplay : public StackObj {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
     /* just copied from Method, to build interpret data*/
-    if (ReferencePendingListLocker::is_locked_by_self()) {
-      return;
-    }
+
     // To be properly initialized, some profiling in the MDO needs the
     // method to be rewritten (number of arguments at a call for
     // instance)

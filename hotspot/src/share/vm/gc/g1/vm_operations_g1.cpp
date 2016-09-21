@@ -204,14 +204,6 @@ void VM_G1IncCollectionPause::doit_epilogue() {
   }
 }
 
-void VM_CGC_Operation::acquire_pending_list_lock() {
-  _pending_list_locker.lock();
-}
-
-void VM_CGC_Operation::release_and_notify_pending_list_lock() {
-  _pending_list_locker.unlock();
-}
-
 void VM_CGC_Operation::doit() {
   GCIdMark gc_id_mark(_gc_id);
   GCTraceCPUTime tcpu;
@@ -222,20 +214,13 @@ void VM_CGC_Operation::doit() {
 }
 
 bool VM_CGC_Operation::doit_prologue() {
-  // Note the relative order of the locks must match that in
-  // VM_GC_Operation::doit_prologue() or deadlocks can occur
-  if (_needs_pending_list_lock) {
-    acquire_pending_list_lock();
-  }
   Heap_lock->lock();
   return true;
 }
 
 void VM_CGC_Operation::doit_epilogue() {
-  // Note the relative order of the unlocks must match that in
-  // VM_GC_Operation::doit_epilogue()
-  Heap_lock->unlock();
-  if (_needs_pending_list_lock) {
-    release_and_notify_pending_list_lock();
+  if (Universe::has_reference_pending_list()) {
+    Heap_lock->notify_all();
   }
+  Heap_lock->unlock();
 }

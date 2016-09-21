@@ -30,14 +30,14 @@
  * @run main GetField
  */
 
-import jdk.test.lib.Utils;
+import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.internal.misc.Unsafe;
 import java.lang.reflect.*;
 import static jdk.test.lib.Asserts.*;
 
 public class GetField {
     public static void main(String args[]) throws Exception {
-        Unsafe unsafe = Utils.getUnsafe();
+        Unsafe unsafe = UnsafeHelper.getUnsafe();
         // Unsafe.INVALID_FIELD_OFFSET is a static final int field,
         // make sure getField returns the correct field
         Field field = Unsafe.class.getField("INVALID_FIELD_OFFSET");

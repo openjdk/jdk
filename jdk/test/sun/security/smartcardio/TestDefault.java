@@ -21,11 +21,12 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6327047
  * @summary verify that TerminalFactory.getDefault() works
  * @author Andreas Sterbenz
+ * @modules java.smartcardio/javax.smartcardio
  * @run main/manual TestDefault
  */
 

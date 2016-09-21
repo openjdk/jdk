@@ -144,7 +144,7 @@ TEST(LogDecorations, iso8601_time) {
   reported_time.tm_hour = h;
   reported_time.tm_min = m;
   reported_time.tm_sec = s;
-  reported_time.tm_isdst = daylight;
+  reported_time.tm_isdst = -1; // let mktime deduce DST settings
   time_t reported_ts = mktime(&reported_time);
   expected_ts = mktime(localtime(&expected_ts));
   time_t diff = reported_ts - expected_ts;

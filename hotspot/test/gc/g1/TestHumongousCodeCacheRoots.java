@@ -26,6 +26,7 @@
  * @key regression
  * @key gc
  * @bug 8027756
+ * @requires vm.gc.G1
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
