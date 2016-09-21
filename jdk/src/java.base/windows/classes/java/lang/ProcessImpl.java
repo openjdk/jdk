@@ -564,6 +564,20 @@ final class ProcessImpl extends Process {
     private static native boolean isProcessAlive(long handle);
 
     /**
+     * The {@code toString} method returns a string consisting of
+     * the native process ID of the process and the exit value of the process.
+     *
+     * @return a string representation of the object.
+     */
+    @Override
+    public String toString() {
+        int exitCode = getExitCodeProcess(handle);
+        return new StringBuilder("Process[pid=").append(getPid())
+                .append(", exitValue=").append(exitCode == STILL_ACTIVE ? "\"not exited\"" : exitCode)
+                .append("]").toString();
+    }
+
+    /**
      * Create a process using the win32 function CreateProcess.
      * The method is synchronized due to MS kb315939 problem.
      * All native handles should restore the inherit flag at the end of call.

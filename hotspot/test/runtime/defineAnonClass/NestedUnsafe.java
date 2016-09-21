@@ -39,7 +39,6 @@ import java.io.InputStream;
 import java.lang.*;
 import jdk.test.lib.*;
 import jdk.internal.misc.Unsafe;
-import jdk.test.lib.unsafe.UnsafeHelper;
 
 
 // Test that an anonymous class in package 'p' cannot define its own anonymous class
@@ -54,7 +53,7 @@ public class NestedUnsafe {
         " } } ");
 
     public static void main(String args[]) throws Exception {
-        Unsafe unsafe = UnsafeHelper.getUnsafe();
+        Unsafe unsafe = Unsafe.getUnsafe();
 
         // The anonymous class calls defineAnonymousClass creating a nested anonymous class.
         byte klassbuf2[] = InMemoryJavaCompiler.compile("p.TestClass2",

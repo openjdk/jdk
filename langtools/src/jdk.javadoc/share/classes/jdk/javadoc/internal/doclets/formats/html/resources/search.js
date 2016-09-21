@@ -263,18 +263,18 @@ $(function() {
             if (ui.item.l !== noResult.l) {
                 var url = "";
                 if (ui.item.category === catModules) {
-                    url = "/" + ui.item.l + "-summary.html";
+                    url = ui.item.l + "-summary.html";
                 } else if (ui.item.category === catPackages) {
                     url = ui.item.l.replace(/\./g, '/') + "/package-summary.html";
                 } else if (ui.item.category === catTypes) {
                     if (ui.item.p === "<Unnamed>") {
-                        url = "/" + ui.item.l + ".html";
+                        url = ui.item.l + ".html";
                     } else {
                         url = ui.item.p.replace(/\./g, '/') + "/" + ui.item.l + ".html";
                     }
                 } else if (ui.item.category === catMembers) {
                     if (ui.item.p === "<Unnamed>") {
-                        url = "/" + ui.item.c + ".html" + "#";
+                        url = ui.item.c + ".html" + "#";
                     } else {
                         url = ui.item.p.replace(/\./g, '/') + "/" + ui.item.c + ".html" + "#";
                     }

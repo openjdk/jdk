@@ -75,11 +75,6 @@ endef
 
 # Param 1 - The file containing the MODULES list
 define create-info-file
-  $(call info-file-item, "JAVA_VERSION", "$(VERSION_NUMBER)")
-  $(call info-file-item, "JAVA_FULL_VERSION", "$(VERSION_STRING)")
-  $(call info-file-item, "OS_NAME", "$(REQUIRED_OS_NAME)")
-  $(call info-file-item, "OS_VERSION", "$(REQUIRED_OS_VERSION)")
-  $(call info-file-item, "OS_ARCH", "$(OPENJDK_TARGET_CPU_LEGACY)")
   $(if $(JDK_ARCH_ABI_PROP_NAME), \
     $(call info-file-item, "SUN_ARCH_ABI", "$(JDK_ARCH_ABI_PROP_NAME)"))
   $(call info-file-item, "SOURCE", "$(strip $(ALL_SOURCE_TIPS))")
@@ -116,8 +111,10 @@ JMODS := $(wildcard $(IMAGES_OUTPUTDIR)/jmods/*.jmod)
 JIMAGE_TARGET_FILE := bin/java$(EXE_SUFFIX)
 
 JLINK_ORDER_RESOURCES := **module-info.class
+JLINK_JLI_CLASSES :=
 ifeq ($(ENABLE_GENERATE_CLASSLIST), true)
   JLINK_ORDER_RESOURCES += @$(SUPPORT_OUTPUTDIR)/classlist/classlist
+  JLINK_JLI_CLASSES := --generate-jli-classes=@$(SUPPORT_OUTPUTDIR)/classlist/jli_trace.out
 endif
 JLINK_ORDER_RESOURCES += \
     /java.base/java/** \
@@ -131,6 +128,7 @@ JLINK_TOOL := $(JLINK) --module-path $(IMAGES_OUTPUTDIR)/jmods \
     --endian $(OPENJDK_BUILD_CPU_ENDIAN) \
     --release-info $(BASE_RELEASE_FILE) \
     --order-resources=$(call CommaList, $(JLINK_ORDER_RESOURCES)) \
+    $(JLINK_JLI_CLASSES) \
     #
 
 ifeq ($(JLINK_KEEP_PACKAGED_MODULES), true)

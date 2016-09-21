@@ -701,7 +701,7 @@ static void *thread_native_entry(Thread *thread) {
 }
 
 bool os::create_thread(Thread* thread, ThreadType thr_type,
-                       size_t stack_size) {
+                       size_t req_stack_size) {
   assert(thread->osthread() == NULL, "caller responsible");
 
   // Allocate the OSThread object
@@ -723,34 +723,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-  // stack size
   // calculate stack size if it's not specified by caller
-  if (stack_size == 0) {
-    stack_size = os::Linux::default_stack_size(thr_type);
-
-    switch (thr_type) {
-    case os::java_thread:
-      // Java threads use ThreadStackSize which default value can be
-      // changed with the flag -Xss
-      assert(JavaThread::stack_size_at_create() > 0, "this should be set");
-      stack_size = JavaThread::stack_size_at_create();
-      break;
-    case os::compiler_thread:
-      if (CompilerThreadStackSize > 0) {
-        stack_size = (size_t)(CompilerThreadStackSize * K);
-        break;
-      } // else fall through:
-        // use VMThreadStackSize if CompilerThreadStackSize is not defined
-    case os::vm_thread:
-    case os::pgc_thread:
-    case os::cgc_thread:
-    case os::watcher_thread:
-      if (VMThreadStackSize > 0) stack_size = (size_t)(VMThreadStackSize * K);
-      break;
-    }
-  }
-
-  stack_size = MAX2(stack_size, os::Linux::min_stack_allowed);
+  size_t stack_size = os::Posix::get_initial_stack_size(thr_type, req_stack_size);
   pthread_attr_setstacksize(&attr, stack_size);
 
   // glibc guard page
@@ -956,10 +930,9 @@ static bool find_vma(address addr, address* vma_low, address* vma_high) {
 // bogus value for initial thread.
 void os::Linux::capture_initial_stack(size_t max_size) {
   // stack size is the easy part, get it from RLIMIT_STACK
-  size_t stack_size;
   struct rlimit rlim;
   getrlimit(RLIMIT_STACK, &rlim);
-  stack_size = rlim.rlim_cur;
+  size_t stack_size = rlim.rlim_cur;
 
   // 6308388: a bug in ld.so will relocate its own .data section to the
   //   lower end of primordial stack; reduce ulimit -s value a little bit
@@ -4793,32 +4766,10 @@ jint os::init_2(void) {
   Linux::signal_sets_init();
   Linux::install_signal_handlers();
 
-  // Check minimum allowable stack size for thread creation and to initialize
-  // the java system classes, including StackOverflowError - depends on page
-  // size.  Add two 4K pages for compiler2 recursion in main thread.
-  // Add in 4*BytesPerWord 4K pages to account for VM stack during
-  // class initialization depending on 32 or 64 bit VM.
-  os::Linux::min_stack_allowed = MAX2(os::Linux::min_stack_allowed,
-                                      JavaThread::stack_guard_zone_size() +
-                                      JavaThread::stack_shadow_zone_size() +
-                                      (4*BytesPerWord COMPILER2_PRESENT(+2)) * 4 * K);
-
-  os::Linux::min_stack_allowed = align_size_up(os::Linux::min_stack_allowed, os::vm_page_size());
-
-  size_t threadStackSizeInBytes = ThreadStackSize * K;
-  if (threadStackSizeInBytes != 0 &&
-      threadStackSizeInBytes < os::Linux::min_stack_allowed) {
-    tty->print_cr("\nThe stack size specified is too small, "
-                  "Specify at least " SIZE_FORMAT "k",
-                  os::Linux::min_stack_allowed/ K);
+  // Check and sets minimum stack sizes against command line options
+  if (Posix::set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
-
-  // Make the stack size a multiple of the page size so that
-  // the yellow/red zones can be guarded.
-  JavaThread::set_stack_size_at_create(round_to(threadStackSizeInBytes,
-                                                vm_page_size()));
-
   Linux::capture_initial_stack(JavaThread::stack_size_at_create());
 
 #if defined(IA32)

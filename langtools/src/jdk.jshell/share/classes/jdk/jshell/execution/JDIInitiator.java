@@ -56,9 +56,11 @@ public class JDIInitiator {
      * @param remoteAgent full class name of remote agent to launch
      * @param isLaunch does JDI do the launch? That is, LaunchingConnector,
      * otherwise we start explicitly and use ListeningConnector
+     * @param host explicit hostname to use, if null use discovered
+     * hostname, applies to listening only (!isLaunch)
      */
-    public JDIInitiator(int port, List<String> remoteVMOptions,
-            String remoteAgent, boolean isLaunch) {
+    public JDIInitiator(int port, List<String> remoteVMOptions, String remoteAgent,
+            boolean isLaunch, String host) {
         this.remoteAgent = remoteAgent;
         String connectorName
                 = isLaunch
@@ -72,6 +74,9 @@ public class JDIInitiator {
                 = isLaunch
                         ? launchArgs(port, String.join(" ", remoteVMOptions))
                         : new HashMap<>();
+        if (host != null && !isLaunch) {
+            argumentName2Value.put("localAddress", host);
+        }
         this.connectorArgs = mergeConnectorArgs(connector, argumentName2Value);
         this.vm = isLaunch
                 ? launchTarget()

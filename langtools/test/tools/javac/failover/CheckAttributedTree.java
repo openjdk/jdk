@@ -311,7 +311,7 @@ public class CheckAttributedTree {
                 final List<CompilationUnitTree> trees = new ArrayList<>();
                 Iterable<? extends Element> elems = newCompilationTask()
                     .withWriter(pw)
-                        .withOption("-Xshouldstop:at=ATTR")
+                        .withOption("--should-stop:at=ATTR")
                         .withOption("-XDverboseCompilePolicy")
                         .withSource(files.iterator().next())
                         .withListener(new TaskListener() {

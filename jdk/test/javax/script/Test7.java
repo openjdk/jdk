@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,14 @@
  * @test
  * @bug 6249843 6705893
  * @summary Tests importPackage and java access in script
+ * @modules jdk.scripting.nashorn
  */
 
-import java.io.*;
-import javax.script.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.Reader;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 public class Test7 {
         public static void main(String[] args) throws Exception {

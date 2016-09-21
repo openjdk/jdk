@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 4823811 8008577
  * @summary Confirm that text which includes numbers with a trailing minus sign is parsed correctly.
+ * @modules jdk.localedata
  * @run main/othervm -Duser.timezone=GMT+09:00 -Djava.locale.providers=JRE,SPI Bug4823811
  */
 
@@ -684,8 +685,8 @@ public class Bug4823811 {
         testNumberFormatFormatting(nfEG, -456, "456-", "ar_EG");
 
         System.out.println("*** DecimalFormat.parse test in ar_EG");
-        testNumberFormatParsing(nfEG, "123-", new Long(-123), "ar_EG");
-        testNumberFormatParsing(nfEG, "123--", new Long(-123), "ar_EG");
+        testNumberFormatParsing(nfEG, "123-", -123L, "ar_EG");
+        testNumberFormatParsing(nfEG, "123--",-123L, "ar_EG");
         testNumberFormatParsingCheckException(nfEG, "-123", 0, "ar_EG");
 
         System.out.println("*** DecimalFormat.format test in en_US");
@@ -693,8 +694,8 @@ public class Bug4823811 {
         testNumberFormatFormatting(nfUS, -456, "-456", "en_US");
 
         System.out.println("*** DecimalFormat.parse test in en_US");
-        testNumberFormatParsing(nfUS, "123-", new Long(123), "en_US");
-        testNumberFormatParsing(nfUS, "-123", new Long(-123), "en_US");
+        testNumberFormatParsing(nfUS, "123-", 123L, "en_US");
+        testNumberFormatParsing(nfUS, "-123",-123L, "en_US");
         testNumberFormatParsingCheckException(nfUS, "--123", 0, "en_US");
     }
 

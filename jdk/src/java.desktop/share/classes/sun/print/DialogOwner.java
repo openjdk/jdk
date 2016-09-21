@@ -25,9 +25,11 @@
 
 package sun.print;
 
+import java.awt.Dialog;
 import javax.print.attribute.Attribute;
 import javax.print.attribute.PrintRequestAttribute;
 import java.awt.Frame;
+import java.awt.Window;
 
 /**
  * Class DialogOwner is a printing attribute class that identifies
@@ -42,7 +44,7 @@ import java.awt.Frame;
 public final class DialogOwner
     implements PrintRequestAttribute {
 
-    private Frame dlgOwner;
+    private Window dlgOwner;
 
     /**
      * Construct a new dialog owner attribute with the given frame.
@@ -53,11 +55,19 @@ public final class DialogOwner
         dlgOwner = frame;
     }
 
+    /**
+     * Construct a new dialog owner attribute with the given dialog.
+     *
+     * @param  dialog the dialog that owns the print dialog
+     */
+    public DialogOwner(Dialog dialog) {
+        dlgOwner = dialog;
+    }
 
     /**
      * Returns the string table for class DialogOwner.
      */
-    public Frame getOwner() {
+    public Window getOwner() {
         return dlgOwner;
     }
 

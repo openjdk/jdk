@@ -62,4 +62,3 @@ public class Bug6451633 {
         Assert.assertEquals(0, ((Document) result.getNode()).getDocumentElement().getChildNodes().getLength());
     }
 }
-

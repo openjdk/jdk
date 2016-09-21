@@ -273,9 +273,7 @@ public class Taskbar {
     }
 
     /**
-     * Requests user attention to the specified window until it is activated.
-     *
-     * On an already active window requesting attention does nothing.
+     * Requests user attention to the specified window.
      *
      * @param w window
      * @throws SecurityException if a security manager exists and it denies the

@@ -88,31 +88,35 @@ public class CreateMultiReleaseTestJars {
     }
 
     public void buildMultiReleaseJar() throws IOException {
-        buildCustomMultiReleaseJar("multi-release.jar", "true");
-    }
-
-    public void buildCustomMultiReleaseJar(String filename, String multiReleaseValue) throws IOException {
-        JarBuilder jb = new JarBuilder(filename);
-        jb.addAttribute("Multi-Release", multiReleaseValue);
-        jb.addEntry("README", readme8.getBytes());
-        jb.addEntry("version/Main.java", main.getBytes());
-        jb.addEntry("version/Main.class", rootClasses.get("version.Main"));
-        jb.addEntry("version/Version.java", java8.getBytes());
-        jb.addEntry("version/Version.class", rootClasses.get("version.Version"));
-        jb.addEntry("META-INF/versions/9/README", readme9.getBytes());
-        jb.addEntry("META-INF/versions/9/version/Version.java", java9.getBytes());
-        jb.addEntry("META-INF/versions/9/version/PackagePrivate.java", ppjava9.getBytes());
+        JarBuilder jb = customMultiReleaseJar("multi-release.jar", "true");
+        addEntries(jb);
         jb.addEntry("META-INF/versions/9/version/Version.class", version9Classes.get("version.Version"));
-        jb.addEntry("META-INF/versions/9/version/PackagePrivate.class", version9Classes.get("version.PackagePrivate"));
-        jb.addEntry("META-INF/versions/10/README", readme10.getBytes());
-        jb.addEntry("META-INF/versions/10/version/Version.java", java10.getBytes());
-        jb.addEntry("META-INF/versions/10/version/Version.class", version10Classes.get("version.Version"));
         jb.build();
     }
 
     public void buildShortMultiReleaseJar() throws IOException {
-        JarBuilder jb = new JarBuilder("short-multi-release.jar");
-        jb.addAttribute("Multi-Release", "true");
+        JarBuilder jb = customMultiReleaseJar("short-multi-release.jar", "true");
+        addEntries(jb);
+        jb.build();
+    }
+
+    private JarBuilder customMultiReleaseJar(String filename, String multiReleaseValue)
+            throws IOException {
+        JarBuilder jb = new JarBuilder(filename);
+        jb.addAttribute("Multi-Release", multiReleaseValue);
+        return jb;
+    }
+
+    public void buildCustomMultiReleaseJar(String filename, String multiReleaseValue,
+            Map<String, String> extraAttributes) throws IOException {
+        JarBuilder jb = new JarBuilder(filename);
+        extraAttributes.entrySet()
+                .forEach(entry -> jb.addAttribute(entry.getKey(), entry.getValue()));
+        jb.addAttribute("Multi-Release", multiReleaseValue);
+        jb.build();
+    }
+
+    private void addEntries(JarBuilder jb) {
         jb.addEntry("README", readme8.getBytes());
         jb.addEntry("version/Main.java", main.getBytes());
         jb.addEntry("version/Main.class", rootClasses.get("version.Main"));
@@ -121,12 +125,10 @@ public class CreateMultiReleaseTestJars {
         jb.addEntry("META-INF/versions/9/README", readme9.getBytes());
         jb.addEntry("META-INF/versions/9/version/Version.java", java9.getBytes());
         jb.addEntry("META-INF/versions/9/version/PackagePrivate.java", ppjava9.getBytes());
-        // no entry for META-INF/versions/9/version/Version.class
         jb.addEntry("META-INF/versions/9/version/PackagePrivate.class", version9Classes.get("version.PackagePrivate"));
         jb.addEntry("META-INF/versions/10/README", readme10.getBytes());
         jb.addEntry("META-INF/versions/10/version/Version.java", java10.getBytes());
         jb.addEntry("META-INF/versions/10/version/Version.class", version10Classes.get("version.Version"));
-        jb.build();
     }
 
     public void buildSignedMultiReleaseJar() throws Exception {

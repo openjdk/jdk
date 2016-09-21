@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -139,14 +139,6 @@ class Aix {
 
   // libpthread version string
   static void libpthread_init();
-
-  // Minimum stack size a thread can be created with (allowing
-  // the VM to completely create the thread and enter user code)
-  static size_t min_stack_allowed;
-
-  // Return default stack size or guard size for the specified thread type
-  static size_t default_stack_size(os::ThreadType thr_type);
-  static size_t default_guard_size(os::ThreadType thr_type);
 
   // Function returns true if we run on OS/400 (pase), false if we run
   // on AIX.

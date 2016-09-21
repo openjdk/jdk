@@ -84,9 +84,13 @@
 // Minimum stack size for the VM.  It's easier to document a constant
 // but it's different for x86 and sparc because the page sizes are different.
 #ifdef _LP64
-size_t os::Solaris::min_stack_allowed = 128*K;
+size_t os::Posix::_compiler_thread_min_stack_allowed = 128 * K;
+size_t os::Posix::_java_thread_min_stack_allowed = 128 * K;
+size_t os::Posix::_vm_internal_thread_min_stack_allowed = 128 * K;
 #else
-size_t os::Solaris::min_stack_allowed = 96*K;
+size_t os::Posix::_compiler_thread_min_stack_allowed = 96 * K;
+size_t os::Posix::_java_thread_min_stack_allowed = 96 * K;
+size_t os::Posix::_vm_internal_thread_min_stack_allowed = 96 * K;
 #endif
 
 int os::Solaris::max_register_window_saves_before_flushing() {

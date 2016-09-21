@@ -131,5 +131,3 @@ public class NSSupportTest {
         assertNull(support.getURI(DC_PREFIX));
     }
 }
-
-

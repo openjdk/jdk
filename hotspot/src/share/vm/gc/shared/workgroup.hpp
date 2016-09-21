@@ -62,7 +62,12 @@ class AbstractGangTask VALUE_OBJ_CLASS_SPEC {
   AbstractGangTask(const char* name) :
     _name(name),
     _gc_id(GCId::current_raw())
- {}
+  {}
+
+  AbstractGangTask(const char* name, const uint gc_id) :
+    _name(name),
+    _gc_id(gc_id)
+  {}
 
   // The abstract work method.
   // The argument tells you which member of the gang you are.
@@ -313,9 +318,9 @@ public:
 // enumeration type.
 
 class SubTasksDone: public CHeapObj<mtInternal> {
-  uint* _tasks;
+  volatile uint* _tasks;
   uint _n_tasks;
-  uint _threads_completed;
+  volatile uint _threads_completed;
 #ifdef ASSERT
   volatile uint _claimed;
 #endif
@@ -358,11 +363,11 @@ public:
 class SequentialSubTasksDone : public StackObj {
 protected:
   uint _n_tasks;     // Total number of tasks available.
-  uint _n_claimed;   // Number of tasks claimed.
+  volatile uint _n_claimed;   // Number of tasks claimed.
   // _n_threads is used to determine when a sub task is done.
   // See comments on SubTasksDone::_n_threads
   uint _n_threads;   // Total number of parallel threads.
-  uint _n_completed; // Number of completed threads.
+  volatile uint _n_completed; // Number of completed threads.
 
   void clear();
 

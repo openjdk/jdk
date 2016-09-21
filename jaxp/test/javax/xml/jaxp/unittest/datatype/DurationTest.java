@@ -484,4 +484,3 @@ public class DurationTest {
 
     }
 }
-

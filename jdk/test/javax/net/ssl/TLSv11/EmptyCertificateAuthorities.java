@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,33 @@
  * @bug 4873188
  * @summary Support TLS 1.1
  * @run main/othervm EmptyCertificateAuthorities
+ * @modules java.security.jgss
+ *          java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal.crypto
+ *          java.security.jgss/sun.security.krb5.internal.ccache
+ *          java.security.jgss/sun.security.krb5.internal
+ *          java.security.jgss/sun.security.krb5.internal.ktab
+ *          java.base/sun.security.util
  * @author Xuelei Fan
  */
 
-import java.io.*;
-import java.net.*;
-import java.security.*;
-import java.security.cert.*;
-import javax.net.ssl.*;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.KeyStore;
+import java.security.Security;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 public class EmptyCertificateAuthorities {
 

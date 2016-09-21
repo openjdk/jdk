@@ -21,13 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4898468 6994008
  * @summary basic test for RSA cipher
  * @author Andreas Sterbenz
  * @library ..
  * @key randomness
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestRSACipher
  * @run main/othervm TestRSACipher sm
  */

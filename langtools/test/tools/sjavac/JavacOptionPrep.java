@@ -96,7 +96,7 @@ public class JavacOptionPrep {
 
             // Ignore this option for now. When the file=... requirement goes
             // away, this will be easier to handle.
-            if (option.startsWith("-Xdebug:completionDeps"))
+            if (option.startsWith("--debug:completionDeps"))
                 continue;
 
             switch (option) {

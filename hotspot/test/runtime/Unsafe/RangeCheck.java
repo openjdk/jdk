@@ -33,7 +33,6 @@
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
-import jdk.test.lib.unsafe.UnsafeHelper;
 
 import jdk.internal.misc.Unsafe;
 
@@ -60,7 +59,7 @@ public class RangeCheck {
 
     public static class DummyClassWithMainRangeCheck {
         public static void main(String args[]) throws Exception {
-            Unsafe unsafe = UnsafeHelper.getUnsafe();
+            Unsafe unsafe = Unsafe.getUnsafe();
             unsafe.getObject(new DummyClassWithMainRangeCheck(), Short.MAX_VALUE);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,7 +33,7 @@ define_pd_global(bool, DontYieldALot,            false);
 define_pd_global(intx, ThreadStackSize,          2048); // 0 => use system default
 define_pd_global(intx, VMThreadStackSize,        2048);
 
-define_pd_global(intx, CompilerThreadStackSize,  0);
+define_pd_global(intx, CompilerThreadStackSize,  2048);
 
 define_pd_global(uintx,JVMInvokeMethodSlack,     8192);
 

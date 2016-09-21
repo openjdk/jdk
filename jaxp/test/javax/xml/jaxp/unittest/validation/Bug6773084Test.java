@@ -160,4 +160,3 @@ public class Bug6773084Test {
     }
 
 }
-

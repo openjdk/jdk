@@ -255,7 +255,7 @@ public class ElementStructureTest {
     }
 
     void run(Writer output, String version) throws Exception {
-        List<String> options = Arrays.asList("-release", version, "-classpath", "");
+        List<String> options = Arrays.asList("--release", version, "-classpath", "");
         List<ToolBox.JavaSource> files = Arrays.asList(new ToolBox.JavaSource("Test", ""));
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         JavacTaskImpl task = (JavacTaskImpl) compiler.getTask(null, null, null, options, null, files);

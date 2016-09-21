@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8136930
- * @summary Test that the VM only recognizes the last specified --add-modules
- *          and --list-modules options
+ * @summary Test that the VM only recognizes the last specified --list-modules
+ *          options but accumulates --add-module values.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  */
@@ -38,14 +38,16 @@ public class ModuleOptionsTest {
 
     public static void main(String[] args) throws Exception {
 
-        // Test that last --add-modules is the only one recognized.  No exception
-        // should be thrown.
+        // Test that multiple --add-modules options are cumulative, not last one wins.
+        // An exception should be thrown because module i_dont_exist doesn't exist.
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "--add-modules=i_dont_exist", "--add-modules=java.base", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
+        output.shouldContain("ResolutionException");
+        output.shouldContain("i_dont_exist");
+        output.shouldHaveExitValue(1);
 
-        // Test that last --limit-modules is the only one recognized.  No exception
+        // Test that the last --limit-modules is the only one recognized.  No exception
         // should be thrown.
         pb = ProcessTools.createJavaProcessBuilder(
             "--limit-modules=i_dont_exist", "--limit-modules=java.base", "-version");

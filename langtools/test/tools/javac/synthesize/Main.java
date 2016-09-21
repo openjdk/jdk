@@ -99,7 +99,7 @@ public class Main
         if (stdBootClassPath) {
             args.add("-Xmodule:java.base");
         } else {
-            args.add("-system");
+            args.add("--system");
             args.add("none");
             files.add("module-info.java");
         }

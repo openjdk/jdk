@@ -29,6 +29,8 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 
+class WorkGang;
+
 class G1MappingChangedListener VALUE_OBJ_CLASS_SPEC {
  public:
   // Fired after commit of the memory, i.e. the memory this listener is registered
@@ -68,7 +70,7 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
     return _commit_map.at(idx);
   }
 
-  virtual void commit_regions(uint start_idx, size_t num_regions = 1) = 0;
+  virtual void commit_regions(uint start_idx, size_t num_regions = 1, WorkGang* pretouch_workers = NULL) = 0;
   virtual void uncommit_regions(uint start_idx, size_t num_regions = 1) = 0;
 
   // Creates an appropriate G1RegionToSpaceMapper for the given parameters.

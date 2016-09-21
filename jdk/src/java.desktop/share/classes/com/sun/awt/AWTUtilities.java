@@ -447,6 +447,7 @@ public final class AWTUtilities {
      * @param shape the new 'mixing-cutout' shape
      * @throws NullPointerException if the component argument is {@code null}
      */
+    @Deprecated(since = "9")
     public static void setComponentMixingCutoutShape(Component component,
             Shape shape)
     {

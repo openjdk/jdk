@@ -314,6 +314,9 @@ else # HAS_SPEC=true
         endif
 
     on-failure:
+	$(call CleanupSmartJavac)
+	$(call StopGlobalTimer)
+	$(call ReportBuildTimes)
 	$(call PrintFailureReports)
 	$(call PrintBuildLogFailures)
 	$(PRINTF) "Hint: If caused by a warning, try configure --disable-warnings-as-errors.\n\n"

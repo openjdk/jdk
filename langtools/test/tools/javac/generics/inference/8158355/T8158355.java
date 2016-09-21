@@ -27,7 +27,7 @@
  * @test
  * @bug 8158355
  * @summary Inference graph dot support broken
- * @compile -Xdebug:dumpInferenceGraphsTo=. T8158355.java
+ * @compile --debug:dumpInferenceGraphsTo=. T8158355.java
  */
 import java.util.List;
 
