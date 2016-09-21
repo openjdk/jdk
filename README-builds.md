@@ -1016,8 +1016,7 @@ about using GNU make:
  * Place the location of the GNU make binary in the `PATH`.
  * **Solaris:** Do NOT use `/usr/bin/make` on Solaris. If your Solaris system
    has the software from the Solaris Developer Companion CD installed, you
-   should try and use `gmake` which will be located in either the `/usr/bin`,
-   `/opt/sfw/bin` or `/usr/sfw/bin` directory.
+   should try and use `/usr/bin/gmake` or `/usr/gnu/bin/make`.
  * **Windows:** Make sure you start your build inside a bash shell.
  * **Mac OS X:** The XCode "command line tools" must be installed on your Mac.
 
