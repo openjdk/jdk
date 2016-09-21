@@ -52,7 +52,6 @@ void InternalVMTests::run() {
   run_unit_test(TestVirtualSpaceNode_test);
   run_unit_test(TestGlobalDefinitions_test);
   run_unit_test(GCTimer_test);
-  run_unit_test(arrayOopDesc_test);
   run_unit_test(CollectedHeap_test);
   run_unit_test(QuickSort_test);
   run_unit_test(GuardedMemory_test);
@@ -82,7 +81,6 @@ void InternalVMTests::run() {
   run_unit_test(Test_invalid_log_file);
   run_unit_test(Test_multiline_logging);
   run_unit_test(DirectivesParser_test);
-  run_unit_test(Test_TempNewSymbol);
 #if INCLUDE_VM_STRUCTS
   run_unit_test(VMStructs_test);
 #endif
