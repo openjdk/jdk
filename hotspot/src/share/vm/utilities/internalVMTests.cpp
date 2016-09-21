@@ -57,7 +57,6 @@ void InternalVMTests::run() {
   run_unit_test(GuardedMemory_test);
   run_unit_test(TestNewSize_test);
   run_unit_test(TestOldSize_test);
-  run_unit_test(TestKlass_test);
   run_unit_test(TestBitMap_test);
   run_unit_test(TestResourcehash_test);
   run_unit_test(ObjectMonitor_test);
