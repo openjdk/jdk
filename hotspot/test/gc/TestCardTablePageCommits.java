@@ -34,7 +34,6 @@ import jdk.test.lib.Platform;
  * @requires vm.gc.Parallel
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver TestCardTablePageCommits
  */
 public class TestCardTablePageCommits {

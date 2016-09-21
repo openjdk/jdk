@@ -24,8 +24,10 @@ package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.common.InitTimer.timer;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import jdk.vm.ci.common.InitTimer;
@@ -80,11 +82,19 @@ public final class HotSpotVMConfigStore {
         return Collections.unmodifiableMap(vmFields);
     }
 
+    /**
+     * Gets the VM intrinsic descriptions exposed by this object.
+     */
+    public List<VMIntrinsicMethod> getIntrinsics() {
+        return Collections.unmodifiableList(vmIntrinsics);
+    }
+
     final HashMap<String, VMField> vmFields;
     final HashMap<String, Long> vmTypeSizes;
     final HashMap<String, Long> vmConstants;
     final HashMap<String, Long> vmAddresses;
     final HashMap<String, VMFlag> vmFlags;
+    final List<VMIntrinsicMethod> vmIntrinsics;
 
     /**
      * Reads the database of VM info. The return value encodes the info in a nested object array
@@ -97,6 +107,7 @@ public final class HotSpotVMConfigStore {
      *         [String name, Long value, ...] vmConstants,
      *         [String name, Long value, ...] vmAddresses,
      *         VMFlag[] vmFlags
+     *         VMIntrinsicMethod[] vmIntrinsics
      *     ]
      * </pre>
      */
@@ -106,7 +117,7 @@ public final class HotSpotVMConfigStore {
         try (InitTimer t = timer("CompilerToVm readConfiguration")) {
             data = compilerToVm.readConfiguration();
         }
-        assert data.length == 5 : data.length;
+        assert data.length == 6 : data.length;
 
         // @formatter:off
         VMField[] vmFieldsInfo    = (VMField[]) data[0];
@@ -115,11 +126,12 @@ public final class HotSpotVMConfigStore {
         Object[] vmAddressesInfo  = (Object[])  data[3];
         VMFlag[] vmFlagsInfo      = (VMFlag[])  data[4];
 
-        vmFields    = new HashMap<>(vmFieldsInfo.length);
-        vmTypeSizes = new HashMap<>(vmTypesSizesInfo.length);
-        vmConstants = new HashMap<>(vmConstantsInfo.length);
-        vmAddresses = new HashMap<>(vmAddressesInfo.length);
-        vmFlags     = new HashMap<>(vmFlagsInfo.length);
+        vmFields     = new HashMap<>(vmFieldsInfo.length);
+        vmTypeSizes  = new HashMap<>(vmTypesSizesInfo.length);
+        vmConstants  = new HashMap<>(vmConstantsInfo.length);
+        vmAddresses  = new HashMap<>(vmAddressesInfo.length);
+        vmFlags      = new HashMap<>(vmFlagsInfo.length);
+        vmIntrinsics = Arrays.asList((VMIntrinsicMethod[]) data[5]);
         // @formatter:on
 
         try (InitTimer t = timer("HotSpotVMConfigStore<init> fill maps")) {

@@ -168,7 +168,6 @@ needs_compact3 = \
   runtime/InternalApi/ThreadCpuTimesDeadlock.java \
   runtime/NMT/JcmdSummaryDiff.java \
   runtime/RedefineTests/RedefineAnnotations.java \
-  serviceability/sa/jmap-hashcode/Test8028623.java \
   serviceability/threads/TestFalseDeadLock.java \
   compiler/codecache/jmx \
   compiler/jsr292/RedefineMethodUsedByMultipleMethodHandles.java \

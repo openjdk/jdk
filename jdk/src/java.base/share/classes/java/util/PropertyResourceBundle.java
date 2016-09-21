@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,6 @@ import java.io.IOException;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnmappableCharacterException;
-import java.security.AccessController;
-import java.util.Locale;
 import sun.security.action.GetPropertyAction;
 import sun.util.PropertyResourceBundleCharset;
 import sun.util.ResourceBundleEnumeration;
@@ -236,5 +234,5 @@ public class PropertyResourceBundle extends ResourceBundle {
 
     // ==================privates====================
 
-    private Map<String,Object> lookup;
+    private final Map<String,Object> lookup;
 }

@@ -44,6 +44,9 @@ size_t      LogConfiguration::_n_outputs = 0;
 LogConfiguration::UpdateListenerFunction* LogConfiguration::_listener_callbacks = NULL;
 size_t      LogConfiguration::_n_listener_callbacks = 0;
 
+// LogFileOutput is the default type of output, its type prefix should be used if no type was specified
+static const char* implicit_output_prefix = LogFileOutput::Prefix;
+
 // Stack object to take the lock for configuring the logging.
 // Should only be held during the critical parts of the configuration
 // (when calling configure_output or reading/modifying the outputs array).
@@ -107,6 +110,55 @@ void LogConfiguration::finalize() {
   FREE_C_HEAP_ARRAY(LogOutput*, _outputs);
 }
 
+// Normalizes the given LogOutput name to type=name form.
+// For example, foo, "foo", file="foo", will all be normalized to file=foo (no quotes, prefixed).
+static bool normalize_output_name(const char* full_name, char* buffer, size_t len, outputStream* errstream) {
+  const char* start_quote = strchr(full_name, '"');
+  const char* equals = strchr(full_name, '=');
+  const bool quoted = start_quote != NULL;
+  const bool is_stdout_or_stderr = (strcmp(full_name, "stdout") == 0 || strcmp(full_name, "stderr") == 0);
+
+  // ignore equals sign within quotes
+  if (quoted && equals > start_quote) {
+    equals = NULL;
+  }
+
+  const char* prefix = "";
+  size_t prefix_len = 0;
+  const char* name = full_name;
+  if (equals != NULL) {
+    // split on equals sign
+    name = equals + 1;
+    prefix = full_name;
+    prefix_len = equals - full_name + 1;
+  } else if (!is_stdout_or_stderr) {
+    prefix = implicit_output_prefix;
+    prefix_len = strlen(prefix);
+  }
+  size_t name_len = strlen(name);
+
+  if (quoted) {
+    const char* end_quote = strchr(start_quote + 1, '"');
+    if (end_quote == NULL) {
+      errstream->print_cr("Output name has opening quote but is missing a terminating quote.");
+      return false;
+    }
+    if (start_quote != name || end_quote[1] != '\0') {
+      errstream->print_cr("Output name can not be partially quoted."
+                          " Either surround the whole name with quotation marks,"
+                          " or do not use quotation marks at all.");
+      return false;
+    }
+    // strip start and end quote
+    name++;
+    name_len -= 2;
+  }
+
+  int ret = jio_snprintf(buffer, len, "%.*s%.*s", prefix_len, prefix, name_len, name);
+  assert(ret > 0, "buffer issue");
+  return true;
+}
+
 size_t LogConfiguration::find_output(const char* name) {
   for (size_t i = 0; i < _n_outputs; i++) {
     if (strcmp(_outputs[i]->name(), name) == 0) {
@@ -116,39 +168,14 @@ size_t LogConfiguration::find_output(const char* name) {
   return SIZE_MAX;
 }
 
-LogOutput* LogConfiguration::new_output(char* name, const char* options, outputStream* errstream) {
-  const char* type;
-  char* equals_pos = strchr(name, '=');
-  if (equals_pos == NULL) {
-    type = "file";
-  } else {
-    *equals_pos = '\0';
-    type = name;
-    name = equals_pos + 1;
-  }
-
-  // Check if name is quoted, and if so, strip the quotes
-  char* quote = strchr(name, '"');
-  if (quote != NULL) {
-    char* end_quote = strchr(name + 1, '"');
-    if (end_quote == NULL) {
-      errstream->print_cr("Output name has opening quote but is missing a terminating quote.");
-      return NULL;
-    } else if (quote != name || end_quote[1] != '\0') {
-      errstream->print_cr("Output name can not be partially quoted."
-                          " Either surround the whole name with quotation marks,"
-                          " or do not use quotation marks at all.");
-      return NULL;
-    }
-    name++;
-    *end_quote = '\0';
-  }
-
+LogOutput* LogConfiguration::new_output(const char* name,
+                                        const char* options,
+                                        outputStream* errstream) {
   LogOutput* output;
-  if (strcmp(type, "file") == 0) {
+  if (strncmp(name, LogFileOutput::Prefix, strlen(LogFileOutput::Prefix)) == 0) {
     output = new LogFileOutput(name);
   } else {
-    errstream->print_cr("Unsupported log output type.");
+    errstream->print_cr("Unsupported log output type: %s", name);
     return NULL;
   }
 
@@ -243,6 +270,7 @@ void LogConfiguration::configure_output(size_t idx, const LogTagLevelExpression&
 }
 
 void LogConfiguration::disable_output(size_t idx) {
+  assert(idx < _n_outputs, "invalid index: " SIZE_FORMAT " (_n_outputs: " SIZE_FORMAT ")", idx, _n_outputs);
   LogOutput* out = _outputs[idx];
 
   // Remove the output from all tagsets.
@@ -253,7 +281,7 @@ void LogConfiguration::disable_output(size_t idx) {
 
   // Delete the output unless stdout/stderr
   if (out != LogOutput::Stderr && out != LogOutput::Stdout) {
-    delete_output(find_output(out->name()));
+    delete_output(idx);
   } else {
     out->set_config_string("all=off");
   }
@@ -261,8 +289,8 @@ void LogConfiguration::disable_output(size_t idx) {
 
 void LogConfiguration::disable_logging() {
   ConfigurationLock cl;
-  for (size_t i = 0; i < _n_outputs; i++) {
-    disable_output(i);
+  for (size_t i = _n_outputs; i > 0; i--) {
+    disable_output(i - 1);
   }
   notify_update_listeners();
 }
@@ -289,6 +317,8 @@ void LogConfiguration::configure_stdout(LogLevelType level, bool exact_match, ..
   }
   expr.set_level(level);
   expr.new_combination();
+  assert(expr.verify_tagsets(),
+         "configure_stdout() called with invalid/non-existing tag set");
 
   // Apply configuration to stdout (output #0), with the same decorators as before.
   ConfigurationLock cl;
@@ -334,9 +364,16 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
   char errbuf[512];
   stringStream ss(errbuf, sizeof(errbuf));
   bool success = parse_log_arguments(output, what, decorators, output_options, &ss);
-  if (!success) {
-    errbuf[strlen(errbuf) - 1] = '\0'; // Strip trailing newline.
-    log_error(logging)("%s", errbuf);
+
+  if (ss.size() > 0) {
+    errbuf[strlen(errbuf) - 1] = '\0'; // Strip trailing newline
+    // If it failed, log the error. If it didn't fail, but something was written
+    // to the stream, log it as a warning.
+    if (!success) {
+      log_error(logging)("%s", ss.base());
+    } else {
+      log_warning(logging)("%s", ss.base());
+    }
   }
 
   os::free(copy);
@@ -348,6 +385,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
                                            const char* decoratorstr,
                                            const char* output_options,
                                            outputStream* errstream) {
+  assert(errstream != NULL, "errstream can not be NULL");
   if (outputstr == NULL || strlen(outputstr) == 0) {
     outputstr = "stdout";
   }
@@ -364,28 +402,39 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
 
   ConfigurationLock cl;
   size_t idx;
-  if (outputstr[0] == '#') {
-    int ret = sscanf(outputstr+1, SIZE_FORMAT, &idx);
+  if (outputstr[0] == '#') { // Output specified using index
+    int ret = sscanf(outputstr + 1, SIZE_FORMAT, &idx);
     if (ret != 1 || idx >= _n_outputs) {
       errstream->print_cr("Invalid output index '%s'", outputstr);
       return false;
     }
-  } else {
-    idx = find_output(outputstr);
+  } else { // Output specified using name
+    // Normalize the name, stripping quotes and ensures it includes type prefix
+    size_t len = strlen(outputstr) + strlen(implicit_output_prefix) + 1;
+    char* normalized = NEW_C_HEAP_ARRAY(char, len, mtLogging);
+    if (!normalize_output_name(outputstr, normalized, len, errstream)) {
+      return false;
+    }
+
+    idx = find_output(normalized);
     if (idx == SIZE_MAX) {
-      char* tmp = os::strdup_check_oom(outputstr, mtLogging);
-      LogOutput* output = new_output(tmp, output_options, errstream);
-      os::free(tmp);
-      if (output == NULL) {
-        return false;
+      // Attempt to create and add the output
+      LogOutput* output = new_output(normalized, output_options, errstream);
+      if (output != NULL) {
+        idx = add_output(output);
       }
-      idx = add_output(output);
     } else if (output_options != NULL && strlen(output_options) > 0) {
       errstream->print_cr("Output options for existing outputs are ignored.");
+    }
+
+    FREE_C_HEAP_ARRAY(char, normalized);
+    if (idx == SIZE_MAX) {
+      return false;
     }
   }
   configure_output(idx, expr, decorators);
   notify_update_listeners();
+  expr.verify_tagsets(errstream);
   return true;
 }
 

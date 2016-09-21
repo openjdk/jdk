@@ -360,6 +360,8 @@ private:
 
   AgeTable _survivors_age_table;
 
+protected:
+  size_t desired_survivor_size() const;
 public:
   uint tenuring_threshold() const { return _tenuring_threshold; }
 
@@ -378,6 +380,8 @@ public:
   void record_age_table(AgeTable* age_table) {
     _survivors_age_table.merge(age_table);
   }
+
+  void print_age_table();
 
   void update_max_gc_locker_expansion();
 

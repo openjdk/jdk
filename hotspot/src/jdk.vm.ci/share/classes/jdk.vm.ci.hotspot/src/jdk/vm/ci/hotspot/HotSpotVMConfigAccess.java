@@ -30,6 +30,13 @@ import jdk.vm.ci.common.JVMCIError;
 public class HotSpotVMConfigAccess {
 
     /**
+     * Gets the available configuration data.
+     */
+    public HotSpotVMConfigStore getStore() {
+        return store;
+    }
+
+    /**
      * Gets the address of a C++ symbol.
      *
      * @param name name of C++ symbol

@@ -1232,7 +1232,7 @@ public class Gen extends JCTree.Visitor {
             Chain exit = switchEnv.info.exit;
             if  (exit != null) {
                 code.resolve(exit);
-                exit.state.defined.excludeFrom(code.nextreg);
+                exit.state.defined.excludeFrom(limit);
             }
 
             // If we have not set the default offset, we do so now.
