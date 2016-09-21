@@ -28,8 +28,8 @@
 ### It also performs some sanity checks on make.
 ###
 
-# The shell code below will be executed on /usr/ccs/bin/make on Solaris, but not in GNU Make.
-# /usr/ccs/bin/make lacks basically every other flow control mechanism.
+# The shell code below will be executed on /usr/bin/make on Solaris, but not in GNU Make.
+# /usr/bin/make lacks basically every other flow control mechanism.
 .TEST_FOR_NON_GNUMAKE:sh=echo You are not using GNU Make/gmake, this is a requirement. Check your path. 1>&2 && exit 1
 
 # The .FEATURES variable is likely to be unique for GNU Make.
