@@ -88,8 +88,7 @@ AC_DEFUN([FLAGS_SETUP_SYSROOT_FLAGS],
         # inlining of system functions and intrinsics.
         $1SYSROOT_CFLAGS="-I-xbuiltin -I[$]$1SYSROOT/usr/include"
         $1SYSROOT_LDFLAGS="-L[$]$1SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
-            -L[$]$1SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
-            -L[$]$1SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
+            -L[$]$1SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR"
       fi
     elif test "x$TOOLCHAIN_TYPE" = xgcc; then
       $1SYSROOT_CFLAGS="--sysroot=[$]$1SYSROOT"

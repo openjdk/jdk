@@ -626,8 +626,7 @@ number of different configurations, e.g. debug, release, 32, 64, etc.</p>
 
 <p>The Common UNIX Printing System (CUPS) Headers are required for building the
    OpenJDK on Solaris and Linux. The Solaris header files can be obtained by
-   installing the package <strong>SFWcups</strong> from the Solaris Software Companion
-   CD/DVD, these often will be installed into the directory <code>/opt/sfw/cups</code>.</p>
+   installing the package <strong>print/cups</strong>.</p>
 
 <p>The CUPS header files can always be downloaded from
    <a href="http://www.cups.org">www.cups.org</a>.</p>
@@ -1111,8 +1110,7 @@ version, see "<a href="#buildgmake">Building GNU make</a>".</li>
 <li>Place the location of the GNU make binary in the <code>PATH</code>.</li>
 <li><strong>Solaris:</strong> Do NOT use <code>/usr/bin/make</code> on Solaris. If your Solaris system
 has the software from the Solaris Developer Companion CD installed, you
-should try and use <code>gmake</code> which will be located in either the <code>/usr/bin</code>,
-<code>/opt/sfw/bin</code> or <code>/usr/sfw/bin</code> directory.</li>
+should try and use <code>/usr/bin/gmake</code> or <code>/usr/gnu/bin/make</code>.</li>
 <li><strong>Windows:</strong> Make sure you start your build inside a bash shell.</li>
 <li><strong>Mac OS X:</strong> The XCode "command line tools" must be installed on your Mac.</li>
 </ul>
