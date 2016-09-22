@@ -67,19 +67,22 @@ public final class ConstructorFinder extends AbstractFinder<Constructor<?>> {
      */
     public static Constructor<?> findConstructor(Class<?> type, Class<?>...args) throws NoSuchMethodException {
         if (type.isPrimitive()) {
-            throw new NoSuchMethodException("Primitive wrapper does not contain constructors");
+            throw new NoSuchMethodException("Primitive wrapper does not contain constructors: "
+                + type.getName());
         }
         if (type.isInterface()) {
-            throw new NoSuchMethodException("Interface does not contain constructors");
+            throw new NoSuchMethodException("Interface does not contain constructors: "
+                + type.getName());
         }
         if (!FinderUtils.isExported(type)) {
-            throw new NoSuchMethodException("Class is not accessible");
+            throw new NoSuchMethodException("Class is not accessible: " + type.getName());
         }
         if (Modifier.isAbstract(type.getModifiers())) {
-            throw new NoSuchMethodException("Abstract class cannot be instantiated");
+            throw new NoSuchMethodException("Abstract class cannot be instantiated: "
+                + type.getName());
         }
         if (!Modifier.isPublic(type.getModifiers()) || !isPackageAccessible(type)) {
-            throw new NoSuchMethodException("Class is not accessible");
+            throw new NoSuchMethodException("Class is not accessible: " + type.getName());
         }
         PrimitiveWrapperMap.replacePrimitivesWithWrappers(args);
         Signature signature = new Signature(type, args);

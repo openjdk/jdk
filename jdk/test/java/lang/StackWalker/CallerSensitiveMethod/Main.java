@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,33 +23,13 @@
 
 /*
  * @test
- * @bug 6327047
- * @summary verify that TerminalFactory.getDefault() works
- * @author Andreas Sterbenz
- * @modules java.smartcardio/javax.smartcardio
- * @run main/manual TestDefault
+ * @bug 8157464
+ * @summary Basic test for StackWalker.getCallerClass()
+ * @library src
+ * @build java.base/java.util.CSM csm/*
+ * @run main/othervm csm/jdk.test.CallerSensitiveTest
+ * @run main/othervm csm/jdk.test.CallerSensitiveTest sm
  */
-
-// This test requires special hardware.
-
-import java.util.List;
-import javax.smartcardio.CardTerminal;
-import javax.smartcardio.TerminalFactory;
-
-public class TestDefault {
-
-    public static void main(String[] args) throws Exception {
-        TerminalFactory factory = TerminalFactory.getDefault();
-        System.out.println("Type: " + factory.getType());
-        List<CardTerminal> terminals = factory.terminals().list();
-        if (terminals.isEmpty()) {
-            System.out.println("Skipping the test: " +
-                    "no card terminals available");
-            return;
-        }
-        System.out.println("Terminals: " + terminals);
-
-        System.out.println("OK.");
-    }
-
+public class Main {
 }
+

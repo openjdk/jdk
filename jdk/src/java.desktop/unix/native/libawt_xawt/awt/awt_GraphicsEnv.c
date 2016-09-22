@@ -442,7 +442,7 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
 
 #ifndef __linux__ /* SOLARIS */
         if (xrenderLibHandle == NULL) {
-            xrenderLibHandle = dlopen("/usr/sfw/lib/libXrender.so.1",
+            xrenderLibHandle = dlopen("/usr/lib/libXrender.so.1",
                                       RTLD_LAZY | RTLD_GLOBAL);
         }
 #endif
