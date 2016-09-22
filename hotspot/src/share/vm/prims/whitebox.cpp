@@ -894,6 +894,7 @@ static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, F
   }
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
   const char* flag_name = env->GetStringUTFChars(name, NULL);
+  CHECK_JNI_EXCEPTION_(env, false);
   Flag::Error result = (*TAt)(flag_name, value, true, true);
   env->ReleaseStringUTFChars(name, flag_name);
   return (result == Flag::SUCCESS);
@@ -906,6 +907,7 @@ static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, F
   }
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
   const char* flag_name = env->GetStringUTFChars(name, NULL);
+  CHECK_JNI_EXCEPTION_(env, false);
   Flag::Error result = (*TAtPut)(flag_name, value, Flag::INTERNAL);
   env->ReleaseStringUTFChars(name, flag_name);
   return (result == Flag::SUCCESS);
@@ -944,6 +946,7 @@ static jobject doubleBox(JavaThread* thread, JNIEnv* env, jdouble value) {
 static Flag* getVMFlag(JavaThread* thread, JNIEnv* env, jstring name) {
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
   const char* flag_name = env->GetStringUTFChars(name, NULL);
+  CHECK_JNI_EXCEPTION_(env, NULL);
   Flag* result = Flag::find_flag(flag_name, strlen(flag_name), true, true);
   env->ReleaseStringUTFChars(name, flag_name);
   return result;
@@ -1084,7 +1087,14 @@ WB_END
 
 WB_ENTRY(void, WB_SetStringVMFlag(JNIEnv* env, jobject o, jstring name, jstring value))
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-  const char* ccstrValue = (value == NULL) ? NULL : env->GetStringUTFChars(value, NULL);
+  const char* ccstrValue;
+  if (value == NULL) {
+    ccstrValue = NULL;
+  }
+  else {
+    ccstrValue = env->GetStringUTFChars(value, NULL);
+    CHECK_JNI_EXCEPTION(env);
+  }
   ccstr ccstrResult = ccstrValue;
   bool needFree;
   {
@@ -1308,6 +1318,7 @@ WB_ENTRY(jobjectArray, WB_GetCodeHeapEntries(JNIEnv* env, jobject o, jint blob_t
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, NULL);
   result = env->NewObjectArray(blobs.length(), clazz, NULL);
+  CHECK_JNI_EXCEPTION_(env, NULL);
   if (result == NULL) {
     return result;
   }
@@ -1317,6 +1328,7 @@ WB_ENTRY(jobjectArray, WB_GetCodeHeapEntries(JNIEnv* env, jobject o, jint blob_t
     jobjectArray obj = codeBlob2objectArray(thread, env, *it);
     CHECK_JNI_EXCEPTION_(env, NULL);
     env->SetObjectArrayElement(result, i, obj);
+    CHECK_JNI_EXCEPTION_(env, NULL);
     ++i;
   }
   return result;
@@ -1523,6 +1535,7 @@ static bool GetMethodOption(JavaThread* thread, JNIEnv* env, jobject method, jst
   // can't be in VM when we call JNI
   ThreadToNativeFromVM ttnfv(thread);
   const char* flag_name = env->GetStringUTFChars(name, NULL);
+  CHECK_JNI_EXCEPTION_(env, false);
   bool result =  CompilerOracle::has_option_value(mh, flag_name, *value);
   env->ReleaseStringUTFChars(name, flag_name);
   return result;
@@ -1678,6 +1691,7 @@ WB_ENTRY(jint, WB_AddCompilerDirective(JNIEnv* env, jobject o, jstring compDirec
   // can't be in VM when we call JNI
   ThreadToNativeFromVM ttnfv(thread);
   const char* dir = env->GetStringUTFChars(compDirect, NULL);
+  CHECK_JNI_EXCEPTION_(env, 0);
   int ret;
   {
     ThreadInVMfromNative ttvfn(thread); // back to VM
