@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,35 +21,20 @@
  * questions.
  */
 
-/*
+/**
+ *
  * @test
- * @bug 6327047
- * @summary verify that TerminalFactory.getDefault() works
- * @author Andreas Sterbenz
- * @modules java.smartcardio/javax.smartcardio
- * @run main/manual TestDefault
+ * @summary Tests that the -javaagent option adds the java.instrument into
+ * the module graph
+ * @modules java.instrument
+ * @run shell MakeJAR3.sh SimpleAgent
+ * @run main/othervm -javaagent:SimpleAgent.jar -limitmods java.base TestAgentWithLimitMods
+ *
  */
+public class TestAgentWithLimitMods {
 
-// This test requires special hardware.
-
-import java.util.List;
-import javax.smartcardio.CardTerminal;
-import javax.smartcardio.TerminalFactory;
-
-public class TestDefault {
-
-    public static void main(String[] args) throws Exception {
-        TerminalFactory factory = TerminalFactory.getDefault();
-        System.out.println("Type: " + factory.getType());
-        List<CardTerminal> terminals = factory.terminals().list();
-        if (terminals.isEmpty()) {
-            System.out.println("Skipping the test: " +
-                    "no card terminals available");
-            return;
-        }
-        System.out.println("Terminals: " + terminals);
-
-        System.out.println("OK.");
+    public static void main(String[] args) {
+        System.out.println("Test passed");
     }
 
 }

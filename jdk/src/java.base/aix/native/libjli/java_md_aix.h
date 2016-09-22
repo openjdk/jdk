@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,35 +21,27 @@
  * questions.
  */
 
+#ifndef JAVA_MD_AIX_H
+#define JAVA_MD_AIX_H
+
 /*
- * @test
- * @bug 6327047
- * @summary verify that TerminalFactory.getDefault() works
- * @author Andreas Sterbenz
- * @modules java.smartcardio/javax.smartcardio
- * @run main/manual TestDefault
+ * Very limited AIX port of dladdr() for libjli.so.
+ *
+ * We try to mimick dladdr(3) on Linux (see http://linux.die.net/man/3/dladdr)
+ * dladdr(3) is not POSIX but a GNU extension, and is not available on AIX.
+ *
+ * We only support Dl_info.dli_fname here as this is the only thing that is
+ * used of it by libjli.so. A more comprehensive port of dladdr can be found
+ * in the hotspot implementation which is not available at this place, though.
  */
 
-// This test requires special hardware.
+typedef struct {
+  const char *dli_fname; /* file path of loaded library */
+  void *dli_fbase;       /* unsupported */
+  const char *dli_sname; /* unsupported */
+  void *dli_saddr;       /* unsupported */
+} Dl_info;
 
-import java.util.List;
-import javax.smartcardio.CardTerminal;
-import javax.smartcardio.TerminalFactory;
+int dladdr(void *addr, Dl_info *info);
 
-public class TestDefault {
-
-    public static void main(String[] args) throws Exception {
-        TerminalFactory factory = TerminalFactory.getDefault();
-        System.out.println("Type: " + factory.getType());
-        List<CardTerminal> terminals = factory.terminals().list();
-        if (terminals.isEmpty()) {
-            System.out.println("Skipping the test: " +
-                    "no card terminals available");
-            return;
-        }
-        System.out.println("Terminals: " + terminals);
-
-        System.out.println("OK.");
-    }
-
-}
+#endif /* JAVA_MD_AIX_H */

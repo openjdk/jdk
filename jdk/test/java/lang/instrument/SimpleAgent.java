@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,35 +21,12 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 6327047
- * @summary verify that TerminalFactory.getDefault() works
- * @author Andreas Sterbenz
- * @modules java.smartcardio/javax.smartcardio
- * @run main/manual TestDefault
- */
+import java.lang.instrument.Instrumentation;
 
-// This test requires special hardware.
+class SimpleAgent {
 
-import java.util.List;
-import javax.smartcardio.CardTerminal;
-import javax.smartcardio.TerminalFactory;
-
-public class TestDefault {
-
-    public static void main(String[] args) throws Exception {
-        TerminalFactory factory = TerminalFactory.getDefault();
-        System.out.println("Type: " + factory.getType());
-        List<CardTerminal> terminals = factory.terminals().list();
-        if (terminals.isEmpty()) {
-            System.out.println("Skipping the test: " +
-                    "no card terminals available");
-            return;
-        }
-        System.out.println("Terminals: " + terminals);
-
-        System.out.println("OK.");
+    public static void premain(String args, Instrumentation inst) {
+        System.out.println("in premain");
     }
 
 }

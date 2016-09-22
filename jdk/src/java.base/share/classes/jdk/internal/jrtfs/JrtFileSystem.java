@@ -183,7 +183,7 @@ class JrtFileSystem extends FileSystem {
     public PathMatcher getPathMatcher(String syntaxAndInput) {
         int pos = syntaxAndInput.indexOf(':');
         if (pos <= 0 || pos == syntaxAndInput.length()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("pos is " + pos);
         }
         String syntax = syntaxAndInput.substring(0, pos);
         String input = syntaxAndInput.substring(pos + 1);
@@ -285,7 +285,8 @@ class JrtFileSystem extends FileSystem {
         for (OpenOption option : options) {
             Objects.requireNonNull(option);
             if (!(option instanceof StandardOpenOption)) {
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException(
+                    "option class: " + option.getClass());
             }
         }
         if (options.contains(StandardOpenOption.WRITE) ||
