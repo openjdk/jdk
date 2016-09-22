@@ -21,32 +21,36 @@
  * questions.
  */
 
-package jdk.test.lib.unsafe;
+package jdk.test.failurehandler.jtreg;
 
-import jdk.internal.misc.Unsafe;
-import java.lang.reflect.Field;
+// Stripped down version of jtreg internal class com.sun.javatest.regtest.config.OS
+class OS {
+    public final String family;
 
+    private static OS current;
 
-/**
- * Helper class for accessing the jdk.internal.misc.Unsafe functionality
- */
-public final class UnsafeHelper {
-    private static Unsafe unsafe = null;
-
-    /**
-     * @return Unsafe instance.
-     */
-    public static synchronized Unsafe getUnsafe() {
-        if (unsafe == null) {
-            try {
-                Field f = Unsafe.class.getDeclaredField("theUnsafe");
-                f.setAccessible(true);
-                unsafe = (Unsafe) f.get(null);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new RuntimeException("Unable to get Unsafe instance.", e);
-            }
+    public static OS current() {
+        if (current == null) {
+            String name = System.getProperty("os.name");
+            current = new OS(name);
         }
-        return unsafe;
+        return current;
+    }
+
+    private OS(String name) {
+        if (name.startsWith("Linux")) {
+            family = "linux";
+        } else if (name.startsWith("Mac") || name.startsWith("Darwin")) {
+            family = "mac";
+        } else if (name.startsWith("SunOS") || name.startsWith("Solaris")) {
+            family = "solaris";
+        } else if (name.startsWith("Windows")) {
+            family = "windows";
+        } else {
+            // use first word of name
+            family = name.replaceFirst("^([^ ]+).*", "$1");
+        }
     }
 }
+
 
