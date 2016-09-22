@@ -159,11 +159,11 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
         for (ModuleElement mdle : modules) {
             if (!mdle.isUnnamed()) {
                 Content moduleLinkContent = getModuleLink(mdle, new StringContent(mdle.getQualifiedName().toString()));
-                Content tdModule = HtmlTree.TD(HtmlStyle.colFirst, moduleLinkContent);
+                Content thModule = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, moduleLinkContent);
                 HtmlTree tdSummary = new HtmlTree(HtmlTag.TD);
                 tdSummary.addStyle(HtmlStyle.colLast);
                 addSummaryComment(mdle, tdSummary);
-                HtmlTree tr = HtmlTree.TR(tdModule);
+                HtmlTree tr = HtmlTree.TR(thModule);
                 tr.addContent(tdSummary);
                 tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
                 tbody.addContent(tr);

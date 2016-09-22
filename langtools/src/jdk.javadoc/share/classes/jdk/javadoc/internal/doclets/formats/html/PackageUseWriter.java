@@ -187,9 +187,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      */
     protected void addClassList(Content contentTree) {
         List<String> classTableHeader = Arrays.asList(
-            configuration.getText("doclet.0_and_1",
-                    configuration.getText("doclet.Class"),
-                    configuration.getText("doclet.Description")));
+                resources.getText("doclet.Class"), resources.getText("doclet.Description"));
         for (String packageName : usingPackageToUsedClasses.keySet()) {
             PackageElement usingPackage = utils.elementUtils.getPackageElement(packageName);
             HtmlTree li = new HtmlTree(HtmlTag.LI);
@@ -234,10 +232,13 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         DocPath dp = pathString(usedClass,
                 DocPaths.CLASS_USE.resolve(DocPath.forName(utils, usedClass)));
         StringContent stringContent = new StringContent(utils.getSimpleName(usedClass));
-        Content td = HtmlTree.TD(HtmlStyle.colOne,
+        Content thType = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst,
                 getHyperLink(dp.fragment(getPackageAnchorName(pkg)), stringContent));
-        addIndexComment(usedClass, td);
-        contentTree.addContent(td);
+        contentTree.addContent(thType);
+        HtmlTree tdDesc = new HtmlTree(HtmlTag.TD);
+        tdDesc.addStyle(HtmlStyle.colLast);
+        addIndexComment(usedClass, tdDesc);
+        contentTree.addContent(tdDesc);
     }
 
     /**
@@ -247,10 +248,10 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      * @param contentTree the content tree to which the information will be added
      */
     protected void addPackageUse(PackageElement pkg, Content contentTree) {
-        Content tdFirst = HtmlTree.TD(HtmlStyle.colFirst,
+        Content thFirst = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst,
                 getHyperLink(utils.getPackageName(pkg),
                 new StringContent(utils.getPackageName(pkg))));
-        contentTree.addContent(tdFirst);
+        contentTree.addContent(thFirst);
         HtmlTree tdLast = new HtmlTree(HtmlTag.TD);
         tdLast.addStyle(HtmlStyle.colLast);
         if (pkg != null && !pkg.isUnnamed()) {
