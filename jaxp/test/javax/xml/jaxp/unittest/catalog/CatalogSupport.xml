@@ -15,6 +15,7 @@
     <system systemId="XI_utf8.xml" uri="XI_utf8.xml"/>
     <system systemId="XI_utf8Catalog.xml" uri="XI_utf8Catalog.xml"/>
     <system systemId="XI_test2.xml" uri="XI_test2.xml"/>
+    <system systemId="XI_test2Catalog.xml" uri="XI_test2Catalog.xml"/>
     <system systemId="XI_red.dtd" uri="XI_red.dtd"/>
 
     <!-- xsd import can be mapped using the namespace or systemId -->
