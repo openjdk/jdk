@@ -331,10 +331,12 @@ oop StackWalk::walk(Handle stackStream, jlong mode,
     assert (use_frames_array(mode), "Bad mode for get live frame");
     RegisterMap regMap(jt, true);
     LiveFrameStream stream(jt, &regMap);
-    return fetchFirstBatch(stream, stackStream, mode, skip_frames, frame_count, start_index, frames_array, CHECK_NULL);
+    return fetchFirstBatch(stream, stackStream, mode, skip_frames, frame_count,
+                           start_index, frames_array, THREAD);
   } else {
     JavaFrameStream stream(jt, mode);
-    return fetchFirstBatch(stream, stackStream, mode, skip_frames, frame_count, start_index, frames_array, CHECK_NULL);
+    return fetchFirstBatch(stream, stackStream, mode, skip_frames, frame_count,
+                           start_index, frames_array, THREAD);
   }
 }
 
