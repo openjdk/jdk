@@ -36,6 +36,7 @@
 print(Debug);
 print();
 
+var Reflector     = Java.type("jdk.nashorn.test.models.Reflector");
 var forName       = java.lang.Class["forName(String)"];
 var RuntimeEvent  = forName("jdk.nashorn.internal.runtime.events.RuntimeEvent").static;
 var getValue      = RuntimeEvent.class.getMethod("getValue");
@@ -84,19 +85,19 @@ for (var i = 0; i < events.length; i++) {
     var e = events[i];
     print("event #" + i);
     print("\tevent class=" + e.getClass());
-    print("\tvalueClass in event=" + getValueClass.invoke(e));
-    var v = getValue.invoke(e);
+    print("\tvalueClass in event=" + Reflector.invoke(getValueClass, e));
+    var v = Reflector.invoke(getValue, e);
     print("\tclass of value=" + v.getClass());
-    print("\treturn type=" + getReturnType.invoke(v));
+    print("\treturn type=" + Reflector.invoke(getReturnType, v));
     lastInLoop = events[i];
 }
 
 print();
 print("in loop last class = " + lastInLoop.getClass());
-print("in loop last value class = " + getValueClass.invoke(lastInLoop));
-var rexInLoop = getValue.invoke(lastInLoop);
+print("in loop last value class = " + Reflector.invoke(getValueClass, lastInLoop));
+var rexInLoop = Reflector.invoke(getValue, lastInLoop);
 print("in loop rex class = " + rexInLoop.getClass());
-print("in loop rex return type = " + getReturnType.invoke(rexInLoop));
+print("in loop rex return type = " + Reflector.invoke(getReturnType, rexInLoop));
 
 //try last runtime events
 var last = Debug.getLastRuntimeEvent();
@@ -106,10 +107,10 @@ print(last !== lastInLoop);
 print();
 
 print("last class = " + last.getClass());
-print("last value class = " + getValueClass.invoke(last));
-var rex = getValue.invoke(last);
+print("last value class = " + Reflector.invoke(getValueClass, last));
+var rex = Reflector.invoke(getValue, last);
 print("rex class = " + rex.getClass());
-print("rex return type = " + getReturnType.invoke(rex));
+print("rex return type = " + Reflector.invoke(getReturnType, rex));
 
 //try the capacity setter
 print();
