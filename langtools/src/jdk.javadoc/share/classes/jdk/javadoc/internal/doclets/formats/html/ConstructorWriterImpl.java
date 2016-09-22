@@ -25,13 +25,13 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.util.*;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -168,11 +168,13 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public void setSummaryColumnStyle(HtmlTree tdTree) {
-        if (foundNonPubConstructor)
-            tdTree.addStyle(HtmlStyle.colLast);
-        else
-            tdTree.addStyle(HtmlStyle.colOne);
+    public void setSummaryColumnStyleAndScope(HtmlTree thTree) {
+        if (foundNonPubConstructor) {
+            thTree.addStyle(HtmlStyle.colSecond);
+        } else {
+            thTree.addStyle(HtmlStyle.colFirst);
+        }
+        thTree.addAttr(HtmlAttr.SCOPE, "row");
     }
 
     /**
@@ -267,9 +269,8 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         if (foundNonPubConstructor) {
             header.add(resources.getText("doclet.Modifier"));
         }
-        header.add(resources.getText("doclet.0_and_1",
-                resources.getText("doclet.Constructor"),
-                resources.getText("doclet.Description")));
+        header.add(resources.getText("doclet.Constructor"));
+        header.add(resources.getText("doclet.Description"));
         return header;
     }
 
