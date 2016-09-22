@@ -2717,9 +2717,9 @@ Node* ClearArrayNode::Identity(PhaseGVN* phase) {
 
 //------------------------------Idealize---------------------------------------
 // Clearing a short array is faster with stores
-Node *ClearArrayNode::Ideal(PhaseGVN *phase, bool can_reshape){
+Node *ClearArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Already know this is a large node, do not try to ideal it
-  if (_is_large) return NULL;
+  if (!IdealizeClearArrayNode || _is_large) return NULL;
 
   const int unit = BytesPerLong;
   const TypeX* t = phase->type(in(2))->isa_intptr_t();

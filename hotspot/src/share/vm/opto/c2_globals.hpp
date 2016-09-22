@@ -120,6 +120,9 @@
           "Check performance difference allowing FP "                       \
           "associativity and commutativity...")                             \
                                                                             \
+  diagnostic_pd(bool, IdealizeClearArrayNode,                               \
+          "Replace ClearArrayNode by subgraph of basic operations.")        \
+                                                                            \
   develop(bool, OptoBreakpoint, false,                                      \
           "insert breakpoint at method entry")                              \
                                                                             \
