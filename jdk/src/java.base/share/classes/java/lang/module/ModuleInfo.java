@@ -664,7 +664,7 @@ final class ModuleInfo {
             try {
                 bb.get(b, off, len);
             } catch (BufferUnderflowException e) {
-                throw new EOFException();
+                throw new EOFException(e.getMessage());
             }
         }
 
@@ -681,7 +681,7 @@ final class ModuleInfo {
                 int ch = bb.get();
                 return (ch != 0);
             } catch (BufferUnderflowException e) {
-                throw new EOFException();
+                throw new EOFException(e.getMessage());
             }
         }
 
@@ -690,7 +690,7 @@ final class ModuleInfo {
             try {
                 return bb.get();
             } catch (BufferUnderflowException e) {
-                throw new EOFException();
+                throw new EOFException(e.getMessage());
             }
         }
 
@@ -699,7 +699,7 @@ final class ModuleInfo {
             try {
                 return ((int) bb.get()) & 0xff;
             } catch (BufferUnderflowException e) {
-                throw new EOFException();
+                throw new EOFException(e.getMessage());
             }
         }
 
@@ -708,7 +708,7 @@ final class ModuleInfo {
             try {
                 return bb.getShort();
             } catch (BufferUnderflowException e) {
-                throw new EOFException();
+                throw new EOFException(e.getMessage());
             }
         }
 
@@ -717,7 +717,7 @@ final class ModuleInfo {
             try {
                 return ((int) bb.getShort()) & 0xffff;
             } catch (BufferUnderflowException e) {
-                throw new EOFException();
+                throw new EOFException(e.getMessage());
             }
         }
 
@@ -726,7 +726,7 @@ final class ModuleInfo {
             try {
                 return bb.getChar();
             } catch (BufferUnderflowException e) {
-                throw new EOFException();
+                throw new EOFException(e.getMessage());
             }
         }
 
@@ -735,7 +735,7 @@ final class ModuleInfo {
             try {
                 return bb.getInt();
             } catch (BufferUnderflowException e) {
-                throw new EOFException();
+                throw new EOFException(e.getMessage());
             }
         }
 
@@ -744,7 +744,7 @@ final class ModuleInfo {
             try {
                 return bb.getLong();
             } catch (BufferUnderflowException e) {
-                throw new EOFException();
+                throw new EOFException(e.getMessage());
             }
         }
 
@@ -753,7 +753,7 @@ final class ModuleInfo {
             try {
                 return bb.getFloat();
             } catch (BufferUnderflowException e) {
-                throw new EOFException();
+                throw new EOFException(e.getMessage());
             }
         }
 
@@ -762,7 +762,7 @@ final class ModuleInfo {
             try {
                 return bb.getDouble();
             } catch (BufferUnderflowException e) {
-                throw new EOFException();
+                throw new EOFException(e.getMessage());
             }
         }
 
