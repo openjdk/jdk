@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8005091 8009686 8025633 8026567 6469562 8071982 8071984
+ * @bug      8005091 8009686 8025633 8026567 6469562 8071982 8071984 8162363
  * @summary  Make sure that type annotations are displayed correctly
  * @author   Bhavesh Patel
  * @library  ../lib
@@ -473,7 +473,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> ...&nbsp;vararg)");
 
         checkOutput("typeannos/RepeatingOnField.html", true,
-                "<code>(package private) java.lang.Integer</code></td>\n<td class=\"colLast\">"
+                "<code>(package private) java.lang.Integer</code></td>\n<th class=\"colSecond\" scope=\"row\">"
                 + "<code><span class=\"memberNameLink\"><a href=\"../typeannos/RepeatingOnField.html#i1"
                 + "\">i1</a></span></code>",
 
@@ -483,7 +483,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
                 + "\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html"
                 + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> java.lang.Integer</code></td>\n"
-                + "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href="
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href="
                 + "\"../typeannos/RepeatingOnField.html#i2\">i2</a></span></code>",
 
                 "<code>(package private) <a href=\"../typeannos/RepTypeUseA.html\" title="
@@ -492,7 +492,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "\"../typeannos/RepTypeUseB.html\" title=\"annotation in typeannos\">"
                 + "@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
                 + "\"annotation in typeannos\">@RepTypeUseB</a> java.lang.Integer</code>"
-                + "</td>\n<td class=\"colLast\"><code><span class=\"memberNameLink\">"
+                + "</td>\n<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
                 + "<a href=\"../typeannos/RepeatingOnField.html#i3\">i3</a></span></code>",
 
                 "<code>(package private) <a href=\"../typeannos/RepAllContextsA.html\" title=\""
@@ -501,7 +501,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "\"../typeannos/RepAllContextsB.html\" title=\"annotation in typeannos\">"
                 + "@RepAllContextsB</a> <a href=\"../typeannos/RepAllContextsB.html\" title="
                 + "\"annotation in typeannos\">@RepAllContextsB</a> java.lang.Integer</code>"
-                + "</td>\n<td class=\"colLast\"><code><span class=\"memberNameLink\">"
+                + "</td>\n<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
                 + "<a href=\"../typeannos/RepeatingOnField.html#i4\">i4</a></span></code>",
 
                 "<code>(package private) java.lang.String <a href=\"../typeannos/RepTypeUseA.html"
@@ -515,7 +515,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html"
                 + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> <a href="
                 + "\"../typeannos/RepTypeUseB.html\" title=\"annotation in typeannos\">"
-                + "@RepTypeUseB</a> []</code></td>\n<td class=\"colLast\"><code><span class="
+                + "@RepTypeUseB</a> []</code></td>\n<th class=\"colSecond\" scope=\"row\"><code><span class="
                 + "\"memberNameLink\"><a href=\"../typeannos/RepeatingOnField.html#sa"
                 + "\">sa</a></span></code>",
 
@@ -572,8 +572,8 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "@RepTypeUseB</a> [] sa</pre>");
 
         checkOutput("typeannos/RepeatingOnMethod.html", true,
-                "<code>(package private) java.lang.String</code></td>\n<td class="
-                + "\"colLast\"><code><span class=\"memberNameLink\"><a href="
+                "<code>(package private) java.lang.String</code></td>\n<th class=\"colSecond\" scope=\"row\">"
+                + "<code><span class=\"memberNameLink\"><a href="
                 + "\"../typeannos/RepeatingOnMethod.html#test1--\">test1</a></span>()</code>",
 
                 "<code>(package private) <a href=\"../typeannos/RepTypeUseA.html\" "
@@ -582,7 +582,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
                 + "\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html"
                 + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> java.lang.String</code>"
-                + "</td>\n<td class=\"colLast\"><code><span class=\"memberNameLink\">"
+                + "</td>\n<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
                 + "<a href=\"../typeannos/RepeatingOnMethod.html#test2--\">test2</a>"
                 + "</span>()</code>",
 
@@ -592,7 +592,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
                 + "\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html\" "
                 + "title=\"annotation in typeannos\">@RepTypeUseB</a> java.lang.String</code>"
-                + "</td>\n<td class=\"colLast\"><code><span class=\"memberNameLink\">"
+                + "</td>\n<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
                 + "<a href=\"../typeannos/RepeatingOnMethod.html#test3--\">test3</a>"
                 + "</span>()</code>",
 
@@ -602,7 +602,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "@RepAllContextsA</a> <a href=\"../typeannos/RepAllContextsB.html\" "
                 + "title=\"annotation in typeannos\">@RepAllContextsB</a> <a href="
                 + "\"../typeannos/RepAllContextsB.html\" title=\"annotation in typeannos\">"
-                + "@RepAllContextsB</a> java.lang.String</code></td>\n<td class=\"colLast\">"
+                + "@RepAllContextsB</a> java.lang.String</code></td>\n<th class=\"colSecond\" scope=\"row\">"
                 + "<code><span class=\"memberNameLink\"><a href=\"../typeannos/RepeatingOnMethod.html"
                 + "#test4--\">test4</a></span>()</code>",
 
@@ -682,12 +682,12 @@ public class TestTypeAnnotations extends JavadocTester {
 
         checkOutput("typeannos/RepeatingOnTypeParametersBoundsTypeArgumentsOnMethod.html", true,
                 "<code>(package private) &lt;T&gt;&nbsp;java.lang.String</code></td>\n"
-                + "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href="
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href="
                 + "\"../typeannos/RepeatingOnTypeParametersBoundsTypeArgumentsOnMethod.html#"
                 + "genericMethod-T-\">genericMethod</a></span>(T&nbsp;t)</code>",
 
                 "<code>(package private) &lt;T&gt;&nbsp;java.lang.String</code></td>\n"
-                + "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href="
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href="
                 + "\"../typeannos/RepeatingOnTypeParametersBoundsTypeArgumentsOnMethod.html#"
                 + "genericMethod2-T-\">genericMethod2</a></span>(<a href=\"../typeannos/RepTypeUseA.html"
                 + "\" title=\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html"
@@ -695,7 +695,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html"
                 + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> T&nbsp;t)</code>",
 
-                "<code>(package private) java.lang.String</code></td>\n<td class=\"colLast\"><code>"
+                "<code>(package private) java.lang.String</code></td>\n<th class=\"colSecond\" scope=\"row\"><code>"
                 + "<span class=\"memberNameLink\"><a href=\"../typeannos/RepeatingOnTypeParametersBoundsTypeArgumentsOnMethod.html#"
                 + "test--\">test</a></span>()</code>",
 

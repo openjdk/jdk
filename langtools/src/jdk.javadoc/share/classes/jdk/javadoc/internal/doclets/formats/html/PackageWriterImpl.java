@@ -229,8 +229,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 }
                 Content classContent = getLink(new LinkInfoImpl(
                         configuration, LinkInfoImpl.Kind.PACKAGE, klass));
-                Content tdClass = HtmlTree.TD(HtmlStyle.colFirst, classContent);
-                HtmlTree tr = HtmlTree.TR(tdClass);
+                Content thClass = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, classContent);
+                HtmlTree tr = HtmlTree.TR(thClass);
                 tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
 
                 HtmlTree tdClassDescription = new HtmlTree(HtmlTag.TD);

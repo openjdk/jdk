@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4905786 6259611
+ * @bug      4905786 6259611 8162363
  * @summary  Make sure that headings use the TH tag instead of the TD tag.
  * @author   jamieh
  * @library ../lib
@@ -76,7 +76,8 @@ public class TestHeadings extends JavadocTester {
         // Class documentation
         checkOutput("pkg1/C1.html", true,
                 "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Field and Description</th>",
+                + "<th class=\"colSecond\" scope=\"col\">Field</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>",
                 "<h3>Methods inherited from class&nbsp;java.lang.Object</h3>");
 
         // Class use documentation
@@ -84,17 +85,19 @@ public class TestHeadings extends JavadocTester {
                 "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>",
                 "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Field and Description</th>");
+                + "<th class=\"colSecond\" scope=\"col\">Field</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>");
 
         // Deprecated
         checkOutput("deprecated-list.html", true,
-                "<th class=\"colOne\" scope=\"col\">Method and Description</th>");
+                "<th class=\"colFirst\" scope=\"col\">Method</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>");
 
         // Constant values
         checkOutput("constant-values.html", true,
                 "<th class=\"colFirst\" scope=\"col\">"
                 + "Modifier and Type</th>\n"
-                + "<th scope=\"col\">Constant Field</th>\n"
+                + "<th class=\"colSecond\" scope=\"col\">Constant Field</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Value</th>");
 
         // Serialized Form
