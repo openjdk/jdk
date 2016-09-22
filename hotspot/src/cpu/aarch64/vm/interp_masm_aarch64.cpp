@@ -327,7 +327,7 @@ void InterpreterMacroAssembler::push_i(Register r) {
 
 void InterpreterMacroAssembler::push_l(Register r) {
   str(zr, pre(esp, -wordSize));
-  str(r, pre(esp, -wordsize));
+  str(r, pre(esp, - wordSize));
 }
 
 void InterpreterMacroAssembler::pop_f(FloatRegister r) {
