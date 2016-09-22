@@ -25,7 +25,6 @@
  * @test
  * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
  * @library ../../../../../
- * @ignore 8161550
  * @modules java.base/jdk.internal.reflect
  *          jdk.vm.ci/jdk.vm.ci.meta
  *          jdk.vm.ci/jdk.vm.ci.runtime
@@ -74,9 +73,27 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests for {@link ResolvedJavaType}.
  */
+@SuppressWarnings("unchecked")
 public class TestResolvedJavaType extends TypeUniverse {
+    private static final Class<? extends Annotation> SIGNATURE_POLYMORPHIC_CLASS = findPolymorphicSignatureClass();
 
     public TestResolvedJavaType() {
+    }
+
+    private static Class<? extends Annotation> findPolymorphicSignatureClass() {
+        Class<? extends Annotation> signaturePolyAnnotation = null;
+        try {
+            for (Class<?> clazz : TestResolvedJavaType.class.getClassLoader().loadClass("java.lang.invoke.MethodHandle").getDeclaredClasses()) {
+                if (clazz.getName().endsWith("PolymorphicSignature") && Annotation.class.isAssignableFrom(clazz)) {
+                    signaturePolyAnnotation = (Class<? extends Annotation>) clazz;
+                    break;
+                }
+            }
+        } catch (Throwable e) {
+            throw new AssertionError("Could not find annotation PolymorphicSignature in java.lang.invoke.MethodHandle", e);
+        }
+        assertNotNull(signaturePolyAnnotation);
+        return signaturePolyAnnotation;
     }
 
     @Test
@@ -577,8 +594,14 @@ public class TestResolvedJavaType extends TypeUniverse {
                     for (Method decl : decls) {
                         ResolvedJavaMethod m = metaAccess.lookupJavaMethod(decl);
                         if (m.isPublic()) {
-                            ResolvedJavaMethod i = metaAccess.lookupJavaMethod(impl);
-                            assertEquals(m.toString(), i, type.resolveMethod(m, context));
+                            ResolvedJavaMethod resolvedmethod = type.resolveMethod(m, context);
+                            if (isSignaturePolymorphic(m)) {
+                                // Signature polymorphic methods must not be resolved
+                                assertNull(resolvedmethod);
+                            } else {
+                                ResolvedJavaMethod i = metaAccess.lookupJavaMethod(impl);
+                                assertEquals(m.toString(), i, resolvedmethod);
+                            }
                         }
                     }
                 }
@@ -606,8 +629,14 @@ public class TestResolvedJavaType extends TypeUniverse {
                     for (Method decl : decls) {
                         ResolvedJavaMethod m = metaAccess.lookupJavaMethod(decl);
                         if (m.isPublic()) {
-                            ResolvedJavaMethod i = metaAccess.lookupJavaMethod(impl);
-                            assertEquals(i, type.resolveConcreteMethod(m, context));
+                            ResolvedJavaMethod resolvedMethod = type.resolveConcreteMethod(m, context);
+                            if (isSignaturePolymorphic(m)) {
+                                // Signature polymorphic methods must not be resolved
+                                assertNull(String.format("Got: %s", resolvedMethod), resolvedMethod);
+                            } else {
+                                ResolvedJavaMethod i = metaAccess.lookupJavaMethod(impl);
+                                assertEquals(i, resolvedMethod);
+                            }
                         }
                     }
                 }
@@ -928,5 +957,9 @@ public class TestResolvedJavaType extends TypeUniverse {
                 assertFalse("test should be removed from untestedApiMethods" + m, known.contains(m.getName()));
             }
         }
+    }
+
+    private static boolean isSignaturePolymorphic(ResolvedJavaMethod method) {
+        return method.getAnnotation(SIGNATURE_POLYMORPHIC_CLASS) != null;
     }
 }
