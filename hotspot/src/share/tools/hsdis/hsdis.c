@@ -468,6 +468,9 @@ static const char* native_arch_name() {
 #ifdef LIBARCH_aarch64
   res = "aarch64";
 #endif
+#ifdef LIBARCH_s390x
+  res = "s390:64-bit";
+#endif
   if (res == NULL)
     res = "architecture not set in Makefile!";
   return res;

@@ -386,6 +386,14 @@
 #define NOT_AMD64(code) code
 #endif
 
+#ifdef S390
+#define S390_ONLY(code) code
+#define NOT_S390(code)
+#else
+#define S390_ONLY(code)
+#define NOT_S390(code) code
+#endif
+
 #ifdef SPARC
 #define SPARC_ONLY(code) code
 #define NOT_SPARC(code)

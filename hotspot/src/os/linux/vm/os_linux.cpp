@@ -291,7 +291,7 @@ void os::init_system_properties_values() {
   //        1: ...
   //        ...
   //        7: The default directories, normally /lib and /usr/lib.
-#if defined(AMD64) || defined(_LP64) && (defined(SPARC) || defined(PPC) || defined(S390))
+#if defined(AMD64) || (defined(_LP64) && defined(SPARC)) || defined(PPC64) || defined(S390)
   #define DEFAULT_LIBPATH "/usr/lib64:/lib64:/lib:/usr/lib"
 #else
   #define DEFAULT_LIBPATH "/lib:/usr/lib"
@@ -1212,8 +1212,8 @@ void os::Linux::clock_init() {
 }
 
 #ifndef SYS_clock_getres
-  #if defined(IA32) || defined(AMD64)
-    #define SYS_clock_getres IA32_ONLY(266)  AMD64_ONLY(229)
+  #if defined(X86) || defined(PPC64) || defined(S390)
+    #define SYS_clock_getres AMD64_ONLY(229) IA32_ONLY(266) PPC64_ONLY(247) S390_ONLY(261)
     #define sys_clock_getres(x,y)  ::syscall(SYS_clock_getres, x, y)
   #else
     #warning "SYS_clock_getres not defined for this platform, disabling fast_thread_cpu_time"
@@ -1766,6 +1766,8 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_PPC64;
 #elif  (defined __powerpc__)
   static  Elf32_Half running_arch_code=EM_PPC;
+#elif  (defined AARCH64)
+  static  Elf32_Half running_arch_code=EM_AARCH64;
 #elif  (defined ARM)
   static  Elf32_Half running_arch_code=EM_ARM;
 #elif  (defined S390)
@@ -1780,11 +1782,9 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_MIPS;
 #elif  (defined M68K)
   static  Elf32_Half running_arch_code=EM_68K;
-#elif  (defined AARCH64)
-  static  Elf32_Half running_arch_code=EM_AARCH64;
 #else
     #error Method os::dll_load requires that one of following is defined:\
-         IA32, AMD64, IA64, __sparc, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K, AARCH64
+        AARCH64, ALPHA, ARM, AMD64, IA32, IA64, M68K, MIPS, MIPSEL, PARISC, __powerpc__, __powerpc64__, S390, __sparc
 #endif
 
   // Identify compatability class for VM's architecture and library's architecture
@@ -2192,9 +2192,11 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
 
 #if defined(AMD64) || defined(IA32) || defined(X32)
 const char* search_string = "model name";
-#elif defined(SPARC)
-const char* search_string = "cpu";
 #elif defined(PPC64)
+const char* search_string = "cpu";
+#elif defined(S390)
+const char* search_string = "processor";
+#elif defined(SPARC)
 const char* search_string = "cpu";
 #else
 const char* search_string = "Processor";
@@ -2233,20 +2235,22 @@ void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
   }
   // cpuinfo not found or parsing failed, just print generic string.  The entire
   // /proc/cpuinfo file will be printed later in the file (or enough of it for x86)
-#if defined(AMD64)
+#if   defined(AARCH64)
+  strncpy(cpuinfo, "AArch64", length);
+#elif defined(AMD64)
   strncpy(cpuinfo, "x86_64", length);
+#elif defined(ARM)  // Order wrt. AARCH64 is relevant!
+  strncpy(cpuinfo, "ARM", length);
 #elif defined(IA32)
   strncpy(cpuinfo, "x86_32", length);
 #elif defined(IA64)
   strncpy(cpuinfo, "IA64", length);
-#elif defined(SPARC)
-  strncpy(cpuinfo, "sparcv9", length);
-#elif defined(AARCH64)
-  strncpy(cpuinfo, "AArch64", length);
-#elif defined(ARM)
-  strncpy(cpuinfo, "ARM", length);
 #elif defined(PPC)
   strncpy(cpuinfo, "PPC64", length);
+#elif defined(S390)
+  strncpy(cpuinfo, "S390", length);
+#elif defined(SPARC)
+  strncpy(cpuinfo, "sparcv9", length);
 #elif defined(ZERO_LIBARCH)
   strncpy(cpuinfo, ZERO_LIBARCH, length);
 #else
@@ -3242,8 +3246,15 @@ size_t os::Linux::find_large_page_size() {
   // the processor.
 
 #ifndef ZERO
-  large_page_size = IA32_ONLY(4 * M) AMD64_ONLY(2 * M) IA64_ONLY(256 * M) SPARC_ONLY(4 * M)
-                     ARM32_ONLY(2 * M) PPC_ONLY(4 * M) AARCH64_ONLY(2 * M);
+  large_page_size =
+    AARCH64_ONLY(2 * M)
+    AMD64_ONLY(2 * M)
+    ARM32_ONLY(2 * M)
+    IA32_ONLY(4 * M)
+    IA64_ONLY(256 * M)
+    PPC_ONLY(4 * M)
+    S390_ONLY(1 * M)
+    SPARC_ONLY(4 * M);
 #endif // ZERO
 
   FILE *fp = fopen("/proc/meminfo", "r");
