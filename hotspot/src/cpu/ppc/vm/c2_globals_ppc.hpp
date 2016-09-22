@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ define_pd_global(bool, SuperWordLoopUnrollAnalysis,  false);
 //   loc = x.f
 //   NullCheck loc
 define_pd_global(bool, OptoScheduling,               false);
+define_pd_global(bool, IdealizeClearArrayNode,       true);
 
 define_pd_global(intx, InitialCodeCacheSize,         2048*K); // Integral multiple of CodeCacheExpansionSize
 define_pd_global(intx, ReservedCodeCacheSize,        256*M);
