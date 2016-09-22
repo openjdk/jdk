@@ -331,6 +331,8 @@ void CodeSection::relocate(address at, relocInfo::relocType rtype, int format, j
 }
 
 void CodeSection::relocate(address at, RelocationHolder const& spec, int format) {
+  // Do not relocate in scratch buffers.
+  if (scratch_emit()) { return; }
   Relocation* reloc = spec.reloc();
   relocInfo::relocType rtype = (relocInfo::relocType) reloc->type();
   if (rtype == relocInfo::none)  return;
