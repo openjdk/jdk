@@ -252,10 +252,14 @@ public class ModuleTestBase extends TestRunner {
     }
 
     void assertAbsent(String regex) throws Exception {
-        List<String> foundList = tb.grep(regex, currentTask.getOutputLines(STDOUT));
+        assertAbsent(regex, STDOUT);
+    }
+
+    void assertAbsent(String regex, Task.OutputKind kind) throws Exception {
+        List<String> foundList = tb.grep(regex, currentTask.getOutputLines(kind));
         if (!foundList.isEmpty()) {
             dumpDocletDiagnostics();
-            throw new Exception(regex + " found in: " + STDOUT);
+            throw new Exception(regex + " found in: " + kind);
         }
     }
 
