@@ -52,6 +52,7 @@
   template(jdk_vm_ci_hotspot_HotSpotCompilationRequestResult,     "jdk/vm/ci/hotspot/HotSpotCompilationRequestResult")     \
   template(jdk_vm_ci_hotspot_VMField,                             "jdk/vm/ci/hotspot/VMField")                             \
   template(jdk_vm_ci_hotspot_VMFlag,                              "jdk/vm/ci/hotspot/VMFlag")                              \
+  template(jdk_vm_ci_hotspot_VMIntrinsicMethod,                   "jdk/vm/ci/hotspot/VMIntrinsicMethod")                   \
   template(jdk_vm_ci_meta_JavaConstant,                           "jdk/vm/ci/meta/JavaConstant")                           \
   template(jdk_vm_ci_meta_PrimitiveConstant,                      "jdk/vm/ci/meta/PrimitiveConstant")                      \
   template(jdk_vm_ci_meta_RawConstant,                            "jdk/vm/ci/meta/RawConstant")                            \

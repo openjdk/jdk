@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -456,6 +456,9 @@ public class GIFImageReader extends ImageReader {
                 // Update IIOReadProgressListeners
                 ++rowsDone;
                 processImageProgress(100.0F*rowsDone/height);
+                if (abortRequested()) {
+                    return;
+                }
 
                 if (decodeThisRow) {
                     outputRow();
@@ -860,7 +863,6 @@ public class GIFImageReader extends ImageReader {
             throw new IndexOutOfBoundsException("imageIndex out of bounds!");
         }
 
-        clearAbortRequest();
         readMetadata();
 
         // A null ImageReadParam means we use the default
@@ -903,8 +905,13 @@ public class GIFImageReader extends ImageReader {
             (streamY - sourceRegion.y)/sourceYSubsampling;
         computeDecodeThisRow();
 
+        clearAbortRequest();
         // Inform IIOReadProgressListeners of start of image
         processImageStarted(imageIndex);
+        if (abortRequested()) {
+            processReadAborted();
+            return theImage;
+        }
         startPass(0);
 
         this.rowBuf = new byte[width];
@@ -947,7 +954,7 @@ public class GIFImageReader extends ImageReader {
             int codeSize = initCodeSize + 1;
             int codeMask = (1 << codeSize) - 1;
 
-            while (!abortRequested()) {
+            do {
                 code = getCode(codeSize, codeMask);
 
                 if (code == clearCode) {
@@ -1005,7 +1012,7 @@ public class GIFImageReader extends ImageReader {
 
                 outputPixels(string, len);
                 oldCode = code;
-            }
+            } while (!abortRequested());
 
             processReadAborted();
             return theImage;

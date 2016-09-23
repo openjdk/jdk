@@ -124,6 +124,12 @@ class JVMCIJavaClasses : AllStatic {
     oop_field(VMFlag, type, "Ljava/lang/String;")                                                                                                              \
     oop_field(VMFlag, value, "Ljava/lang/Object;")                                                                                                             \
   end_class                                                                                                                                                    \
+  start_class(VMIntrinsicMethod)                                                                                                                               \
+    oop_field(VMIntrinsicMethod, declaringClass, "Ljava/lang/String;")                                                                                         \
+    oop_field(VMIntrinsicMethod, name, "Ljava/lang/String;")                                                                                                   \
+    oop_field(VMIntrinsicMethod, descriptor, "Ljava/lang/String;")                                                                                             \
+    int_field(VMIntrinsicMethod, id)                                                                                                                           \
+  end_class                                                                                                                                                    \
   start_class(Assumptions_NoFinalizableSubclass)                                                                                                               \
     oop_field(Assumptions_NoFinalizableSubclass, receiverType, "Ljdk/vm/ci/meta/ResolvedJavaType;")                                                            \
   end_class                                                                                                                                                    \

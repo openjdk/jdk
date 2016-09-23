@@ -442,7 +442,7 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
 
 #ifndef __linux__ /* SOLARIS */
         if (xrenderLibHandle == NULL) {
-            xrenderLibHandle = dlopen("/usr/sfw/lib/libXrender.so.1",
+            xrenderLibHandle = dlopen("/usr/lib/libXrender.so.1",
                                       RTLD_LAZY | RTLD_GLOBAL);
         }
 #endif
@@ -2181,7 +2181,8 @@ static char *get_output_screen_name(JNIEnv *env, int screen) {
 JNIEXPORT jdouble JNICALL
 Java_sun_awt_X11GraphicsDevice_getNativeScaleFactor
     (JNIEnv *env, jobject this, jint screen) {
-    char *name = get_output_screen_name(env, screen);
+    // in case of Xinerama individual screen scales are not supported
+    char *name = get_output_screen_name(env, usingXinerama ? 0 : screen);
     double scale = getNativeScaleFactor(name);
     if (name) {
         free(name);

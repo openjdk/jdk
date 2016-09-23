@@ -34,6 +34,7 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
+#include "oops/arrayKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
@@ -42,7 +43,6 @@
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/orderAccess.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 
@@ -321,7 +321,8 @@ Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
   int dim = dimension();
   if (dim == n) return this;
 
-  if (higher_dimension() == NULL) {
+  // lock-free read needs acquire semantics
+  if (higher_dimension_acquire() == NULL) {
     if (or_null)  return NULL;
 
     ResourceMark rm;
@@ -339,8 +340,8 @@ Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
           ObjArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, CHECK_NULL);
         ObjArrayKlass* ak = ObjArrayKlass::cast(k);
         ak->set_lower_dimension(this);
-        OrderAccess::storestore();
-        set_higher_dimension(ak);
+        // use 'release' to pair with lock-free load
+        release_set_higher_dimension(ak);
         assert(ak->is_objArray_klass(), "incorrect initialization of ObjArrayKlass");
       }
     }

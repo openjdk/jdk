@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,21 @@ import sun.jvm.hotspot.utilities.*;
 // that the check is reached, and a series of (Klass, count) pairs
 // which are used to store a type profile for the receiver of the check.
 public class ReceiverTypeData<K,M> extends CounterData {
-  static final int   receiver0Offset = counterCellCount;
-  static final int     count0Offset = receiver0Offset + 1;
-  static final int     receiverTypeRowCellCount = (count0Offset + 1) - receiver0Offset;
+  static final int INCLUDE_JVMCI;
+  static final int nonProfiledCountOffset = counterCellCount;
+  static final int receiver0Offset;
+  static final int count0Offset;
+  static final int receiverTypeRowCellCount;
+  static {
+    INCLUDE_JVMCI = VM.getVM().getTypeDataBase().lookupIntConstant("INCLUDE_JVMCI");
+    if (INCLUDE_JVMCI == 1) {
+        receiver0Offset = nonProfiledCountOffset + 1;
+    } else {
+        receiver0Offset = counterCellCount;
+    }
+    count0Offset = receiver0Offset + 1;
+    receiverTypeRowCellCount = (count0Offset + 1) - receiver0Offset;
+  }
   final MethodDataInterface<K,M> methodData;
 
   public ReceiverTypeData(MethodDataInterface<K,M> methodData, DataLayout layout) {
@@ -53,7 +65,11 @@ public class ReceiverTypeData<K,M> extends CounterData {
   boolean isReceivertypedata() { return true; }
 
   static int staticCellCount() {
-    return counterCellCount + MethodData.TypeProfileWidth * receiverTypeRowCellCount;
+    int cellCount = counterCellCount + MethodData.TypeProfileWidth * receiverTypeRowCellCount;
+    if (INCLUDE_JVMCI == 1) {
+      cellCount += 1;
+    }
+    return cellCount;
   }
 
   public int cellCount() {

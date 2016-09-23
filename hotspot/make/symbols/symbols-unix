@@ -67,6 +67,7 @@ JVM_FindSignal
 JVM_FreeMemory
 JVM_GC
 JVM_GetAllThreads
+JVM_GetAndClearReferencePendingList
 JVM_GetArrayElement
 JVM_GetArrayLength
 JVM_GetCallerClass
@@ -130,6 +131,7 @@ JVM_GetSystemPackages
 JVM_GetTemporaryDirectory
 JVM_GetVmArguments
 JVM_Halt
+JVM_HasReferencePendingList
 JVM_HoldsLock
 JVM_IHashCode
 JVM_InitProperties
@@ -179,6 +181,7 @@ JVM_SuspendThread
 JVM_ToStackTraceElement
 JVM_TotalMemory
 JVM_UnloadLibrary
+JVM_WaitForReferencePendingList
 JVM_Yield
 
 # Module related API's

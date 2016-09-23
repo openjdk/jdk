@@ -3017,9 +3017,6 @@ public:
           "Number of receiver types to record in call/cast profile")        \
           range(0, 8)                                                       \
                                                                             \
-  experimental(intx, MethodProfileWidth, 0,                                 \
-          "Number of methods to record in call profile")                    \
-                                                                            \
   develop(intx, BciProfileWidth,      2,                                    \
           "Number of return bci's to record in ret profile")                \
                                                                             \
