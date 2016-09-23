@@ -299,7 +299,7 @@ public:
                              Handle class_loader,
                              Handle protection_domain,
                              ClassFileStream* st,
-                             const Klass* host_klass,
+                             const InstanceKlass* host_klass,
                              GrowableArray<Handle>* cp_patches,
                              TRAPS);
 

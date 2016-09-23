@@ -229,24 +229,25 @@ unsigned int Symbol::new_hash(juint seed) {
 }
 
 void Symbol::increment_refcount() {
-  // Only increment the refcount if positive.  If negative either
+  // Only increment the refcount if non-negative.  If negative either
   // overflow has occurred or it is a permanent symbol in a read only
   // shared archive.
-  if (_refcount >= 0) {
+  if (_refcount >= 0) { // not a permanent symbol
     Atomic::inc(&_refcount);
     NOT_PRODUCT(Atomic::inc(&_total_count);)
   }
 }
 
 void Symbol::decrement_refcount() {
-  if (_refcount >= 0) {
-    Atomic::dec(&_refcount);
+  if (_refcount >= 0) { // not a permanent symbol
+    jshort new_value = Atomic::add(-1, &_refcount);
 #ifdef ASSERT
-    if (_refcount < 0) {
+    if (new_value == -1) { // we have transitioned from 0 -> -1
       print();
       assert(false, "reference count underflow for symbol");
     }
 #endif
+    (void)new_value;
   }
 }
 

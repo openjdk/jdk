@@ -164,10 +164,17 @@ TEST_F(LogConfigurationTest, disable_logging) {
   // Add TestLogFileName as an output
   set_log_config(TestLogFileName, "logging=info");
 
+  // Add a second file output
+  char other_file_name[2 * K];
+  jio_snprintf(other_file_name, sizeof(other_file_name), "%s-other", TestLogFileName);
+  set_log_config(other_file_name, "logging=info");
+
   LogConfiguration::disable_logging();
 
-  // Verify TestLogFileName was disabled
+  // Verify that both file outputs were disabled
   EXPECT_FALSE(is_described(TestLogFileName));
+  EXPECT_FALSE(is_described(other_file_name));
+  delete_file(other_file_name);
 
   // Verify that no tagset has logging enabled
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
@@ -287,5 +294,44 @@ TEST_F(LogConfigurationTest, parse_log_arguments) {
     const LogDecorators::Decorator decorator = static_cast<LogDecorators::Decorator>(d);
     EXPECT_TRUE(LogConfiguration::parse_log_arguments("#0", "", LogDecorators::name(decorator), "", &ss));
   }
-  EXPECT_STREQ("", ss.as_string()) << "Error reported while parsing: " << ss.as_string();
+}
+
+TEST_F(LogConfigurationTest, parse_invalid_tagset) {
+  static const char* invalid_tagset = "logging+start+exit+safepoint+gc"; // Must not exist for test to function.
+
+  // Make sure warning is produced if one or more configured tagsets are invalid
+  ResourceMark rm;
+  stringStream ss;
+  bool success = LogConfiguration::parse_log_arguments("stdout", invalid_tagset, NULL, NULL, &ss);
+  const char* msg = ss.as_string();
+  EXPECT_TRUE(success) << "Should only cause a warning, not an error";
+  EXPECT_TRUE(string_contains_substring(msg, "No tag set matches selection(s):"));
+  EXPECT_TRUE(string_contains_substring(msg, invalid_tagset));
+}
+
+TEST_F(LogConfigurationTest, output_name_normalization) {
+  const char* patterns[] = { "%s", "file=%s", "\"%s\"", "file=\"%s\"" };
+  char buf[1 * K];
+  for (size_t i = 0; i < ARRAY_SIZE(patterns); i++) {
+    int ret = jio_snprintf(buf, sizeof(buf), patterns[i], TestLogFileName);
+    ASSERT_NE(-1, ret);
+    set_log_config(buf, "logging=trace");
+    EXPECT_TRUE(is_described("#2: "));
+    EXPECT_TRUE(is_described(TestLogFileName));
+    EXPECT_FALSE(is_described("#3: "))
+        << "duplicate file output due to incorrect normalization for pattern: " << patterns[i];
+  }
+
+  // Make sure prefixes are ignored when used within quotes
+  // (this should create a log with "file=" in its filename)
+  int ret = jio_snprintf(buf, sizeof(buf), "\"file=%s\"", TestLogFileName);
+  ASSERT_NE(-1, ret);
+  set_log_config(buf, "logging=trace");
+  EXPECT_TRUE(is_described("#3: ")) << "prefix within quotes not ignored as it should be";
+  set_log_config(buf, "all=off");
+
+  // Remove the extra log file created
+  ret = jio_snprintf(buf, sizeof(buf), "file=%s", TestLogFileName);
+  ASSERT_NE(-1, ret);
+  delete_file(buf);
 }

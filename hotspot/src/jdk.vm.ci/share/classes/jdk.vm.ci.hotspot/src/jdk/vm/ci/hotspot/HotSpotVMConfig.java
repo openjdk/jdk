@@ -144,6 +144,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final int methodFlagsCallerSensitive = getConstant("Method::_caller_sensitive", Integer.class);
     final int methodFlagsForceInline = getConstant("Method::_force_inline", Integer.class);
+    final int methodFlagsIntrinsicCandidate = getConstant("Method::_intrinsic_candidate", Integer.class);
     final int methodFlagsDontInline = getConstant("Method::_dont_inline", Integer.class);
     final int methodFlagsReservedStackAccess = getConstant("Method::_reserved_stack_access", Integer.class);
     final int nonvirtualVtableIndex = getConstant("Method::nonvirtual_vtable_index", Integer.class);
