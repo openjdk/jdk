@@ -89,14 +89,28 @@ inline bool G1CMBitMap::parMark(HeapWord* addr) {
 
 #undef check_mark
 
+#ifndef PRODUCT
 template<typename Fn>
-inline void G1CMMarkStack::iterate(Fn fn) {
+inline void G1CMMarkStack::iterate(Fn fn) const {
   assert_at_safepoint(true);
-  assert(!stack_modified(), "Saved index " SIZE_FORMAT " must be the same as " SIZE_FORMAT, _saved_index, _index);
-  for (size_t i = 0; i < _index; ++i) {
-    fn(_base[i]);
+
+  size_t num_chunks = 0;
+
+  OopChunk* cur = _chunk_list;
+  while (cur != NULL) {
+    guarantee(num_chunks <= _chunks_in_chunk_list, "Found " SIZE_FORMAT " oop chunks which is more than there should be", num_chunks);
+
+    for (size_t i = 0; i < OopsPerChunk; ++i) {
+      if (cur->data[i] == NULL) {
+        break;
+      }
+      fn(cur->data[i]);
+    }
+    cur = cur->next;
+    num_chunks++;
   }
 }
+#endif
 
 // It scans an object and visits its children.
 inline void G1CMTask::scan_object(oop obj) { process_grey_object<true>(obj); }
