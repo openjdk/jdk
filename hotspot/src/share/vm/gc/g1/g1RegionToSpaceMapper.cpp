@@ -66,8 +66,12 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     guarantee(alloc_granularity >= page_size, "allocation granularity smaller than commit granularity");
   }
 
-  virtual void commit_regions(uint start_idx, size_t num_regions) {
-    bool zero_filled = _storage.commit((size_t)start_idx * _pages_per_region, num_regions * _pages_per_region);
+  virtual void commit_regions(uint start_idx, size_t num_regions, WorkGang* pretouch_gang) {
+    size_t const start_page = (size_t)start_idx * _pages_per_region;
+    bool zero_filled = _storage.commit(start_page, num_regions * _pages_per_region);
+    if (AlwaysPreTouch) {
+      _storage.pretouch(start_page, num_regions * _pages_per_region, pretouch_gang);
+    }
     _commit_map.set_range(start_idx, start_idx + num_regions);
     fire_on_commit(start_idx, num_regions, zero_filled);
   }
@@ -110,19 +114,38 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     _refcounts.initialize((HeapWord*)rs.base(), (HeapWord*)(rs.base() + align_size_up(rs.size(), page_size)), page_size);
   }
 
-  virtual void commit_regions(uint start_idx, size_t num_regions) {
+  virtual void commit_regions(uint start_idx, size_t num_regions, WorkGang* pretouch_gang) {
+    size_t const NoPage = ~(size_t)0;
+
+    size_t first_committed = NoPage;
+    size_t num_committed = 0;
+
+    bool all_zero_filled = true;
+
     for (uint i = start_idx; i < start_idx + num_regions; i++) {
       assert(!_commit_map.at(i), "Trying to commit storage at region %u that is already committed", i);
       size_t idx = region_idx_to_page_idx(i);
       uint old_refcount = _refcounts.get_by_index(idx);
+
       bool zero_filled = false;
       if (old_refcount == 0) {
+        if (first_committed == NoPage) {
+          first_committed = idx;
+          num_committed = 1;
+        } else {
+          num_committed++;
+        }
         zero_filled = _storage.commit(idx, 1);
       }
+      all_zero_filled &= zero_filled;
+
       _refcounts.set_by_index(idx, old_refcount + 1);
       _commit_map.set_bit(i);
-      fire_on_commit(i, 1, zero_filled);
     }
+    if (AlwaysPreTouch && num_committed > 0) {
+      _storage.pretouch(first_committed, num_committed, pretouch_gang);
+    }
+    fire_on_commit(start_idx, num_regions, all_zero_filled);
   }
 
   virtual void uncommit_regions(uint start_idx, size_t num_regions) {
