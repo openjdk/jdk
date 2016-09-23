@@ -31,6 +31,8 @@ import static java.awt.RenderingHints.*;
 import java.awt.event.*;
 import java.awt.font.*;
 import java.awt.geom.AffineTransform;
+import static java.awt.geom.AffineTransform.TYPE_FLIP;
+import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
 import java.awt.print.PrinterGraphics;
 import java.text.BreakIterator;
 import java.text.CharacterIterator;
@@ -2034,6 +2036,14 @@ public class SwingUtilities2 {
             }
         }
         return path;
+    }
+
+    public static boolean isScaledGraphics(Graphics g) {
+        if (g instanceof Graphics2D) {
+            AffineTransform tx = ((Graphics2D) g).getTransform();
+            return (tx.getType() & ~(TYPE_TRANSLATION | TYPE_FLIP)) != 0;
+        }
+        return false;
     }
 
     /**
