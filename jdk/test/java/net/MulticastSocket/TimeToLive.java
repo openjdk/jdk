@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ public class TimeToLive {
     static int[] bad_ttls = { -1, 256 };
 
     public static void main(String[] args) throws Exception {
-        MulticastSocket socket = new MulticastSocket(6789);
+        MulticastSocket socket = new MulticastSocket();
         int ttl = socket.getTimeToLive();
         System.out.println("default ttl: " + ttl);
         for (int i = 0; i < new_ttls.length; i++) {
