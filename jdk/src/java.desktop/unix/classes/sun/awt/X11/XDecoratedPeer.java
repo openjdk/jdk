@@ -325,7 +325,8 @@ abstract class XDecoratedPeer extends XWindowPeer {
                 if (!isEmbedded() && !isTargetUndecorated()) {
                     lastKnownInsets.put(getClass(), in);
                 }
-                if (!in.equals(dimensions.getInsets())) {
+                if (!in.equals(dimensions.getInsets()) ||
+                                                !dimensions.isClientSizeSet()) {
                     handleCorrectInsets(in);
                 }
                 insets_corrected = true;
@@ -374,6 +375,9 @@ abstract class XDecoratedPeer extends XWindowPeer {
             } else { /* reparented to WM frame, figure out our insets */
                 setReparented(true);
                 insets_corrected = false;
+                if (XWM.getWMID() == XWM.UNITY_COMPIZ_WM) {
+                    return;
+                }
 
                 // Check if we have insets provided by the WM
                 Insets correctWM = getWMSetInsets(null);
@@ -405,7 +409,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
                     }
                 }
 
-                if (correctWM != null && XWM.getWMID() != XWM.UNITY_COMPIZ_WM) {
+                if (correctWM != null) {
                     handleCorrectInsets(correctWM);
                 }
             }
