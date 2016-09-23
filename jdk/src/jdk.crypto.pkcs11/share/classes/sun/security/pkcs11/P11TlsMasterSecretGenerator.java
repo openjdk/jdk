@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,10 @@ public final class P11TlsMasterSecretGenerator extends KeyGeneratorSpi {
     private TlsMasterSecretParameterSpec spec;
     private P11Key p11Key;
 
-    int version;
+    CK_VERSION ckVersion;
+
+    // whether SSLv3 is supported
+    private final boolean supportSSLv3;
 
     P11TlsMasterSecretGenerator(Token token, String algorithm, long mechanism)
             throws PKCS11Exception {
@@ -69,6 +72,11 @@ public final class P11TlsMasterSecretGenerator extends KeyGeneratorSpi {
         this.token = token;
         this.algorithm = algorithm;
         this.mechanism = mechanism;
+
+        // Given the current lookup order specified in SunPKCS11.java, if
+        // CKM_SSL3_MASTER_KEY_DERIVE is not used to construct this object,
+        // it means that this mech is disabled or unsupported.
+        supportSSLv3 = (mechanism == CKM_SSL3_MASTER_KEY_DERIVE);
     }
 
     protected void engineInit(SecureRandom random) {
@@ -81,7 +89,17 @@ public final class P11TlsMasterSecretGenerator extends KeyGeneratorSpi {
         if (params instanceof TlsMasterSecretParameterSpec == false) {
             throw new InvalidAlgorithmParameterException(MSG);
         }
-        this.spec = (TlsMasterSecretParameterSpec)params;
+
+        TlsMasterSecretParameterSpec spec = (TlsMasterSecretParameterSpec)params;
+        int version = (spec.getMajorVersion() << 8) | spec.getMinorVersion();
+        if ((version == 0x0300 && !supportSSLv3) || (version < 0x0300) ||
+            (version > 0x0302)) {
+             throw new InvalidAlgorithmParameterException
+                    ("Only" + (supportSSLv3? " SSL 3.0,": "") +
+                     " TLS 1.0, and TLS 1.1 are supported (0x" +
+                     Integer.toHexString(version) + ")");
+        }
+
         SecretKey key = spec.getPremasterSecret();
         // algorithm should be either TlsRsaPremasterSecret or TlsPremasterSecret,
         // but we omit the check
@@ -90,25 +108,7 @@ public final class P11TlsMasterSecretGenerator extends KeyGeneratorSpi {
         } catch (InvalidKeyException e) {
             throw new InvalidAlgorithmParameterException("init() failed", e);
         }
-        version = (spec.getMajorVersion() << 8) | spec.getMinorVersion();
-        if ((version < 0x0300) || (version > 0x0302)) {
-            throw new InvalidAlgorithmParameterException
-                ("Only SSL 3.0, TLS 1.0, and TLS 1.1 supported");
-        }
-        // We assume the token supports the required mechanism. If it does not,
-        // generateKey() will fail and the failover should take care of us.
-    }
-
-    protected void engineInit(int keysize, SecureRandom random) {
-        throw new InvalidParameterException(MSG);
-    }
-
-    protected SecretKey engineGenerateKey() {
-        if (spec == null) {
-            throw new IllegalStateException
-                ("TlsMasterSecretGenerator must be initialized");
-        }
-        CK_VERSION ckVersion;
+        this.spec = spec;
         if (p11Key.getAlgorithm().equals("TlsRsaPremasterSecret")) {
             mechanism = (version == 0x0300) ? CKM_SSL3_MASTER_KEY_DERIVE
                                              : CKM_TLS_MASTER_KEY_DERIVE;
@@ -123,6 +123,17 @@ public final class P11TlsMasterSecretGenerator extends KeyGeneratorSpi {
             mechanism = (version == 0x0300) ? CKM_SSL3_MASTER_KEY_DERIVE_DH
                                              : CKM_TLS_MASTER_KEY_DERIVE_DH;
             ckVersion = null;
+        }
+    }
+
+    protected void engineInit(int keysize, SecureRandom random) {
+        throw new InvalidParameterException(MSG);
+    }
+
+    protected SecretKey engineGenerateKey() {
+        if (spec == null) {
+            throw new IllegalStateException
+                ("TlsMasterSecretGenerator must be initialized");
         }
         byte[] clientRandom = spec.getClientRandom();
         byte[] serverRandom = spec.getServerRandom();
@@ -139,13 +150,12 @@ public final class P11TlsMasterSecretGenerator extends KeyGeneratorSpi {
             long keyID = token.p11.C_DeriveKey(session.id(),
                 new CK_MECHANISM(mechanism, params), p11Key.keyID, attributes);
             int major, minor;
-            ckVersion = params.pVersion;
-            if (ckVersion == null) {
+            if (params.pVersion == null) {
                 major = -1;
                 minor = -1;
             } else {
-                major = ckVersion.major;
-                minor = ckVersion.minor;
+                major = params.pVersion.major;
+                minor = params.pVersion.minor;
             }
             SecretKey key = P11Key.masterSecretKey(session, keyID,
                 "TlsMasterSecret", 48 << 3, attributes, major, minor);
@@ -156,5 +166,4 @@ public final class P11TlsMasterSecretGenerator extends KeyGeneratorSpi {
             token.releaseSession(session);
         }
     }
-
 }
