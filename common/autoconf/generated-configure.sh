@@ -926,9 +926,7 @@ COMPRESS_JARS
 INCLUDE_SA
 UNLIMITED_CRYPTO
 CACERTS_FILE
-BUILD_HEADLESS
-SUPPORT_HEADFUL
-SUPPORT_HEADLESS
+ENABLE_HEADLESS_ONLY
 DEFAULT_MAKE_TARGET
 OS_VERSION_MICRO
 OS_VERSION_MINOR
@@ -1153,7 +1151,7 @@ with_sdk_name
 with_conf_name
 with_output_sync
 with_default_make_target
-enable_headful
+enable_headless_only
 with_cacerts_file
 enable_unlimited_crypto
 with_copyright_year
@@ -1976,8 +1974,7 @@ Optional Features:
                           [disabled]
   --enable-debug          set the debug level to fastdebug (shorthand for
                           --with-debug-level=fastdebug) [disabled]
-  --disable-headful       disable building headful support (graphical UI
-                          support) [enabled]
+  --enable-headless-only  only build headless (no GUI) support [disabled]
   --enable-unlimited-crypto
                           Enable unlimited crypto policy [disabled]
   --disable-keep-packaged-modules
@@ -5095,7 +5092,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1474460325
+DATE_WHEN_GENERATED=1474894604
 
 ###############################################################################
 #
@@ -24192,36 +24189,30 @@ fi
 
 # We need build & target for this.
 
-  # Should we build a JDK/JVM with headful support (ie a graphical ui)?
-  # We always build headless support.
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking headful support" >&5
-$as_echo_n "checking headful support... " >&6; }
-  # Check whether --enable-headful was given.
-if test "${enable_headful+set}" = set; then :
-  enableval=$enable_headful; SUPPORT_HEADFUL=${enable_headful}
-else
-  SUPPORT_HEADFUL=yes
+  # Should we build a JDK without a graphical UI?
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking headless only" >&5
+$as_echo_n "checking headless only... " >&6; }
+  # Check whether --enable-headless-only was given.
+if test "${enable_headless_only+set}" = set; then :
+  enableval=$enable_headless_only;
 fi
 
 
-  SUPPORT_HEADLESS=yes
-  BUILD_HEADLESS="BUILD_HEADLESS:=true"
-
-  if test "x$SUPPORT_HEADFUL" = xyes; then
-    # We are building both headful and headless.
-    headful_msg="include support for both headful and headless"
+  if test "x$enable_headless_only" = "xyes"; then
+    ENABLE_HEADLESS_ONLY="true"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  elif test "x$enable_headless_only" = "xno"; then
+    ENABLE_HEADLESS_ONLY="false"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  elif test "x$enable_headless_only" = "x"; then
+    ENABLE_HEADLESS_ONLY="false"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  else
+    as_fn_error $? "--enable-headless-only can only take yes or no" "$LINENO" 5
   fi
-
-  if test "x$SUPPORT_HEADFUL" = xno; then
-    # Thus we are building headless only.
-    BUILD_HEADLESS="BUILD_HEADLESS:=true"
-    headful_msg="headless only"
-  fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $headful_msg" >&5
-$as_echo "$headful_msg" >&6; }
-
-
 
 
 
@@ -53045,13 +53036,9 @@ $as_echo "yes" >&6; }
     # No X11 support on windows or macosx
     NEEDS_LIB_X11=false
   else
-    if test "x$SUPPORT_HEADFUL" = xno; then
-      # No X11 support if building headless-only
-      NEEDS_LIB_X11=false
-    else
-      # All other instances need X11
-      NEEDS_LIB_X11=true
-    fi
+    # All other instances need X11, even if building headless only, libawt still
+    # needs X11 headers.
+    NEEDS_LIB_X11=true
   fi
 
   # Check if cups is needed
