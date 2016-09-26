@@ -1282,12 +1282,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
         JobSheets jobSheets = (JobSheets)attributes.get(JobSheets.class);
         if (jobSheets != null) {
             noJobSheet = jobSheets == JobSheets.NONE;
-        } else {
-            JobSheets js = (JobSheets)getPrintService().
-                                      getDefaultAttributeValue(JobSheets.class);
-            if (js != null && js.equals(JobSheets.NONE)) {
-                noJobSheet = true;
-            }
         }
 
         JobName jobName = (JobName)attributes.get(JobName.class);
@@ -1485,6 +1479,22 @@ public abstract class RasterPrinterJob extends PrinterJob {
         if ((psvc.getAttribute(PrinterIsAcceptingJobs.class)) ==
                          PrinterIsAcceptingJobs.NOT_ACCEPTING_JOBS) {
             throw new PrinterException("Printer is not accepting job.");
+        }
+
+        /*
+         * Check the default job-sheet value on underlying platform. If IPP
+         * reports job-sheets=none, then honour that and modify noJobSheet since
+         * by default, noJobSheet is false which mean jdk will print banner page.
+         * This is because if "attributes" is null (if user directly calls print()
+         * without specifying any attributes and without showing printdialog) then
+         * setAttribute will return without changing noJobSheet value.
+         * Also, we do this before setAttributes() call so as to allow the user
+         * to override this via explicitly adding JobSheets attributes to
+         * PrintRequestAttributeSet while calling print(attributes)
+         */
+        JobSheets js = (JobSheets)psvc.getDefaultAttributeValue(JobSheets.class);
+        if (js != null && js.equals(JobSheets.NONE)) {
+            noJobSheet = true;
         }
 
         if ((psvc instanceof SunPrinterJobService) &&
