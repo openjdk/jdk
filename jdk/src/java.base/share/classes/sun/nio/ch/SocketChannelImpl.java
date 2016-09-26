@@ -616,8 +616,6 @@ class SocketChannelImpl
     }
 
     public boolean connect(SocketAddress sa) throws IOException {
-        int localPort = 0;
-
         synchronized (readLock) {
             synchronized (writeLock) {
                 ensureOpenAndUnconnected();
