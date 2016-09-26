@@ -95,7 +95,7 @@ typedef enum {
   </xsl:template>
 
   <xsl:template name="intro">
-  <xsl:call-template name="includeHeader"/>
+  <xsl:call-template name="include_GPL_CP_Header"/>
   <xsl:text>
     /* Include file for the Java(tm) Virtual Machine Tool Interface */
 

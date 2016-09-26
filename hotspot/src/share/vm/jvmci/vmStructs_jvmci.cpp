@@ -69,7 +69,7 @@
                                                                                                                                      \
   static_field(CompilerToVM::Data,             _supports_inline_contig_alloc,          bool)                                         \
   static_field(CompilerToVM::Data,             _heap_end_addr,                         HeapWord**)                                   \
-  static_field(CompilerToVM::Data,             _heap_top_addr,                         HeapWord**)                                   \
+  static_field(CompilerToVM::Data,             _heap_top_addr,                         HeapWord* volatile*)                          \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             _max_oop_map_stack_offset,              int)                                          \
                                                                                                                                      \
