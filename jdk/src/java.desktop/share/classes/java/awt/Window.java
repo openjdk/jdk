@@ -678,6 +678,10 @@ public class Window extends Container implements Accessible {
      * Depending on the platform capabilities one or several images
      * of different dimensions will be used as the window's icon.
      * <p>
+     * The {@code icons} list can contain {@code MultiResolutionImage} images also.
+     * Suitable image depending on screen resolution is extracted from
+     * base {@code MultiResolutionImage} image and added to the icons list
+     * while base resolution image is removed from list.
      * The {@code icons} list is scanned for the images of most
      * appropriate dimensions from the beginning. If the list contains
      * several images of the same size, the first will be used.
