@@ -45,6 +45,7 @@ class DemultiplexInput extends Thread {
 
     DemultiplexInput(InputStream input, Map<String, OutputStream> io, Iterable<OutputStream> closeList) {
         super("output reader");
+        setDaemon(true);
         this.delegate = new DataInputStream(input);
         this.io = io;
         this.closeList = closeList;
