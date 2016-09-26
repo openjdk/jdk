@@ -45,9 +45,9 @@ import java.util.stream.Stream;
  * Represents the source of the class files.
  */
 public class Archive implements Closeable {
-    public static Archive getInstance(Path p) {
+    public static Archive getInstance(Path p, Runtime.Version version) {
         try {
-            return new Archive(p, ClassFileReader.newInstance(p));
+            return new Archive(p, ClassFileReader.newInstance(p, version));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
