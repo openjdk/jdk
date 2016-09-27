@@ -25,8 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -118,15 +116,11 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     public List<String> getSummaryTableHeader(Element member) {
         if (utils.isInterface(member)) {
             return Arrays.asList(writer.getModifierTypeHeader(),
-                configuration.getText("doclet.0_and_1",
-                    configuration.getText("doclet.Interface"),
-                    configuration.getText("doclet.Description")));
+                    resources.getText("doclet.Interface"), resources.getText("doclet.Description"));
 
         } else {
             return Arrays.asList(writer.getModifierTypeHeader(),
-                configuration.getText("doclet.0_and_1",
-                    configuration.getText("doclet.Class"),
-                    configuration.getText("doclet.Description")));
+                    resources.getText("doclet.Class"), resources.getText("doclet.Description"));
         }
     }
 

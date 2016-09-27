@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4504730 4526070 5077317
+ * @bug 4504730 4526070 5077317 8162363
  * @summary Test the generation of constant-values.html.
  * @author jamieh
  * @library ../lib
@@ -53,29 +53,29 @@ public class TestConstantValuesDriver extends JavadocTester {
                 "TEST4PASSES",
                 "<code>\"&lt;Hello World&gt;\"</code>",
                 "</a><code>public&nbsp;static&nbsp;final&nbsp;byte</code></td>\n" +
-                    "<td><code><a href=\"TestConstantValues.html#BYTE_MAX_VALUE\">" +
-                    "BYTE_MAX_VALUE</a></code></td>\n" +
+                    "<th class=\"colSecond\" scope=\"row\"><code><a href=\"TestConstantValues.html#BYTE_MAX_VALUE\">" +
+                    "BYTE_MAX_VALUE</a></code></th>\n" +
                     "<td class=\"colLast\"><code>127</code></td>",
                 "</a><code>public&nbsp;static&nbsp;final&nbsp;byte</code></td>\n" +
-                    "<td><code><a href=\"TestConstantValues.html#BYTE_MIN_VALUE\">" +
-                    "BYTE_MIN_VALUE</a></code></td>\n" +
+                    "<th class=\"colSecond\" scope=\"row\"><code><a href=\"TestConstantValues.html#BYTE_MIN_VALUE\">" +
+                    "BYTE_MIN_VALUE</a></code></th>\n" +
                     "<td class=\"colLast\"><code>-127</code></td>",
                 "</a><code>public&nbsp;static&nbsp;final&nbsp;char</code></td>\n" +
-                    "<td><code><a href=\"TestConstantValues.html#CHAR_MAX_VALUE\">" +
-                    "CHAR_MAX_VALUE</a></code></td>\n" +
+                    "<th class=\"colSecond\" scope=\"row\"><code><a href=\"TestConstantValues.html#CHAR_MAX_VALUE\">" +
+                    "CHAR_MAX_VALUE</a></code></th>\n" +
                     "<td class=\"colLast\"><code>65535</code></td>",
                 "</a><code>public&nbsp;static&nbsp;final&nbsp;double</code></td>",
-                    "<td><code><a href=\"TestConstantValues.html#DOUBLE_MAX_VALUE\">" +
-                    "DOUBLE_MAX_VALUE</a></code></td>\n" +
+                    "<th class=\"colSecond\" scope=\"row\"><code><a href=\"TestConstantValues.html#DOUBLE_MAX_VALUE\">" +
+                    "DOUBLE_MAX_VALUE</a></code></th>\n" +
                     "<td class=\"colLast\"><code>1.7976931348623157E308</code></td>",
                 "</a><code>public&nbsp;static&nbsp;final&nbsp;double</code></td>\n" +
-                    "<td><code><a href=\"TestConstantValues.html#DOUBLE_MIN_VALUE\">" +
-                    "DOUBLE_MIN_VALUE</a></code></td>",
+                    "<th class=\"colSecond\" scope=\"row\"><code><a href=\"TestConstantValues.html#DOUBLE_MIN_VALUE\">" +
+                    "DOUBLE_MIN_VALUE</a></code></th>",
                 "</a><code>public&nbsp;static&nbsp;final&nbsp;boolean</code></td>\n" +
-                    "<td><code><a href=\"TestConstantValues.html#GOODBYE\">" +
-                    "GOODBYE</a></code></td>",
+                    "<th class=\"colSecond\" scope=\"row\"><code><a href=\"TestConstantValues.html#GOODBYE\">" +
+                    "GOODBYE</a></code></th>",
                 "</a><code>public&nbsp;static&nbsp;final&nbsp;boolean</code></td>\n" +
-                    "<td><code><a href=\"TestConstantValues.html#HELLO\">HELLO</a></code></td>\n" +
+                    "<th class=\"colSecond\" scope=\"row\"><code><a href=\"TestConstantValues.html#HELLO\">HELLO</a></code></th>\n" +
                     "<td class=\"colLast\"><code>true</code></td>"
         );
     }

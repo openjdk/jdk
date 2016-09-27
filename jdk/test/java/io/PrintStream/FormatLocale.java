@@ -21,10 +21,11 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8146156
  * @summary test whether conversion follows Locale.Category.FORMAT locale.
+ * @modules jdk.localedata
  * @run main/othervm FormatLocale
  */
 

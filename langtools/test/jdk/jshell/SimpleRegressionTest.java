@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8130450 8158906 8154374
+ * @test 8130450 8158906 8154374 8166400
  * @summary simple regression test
  * @build KullaTesting TestingInputStream
  * @run testng SimpleRegressionTest
@@ -148,5 +148,22 @@ public class SimpleRegressionTest extends KullaTesting {
     public void testContextClassLoader() {
         assertEval("class C {}");
         assertEval("C.class.getClassLoader() == Thread.currentThread().getContextClassLoader()", "true");
+    }
+
+    public void testArayRepresentation() {
+        assertEval("new int[4]", "int[4] { 0, 0, 0, 0 }");
+        assertEval("new int[0]", "int[0] {  }");
+        assertEval("new byte[2]", "byte[2] { 0, 0 }");
+        assertEval("new short[] { 1234, 4321 }", "short[2] { 1234, 4321 }");
+        assertEval("new long[] { 123456789 }", "long[1] { 123456789 }");
+        assertEval("new float[] { -23.5645f, 1.0101f }", "float[2] { -23.5645, 1.0101 }");
+        assertEval("new double[] { 1/8, Math.PI }", "double[2] { 0.0, 3.141592653589793 }");
+        assertEval("new String[] { \"hi\", \"low\", null }", "String[3] { \"hi\", \"low\", null }");
+        assertEval("new char[] { 'a', 34, 77 }", "char[3] { 'a', '\"', 'M' }");
+        assertEval("new boolean[] { false, true }", "boolean[2] { false, true }");
+        assertEval("new int[][] { new int[] {44, 55}, new int[] {88,99}}",
+                "int[][2] { int[2] { 44, 55 }, int[2] { 88, 99 } }");
+        assertEval("new Object[] { \"howdy\", new int[] { 33, 44, 55 }, new String[] { \"up\", \"down\" }}",
+                "Object[3] { \"howdy\", int[3] { 33, 44, 55 }, String[2] { \"up\", \"down\" } }");
     }
 }
