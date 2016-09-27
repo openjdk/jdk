@@ -24,6 +24,8 @@
  */
 package com.sun.java.swing.plaf.gtk;
 
+import sun.awt.ModalExclude;
+import sun.awt.SunToolkit;
 import sun.awt.UNIXToolkit;
 
 import javax.swing.plaf.synth.*;
@@ -36,6 +38,7 @@ import com.sun.java.swing.plaf.gtk.GTKConstants.ExpanderStyle;
 import com.sun.java.swing.plaf.gtk.GTKConstants.Orientation;
 import com.sun.java.swing.plaf.gtk.GTKConstants.PositionType;
 import com.sun.java.swing.plaf.gtk.GTKConstants.ShadowType;
+import java.awt.image.BufferedImage;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -567,8 +570,10 @@ class GTKPainter extends SynthPainter {
         Region id = context.getRegion();
         int gtkState = GTKLookAndFeel.synthStateToGTKState(
                 id, context.getComponentState());
+        boolean isHW = SunToolkit.getHeavyweightComponent(
+                context.getComponent()) instanceof ModalExclude;
         synchronized (UNIXToolkit.GTK_LOCK) {
-            if (ENGINE.paintCachedImage(g, x, y, w, h, id, gtkState)) {
+            if (ENGINE.paintCachedImage(g, x, y, w, h, id, gtkState, isHW)) {
                 return;
             }
             ENGINE.startPainting(g, x, y, w, h, id, gtkState);
@@ -581,7 +586,25 @@ class GTKPainter extends SynthPainter {
                 style.getGTKColor(context, gtkState, GTKColorType.BACKGROUND),
                 x + insets.left, y + insets.top, w - insets.left - insets.right,
                 h - insets.top - insets.bottom);
-            ENGINE.finishPainting();
+            BufferedImage img = ENGINE.finishPainting();
+            if(!isHW) {
+                int border = img.getRGB(0, h / 2);
+                if (img != null && border == img.getRGB(w / 2, h / 2)) {
+                    // fix no menu borders in Adwaita theme
+                    Graphics g2 = img.getGraphics();
+                    Color c = new Color(border);
+                    g2.setColor(new Color(Math.max((int) (c.getRed() * 0.8), 0),
+                            Math.max((int) (c.getGreen() * 0.8), 0),
+                            Math.max((int) (c.getBlue() * 0.8), 0)));
+                    g2.drawLine(0, 0, w - 1, 0);
+                    g2.drawLine(w - 1, 0, w - 1, h - 1);
+                    g2.drawLine(0, h - 1, 0, 1);
+                    g2.setColor(c.darker());
+                    g2.drawLine(w - 1, h - 1, 0, h - 1);
+                    g2.dispose();
+                    g.drawImage(img, x, y, null);
+                }
+            }
         }
     }
 
