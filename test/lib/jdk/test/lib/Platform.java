@@ -116,6 +116,14 @@ public class Platform {
         return (jdkDebug.toLowerCase().contains("debug"));
     }
 
+    public static boolean isSlowDebugBuild() {
+        return (jdkDebug.toLowerCase().equals("slowdebug"));
+    }
+
+    public static boolean isFastDebugBuild() {
+        return (jdkDebug.toLowerCase().equals("fastdebug"));
+    }
+
     public static String getVMVersion() {
         return vmVersion;
     }

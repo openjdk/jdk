@@ -31,13 +31,12 @@
  */
 
 import java.lang.reflect.Field;
-import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.internal.misc.Unsafe;
 import static jdk.test.lib.Asserts.*;
 
 public class GetPutByte {
     public static void main(String args[]) throws Exception {
-        Unsafe unsafe = UnsafeHelper.getUnsafe();
+        Unsafe unsafe = Unsafe.getUnsafe();
         Test t = new Test();
         Field field = Test.class.getField("b");
 

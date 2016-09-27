@@ -46,7 +46,6 @@ import jdk.internal.misc.Unsafe;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
-import jdk.test.lib.unsafe.UnsafeHelper;
 import sun.hotspot.WhiteBox;
 
 /* In order to test that TargetSurvivorRatio affects survivor space occupancy
@@ -249,7 +248,7 @@ public class TestTargetSurvivorRatioFlag {
     public static class TargetSurvivorRatioVerifier {
 
         static final WhiteBox wb = WhiteBox.getWhiteBox();
-        static final Unsafe unsafe = UnsafeHelper.getUnsafe();
+        static final Unsafe unsafe = Unsafe.getUnsafe();
 
         // Desired size of memory allocated at once
         public static final int CHUNK_SIZE = 1024;

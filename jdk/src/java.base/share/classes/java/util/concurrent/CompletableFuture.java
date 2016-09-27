@@ -2559,6 +2559,13 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * exceptionally with a CompletionException with this exception as
      * cause.
      *
+     * <p>Unless overridden by a subclass, a new non-minimal
+     * CompletableFuture with all methods available can be obtained from
+     * a minimal CompletionStage via {@link #toCompletableFuture()}.
+     * For example, completion of a minimal stage can be awaited by
+     *
+     * <pre> {@code minimalStage.toCompletableFuture().join(); }</pre>
+     *
      * @return the new CompletionStage
      * @since 9
      */
@@ -2853,6 +2860,16 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         @Override public CompletableFuture<T> completeOnTimeout
             (T value, long timeout, TimeUnit unit) {
             throw new UnsupportedOperationException(); }
+        @Override public CompletableFuture<T> toCompletableFuture() {
+            Object r;
+            if ((r = result) != null)
+                return new CompletableFuture<T>(encodeRelay(r));
+            else {
+                CompletableFuture<T> d = new CompletableFuture<>();
+                unipush(new UniRelay<T,T>(d, this));
+                return d;
+            }
+        }
     }
 
     // VarHandle mechanics

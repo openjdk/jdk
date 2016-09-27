@@ -40,7 +40,7 @@ TESTLIBRARY_DIR = ../../../../test/lib
 JAVAC = $(JDK_HOME)/bin/javac
 JAR = $(JDK_HOME)/bin/jar
 
-SRC_FILES = $(shell find $(SRC_DIR) $(TESTLIBRARY_DIR)/share/classes -name '*.java')
+SRC_FILES = $(shell find $(SRC_DIR) $(TESTLIBRARY_DIR)/jdk/test/lib -name '*.java')
 WB_SRC_FILES = $(shell find $(TESTLIBRARY_DIR)/sun/hotspot -name '*.java')
 
 MAIN_CLASS = sun.hotspot.tools.ctw.CompileTheWorld

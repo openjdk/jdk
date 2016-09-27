@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4789689 4905985 4927164 4827184 4993906 5004549 7025314 7010344 8025633 8026567
+ * @bug      4789689 4905985 4927164 4827184 4993906 5004549 7025314 7010344 8025633 8026567 8162363
  * @summary  Run Javadoc on a set of source files that demonstrate new
  *           language features.  Check the output to ensure that the new
  *           language features are properly documented.
@@ -134,7 +134,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 // Method that returns TypeParameters
                 "<td class=\"colFirst\"><code><a href=\"../pkg/TypeParameters.html\" "
                 + "title=\"type parameter in TypeParameters\">E</a>[]</code></td>\n"
-                + "<td class=\"colLast\"><code><span class=\"memberNameLink\">"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
                 + "<a href=\"../pkg/TypeParameters.html#methodThatReturnsTypeParameterA-E:A-\">"
                 + "methodThatReturnsTypeParameterA</a></span>(<a href=\"../pkg/TypeParameters.html\" "
                 + "title=\"type parameter in TypeParameters\">E</a>[]&nbsp;e)</code>",
@@ -144,15 +144,15 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "title=\"type parameter in TypeParameters\">E</a>[]&nbsp;e)</pre>\n",
                 "<td class=\"colFirst\"><code>&lt;T extends java.lang.Object &amp; java.lang.Comparable&lt;? super T&gt;&gt;"
                 + "<br>T</code></td>\n"
-                + "<td class=\"colLast\"><code><span class=\"memberNameLink\">"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
                 + "<a href=\"../pkg/TypeParameters.html#methodtThatReturnsTypeParametersB-java.util.Collection-\">"
-                + "methodtThatReturnsTypeParametersB</a></span>(java.util.Collection&lt;? extends T&gt;&nbsp;coll)</code>\n"
-                + "<div class=\"block\">Returns TypeParameters</div>\n",
+                + "methodtThatReturnsTypeParametersB</a></span>(java.util.Collection&lt;? extends T&gt;&nbsp;coll)</code>",
+                "<div class=\"block\">Returns TypeParameters</div>\n",
                 // Method takes a TypeVariable
                 "<td class=\"colFirst\"><code>&lt;X extends java.lang.Throwable&gt;<br>"
                 + "<a href=\"../pkg/TypeParameters.html\" title=\"type parameter in TypeParameters\">E</a>"
                 + "</code></td>\n"
-                + "<td class=\"colLast\"><code><span class=\"memberNameLink\">"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
                 + "<a href=\"../pkg/TypeParameters.html#orElseThrow-java.util.function.Supplier-\">"
                 + "orElseThrow</a></span>(java.util.function.Supplier&lt;? extends X&gt;&nbsp;exceptionSupplier)</code>"
                 );
@@ -219,19 +219,19 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">"
                 + "Foo</a></span><span class=\"tabEnd\">&nbsp;</span></caption>",
-                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest1.html\" "
+                "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest1.html\" "
                 + "title=\"class in pkg2\">ClassUseTest1</a>&lt;T extends "
                 + "<a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo"
                 + "</a> &amp; <a href=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">"
-                + "Foo2</a>&gt;</span></code>&nbsp;</td>",
+                + "Foo2</a>&gt;</span></code></th>",
                 "<caption><span>Methods in <a href=\"../../pkg2/"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../../pkg2/Foo.html\" title=\"class in "
                 + "pkg2\">Foo</a></span><span class=\"tabEnd\">&nbsp;</span></caption>",
-                "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest1."
+                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest1."
                 + "</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/"
                 + "ClassUseTest1.html#method-T-\">method</a></span>"
-                + "(T&nbsp;t)</code>&nbsp;</td>",
+                + "(T&nbsp;t)</code></th>",
                 "<caption><span>Fields in <a href=\"../../pkg2/"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">"
@@ -259,20 +259,20 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "type <a href=\"../../pkg2/Foo2.html\" title=\"interface "
                 + "in pkg2\">Foo2</a></span><span class=\"tabEnd\">&nbsp;"
                 + "</span></caption>",
-                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest1.html\" "
+                "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest1.html\" "
                 + "title=\"class in pkg2\">ClassUseTest1</a>&lt;T extends "
                 + "<a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo"
                 + "</a> &amp; <a href=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">"
-                + "Foo2</a>&gt;</span></code>&nbsp;</td>",
+                + "Foo2</a>&gt;</span></code></th>",
                 "<caption><span>Methods in <a href=\"../../pkg2/"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../../pkg2/Foo2.html\" title=\"interface "
                 + "in pkg2\">Foo2</a></span><span class=\"tabEnd\">&nbsp;"
                 + "</span></caption>",
-                "<td class=\"colLast\"><span class=\"typeNameLabel\">"
+                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">"
                 + "ClassUseTest1.</span><code><span class=\"memberNameLink\"><a href=\"../../"
                 + "pkg2/ClassUseTest1.html#method-T-\">method</a></span>"
-                + "(T&nbsp;t)</code>&nbsp;</td>"
+                + "(T&nbsp;t)</code></th>"
         );
 
         // ClassUseTest2: <T extends ParamTest<Foo3>>
@@ -282,20 +282,20 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "type <a href=\"../../pkg2/ParamTest.html\" title=\"class "
                 + "in pkg2\">ParamTest</a></span><span class=\"tabEnd\">"
                 + "&nbsp;</span></caption>",
-                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest2.html\" "
+                "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest2.html\" "
                 + "title=\"class in pkg2\">ClassUseTest2</a>&lt;T extends "
                 + "<a href=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">"
                 + "ParamTest</a>&lt;<a href=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">"
-                + "Foo3</a>&gt;&gt;</span></code>&nbsp;</td>",
+                + "Foo3</a>&gt;&gt;</span></code></th>",
                 "<caption><span>Methods in <a href=\"../../pkg2/"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../../pkg2/ParamTest.html\" title=\"class "
                 + "in pkg2\">ParamTest</a></span><span class=\"tabEnd\">"
                 + "&nbsp;</span></caption>",
-                "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest2."
+                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest2."
                 + "</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/"
                 + "ClassUseTest2.html#method-T-\">method</a></span>"
-                + "(T&nbsp;t)</code>&nbsp;</td>",
+                + "(T&nbsp;t)</code></th>",
                 "<caption><span>Fields in <a href=\"../../pkg2/"
                 + "package-summary.html\">pkg2</a> declared as <a href=\"../"
                 + "../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest"
@@ -323,20 +323,20 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">"
                 + "Foo3</a></span><span class=\"tabEnd\">&nbsp;</span></caption>",
-                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest2.html\" "
+                "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest2.html\" "
                 + "title=\"class in pkg2\">ClassUseTest2</a>&lt;T extends "
                 + "<a href=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">"
                 + "ParamTest</a>&lt;<a href=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">"
-                + "Foo3</a>&gt;&gt;</span></code>&nbsp;</td>",
+                + "Foo3</a>&gt;&gt;</span></code></th>",
                 "<caption><span>Methods in <a href=\"../../pkg2/"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../../pkg2/Foo3.html\" title=\"class in "
                 + "pkg2\">Foo3</a></span><span class=\"tabEnd\">&nbsp;"
                 + "</span></caption>",
-                "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest2."
+                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest2."
                 + "</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/"
                 + "ClassUseTest2.html#method-T-\">method</a></span>"
-                + "(T&nbsp;t)</code>&nbsp;</td>",
+                + "(T&nbsp;t)</code></th>",
                 "<caption><span>Methods in <a href=\"../../pkg2/"
                 + "package-summary.html\">pkg2</a> that return types with "
                 + "arguments of type <a href=\"../../pkg2/Foo3.html\" title"
@@ -357,20 +357,20 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "type <a href=\"../../pkg2/ParamTest2.html\" title=\"class "
                 + "in pkg2\">ParamTest2</a></span><span class=\"tabEnd\">"
                 + "&nbsp;</span></caption>",
-                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest3.html\" "
+                "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest3.html\" "
                 + "title=\"class in pkg2\">ClassUseTest3</a>&lt;T extends "
                 + "<a href=\"../../pkg2/ParamTest2.html\" title=\"class in pkg2\">"
                 + "ParamTest2</a>&lt;java.util.List&lt;? extends "
                 + "<a href=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">"
-                + "Foo4</a>&gt;&gt;&gt;</span></code>&nbsp;</td>",
+                + "Foo4</a>&gt;&gt;&gt;</span></code></th>",
                 "<caption><span>Methods in <a href=\"../../pkg2/"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../../pkg2/ParamTest2.html\" title=\"class "
                 + "in pkg2\">ParamTest2</a></span><span class=\"tabEnd\">"
                 + "&nbsp;</span></caption>",
-                "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest3"
+                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest3"
                 + ".</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest3."
-                + "html#method-T-\">method</a></span>(T&nbsp;t)</code>&nbsp;</td>",
+                + "html#method-T-\">method</a></span>(T&nbsp;t)</code></th>",
                 "<td class=\"colFirst\"><code>&lt;T extends <a href=\"../"
                 + "../pkg2/ParamTest2.html\" title=\"class in pkg2\">"
                 + "ParamTest2</a>&lt;java.util.List&lt;? extends <a href=\".."
@@ -387,20 +387,20 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "type <a href=\"../../pkg2/Foo4.html\" title=\"class in "
                 + "pkg2\">Foo4</a></span><span class=\"tabEnd\">&nbsp;"
                 + "</span></caption>",
-                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest3.html\" "
+                "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest3.html\" "
                 + "title=\"class in pkg2\">ClassUseTest3</a>&lt;T extends "
                 + "<a href=\"../../pkg2/ParamTest2.html\" title=\"class in pkg2\">"
                 + "ParamTest2</a>&lt;java.util.List&lt;? extends "
                 + "<a href=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">"
-                + "Foo4</a>&gt;&gt;&gt;</span></code>&nbsp;</td>",
+                + "Foo4</a>&gt;&gt;&gt;</span></code></th>",
                 "<caption><span>Methods in <a href=\"../../pkg2/"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../../pkg2/Foo4.html\" title=\"class in "
                 + "pkg2\">Foo4</a></span><span class=\"tabEnd\">&nbsp;</span></caption>",
-                "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest3."
+                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest3."
                 + "</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest3."
                 + "html#method-T-\">method</a></span>(T&nbsp;t)</code>"
-                + "&nbsp;</td>",
+                + "</th>",
                 "<caption><span>Methods in <a href=\"../../pkg2/"
                 + "package-summary.html\">pkg2</a> that return types with "
                 + "arguments of type <a href=\"../../pkg2/Foo4.html\" "
@@ -425,18 +425,17 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Method and Description</th>\n"
+                + "<th class=\"colSecond\" scope=\"col\">Method</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>\n"
                 + "<tbody>\n"
                 + "<tr class=\"altColor\">\n"
                 + "<td class=\"colFirst\"><code>void</code></td>\n"
-                + "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest3."
+                + "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest3."
                 + "</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest3."
                 + "html#method-java.util.Set-\">method</a></span>(java."
                 + "util.Set&lt;<a href=\"../../pkg2/Foo4.html\" title=\""
-                + "class in pkg2\">Foo4</a>&gt;&nbsp;p)</code>&nbsp;</td>\n"
-                + "</tr>\n"
-                + "</tbody>",
+                + "class in pkg2\">Foo4</a>&gt;&nbsp;p)</code></th>",
                 "<caption><span>Constructor parameters in <a href=\"../../"
                 + "pkg2/package-summary.html\">pkg2</a> with type arguments "
                 + "of type <a href=\"../../pkg2/Foo4.html\" title=\"class in "

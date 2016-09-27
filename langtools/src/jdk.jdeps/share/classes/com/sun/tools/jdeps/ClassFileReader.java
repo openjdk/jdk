@@ -29,6 +29,8 @@ import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.Dependencies.ClassFileError;
 
+import jdk.internal.util.jar.VersionedStream;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -50,6 +52,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipFile;
 
 /**
  * ClassFileReader reads ClassFile(s) of a given path that can be
@@ -60,6 +63,13 @@ public class ClassFileReader implements Closeable {
      * Returns a ClassFileReader instance of a given path.
      */
     public static ClassFileReader newInstance(Path path) throws IOException {
+        return newInstance(path, JarFile.baseVersion());
+    }
+
+    /**
+     * Returns a ClassFileReader instance of a given path.
+     */
+    public static ClassFileReader newInstance(Path path, Runtime.Version version) throws IOException {
         if (Files.notExists(path)) {
             throw new FileNotFoundException(path.toString());
         }
@@ -67,17 +77,10 @@ public class ClassFileReader implements Closeable {
         if (Files.isDirectory(path)) {
             return new DirectoryReader(path);
         } else if (path.getFileName().toString().endsWith(".jar")) {
-            return new JarFileReader(path);
+            return new JarFileReader(path, version);
         } else {
             return new ClassFileReader(path);
         }
-    }
-
-    /**
-     * Returns a ClassFileReader instance of a given JarFile.
-     */
-    public static ClassFileReader newInstance(Path path, JarFile jf) throws IOException {
-        return new JarFileReader(path, jf);
     }
 
     /**
@@ -302,13 +305,16 @@ public class ClassFileReader implements Closeable {
 
     static class JarFileReader extends ClassFileReader {
         private final JarFile jarfile;
-        JarFileReader(Path path) throws IOException {
-            this(path, new JarFile(path.toFile(), false));
+        private final Runtime.Version version;
+
+        JarFileReader(Path path, Runtime.Version version) throws IOException {
+            this(path, openJarFile(path.toFile(), version), version);
         }
 
-        JarFileReader(Path path, JarFile jf) throws IOException {
+        JarFileReader(Path path, JarFile jf, Runtime.Version version) throws IOException {
             super(path);
             this.jarfile = jf;
+            this.version = version;
         }
 
         @Override
@@ -316,9 +322,26 @@ public class ClassFileReader implements Closeable {
             jarfile.close();
         }
 
+        private static JarFile openJarFile(File f, Runtime.Version version)
+                throws IOException {
+            JarFile jf;
+            if (version == null) {
+                jf = new JarFile(f, false);
+                if (jf.isMultiRelease()) {
+                    throw new MultiReleaseException("err.multirelease.option.notfound", f.getName());
+                }
+            } else {
+                jf = new JarFile(f, false, ZipFile.OPEN_READ, version);
+                if (!jf.isMultiRelease()) {
+                    throw new MultiReleaseException("err.multirelease.option.exists", f.getName());
+                }
+            }
+            return jf;
+        }
+
         protected Set<String> scan() {
-            try (JarFile jf = new JarFile(path.toFile())) {
-                return jf.stream().map(JarEntry::getName)
+            try (JarFile jf = openJarFile(path.toFile(), version)) {
+                return VersionedStream.stream(jf).map(JarEntry::getName)
                          .filter(n -> n.endsWith(".class"))
                          .collect(Collectors.toSet());
             } catch (IOException e) {
@@ -348,15 +371,14 @@ public class ClassFileReader implements Closeable {
         }
 
         protected ClassFile readClassFile(JarFile jarfile, JarEntry e) throws IOException {
-            InputStream is = null;
-            try {
-                is = jarfile.getInputStream(e);
-                return ClassFile.read(is);
+            try (InputStream is = jarfile.getInputStream(e)) {
+                ClassFile cf = ClassFile.read(is);
+                if (jarfile.isMultiRelease()) {
+                    VersionHelper.add(jarfile, e, cf);
+                }
+                return cf;
             } catch (ConstantPoolException ex) {
                 throw new ClassFileError(ex);
-            } finally {
-                if (is != null)
-                    is.close();
             }
         }
 
@@ -368,6 +390,21 @@ public class ClassFileReader implements Closeable {
                 }
             };
         }
+    }
+
+    Enumeration<JarEntry> versionedEntries(JarFile jf) {
+        Iterator<JarEntry> it = VersionedStream.stream(jf).iterator();
+        return new Enumeration<>() {
+            @Override
+            public boolean hasMoreElements() {
+                return it.hasNext();
+            }
+
+            @Override
+            public JarEntry nextElement() {
+                return it.next();
+            }
+        };
     }
 
     class JarFileIterator implements Iterator<ClassFile> {
@@ -388,7 +425,7 @@ public class ClassFileReader implements Closeable {
             if (jarfile == null) return;
 
             this.jf = jarfile;
-            this.entries = jf.entries();
+            this.entries = versionedEntries(jf);
             this.nextEntry = nextEntry();
         }
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995
+ * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -397,7 +397,7 @@ public class TestModules extends JavadocTester {
                 + "</a>");
         checkOutput("module1-summary.html", true,
                 "<tr class=\"altColor\">\n"
-                + "<td class=\"colFirst\"><a href=\"testpkgmdl1/package-summary.html\">testpkgmdl1</a></td>\n"
+                + "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdl1/package-summary.html\">testpkgmdl1</a></th>\n"
                 + "<td class=\"colSecond\">All Modules</td>\n"
                 + "<td class=\"colLast\">&nbsp;</td>\n"
                 + "</tr>");
@@ -408,7 +408,7 @@ public class TestModules extends JavadocTester {
                 + "</a>");
         checkOutput("module1-summary.html", true,
                 "<tr class=\"rowColor\">\n"
-                + "<td class=\"colFirst\"><a href=\"module2-summary.html\">module2</a></td>\n"
+                + "<th class=\"colFirst\" scope=\"row\"><a href=\"module2-summary.html\">module2</a></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"block\">This is a test description for the module2 module.</div>\n"
                 + "</td>\n"
@@ -424,8 +424,8 @@ public class TestModules extends JavadocTester {
                 + "</a>");
         checkOutput("module2-summary.html", true,
                 "<tr class=\"rowColor\">\n"
-                + "<td class=\"colFirst\"><a href=\"testpkg2mdl2/package-summary.html\">"
-                + "testpkg2mdl2</a></td>\n"
+                + "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkg2mdl2/package-summary.html\">"
+                + "testpkg2mdl2</a></th>\n"
                 + "<td class=\"colSecond\">module1</td>\n"
                 + "<td class=\"colLast\">&nbsp;</td>\n"
                 + "</tr>");
@@ -436,7 +436,7 @@ public class TestModules extends JavadocTester {
                 + "</a>");
         checkOutput("module2-summary.html", true,
                 "<tr class=\"altColor\">\n"
-                + "<td class=\"colFirst\"><a href=\"java.base-summary.html\">java.base</a></td>\n"
+                + "<th class=\"colFirst\" scope=\"row\"><a href=\"java.base-summary.html\">java.base</a></th>\n"
                 + "<td class=\"colLast\">&nbsp;</td>\n"
                 + "</tr>");
         checkOutput("module2-summary.html", true,
@@ -446,24 +446,24 @@ public class TestModules extends JavadocTester {
                 + "</a>");
         checkOutput("module2-summary.html", true,
                 "<tr class=\"altColor\">\n"
-                + "<td class=\"colFirst\"><a href=\"testpkgmdl2/TestClassInModule2.html\" "
-                + "title=\"class in testpkgmdl2\">TestClassInModule2</a></td>\n"
+                + "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdl2/TestClassInModule2.html\" "
+                + "title=\"class in testpkgmdl2\">TestClassInModule2</a></th>\n"
                 + "<td class=\"colLast\">&nbsp;</td>\n"
                 + "</tr>");
         checkOutput("module2-summary.html", true,
                 "<tr class=\"altColor\">\n"
-                + "<td class=\"colFirst\"><a href=\"testpkg2mdl2/TestInterfaceInModule2.html\" "
+                + "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkg2mdl2/TestInterfaceInModule2.html\" "
                 + "title=\"interface in testpkg2mdl2\">TestInterfaceInModule2</a><br>"
                 + "(<span class=\"implementationLabel\">Implementation:</span>&nbsp;"
                 + "<a href=\"testpkgmdl2/TestClassInModule2.html\" title=\"class in testpkgmdl2\">"
-                + "TestClassInModule2</a>)</td>\n"
+                + "TestClassInModule2</a>)</th>\n"
                 + "<td class=\"colLast\">&nbsp;</td>\n"
                 + "</tr");
         checkOutput("module2-summary.html", true,
                 "<caption><span>Exported Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
-                + "<th scope=\"col\">Module</th>\n"
+                + "<th class=\"colSecond\" scope=\"col\">Module</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>");
         checkOutput("module2-summary.html", true,

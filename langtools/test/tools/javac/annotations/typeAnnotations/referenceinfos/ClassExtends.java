@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
 
 /*
  * @test
- * @bug 8042451
+ * @bug 8042451 8164519
  * @summary Test population of reference info for class extends clauses
  * @modules jdk.jdeps/com.sun.tools.classfile
  * @compile -g Driver.java ReferenceInfoUtil.java ClassExtends.java
@@ -33,21 +33,21 @@ import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
  */
 public class ClassExtends {
 
-    @TADescription(annotation = "TA", type = CLASS_EXTENDS, typeIndex = -1)
+    @TADescription(annotation = "TA", type = CLASS_EXTENDS, typeIndex = 65535)
     @TADescription(annotation = "TB", type = CLASS_EXTENDS, typeIndex = 1)
     public String regularClass() {
         return "class %TEST_CLASS_NAME% extends @TA Object implements Cloneable, @TB Runnable {"
                + "  public void run() { } }";
     }
 
-    @TADescription(annotation = "RTAs", type = CLASS_EXTENDS, typeIndex = -1)
+    @TADescription(annotation = "RTAs", type = CLASS_EXTENDS, typeIndex = 65535)
     @TADescription(annotation = "RTBs", type = CLASS_EXTENDS, typeIndex = 1)
     public String regularClassRepeatableAnnotation() {
         return "class %TEST_CLASS_NAME% extends @RTA @RTA Object implements Cloneable, @RTB @RTB Runnable {"
                 + "  public void run() { } }";
     }
 
-    @TADescription(annotation = "TA", type = CLASS_EXTENDS, typeIndex = -1,
+    @TADescription(annotation = "TA", type = CLASS_EXTENDS, typeIndex = 65535,
             genericLocation = { 3, 0 })
     @TADescription(annotation = "TB", type = CLASS_EXTENDS, typeIndex = 1,
             genericLocation  = { 3, 1 })
@@ -55,7 +55,7 @@ public class ClassExtends {
         return "class %TEST_CLASS_NAME% extends HashMap<@TA String, String> implements Cloneable, Map<String, @TB String>{ } ";
     }
 
-    @TADescription(annotation = "RTAs", type = CLASS_EXTENDS, typeIndex = -1,
+    @TADescription(annotation = "RTAs", type = CLASS_EXTENDS, typeIndex = 65535,
             genericLocation = { 3, 0 })
     @TADescription(annotation = "RTBs", type = CLASS_EXTENDS, typeIndex = 1,
             genericLocation  = { 3, 1 })
@@ -63,21 +63,21 @@ public class ClassExtends {
         return "class %TEST_CLASS_NAME% extends HashMap<@RTA @RTA String, String> implements Cloneable, Map<String, @RTB @RTB String>{ } ";
     }
 
-    @TADescription(annotation = "TA", type = CLASS_EXTENDS, typeIndex = -1)
+    @TADescription(annotation = "TA", type = CLASS_EXTENDS, typeIndex = 65535)
     @TADescription(annotation = "TB", type = CLASS_EXTENDS, typeIndex = 1)
     public String abstractClass() {
         return "abstract class %TEST_CLASS_NAME% extends @TA Date implements Cloneable, @TB Runnable {"
                + "  public void run() { } }";
     }
 
-    @TADescription(annotation = "RTAs", type = CLASS_EXTENDS, typeIndex = -1)
+    @TADescription(annotation = "RTAs", type = CLASS_EXTENDS, typeIndex = 65535)
     @TADescription(annotation = "RTBs", type = CLASS_EXTENDS, typeIndex = 1)
     public String abstractClassRepeatableAnnotation() {
         return "abstract class %TEST_CLASS_NAME% extends @RTA @RTA Date implements Cloneable, @RTB @RTB Runnable {"
                 + "  public void run() { } }";
     }
 
-    @TADescription(annotation = "RTAs", type = CLASS_EXTENDS, typeIndex = -1,
+    @TADescription(annotation = "RTAs", type = CLASS_EXTENDS, typeIndex = 65535,
             genericLocation = { 3, 0 })
     @TADescription(annotation = "RTBs", type = CLASS_EXTENDS, typeIndex = 1,
             genericLocation  = { 3, 1 })

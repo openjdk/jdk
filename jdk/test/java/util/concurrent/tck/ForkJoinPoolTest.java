@@ -51,6 +51,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import junit.framework.AssertionFailedError;
@@ -84,13 +85,6 @@ public class ForkJoinPoolTest extends JSR166TestCase {
 
     // Some classes to test extension and factory methods
 
-    static class MyHandler implements Thread.UncaughtExceptionHandler {
-        volatile int catches = 0;
-        public void uncaughtException(Thread t, Throwable e) {
-            ++catches;
-        }
-    }
-
     static class MyError extends Error {}
 
     // to test handlers
@@ -101,9 +95,9 @@ public class ForkJoinPoolTest extends JSR166TestCase {
 
     static class FailingThreadFactory
             implements ForkJoinPool.ForkJoinWorkerThreadFactory {
-        volatile int calls = 0;
+        final AtomicInteger calls = new AtomicInteger(0);
         public ForkJoinWorkerThread newThread(ForkJoinPool p) {
-            if (++calls > 1) return null;
+            if (calls.incrementAndGet() > 1) return null;
             return new FailingFJWSubclass(p);
         }
     }
