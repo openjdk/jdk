@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.awt.peer.MenuBarPeer;
 
 import sun.awt.AWTAccessor;
 
-public class CMenuBar extends CMenuComponent implements MenuBarPeer {
+public final class CMenuBar extends CMenuComponent implements MenuBarPeer {
 
     private int nextInsertionIndex = -1;
 
@@ -40,14 +40,15 @@ public class CMenuBar extends CMenuComponent implements MenuBarPeer {
     }
 
     @Override
-    protected long createModel() {
+    long createModel() {
         return nativeCreateMenuBar();
     }
 
     @Override
-    public void addHelpMenu(Menu m) {
-        CMenu cMenu = AWTAccessor.getMenuComponentAccessor().getPeer(m);
-        nativeSetHelpMenu(getModel(), cMenu.getModel());
+    public void addHelpMenu(final Menu m) {
+        final CMenu cMenu = AWTAccessor.getMenuComponentAccessor().getPeer(m);
+        execute(parentPtr -> cMenu.execute(
+                menuPtr -> nativeSetHelpMenu(parentPtr, menuPtr)));
     }
 
     public int getNextInsertionIndex() {
@@ -65,8 +66,8 @@ public class CMenuBar extends CMenuComponent implements MenuBarPeer {
     }
 
     @Override
-    public void delMenu(int index) {
-        nativeDelMenu(getModel(), index);
+    public void delMenu(final int index) {
+        execute(ptr -> nativeDelMenu(ptr, index));
     }
 
     private native long nativeCreateMenuBar();
