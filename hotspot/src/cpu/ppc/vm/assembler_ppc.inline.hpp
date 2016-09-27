@@ -349,6 +349,9 @@ inline void Assembler::stdx( Register d, Register s1, Register s2) { emit_int32(
 inline void Assembler::stdu( Register d, int si16,    Register s1) { emit_int32(STDU_OPCODE | rs(d) | ds(si16)   | rta0mem(s1));}
 inline void Assembler::stdux(Register s, Register a,  Register b)  { emit_int32(STDUX_OPCODE| rs(s) | rta0mem(a) | rb(b));}
 
+inline void Assembler::st_ptr(Register d, int b, Register s1) { std(d, b, s1); }
+DEBUG_ONLY(inline void Assembler::st_ptr(Register d, ByteSize b, Register s1) { std(d, in_bytes(b), s1); })
+
 // PPC 1, section 3.3.13 Move To/From System Register Instructions
 inline void Assembler::mtlr( Register s1)         { emit_int32(MTLR_OPCODE  | rs(s1)); }
 inline void Assembler::mflr( Register d )         { emit_int32(MFLR_OPCODE  | rt(d)); }
