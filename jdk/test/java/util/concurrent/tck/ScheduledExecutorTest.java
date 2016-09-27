@@ -537,15 +537,14 @@ public class ScheduledExecutorTest extends JSR166TestCase {
      * isShutdown is false before shutdown, true after
      */
     public void testIsShutdown() {
-
         final ScheduledThreadPoolExecutor p = new ScheduledThreadPoolExecutor(1);
-        try {
-            assertFalse(p.isShutdown());
+        assertFalse(p.isShutdown());
+        try (PoolCleaner cleaner = cleaner(p)) {
+            try {
+                p.shutdown();
+                assertTrue(p.isShutdown());
+            } catch (SecurityException ok) {}
         }
-        finally {
-            try { p.shutdown(); } catch (SecurityException ok) { return; }
-        }
-        assertTrue(p.isShutdown());
     }
 
     /**

@@ -40,6 +40,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -50,11 +51,6 @@ public class CyclicBarrierTest extends JSR166TestCase {
     }
     public static Test suite() {
         return new TestSuite(CyclicBarrierTest.class);
-    }
-
-    private volatile int countAction;
-    private class MyAction implements Runnable {
-        public void run() { ++countAction; }
     }
 
     /**
@@ -114,14 +110,16 @@ public class CyclicBarrierTest extends JSR166TestCase {
      * The supplied barrier action is run at barrier
      */
     public void testBarrierAction() throws Exception {
-        countAction = 0;
-        CyclicBarrier b = new CyclicBarrier(1, new MyAction());
+        final AtomicInteger count = new AtomicInteger(0);
+        final Runnable incCount = new Runnable() { public void run() {
+            count.getAndIncrement(); }};
+        CyclicBarrier b = new CyclicBarrier(1, incCount);
         assertEquals(1, b.getParties());
         assertEquals(0, b.getNumberWaiting());
         b.await();
         b.await();
         assertEquals(0, b.getNumberWaiting());
-        assertEquals(2, countAction);
+        assertEquals(2, count.get());
     }
 
     /**

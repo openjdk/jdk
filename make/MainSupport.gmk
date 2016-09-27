@@ -31,11 +31,13 @@ ifndef _MAINSUPPORT_GMK
 _MAINSUPPORT_GMK := 1
 
 # Run the tests specified by $1, with PRODUCT_HOME specified by $2
+# JT_JAVA is picked up by the jtreg launcher and used to run Jtreg itself.
 define RunTests
 	($(CD) $(SRC_ROOT)/test && $(MAKE) $(MAKE_ARGS) -j1 -k MAKEFLAGS= \
 	    JT_HOME=$(JT_HOME) PRODUCT_HOME=$(strip $2) \
 	    TEST_IMAGE_DIR=$(TEST_IMAGE_DIR) \
 	    ALT_OUTPUTDIR=$(OUTPUT_ROOT) TEST_JOBS=$(TEST_JOBS) \
+	    JT_JAVA=$(BOOT_JDK) \
 	    JOBS=$(JOBS) $1) || true
 endef
 

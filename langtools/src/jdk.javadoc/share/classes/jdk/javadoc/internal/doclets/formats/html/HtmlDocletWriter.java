@@ -405,7 +405,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 }
                 Content classContent = getLink(new LinkInfoImpl(
                         configuration, LinkInfoImpl.Kind.PACKAGE, te));
-                Content tdClass = HtmlTree.TD(HtmlStyle.colFirst, classContent);
+                Content tdClass = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, classContent);
                 HtmlTree tr = HtmlTree.TR(tdClass);
                 tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
                 altColor = !altColor;
@@ -942,16 +942,20 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content tr = new HtmlTree(HtmlTag.TR);
         final int size = header.size();
         Content tableHeader;
-        if (size == 1) {
+        if (size == 2) {
             tableHeader = new StringContent(header.get(0));
-            tr.addContent(HtmlTree.TH(HtmlStyle.colOne, scope, tableHeader));
+            tr.addContent(HtmlTree.TH(HtmlStyle.colFirst, scope, tableHeader));
+            tableHeader = new StringContent(header.get(1));
+            tr.addContent(HtmlTree.TH(HtmlStyle.colLast, scope, tableHeader));
             return tr;
         }
         for (int i = 0; i < size; i++) {
             tableHeader = new StringContent(header.get(i));
-            if(i == 0)
+            if (i == 0)
                 tr.addContent(HtmlTree.TH(HtmlStyle.colFirst, scope, tableHeader));
-            else if(i == (size - 1))
+            else if (i == 1)
+                tr.addContent(HtmlTree.TH(HtmlStyle.colSecond, scope, tableHeader));
+            else if (i == (size - 1))
                 tr.addContent(HtmlTree.TH(HtmlStyle.colLast, scope, tableHeader));
             else
                 tr.addContent(HtmlTree.TH(scope, tableHeader));
@@ -1062,13 +1066,16 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             boolean altColor = true;
             for (Element e : deprPkgs) {
                 PackageElement pkg = (PackageElement) e;
-                HtmlTree td = HtmlTree.TD(HtmlStyle.colOne,
+                HtmlTree thRow = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst,
                         getPackageLink(pkg, getPackageName(pkg)));
+                HtmlTree tr = HtmlTree.TR(thRow);
+                HtmlTree tdDesc = new HtmlTree(HtmlTag.TD);
+                tdDesc.addStyle(HtmlStyle.colLast);
                 List<? extends DocTree> tags = utils.getDeprecatedTrees(pkg);
                 if (!tags.isEmpty()) {
-                    addInlineDeprecatedComment(pkg, tags.get(0), td);
+                    addInlineDeprecatedComment(pkg, tags.get(0), tdDesc);
                 }
-                HtmlTree tr = HtmlTree.TR(td);
+                tr.addContent(tdDesc);
                 tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
                 altColor = !altColor;
                 tbody.addContent(tr);

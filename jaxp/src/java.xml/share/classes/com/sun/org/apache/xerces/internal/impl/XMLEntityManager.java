@@ -1033,12 +1033,12 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             staxInputSource = new StaxXMLInputSource(xmlInputSource, fISCreatedByResolver);
         }
 
-        if (staxInputSource == null) {
+        if (staxInputSource == null && fUseCatalog) {
             if (fCatalogFeatures == null) {
                 fCatalogFeatures = JdkXmlUtils.getCatalogFeatures(fDefer, fCatalogFile, fPrefer, fResolve);
             }
             fCatalogFile = fCatalogFeatures.get(Feature.FILES);
-            if (fUseCatalog && fCatalogFile != null) {
+            if (fCatalogFile != null) {
                 try {
                     if (fCatalogResolver == null) {
                         fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
@@ -1133,12 +1133,12 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             xmlInputSource = fEntityResolver.resolveEntity(resourceIdentifier);
         }
 
-        if (xmlInputSource == null) {
+        if (xmlInputSource == null && fUseCatalog) {
             if (fCatalogFeatures == null) {
                 fCatalogFeatures = JdkXmlUtils.getCatalogFeatures(fDefer, fCatalogFile, fPrefer, fResolve);
             }
             fCatalogFile = fCatalogFeatures.get(Feature.FILES);
-            if (fUseCatalog && fCatalogFile != null) {
+            if (fCatalogFile != null) {
                 /*
                  since the method can be called from various processors, both
                  EntityResolver and URIResolver are used to attempt to find

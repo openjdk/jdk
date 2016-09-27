@@ -36,6 +36,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -389,6 +390,23 @@ class JdepsTask {
                 }
             }
         },
+        new Option(true, "--multi-release") {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                if (arg.equalsIgnoreCase("base")) {
+                    task.options.multiRelease = JarFile.baseVersion();
+                } else {
+                    try {
+                        int v = Integer.parseInt(arg);
+                        if (v < 9) {
+                            throw new BadArgs("err.invalid.arg.for.option", arg);
+                        }
+                    } catch (NumberFormatException x) {
+                        throw new BadArgs("err.invalid.arg.for.option", arg);
+                    }
+                    task.options.multiRelease = Runtime.Version.parse(arg);
+                }
+            }
+        },
     };
 
     private static final String PROGNAME = "jdeps";
@@ -481,6 +499,9 @@ class JdepsTask {
         } catch (IOException e) {
             e.printStackTrace();
             return EXIT_CMDERR;
+        } catch (MultiReleaseException e) {
+            reportError(e.getKey(), (Object)e.getMsg());
+            return EXIT_CMDERR;  // could be EXIT_ABNORMAL sometimes
         } finally {
             log.flush();
         }
@@ -541,11 +562,16 @@ class JdepsTask {
         if (options.classpath != null)
             builder.addClassPath(options.classpath);
 
+        if (options.multiRelease != null)
+            builder.multiRelease(options.multiRelease);
+
         // build the root set of archives to be analyzed
         for (String s : inputArgs) {
             Path p = Paths.get(s);
             if (Files.exists(p)) {
                 builder.addRoot(p);
+            } else {
+                warning("warn.invalid.arg", s);
             }
         }
 
@@ -839,6 +865,7 @@ class JdepsTask {
         String modulePath;
         String rootModule;
         Set<String> addmods = new HashSet<>();
+        Runtime.Version multiRelease;
 
         boolean hasFilter() {
             return numFilters() > 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,8 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
     // master secret as a P11Key
     private P11Key p11Key;
 
-    // version, e.g. 0x0301
-    private int version;
+    // whether SSLv3 is supported
+    private final boolean supportSSLv3;
 
     P11TlsKeyMaterialGenerator(Token token, String algorithm, long mechanism)
             throws PKCS11Exception {
@@ -77,6 +77,11 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
         this.token = token;
         this.algorithm = algorithm;
         this.mechanism = mechanism;
+
+        // Given the current lookup order specified in SunPKCS11.java,
+        // if CKM_SSL3_KEY_AND_MAC_DERIVE is not used to construct this object,
+        // it means that this mech is disabled or unsupported.
+        this.supportSSLv3 = (mechanism == CKM_SSL3_KEY_AND_MAC_DERIVE);
     }
 
     protected void engineInit(SecureRandom random) {
@@ -89,20 +94,26 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
         if (params instanceof TlsKeyMaterialParameterSpec == false) {
             throw new InvalidAlgorithmParameterException(MSG);
         }
-        this.spec = (TlsKeyMaterialParameterSpec)params;
+
+        TlsKeyMaterialParameterSpec spec = (TlsKeyMaterialParameterSpec)params;
+        int version = (spec.getMajorVersion() << 8) | spec.getMinorVersion();
+
+        if ((version == 0x0300 && !supportSSLv3) || (version < 0x0300) ||
+            (version > 0x0302)) {
+             throw new InvalidAlgorithmParameterException
+                    ("Only" + (supportSSLv3? " SSL 3.0,": "") +
+                     " TLS 1.0, and TLS 1.1 are supported (0x" +
+                     Integer.toHexString(version) + ")");
+        }
         try {
             p11Key = P11SecretKeyFactory.convertKey
                             (token, spec.getMasterSecret(), "TlsMasterSecret");
         } catch (InvalidKeyException e) {
             throw new InvalidAlgorithmParameterException("init() failed", e);
         }
-        version = (spec.getMajorVersion() << 8) | spec.getMinorVersion();
-        if ((version < 0x0300) && (version > 0x0302)) {
-            throw new InvalidAlgorithmParameterException
-                    ("Only SSL 3.0, TLS 1.0, and TLS 1.1 are supported");
-        }
-        // we assume the token supports both the CKM_SSL3_* and the CKM_TLS_*
-        // mechanisms
+        this.spec = spec;
+        this.mechanism = (version == 0x0300)?
+            CKM_SSL3_KEY_AND_MAC_DERIVE : CKM_TLS_KEY_AND_MAC_DERIVE;
     }
 
     protected void engineInit(int keysize, SecureRandom random) {
@@ -115,8 +126,6 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
             throw new IllegalStateException
                 ("TlsKeyMaterialGenerator must be initialized");
         }
-        mechanism = (version == 0x0300) ? CKM_SSL3_KEY_AND_MAC_DERIVE
-                                         : CKM_TLS_KEY_AND_MAC_DERIVE;
         int macBits = spec.getMacKeyLength() << 3;
         int ivBits = spec.getIvLength() << 3;
 
