@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
    @author Chris Hegarty
  */
 
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.io.File;
 import java.io.IOException;
@@ -74,6 +75,11 @@ public class InheritHandle
         } catch (IOException ioe) {
             System.out.println("Cannot create process");
             ioe.printStackTrace();
+            try {
+                ss.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             return;
         }
 
@@ -85,9 +91,18 @@ public class InheritHandle
             System.out.println("Now close the socket and try to create another" +
                                " one listening on the same port");
             ss.close();
-            ss = new ServerSocket(port);
-            System.out.println("Second ServerSocket created successfully");
-            ss.close();
+            int retries = 0;
+            while (retries < 5) {
+                try (ServerSocket s = new ServerSocket(port);) {
+                    System.out.println("Second ServerSocket created successfully");
+                    break;
+                } catch (BindException e) {
+                    System.out.println("BindException \"" + e.getMessage() + "\", retrying...");
+                    Thread.sleep(100L);
+                    retries ++;
+                    continue;
+                }
+            }
 
         } catch (InterruptedException ie) {
         } catch (IOException ioe) {

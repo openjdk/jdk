@@ -86,11 +86,11 @@ public final class PropertyNode extends Node {
     }
 
     /**
-     * Get the name of the property key
-     * @return key name
+     * Get the name of the property key, or {@code null} if key is a computed name.
+     * @return key name or null
      */
     public String getKeyName() {
-        return key instanceof PropertyKey ? ((PropertyKey) key).getPropertyName() : null;
+        return !computed && key instanceof PropertyKey ? ((PropertyKey) key).getPropertyName() : null;
     }
 
     @Override

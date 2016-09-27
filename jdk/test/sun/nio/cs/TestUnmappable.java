@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,11 @@
  * @bug 8008386
  * @summary (cs) Unmappable leading should be decoded to replacement.
  *          Tests for Shift_JIS and MS932 decoding
+ * @modules jdk.charsets
  * @run main TestUnmappable
  */
 
-import java.nio.*;
-import java.nio.charset.*;
+import java.nio.charset.Charset;
 
 public class TestUnmappable {
     public static void main(String args[]) throws Exception {

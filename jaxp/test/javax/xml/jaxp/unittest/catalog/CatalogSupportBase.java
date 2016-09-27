@@ -276,7 +276,7 @@ public class CatalogSupportBase {
         SAXParser parser = getSAXParser(setUseCatalog, useCatalog, catalog);
 
         parser.parse(xml, handler);
-        assertEquals(expected, handler.getResult().trim(), "");
+        Assert.assertEquals(handler.getResult().trim(), expected);
     }
 
     /*
@@ -287,8 +287,9 @@ public class CatalogSupportBase {
         XMLReader reader = getXMLReader(setUseCatalog, useCatalog, catalog);
 
         reader.setContentHandler(handler);
+        reader.setEntityResolver(handler);
         reader.parse(xml);
-        assertEquals(expected, handler.getResult().trim(), "");
+        Assert.assertEquals(handler.getResult().trim(), expected);
     }
 
     /*
@@ -300,7 +301,7 @@ public class CatalogSupportBase {
 
         parser.parse(new InputSource(new StringReader(xml)), handler);
         debugPrint("handler.result:" + handler.getResult());
-        assertEquals(expected, handler.getResult(), "Catalog support for XInclude");
+        Assert.assertEquals(handler.getResult().trim(), expected);
     }
 
     /*
@@ -314,8 +315,7 @@ public class CatalogSupportBase {
 
         Node node = doc.getElementsByTagName(elementInSystem).item(0);
         String result = node.getFirstChild().getTextContent();
-
-        assertEquals(expected, result.trim(), "Catalog support for DOM");
+        Assert.assertEquals(result.trim(), expected);
     }
 
     /*
@@ -327,7 +327,7 @@ public class CatalogSupportBase {
             XMLStreamReader streamReader = getStreamReader(
                     setUseCatalog, useCatalog, catalog, xml, resolver);
             String text = getText(streamReader, XMLStreamConstants.CHARACTERS);
-            assertEquals(expected, text.trim(), "Catalog support for StAX");
+            Assert.assertEquals(text.trim(), expected);
     }
 
     /*
@@ -340,7 +340,7 @@ public class CatalogSupportBase {
             XMLStreamReader streamReader = getStreamReader(
                     setUseCatalog, useCatalog, catalog, xml, resolver);
             String text = getText(streamReader, XMLStreamConstants.ENTITY_REFERENCE);
-            assertEquals(expected, text.trim(), "Catalog support for StAX");
+            Assert.assertEquals(text.trim(), expected);
     }
 
     /*
@@ -601,9 +601,11 @@ public class CatalogSupportBase {
     }
 
     /**
-     * Returns the text of the first element found by the reader.
+     * Returns the accumulated text of an event type.
+     *
      * @param streamReader the XMLStreamReader
-     * @return the text of the first element
+     * @param type the type of event requested
+     * @return the text of the accumulated text for the request type
      * @throws XMLStreamException
      */
     String getText(XMLStreamReader streamReader, int type) throws XMLStreamException {
@@ -660,24 +662,6 @@ public class CatalogSupportBase {
         }
 
         return factory;
-    }
-
-    void assertNotNull(Object obj, String msg) {
-        if (obj == null) {
-            debugPrint("Test failed: " + msg);
-        } else {
-            debugPrint("Test passed: " + obj + " is not null");
-        }
-    }
-
-    void assertEquals(String expected, String actual, String msg) {
-        if (!expected.equals(actual)) {
-            debugPrint("Test failed: " + msg);
-        } else {
-            debugPrint("Test passed: ");
-        }
-        debugPrint("Expected: " + expected);
-        debugPrint("Actual: " + actual);
     }
 
     void fail(String msg) {

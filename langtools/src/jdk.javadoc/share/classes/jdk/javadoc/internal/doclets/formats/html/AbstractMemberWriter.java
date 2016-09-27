@@ -424,12 +424,15 @@ public abstract class AbstractMemberWriter {
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             boolean altColor = true;
             for (Element member : deprmembers) {
-                HtmlTree td = HtmlTree.TD(HtmlStyle.colOne, getDeprecatedLink(member));
+                HtmlTree thRow = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, getDeprecatedLink(member));
+                HtmlTree tr = HtmlTree.TR(thRow);
+                HtmlTree td = new HtmlTree(HtmlTag.TD);
+                td.addStyle(HtmlStyle.colLast);
                 List<? extends DocTree> deprTrees = utils.getBlockTags(member, DocTree.Kind.DEPRECATED);
                 if (!deprTrees.isEmpty()) {
                     writer.addInlineDeprecatedComment(member, deprTrees.get(0), td);
                 }
-                HtmlTree tr = HtmlTree.TR(td);
+                tr.addContent(td);
                 tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
                 altColor = !altColor;
                 tbody.addContent(tr);
@@ -477,8 +480,9 @@ public abstract class AbstractMemberWriter {
                 tdFirst.addStyle(HtmlStyle.colFirst);
                 writer.addSummaryType(this, element, tdFirst);
                 tr.addContent(tdFirst);
-                HtmlTree tdLast = new HtmlTree(HtmlTag.TD);
-                tdLast.addStyle(HtmlStyle.colLast);
+                HtmlTree thType = new HtmlTree(HtmlTag.TH);
+                thType.addStyle(HtmlStyle.colSecond);
+                thType.addAttr(HtmlAttr.SCOPE, "row");
                 if (te != null
                         && !utils.isConstructor(element)
                         && !utils.isClass(element)
@@ -487,14 +491,17 @@ public abstract class AbstractMemberWriter {
                     HtmlTree name = new HtmlTree(HtmlTag.SPAN);
                     name.addStyle(HtmlStyle.typeNameLabel);
                     name.addContent(name(te) + ".");
-                    tdLast.addContent(name);
+                    thType.addContent(name);
                 }
                 addSummaryLink(utils.isClass(element) || utils.isInterface(element)
                         ? LinkInfoImpl.Kind.CLASS_USE
                         : LinkInfoImpl.Kind.MEMBER,
-                    te, element, tdLast);
-                writer.addSummaryLinkComment(this, element, tdLast);
-                tr.addContent(tdLast);
+                        te, element, thType);
+                tr.addContent(thType);
+                HtmlTree tdDesc = new HtmlTree(HtmlTag.TD);
+                tdDesc.addStyle(HtmlStyle.colLast);
+                writer.addSummaryLinkComment(this, element, tdDesc);
+                tr.addContent(tdDesc);
                 tbody.addContent(tr);
             }
             table.addContent(tbody);
@@ -557,12 +564,15 @@ public abstract class AbstractMemberWriter {
         HtmlTree tdSummaryType = new HtmlTree(HtmlTag.TD);
         tdSummaryType.addStyle(HtmlStyle.colFirst);
         writer.addSummaryType(this, member, tdSummaryType);
-        HtmlTree tdSummary = new HtmlTree(HtmlTag.TD);
-        setSummaryColumnStyle(tdSummary);
-        addSummaryLink(tElement, member, tdSummary);
-        writer.addSummaryLinkComment(this, member, firstSentenceTags, tdSummary);
         HtmlTree tr = HtmlTree.TR(tdSummaryType);
-        tr.addContent(tdSummary);
+        HtmlTree thSummaryLink = new HtmlTree(HtmlTag.TH);
+        setSummaryColumnStyleAndScope(thSummaryLink);
+        addSummaryLink(tElement, member, thSummaryLink);
+        tr.addContent(thSummaryLink);
+        HtmlTree tdDesc = new HtmlTree(HtmlTag.TD);
+        tdDesc.addStyle(HtmlStyle.colLast);
+        writer.addSummaryLinkComment(this, member, firstSentenceTags, tdDesc);
+        tr.addContent(tdDesc);
         if (utils.isMethod(member) && !utils.isAnnotationType(member)) {
             int methodType = utils.isStatic(member) ? MethodTypes.STATIC.value() :
                     MethodTypes.INSTANCE.value();
@@ -612,12 +622,13 @@ public abstract class AbstractMemberWriter {
     }
 
     /**
-     * Set the style for the summary column.
+     * Set the style and scope attribute for the summary column.
      *
-     * @param tdTree the column for which the style will be set
+     * @param thTree the column for which the style and scope attribute will be set
      */
-    public void setSummaryColumnStyle(HtmlTree tdTree) {
-        tdTree.addStyle(HtmlStyle.colLast);
+    public void setSummaryColumnStyleAndScope(HtmlTree thTree) {
+        thTree.addStyle(HtmlStyle.colSecond);
+        thTree.addAttr(HtmlAttr.SCOPE, "row");
     }
 
     /**

@@ -25,8 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
-
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -34,6 +33,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -214,9 +214,8 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      */
     @Override
     public List<String> getSummaryTableHeader(Element member) {
-        List<String> header = Arrays.asList(configuration.getText("doclet.0_and_1",
-                configuration.getText("doclet.Enum_Constant"),
-                configuration.getText("doclet.Description")));
+        List<String> header = Arrays.asList(resources.getText("doclet.Enum_Constant"),
+                resources.getText("doclet.Description"));
         return header;
     }
 
@@ -259,8 +258,9 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public void setSummaryColumnStyle(HtmlTree tdTree) {
-        tdTree.addStyle(HtmlStyle.colOne);
+    public void setSummaryColumnStyleAndScope(HtmlTree thTree) {
+        thTree.addStyle(HtmlStyle.colFirst);
+        thTree.addAttr(HtmlAttr.SCOPE, "row");
     }
 
     /**

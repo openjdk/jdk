@@ -186,6 +186,6 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 
 // Inlining support
 #define NOINLINE
-#define ALWAYSINLINE __attribute__((always_inline))
+#define ALWAYSINLINE inline __attribute__((always_inline))
 
 #endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_XLC_HPP

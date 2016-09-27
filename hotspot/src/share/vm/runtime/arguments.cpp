@@ -1308,35 +1308,13 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
   return true;
 }
 
-// sets or adds a module name to the jdk.module.addmods property
-bool Arguments::append_to_addmods_property(const char* module_name) {
-  const char* key = "jdk.module.addmods";
-  const char* old_value = Arguments::get_property(key);
-  size_t buf_len = strlen(key) + strlen(module_name) + 2;
-  if (old_value != NULL) {
-    buf_len += strlen(old_value) + 1;
-  }
-  char* new_value = AllocateHeap(buf_len, mtArguments);
-  if (new_value == NULL) {
-    return false;
-  }
-  if (old_value == NULL) {
-    jio_snprintf(new_value, buf_len, "%s=%s", key, module_name);
-  } else {
-    jio_snprintf(new_value, buf_len, "%s=%s,%s", key, old_value, module_name);
-  }
-  bool added = add_property(new_value, UnwriteableProperty, InternalProperty);
-  FreeHeap(new_value);
-  return added;
-}
-
 #if INCLUDE_CDS
 void Arguments::check_unsupported_dumping_properties() {
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
   const char* unsupported_properties[5] = { "jdk.module.main",
                                            "jdk.module.path",
                                            "jdk.module.upgrade.path",
-                                           "jdk.module.addmods",
+                                           "jdk.module.addmods.0",
                                            "jdk.module.limitmods" };
   const char* unsupported_options[5] = { "-m",
                                         "--module-path",
@@ -1687,11 +1665,6 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     CompactibleFreeListSpaceLAB::modify_initialization(OldPLABSize, OldPLABWeight);
   }
 
-  if (!ClassUnloading) {
-    FLAG_SET_CMDLINE(bool, CMSClassUnloadingEnabled, false);
-    FLAG_SET_CMDLINE(bool, ExplicitGCInvokesConcurrentAndUnloadsClasses, false);
-  }
-
   log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
 }
 #endif // INCLUDE_ALL_GCS
@@ -2018,6 +1991,13 @@ void Arguments::set_gc_specific_flags() {
   if (MinHeapFreeRatio == 100) {
     // Keeping the heap 100% free is hard ;-) so limit it to 99%.
     FLAG_SET_ERGO(uintx, MinHeapFreeRatio, 99);
+  }
+
+  // If class unloading is disabled, also disable concurrent class unloading.
+  if (!ClassUnloading) {
+    FLAG_SET_CMDLINE(bool, CMSClassUnloadingEnabled, false);
+    FLAG_SET_CMDLINE(bool, ClassUnloadingWithConcurrentMark, false);
+    FLAG_SET_CMDLINE(bool, ExplicitGCInvokesConcurrentAndUnloadsClasses, false);
   }
 #endif // INCLUDE_ALL_GCS
 }
@@ -2566,8 +2546,8 @@ bool Arguments::parse_uintx(const char* value,
 
 unsigned int addreads_count = 0;
 unsigned int addexports_count = 0;
+unsigned int addmods_count = 0;
 unsigned int patch_mod_count = 0;
-const char* add_modules_value = NULL;
 
 bool Arguments::create_property(const char* prop_name, const char* prop_value, PropertyInternal internal) {
   size_t prop_len = strlen(prop_name) + strlen(prop_value) + 2;
@@ -2821,7 +2801,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_ENOMEM;
       }
     } else if (match_option(option, "--add-modules=", &tail)) {
-      add_modules_value = tail;
+      if (!create_numbered_property("jdk.module.addmods", tail, addmods_count++)) {
+        return JNI_ENOMEM;
+      }
     } else if (match_option(option, "--limit-modules=", &tail)) {
       if (!create_property("jdk.module.limitmods", tail, InternalProperty)) {
         return JNI_ENOMEM;
@@ -2873,7 +2855,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         char *options = strcpy(NEW_C_HEAP_ARRAY(char, strlen(tail) + 1, mtArguments), tail);
         add_init_agent("instrument", options, false);
         // java agents need module java.instrument
-        if (!Arguments::append_to_addmods_property("java.instrument")) {
+        if (!create_numbered_property("jdk.module.addmods", "java.instrument", addmods_count++)) {
           return JNI_ENOMEM;
         }
       }
@@ -3149,7 +3131,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           return JNI_EINVAL;
         }
         // management agent in module java.management
-        if (!Arguments::append_to_addmods_property("java.management")) {
+        if (!create_numbered_property("jdk.module.addmods", "java.management", addmods_count++)) {
           return JNI_ENOMEM;
         }
 #else
@@ -3560,15 +3542,6 @@ jint Arguments::finalize_vm_init_args() {
     return JNI_ERR;
   }
 
-  // Append the value of the last --add-modules option specified on the command line.
-  // This needs to be done here, to prevent overwriting possible values written
-  // to the jdk.module.addmods property by -javaagent and other options.
-  if (add_modules_value != NULL) {
-    if (!append_to_addmods_property(add_modules_value)) {
-      return JNI_ENOMEM;
-    }
-  }
-
   // This must be done after all arguments have been processed.
   // java_compiler() true means set to "NONE" or empty.
   if (java_compiler() && !xdebug_mode()) {
@@ -3617,7 +3590,8 @@ jint Arguments::finalize_vm_init_args() {
 #endif
 
 #if INCLUDE_JVMCI
-  if (EnableJVMCI && !append_to_addmods_property("jdk.vm.ci")) {
+  if (EnableJVMCI &&
+      !create_numbered_property("jdk.module.addmods", "jdk.vm.ci", addmods_count++)) {
     return JNI_ENOMEM;
   }
 #endif

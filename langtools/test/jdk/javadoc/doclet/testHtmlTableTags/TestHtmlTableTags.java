@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      6786688 8008164
+ * @bug      6786688 8008164 8162363
  * @summary  HTML tables should have table summary, caption and table headers.
  * @author   Bhavesh Patel
  * @library  ../lib
@@ -282,25 +282,32 @@ public class TestHtmlTableTags extends JavadocTester {
         // Class documentation
         checkOutput("pkg1/C1.html", true,
                 "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Field and Description</th>",
+                + "<th class=\"colSecond\" scope=\"col\">Field</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>",
                 "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Method and Description</th>");
+                + "<th class=\"colSecond\" scope=\"col\">Method</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>");
 
         checkOutput("pkg2/C2.html", true,
                 "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Class and Description</th>",
-                "<th class=\"colOne\" scope=\"col\">Constructor and Description</th>");
+                + "<th class=\"colSecond\" scope=\"col\">Class</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>",
+                "<th class=\"colFirst\" scope=\"col\">Constructor</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>");
 
         checkOutput("pkg2/C2.ModalExclusionType.html", true,
-                "<th class=\"colOne\" scope=\"col\">Enum Constant and Description</th>");
+                "<th class=\"colFirst\" scope=\"col\">Enum Constant</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>");
 
         checkOutput("pkg2/C3.html", true,
                 "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Required Element and Description</th>");
+                + "<th class=\"colSecond\" scope=\"col\">Required Element</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>");
 
         checkOutput("pkg2/C4.html", true,
                 "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Optional Element and Description</th>");
+                + "<th class=\"colSecond\" scope=\"col\">Optional Element</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>");
 
         // Class use documentation
         checkOutput("pkg1/class-use/I1.html", true,
@@ -309,43 +316,52 @@ public class TestHtmlTableTags extends JavadocTester {
 
         checkOutput("pkg1/class-use/C1.html", true,
                 "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Field and Description</th>",
+                + "<th class=\"colSecond\" scope=\"col\">Field</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>",
                 "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Method and Description</th>");
+                + "<th class=\"colSecond\" scope=\"col\">Method</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>");
 
         checkOutput("pkg2/class-use/C2.html", true,
                 "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Field and Description</th>",
+                + "<th class=\"colSecond\" scope=\"col\">Field</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>",
                 "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Method and Description</th>");
+                + "<th class=\"colSecond\" scope=\"col\">Method</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
                 "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>",
                 "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Method and Description</th>");
+                + "<th class=\"colSecond\" scope=\"col\">Method</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>");
 
         // Package use documentation
         checkOutput("pkg1/package-use.html", true,
                 "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>",
-                "<th class=\"colOne\" scope=\"col\">Class and Description</th>");
+                "<th class=\"colFirst\" scope=\"col\">Class</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>");
 
         checkOutput("pkg2/package-use.html", true,
                 "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>",
-                "<th class=\"colOne\" scope=\"col\">Class and Description</th>");
+                "<th class=\"colFirst\" scope=\"col\">Class</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>");
 
         // Deprecated
         checkOutput("deprecated-list.html", true,
-                "<th class=\"colOne\" scope=\"col\">Field and Description</th>",
-                "<th class=\"colOne\" scope=\"col\">Method and Description</th>");
+                "<th class=\"colFirst\" scope=\"col\">Field</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>",
+                "<th class=\"colFirst\" scope=\"col\">Method</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>");
 
         // Constant values
         checkOutput("constant-values.html", true,
                 "<th class=\"colFirst\" scope=\"col\">"
                 + "Modifier and Type</th>\n"
-                + "<th"
+                + "<th class=\"colSecond\""
                 + " scope=\"col\">Constant Field</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Value</th>");
 

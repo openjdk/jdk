@@ -1349,17 +1349,23 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
         force_unwind ? NULL : nm->handler_for_exception_and_pc(exception, pc);
 
       if (handler_address == NULL) {
-        Handle original_exception(thread, exception());
-        handler_address = SharedRuntime::compute_compiled_exc_handler(nm, pc, exception, force_unwind, true);
+        bool recursive_exception = false;
+        handler_address = SharedRuntime::compute_compiled_exc_handler(nm, pc, exception, force_unwind, true, recursive_exception);
         assert (handler_address != NULL, "must have compiled handler");
         // Update the exception cache only when the unwind was not forced
         // and there didn't happen another exception during the computation of the
-        // compiled exception handler.
-        if (!force_unwind && original_exception() == exception()) {
+        // compiled exception handler. Checking for exception oop equality is not
+        // sufficient because some exceptions are pre-allocated and reused.
+        if (!force_unwind && !recursive_exception) {
           nm->add_handler_for_exception_and_pc(exception,pc,handler_address);
         }
       } else {
-        assert(handler_address == SharedRuntime::compute_compiled_exc_handler(nm, pc, exception, force_unwind, true), "Must be the same");
+#ifdef ASSERT
+        bool recursive_exception = false;
+        address computed_address = SharedRuntime::compute_compiled_exc_handler(nm, pc, exception, force_unwind, true, recursive_exception);
+        vmassert(recursive_exception || (handler_address == computed_address), "Handler address inconsistency: " PTR_FORMAT " != " PTR_FORMAT,
+                 p2i(handler_address), p2i(computed_address));
+#endif
       }
     }
 

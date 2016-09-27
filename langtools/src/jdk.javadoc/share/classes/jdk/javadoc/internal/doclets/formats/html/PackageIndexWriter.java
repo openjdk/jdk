@@ -151,11 +151,11 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
             if (!pkg.isUnnamed()) {
                 if (!(configuration.nodeprecated && utils.isDeprecated(pkg))) {
                     Content packageLinkContent = getPackageLink(pkg, getPackageName(pkg));
-                    Content tdPackage = HtmlTree.TD(HtmlStyle.colFirst, packageLinkContent);
+                    Content thPackage = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, packageLinkContent);
                     HtmlTree tdSummary = new HtmlTree(HtmlTag.TD);
                     tdSummary.addStyle(HtmlStyle.colLast);
                     addSummaryComment(pkg, tdSummary);
-                    HtmlTree tr = HtmlTree.TR(tdPackage);
+                    HtmlTree tr = HtmlTree.TR(thPackage);
                     tr.addContent(tdSummary);
                     tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
                     tbody.addContent(tr);

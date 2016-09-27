@@ -79,7 +79,8 @@ public final class ImageHeader {
         Objects.requireNonNull(buffer);
 
         if (buffer.capacity() != HEADER_SLOTS) {
-            throw new InternalError("jimage header not the correct size");
+            throw new InternalError(
+                "jimage header not the correct size: " + buffer.capacity());
         }
 
         int magic = buffer.get(0);

@@ -917,8 +917,15 @@ static char* describe_thr_create_attributes(char* buf, size_t buflen,
   return buf;
 }
 
+// return default stack size for thr_type
+size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
+  // default stack size when not specified by caller is 1M (2M for LP64)
+  size_t s = (BytesPerWord >> 2) * K * K;
+  return s;
+}
+
 bool os::create_thread(Thread* thread, ThreadType thr_type,
-                       size_t stack_size) {
+                       size_t req_stack_size) {
   // Allocate the OSThread object
   OSThread* osthread = new OSThread(NULL, NULL);
   if (osthread == NULL) {
@@ -953,31 +960,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     tty->print_cr("In create_thread, creating a %s thread\n", thrtyp);
   }
 
-  // Calculate stack size if it's not specified by caller.
-  if (stack_size == 0) {
-    // The default stack size 1M (2M for LP64).
-    stack_size = (BytesPerWord >> 2) * K * K;
-
-    switch (thr_type) {
-    case os::java_thread:
-      // Java threads use ThreadStackSize which default value can be changed with the flag -Xss
-      if (JavaThread::stack_size_at_create() > 0) stack_size = JavaThread::stack_size_at_create();
-      break;
-    case os::compiler_thread:
-      if (CompilerThreadStackSize > 0) {
-        stack_size = (size_t)(CompilerThreadStackSize * K);
-        break;
-      } // else fall through:
-        // use VMThreadStackSize if CompilerThreadStackSize is not defined
-    case os::vm_thread:
-    case os::pgc_thread:
-    case os::cgc_thread:
-    case os::watcher_thread:
-      if (VMThreadStackSize > 0) stack_size = (size_t)(VMThreadStackSize * K);
-      break;
-    }
-  }
-  stack_size = MAX2(stack_size, os::Solaris::min_stack_allowed);
+  // calculate stack size if it's not specified by caller
+  size_t stack_size = os::Posix::get_initial_stack_size(thr_type, req_stack_size);
 
   // Initial state is ALLOCATED but not INITIALIZED
   osthread->set_state(ALLOCATED);
@@ -4400,7 +4384,12 @@ void os::init(void) {
   // Constant minimum stack size allowed. It must be at least
   // the minimum of what the OS supports (thr_min_stack()), and
   // enough to allow the thread to get to user bytecode execution.
-  Solaris::min_stack_allowed = MAX2(thr_min_stack(), Solaris::min_stack_allowed);
+  Posix::_compiler_thread_min_stack_allowed = MAX2(thr_min_stack(),
+                                                   Posix::_compiler_thread_min_stack_allowed);
+  Posix::_java_thread_min_stack_allowed = MAX2(thr_min_stack(),
+                                               Posix::_java_thread_min_stack_allowed);
+  Posix::_vm_internal_thread_min_stack_allowed = MAX2(thr_min_stack(),
+                                                      Posix::_vm_internal_thread_min_stack_allowed);
 
   // dynamic lookup of functions that may not be available in our lowest
   // supported Solaris release
@@ -4445,46 +4434,10 @@ jint os::init_2(void) {
     log_info(os)("Memory Serialize Page address: " INTPTR_FORMAT, p2i(mem_serialize_page));
   }
 
-  // Check minimum allowable stack size for thread creation and to initialize
-  // the java system classes, including StackOverflowError - depends on page
-  // size.  Add two 4K pages for compiler2 recursion in main thread.
-  // Add in 4*BytesPerWord 4K pages to account for VM stack during
-  // class initialization depending on 32 or 64 bit VM.
-  os::Solaris::min_stack_allowed = MAX2(os::Solaris::min_stack_allowed,
-                                        JavaThread::stack_guard_zone_size() +
-                                        JavaThread::stack_shadow_zone_size() +
-                                        (4*BytesPerWord COMPILER2_PRESENT(+2)) * 4 * K);
-
-  os::Solaris::min_stack_allowed = align_size_up(os::Solaris::min_stack_allowed, os::vm_page_size());
-
-  size_t threadStackSizeInBytes = ThreadStackSize * K;
-  if (threadStackSizeInBytes != 0 &&
-      threadStackSizeInBytes < os::Solaris::min_stack_allowed) {
-    tty->print_cr("\nThe stack size specified is too small, Specify at least %dk",
-                  os::Solaris::min_stack_allowed/K);
+  // Check and sets minimum stack sizes against command line options
+  if (Posix::set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
-
-  // For 64kbps there will be a 64kb page size, which makes
-  // the usable default stack size quite a bit less.  Increase the
-  // stack for 64kb (or any > than 8kb) pages, this increases
-  // virtual memory fragmentation (since we're not creating the
-  // stack on a power of 2 boundary.  The real fix for this
-  // should be to fix the guard page mechanism.
-
-  if (vm_page_size() > 8*K) {
-    threadStackSizeInBytes = (threadStackSizeInBytes != 0)
-       ? threadStackSizeInBytes +
-         JavaThread::stack_red_zone_size() +
-         JavaThread::stack_yellow_zone_size()
-       : 0;
-    ThreadStackSize = threadStackSizeInBytes/K;
-  }
-
-  // Make the stack size a multiple of the page size so that
-  // the yellow/red zones can be guarded.
-  JavaThread::set_stack_size_at_create(round_to(threadStackSizeInBytes,
-                                                vm_page_size()));
 
   Solaris::libthread_init();
 
