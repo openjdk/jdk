@@ -499,6 +499,8 @@ ping4(JNIEnv *env,
             case ERROR_REQUEST_ABORTED:
             case ERROR_INCORRECT_ADDRESS:
             case ERROR_HOST_DOWN:
+            case ERROR_INVALID_COMPUTERNAME:
+            case ERROR_INVALID_NETNAME:
             case WSAEHOSTUNREACH:   /* Host Unreachable */
             case WSAENETUNREACH:    /* Network Unreachable */
             case WSAENETDOWN:       /* Network is down */
