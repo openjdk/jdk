@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,36 +29,32 @@ import java.awt.Font;
 import java.awt.MenuComponent;
 import java.awt.peer.MenuComponentPeer;
 
-public abstract class CMenuComponent implements MenuComponentPeer {
+abstract class CMenuComponent extends CFRetainedResource
+        implements MenuComponentPeer {
 
-    private MenuComponent target;
-    private long modelPtr;
+    private final MenuComponent target;
 
-    CMenuComponent(MenuComponent target) {
+    CMenuComponent(final MenuComponent target) {
+        super(0, true);
         this.target = target;
-        this.modelPtr = createModel();
+        setPtr(createModel());
     }
 
-    MenuComponent getTarget() {
+    final MenuComponent getTarget() {
         return target;
     }
 
-    public long getModel() {
-        return modelPtr;
-    }
+    abstract long createModel();
 
-    protected abstract long createModel();
-
-    public void dispose() {
+    @Override
+    public final void dispose() {
+        super.dispose();
         LWCToolkit.targetDisposedPeer(target, this);
-        nativeDispose(modelPtr);
-        target = null;
     }
-
-    private native void nativeDispose(long modelPtr);
 
     // 1.5 peer method
-    public void setFont(Font f) {
+    @Override
+    public final void setFont(final Font f) {
         // no-op, as we don't currently support menu fonts
         // c.f. radar 4032912
     }

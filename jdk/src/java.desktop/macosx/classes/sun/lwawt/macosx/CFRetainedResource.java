@@ -23,7 +23,6 @@
  * questions.
  */
 
-
 package sun.lwawt.macosx;
 
 /**
@@ -34,6 +33,7 @@ public class CFRetainedResource {
     private static native void nativeCFRelease(final long ptr, final boolean disposeOnAppKitThread);
 
     private final boolean disposeOnAppKitThread;
+    // TODO this pointer should be private and accessed via CFNativeAction class
     protected volatile long ptr;
 
     /**
@@ -70,8 +70,72 @@ public class CFRetainedResource {
         nativeCFRelease(oldPtr, disposeOnAppKitThread); // perform outside of the synchronized block
     }
 
+    /**
+     * The interface which allows to execute some native operations with
+     * assumption that the native pointer will be valid till the end.
+     */
+    public interface CFNativeAction {
+
+        /**
+         * The native operation should be called from this method.
+         *
+         * @param  ptr the pointer to the native data
+         */
+        void run(long ptr);
+    }
+
+    /**
+     * The interface which allows to execute some native operations and get a
+     * result with assumption that the native pointer will be valid till the
+     * end.
+     */
+    interface CFNativeActionGet {
+
+        /**
+         * The native operation should be called from this method.
+         *
+         * @param  ptr the pointer to the native data
+         * @return result of the native operation
+         */
+        long run(long ptr);
+    }
+
+    /**
+     * This is utility method which should be used instead of the direct access
+     * to the {@link #ptr}, because this method guaranteed that the pointer will
+     * not be zero and will be valid till the end of the operation.It is highly
+     * recomended to not use any external lock in action. If the current
+     * {@link #ptr} is {@code 0} then action will be ignored.
+     *
+     * @param  action The native operation
+     */
+    public final synchronized void execute(final CFNativeAction action) {
+        if (ptr != 0) {
+            action.run(ptr);
+        }
+    }
+
+    /**
+     * This is utility method which should be used instead of the direct access
+     * to the {@link #ptr}, because this method guaranteed that the pointer will
+     * not be zero and will be valid till the end of the operation. It is highly
+     * recomended to not use any external lock in action. If the current
+     * {@link #ptr} is {@code 0} then action will be ignored and {@code} is
+     * returned.
+     *
+     * @param  action the native operation
+     * @return result of the native operation, usually the native pointer to
+     *         some other data
+     */
+    final synchronized long executeGet(final CFNativeActionGet action) {
+        if (ptr != 0) {
+            return action.run(ptr);
+        }
+        return 0;
+    }
+
     @Override
-    protected void finalize() throws Throwable {
+    protected final void finalize() throws Throwable {
         dispose();
     }
 }
