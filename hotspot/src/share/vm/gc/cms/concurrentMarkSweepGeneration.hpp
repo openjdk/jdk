@@ -540,7 +540,7 @@ class CMSCollector: public CHeapObj<mtGC> {
 
   // Overflow list of grey objects, threaded through mark-word
   // Manipulated with CAS in the parallel/multi-threaded case.
-  oop _overflow_list;
+  oopDesc* volatile _overflow_list;
   // The following array-pair keeps track of mark words
   // displaced for accommodating overflow list above.
   // This code will likely be revisited under RFE#4922830.
