@@ -40,6 +40,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -133,11 +134,14 @@ public class MultiReleaseJarAPI {
         testCustomMultiReleaseValue(value, Map.of(), expected);
     }
 
+    private static final AtomicInteger JAR_COUNT = new AtomicInteger(0);
+
     private void testCustomMultiReleaseValue(String value,
             Map<String, String> extraAttributes, boolean expected)
             throws Exception {
-        creator.buildCustomMultiReleaseJar("custom-mr.jar", value, extraAttributes);
-        File custom = new File(userdir, "custom-mr.jar");
+        String fileName = "custom-mr" + JAR_COUNT.incrementAndGet() + ".jar";
+        creator.buildCustomMultiReleaseJar(fileName, value, extraAttributes);
+        File custom = new File(userdir, fileName);
         try (JarFile jf = new JarFile(custom, true, ZipFile.OPEN_READ, Runtime.version())) {
             Assert.assertEquals(jf.isMultiRelease(), expected);
         }
