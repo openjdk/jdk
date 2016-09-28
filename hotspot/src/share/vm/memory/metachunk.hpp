@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ class Metabase VALUE_OBJ_CLASS_SPEC {
 //            +--------------+ <- bottom --+       --+
 
 class Metachunk : public Metabase<Metachunk> {
-  friend class TestMetachunk;
+  friend class MetachunkTest;
   // The VirtualSpaceNode containing this chunk.
   VirtualSpaceNode* _container;
 
