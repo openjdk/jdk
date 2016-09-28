@@ -112,31 +112,35 @@ public class SASymbolTableTestAgent extends Tool {
 
     public void run() {
         System.out.println("SASymbolTableTestAgent: starting");
-        VM vm = VM.getVM();
-        SymbolTable table = vm.getSymbolTable();
+        try {
+            VM vm = VM.getVM();
+            SymbolTable table = vm.getSymbolTable();
 
-        // (a) These are names that are likely to exist in the symbol table
-        //     of a JVM after start-up. They were taken from vmSymbols.hpp
-        //     during the middle of JDK9 development.
-        //
-        //     The purpose is not to check that each name must exist (a future
-        //     version of JDK may not preload some of the classes).
-        //
-        //     The purpose of this loops is to ensure that we check a lot of symbols,
-        //     so we will (most likely) hit on both VALUE_ONLY_BUCKET_TYPE and normal bucket type
-        //     in CompactHashTable.probe().
-        for (String n : commonNames) {
-            Symbol s = table.probe(n);
-            System.out.format("%-40s = %s\n", n, s);
-        }
+            // (a) These are names that are likely to exist in the symbol table
+            //     of a JVM after start-up. They were taken from vmSymbols.hpp
+            //     during the middle of JDK9 development.
+            //
+            //     The purpose is not to check that each name must exist (a future
+            //     version of JDK may not preload some of the classes).
+            //
+            //     The purpose of this loops is to ensure that we check a lot of symbols,
+            //     so we will (most likely) hit on both VALUE_ONLY_BUCKET_TYPE and normal bucket type
+            //     in CompactHashTable.probe().
+            for (String n : commonNames) {
+                Symbol s = table.probe(n);
+                System.out.format("%-40s = %s\n", n, s);
+            }
 
-        System.out.println("======================================================================");
+            System.out.println("======================================================================");
 
-        // (b) Also test a few strings that are known to not exist in the table. This will
-        //     both the compact table (if it exists) and the regular table to be walked.
-        for (String n : badNames) {
-            Symbol s = table.probe(n);
-            System.out.format("%-40s = %s\n", n, s);
+            // (b) Also test a few strings that are known to not exist in the table. This will
+            //     both the compact table (if it exists) and the regular table to be walked.
+            for (String n : badNames) {
+                Symbol s = table.probe(n);
+                System.out.format("%-40s = %s\n", n, s);
+            }
+        } catch (NullPointerException e) {
+            System.out.println("connected too early -- please try again");
         }
     }
 }
