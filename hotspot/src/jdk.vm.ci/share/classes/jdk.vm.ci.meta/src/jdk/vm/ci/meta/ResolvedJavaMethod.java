@@ -26,7 +26,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 
 /**
@@ -72,14 +71,6 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      */
     int getMaxStackSize();
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Only the {@linkplain Modifier#methodModifiers() method flags} specified in the JVM
-     * specification will be included in the returned mask.
-     */
-    int getModifiers();
-
     default boolean isFinal() {
         return ModifiersProvider.super.isFinalFlagSet();
     }
@@ -88,9 +79,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      * Determines if this method is a synthetic method as defined by the Java Language
      * Specification.
      */
-    default boolean isSynthetic() {
-        return (SYNTHETIC & getModifiers()) == SYNTHETIC;
-    }
+    boolean isSynthetic();
 
     /**
      * Checks that the method is a
@@ -99,9 +88,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      *
      * @return whether the method is a varargs method
      */
-    default boolean isVarArgs() {
-        return (VARARGS & getModifiers()) == VARARGS;
-    }
+    boolean isVarArgs();
 
     /**
      * Checks that the method is a
@@ -110,9 +97,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      *
      * @return whether the method is a bridge method
      */
-    default boolean isBridge() {
-        return (BRIDGE & getModifiers()) == BRIDGE;
-    }
+    boolean isBridge();
 
     /**
      * Returns {@code true} if this method is a default method; returns {@code false} otherwise.
@@ -226,18 +211,6 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      * variable table.
      */
     LocalVariableTable getLocalVariableTable();
-
-    /**
-     * Invokes the underlying method represented by this object, on the specified object with the
-     * specified parameters. This method is similar to a reflective method invocation by
-     * {@link Method#invoke}.
-     *
-     * @param receiver The receiver for the invocation, or {@code null} if it is a static method.
-     * @param arguments The arguments for the invocation.
-     * @return The value returned by the method invocation, or {@code null} if the return type is
-     *         {@code void}.
-     */
-    JavaConstant invoke(JavaConstant receiver, JavaConstant[] arguments);
 
     /**
      * Gets the encoding of (that is, a constant representing the value of) this method.

@@ -3147,6 +3147,24 @@ void MacroAssembler::fremr(Register tmp) {
   fpop();
 }
 
+// dst = c = a * b + c
+void MacroAssembler::fmad(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c) {
+  Assembler::vfmadd231sd(c, a, b);
+  if (dst != c) {
+    movdbl(dst, c);
+  }
+}
+
+// dst = c = a * b + c
+void MacroAssembler::fmaf(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c) {
+  Assembler::vfmadd231ss(c, a, b);
+  if (dst != c) {
+    movflt(dst, c);
+  }
+}
+
+
+
 
 void MacroAssembler::incrementl(AddressLiteral dst) {
   if (reachable(dst)) {

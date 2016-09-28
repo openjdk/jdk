@@ -1860,6 +1860,8 @@ private:
   void vdivsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vdivss(XMMRegister dst, XMMRegister nds, Address src);
   void vdivss(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vfmadd231sd(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vfmadd231ss(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vmulsd(XMMRegister dst, XMMRegister nds, Address src);
   void vmulsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vmulss(XMMRegister dst, XMMRegister nds, Address src);
