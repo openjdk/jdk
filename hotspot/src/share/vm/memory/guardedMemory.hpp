@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,7 @@
  */
 class GuardedMemory : StackObj { // Wrapper on stack
 
+  friend class GuardedMemoryTest;
   // Private inner classes for memory layout...
 
 protected:
@@ -317,10 +318,6 @@ protected:
    */
   static bool free_copy(void* p);
 
-  // Testing...
-#ifndef PRODUCT
-  static void test_guarded_memory(void);
-#endif
 }; // GuardedMemory
 
 #endif // SHARE_VM_MEMORY_GUARDEDMEMORY_HPP

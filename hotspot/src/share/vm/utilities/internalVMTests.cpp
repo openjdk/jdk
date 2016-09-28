@@ -53,7 +53,6 @@ void InternalVMTests::run() {
   run_unit_test(GCTimer_test);
   run_unit_test(CollectedHeap_test);
   run_unit_test(QuickSort_test);
-  run_unit_test(GuardedMemory_test);
   run_unit_test(TestNewSize_test);
   run_unit_test(TestOldSize_test);
   run_unit_test(TestBitMap_test);
