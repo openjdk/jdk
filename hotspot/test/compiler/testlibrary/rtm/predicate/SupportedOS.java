@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,15 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-package jdk.vm.ci.hotspot;
 
-import jdk.internal.misc.Unsafe;
+package compiler.testlibrary.rtm.predicate;
 
-/**
- * Package private access to the {@link Unsafe} capability.
- */
-class UnsafeAccess {
+import jdk.test.lib.Platform;
 
-    static final Unsafe UNSAFE = Unsafe.getUnsafe();
+import java.util.function.BooleanSupplier;
+
+public class SupportedOS implements BooleanSupplier {
+    @Override
+    public boolean getAsBoolean() {
+        if (Platform.isAix()) {
+            // Actually, this works since AIX 7.1.3.30, but os.version property
+            // is set to 7.1.
+            return (Platform.getOsVersionMajor()  > 7) ||
+                   (Platform.getOsVersionMajor() == 7 && Platform.getOsVersionMinor() > 1);
+
+        } else if (Platform.isLinux()) {
+            if (Platform.isPPC()) {
+                return (Platform.getOsVersionMajor()  > 4) ||
+                       (Platform.getOsVersionMajor() == 4 && Platform.getOsVersionMinor() > 1);
+            }
+        }
+        return true;
+    }
 }

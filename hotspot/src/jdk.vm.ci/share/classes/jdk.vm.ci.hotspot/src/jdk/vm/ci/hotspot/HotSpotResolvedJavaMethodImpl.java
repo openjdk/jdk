@@ -24,13 +24,15 @@ package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
+import static jdk.vm.ci.hotspot.HotSpotModifiers.BRIDGE;
+import static jdk.vm.ci.hotspot.HotSpotModifiers.SYNTHETIC;
+import static jdk.vm.ci.hotspot.HotSpotModifiers.VARARGS;
+import static jdk.vm.ci.hotspot.HotSpotModifiers.jvmMethodModifiers;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -42,13 +44,11 @@ import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.DefaultProfilingInfo;
 import jdk.vm.ci.meta.ExceptionHandler;
-import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.LineNumberTable;
 import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.LocalVariableTable;
-import jdk.vm.ci.meta.ModifiersProvider;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -210,7 +210,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public int getModifiers() {
-        return getAllModifiers() & ModifiersProvider.jvmMethodModifiers();
+        return getAllModifiers() & jvmMethodModifiers();
     }
 
     @Override
@@ -490,6 +490,19 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         return javaMethod == null ? null : javaMethod.getAnnotation(annotationClass);
     }
 
+    public boolean isBridge() {
+        return (BRIDGE & getModifiers()) != 0;
+    }
+
+    @Override
+    public boolean isSynthetic() {
+        return (SYNTHETIC & getModifiers()) != 0;
+    }
+
+    public boolean isVarArgs() {
+        return (VARARGS & getModifiers()) != 0;
+    }
+
     public boolean isDefault() {
         if (isConstructor()) {
             return false;
@@ -695,27 +708,6 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     public boolean isIntrinsicCandidate() {
         return (getFlags() & config().methodFlagsIntrinsicCandidate) != 0;
-    }
-
-    @Override
-    public JavaConstant invoke(JavaConstant receiver, JavaConstant[] arguments) {
-        assert !isConstructor();
-        Method javaMethod = (Method) toJava();
-        javaMethod.setAccessible(true);
-
-        Object[] objArguments = new Object[arguments.length];
-        for (int i = 0; i < arguments.length; i++) {
-            objArguments[i] = HotSpotObjectConstantImpl.asBoxedValue(arguments[i]);
-        }
-        Object objReceiver = receiver != null && !receiver.isNull() ? ((HotSpotObjectConstantImpl) receiver).object() : null;
-
-        try {
-            Object objResult = javaMethod.invoke(objReceiver, objArguments);
-            return javaMethod.getReturnType() == void.class ? null : HotSpotObjectConstantImpl.forBoxedValue(getSignature().getReturnKind(), objResult);
-
-        } catch (IllegalAccessException | InvocationTargetException ex) {
-            throw new IllegalArgumentException(ex);
-        }
     }
 
     /**

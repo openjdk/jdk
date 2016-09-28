@@ -2103,6 +2103,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(OverflowAddLNode, OverflowLNode)                        \
   declare_c2_type(OverflowSubLNode, OverflowLNode)                        \
   declare_c2_type(OverflowMulLNode, OverflowLNode)                        \
+  declare_c2_type(FmaDNode, Node)                                         \
+  declare_c2_type(FmaFNode, Node)                                         \
                                                                           \
   /*********************/                                                 \
   /* Adapter Blob Entries */                                              \
