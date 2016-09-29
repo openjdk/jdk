@@ -1962,12 +1962,12 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * This method is bound as the predicate in {@linkplain MethodHandles#countedLoop(MethodHandle, MethodHandle,
      * MethodHandle) counting loops}.
      *
-     * @param counter the counter parameter, passed in during loop execution.
      * @param limit the upper bound of the parameter, statically bound at loop creation time.
+     * @param counter the counter parameter, passed in during loop execution.
      *
      * @return whether the counter has reached the limit.
      */
-    static boolean countedLoopPredicate(int counter, int limit) {
+    static boolean countedLoopPredicate(int limit, int counter) {
         return counter < limit;
     }
 
@@ -1975,24 +1975,13 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * This method is bound as the step function in {@linkplain MethodHandles#countedLoop(MethodHandle, MethodHandle,
      * MethodHandle) counting loops} to increment the counter.
      *
+     * @param limit the upper bound of the loop counter (ignored).
      * @param counter the loop counter.
      *
      * @return the loop counter incremented by 1.
      */
-    static int countedLoopStep(int counter, int limit) {
+    static int countedLoopStep(int limit, int counter) {
         return counter + 1;
-    }
-
-    /**
-     * This method is bound as a filter in {@linkplain MethodHandles#countedLoop(MethodHandle, MethodHandle, MethodHandle,
-     * MethodHandle) counting loops} to pass the correct counter value to the body.
-     *
-     * @param counter the loop counter.
-     *
-     * @return the loop counter decremented by 1.
-     */
-    static int decrementCounter(int counter) {
-        return counter - 1;
     }
 
     /**
@@ -2164,12 +2153,11 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             MH_arrayIdentity         =  5,
             MH_countedLoopPred       =  6,
             MH_countedLoopStep       =  7,
-            MH_iteratePred           =  8,
-            MH_initIterator          =  9,
+            MH_initIterator          =  8,
+            MH_iteratePred           =  9,
             MH_iterateNext           = 10,
-            MH_decrementCounter      = 11,
-            MH_Array_newInstance     = 12,
-            MH_LIMIT                 = 13;
+            MH_Array_newInstance     = 11,
+            MH_LIMIT                 = 12;
 
     static MethodHandle getConstantHandle(int idx) {
         MethodHandle handle = HANDLES[idx];
@@ -2220,18 +2208,15 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 case MH_countedLoopStep:
                     return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "countedLoopStep",
                             MethodType.methodType(int.class, int.class, int.class));
-                case MH_iteratePred:
-                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "iteratePredicate",
-                            MethodType.methodType(boolean.class, Iterator.class));
                 case MH_initIterator:
                     return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "initIterator",
                             MethodType.methodType(Iterator.class, Iterable.class));
+                case MH_iteratePred:
+                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "iteratePredicate",
+                            MethodType.methodType(boolean.class, Iterator.class));
                 case MH_iterateNext:
                     return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "iterateNext",
                             MethodType.methodType(Object.class, Iterator.class));
-                case MH_decrementCounter:
-                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "decrementCounter",
-                            MethodType.methodType(int.class, int.class));
                 case MH_Array_newInstance:
                     return IMPL_LOOKUP.findStatic(Array.class, "newInstance",
                             MethodType.methodType(Object.class, Class.class, int.class));

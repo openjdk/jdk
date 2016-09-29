@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,18 +62,18 @@ Java_java_net_SocketInputStream_socketRead0(JNIEnv *env, jobject this,
                                             jobject fdObj, jbyteArray data,
                                             jint off, jint len, jint timeout)
 {
-    char *bufP;
     char BUF[MAX_BUFFER_LEN];
-    jint fd, newfd;
-    jint nread;
+    char *bufP;
+    jint fd, newfd, nread;
 
     if (IS_NULL(fdObj)) {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "socket closed");
+        JNU_ThrowByName(env, "java/net/SocketException",
+                        "Socket closed");
         return -1;
     }
     fd = (*env)->GetIntField(env, fdObj, IO_fd_fdID);
     if (fd == -1) {
-        NET_ThrowSocketException(env, "Socket closed");
+        JNU_ThrowByName(env, "java/net/SocketException", "Socket closed");
         return -1;
     }
 
@@ -103,10 +103,10 @@ Java_java_net_SocketInputStream_socketRead0(JNIEnv *env, jobject this,
 
             if (ret <= 0) {
                 if (ret == 0) {
-                    JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
+                    JNU_ThrowByName(env, "java/net/SocketTimeoutException",
                                     "Read timed out");
                 } else if (ret == -1) {
-                    JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "socket closed");
+                    JNU_ThrowByName(env, "java/net/SocketException", "socket closed");
                 }
                 if (bufP != BUF) {
                     free(bufP);
@@ -117,7 +117,7 @@ Java_java_net_SocketInputStream_socketRead0(JNIEnv *env, jobject this,
             /*check if the socket has been closed while we were in timeout*/
             newfd = (*env)->GetIntField(env, fdObj, IO_fd_fdID);
             if (newfd == -1) {
-                NET_ThrowSocketException(env, "Socket Closed");
+                JNU_ThrowByName(env, "java/net/SocketException", "Socket closed");
                 if (bufP != BUF) {
                     free(bufP);
                 }
@@ -134,11 +134,11 @@ Java_java_net_SocketInputStream_socketRead0(JNIEnv *env, jobject this,
             // Check if the socket has been closed since we last checked.
             // This could be a reason for recv failing.
             if ((*env)->GetIntField(env, fdObj, IO_fd_fdID) == -1) {
-                NET_ThrowSocketException(env, "Socket closed");
+                JNU_ThrowByName(env, "java/net/SocketException", "Socket closed");
             } else {
                 switch (WSAGetLastError()) {
                     case WSAEINTR:
-                        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+                        JNU_ThrowByName(env, "java/net/SocketException",
                             "socket closed");
                         break;
 
@@ -153,7 +153,7 @@ Java_java_net_SocketInputStream_socketRead0(JNIEnv *env, jobject this,
                         break;
 
                     case WSAETIMEDOUT :
-                        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
+                        JNU_ThrowByName(env, "java/net/SocketTimeoutException",
                                        "Read timed out");
                         break;
 

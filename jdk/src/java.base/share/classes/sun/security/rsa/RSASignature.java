@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,14 +182,15 @@ public abstract class RSASignature extends SignatureSpi {
     }
 
     // verify the data and return the result. See JCA doc
+    // should be reset to the state after engineInitVerify call.
     protected boolean engineVerify(byte[] sigBytes) throws SignatureException {
-        if (sigBytes.length != RSACore.getByteLength(publicKey)) {
-            throw new SignatureException("Signature length not correct: got " +
+        try {
+            if (sigBytes.length != RSACore.getByteLength(publicKey)) {
+                throw new SignatureException("Signature length not correct: got " +
                     sigBytes.length + " but was expecting " +
                     RSACore.getByteLength(publicKey));
-        }
-        byte[] digest = getDigestValue();
-        try {
+            }
+            byte[] digest = getDigestValue();
             byte[] decrypted = RSACore.rsa(sigBytes, publicKey);
             byte[] unpadded = padding.unpad(decrypted);
             byte[] decodedDigest = decodeSignature(digestOID, unpadded);
@@ -202,6 +203,8 @@ public abstract class RSASignature extends SignatureSpi {
             return false;
         } catch (IOException e) {
             throw new SignatureException("Signature encoding error", e);
+        } finally {
+            resetDigest();
         }
     }
 

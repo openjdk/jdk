@@ -53,12 +53,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), aix)
-  BUILD_LIBNIO_MAPFILE:=$(JDK_TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
-  BUILD_LIBNIO_EXFILES += \
-      /NativeThread.c
-  # Notice: we really need the leading slash here because otherwise every
-  # FILE_NAME in EXCLUDE_FILES will actually match any file ending in FILE_NAME
-  # (e.g. 'NativeThread.c' will also exclude 'AixNativeThread.c').
+  BUILD_LIBNIO_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
 endif
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBNIO, \

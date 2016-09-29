@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,13 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommands
   return jmm_interface->GetDiagnosticCommands(env);
 }
 
+#define EXCEPTION_CHECK_AND_FREE(x) do { \
+                                        if ((*env)->ExceptionCheck(env)) { \
+                                            free(x); \
+                                            return NULL; \
+                                        } \
+                                    } while(0)
+
 jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
                                               int num_arg) {
   int i;
@@ -59,6 +66,7 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
   dcmd_arg_info_array = (dcmdArgInfo*) malloc(num_arg * sizeof(dcmdArgInfo));
   /* According to ISO C it is perfectly legal for malloc to return zero if called with a zero argument */
   if (dcmd_arg_info_array == NULL && num_arg != 0) {
+    JNU_ThrowOutOfMemoryError(env, 0);
     return NULL;
   }
   jmm_interface->GetDiagnosticCommandArgumentsInfo(env, command,
@@ -76,14 +84,24 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
     return NULL;
   }
   for (i=0; i<num_arg; i++) {
+    jstring jname, jdesc,jtype,jdefStr;
+
+    jname = (*env)->NewStringUTF(env,dcmd_arg_info_array[i].name);
+    EXCEPTION_CHECK_AND_FREE(dcmd_arg_info_array);
+
+    jdesc = (*env)->NewStringUTF(env,dcmd_arg_info_array[i].description);
+    EXCEPTION_CHECK_AND_FREE(dcmd_arg_info_array);
+
+    jtype = (*env)->NewStringUTF(env,dcmd_arg_info_array[i].type);
+    EXCEPTION_CHECK_AND_FREE(dcmd_arg_info_array);
+
+    jdefStr = (*env)->NewStringUTF(env, dcmd_arg_info_array[i].default_string);
+    EXCEPTION_CHECK_AND_FREE(dcmd_arg_info_array);
     obj = JNU_NewObjectByName(env,
                               "com/sun/management/internal/DiagnosticCommandArgumentInfo",
                               "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZI)V",
-                              (*env)->NewStringUTF(env,dcmd_arg_info_array[i].name),
-                              (*env)->NewStringUTF(env,dcmd_arg_info_array[i].description),
-                              (*env)->NewStringUTF(env,dcmd_arg_info_array[i].type),
-                              dcmd_arg_info_array[i].default_string == NULL ? NULL:
-                              (*env)->NewStringUTF(env, dcmd_arg_info_array[i].default_string),
+                              jname, jdesc, jtype,
+                              dcmd_arg_info_array[i].default_string == NULL ? NULL: jdefStr,
                               dcmd_arg_info_array[i].mandatory,
                               dcmd_arg_info_array[i].option,
                               dcmd_arg_info_array[i].multiple,
@@ -93,6 +111,7 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
       return NULL;
     }
     (*env)->SetObjectArrayElement(env, result, i, obj);
+    EXCEPTION_CHECK_AND_FREE(dcmd_arg_info_array);
   }
   free(dcmd_arg_info_array);
   arraysCls = (*env)->FindClass(env, "java/util/Arrays");
@@ -125,6 +144,7 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
   jint ret = jmm_interface->GetOptionalSupport(env, &mos);
   jsize num_commands;
   dcmdInfo* dcmd_info_array;
+  jstring jname, jdesc, jimpact;
 
   if (commands == NULL) {
       JNU_ThrowNullPointerException(env, "Invalid String Array");
@@ -139,7 +159,6 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
 
   result = (*env)->NewObjectArray(env, num_commands, dcmdInfoCls, NULL);
   if (result == NULL) {
-      JNU_ThrowOutOfMemoryError(env, 0);
       return NULL;
   }
   if (num_commands == 0) {
@@ -159,15 +178,22 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
                                                    dcmd_info_array[i].num_arguments);
       if (args == NULL) {
           free(dcmd_info_array);
-          JNU_ThrowOutOfMemoryError(env, 0);
           return NULL;
       }
+
+      jname = (*env)->NewStringUTF(env,dcmd_info_array[i].name);
+      EXCEPTION_CHECK_AND_FREE(dcmd_info_array);
+
+      jdesc = (*env)->NewStringUTF(env,dcmd_info_array[i].description);
+      EXCEPTION_CHECK_AND_FREE(dcmd_info_array);
+
+      jimpact = (*env)->NewStringUTF(env,dcmd_info_array[i].impact);
+      EXCEPTION_CHECK_AND_FREE(dcmd_info_array);
+
       obj = JNU_NewObjectByName(env,
                                 "com/sun/management/internal/DiagnosticCommandInfo",
                                 "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/util/List;)V",
-                                (*env)->NewStringUTF(env,dcmd_info_array[i].name),
-                                (*env)->NewStringUTF(env,dcmd_info_array[i].description),
-                                (*env)->NewStringUTF(env,dcmd_info_array[i].impact),
+                                jname, jdesc, jimpact,
                                 dcmd_info_array[i].permission_class==NULL?NULL:(*env)->NewStringUTF(env,dcmd_info_array[i].permission_class),
                                 dcmd_info_array[i].permission_name==NULL?NULL:(*env)->NewStringUTF(env,dcmd_info_array[i].permission_name),
                                 dcmd_info_array[i].permission_action==NULL?NULL:(*env)->NewStringUTF(env,dcmd_info_array[i].permission_action),
@@ -175,10 +201,11 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
                                 args);
       if (obj == NULL) {
           free(dcmd_info_array);
-          JNU_ThrowOutOfMemoryError(env, 0);
           return NULL;
       }
+
       (*env)->SetObjectArrayElement(env, result, i, obj);
+      EXCEPTION_CHECK_AND_FREE(dcmd_info_array);
   }
   free(dcmd_info_array);
   return result;
