@@ -19,20 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/**
- * This class is launched in a sub-process by the main test,
- * SASymbolTableTest.java.
- *
- * This class does nothing in particular. It just sleeps for 120
- * seconds so SASymbolTableTestAgent can have a chance to examine its
- * SymbolTable. This process should be killed by the parent process
- * after SASymbolTableTestAgent has completed testing.
- */
-public class SASymbolTableTestAttachee {
-    public static void main(String args[]) throws Throwable {
-        System.out.println("SASymbolTableTestAttachee: sleeping to wait for SA tool to attach ...");
-        Thread.sleep(120 * 1000);
+package compiler.testlibrary.rtm.predicate;
+
+import jdk.test.lib.Platform;
+
+import java.util.function.BooleanSupplier;
+
+public class SupportedOS implements BooleanSupplier {
+    @Override
+    public boolean getAsBoolean() {
+        if (Platform.isAix()) {
+            // Actually, this works since AIX 7.1.3.30, but os.version property
+            // is set to 7.1.
+            return (Platform.getOsVersionMajor()  > 7) ||
+                   (Platform.getOsVersionMajor() == 7 && Platform.getOsVersionMinor() > 1);
+
+        } else if (Platform.isLinux()) {
+            if (Platform.isPPC()) {
+                return (Platform.getOsVersionMajor()  > 4) ||
+                       (Platform.getOsVersionMajor() == 4 && Platform.getOsVersionMinor() > 1);
+            }
+        }
+        return true;
     }
 }
