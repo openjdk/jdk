@@ -37,6 +37,11 @@
   #include <sys/signal.h>
   /* Also defined in net/linux_close.c */
   #define INTERRUPT_SIGNAL (__SIGRTMAX - 2)
+#elif _AIX
+  #include <pthread.h>
+  #include <sys/signal.h>
+  /* Also defined in net/aix_close.c */
+  #define INTERRUPT_SIGNAL (SIGRTMAX - 1)
 #elif __solaris__
   #include <thread.h>
   #include <signal.h>
@@ -59,7 +64,7 @@ JNIEXPORT void JNICALL
 Java_sun_nio_ch_NativeThread_init(JNIEnv *env, jclass cl)
 {
     /* Install the null handler for INTERRUPT_SIGNAL.  This might overwrite the
-     * handler previously installed by java/net/linux_close.c, but that's okay
+     * handler previously installed by <platform>_close.c, but that's okay
      * since neither handler actually does anything.  We install our own
      * handler here simply out of paranoia; ultimately the two mechanisms
      * should somehow be unified, perhaps within the VM.
