@@ -275,8 +275,6 @@ com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-
 
 java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java 8062512 generic-all
 
-java/util/Arrays/ParallelPrefix.java                            8080165,8085982 generic-all
-
 java/util/BitSet/BitSetStreamTest.java                          8079538 generic-all
 
 ############################################################################
