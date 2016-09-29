@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,8 +79,8 @@ template <MEMFLAGS F> inline BasicHashtableEntry<F>* BasicHashtable<F>::bucket(i
 
 
 template <MEMFLAGS F> inline void HashtableBucket<F>::set_entry(BasicHashtableEntry<F>* l) {
-  // Warning: Preserve store ordering.  The SystemDictionary is read
-  //          without locks.  The new SystemDictionaryEntry must be
+  // Warning: Preserve store ordering.  The PackageEntryTable, ModuleEntryTable and
+  //          SystemDictionary are read without locks.  The new entry must be
   //          complete before other threads can be allowed to see it
   //          via a store to _buckets[index].
   OrderAccess::release_store_ptr(&_entry, l);
@@ -88,8 +88,8 @@ template <MEMFLAGS F> inline void HashtableBucket<F>::set_entry(BasicHashtableEn
 
 
 template <MEMFLAGS F> inline BasicHashtableEntry<F>* HashtableBucket<F>::get_entry() const {
-  // Warning: Preserve load ordering.  The SystemDictionary is read
-  //          without locks.  The new SystemDictionaryEntry must be
+  // Warning: Preserve load ordering.  The PackageEntryTable, ModuleEntryTable and
+  //          SystemDictionary are read without locks.  The new entry must be
   //          complete before other threads can be allowed to see it
   //          via a store to _buckets[index].
   return (BasicHashtableEntry<F>*) OrderAccess::load_ptr_acquire(&_entry);

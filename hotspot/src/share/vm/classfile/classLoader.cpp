@@ -1358,7 +1358,7 @@ ClassFileStream* ClassLoader::search_module_entries(const GrowableArray<ModuleCl
   if (!Universe::is_module_initialized() &&
       !ModuleEntryTable::javabase_defined() &&
       mod_entry == NULL) {
-    mod_entry = ModuleEntryTable::javabase_module();
+    mod_entry = ModuleEntryTable::javabase_moduleEntry();
   }
 
   // The module must be a named module
@@ -1708,7 +1708,7 @@ void ClassLoader::create_javabase() {
     if (jb_module == NULL) {
       vm_exit_during_initialization("Unable to create ModuleEntry for java.base");
     }
-    ModuleEntryTable::set_javabase_module(jb_module);
+    ModuleEntryTable::set_javabase_moduleEntry(jb_module);
   }
 }
 

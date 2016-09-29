@@ -738,6 +738,7 @@ class MmapArrayAllocator : public AllStatic {
   static size_t size_for(size_t length);
 
  public:
+  static E* allocate_or_null(size_t length);
   static E* allocate(size_t length);
   static void free(E* addr, size_t length);
 };
