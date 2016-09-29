@@ -2872,6 +2872,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_writeImage
     if (setjmp(jerr->setjmp_buffer)) {
         /* If we get here, the JPEG code has signaled an error
            while writing. */
+        RELEASE_ARRAYS(env, data, (const JOCTET *)(dest->next_output_byte));
         if (!(*env)->ExceptionOccurred(env)) {
             char buffer[JMSG_LENGTH_MAX];
             (*cinfo->err->format_message) ((j_common_ptr) cinfo,
