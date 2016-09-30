@@ -21,9 +21,9 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 8159305
+ * @bug 8159305 8166127
  * @summary Tests primarily the module graph computations.
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.api
@@ -40,6 +40,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import toolbox.*;
+import toolbox.Task.Expect;
+import toolbox.Task.OutputKind;
 
 public class Modules extends ModuleTestBase {
 
@@ -54,8 +56,8 @@ public class Modules extends ModuleTestBase {
         ModuleBuilder mb = new ModuleBuilder(tb, "m1");
         mb.comment("The first module.")
                 .exports("pub")
-                .classes("package pub; /** Klass A */ public class A {}")
-                .classes("package pro; /** Klass B */ public class B {}")
+                .classes("package pub; /** Class A */ public class A {}")
+                .classes("package pro; /** Class B */ public class B {}")
                 .write(src);
         execTask("--module-source-path", src.toString(),
                  "--module", "m1");
@@ -72,15 +74,15 @@ public class Modules extends ModuleTestBase {
         mb1.comment("The first module.")
                 .exports("m1pub")
                 .requires("m2")
-                .classes("package m1pub; /** Klass A */ public class A {}")
-                .classes("package m1pro; /** Klass B */ public class B {}")
+                .classes("package m1pub; /** Class A */ public class A {}")
+                .classes("package m1pro; /** Class B */ public class B {}")
                 .write(src);
 
         ModuleBuilder mb2 = new ModuleBuilder(tb, "m2");
         mb2.comment("The second module.")
                 .exports("m2pub")
-                .classes("package m2pub; /** Klass A */ public class A {}")
-                .classes("package m2pro; /** Klass B */ public class B {}")
+                .classes("package m2pub; /** Class A */ public class A {}")
+                .classes("package m2pro; /** Class B */ public class B {}")
                 .write(src);
         execTask("--module-source-path", src.toString(),
             "--module", "m1,m2");
@@ -98,15 +100,15 @@ public class Modules extends ModuleTestBase {
         mb1.comment("The first module.")
                 .exports("m1pub")
                 .requires("m2")
-                .classes("package m1pub; /** Klass A */ public class A {}")
-                .classes("package m1pro; /** Klass B */ public class B {}")
+                .classes("package m1pub; /** Class A */ public class A {}")
+                .classes("package m1pro; /** Class B */ public class B {}")
                 .write(src);
 
         ModuleBuilder mb2 = new ModuleBuilder(tb, "m2");
         mb2.comment("The second module.")
                 .exports("m2pub")
-                .classes("package m2pub; /** Klass A */ public class A {}")
-                .classes("package m2pro; /** Klass B */ public class B {}")
+                .classes("package m2pub; /** Class A */ public class A {}")
+                .classes("package m2pro; /** Class B */ public class B {}")
                 .write(src);
         execTask("--module-source-path", src.toString(),
             "--module", "m1",
@@ -117,7 +119,268 @@ public class Modules extends ModuleTestBase {
 
     }
 
-   /**
+    @Test
+    public void testModulePathOption(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path modulePath = base.resolve("modules");
+
+        ModuleBuilder mb1 = new ModuleBuilder(tb, "m1");
+        mb1.comment("Module on module path.")
+                .exports("pkg1")
+                .classes("package pkg1; /** Class A */ public class A { }")
+                .build(modulePath);
+
+        ModuleBuilder mb2 = new ModuleBuilder(tb, "m2");
+        mb2.comment("The second module.")
+                .exports("pkg2")
+                .requires("m1")
+                .classes("package pkg2; /** Class B */ public class B { /** Field f */ public pkg1.A f; }")
+                .write(src);
+        execTask("--module-source-path", src.toString(),
+                "--module-path", modulePath.toString(),
+                "--module", "m2");
+        checkModulesSpecified("m2");
+        checkPackagesIncluded("pkg2");
+        checkMembersSelected("pkg2.B.f");
+
+        // module path option "-p"
+        execTask("--module-source-path", src.toString(),
+                "-p", modulePath.toString(),
+                "--module", "m2");
+        // no module path
+        execNegativeTask("--module-source-path", src.toString(),
+                "--module", "m2");
+        assertErrorPresent("error: module not found: m1");
+    }
+
+    @Test
+    public void testUpgradeModulePathOption(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path modulePath = base.resolve("modules");
+        Path upgradePath = base.resolve("upgrades");
+
+        ModuleBuilder mb1 = new ModuleBuilder(tb, "m1");
+        mb1.comment("Module on module path.")
+                .exports("pkg1")
+                .classes("package pkg1; /** Class A */ public class A { }")
+                .build(modulePath);
+
+        ModuleBuilder mbUpgrade = new ModuleBuilder(tb, "m1");
+        mbUpgrade.comment("Module on upgrade module path.")
+                .exports("pkg1")
+                .classes("package pkg1; /** Class C */ public class C { }")
+                .build(upgradePath);
+
+        ModuleBuilder mb2 = new ModuleBuilder(tb, "m2");
+        mb2.comment("The second module.")
+                .exports("pkg2")
+                .requires("m1")
+                .classes("package pkg2; /** Class B */ public class B { /** Field f */ public pkg1.C f; }")
+                .write(src);
+        execTask("--module-source-path", src.toString(),
+                "--module-path", modulePath.toString(),
+                "--upgrade-module-path", upgradePath.toString(),
+                "--module", "m2");
+        checkModulesSpecified("m2");
+        checkPackagesIncluded("pkg2");
+        checkMembersSelected("pkg2.B.f");
+
+        // no upgrade module path
+        execNegativeTask("--module-source-path", src.toString(),
+                "--module-path", modulePath.toString(),
+                "--module", "m2");
+        assertErrorPresent("error: cannot find symbol");
+
+        // dependency from module path
+        ModuleBuilder mb3 = new ModuleBuilder(tb, "m3");
+        mb3.comment("The third module.")
+                .exports("pkg3")
+                .requires("m1")
+                .classes("package pkg3; /** Class Z */ public class Z { /** Field f */ public pkg1.A f; }")
+                .write(src);
+        execNegativeTask("--module-source-path", src.toString(),
+                "--module-path", modulePath.toString(),
+                "--upgrade-module-path", upgradePath.toString(),
+                "--module", "m3");
+        assertErrorPresent("Z.java:1: error: cannot find symbol");
+    }
+
+    @Test
+    public void testAddModulesOption(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path modulePath = base.resolve("modules");
+
+        ModuleBuilder mb1 = new ModuleBuilder(tb, "m1");
+        mb1.comment("Module on module path.")
+                .exports("pkg1")
+                .classes("package pkg1; /** Class A */ public class A { }")
+                .build(modulePath);
+
+        ModuleBuilder mb2 = new ModuleBuilder(tb, "m2");
+        mb2.comment("The second module.")
+                .exports("pkg2")
+                .classes("package pkg2; /** @see pkg1.A */ public class B { }")
+                .write(src);
+
+        String log = new JavadocTask(tb)
+                .options("--module-source-path", src.toString(),
+                        "--module-path", modulePath.toString(),
+                        "--module", "m2")
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutput(OutputKind.DIRECT);
+        if (!log.contains("B.java:1: error: reference not found")) {
+            throw new Exception("Error not found");
+        }
+
+        new JavadocTask(tb)
+                .options("--module-source-path", src.toString(),
+                        "--module-path", modulePath.toString(),
+                        "--add-modules", "m1",
+                        "--module", "m2")
+                .run()
+                .writeAll();
+    }
+
+    @Test
+    public void testLimitModulesOption(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path modulePath = base.resolve("modules");
+
+        ModuleBuilder mb1 = new ModuleBuilder(tb, "m1");
+        mb1.comment("Module on module path.")
+                .build(modulePath);
+
+        ModuleBuilder mb2 = new ModuleBuilder(tb, "m2");
+        mb2.comment("The second module.")
+                .exports("pkg2")
+                .requires("m1")
+                .classes("package pkg2; /** Class B */ public class B { }")
+                .write(src);
+
+        execNegativeTask("--module-source-path", src.toString(),
+                "--module-path", modulePath.toString(),
+                "--limit-modules", "java.base",
+                "--module", "m2");
+        assertErrorPresent("error: module not found: m1");
+    }
+
+    @Test
+    public void testAddExportsOption(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path modulePath = base.resolve("modules");
+
+        ModuleBuilder mb1 = new ModuleBuilder(tb, "m1");
+        mb1.comment("Module on module path.")
+                .classes("package pkg1; /** Class A */ public class A { }")
+                .build(modulePath);
+
+        ModuleBuilder mb2 = new ModuleBuilder(tb, "m2");
+        mb2.comment("The second module.")
+                .exports("pkg2")
+                .requires("m1")
+                .classes("package pkg2; /** Class B */ public class B { /** Field f */ public pkg1.A f; }")
+                .write(src);
+        execTask("--module-source-path", src.toString(),
+                "--module-path", modulePath.toString(),
+                "--add-exports", "m1/pkg1=m2",
+                "--module", "m2");
+        checkModulesSpecified("m2");
+        checkPackagesIncluded("pkg2");
+        checkMembersSelected("pkg2.B.f");
+    }
+
+//    @Test @ignore JDK-8166379
+    public void testPatchModuleOption(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path modulePath = base.resolve("modules");
+        Path patchPath = base.resolve("patch");
+
+        ModuleBuilder mb1 = new ModuleBuilder(tb, "m1");
+        mb1.comment("Module on module path.")
+                .exports("pkg1")
+                .classes("package pkg1; /** Class A */ public class A { }")
+                .build(modulePath);
+
+        tb.writeJavaFiles(patchPath, "package pkg1; /** Class A */ public class A { public static int k; }");
+        new JavacTask(tb)
+                .files(patchPath.resolve("pkg1/A.java"))
+                .run();
+
+        ModuleBuilder mb2 = new ModuleBuilder(tb, "m2");
+        mb2.comment("The second module.")
+                .exports("pkg2")
+                .requires("m1")
+                .classes("package pkg2; /** Class B */ public class B { /** Field f */ public int f = pkg1.A.k; }")
+                .write(src);
+        execTask("--module-source-path", src.toString(),
+                "--patch-module", "m1=" + patchPath.toString(),
+                "--module-path", modulePath.toString(),
+                "--module", "m2");
+        checkModulesSpecified("m2");
+        checkPackagesIncluded("pkg2");
+        checkMembersSelected("pkg2.B.f");
+    }
+
+    @Test
+    public void testAddReadsOption(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path modulePath = base.resolve("modules");
+
+        ModuleBuilder mb1 = new ModuleBuilder(tb, "m1");
+        mb1.comment("Module on module path.")
+                .exports("pkg1")
+                .classes("package pkg1; /** Class A */ public class A {}")
+                .build(modulePath);
+
+        ModuleBuilder mb2 = new ModuleBuilder(tb, "m2");
+        mb2.comment("The second module.")
+                .exports("pkg2")
+                .classes("package pkg2; /** Class B */ public class B { /** Field f */ public pkg1.A f;}")
+                .write(src);
+        execTask("--module-source-path", src.toString(),
+                "--module-path", modulePath.toString(),
+                "--add-modules", "m1",
+                "--add-reads", "m2=m1",
+                "--module", "m2");
+        checkModulesSpecified("m2");
+        checkPackagesIncluded("pkg2");
+        checkMembersSelected("pkg2.B.f");
+    }
+
+    @Test
+    public void testModuleOptionsWithLegacy(Path base) throws Exception {
+        Files.createDirectory(base);
+        Path src = base.resolve("src");
+        Path classpath = base.resolve("classpath");
+        Path modulePath = base.resolve("modules");
+
+        tb.writeJavaFiles(classpath, "package pkg1; /** Class C */ public class C { }");
+        new JavacTask(tb)
+                .files(classpath.resolve("pkg1/C.java"))
+                .run();
+
+        ModuleBuilder mb = new ModuleBuilder(tb, "m1");
+        mb.comment("The first module.")
+                .exports("pub")
+                .classes("package pub; /** Class M */ public class M { }")
+                .build(modulePath);
+
+        tb.writeJavaFiles(src, "package pkg; /** Class L */ public class L { public pkg1.C f1; public pub.M f2; }");
+
+        execTask("--source-path", src.toString(),
+                "--class-path", classpath.toString(),
+                "--module-path", modulePath.toString(),
+                "--add-modules", "m1",
+                "pkg");
+        checkPackagesIncluded("pkg");
+        checkTypesIncluded("pkg.L");
+        checkMembersSelected("pkg.L.f1");
+        checkMembersSelected("pkg.L.f2");
+        assertAbsent("error", OutputKind.DIRECT);
+    }
+
+    /**
      * Tests diamond graph, inspired by javac diamond tests.
      *
      *
@@ -262,48 +525,48 @@ public class Modules extends ModuleTestBase {
         new ModuleBuilder(tb, "J")
                 .comment("The J module.")
                 .exports("openJ")
-                .classes("package openJ;  /** Klass J open. */ public class J { }")
-                .classes("package closedJ; /** Klass J closed. */ public class J  { }")
+                .classes("package openJ;  /** Class J open. */ public class J { }")
+                .classes("package closedJ; /** Class J closed. */ public class J  { }")
                 .write(src);
 
         new ModuleBuilder(tb, "L")
                 .comment("The L module.")
                 .exports("openL")
                 .requiresPublic("P")
-                .classes("package openL; /** Klass L open */ public class L { }")
-                .classes("package closedL;  /** Klass L closed */ public class L { }")
+                .classes("package openL; /** Class L open */ public class L { }")
+                .classes("package closedL;  /** Class L closed */ public class L { }")
                 .write(src);
 
         new ModuleBuilder(tb, "N")
                 .comment("The N module.")
                 .exports("openN")
                 .requiresPublic("O")
-                .classes("package openN; /** Klass N open */ public class N  { }")
-                .classes("package closedN; /** Klass N closed */ public class N { }")
+                .classes("package openN; /** Class N open */ public class N  { }")
+                .classes("package closedN; /** Class N closed */ public class N { }")
                 .write(src);
 
         new ModuleBuilder(tb, "O")
                 .comment("The O module.")
                 .exports("openO")
                 .requires("J")
-                .classes("package openO; /** Klass O open. */ public class O { openJ.J j; }")
-                .classes("package closedO;  /** Klass O closed. */ public class O { }")
+                .classes("package openO; /** Class O open. */ public class O { openJ.J j; }")
+                .classes("package closedO;  /** Class O closed. */ public class O { }")
                 .write(src);
 
         new ModuleBuilder(tb, "P")
                 .comment("The O module.")
                 .exports("openP")
                 .requires("J")
-                .classes("package openP; /** Klass O open. */ public class O { openJ.J j; }")
-                .classes("package closedP;  /** Klass O closed. */ public class O { }")
+                .classes("package openP; /** Class O open. */ public class O { openJ.J j; }")
+                .classes("package closedP;  /** Class O closed. */ public class O { }")
                 .write(src);
 
         new ModuleBuilder(tb, "Q")
                 .comment("The Q module.")
                 .exports("openQ")
                 .requires("J")
-                .classes("package openQ; /** Klass Q open. */ public class Q { openJ.J j; }")
-                .classes("package closedQ;  /** Klass Q closed. */ public class Q { }")
+                .classes("package openQ; /** Class Q open. */ public class Q { openJ.J j; }")
+                .classes("package closedQ;  /** Class Q closed. */ public class Q { }")
                 .write(src);
 
     }

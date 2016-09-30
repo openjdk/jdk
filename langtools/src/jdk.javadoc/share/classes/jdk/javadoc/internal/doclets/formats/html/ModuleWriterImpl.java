@@ -294,11 +294,11 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     public void addRequiresList(ModuleElement.RequiresDirective direct, Content tbody, boolean altColor) {
         ModuleElement m = direct.getDependency();
         Content moduleLinkContent = getModuleLink(m, new StringContent(m.getQualifiedName().toString()));
-        Content tdPackage = HtmlTree.TD(HtmlStyle.colFirst, moduleLinkContent);
+        Content thPackage = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, moduleLinkContent);
         HtmlTree tdSummary = new HtmlTree(HtmlTag.TD);
         tdSummary.addStyle(HtmlStyle.colLast);
         addSummaryComment(m, tdSummary);
-        HtmlTree tr = HtmlTree.TR(tdPackage);
+        HtmlTree tr = HtmlTree.TR(thPackage);
         tr.addContent(tdSummary);
         tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
         tbody.addContent(tr);
@@ -347,27 +347,27 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     public void addExportedPackagesList(ModuleElement.ExportsDirective direct, Content tbody, boolean altColor) {
         PackageElement pkg = direct.getPackage();
         Content pkgLinkContent = getPackageLink(pkg, new StringContent(utils.getPackageName(pkg)));
-        Content tdPackage = HtmlTree.TD(HtmlStyle.colFirst, pkgLinkContent);
-        HtmlTree tdModules = new HtmlTree(HtmlTag.TD);
-        tdModules.addStyle(HtmlStyle.colSecond);
+        Content tdPackage = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, pkgLinkContent);
+        HtmlTree thModules = new HtmlTree(HtmlTag.TD);
+        thModules.addStyle(HtmlStyle.colSecond);
         List<? extends ModuleElement> targetModules = direct.getTargetModules();
         if (targetModules != null) {
             List<? extends ModuleElement> mElements = direct.getTargetModules();
             for (int i = 0; i < mElements.size(); i++) {
                 if (i > 0) {
-                    tdModules.addContent(new HtmlTree(HtmlTag.BR));
+                    thModules.addContent(new HtmlTree(HtmlTag.BR));
                 }
                 ModuleElement m = mElements.get(i);
-                tdModules.addContent(new StringContent(m.getQualifiedName().toString()));
+                thModules.addContent(new StringContent(m.getQualifiedName().toString()));
             }
         } else {
-            tdModules.addContent(configuration.getText("doclet.All_Modules"));
+            thModules.addContent(configuration.getText("doclet.All_Modules"));
         }
         HtmlTree tdSummary = new HtmlTree(HtmlTag.TD);
         tdSummary.addStyle(HtmlStyle.colLast);
         addSummaryComment(pkg, tdSummary);
         HtmlTree tr = HtmlTree.TR(tdPackage);
-        tr.addContent(tdModules);
+        tr.addContent(thModules);
         tr.addContent(tdSummary);
         tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
         tbody.addContent(tr);
@@ -428,11 +428,11 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     public void addUsesList(ModuleElement.UsesDirective direct, Content tbody, boolean altColor) {
         TypeElement type = direct.getService();
         Content typeLinkContent = getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.PACKAGE, type));
-        Content tdPackage = HtmlTree.TD(HtmlStyle.colFirst, typeLinkContent);
+        Content thPackage = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, typeLinkContent);
         HtmlTree tdSummary = new HtmlTree(HtmlTag.TD);
         tdSummary.addStyle(HtmlStyle.colLast);
         addSummaryComment(type, tdSummary);
-        HtmlTree tr = HtmlTree.TR(tdPackage);
+        HtmlTree tr = HtmlTree.TR(thPackage);
         tr.addContent(tdSummary);
         tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
         tbody.addContent(tr);
@@ -463,18 +463,18 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         TypeElement srv = direct.getService();
         Content implLinkContent = getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.PACKAGE, impl));
         Content srvLinkContent = getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.PACKAGE, srv));
-        HtmlTree tdType = HtmlTree.TD(HtmlStyle.colFirst, srvLinkContent);
-        tdType.addContent(new HtmlTree(HtmlTag.BR));
-        tdType.addContent("(");
+        HtmlTree thType = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, srvLinkContent);
+        thType.addContent(new HtmlTree(HtmlTag.BR));
+        thType.addContent("(");
         HtmlTree implSpan = HtmlTree.SPAN(HtmlStyle.implementationLabel, contents.implementation);
-        tdType.addContent(implSpan);
-        tdType.addContent(Contents.SPACE);
-        tdType.addContent(implLinkContent);
-        tdType.addContent(")");
+        thType.addContent(implSpan);
+        thType.addContent(Contents.SPACE);
+        thType.addContent(implLinkContent);
+        thType.addContent(")");
         HtmlTree tdDesc = new HtmlTree(HtmlTag.TD);
         tdDesc.addStyle(HtmlStyle.colLast);
         addSummaryComment(srv, tdDesc);
-        HtmlTree tr = HtmlTree.TR(tdType);
+        HtmlTree tr = HtmlTree.TR(thType);
         tr.addContent(tdDesc);
         tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
         tbody.addContent(tr);

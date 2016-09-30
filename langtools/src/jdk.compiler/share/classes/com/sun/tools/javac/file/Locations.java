@@ -130,6 +130,7 @@ public class Locations {
 
     Map<Path, FileSystem> fileSystems = new LinkedHashMap<>();
     List<Closeable> closeables = new ArrayList<>();
+    private Map<String,String> fsEnv = Collections.emptyMap();
 
     Locations() {
         initHandlers();
@@ -205,6 +206,10 @@ public class Locations {
             }
         }
         return entries;
+    }
+
+    public void setMultiReleaseValue(String multiReleaseValue) {
+        fsEnv = Collections.singletonMap("multi-release", multiReleaseValue);
     }
 
     /**
@@ -1047,7 +1052,8 @@ public class Locations {
                 }
 
                 if (p.getFileName().toString().endsWith(".jar") && fsInfo.exists(p)) {
-                    try (FileSystem fs = FileSystems.newFileSystem(p, null)) {
+                    URI uri = URI.create("jar:" + p.toUri());
+                    try (FileSystem fs = FileSystems.newFileSystem(uri, fsEnv, null)) {
                         Path moduleInfoClass = fs.getPath("module-info.class");
                         if (Files.exists(moduleInfoClass)) {
                             String moduleName = readModuleName(moduleInfoClass);

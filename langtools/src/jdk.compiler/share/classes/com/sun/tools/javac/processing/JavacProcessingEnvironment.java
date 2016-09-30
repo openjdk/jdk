@@ -1503,13 +1503,35 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 }
             }
             public void visitClassDef(JCClassDecl node) {
+                super.visitClassDef(node);
+                // remove generated constructor that may have been added during attribution:
+                List<JCTree> beforeConstructor = List.nil();
+                List<JCTree> defs = node.defs;
+                while (defs.nonEmpty() && !defs.head.hasTag(Tag.METHODDEF)) {
+                    beforeConstructor = beforeConstructor.prepend(defs.head);
+                    defs = defs.tail;
+                }
+                if (defs.nonEmpty() &&
+                    (((JCMethodDecl) defs.head).mods.flags & Flags.GENERATEDCONSTR) != 0) {
+                    defs = defs.tail;
+                    while (beforeConstructor.nonEmpty()) {
+                        defs = defs.prepend(beforeConstructor.head);
+                        beforeConstructor = beforeConstructor.tail;
+                    }
+                    node.defs = defs;
+                }
                 if (node.sym != null) {
                     node.sym.completer = new ImplicitCompleter(topLevel);
                 }
                 node.sym = null;
-                super.visitClassDef(node);
             }
             public void visitMethodDef(JCMethodDecl node) {
+                // remove super constructor call that may have been added during attribution:
+                if (TreeInfo.isConstructor(node) && node.sym != null && node.sym.owner.isEnum() &&
+                    node.body.stats.nonEmpty() && TreeInfo.isSuperCall(node.body.stats.head) &&
+                    node.body.stats.head.pos == node.body.pos) {
+                    node.body.stats = node.body.stats.tail;
+                }
                 node.sym = null;
                 super.visitMethodDef(node);
             }

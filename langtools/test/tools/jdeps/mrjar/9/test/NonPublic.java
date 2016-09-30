@@ -21,32 +21,10 @@
  * questions.
  */
 
-package jdk.test.lib.unsafe;
+package test;
 
-import jdk.internal.misc.Unsafe;
-import java.lang.reflect.Field;
-
-
-/**
- * Helper class for accessing the jdk.internal.misc.Unsafe functionality
- */
-public final class UnsafeHelper {
-    private static Unsafe unsafe = null;
-
-    /**
-     * @return Unsafe instance.
-     */
-    public static synchronized Unsafe getUnsafe() {
-        if (unsafe == null) {
-            try {
-                Field f = Unsafe.class.getDeclaredField("theUnsafe");
-                f.setAccessible(true);
-                unsafe = (Unsafe) f.get(null);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new RuntimeException("Unable to get Unsafe instance.", e);
-            }
-        }
-        return unsafe;
+class NonPublic {
+    public String toString() {
+        return "NonPublic";
     }
 }
-

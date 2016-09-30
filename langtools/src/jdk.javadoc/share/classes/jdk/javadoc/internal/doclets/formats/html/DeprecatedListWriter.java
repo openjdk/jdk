@@ -261,14 +261,13 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         for (DeprElementKind kind : DeprElementKind.values()) {
             if (deprapi.hasDocumentation(kind)) {
                 addAnchor(deprapi, kind, div);
-                memberTableSummary =
-                        configuration.getText("doclet.Member_Table_Summary",
-                        configuration.getText(getHeadingKey(kind)),
-                        configuration.getText(getSummaryKey(kind)));
+                memberTableSummary
+                        = resources.getText("doclet.Member_Table_Summary",
+                                resources.getText(getHeadingKey(kind)),
+                                resources.getText(getSummaryKey(kind)));
                 List<String> memberTableHeader = new ArrayList<>();
-                memberTableHeader.add(configuration.getText("doclet.0_and_1",
-                        configuration.getText(getHeaderKey(kind)),
-                        configuration.getText("doclet.Description")));
+                memberTableHeader.add(resources.getText(getHeaderKey(kind)));
+                memberTableHeader.add(resources.getText("doclet.Description"));
                 if (kind == DeprElementKind.PACKAGE)
                     addPackageDeprecatedAPI(deprapi.getSet(kind),
                             getHeadingKey(kind), memberTableSummary, memberTableHeader, div);

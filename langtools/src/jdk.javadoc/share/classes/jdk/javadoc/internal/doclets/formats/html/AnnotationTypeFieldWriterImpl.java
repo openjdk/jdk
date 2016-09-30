@@ -25,8 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -222,9 +220,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
      */
     public List<String> getSummaryTableHeader(Element member) {
         List<String> header = Arrays.asList(writer.getModifierTypeHeader(),
-                configuration.getText("doclet.0_and_1",
-                        configuration.getText("doclet.Fields"),
-                        configuration.getText("doclet.Description")));
+                resources.getText("doclet.Fields"), resources.getText("doclet.Description"));
         return header;
     }
 

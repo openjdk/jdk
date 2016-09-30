@@ -24,6 +24,7 @@
  */
 package jdk.jshell.execution;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -200,6 +201,21 @@ public class DirectExecutionControl implements ExecutionControl {
             return "\"" + (String) value + "\"";
         } else if (value instanceof Character) {
             return "'" + value + "'";
+        } else if (value.getClass().isArray()) {
+            String tn = value.getClass().getTypeName();
+            int len = Array.getLength(value);
+            StringBuilder sb = new StringBuilder();
+            sb.append(tn.substring(tn.lastIndexOf('.') + 1, tn.length() - 1));
+            sb.append(len);
+            sb.append("] { ");
+            for (int i = 0; i < len; ++i) {
+                sb.append(valueString(Array.get(value, i)));
+                if (i < len - 1) {
+                    sb.append(", ");
+                }
+            }
+            sb.append(" }");
+            return sb.toString();
         } else {
             return value.toString();
         }

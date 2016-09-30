@@ -1024,7 +1024,7 @@ public class ConcurrentSkipListMapTest extends JSR166TestCase {
 
     static NavigableMap<Integer, Integer> newMap(Class cl) throws Exception {
         NavigableMap<Integer, Integer> result =
-            (NavigableMap<Integer, Integer>) cl.newInstance();
+            (NavigableMap<Integer, Integer>) cl.getConstructor().newInstance();
         assertEquals(0, result.size());
         assertFalse(result.keySet().iterator().hasNext());
         return result;
