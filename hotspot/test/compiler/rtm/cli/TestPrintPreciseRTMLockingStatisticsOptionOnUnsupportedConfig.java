@@ -42,6 +42,7 @@
 package compiler.rtm.cli;
 
 import compiler.testlibrary.rtm.predicate.SupportedCPU;
+import compiler.testlibrary.rtm.predicate.SupportedOS;
 import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.test.lib.cli.predicate.AndPredicate;
 import jdk.test.lib.cli.predicate.NotPredicate;
@@ -49,8 +50,8 @@ import jdk.test.lib.cli.predicate.NotPredicate;
 public class TestPrintPreciseRTMLockingStatisticsOptionOnUnsupportedConfig
         extends TestPrintPreciseRTMLockingStatisticsBase {
     private TestPrintPreciseRTMLockingStatisticsOptionOnUnsupportedConfig() {
-        super(new NotPredicate(new AndPredicate(new SupportedCPU(),
-                new SupportedVM())));
+        super(new NotPredicate(
+                new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM())));
     }
 
     public static void main(String args[]) throws Throwable {

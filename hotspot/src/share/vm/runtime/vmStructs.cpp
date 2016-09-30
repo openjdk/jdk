@@ -2103,6 +2103,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(OverflowAddLNode, OverflowLNode)                        \
   declare_c2_type(OverflowSubLNode, OverflowLNode)                        \
   declare_c2_type(OverflowMulLNode, OverflowLNode)                        \
+  declare_c2_type(FmaDNode, Node)                                         \
+  declare_c2_type(FmaFNode, Node)                                         \
                                                                           \
   /*********************/                                                 \
   /* Adapter Blob Entries */                                              \
@@ -2970,6 +2972,7 @@ VMStructEntry VMStructs::localHotSpotVMStructs[] = {
 
 #if INCLUDE_ALL_GCS
   VM_STRUCTS_PARALLELGC(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
+                        GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                         GENERATE_STATIC_VM_STRUCT_ENTRY)
 
   VM_STRUCTS_CMS(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
@@ -2982,7 +2985,7 @@ VMStructEntry VMStructs::localHotSpotVMStructs[] = {
 
 #if INCLUDE_TRACE
   VM_STRUCTS_TRACE(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                GENERATE_STATIC_VM_STRUCT_ENTRY)
+                   GENERATE_STATIC_VM_STRUCT_ENTRY)
 #endif
 
   VM_STRUCTS_EXT(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
@@ -3168,11 +3171,12 @@ VMStructs::init() {
 
 #if INCLUDE_ALL_GCS
   VM_STRUCTS_PARALLELGC(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
-             CHECK_STATIC_VM_STRUCT_ENTRY);
+                        CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
+                        CHECK_STATIC_VM_STRUCT_ENTRY);
 
   VM_STRUCTS_CMS(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
-             CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
-             CHECK_STATIC_VM_STRUCT_ENTRY);
+                 CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
+                 CHECK_STATIC_VM_STRUCT_ENTRY);
 
   VM_STRUCTS_G1(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
                 CHECK_STATIC_VM_STRUCT_ENTRY);
@@ -3181,7 +3185,7 @@ VMStructs::init() {
 
 #if INCLUDE_TRACE
   VM_STRUCTS_TRACE(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
-                CHECK_STATIC_VM_STRUCT_ENTRY);
+                   CHECK_STATIC_VM_STRUCT_ENTRY);
 #endif
 
   VM_STRUCTS_EXT(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
@@ -3293,6 +3297,7 @@ VMStructs::init() {
                         CHECK_NO_OP));
 #if INCLUDE_ALL_GCS
   debug_only(VM_STRUCTS_PARALLELGC(ENSURE_FIELD_TYPE_PRESENT,
+                                   ENSURE_FIELD_TYPE_PRESENT,
                                    ENSURE_FIELD_TYPE_PRESENT));
   debug_only(VM_STRUCTS_CMS(ENSURE_FIELD_TYPE_PRESENT,
                             ENSURE_FIELD_TYPE_PRESENT,

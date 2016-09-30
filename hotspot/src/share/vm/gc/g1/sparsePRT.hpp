@@ -250,7 +250,7 @@ class SparsePRT VALUE_OBJ_CLASS_SPEC {
 
   bool should_be_on_expanded_list();
 
-  static SparsePRT* _head_expanded_list;
+  static SparsePRT* volatile _head_expanded_list;
 
 public:
   SparsePRT(HeapRegion* hr);

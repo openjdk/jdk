@@ -37,42 +37,47 @@
 #include "utilities/globalDefinitions.hpp"
 
 // setup and cleanup actions
-void JavaFrameStream::setup_magic_on_entry(objArrayHandle frames_array) {
+void BaseFrameStream::setup_magic_on_entry(objArrayHandle frames_array) {
   frames_array->obj_at_put(magic_pos, _thread->threadObj());
   _anchor = address_value();
   assert(check_magic(frames_array), "invalid magic");
 }
 
-bool JavaFrameStream::check_magic(objArrayHandle frames_array) {
+bool BaseFrameStream::check_magic(objArrayHandle frames_array) {
   oop   m1 = frames_array->obj_at(magic_pos);
   jlong m2 = _anchor;
   if (m1 == _thread->threadObj() && m2 == address_value())  return true;
   return false;
 }
 
-bool JavaFrameStream::cleanup_magic_on_exit(objArrayHandle frames_array) {
+bool BaseFrameStream::cleanup_magic_on_exit(objArrayHandle frames_array) {
   bool ok = check_magic(frames_array);
   frames_array->obj_at_put(magic_pos, NULL);
   _anchor = 0L;
   return ok;
 }
 
-// Returns JavaFrameStream for the current stack being traversed.
+JavaFrameStream::JavaFrameStream(JavaThread* thread, int mode)
+  : BaseFrameStream(thread), _vfst(thread) {
+  _need_method_info = StackWalk::need_method_info(mode);
+}
+
+// Returns the BaseFrameStream for the current stack being traversed.
 //
 // Parameters:
 //  thread         Current Java thread.
 //  magic          Magic value used for each stack walking
 //  frames_array   User-supplied buffers.  The 0th element is reserved
-//                 to this JavaFrameStream to use
+//                 for this BaseFrameStream to use
 //
-JavaFrameStream* JavaFrameStream::from_current(JavaThread* thread, jlong magic,
+BaseFrameStream* BaseFrameStream::from_current(JavaThread* thread, jlong magic,
                                                objArrayHandle frames_array)
 {
   assert(thread != NULL && thread->is_Java_thread(), "");
   oop m1 = frames_array->obj_at(magic_pos);
   if (m1 != thread->threadObj())      return NULL;
   if (magic == 0L)                    return NULL;
-  JavaFrameStream* stream = (JavaFrameStream*) (intptr_t) magic;
+  BaseFrameStream* stream = (BaseFrameStream*) (intptr_t) magic;
   if (!stream->is_valid_in(thread, frames_array))   return NULL;
   return stream;
 }
@@ -85,7 +90,7 @@ JavaFrameStream* JavaFrameStream::from_current(JavaThread* thread, jlong magic,
 //
 // Parameters:
 //   mode             Restrict which frames to be decoded.
-//   JavaFrameStream  stream of javaVFrames
+//   BaseFrameStream  stream of frames
 //   max_nframes      Maximum number of frames to be filled.
 //   start_index      Start index to the user-supplied buffers.
 //   frames_array     Buffer to store Class or StackFrame in, starting at start_index.
@@ -96,7 +101,7 @@ JavaFrameStream* JavaFrameStream::from_current(JavaThread* thread, jlong magic,
 //
 // Returns the number of frames whose information was transferred into the buffers.
 //
-int StackWalk::fill_in_frames(jlong mode, JavaFrameStream& stream,
+int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
                               int max_nframes, int start_index,
                               objArrayHandle  frames_array,
                               int& end_index, TRAPS) {
@@ -110,7 +115,6 @@ int StackWalk::fill_in_frames(jlong mode, JavaFrameStream& stream,
   int frames_decoded = 0;
   for (; !stream.at_end(); stream.next()) {
     Method* method = stream.method();
-    int bci = stream.bci();
 
     if (method == NULL) continue;
 
@@ -129,35 +133,42 @@ int StackWalk::fill_in_frames(jlong mode, JavaFrameStream& stream,
     int index = end_index++;
     if (TraceStackWalk) {
       tty->print("  %d: frame method: ", index); method->print_short_name();
-      tty->print_cr(" bci=%d", bci);
+      tty->print_cr(" bci=%d", stream.bci());
     }
 
+    if (!need_method_info(mode) && get_caller_class(mode) &&
+          index == start_index && method->caller_sensitive()) {
+      ResourceMark rm(THREAD);
+      THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(),
+        err_msg("StackWalker::getCallerClass called from @CallerSensitive %s method",
+                method->name_and_sig_as_C_string()));
+    }
     // fill in StackFrameInfo and initialize MemberName
-    if (live_frame_info(mode)) {
-      assert (use_frames_array(mode), "Bad mode for get live frame");
-      Handle stackFrame(frames_array->obj_at(index));
-      fill_live_stackframe(stackFrame, method, bci, stream.java_frame(), CHECK_0);
-    } else if (need_method_info(mode)) {
-      assert (use_frames_array(mode), "Bad mode for get stack frame");
-      Handle stackFrame(frames_array->obj_at(index));
-      fill_stackframe(stackFrame, method, bci);
-    } else {
-      assert (use_frames_array(mode) == false, "Bad mode for filling in Class object");
-      if (get_caller_class(mode) && index == start_index && method->caller_sensitive()) {
-        ResourceMark rm(THREAD);
-        THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(),
-          err_msg("StackWalker::getCallerClass called from @CallerSensitive %s method",
-                  method->name_and_sig_as_C_string()));
-      }
-
-      frames_array->obj_at_put(index, method->method_holder()->java_mirror());
-    }
+    stream.fill_frame(index, frames_array, method, CHECK_0);
     if (++frames_decoded >= max_nframes)  break;
   }
   return frames_decoded;
 }
 
-static oop create_primitive_value_instance(StackValueCollection* values, int i, TRAPS) {
+// Fill in the LiveStackFrameInfo at the given index in frames_array
+void LiveFrameStream::fill_frame(int index, objArrayHandle  frames_array,
+                                 const methodHandle& method, TRAPS) {
+  Handle stackFrame(THREAD, frames_array->obj_at(index));
+  fill_live_stackframe(stackFrame, method, CHECK);
+}
+
+// Fill in the StackFrameInfo at the given index in frames_array
+void JavaFrameStream::fill_frame(int index, objArrayHandle  frames_array,
+                                 const methodHandle& method, TRAPS) {
+  if (_need_method_info) {
+    Handle stackFrame(THREAD, frames_array->obj_at(index));
+    fill_stackframe(stackFrame, method);
+  } else {
+    frames_array->obj_at_put(index, method->method_holder()->java_mirror());
+  }
+}
+
+oop LiveFrameStream::create_primitive_value_instance(StackValueCollection* values, int i, TRAPS) {
   Klass* k = SystemDictionary::resolve_or_null(vmSymbols::java_lang_LiveStackFrameInfo(), CHECK_NULL);
   instanceKlassHandle ik (THREAD, k);
 
@@ -228,7 +239,7 @@ static oop create_primitive_value_instance(StackValueCollection* values, int i, 
   return (instanceOop) result.get_jobject();
 }
 
-static objArrayHandle values_to_object_array(StackValueCollection* values, TRAPS) {
+objArrayHandle LiveFrameStream::values_to_object_array(StackValueCollection* values, TRAPS) {
   objArrayHandle empty;
   int length = values->size();
   objArrayOop array_oop = oopFactory::new_objArray(SystemDictionary::Object_klass(),
@@ -243,7 +254,7 @@ static objArrayHandle values_to_object_array(StackValueCollection* values, TRAPS
   return array_h;
 }
 
-static objArrayHandle monitors_to_object_array(GrowableArray<MonitorInfo*>* monitors, TRAPS) {
+objArrayHandle LiveFrameStream::monitors_to_object_array(GrowableArray<MonitorInfo*>* monitors, TRAPS) {
   int length = monitors->length();
   objArrayOop array_oop = oopFactory::new_objArray(SystemDictionary::Object_klass(),
                                                    length, CHECK_(objArrayHandle()));
@@ -256,19 +267,19 @@ static objArrayHandle monitors_to_object_array(GrowableArray<MonitorInfo*>* moni
 }
 
 // Fill StackFrameInfo with declaringClass and bci and initialize memberName
-void StackWalk::fill_stackframe(Handle stackFrame, const methodHandle& method, int bci) {
+void BaseFrameStream::fill_stackframe(Handle stackFrame, const methodHandle& method) {
   java_lang_StackFrameInfo::set_declaringClass(stackFrame(), method->method_holder()->java_mirror());
-  java_lang_StackFrameInfo::set_method_and_bci(stackFrame(), method, bci);
+  java_lang_StackFrameInfo::set_method_and_bci(stackFrame(), method, bci());
 }
 
 // Fill LiveStackFrameInfo with locals, monitors, and expressions
-void StackWalk::fill_live_stackframe(Handle stackFrame, const methodHandle& method,
-                                     int bci, javaVFrame* jvf, TRAPS) {
-  fill_stackframe(stackFrame, method, bci);
-  if (jvf != NULL) {
-    StackValueCollection* locals = jvf->locals();
-    StackValueCollection* expressions = jvf->expressions();
-    GrowableArray<MonitorInfo*>* monitors = jvf->monitors();
+void LiveFrameStream::fill_live_stackframe(Handle stackFrame,
+                                           const methodHandle& method, TRAPS) {
+  fill_stackframe(stackFrame, method);
+  if (_jvf != NULL) {
+    StackValueCollection* locals = _jvf->locals();
+    StackValueCollection* expressions = _jvf->expressions();
+    GrowableArray<MonitorInfo*>* monitors = _jvf->monitors();
 
     if (!locals->is_empty()) {
       objArrayHandle locals_h = values_to_object_array(locals, CHECK);
@@ -315,15 +326,28 @@ oop StackWalk::walk(Handle stackStream, jlong mode,
     THROW_MSG_(vmSymbols::java_lang_NullPointerException(), "frames_array is NULL", NULL);
   }
 
-  Klass* stackWalker_klass = SystemDictionary::StackWalker_klass();
-  Klass* abstractStackWalker_klass = SystemDictionary::AbstractStackWalker_klass();
+  // Setup traversal onto my stack.
+  if (live_frame_info(mode)) {
+    assert (use_frames_array(mode), "Bad mode for get live frame");
+    RegisterMap regMap(jt, true);
+    LiveFrameStream stream(jt, &regMap);
+    return fetchFirstBatch(stream, stackStream, mode, skip_frames, frame_count,
+                           start_index, frames_array, THREAD);
+  } else {
+    JavaFrameStream stream(jt, mode);
+    return fetchFirstBatch(stream, stackStream, mode, skip_frames, frame_count,
+                           start_index, frames_array, THREAD);
+  }
+}
 
+oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
+                               jlong mode, int skip_frames, int frame_count,
+                               int start_index, objArrayHandle frames_array, TRAPS) {
   methodHandle m_doStackWalk(THREAD, Universe::do_stack_walk_method());
 
-  // Setup traversal onto my stack.
-  RegisterMap regMap(jt, true);
-  JavaFrameStream stream(jt, &regMap);
   {
+    Klass* stackWalker_klass = SystemDictionary::StackWalker_klass();
+    Klass* abstractStackWalker_klass = SystemDictionary::AbstractStackWalker_klass();
     while (!stream.at_end()) {
       InstanceKlass* ik = stream.method()->method_holder();
       if (ik != stackWalker_klass &&
@@ -341,10 +365,7 @@ oop StackWalk::walk(Handle stackStream, jlong mode,
     // from the stack frame at depth == skip_frames.
     for (int n=0; n < skip_frames && !stream.at_end(); stream.next(), n++) {
       if (TraceStackWalk) {
-        tty->print("  skip "); stream.method()->print_short_name();
-        tty->print_cr(" frame id: " PTR_FORMAT " pc: " PTR_FORMAT,
-                      p2i(stream.java_frame()->fr().id()),
-                      p2i(stream.java_frame()->fr().pc()));
+        tty->print("  skip "); stream.method()->print_short_name(); tty->cr();
       }
     }
   }
@@ -402,13 +423,13 @@ oop StackWalk::walk(Handle stackStream, jlong mode,
 //
 // Returns the end index of frame filled in the buffer.
 //
-jint StackWalk::moreFrames(Handle stackStream, jlong mode, jlong magic,
-                           int frame_count, int start_index,
-                           objArrayHandle frames_array,
-                           TRAPS)
+jint StackWalk::fetchNextBatch(Handle stackStream, jlong mode, jlong magic,
+                               int frame_count, int start_index,
+                               objArrayHandle frames_array,
+                               TRAPS)
 {
   JavaThread* jt = (JavaThread*)THREAD;
-  JavaFrameStream* existing_stream = JavaFrameStream::from_current(jt, magic, frames_array);
+  BaseFrameStream* existing_stream = BaseFrameStream::from_current(jt, magic, frames_array);
   if (existing_stream == NULL) {
     THROW_MSG_(vmSymbols::java_lang_InternalError(), "doStackWalk: corrupted buffers", 0L);
   }
@@ -418,7 +439,7 @@ jint StackWalk::moreFrames(Handle stackStream, jlong mode, jlong magic,
   }
 
   if (TraceStackWalk) {
-    tty->print_cr("StackWalk::moreFrames frame_count %d existing_stream " PTR_FORMAT " start %d frames %d",
+    tty->print_cr("StackWalk::fetchNextBatch frame_count %d existing_stream " PTR_FORMAT " start %d frames %d",
                   frame_count, p2i(existing_stream), start_index, frames_array->length());
   }
   int end_index = start_index;
@@ -429,7 +450,7 @@ jint StackWalk::moreFrames(Handle stackStream, jlong mode, jlong magic,
   int count = frame_count + start_index;
   assert (frames_array->length() >= count, "not enough space in buffers");
 
-  JavaFrameStream& stream = (*existing_stream);
+  BaseFrameStream& stream = (*existing_stream);
   if (!stream.at_end()) {
     stream.next(); // advance past the last frame decoded in previous batch
     if (!stream.at_end()) {
