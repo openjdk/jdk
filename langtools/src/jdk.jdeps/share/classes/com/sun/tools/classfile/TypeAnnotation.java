@@ -130,10 +130,7 @@ public class TypeAnnotation {
             break;
         // class extends or implements clause
         case CLASS_EXTENDS:
-            int in = cr.readUnsignedShort();
-            if (in == 0xFFFF)
-                in = -1;
-            position.type_index = in;
+            position.type_index = cr.readUnsignedShort();;
             break;
         // throws
         case THROWS:

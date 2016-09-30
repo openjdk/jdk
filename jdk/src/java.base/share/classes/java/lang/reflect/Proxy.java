@@ -597,10 +597,10 @@ public class Proxy implements java.io.Serializable {
         private final Module module;
         ProxyBuilder(ClassLoader loader, List<Class<?>> interfaces) {
             if (!VM.isModuleSystemInited()) {
-                throw new InternalError("Proxy is not supported until module system is fully initialzed");
+                throw new InternalError("Proxy is not supported until module system is fully initialized");
             }
             if (interfaces.size() > 65535) {
-                throw new IllegalArgumentException("interface limit exceeded");
+                throw new IllegalArgumentException("interface limit exceeded: " + interfaces.size());
             }
 
             Set<Class<?>> refTypes = referencedTypes(loader, interfaces);

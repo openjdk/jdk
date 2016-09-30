@@ -528,20 +528,23 @@ Table styles
     float:left;
 
 }
+.rowColor th, .altColor th {
+    font-weight:normal;
+}
 .overviewSummary td, .memberSummary td, .typeSummary td,
 .useSummary td, .constantsSummary td, .deprecatedSummary td,
 .requiresSummary td, .packagesSummary td, .providesSummary td, .usesSummary td {
     text-align:left;
     padding:0px 0px 12px 10px;
 }
-th.colOne, th.colFirst, th.colSecond, th.colLast, .useSummary th, .constantsSummary th, .packagesSummary th,
-td.colOne, td.colFirst, td.colSecond, td.colLast, .useSummary td, .constantsSummary td {
+th.colFirst, th.colSecond, th.colLast, .useSummary th, .constantsSummary th, .packagesSummary th,
+td.colFirst, td.colSecond, td.colLast, .useSummary td, .constantsSummary td {
     vertical-align:top;
     padding-right:0px;
     padding-top:8px;
     padding-bottom:3px;
 }
-th.colFirst, th.colSecond, th.colLast, th.colOne, .constantsSummary th, .packagesSummary th {
+th.colFirst, th.colSecond, th.colLast, .constantsSummary th, .packagesSummary th {
     background:#dee3e9;
     text-align:left;
     padding:8px 3px 3px 7px;
@@ -550,10 +553,10 @@ td.colFirst, th.colFirst {
     white-space:nowrap;
     font-size:13px;
 }
-td.colLast, th.colLast {
+td.colSecond, th.colSecond, td.colLast, th.colLast {
     font-size:13px;
 }
-td.colOne, th.colOne, .constantsSummary th, .packagesSummary th {
+.constantsSummary th, .packagesSummary th {
     font-size:13px;
 }
 .providesSummary th.colFirst, .providesSummary th.colLast, .providesSummary td.colFirst,
@@ -567,23 +570,22 @@ td.colOne, th.colOne, .constantsSummary th, .packagesSummary th {
 .packagesSummary td.colFirst, .packagesSummary td.colSecond, .packagesSummary th.colFirst, .packagesSummary th,
 .usesSummary td.colFirst, .usesSummary th.colFirst,
 .useSummary td.colFirst, .useSummary th.colFirst,
-.overviewSummary td.colOne, .overviewSummary th.colOne,
 .memberSummary td.colFirst, .memberSummary th.colFirst,
-.memberSummary td.colOne, .memberSummary th.colOne,
+.memberSummary td.colSecond, .memberSummary th.colSecond,
 .typeSummary td.colFirst{
     width:25%;
     vertical-align:top;
 }
-td.colOne a:link, td.colOne a:active, td.colOne a:visited, td.colOne a:hover, td.colFirst a:link, td.colFirst a:active, td.colFirst a:visited, td.colFirst a:hover, td.colSecond a:link, td.colSecond a:active, td.colSecond a:visited, td.colSecond a:hover, td.colLast a:link, td.colLast a:active, td.colLast a:visited, td.colLast a:hover, .constantValuesContainer td a:link, .constantValuesContainer td a:active, .constantValuesContainer td a:visited, .constantValuesContainer td a:hover {
+td.colFirst a:link, td.colFirst a:active, td.colFirst a:visited, td.colFirst a:hover, td.colSecond a:link, td.colSecond a:active, td.colSecond a:visited, td.colSecond a:hover, th.colFirst a:link, th.colFirst a:active, th.colFirst a:visited, th.colFirst a:hover, th.colSecond a:link, th.colSecond a:active, th.colSecond a:visited, th.colSecond a:hover, td.colLast a:link, td.colLast a:active, td.colLast a:visited, td.colLast a:hover, .constantValuesContainer td a:link, .constantValuesContainer td a:active, .constantValuesContainer td a:visited, .constantValuesContainer td a:hover {
     font-weight:bold;
 }
 .tableSubHeadingColor {
     background-color:#EEEEFF;
 }
-.altColor {
+.altColor, .altColor th {
     background-color:#FFFFFF;
 }
-.rowColor {
+.rowColor, .rowColor th {
     background-color:#EEEEEF;
 }
 /*

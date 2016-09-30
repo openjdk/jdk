@@ -789,7 +789,7 @@ public class TypeAnnotationPosition {
         classExtends(final List<TypePathEntry> location,
                      final JCLambda onLambda,
                      final int pos) {
-        return classExtends(location, onLambda, -1, pos);
+        return classExtends(location, onLambda, 65535, pos);
     }
 
     /**
@@ -821,7 +821,7 @@ public class TypeAnnotationPosition {
      * @param pos The position from the associated tree node.
      */
     public static TypeAnnotationPosition classExtends(final int pos) {
-        return classExtends(-1, pos);
+        return classExtends(65535, pos);
     }
 
     /**

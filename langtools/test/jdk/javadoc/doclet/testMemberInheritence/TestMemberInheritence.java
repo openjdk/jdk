@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4638588 4635809 6256068 6270645 8025633 8026567
+ * @bug 4638588 4635809 6256068 6270645 8025633 8026567 8162363
  * @summary Test to make sure that members are inherited properly in the Javadoc.
  *          Verify that inheritence labels are correct.
  * @author jamieh
@@ -90,10 +90,10 @@ public class TestMemberInheritence extends JavadocTester {
         checkOutput("pkg1/Implementer.html", true,
                 // ensure the method makes it
                 "<td class=\"colFirst\"><code>static java.time.Period</code></td>\n"
-                + "<td class=\"colLast\"><code><span class=\"memberNameLink\">"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
                 + "<a href=\"../pkg1/Implementer.html#between-java.time.LocalDate-java.time.LocalDate-\">"
                 + "between</a></span>(java.time.LocalDate&nbsp;startDateInclusive,\n"
-                + "       java.time.LocalDate&nbsp;endDateExclusive)</code>&nbsp;</td>",
+                + "       java.time.LocalDate&nbsp;endDateExclusive)</code></th>",
                 // check the inherited from interfaces
                 "<h3>Methods inherited from interface&nbsp;pkg1.<a href=\"../pkg1/Interface.html\""
                 + " title=\"interface in pkg1\">Interface</a></h3>\n"
