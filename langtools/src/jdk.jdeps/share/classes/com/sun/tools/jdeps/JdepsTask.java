@@ -150,7 +150,7 @@ class JdepsTask {
                 task.options.help = true;
             }
         },
-        new Option(true, "-dotoutput") {
+        new Option(true, "-dotoutput", "--dot-output") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 Path p = Paths.get(arg);
                 if (Files.exists(p) && (!Files.isDirectory(p) || !Files.isWritable(p))) {
@@ -191,7 +191,7 @@ class JdepsTask {
                 }
             }
         },
-        new Option(false, "-apionly") {
+        new Option(false, "-apionly", "--api-only") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.apiOnly = true;
             }
@@ -203,7 +203,7 @@ class JdepsTask {
                 task.options.addmods.addAll(mods);
             }
         },
-        new Option(true, "--gen-module-info") {
+        new Option(true, "--generate-module-info") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 Path p = Paths.get(arg);
                 if (Files.exists(p) && (!Files.isDirectory(p) || !Files.isWritable(p))) {
@@ -212,7 +212,7 @@ class JdepsTask {
                 task.options.genModuleInfo = Paths.get(arg);
             }
         },
-        new Option(false, "-jdkinternals") {
+        new Option(false, "-jdkinternals", "--jdk-internals") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.findJDKInternals = true;
                 task.options.verbose = CLASS;
@@ -263,19 +263,36 @@ class JdepsTask {
                 task.options.addmods.add(arg);
             }
         },
+        new Option(true, "--multi-release") {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                if (arg.equalsIgnoreCase("base")) {
+                    task.options.multiRelease = JarFile.baseVersion();
+                } else {
+                    try {
+                        int v = Integer.parseInt(arg);
+                        if (v < 9) {
+                            throw new BadArgs("err.invalid.arg.for.option", arg);
+                        }
+                    } catch (NumberFormatException x) {
+                        throw new BadArgs("err.invalid.arg.for.option", arg);
+                    }
+                    task.options.multiRelease = Runtime.Version.parse(arg);
+                }
+            }
+        },
 
         // ---- Target filtering options ----
-        new Option(true, "-p", "-package") {
+        new Option(true, "-p", "-package", "--package") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.packageNames.add(arg);
             }
         },
-        new Option(true, "-e", "-regex") {
+        new Option(true, "-e", "-regex", "--regex") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.regex = Pattern.compile(arg);
             }
         },
-        new Option(true, "-requires") {
+        new Option(true, "--require") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.requires.add(arg);
             }
@@ -336,7 +353,7 @@ class JdepsTask {
             }
         },
 
-        new Option(false, "-I", "-inverse") {
+        new Option(false, "-I", "--inverse") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.inverse = true;
                 // equivalent to the inverse of compile-time view analysis
@@ -361,7 +378,7 @@ class JdepsTask {
             }
         },
 
-        new Option(false, "-version") {
+        new Option(false, "-version", "--version") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.version = true;
             }
@@ -387,23 +404,6 @@ class JdepsTask {
                     task.options.depth = Integer.parseInt(arg);
                 } catch (NumberFormatException e) {
                     throw new BadArgs("err.invalid.arg.for.option", opt);
-                }
-            }
-        },
-        new Option(true, "--multi-release") {
-            void process(JdepsTask task, String opt, String arg) throws BadArgs {
-                if (arg.equalsIgnoreCase("base")) {
-                    task.options.multiRelease = JarFile.baseVersion();
-                } else {
-                    try {
-                        int v = Integer.parseInt(arg);
-                        if (v < 9) {
-                            throw new BadArgs("err.invalid.arg.for.option", arg);
-                        }
-                    } catch (NumberFormatException x) {
-                        throw new BadArgs("err.invalid.arg.for.option", arg);
-                    }
-                    task.options.multiRelease = Runtime.Version.parse(arg);
                 }
             }
         },
