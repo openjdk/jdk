@@ -81,7 +81,6 @@ typedef void * * (JNICALL *ZipOpen_t)(const char *name, char **pmsg);
 typedef void (JNICALL *ZipClose_t)(jzfile *zip);
 typedef jzentry* (JNICALL *FindEntry_t)(jzfile *zip, const char *name, jint *sizeP, jint *nameLen);
 typedef jboolean (JNICALL *ReadEntry_t)(jzfile *zip, jzentry *entry, unsigned char *buf, char *namebuf);
-typedef jboolean (JNICALL *ReadMappedEntry_t)(jzfile *zip, jzentry *entry, unsigned char **buf, char *namebuf);
 typedef jzentry* (JNICALL *GetNextEntry_t)(jzfile *zip, jint n);
 typedef jboolean (JNICALL *ZipInflateFully_t)(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pmsg);
 typedef jint     (JNICALL *Crc32_t)(jint crc, const jbyte *buf, jint len);
@@ -91,7 +90,6 @@ static ZipOpen_t         ZipOpen            = NULL;
 static ZipClose_t        ZipClose           = NULL;
 static FindEntry_t       FindEntry          = NULL;
 static ReadEntry_t       ReadEntry          = NULL;
-static ReadMappedEntry_t ReadMappedEntry    = NULL;
 static GetNextEntry_t    GetNextEntry       = NULL;
 static canonicalize_fn_t CanonicalizeEntry  = NULL;
 static ZipInflateFully_t ZipInflateFully    = NULL;
@@ -353,15 +351,10 @@ u1* ClassPathZipEntry::open_entry(const char* name, jint* filesize, bool nul_ter
     filename = NEW_RESOURCE_ARRAY(char, name_len + 1);
   }
 
-  // file found, get pointer to the entry in mmapped jar file.
-  if (ReadMappedEntry == NULL ||
-      !(*ReadMappedEntry)(_zip, entry, &buffer, filename)) {
-      // mmapped access not available, perhaps due to compression,
-      // read contents into resource array
-      int size = (*filesize) + ((nul_terminate) ? 1 : 0);
-      buffer = NEW_RESOURCE_ARRAY(u1, size);
-      if (!(*ReadEntry)(_zip, entry, buffer, filename)) return NULL;
-  }
+  // read contents into resource array
+  int size = (*filesize) + ((nul_terminate) ? 1 : 0);
+  buffer = NEW_RESOURCE_ARRAY(u1, size);
+  if (!(*ReadEntry)(_zip, entry, buffer, filename)) return NULL;
 
   // return result
   if (nul_terminate) {
@@ -1079,7 +1072,6 @@ void ClassLoader::load_zip_library() {
   ZipClose     = CAST_TO_FN_PTR(ZipClose_t, os::dll_lookup(handle, "ZIP_Close"));
   FindEntry    = CAST_TO_FN_PTR(FindEntry_t, os::dll_lookup(handle, "ZIP_FindEntry"));
   ReadEntry    = CAST_TO_FN_PTR(ReadEntry_t, os::dll_lookup(handle, "ZIP_ReadEntry"));
-  ReadMappedEntry = CAST_TO_FN_PTR(ReadMappedEntry_t, os::dll_lookup(handle, "ZIP_ReadMappedEntry"));
   GetNextEntry = CAST_TO_FN_PTR(GetNextEntry_t, os::dll_lookup(handle, "ZIP_GetNextEntry"));
   ZipInflateFully = CAST_TO_FN_PTR(ZipInflateFully_t, os::dll_lookup(handle, "ZIP_InflateFully"));
   Crc32        = CAST_TO_FN_PTR(Crc32_t, os::dll_lookup(handle, "ZIP_CRC32"));
