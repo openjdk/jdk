@@ -388,7 +388,8 @@ public:
     static BOOL activateKeyboardLayout(HKL hkl);
 
     HANDLE m_waitEvent;
-    DWORD eventNumber;
+    volatile DWORD eventNumber;
+    volatile BOOL isInDoDragDropLoop;
 private:
     HWND CreateToolkitWnd(LPCTSTR name);
 
