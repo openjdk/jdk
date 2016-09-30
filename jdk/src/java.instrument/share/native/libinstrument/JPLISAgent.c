@@ -790,9 +790,10 @@ getModuleObject(jvmtiEnv*               jvmti,
     pkg_name_buf[len] = '\0';
 
     err = (*jvmti)->GetNamedModule(jvmti, loaderObject, pkg_name_buf, &moduleObject);
+    free((void*)pkg_name_buf);
+    check_phase_ret_blob(err, NULL);
     jplis_assert_msg(err == JVMTI_ERROR_NONE, "error in the JVMTI GetNamedModule");
 
-    free((void*)pkg_name_buf);
     return moduleObject;
 }
 
