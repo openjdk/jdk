@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -475,13 +475,14 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketSend
  * Method:    socketSetIntOption
  * Signature: (III)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketSetIntOption
-  (JNIEnv *env, jclass clazz, jint fd , jint cmd, jint value) {
+JNIEXPORT void JNICALL
+Java_java_net_DualStackPlainDatagramSocketImpl_socketSetIntOption
+  (JNIEnv *env, jclass clazz, jint fd, jint cmd, jint value)
+{
     int level = 0, opt = 0;
 
     if (NET_MapSocketOption(cmd, &level, &opt) < 0) {
-        JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "Invalid option");
+        JNU_ThrowByName(env, "java/net/SocketException", "Invalid option");
         return;
     }
 
@@ -495,14 +496,15 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketSetI
  * Method:    socketGetIntOption
  * Signature: (II)I
  */
-JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketGetIntOption
-  (JNIEnv *env, jclass clazz, jint fd, jint cmd) {
-    int level = 0, opt = 0, result=0;
+JNIEXPORT jint JNICALL
+Java_java_net_DualStackPlainDatagramSocketImpl_socketGetIntOption
+  (JNIEnv *env, jclass clazz, jint fd, jint cmd)
+{
+    int level = 0, opt = 0, result = 0;
     int result_len = sizeof(result);
 
     if (NET_MapSocketOption(cmd, &level, &opt) < 0) {
-        JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "Invalid option");
+        JNU_ThrowByName(env, "java/net/SocketException", "Invalid option");
         return -1;
     }
 
@@ -519,8 +521,10 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketGetI
  * Method:    dataAvailable
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_dataAvailable
-(JNIEnv *env, jobject this) {
+JNIEXPORT jint JNICALL
+Java_java_net_DualStackPlainDatagramSocketImpl_dataAvailable
+  (JNIEnv *env, jobject this)
+{
     SOCKET fd;
     int  rv = -1;
     jobject fdObj = (*env)->GetObjectField(env, this, pdsi_fdID);

@@ -81,7 +81,8 @@ public class ImageLocation {
                 }
 
                 if (kind < ATTRIBUTE_END || ATTRIBUTE_COUNT <= kind) {
-                    throw new InternalError("Invalid jimage attribute kind");
+                    throw new InternalError(
+                        "Invalid jimage attribute kind: " + kind);
                 }
 
                 int length = attributeLength(data);
@@ -91,7 +92,7 @@ public class ImageLocation {
                     value <<= 8;
 
                     if (!bytes.hasRemaining()) {
-                        throw new InternalError("\"Missing jimage attribute datad");
+                        throw new InternalError("Missing jimage attribute data");
                     }
 
                     value |= bytes.get() & 0xFF;
@@ -134,7 +135,8 @@ public class ImageLocation {
 
     long getAttribute(int kind) {
         if (kind < ATTRIBUTE_END || ATTRIBUTE_COUNT <= kind) {
-            throw new InternalError("Invalid jimage attribute kind");
+            throw new InternalError(
+                "Invalid jimage attribute kind: " + kind);
         }
 
         return attributes[kind];
@@ -142,7 +144,8 @@ public class ImageLocation {
 
     String getAttributeString(int kind) {
         if (kind < ATTRIBUTE_END || ATTRIBUTE_COUNT <= kind) {
-            throw new InternalError("Invalid jimage attribute kind");
+            throw new InternalError(
+                "Invalid jimage attribute kind: " + kind);
         }
 
         return getStrings().get((int)attributes[kind]);

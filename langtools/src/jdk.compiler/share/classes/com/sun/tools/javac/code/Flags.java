@@ -134,7 +134,7 @@ public class Flags {
     /** Flag is set for nested classes that do not access instance members
      *  or `this' of an outer class and therefore don't need to be passed
      *  a this$n reference.  This value is currently set only for anonymous
-     *  classes in superclass constructor calls and only for pre 1.4 targets.
+     *  classes in superclass constructor calls.
      *  todo: use this value for optimizing away this$n parameters in
      *  other cases.
      */

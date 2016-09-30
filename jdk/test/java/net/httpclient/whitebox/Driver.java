@@ -24,5 +24,6 @@
 /*
  * @test
  * @bug 8151299
+ * @modules java.httpclient
  * @run testng java.httpclient/java.net.http.SelectorTest
  */

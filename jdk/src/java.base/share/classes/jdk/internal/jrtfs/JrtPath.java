@@ -122,7 +122,8 @@ final class JrtPath implements Path {
     public final JrtPath getName(int index) {
         initOffsets();
         if (index < 0 || index >= offsets.length) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("index: " +
+                index + ", offsets length: " + offsets.length);
         }
         int begin = offsets[index];
         int end;
@@ -139,7 +140,9 @@ final class JrtPath implements Path {
         initOffsets();
         if (beginIndex < 0 || endIndex > offsets.length ||
             beginIndex >= endIndex) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(
+                "beginIndex: " + beginIndex + ", endIndex: " + endIndex +
+                ", offsets length: " + offsets.length);
         }
         // starting/ending offsets
         int begin = offsets[beginIndex];
@@ -211,7 +214,8 @@ final class JrtPath implements Path {
             return o;
         }
         if (jrtfs != o.jrtfs || isAbsolute() != o.isAbsolute()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(
+                "Incorrect filesystem or path: " + other);
         }
         final String tp = this.path;
         final String op = o.path;
@@ -366,7 +370,8 @@ final class JrtPath implements Path {
     private JrtPath checkPath(Path path) {
         Objects.requireNonNull(path);
         if (!(path instanceof JrtPath))
-            throw new ProviderMismatchException();
+            throw new ProviderMismatchException("path class: " +
+                path.getClass());
         return (JrtPath) path;
     }
 
@@ -459,7 +464,7 @@ final class JrtPath implements Path {
             }
             if (c == '\u0000') {
                 throw new InvalidPathException(path,
-                        "Path: nul character not allowed");
+                        "Path: NUL character not allowed");
             }
             to.append(c);
             prevC = c;

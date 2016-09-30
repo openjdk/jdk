@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,26 +37,27 @@ public class TimeToLive {
     static int[] bad_ttls = { -1, 256 };
 
     public static void main(String[] args) throws Exception {
-        MulticastSocket socket = new MulticastSocket(6789);
-        int ttl = socket.getTimeToLive();
-        System.out.println("default ttl: " + ttl);
-        for (int i = 0; i < new_ttls.length; i++) {
-            socket.setTimeToLive(new_ttls[i]);
-            if (!(new_ttls[i] == socket.getTimeToLive())) {
-                throw new RuntimeException("test failure, set/get differ: " +
-                                           new_ttls[i] + " /  " +
-                                           socket.getTimeToLive());
+        try (MulticastSocket socket = new MulticastSocket()) {
+            int ttl = socket.getTimeToLive();
+            System.out.println("default ttl: " + ttl);
+            for (int i = 0; i < new_ttls.length; i++) {
+                socket.setTimeToLive(new_ttls[i]);
+                if (!(new_ttls[i] == socket.getTimeToLive())) {
+                    throw new RuntimeException("test failure, set/get differ: " +
+                            new_ttls[i] + " /  " +
+                            socket.getTimeToLive());
+                }
             }
-        }
-        for (int j = 0; j < bad_ttls.length; j++) {
-            boolean exception = false;
-            try {
-                socket.setTimeToLive(bad_ttls[j]);
-            } catch (IllegalArgumentException e) {
-                exception = true;
-            }
-            if (!exception) {
-                throw new RuntimeException("bad argument accepted: " + bad_ttls[j]);
+            for (int j = 0; j < bad_ttls.length; j++) {
+                boolean exception = false;
+                try {
+                    socket.setTimeToLive(bad_ttls[j]);
+                } catch (IllegalArgumentException e) {
+                    exception = true;
+                }
+                if (!exception) {
+                    throw new RuntimeException("bad argument accepted: " + bad_ttls[j]);
+                }
             }
         }
     }

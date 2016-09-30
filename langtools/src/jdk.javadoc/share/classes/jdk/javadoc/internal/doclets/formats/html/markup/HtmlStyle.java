@@ -48,7 +48,6 @@ public enum HtmlStyle {
     classUseContainer,
     colFirst,
     colLast,
-    colOne,
     colSecond,
     constantsSummary,
     constantValuesContainer,

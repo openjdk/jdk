@@ -1795,9 +1795,9 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1,
  * Signature: (ILjava/lang/Object;)V
  */
 JNIEXPORT void JNICALL
-Java_java_net_TwoStacksPlainDatagramSocketImpl_socketNativeSetOption(JNIEnv *env,jobject this,
-                                                      jint opt,jobject value) {
-
+Java_java_net_TwoStacksPlainDatagramSocketImpl_socketNativeSetOption
+  (JNIEnv *env,jobject this, jint opt,jobject value)
+{
     int fd=-1, fd1=-1;
     int levelv4 = 0, levelv6 = 0, optnamev4 = 0, optnamev6 = 0, optlen = 0;
     union {
@@ -1828,13 +1828,13 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_socketNativeSetOption(JNIEnv *env
      */
     if (fd1 != -1) {
         if (NET_MapSocketOptionV6(opt, &levelv6, &optnamev6)) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Invalid option");
+            JNU_ThrowByName(env, "java/net/SocketException", "Invalid option");
             return;
         }
     }
     if (fd != -1) {
         if (NET_MapSocketOption(opt, &levelv4, &optnamev4)) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Invalid option");
+            JNU_ThrowByName(env, "java/net/SocketException", "Invalid option");
             return;
         }
     }
@@ -2163,9 +2163,9 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1, jint o
  * Signature: (I)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL
-Java_java_net_TwoStacksPlainDatagramSocketImpl_socketGetOption(JNIEnv *env, jobject this,
-                                                      jint opt) {
-
+Java_java_net_TwoStacksPlainDatagramSocketImpl_socketGetOption
+  (JNIEnv *env, jobject this, jint opt)
+{
     int fd=-1, fd1=-1;
     int level, optname, optlen;
     union {
@@ -2197,13 +2197,13 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_socketGetOption(JNIEnv *env, jobj
      * level and option name.
      */
     if (NET_MapSocketOption(opt, &level, &optname)) {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Invalid option");
+        JNU_ThrowByName(env, "java/net/SocketException", "Invalid option");
         return NULL;
     }
 
     if (fd == -1) {
         if (NET_MapSocketOptionV6(opt, &level, &optname)) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Invalid option");
+            JNU_ThrowByName(env, "java/net/SocketException", "Invalid option");
             return NULL;
         }
         fd = fd1; /* must be IPv6 only */

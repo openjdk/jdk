@@ -32,6 +32,7 @@
  * @run
  */
 
+var Reflector     = Java.type("jdk.nashorn.test.models.Reflector");
 var forName       = java.lang.Class["forName(String)"];
 var RuntimeEvent  = forName("jdk.nashorn.internal.runtime.events.RuntimeEvent").static;
 var getValue      = RuntimeEvent.class.getMethod("getValue");
@@ -42,6 +43,10 @@ var getReturnValue     = RecompilationEvent.class.getMethod("getReturnValue");
 var setReturnTypeAndValue = [];
 var expectedValues = [];
 
+function invoke(m, obj) {
+    return Reflector.invoke(m, obj);
+}
+
 function checkExpectedRecompilation(f, expectedValues, testCase) {
     Debug.clearRuntimeEvents();
     print(f());
@@ -51,12 +56,12 @@ function checkExpectedRecompilation(f, expectedValues, testCase) {
     if (events.length ==  expectedValues.length) {
         for (var i in events) {
             var e = events[i];
-            var returnValue = getReturnValue.invoke(e);
+            var returnValue = invoke(getReturnValue, e);
             if (typeof returnValue != 'undefined') {
-            setReturnTypeAndValue[i] = [getReturnType.invoke(getValue.invoke(e)), returnValue];
+                setReturnTypeAndValue[i] = [invoke(getReturnType, invoke(getValue, e)), returnValue];
             } else {
                 returnValue = "undefined";
-                setReturnTypeAndValue[i] = [getReturnType.invoke(getValue.invoke(e)), returnValue];
+                setReturnTypeAndValue[i] = [invoke(getReturnType, invoke(getValue, e)), returnValue];
             }
             if (!setReturnTypeAndValue[i].toString().equals(expectedValues[i].toString())) {
                 fail("The return values are not as expected. Expected value: " + expectedValues[i] + " and got: " + setReturnTypeAndValue[i] + " in test case: " + f);

@@ -808,6 +808,17 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Generates a TH tag with style class, scope attribute and some content.
+     *
+     * @param styleClass style for the tag
+     * @param body content for the tag
+     * @return an HtmlTree object for the TH tag
+     */
+    public static HtmlTree TH_ROW_SCOPE(HtmlStyle styleClass, Content body) {
+        return TH(styleClass, "row", body);
+    }
+
+    /**
      * Generates a TITLE tag with some content.
      *
      * @param body content for the tag

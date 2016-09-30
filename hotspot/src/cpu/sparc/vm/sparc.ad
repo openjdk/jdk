@@ -2921,6 +2921,26 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     __ cmp( Rold, O7 );
   %}
 
+  // raw int cas without using tmp register for compareAndExchange
+  enc_class enc_casi_exch( iRegP mem, iRegL old, iRegL new) %{
+    Register Rmem = reg_to_register_object($mem$$reg);
+    Register Rold = reg_to_register_object($old$$reg);
+    Register Rnew = reg_to_register_object($new$$reg);
+
+    MacroAssembler _masm(&cbuf);
+    __ cas(Rmem, Rold, Rnew);
+  %}
+
+  // 64-bit cas without using tmp register for compareAndExchange
+  enc_class enc_casx_exch( iRegP mem, iRegL old, iRegL new) %{
+    Register Rmem = reg_to_register_object($mem$$reg);
+    Register Rold = reg_to_register_object($old$$reg);
+    Register Rnew = reg_to_register_object($new$$reg);
+
+    MacroAssembler _masm(&cbuf);
+    __ casx(Rmem, Rold, Rnew);
+  %}
+
   enc_class enc_lflags_ne_to_boolean( iRegI res ) %{
     Register Rres = reg_to_register_object($res$$reg);
 
@@ -7105,6 +7125,7 @@ instruct storeLConditional( iRegP mem_ptr, iRegL oldval, g3RegL newval, flagsReg
 instruct compareAndSwapL_bool(iRegP mem_ptr, iRegL oldval, iRegL newval, iRegI res, o7RegI tmp1, flagsReg ccr ) %{
   predicate(VM_Version::supports_cx8());
   match(Set res (CompareAndSwapL mem_ptr (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapL mem_ptr (Binary oldval newval)));
   effect( USE mem_ptr, KILL ccr, KILL tmp1);
   format %{
             "MOV    $newval,O7\n\t"
@@ -7121,6 +7142,7 @@ instruct compareAndSwapL_bool(iRegP mem_ptr, iRegL oldval, iRegL newval, iRegI r
 
 instruct compareAndSwapI_bool(iRegP mem_ptr, iRegI oldval, iRegI newval, iRegI res, o7RegI tmp1, flagsReg ccr ) %{
   match(Set res (CompareAndSwapI mem_ptr (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapI mem_ptr (Binary oldval newval)));
   effect( USE mem_ptr, KILL ccr, KILL tmp1);
   format %{
             "MOV    $newval,O7\n\t"
@@ -7139,6 +7161,7 @@ instruct compareAndSwapP_bool(iRegP mem_ptr, iRegP oldval, iRegP newval, iRegI r
   predicate(VM_Version::supports_cx8());
 #endif
   match(Set res (CompareAndSwapP mem_ptr (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapP mem_ptr (Binary oldval newval)));
   effect( USE mem_ptr, KILL ccr, KILL tmp1);
   format %{
             "MOV    $newval,O7\n\t"
@@ -7159,6 +7182,7 @@ instruct compareAndSwapP_bool(iRegP mem_ptr, iRegP oldval, iRegP newval, iRegI r
 
 instruct compareAndSwapN_bool(iRegP mem_ptr, iRegN oldval, iRegN newval, iRegI res, o7RegI tmp1, flagsReg ccr ) %{
   match(Set res (CompareAndSwapN mem_ptr (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapN mem_ptr (Binary oldval newval)));
   effect( USE mem_ptr, KILL ccr, KILL tmp1);
   format %{
             "MOV    $newval,O7\n\t"
@@ -7169,6 +7193,54 @@ instruct compareAndSwapN_bool(iRegP mem_ptr, iRegN oldval, iRegN newval, iRegI r
   %}
   ins_encode( enc_casi(mem_ptr, oldval, newval),
               enc_iflags_ne_to_boolean(res) );
+  ins_pipe( long_memory_op );
+%}
+
+instruct compareAndExchangeI(iRegP mem_ptr, iRegI oldval, iRegI newval)
+%{
+  match(Set newval (CompareAndExchangeI mem_ptr (Binary oldval newval)));
+  effect( USE mem_ptr );
+
+  format %{
+            "CASA   [$mem_ptr],$oldval,$newval\t! If $oldval==[$mem_ptr] Then store $newval into [$mem_ptr] and set $newval=[$mem_ptr]\n\t"
+  %}
+  ins_encode( enc_casi_exch(mem_ptr, oldval, newval) );
+  ins_pipe( long_memory_op );
+%}
+
+instruct compareAndExchangeL(iRegP mem_ptr, iRegL oldval, iRegL newval)
+%{
+  match(Set newval (CompareAndExchangeL mem_ptr (Binary oldval newval)));
+  effect( USE mem_ptr );
+
+  format %{
+            "CASXA  [$mem_ptr],$oldval,$newval\t! If $oldval==[$mem_ptr] Then store $newval into [$mem_ptr] and set $newval=[$mem_ptr]\n\t"
+  %}
+  ins_encode( enc_casx_exch(mem_ptr, oldval, newval) );
+  ins_pipe( long_memory_op );
+%}
+
+instruct compareAndExchangeP(iRegP mem_ptr, iRegP oldval, iRegP newval)
+%{
+  match(Set newval (CompareAndExchangeP mem_ptr (Binary oldval newval)));
+  effect( USE mem_ptr );
+
+  format %{
+            "CASXA  [$mem_ptr],$oldval,$newval\t! If $oldval==[$mem_ptr] Then store $newval into [$mem_ptr] and set $newval=[$mem_ptr]\n\t"
+  %}
+  ins_encode( enc_casx_exch(mem_ptr, oldval, newval) );
+  ins_pipe( long_memory_op );
+%}
+
+instruct compareAndExchangeN(iRegP mem_ptr, iRegN oldval, iRegN newval)
+%{
+  match(Set newval (CompareAndExchangeN mem_ptr (Binary oldval newval)));
+  effect( USE mem_ptr );
+
+  format %{
+            "CASA   [$mem_ptr],$oldval,$newval\t! If $oldval==[$mem_ptr] Then store $newval into [$mem_ptr] and set $newval=[$mem_ptr]\n\t"
+  %}
+  ins_encode( enc_casi_exch(mem_ptr, oldval, newval) );
   ins_pipe( long_memory_op );
 %}
 
