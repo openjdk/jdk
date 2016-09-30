@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.util.*;
 
 import javax.lang.model.element.Modifier;
@@ -332,7 +331,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         Content nameContent = getDocLink(LinkInfoImpl.Kind.CONSTANT_SUMMARY,
                 member, member.getSimpleName(), false);
         Content code = HtmlTree.CODE(nameContent);
-        return HtmlTree.TD(code);
+        return HtmlTree.TH_ROW_SCOPE(HtmlStyle.colSecond, code);
     }
 
     /**

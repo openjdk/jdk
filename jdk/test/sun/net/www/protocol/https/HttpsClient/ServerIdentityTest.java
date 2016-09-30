@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
  * @bug 4328195
  * @summary Need to include the alternate subject DN for certs,
  *          https should check for this
- * @run main/othervm ServerIdentityTest
+ * @library /javax/net/ssl/templates
+ * @run main/othervm ServerIdentityTest dnsstore
+ * @run main/othervm ServerIdentityTest ipstore
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use
  *     system properties in samevm/agentvm mode.
@@ -34,242 +36,71 @@
  * @author Yingxian Wang
  */
 
-import java.io.*;
-import java.net.*;
-import javax.net.ssl.*;
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.security.KeyStore;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
 
 public class ServerIdentityTest {
 
-    /*
-     * =============================================================
-     * Set the various variables needed for the tests, then
-     * specify what tests to run on each side.
-     */
-
-    /*
-     * Should we run the client or server in a separate thread?
-     * Both sides can throw exceptions, but do you have a preference
-     * as to which side should be the main thread.
-     */
-    static boolean separateServerThread = true;
-
-    /*
-     * Where do we find the keystores?
-     */
-    static String pathToStores = "./";
-    static String[] keyStoreFiles = {"dnsstore", "ipstore"};
-    static String[] trustStoreFiles = {"dnsstore", "ipstore"};
-    static String passwd = "changeit";
-
-    /*
-     * Is the server ready to serve?
-     */
-    boolean serverReady = false;
-
-    /*
-     * Turn on SSL debugging?
-     */
-    static boolean debug = false;
-
-    /*
-     * If the client or server is doing some kind of object creation
-     * that the other side depends on, and that thread prematurely
-     * exits, you may experience a hang.  The test harness will
-     * terminate all hung threads after its timeout has expired,
-     * currently 3 minutes by default, but you might try to be
-     * smart about it....
-     */
-
-    /*
-     * Define the server side of the test.
-     *
-     * If the server prematurely exits, serverReady will be set to true
-     * to avoid infinite hangs.
-     */
-    void doServerSide() throws Exception {
-        SSLServerSocketFactory sslssf =
-            context.getServerSocketFactory();
-        SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
-        serverPort = sslServerSocket.getLocalPort();
-
-        /*
-         * Signal Client, we're ready for his connect.
-         */
-        serverReady = true;
-
-        SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
-        OutputStream sslOS = sslSocket.getOutputStream();
-        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(sslOS));
-        bw.write("HTTP/1.1 200 OK\r\n\r\n\r\n");
-        bw.flush();
-        Thread.sleep(2000);
-        sslSocket.getSession().invalidate();
-        sslSocket.close();
-    }
-
-    /*
-     * Define the client side of the test.
-     *
-     * If the server prematurely exits, serverReady will be set to true
-     * to avoid infinite hangs.
-     */
-    void doClientSide() throws Exception {
-        /*
-         * Wait for server to get started.
-         */
-        while (!serverReady) {
-            Thread.sleep(50);
-        }
-        String host = iphost? "127.0.0.1": "localhost";
-        URL url = new URL("https://"+host+":"+serverPort+"/index.html");
-
-        HttpURLConnection urlc = (HttpURLConnection)url.openConnection();
-        InputStream is = urlc.getInputStream();
-        is.close();
-    }
-
-    /*
-     * =============================================================
-     * The remainder is just support stuff
-     */
-
-    volatile int serverPort = 0;
-
-    volatile Exception serverException = null;
-    volatile Exception clientException = null;
+    private static final String PASSWORD = "changeit";
 
     public static void main(String[] args) throws Exception {
-        SSLSocketFactory reservedSFactory =
-                HttpsURLConnection.getDefaultSSLSocketFactory();
-        try {
-            for (int i = 0; i < keyStoreFiles.length; i++) {
-                String keyFilename =
-                    System.getProperty("test.src", ".") + "/" + pathToStores +
-                    "/" + keyStoreFiles[i];
-                String trustFilename =
-                    System.getProperty("test.src", ".") + "/" + pathToStores +
-                    "/" + trustStoreFiles[i];
+        final String keystore = args[0];
+        String keystoreFilename = SSLTest.TEST_SRC + "/" + keystore;
 
-                System.setProperty("javax.net.ssl.keyStore", keyFilename);
-                System.setProperty("javax.net.ssl.keyStorePassword", passwd);
-                System.setProperty("javax.net.ssl.trustStore", trustFilename);
-                System.setProperty("javax.net.ssl.trustStorePassword", passwd);
+        SSLTest.setup(keystoreFilename, keystoreFilename, PASSWORD);
 
-                if (debug)
-                    System.setProperty("javax.net.debug", "all");
-                SSLContext context = SSLContext.getInstance("SSL");
+        SSLContext context = SSLContext.getInstance("SSL");
 
-                KeyManager[] kms = new KeyManager[1];
-                KeyStore ks = KeyStore.getInstance("JKS");
-                FileInputStream fis = new FileInputStream(keyFilename);
-                ks.load(fis, passwd.toCharArray());
-                fis.close();
-                KeyManager km = new MyKeyManager(ks, passwd.toCharArray());
-                kms[0] = km;
-                context.init(kms, null, null);
-                HttpsURLConnection.setDefaultSSLSocketFactory(
-                     context.getSocketFactory());
-
-                /*
-                 * Start the tests.
-                 */
-                System.out.println("Testing " + keyFilename);
-                new ServerIdentityTest(context, keyStoreFiles[i]);
-            }
-        } finally {
-            HttpsURLConnection.setDefaultSSLSocketFactory(reservedSFactory);
-        }
-    }
-
-    Thread clientThread = null;
-    Thread serverThread = null;
-
-    /*
-     * Primary constructor, used to drive remainder of the test.
-     *
-     * Fork off the other side, then do your work.
-     */
-    SSLContext context;
-    boolean iphost = false;
-    ServerIdentityTest(SSLContext context, String keystore)
-        throws Exception {
-        this.context = context;
-        iphost = keystore.equals("ipstore");
-        if (separateServerThread) {
-            startServer(true);
-            startClient(false);
-        } else {
-            startClient(true);
-            startServer(false);
-        }
+        KeyManager[] kms = new KeyManager[1];
+        KeyStore ks = SSLTest.loadJksKeyStore(keystoreFilename, PASSWORD);
+        KeyManager km = new MyKeyManager(ks, PASSWORD.toCharArray());
+        kms[0] = km;
+        context.init(kms, null, null);
+        HttpsURLConnection.setDefaultSSLSocketFactory(
+                context.getSocketFactory());
 
         /*
-         * Wait for other side to close down.
+         * Start the test.
          */
-        if (separateServerThread) {
-            serverThread.join();
-        } else {
-            clientThread.join();
-        }
+        System.out.println("Testing " + keystore);
 
-        /*
-         * When we get here, the test is pretty much over.
-         *
-         * If the main thread excepted, that propagates back
-         * immediately.  If the other thread threw an exception, we
-         * should report back.
-         */
-        if (serverException != null)
-            throw serverException;
-        if (clientException != null)
-            throw clientException;
-    }
-
-    void startServer(boolean newThread) throws Exception {
-        if (newThread) {
-            serverThread = new Thread() {
-                public void run() {
-                    try {
-                        doServerSide();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        /*
-                         * Our server thread just died.
-                         *
-                         * Release the client, if not active already...
-                         */
-                        System.err.println("Server died...");
-                        serverReady = true;
-                        serverException = e;
-                    }
+        new SSLTest()
+            .setSSLContext(context)
+            .setServerApplication((socket, test) -> {
+                BufferedWriter bw = new BufferedWriter(
+                        new OutputStreamWriter(socket.getOutputStream()));
+                bw.write("HTTP/1.1 200 OK\r\n\r\n\r\n");
+                bw.flush();
+                Thread.sleep(2000);
+                socket.getSession().invalidate();
+                SSLTest.print("Server application is done");
+            })
+            .setClientPeer((test) -> {
+                boolean serverIsReady = test.waitForServerSignal();
+                if (!serverIsReady) {
+                    SSLTest.print(
+                            "The server is not ready, ignore on client side.");
+                    return;
                 }
-            };
-            serverThread.start();
-        } else {
-            doServerSide();
-        }
-    }
 
-    void startClient(boolean newThread) throws Exception {
-        if (newThread) {
-            clientThread = new Thread() {
-                public void run() {
-                    try {
-                        doClientSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our client thread just died.
-                         */
-                        System.err.println("Client died...");
-                        clientException = e;
-                    }
-                }
-            };
-            clientThread.start();
-        } else {
-            doClientSide();
-        }
+                // Signal the server, the client is ready to communicate.
+                test.signalClientReady();
+
+                String host = keystore.equals("ipstore")
+                        ? "127.0.0.1" : "localhost";
+                URL url = new URL("https://" + host + ":" + test.getServerPort()
+                        + "/index.html");
+
+                ((HttpURLConnection) url.openConnection())
+                        .getInputStream().close();
+
+                SSLTest.print("Client is done");
+            }).runTest();
     }
 }

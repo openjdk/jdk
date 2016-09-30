@@ -25,7 +25,6 @@
  * @test
  * @bug 8058575
  * @summary Test that bad host classes cause exceptions to get thrown.
- * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.org.objectweb.asm
  * @run main TestBadHostClass
@@ -35,7 +34,6 @@
 import java.lang.*;
 import java.lang.reflect.Field;
 import jdk.internal.misc.Unsafe;
-import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 

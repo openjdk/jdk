@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,27 +258,38 @@ class NativeRSASignature extends SignatureSpi {
 
     @Override
     protected synchronized byte[] engineSign() throws SignatureException {
-        byte[] sig = new byte[sigLength];
-        int rv = doFinal(sig, 0, sigLength);
-        if (rv < 0) {
-            throw new SignatureException(new UcryptoException(-rv));
+        try {
+            byte[] sig = new byte[sigLength];
+            int rv = doFinal(sig, 0, sigLength);
+            if (rv < 0) {
+                throw new SignatureException(new UcryptoException(-rv));
+            }
+            return sig;
+        } finally {
+            // doFinal should already be called, no need to cancel
+            reset(false);
         }
-        return sig;
     }
 
     @Override
     protected synchronized int engineSign(byte[] outbuf, int offset, int len)
         throws SignatureException {
-        if (outbuf == null || (offset < 0) || (outbuf.length < (offset + sigLength))
-            || (len < sigLength)) {
-            throw new SignatureException("Invalid output buffer. offset: " +
-                offset + ". len: " + len + ". sigLength: " + sigLength);
+        boolean doCancel = true;
+        try {
+            if (outbuf == null || (offset < 0) || (outbuf.length < (offset + sigLength))
+                || (len < sigLength)) {
+                throw new SignatureException("Invalid output buffer. offset: " +
+                    offset + ". len: " + len + ". sigLength: " + sigLength);
+            }
+            int rv = doFinal(outbuf, offset, sigLength);
+            doCancel = false;
+            if (rv < 0) {
+                throw new SignatureException(new UcryptoException(-rv));
+            }
+            return sigLength;
+        } finally {
+            reset(doCancel);
         }
-        int rv = doFinal(outbuf, offset, sigLength);
-        if (rv < 0) {
-            throw new SignatureException(new UcryptoException(-rv));
-        }
-        return sigLength;
     }
 
     @Override
@@ -329,19 +340,25 @@ class NativeRSASignature extends SignatureSpi {
     @Override
     protected synchronized boolean engineVerify(byte[] sigBytes, int sigOfs, int sigLen)
         throws SignatureException {
-        if (sigBytes == null || (sigOfs < 0) || (sigBytes.length < (sigOfs + this.sigLength))
-            || (sigLen != this.sigLength)) {
-            throw new SignatureException("Invalid signature length: got " +
-                sigLen + " but was expecting " + this.sigLength);
-        }
+        boolean doCancel = true;
+        try {
+            if (sigBytes == null || (sigOfs < 0) || (sigBytes.length < (sigOfs + this.sigLength))
+                || (sigLen != this.sigLength)) {
+                throw new SignatureException("Invalid signature length: got " +
+                    sigLen + " but was expecting " + this.sigLength);
+            }
 
-        int rv = doFinal(sigBytes, sigOfs, sigLen);
-        if (rv == 0) {
-            return true;
-        } else {
-            UcryptoProvider.debug("Signature: " + mech + " verification error " +
+            int rv = doFinal(sigBytes, sigOfs, sigLen);
+            doCancel = false;
+            if (rv == 0) {
+                return true;
+            } else {
+                UcryptoProvider.debug("Signature: " + mech + " verification error " +
                              new UcryptoException(-rv).getMessage());
-            return false;
+                return false;
+            }
+        } finally {
+            reset(doCancel);
         }
     }
 
@@ -432,13 +449,9 @@ class NativeRSASignature extends SignatureSpi {
 
     // returns 0 (success) or negative (ucrypto error occurred)
     private int doFinal(byte[] sigBytes, int sigOfs, int sigLen) {
-        try {
-            ensureInitialized();
-            int k = nativeFinal(pCtxt.id, sign, sigBytes, sigOfs, sigLen);
-            return k;
-        } finally {
-            reset(false);
-        }
+        ensureInitialized();
+        int k = nativeFinal(pCtxt.id, sign, sigBytes, sigOfs, sigLen);
+        return k;
     }
 
     // check and return RSA key size in number of bytes

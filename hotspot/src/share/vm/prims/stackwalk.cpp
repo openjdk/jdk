@@ -113,7 +113,10 @@ int StackWalk::fill_in_frames(jlong mode, JavaFrameStream& stream,
     int bci = stream.bci();
 
     if (method == NULL) continue;
-    if (!ShowHiddenFrames && StackWalk::skip_hidden_frames(mode)) {
+
+    // skip hidden frames for default StackWalker option (i.e. SHOW_HIDDEN_FRAMES
+    // not set) and when StackWalker::getCallerClass is called
+    if (!ShowHiddenFrames && (skip_hidden_frames(mode) || get_caller_class(mode))) {
       if (method->is_hidden()) {
         if (TraceStackWalk) {
           tty->print("  hidden method: "); method->print_short_name();
@@ -139,7 +142,14 @@ int StackWalk::fill_in_frames(jlong mode, JavaFrameStream& stream,
       Handle stackFrame(frames_array->obj_at(index));
       fill_stackframe(stackFrame, method, bci);
     } else {
-      assert (use_frames_array(mode) == false, "Bad mode for get caller class");
+      assert (use_frames_array(mode) == false, "Bad mode for filling in Class object");
+      if (get_caller_class(mode) && index == start_index && method->caller_sensitive()) {
+        ResourceMark rm(THREAD);
+        THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(),
+          err_msg("StackWalker::getCallerClass called from @CallerSensitive %s method",
+                  method->name_and_sig_as_C_string()));
+      }
+
       frames_array->obj_at_put(index, method->method_holder()->java_mirror());
     }
     if (++frames_decoded >= max_nframes)  break;

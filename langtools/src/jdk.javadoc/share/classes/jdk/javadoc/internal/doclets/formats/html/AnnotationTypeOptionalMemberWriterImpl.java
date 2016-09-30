@@ -133,9 +133,8 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
      */
     public List<String> getSummaryTableHeader(Element member) {
         List<String> header = Arrays.asList(writer.getModifierTypeHeader(),
-                configuration.getText("doclet.0_and_1",
-                        configuration.getText("doclet.Annotation_Type_Optional_Member"),
-                        configuration.getText("doclet.Description")));
+                resources.getText("doclet.Annotation_Type_Optional_Member"),
+                resources.getText("doclet.Description"));
         return header;
     }
 

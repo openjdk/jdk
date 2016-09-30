@@ -21,10 +21,11 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8046343
  * @summary Make sure that direct protocol is available
+ * @modules java.smartcardio/javax.smartcardio
  * @run main/manual TestDirect
  */
 

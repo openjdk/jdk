@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4951228 6290760 8025633 8026567 8081854
+ * @bug      4951228 6290760 8025633 8026567 8081854 8162363
  * @summary  Test the case where the overriden method returns a different
  *           type than the method in the child class.  Make sure the
  *           documentation is inherited but the return type isn't.
@@ -51,7 +51,7 @@ public class TestMemberSummary extends JavadocTester {
         checkOutput("pkg/PublicChild.html", true,
                 // Check return type in member summary.
                 "<code><a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">PublicChild</a></code></td>\n"
-                + "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../pkg/PublicChild.html#returnTypeTest--\">"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"../pkg/PublicChild.html#returnTypeTest--\">"
                 + "returnTypeTest</a></span>()</code>",
                 // Check return type in member detail.
                 "<pre>public&nbsp;<a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">"

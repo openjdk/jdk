@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 
@@ -215,9 +214,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
     @Override
     public List<String> getSummaryTableHeader(Element member) {
         List<String> header = Arrays.asList(writer.getModifierTypeHeader(),
-            resources.getText("doclet.0_and_1",
-                    resources.getText("doclet.Field"),
-                    resources.getText("doclet.Description")));
+                resources.getText("doclet.Field"), resources.getText("doclet.Description"));
         return header;
     }
 

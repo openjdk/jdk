@@ -256,7 +256,7 @@ public class Analyzer {
         // return classname or package name depending on the level
         private String getLocationName(Location o) {
             if (level == Type.CLASS || level == Type.VERBOSE) {
-                return o.getClassName();
+                return VersionHelper.get(o.getClassName());
             } else {
                 String pkg = o.getPackageName();
                 return pkg.isEmpty() ? "<unnamed>" : pkg;
