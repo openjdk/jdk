@@ -263,4 +263,26 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+//------------------------------FmaDNode--------------------------------------
+// fused-multiply-add double
+class FmaDNode : public Node {
+public:
+  FmaDNode(Node *c, Node *in1, Node *in2, Node *in3) : Node(c, in1, in2, in3) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return Type::DOUBLE; }
+  virtual uint ideal_reg() const { return Op_RegD; }
+  virtual const Type* Value(PhaseGVN* phase) const;
+};
+
+//------------------------------FmaFNode--------------------------------------
+// fused-multiply-add float
+class FmaFNode : public Node {
+public:
+  FmaFNode(Node *c, Node *in1, Node *in2, Node *in3) : Node(c, in1, in2, in3) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return Type::FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+  virtual const Type* Value(PhaseGVN* phase) const;
+};
+
 #endif // SHARE_VM_OPTO_MULNODE_HPP

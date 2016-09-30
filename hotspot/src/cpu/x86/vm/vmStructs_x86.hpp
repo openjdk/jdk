@@ -73,6 +73,7 @@
 #define VM_LONG_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
   declare_preprocessor_constant("VM_Version::CPU_AVX512BW", CPU_AVX512BW) \
   declare_preprocessor_constant("VM_Version::CPU_AVX512VL", CPU_AVX512VL) \
-  declare_preprocessor_constant("VM_Version::CPU_SHA", CPU_SHA)
+  declare_preprocessor_constant("VM_Version::CPU_SHA", CPU_SHA)           \
+  declare_preprocessor_constant("VM_Version::CPU_FMA", CPU_FMA)
 
 #endif // CPU_X86_VM_VMSTRUCTS_X86_HPP

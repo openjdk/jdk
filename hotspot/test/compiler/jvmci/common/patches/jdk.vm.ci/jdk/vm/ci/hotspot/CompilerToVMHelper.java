@@ -28,6 +28,7 @@ import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import java.lang.reflect.Executable;
 
 /**
  * A simple "proxy" class to get test access to CompilerToVM package-private methods
@@ -171,9 +172,9 @@ public class CompilerToVMHelper {
         return CTVM.hasFinalizableSubclass((HotSpotResolvedObjectTypeImpl) type);
     }
 
-    public static HotSpotResolvedJavaMethodImpl getResolvedJavaMethodAtSlot(
-            Class<?> holder, int slot) {
-        return CTVM.getResolvedJavaMethodAtSlot(holder, slot);
+    public static HotSpotResolvedJavaMethodImpl asResolvedJavaMethod(
+            Executable executable) {
+        return CTVM.asResolvedJavaMethod(executable);
     }
 
     public static long getMaxCallTargetOffset(long address) {

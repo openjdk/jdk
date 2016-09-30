@@ -22,6 +22,7 @@
  */
 package jdk.vm.ci.hotspot;
 
+import static jdk.vm.ci.hotspot.HotSpotModifiers.jvmFieldModifiers;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 
 import java.lang.annotation.Annotation;
@@ -29,7 +30,6 @@ import java.lang.reflect.Field;
 
 import jdk.internal.vm.annotation.Stable;
 import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.ModifiersProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
@@ -81,7 +81,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
 
     @Override
     public int getModifiers() {
-        return modifiers & ModifiersProvider.jvmFieldModifiers();
+        return modifiers & jvmFieldModifiers();
     }
 
     @Override

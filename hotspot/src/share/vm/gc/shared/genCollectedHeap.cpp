@@ -721,7 +721,7 @@ bool GenCollectedHeap::supports_inline_contig_alloc() const {
   return _young_gen->supports_inline_contig_alloc();
 }
 
-HeapWord** GenCollectedHeap::top_addr() const {
+HeapWord* volatile* GenCollectedHeap::top_addr() const {
   return _young_gen->top_addr();
 }
 
@@ -1256,21 +1256,20 @@ class GenTimeOfLastGCClosure: public GenCollectedHeap::GenClosure {
 };
 
 jlong GenCollectedHeap::millis_since_last_gc() {
-  // We need a monotonically non-decreasing time in ms but
-  // os::javaTimeMillis() does not guarantee monotonicity.
+  // javaTimeNanos() is guaranteed to be monotonically non-decreasing
+  // provided the underlying platform provides such a time source
+  // (and it is bug free). So we still have to guard against getting
+  // back a time later than 'now'.
   jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
   GenTimeOfLastGCClosure tolgc_cl(now);
   // iterate over generations getting the oldest
   // time that a generation was collected
   generation_iterate(&tolgc_cl, false);
 
-  // javaTimeNanos() is guaranteed to be monotonically non-decreasing
-  // provided the underlying platform provides such a time source
-  // (and it is bug free). So we still have to guard against getting
-  // back a time later than 'now'.
   jlong retVal = now - tolgc_cl.time();
   if (retVal < 0) {
-    NOT_PRODUCT(log_warning(gc)("time warp: " JLONG_FORMAT, retVal);)
+    log_warning(gc)("millis_since_last_gc() would return : " JLONG_FORMAT
+       ". returning zero instead.", retVal);
     return 0;
   }
   return retVal;

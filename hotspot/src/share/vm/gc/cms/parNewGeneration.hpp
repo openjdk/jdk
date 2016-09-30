@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -323,7 +323,7 @@ class ParNewGeneration: public DefNewGeneration {
   // A list of from-space images of to-be-scanned objects, threaded through
   // klass-pointers (klass information already copied to the forwarded
   // image.)  Manipulated with CAS.
-  oop _overflow_list;
+  oopDesc* volatile _overflow_list;
   NOT_PRODUCT(ssize_t _num_par_pushes;)
 
   // This closure is used by the reference processor to filter out

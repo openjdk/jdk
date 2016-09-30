@@ -104,14 +104,14 @@ reg_def FPR7H( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next());
 //
 // Empty fill registers, which are never used, but supply alignment to xmm regs
 //
-reg_def FILL0( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next(2));
-reg_def FILL1( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next(3));
-reg_def FILL2( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next(4));
-reg_def FILL3( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next(5));
-reg_def FILL4( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next(6));
-reg_def FILL5( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next(7));
-reg_def FILL6( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next(8));
-reg_def FILL7( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next(9));
+reg_def FILL0( SOC, SOC, Op_RegF, 8, VMRegImpl::Bad());
+reg_def FILL1( SOC, SOC, Op_RegF, 9, VMRegImpl::Bad());
+reg_def FILL2( SOC, SOC, Op_RegF, 10, VMRegImpl::Bad());
+reg_def FILL3( SOC, SOC, Op_RegF, 11, VMRegImpl::Bad());
+reg_def FILL4( SOC, SOC, Op_RegF, 12, VMRegImpl::Bad());
+reg_def FILL5( SOC, SOC, Op_RegF, 13, VMRegImpl::Bad());
+reg_def FILL6( SOC, SOC, Op_RegF, 14, VMRegImpl::Bad());
+reg_def FILL7( SOC, SOC, Op_RegF, 15, VMRegImpl::Bad());
 
 // Specify priority of register selection within phases of register
 // allocation.  Highest priority is first.  A useful heuristic is to
