@@ -2047,6 +2047,25 @@ public class SwingUtilities2 {
     }
 
     /**
+     * Returns the client property for the given key if it is set; otherwise
+     * returns the {@L&F} property.
+     *
+     * @param component the component
+     * @param key an {@code String} specifying the key for the desired boolean value
+     * @return the boolean value of the client property if it is set or the {@L&F}
+     *         property in other case.
+     */
+    public static boolean getBoolean(JComponent component, String key) {
+        Object clientProperty = component.getClientProperty(key);
+
+        if (clientProperty instanceof Boolean) {
+            return Boolean.TRUE.equals(clientProperty);
+        }
+
+        return UIManager.getBoolean(key);
+    }
+
+    /**
      * Used to listen to "blit" repaints in RepaintManager.
      */
     public interface RepaintListener {

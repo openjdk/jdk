@@ -936,13 +936,15 @@ public class BasicMenuItemUI extends MenuItemUI
         }
     }
 
-    boolean closeOnMouseClick() {
+    boolean doNotCloseOnMouseClick() {
         if (menuItem instanceof JCheckBoxMenuItem) {
-            return UIManager.getBoolean("CheckBoxMenuItem.closeOnMouseClick");
+            String property = "CheckBoxMenuItem.doNotCloseOnMouseClick";
+            return SwingUtilities2.getBoolean(menuItem, property);
         } else if (menuItem instanceof JRadioButtonMenuItem) {
-            return UIManager.getBoolean("RadioButtonMenuItem.closeOnMouseClick");
+            String property = "RadioButtonMenuItem.doNotCloseOnMouseClick";
+            return SwingUtilities2.getBoolean(menuItem, property);
         }
-        return true;
+        return false;
     }
 
     /**
@@ -967,7 +969,7 @@ public class BasicMenuItemUI extends MenuItemUI
             BasicLookAndFeel.playSound(menuItem, getPropertyPrefix() +
                                        ".commandSound");
         }
-        if (closeOnMouseClick()) {
+        if (!doNotCloseOnMouseClick()) {
             // Visual feedback
             if (msm == null) {
                 msm = MenuSelectionManager.defaultManager();
