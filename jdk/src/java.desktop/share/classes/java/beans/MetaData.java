@@ -510,102 +510,6 @@ private abstract static class java_util_Collections extends PersistenceDelegate 
             return new Expression(oldInstance, Collections.class, "synchronizedSortedMap", new Object[]{map});
         }
     }
-
-    static final class CheckedCollection_PersistenceDelegate extends java_util_Collections {
-        protected Expression instantiate(Object oldInstance, Encoder out) {
-            Object type = MetaData.getPrivateFieldValue(oldInstance, "java.util.Collections$CheckedCollection.type");
-            List<?> list = new ArrayList<>((Collection<?>) oldInstance);
-            return new Expression(oldInstance, Collections.class, "checkedCollection", new Object[]{list, type});
-        }
-    }
-
-    static final class CheckedList_PersistenceDelegate extends java_util_Collections {
-        protected Expression instantiate(Object oldInstance, Encoder out) {
-            Object type = MetaData.getPrivateFieldValue(oldInstance, "java.util.Collections$CheckedCollection.type");
-            List<?> list = new LinkedList<>((Collection<?>) oldInstance);
-            return new Expression(oldInstance, Collections.class, "checkedList", new Object[]{list, type});
-        }
-    }
-
-    static final class CheckedRandomAccessList_PersistenceDelegate extends java_util_Collections {
-        protected Expression instantiate(Object oldInstance, Encoder out) {
-            Object type = MetaData.getPrivateFieldValue(oldInstance, "java.util.Collections$CheckedCollection.type");
-            List<?> list = new ArrayList<>((Collection<?>) oldInstance);
-            return new Expression(oldInstance, Collections.class, "checkedList", new Object[]{list, type});
-        }
-    }
-
-    static final class CheckedSet_PersistenceDelegate extends java_util_Collections {
-        protected Expression instantiate(Object oldInstance, Encoder out) {
-            Object type = MetaData.getPrivateFieldValue(oldInstance, "java.util.Collections$CheckedCollection.type");
-            Set<?> set = new HashSet<>((Set<?>) oldInstance);
-            return new Expression(oldInstance, Collections.class, "checkedSet", new Object[]{set, type});
-        }
-    }
-
-    static final class CheckedSortedSet_PersistenceDelegate extends java_util_Collections {
-        protected Expression instantiate(Object oldInstance, Encoder out) {
-            Object type = MetaData.getPrivateFieldValue(oldInstance, "java.util.Collections$CheckedCollection.type");
-            SortedSet<?> set = new TreeSet<>((SortedSet<?>) oldInstance);
-            return new Expression(oldInstance, Collections.class, "checkedSortedSet", new Object[]{set, type});
-        }
-    }
-
-    static final class CheckedMap_PersistenceDelegate extends java_util_Collections {
-        protected Expression instantiate(Object oldInstance, Encoder out) {
-            Object keyType   = MetaData.getPrivateFieldValue(oldInstance, "java.util.Collections$CheckedMap.keyType");
-            Object valueType = MetaData.getPrivateFieldValue(oldInstance, "java.util.Collections$CheckedMap.valueType");
-            Map<?,?> map = new HashMap<>((Map<?,?>) oldInstance);
-            return new Expression(oldInstance, Collections.class, "checkedMap", new Object[]{map, keyType, valueType});
-        }
-    }
-
-    static final class CheckedSortedMap_PersistenceDelegate extends java_util_Collections {
-        protected Expression instantiate(Object oldInstance, Encoder out) {
-            Object keyType   = MetaData.getPrivateFieldValue(oldInstance, "java.util.Collections$CheckedMap.keyType");
-            Object valueType = MetaData.getPrivateFieldValue(oldInstance, "java.util.Collections$CheckedMap.valueType");
-            SortedMap<?,?> map = new TreeMap<>((SortedMap<?,?>) oldInstance);
-            return new Expression(oldInstance, Collections.class, "checkedSortedMap", new Object[]{map, keyType, valueType});
-        }
-    }
-}
-
-/**
- * The persistence delegate for {@code java.util.EnumMap} classes.
- *
- * @author Sergey A. Malenkov
- */
-static final class java_util_EnumMap_PersistenceDelegate extends PersistenceDelegate {
-    protected boolean mutatesTo(Object oldInstance, Object newInstance) {
-        return super.mutatesTo(oldInstance, newInstance) && (getType(oldInstance) == getType(newInstance));
-    }
-
-    protected Expression instantiate(Object oldInstance, Encoder out) {
-        return new Expression(oldInstance, EnumMap.class, "new", new Object[] {getType(oldInstance)});
-    }
-
-    private static Object getType(Object instance) {
-        return MetaData.getPrivateFieldValue(instance, "java.util.EnumMap.keyType");
-    }
-}
-
-/**
- * The persistence delegate for {@code java.util.EnumSet} classes.
- *
- * @author Sergey A. Malenkov
- */
-static final class java_util_EnumSet_PersistenceDelegate extends PersistenceDelegate {
-    protected boolean mutatesTo(Object oldInstance, Object newInstance) {
-        return super.mutatesTo(oldInstance, newInstance) && (getType(oldInstance) == getType(newInstance));
-    }
-
-    protected Expression instantiate(Object oldInstance, Encoder out) {
-        return new Expression(oldInstance, EnumSet.class, "noneOf", new Object[] {getType(oldInstance)});
-    }
-
-    private static Object getType(Object instance) {
-        return MetaData.getPrivateFieldValue(instance, "java.util.EnumSet.elementType");
-    }
 }
 
 // Collection
@@ -1313,9 +1217,6 @@ static final class sun_swing_PrintColorUIResource_PersistenceDelegate extends Pe
 
         internalPersistenceDelegates.put("java.sql.Date", new java_util_Date_PersistenceDelegate());
         internalPersistenceDelegates.put("java.sql.Time", new java_util_Date_PersistenceDelegate());
-
-        internalPersistenceDelegates.put("java.util.JumboEnumSet", new java_util_EnumSet_PersistenceDelegate());
-        internalPersistenceDelegates.put("java.util.RegularEnumSet", new java_util_EnumSet_PersistenceDelegate());
     }
 
     @SuppressWarnings("rawtypes")
