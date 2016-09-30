@@ -37,45 +37,67 @@ import javax.swing.UIManager;
 
 /*
  * @test
- * @bug 8158566 8160879 8160977
+ * @bug 8158566 8160879 8160977 8158566
  * @summary Provide a Swing property which modifies MenuItemUI behaviour
  */
 public class CloseOnMouseClickPropertyTest {
 
+    private static final String CHECK_BOX_PROP = "CheckBoxMenuItem."
+            + "doNotCloseOnMouseClick";
+    private static final String RADIO_BUTTON_PROP = "RadioButtonMenuItem"
+            + ".doNotCloseOnMouseClick";
+
     private static JFrame frame;
     private static JMenu menu;
+
+    private static TestItem[] TEST_ITEMS = {
+        new TestItem(TestType.CHECK_BOX_MENU_ITEM, true, true),
+        new TestItem(TestType.CHECK_BOX_MENU_ITEM, true, false),
+        new TestItem(TestType.CHECK_BOX_MENU_ITEM, false, true),
+        new TestItem(TestType.CHECK_BOX_MENU_ITEM, false, false),
+
+        new TestItem(TestType.CHECK_BOX_MENU_ITEM, null, true),
+        new TestItem(TestType.CHECK_BOX_MENU_ITEM, null, false),
+        new TestItem(TestType.CHECK_BOX_MENU_ITEM, true, null),
+        new TestItem(TestType.CHECK_BOX_MENU_ITEM, false, null),
+
+
+        new TestItem(TestType.RADIO_BUTTON_MENU_ITEM, true, true),
+        new TestItem(TestType.RADIO_BUTTON_MENU_ITEM, true, false),
+        new TestItem(TestType.RADIO_BUTTON_MENU_ITEM, false, true),
+        new TestItem(TestType.RADIO_BUTTON_MENU_ITEM, false, false),
+
+        new TestItem(TestType.RADIO_BUTTON_MENU_ITEM, true, null),
+        new TestItem(TestType.RADIO_BUTTON_MENU_ITEM, false, null),
+        new TestItem(TestType.RADIO_BUTTON_MENU_ITEM, null, true),
+        new TestItem(TestType.RADIO_BUTTON_MENU_ITEM, null, false),
+
+        new TestItem(TestType.MENU_ITEM, true, true),
+        new TestItem(TestType.MENU_ITEM, true, false),
+        new TestItem(TestType.MENU_ITEM, false, true),
+        new TestItem(TestType.MENU_ITEM, false, false),
+
+        new TestItem(TestType.MENU_ITEM, true, null),
+        new TestItem(TestType.MENU_ITEM, false, null),
+        new TestItem(TestType.MENU_ITEM, null, true),
+        new TestItem(TestType.MENU_ITEM, null, false),
+    };
 
     public static void main(String[] args) throws Exception {
 
         for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
             UIManager.setLookAndFeel(info.getClassName());
-            test(true);
-
-            setProperty(false);
-            test(false);
-
-            setProperty(true);
-            test(true);
+            for (TestItem testItem : TEST_ITEMS) {
+                test(testItem);
+            }
         }
     }
 
-    private static void setProperty(boolean closeOnMouseClick) {
-        UIManager.put("CheckBoxMenuItem.closeOnMouseClick", closeOnMouseClick);
-        UIManager.put("RadioButtonMenuItem.closeOnMouseClick", closeOnMouseClick);
-    }
-
-    private static void test(boolean closeOnMouseClick) throws Exception {
-        for (TestType testType : TestType.values()) {
-            test(testType, closeOnMouseClick);
-        }
-    }
-
-    private static void test(TestType testType, boolean closeOnMouseClick)
-            throws Exception {
+    private static void test(TestItem item) throws Exception {
 
         Robot robot = new Robot();
         robot.setAutoDelay(50);
-        SwingUtilities.invokeAndWait(() -> createAndShowGUI(testType));
+        SwingUtilities.invokeAndWait(() -> createAndShowGUI(item));
         robot.waitForIdle();
 
         Point point = getClickPoint(true);
@@ -94,21 +116,13 @@ public class CloseOnMouseClickPropertyTest {
             JMenuItem menuItem = menu.getItem(0);
             boolean isShowing = menuItem.isShowing();
             frame.dispose();
-
-            if (TestType.MENU_ITEM.equals(testType)) {
-                if (isShowing) {
-                    throw new RuntimeException("Menu Item is not closed!");
-                }
-            } else {
-                if (isShowing ^ !closeOnMouseClick) {
-                    throw new RuntimeException("Property is not taken into account:"
-                            + " closeOnMouseClick");
-                }
+            if (isShowing ^ item.doNotCloseOnMouseClick()) {
+                throw new RuntimeException("Property is not taken into account!");
             }
         });
     }
 
-    private static void createAndShowGUI(TestType testType) {
+    private static void createAndShowGUI(TestItem testItem) {
 
         frame = new JFrame();
         frame.setSize(300, 300);
@@ -116,21 +130,13 @@ public class CloseOnMouseClickPropertyTest {
 
         JMenuBar menuBar = new JMenuBar();
         menu = new JMenu("Menu");
-        menu.add(getMenuItem(testType));
+        JMenuItem menuItem = testItem.getMenuItem();
+        testItem.setProperties(menuItem);
+        menu.add(menuItem);
         menuBar.add(menu);
+
         frame.setJMenuBar(menuBar);
         frame.setVisible(true);
-    }
-
-    private static JMenuItem getMenuItem(TestType testType) {
-        switch (testType) {
-            case CHECK_BOX_MENU_ITEM:
-                return new JCheckBoxMenuItem("Check Box");
-            case RADIO_BUTTON_MENU_ITEM:
-                return new JRadioButtonMenuItem("Radio Button");
-            default:
-                return new JMenuItem("Menu Item");
-        }
     }
 
     private static Point getClickPoint(boolean parent) throws Exception {
@@ -156,5 +162,61 @@ public class CloseOnMouseClickPropertyTest {
         MENU_ITEM,
         CHECK_BOX_MENU_ITEM,
         RADIO_BUTTON_MENU_ITEM
+    }
+
+    static class TestItem {
+
+        TestType type;
+        Boolean compDoNotCloseOnMouseClick;
+        Boolean lafDoNotCloseOnMouseClick;
+
+        public TestItem(TestType type,
+                        Boolean compDoNotCloseOnMouseClick,
+                        Boolean lafDoNotCloseOnMouseClick)
+        {
+            this.type = type;
+            this.compDoNotCloseOnMouseClick = compDoNotCloseOnMouseClick;
+            this.lafDoNotCloseOnMouseClick = lafDoNotCloseOnMouseClick;
+        }
+
+        boolean doNotCloseOnMouseClick() {
+            switch (type) {
+                case MENU_ITEM:
+                    return false;
+                default:
+                    return compDoNotCloseOnMouseClick != null
+                            ? compDoNotCloseOnMouseClick
+                            : lafDoNotCloseOnMouseClick;
+            }
+        }
+
+        void setProperties(JMenuItem menuItem) {
+            switch (type) {
+                case CHECK_BOX_MENU_ITEM:
+                    menuItem.putClientProperty(CHECK_BOX_PROP, compDoNotCloseOnMouseClick);
+                    UIManager.put(CHECK_BOX_PROP, lafDoNotCloseOnMouseClick);
+                    break;
+                case RADIO_BUTTON_MENU_ITEM:
+                    menuItem.putClientProperty(RADIO_BUTTON_PROP, compDoNotCloseOnMouseClick);
+                    UIManager.put(RADIO_BUTTON_PROP, lafDoNotCloseOnMouseClick);
+                    break;
+                default:
+                    menuItem.putClientProperty(CHECK_BOX_PROP, compDoNotCloseOnMouseClick);
+                    menuItem.putClientProperty(RADIO_BUTTON_PROP, compDoNotCloseOnMouseClick);
+                    UIManager.put(CHECK_BOX_PROP, lafDoNotCloseOnMouseClick);
+                    UIManager.put(RADIO_BUTTON_PROP, lafDoNotCloseOnMouseClick);
+            }
+        }
+
+        JMenuItem getMenuItem() {
+            switch (type) {
+                case CHECK_BOX_MENU_ITEM:
+                    return new JCheckBoxMenuItem("Check Box");
+                case RADIO_BUTTON_MENU_ITEM:
+                    return new JRadioButtonMenuItem("Radio Button");
+                default:
+                    return new JMenuItem("Menu Item");
+            }
+        }
     }
 }
