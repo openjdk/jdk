@@ -165,9 +165,11 @@ public class JavadocTool implements DocumentationTool {
     public int isSupportedOption(String option) {
         if (option == null)
             throw new NullPointerException();
-        for (ToolOption o: ToolOption.values()) {
-            if (o.opt.equals(option))
-                return o.hasArg ? 1 : 0;
+        for (ToolOption o : ToolOption.values()) {
+            for (String name : o.names) {
+                if (name.equals(option))
+                    return o.hasArg ? 1 : 0;
+            }
         }
         return -1;
     }
