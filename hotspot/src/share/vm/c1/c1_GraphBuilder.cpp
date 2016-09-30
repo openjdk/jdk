@@ -1493,6 +1493,21 @@ void GraphBuilder::method_return(Value x, bool ignore_return) {
   // Check to see whether we are inlining. If so, Return
   // instructions become Gotos to the continuation point.
   if (continuation() != NULL) {
+
+    int invoke_bci = state()->caller_state()->bci();
+
+    if (x != NULL  && !ignore_return) {
+      ciMethod* caller = state()->scope()->caller()->method();
+      Bytecodes::Code invoke_raw_bc = caller->raw_code_at_bci(invoke_bci);
+      if (invoke_raw_bc == Bytecodes::_invokehandle || invoke_raw_bc == Bytecodes::_invokedynamic) {
+        ciType* declared_ret_type = caller->get_declared_signature_at_bci(invoke_bci)->return_type();
+        if (declared_ret_type->is_klass() && x->exact_type() == NULL &&
+            x->declared_type() != declared_ret_type && declared_ret_type != compilation()->env()->Object_klass()) {
+          x = append(new TypeCast(declared_ret_type->as_klass(), x, copy_state_before()));
+        }
+      }
+    }
+
     assert(!method()->is_synchronized() || InlineSynchronizedMethods, "can not inline synchronized methods yet");
 
     if (compilation()->env()->dtrace_method_probes()) {
@@ -1516,7 +1531,6 @@ void GraphBuilder::method_return(Value x, bool ignore_return) {
     // State at end of inlined method is the state of the caller
     // without the method parameters on stack, including the
     // return value, if any, of the inlined method on operand stack.
-    int invoke_bci = state()->caller_state()->bci();
     set_state(state()->caller_state()->copy_for_parsing());
     if (x != NULL) {
       if (!ignore_return) {
