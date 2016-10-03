@@ -750,11 +750,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
   # Prepend the extra path to the global path
   BASIC_PREPEND_TO_PATH([PATH],$EXTRA_PATH)
 
-  if test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
-    # Add extra search paths on solaris for utilities like ar, as, dtrace etc...
-    PATH="$PATH:/usr/ccs/bin:/usr/sfw/bin:/opt/csw/bin:/usr/sbin"
-  fi
-
   AC_MSG_CHECKING([for sysroot])
   AC_MSG_RESULT([$SYSROOT])
   AC_MSG_CHECKING([for toolchain path])

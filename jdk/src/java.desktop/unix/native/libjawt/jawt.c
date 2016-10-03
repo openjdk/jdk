@@ -39,6 +39,10 @@ DEF_STATIC_JNI_OnLoad
  */
 JNIEXPORT jboolean JNICALL JAWT_GetAWT(JNIEnv* env, JAWT* awt)
 {
+#if defined(HEADLESS)
+    /* there are no AWT libs available at all */
+    return JNI_FALSE;
+#else
     if (awt == NULL) {
         return JNI_FALSE;
     }
@@ -64,4 +68,5 @@ JNIEXPORT jboolean JNICALL JAWT_GetAWT(JNIEnv* env, JAWT* awt)
     }
 
     return JNI_TRUE;
+#endif
 }

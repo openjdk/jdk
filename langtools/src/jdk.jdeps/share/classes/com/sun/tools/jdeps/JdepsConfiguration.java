@@ -81,19 +81,22 @@ public class JdepsConfiguration implements AutoCloseable {
     private final List<Archive> initialArchives = new ArrayList<>();
     private final Set<Module> rootModules = new HashSet<>();
     private final Configuration configuration;
+    private final Runtime.Version version;
 
     private JdepsConfiguration(SystemModuleFinder systemModulePath,
                                ModuleFinder finder,
                                Set<String> roots,
                                List<Path> classpaths,
                                List<Archive> initialArchives,
-                               boolean allDefaultModules)
+                               boolean allDefaultModules,
+                               Runtime.Version version)
         throws IOException
     {
         trace("root: %s%n", roots);
 
         this.system = systemModulePath;
         this.finder = finder;
+        this.version = version;
 
         // build root set for resolution
         Set<String> mods = new HashSet<>(roots);
@@ -121,7 +124,7 @@ public class JdepsConfiguration implements AutoCloseable {
         // classpath archives
         for (Path p : classpaths) {
             if (Files.exists(p)) {
-                Archive archive = Archive.getInstance(p);
+                Archive archive = Archive.getInstance(p, version);
                 addPackagesInUnnamedModule(archive);
                 classpathArchives.add(archive);
             }
@@ -292,7 +295,7 @@ public class JdepsConfiguration implements AutoCloseable {
             if (location.getScheme().equals("jrt")) {
                 reader = system.getClassReader(mn);
             } else {
-                reader = ClassFileReader.newInstance(Paths.get(location));
+                reader = ClassFileReader.newInstance(Paths.get(location), version);
             }
 
             builder.classes(reader);
@@ -302,6 +305,10 @@ public class JdepsConfiguration implements AutoCloseable {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public Runtime.Version getVersion() {
+        return version;
     }
 
     /*
@@ -476,6 +483,7 @@ public class JdepsConfiguration implements AutoCloseable {
         ModuleFinder appModulePath;
         boolean addAllApplicationModules;
         boolean addAllDefaultModules;
+        Runtime.Version version;
 
         public Builder() {
             this.systemModulePath = new SystemModuleFinder();
@@ -526,8 +534,13 @@ public class JdepsConfiguration implements AutoCloseable {
             return this;
         }
 
+        public Builder multiRelease(Runtime.Version version) {
+            this.version = version;
+            return this;
+        }
+
         public Builder addRoot(Path path) {
-            Archive archive = Archive.getInstance(path);
+            Archive archive = Archive.getInstance(path, version);
             if (archive.contains(MODULE_INFO)) {
                 paths.add(path);
             } else {
@@ -569,7 +582,8 @@ public class JdepsConfiguration implements AutoCloseable {
                                           rootModules,
                                           classPaths,
                                           initialArchives,
-                                          addAllDefaultModules);
+                                          addAllDefaultModules,
+                                          version);
         }
 
         private static ModuleFinder createModulePathFinder(String mpaths) {

@@ -4368,10 +4368,11 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         }
 
         // Step 4: fill in missing parameter types.
-        List<MethodHandle> finit = fillParameterTypes(init, commonSuffix);
-        List<MethodHandle> fstep = fillParameterTypes(step, commonParameterSequence);
-        List<MethodHandle> fpred = fillParameterTypes(pred, commonParameterSequence);
-        List<MethodHandle> ffini = fillParameterTypes(fini, commonParameterSequence);
+        // Also convert all handles to fixed-arity handles.
+        List<MethodHandle> finit = fixArities(fillParameterTypes(init, commonSuffix));
+        List<MethodHandle> fstep = fixArities(fillParameterTypes(step, commonParameterSequence));
+        List<MethodHandle> fpred = fixArities(fillParameterTypes(pred, commonParameterSequence));
+        List<MethodHandle> ffini = fixArities(fillParameterTypes(fini, commonParameterSequence));
 
         assert finit.stream().map(MethodHandle::type).map(MethodType::parameterList).
                 allMatch(pl -> pl.equals(commonSuffix));
@@ -4387,6 +4388,10 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
             int tpsize = targetParams.size();
             return pc < tpsize ? dropArguments0(h, pc, targetParams.subList(pc, tpsize)) : h;
         }).collect(Collectors.toList());
+    }
+
+    private static List<MethodHandle> fixArities(List<MethodHandle> hs) {
+        return hs.stream().map(MethodHandle::asFixedArity).collect(Collectors.toList());
     }
 
     /**
@@ -4887,7 +4892,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         // target parameter list.
         cleanup = dropArgumentsToMatch(cleanup, (rtype == void.class ? 1 : 2), targetParamTypes, 0);
 
-        return MethodHandleImpl.makeTryFinally(target, cleanup, rtype, targetParamTypes);
+        // Use asFixedArity() to avoid unnecessary boxing of last argument for VarargsCollector case.
+        return MethodHandleImpl.makeTryFinally(target.asFixedArity(), cleanup.asFixedArity(), rtype, targetParamTypes);
     }
 
     /**

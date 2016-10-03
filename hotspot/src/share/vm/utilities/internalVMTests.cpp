@@ -60,7 +60,6 @@ void InternalVMTests::run() {
   run_unit_test(TestBitMap_test);
   run_unit_test(TestResourcehash_test);
   run_unit_test(ObjectMonitor_test);
-  run_unit_test(TestChunkedList_test);
   run_unit_test(Test_log_tag_combinations_limit);
   run_unit_test(Test_logtarget);
   run_unit_test(Test_logstream);
@@ -86,7 +85,6 @@ void InternalVMTests::run() {
   run_unit_test(TestBufferingOopClosure_test);
   if (UseG1GC) {
     run_unit_test(FreeRegionList_test);
-    run_unit_test(IHOP_test);
   }
   run_unit_test(WorkerDataArray_test);
   run_unit_test(ParallelCompact_test);

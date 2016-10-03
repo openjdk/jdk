@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6316539
+ * @bug 6316539 8136355
  * @summary Basic tests for TlsRsaPremasterSecret generator
  * @author Andreas Sterbenz
  * @library ..
@@ -34,6 +34,7 @@
  */
 
 import java.security.Provider;
+import java.security.InvalidAlgorithmParameterException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
@@ -61,7 +62,7 @@ public class TestPremaster extends PKCS11Test {
             System.out.println("OK: " + e);
         }
 
-        int[] protocolVersions = {0x0300, 0x0301, 0x0302, 0x0400};
+        int[] protocolVersions = {0x0300, 0x0301, 0x0302};
         for (int clientVersion : protocolVersions) {
             for (int serverVersion : protocolVersions) {
                 test(kg, clientVersion, serverVersion);
@@ -81,8 +82,18 @@ public class TestPremaster extends PKCS11Test {
                 "Testing RSA pre-master secret key generation between " +
                 "client (0x%04X) and server(0x%04X)%n",
                 clientVersion, serverVersion);
-        kg.init(new TlsRsaPremasterSecretParameterSpec(
+        try {
+            kg.init(new TlsRsaPremasterSecretParameterSpec(
                                     clientVersion, serverVersion));
+        } catch (InvalidAlgorithmParameterException iape) {
+            // S12 removed support for SSL v3.0
+            if (clientVersion == 0x300 || serverVersion == 0x300) {
+                System.out.println("Skip testing SSLv3 due to no support");
+                return;
+            }
+            // unexpected, pass it up
+            throw iape;
+        }
         SecretKey key = kg.generateKey();
         byte[] encoded = key.getEncoded();
         if (encoded != null) {  // raw key material may be not extractable

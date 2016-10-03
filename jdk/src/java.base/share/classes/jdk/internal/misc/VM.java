@@ -50,7 +50,7 @@ public class VM {
     public static void initLevel(int value) {
         synchronized (lock) {
             if (value <= initLevel || value > SYSTEM_BOOTED)
-                throw new InternalError();
+                throw new InternalError("Bad level: " + value);
             initLevel = value;
             lock.notifyAll();
         }

@@ -869,5 +869,4 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     static SpeciesData speciesData_LLL()    { return checkCache(3, "LLL"); }
     static SpeciesData speciesData_LLLL()   { return checkCache(4, "LLLL"); }
     static SpeciesData speciesData_LLLLL()  { return checkCache(5, "LLLLL"); }
-    static SpeciesData speciesData_LLLLLL() { return checkCache(6, "LLLLLL"); }
 }

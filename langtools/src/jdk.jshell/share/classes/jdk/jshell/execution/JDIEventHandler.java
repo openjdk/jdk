@@ -53,6 +53,7 @@ class JDIEventHandler implements Runnable {
         this.vm = vm;
         this.reportVMExit = reportVMExit;
         this.thread = new Thread(this, "event-handler");
+        this.thread.setDaemon(true);
     }
 
     /**

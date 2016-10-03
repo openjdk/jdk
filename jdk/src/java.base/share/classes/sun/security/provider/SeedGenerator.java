@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,7 +344,8 @@ abstract class SeedGenerator {
                         try {
                             BogusThread bt = new BogusThread();
                             Thread t = new Thread
-                                (seedGroup, bt, "SeedGenerator Thread", 0, false);
+                                (seedGroup, bt, "SeedGenerator Thread", 0,
+                                        false);
                             t.start();
                         } catch (Exception e) {
                             throw new InternalError("internal error: " +
@@ -357,7 +358,8 @@ abstract class SeedGenerator {
                         long startTime = System.nanoTime();
                         while (System.nanoTime() - startTime < 250000000) {
                             synchronized(this){};
-                            latch++;
+                            // Mask the sign bit and keep latch non-negative
+                            latch = (latch + 1) & 0x1FFFFFFF;
                         }
 
                         // Translate the value using the permutation, and xor
@@ -431,7 +433,7 @@ abstract class SeedGenerator {
         // data and using it to mix the trivial permutation.
         // It should be evenly distributed. The specific values
         // are not crucial to the security of this class.
-        private static byte[] rndTab = {
+        private static final byte[] rndTab = {
             56, 30, -107, -6, -86, 25, -83, 75, -12, -64,
             5, -128, 78, 21, 16, 32, 70, -81, 37, -51,
             -43, -46, -108, 87, 29, 17, -55, 22, -11, -111,

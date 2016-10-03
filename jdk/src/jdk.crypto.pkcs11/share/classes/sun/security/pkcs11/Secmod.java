@@ -45,7 +45,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  * <pre>
  *   Secmod secmod = Secmod.getInstance();
  *   if (secmod.isInitialized() == false) {
- *       secmod.initialize("/home/myself/.mozilla", "/usr/sfw/lib/mozilla");
+ *       secmod.initialize("/home/myself/.mozilla");
  *   }
  *
  *   Provider p = secmod.getModule(ModuleType.KEYSTORE).getProvider();
