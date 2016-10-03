@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@ package sun.lwawt.macosx;
 
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import sun.awt.CGraphicsConfig;
 import sun.awt.CGraphicsEnvironment;
@@ -83,7 +86,7 @@ public class CPlatformView extends CFRetainedResource {
      * Cocoa coordinates).
      */
     public void setBounds(int x, int y, int width, int height) {
-        CWrapper.NSView.setFrame(ptr, x, y, width, height);
+        execute(ptr->CWrapper.NSView.setFrame(ptr, x, y, width, height));
     }
 
     // REMIND: CGLSurfaceData expects top-level's size
@@ -96,7 +99,7 @@ public class CPlatformView extends CFRetainedResource {
     }
 
     public void setToolTip(String msg) {
-        CWrapper.NSView.setToolTip(ptr, msg);
+        execute(ptr -> CWrapper.NSView.setToolTip(ptr, msg));
     }
 
     // ----------------------------------------------------------------------
@@ -147,18 +150,25 @@ public class CPlatformView extends CFRetainedResource {
     }
 
     public void setAutoResizable(boolean toResize) {
-        nativeSetAutoResizable(this.getAWTView(), toResize);
+        execute(ptr -> nativeSetAutoResizable(ptr, toResize));
     }
 
     public boolean isUnderMouse() {
-        return nativeIsViewUnderMouse(getAWTView());
+        AtomicBoolean ref = new AtomicBoolean();
+        execute(ptr -> {
+            ref.set(nativeIsViewUnderMouse(ptr));
+        });
+        return ref.get();
     }
 
     public GraphicsDevice getGraphicsDevice() {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         CGraphicsEnvironment cge = (CGraphicsEnvironment)ge;
-        int displayID = nativeGetNSViewDisplayID(getAWTView());
-        GraphicsDevice gd = cge.getScreenDevice(displayID);
+        AtomicInteger ref = new AtomicInteger();
+        execute(ptr -> {
+            ref.set(nativeGetNSViewDisplayID(ptr));
+        });
+        GraphicsDevice gd = cge.getScreenDevice(ref.get());
         if (gd == null) {
             // this could possibly happen during device removal
             // use the default screen device in this case
@@ -168,8 +178,15 @@ public class CPlatformView extends CFRetainedResource {
     }
 
     public Point getLocationOnScreen() {
-        Rectangle r = nativeGetLocationOnScreen(this.getAWTView()).getBounds();
-        return new Point(r.x, r.y);
+        AtomicReference<Rectangle> ref = new AtomicReference<>();
+        execute(ptr -> {
+            ref.set(nativeGetLocationOnScreen(ptr).getBounds());
+        });
+        Rectangle r = ref.get();
+        if (r != null) {
+            return new Point(r.x, r.y);
+        }
+        return new Point(0, 0);
     }
 
     // ----------------------------------------------------------------------
