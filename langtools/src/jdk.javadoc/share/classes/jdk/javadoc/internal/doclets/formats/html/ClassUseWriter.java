@@ -330,8 +330,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             HtmlTree tr = new HtmlTree(HtmlTag.TR);
             tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
             altColor = !altColor;
-            Content tdFirst = HtmlTree.TD(HtmlStyle.colFirst, getPackageLink(pkg));
-            tr.addContent(tdFirst);
+            Content thFirst = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, getPackageLink(pkg));
+            tr.addContent(thFirst);
             HtmlTree tdLast = new HtmlTree(HtmlTag.TD);
             tdLast.addStyle(HtmlStyle.colLast);
             addSummaryComment(pkg, tdLast);
@@ -380,9 +380,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @param contentTree the content tree to which the package use information will be added
      */
     protected void addPackageUse(PackageElement pkg, Content contentTree) {
-        Content tdFirst = HtmlTree.TD(HtmlStyle.colFirst,
+        Content thFirst = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst,
                 getHyperLink(getPackageAnchorName(pkg), new StringContent(utils.getPackageName(pkg))));
-        contentTree.addContent(tdFirst);
+        contentTree.addContent(thFirst);
         HtmlTree tdLast = new HtmlTree(HtmlTag.TD);
         tdLast.addStyle(HtmlStyle.colLast);
         addSummaryComment(pkg, tdLast);

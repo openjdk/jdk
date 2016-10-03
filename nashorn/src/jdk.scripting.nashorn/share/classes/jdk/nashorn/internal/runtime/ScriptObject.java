@@ -186,7 +186,10 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
     /** Method handle for setting the user accessors of a ScriptObject */
     //TODO fastpath this
-    public static final Call SET_USER_ACCESSORS = virtualCall(MethodHandles.lookup(), ScriptObject.class, "setUserAccessors", void.class, String.class, ScriptFunction.class, ScriptFunction.class);
+    public static final Call SET_USER_ACCESSORS = virtualCallNoLookup(ScriptObject.class, "setUserAccessors", void.class, Object.class, ScriptFunction.class, ScriptFunction.class);
+
+    /** Method handle for generic property setter */
+    public static final Call GENERIC_SET = virtualCallNoLookup(ScriptObject.class, "set", void.class, Object.class, Object.class, int.class);
 
     static final MethodHandle[] SET_SLOW = new MethodHandle[] {
         findOwnMH_V("set", void.class, Object.class, int.class, int.class),
@@ -1063,12 +1066,13 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @param getter {@link UserAccessorProperty} defined getter, or null if none
      * @param setter {@link UserAccessorProperty} defined setter, or null if none
      */
-    public final void setUserAccessors(final String key, final ScriptFunction getter, final ScriptFunction setter) {
-        final Property oldProperty = getMap().findProperty(key);
+    public final void setUserAccessors(final Object key, final ScriptFunction getter, final ScriptFunction setter) {
+        final Object realKey = JSType.toPropertyKey(key);
+        final Property oldProperty = getMap().findProperty(realKey);
         if (oldProperty instanceof UserAccessorProperty) {
             modifyOwnProperty(oldProperty, oldProperty.getFlags(), getter, setter);
         } else {
-            addOwnProperty(newUserAccessors(key, oldProperty != null ? oldProperty.getFlags() : 0, getter, setter));
+            addOwnProperty(newUserAccessors(realKey, oldProperty != null ? oldProperty.getFlags() : 0, getter, setter));
         }
     }
 

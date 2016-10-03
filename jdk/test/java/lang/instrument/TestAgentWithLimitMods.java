@@ -22,17 +22,19 @@
  */
 
 /**
- * This class is launched in a sub-process by the main test,
- * SASymbolTableTest.java.
  *
- * This class does nothing in particular. It just sleeps for 120
- * seconds so SASymbolTableTestAgent can have a chance to examine its
- * SymbolTable. This process should be killed by the parent process
- * after SASymbolTableTestAgent has completed testing.
+ * @test
+ * @summary Tests that the -javaagent option adds the java.instrument into
+ * the module graph
+ * @modules java.instrument
+ * @run shell MakeJAR3.sh SimpleAgent
+ * @run main/othervm -javaagent:SimpleAgent.jar -limitmods java.base TestAgentWithLimitMods
+ *
  */
-public class SASymbolTableTestAttachee {
-    public static void main(String args[]) throws Throwable {
-        System.out.println("SASymbolTableTestAttachee: sleeping to wait for SA tool to attach ...");
-        Thread.sleep(120 * 1000);
+public class TestAgentWithLimitMods {
+
+    public static void main(String[] args) {
+        System.out.println("Test passed");
     }
+
 }

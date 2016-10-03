@@ -1544,6 +1544,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ fence();
   }
 
+  if (CheckJNICalls) {
+    // clear_pending_jni_exception_check
+    __ load_const_optimized(R0, 0L);
+    __ st_ptr(R0, JavaThread::pending_jni_exception_check_fn_offset(), R16_thread);
+  }
+
   __ reset_last_Java_frame();
 
   // Jvmdi/jvmpi support. Whether we've got an exception pending or

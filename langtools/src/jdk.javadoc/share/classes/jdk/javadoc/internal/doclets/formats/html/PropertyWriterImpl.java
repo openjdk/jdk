@@ -25,8 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -235,10 +233,8 @@ public class PropertyWriterImpl extends AbstractMemberWriter
      */
     @Override
     public List<String> getSummaryTableHeader(Element member) {
-        List<String> header = Arrays.asList(configuration.getText("doclet.Type"),
-                configuration.getText("doclet.0_and_1",
-                        configuration.getText("doclet.Property"),
-                        configuration.getText("doclet.Description")));
+        List<String> header = Arrays.asList(resources.getText("doclet.Type"),
+                resources.getText("doclet.Property"), resources.getText("doclet.Description"));
         return header;
     }
 

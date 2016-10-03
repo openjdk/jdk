@@ -1575,6 +1575,9 @@ class Assembler : public AbstractAssembler {
   inline void stdu( Register d, int si16,    Register s1);
   inline void stdux(Register s, Register a,  Register b);
 
+  inline void st_ptr(Register d, int si16,    Register s1);
+  DEBUG_ONLY(inline void st_ptr(Register d, ByteSize b, Register s1);)
+
   // PPC 1, section 3.3.13 Move To/From System Register Instructions
   inline void mtlr( Register s1);
   inline void mflr( Register d);

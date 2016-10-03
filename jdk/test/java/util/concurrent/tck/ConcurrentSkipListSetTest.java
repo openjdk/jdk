@@ -725,7 +725,8 @@ public class ConcurrentSkipListSetTest extends JSR166TestCase {
     }
 
     static NavigableSet<Integer> newSet(Class cl) throws Exception {
-        NavigableSet<Integer> result = (NavigableSet<Integer>) cl.newInstance();
+        NavigableSet<Integer> result =
+            (NavigableSet<Integer>) cl.getConstructor().newInstance();
         assertEquals(0, result.size());
         assertFalse(result.iterator().hasNext());
         return result;

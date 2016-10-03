@@ -302,7 +302,7 @@ public class AtomicLongArrayTest extends JSR166TestCase {
 
     class Counter extends CheckedRunnable {
         final AtomicLongArray aa;
-        volatile long counts;
+        int decs;
         Counter(AtomicLongArray a) { aa = a; }
         public void realRun() {
             for (;;) {
@@ -313,7 +313,7 @@ public class AtomicLongArrayTest extends JSR166TestCase {
                     if (v != 0) {
                         done = false;
                         if (aa.compareAndSet(i, v, v - 1))
-                            ++counts;
+                            decs++;
                     }
                 }
                 if (done)
@@ -333,13 +333,11 @@ public class AtomicLongArrayTest extends JSR166TestCase {
             aa.set(i, countdown);
         Counter c1 = new Counter(aa);
         Counter c2 = new Counter(aa);
-        Thread t1 = new Thread(c1);
-        Thread t2 = new Thread(c2);
-        t1.start();
-        t2.start();
+        Thread t1 = newStartedThread(c1);
+        Thread t2 = newStartedThread(c2);
         t1.join();
         t2.join();
-        assertEquals(c1.counts+c2.counts, SIZE * countdown);
+        assertEquals(c1.decs + c2.decs, SIZE * countdown);
     }
 
     /**
