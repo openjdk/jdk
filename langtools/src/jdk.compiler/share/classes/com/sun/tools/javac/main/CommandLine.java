@@ -27,7 +27,6 @@ package com.sun.tools.javac.main;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.io.StreamTokenizer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -51,10 +50,11 @@ public class CommandLine {
      * '@file' argument replaced with the resulting tokens. Recursive command
      * files are not supported. The '@' character itself can be quoted with
      * the sequence '@@'.
+     * @param args the arguments that may contain @files
+     * @return the arguments, with @files expanded
+     * @throws IOException if there is a problem reading any of the @files
      */
-    public static String[] parse(String[] args)
-        throws IOException
-    {
+    public static String[] parse(String[] args) throws IOException {
         ListBuffer<String> newArgs = new ListBuffer<>();
         for (String arg : args) {
             if (arg.length() > 1 && arg.charAt(0) == '@') {
@@ -71,19 +71,120 @@ public class CommandLine {
         return newArgs.toList().toArray(new String[newArgs.length()]);
     }
 
-    private static void loadCmdFile(String name, ListBuffer<String> args)
-        throws IOException
-    {
+    private static void loadCmdFile(String name, ListBuffer<String> args) throws IOException {
         try (Reader r = Files.newBufferedReader(Paths.get(name))) {
-            StreamTokenizer st = new StreamTokenizer(r);
-            st.resetSyntax();
-            st.wordChars(' ', 255);
-            st.whitespaceChars(0, ' ');
-            st.commentChar('#');
-            st.quoteChar('"');
-            st.quoteChar('\'');
-            while (st.nextToken() != StreamTokenizer.TT_EOF) {
-                args.append(st.sval);
+            Tokenizer t = new Tokenizer(r);
+            String s;
+            while ((s = t.nextToken()) != null) {
+                args.append(s);
+            }
+        }
+    }
+
+    public static class Tokenizer {
+        private final Reader in;
+        private int ch;
+
+        public Tokenizer(Reader in) throws IOException {
+            this.in = in;
+            ch = in.read();
+        }
+
+        public String nextToken() throws IOException {
+            skipWhite();
+            if (ch == -1) {
+                return null;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            char quoteChar = 0;
+
+            while (ch != -1) {
+                switch (ch) {
+                    case ' ':
+                    case '\t':
+                    case '\f':
+                        if (quoteChar == 0) {
+                            return sb.toString();
+                        }
+                        sb.append((char) ch);
+                        break;
+
+                    case '\n':
+                    case '\r':
+                        return sb.toString();
+
+                    case '\'':
+                    case '"':
+                        if (quoteChar == 0) {
+                            quoteChar = (char) ch;
+                        } else if (quoteChar == ch) {
+                            quoteChar = 0;
+                        } else {
+                            sb.append((char) ch);
+                        }
+                        break;
+
+                    case '\\':
+                        if (quoteChar != 0) {
+                            ch = in.read();
+                            switch (ch) {
+                                case '\n':
+                                case '\r':
+                                    while (ch == ' ' || ch == '\n' || ch == '\r' || ch == '\t' || ch == '\f') {
+                                        ch = in.read();
+                                    }
+                                    continue;
+
+                                case 'n':
+                                    ch = '\n';
+                                    break;
+                                case 'r':
+                                    ch = '\r';
+                                    break;
+                                case 't':
+                                    ch = '\t';
+                                    break;
+                                case 'f':
+                                    ch = '\f';
+                                    break;
+                            }
+                        }
+                        sb.append((char) ch);
+                        break;
+
+                    default:
+                        sb.append((char) ch);
+                }
+
+                ch = in.read();
+            }
+
+            return sb.toString();
+        }
+
+        void skipWhite() throws IOException {
+            while (ch != -1) {
+                switch (ch) {
+                    case ' ':
+                    case '\t':
+                    case '\n':
+                    case '\r':
+                    case '\f':
+                        break;
+
+                    case '#':
+                        ch = in.read();
+                        while (ch != '\n' && ch != '\r' && ch != -1) {
+                            ch = in.read();
+                        }
+                        break;
+
+                    default:
+                        return;
+                }
+
+                ch = in.read();
             }
         }
     }
