@@ -913,7 +913,7 @@ crypto.policy=crypto.policydir-tbd
 #       Constraint {"," Constraint }
 #   Constraint:
 #       AlgConstraint | MaxTransformsConstraint | MaxReferencesConstraint |
-#       ReferenceUriSchemeConstraint | OtherConstraint
+#       ReferenceUriSchemeConstraint | KeySizeConstraint | OtherConstraint
 #   AlgConstraint
 #       "disallowAlg" Uri
 #   MaxTransformsConstraint:
@@ -922,12 +922,16 @@ crypto.policy=crypto.policydir-tbd
 #       "maxReferences" Integer
 #   ReferenceUriSchemeConstraint:
 #       "disallowReferenceUriSchemes" String { String }
+#   KeySizeConstraint:
+#       "minKeySize" KeyAlg Integer
 #   OtherConstraint:
 #       "noDuplicateIds" | "noRetrievalMethodLoops"
 #
 # For AlgConstraint, Uri is the algorithm URI String that is not allowed.
 # See the XML Signature Recommendation for more information on algorithm
-# URI Identifiers. If the MaxTransformsConstraint or MaxReferencesConstraint is
+# URI Identifiers. For KeySizeConstraint, KeyAlg is the standard algorithm
+# name of the key type (ex: "RSA"). If the MaxTransformsConstraint,
+# MaxReferencesConstraint or KeySizeConstraint (for the same key type) is
 # specified more than once, only the last entry is enforced.
 #
 # Note: This property is currently used by the JDK Reference implementation. It
@@ -941,6 +945,8 @@ jdk.xml.dsig.secureValidationPolicy=\
     maxTransforms 5,\
     maxReferences 30,\
     disallowReferenceUriSchemes file http https,\
+    minKeySize RSA 1024,\
+    minKeySize DSA 1024,\
     noDuplicateIds,\
     noRetrievalMethodLoops
 
