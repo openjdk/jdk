@@ -226,7 +226,7 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
           HandleMark hm(THREAD);
           assert(default_methods->at(i)->is_method(), "must be a Method*");
           methodHandle mh(THREAD, default_methods->at(i));
-
+          assert(!mh->is_private(), "private interface method in the default method list");
           bool needs_new_entry = update_inherited_vtable(ik(), mh, super_vtable_len, i, checkconstraints, CHECK);
 
           // needs new entry
@@ -362,14 +362,16 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, methodHandle tar
 
   Array<int>* def_vtable_indices = NULL;
   bool is_default = false;
-  // default methods are concrete methods in superinterfaces which are added to the vtable
-  // with their real method_holder
+
+  // default methods are non-private concrete methods in superinterfaces which are added
+  // to the vtable with their real method_holder.
   // Since vtable and itable indices share the same storage, don't touch
-  // the default method's real vtable/itable index
+  // the default method's real vtable/itable index.
   // default_vtable_indices stores the vtable value relative to this inheritor
   if (default_index >= 0 ) {
     is_default = true;
     def_vtable_indices = klass->default_vtable_indices();
+    assert(!target_method()->is_private(), "private interface method flagged as default");
     assert(def_vtable_indices != NULL, "def vtable alloc?");
     assert(default_index <= def_vtable_indices->length(), "def vtable len?");
   } else {
@@ -395,12 +397,15 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, methodHandle tar
     // This method will either be assigned its own itable index later,
     // or be assigned an inherited vtable index in the loop below.
     // default methods inherited by classes store their vtable indices
-    // in the inheritor's default_vtable_indices
+    // in the inheritor's default_vtable_indices.
     // default methods inherited by interfaces may already have a
-    // valid itable index, if so, don't change it
-    // overpass methods in an interface will be assigned an itable index later
-    // by an inheriting class
-    if (!is_default || !target_method()->has_itable_index()) {
+    // valid itable index, if so, don't change it.
+    // Overpass methods in an interface will be assigned an itable index later
+    // by an inheriting class.
+    // Private interface methods have no itable index and are always invoked nonvirtually,
+    // so they retain their nonvirtual_vtable_index value, and therefore can_be_statically_bound()
+    // will return true.
+    if ((!is_default || !target_method()->has_itable_index()) && !target_method()->is_private()) {
       target_method()->set_vtable_index(Method::pending_itable_index);
     }
   }
@@ -597,7 +602,9 @@ bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
   // abstract method entries using default inheritance rules
   if (target_method()->method_holder() != NULL &&
       target_method()->method_holder()->is_interface()  &&
-      !target_method()->is_abstract() ) {
+      !target_method()->is_abstract()) {
+    assert(target_method()->is_default_method() || target_method()->is_private(),
+           "unexpected interface method type");
     return false;
   }
 
@@ -606,10 +613,8 @@ bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
     return true;
   }
 
-  // private methods in classes always have a new entry in the vtable
-  // specification interpretation since classic has
-  // private methods not overriding
-  // JDK8 adds private  methods in interfaces which require invokespecial
+  // private methods in classes always have a new entry in the vtable.
+  // Specification interpretation since classic has private methods not overriding.
   if (target_method()->is_private()) {
     return true;
   }
@@ -1088,6 +1093,7 @@ void klassItable::initialize_itable(bool checkconstraints, TRAPS) {
 inline bool interface_method_needs_itable_index(Method* m) {
   if (m->is_static())           return false;   // e.g., Stream.empty
   if (m->is_initializer())      return false;   // <init> or <clinit>
+  if (m->is_private())          return false;   // requires invokeSpecial
   // If an interface redeclares a method from java.lang.Object,
   // it should already have a vtable index, don't touch it.
   // e.g., CharSequence.toString (from initialize_vtable)

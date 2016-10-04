@@ -207,18 +207,18 @@ class InstanceKlass: public Klass {
 
   // Start after _misc_kind field.
   enum {
-    _misc_rewritten                = 1 << 2,  // methods rewritten.
-    _misc_has_nonstatic_fields     = 1 << 3,  // for sizing with UseCompressedOops
-    _misc_should_verify_class      = 1 << 4,  // allow caching of preverification
-    _misc_is_anonymous             = 1 << 5,  // has embedded _host_klass field
-    _misc_is_contended             = 1 << 6,  // marked with contended annotation
-    _misc_has_default_methods      = 1 << 7,  // class/superclass/implemented interfaces has default methods
-    _misc_declares_default_methods = 1 << 8,  // directly declares default methods (any access)
-    _misc_has_been_redefined       = 1 << 9,  // class has been redefined
-    _misc_is_scratch_class         = 1 << 10, // class is the redefined scratch class
-    _misc_is_shared_boot_class     = 1 << 11, // defining class loader is boot class loader
-    _misc_is_shared_platform_class = 1 << 12, // defining class loader is platform class loader
-    _misc_is_shared_app_class      = 1 << 13  // defining class loader is app class loader
+    _misc_rewritten                           = 1 << 2,  // methods rewritten.
+    _misc_has_nonstatic_fields                = 1 << 3,  // for sizing with UseCompressedOops
+    _misc_should_verify_class                 = 1 << 4,  // allow caching of preverification
+    _misc_is_anonymous                        = 1 << 5,  // has embedded _host_klass field
+    _misc_is_contended                        = 1 << 6,  // marked with contended annotation
+    _misc_has_nonstatic_concrete_methods      = 1 << 7,  // class/superclass/implemented interfaces has non-static, concrete methods
+    _misc_declares_nonstatic_concrete_methods = 1 << 8,  // directly declares non-static, concrete methods
+    _misc_has_been_redefined                  = 1 << 9,  // class has been redefined
+    _misc_is_scratch_class                    = 1 << 10, // class is the redefined scratch class
+    _misc_is_shared_boot_class                = 1 << 11, // defining class loader is boot class loader
+    _misc_is_shared_platform_class            = 1 << 12, // defining class loader is platform class loader
+    _misc_is_shared_app_class                 = 1 << 13  // defining class loader is app class loader
   };
   u2 loader_type_bits() {
     return _misc_is_shared_boot_class|_misc_is_shared_platform_class|_misc_is_shared_app_class;
@@ -814,25 +814,25 @@ public:
 
 #endif // INCLUDE_JVMTI
 
-  bool has_default_methods() const {
-    return (_misc_flags & _misc_has_default_methods) != 0;
+  bool has_nonstatic_concrete_methods() const {
+    return (_misc_flags & _misc_has_nonstatic_concrete_methods) != 0;
   }
-  void set_has_default_methods(bool b) {
+  void set_has_nonstatic_concrete_methods(bool b) {
     if (b) {
-      _misc_flags |= _misc_has_default_methods;
+      _misc_flags |= _misc_has_nonstatic_concrete_methods;
     } else {
-      _misc_flags &= ~_misc_has_default_methods;
+      _misc_flags &= ~_misc_has_nonstatic_concrete_methods;
     }
   }
 
-  bool declares_default_methods() const {
-    return (_misc_flags & _misc_declares_default_methods) != 0;
+  bool declares_nonstatic_concrete_methods() const {
+    return (_misc_flags & _misc_declares_nonstatic_concrete_methods) != 0;
   }
-  void set_declares_default_methods(bool b) {
+  void set_declares_nonstatic_concrete_methods(bool b) {
     if (b) {
-      _misc_flags |= _misc_declares_default_methods;
+      _misc_flags |= _misc_declares_nonstatic_concrete_methods;
     } else {
-      _misc_flags &= ~_misc_declares_default_methods;
+      _misc_flags &= ~_misc_declares_nonstatic_concrete_methods;
     }
   }
 
