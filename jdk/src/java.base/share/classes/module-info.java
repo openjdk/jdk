@@ -279,6 +279,7 @@ module java.base {
         java.security.jgss,
         java.security.sasl,
         java.smartcardio,
+        java.xml.crypto,
         jdk.crypto.ec,
         jdk.crypto.token,
         jdk.jartool,
