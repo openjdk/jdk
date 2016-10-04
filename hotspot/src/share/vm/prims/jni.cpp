@@ -1173,7 +1173,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
   args->set_java_argument_object(&java_args);
 
   // handle arguments
-  assert(!method->is_static(), "method should not be static");
+  assert(!method->is_static(), "method %s should not be static", method->name_and_sig_as_C_string());
   args->push_receiver(h_recv); // Push jobject handle
 
   // Fill out JavaCallArguments object
