@@ -31,7 +31,7 @@
 static const LogTagSet& tagset = LogTagSetMapping<LOG_TAGS(logging, safepoint)>::tagset();
 static const LogDecorators default_decorators;
 
-TEST(LogDecorations, level) {
+TEST_VM(LogDecorations, level) {
   for (uint l = LogLevel::First; l <= LogLevel::Last; l++) {
     LogLevelType level = static_cast<LogLevelType>(l);
     // Create a decorations object for the current level
@@ -52,7 +52,7 @@ TEST(LogDecorations, level) {
   }
 }
 
-TEST(LogDecorations, uptime) {
+TEST_VM(LogDecorations, uptime) {
   // Verify the format of the decoration
   int a, b;
   char decimal_point;
@@ -73,7 +73,7 @@ TEST(LogDecorations, uptime) {
   }
 }
 
-TEST(LogDecorations, tags) {
+TEST_VM(LogDecorations, tags) {
   char expected_tags[1 * K];
   tagset.label(expected_tags, sizeof(expected_tags));
   // Verify that the expected tags are included in the tags decoration
@@ -82,7 +82,7 @@ TEST(LogDecorations, tags) {
 }
 
 // Test each variation of the different timestamp decorations (ms, ns, uptime ms, uptime ns)
-TEST(LogDecorations, timestamps) {
+TEST_VM(LogDecorations, timestamps) {
   struct {
     const LogDecorators::Decorator decorator;
     const char* suffix;

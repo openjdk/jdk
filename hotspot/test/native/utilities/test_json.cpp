@@ -54,322 +54,322 @@ JSON_GTest::JSON_GTest(const char* text) : JSON(text, false, tty) {
     parse();
 }
 
-TEST(utilities, json_curly_braces) {
+TEST_VM(utilities, json_curly_braces) {
     JSON_GTest::test("{}", true);
 }
 
-TEST(utilities, json_brackets) {
+TEST_VM(utilities, json_brackets) {
     JSON_GTest::test("[]", true);
 }
 
-TEST(utilities, json_space_braces) {
+TEST_VM(utilities, json_space_braces) {
     JSON_GTest::test("  {  }  ", true);
 }
 
-TEST(utilities, json_space_bracketes) {
+TEST_VM(utilities, json_space_bracketes) {
     JSON_GTest::test("  [  ]  ", true);
 }
 
-TEST(utilities, json_quoted_error) {
+TEST_VM(utilities, json_quoted_error) {
     JSON_GTest::test("\"error\"", false);
 }
 
-TEST(utilities, json_error_string) {
+TEST_VM(utilities, json_error_string) {
     JSON_GTest::test("error", false);
 }
 
-TEST(utilities, json_simple_integer) {
+TEST_VM(utilities, json_simple_integer) {
     JSON_GTest::test("1", false);
 }
 
-TEST(utilities, json_siple_float) {
+TEST_VM(utilities, json_siple_float) {
     JSON_GTest::test("1.2", false);
 }
 
-TEST(utilities, json_simple_boolean_true) {
+TEST_VM(utilities, json_simple_boolean_true) {
     JSON_GTest::test("true", false);
 }
 
-TEST(utilities, json_simple_boolean_false) {
+TEST_VM(utilities, json_simple_boolean_false) {
     JSON_GTest::test("false", false);
 }
 
-TEST(utilities, json_simple_null) {
+TEST_VM(utilities, json_simple_null) {
     JSON_GTest::test("null", false);
 }
 
-TEST(utilities, json_one_element_int_array) {
+TEST_VM(utilities, json_one_element_int_array) {
     JSON_GTest::test("[ 1 ]", true);
 }
 
-TEST(utilities, json_int_array) {
+TEST_VM(utilities, json_int_array) {
     JSON_GTest::test("[ 1, ]", true);
 }
 
-TEST(utilities, json_one_element_bool_array) {
+TEST_VM(utilities, json_one_element_bool_array) {
     JSON_GTest::test("[ true ]", true);
 }
 
-TEST(utilities, json_bool_array) {
+TEST_VM(utilities, json_bool_array) {
     JSON_GTest::test("[ true, ]", true);
 }
 
-TEST(utilities, json_one_element_false_array) {
+TEST_VM(utilities, json_one_element_false_array) {
     JSON_GTest::test("[ false ]", true);
 }
 
-TEST(utilities, json_false_bool_array) {
+TEST_VM(utilities, json_false_bool_array) {
     JSON_GTest::test("[ false, ]", true);
 }
 
-TEST(utilities, json_one_null_array) {
+TEST_VM(utilities, json_one_null_array) {
     JSON_GTest::test("[ null ]", true);
 }
 
-TEST(utilities, json_null_array) {
+TEST_VM(utilities, json_null_array) {
     JSON_GTest::test("[ null, ]", true);
 }
 
-TEST(utilities, json_one_empty_string_array) {
+TEST_VM(utilities, json_one_empty_string_array) {
     JSON_GTest::test("[ \"\" ]", true);
 }
 
-TEST(utilities, json_empty_string_array) {
+TEST_VM(utilities, json_empty_string_array) {
     JSON_GTest::test("[ \"\", ]", true);
 }
 
-TEST(utilities, json_single_string_array) {
+TEST_VM(utilities, json_single_string_array) {
     JSON_GTest::test("[ \"elem1\" ]", true);
 }
 
-TEST(utilities, json_string_comma_arrray) {
+TEST_VM(utilities, json_string_comma_arrray) {
     JSON_GTest::test("[ \"elem1\", ]", true);
 }
 
-TEST(utilities, json_two_strings_array) {
+TEST_VM(utilities, json_two_strings_array) {
     JSON_GTest::test("[ \"elem1\", \"elem2\" ]", true);
 }
 
-TEST(utilities, json_two_strings_comma_array) {
+TEST_VM(utilities, json_two_strings_comma_array) {
     JSON_GTest::test("[ \"elem1\", \"elem2\", ]", true);
 }
 
-TEST(utilities, json_curly_braces_outside) {
+TEST_VM(utilities, json_curly_braces_outside) {
     JSON_GTest::test("[ \"elem1\" ] { }", false);
 }
 
-TEST(utilities, json_element_in_array) {
+TEST_VM(utilities, json_element_in_array) {
     JSON_GTest::test("[ elem1, \"elem2\" ]", false);
 }
 
-TEST(utilities, json_incorrect_end_array) {
+TEST_VM(utilities, json_incorrect_end_array) {
     JSON_GTest::test("[ \"elem1\"", false);
 }
 
-TEST(utilities, json_incorrect_string_end) {
+TEST_VM(utilities, json_incorrect_string_end) {
     JSON_GTest::test("[ \"elem1 ]", false);
 }
 
-TEST(utilities, json_incorrect_end_of_two_elements_array) {
+TEST_VM(utilities, json_incorrect_end_of_two_elements_array) {
     JSON_GTest::test("[ \"elem1\", \"elem2\"", false);
 }
 
-TEST(utilities, json_incorrect_bool_true_array) {
+TEST_VM(utilities, json_incorrect_bool_true_array) {
     JSON_GTest::test("[ truefoo ]", false);
 }
 
-TEST(utilities, json_incorrect_bool_false_array) {
+TEST_VM(utilities, json_incorrect_bool_false_array) {
     JSON_GTest::test("[ falsefoo ]", false);
 }
 
-TEST(utilities, json_incorrect_null_array) {
+TEST_VM(utilities, json_incorrect_null_array) {
     JSON_GTest::test("[ nullfoo ]", false);
 }
 
-TEST(utilities, json_key_pair) {
+TEST_VM(utilities, json_key_pair) {
     JSON_GTest::test("{ key : 1 }", true);
 }
 
-TEST(utilities, json_key_pair_comma) {
+TEST_VM(utilities, json_key_pair_comma) {
     JSON_GTest::test("{ key : 1, }", true);
 }
 
-TEST(utilities, json_bool_true_key) {
+TEST_VM(utilities, json_bool_true_key) {
     JSON_GTest::test("{ key : true }", true);
 }
 
-TEST(utilities, json_bool_true_key_comma) {
+TEST_VM(utilities, json_bool_true_key_comma) {
     JSON_GTest::test("{ key : true, }", true);
 }
 
-TEST(utilities, json_bool_false_key) {
+TEST_VM(utilities, json_bool_false_key) {
     JSON_GTest::test("{ key : false }", true);
 }
 
-TEST(utilities, json_bool_false_key_comma) {
+TEST_VM(utilities, json_bool_false_key_comma) {
     JSON_GTest::test("{ key : false, }", true);
 }
 
-TEST(utilities, json_null_key) {
+TEST_VM(utilities, json_null_key) {
     JSON_GTest::test("{ key : null }", true);
 }
 
-TEST(utilities, json_null_key_comma) {
+TEST_VM(utilities, json_null_key_comma) {
     JSON_GTest::test("{ key : null, }", true);
 }
 
-TEST(utilities, json_pair_of_empty_strings) {
+TEST_VM(utilities, json_pair_of_empty_strings) {
     JSON_GTest::test("{ \"\" : \"\" }", true);
 }
 
-TEST(utilities, json_pair_of_empty_strings_comma) {
+TEST_VM(utilities, json_pair_of_empty_strings_comma) {
     JSON_GTest::test("{ \"\" : \"\", }", true);
 }
 
-TEST(utilities, json_pair_of_strings) {
+TEST_VM(utilities, json_pair_of_strings) {
     JSON_GTest::test("{ \"key1\" : \"val1\" }", true);
 }
 
-TEST(utilities, json_pair_of_strings_comma) {
+TEST_VM(utilities, json_pair_of_strings_comma) {
     JSON_GTest::test("{ \"key1\" : \"val1\", }", true);
 }
 
-TEST(utilities, json_two_pairs_of_strings) {
+TEST_VM(utilities, json_two_pairs_of_strings) {
     JSON_GTest::test("{ \"key1\" : \"val1\", \"key2\" : \"val2\" }", true);
 }
 
-TEST(utilities, json_two_pairs_of_strings_comma) {
+TEST_VM(utilities, json_two_pairs_of_strings_comma) {
     JSON_GTest::test("{ \"key1\" : \"val1\", \"key2\" : \"val2\", }", true);
 }
 
-TEST(utilities, json_array_outside) {
+TEST_VM(utilities, json_array_outside) {
     JSON_GTest::test("{ \"key\" : \"val\" } [ \"error\" ]", false);
 }
 
-TEST(utilities, json_incorrect_object_end) {
+TEST_VM(utilities, json_incorrect_object_end) {
     JSON_GTest::test("{ \"key\" : \"val\" ", false);
 }
 
-TEST(utilities, json_empty_comment) {
+TEST_VM(utilities, json_empty_comment) {
     JSON_GTest::test("/**/ { }", true);
 }
 
-TEST(utilities, json_space_comment) {
+TEST_VM(utilities, json_space_comment) {
     JSON_GTest::test("/* */ { }", true);
 }
 
-TEST(utilities, json_comment) {
+TEST_VM(utilities, json_comment) {
     JSON_GTest::test("/*foo*/ { }", true);
 }
 
-TEST(utilities, json_star_comment) {
+TEST_VM(utilities, json_star_comment) {
     JSON_GTest::test("/* *foo */ { }", true);
 }
 
-TEST(utilities, json_stars_comment) {
+TEST_VM(utilities, json_stars_comment) {
     JSON_GTest::test("/* *foo* */ { }", true);
 }
 
-TEST(utilities, json_special_comment) {
+TEST_VM(utilities, json_special_comment) {
     JSON_GTest::test("/* /*foo */ { }", true);
 }
 
-TEST(utilities, json_comment_after) {
+TEST_VM(utilities, json_comment_after) {
     JSON_GTest::test("{ } /* foo */", true);
 }
 
-TEST(utilities, json_comment_after_and_space) {
+TEST_VM(utilities, json_comment_after_and_space) {
     JSON_GTest::test("{ } /* foo */ ", true);
 }
 
-TEST(utilities, json_one_line_empty_comment_after) {
+TEST_VM(utilities, json_one_line_empty_comment_after) {
     JSON_GTest::test("{ } //", true);
 }
 
-TEST(utilities, json_one_line_space_comment_after) {
+TEST_VM(utilities, json_one_line_space_comment_after) {
     JSON_GTest::test("{ } // ", true);
 }
 
-TEST(utilities, json_one_line_comment_after) {
+TEST_VM(utilities, json_one_line_comment_after) {
     JSON_GTest::test("{ } // foo", true);
 }
 
-TEST(utilities, json_incorrect_multiline_comment) {
+TEST_VM(utilities, json_incorrect_multiline_comment) {
     JSON_GTest::test("/* * / { }", false);
 }
 
-TEST(utilities, json_incorrect_multiline_comment_begin) {
+TEST_VM(utilities, json_incorrect_multiline_comment_begin) {
     JSON_GTest::test("/ * */ { }", false);
 }
 
-TEST(utilities, json_oneline_comment_only) {
+TEST_VM(utilities, json_oneline_comment_only) {
     JSON_GTest::test("// { }", false);
 }
 
-TEST(utilities, json_multiline_comment_only) {
+TEST_VM(utilities, json_multiline_comment_only) {
     JSON_GTest::test("/* { } */", false);
 }
 
-TEST(utilities, json_multiline_comment_2) {
+TEST_VM(utilities, json_multiline_comment_2) {
     JSON_GTest::test("/* { } */ ", false);
 }
 
-TEST(utilities, json_incorrectly_commented_object) {
+TEST_VM(utilities, json_incorrectly_commented_object) {
     JSON_GTest::test("/* { } ", false);
 }
 
-TEST(utilities, json_missing_multiline_end) {
+TEST_VM(utilities, json_missing_multiline_end) {
     JSON_GTest::test("{ } /* ", false);
 }
 
-TEST(utilities, json_missing_multiline_slash) {
+TEST_VM(utilities, json_missing_multiline_slash) {
     JSON_GTest::test("/* { } *", false);
 }
 
-TEST(utilities, json_commented_object_end) {
+TEST_VM(utilities, json_commented_object_end) {
     JSON_GTest::test("{ /* } */", false);
 }
 
-TEST(utilities, json_commented_array_end) {
+TEST_VM(utilities, json_commented_array_end) {
     JSON_GTest::test("[ /* ] */", false);
 }
 
-TEST(utilities, json_missing_object_end) {
+TEST_VM(utilities, json_missing_object_end) {
     JSON_GTest::test("{ key : \"val\", /* } */", false);
 }
 
-TEST(utilities, json_missing_array_end) {
+TEST_VM(utilities, json_missing_array_end) {
     JSON_GTest::test("[ \"val\", /* ] */", false);
 }
 
-TEST(utilities, json_key_values_1) {
+TEST_VM(utilities, json_key_values_1) {
     JSON_GTest::test("/* comment */{ key1 : { \"key2\" : { \"key3\" : [ \"elem1\", \"elem2\","
             "{ \"key4\" : null }, 3 , 2 , 1 , 0 , -1 , -2 , -3 , true, false, null, ] }, \"key5\""
             " : true }, \"key6\" : [ \"☃\" ], key7 : \"val\",}", true);
 }
 
-TEST(utilities, json_key_values_2) {
+TEST_VM(utilities, json_key_values_2) {
     JSON_GTest::test("/* comment */ { \"key1\" : { \"key2\" : { \"key3\" : [ \"elem1\", \"elem2\","
             "{ \"key4\" : null }, 3 , 2 , 1 , 0 , -1 , -2 , -3 , true, false, null, ] }, \"key5\""
             " : true }, \"key6\" : [ \"☃\" ], key7 : \"val\",}", true);
 }
 
-TEST(utilities, json_quoted_symbols) {
+TEST_VM(utilities, json_quoted_symbols) {
     JSON_GTest::test("/*comment*/{\"ff1 fsd\":{\"☃\":{\"☃\":[\"☃\",\"☃\"]},"
             "\"☃\":true},\"☃\":[\"☃\"],\"foo\":\"☃\",}", true);
 }
 
-TEST(utilities, json_incorrect_key) {
+TEST_VM(utilities, json_incorrect_key) {
     JSON_GTest::test("/* comment */ { key1 error : { \"☃\" : { \"☃\" : [ \"☃\","
             " \"☃\" ] }, \"☃\" : true }, \"baz\" : [ \"☃\" ], foo : \"☃\",}",
             false); // first key needs to be quoted since it contains a space
 }
 
-TEST(utilities, json_array_with_newline) {
+TEST_VM(utilities, json_array_with_newline) {
     JSON_GTest::test("[\n]", true);
 }
 
-TEST(utilities, json_directives_file) {
+TEST_VM(utilities, json_directives_file) {
     JSON_GTest::test(
             "[" "\n"
             "   {"
