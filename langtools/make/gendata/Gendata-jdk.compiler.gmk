@@ -52,7 +52,7 @@ $(SUPPORT_OUTPUTDIR)/symbols/ct.sym-files/_the.symbols: \
 	$(RM) -r $(@D)
 	$(MKDIR) -p $(@D)
 	$(ECHO) Creating ct.sym classes
-	$(JAVA) $(INTERIM_LANGTOOLS_ARGS) \
+	$(JAVA_SMALL) $(INTERIM_LANGTOOLS_ARGS) \
 	    $(COMPILECREATESYMBOLS_ADD_EXPORTS) \
 	    -classpath $(BUILDTOOLS_OUTPUTDIR)/create_symbols \
 	    build.tools.symbolgenerator.CreateSymbols \
