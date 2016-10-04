@@ -32,7 +32,7 @@
 static const char* name = "file=testlog.pid%p.%t.log";
 
 // Test parsing a bunch of valid file output options
-TEST(LogFileOutput, parse_valid) {
+TEST_VM(LogFileOutput, parse_valid) {
   const char* valid_options[] = {
     "", "filecount=10", "filesize=512",
     "filecount=11,filesize=256",
@@ -64,7 +64,7 @@ TEST(LogFileOutput, parse_valid) {
 }
 
 // Test parsing a bunch of invalid file output options
-TEST(LogFileOutput, parse_invalid) {
+TEST_VM(LogFileOutput, parse_invalid) {
   const char* invalid_options[] = {
     "invalidopt", "filecount=",
     "filesize=,filecount=10",
@@ -91,7 +91,7 @@ TEST(LogFileOutput, parse_invalid) {
 }
 
 // Test for overflows with filesize
-TEST(LogFileOutput, filesize_overflow) {
+TEST_VM(LogFileOutput, filesize_overflow) {
   char buf[256];
   int ret = jio_snprintf(buf, sizeof(buf), "filesize=" SIZE_FORMAT "K", SIZE_MAX);
   ASSERT_GT(ret, 0) << "Buffer too small";
