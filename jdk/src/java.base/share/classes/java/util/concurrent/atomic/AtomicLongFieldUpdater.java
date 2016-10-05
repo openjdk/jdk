@@ -40,6 +40,7 @@ import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Objects;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongUnaryOperator;
 import jdk.internal.misc.Unsafe;
@@ -409,7 +410,17 @@ public abstract class AtomicLongFieldUpdater<T> {
             if (!Modifier.isVolatile(modifiers))
                 throw new IllegalArgumentException("Must be volatile type");
 
-            this.cclass = (Modifier.isProtected(modifiers)) ? caller : tclass;
+            // Access to protected field members is restricted to receivers only
+            // of the accessing class, or one of its subclasses, and the
+            // accessing class must in turn be a subclass (or package sibling)
+            // of the protected member's defining class.
+            // If the updater refers to a protected field of a declaring class
+            // outside the current package, the receiver argument will be
+            // narrowed to the type of the accessing class.
+            this.cclass = (Modifier.isProtected(modifiers) &&
+                           tclass.isAssignableFrom(caller) &&
+                           !isSamePackage(tclass, caller))
+                          ? caller : tclass;
             this.tclass = tclass;
             this.offset = U.objectFieldOffset(field);
         }
@@ -540,7 +551,17 @@ public abstract class AtomicLongFieldUpdater<T> {
             if (!Modifier.isVolatile(modifiers))
                 throw new IllegalArgumentException("Must be volatile type");
 
-            this.cclass = (Modifier.isProtected(modifiers)) ? caller : tclass;
+            // Access to protected field members is restricted to receivers only
+            // of the accessing class, or one of its subclasses, and the
+            // accessing class must in turn be a subclass (or package sibling)
+            // of the protected member's defining class.
+            // If the updater refers to a protected field of a declaring class
+            // outside the current package, the receiver argument will be
+            // narrowed to the type of the accessing class.
+            this.cclass = (Modifier.isProtected(modifiers) &&
+                           tclass.isAssignableFrom(caller) &&
+                           !isSamePackage(tclass, caller))
+                          ? caller : tclass;
             this.tclass = tclass;
             this.offset = U.objectFieldOffset(field);
         }
@@ -620,5 +641,14 @@ public abstract class AtomicLongFieldUpdater<T> {
             }
         } while (acl != null);
         return false;
+    }
+
+    /**
+     * Returns true if the two classes have the same class loader and
+     * package qualifier
+     */
+    static boolean isSamePackage(Class<?> class1, Class<?> class2) {
+        return class1.getClassLoader() == class2.getClassLoader()
+               && Objects.equals(class1.getPackageName(), class2.getPackageName());
     }
 }
