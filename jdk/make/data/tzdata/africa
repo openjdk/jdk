@@ -487,7 +487,7 @@ Zone	Africa/Monrovia	-0:43:08 -	LMT	1882
 # http://www.libyaherald.com/2013/10/24/correction-no-time-change-tomorrow/
 #
 # From Paul Eggert (2013-10-25):
-# For now, assume they're reverting to the pre-2012 rules of permanent UTC+2.
+# For now, assume they're reverting to the pre-2012 rules of permanent UT +02.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Libya	1951	only	-	Oct	14	2:00	1:00	S
