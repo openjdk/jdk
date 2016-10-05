@@ -78,6 +78,7 @@ import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
+import com.sun.tools.javac.util.JDK9Wrappers;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.jvm.ModuleNameReader;
@@ -1103,6 +1104,11 @@ public class Locations {
 
                 if (p.getFileName().toString().endsWith(".jmod")) {
                     try {
+                        // check if the JMOD file is valid
+                        JDK9Wrappers.JmodFile.checkMagic(p);
+
+                        // No JMOD file system.  Use JarFileSystem to
+                        // workaround for now
                         FileSystem fs = fileSystems.get(p);
                         if (fs == null) {
                             URI uri = URI.create("jar:" + p.toUri());
