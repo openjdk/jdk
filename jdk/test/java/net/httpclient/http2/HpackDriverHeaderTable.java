@@ -25,15 +25,11 @@
  * @test
  * @bug 8153353
  * @modules java.httpclient/sun.net.httpclient.hpack
+ *          jdk.localedata
  * @key randomness
  * @compile/module=java.httpclient sun/net/httpclient/hpack/SpecHelper.java
  * @compile/module=java.httpclient sun/net/httpclient/hpack/TestHelper.java
  * @compile/module=java.httpclient sun/net/httpclient/hpack/BuffersTestingKit.java
- * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.BinaryPrimitivesTest
- * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.CircularBufferTest
- * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.DecoderTest
- * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.EncoderTest
- * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.HuffmanTest
- * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.TestHelper
+ * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.HeaderTableTest
  */
-public class HpackDriver { }
+public class HpackDriverHeaderTable { }

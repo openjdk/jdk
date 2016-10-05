@@ -189,6 +189,9 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
         String MHT[] = new String[] {"Hora de las Islas Marshall", "MHT",
                                      "Hora de verano de las Islas Marshall", "MHST",
                                      "Hora de Islas Marshall", "MHT"};
+        String MMT[] = new String[] {"Hora de Myanmar", "MMT",
+                                     "Hora de verano de Myanmar", "MMST",
+                                     "Hora de Myanmar", "MMT"};
         String MSK[] = new String[] {"Hora est\u00e1ndar de Mosc\u00fa", "MSK",
                                      "Hora de verano de Mosc\u00fa", "MSD",
                                      "Hora de Mosc\u00FA", "MT"};
@@ -684,9 +687,7 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
             {"Asia/Qyzylorda", new String[] {"Hora de Qyzylorda", "QYZT",
                                              "Hora de verano de Qyzylorda", "QYZST",
                                              "Hora de Qyzylorda", "QYZT"}},
-            {"Asia/Rangoon", new String[] {"Hora de Myanmar", "MMT",
-                                           "Hora de verano de Myanmar", "MMST",
-                                           "Hora de Myanmar", "MMT"}},
+            {"Asia/Rangoon", MMT},
             {"Asia/Riyadh", ARAST},
             {"Asia/Saigon", ICT},
             {"Asia/Sakhalin", new String[] {"Hora de Sajalin", "SAKT",
@@ -719,6 +720,7 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
                                                "Hora de verano de Vladivostok", "VLAST",
                                                "Hora de Vladivostok", "VLAT"}},
             {"Asia/Yakutsk", YAKT},
+            {"Asia/Yangon", MMT},
             {"Asia/Yekaterinburg", new String[] {"Hora de Ekaterinburgo", "YEKT",
                                                  "Hora de verano de Ekaterinburgo", "YEKST",
                                                  "Hora de Ekaterinburgo", "YEKT"}},
