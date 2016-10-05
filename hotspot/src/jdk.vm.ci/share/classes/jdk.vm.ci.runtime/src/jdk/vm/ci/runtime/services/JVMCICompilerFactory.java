@@ -22,6 +22,8 @@
  */
 package jdk.vm.ci.runtime.services;
 
+import java.io.PrintStream;
+
 import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.runtime.JVMCIRuntime;
 import jdk.vm.ci.services.JVMCIPermission;
@@ -70,4 +72,12 @@ public abstract class JVMCICompilerFactory {
      * Create a new instance of a {@link JVMCICompiler}.
      */
     public abstract JVMCICompiler createCompiler(JVMCIRuntime runtime);
+
+    /**
+     * Prints a description of the properties used to configure this compiler.
+     *
+     * @param out where to print the message
+     */
+    public void printProperties(PrintStream out) {
+    }
 }
