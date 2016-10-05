@@ -574,6 +574,10 @@ uint Compile::scratch_emit_size(const Node* n) {
   buf.consts()->initialize_shared_locs(&locs_buf[lsize * 0], lsize);
   buf.insts()->initialize_shared_locs( &locs_buf[lsize * 1], lsize);
   buf.stubs()->initialize_shared_locs( &locs_buf[lsize * 2], lsize);
+  // Mark as scratch buffer.
+  buf.consts()->set_scratch_emit();
+  buf.insts()->set_scratch_emit();
+  buf.stubs()->set_scratch_emit();
 
   // Do the emission.
 
