@@ -552,6 +552,14 @@ void virtual_call_Relocation::unpack_data() {
   _cached_value = x0==0? NULL: address_from_scaled_offset(x0, point);
 }
 
+void runtime_call_w_cp_Relocation::pack_data_to(CodeSection * dest) {
+  short* p = pack_1_int_to((short *)dest->locs_end(), (jint)(_offset >> 2));
+  dest->set_locs_end((relocInfo*) p);
+}
+
+void runtime_call_w_cp_Relocation::unpack_data() {
+  _offset = unpack_1_int() << 2;
+}
 
 void static_stub_Relocation::pack_data_to(CodeSection* dest) {
   short* p = (short*) dest->locs_end();
@@ -1017,6 +1025,7 @@ void RelocIterator::print_current() {
       break;
     }
   case relocInfo::runtime_call_type:
+  case relocInfo::runtime_call_w_cp_type:
     {
       CallRelocation* r = (CallRelocation*) reloc();
       tty->print(" | [destination=" INTPTR_FORMAT "]", p2i(r->destination()));
