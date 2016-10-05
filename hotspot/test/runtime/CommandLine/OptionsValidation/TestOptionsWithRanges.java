@@ -110,10 +110,6 @@ public class TestOptionsWithRanges {
         excludeTestMaxRange("OldSize");
         excludeTestMaxRange("ParallelGCThreads");
 
-        excludeTestMaxRange("CompilerThreadStackSize");
-        excludeTestMaxRange("ThreadStackSize");
-        excludeTestMaxRange("VMThreadStackSize");
-
         /*
          * Remove parameters controlling the code cache. As these
          * parameters have implications on the physical memory

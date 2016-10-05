@@ -143,13 +143,6 @@ ifneq ($(filter $(OPENJDK_TARGET_OS), linux macosx windows), )
   JVM_PRECOMPILED_HEADER := $(HOTSPOT_TOPDIR)/src/share/vm/precompiled/precompiled.hpp
 endif
 
-ifneq ($(filter $(OPENJDK_TARGET_OS), macosx aix solaris), )
-  # On macosx, aix and solaris we have to link with the C++ compiler
-  JVM_TOOLCHAIN := TOOLCHAIN_LINK_CXX
-else
-  JVM_TOOLCHAIN := TOOLCHAIN_DEFAULT
-endif
-
 ifeq ($(OPENJDK_TARGET_CPU), x86)
   JVM_EXCLUDE_PATTERNS += x86_64
 else ifeq ($(OPENJDK_TARGET_CPU), x86_64)
@@ -194,7 +187,7 @@ JVM_OPTIMIZATION ?= HIGHEST_JVM
 # Now set up the actual compilation of the main hotspot native library
 
 $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
-    TOOLCHAIN := $(JVM_TOOLCHAIN), \
+    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     LIBRARY := jvm, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR), \
     SRC := $(JVM_SRC_DIRS), \

@@ -31,14 +31,18 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.text.BreakIterator;
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -61,6 +65,7 @@ import com.sun.tools.javac.util.Options;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.Doclet.Option;
 import jdk.javadoc.doclet.DocletEnvironment;
+import jdk.javadoc.internal.doclets.toolkit.Resources;
 
 import static javax.tools.DocumentationTool.Location.*;
 
@@ -168,7 +173,10 @@ public class Start extends ToolOption.Helper {
     }
 
     void usage(boolean exit) {
-        usage("main.usage", "-help", "main.usage.foot", exit);
+        usage("main.usage", "-help", "main.usage.foot");
+
+        if (exit)
+            throw new Messager.ExitJavadoc();
     }
 
     @Override
@@ -177,28 +185,126 @@ public class Start extends ToolOption.Helper {
     }
 
     void Xusage(boolean exit) {
-        usage("main.Xusage", "-X", "main.Xusage.foot", exit);
-    }
-
-    private void usage(String main, String option, String foot, boolean exit) {
-        messager.notice(main);
-        // let doclet print usage information (does nothing on error)
-        if (docletClass != null) {
-            String name = doclet.getName();
-            Set<Option> supportedOptions = doclet.getSupportedOptions();
-            messager.notice("main.doclet.usage.header", name);
-            Option.Kind myKind = option.equals("-X")
-                    ? Option.Kind.EXTENDED
-                    : Option.Kind.STANDARD;
-            supportedOptions.stream()
-                    .filter(opt -> opt.getKind() == myKind)
-                    .forEach(opt -> messager.printNotice(opt.toString()));
-        }
-        if (foot != null)
-            messager.notice(foot);
+        usage("main.Xusage", "-X", "main.Xusage.foot");
 
         if (exit)
             throw new Messager.ExitJavadoc();
+    }
+
+    private void usage(String header, String option, String footer) {
+        messager.notice(header);
+        showToolOptions(option.equals("-X") ? OptionKind.EXTENDED : OptionKind.STANDARD);
+
+        // let doclet print usage information
+        if (docletClass != null) {
+            String name = doclet.getName();
+            messager.notice("main.doclet.usage.header", name);
+            showDocletOptions(option.equals("-X") ? Option.Kind.EXTENDED : Option.Kind.STANDARD);
+        }
+
+        if (footer != null)
+            messager.notice(footer);
+    }
+
+    void showToolOptions(OptionKind kind) {
+        Comparator<ToolOption> comp = new Comparator<ToolOption>() {
+            final Collator collator = Collator.getInstance(Locale.US);
+            { collator.setStrength(Collator.PRIMARY); }
+
+            @Override
+            public int compare(ToolOption o1, ToolOption o2) {
+                return collator.compare(o1.primaryName, o2.primaryName);
+            }
+        };
+
+        Stream.of(ToolOption.values())
+                    .filter(opt -> opt.kind == kind)
+                    .sorted(comp)
+                    .forEach(opt -> showToolOption(opt));
+    }
+
+    void showToolOption(ToolOption option) {
+        List<String> names = option.getNames();
+        String parameters;
+        if (option.hasArg || option.primaryName.endsWith(":")) {
+            String sep = (option == ToolOption.J) || option.primaryName.endsWith(":") ? "" : " ";
+            parameters = sep + option.getParameters(messager);
+        } else {
+            parameters = "";
+        }
+        String description = option.getDescription(messager);
+        showUsage(names, parameters, description);
+    }
+
+    void showDocletOptions(Option.Kind kind) {
+        Comparator<Doclet.Option> comp = new Comparator<Doclet.Option>() {
+            final Collator collator = Collator.getInstance(Locale.US);
+            { collator.setStrength(Collator.PRIMARY); }
+
+            @Override
+            public int compare(Doclet.Option o1, Doclet.Option o2) {
+                return collator.compare(o1.getName(), o2.getName());
+            }
+        };
+
+        doclet.getSupportedOptions().stream()
+                .filter(opt -> opt.getKind() == kind)
+                .sorted(comp)
+                .forEach(opt -> showDocletOption(opt));
+    }
+
+    void showDocletOption(Doclet.Option option) {
+        List<String> names = Arrays.asList(option.getName());
+        String parameters;
+        if (option.getArgumentCount() > 0 || option.getName().endsWith(":")) {
+            String sep = option.getName().endsWith(":") ? "" : " ";
+            parameters = sep + option.getParameters();
+        } else {
+            parameters = "";
+        }
+        String description = option.getDescription();
+        showUsage(names, parameters, description);
+    }
+
+    // The following constants are intended to format the output to
+    // be similar to that of the java launcher: i.e. "java -help".
+
+    /** The indent for the option synopsis. */
+    private static final String SMALL_INDENT = "    ";
+    /** The automatic indent for the description. */
+    private static final String LARGE_INDENT = "                  ";
+    /** The space allowed for the synopsis, if the description is to be shown on the same line. */
+    private static final int DEFAULT_SYNOPSIS_WIDTH = 13;
+    /** The nominal maximum line length, when seeing if text will fit on a line. */
+    private static final int DEFAULT_MAX_LINE_LENGTH = 80;
+    /** The format for a single-line help entry. */
+    private static final String COMPACT_FORMAT = SMALL_INDENT + "%-" + DEFAULT_SYNOPSIS_WIDTH + "s %s";
+
+    void showUsage(List<String> names, String parameters, String description) {
+        String synopses = names.stream()
+                .map(s -> s + parameters)
+                .collect(Collectors.joining(", "));
+        // If option synopses and description fit on a single line of reasonable length,
+        // display using COMPACT_FORMAT
+        if (synopses.length() < DEFAULT_SYNOPSIS_WIDTH
+                && !description.contains("\n")
+                && (SMALL_INDENT.length() + DEFAULT_SYNOPSIS_WIDTH + 1 + description.length() <= DEFAULT_MAX_LINE_LENGTH)) {
+            messager.printNotice(String.format(COMPACT_FORMAT, synopses, description));
+            return;
+        }
+
+        // If option synopses fit on a single line of reasonable length, show that;
+        // otherwise, show 1 per line
+        if (synopses.length() <= DEFAULT_MAX_LINE_LENGTH) {
+            messager.printNotice(SMALL_INDENT + synopses);
+        } else {
+            for (String name: names) {
+                messager.printNotice(SMALL_INDENT + name + parameters);
+            }
+        }
+
+        // Finally, show the description
+        messager.printNotice(LARGE_INDENT + description.replace("\n", "\n" + LARGE_INDENT));
     }
 
 
@@ -433,14 +539,37 @@ public class Start extends ToolOption.Helper {
             docletOptions = doclet.getSupportedOptions();
         }
         String arg = args.get(idx);
+        String argBase, argVal;
+        if (arg.startsWith("--") && arg.contains("=")) {
+            int sep = arg.indexOf("=");
+            argBase = arg.substring(0, sep);
+            argVal = arg.substring(sep + 1);
+        } else {
+            argBase = arg;
+            argVal = null;
+        }
 
         for (Doclet.Option opt : docletOptions) {
-            if (opt.matches(arg)) {
-                if (args.size() - idx < opt.getArgumentCount()) {
-                    usageError("main.requires_argument", arg);
+            if (opt.matches(argBase)) {
+                if (argVal != null) {
+                    switch (opt.getArgumentCount()) {
+                        case 0:
+                            usageError("main.unnecessary_arg_provided", argBase);
+                            break;
+                        case 1:
+                            opt.process(arg, Arrays.asList(argVal).listIterator());
+                            break;
+                        default:
+                            usageError("main.only_one_argument_with_equals", argBase);
+                            break;
+                    }
+                } else {
+                    if (args.size() - idx -1 < opt.getArgumentCount()) {
+                        usageError("main.requires_argument", arg);
+                    }
+                    opt.process(arg, args.listIterator(idx + 1));
+                    idx += opt.getArgumentCount();
                 }
-                opt.process(arg, args.listIterator(idx + 1));
-                idx += opt.getArgumentCount();
                 return idx;
             }
         }
@@ -463,11 +592,11 @@ public class Start extends ToolOption.Helper {
         // Step 1: loop through the args, set locale early on, if found.
         for (int i = 0 ; i < argv.size() ; i++) {
             String arg = argv.get(i);
-            if (arg.equals(ToolOption.LOCALE.opt)) {
+            if (arg.equals(ToolOption.LOCALE.primaryName)) {
                 checkOneArg(argv, i++);
                 String lname = argv.get(i);
                 locale = getLocale(lname);
-            } else if (arg.equals(ToolOption.DOCLET.opt)) {
+            } else if (arg.equals(ToolOption.DOCLET.primaryName)) {
                 checkOneArg(argv, i++);
                 if (userDocletName != null) {
                     usageError("main.more_than_one_doclet_specified_0_and_1",
@@ -478,7 +607,7 @@ public class Start extends ToolOption.Helper {
                             docletName, argv.get(i));
                 }
                 userDocletName = argv.get(i);
-            } else if (arg.equals(ToolOption.DOCLETPATH.opt)) {
+            } else if (arg.equals(ToolOption.DOCLETPATH.primaryName)) {
                 checkOneArg(argv, i++);
                 if (userDocletPath == null) {
                     userDocletPath = argv.get(i);
@@ -599,8 +728,12 @@ public class Start extends ToolOption.Helper {
                 handleDocletOptions(i, args, true);
 
                 if (o.hasArg) {
-                    checkOneArg(args, i++);
-                    o.process(this, args.get(i));
+                    if (arg.startsWith("--") && arg.contains("=")) {
+                        o.process(this, arg.substring(arg.indexOf('=') + 1));
+                    } else {
+                        checkOneArg(args, i++);
+                        o.process(this, args.get(i));
+                    }
                 } else if (o.hasSuffix) {
                     o.process(this, arg);
                 } else {

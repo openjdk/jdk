@@ -236,10 +236,6 @@ TARGETS += $(BUILD_LIBZIP)
 
 ##########################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), aix)
-  LIBJIMAGE_TOOLCHAIN := TOOLCHAIN_LINK_CXX
-endif # OPENJDK_TARGET_OS aix
-
 JIMAGELIB_CPPFLAGS := \
     -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
     -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava \
@@ -249,7 +245,7 @@ JIMAGELIB_CPPFLAGS := \
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBJIMAGE, \
     LIBRARY := jimage, \
-    TOOLCHAIN := $(LIBJIMAGE_TOOLCHAIN), \
+    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     OPTIMIZATION := LOW, \
     SRC := $(JDK_TOPDIR)/src/java.base/share/native/libjimage \
