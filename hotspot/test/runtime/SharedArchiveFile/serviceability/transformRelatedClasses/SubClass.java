@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,20 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 6505888
- * @summary Tests CheckedSortedMap encoding
- * @author Sergey Malenkov
- */
-
-import java.util.Collections;
-import java.util.SortedMap;
-import java.util.TreeMap;
-
-public final class java_util_Collections_CheckedSortedMap extends AbstractTest<SortedMap<String, String>> {
+public class SubClass extends SuperClazz {
     public static void main(String[] args) {
-        new java_util_Collections_CheckedSortedMap().test(true);
+        System.out.println("SubClass: entering main()");
+        test();
     }
 
-    protected SortedMap<String, String> getObject() {
-        SortedMap<String, String> map = new TreeMap<String, String>();
-        map.put("key", "value");
-        return Collections.checkedSortedMap(map, String.class, String.class);
+    public static void test() {
+        // The line below will be used to check for successful class transformation
+        System.out.println(TransformUtil.ChildCheckPattern +
+                           TransformUtil.BeforePattern);
+        (new SubClass()).callParent();
     }
 
-    protected SortedMap<String, String> getAnotherObject() {
-        SortedMap<String, String> map = new TreeMap<String, String>();
-        return Collections.checkedSortedMap(map, String.class, String.class);
+    private void callParent() {
+        super.testParent();
     }
 }

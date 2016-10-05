@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,14 @@
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
-include SetupJavaCompilers.gmk
 
 TOOLS_CLASSES_DIR := $(BUILDTOOLS_OUTPUTDIR)/tools_jigsaw_classes
 
-$(eval $(call SetupJavaCompilation,BUILD_JIGSAW_TOOLS, \
-    SETUP := GENERATE_USINGJDKBYTECODE, \
-    SRC := $(JDK_TOPDIR)/make/src/classes, \
-    INCLUDES := build/tools/deps \
-                build/tools/jigsaw, \
-    BIN := $(TOOLS_CLASSES_DIR), \
-    ADD_JAVAC_FLAGS := --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED ))
-
+# To avoid reevaluating the compilation setup for the tools each time this file
+# is included, the actual compilation is handled by CompileModuleTools.gmk. The
+# following trick is used to be able to declare a dependency on the built tools.
+BUILD_TOOLS_JDK := $(call SetupJavaCompilationCompileTarget, \
+    BUILD_JIGSAW_TOOLS, $(TOOLS_CLASSES_DIR))
 
 TOOL_GENGRAPHS := $(BUILD_JAVA) -esa -ea -cp $(TOOLS_CLASSES_DIR) \
     build.tools.jigsaw.GenGraphs
@@ -45,3 +41,8 @@ TOOL_GENGRAPHS := $(BUILD_JAVA) -esa -ea -cp $(TOOLS_CLASSES_DIR) \
 TOOL_MODULESUMMARY := $(BUILD_JAVA) -esa -ea -cp $(TOOLS_CLASSES_DIR) \
     --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED \
     build.tools.jigsaw.ModuleSummary
+
+TOOL_ADD_PACKAGES_ATTRIBUTE := $(BUILD_JAVA) $(JAVA_FLAGS_SMALL) \
+    -cp $(TOOLS_CLASSES_DIR) \
+    --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
+    build.tools.jigsaw.AddPackagesAttribute

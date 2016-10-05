@@ -116,7 +116,7 @@ public class ShowReplacement {
     @Test
     public void removedPackage() {
         Path file = Paths.get("q", "RemovedPackage.class");
-        String[] output = JdepsUtil.jdeps("-jdkinternals", CLASSES_DIR.resolve(file).toString());
+        String[] output = JdepsUtil.jdeps("--jdk-internals", CLASSES_DIR.resolve(file).toString());
         int i = 0;
         // expect no replacement
         while (i < output.length && !output[i].contains("Suggested Replacement")) {

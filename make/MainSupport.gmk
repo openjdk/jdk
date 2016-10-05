@@ -137,7 +137,6 @@ MAKE_MAKEDIR_LIST := make
 define DeclareRecipeForModuleMakefile
   ifeq ($$($1_MULTIPLE_MAKEFILES), true)
     $2-$$($1_TARGET_SUFFIX): $2-$$($1_TARGET_SUFFIX)-$$(notdir $3)
-    $1 += $2-$$($1_TARGET_SUFFIX)-$$(notdir $3)
 
     $2-$$($1_TARGET_SUFFIX)-$$(notdir $3):
   else
@@ -173,6 +172,12 @@ define DeclareRecipesForPhaseAndModule
 
   # Only declare recipes if there are makefiles to call
   ifneq ($$($1_$2_TOPDIRS), )
+    # Add the top dir specific target to target list regardless of if recipe
+    # generation is disabled.
+    ifeq ($$($1_MULTIPLE_MAKEFILES), true)
+      $$(foreach d, $$($1_$2_TOPDIRS), \
+        $$(eval $1 += $2-$$($1_TARGET_SUFFIX)-$$(notdir $$d)))
+    endif
     ifeq ($(NO_RECIPES),)
       $$(foreach d, $$($1_$2_TOPDIRS), \
           $$(eval $$(call DeclareRecipeForModuleMakefile,$1,$2,$$d)))
