@@ -249,17 +249,11 @@ public class MotifIconFactory implements Serializable
                 if (check) {
                     // draw check
                     g.setColor(foreground);
-                    g.drawLine(csize-2,1,csize-2,2);
-                    g.drawLine(csize-3,2,csize-3,3);
-                    g.drawLine(csize-4,3,csize-4,4);
-                    g.drawLine(csize-5,4,csize-5,6);
-                    g.drawLine(csize-6,5,csize-6,8);
-                    g.drawLine(csize-7,6,csize-7,10);
-                    g.drawLine(csize-8,7,csize-8,10);
-                    g.drawLine(csize-9,6,csize-9,9);
-                    g.drawLine(csize-10,5,csize-10,8);
-                    g.drawLine(csize-11,5,csize-11,7);
-                    g.drawLine(csize-12,6,csize-12,6);
+                    int[] xa = {csize - 12, csize - 8, csize - 7, csize - 4,
+                                csize - 2, csize - 2, csize - 8, csize - 10,
+                                csize - 11};
+                    int[] ya = new int[]{6, 10, 10, 4, 2, 1, 7, 5, 5};
+                    g.fillPolygon(xa, ya, 9);
                 }
                 g.translate(-x, -y);
                 g.setColor(oldColor);
@@ -301,50 +295,18 @@ public class MotifIconFactory implements Serializable
 
             if (checkIn){
                 g.setColor(shadow);
-                g.drawLine(x+5,y+0,x+8,y+0);
-                g.drawLine(x+3,y+1,x+4,y+1);
-                g.drawLine(x+9,y+1,x+9,y+1);
-                g.drawLine(x+2,y+2,x+2,y+2);
-                g.drawLine(x+1,y+3,x+1,y+3);
-                g.drawLine(x,y+4,x,y+9);
-                g.drawLine(x+1,y+10,x+1,y+10);
-                g.drawLine(x+2,y+11,x+2,y+11);
+                g.drawArc(x, y, w - 1, h - 1, 45, 180);
                 g.setColor(highlight);
-                g.drawLine(x+3,y+12,x+4,y+12);
-                g.drawLine(x+5,y+13,x+8,y+13);
-                g.drawLine(x+9,y+12,x+10,y+12);
-                g.drawLine(x+11,y+11,x+11,y+11);
-                g.drawLine(x+12,y+10,x+12,y+10);
-                g.drawLine(x+13,y+9,x+13,y+4);
-                g.drawLine(x+12,y+3,x+12,y+3);
-                g.drawLine(x+11,y+2,x+11,y+2);
-                g.drawLine(x+10,y+1,x+10,y+1);
+                g.drawArc(x, y, w - 1, h - 1, 45, -180);
                 g.setColor(dot);
-                g.fillRect(x+4,y+5,6,4);
-                g.drawLine(x+5,y+4,x+8,y+4);
-                g.drawLine(x+5,y+9,x+8,y+9);
+                g.fillOval(x + 3, y + 3, 7, 7);
             }
             else {
                 g.setColor(highlight);
-                g.drawLine(x+5,y+0,x+8,y+0);
-                g.drawLine(x+3,y+1,x+4,y+1);
-                g.drawLine(x+9,y+1,x+9,y+1);
-                g.drawLine(x+2,y+2,x+2,y+2);
-                g.drawLine(x+1,y+3,x+1,y+3);
-                g.drawLine(x,y+4,x,y+9);
-                g.drawLine(x+1,y+10,x+1,y+10);
-                g.drawLine(x+2,y+11,x+2,y+11);
+                g.drawArc(x, y, w - 1, h - 1, 45, 180);
 
                 g.setColor(shadow);
-                g.drawLine(x+3,y+12,x+4,y+12);
-                g.drawLine(x+5,y+13,x+8,y+13);
-                g.drawLine(x+9,y+12,x+10,y+12);
-                g.drawLine(x+11,y+11,x+11,y+11);
-                g.drawLine(x+12,y+10,x+12,y+10);
-                g.drawLine(x+13,y+9,x+13,y+4);
-                g.drawLine(x+12,y+3,x+12,y+3);
-                g.drawLine(x+11,y+2,x+11,y+2);
-                g.drawLine(x+10,y+1,x+10,y+1);
+                g.drawArc(x, y, w - 1, h - 1, 45, -180);
 
             }
         }
