@@ -124,6 +124,9 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.jimage.decompressor to
         jdk.jlink;
+    exports jdk.internal.jmod to
+        jdk.compiler,
+        jdk.jlink;
     exports jdk.internal.logger to
         java.logging;
     exports jdk.internal.org.objectweb.asm to
