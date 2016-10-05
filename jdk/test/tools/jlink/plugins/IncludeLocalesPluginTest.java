@@ -92,7 +92,7 @@ public class IncludeLocalesPluginTest {
 
         // Asterisk works exactly the same as above
         {
-            "*",
+            "--include-locales=*",
             "jdk.localedata",
             List.of(
                 "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",

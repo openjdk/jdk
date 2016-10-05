@@ -37,6 +37,7 @@ import java.util.MissingResourceException;
 import java.util.Queue;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.function.Function;
 
 import javax.annotation.processing.Processor;
 import javax.lang.model.SourceVersion;
@@ -67,7 +68,9 @@ import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCLambda;
 import com.sun.tools.javac.tree.JCTree.JCMemberReference;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
+import com.sun.tools.javac.tree.JCTree.JCModuleDecl;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
+import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.Factory;
@@ -341,6 +344,13 @@ public class JavaCompiler {
                 }
             };
 
+    protected final ModuleFinder.ModuleInfoSourceFileCompleter moduleInfoSourceFileCompleter =
+            fo -> (ModuleSymbol) readSourceFile(parseImplicitFile(fo), null, tl -> {
+                return tl.defs.nonEmpty() && tl.defs.head.hasTag(Tag.MODULEDEF) ?
+                        ((JCModuleDecl) tl.defs.head).sym.module_info :
+                        syms.defineClass(names.module_info, syms.errModule);
+            }).owner;
+
     /**
      * Command line options.
      */
@@ -411,6 +421,7 @@ public class JavaCompiler {
         diags = Factory.instance(context);
 
         finder.sourceCompleter = sourceCompleter;
+        moduleFinder.sourceFileCompleter = moduleInfoSourceFileCompleter;
 
         options = Options.instance(context);
 
@@ -779,6 +790,19 @@ public class JavaCompiler {
         readSourceFile(null, c);
     }
 
+    private JCTree.JCCompilationUnit parseImplicitFile(JavaFileObject filename) {
+        JavaFileObject prev = log.useSource(filename);
+        try {
+            JCTree.JCCompilationUnit t = parse(filename, filename.getCharContent(false));
+            return t;
+        } catch (IOException e) {
+            log.error("error.reading.file", filename, JavacFileManager.getMessage(e));
+            return make.TopLevel(List.<JCTree>nil());
+        } finally {
+            log.useSource(prev);
+        }
+    }
+
     /** Compile a ClassSymbol from source, optionally using the given compilation unit as
      *  the source tree.
      *  @param tree the compilation unit in which the given ClassSymbol resides,
@@ -789,19 +813,19 @@ public class JavaCompiler {
         if (completionFailureName == c.fullname) {
             throw new CompletionFailure(c, "user-selected completion failure by class name");
         }
-        JavaFileObject filename = c.classfile;
-        JavaFileObject prev = log.useSource(filename);
 
         if (tree == null) {
-            try {
-                tree = parse(filename, filename.getCharContent(false));
-            } catch (IOException e) {
-                log.error("error.reading.file", filename, JavacFileManager.getMessage(e));
-                tree = make.TopLevel(List.<JCTree>nil());
-            } finally {
-                log.useSource(prev);
-            }
+            tree = parseImplicitFile(c.classfile);
         }
+
+        readSourceFile(tree, c, cut -> c);
+    }
+
+    private ClassSymbol readSourceFile(JCCompilationUnit tree,
+                                       ClassSymbol expectedSymbol,
+                                       Function<JCCompilationUnit, ClassSymbol> symbolGetter)
+                                           throws CompletionFailure {
+        Assert.checkNonNull(tree);
 
         if (!taskListener.isEmpty()) {
             TaskEvent e = new TaskEvent(TaskEvent.Kind.ENTER, tree);
@@ -814,18 +838,20 @@ public class JavaCompiler {
         // Note that if module resolution failed, we may not even
         // have enough modules available to access java.lang, and
         // so risk getting FatalError("no.java.lang") from MemberEnter.
-        if (!modules.enter(List.of(tree), c)) {
-            throw new CompletionFailure(c, diags.fragment("cant.resolve.modules"));
+        if (!modules.enter(List.of(tree), expectedSymbol)) {
+            throw new CompletionFailure(symbolGetter.apply(tree),
+                                        diags.fragment("cant.resolve.modules"));
         }
 
-        enter.complete(List.of(tree), c);
+        enter.complete(List.of(tree), expectedSymbol);
 
         if (!taskListener.isEmpty()) {
             TaskEvent e = new TaskEvent(TaskEvent.Kind.ENTER, tree);
             taskListener.finished(e);
         }
 
-        if (enter.getEnv(c) == null) {
+        ClassSymbol sym = symbolGetter.apply(tree);
+        if (sym == null || enter.getEnv(sym) == null) {
             boolean isPkgInfo =
                 tree.sourcefile.isNameCompatible("package-info",
                                                  JavaFileObject.Kind.SOURCE);
@@ -836,24 +862,26 @@ public class JavaCompiler {
                 if (enter.getEnv(tree.modle) == null) {
                     JCDiagnostic diag =
                         diagFactory.fragment("file.does.not.contain.module");
-                    throw new ClassFinder.BadClassFile(c, filename, diag, diagFactory);
+                    throw new ClassFinder.BadClassFile(sym, tree.sourcefile, diag, diagFactory);
                 }
             } else if (isPkgInfo) {
                 if (enter.getEnv(tree.packge) == null) {
                     JCDiagnostic diag =
                         diagFactory.fragment("file.does.not.contain.package",
-                                                 c.location());
-                    throw new ClassFinder.BadClassFile(c, filename, diag, diagFactory);
+                                                 sym.location());
+                    throw new ClassFinder.BadClassFile(sym, tree.sourcefile, diag, diagFactory);
                 }
             } else {
                 JCDiagnostic diag =
                         diagFactory.fragment("file.doesnt.contain.class",
-                                            c.getQualifiedName());
-                throw new ClassFinder.BadClassFile(c, filename, diag, diagFactory);
+                                            sym.getQualifiedName());
+                throw new ClassFinder.BadClassFile(sym, tree.sourcefile, diag, diagFactory);
             }
         }
 
         implicitSourceFilesRead = true;
+
+        return sym;
     }
 
     /** Track when the JavaCompiler has been used to compile something. */

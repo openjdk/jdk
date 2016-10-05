@@ -25,12 +25,13 @@
 
 package sun.rmi.server;
 
-import java.io.IOException;
+import java.io.ObjectInputFilter;
 import java.io.ObjectOutput;
-import java.rmi.*;
-import java.rmi.server.*;
-import sun.rmi.transport.*;
-import sun.rmi.transport.tcp.*;
+import java.rmi.server.RMIClientSocketFactory;
+import java.rmi.server.RMIServerSocketFactory;
+import java.rmi.server.RemoteRef;
+
+import sun.rmi.transport.LiveRef;
 
 /**
  * Server-side ref for a remote impl that uses a custom socket factory.
@@ -59,6 +60,16 @@ public class UnicastServerRef2 extends UnicastServerRef
     }
 
     /**
+     * Construct a Unicast server remote reference for a specified
+     * liveRef and filter.
+     */
+    public UnicastServerRef2(LiveRef ref,
+                             ObjectInputFilter filter)
+    {
+        super(ref, filter);
+    }
+
+    /**
      * Construct a Unicast server remote reference to be exported
      * on the specified port.
      */
@@ -67,6 +78,18 @@ public class UnicastServerRef2 extends UnicastServerRef
                              RMIServerSocketFactory ssf)
     {
         super(new LiveRef(port, csf, ssf));
+    }
+
+    /**
+     * Construct a Unicast server remote reference to be exported
+     * on the specified port.
+     */
+    public UnicastServerRef2(int port,
+                             RMIClientSocketFactory csf,
+                             RMIServerSocketFactory ssf,
+                             ObjectInputFilter filter)
+    {
+        super(new LiveRef(port, csf, ssf), filter);
     }
 
     /**

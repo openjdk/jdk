@@ -41,6 +41,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -407,6 +408,23 @@ public abstract class JavadocTester {
                         + stringToFind + "\n");
             }
         }
+    }
+
+    /**
+     * Get the content of the one of the output streams written by
+     * javadoc.
+     */
+    public String getOutput(Output output) {
+        return outputMap.get(output);
+    }
+
+    /**
+     * Get the content of the one of the output streams written by
+     * javadoc.
+     */
+    public List<String> getOutputLines(Output output) {
+        String text = outputMap.get(output);
+        return (text == null) ? Collections.emptyList() : Arrays.asList(text.split(NL));
     }
 
     /**

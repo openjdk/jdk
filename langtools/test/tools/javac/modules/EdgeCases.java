@@ -58,6 +58,8 @@ import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import toolbox.JarTask;
 import toolbox.JavacTask;
 import toolbox.Task;
+import toolbox.Task.Expect;
+import toolbox.Task.OutputKind;
 
 public class EdgeCases extends ModuleTestBase {
 
@@ -301,6 +303,149 @@ public class EdgeCases extends ModuleTestBase {
 
         if (!expected.equals(log)) {
             throw new IllegalStateException(log.toString());
+        }
+    }
+
+    @Test
+    public void testImplicitJavaBase(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path src_java_base = src.resolve("java.base");
+        Files.createDirectories(src_java_base);
+        tb.writeJavaFiles(src_java_base, "module java.base { exports java.lang; }");
+        tb.writeJavaFiles(src_java_base,
+                          "package java.lang; public class Object {}");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        //module-info from source:
+        new JavacTask(tb)
+            .options("-sourcepath", src_java_base.toString())
+            .outdir(classes)
+            .files(findJavaFiles(src_java_base.resolve("java").resolve("lang").resolve("Object.java")))
+            .run()
+            .writeAll();
+
+        //module-info from class:
+        if (!Files.exists(classes.resolve("module-info.class"))) {
+            throw new AssertionError("module-info.class not created!");
+        }
+
+        new JavacTask(tb)
+            .outdir(classes)
+            .files(findJavaFiles(src_java_base.resolve("java").resolve("lang").resolve("Object.java")))
+            .run()
+            .writeAll();
+
+        //broken module-info.class:
+        Files.newOutputStream(classes.resolve("module-info.class")).close();
+
+        List<String> log = new JavacTask(tb)
+            .options("-XDrawDiagnostics")
+            .outdir(classes)
+            .files(findJavaFiles(src_java_base.resolve("java").resolve("lang").resolve("Object.java")))
+            .run(Expect.FAIL)
+            .writeAll()
+            .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = Arrays.asList(
+                "- compiler.err.cant.access: <error>.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.illegal.start.of.class.file))",
+                "1 error");
+
+        if (!expected.equals(log)) {
+            throw new AssertionError("Unexpected output: " + log);
+        }
+
+        //broken module-info.java:
+        Files.delete(classes.resolve("module-info.class"));
+
+        try (Writer out = Files.newBufferedWriter(src_java_base.resolve("module-info.java"))) {
+            out.write("class Broken {}");
+        }
+
+        log = new JavacTask(tb)
+            .options("-sourcepath", src_java_base.toString(),
+                                "-XDrawDiagnostics")
+            .outdir(classes)
+            .files(findJavaFiles(src_java_base.resolve("java").resolve("lang").resolve("Object.java")))
+            .run(Expect.FAIL)
+            .writeAll()
+            .getOutputLines(OutputKind.DIRECT);
+
+        expected = Arrays.asList("X");
+
+        if (expected.equals(log)) {
+            throw new AssertionError("Unexpected output: " + log);
+        }
+    }
+
+    @Test
+    public void testModuleInfoNameMismatchSource(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path m1 = src.resolve("m1");
+        Files.createDirectories(m1);
+        tb.writeJavaFiles(m1, "module other { }",
+                              "package test; public class Test {}");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        List<String> log = new JavacTask(tb)
+            .options("--module-source-path", src.toString(),
+                     "-XDrawDiagnostics")
+            .outdir(classes)
+            .files(findJavaFiles(m1.resolve("test").resolve("Test.java")))
+            .run(Expect.FAIL)
+            .writeAll()
+            .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = Arrays.asList(
+                "module-info.java:1:1: compiler.err.module.name.mismatch: other, m1",
+                "- compiler.err.cant.access: m1.module-info, (compiler.misc.cant.resolve.modules)",
+                "2 errors");
+
+        if (!expected.equals(log)) {
+            throw new AssertionError("Unexpected output: " + log);
+        }
+    }
+
+    @Test
+    public void testModuleInfoNameMismatchClass(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Files.createDirectories(src);
+        tb.writeJavaFiles(src, "module other { }",
+                               "package test; public class Test {}");
+        Path classes = base.resolve("classes");
+        Path m1Classes = classes.resolve("m1");
+        tb.createDirectories(m1Classes);
+
+        new JavacTask(tb)
+            .outdir(m1Classes)
+            .files(findJavaFiles(src))
+            .run()
+            .writeAll()
+            .getOutputLines(OutputKind.DIRECT);
+
+        Path src2 = base.resolve("src2");
+        Files.createDirectories(src2);
+        tb.writeJavaFiles(src2, "module use { requires m1; }");
+
+        Path classes2 = base.resolve("classes2");
+        tb.createDirectories(classes2);
+
+        List<String> log = new JavacTask(tb)
+            .options("--module-path", classes.toString(),
+                     "-XDrawDiagnostics")
+            .outdir(classes2)
+            .files(findJavaFiles(src2))
+            .run(Expect.FAIL)
+            .writeAll()
+            .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = Arrays.asList(
+                "- compiler.err.cant.access: m1.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.module.name.mismatch: other, m1))",
+                "1 error");
+
+        if (!expected.equals(log)) {
+            throw new AssertionError("Unexpected output: " + log);
         }
     }
 

@@ -1302,7 +1302,7 @@ static void mcast_set_loop_v6(JNIEnv *env, jobject this, int fd, jobject value) 
  * Sets the multicast loopback mode.
  */
 static void setMulticastLoopbackMode(JNIEnv *env, jobject this, int fd,
-                                  jint opt, jobject value) {
+                                     jint opt, jobject value) {
 #ifdef AF_INET6
 #ifdef __linux__
     mcast_set_loop_v4(env, this, fd, value);
@@ -1330,10 +1330,9 @@ static void setMulticastLoopbackMode(JNIEnv *env, jobject this, int fd,
  * Signature: (ILjava/lang/Object;)V
  */
 JNIEXPORT void JNICALL
-Java_java_net_PlainDatagramSocketImpl_socketSetOption0(JNIEnv *env,
-                                                      jobject this,
-                                                      jint opt,
-                                                      jobject value) {
+Java_java_net_PlainDatagramSocketImpl_socketSetOption0
+  (JNIEnv *env, jobject this, jint opt, jobject value)
+{
     int fd;
     int level, optname, optlen;
     int optval;
@@ -1380,7 +1379,7 @@ Java_java_net_PlainDatagramSocketImpl_socketSetOption0(JNIEnv *env,
      * level and option name.
      */
     if (NET_MapSocketOption(opt, &level, &optname)) {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Invalid option");
+        JNU_ThrowByName(env, "java/net/SocketException", "Invalid option");
         return;
     }
 
@@ -1699,8 +1698,9 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, jint opt) {
  * Signature: (I)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL
-Java_java_net_PlainDatagramSocketImpl_socketGetOption(JNIEnv *env, jobject this,
-                                                      jint opt) {
+Java_java_net_PlainDatagramSocketImpl_socketGetOption
+  (JNIEnv *env, jobject this, jint opt)
+{
     int fd;
     int level, optname, optlen;
     union {
@@ -1751,7 +1751,7 @@ Java_java_net_PlainDatagramSocketImpl_socketGetOption(JNIEnv *env, jobject this,
      * level and option name.
      */
     if (NET_MapSocketOption(opt, &level, &optname)) {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Invalid option");
+        JNU_ThrowByName(env, "java/net/SocketException", "Invalid option");
         return NULL;
     }
 

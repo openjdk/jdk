@@ -564,11 +564,20 @@ public class JImageGenerator {
         private final List<String> limitMods = new ArrayList<>();
         private final List<String> options = new ArrayList<>();
         private String modulePath;
+        // if you want to specifiy repeated --module-path option
+        private String repeatedModulePath;
+        // if you want to specifiy repeated --limit-modules option
+        private String repeatedLimitMods;
         private Path output;
         private Path existing;
 
         public JLinkTask modulePath(String modulePath) {
             this.modulePath = modulePath;
+            return this;
+        }
+
+        public JLinkTask repeatedModulePath(String modulePath) {
+            this.repeatedModulePath = modulePath;
             return this;
         }
 
@@ -594,6 +603,11 @@ public class JImageGenerator {
 
         public JLinkTask limitMods(String moduleName) {
             this.limitMods.add(moduleName);
+            return this;
+        }
+
+        public JLinkTask repeatedLimitMods(String modules) {
+            this.repeatedLimitMods = modules;
             return this;
         }
 
@@ -639,6 +653,10 @@ public class JImageGenerator {
                 options.add(LIMIT_MODULES_OPTION);
                 options.add(limitMods.stream().collect(Collectors.joining(",")));
             }
+            if (repeatedLimitMods != null) {
+                options.add(LIMIT_MODULES_OPTION);
+                options.add(repeatedLimitMods);
+            }
             if (!jars.isEmpty() || !jmods.isEmpty()) {
                 options.add(MODULE_PATH_OPTION);
                 options.add(modulePath());
@@ -646,6 +664,10 @@ public class JImageGenerator {
             if (modulePath != null) {
                 options.add(MODULE_PATH_OPTION);
                 options.add(modulePath);
+            }
+            if (repeatedModulePath != null) {
+                options.add(MODULE_PATH_OPTION);
+                options.add(repeatedModulePath);
             }
             if (!pluginModulePath.isEmpty()) {
                 options.add(PLUGIN_MODULE_PATH);
