@@ -41,6 +41,8 @@ ifeq ($(BUILD_GTEST), true)
   include lib/CompileGtest.gmk
 endif
 
+include CopyToExplodedJdk.gmk
+
 all: $(TARGETS)
 
 .PHONY: all

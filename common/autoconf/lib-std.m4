@@ -45,84 +45,44 @@ AC_DEFUN_ONCE([LIB_SETUP_STD_LIBS],
   )
 
   if test "x$OPENJDK_TARGET_OS" = xlinux; then
-    # Test if -lstdc++ works.
-    AC_MSG_CHECKING([if dynamic link of stdc++ is possible])
-    AC_LANG_PUSH(C++)
-    OLD_CXXFLAGS="$CXXFLAGS"
-    CXXFLAGS="$CXXFLAGS -lstdc++"
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([], [return 0;])],
-        [has_dynamic_libstdcxx=yes],
-        [has_dynamic_libstdcxx=no])
-    CXXFLAGS="$OLD_CXXFLAGS"
-    AC_LANG_POP(C++)
-    AC_MSG_RESULT([$has_dynamic_libstdcxx])
-
     # Test if stdc++ can be linked statically.
     AC_MSG_CHECKING([if static link of stdc++ is possible])
-    STATIC_STDCXX_FLAGS="-Wl,-Bstatic -lstdc++ -lgcc -Wl,-Bdynamic"
+    STATIC_STDCXX_FLAGS="-static-libstdc++ -static-libgcc"
     AC_LANG_PUSH(C++)
     OLD_LIBS="$LIBS"
-    OLD_CXX="$CXX"
     LIBS="$STATIC_STDCXX_FLAGS"
-    CXX="$CC"
     AC_LINK_IFELSE([AC_LANG_PROGRAM([], [return 0;])],
         [has_static_libstdcxx=yes],
         [has_static_libstdcxx=no])
     LIBS="$OLD_LIBS"
-    CXX="$OLD_CXX"
     AC_LANG_POP(C++)
     AC_MSG_RESULT([$has_static_libstdcxx])
-
-    if test "x$has_static_libstdcxx" = xno && test "x$has_dynamic_libstdcxx" = xno; then
-      AC_MSG_ERROR([Cannot link to stdc++, neither dynamically nor statically!])
-    fi
 
     if test "x$with_stdc__lib" = xstatic && test "x$has_static_libstdcxx" = xno; then
       AC_MSG_ERROR([Static linking of libstdc++ was not possible!])
     fi
 
-    if test "x$with_stdc__lib" = xdynamic && test "x$has_dynamic_libstdcxx" = xno; then
-      AC_MSG_ERROR([Dynamic linking of libstdc++ was not possible!])
-    fi
-
     # If dynamic was requested, it's available since it would fail above otherwise.
     # If dynamic wasn't requested, go with static unless it isn't available.
     AC_MSG_CHECKING([how to link with libstdc++])
-    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno || HOTSPOT_CHECK_JVM_VARIANT(zeroshark); then
-      LIBCXX="$LIBCXX -lstdc++"
-      # To help comparisons with old build, put stdc++ first in JVM_LIBS
-      JVM_LIBS="-lstdc++ $JVM_LIBS"
-      # Ideally, we should test stdc++ for the BUILD toolchain separately. For now
-      # just use the same setting as for the TARGET toolchain.
-      OPENJDK_BUILD_JVM_LIBS="-lstdc++ $OPENJDK_BUILD_JVM_LIBS"
-      LDCXX="$CXX"
-      STATIC_CXX_SETTING="STATIC_CXX=false"
+    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno \
+        || HOTSPOT_CHECK_JVM_VARIANT(zeroshark); then
       AC_MSG_RESULT([dynamic])
     else
       LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"
-      JVM_LDFLAGS="$JVM_LDFLAGS -static-libgcc"
-      # To help comparisons with old build, put stdc++ first in JVM_LIBS
-      JVM_LIBS="-Wl,-Bstatic -lstdc++ -Wl,-Bdynamic $JVM_LIBS"
+      JVM_LDFLAGS="$JVM_LDFLAGS $STATIC_STDCXX_FLAGS"
       # Ideally, we should test stdc++ for the BUILD toolchain separately. For now
       # just use the same setting as for the TARGET toolchain.
-      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS -static-libgcc"
-      OPENJDK_BUILD_JVM_LIBS="-Wl,-Bstatic -lstdc++ -Wl,-Bdynamic $OPENJDK_BUILD_JVM_LIBS"
-      LDCXX="$CC"
-      STATIC_CXX_SETTING="STATIC_CXX=true"
+      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $STATIC_STDCXX_FLAGS"
       AC_MSG_RESULT([static])
     fi
   fi
-  AC_SUBST(STATIC_CXX_SETTING)
 
   # libCrun is the c++ runtime-library with SunStudio (roughly the equivalent of gcc's libstdc++.so)
   if test "x$TOOLCHAIN_TYPE" = xsolstudio && test "x$LIBCXX" = x; then
     LIBCXX="${SYSROOT}/usr/lib${OPENJDK_TARGET_CPU_ISADIR}/libCrun.so.1"
   fi
 
-  # TODO better (platform agnostic) test
-  if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$LIBCXX" = x && test "x$TOOLCHAIN_TYPE" = xgcc; then
-    LIBCXX="-lstdc++"
-  fi
   AC_SUBST(LIBCXX)
 
   # Setup Windows runtime dlls
