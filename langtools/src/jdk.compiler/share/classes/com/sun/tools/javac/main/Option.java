@@ -425,8 +425,7 @@ public enum Option {
     J("-J", "opt.arg.flag", "opt.J", STANDARD, INFO, ArgKind.ADJACENT) {
         @Override
         public boolean process(OptionHelper helper, String option) {
-            throw new AssertionError
-                ("the -J flag should be caught by the launcher.");
+            throw new AssertionError("the -J flag should be caught by the launcher.");
         }
     },
 
@@ -691,7 +690,7 @@ public enum Option {
          * This option takes an argument.
          * If the name of option ends with ':' or '=', the argument must be provided directly
          * after that separator.
-         * Otherwise, if may appear after an '=' or in the following argument position.
+         * Otherwise, it may appear after an '=' or in the following argument position.
          */
         REQUIRED,
 

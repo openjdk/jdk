@@ -93,23 +93,19 @@ class MulticastSocket extends DatagramSocket {
     /**
      * Create a multicast socket.
      *
-     * <p>If there is a security manager,
-     * its {@code checkListen} method is first called
-     * with 0 as its argument to ensure the operation is allowed.
-     * This could result in a SecurityException.
+     * <p>
+     * If there is a security manager, its {@code checkListen} method is first
+     * called with 0 as its argument to ensure the operation is allowed. This
+     * could result in a SecurityException.
      * <p>
      * When the socket is created the
-     * {@link DatagramSocket#setReuseAddress(boolean)} method is
-     * called to enable the SO_REUSEADDR socket option. When
-     * {@link StandardSocketOptions#SO_REUSEPORT SO_REUSEPORT} is
-     * supported then
-     * {@link DatagramSocketImpl#setOption(SocketOption, Object)}
-     * is called to enable the socket option.
+     * {@link DatagramSocket#setReuseAddress(boolean)} method is called to
+     * enable the SO_REUSEADDR socket option.
      *
-     * @exception IOException if an I/O exception occurs
-     * while creating the MulticastSocket
-     * @exception  SecurityException  if a security manager exists and its
-     *             {@code checkListen} method doesn't allow the operation.
+     * @exception IOException if an I/O exception occurs while creating the
+     * MulticastSocket
+     * @exception SecurityException if a security manager exists and its
+     * {@code checkListen} method doesn't allow the operation.
      * @see SecurityManager#checkListen
      * @see java.net.DatagramSocket#setReuseAddress(boolean)
      * @see java.net.DatagramSocketImpl#setOption(SocketOption, Object)
@@ -174,17 +170,13 @@ class MulticastSocket extends DatagramSocket {
         // Enable SO_REUSEADDR before binding
         setReuseAddress(true);
 
-        // Enable SO_REUSEPORT if supported before binding
-        if (supportedOptions().contains(StandardSocketOptions.SO_REUSEPORT)) {
-            this.setOption(StandardSocketOptions.SO_REUSEPORT, true);
-        }
-
         if (bindaddr != null) {
             try {
                 bind(bindaddr);
             } finally {
-                if (!isBound())
+                if (!isBound()) {
                     close();
+                }
             }
         }
     }

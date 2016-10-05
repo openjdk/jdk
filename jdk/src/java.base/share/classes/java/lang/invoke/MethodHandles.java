@@ -44,8 +44,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ReflectPermission;
 import java.nio.ByteOrder;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -3114,7 +3112,7 @@ assert((int)twice.invokeExact(21) == 42);
      * @see MethodHandles#explicitCastArguments
      * @since 9
      */
-    public static  MethodHandle zero(Class<?> type) {
+    public static MethodHandle zero(Class<?> type) {
         Objects.requireNonNull(type);
         return type.isPrimitive() ?  zero(Wrapper.forPrimitiveType(type), type) : zero(Wrapper.OBJECT, type);
     }
@@ -3403,7 +3401,8 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
                 throw newIllegalArgumentException("illegal pos", pos, newTypes);
             }
             addTypes = addTypes.subList(pos, add);
-            add -= pos; assert(addTypes.size() == add);
+            add -= pos;
+            assert(addTypes.size() == add);
         }
         // Do not add types which already match the existing arguments.
         if (match > add || !oldTypes.equals(addTypes.subList(0, match))) {
@@ -3413,7 +3412,8 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
             throw newIllegalArgumentException("argument lists do not match", oldTypes, newTypes);
         }
         addTypes = addTypes.subList(match, add);
-        add -= match; assert(addTypes.size() == add);
+        add -= match;
+        assert(addTypes.size() == add);
         // newTypes:     (   P*[pos], M*[match], A*[add] )
         // target: ( S*[skip],        M*[match]  )
         MethodHandle adapter = target;
@@ -3423,26 +3423,37 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
         // adapter: (S*[skip],        M*[match], A*[add] )
         if (pos > 0) {
             adapter = dropArguments0(adapter, skip, newTypes.subList(0, pos));
-       }
+        }
         // adapter: (S*[skip], P*[pos], M*[match], A*[add] )
         return adapter;
     }
 
     /**
-     * Adapts a target method handle to match the given parameter type list, if necessary, by adding dummy arguments.
-     * Some leading parameters are first skipped; they will be left unchanged and are otherwise ignored.
-     * The remaining types in the target's parameter type list must be contained as a sub-list of the given type list,
-     * at the given position.
-     * Any non-matching parameter types (before or after the matching sub-list) are inserted in corresponding
-     * positions of the target method handle's parameters, as if by {@link #dropArguments}.
-     * (More precisely, elements in the new list before {@code pos} are inserted into the target list at {@code skip},
-     * while elements in the new list after the match beginning at {@code pos} are inserted at the end of the
-     * target list.)
-     * The target's return type will be unchanged.
+     * Adapts a target method handle to match the given parameter type list. If necessary, adds dummy arguments. Some
+     * leading parameters can be skipped before matching begins. The remaining types in the {@code target}'s parameter
+     * type list must be a sub-list of the {@code newTypes} type list at the starting position {@code pos}. The
+     * resulting handle will have the target handle's parameter type list, with any non-matching parameter types (before
+     * or after the matching sub-list) inserted in corresponding positions of the target's original parameters, as if by
+     * {@link #dropArguments(MethodHandle, int, Class[])}.
+     * <p>
+     * The resulting handle will have the same return type as the target handle.
+     * <p>
+     * In more formal terms, assume these two type lists:<ul>
+     * <li>The target handle has the parameter type list {@code S..., M...}, with as many types in {@code S} as
+     * indicated by {@code skip}. The {@code M} types are those that are supposed to match part of the given type list,
+     * {@code newTypes}.
+     * <li>The {@code newTypes} list contains types {@code P..., M..., A...}, with as many types in {@code P} as
+     * indicated by {@code pos}. The {@code M} types are precisely those that the {@code M} types in the target handle's
+     * parameter type list are supposed to match. The types in {@code A} are additional types found after the matching
+     * sub-list.
+     * </ul>
+     * Given these assumptions, the result of an invocation of {@code dropArgumentsToMatch} will have the parameter type
+     * list {@code S..., P..., M..., A...}, with the {@code P} and {@code A} types inserted as if by
+     * {@link #dropArguments(MethodHandle, int, Class[])}.
+     * <p>
      * @apiNote
-     * Two method handles whose argument lists are "effectively identical" (i.e., identical
-     * in a common prefix) may be mutually converted to a common type
-     * by two calls to {@code dropArgumentsToMatch}, as follows:
+     * Two method handles whose argument lists are "effectively identical" (i.e., identical in a common prefix) may be
+     * mutually converted to a common type by two calls to {@code dropArgumentsToMatch}, as follows:
      * <blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
@@ -3461,14 +3472,15 @@ assertEquals("xy", h3.invoke("x", "y", 1, "a", "b", "c"));
      * }</pre></blockquote>
      * @param target the method handle to adapt
      * @param skip number of targets parameters to disregard (they will be unchanged)
-     * @param newTypes the desired argument list of the method handle
+     * @param newTypes the list of types to match {@code target}'s parameter type list to
      * @param pos place in {@code newTypes} where the non-skipped target parameters must occur
      * @return a possibly adapted method handle
      * @throws NullPointerException if either argument is null
      * @throws IllegalArgumentException if any element of {@code newTypes} is {@code void.class},
      *         or if {@code skip} is negative or greater than the arity of the target,
      *         or if {@code pos} is negative or greater than the newTypes list size,
-     *         or if the non-skipped target parameter types match the new types at {@code pos}
+     *         or if {@code newTypes} does not contain the {@code target}'s non-skipped parameter types at position
+     *         {@code pos}.
      * @since 9
      */
     public static
@@ -3922,6 +3934,113 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         return foldArguments(target, 0, combiner);
     }
 
+    /**
+     * Adapts a target method handle by pre-processing some of its arguments, starting at a given position, and then
+     * calling the target with the result of the pre-processing, inserted into the original sequence of arguments just
+     * before the folded arguments.
+     * <p>
+     * This method is closely related to {@link #foldArguments(MethodHandle, MethodHandle)}, but allows to control the
+     * position in the parameter list at which folding takes place. The argument controlling this, {@code pos}, is a
+     * zero-based index. The aforementioned method {@link #foldArguments(MethodHandle, MethodHandle)} assumes position
+     * 0.
+     * <p>
+     * @apiNote Example:
+     * <blockquote><pre>{@code
+    import static java.lang.invoke.MethodHandles.*;
+    import static java.lang.invoke.MethodType.*;
+    ...
+    MethodHandle trace = publicLookup().findVirtual(java.io.PrintStream.class,
+    "println", methodType(void.class, String.class))
+    .bindTo(System.out);
+    MethodHandle cat = lookup().findVirtual(String.class,
+    "concat", methodType(String.class, String.class));
+    assertEquals("boojum", (String) cat.invokeExact("boo", "jum"));
+    MethodHandle catTrace = foldArguments(cat, 1, trace);
+    // also prints "jum":
+    assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
+     * }</pre></blockquote>
+     * <p>Here is pseudocode for the resulting adapter. In the code, {@code T}
+     * represents the result type of the {@code target} and resulting adapter.
+     * {@code V}/{@code v} represent the type and value of the parameter and argument
+     * of {@code target} that precedes the folding position; {@code V} also is
+     * the result type of the {@code combiner}. {@code A}/{@code a} denote the
+     * types and values of the {@code N} parameters and arguments at the folding
+     * position. {@code Z}/{@code z} and {@code B}/{@code b} represent the types
+     * and values of the {@code target} parameters and arguments that precede and
+     * follow the folded parameters and arguments starting at {@code pos},
+     * respectively.
+     * <blockquote><pre>{@code
+     * // there are N arguments in A...
+     * T target(Z..., V, A[N]..., B...);
+     * V combiner(A...);
+     * T adapter(Z... z, A... a, B... b) {
+     *   V v = combiner(a...);
+     *   return target(z..., v, a..., b...);
+     * }
+     * // and if the combiner has a void return:
+     * T target2(Z..., A[N]..., B...);
+     * void combiner2(A...);
+     * T adapter2(Z... z, A... a, B... b) {
+     *   combiner2(a...);
+     *   return target2(z..., a..., b...);
+     * }
+     * }</pre></blockquote>
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
+     *
+     * @param target the method handle to invoke after arguments are combined
+     * @param pos the position at which to start folding and at which to insert the folding result; if this is {@code
+     *            0}, the effect is the same as for {@link #foldArguments(MethodHandle, MethodHandle)}.
+     * @param combiner method handle to call initially on the incoming arguments
+     * @return method handle which incorporates the specified argument folding logic
+     * @throws NullPointerException if either argument is null
+     * @throws IllegalArgumentException if either of the following two conditions holds:
+     *          (1) {@code combiner}'s return type is non-{@code void} and not the same as the argument type at position
+     *              {@code pos} of the target signature;
+     *          (2) the {@code N} argument types at position {@code pos} of the target signature (skipping one matching
+     *              the {@code combiner}'s return type) are not identical with the argument types of {@code combiner}.
+     *
+     * @see #foldArguments(MethodHandle, MethodHandle)
+     * @since 9
+     */
+    public static MethodHandle foldArguments(MethodHandle target, int pos, MethodHandle combiner) {
+        MethodType targetType = target.type();
+        MethodType combinerType = combiner.type();
+        Class<?> rtype = foldArgumentChecks(pos, targetType, combinerType);
+        BoundMethodHandle result = target.rebind();
+        boolean dropResult = rtype == void.class;
+        LambdaForm lform = result.editor().foldArgumentsForm(1 + pos, dropResult, combinerType.basicType());
+        MethodType newType = targetType;
+        if (!dropResult) {
+            newType = newType.dropParameterTypes(pos, pos + 1);
+        }
+        result = result.copyWithExtendL(newType, lform, combiner);
+        return result;
+    }
+
+    /**
+     * As {@see foldArguments(MethodHandle, int, MethodHandle)}, but with the
+     * added capability of selecting the arguments from the targets parameters
+     * to call the combiner with. This allows us to avoid some simple cases of
+     * permutations and padding the combiner with dropArguments to select the
+     * right argument, which may ultimately produce fewer intermediaries.
+     */
+    static MethodHandle foldArguments(MethodHandle target, int pos, MethodHandle combiner, int ... argPositions) {
+        MethodType targetType = target.type();
+        MethodType combinerType = combiner.type();
+        Class<?> rtype = foldArgumentChecks(pos, targetType, combinerType, argPositions);
+        BoundMethodHandle result = target.rebind();
+        boolean dropResult = rtype == void.class;
+        LambdaForm lform = result.editor().foldArgumentsForm(1 + pos, dropResult, combinerType.basicType(), argPositions);
+        MethodType newType = targetType;
+        if (!dropResult) {
+            newType = newType.dropParameterTypes(pos, pos + 1);
+        }
+        result = result.copyWithExtendL(newType, lform, combiner);
+        return result;
+    }
+
     private static Class<?> foldArgumentChecks(int foldPos, MethodType targetType, MethodType combinerType) {
         int foldArgs   = combinerType.parameterCount();
         Class<?> rtype = combinerType.returnType();
@@ -4125,32 +4244,69 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * iteration. Upon termination of the loop due to one of the predicates, a corresponding finalizer is run and
      * delivers the loop's result, which is the return value of the resulting handle.
      * <p>
-     * Intuitively, every loop is formed by one or more "clauses", each specifying a local iteration value and/or a loop
+     * Intuitively, every loop is formed by one or more "clauses", each specifying a local <em>iteration variable</em> and/or a loop
      * exit. Each iteration of the loop executes each clause in order. A clause can optionally update its iteration
      * variable; it can also optionally perform a test and conditional loop exit. In order to express this logic in
-     * terms of method handles, each clause will determine four actions:<ul>
-     * <li>Before the loop executes, the initialization of an iteration variable or loop invariant local.
-     * <li>When a clause executes, an update step for the iteration variable.
-     * <li>When a clause executes, a predicate execution to test for loop exit.
-     * <li>If a clause causes a loop exit, a finalizer execution to compute the loop's return value.
+     * terms of method handles, each clause will specify up to four independent actions:<ul>
+     * <li><em>init:</em> Before the loop executes, the initialization of an iteration variable {@code v} of type {@code V}.
+     * <li><em>step:</em> When a clause executes, an update step for the iteration variable {@code v}.
+     * <li><em>pred:</em> When a clause executes, a predicate execution to test for loop exit.
+     * <li><em>fini:</em> If a clause causes a loop exit, a finalizer execution to compute the loop's return value.
      * </ul>
+     * The full sequence of all iteration variable types, in clause order, will be notated as {@code (V...)}.
+     * The values themselves will be {@code (v...)}.  When we speak of "parameter lists", we will usually
+     * be referring to types, but in some contexts (describing execution) the lists will be of actual values.
      * <p>
      * Some of these clause parts may be omitted according to certain rules, and useful default behavior is provided in
      * this case. See below for a detailed description.
      * <p>
-     * Each clause function, with the exception of clause initializers, is able to observe the entire loop state,
-     * because it will be passed <em>all</em> current iteration variable values, as well as all incoming loop
-     * parameters. Most clause functions will not need all of this information, but they will be formally connected as
-     * if by {@link #dropArguments}.
+     * <em>Parameters optional everywhere:</em>
+     * Each clause function is allowed but not required to accept a parameter for each iteration variable {@code v}.
+     * As an exception, the init functions cannot take any {@code v} parameters,
+     * because those values are not yet computed when the init functions are executed.
+     * Any clause function may neglect to take any trailing subsequence of parameters it is entitled to take.
+     * In fact, any clause function may take no arguments at all.
      * <p>
+     * <em>Loop parameters:</em>
+     * A clause function may take all the iteration variable values it is entitled to, in which case
+     * it may also take more trailing parameters. Such extra values are called <em>loop parameters</em>,
+     * with their types and values notated as {@code (A...)} and {@code (a...)}.
+     * These become the parameters of the resulting loop handle, to be supplied whenever the loop is executed.
+     * (Since init functions do not accept iteration variables {@code v}, any parameter to an
+     * init function is automatically a loop parameter {@code a}.)
+     * As with iteration variables, clause functions are allowed but not required to accept loop parameters.
+     * These loop parameters act as loop-invariant values visible across the whole loop.
+     * <p>
+     * <em>Parameters visible everywhere:</em>
+     * Each non-init clause function is permitted to observe the entire loop state, because it can be passed the full
+     * list {@code (v... a...)} of current iteration variable values and incoming loop parameters.
+     * The init functions can observe initial pre-loop state, in the form {@code (a...)}.
+     * Most clause functions will not need all of this information, but they will be formally connected to it
+     * as if by {@link #dropArguments}.
+     * <a name="astar"></a>
+     * More specifically, we shall use the notation {@code (V*)} to express an arbitrary prefix of a full
+     * sequence {@code (V...)} (and likewise for {@code (v*)}, {@code (A*)}, {@code (a*)}).
+     * In that notation, the general form of an init function parameter list
+     * is {@code (A*)}, and the general form of a non-init function parameter list is {@code (V*)} or {@code (V... A*)}.
+     * <p>
+     * <em>Checking clause structure:</em>
      * Given a set of clauses, there is a number of checks and adjustments performed to connect all the parts of the
      * loop. They are spelled out in detail in the steps below. In these steps, every occurrence of the word "must"
-     * corresponds to a place where {@link IllegalArgumentException} may be thrown if the required constraint is not met
-     * by the inputs to the loop combinator. The term "effectively identical", applied to parameter type lists, means
-     * that they must be identical, or else one list must be a proper prefix of the other.
+     * corresponds to a place where {@link IllegalArgumentException} will be thrown if the required constraint is not
+     * met by the inputs to the loop combinator.
+     * <p>
+     * <em>Effectively identical sequences:</em>
+     * <a name="effid"></a>
+     * A parameter list {@code A} is defined to be <em>effectively identical</em> to another parameter list {@code B}
+     * if {@code A} and {@code B} are identical, or if {@code A} is shorter and is identical with a proper prefix of {@code B}.
+     * When speaking of an unordered set of parameter lists, we say they the set is "effectively identical"
+     * as a whole if the set contains a longest list, and all members of the set are effectively identical to
+     * that longest list.
+     * For example, any set of type sequences of the form {@code (V*)} is effectively identical,
+     * and the same is true if more sequences of the form {@code (V... A*)} are added.
      * <p>
      * <em>Step 0: Determine clause structure.</em><ol type="a">
-     * <li>The clause array (of type {@code MethodHandle[][]} must be non-{@code null} and contain at least one element.
+     * <li>The clause array (of type {@code MethodHandle[][]}) must be non-{@code null} and contain at least one element.
      * <li>The clause array may not contain {@code null}s or sub-arrays longer than four elements.
      * <li>Clauses shorter than four elements are treated as if they were padded by {@code null} elements to length
      * four. Padding takes place by appending elements to the array.
@@ -4158,30 +4314,35 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * <li>Each clause is treated as a four-tuple of functions, called "init", "step", "pred", and "fini".
      * </ol>
      * <p>
-     * <em>Step 1A: Determine iteration variables.</em><ol type="a">
-     * <li>Examine init and step function return types, pairwise, to determine each clause's iteration variable type.
-     * <li>If both functions are omitted, use {@code void}; else if one is omitted, use the other's return type; else
-     * use the common return type (they must be identical).
+     * <em>Step 1A: Determine iteration variable types {@code (V...)}.</em><ol type="a">
+     * <li>The iteration variable type for each clause is determined using the clause's init and step return types.
+     * <li>If both functions are omitted, there is no iteration variable for the corresponding clause ({@code void} is
+     * used as the type to indicate that). If one of them is omitted, the other's return type defines the clause's
+     * iteration variable type. If both are given, the common return type (they must be identical) defines the clause's
+     * iteration variable type.
      * <li>Form the list of return types (in clause order), omitting all occurrences of {@code void}.
-     * <li>This list of types is called the "common prefix".
+     * <li>This list of types is called the "iteration variable types" ({@code (V...)}).
      * </ol>
      * <p>
-     * <em>Step 1B: Determine loop parameters.</em><ul>
-     * <li><b>If at least one init function is given,</b><ol type="a">
-     *   <li>Examine init function parameter lists.
-     *   <li>Omitted init functions are deemed to have {@code null} parameter lists.
-     *   <li>All init function parameter lists must be effectively identical.
-     *   <li>The longest parameter list (which is necessarily unique) is called the "common suffix".
-     * </ol>
-     * <li><b>If no init function is given,</b><ol type="a">
-     *   <li>Examine the suffixes of the step, pred, and fini parameter lists, after removing the "common prefix".
-     *   <li>The longest of these suffixes is taken as the "common suffix".
-     * </ol></ul>
+     * <em>Step 1B: Determine loop parameters {@code (A...)}.</em><ul>
+     * <li>Examine and collect init function parameter lists (which are of the form {@code (A*)}).
+     * <li>Examine and collect the suffixes of the step, pred, and fini parameter lists, after removing the iteration variable types.
+     * (They must have the form {@code (V... A*)}; collect the {@code (A*)} parts only.)
+     * <li>Do not collect suffixes from step, pred, and fini parameter lists that do not begin with all the iteration variable types.
+     * (These types will checked in step 2, along with all the clause function types.)
+     * <li>Omitted clause functions are ignored.  (Equivalently, they are deemed to have empty parameter lists.)
+     * <li>All of the collected parameter lists must be effectively identical.
+     * <li>The longest parameter list (which is necessarily unique) is called the "external parameter list" ({@code (A...)}).
+     * <li>If there is no such parameter list, the external parameter list is taken to be the empty sequence.
+     * <li>The combined list consisting of iteration variable types followed by the external parameter types is called
+     * the "internal parameter list".
+     * </ul>
      * <p>
      * <em>Step 1C: Determine loop return type.</em><ol type="a">
      * <li>Examine fini function return types, disregarding omitted fini functions.
-     * <li>If there are no fini functions, use {@code void} as the loop return type.
-     * <li>Otherwise, use the common return type of the fini functions; they must all be identical.
+     * <li>If there are no fini functions, the loop return type is {@code void}.
+     * <li>Otherwise, the common return type {@code R} of the fini functions (their return types must be identical) defines the loop return
+     * type.
      * </ol>
      * <p>
      * <em>Step 1D: Check other types.</em><ol type="a">
@@ -4190,69 +4351,107 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * </ol>
      * <p>
      * <em>Step 2: Determine parameter lists.</em><ol type="a">
-     * <li>The parameter list for the resulting loop handle will be the "common suffix".
-     * <li>The parameter list for init functions will be adjusted to the "common suffix". (Note that their parameter
-     * lists are already effectively identical to the common suffix.)
-     * <li>The parameter list for non-init (step, pred, and fini) functions will be adjusted to the common prefix
-     * followed by the common suffix, called the "common parameter sequence".
-     * <li>Every non-init, non-omitted function parameter list must be effectively identical to the common parameter
-     * sequence.
+     * <li>The parameter list for the resulting loop handle will be the external parameter list {@code (A...)}.
+     * <li>The parameter list for init functions will be adjusted to the external parameter list.
+     * (Note that their parameter lists are already effectively identical to this list.)
+     * <li>The parameter list for every non-omitted, non-init (step, pred, and fini) function must be
+     * effectively identical to the internal parameter list {@code (V... A...)}.
      * </ol>
      * <p>
      * <em>Step 3: Fill in omitted functions.</em><ol type="a">
-     * <li>If an init function is omitted, use a {@linkplain #constant constant function} of the appropriate
-     * {@code null}/zero/{@code false}/{@code void} type. (For this purpose, a constant {@code void} is simply a
-     * function which does nothing and returns {@code void}; it can be obtained from another constant function by
-     * {@linkplain MethodHandle#asType type conversion}.)
+     * <li>If an init function is omitted, use a {@linkplain #empty default value} for the clause's iteration variable
+     * type.
      * <li>If a step function is omitted, use an {@linkplain #identity identity function} of the clause's iteration
      * variable type; insert dropped argument parameters before the identity function parameter for the non-{@code void}
      * iteration variables of preceding clauses. (This will turn the loop variable into a local loop invariant.)
-     * <li>If a pred function is omitted, the corresponding fini function must also be omitted.
      * <li>If a pred function is omitted, use a constant {@code true} function. (This will keep the loop going, as far
-     * as this clause is concerned.)
-     * <li>If a fini function is omitted, use a constant {@code null}/zero/{@code false}/{@code void} function of the
+     * as this clause is concerned.  Note that in such cases the corresponding fini function is unreachable.)
+     * <li>If a fini function is omitted, use a {@linkplain #empty default value} for the
      * loop return type.
      * </ol>
      * <p>
      * <em>Step 4: Fill in missing parameter types.</em><ol type="a">
-     * <li>At this point, every init function parameter list is effectively identical to the common suffix, but some
-     * lists may be shorter. For every init function with a short parameter list, pad out the end of the list by
-     * {@linkplain #dropArguments dropping arguments}.
-     * <li>At this point, every non-init function parameter list is effectively identical to the common parameter
-     * sequence, but some lists may be shorter. For every non-init function with a short parameter list, pad out the end
-     * of the list by {@linkplain #dropArguments dropping arguments}.
+     * <li>At this point, every init function parameter list is effectively identical to the external parameter list {@code (A...)},
+     * but some lists may be shorter. For every init function with a short parameter list, pad out the end of the list.
+     * <li>At this point, every non-init function parameter list is effectively identical to the internal parameter
+     * list {@code (V... A...)}, but some lists may be shorter. For every non-init function with a short parameter list,
+     * pad out the end of the list.
+     * <li>Argument lists are padded out by {@linkplain #dropArgumentsToMatch dropping unused trailing arguments}.
      * </ol>
      * <p>
      * <em>Final observations.</em><ol type="a">
      * <li>After these steps, all clauses have been adjusted by supplying omitted functions and arguments.
-     * <li>All init functions have a common parameter type list, which the final loop handle will also have.
-     * <li>All fini functions have a common return type, which the final loop handle will also have.
-     * <li>All non-init functions have a common parameter type list, which is the common parameter sequence, of
-     * (non-{@code void}) iteration variables followed by loop parameters.
-     * <li>Each pair of init and step functions agrees in their return types.
-     * <li>Each non-init function will be able to observe the current values of all iteration variables, by means of the
-     * common prefix.
+     * <li>All init functions have a common parameter type list {@code (A...)}, which the final loop handle will also have.
+     * <li>All fini functions have a common return type {@code R}, which the final loop handle will also have.
+     * <li>All non-init functions have a common parameter type list {@code (V... A...)}, of
+     * (non-{@code void}) iteration variables {@code V} followed by loop parameters.
+     * <li>Each pair of init and step functions agrees in their return type {@code V}.
+     * <li>Each non-init function will be able to observe the current values {@code (v...)} of all iteration variables.
+     * <li>Every function will be able to observe the incoming values {@code (a...)} of all loop parameters.
      * </ol>
+     * <p>
+     * <em>Example.</em> As a consequence of step 1A above, the {@code loop} combinator has the following property:
+     * <ul>
+     * <li>Given {@code N} clauses {@code Cn = {null, Sn, Pn}} with {@code n = 1..N}.
+     * <li>Suppose predicate handles {@code Pn} are either {@code null} or have no parameters.
+     * (Only one {@code Pn} has to be non-{@code null}.)
+     * <li>Suppose step handles {@code Sn} have signatures {@code (B1..BX)Rn}, for some constant {@code X>=N}.
+     * <li>Suppose {@code Q} is the count of non-void types {@code Rn}, and {@code (V1...VQ)} is the sequence of those types.
+     * <li>It must be that {@code Vn == Bn} for {@code n = 1..min(X,Q)}.
+     * <li>The parameter types {@code Vn} will be interpreted as loop-local state elements {@code (V...)}.
+     * <li>Any remaining types {@code BQ+1..BX} (if {@code Q<X}) will determine
+     * the resulting loop handle's parameter types {@code (A...)}.
+     * </ul>
+     * In this example, the loop handle parameters {@code (A...)} were derived from the step functions,
+     * which is natural if most of the loop computation happens in the steps.  For some loops,
+     * the burden of computation might be heaviest in the pred functions, and so the pred functions
+     * might need to accept the loop parameter values.  For loops with complex exit logic, the fini
+     * functions might need to accept loop parameters, and likewise for loops with complex entry logic,
+     * where the init functions will need the extra parameters.  For such reasons, the rules for
+     * determining these parameters are as symmetric as possible, across all clause parts.
+     * In general, the loop parameters function as common invariant values across the whole
+     * loop, while the iteration variables function as common variant values, or (if there is
+     * no step function) as internal loop invariant temporaries.
      * <p>
      * <em>Loop execution.</em><ol type="a">
-     * <li>When the loop is called, the loop input values are saved in locals, to be passed (as the common suffix) to
+     * <li>When the loop is called, the loop input values are saved in locals, to be passed to
      * every clause function. These locals are loop invariant.
-     * <li>Each init function is executed in clause order (passing the common suffix) and the non-{@code void} values
-     * are saved (as the common prefix) into locals. These locals are loop varying (unless their steps are identity
-     * functions, as noted above).
-     * <li>All function executions (except init functions) will be passed the common parameter sequence, consisting of
-     * the non-{@code void} iteration values (in clause order) and then the loop inputs (in argument order).
+     * <li>Each init function is executed in clause order (passing the external arguments {@code (a...)})
+     * and the non-{@code void} values are saved (as the iteration variables {@code (v...)}) into locals.
+     * These locals will be loop varying (unless their steps behave as identity functions, as noted above).
+     * <li>All function executions (except init functions) will be passed the internal parameter list, consisting of
+     * the non-{@code void} iteration values {@code (v...)} (in clause order) and then the loop inputs {@code (a...)}
+     * (in argument order).
      * <li>The step and pred functions are then executed, in clause order (step before pred), until a pred function
      * returns {@code false}.
-     * <li>The non-{@code void} result from a step function call is used to update the corresponding loop variable. The
-     * updated value is immediately visible to all subsequent function calls.
+     * <li>The non-{@code void} result from a step function call is used to update the corresponding value in the
+     * sequence {@code (v...)} of loop variables.
+     * The updated value is immediately visible to all subsequent function calls.
      * <li>If a pred function returns {@code false}, the corresponding fini function is called, and the resulting value
-     * is returned from the loop as a whole.
+     * (of type {@code R}) is returned from the loop as a whole.
+     * <li>If all the pred functions always return true, no fini function is ever invoked, and the loop cannot exit
+     * except by throwing an exception.
      * </ol>
      * <p>
-     * Here is pseudocode for the resulting loop handle. In the code, {@code V}/{@code v} represent the types / values
-     * of loop variables; {@code A}/{@code a}, those of arguments passed to the resulting loop; and {@code R}, the
-     * result types of finalizers as well as of the resulting loop.
+     * <em>Usage tips.</em>
+     * <ul>
+     * <li>Although each step function will receive the current values of <em>all</em> the loop variables,
+     * sometimes a step function only needs to observe the current value of its own variable.
+     * In that case, the step function may need to explicitly {@linkplain #dropArguments drop all preceding loop variables}.
+     * This will require mentioning their types, in an expression like {@code dropArguments(step, 0, V0.class, ...)}.
+     * <li>Loop variables are not required to vary; they can be loop invariant.  A clause can create
+     * a loop invariant by a suitable init function with no step, pred, or fini function.  This may be
+     * useful to "wire" an incoming loop argument into the step or pred function of an adjacent loop variable.
+     * <li>If some of the clause functions are virtual methods on an instance, the instance
+     * itself can be conveniently placed in an initial invariant loop "variable", using an initial clause
+     * like {@code new MethodHandle[]{identity(ObjType.class)}}.  In that case, the instance reference
+     * will be the first iteration variable value, and it will be easy to use virtual
+     * methods as clause parts, since all of them will take a leading instance reference matching that value.
+     * </ul>
+     * <p>
+     * Here is pseudocode for the resulting loop handle. As above, {@code V} and {@code v} represent the types
+     * and values of loop variables; {@code A} and {@code a} represent arguments passed to the whole loop;
+     * and {@code R} is the common result type of all finalizers as well as of the resulting loop.
      * <blockquote><pre>{@code
      * V... init...(A...);
      * boolean pred...(V..., A...);
@@ -4270,6 +4469,9 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *   }
      * }
      * }</pre></blockquote>
+     * Note that the parameter type lists {@code (V...)} and {@code (A...)} have been expanded
+     * to their full length, even though individual clause functions may neglect to take them all.
+     * As noted above, missing parameters are filled in as if by {@link #dropArgumentsToMatch}.
      * <p>
      * @apiNote Example:
      * <blockquote><pre>{@code
@@ -4286,6 +4488,43 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * MethodHandle loop = MethodHandles.loop(counterClause, accumulatorClause);
      * assertEquals(120, loop.invoke(5));
      * }</pre></blockquote>
+     * The same example, dropping arguments and using combinators:
+     * <blockquote><pre>{@code
+     * // simplified implementation of the factorial function as a loop handle
+     * static int inc(int i) { return i + 1; } // drop acc, k
+     * static int mult(int i, int acc) { return i * acc; } //drop k
+     * static boolean cmp(int i, int k) { return i < k; }
+     * // assume MH_inc, MH_mult, and MH_cmp are handles to the above methods
+     * // null initializer for counter, should initialize to 0
+     * MethodHandle MH_one = MethodHandles.constant(int.class, 1);
+     * MethodHandle MH_pred = MethodHandles.dropArguments(MH_cmp, 1, int.class); // drop acc
+     * MethodHandle MH_fin = MethodHandles.dropArguments(MethodHandles.identity(int.class), 0, int.class); // drop i
+     * MethodHandle[] counterClause = new MethodHandle[]{null, MH_inc};
+     * MethodHandle[] accumulatorClause = new MethodHandle[]{MH_one, MH_mult, MH_pred, MH_fin};
+     * MethodHandle loop = MethodHandles.loop(counterClause, accumulatorClause);
+     * assertEquals(720, loop.invoke(6));
+     * }</pre></blockquote>
+     * A similar example, using a helper object to hold a loop parameter:
+     * <blockquote><pre>{@code
+     * // instance-based implementation of the factorial function as a loop handle
+     * static class FacLoop {
+     *   final int k;
+     *   FacLoop(int k) { this.k = k; }
+     *   int inc(int i) { return i + 1; }
+     *   int mult(int i, int acc) { return i * acc; }
+     *   boolean pred(int i) { return i < k; }
+     *   int fin(int i, int acc) { return acc; }
+     * }
+     * // assume MH_FacLoop is a handle to the constructor
+     * // assume MH_inc, MH_mult, MH_pred, and MH_fin are handles to the above methods
+     * // null initializer for counter, should initialize to 0
+     * MethodHandle MH_one = MethodHandles.constant(int.class, 1);
+     * MethodHandle[] instanceClause = new MethodHandle[]{MH_FacLoop};
+     * MethodHandle[] counterClause = new MethodHandle[]{null, MH_inc};
+     * MethodHandle[] accumulatorClause = new MethodHandle[]{MH_one, MH_mult, MH_pred, MH_fin};
+     * MethodHandle loop = MethodHandles.loop(instanceClause, counterClause, accumulatorClause);
+     * assertEquals(5040, loop.invoke(7));
+     * }</pre></blockquote>
      *
      * @param clauses an array of arrays (4-tuples) of {@link MethodHandle}s adhering to the rules described above.
      *
@@ -4301,7 +4540,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      */
     public static MethodHandle loop(MethodHandle[]... clauses) {
         // Step 0: determine clause structure.
-        checkLoop0(clauses);
+        loopChecks0(clauses);
 
         List<MethodHandle> init = new ArrayList<>();
         List<MethodHandle> step = new ArrayList<>();
@@ -4318,7 +4557,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         assert Stream.of(init, step, pred, fini).map(List::size).distinct().count() == 1;
         final int nclauses = init.size();
 
-        // Step 1A: determine iteration variables.
+        // Step 1A: determine iteration variables (V...).
         final List<Class<?>> iterationVariableTypes = new ArrayList<>();
         for (int i = 0; i < nclauses; ++i) {
             MethodHandle in = init.get(i);
@@ -4326,7 +4565,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
             if (in == null && st == null) {
                 iterationVariableTypes.add(void.class);
             } else if (in != null && st != null) {
-                checkLoop1a(i, in, st);
+                loopChecks1a(i, in, st);
                 iterationVariableTypes.add(in.type().returnType());
             } else {
                 iterationVariableTypes.add(in == null ? st.type().returnType() : in.type().returnType());
@@ -4335,20 +4574,20 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         final List<Class<?>> commonPrefix = iterationVariableTypes.stream().filter(t -> t != void.class).
                 collect(Collectors.toList());
 
-        // Step 1B: determine loop parameters.
+        // Step 1B: determine loop parameters (A...).
         final List<Class<?>> commonSuffix = buildCommonSuffix(init, step, pred, fini, commonPrefix.size());
-        checkLoop1b(init, commonSuffix);
+        loopChecks1b(init, commonSuffix);
 
         // Step 1C: determine loop return type.
         // Step 1D: check other types.
         final Class<?> loopReturnType = fini.stream().filter(Objects::nonNull).map(MethodHandle::type).
                 map(MethodType::returnType).findFirst().orElse(void.class);
-        checkLoop1cd(pred, fini, loopReturnType);
+        loopChecks1cd(pred, fini, loopReturnType);
 
         // Step 2: determine parameter lists.
         final List<Class<?>> commonParameterSequence = new ArrayList<>(commonPrefix);
         commonParameterSequence.addAll(commonSuffix);
-        checkLoop2(step, pred, fini, commonParameterSequence);
+        loopChecks2(step, pred, fini, commonParameterSequence);
 
         // Step 3: fill in omitted functions.
         for (int i = 0; i < nclauses; ++i) {
@@ -4382,6 +4621,79 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         return MethodHandleImpl.makeLoop(loopReturnType, commonSuffix, finit, fstep, fpred, ffini);
     }
 
+    private static void loopChecks0(MethodHandle[][] clauses) {
+        if (clauses == null || clauses.length == 0) {
+            throw newIllegalArgumentException("null or no clauses passed");
+        }
+        if (Stream.of(clauses).anyMatch(Objects::isNull)) {
+            throw newIllegalArgumentException("null clauses are not allowed");
+        }
+        if (Stream.of(clauses).anyMatch(c -> c.length > 4)) {
+            throw newIllegalArgumentException("All loop clauses must be represented as MethodHandle arrays with at most 4 elements.");
+        }
+    }
+
+    private static void loopChecks1a(int i, MethodHandle in, MethodHandle st) {
+        if (in.type().returnType() != st.type().returnType()) {
+            throw misMatchedTypes("clause " + i + ": init and step return types", in.type().returnType(),
+                    st.type().returnType());
+        }
+    }
+
+    private static List<Class<?>> longestParameterList(Stream<MethodHandle> mhs, int skipSize) {
+        final List<Class<?>> empty = List.of();
+        final List<Class<?>> longest = mhs.filter(Objects::nonNull).
+                // take only those that can contribute to a common suffix because they are longer than the prefix
+                        map(MethodHandle::type).
+                        filter(t -> t.parameterCount() > skipSize).
+                        map(MethodType::parameterList).
+                        reduce((p, q) -> p.size() >= q.size() ? p : q).orElse(empty);
+        return longest.size() == 0 ? empty : longest.subList(skipSize, longest.size());
+    }
+
+    private static List<Class<?>> longestParameterList(List<List<Class<?>>> lists) {
+        final List<Class<?>> empty = List.of();
+        return lists.stream().reduce((p, q) -> p.size() >= q.size() ? p : q).orElse(empty);
+    }
+
+    private static List<Class<?>> buildCommonSuffix(List<MethodHandle> init, List<MethodHandle> step, List<MethodHandle> pred, List<MethodHandle> fini, int cpSize) {
+        final List<Class<?>> longest1 = longestParameterList(Stream.of(step, pred, fini).flatMap(List::stream), cpSize);
+        final List<Class<?>> longest2 = longestParameterList(init.stream(), 0);
+        return longestParameterList(Arrays.asList(longest1, longest2));
+    }
+
+    private static void loopChecks1b(List<MethodHandle> init, List<Class<?>> commonSuffix) {
+        if (init.stream().filter(Objects::nonNull).map(MethodHandle::type).
+                anyMatch(t -> !t.effectivelyIdenticalParameters(0, commonSuffix))) {
+            throw newIllegalArgumentException("found non-effectively identical init parameter type lists: " + init +
+                    " (common suffix: " + commonSuffix + ")");
+        }
+    }
+
+    private static void loopChecks1cd(List<MethodHandle> pred, List<MethodHandle> fini, Class<?> loopReturnType) {
+        if (fini.stream().filter(Objects::nonNull).map(MethodHandle::type).map(MethodType::returnType).
+                anyMatch(t -> t != loopReturnType)) {
+            throw newIllegalArgumentException("found non-identical finalizer return types: " + fini + " (return type: " +
+                    loopReturnType + ")");
+        }
+
+        if (!pred.stream().filter(Objects::nonNull).findFirst().isPresent()) {
+            throw newIllegalArgumentException("no predicate found", pred);
+        }
+        if (pred.stream().filter(Objects::nonNull).map(MethodHandle::type).map(MethodType::returnType).
+                anyMatch(t -> t != boolean.class)) {
+            throw newIllegalArgumentException("predicates must have boolean return type", pred);
+        }
+    }
+
+    private static void loopChecks2(List<MethodHandle> step, List<MethodHandle> pred, List<MethodHandle> fini, List<Class<?>> commonParameterSequence) {
+        if (Stream.of(step, pred, fini).flatMap(List::stream).filter(Objects::nonNull).map(MethodHandle::type).
+                anyMatch(t -> !t.effectivelyIdenticalParameters(0, commonParameterSequence))) {
+            throw newIllegalArgumentException("found non-effectively identical parameter type lists:\nstep: " + step +
+                    "\npred: " + pred + "\nfini: " + fini + " (common parameter sequence: " + commonParameterSequence + ")");
+        }
+    }
+
     private static List<MethodHandle> fillParameterTypes(List<MethodHandle> hs, final List<Class<?>> targetParams) {
         return hs.stream().map(h -> {
             int pc = h.type().parameterCount();
@@ -4395,26 +4707,60 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     }
 
     /**
-     * Constructs a {@code while} loop from an initializer, a body, and a predicate. This is a convenience wrapper for
-     * the {@linkplain #loop(MethodHandle[][]) generic loop combinator}.
+     * Constructs a {@code while} loop from an initializer, a body, and a predicate.
+     * This is a convenience wrapper for the {@linkplain #loop(MethodHandle[][]) generic loop combinator}.
      * <p>
-     * The loop handle's result type is the same as the sole loop variable's, i.e., the result type of {@code init}.
-     * The parameter type list of {@code init} also determines that of the resulting handle. The {@code pred} handle
-     * must have an additional leading parameter of the same type as {@code init}'s result, and so must the {@code
-     * body}. These constraints follow directly from those described for the {@linkplain MethodHandles#loop(MethodHandle[][])
-     * generic loop combinator}.
+     * The {@code pred} handle describes the loop condition; and {@code body}, its body. The loop resulting from this
+     * method will, in each iteration, first evaluate the predicate and then execute its body (if the predicate
+     * evaluates to {@code true}).
+     * The loop will terminate once the predicate evaluates to {@code false} (the body will not be executed in this case).
+     * <p>
+     * The {@code init} handle describes the initial value of an additional optional loop-local variable.
+     * In each iteration, this loop-local variable, if present, will be passed to the {@code body}
+     * and updated with the value returned from its invocation. The result of loop execution will be
+     * the final value of the additional loop-local variable (if present).
+     * <p>
+     * The following rules hold for these argument handles:<ul>
+     * <li>The {@code body} handle must not be {@code null}; its type must be of the form
+     * {@code (V A...)V}, where {@code V} is non-{@code void}, or else {@code (A...)void}.
+     * (In the {@code void} case, we assign the type {@code void} to the name {@code V},
+     * and we will write {@code (V A...)V} with the understanding that a {@code void} type {@code V}
+     * is quietly dropped from the parameter list, leaving {@code (A...)V}.)
+     * <li>The parameter list {@code (V A...)} of the body is called the <em>internal parameter list</em>.
+     * It will constrain the parameter lists of the other loop parts.
+     * <li>If the iteration variable type {@code V} is dropped from the internal parameter list, the resulting shorter
+     * list {@code (A...)} is called the <em>external parameter list</em>.
+     * <li>The body return type {@code V}, if non-{@code void}, determines the type of an
+     * additional state variable of the loop.
+     * The body must both accept and return a value of this type {@code V}.
+     * <li>If {@code init} is non-{@code null}, it must have return type {@code V}.
+     * Its parameter list (of some <a href="MethodHandles.html#astar">form {@code (A*)}</a>) must be
+     * <a href="MethodHandles.html#effid">effectively identical</a>
+     * to the external parameter list {@code (A...)}.
+     * <li>If {@code init} is {@code null}, the loop variable will be initialized to its
+     * {@linkplain #empty default value}.
+     * <li>The {@code pred} handle must not be {@code null}.  It must have {@code boolean} as its return type.
+     * Its parameter list (either empty or of the form {@code (V A*)}) must be
+     * effectively identical to the internal parameter list.
+     * </ul>
+     * <p>
+     * The resulting loop handle's result type and parameter signature are determined as follows:<ul>
+     * <li>The loop handle's result type is the result type {@code V} of the body.
+     * <li>The loop handle's parameter types are the types {@code (A...)},
+     * from the external parameter list.
+     * </ul>
      * <p>
      * Here is pseudocode for the resulting loop handle. In the code, {@code V}/{@code v} represent the type / value of
      * the sole loop variable as well as the result type of the loop; and {@code A}/{@code a}, that of the argument
      * passed to the loop.
      * <blockquote><pre>{@code
-     * V init(A);
-     * boolean pred(V, A);
-     * V body(V, A);
-     * V whileLoop(A a) {
-     *   V v = init(a);
-     *   while (pred(v, a)) {
-     *     v = body(v, a);
+     * V init(A...);
+     * boolean pred(V, A...);
+     * V body(V, A...);
+     * V whileLoop(A... a...) {
+     *   V v = init(a...);
+     *   while (pred(v, a...)) {
+     *     v = body(v, a...);
      *   }
      *   return v;
      * }
@@ -4439,58 +4785,96 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * }</pre></blockquote>
      *
      * <p>
-     * @implSpec The implementation of this method is equivalent to:
+     * @apiNote The implementation of this method can be expressed as follows:
      * <blockquote><pre>{@code
      * MethodHandle whileLoop(MethodHandle init, MethodHandle pred, MethodHandle body) {
+     *     MethodHandle fini = (body.type().returnType() == void.class
+     *                         ? null : identity(body.type().returnType()));
      *     MethodHandle[]
-     *         checkExit = {null, null, pred, identity(init.type().returnType())},
-     *         varBody = {init, body};
+     *         checkExit = { null, null, pred, fini },
+     *         varBody   = { init, body };
      *     return loop(checkExit, varBody);
      * }
      * }</pre></blockquote>
      *
-     * @param init initializer: it should provide the initial value of the loop variable. This controls the loop's
-     *             result type. Passing {@code null} or a {@code void} init function will make the loop's result type
-     *             {@code void}.
-     * @param pred condition for the loop, which may not be {@code null}.
-     * @param body body of the loop, which may not be {@code null}.
+     * @param init optional initializer, providing the initial value of the loop variable.
+     *             May be {@code null}, implying a default initial value.  See above for other constraints.
+     * @param pred condition for the loop, which may not be {@code null}. Its result type must be {@code boolean}. See
+     *             above for other constraints.
+     * @param body body of the loop, which may not be {@code null}. It controls the loop parameters and result type.
+     *             See above for other constraints.
      *
-     * @return the value of the loop variable as the loop terminates.
-     * @throws IllegalArgumentException if any argument has a type inconsistent with the loop structure
+     * @return a method handle implementing the {@code while} loop as described by the arguments.
+     * @throws IllegalArgumentException if the rules for the arguments are violated.
+     * @throws NullPointerException if {@code pred} or {@code body} are {@code null}.
      *
-     * @see MethodHandles#loop(MethodHandle[][])
+     * @see #loop(MethodHandle[][])
+     * @see #doWhileLoop(MethodHandle, MethodHandle, MethodHandle)
      * @since 9
      */
     public static MethodHandle whileLoop(MethodHandle init, MethodHandle pred, MethodHandle body) {
-        MethodHandle fin = init == null || init.type().returnType() == void.class ? zero(void.class) :
-                identity(init.type().returnType());
-        MethodHandle[] checkExit = {null, null, pred, fin};
-        MethodHandle[] varBody = {init, body};
+        whileLoopChecks(init, pred, body);
+        MethodHandle fini = identityOrVoid(body.type().returnType());
+        MethodHandle[] checkExit = { null, null, pred, fini };
+        MethodHandle[] varBody = { init, body };
         return loop(checkExit, varBody);
     }
 
     /**
-     * Constructs a {@code do-while} loop from an initializer, a body, and a predicate. This is a convenience wrapper
-     * for the {@linkplain MethodHandles#loop(MethodHandle[][]) generic loop combinator}.
+     * Constructs a {@code do-while} loop from an initializer, a body, and a predicate.
+     * This is a convenience wrapper for the {@linkplain #loop(MethodHandle[][]) generic loop combinator}.
      * <p>
-     * The loop handle's result type is the same as the sole loop variable's, i.e., the result type of {@code init}.
-     * The parameter type list of {@code init} also determines that of the resulting handle. The {@code pred} handle
-     * must have an additional leading parameter of the same type as {@code init}'s result, and so must the {@code
-     * body}. These constraints follow directly from those described for the {@linkplain MethodHandles#loop(MethodHandle[][])
-     * generic loop combinator}.
+     * The {@code pred} handle describes the loop condition; and {@code body}, its body. The loop resulting from this
+     * method will, in each iteration, first execute its body and then evaluate the predicate.
+     * The loop will terminate once the predicate evaluates to {@code false} after an execution of the body.
+     * <p>
+     * The {@code init} handle describes the initial value of an additional optional loop-local variable.
+     * In each iteration, this loop-local variable, if present, will be passed to the {@code body}
+     * and updated with the value returned from its invocation. The result of loop execution will be
+     * the final value of the additional loop-local variable (if present).
+     * <p>
+     * The following rules hold for these argument handles:<ul>
+     * <li>The {@code body} handle must not be {@code null}; its type must be of the form
+     * {@code (V A...)V}, where {@code V} is non-{@code void}, or else {@code (A...)void}.
+     * (In the {@code void} case, we assign the type {@code void} to the name {@code V},
+     * and we will write {@code (V A...)V} with the understanding that a {@code void} type {@code V}
+     * is quietly dropped from the parameter list, leaving {@code (A...)V}.)
+     * <li>The parameter list {@code (V A...)} of the body is called the <em>internal parameter list</em>.
+     * It will constrain the parameter lists of the other loop parts.
+     * <li>If the iteration variable type {@code V} is dropped from the internal parameter list, the resulting shorter
+     * list {@code (A...)} is called the <em>external parameter list</em>.
+     * <li>The body return type {@code V}, if non-{@code void}, determines the type of an
+     * additional state variable of the loop.
+     * The body must both accept and return a value of this type {@code V}.
+     * <li>If {@code init} is non-{@code null}, it must have return type {@code V}.
+     * Its parameter list (of some <a href="MethodHandles.html#astar">form {@code (A*)}</a>) must be
+     * <a href="MethodHandles.html#effid">effectively identical</a>
+     * to the external parameter list {@code (A...)}.
+     * <li>If {@code init} is {@code null}, the loop variable will be initialized to its
+     * {@linkplain #empty default value}.
+     * <li>The {@code pred} handle must not be {@code null}.  It must have {@code boolean} as its return type.
+     * Its parameter list (either empty or of the form {@code (V A*)}) must be
+     * effectively identical to the internal parameter list.
+     * </ul>
+     * <p>
+     * The resulting loop handle's result type and parameter signature are determined as follows:<ul>
+     * <li>The loop handle's result type is the result type {@code V} of the body.
+     * <li>The loop handle's parameter types are the types {@code (A...)},
+     * from the external parameter list.
+     * </ul>
      * <p>
      * Here is pseudocode for the resulting loop handle. In the code, {@code V}/{@code v} represent the type / value of
      * the sole loop variable as well as the result type of the loop; and {@code A}/{@code a}, that of the argument
      * passed to the loop.
      * <blockquote><pre>{@code
-     * V init(A);
-     * boolean pred(V, A);
-     * V body(V, A);
-     * V doWhileLoop(A a) {
-     *   V v = init(a);
+     * V init(A...);
+     * boolean pred(V, A...);
+     * V body(V, A...);
+     * V doWhileLoop(A... a...) {
+     *   V v = init(a...);
      *   do {
-     *     v = body(v, a);
-     *   } while (pred(v, a));
+     *     v = body(v, a...);
+     *   } while (pred(v, a...));
      *   return v;
      * }
      * }</pre></blockquote>
@@ -4507,301 +4891,654 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * }</pre></blockquote>
      *
      * <p>
-     * @implSpec The implementation of this method is equivalent to:
+     * @apiNote The implementation of this method can be expressed as follows:
      * <blockquote><pre>{@code
      * MethodHandle doWhileLoop(MethodHandle init, MethodHandle body, MethodHandle pred) {
-     *     MethodHandle[] clause = { init, body, pred, identity(init.type().returnType()) };
+     *     MethodHandle fini = (body.type().returnType() == void.class
+     *                         ? null : identity(body.type().returnType()));
+     *     MethodHandle[] clause = { init, body, pred, fini };
      *     return loop(clause);
      * }
      * }</pre></blockquote>
      *
+     * @param init optional initializer, providing the initial value of the loop variable.
+     *             May be {@code null}, implying a default initial value.  See above for other constraints.
+     * @param body body of the loop, which may not be {@code null}. It controls the loop parameters and result type.
+     *             See above for other constraints.
+     * @param pred condition for the loop, which may not be {@code null}. Its result type must be {@code boolean}. See
+     *             above for other constraints.
      *
-     * @param init initializer: it should provide the initial value of the loop variable. This controls the loop's
-     *             result type. Passing {@code null} or a {@code void} init function will make the loop's result type
-     *             {@code void}.
-     * @param pred condition for the loop, which may not be {@code null}.
-     * @param body body of the loop, which may not be {@code null}.
+     * @return a method handle implementing the {@code while} loop as described by the arguments.
+     * @throws IllegalArgumentException if the rules for the arguments are violated.
+     * @throws NullPointerException if {@code pred} or {@code body} are {@code null}.
      *
-     * @return the value of the loop variable as the loop terminates.
-     * @throws IllegalArgumentException if any argument has a type inconsistent with the loop structure
-     *
-     * @see MethodHandles#loop(MethodHandle[][])
+     * @see #loop(MethodHandle[][])
+     * @see #whileLoop(MethodHandle, MethodHandle, MethodHandle)
      * @since 9
      */
     public static MethodHandle doWhileLoop(MethodHandle init, MethodHandle body, MethodHandle pred) {
-        MethodHandle fin = init == null || init.type().returnType() == void.class ? zero(void.class) :
-                identity(init.type().returnType());
-        MethodHandle[] clause = {init, body, pred, fin};
+        whileLoopChecks(init, pred, body);
+        MethodHandle fini = identityOrVoid(body.type().returnType());
+        MethodHandle[] clause = {init, body, pred, fini };
         return loop(clause);
     }
 
+    private static void whileLoopChecks(MethodHandle init, MethodHandle pred, MethodHandle body) {
+        Objects.requireNonNull(pred);
+        Objects.requireNonNull(body);
+        MethodType bodyType = body.type();
+        Class<?> returnType = bodyType.returnType();
+        List<Class<?>> innerList = bodyType.parameterList();
+        List<Class<?>> outerList = innerList;
+        if (returnType == void.class) {
+            // OK
+        } else if (innerList.size() == 0 || innerList.get(0) != returnType) {
+            // leading V argument missing => error
+            MethodType expected = bodyType.insertParameterTypes(0, returnType);
+            throw misMatchedTypes("body function", bodyType, expected);
+        } else {
+            outerList = innerList.subList(1, innerList.size());
+        }
+        MethodType predType = pred.type();
+        if (predType.returnType() != boolean.class ||
+                !predType.effectivelyIdenticalParameters(0, innerList)) {
+            throw misMatchedTypes("loop predicate", predType, methodType(boolean.class, innerList));
+        }
+        if (init != null) {
+            MethodType initType = init.type();
+            if (initType.returnType() != returnType ||
+                    !initType.effectivelyIdenticalParameters(0, outerList)) {
+                throw misMatchedTypes("loop initializer", initType, methodType(returnType, outerList));
+            }
+        }
+    }
+
     /**
-     * Constructs a loop that runs a given number of iterations. The loop counter is an {@code int} initialized from the
-     * {@code iterations} handle evaluation result. The counter is passed to the {@code body} function, so that must
-     * accept an initial {@code int} argument. The result of the loop execution is the final value of the additional
-     * local state. This is a convenience wrapper for the {@linkplain MethodHandles#loop(MethodHandle[][]) generic loop
-     * combinator}.
+     * Constructs a loop that runs a given number of iterations.
+     * This is a convenience wrapper for the {@linkplain #loop(MethodHandle[][]) generic loop combinator}.
      * <p>
-     * The result type and parameter type list of {@code init} determine those of the resulting handle. The {@code
-     * iterations} handle must accept the same parameter types as {@code init} but return an {@code int}. The {@code
-     * body} handle must accept the same parameter types as well, preceded by an {@code int} parameter for the counter,
-     * and a parameter of the same type as {@code init}'s result. These constraints follow directly from those described
-     * for the {@linkplain MethodHandles#loop(MethodHandle[][]) generic loop combinator}.
+     * The number of iterations is determined by the {@code iterations} handle evaluation result.
+     * The loop counter {@code i} is an extra loop iteration variable of type {@code int}.
+     * It will be initialized to 0 and incremented by 1 in each iteration.
+     * <p>
+     * If the {@code body} handle returns a non-{@code void} type {@code V}, a leading loop iteration variable
+     * of that type is also present.  This variable is initialized using the optional {@code init} handle,
+     * or to the {@linkplain #empty default value} of type {@code V} if that handle is {@code null}.
+     * <p>
+     * In each iteration, the iteration variables are passed to an invocation of the {@code body} handle.
+     * A non-{@code void} value returned from the body (of type {@code V}) updates the leading
+     * iteration variable.
+     * The result of the loop handle execution will be the final {@code V} value of that variable
+     * (or {@code void} if there is no {@code V} variable).
+     * <p>
+     * The following rules hold for the argument handles:<ul>
+     * <li>The {@code iterations} handle must not be {@code null}, and must return
+     * the type {@code int}, referred to here as {@code I} in parameter type lists.
+     * <li>The {@code body} handle must not be {@code null}; its type must be of the form
+     * {@code (V I A...)V}, where {@code V} is non-{@code void}, or else {@code (I A...)void}.
+     * (In the {@code void} case, we assign the type {@code void} to the name {@code V},
+     * and we will write {@code (V I A...)V} with the understanding that a {@code void} type {@code V}
+     * is quietly dropped from the parameter list, leaving {@code (I A...)V}.)
+     * <li>The parameter list {@code (V I A...)} of the body contributes to a list
+     * of types called the <em>internal parameter list</em>.
+     * It will constrain the parameter lists of the other loop parts.
+     * <li>As a special case, if the body contributes only {@code V} and {@code I} types,
+     * with no additional {@code A} types, then the internal parameter list is extended by
+     * the argument types {@code A...} of the {@code iterations} handle.
+     * <li>If the iteration variable types {@code (V I)} are dropped from the internal parameter list, the resulting shorter
+     * list {@code (A...)} is called the <em>external parameter list</em>.
+     * <li>The body return type {@code V}, if non-{@code void}, determines the type of an
+     * additional state variable of the loop.
+     * The body must both accept a leading parameter and return a value of this type {@code V}.
+     * <li>If {@code init} is non-{@code null}, it must have return type {@code V}.
+     * Its parameter list (of some <a href="MethodHandles.html#astar">form {@code (A*)}</a>) must be
+     * <a href="MethodHandles.html#effid">effectively identical</a>
+     * to the external parameter list {@code (A...)}.
+     * <li>If {@code init} is {@code null}, the loop variable will be initialized to its
+     * {@linkplain #empty default value}.
+     * <li>The parameter list of {@code iterations} (of some form {@code (A*)}) must be
+     * effectively identical to the external parameter list {@code (A...)}.
+     * </ul>
+     * <p>
+     * The resulting loop handle's result type and parameter signature are determined as follows:<ul>
+     * <li>The loop handle's result type is the result type {@code V} of the body.
+     * <li>The loop handle's parameter types are the types {@code (A...)},
+     * from the external parameter list.
+     * </ul>
      * <p>
      * Here is pseudocode for the resulting loop handle. In the code, {@code V}/{@code v} represent the type / value of
-     * the sole loop variable as well as the result type of the loop; and {@code A}/{@code a}, that of the argument
-     * passed to the loop.
+     * the second loop variable as well as the result type of the loop; and {@code A...}/{@code a...} represent
+     * arguments passed to the loop.
      * <blockquote><pre>{@code
-     * int iterations(A);
-     * V init(A);
-     * V body(int, V, A);
-     * V countedLoop(A a) {
-     *   int end = iterations(a);
-     *   V v = init(a);
+     * int iterations(A...);
+     * V init(A...);
+     * V body(V, int, A...);
+     * V countedLoop(A... a...) {
+     *   int end = iterations(a...);
+     *   V v = init(a...);
      *   for (int i = 0; i < end; ++i) {
-     *     v = body(i, v, a);
+     *     v = body(v, i, a...);
      *   }
      *   return v;
      * }
      * }</pre></blockquote>
      * <p>
-     * @apiNote Example:
+     * @apiNote Example with a fully conformant body method:
      * <blockquote><pre>{@code
      * // String s = "Lambdaman!"; for (int i = 0; i < 13; ++i) { s = "na " + s; } return s;
      * // => a variation on a well known theme
-     * static String start(String arg) { return arg; }
-     * static String step(int counter, String v, String arg) { return "na " + v; }
-     * // assume MH_start and MH_step are handles to the two methods above
+     * static String step(String v, int counter, String init) { return "na " + v; }
+     * // assume MH_step is a handle to the method above
      * MethodHandle fit13 = MethodHandles.constant(int.class, 13);
-     * MethodHandle loop = MethodHandles.countedLoop(fit13, MH_start, MH_step);
+     * MethodHandle start = MethodHandles.identity(String.class);
+     * MethodHandle loop = MethodHandles.countedLoop(fit13, start, MH_step);
      * assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke("Lambdaman!"));
      * }</pre></blockquote>
-     *
      * <p>
-     * @implSpec The implementation of this method is equivalent to:
+     * @apiNote Example with the simplest possible body method type,
+     * and passing the number of iterations to the loop invocation:
+     * <blockquote><pre>{@code
+     * // String s = "Lambdaman!"; for (int i = 0; i < 13; ++i) { s = "na " + s; } return s;
+     * // => a variation on a well known theme
+     * static String step(String v, int counter ) { return "na " + v; }
+     * // assume MH_step is a handle to the method above
+     * MethodHandle count = MethodHandles.dropArguments(MethodHandles.identity(int.class), 1, String.class);
+     * MethodHandle start = MethodHandles.dropArguments(MethodHandles.identity(String.class), 0, int.class);
+     * MethodHandle loop = MethodHandles.countedLoop(count, start, MH_step);  // (v, i) -> "na " + v
+     * assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke(13, "Lambdaman!"));
+     * }</pre></blockquote>
+     * <p>
+     * @apiNote Example that treats the number of iterations, string to append to, and string to append
+     * as loop parameters:
+     * <blockquote><pre>{@code
+     * // String s = "Lambdaman!", t = "na"; for (int i = 0; i < 13; ++i) { s = t + " " + s; } return s;
+     * // => a variation on a well known theme
+     * static String step(String v, int counter, int iterations_, String pre, String start_) { return pre + " " + v; }
+     * // assume MH_step is a handle to the method above
+     * MethodHandle count = MethodHandles.identity(int.class);
+     * MethodHandle start = MethodHandles.dropArguments(MethodHandles.identity(String.class), 0, int.class, String.class);
+     * MethodHandle loop = MethodHandles.countedLoop(count, start, MH_step);  // (v, i, _, pre, _) -> pre + " " + v
+     * assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke(13, "na", "Lambdaman!"));
+     * }</pre></blockquote>
+     * <p>
+     * @apiNote Example that illustrates the usage of {@link #dropArgumentsToMatch(MethodHandle, int, List, int)}
+     * to enforce a loop type:
+     * <blockquote><pre>{@code
+     * // String s = "Lambdaman!", t = "na"; for (int i = 0; i < 13; ++i) { s = t + " " + s; } return s;
+     * // => a variation on a well known theme
+     * static String step(String v, int counter, String pre) { return pre + " " + v; }
+     * // assume MH_step is a handle to the method above
+     * MethodType loopType = methodType(String.class, String.class, int.class, String.class);
+     * MethodHandle count = MethodHandles.dropArgumentsToMatch(MethodHandles.identity(int.class),    0, loopType.parameterList(), 1);
+     * MethodHandle start = MethodHandles.dropArgumentsToMatch(MethodHandles.identity(String.class), 0, loopType.parameterList(), 2);
+     * MethodHandle body  = MethodHandles.dropArgumentsToMatch(MH_step,                              2, loopType.parameterList(), 0);
+     * MethodHandle loop = MethodHandles.countedLoop(count, start, body);  // (v, i, pre, _, _) -> pre + " " + v
+     * assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke("na", 13, "Lambdaman!"));
+     * }</pre></blockquote>
+     * <p>
+     * @apiNote The implementation of this method can be expressed as follows:
      * <blockquote><pre>{@code
      * MethodHandle countedLoop(MethodHandle iterations, MethodHandle init, MethodHandle body) {
-     *     return countedLoop(null, iterations, init, body);  // null => constant zero
+     *     return countedLoop(empty(iterations.type()), iterations, init, body);
      * }
      * }</pre></blockquote>
      *
-     * @param iterations a handle to return the number of iterations this loop should run.
-     * @param init initializer for additional loop state. This determines the loop's result type.
-     *             Passing {@code null} or a {@code void} init function will make the loop's result type
-     *             {@code void}.
-     * @param body the body of the loop, which must not be {@code null}.
-     *             It must accept an initial {@code int} parameter (for the counter), and then any
-     *             additional loop-local variable plus loop parameters.
+     * @param iterations a non-{@code null} handle to return the number of iterations this loop should run. The handle's
+     *                   result type must be {@code int}. See above for other constraints.
+     * @param init optional initializer, providing the initial value of the loop variable.
+     *             May be {@code null}, implying a default initial value.  See above for other constraints.
+     * @param body body of the loop, which may not be {@code null}.
+     *             It controls the loop parameters and result type in the standard case (see above for details).
+     *             It must accept its own return type (if non-void) plus an {@code int} parameter (for the counter),
+     *             and may accept any number of additional types.
+     *             See above for other constraints.
      *
      * @return a method handle representing the loop.
-     * @throws IllegalArgumentException if any argument has a type inconsistent with the loop structure
+     * @throws NullPointerException if either of the {@code iterations} or {@code body} handles is {@code null}.
+     * @throws IllegalArgumentException if any argument violates the rules formulated above.
      *
+     * @see #countedLoop(MethodHandle, MethodHandle, MethodHandle, MethodHandle)
      * @since 9
      */
     public static MethodHandle countedLoop(MethodHandle iterations, MethodHandle init, MethodHandle body) {
-        return countedLoop(null, iterations, init, body);
+        return countedLoop(empty(iterations.type()), iterations, init, body);
     }
 
     /**
-     * Constructs a loop that counts over a range of numbers. The loop counter is an {@code int} that will be
-     * initialized to the {@code int} value returned from the evaluation of the {@code start} handle and run to the
-     * value returned from {@code end} (exclusively) with a step width of 1. The counter value is passed to the {@code
-     * body} function in each iteration; it has to accept an initial {@code int} parameter
-     * for that. The result of the loop execution is the final value of the additional local state
-     * obtained by running {@code init}.
-     * This is a
-     * convenience wrapper for the {@linkplain MethodHandles#loop(MethodHandle[][]) generic loop combinator}.
+     * Constructs a loop that counts over a range of numbers.
+     * This is a convenience wrapper for the {@linkplain #loop(MethodHandle[][]) generic loop combinator}.
      * <p>
-     * The constraints for the {@code init} and {@code body} handles are the same as for {@link
-     * #countedLoop(MethodHandle, MethodHandle, MethodHandle)}. Additionally, the {@code start} and {@code end} handles
-     * must return an {@code int} and accept the same parameters as {@code init}.
+     * The loop counter {@code i} is a loop iteration variable of type {@code int}.
+     * The {@code start} and {@code end} handles determine the start (inclusive) and end (exclusive)
+     * values of the loop counter.
+     * The loop counter will be initialized to the {@code int} value returned from the evaluation of the
+     * {@code start} handle and run to the value returned from {@code end} (exclusively) with a step width of 1.
+     * <p>
+     * If the {@code body} handle returns a non-{@code void} type {@code V}, a leading loop iteration variable
+     * of that type is also present.  This variable is initialized using the optional {@code init} handle,
+     * or to the {@linkplain #empty default value} of type {@code V} if that handle is {@code null}.
+     * <p>
+     * In each iteration, the iteration variables are passed to an invocation of the {@code body} handle.
+     * A non-{@code void} value returned from the body (of type {@code V}) updates the leading
+     * iteration variable.
+     * The result of the loop handle execution will be the final {@code V} value of that variable
+     * (or {@code void} if there is no {@code V} variable).
+     * <p>
+     * The following rules hold for the argument handles:<ul>
+     * <li>The {@code start} and {@code end} handles must not be {@code null}, and must both return
+     * the common type {@code int}, referred to here as {@code I} in parameter type lists.
+     * <li>The {@code body} handle must not be {@code null}; its type must be of the form
+     * {@code (V I A...)V}, where {@code V} is non-{@code void}, or else {@code (I A...)void}.
+     * (In the {@code void} case, we assign the type {@code void} to the name {@code V},
+     * and we will write {@code (V I A...)V} with the understanding that a {@code void} type {@code V}
+     * is quietly dropped from the parameter list, leaving {@code (I A...)V}.)
+     * <li>The parameter list {@code (V I A...)} of the body contributes to a list
+     * of types called the <em>internal parameter list</em>.
+     * It will constrain the parameter lists of the other loop parts.
+     * <li>As a special case, if the body contributes only {@code V} and {@code I} types,
+     * with no additional {@code A} types, then the internal parameter list is extended by
+     * the argument types {@code A...} of the {@code end} handle.
+     * <li>If the iteration variable types {@code (V I)} are dropped from the internal parameter list, the resulting shorter
+     * list {@code (A...)} is called the <em>external parameter list</em>.
+     * <li>The body return type {@code V}, if non-{@code void}, determines the type of an
+     * additional state variable of the loop.
+     * The body must both accept a leading parameter and return a value of this type {@code V}.
+     * <li>If {@code init} is non-{@code null}, it must have return type {@code V}.
+     * Its parameter list (of some <a href="MethodHandles.html#astar">form {@code (A*)}</a>) must be
+     * <a href="MethodHandles.html#effid">effectively identical</a>
+     * to the external parameter list {@code (A...)}.
+     * <li>If {@code init} is {@code null}, the loop variable will be initialized to its
+     * {@linkplain #empty default value}.
+     * <li>The parameter list of {@code start} (of some form {@code (A*)}) must be
+     * effectively identical to the external parameter list {@code (A...)}.
+     * <li>Likewise, the parameter list of {@code end} must be effectively identical
+     * to the external parameter list.
+     * </ul>
+     * <p>
+     * The resulting loop handle's result type and parameter signature are determined as follows:<ul>
+     * <li>The loop handle's result type is the result type {@code V} of the body.
+     * <li>The loop handle's parameter types are the types {@code (A...)},
+     * from the external parameter list.
+     * </ul>
      * <p>
      * Here is pseudocode for the resulting loop handle. In the code, {@code V}/{@code v} represent the type / value of
-     * the sole loop variable as well as the result type of the loop; and {@code A}/{@code a}, that of the argument
-     * passed to the loop.
+     * the second loop variable as well as the result type of the loop; and {@code A...}/{@code a...} represent
+     * arguments passed to the loop.
      * <blockquote><pre>{@code
-     * int start(A);
-     * int end(A);
-     * V init(A);
-     * V body(int, V, A);
-     * V countedLoop(A a) {
-     *   int s = start(a);
-     *   int e = end(a);
-     *   V v = init(a);
+     * int start(A...);
+     * int end(A...);
+     * V init(A...);
+     * V body(V, int, A...);
+     * V countedLoop(A... a...) {
+     *   int e = end(a...);
+     *   int s = start(a...);
+     *   V v = init(a...);
      *   for (int i = s; i < e; ++i) {
-     *     v = body(i, v, a);
+     *     v = body(v, i, a...);
      *   }
      *   return v;
      * }
      * }</pre></blockquote>
      *
      * <p>
-     * @implSpec The implementation of this method is equivalent to:
+     * @apiNote The implementation of this method can be expressed as follows:
      * <blockquote><pre>{@code
      * MethodHandle countedLoop(MethodHandle start, MethodHandle end, MethodHandle init, MethodHandle body) {
      *     MethodHandle returnVar = dropArguments(identity(init.type().returnType()), 0, int.class, int.class);
-     *     // assume MH_increment and MH_lessThan are handles to x+1 and x<y of type int,
-     *     // assume MH_decrement is a handle to x-1 of type int
+     *     // assume MH_increment and MH_predicate are handles to implementation-internal methods with
+     *     // the following semantics:
+     *     // MH_increment: (int limit, int counter) -> counter + 1
+     *     // MH_predicate: (int limit, int counter) -> counter < limit
+     *     Class<?> counterType = start.type().returnType();  // int
+     *     Class<?> returnType = body.type().returnType();
+     *     MethodHandle incr = MH_increment, pred = MH_predicate, retv = null;
+     *     if (returnType != void.class) {  // ignore the V variable
+     *         incr = dropArguments(incr, 1, returnType);  // (limit, v, i) => (limit, i)
+     *         pred = dropArguments(pred, 1, returnType);  // ditto
+     *         retv = dropArguments(identity(returnType), 0, counterType); // ignore limit
+     *     }
+     *     body = dropArguments(body, 0, counterType);  // ignore the limit variable
      *     MethodHandle[]
-     *         indexVar = {start, MH_increment}, // i = start; i = i+1
-     *         loopLimit = {end, null,
-     *                       filterArgument(MH_lessThan, 0, MH_decrement), returnVar}, // i-1<end
-     *         bodyClause = {init,
-     *                       filterArgument(dropArguments(body, 1, int.class), 0, MH_decrement}; // v = body(i-1, v)
-     *     return loop(indexVar, loopLimit, bodyClause);
+     *         loopLimit  = { end, null, pred, retv }, // limit = end(); i < limit || return v
+     *         bodyClause = { init, body },            // v = init(); v = body(v, i)
+     *         indexVar   = { start, incr };           // i = start(); i = i + 1
+     *     return loop(loopLimit, bodyClause, indexVar);
      * }
      * }</pre></blockquote>
      *
-     * @param start a handle to return the start value of the loop counter.
-     *              If it is {@code null}, a constant zero is assumed.
-     * @param end a non-{@code null} handle to return the end value of the loop counter (the loop will run to {@code end-1}).
-     * @param init initializer for additional loop state. This determines the loop's result type.
-     *             Passing {@code null} or a {@code void} init function will make the loop's result type
-     *             {@code void}.
-     * @param body the body of the loop, which must not be {@code null}.
-     *             It must accept an initial {@code int} parameter (for the counter), and then any
-     *             additional loop-local variable plus loop parameters.
+     * @param start a non-{@code null} handle to return the start value of the loop counter, which must be {@code int}.
+     *              See above for other constraints.
+     * @param end a non-{@code null} handle to return the end value of the loop counter (the loop will run to
+     *            {@code end-1}). The result type must be {@code int}. See above for other constraints.
+     * @param init optional initializer, providing the initial value of the loop variable.
+     *             May be {@code null}, implying a default initial value.  See above for other constraints.
+     * @param body body of the loop, which may not be {@code null}.
+     *             It controls the loop parameters and result type in the standard case (see above for details).
+     *             It must accept its own return type (if non-void) plus an {@code int} parameter (for the counter),
+     *             and may accept any number of additional types.
+     *             See above for other constraints.
      *
      * @return a method handle representing the loop.
-     * @throws IllegalArgumentException if any argument has a type inconsistent with the loop structure
+     * @throws NullPointerException if any of the {@code start}, {@code end}, or {@code body} handles is {@code null}.
+     * @throws IllegalArgumentException if any argument violates the rules formulated above.
      *
+     * @see #countedLoop(MethodHandle, MethodHandle, MethodHandle)
      * @since 9
      */
     public static MethodHandle countedLoop(MethodHandle start, MethodHandle end, MethodHandle init, MethodHandle body) {
-        Class<?> resultType;
-        MethodHandle actualInit;
-        if (init == null) {
-            resultType = body == null ? void.class : body.type().returnType();
-            actualInit = empty(methodType(resultType));
-        } else {
-            resultType = init.type().returnType();
-            actualInit = init;
+        countedLoopChecks(start, end, init, body);
+        Class<?> counterType = start.type().returnType();  // int, but who's counting?
+        Class<?> limitType   = end.type().returnType();    // yes, int again
+        Class<?> returnType  = body.type().returnType();
+        MethodHandle incr = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopStep);
+        MethodHandle pred = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopPred);
+        MethodHandle retv = null;
+        if (returnType != void.class) {
+            incr = dropArguments(incr, 1, returnType);  // (limit, v, i) => (limit, i)
+            pred = dropArguments(pred, 1, returnType);  // ditto
+            retv = dropArguments(identity(returnType), 0, counterType);
         }
-        MethodHandle defaultResultHandle = resultType == void.class ? zero(void.class) : identity(resultType);
-        MethodHandle actualBody = body == null ? dropArguments(defaultResultHandle, 0, int.class) : body;
-        MethodHandle returnVar = dropArguments(defaultResultHandle, 0, int.class, int.class);
-        MethodHandle actualEnd = end == null ? constant(int.class, 0) : end;
-        MethodHandle decr = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_decrementCounter);
-        MethodHandle[] indexVar = {start, MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopStep)};
-        MethodHandle[] loopLimit = {actualEnd, null,
-                filterArgument(MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopPred), 0, decr),
-                returnVar};
-        MethodHandle[] bodyClause = {actualInit, filterArgument(dropArguments(actualBody, 1, int.class), 0, decr)};
-        return loop(indexVar, loopLimit, bodyClause);
+        body = dropArguments(body, 0, counterType);  // ignore the limit variable
+        MethodHandle[]
+            loopLimit  = { end, null, pred, retv }, // limit = end(); i < limit || return v
+            bodyClause = { init, body },            // v = init(); v = body(v, i)
+            indexVar   = { start, incr };           // i = start(); i = i + 1
+        return loop(loopLimit, bodyClause, indexVar);
+    }
+
+    private static void countedLoopChecks(MethodHandle start, MethodHandle end, MethodHandle init, MethodHandle body) {
+        Objects.requireNonNull(start);
+        Objects.requireNonNull(end);
+        Objects.requireNonNull(body);
+        Class<?> counterType = start.type().returnType();
+        if (counterType != int.class) {
+            MethodType expected = start.type().changeReturnType(int.class);
+            throw misMatchedTypes("start function", start.type(), expected);
+        } else if (end.type().returnType() != counterType) {
+            MethodType expected = end.type().changeReturnType(counterType);
+            throw misMatchedTypes("end function", end.type(), expected);
+        }
+        MethodType bodyType = body.type();
+        Class<?> returnType = bodyType.returnType();
+        List<Class<?>> innerList = bodyType.parameterList();
+        // strip leading V value if present
+        int vsize = (returnType == void.class ? 0 : 1);
+        if (vsize != 0 && (innerList.size() == 0 || innerList.get(0) != returnType)) {
+            // argument list has no "V" => error
+            MethodType expected = bodyType.insertParameterTypes(0, returnType);
+            throw misMatchedTypes("body function", bodyType, expected);
+        } else if (innerList.size() <= vsize || innerList.get(vsize) != counterType) {
+            // missing I type => error
+            MethodType expected = bodyType.insertParameterTypes(vsize, counterType);
+            throw misMatchedTypes("body function", bodyType, expected);
+        }
+        List<Class<?>> outerList = innerList.subList(vsize + 1, innerList.size());
+        if (outerList.isEmpty()) {
+            // special case; take lists from end handle
+            outerList = end.type().parameterList();
+            innerList = bodyType.insertParameterTypes(vsize + 1, outerList).parameterList();
+        }
+        MethodType expected = methodType(counterType, outerList);
+        if (!start.type().effectivelyIdenticalParameters(0, outerList)) {
+            throw misMatchedTypes("start parameter types", start.type(), expected);
+        }
+        if (end.type() != start.type() &&
+            !end.type().effectivelyIdenticalParameters(0, outerList)) {
+            throw misMatchedTypes("end parameter types", end.type(), expected);
+        }
+        if (init != null) {
+            MethodType initType = init.type();
+            if (initType.returnType() != returnType ||
+                !initType.effectivelyIdenticalParameters(0, outerList)) {
+                throw misMatchedTypes("loop initializer", initType, methodType(returnType, outerList));
+            }
+        }
     }
 
     /**
-     * Constructs a loop that ranges over the elements produced by an {@code Iterator<T>}.
-     * The iterator will be produced by the evaluation of the {@code iterator} handle.
-     * This handle must have {@link java.util.Iterator} as its return type.
-     * If this handle is passed as {@code null} the method {@link Iterable#iterator} will be used instead,
-     * and will be applied to a leading argument of the loop handle.
-     * Each value produced by the iterator is passed to the {@code body}, which must accept an initial {@code T} parameter.
-     * The result of the loop execution is the final value of the additional local state
-     * obtained by running {@code init}.
+     * Constructs a loop that ranges over the values produced by an {@code Iterator<T>}.
+     * This is a convenience wrapper for the {@linkplain #loop(MethodHandle[][]) generic loop combinator}.
      * <p>
-     * This is a convenience wrapper for the
-     * {@linkplain MethodHandles#loop(MethodHandle[][]) generic loop combinator}, and the constraints imposed on the {@code body}
-     * handle follow directly from those described for the latter.
+     * The iterator itself will be determined by the evaluation of the {@code iterator} handle.
+     * Each value it produces will be stored in a loop iteration variable of type {@code T}.
+     * <p>
+     * If the {@code body} handle returns a non-{@code void} type {@code V}, a leading loop iteration variable
+     * of that type is also present.  This variable is initialized using the optional {@code init} handle,
+     * or to the {@linkplain #empty default value} of type {@code V} if that handle is {@code null}.
+     * <p>
+     * In each iteration, the iteration variables are passed to an invocation of the {@code body} handle.
+     * A non-{@code void} value returned from the body (of type {@code V}) updates the leading
+     * iteration variable.
+     * The result of the loop handle execution will be the final {@code V} value of that variable
+     * (or {@code void} if there is no {@code V} variable).
+     * <p>
+     * The following rules hold for the argument handles:<ul>
+     * <li>The {@code body} handle must not be {@code null}; its type must be of the form
+     * {@code (V T A...)V}, where {@code V} is non-{@code void}, or else {@code (T A...)void}.
+     * (In the {@code void} case, we assign the type {@code void} to the name {@code V},
+     * and we will write {@code (V T A...)V} with the understanding that a {@code void} type {@code V}
+     * is quietly dropped from the parameter list, leaving {@code (T A...)V}.)
+     * <li>The parameter list {@code (V T A...)} of the body contributes to a list
+     * of types called the <em>internal parameter list</em>.
+     * It will constrain the parameter lists of the other loop parts.
+     * <li>As a special case, if the body contributes only {@code V} and {@code T} types,
+     * with no additional {@code A} types, then the internal parameter list is extended by
+     * the argument types {@code A...} of the {@code iterator} handle; if it is {@code null} the
+     * single type {@code Iterable} is added and constitutes the {@code A...} list.
+     * <li>If the iteration variable types {@code (V T)} are dropped from the internal parameter list, the resulting shorter
+     * list {@code (A...)} is called the <em>external parameter list</em>.
+     * <li>The body return type {@code V}, if non-{@code void}, determines the type of an
+     * additional state variable of the loop.
+     * The body must both accept a leading parameter and return a value of this type {@code V}.
+     * <li>If {@code init} is non-{@code null}, it must have return type {@code V}.
+     * Its parameter list (of some <a href="MethodHandles.html#astar">form {@code (A*)}</a>) must be
+     * <a href="MethodHandles.html#effid">effectively identical</a>
+     * to the external parameter list {@code (A...)}.
+     * <li>If {@code init} is {@code null}, the loop variable will be initialized to its
+     * {@linkplain #empty default value}.
+     * <li>If the {@code iterator} handle is non-{@code null}, it must have the return
+     * type {@code java.util.Iterator} or a subtype thereof.
+     * The iterator it produces when the loop is executed will be assumed
+     * to yield values which can be converted to type {@code T}.
+     * <li>The parameter list of an {@code iterator} that is non-{@code null} (of some form {@code (A*)}) must be
+     * effectively identical to the external parameter list {@code (A...)}.
+     * <li>If {@code iterator} is {@code null} it defaults to a method handle which behaves
+     * like {@link java.lang.Iterable#iterator()}.  In that case, the internal parameter list
+     * {@code (V T A...)} must have at least one {@code A} type, and the default iterator
+     * handle parameter is adjusted to accept the leading {@code A} type, as if by
+     * the {@link MethodHandle#asType asType} conversion method.
+     * The leading {@code A} type must be {@code Iterable} or a subtype thereof, or an array type.
+     * This conversion step, done at loop construction time, must not throw a {@code WrongMethodTypeException}.
+     * </ul>
+     * <p>
+     * The type {@code T} may be either a primitive or reference.
+     * Since type {@code Iterator<T>} is erased in the method handle representation to the raw type {@code Iterator},
+     * the {@code iteratedLoop} combinator adjusts the leading argument type for {@code body} to {@code Object}
+     * as if by the {@link MethodHandle#asType asType} conversion method.
+     * Therefore, if an iterator of the wrong type appears as the loop is executed, runtime exceptions may occur
+     * as the result of dynamic conversions performed by {@link MethodHandle#asType(MethodType)}.
+     * <p>
+     * The resulting loop handle's result type and parameter signature are determined as follows:<ul>
+     * <li>The loop handle's result type is the result type {@code V} of the body.
+     * <li>The loop handle's parameter types are the types {@code (A...)},
+     * from the external parameter list.
+     * </ul>
      * <p>
      * Here is pseudocode for the resulting loop handle. In the code, {@code V}/{@code v} represent the type / value of
      * the loop variable as well as the result type of the loop; {@code T}/{@code t}, that of the elements of the
-     * structure the loop iterates over, and {@code A}/{@code a}, that of the argument passed to the loop.
+     * structure the loop iterates over, and {@code A...}/{@code a...} represent arguments passed to the loop.
      * <blockquote><pre>{@code
-     * Iterator<T> iterator(A);  // defaults to Iterable::iterator
-     * V init(A);
-     * V body(T,V,A);
-     * V iteratedLoop(A a) {
-     *   Iterator<T> it = iterator(a);
-     *   V v = init(a);
+     * Iterator<T> iterator(A...);  // defaults to Iterable::iterator
+     * V init(A...);
+     * V body(V,T,A...);
+     * V iteratedLoop(A... a...) {
+     *   Iterator<T> it = iterator(a...);
+     *   V v = init(a...);
      *   for (T t : it) {
-     *     v = body(t, v, a);
+     *     v = body(v, t, a...);
      *   }
      *   return v;
      * }
      * }</pre></blockquote>
      * <p>
-     * The type {@code T} may be either a primitive or reference.
-     * Since type {@code Iterator<T>} is erased in the method handle representation to the raw type
-     * {@code Iterator}, the {@code iteratedLoop} combinator adjusts the leading argument type for {@code body}
-     * to {@code Object} as if by the {@link MethodHandle#asType asType} conversion method.
-     * Therefore, if an iterator of the wrong type appears as the loop is executed,
-     * runtime exceptions may occur as the result of dynamic conversions performed by {@code asType}.
-     * <p>
      * @apiNote Example:
      * <blockquote><pre>{@code
-     * // reverse a list
-     * static List<String> reverseStep(String e, List<String> r, List<String> l) {
+     * // get an iterator from a list
+     * static List<String> reverseStep(List<String> r, String e) {
      *   r.add(0, e);
      *   return r;
      * }
-     * static List<String> newArrayList(List<String> l) { return new ArrayList<>(); }
-     * // assume MH_reverseStep, MH_newArrayList are handles to the above methods
+     * static List<String> newArrayList() { return new ArrayList<>(); }
+     * // assume MH_reverseStep and MH_newArrayList are handles to the above methods
      * MethodHandle loop = MethodHandles.iteratedLoop(null, MH_newArrayList, MH_reverseStep);
      * List<String> list = Arrays.asList("a", "b", "c", "d", "e");
      * List<String> reversedList = Arrays.asList("e", "d", "c", "b", "a");
      * assertEquals(reversedList, (List<String>) loop.invoke(list));
      * }</pre></blockquote>
      * <p>
-     * @implSpec The implementation of this method is equivalent to (excluding error handling):
+     * @apiNote The implementation of this method can be expressed approximately as follows:
      * <blockquote><pre>{@code
      * MethodHandle iteratedLoop(MethodHandle iterator, MethodHandle init, MethodHandle body) {
-     *     // assume MH_next and MH_hasNext are handles to methods of Iterator
-     *     Class<?> itype = iterator.type().returnType();
-     *     Class<?> ttype = body.type().parameterType(0);
-     *     MethodHandle returnVar = dropArguments(identity(init.type().returnType()), 0, itype);
+     *     // assume MH_next, MH_hasNext, MH_startIter are handles to methods of Iterator/Iterable
+     *     Class<?> returnType = body.type().returnType();
+     *     Class<?> ttype = body.type().parameterType(returnType == void.class ? 0 : 1);
      *     MethodHandle nextVal = MH_next.asType(MH_next.type().changeReturnType(ttype));
+     *     MethodHandle retv = null, step = body, startIter = iterator;
+     *     if (returnType != void.class) {
+     *         // the simple thing first:  in (I V A...), drop the I to get V
+     *         retv = dropArguments(identity(returnType), 0, Iterator.class);
+     *         // body type signature (V T A...), internal loop types (I V A...)
+     *         step = swapArguments(body, 0, 1);  // swap V <-> T
+     *     }
+     *     if (startIter == null)  startIter = MH_getIter;
      *     MethodHandle[]
-     *         iterVar = {iterator, null, MH_hasNext, returnVar}, // it = iterator(); while (it.hasNext)
-     *         bodyClause = {init, filterArgument(body, 0, nextVal)};  // v = body(t, v, a);
+     *         iterVar    = { startIter, null, MH_hasNext, retv }, // it = iterator; while (it.hasNext())
+     *         bodyClause = { init, filterArguments(step, 0, nextVal) };  // v = body(v, t, a)
      *     return loop(iterVar, bodyClause);
      * }
      * }</pre></blockquote>
      *
-     * @param iterator a handle to return the iterator to start the loop.
-     *             The handle must have {@link java.util.Iterator} as its return type.
-     *             Passing {@code null} will make the loop call {@link Iterable#iterator()} on the first
-     *             incoming value.
-     * @param init initializer for additional loop state. This determines the loop's result type.
-     *             Passing {@code null} or a {@code void} init function will make the loop's result type
-     *             {@code void}.
-     * @param body the body of the loop, which must not be {@code null}.
-     *             It must accept an initial {@code T} parameter (for the iterated values), and then any
-     *             additional loop-local variable plus loop parameters.
+     * @param iterator an optional handle to return the iterator to start the loop.
+     *                 If non-{@code null}, the handle must return {@link java.util.Iterator} or a subtype.
+     *                 See above for other constraints.
+     * @param init optional initializer, providing the initial value of the loop variable.
+     *             May be {@code null}, implying a default initial value.  See above for other constraints.
+     * @param body body of the loop, which may not be {@code null}.
+     *             It controls the loop parameters and result type in the standard case (see above for details).
+     *             It must accept its own return type (if non-void) plus a {@code T} parameter (for the iterated values),
+     *             and may accept any number of additional types.
+     *             See above for other constraints.
      *
      * @return a method handle embodying the iteration loop functionality.
-     * @throws IllegalArgumentException if any argument has a type inconsistent with the loop structure
+     * @throws NullPointerException if the {@code body} handle is {@code null}.
+     * @throws IllegalArgumentException if any argument violates the above requirements.
      *
      * @since 9
      */
     public static MethodHandle iteratedLoop(MethodHandle iterator, MethodHandle init, MethodHandle body) {
-        checkIteratedLoop(iterator, body);
-        Class<?> resultType = init == null ?
-                body == null ? void.class : body.type().returnType() :
-                init.type().returnType();
-        boolean voidResult = resultType == void.class;
+        Class<?> iterableType = iteratedLoopChecks(iterator, init, body);
+        Class<?> returnType = body.type().returnType();
+        MethodHandle hasNext = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_iteratePred);
+        MethodHandle nextRaw = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_iterateNext);
+        MethodHandle startIter;
+        MethodHandle nextVal;
+        {
+            MethodType iteratorType;
+            if (iterator == null) {
+                // derive argument type from body, if available, else use Iterable
+                startIter = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_initIterator);
+                iteratorType = startIter.type().changeParameterType(0, iterableType);
+            } else {
+                // force return type to the internal iterator class
+                iteratorType = iterator.type().changeReturnType(Iterator.class);
+                startIter = iterator;
+            }
+            Class<?> ttype = body.type().parameterType(returnType == void.class ? 0 : 1);
+            MethodType nextValType = nextRaw.type().changeReturnType(ttype);
 
-        MethodHandle initIterator;
-        if (iterator == null) {
-            MethodHandle initit = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_initIterator);
-            initIterator = initit.asType(initit.type().changeParameterType(0,
-                    body.type().parameterType(voidResult ? 1 : 2)));
-        } else {
-            initIterator = iterator.asType(iterator.type().changeReturnType(Iterator.class));
+            // perform the asType transforms under an exception transformer, as per spec.:
+            try {
+                startIter = startIter.asType(iteratorType);
+                nextVal = nextRaw.asType(nextValType);
+            } catch (WrongMethodTypeException ex) {
+                throw new IllegalArgumentException(ex);
+            }
         }
 
-        Class<?> ttype = body.type().parameterType(0);
+        MethodHandle retv = null, step = body;
+        if (returnType != void.class) {
+            // the simple thing first:  in (I V A...), drop the I to get V
+            retv = dropArguments(identity(returnType), 0, Iterator.class);
+            // body type signature (V T A...), internal loop types (I V A...)
+            step = swapArguments(body, 0, 1);  // swap V <-> T
+        }
 
-        MethodHandle returnVar =
-                dropArguments(voidResult ? zero(void.class) : identity(resultType), 0, Iterator.class);
-        MethodHandle initnx = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_iterateNext);
-        MethodHandle nextVal = initnx.asType(initnx.type().changeReturnType(ttype));
-
-        MethodHandle[] iterVar = {initIterator, null, MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_iteratePred),
-                returnVar};
-        MethodHandle[] bodyClause = {init, filterArgument(body, 0, nextVal)};
-
+        MethodHandle[]
+            iterVar    = { startIter, null, hasNext, retv },
+            bodyClause = { init, filterArgument(step, 0, nextVal) };
         return loop(iterVar, bodyClause);
+    }
+
+    private static Class<?> iteratedLoopChecks(MethodHandle iterator, MethodHandle init, MethodHandle body) {
+        Objects.requireNonNull(body);
+        MethodType bodyType = body.type();
+        Class<?> returnType = bodyType.returnType();
+        List<Class<?>> innerList = bodyType.parameterList();
+        // strip leading V value if present
+        int vsize = (returnType == void.class ? 0 : 1);
+        if (vsize != 0 && (innerList.size() == 0 || innerList.get(0) != returnType)) {
+            // argument list has no "V" => error
+            MethodType expected = bodyType.insertParameterTypes(0, returnType);
+            throw misMatchedTypes("body function", bodyType, expected);
+        } else if (innerList.size() <= vsize) {
+            // missing T type => error
+            MethodType expected = bodyType.insertParameterTypes(vsize, Object.class);
+            throw misMatchedTypes("body function", bodyType, expected);
+        }
+        //Class<?> elementType = innerList.get(vsize);  // do not need this
+        List<Class<?>> outerList = innerList.subList(vsize + 1, innerList.size());
+        if (outerList.isEmpty()) {
+            // special case; take lists from iterator handle
+            outerList = ((iterator != null)
+                    ? iterator.type().parameterList()
+                    : Arrays.asList(Iterable.class));
+            innerList = bodyType.insertParameterTypes(vsize + 1, outerList).parameterList();
+        }
+        if (iterator != null) {
+            MethodType itype = iterator.type();
+            if (!Iterator.class.isAssignableFrom(itype.returnType())) {
+                throw newIllegalArgumentException("iteratedLoop first argument must have Iterator return type");
+            }
+            if (!itype.effectivelyIdenticalParameters(0, outerList)) {
+                MethodType expected = methodType(itype.returnType(), outerList);
+                throw misMatchedTypes("iterator parameters", itype, expected);
+            }
+        }
+        if (init != null) {
+            MethodType initType = init.type();
+            if (initType.returnType() != returnType ||
+                    !initType.effectivelyIdenticalParameters(0, outerList)) {
+                throw misMatchedTypes("loop initializer", initType, methodType(returnType, outerList));
+            }
+        }
+        Class<?> iterableType = outerList.isEmpty() ? null : outerList.get(0);
+        if (iterableType != null && !Iterable.class.isAssignableFrom(iterableType) && !iterableType.isArray()) {
+            throw newIllegalArgumentException(
+                    "inferred first loop argument must be an array or inherit from Iterable: " + iterableType);
+        }
+        return iterableType;  // help the caller a bit
+    }
+
+    /*non-public*/ static MethodHandle swapArguments(MethodHandle mh, int i, int j) {
+        // there should be a better way to uncross my wires
+        int arity = mh.type().parameterCount();
+        int[] order = new int[arity];
+        for (int k = 0; k < arity; k++)  order[k] = k;
+        order[i] = j; order[j] = i;
+        Class<?>[] types = mh.type().parameterArray();
+        Class<?> ti = types[i]; types[i] = types[j]; types[j] = ti;
+        MethodType swapType = methodType(mh.type().returnType(), types);
+        return permuteArguments(mh, swapType, order);
     }
 
     /**
@@ -4885,7 +5622,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         List<Class<?>> cleanupParamTypes = cleanup.type().parameterList();
         Class<?> rtype = target.type().returnType();
 
-        checkTryFinally(target, cleanup);
+        tryFinallyChecks(target, cleanup);
 
         // Match parameter lists: if the cleanup has a shorter parameter list than the target, add ignored arguments.
         // The cleanup parameter list (minus the leading Throwable and result parameters) must be a sublist of the
@@ -4896,210 +5633,22 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         return MethodHandleImpl.makeTryFinally(target.asFixedArity(), cleanup.asFixedArity(), rtype, targetParamTypes);
     }
 
-    /**
-     * Adapts a target method handle by pre-processing some of its arguments, starting at a given position, and then
-     * calling the target with the result of the pre-processing, inserted into the original sequence of arguments just
-     * before the folded arguments.
-     * <p>
-     * This method is closely related to {@link #foldArguments(MethodHandle, MethodHandle)}, but allows to control the
-     * position in the parameter list at which folding takes place. The argument controlling this, {@code pos}, is a
-     * zero-based index. The aforementioned method {@link #foldArguments(MethodHandle, MethodHandle)} assumes position
-     * 0.
-     * <p>
-     * @apiNote Example:
-     * <blockquote><pre>{@code
-    import static java.lang.invoke.MethodHandles.*;
-    import static java.lang.invoke.MethodType.*;
-    ...
-    MethodHandle trace = publicLookup().findVirtual(java.io.PrintStream.class,
-    "println", methodType(void.class, String.class))
-    .bindTo(System.out);
-    MethodHandle cat = lookup().findVirtual(String.class,
-    "concat", methodType(String.class, String.class));
-    assertEquals("boojum", (String) cat.invokeExact("boo", "jum"));
-    MethodHandle catTrace = foldArguments(cat, 1, trace);
-    // also prints "jum":
-    assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
-     * }</pre></blockquote>
-     * <p>Here is pseudocode for the resulting adapter. In the code, {@code T}
-     * represents the result type of the {@code target} and resulting adapter.
-     * {@code V}/{@code v} represent the type and value of the parameter and argument
-     * of {@code target} that precedes the folding position; {@code V} also is
-     * the result type of the {@code combiner}. {@code A}/{@code a} denote the
-     * types and values of the {@code N} parameters and arguments at the folding
-     * position. {@code Z}/{@code z} and {@code B}/{@code b} represent the types
-     * and values of the {@code target} parameters and arguments that precede and
-     * follow the folded parameters and arguments starting at {@code pos},
-     * respectively.
-     * <blockquote><pre>{@code
-     * // there are N arguments in A...
-     * T target(Z..., V, A[N]..., B...);
-     * V combiner(A...);
-     * T adapter(Z... z, A... a, B... b) {
-     *   V v = combiner(a...);
-     *   return target(z..., v, a..., b...);
-     * }
-     * // and if the combiner has a void return:
-     * T target2(Z..., A[N]..., B...);
-     * void combiner2(A...);
-     * T adapter2(Z... z, A... a, B... b) {
-     *   combiner2(a...);
-     *   return target2(z..., a..., b...);
-     * }
-     * }</pre></blockquote>
-     * <p>
-     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
-     * variable-arity method handle}, even if the original target method handle was.
-     *
-     * @param target the method handle to invoke after arguments are combined
-     * @param pos the position at which to start folding and at which to insert the folding result; if this is {@code
-     *            0}, the effect is the same as for {@link #foldArguments(MethodHandle, MethodHandle)}.
-     * @param combiner method handle to call initially on the incoming arguments
-     * @return method handle which incorporates the specified argument folding logic
-     * @throws NullPointerException if either argument is null
-     * @throws IllegalArgumentException if {@code combiner}'s return type
-     *          is non-void and not the same as the argument type at position {@code pos} of
-     *          the target signature, or if the {@code N} argument types at position {@code pos}
-     *          of the target signature
-     *          (skipping one matching the {@code combiner}'s return type)
-     *          are not identical with the argument types of {@code combiner}
-     *
-     * @see #foldArguments(MethodHandle, MethodHandle)
-     * @since 9
-     */
-    public static MethodHandle foldArguments(MethodHandle target, int pos, MethodHandle combiner) {
-        MethodType targetType = target.type();
-        MethodType combinerType = combiner.type();
-        Class<?> rtype = foldArgumentChecks(pos, targetType, combinerType);
-        BoundMethodHandle result = target.rebind();
-        boolean dropResult = rtype == void.class;
-        LambdaForm lform = result.editor().foldArgumentsForm(1 + pos, dropResult, combinerType.basicType());
-        MethodType newType = targetType;
-        if (!dropResult) {
-            newType = newType.dropParameterTypes(pos, pos + 1);
-        }
-        result = result.copyWithExtendL(newType, lform, combiner);
-        return result;
-    }
-
-    /**
-     * As {@see foldArguments(MethodHandle, int, MethodHandle)}, but with the
-     * added capability of selecting the arguments from the targets parameters
-     * to call the combiner with. This allows us to avoid some simple cases of
-     * permutations and padding the combiner with dropArguments to select the
-     * right argument, which may ultimately produce fewer intermediaries.
-     */
-    static MethodHandle foldArguments(MethodHandle target, int pos, MethodHandle combiner, int ... argPositions) {
-        MethodType targetType = target.type();
-        MethodType combinerType = combiner.type();
-        Class<?> rtype = foldArgumentChecks(pos, targetType, combinerType, argPositions);
-        BoundMethodHandle result = target.rebind();
-        boolean dropResult = rtype == void.class;
-        LambdaForm lform = result.editor().foldArgumentsForm(1 + pos, dropResult, combinerType.basicType(), argPositions);
-        MethodType newType = targetType;
-        if (!dropResult) {
-            newType = newType.dropParameterTypes(pos, pos + 1);
-        }
-        result = result.copyWithExtendL(newType, lform, combiner);
-        return result;
-    }
-
-    private static void checkLoop0(MethodHandle[][] clauses) {
-        if (clauses == null || clauses.length == 0) {
-            throw newIllegalArgumentException("null or no clauses passed");
-        }
-        if (Stream.of(clauses).anyMatch(Objects::isNull)) {
-            throw newIllegalArgumentException("null clauses are not allowed");
-        }
-        if (Stream.of(clauses).anyMatch(c -> c.length > 4)) {
-            throw newIllegalArgumentException("All loop clauses must be represented as MethodHandle arrays with at most 4 elements.");
-        }
-    }
-
-    private static void checkLoop1a(int i, MethodHandle in, MethodHandle st) {
-        if (in.type().returnType() != st.type().returnType()) {
-            throw misMatchedTypes("clause " + i + ": init and step return types", in.type().returnType(),
-                    st.type().returnType());
-        }
-    }
-
-    private static List<Class<?>> buildCommonSuffix(List<MethodHandle> init, List<MethodHandle> step, List<MethodHandle> pred, List<MethodHandle> fini, int cpSize) {
-        final List<Class<?>> empty = List.of();
-        final List<MethodHandle> nonNullInits = init.stream().filter(Objects::nonNull).collect(Collectors.toList());
-        if (nonNullInits.isEmpty()) {
-            final List<Class<?>> longest = Stream.of(step, pred, fini).flatMap(List::stream).filter(Objects::nonNull).
-                    // take only those that can contribute to a common suffix because they are longer than the prefix
-                    map(MethodHandle::type).filter(t -> t.parameterCount() > cpSize).map(MethodType::parameterList).
-                    reduce((p, q) -> p.size() >= q.size() ? p : q).orElse(empty);
-            return longest.size() == 0 ? empty : longest.subList(cpSize, longest.size());
-        } else {
-            return nonNullInits.stream().map(MethodHandle::type).map(MethodType::parameterList).
-                    reduce((p, q) -> p.size() >= q.size() ? p : q).get();
-        }
-    }
-
-    private static void checkLoop1b(List<MethodHandle> init, List<Class<?>> commonSuffix) {
-        if (init.stream().filter(Objects::nonNull).map(MethodHandle::type).map(MethodType::parameterList).
-                anyMatch(pl -> !pl.equals(commonSuffix.subList(0, pl.size())))) {
-            throw newIllegalArgumentException("found non-effectively identical init parameter type lists: " + init +
-                    " (common suffix: " + commonSuffix + ")");
-        }
-    }
-
-    private static void checkLoop1cd(List<MethodHandle> pred, List<MethodHandle> fini, Class<?> loopReturnType) {
-        if (fini.stream().filter(Objects::nonNull).map(MethodHandle::type).map(MethodType::returnType).
-                anyMatch(t -> t != loopReturnType)) {
-            throw newIllegalArgumentException("found non-identical finalizer return types: " + fini + " (return type: " +
-                    loopReturnType + ")");
-        }
-
-        if (!pred.stream().filter(Objects::nonNull).findFirst().isPresent()) {
-            throw newIllegalArgumentException("no predicate found", pred);
-        }
-        if (pred.stream().filter(Objects::nonNull).map(MethodHandle::type).map(MethodType::returnType).
-                anyMatch(t -> t != boolean.class)) {
-            throw newIllegalArgumentException("predicates must have boolean return type", pred);
-        }
-    }
-
-    private static void checkLoop2(List<MethodHandle> step, List<MethodHandle> pred, List<MethodHandle> fini, List<Class<?>> commonParameterSequence) {
-        final int cpSize = commonParameterSequence.size();
-        if (Stream.of(step, pred, fini).flatMap(List::stream).filter(Objects::nonNull).map(MethodHandle::type).
-                map(MethodType::parameterList).
-                anyMatch(pl -> pl.size() > cpSize || !pl.equals(commonParameterSequence.subList(0, pl.size())))) {
-            throw newIllegalArgumentException("found non-effectively identical parameter type lists:\nstep: " + step +
-                    "\npred: " + pred + "\nfini: " + fini + " (common parameter sequence: " + commonParameterSequence + ")");
-        }
-    }
-
-    private static void checkIteratedLoop(MethodHandle iterator, MethodHandle body) {
-        if (null != iterator && !Iterator.class.isAssignableFrom(iterator.type().returnType())) {
-            throw newIllegalArgumentException("iteratedLoop first argument must have Iterator return type");
-        }
-        if (null == body) {
-            throw newIllegalArgumentException("iterated loop body must not be null");
-        }
-    }
-
-    private static void checkTryFinally(MethodHandle target, MethodHandle cleanup) {
+    private static void tryFinallyChecks(MethodHandle target, MethodHandle cleanup) {
         Class<?> rtype = target.type().returnType();
         if (rtype != cleanup.type().returnType()) {
             throw misMatchedTypes("target and return types", cleanup.type().returnType(), rtype);
         }
-        List<Class<?>> cleanupParamTypes = cleanup.type().parameterList();
-        if (!Throwable.class.isAssignableFrom(cleanupParamTypes.get(0))) {
+        MethodType cleanupType = cleanup.type();
+        if (!Throwable.class.isAssignableFrom(cleanupType.parameterType(0))) {
             throw misMatchedTypes("cleanup first argument and Throwable", cleanup.type(), Throwable.class);
         }
-        if (rtype != void.class && cleanupParamTypes.get(1) != rtype) {
+        if (rtype != void.class && cleanupType.parameterType(1) != rtype) {
             throw misMatchedTypes("cleanup second argument and target return type", cleanup.type(), rtype);
         }
         // The cleanup parameter list (minus the leading Throwable and result parameters) must be a sublist of the
         // target parameter list.
         int cleanupArgIndex = rtype == void.class ? 1 : 2;
-        List<Class<?>> cleanupArgSuffix = cleanupParamTypes.subList(cleanupArgIndex, cleanupParamTypes.size());
-        List<Class<?>> targetParamTypes = target.type().parameterList();
-        if (targetParamTypes.size() < cleanupArgSuffix.size() ||
-                !cleanupArgSuffix.equals(targetParamTypes.subList(0, cleanupParamTypes.size() - cleanupArgIndex))) {
+        if (!cleanupType.effectivelyIdenticalParameters(cleanupArgIndex, target.type().parameterList())) {
             throw misMatchedTypes("cleanup parameters after (Throwable,result) and target parameter list prefix",
                     cleanup.type(), target.type());
         }

@@ -32,12 +32,12 @@ include JavaCompilation.gmk
 
 ################################################################################
 # The compileprops tools compiles a properties file into a resource bundle.
-TOOL_COMPILEPROPS_CMD := $(JAVA) -cp $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes \
+TOOL_COMPILEPROPS_CMD := $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes \
     compileproperties.CompileProperties -quiet
 
 ################################################################################
 # The compileprops tools compiles a properties file into an enum-like class.
-TOOL_PARSEPROPS_CMD := $(JAVA) -cp $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes \
+TOOL_PARSEPROPS_CMD := $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes \
     propertiesparser.PropertiesParser
 
 
