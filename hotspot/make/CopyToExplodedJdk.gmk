@@ -23,32 +23,33 @@
 # questions.
 #
 
-ifeq ($(JVM_VARIANT), )
-  $(error This makefile must be called with JVM_VARIANT set)
-endif
+# Copy all built libraries into exploded jdk
+LIB_TARGETS := $(filter $(LIB_OUTPUTDIR)/%, $(TARGETS))
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  $(eval $(call SetupCopyFiles, COPY_LIBS_BIN, \
+      SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base, \
+      DEST := $(JDK_OUTPUTDIR)/bin, \
+      FILES := $(filter-out %.lib, $(LIB_TARGETS)), \
+  ))
 
-JVM_VARIANT_OUTPUTDIR := $(HOTSPOT_OUTPUTDIR)/variant-$(JVM_VARIANT)
-JVM_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/libjvm
-JVM_SUPPORT_DIR := $(JVM_VARIANT_OUTPUTDIR)/support
+  $(eval $(call SetupCopyFiles, COPY_LIBS_LIB, \
+      SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base, \
+      DEST := $(JDK_OUTPUTDIR)/lib, \
+      FILES := $(filter %.lib, $(LIB_TARGETS))))
 
-DTRACE_SUPPORT_DIR := $(JVM_SUPPORT_DIR)/dtrace
-
-LIB_OUTPUTDIR := $(call FindLibDirForModule, java.base)
-ifneq ($(filter client minimal, $(JVM_VARIANT)), )
-  JVM_VARIANT_SUBDIR := $(JVM_VARIANT)
+  TARGETS += $(COPY_LIBS_BIN) $(COPY_LIBS_LIB)
 else
-  # Use 'server' as default target directory name for all other variants.
-  JVM_VARIANT_SUBDIR := server
+  $(eval $(call SetupCopyFiles, COPY_LIBS, \
+      SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base, \
+      DEST := $(JDK_OUTPUTDIR)/lib, \
+      FILES := $(filter %$(SHARED_LIBRARY_SUFFIX), $(LIB_TARGETS)), \
+  ))
+  $(eval $(call SetupCopyFiles, LINK_LIBS, \
+      SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base, \
+      DEST := $(JDK_OUTPUTDIR)/lib, \
+      FILES := $(filter-out %$(SHARED_LIBRARY_SUFFIX), $(LIB_TARGETS)), \
+      MACRO := link-file-relative, \
+  ))
+
+  TARGETS += $(COPY_LIBS) $(LINK_LIBS)
 endif
-JVM_LIB_OUTPUTDIR := $(LIB_OUTPUTDIR)/$(JVM_VARIANT_SUBDIR)
-
-################################################################################
-
-# Test if a feature is available in the present build of JVM_VARIANT. Will return
-# 'true' or 'false'.
-# $1 - the feature to test for
-check-jvm-feature = \
-  $(strip \
-    $(if $(filter-out $(VALID_JVM_FEATURES), $1), \
-      $(error Internal error: Invalid feature tested: $1)) \
-    $(if $(filter $1, $(JVM_FEATURES_$(JVM_VARIANT))), true, false))
