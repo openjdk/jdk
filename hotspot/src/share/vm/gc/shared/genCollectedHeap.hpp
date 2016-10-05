@@ -392,6 +392,9 @@ public:
                      CLDClosure* weak_cld_closure,
                      CodeBlobToOopClosure* code_roots);
 
+  void process_string_table_roots(StrongRootsScope* scope,
+                                  OopClosure* root_closure);
+
  public:
   void young_process_roots(StrongRootsScope* scope,
                            OopsInGenClosure* root_closure,
@@ -403,12 +406,19 @@ public:
   // scan the younger generations itself.  (For example, a generation might
   // explicitly mark reachable objects in younger generations, to avoid
   // excess storage retention.)
-  void old_process_roots(StrongRootsScope* scope,
+  void cms_process_roots(StrongRootsScope* scope,
                          bool young_gen_as_roots,
                          ScanningOption so,
                          bool only_strong_roots,
                          OopsInGenClosure* root_closure,
                          CLDClosure* cld_closure);
+
+  void full_process_roots(StrongRootsScope* scope,
+                          bool is_adjust_phase,
+                          ScanningOption so,
+                          bool only_strong_roots,
+                          OopsInGenClosure* root_closure,
+                          CLDClosure* cld_closure);
 
   // Apply "root_closure" to all the weak roots of the system.
   // These include JNI weak roots, string table,
