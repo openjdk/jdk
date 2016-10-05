@@ -103,8 +103,6 @@ public final class Undefined extends DefaultPropertyAccess {
             final String name = NashornCallSiteDescriptor.getOperand(desc);
             final String msg = name != null? "not.a.function" : "cant.call.undefined";
             throw typeError(msg, name);
-        case CALL_METHOD:
-            throw lookupTypeError("cant.read.property.of.undefined", desc);
         case GET_PROPERTY:
         case GET_ELEMENT:
         case GET_METHOD:

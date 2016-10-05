@@ -58,15 +58,15 @@ static int NET_ReadWithTimeout(JNIEnv *env, int fd, char *bufP, int len, long ti
         result = NET_TimeoutWithCurrentTime(fd, timeout, prevtime);
         if (result <= 0) {
             if (result == 0) {
-                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException", "Read timed out");
+                JNU_ThrowByName(env, "java/net/SocketTimeoutException", "Read timed out");
             } else if (result == -1) {
                 if (errno == EBADF) {
-                    JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
+                    JNU_ThrowByName(env, "java/net/SocketException", "Socket closed");
                 } else if (errno == ENOMEM) {
                     JNU_ThrowOutOfMemoryError(env, "NET_Timeout native heap allocation failed");
                 } else {
                     JNU_ThrowByNameWithMessageAndLastError
-                            (env, JNU_JAVANETPKG "SocketException", "select/poll failed");
+                            (env, "java/net/SocketException", "select/poll failed");
                 }
             }
             return -1;
@@ -100,19 +100,14 @@ Java_java_net_SocketInputStream_socketRead0(JNIEnv *env, jobject this,
     jint fd, nread;
 
     if (IS_NULL(fdObj)) {
-        /* shouldn't this be a NullPointerException? -br */
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+        JNU_ThrowByName(env, "java/net/SocketException",
                         "Socket closed");
         return -1;
-    } else {
-        fd = (*env)->GetIntField(env, fdObj, IO_fd_fdID);
-        /* Bug 4086704 - If the Socket associated with this file descriptor
-         * was closed (sysCloseFD), then the file descriptor is set to -1.
-         */
-        if (fd == -1) {
-            JNU_ThrowByName(env, "java/net/SocketException", "Socket closed");
-            return -1;
-        }
+    }
+    fd = (*env)->GetIntField(env, fdObj, IO_fd_fdID);
+    if (fd == -1) {
+        JNU_ThrowByName(env, "java/net/SocketException", "Socket closed");
+        return -1;
     }
 
     /*
@@ -154,17 +149,17 @@ Java_java_net_SocketInputStream_socketRead0(JNIEnv *env, jobject this,
                     break;
 
                 case EBADF:
-                    JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+                    JNU_ThrowByName(env, "java/net/SocketException",
                         "Socket closed");
                     break;
 
                 case EINTR:
-                     JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
+                     JNU_ThrowByName(env, "java/io/InterruptedIOException",
                            "Operation interrupted");
                      break;
                 default:
                     JNU_ThrowByNameWithMessageAndLastError
-                        (env, JNU_JAVANETPKG "SocketException", "Read failed");
+                        (env, "java/net/SocketException", "Read failed");
             }
         }
     } else {

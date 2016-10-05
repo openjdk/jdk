@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,8 +298,6 @@ int NET_Socket(int domain, int type, int protocol);
 
 void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
          const char *defaultDetail);
-
-void NET_ThrowSocketException(JNIEnv *env, char* msg);
 
 /*
  * differs from NET_Timeout() as follows:

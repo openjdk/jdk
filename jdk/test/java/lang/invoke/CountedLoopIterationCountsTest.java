@@ -71,7 +71,7 @@ public class CountedLoopIterationCountsTest {
         }
     }
 
-    static int step(int counter, int stepCount) {
+    static int step(int stepCount, int counter) {
         return stepCount + 1;
     }
 

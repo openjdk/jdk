@@ -195,6 +195,8 @@ public class Basic {
                 new String[] {"v10", "version", "Version.class"}
         );
 
+        compare(jarfile, names);
+
         delete(jarfile);
         deleteDir(Paths.get(usr, "classes"));
     }

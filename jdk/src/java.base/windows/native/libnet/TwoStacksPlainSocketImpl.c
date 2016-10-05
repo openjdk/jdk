@@ -838,10 +838,9 @@ Java_java_net_TwoStacksPlainSocketImpl_socketClose0(JNIEnv *env, jobject this,
  * Signature: (IZLjava/lang/Object;)V
  */
 JNIEXPORT void JNICALL
-Java_java_net_TwoStacksPlainSocketImpl_socketNativeSetOption(JNIEnv *env,
-                                              jobject this,
-                                              jint cmd, jboolean on,
-                                              jobject value) {
+Java_java_net_TwoStacksPlainSocketImpl_socketNativeSetOption
+  (JNIEnv *env, jobject this, jint cmd, jboolean on, jobject value)
+{
     int fd, fd1;
     int level = 0, optname = 0, optlen = 0;
     union {
@@ -923,11 +922,10 @@ Java_java_net_TwoStacksPlainSocketImpl_socketNativeSetOption(JNIEnv *env,
 
     /*
      * Map the Java level socket option to the platform specific
-     * level
+     * level and option name.
      */
     if (NET_MapSocketOption(cmd, &level, &optname)) {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
-                        "Invalid option");
+        JNU_ThrowByName(env, "java/net/SocketException", "Invalid option");
         return;
     }
 
@@ -1006,15 +1004,16 @@ Java_java_net_TwoStacksPlainSocketImpl_socketNativeSetOption(JNIEnv *env,
  * Signature: (I)I
  */
 JNIEXPORT jint JNICALL
-Java_java_net_TwoStacksPlainSocketImpl_socketGetOption(JNIEnv *env, jobject this,
-                                              jint opt, jobject iaContainerObj) {
-
+Java_java_net_TwoStacksPlainSocketImpl_socketGetOption
+  (JNIEnv *env, jobject this, jint opt, jobject iaContainerObj)
+{
     int fd, fd1;
     int level = 0, optname = 0, optlen = 0;
     union {
         int i;
         struct linger ling;
     } optval;
+
     /*
      * Get SOCKET and check it hasn't been closed
      */
@@ -1073,7 +1072,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketGetOption(JNIEnv *env, jobject this
      * level and option name.
      */
     if (NET_MapSocketOption(opt, &level, &optname)) {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Invalid option");
+        JNU_ThrowByName(env, "java/net/SocketException", "Invalid option");
         return -1;
     }
 
