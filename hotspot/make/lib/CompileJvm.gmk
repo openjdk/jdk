@@ -190,6 +190,11 @@ endif
 
 JVM_OPTIMIZATION ?= HIGHEST_JVM
 
+# Need to set JVM_STRIPFLAGS to the default value from SPEC since the STRIPFLAGS
+# parameter to SetupNativeCompilation allows an empty value to override the
+# default.
+JVM_STRIPFLAGS ?= $(STRIPFLAGS)
+
 ################################################################################
 # Now set up the actual compilation of the main hotspot native library
 
@@ -219,6 +224,7 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
     MAPFILE := $(JVM_MAPFILE), \
     USE_MAPFILE_FOR_SYMBOLS := true, \
     STRIP_SYMBOLS := $(JVM_STRIP_SYMBOLS), \
+    STRIPFLAGS := $(JVM_STRIPFLAGS), \
     EMBED_MANIFEST := true, \
     RC_FLAGS := $(JVM_RCFLAGS), \
     VERSIONINFO_RESOURCE := $(HOTSPOT_TOPDIR)/src/os/windows/vm/version.rc, \
