@@ -30,6 +30,7 @@
 #include "compiler/oopMap.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
+#include "utilities/macros.hpp"
 
 // CodeBlob Types
 // Used in the CodeCache to assign CodeBlobs to different CodeHeaps
@@ -95,6 +96,7 @@ protected:
   bool                _caller_must_gc_arguments;
   CodeStrings         _strings;
   const char*         _name;
+  S390_ONLY(int       _ctable_offset;)
 
   CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments);
   CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
@@ -139,6 +141,12 @@ public:
   address code_begin() const          { return _code_begin;    }
   address code_end() const            { return _code_end; }
   address data_end() const            { return _data_end;      }
+
+  // This field holds the beginning of the const section in the old code buffer.
+  // It is needed to fix relocations of pc-relative loads when resizing the
+  // the constant pool or moving it.
+  S390_ONLY(address ctable_begin() const { return header_begin() + _ctable_offset; })
+  void set_ctable_begin(address ctable) { S390_ONLY(_ctable_offset = ctable - header_begin();) }
 
   // Sizes
   int size() const                               { return _size; }

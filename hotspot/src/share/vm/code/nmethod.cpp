@@ -682,6 +682,7 @@ nmethod::nmethod(
     // Section offsets
     _consts_offset           = content_offset()      + code_buffer->total_offset_of(code_buffer->consts());
     _stub_offset             = content_offset()      + code_buffer->total_offset_of(code_buffer->stubs());
+    set_ctable_begin(header_begin() + _consts_offset);
 
 #if INCLUDE_JVMCI
     _jvmci_installed_code = installed_code();
@@ -2177,6 +2178,7 @@ void nmethod::verify_scopes() {
         //verify_interrupt_point(iter.addr());
         break;
       case relocInfo::runtime_call_type:
+      case relocInfo::runtime_call_w_cp_type:
         address destination = iter.reloc()->value();
         // Right now there is no way to find out which entries support
         // an interrupt point.  It would be nice if we had this
@@ -2435,10 +2437,11 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
           st.print(")");
           return st.as_string();
         }
-        case relocInfo::runtime_call_type: {
+        case relocInfo::runtime_call_type:
+        case relocInfo::runtime_call_w_cp_type: {
           stringStream st;
           st.print("runtime_call");
-          runtime_call_Relocation* r = iter.runtime_call_reloc();
+          CallRelocation* r = (CallRelocation*)iter.reloc();
           address dest = r->destination();
           CodeBlob* cb = CodeCache::find_blob(dest);
           if (cb != NULL) {
