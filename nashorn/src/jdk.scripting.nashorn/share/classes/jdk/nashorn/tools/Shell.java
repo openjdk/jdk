@@ -292,7 +292,7 @@ public class Shell implements PartialParser {
                 String l = "";
                 try (final BufferedReader r = Files.newBufferedReader(p)) {
                     l = r.readLine();
-                } catch (IOException ioe) {
+                } catch (final IOException ioe) {
                     // ignore
                 }
                 if (l.startsWith("#!")) {

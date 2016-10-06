@@ -40,7 +40,7 @@ public final class TrustedGuardingDynamicLinkerExporter extends GuardingDynamicL
     @Override
     public List<GuardingDynamicLinker> get() {
         final ArrayList<GuardingDynamicLinker> linkers = new ArrayList<>();
-        linkers.add((GuardingDynamicLinker) (LinkRequest linkRequest, LinkerServices linkerServices) -> {
+        linkers.add((GuardingDynamicLinker) (final LinkRequest linkRequest, final LinkerServices linkerServices) -> {
             // handle only the TestLinkerOperation instances
             if (linkRequest.getCallSiteDescriptor().getOperation() instanceof TestLinkerOperation) {
                 System.out.println("inside " + this.getClass().getName());

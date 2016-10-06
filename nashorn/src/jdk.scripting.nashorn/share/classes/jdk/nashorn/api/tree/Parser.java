@@ -140,7 +140,7 @@ public interface Parser {
      */
     public static Parser create(final String... options) throws IllegalArgumentException {
         options.getClass();
-        for (String opt : options) {
+        for (final String opt : options) {
             switch (opt) {
                 case "--const-as-var":
                 case "-dump-on-error":
