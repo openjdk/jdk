@@ -1097,21 +1097,19 @@ EmitCallOffsets emit_call_with_trampoline_stub(MacroAssembler &_masm, address en
   // No entry point given, use the current pc.
   if (entry_point == NULL) entry_point = __ pc();
 
-  if (!Compile::current()->in_scratch_emit_size()) {
-    // Put the entry point as a constant into the constant pool.
-    const address entry_point_toc_addr   = __ address_constant(entry_point, RelocationHolder::none);
-    if (entry_point_toc_addr == NULL) {
-      ciEnv::current()->record_out_of_memory_failure();
-      return offsets;
-    }
-    const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
-
-    // Emit the trampoline stub which will be related to the branch-and-link below.
-    CallStubImpl::emit_trampoline_stub(_masm, entry_point_toc_offset, offsets.insts_call_instruction_offset);
-    if (ciEnv::current()->failing()) { return offsets; } // Code cache may be full.
-    __ relocate(rtype);
+  // Put the entry point as a constant into the constant pool.
+  const address entry_point_toc_addr   = __ address_constant(entry_point, RelocationHolder::none);
+  if (entry_point_toc_addr == NULL) {
+    ciEnv::current()->record_out_of_memory_failure();
+    return offsets;
   }
-
+  const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
+  
+  // Emit the trampoline stub which will be related to the branch-and-link below.
+  CallStubImpl::emit_trampoline_stub(_masm, entry_point_toc_offset, offsets.insts_call_instruction_offset);
+  if (ciEnv::current()->failing()) { return offsets; } // Code cache may be full.
+  __ relocate(rtype);
+  
   // Note: At this point we do not have the address of the trampoline
   // stub, and the entry point might be too far away for bl, so __ pc()
   // serves as dummy and the bl will be patched later.
@@ -2166,6 +2164,16 @@ bool Matcher::narrow_klass_use_complex_address() {
   return false;
 }
 
+bool Matcher::const_oop_prefer_decode() {
+  // Prefer ConN+DecodeN over ConP in simple compressed oops mode.
+  return Universe::narrow_oop_base() == NULL;
+}
+
+bool Matcher::const_klass_prefer_decode() {
+  // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
+  return Universe::narrow_klass_base() == NULL;
+}
+
 // Is it better to copy float constants, or load them directly from memory?
 // Intel can load a float constant from a direct address, requiring no
 // extra registers. Most RISCs will have to materialize an address into a
@@ -2424,23 +2432,21 @@ encode %{
     MacroAssembler _masm(&cbuf);
     int toc_offset = 0;
 
-    if (!ra_->C->in_scratch_emit_size()) {
-      address const_toc_addr;
-      // Create a non-oop constant, no relocation needed.
-      // If it is an IC, it has a virtual_call_Relocation.
-      const_toc_addr = __ long_constant((jlong)$src$$constant);
-      if (const_toc_addr == NULL) {
-        ciEnv::current()->record_out_of_memory_failure();
-        return;
-      }
-
-      // Get the constant's TOC offset.
-      toc_offset = __ offset_to_method_toc(const_toc_addr);
-
-      // Keep the current instruction offset in mind.
-      ((loadConLNode*)this)->_cbuf_insts_offset = __ offset();
+    address const_toc_addr;
+    // Create a non-oop constant, no relocation needed.
+    // If it is an IC, it has a virtual_call_Relocation.
+    const_toc_addr = __ long_constant((jlong)$src$$constant);
+    if (const_toc_addr == NULL) {
+      ciEnv::current()->record_out_of_memory_failure();
+      return;
     }
-
+    
+    // Get the constant's TOC offset.
+    toc_offset = __ offset_to_method_toc(const_toc_addr);
+    
+    // Keep the current instruction offset in mind.
+    ((loadConLNode*)this)->_cbuf_insts_offset = __ offset();
+  
     __ ld($dst$$Register, toc_offset, $toc$$Register);
   %}
 
@@ -2576,31 +2582,29 @@ encode %{
     MacroAssembler _masm(&cbuf);
     int toc_offset = 0;
 
-    if (!ra_->C->in_scratch_emit_size()) {
-      intptr_t val = $src$$constant;
-      relocInfo::relocType constant_reloc = $src->constant_reloc();  // src
-      address const_toc_addr;
-      if (constant_reloc == relocInfo::oop_type) {
-        // Create an oop constant and a corresponding relocation.
-        AddressLiteral a = __ allocate_oop_address((jobject)val);
-        const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-        __ relocate(a.rspec());
-      } else if (constant_reloc == relocInfo::metadata_type) {
-        AddressLiteral a = __ constant_metadata_address((Metadata *)val);
-        const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-        __ relocate(a.rspec());
-      } else {
-        // Create a non-oop constant, no relocation needed.
-        const_toc_addr = __ long_constant((jlong)$src$$constant);
-      }
-
-      if (const_toc_addr == NULL) {
-        ciEnv::current()->record_out_of_memory_failure();
-        return;
-      }
-      // Get the constant's TOC offset.
-      toc_offset = __ offset_to_method_toc(const_toc_addr);
+    intptr_t val = $src$$constant;
+    relocInfo::relocType constant_reloc = $src->constant_reloc();  // src
+    address const_toc_addr;
+    if (constant_reloc == relocInfo::oop_type) {
+      // Create an oop constant and a corresponding relocation.
+      AddressLiteral a = __ allocate_oop_address((jobject)val);
+      const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
+      __ relocate(a.rspec());
+    } else if (constant_reloc == relocInfo::metadata_type) {
+      AddressLiteral a = __ constant_metadata_address((Metadata *)val);
+      const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
+      __ relocate(a.rspec());
+    } else {
+      // Create a non-oop constant, no relocation needed.
+      const_toc_addr = __ long_constant((jlong)$src$$constant);
     }
+
+    if (const_toc_addr == NULL) {
+      ciEnv::current()->record_out_of_memory_failure();
+      return;
+    }
+    // Get the constant's TOC offset.
+    toc_offset = __ offset_to_method_toc(const_toc_addr);
 
     __ ld($dst$$Register, toc_offset, $toc$$Register);
   %}
@@ -3272,28 +3276,26 @@ encode %{
     } else {
       // Remember the offset not the address.
       const int start_offset = __ offset();
+
       // The trampoline stub.
-      if (!Compile::current()->in_scratch_emit_size()) {
-        // No entry point given, use the current pc.
-        // Make sure branch fits into
-        if (entry_point == 0) entry_point = __ pc();
+      // No entry point given, use the current pc.
+      // Make sure branch fits into
+      if (entry_point == 0) entry_point = __ pc();
 
-        // Put the entry point as a constant into the constant pool.
-        const address entry_point_toc_addr   = __ address_constant(entry_point, RelocationHolder::none);
-        if (entry_point_toc_addr == NULL) {
-          ciEnv::current()->record_out_of_memory_failure();
-          return;
-        }
-        const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
-
-
-        // Emit the trampoline stub which will be related to the branch-and-link below.
-        CallStubImpl::emit_trampoline_stub(_masm, entry_point_toc_offset, start_offset);
-        if (ciEnv::current()->failing()) { return; } // Code cache may be full.
-        int method_index = resolved_method_index(cbuf);
-        __ relocate(_optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
-                                       : static_call_Relocation::spec(method_index));
+      // Put the entry point as a constant into the constant pool.
+      const address entry_point_toc_addr = __ address_constant(entry_point, RelocationHolder::none);
+      if (entry_point_toc_addr == NULL) {
+        ciEnv::current()->record_out_of_memory_failure();
+        return;
       }
+      const int entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
+
+      // Emit the trampoline stub which will be related to the branch-and-link below.
+      CallStubImpl::emit_trampoline_stub(_masm, entry_point_toc_offset, start_offset);
+      if (ciEnv::current()->failing()) { return; } // Code cache may be full.
+      int method_index = resolved_method_index(cbuf);
+      __ relocate(_optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
+                  : static_call_Relocation::spec(method_index));
 
       // The real call.
       // Note: At this point we do not have the address of the trampoline

@@ -28,6 +28,12 @@
 #include "unittest.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+TEST(LogTagLevelExpression, combination_limit) {
+  size_t max_combinations = LogTagLevelExpression::MaxCombinations;
+  EXPECT_GT(max_combinations, LogTagSet::ntagsets())
+      << "Combination limit not sufficient for configuring all available tag sets";
+}
+
 TEST(LogTagLevelExpression, parse) {
   char buf[256];
   const char* invalid_substr[] = {
