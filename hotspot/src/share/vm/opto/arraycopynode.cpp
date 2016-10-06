@@ -26,9 +26,10 @@
 #include "opto/arraycopynode.hpp"
 #include "opto/graphKit.hpp"
 
-ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled)
+ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard)
   : CallNode(arraycopy_type(), NULL, TypeRawPtr::BOTTOM),
     _alloc_tightly_coupled(alloc_tightly_coupled),
+    _has_negative_length_guard(has_negative_length_guard),
     _kind(None),
     _arguments_validated(false),
     _src_type(TypeOopPtr::BOTTOM),
@@ -45,10 +46,11 @@ ArrayCopyNode* ArrayCopyNode::make(GraphKit* kit, bool may_throw,
                                    Node* dest, Node* dest_offset,
                                    Node* length,
                                    bool alloc_tightly_coupled,
+                                   bool has_negative_length_guard,
                                    Node* src_klass, Node* dest_klass,
                                    Node* src_length, Node* dest_length) {
 
-  ArrayCopyNode* ac = new ArrayCopyNode(kit->C, alloc_tightly_coupled);
+  ArrayCopyNode* ac = new ArrayCopyNode(kit->C, alloc_tightly_coupled, has_negative_length_guard);
   Node* prev_mem = kit->set_predefined_input_for_runtime_call(ac);
 
   ac->init_req(ArrayCopyNode::Src, src);
