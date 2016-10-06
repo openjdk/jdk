@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,24 @@ ifneq ($(LIBS_DIR), )
     $(eval $(call SetupCopyFiles, COPY_LIBS, \
         SRC := $(LIBS_DIR), \
         DEST := $(JDK_OUTPUTDIR)/lib, \
-        FILES := $(call CacheFind, $(LIBS_DIR)), \
+        FILES := $(filter %$(SHARED_LIBRARY_SUFFIX), $(call CacheFind, $(LIBS_DIR))), \
     ))
-    TARGETS += $(COPY_LIBS)
+
+    # Use relative links if the import dir is inside the OUTPUT_ROOT, otherwise
+    # copy to avoid having automated systems following symlinks when deleting files,
+    # or risk invalidating the build output from external changes.
+    ifeq ($(filter $(OUTPUT_ROOT)/%, $(LIBS_DIR)), )
+      LINK_MACRO := install-file
+    else
+      LINK_MACRO := link-file-relative
+    endif
+    $(eval $(call SetupCopyFiles, LINK_LIBS, \
+        SRC := $(LIBS_DIR), \
+        DEST := $(JDK_OUTPUTDIR)/lib, \
+        FILES := $(filter-out %$(SHARED_LIBRARY_SUFFIX), $(call CacheFind, $(LIBS_DIR))), \
+        MACRO := $(LINK_MACRO), \
+    ))
+    TARGETS += $(COPY_LIBS) $(LINK_LIBS)
   endif
 endif
 
