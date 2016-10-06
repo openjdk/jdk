@@ -221,7 +221,7 @@ abstract class NashornLoader extends SecureClassLoader {
             final String res = "/"+ MODULE_MANIPULATOR_NAME.replace('.', '/') + ".class";
             try (InputStream in = NashornLoader.class.getResourceAsStream(res)) {
                 return in.readAllBytes();
-            } catch (IOException exp) {
+            } catch (final IOException exp) {
                 throw new UncheckedIOException(exp);
             }
         };

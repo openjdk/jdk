@@ -51,7 +51,7 @@ final class FunctionExpressionTreeImpl extends ExpressionTreeImpl
 
         this.params = params;
         if (node.getFlag(FunctionNode.HAS_EXPRESSION_BODY)) {
-            StatementTree first = body.getStatements().get(0);
+            final StatementTree first = body.getStatements().get(0);
             assert first instanceof ReturnTree : "consise func. expression should have a return statement";
             this.body = ((ReturnTree)first).getExpression();
         } else {

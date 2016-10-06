@@ -102,7 +102,7 @@ final class SplitIntoFunctions extends NodeVisitor<BlockLexicalContext> {
         super(new BlockLexicalContext() {
             @Override
             protected Block afterSetStatements(final Block block) {
-                for(Statement stmt: block.getStatements()) {
+                for(final Statement stmt: block.getStatements()) {
                     assert !(stmt instanceof SplitNode);
                 }
                 return block;
@@ -145,7 +145,7 @@ final class SplitIntoFunctions extends NodeVisitor<BlockLexicalContext> {
         final FunctionState fnState = getCurrentFunctionState();
 
         final String name = splitNode.getName();
-        Block body = splitNode.getBody();
+        final Block body = splitNode.getBody();
         final int firstLineNumber = body.getFirstStatementLineNumber();
         final long token = body.getToken();
         final int finish = body.getFinish();

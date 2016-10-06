@@ -40,12 +40,12 @@ import jdk.dynalink.NamedOperation;
 import jdk.dynalink.Operation;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.beans.BeansLinker;
+import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.GuardingDynamicLinker;
 import jdk.dynalink.linker.GuardingDynamicLinkerExporter;
-import jdk.dynalink.linker.GuardedInvocation;
-import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.dynalink.linker.LinkRequest;
 import jdk.dynalink.linker.LinkerServices;
+import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.dynalink.linker.support.Guards;
 import jdk.dynalink.linker.support.Lookup;
 
@@ -65,7 +65,7 @@ public final class MissingMethodLinkerExporter extends GuardingDynamicLinkerExpo
     public static class MissingMethod {
         private final String name;
 
-        public MissingMethod(String name) {
+        public MissingMethod(final String name) {
             this.name = name;
         }
 
@@ -130,20 +130,20 @@ public final class MissingMethodLinkerExporter extends GuardingDynamicLinkerExpo
             }
 
             @Override
-            public GuardedInvocation getGuardedInvocation(LinkRequest request,
-                LinkerServices linkerServices) throws Exception {
+            public GuardedInvocation getGuardedInvocation(final LinkRequest request,
+                final LinkerServices linkerServices) throws Exception {
                 final Object self = request.getReceiver();
-                CallSiteDescriptor desc = request.getCallSiteDescriptor();
+                final CallSiteDescriptor desc = request.getCallSiteDescriptor();
 
                 // any method call is done by two steps. Step (1) GET_METHOD and (2) is CALL
                 // For step (1), we check if GET_METHOD can succeed by Java linker, if so
                 // we return that method object. If not, we return a MissingMethod object.
                 if (self instanceof MissingMethodHandler) {
                     // Check if this is a named GET_METHOD first.
-                    boolean isGetMethod = getFirstStandardOperation(desc) == StandardOperation.GET_METHOD;
-                    Object name = NamedOperation.getName(desc.getOperation());
+                    final boolean isGetMethod = getFirstStandardOperation(desc) == StandardOperation.GET_METHOD;
+                    final Object name = NamedOperation.getName(desc.getOperation());
                     if (isGetMethod && name instanceof String) {
-                        GuardingDynamicLinker javaLinker = beansLinker.getLinkerForClass(self.getClass());
+                        final GuardingDynamicLinker javaLinker = beansLinker.getLinkerForClass(self.getClass());
                         GuardedInvocation inv;
                         try {
                             inv = javaLinker.getGuardedInvocation(request, linkerServices);
@@ -151,11 +151,11 @@ public final class MissingMethodLinkerExporter extends GuardingDynamicLinkerExpo
                             inv = null;
                         }
 
-                        String nameStr = name.toString();
+                        final String nameStr = name.toString();
                         if (inv == null) {
                             // use "this" for just guard and drop it -- return a constant Method handle
                             // that returns a newly created MissingMethod object
-                            MethodHandle mh = MethodHandles.constant(Object.class, new MissingMethod(nameStr));
+                            final MethodHandle mh = MethodHandles.constant(Object.class, new MissingMethod(nameStr));
                             inv = new GuardedInvocation(
                                 MethodHandles.dropArguments(mh, 0, Object.class),
                                 Guards.isOfClass(self.getClass(), MethodType.methodType(Boolean.TYPE, Object.class)));
@@ -166,7 +166,7 @@ public final class MissingMethodLinkerExporter extends GuardingDynamicLinkerExpo
                 } else if (self instanceof MissingMethod) {
                     // This is step (2). We call MissingMethodHandler.doesNotUnderstand here
                     // Check if this is this a CALL first.
-                    boolean isCall = getFirstStandardOperation(desc) == StandardOperation.CALL;
+                    final boolean isCall = getFirstStandardOperation(desc) == StandardOperation.CALL;
                     if (isCall) {
                         MethodHandle mh = DOES_NOT_UNDERSTAND;
 
