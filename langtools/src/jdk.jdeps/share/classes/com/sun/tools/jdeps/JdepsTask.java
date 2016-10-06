@@ -483,6 +483,7 @@ class JdepsTask {
             }
             if (options.checkModuleDeps != null && !inputArgs.isEmpty()) {
                 reportError("err.invalid.module.option", inputArgs, "--check");
+                return EXIT_CMDERR;
             }
 
             boolean ok = run();
@@ -604,11 +605,12 @@ class JdepsTask {
         boolean ok = analyzer.run(options.compileTimeView, options.depth);
 
         // print skipped entries, if any
-        analyzer.archives()
-            .forEach(archive -> archive.reader()
-                .skippedEntries().stream()
-                .forEach(name -> warning("warn.skipped.entry",
-                                         name, archive.getPathName())));
+        if (!options.nowarning) {
+            analyzer.archives()
+                .forEach(archive -> archive.reader()
+                    .skippedEntries().stream()
+                    .forEach(name -> warning("warn.skipped.entry", name)));
+        }
 
         if (options.findJDKInternals && !options.nowarning) {
             Map<String, String> jdkInternals = new TreeMap<>();
@@ -676,16 +678,28 @@ class JdepsTask {
     }
 
     private boolean genModuleInfo(JdepsConfiguration config) throws IOException {
+        // check if any JAR file contains unnamed package
+        for (String arg : inputArgs) {
+            Optional<String> classInUnnamedPackage =
+                ClassFileReader.newInstance(Paths.get(arg))
+                    .entries().stream()
+                    .filter(n -> n.endsWith(".class"))
+                    .filter(cn -> toPackageName(cn).isEmpty())
+                    .findFirst();
+
+            if (classInUnnamedPackage.isPresent()) {
+                if (classInUnnamedPackage.get().equals("module-info.class")) {
+                    reportError("err.genmoduleinfo.not.jarfile", arg);
+                } else {
+                    reportError("err.genmoduleinfo.unnamed.package", arg);
+                }
+                return false;
+            }
+        }
+
         ModuleInfoBuilder builder
             = new ModuleInfoBuilder(config, inputArgs, options.genModuleInfo);
         boolean ok = builder.run();
-
-        builder.modules().forEach(module -> {
-            if (module.packages().contains("")) {
-                reportError("ERROR: %s contains unnamed package.  " +
-                    "module-info.java not generated%n", module.getPathName());
-            }
-        });
 
         if (!ok && !options.nowarning) {
             log.println("ERROR: missing dependencies");
@@ -701,6 +715,11 @@ class JdepsTask {
                 });
         }
         return ok;
+    }
+
+    private String toPackageName(String name) {
+        int i = name.lastIndexOf('/');
+        return i > 0 ? name.replace('/', '.').substring(0, i) : "";
     }
 
     /**
