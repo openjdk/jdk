@@ -4046,7 +4046,7 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       if (!stopped()) {
         newcopy = new_array(klass_node, length, 0);  // no arguments to push
 
-        ArrayCopyNode* ac = ArrayCopyNode::make(this, true, original, start, newcopy, intcon(0), moved, true,
+        ArrayCopyNode* ac = ArrayCopyNode::make(this, true, original, start, newcopy, intcon(0), moved, true, false,
                                                 load_object_klass(original), klass_node);
         if (!is_copyOfRange) {
           ac->set_copyof(validated);
@@ -4566,7 +4566,7 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
 
   const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
 
-  ArrayCopyNode* ac = ArrayCopyNode::make(this, false, src, NULL, dest, NULL, countx, false);
+  ArrayCopyNode* ac = ArrayCopyNode::make(this, false, src, NULL, dest, NULL, countx, false, false);
   ac->set_clonebasic();
   Node* n = _gvn.transform(ac);
   if (n == ac) {
@@ -4703,7 +4703,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
           set_control(is_obja);
           // Generate a direct call to the right arraycopy function(s).
           Node* alloc = tightly_coupled_allocation(alloc_obj, NULL);
-          ArrayCopyNode* ac = ArrayCopyNode::make(this, true, obj, intcon(0), alloc_obj, intcon(0), obj_length, alloc != NULL);
+          ArrayCopyNode* ac = ArrayCopyNode::make(this, true, obj, intcon(0), alloc_obj, intcon(0), obj_length, alloc != NULL, false);
           ac->set_cloneoop();
           Node* n = _gvn.transform(ac);
           assert(n == ac, "cannot disappear");
@@ -5100,6 +5100,8 @@ bool LibraryCallKit::inline_arraycopy() {
     trap_bci = alloc->jvms()->bci();
   }
 
+  bool negative_length_guard_generated = false;
+
   if (!C->too_many_traps(trap_method, trap_bci, Deoptimization::Reason_intrinsic) &&
       can_emit_guards &&
       !src->is_top() && !dest->is_top()) {
@@ -5132,6 +5134,15 @@ bool LibraryCallKit::inline_arraycopy() {
                          load_array_length(dest),
                          slow_region);
 
+    // (6) length must not be negative.
+    // This is also checked in generate_arraycopy() during macro expansion, but
+    // we also have to check it here for the case where the ArrayCopyNode will
+    // be eliminated by Escape Analysis.
+    if (EliminateAllocations) {
+      generate_negative_guard(length, slow_region);
+      negative_length_guard_generated = true;
+    }
+
     // (9) each element of an oop array must be assignable
     Node* src_klass  = load_object_klass(src);
     Node* dest_klass = load_object_klass(dest);
@@ -5159,7 +5170,7 @@ bool LibraryCallKit::inline_arraycopy() {
     return true;
   }
 
-  ArrayCopyNode* ac = ArrayCopyNode::make(this, true, src, src_offset, dest, dest_offset, length, alloc != NULL,
+  ArrayCopyNode* ac = ArrayCopyNode::make(this, true, src, src_offset, dest, dest_offset, length, alloc != NULL, negative_length_guard_generated,
                                           // Create LoadRange and LoadKlass nodes for use during macro expansion here
                                           // so the compiler has a chance to eliminate them: during macro expansion,
                                           // we have to set their control (CastPP nodes are eliminated).
