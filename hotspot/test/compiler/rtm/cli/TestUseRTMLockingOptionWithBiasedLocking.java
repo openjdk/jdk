@@ -42,6 +42,7 @@
 package compiler.rtm.cli;
 
 import compiler.testlibrary.rtm.predicate.SupportedCPU;
+import compiler.testlibrary.rtm.predicate.SupportedOS;
 import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.cli.CommandLineOptionTest;
@@ -50,7 +51,7 @@ import jdk.test.lib.cli.predicate.AndPredicate;
 public class TestUseRTMLockingOptionWithBiasedLocking
         extends CommandLineOptionTest {
     private TestUseRTMLockingOptionWithBiasedLocking() {
-        super(new AndPredicate(new SupportedCPU(), new SupportedVM()));
+        super(new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM()));
     }
 
     @Override

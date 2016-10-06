@@ -261,6 +261,9 @@ void InterpreterMacroAssembler::push_ptr(Register r) {
 }
 
 void InterpreterMacroAssembler::push_l(Register r) {
+  // Clear unused slot.
+  load_const_optimized(R0, 0L);
+  std(R0, 0, R15_esp);
   std(r, - Interpreter::stackElementSize, R15_esp);
   addi(R15_esp, R15_esp, - 2 * Interpreter::stackElementSize );
 }

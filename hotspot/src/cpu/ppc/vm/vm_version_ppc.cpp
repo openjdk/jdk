@@ -230,6 +230,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
+  if (UseFMA) {
+    warning("FMA instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(UseFMA, false);
+  }
+
   if (UseSHA) {
     warning("SHA instructions are not available on this CPU");
     FLAG_SET_DEFAULT(UseSHA, false);
@@ -274,7 +279,14 @@ void VM_Version::initialize() {
     }
     bool os_too_old = true;
 #ifdef AIX
-    if (os::Aix::os_version() >= 0x0701031e) { // at least AIX 7.1.3.30
+    // Actually, this is supported since AIX 7.1.. Unfortunately, this first
+    // contained bugs, so that it can only be enabled after AIX 7.1.3.30.
+    // The Java property os.version, which is used in RTM tests to decide
+    // whether the feature is available, only knows major and minor versions.
+    // We don't want to change this property, as user code might depend on it.
+    // So the tests can not check on subversion 3.30, and we only enable RTM
+    // with AIX 7.2.
+    if (os::Aix::os_version() >= 0x07020000) { // At least AIX 7.2.
       os_too_old = false;
     }
 #endif

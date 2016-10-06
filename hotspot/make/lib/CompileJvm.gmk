@@ -174,13 +174,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   JVM_RCFLAGS += -D"HS_FILEDESC=$(HOTSPOT_VM_DISTRO) $(RC_DESC)$(JVM_VARIANT) VM"
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-  # NOTE: The old build did not strip binaries on macosx.
-  JVM_STRIP_SYMBOLS := false
-else
-  JVM_STRIP_SYMBOLS := true
-endif
-
 JVM_OPTIMIZATION ?= HIGHEST_JVM
 
 ################################################################################
@@ -189,7 +182,7 @@ JVM_OPTIMIZATION ?= HIGHEST_JVM
 $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     LIBRARY := jvm, \
-    OUTPUT_DIR := $(JVM_OUTPUTDIR), \
+    OUTPUT_DIR := $(JVM_LIB_OUTPUTDIR), \
     SRC := $(JVM_SRC_DIRS), \
     EXCLUDES := $(JVM_EXCLUDES), \
     EXCLUDE_FILES := $(JVM_EXCLUDE_FILES), \
@@ -211,13 +204,24 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/objs, \
     MAPFILE := $(JVM_MAPFILE), \
     USE_MAPFILE_FOR_SYMBOLS := true, \
-    STRIP_SYMBOLS := $(JVM_STRIP_SYMBOLS), \
     EMBED_MANIFEST := true, \
     RC_FLAGS := $(JVM_RCFLAGS), \
     VERSIONINFO_RESOURCE := $(HOTSPOT_TOPDIR)/src/os/windows/vm/version.rc, \
     PRECOMPILED_HEADER := $(JVM_PRECOMPILED_HEADER), \
     PRECOMPILED_HEADER_EXCLUDE := $(JVM_PRECOMPILED_HEADER_EXCLUDE), \
 ))
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  # It doesn't matter which jvm.lib file gets exported, but we need
+  # to pick just one.
+  ifeq ($(JVM_VARIANT), $(firstword $(JVM_VARIANTS)))
+    $(eval $(call SetupCopyFiles, COPY_JVM_LIB, \
+        DEST := $(LIB_OUTPUTDIR), \
+        FILES :=$(JVM_VARIANT_OUTPUTDIR)/libjvm/objs/jvm.lib, \
+    ))
+    TARGETS += $(COPY_JVM_LIB)
+  endif
+endif
 
 # AIX warning explanation:
 # 1500-010  : (W) WARNING in ...: Infinite loop.  Program may not stop.
