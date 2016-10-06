@@ -566,7 +566,7 @@ public interface Tree {
          */
         OTHER(null);
 
-        Kind(Class<? extends Tree> intf) {
+        Kind(final Class<? extends Tree> intf) {
             associatedInterface = intf;
         }
 

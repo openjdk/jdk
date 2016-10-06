@@ -38,9 +38,9 @@ final class ImportEntryTreeImpl extends TreeImpl implements ImportEntryTree {
     private final IdentifierTree localName;
 
     private ImportEntryTreeImpl(final long startPos, final long endPos,
-            IdentifierTree moduleRequest,
-            IdentifierTree importName,
-            IdentifierTree localName) {
+            final IdentifierTree moduleRequest,
+            final IdentifierTree importName,
+            final IdentifierTree localName) {
         super(null); // No underlying Node!
         this.startPos = startPos;
         this.endPos = endPos;
@@ -49,7 +49,7 @@ final class ImportEntryTreeImpl extends TreeImpl implements ImportEntryTree {
         this.localName = localName;
     }
 
-    private static ImportEntryTreeImpl createImportEntry(Module.ImportEntry entry) {
+    private static ImportEntryTreeImpl createImportEntry(final Module.ImportEntry entry) {
         return new ImportEntryTreeImpl(entry.getStartPosition(),
                 entry.getEndPosition(),
                 identOrNull(entry.getModuleRequest()),
@@ -57,7 +57,7 @@ final class ImportEntryTreeImpl extends TreeImpl implements ImportEntryTree {
                 identOrNull(entry.getLocalName()));
     }
 
-    static List<ImportEntryTreeImpl> createImportList(List<Module.ImportEntry> importList) {
+    static List<ImportEntryTreeImpl> createImportList(final List<Module.ImportEntry> importList) {
         return importList.stream().
             map(ImportEntryTreeImpl::createImportEntry).
             collect(Collectors.toList());
