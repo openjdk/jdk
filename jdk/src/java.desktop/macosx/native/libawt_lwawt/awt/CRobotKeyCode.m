@@ -45,7 +45,7 @@
     self = [super init];
 
     if (nil != self) {
-        javaToMacKeyMap = [NSDictionary dictionaryWithObjectsAndKeys :
+        self.javaToMacKeyMap = [NSDictionary dictionaryWithObjectsAndKeys :
             [NSNumber numberWithInt : OSX_Delete], [NSNumber numberWithInt : java_awt_event_KeyEvent_VK_BACK_SPACE],
             [NSNumber numberWithInt : OSX_kVK_Tab], [NSNumber numberWithInt : java_awt_event_KeyEvent_VK_TAB],
             [NSNumber numberWithInt : OSX_kVK_Return], [NSNumber numberWithInt : java_awt_event_KeyEvent_VK_ENTER],
