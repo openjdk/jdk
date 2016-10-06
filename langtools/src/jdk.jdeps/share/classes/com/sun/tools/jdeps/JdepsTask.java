@@ -605,11 +605,12 @@ class JdepsTask {
         boolean ok = analyzer.run(options.compileTimeView, options.depth);
 
         // print skipped entries, if any
-        analyzer.archives()
-            .forEach(archive -> archive.reader()
-                .skippedEntries().stream()
-                .forEach(name -> warning("warn.skipped.entry",
-                                         name, archive.getPathName())));
+        if (!options.nowarning) {
+            analyzer.archives()
+                .forEach(archive -> archive.reader()
+                    .skippedEntries().stream()
+                    .forEach(name -> warning("warn.skipped.entry", name)));
+        }
 
         if (options.findJDKInternals && !options.nowarning) {
             Map<String, String> jdkInternals = new TreeMap<>();
