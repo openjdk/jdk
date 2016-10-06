@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,32 +25,12 @@
 
 package com.sun.security.jgss;
 
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSCredential;
-import sun.security.jgss.GSSContextImpl;
 import sun.security.jgss.GSSCredentialImpl;
-import sun.security.jgss.JgssExtender;
 
-// The com.sun.security.jgss extension to JGSS-API
-class Extender extends JgssExtender {
+class ExtendedGSSCredentialImpl extends GSSCredentialImpl
+        implements ExtendedGSSCredential {
 
-    static {
-        JgssExtender.setExtender(new Extender());
-    }
-
-    public GSSCredential wrap(GSSCredential cred) {
-        if (cred instanceof ExtendedGSSCredentialImpl) {
-            return cred;
-        } else {
-            return new ExtendedGSSCredentialImpl((GSSCredentialImpl)cred);
-        }
-    }
-
-    public GSSContext wrap(GSSContext ctxt) {
-        if (ctxt instanceof ExtendedGSSContextImpl) {
-            return ctxt;
-        } else {
-            return new ExtendedGSSContextImpl((GSSContextImpl)ctxt);
-        }
+    public ExtendedGSSCredentialImpl(GSSCredentialImpl old) {
+        super(old);
     }
 }
