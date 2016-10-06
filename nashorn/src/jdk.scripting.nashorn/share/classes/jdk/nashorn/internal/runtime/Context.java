@@ -1339,7 +1339,7 @@ public final class Context {
 
         final ModuleFinder finder = new ModuleFinder() {
             @Override
-            public Optional<ModuleReference> find(String name) {
+            public Optional<ModuleReference> find(final String name) {
                 if (name.equals(mn)) {
                     return Optional.of(mref);
                 } else {
@@ -1387,7 +1387,7 @@ public final class Context {
         ClassLoader loader = null;
         try {
             loader = clazz.getClassLoader();
-        } catch (SecurityException ignored) {
+        } catch (final SecurityException ignored) {
             // This could fail because of anonymous classes being used.
             // Accessing loader of anonymous class fails (for extension
             // loader class too?). In any case, for us fetching Context

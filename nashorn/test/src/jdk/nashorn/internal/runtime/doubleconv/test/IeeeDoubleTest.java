@@ -228,8 +228,8 @@ public class IeeeDoubleTest {
 
     @Test
     public void testNormalizedBoundaries() throws Exception {
-        Object boundary_plus = DiyFpCtor.newInstance();
-        Object boundary_minus = DiyFpCtor.newInstance();
+        final Object boundary_plus = DiyFpCtor.newInstance();
+        final Object boundary_minus = DiyFpCtor.newInstance();
         Object diy_fp = asNormalizedDiyFp.invoke(null, doubleToLong.invoke(null, 1.5));
         normalizedBoundaries.invoke(null, doubleToLong.invoke(null, 1.5), boundary_minus, boundary_plus);
         assertEquals(e.invoke(diy_fp), e.invoke(boundary_minus));
