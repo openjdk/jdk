@@ -98,8 +98,7 @@
 #        1:00       CET CEST CEMT Central Europe
 #        1:00:14    SET           Swedish (1879-1899)*
 #        2:00       EET EEST      Eastern Europe
-#        3:00       FET           Further-eastern Europe (2011-2014)*
-#        3:00       MSK MSD  MSM* Minsk, Moscow
+#        3:00       MSK MSD       Moscow
 
 # From Peter Ilieve (1994-12-04),
 # The original six [EU members]: Belgium, France, (West) Germany, Italy,
@@ -606,16 +605,33 @@ Rule	E-Eur	1979	1995	-	Sep	lastSun	 0:00	0	-
 Rule	E-Eur	1981	max	-	Mar	lastSun	 0:00	1:00	S
 Rule	E-Eur	1996	max	-	Oct	lastSun	 0:00	0	-
 
+
+# Daylight saving time for Russia and the Soviet Union
+#
+# The 1917-1921 decree URLs are from Alexander Belopolsky (2016-08-23).
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Russia	1917	only	-	Jul	 1	23:00	1:00	MST  # Moscow Summer Time
+#
+# Decree No. 142 (1917-12-22) http://istmat.info/node/28137
 Rule	Russia	1917	only	-	Dec	28	 0:00	0	MMT  # Moscow Mean Time
+#
+# Decree No. 497 (1918-05-30) http://istmat.info/node/30001
 Rule	Russia	1918	only	-	May	31	22:00	2:00	MDST # Moscow Double Summer Time
 Rule	Russia	1918	only	-	Sep	16	 1:00	1:00	MST
+#
+# Decree No. 258 (1919-05-29) http://istmat.info/node/37949
 Rule	Russia	1919	only	-	May	31	23:00	2:00	MDST
-Rule	Russia	1919	only	-	Jul	 1	 2:00	1:00	MSD
+#
+Rule	Russia	1919	only	-	Jul	 1	 0:00u	1:00	MSD
 Rule	Russia	1919	only	-	Aug	16	 0:00	0	MSK
+#
+# Decree No. 63 (1921-02-03) http://istmat.info/node/45840
 Rule	Russia	1921	only	-	Feb	14	23:00	1:00	MSD
-Rule	Russia	1921	only	-	Mar	20	23:00	2:00	MSM  # Midsummer
+#
+# Decree No. 121 (1921-03-07) http://istmat.info/node/45949
+Rule	Russia	1921	only	-	Mar	20	23:00	2:00	+05
+#
 Rule	Russia	1921	only	-	Sep	 1	 0:00	1:00	MSD
 Rule	Russia	1921	only	-	Oct	 1	 0:00	0	-
 # Act No. 925 of the Council of Ministers of the USSR (1980-10-24):
@@ -798,8 +814,6 @@ Zone	Europe/Vienna	1:05:21 -	LMT	1893 Apr
 # From Alexander Bokovoy (2014-10-09):
 # Belarussian government decided against changing to winter time....
 # http://eng.belta.by/all_news/society/Belarus-decides-against-adjusting-time-in-Russias-wake_i_76335.html
-# From Paul Eggert (2014-10-08):
-# Hence Belarus can share time zone abbreviations with Moscow again.
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Minsk	1:50:16 -	LMT	1880
@@ -810,8 +824,7 @@ Zone	Europe/Minsk	1:50:16 -	LMT	1880
 			3:00	Russia	MSK/MSD	1990
 			3:00	-	MSK	1991 Mar 31  2:00s
 			2:00	Russia	EE%sT	2011 Mar 27  2:00s
-			3:00	-	FET	2014 Oct 26  1:00s
-			3:00	-	MSK
+			3:00	-	+03
 
 # Belgium
 #
@@ -1319,7 +1332,7 @@ Zone	Europe/Paris	0:09:21 -	LMT	1891 Mar 15  0:01
 # http://www.parlament-berlin.de/pds-fraktion.nsf/727459127c8b66ee8525662300459099/defc77cb784f180ac1256c2b0030274b/$FILE/bersarint.pdf
 # says that Bersarin issued an order to use Moscow time on May 20.
 # However, Moscow did not observe daylight saving in 1945, so
-# this was equivalent to CEMT (GMT+3), not GMT+4.
+# this was equivalent to UT +03, not +04.
 
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
@@ -2283,7 +2296,6 @@ Zone Europe/Bucharest	1:44:24 -	LMT	1891 Oct
 # http://www.worldtimezone.com/dst_news/dst_news_russia-map-2014-07.html
 
 # From Paul Eggert (2006-03-22):
-# Except for Moscow after 1919-07-01, I invented the time zone abbreviations.
 # Moscow time zone abbreviations after 1919-07-01, and Moscow rules after 1991,
 # are from Andrey A. Chernov.  The rest is from Shanks & Pottenger,
 # except we follow Chernov's report that 1992 DST transitions were Sat
@@ -2359,7 +2371,7 @@ Zone Europe/Kaliningrad	 1:22:00 -	LMT	1893 Apr
 			 2:00	Poland	CE%sT	1946
 			 3:00	Russia	MSK/MSD	1989 Mar 26  2:00s
 			 2:00	Russia	EE%sT	2011 Mar 27  2:00s
-			 3:00	-	FET	2014 Oct 26  2:00s
+			 3:00	-	+03	2014 Oct 26  2:00s
 			 2:00	-	EET
 
 
@@ -2412,6 +2424,16 @@ Zone Europe/Kaliningrad	 1:22:00 -	LMT	1893 Apr
 # 78	RU-SPE	Saint Petersburg
 # 83	RU-NEN	Nenets Autonomous Okrug
 
+# From Paul Eggert (2016-08-23):
+# The Soviets switched to UT-based time in 1919.  Decree No. 59
+# (1919-02-08) http://istmat.info/node/35567 established UT-based time
+# zones, and Decree No. 147 (1919-03-29) http://istmat.info/node/35854
+# specified a transition date of 1919-07-01, apparently at 00:00 UT.
+# No doubt only the Soviet-controlled regions switched on that date;
+# later transitions to UT-based time in other parts of Russia are
+# taken from what appear to be guesses by Shanks.
+# (Thanks to Alexander Belopolsky for pointers to the decrees.)
+
 # From Stepan Golosunov (2016-03-07):
 # 11. Regions-violators, 1981-1982.
 # Wikipedia refers to
@@ -2453,7 +2475,7 @@ Zone Europe/Kaliningrad	 1:22:00 -	LMT	1893 Apr
 # attributes the 1982 changes to the Act of the Council of Ministers
 # of the USSR No. 126 from 18.02.1982.  1980-925.txt also adds
 # Udmurtia to the list of affected territories and lists Khatangsky
-# district separately from Taymyr Autonomous Okurg.  Probably erroneously.
+# district separately from Taymyr Autonomous Okrug.  Probably erroneously.
 #
 # The affected territories are currently listed under Europe/Moscow,
 # Asia/Yekaterinburg and Asia/Krasnoyarsk.
@@ -2513,7 +2535,7 @@ Zone Europe/Kaliningrad	 1:22:00 -	LMT	1893 Apr
 
 Zone Europe/Moscow	 2:30:17 -	LMT	1880
 			 2:30:17 -	MMT	1916 Jul  3 # Moscow Mean Time
-			 2:31:19 Russia	%s	1919 Jul  1  2:00
+			 2:31:19 Russia	%s	1919 Jul  1  0:00u
 			 3:00	Russia	%s	1921 Oct
 			 3:00	Russia	MSK/MSD	1922 Oct
 			 2:00	-	EET	1930 Jun 21
@@ -2596,22 +2618,21 @@ Zone Europe/Astrakhan	 3:12:12 -	LMT	1924 May
 # The 1988 transition is from USSR act No. 5 (1988-01-04).
 
 Zone Europe/Volgograd	 2:57:40 -	LMT	1920 Jan  3
-			 3:00	-	TSAT	1925 Apr  6 # Tsaritsyn Time
-			 3:00	-	STAT	1930 Jun 21 # Stalingrad Time
-			 4:00	-	STAT	1961 Nov 11
-			 4:00	Russia	VOL%sT	1988 Mar 27  2:00s # Volgograd T
-			 3:00	Russia	VOL%sT	1991 Mar 31  2:00s
-			 4:00	-	VOLT	1992 Mar 29  2:00s
-			 3:00	Russia	MSK/MSD	2011 Mar 27  2:00s
-			 4:00	-	MSK	2014 Oct 26  2:00s
-			 3:00	-	MSK
+			 3:00	-	+03	1930 Jun 21
+			 4:00	-	+04	1961 Nov 11
+			 4:00	Russia	+04/+05	1988 Mar 27  2:00s
+			 3:00	Russia	+03/+04	1991 Mar 31  2:00s
+			 4:00	-	+04	1992 Mar 29  2:00s
+			 3:00	Russia	+03/+04	2011 Mar 27  2:00s
+			 4:00	-	+04	2014 Oct 26  2:00s
+			 3:00	-	+03
 
 # From Paul Eggert (2016-03-18):
 # Europe/Kirov covers:
 # 43	RU-KIR	Kirov Oblast
 # The 1989 transition is from USSR act No. 227 (1989-03-14).
 #
-Zone Europe/Kirov	 3:18:48 -	LMT	1919 Jul  1  2:00
+Zone Europe/Kirov	 3:18:48 -	LMT	1919 Jul  1  0:00u
 			 3:00	-	+03	1930 Jun 21
 			 4:00	Russia	+04/+05	1989 Mar 26  2:00s
 			 3:00	Russia	+03/+04	1991 Mar 31  2:00s
@@ -2629,16 +2650,16 @@ Zone Europe/Kirov	 3:18:48 -	LMT	1919 Jul  1  2:00
 # Byalokoz 1919 says Samara was 3:20:20.
 # The 1989 transition is from USSR act No. 227 (1989-03-14).
 
-Zone Europe/Samara	 3:20:20 -	LMT	1919 Jul  1  2:00
-			 3:00	-	SAMT	1930 Jun 21 # Samara Time
-			 4:00	-	SAMT	1935 Jan 27
-			 4:00	Russia	KUY%sT	1989 Mar 26  2:00s # Kuybyshev
-			 3:00	Russia	MSK/MSD	1991 Mar 31  2:00s
-			 2:00	Russia	EE%sT	1991 Sep 29  2:00s
-			 3:00	-	SAMT	1991 Oct 20  3:00
-			 4:00	Russia	SAM%sT	2010 Mar 28  2:00s
-			 3:00	Russia	SAM%sT	2011 Mar 27  2:00s
-			 4:00	-	SAMT
+Zone Europe/Samara	 3:20:20 -	LMT	1919 Jul  1  0:00u
+			 3:00	-	+03	1930 Jun 21
+			 4:00	-	+04	1935 Jan 27
+			 4:00	Russia	+04/+05	1989 Mar 26  2:00s
+			 3:00	Russia	+03/+04	1991 Mar 31  2:00s
+			 2:00	Russia	+02/+03	1991 Sep 29  2:00s
+			 3:00	-	+03	1991 Oct 20  3:00
+			 4:00	Russia	+04/+05	2010 Mar 28  2:00s
+			 3:00	Russia	+03/+04	2011 Mar 27  2:00s
+			 4:00	-	+04
 
 # From Paul Eggert (2016-03-18):
 # Europe/Ulyanovsk covers:
@@ -2653,7 +2674,7 @@ Zone Europe/Samara	 3:20:20 -	LMT	1919 Jul  1  2:00
 # From Matt Johnson (2016-03-09):
 # http://publication.pravo.gov.ru/Document/View/0001201603090051
 
-Zone Europe/Ulyanovsk	 3:13:36 -	LMT	1919 Jul  1  2:00
+Zone Europe/Ulyanovsk	 3:13:36 -	LMT	1919 Jul  1  0:00u
 			 3:00	-	+03	1930 Jun 21
 			 4:00	Russia	+04/+05	1989 Mar 26  2:00s
 			 3:00	Russia	+03/+04	1991 Mar 31  2:00s
@@ -2685,12 +2706,12 @@ Zone Europe/Ulyanovsk	 3:13:36 -	LMT	1919 Jul  1  2:00
 
 Zone Asia/Yekaterinburg	 4:02:33 -	LMT	1916 Jul  3
 			 3:45:05 -	PMT	1919 Jul 15  4:00
-			 4:00	-	SVET	1930 Jun 21 # Sverdlovsk Time
-			 5:00	Russia	SVE%sT	1991 Mar 31  2:00s
-			 4:00	Russia	SVE%sT	1992 Jan 19  2:00s
-			 5:00	Russia	YEK%sT	2011 Mar 27  2:00s
-			 6:00	-	YEKT	2014 Oct 26  2:00s
-			 5:00	-	YEKT
+			 4:00	-	+04	1930 Jun 21
+			 5:00	Russia	+05/+06	1991 Mar 31  2:00s
+			 4:00	Russia	+04/+05	1992 Jan 19  2:00s
+			 5:00	Russia	+05/+06	2011 Mar 27  2:00s
+			 6:00	-	+06	2014 Oct 26  2:00s
+			 5:00	-	+05
 
 
 # From Tim Parenti (2014-07-03), per Oscar van Vlijmen (2001-08-25):
@@ -2700,12 +2721,12 @@ Zone Asia/Yekaterinburg	 4:02:33 -	LMT	1916 Jul  3
 # Byalokoz 1919 says Omsk was 4:53:30.
 
 Zone Asia/Omsk		 4:53:30 -	LMT	1919 Nov 14
-			 5:00	-	OMST	1930 Jun 21 # Omsk Time
-			 6:00	Russia	OMS%sT	1991 Mar 31  2:00s
-			 5:00	Russia	OMS%sT	1992 Jan 19  2:00s
-			 6:00	Russia	OMS%sT	2011 Mar 27  2:00s
-			 7:00	-	OMST	2014 Oct 26  2:00s
-			 6:00	-	OMST
+			 5:00	-	+05	1930 Jun 21
+			 6:00	Russia	+06/+07	1991 Mar 31  2:00s
+			 5:00	Russia	+05/+06	1992 Jan 19  2:00s
+			 6:00	Russia	+06/+07	2011 Mar 27  2:00s
+			 7:00	-	+07	2014 Oct 26  2:00s
+			 6:00	-	+06
 
 # From Paul Eggert (2016-02-22):
 # Asia/Barnaul covers:
@@ -2785,7 +2806,7 @@ Zone Asia/Novosibirsk	 5:31:40 -	LMT	1919 Dec 14  6:00
 # Note that time belts (numbered from 2 (Moscow) to 12 according to their
 # GMT/UTC offset and having too many exceptions like regions formally
 # belonging to one belt but using time from another) were replaced
-# with time zones in 2011 with different numberings (there was a
+# with time zones in 2011 with different numbering (there was a
 # 2-hour gap between second and third zones in 2011-2014).
 
 # From Stepan Golosunov (2016-04-12):
@@ -2868,12 +2889,12 @@ Zone Asia/Novokuznetsk	 5:48:48 -	LMT	1924 May  1
 # Byalokoz 1919 says Krasnoyarsk was 6:11:26.
 
 Zone Asia/Krasnoyarsk	 6:11:26 -	LMT	1920 Jan  6
-			 6:00	-	KRAT	1930 Jun 21 # Krasnoyarsk Time
-			 7:00	Russia	KRA%sT	1991 Mar 31  2:00s
-			 6:00	Russia	KRA%sT	1992 Jan 19  2:00s
-			 7:00	Russia	KRA%sT	2011 Mar 27  2:00s
-			 8:00	-	KRAT	2014 Oct 26  2:00s
-			 7:00	-	KRAT
+			 6:00	-	+06	1930 Jun 21
+			 7:00	Russia	+07/+08	1991 Mar 31  2:00s
+			 6:00	Russia	+06/+07	1992 Jan 19  2:00s
+			 7:00	Russia	+07/+08	2011 Mar 27  2:00s
+			 8:00	-	+08	2014 Oct 26  2:00s
+			 7:00	-	+07
 
 
 # From Tim Parenti (2014-07-03), per Oscar van Vlijmen (2001-08-25):
@@ -2890,12 +2911,12 @@ Zone Asia/Krasnoyarsk	 6:11:26 -	LMT	1920 Jan  6
 
 Zone Asia/Irkutsk	 6:57:05 -	LMT	1880
 			 6:57:05 -	IMT	1920 Jan 25 # Irkutsk Mean Time
-			 7:00	-	IRKT	1930 Jun 21 # Irkutsk Time
-			 8:00	Russia	IRK%sT	1991 Mar 31  2:00s
-			 7:00	Russia	IRK%sT	1992 Jan 19  2:00s
-			 8:00	Russia	IRK%sT	2011 Mar 27  2:00s
-			 9:00	-	IRKT	2014 Oct 26  2:00s
-			 8:00	-	IRKT
+			 7:00	-	+07	1930 Jun 21
+			 8:00	Russia	+08/+09	1991 Mar 31  2:00s
+			 7:00	Russia	+07/+08	1992 Jan 19  2:00s
+			 8:00	Russia	+08/+09	2011 Mar 27  2:00s
+			 9:00	-	+09	2014 Oct 26  2:00s
+			 8:00	-	+08
 
 
 # From Tim Parenti (2014-07-06):
@@ -2912,13 +2933,13 @@ Zone Asia/Irkutsk	 6:57:05 -	LMT	1880
 # http://publication.pravo.gov.ru/Document/View/0001201512300107
 
 Zone Asia/Chita	 7:33:52 -	LMT	1919 Dec 15
-			 8:00	-	YAKT	1930 Jun 21 # Yakutsk Time
-			 9:00	Russia	YAK%sT	1991 Mar 31  2:00s
-			 8:00	Russia	YAK%sT	1992 Jan 19  2:00s
-			 9:00	Russia	YAK%sT	2011 Mar 27  2:00s
-			10:00	-	YAKT	2014 Oct 26  2:00s
-			 8:00	-	IRKT	2016 Mar 27  2:00
-			 9:00	-	YAKT
+			 8:00	-	+08	1930 Jun 21
+			 9:00	Russia	+09/+10	1991 Mar 31  2:00s
+			 8:00	Russia	+08/+09	1992 Jan 19  2:00s
+			 9:00	Russia	+09/+10	2011 Mar 27  2:00s
+			10:00	-	+10	2014 Oct 26  2:00s
+			 8:00	-	+08	2016 Mar 27  2:00
+			 9:00	-	+09
 
 
 # From Tim Parenti (2014-07-03), per Oscar van Vlijmen (2009-11-29):
@@ -2958,12 +2979,12 @@ Zone Asia/Chita	 7:33:52 -	LMT	1919 Dec 15
 # Byalokoz 1919 says Yakutsk was 8:38:58.
 
 Zone Asia/Yakutsk	 8:38:58 -	LMT	1919 Dec 15
-			 8:00	-	YAKT	1930 Jun 21 # Yakutsk Time
-			 9:00	Russia	YAK%sT	1991 Mar 31  2:00s
-			 8:00	Russia	YAK%sT	1992 Jan 19  2:00s
-			 9:00	Russia	YAK%sT	2011 Mar 27  2:00s
-			10:00	-	YAKT	2014 Oct 26  2:00s
-			 9:00	-	YAKT
+			 8:00	-	+08	1930 Jun 21
+			 9:00	Russia	+09/+10	1991 Mar 31  2:00s
+			 8:00	Russia	+08/+09	1992 Jan 19  2:00s
+			 9:00	Russia	+09/+10	2011 Mar 27  2:00s
+			10:00	-	+10	2014 Oct 26  2:00s
+			 9:00	-	+09
 
 
 # From Tim Parenti (2014-07-03), per Oscar van Vlijmen (2009-11-29):
@@ -2981,12 +3002,12 @@ Zone Asia/Yakutsk	 8:38:58 -	LMT	1919 Dec 15
 # Go with Byalokoz.
 
 Zone Asia/Vladivostok	 8:47:31 -	LMT	1922 Nov 15
-			 9:00	-	VLAT	1930 Jun 21 # Vladivostok Time
-			10:00	Russia	VLA%sT	1991 Mar 31  2:00s
-			 9:00	Russia	VLA%sT	1992 Jan 19  2:00s
-			10:00	Russia	VLA%sT	2011 Mar 27  2:00s
-			11:00	-	VLAT	2014 Oct 26  2:00s
-			10:00	-	VLAT
+			 9:00	-	+09	1930 Jun 21
+			10:00	Russia	+10/+11	1991 Mar 31  2:00s
+			 9:00	Russia	+09/+10	1992 Jan 19  2:00s
+			10:00	Russia	+10/+11	2011 Mar 27  2:00s
+			11:00	-	+11	2014 Oct 26  2:00s
+			10:00	-	+10
 
 
 # From Tim Parenti (2014-07-03):
@@ -3004,14 +3025,14 @@ Zone Asia/Vladivostok	 8:47:31 -	LMT	1922 Nov 15
 # This transition is no doubt wrong, but we have no better info.
 
 Zone Asia/Khandyga	 9:02:13 -	LMT	1919 Dec 15
-			 8:00	-	YAKT	1930 Jun 21 # Yakutsk Time
-			 9:00	Russia	YAK%sT	1991 Mar 31  2:00s
-			 8:00	Russia	YAK%sT	1992 Jan 19  2:00s
-			 9:00	Russia	YAK%sT	2004
-			10:00	Russia	VLA%sT	2011 Mar 27  2:00s
-			11:00	-	VLAT	2011 Sep 13  0:00s # Decree 725?
-			10:00	-	YAKT	2014 Oct 26  2:00s
-			 9:00	-	YAKT
+			 8:00	-	+08	1930 Jun 21
+			 9:00	Russia	+09/+10	1991 Mar 31  2:00s
+			 8:00	Russia	+08/+09	1992 Jan 19  2:00s
+			 9:00	Russia	+09/+10	2004
+			10:00	Russia	+10/+11	2011 Mar 27  2:00s
+			11:00	-	+11	2011 Sep 13  0:00s # Decree 725?
+			10:00	-	+10	2014 Oct 26  2:00s
+			 9:00	-	+09
 
 
 # From Tim Parenti (2014-07-03):
@@ -3027,15 +3048,14 @@ Zone Asia/Khandyga	 9:02:13 -	LMT	1919 Dec 15
 
 # The Zone name should be Asia/Yuzhno-Sakhalinsk, but that's too long.
 Zone Asia/Sakhalin	 9:30:48 -	LMT	1905 Aug 23
-			 9:00	-	JCST	1937 Oct  1
-			 9:00	-	JST	1945 Aug 25
-			11:00	Russia	SAK%sT	1991 Mar 31  2:00s # Sakhalin T
-			10:00	Russia	SAK%sT	1992 Jan 19  2:00s
-			11:00	Russia	SAK%sT	1997 Mar lastSun  2:00s
-			10:00	Russia	SAK%sT	2011 Mar 27  2:00s
-			11:00	-	SAKT	2014 Oct 26  2:00s
-			10:00	-	SAKT	2016 Mar 27  2:00s
-			11:00	-	SAKT
+			 9:00	-	+09	1945 Aug 25
+			11:00	Russia	+11/+12	1991 Mar 31  2:00s # Sakhalin T
+			10:00	Russia	+10/+11	1992 Jan 19  2:00s
+			11:00	Russia	+11/+12	1997 Mar lastSun  2:00s
+			10:00	Russia	+10/+11	2011 Mar 27  2:00s
+			11:00	-	+11	2014 Oct 26  2:00s
+			10:00	-	+10	2016 Mar 27  2:00s
+			11:00	-	+11
 
 
 # From Tim Parenti (2014-07-03), per Oscar van Vlijmen (2009-11-29):
@@ -3058,13 +3078,13 @@ Zone Asia/Sakhalin	 9:30:48 -	LMT	1905 Aug 23
 # http://publication.pravo.gov.ru/Document/View/0001201604050038
 
 Zone Asia/Magadan	10:03:12 -	LMT	1924 May  2
-			10:00	-	MAGT	1930 Jun 21 # Magadan Time
-			11:00	Russia	MAG%sT	1991 Mar 31  2:00s
-			10:00	Russia	MAG%sT	1992 Jan 19  2:00s
-			11:00	Russia	MAG%sT	2011 Mar 27  2:00s
-			12:00	-	MAGT	2014 Oct 26  2:00s
-			10:00	-	MAGT	2016 Apr 24  2:00s
-			11:00	-	MAGT
+			10:00	-	+10	1930 Jun 21 # Magadan Time
+			11:00	Russia	+11/+12	1991 Mar 31  2:00s
+			10:00	Russia	+10/+11	1992 Jan 19  2:00s
+			11:00	Russia	+11/+12	2011 Mar 27  2:00s
+			12:00	-	+12	2014 Oct 26  2:00s
+			10:00	-	+10	2016 Apr 24  2:00s
+			11:00	-	+11
 
 
 # From Tim Parenti (2014-07-06):
@@ -3107,17 +3127,14 @@ Zone Asia/Magadan	10:03:12 -	LMT	1924 May  2
 # in Russian.)  In addition, Srednekolymsk appears to be a much older
 # settlement and the population of Zyryanka seems to be declining.
 # Go with Srednekolymsk.
-#
-# Since Magadan Oblast moves to UTC+10 on 2014-10-26, we cannot keep using MAGT
-# as the abbreviation.  Use SRET instead.
 
 Zone Asia/Srednekolymsk	10:14:52 -	LMT	1924 May  2
-			10:00	-	MAGT	1930 Jun 21 # Magadan Time
-			11:00	Russia	MAG%sT	1991 Mar 31  2:00s
-			10:00	Russia	MAG%sT	1992 Jan 19  2:00s
-			11:00	Russia	MAG%sT	2011 Mar 27  2:00s
-			12:00	-	MAGT	2014 Oct 26  2:00s
-			11:00	-	SRET	# Srednekolymsk Time
+			10:00	-	+10	1930 Jun 21
+			11:00	Russia	+11/+12	1991 Mar 31  2:00s
+			10:00	Russia	+10/+11	1992 Jan 19  2:00s
+			11:00	Russia	+11/+12	2011 Mar 27  2:00s
+			12:00	-	+12	2014 Oct 26  2:00s
+			11:00	-	+11
 
 
 # From Tim Parenti (2014-07-03):
@@ -3135,14 +3152,14 @@ Zone Asia/Srednekolymsk	10:14:52 -	LMT	1924 May  2
 # UTC+12 since at least then, too.
 
 Zone Asia/Ust-Nera	 9:32:54 -	LMT	1919 Dec 15
-			 8:00	-	YAKT	1930 Jun 21 # Yakutsk Time
-			 9:00	Russia	YAKT	1981 Apr  1
-			11:00	Russia	MAG%sT	1991 Mar 31  2:00s
-			10:00	Russia	MAG%sT	1992 Jan 19  2:00s
-			11:00	Russia	MAG%sT	2011 Mar 27  2:00s
-			12:00	-	MAGT	2011 Sep 13  0:00s # Decree 725?
-			11:00	-	VLAT	2014 Oct 26  2:00s
-			10:00	-	VLAT
+			 8:00	-	+08	1930 Jun 21
+			 9:00	Russia	+09/+10	1981 Apr  1
+			11:00	Russia	+11/+12	1991 Mar 31  2:00s
+			10:00	Russia	+10/+11	1992 Jan 19  2:00s
+			11:00	Russia	+11/+12	2011 Mar 27  2:00s
+			12:00	-	+12	2011 Sep 13  0:00s # Decree 725?
+			11:00	-	+11	2014 Oct 26  2:00s
+			10:00	-	+10
 
 
 # From Tim Parenti (2014-07-03), per Oscar van Vlijmen (2001-08-25):
@@ -3155,12 +3172,12 @@ Zone Asia/Ust-Nera	 9:32:54 -	LMT	1919 Dec 15
 # The Zone name should be Asia/Petropavlovsk-Kamchatski or perhaps
 # Asia/Petropavlovsk-Kamchatsky, but these are too long.
 Zone Asia/Kamchatka	10:34:36 -	LMT	1922 Nov 10
-			11:00	-	PETT	1930 Jun 21 # P-K Time
-			12:00	Russia	PET%sT	1991 Mar 31  2:00s
-			11:00	Russia	PET%sT	1992 Jan 19  2:00s
-			12:00	Russia	PET%sT	2010 Mar 28  2:00s
-			11:00	Russia	PET%sT	2011 Mar 27  2:00s
-			12:00	-	PETT
+			11:00	-	+11	1930 Jun 21
+			12:00	Russia	+12/+13	1991 Mar 31  2:00s
+			11:00	Russia	+11/+12	1992 Jan 19  2:00s
+			12:00	Russia	+12/+13	2010 Mar 28  2:00s
+			11:00	Russia	+11/+12	2011 Mar 27  2:00s
+			12:00	-	+12
 
 
 # From Tim Parenti (2014-07-03):
@@ -3168,13 +3185,13 @@ Zone Asia/Kamchatka	10:34:36 -	LMT	1922 Nov 10
 # 87	RU-CHU	Chukotka Autonomous Okrug
 
 Zone Asia/Anadyr	11:49:56 -	LMT	1924 May  2
-			12:00	-	ANAT	1930 Jun 21 # Anadyr Time
-			13:00	Russia	ANA%sT	1982 Apr  1  0:00s
-			12:00	Russia	ANA%sT	1991 Mar 31  2:00s
-			11:00	Russia	ANA%sT	1992 Jan 19  2:00s
-			12:00	Russia	ANA%sT	2010 Mar 28  2:00s
-			11:00	Russia	ANA%sT	2011 Mar 27  2:00s
-			12:00	-	ANAT
+			12:00	-	+12	1930 Jun 21
+			13:00	Russia	+13/+14	1982 Apr  1  0:00s
+			12:00	Russia	+12/+13	1991 Mar 31  2:00s
+			11:00	Russia	+11/+12	1992 Jan 19  2:00s
+			12:00	Russia	+12/+13	2010 Mar 28  2:00s
+			11:00	Russia	+11/+12	2011 Mar 27  2:00s
+			12:00	-	+12
 
 
 # San Marino
@@ -3495,6 +3512,14 @@ Zone	Europe/Zurich	0:34:08 -	LMT	1853 Jul 16 # See above comment.
 # Engineered Standard Time," said Twitter user @aysekarahasan.
 # http://www.bbc.com/news/world-europe-34631326
 
+# From Burak AYDIN (2016-09-08):
+# Turkey will stay in Daylight Saving Time even in winter....
+# http://www.resmigazete.gov.tr/eskiler/2016/09/20160908-2.pdf
+#
+# From Paul Eggert (2016-09-07):
+# The change is permanent, so this is the new standard time in Turkey.
+# It takes effect today, which is not much notice.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Turkey	1916	only	-	May	 1	0:00	1:00	S
 Rule	Turkey	1916	only	-	Oct	 1	0:00	0	-
@@ -3558,7 +3583,7 @@ Rule	Turkey	1996	2006	-	Oct	lastSun	1:00s	0	-
 Zone	Europe/Istanbul	1:55:52 -	LMT	1880
 			1:56:56	-	IMT	1910 Oct # Istanbul Mean Time?
 			2:00	Turkey	EE%sT	1978 Oct 15
-			3:00	Turkey	TR%sT	1985 Apr 20 # Turkey Time
+			3:00	Turkey	+03/+04	1985 Apr 20
 			2:00	Turkey	EE%sT	2007
 			2:00	EU	EE%sT	2011 Mar 27  1:00u
 			2:00	-	EET	2011 Mar 28  1:00u
@@ -3566,7 +3591,8 @@ Zone	Europe/Istanbul	1:55:52 -	LMT	1880
 			2:00	-	EET	2014 Mar 31  1:00u
 			2:00	EU	EE%sT	2015 Oct 25  1:00u
 			2:00	1:00	EEST	2015 Nov  8  1:00u
-			2:00	EU	EE%sT
+			2:00	EU	EE%sT	2016 Sep  7
+			3:00	-	+03
 Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 
 # Ukraine

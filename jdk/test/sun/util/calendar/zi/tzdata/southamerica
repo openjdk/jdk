@@ -433,9 +433,9 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 # stuck on Summer daylight savings time even though the summer is over.
 
 # From Paul Eggert (2013-09-05):
-# Perhaps San Luis operates on the legal fiction that it is at UTC-4
+# Perhaps San Luis operates on the legal fiction that it is at -04
 # with perpetual summer time, but ordinary usage typically seems to
-# just say it's at UTC-3; see, for example,
+# just say it's at -03; see, for example,
 # http://es.wikipedia.org/wiki/Hora_oficial_argentina
 # We've documented similar situations as being plain changes to
 # standard time, so let's do that here too.  This does not change UTC
