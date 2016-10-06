@@ -63,7 +63,7 @@ public class ClassFileReader implements Closeable {
      * Returns a ClassFileReader instance of a given path.
      */
     public static ClassFileReader newInstance(Path path) throws IOException {
-        return newInstance(path, JarFile.baseVersion());
+        return newInstance(path, null);
     }
 
     /**
