@@ -139,13 +139,11 @@ Zone	Asia/Kabul	4:36:48 -	LMT	1890
 # http://www.worldtimezone.com/dst_news/dst_news_armenia03.html
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Yerevan	2:58:00 -	LMT	1924 May  2
-			3:00	-	YERT	1957 Mar    # Yerevan Time
-			4:00 RussiaAsia YER%sT	1991 Mar 31  2:00s
-			3:00	1:00	YERST	1991 Sep 23 # independence
-			3:00 RussiaAsia	AM%sT	1995 Sep 24  2:00s
-			4:00	-	AMT	1997
-			4:00 RussiaAsia	AM%sT	2012 Feb  9
-			4:00	-	AMT
+			3:00	-	+03	1957 Mar
+			4:00 RussiaAsia +04/+05	1991 Mar 31  2:00s
+			3:00 RussiaAsia	+03/+04	1995 Sep 24  2:00s
+			4:00	-	+04	1997
+			4:00 RussiaAsia	+04/+05
 
 # Azerbaijan
 
@@ -166,13 +164,12 @@ Rule	Azer	1997	2015	-	Mar	lastSun	 4:00	1:00	S
 Rule	Azer	1997	2015	-	Oct	lastSun	 5:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Baku	3:19:24 -	LMT	1924 May  2
-			3:00	-	BAKT	1957 Mar    # Baku Time
-			4:00 RussiaAsia BAK%sT	1991 Mar 31  2:00s
-			3:00	1:00	BAKST	1991 Aug 30 # independence
-			3:00 RussiaAsia	AZ%sT	1992 Sep lastSun  2:00s
-			4:00	-	AZT	1996     # Azerbaijan Time
-			4:00	EUAsia	AZ%sT	1997
-			4:00	Azer	AZ%sT
+			3:00	-	+03	1957 Mar
+			4:00 RussiaAsia +04/+05	1991 Mar 31  2:00s
+			3:00 RussiaAsia	+03/+04	1992 Sep lastSun  2:00s
+			4:00	-	+04	1996
+			4:00	EUAsia	+04/+05	1997
+			4:00	Azer	+04/+05
 
 # Bahrain
 # See Asia/Qatar.
@@ -291,7 +288,7 @@ Zone	Asia/Brunei	7:39:40 -	LMT	1926 Mar # Bandar Seri Begawan
 # Milne says 6:24:40 was the meridian of the time ball observatory at Rangoon.
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Rangoon	6:24:40 -	LMT	1880        # or Yangon
+Zone	Asia/Yangon	6:24:40 -	LMT	1880        # or Rangoon
 			6:24:40	-	RMT	1920        # Rangoon Mean Time?
 			6:30	-	BURT	1942 May    # Burma Time
 			9:00	-	JST	1945 May  3
@@ -406,7 +403,7 @@ Rule	PRC	1987	1991	-	Apr	Sun>=10	0:00	1:00	D
 # Lewiston (ME) Daily Sun (1939-05-29), p 17, said "Even the time is
 # different - the occupied districts going by Tokyo time, an hour
 # ahead of that prevailing in the rest of Shanghai."  Guess that the
-# Xujiahui Observatory was under French control and stuck with UT+8.
+# Xujiahui Observatory was under French control and stuck with UT +08.
 #
 # In earlier versions of this file, China had many separate Zone entries, but
 # this was based on what were apparently incorrect data in Shanks & Pottenger.
@@ -415,26 +412,26 @@ Rule	PRC	1987	1991	-	Apr	Sun>=10	0:00	1:00	D
 # Proposed in 1918 and theoretically in effect until 1949 (although in practice
 # mainly observed in coastal areas), the five zones were:
 #
-# Changbai Time ("Long-white Time", Long-white = Heilongjiang area) UT+8.5
+# Changbai Time ("Long-white Time", Long-white = Heilongjiang area) UT +08:30
 # Asia/Harbin (currently a link to Asia/Shanghai)
 # Heilongjiang (except Mohe county), Jilin
 #
-# Zhongyuan Time ("Central plain Time") UT+8
+# Zhongyuan Time ("Central plain Time") UT +08
 # Asia/Shanghai
 # most of China
 # This currently represents most other zones as well,
 # as apparently these regions have been the same since 1970.
 # Milne gives 8:05:43.2 for Xujiahui Observatory time; round to nearest.
-# Guo says Shanghai switched to UT+8 "from the end of the 19th century".
+# Guo says Shanghai switched to UT +08 "from the end of the 19th century".
 #
-# Long-shu Time (probably due to Long and Shu being two names of that area) UT+7
+# Long-shu Time (probably due to Long and Shu being two names of the area) UT +07
 # Asia/Chongqing (currently a link to Asia/Shanghai)
 # Guangxi, Guizhou, Hainan, Ningxia, Sichuan, Shaanxi, and Yunnan;
 # most of Gansu; west Inner Mongolia; west Qinghai; and the Guangdong
 # counties Deqing, Enping, Kaiping, Luoding, Taishan, Xinxing,
 # Yangchun, Yangjiang, Yu'nan, and Yunfu.
 #
-# Xin-zang Time ("Xinjiang-Tibet Time") UT+6
+# Xin-zang Time ("Xinjiang-Tibet Time") UT +06
 # Asia/Urumqi
 # This currently represents Kunlun Time as well,
 # as apparently the two regions have been the same since 1970.
@@ -447,7 +444,7 @@ Rule	PRC	1987	1991	-	Apr	Sun>=10	0:00	1:00	D
 # Shihezi, Changji, Yanqi, Heshuo, Tuokexun, Tulufan, Shanshan, Hami,
 # Fukang, Kuitun, Kumukuli, Miquan, Qitai, and Turfan.
 #
-# Kunlun Time UT+5.5
+# Kunlun Time UT +05:30
 # Asia/Kashgar (currently a link to Asia/Urumqi)
 # West Tibet, including Pulan, Aheqi, Shufu, Shule;
 # West Xinjiang, including Aksu, Atushi, Yining, Hetian, Cele, Luopu, Nileke,
@@ -463,7 +460,7 @@ Rule	PRC	1987	1991	-	Apr	Sun>=10	0:00	1:00	D
 #
 # On the other hand, ethnic Uyghurs, who make up about half the
 # population of Xinjiang, typically use "Xinjiang time" which is two
-# hours behind Beijing time, or UTC +0600. The government of the Xinjiang
+# hours behind Beijing time, or UT +06. The government of the Xinjiang
 # Uyghur Autonomous Region, (XAUR, or just Xinjiang for short) as well as
 # local governments such as the Ürümqi city government use both times in
 # publications, referring to what is popularly called Xinjiang time as
@@ -519,8 +516,8 @@ Rule	PRC	1987	1991	-	Apr	Sun>=10	0:00	1:00	D
 # having the same time as Beijing.
 
 # From Paul Eggert (2014-06-30):
-# In the early days of the PRC, Tibet was given its own time zone (UT+6) but
-# this was withdrawn in 1959 and never reinstated; see Tubten Khétsun,
+# In the early days of the PRC, Tibet was given its own time zone (UT +06)
+# but this was withdrawn in 1959 and never reinstated; see Tubten Khétsun,
 # Memories of life in Lhasa under Chinese Rule, Columbia U Press, ISBN
 # 978-0231142861 (2008), translator's introduction by Matthew Akester, p x.
 # As this is before our 1970 cutoff, Tibet doesn't need a separate zone.
@@ -534,12 +531,12 @@ Rule	PRC	1987	1991	-	Apr	Sun>=10	0:00	1:00	D
 # Republics, the Soviet Union, the Kuomintang, and the People's Republic of
 # China, and tracking down all these organizations' timekeeping rules would be
 # quite a trick.  Approximate this lost history by a transition from LMT to
-# XJT at the start of 1928, the year of accession of the warlord Jin Shuren,
+# UT +06 at the start of 1928, the year of accession of the warlord Jin Shuren,
 # which happens to be the date given by Shanks & Pottenger (no doubt as a
-# guess) as the transition from LMT.  Ignore the usage of UT+8 before
-# 1986-02-01 under the theory that the transition date to UT+8 is unknown and
+# guess) as the transition from LMT.  Ignore the usage of +08 before
+# 1986-02-01 under the theory that the transition date to +08 is unknown and
 # that the sort of users who prefer Asia/Urumqi now typically ignored the
-# UT+8 mandate back then.
+# +08 mandate back then.
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 # Beijing time, used throughout China; represented by Shanghai.
@@ -744,7 +741,7 @@ Zone	Asia/Hong_Kong	7:36:42 -	LMT	1904 Oct 30
 # be found from historical government announcement database.
 
 # From Paul Eggert (2014-07-03):
-# As per Yu-Cheng Chuang, say that Taiwan was at UT+9 from 1937-10-01
+# As per Yu-Cheng Chuang, say that Taiwan was at UT +09 from 1937-10-01
 # until 1945-09-21 at 01:00, overriding Shanks & Pottenger.
 # Likewise, use Yu-Cheng Chuang's data for DST in Taiwan.
 
@@ -858,16 +855,15 @@ Link	Asia/Nicosia	Europe/Nicosia
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Tbilisi	2:59:11 -	LMT	1880
 			2:59:11	-	TBMT	1924 May  2 # Tbilisi Mean Time
-			3:00	-	TBIT	1957 Mar    # Tbilisi Time
-			4:00 RussiaAsia TBI%sT	1991 Mar 31  2:00s
-			3:00	1:00	TBIST	1991 Apr  9 # independence
-			3:00 RussiaAsia GE%sT	1992        # Georgia Time
-			3:00 E-EurAsia	GE%sT	1994 Sep lastSun
-			4:00 E-EurAsia	GE%sT	1996 Oct lastSun
-			4:00	1:00	GEST	1997 Mar lastSun
-			4:00 E-EurAsia	GE%sT	2004 Jun 27
-			3:00 RussiaAsia	GE%sT	2005 Mar lastSun  2:00
-			4:00	-	GET
+			3:00	-	+03	1957 Mar
+			4:00 RussiaAsia +04/+05	1991 Mar 31  2:00s
+			3:00 RussiaAsia +03/+04	1992
+			3:00 E-EurAsia	+03/+04	1994 Sep lastSun
+			4:00 E-EurAsia	+04/+05	1996 Oct lastSun
+			4:00	1:00	+05	1997 Mar lastSun
+			4:00 E-EurAsia	+04/+05	2004 Jun 27
+			3:00 RussiaAsia	+03/+04	2005 Mar lastSun  2:00
+			4:00	-	+04
 
 # East Timor
 
@@ -944,7 +940,7 @@ Zone	Asia/Kolkata	5:53:28 -	LMT	1880        # Kolkata
 # These would be the earliest possible times for a change.
 # Régimes horaires pour le monde entier, by Henri Le Corre, (Éditions
 # Traditionnelles, 1987, Paris) says that Java and Madura switched
-# from JST to UTC+07:30 on 1945-09-23, and gives 1944-09-01 for Jayapura
+# from UT +09 to +07:30 on 1945-09-23, and gives 1944-09-01 for Jayapura
 # (Hollandia).  For now, assume all Indonesian locations other than Jayapura
 # switched on 1945-09-23.
 #
@@ -955,11 +951,11 @@ Zone	Asia/Kolkata	5:53:28 -	LMT	1880        # Kolkata
 # summary published by the Time and Frequency Laboratory of the
 # Research Center for Calibration, Instrumentation and Metrology,
 # Indonesia, <http://time.kim.lipi.go.id/time-eng.php> (2006-09-29).
-# The abbreviations are:
+# The time zone abbreviations and UT offsets are:
 #
-# WIB  - UTC+7 - Waktu Indonesia Barat (Indonesia western time)
-# WITA - UTC+8 - Waktu Indonesia Tengah (Indonesia central time)
-# WIT  - UTC+9 - Waktu Indonesia Timur (Indonesia eastern time)
+# WIB  - +07 - Waktu Indonesia Barat (Indonesia western time)
+# WITA - +08 - Waktu Indonesia Tengah (Indonesia central time)
+# WIT  - +09 - Waktu Indonesia Timur (Indonesia eastern time)
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 # Java, Sumatra
@@ -1848,11 +1844,11 @@ Rule	Kyrgyz	1997	2005	-	Mar	lastSun	2:30	1:00	S
 Rule	Kyrgyz	1997	2004	-	Oct	lastSun	2:30	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Bishkek	4:58:24 -	LMT	1924 May  2
-			5:00	-	FRUT	1930 Jun 21 # Frunze Time
-			6:00 RussiaAsia FRU%sT	1991 Mar 31  2:00s
-			5:00	1:00	FRUST	1991 Aug 31  2:00 # independence
-			5:00	Kyrgyz	KG%sT	2005 Aug 12 # Kyrgyzstan Time
-			6:00	-	KGT
+			5:00	-	+05	1930 Jun 21
+			6:00 RussiaAsia +06/+07	1991 Mar 31  2:00s
+			5:00 RussiaAsia	+05/+06	1991 Aug 31  2:00
+			5:00	Kyrgyz	+05/+06	2005 Aug 12
+			6:00	-	+06
 
 ###############################################################################
 
@@ -1891,25 +1887,24 @@ Rule	ROK	1957	1960	-	Sep	Sun>=18	0:00	0	S
 Rule	ROK	1987	1988	-	May	Sun>=8	2:00	1:00	D
 Rule	ROK	1987	1988	-	Oct	Sun>=8	3:00	0	S
 
-# From Paul Eggert (2014-10-30):
+# From Paul Eggert (2016-08-23):
 # The Korean Wikipedia entry gives the following sources for UT offsets:
 #
-# 1908: Official Journal Article No. 3994 (Edict No. 5)
+# 1908: Official Journal Article No. 3994 (decree No. 5)
 # 1912: Governor-General of Korea Official Gazette Issue No. 367
 #       (Announcement No. 338)
 # 1954: Presidential Decree No. 876 (1954-03-17)
 # 1961: Law No. 676 (1961-08-07)
-# 1987: Law No. 3919 (1986-12-31)
 #
-# The Wikipedia entry also has confusing information about a change
-# to UT+9 in April 1910, but then what would be the point of the later change
-# to UT+9 on 1912-01-01?  Omit the 1910 change for now.
+# (Another source "1987: Law No. 3919 (1986-12-31)" was in the 2014-10-30
+# edition of the Korean Wikipedia entry.)
 #
 # I guessed that time zone abbreviations through 1945 followed the same
 # rules as discussed under Taiwan, with nominal switches from JST to KST
 # when the respective cities were taken over by the Allies after WWII.
 #
-# For Pyongyang we have no information; guess no changes since World War II.
+# For Pyongyang, guess no changes from World War II until 2015, as we
+# have no information otherwise.
 
 # From Steffen Thorsen (2015-08-07):
 # According to many news sources, North Korea is going to change to
@@ -2069,7 +2064,7 @@ Zone	Indian/Maldives	4:54:00 -	LMT	1880 # Male
 # Bill Bonnet (2005-05-19) reports that the US Embassy in Ulaanbaatar says
 # there is only one time zone and that DST is observed, citing Microsoft
 # Windows XP as the source.  Risto Nykänen (2005-05-16) reports that
-# travelmongolia.org says there are two time zones (UTC+7, UTC+8) with no DST.
+# travelmongolia.org says there are two time zones (UT +07, +08) with no DST.
 # Oscar van Vlijmen (2005-05-20) reports that the Mongolian Embassy in
 # Washington, DC says there are two time zones, with DST observed.
 # He also found
@@ -2705,7 +2700,7 @@ Link Asia/Qatar Asia/Bahrain
 # earlier date.
 #
 # Shanks & Pottenger also state that until 1968-05-01 Saudi Arabia had two
-# time zones; the other zone, at UTC+4, was in the far eastern part of
+# time zones; the other zone, at UT +04, was in the far eastern part of
 # the country.  Ignore this, as it's before our 1970 cutoff.
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -2974,10 +2969,10 @@ Zone	Asia/Damascus	2:25:12 -	LMT	1920 # Dimashq
 # From Shanks & Pottenger.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Dushanbe	4:35:12 -	LMT	1924 May  2
-			5:00	-	DUST	1930 Jun 21 # Dushanbe Time
-			6:00 RussiaAsia DUS%sT	1991 Mar 31  2:00s
-			5:00	1:00	DUSST	1991 Sep  9  2:00s
-			5:00	-	TJT	# Tajikistan Time
+			5:00	-	+05	1930 Jun 21
+			6:00 RussiaAsia +06/+07	1991 Mar 31  2:00s
+			5:00	1:00	+05/+06	1991 Sep  9  2:00s
+			5:00	-	+05
 
 # Thailand
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -2991,11 +2986,10 @@ Link Asia/Bangkok Asia/Vientiane	# Laos
 # From Shanks & Pottenger.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Ashgabat	3:53:32 -	LMT	1924 May  2 # or Ashkhabad
-			4:00	-	ASHT	1930 Jun 21 # Ashkhabad Time
-			5:00 RussiaAsia	ASH%sT	1991 Mar 31  2:00
-			4:00 RussiaAsia	ASH%sT	1991 Oct 27 # independence
-			4:00 RussiaAsia	TM%sT	1992 Jan 19  2:00
-			5:00	-	TMT
+			4:00	-	+04	1930 Jun 21
+			5:00 RussiaAsia	+05/+06	1991 Mar 31  2:00
+			4:00 RussiaAsia	+04/+05	1992 Jan 19  2:00
+			5:00	-	+05
 
 # United Arab Emirates
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -3007,20 +3001,18 @@ Link Asia/Dubai Asia/Muscat	# Oman
 # Byalokoz 1919 says Uzbekistan was 4:27:53.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Samarkand	4:27:53 -	LMT	1924 May  2
-			4:00	-	SAMT	1930 Jun 21 # Samarkand Time
-			5:00	-	SAMT	1981 Apr  1
-			5:00	1:00	SAMST	1981 Oct  1
-			6:00	-	TAST	1982 Apr  1 # Tashkent Time
-			5:00 RussiaAsia	SAM%sT	1991 Sep  1 # independence
-			5:00 RussiaAsia	UZ%sT	1992
-			5:00	-	UZT
+			4:00	-	+04	1930 Jun 21
+			5:00	-	+05	1981 Apr  1
+			5:00	1:00	+06	1981 Oct  1
+			6:00	-	+06	1982 Apr  1
+			5:00 RussiaAsia	+05/+06	1992
+			5:00	-	+05
 # Milne says Tashkent was 4:37:10.8; round to nearest.
 Zone	Asia/Tashkent	4:37:11 -	LMT	1924 May  2
-			5:00	-	TAST	1930 Jun 21 # Tashkent Time
-			6:00 RussiaAsia	TAS%sT	1991 Mar 31  2:00
-			5:00 RussiaAsia	TAS%sT	1991 Sep  1 # independence
-			5:00 RussiaAsia	UZ%sT	1992
-			5:00	-	UZT
+			5:00	-	+05	1930 Jun 21
+			6:00 RussiaAsia	+06/+07	1991 Mar 31  2:00
+			5:00 RussiaAsia	+05/+06	1992
+			5:00	-	+05
 
 # Vietnam
 
