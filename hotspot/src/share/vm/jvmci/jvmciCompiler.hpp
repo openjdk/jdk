@@ -47,7 +47,10 @@ private:
 
   static elapsedTimer _codeInstallTimer;
 
-  static void abort_on_pending_exception(Handle exception, const char* message, bool dump_core = false);
+  /**
+   * Exits the VM due to an unexpected exception.
+   */
+  static void exit_on_pending_exception(Handle exception, const char* message);
 
 public:
   JVMCICompiler();

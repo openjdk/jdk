@@ -3897,10 +3897,6 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
 
 void Arguments::set_shared_spaces_flags() {
   if (DumpSharedSpaces) {
-    if (Arguments::get_patch_mod_prefix() != NULL) {
-      vm_exit_during_initialization(
-        "Cannot use the following option when dumping the shared archive: --patch-module");
-    }
 
     if (RequireSharedSpaces) {
       warning("Cannot dump shared archive while using shared archive");

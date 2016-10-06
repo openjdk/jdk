@@ -653,16 +653,17 @@ class HeapRegion: public G1ContiguousSpace {
     }
   }
 
-  // filter_young: if true and the region is a young region then we
-  // skip the iteration.
-  // card_ptr: if not NULL, and we decide that the card is not young
-  // and we iterate over it, we'll clean the card before we start the
-  // iteration.
-  HeapWord*
-  oops_on_card_seq_iterate_careful(MemRegion mr,
-                                   FilterOutOfRegionClosure* cl,
-                                   bool filter_young,
-                                   jbyte* card_ptr);
+  // Iterate over the card in the card designated by card_ptr,
+  // applying cl to all references in the region.
+  // mr: the memory region covered by the card.
+  // card_ptr: if we decide that the card is not young and we iterate
+  // over it, we'll clean the card before we start the iteration.
+  // Returns true if card was successfully processed, false if an
+  // unparsable part of the heap was encountered, which should only
+  // happen when invoked concurrently with the mutator.
+  bool oops_on_card_seq_iterate_careful(MemRegion mr,
+                                        FilterOutOfRegionClosure* cl,
+                                        jbyte* card_ptr);
 
   size_t recorded_rs_length() const        { return _recorded_rs_length; }
   double predicted_elapsed_time_ms() const { return _predicted_elapsed_time_ms; }

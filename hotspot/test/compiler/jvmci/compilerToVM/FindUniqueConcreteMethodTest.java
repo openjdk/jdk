@@ -74,45 +74,37 @@ public class FindUniqueConcreteMethodTest {
     private static Set<TestCase> createTestCases() {
         Set<TestCase> result = new HashSet<>();
         // a public method
-        result.add(new TestCase(true, SingleSubclass.class,
-                SingleSubclass.class, "usualMethod"));
+        result.add(new TestCase(true, SingleSubclass.class, "usualMethod"));
         // overriden method
-        result.add(new TestCase(true, SingleSubclass.class,
-                SingleSubclass.class, "overridenMethod"));
+        result.add(new TestCase(true, SingleSubclass.class, "overridenMethod"));
         // private method
-        result.add(new TestCase(true, SingleSubclass.class,
-                SingleSubclass.class, "privateMethod"));
+        result.add(new TestCase(true, SingleSubclass.class, "privateMethod"));
         // protected method
-        result.add(new TestCase(true, SingleSubclass.class,
-                SingleSubclass.class, "protectedMethod"));
+        result.add(new TestCase(true, SingleSubclass.class, "protectedMethod"));
         // default(package-private) method
-        result.add(new TestCase(true, SingleSubclass.class,
-                SingleSubclass.class, "defaultAccessMethod"));
+        result.add(new TestCase(true, SingleSubclass.class, "defaultAccessMethod"));
         // default interface method redefined in implementer
-        result.add(new TestCase(true, MultipleImplementer1.class,
-                MultipleImplementer1.class, "defaultMethod"));
+        result.add(new TestCase(true, MultipleImplementer1.class, "defaultMethod"));
         // interface method
-        result.add(new TestCase(true, MultipleImplementer1.class,
-                MultipleImplementer1.class, "testMethod"));
+        result.add(new TestCase(true, MultipleImplementer1.class, "testMethod"));
         // default interface method not redefined in implementer
-        result.add(new TestCase(true, SingleImplementer.class,
-                SingleImplementerInterface.class, "defaultMethod"));
+        // result.add(new TestCase(true, SingleImplementer.class,
+        //                         SingleImplementerInterface.class, "defaultMethod"));
         // static method
-        result.add(new TestCase(false, SingleSubclass.class,
-                SingleSubclass.class, "staticMethod"));
+        result.add(new TestCase(false, SingleSubclass.class, "staticMethod"));
         // interface method
         result.add(new TestCase(false, MultipleSuperImplementers.class,
-                                DuplicateSimpleSingleImplementerInterface.class, "interfaceMethod", false));
+                                DuplicateSimpleSingleImplementerInterface.class, "interfaceMethod"));
         result.add(new TestCase(false, MultipleSuperImplementers.class,
-                                SimpleSingleImplementerInterface.class, "interfaceMethod", false));
+                                SimpleSingleImplementerInterface.class, "interfaceMethod"));
         return result;
     }
 
     private void runTest(TestCase tcase) throws NoSuchMethodException {
         System.out.println(tcase);
         Method method = tcase.holder.getDeclaredMethod(tcase.methodName);
-        HotSpotResolvedJavaMethod testMethod = CTVMUtilities
-            .getResolvedMethod(tcase.methodFromReceiver ? tcase.receiver : tcase.holder, method);
+        HotSpotResolvedJavaMethod testMethod = CTVMUtilities.getResolvedMethod(method);
+
         HotSpotResolvedObjectType resolvedType = CompilerToVMHelper
                 .lookupType(Utils.toJVMTypeSignature(tcase.receiver), getClass(),
                 /* resolve = */ true);
@@ -127,25 +119,23 @@ public class FindUniqueConcreteMethodTest {
         public final Class<?> holder;
         public final String methodName;
         public final boolean isPositive;
-        public final boolean methodFromReceiver;
 
         public TestCase(boolean isPositive, Class<?> clazz, Class<?> holder,
-                        String methodName, boolean methodFromReceiver) {
+                        String methodName) {
             this.receiver = clazz;
             this.methodName = methodName;
             this.isPositive = isPositive;
             this.holder = holder;
-            this.methodFromReceiver = methodFromReceiver;
         }
 
-        public TestCase(boolean isPositive, Class<?> clazz, Class<?> holder, String methodName) {
-            this(isPositive, clazz, holder, methodName, true);
+        public TestCase(boolean isPositive, Class<?> clazz, String methodName) {
+            this(isPositive, clazz, clazz, methodName);
         }
 
         @Override
         public String toString() {
-            return String.format("CASE: receiver=%s, holder=%s, method=%s, isPositive=%s, methodFromReceiver=%s",
-                                 receiver.getName(), holder.getName(), methodName, isPositive, methodFromReceiver);
+            return String.format("CASE: receiver=%s, holder=%s, method=%s, isPositive=%s",
+                                 receiver.getName(), holder.getName(), methodName, isPositive);
         }
     }
 }
