@@ -373,7 +373,7 @@ create-buildjdk-interim-image:
 ALL_TARGETS += create-buildjdk-copy create-buildjdk-interim-image
 
 ################################################################################
-# The interim-image is a small jlinked image that is used to generate artifacts 
+# The interim-image is a small jlinked image that is used to generate artifacts
 # at build time for use when linking the real images.
 
 interim-image:
@@ -615,23 +615,33 @@ else
   $(foreach m, $(LAUNCHER_MODULES), $(eval $m-jmod: $m-launchers))
   $(foreach m, $(COPY_MODULES), $(eval $m-jmod: $m-copy))
 
-  # Jmods cannot be created until we have the jlink tool ready to run, which requires
-  # all java modules to be compiled and jdk.jlink-launchers.
-  # And we also need to copy jvm.cfg (done in java.base-copy) and tzdb.dat (done in
-  # java.base-gendata) to the appropriate location otherwise jimage, jlink and jmod won't start.
-  $(JMOD_TARGETS): java.base-libs java.base-copy java.base-gendata jdk.jlink-launchers
-  # When creating a BUILDJDK, the java compilation has already been done by the
-  # normal build and copied in.
-  ifneq ($(CREATING_BUILDJDK), true)
-    $(JMOD_TARGETS): java
-  endif
-
+  # Jmods cannot be created until we have the jmod tool ready to run. During
+  # a normal build we run it from the exploded image, but when cross compiling
+  # it's run from the buildjdk, which is either created at build time or user
+  # supplied.
+  #
+  # For the exploded image to be runnable, all java modules and
+  # jdk.jlink-launchers need to be built. We also need to copy jvm.cfg (done
+  # in java.base-copy) and tzdb.dat (done in java.base-gendata) to the
+  # appropriate location otherwise jimage, jlink and jmod won't start. This
+  # also applies when creating the buildjdk.
+  DEFAULT_JMOD_DEPS := java.base-libs java.base-copy java.base-gendata \
+      jdk.jlink-launchers
+  # When cross compiling and buildjdk is to be created, depend on creating the
+  # buildjdk instead of the default dependencies.
   ifeq ($(CREATE_BUILDJDK), true)
-    # Avoid calling create-buildjdk from within a create-buildjdk call
+    # Avoid calling create-buildjdk from within a create-buildjdk call.
     ifneq ($(CREATING_BUILDJDK), true)
       $(JMOD_TARGETS): create-buildjdk
       buildtools-modules: create-buildjdk
+    else
+      # While actually creating the buildjdk, the default deps applies.
+      $(JMOD_TARGETS): $(DEFAULT_JMOD_DEPS)
     endif
+  else
+    # The normal non cross compilation case uses the default deps.
+    # To avoid races with the optimize target, that also needs to happen first.
+    $(JMOD_TARGETS): $(DEFAULT_JMOD_DEPS) exploded-image-optimize
   endif
 
   zip-security: java.base-java java.security.jgss-java java.security.jgss-libs \
@@ -663,7 +673,11 @@ else
 
   mac-bundles-jdk: jdk-image jre-image
 
-  exploded-image-optimize: exploded-image-base buildtools-modules
+  # The optimize target can run as soon as the modules dir has been completely
+  # populated (java, copy and gendata targets) and the basic libs and launchers
+  # have been built.
+  exploded-image-optimize: java copy gendata java.base-libs java.base-launchers \
+      buildtools-modules
 
   bootcycle-images: jdk-image
 
@@ -761,7 +775,12 @@ samples: samples-jdk
 
 # The "exploded image" is a locally runnable JDK in $(BUILD_OUTPUT)/jdk.
 exploded-image-base: $(ALL_MODULES)
-exploded-image: exploded-image-base exploded-image-optimize
+exploded-image: exploded-image-base
+# When cross compiling, no need to optimize the exploded image since it won't
+# be runnable on the host platform anyway.
+ifneq ($(COMPILE_TYPE), cross)
+  exploded-image: exploded-image-optimize
+endif
 
 create-buildjdk: create-buildjdk-copy create-buildjdk-interim-image
 
