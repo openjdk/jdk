@@ -165,8 +165,8 @@ public class Messager extends Log implements Reporter {
     /**
      * Constructor
      * @param programName  Name of the program (for error messages).
-     * @param stdOut    Stream for notices etc.
-     * @param stdErr    Stream for errors and warnings
+     * @param outWriter    Stream for notices etc.
+     * @param errWriter    Stream for errors and warnings
      */
     @SuppressWarnings("deprecation")
     public Messager(Context context, String programName, PrintWriter outWriter, PrintWriter errWriter) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.javap;
 
 import java.io.PrintWriter;
+import java.util.spi.ToolProvider;
 
 /**
  *  Main entry point.
@@ -57,5 +58,15 @@ public class Main {
         JavapTask t = new JavapTask();
         t.setLog(out);
         return t.run(args);
+    }
+
+    public static class JavapToolProvider implements ToolProvider {
+        public String name() {
+            return "javap";
+        }
+
+        public int run(PrintWriter out, PrintWriter err, String... args) {
+            return Main.run(args, out);
+        }
     }
 }

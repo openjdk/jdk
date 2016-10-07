@@ -119,20 +119,21 @@ public class Start extends ToolOption.Helper {
     private JavaFileManager fileManager;
 
     Start() {
-        this(null, null, null, null, null);
+        this(null, null, null, null, null, null);
     }
 
-    Start(PrintWriter writer) {
-        this(null, null, writer, null, null);
+    Start(PrintWriter outWriter, PrintWriter errWriter) {
+        this(null, null, outWriter, errWriter, null, null);
     }
 
-    Start(Context context, String programName, PrintWriter writer,
+    Start(Context context, String programName,
+            PrintWriter outWriter, PrintWriter errWriter,
             String docletName, ClassLoader classLoader) {
         this.context = context == null ? new Context() : context;
         String pname = programName == null ? ProgramName : programName;
-        this.messager = writer == null
+        this.messager = (outWriter == null && errWriter == null)
                 ? new Messager(this.context, pname)
-                : new Messager(this.context, pname, writer, writer);
+                : new Messager(this.context, pname, outWriter, errWriter);
         this.docletName = docletName;
         this.classLoader = classLoader;
         this.docletClass = null;
