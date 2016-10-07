@@ -66,12 +66,25 @@ public class Main {
     /**
      * Programmatic interface.
      *
-     * @param writer PrintWriter to receive notice messages.
+     * @param writer a stream for all output
      * @param args The command line parameters.
      * @return The return code.
      */
     public static int execute(String[] args, PrintWriter writer) {
-        Start jdoc = new Start(writer);
+        Start jdoc = new Start(writer, writer);
+        return jdoc.begin(args);
+    }
+
+    /**
+     * Programmatic interface.
+     *
+     * @param outWriter a stream for expected output
+     * @param errWriter a stream for diagnostic output
+     * @param args The command line parameters.
+     * @return The return code.
+     */
+    public static int execute(String[] args, PrintWriter outWriter, PrintWriter errWriter) {
+        Start jdoc = new Start(outWriter, errWriter);
         return jdoc.begin(args);
     }
 }

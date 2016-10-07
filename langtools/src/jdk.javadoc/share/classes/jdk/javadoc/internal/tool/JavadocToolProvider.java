@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,25 @@
  * questions.
  */
 
-/** Defines tools for analysing dependencies in Java libraries and programs, including
- *  the <em>jdeps</em> and <em>javap</em> tools.
+package jdk.javadoc.internal.tool;
+
+import java.io.PrintWriter;
+import java.util.spi.ToolProvider;
+
+/**
+ * An implementation of the {@link java.util.spi.ToolProvider ToolProvider} SPI,
+ * providing access to JDK documentation tool, javadoc.
+ *
+ * @since 9
  */
-module jdk.jdeps {
-    requires java.base;
-    requires java.compiler;
-    requires jdk.compiler;
-    exports com.sun.tools.classfile to
-        jdk.jlink;
+// This is currently a stand-alone top-level class so that it can easily be excluded
+// from interims builds of javadoc, used while building JDK.
+public class JavadocToolProvider implements ToolProvider {
+    public String name() {
+        return "javadoc";
+    }
 
-    provides java.util.spi.ToolProvider
-        with com.sun.tools.javap.Main.JavapToolProvider;
-
-    provides java.util.spi.ToolProvider
-        with com.sun.tools.jdeps.Main.JDepsToolProvider;
+    public int run(PrintWriter out, PrintWriter err, String... args) {
+        return Main.execute(args, out, err);
+    }
 }
