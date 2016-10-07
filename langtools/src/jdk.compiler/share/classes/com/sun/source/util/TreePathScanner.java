@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,10 @@ import com.sun.source.tree.*;
  * Inside your method, call super.visitXYZ to visit descendant
  * nodes.
  *
+ * @apiNote
+ * In order to initialize the "current path", the scan must be
+ * started by calling one of the {@code scan} methods.
+ *
  * @author Jonathan Gibbons
  * @since 1.6
  */
@@ -58,6 +62,13 @@ public class TreePathScanner<R, P> extends TreeScanner<R, P> {
     /**
      * Scans a single node.
      * The current path is updated for the duration of the scan.
+     *
+     * @apiNote This method should normally only be called by the
+     * scanner's {@code visit} methods, as part of an ongoing scan
+     * initiated by {@link #scan(TreePath,Object) scan(TreePath, P)}.
+     * The one exception is that it may also be called to initiate
+     * a full scan of a {@link CompilationUnitTree}.
+     *
      * @return the result value from the visit method
      */
     @Override
