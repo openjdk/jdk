@@ -755,44 +755,11 @@ public class Parser extends AbstractParser implements Loggable {
 
     private void verifyDestructuringAssignmentPattern(final Expression pattern, final String contextString) {
         assert pattern instanceof ObjectNode || pattern instanceof LiteralNode.ArrayLiteralNode;
-        pattern.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+        pattern.accept(new VerifyDestructuringPatternNodeVisitor(new LexicalContext()) {
             @Override
-            public boolean enterLiteralNode(final LiteralNode<?> literalNode) {
-                if (literalNode.isArray()) {
-                    boolean restElement = false;
-                    for (final Expression element : literalNode.getElementExpressions()) {
-                        if (element != null) {
-                            if (restElement) {
-                                throw error(String.format("Unexpected element after rest element"), element.getToken());
-                            }
-                            if (element.isTokenType(SPREAD_ARRAY)) {
-                                restElement = true;
-                                final Expression lvalue = ((UnaryNode) element).getExpression();
-                                if (!checkValidLValue(lvalue, contextString)) {
-                                    throw error(AbstractParser.message("invalid.lvalue"), lvalue.getToken());
-                                }
-                            }
-                            element.accept(this);
-                        }
-                    }
-                    return false;
-                } else {
-                    return enterDefault(literalNode);
-                }
-            }
-
-            @Override
-            public boolean enterObjectNode(final ObjectNode objectNode) {
-                return true;
-            }
-
-            @Override
-            public boolean enterPropertyNode(final PropertyNode propertyNode) {
-                if (propertyNode.getValue() != null) {
-                    propertyNode.getValue().accept(this);
-                    return false;
-                } else {
-                    return enterDefault(propertyNode);
+            protected void verifySpreadElement(final Expression lvalue) {
+                if (!checkValidLValue(lvalue, contextString)) {
+                    throw error(AbstractParser.message("invalid.lvalue"), lvalue.getToken());
                 }
             }
 
@@ -814,27 +781,6 @@ public class Parser extends AbstractParser implements Loggable {
             @Override
             public boolean enterIndexNode(final IndexNode indexNode) {
                 return false;
-            }
-
-            @Override
-            public boolean enterBinaryNode(final BinaryNode binaryNode) {
-                if (binaryNode.isTokenType(ASSIGN)) {
-                    binaryNode.lhs().accept(this);
-                    // Initializer(rhs) can be any AssignmentExpression
-                    return false;
-                } else {
-                    return enterDefault(binaryNode);
-                }
-            }
-
-            @Override
-            public boolean enterUnaryNode(final UnaryNode unaryNode) {
-                if (unaryNode.isTokenType(SPREAD_ARRAY)) {
-                    // rest element
-                    return true;
-                } else {
-                    return enterDefault(unaryNode);
-                }
             }
 
             @Override
@@ -1579,7 +1525,50 @@ public class Parser extends AbstractParser implements Loggable {
         variableDeclarationList(varType, true, -1);
     }
 
-    private List<Expression> variableDeclarationList(final TokenType varType, final boolean isStatement, final int sourceOrder) {
+    private static final class ForVariableDeclarationListResult {
+        /** First missing const or binding pattern initializer. */
+        Expression missingAssignment;
+        /** First declaration with an initializer. */
+        long declarationWithInitializerToken;
+        /** Destructuring assignments. */
+        Expression init;
+        Expression firstBinding;
+        Expression secondBinding;
+
+        void recordMissingAssignment(final Expression binding) {
+            if (missingAssignment == null) {
+                missingAssignment = binding;
+            }
+        }
+
+        void recordDeclarationWithInitializer(final long token) {
+            if (declarationWithInitializerToken == 0L) {
+                declarationWithInitializerToken = token;
+            }
+        }
+
+        void addBinding(final Expression binding) {
+            if (firstBinding == null) {
+                firstBinding = binding;
+            } else if (secondBinding == null)  {
+                secondBinding = binding;
+            }
+            // ignore the rest
+        }
+
+        void addAssignment(final Expression assignment) {
+            if (init == null) {
+                init = assignment;
+            } else {
+                init = new BinaryNode(Token.recast(init.getToken(), COMMARIGHT), init, assignment);
+            }
+        }
+    }
+
+    /**
+     * @param isStatement {@code true} if a VariableStatement, {@code false} if a {@code for} loop VariableDeclarationList
+     */
+    private ForVariableDeclarationListResult variableDeclarationList(final TokenType varType, final boolean isStatement, final int sourceOrder) {
         // VAR tested in caller.
         assert varType == VAR || varType == LET || varType == CONST;
         final int varLine = line;
@@ -1587,7 +1576,6 @@ public class Parser extends AbstractParser implements Loggable {
 
         next();
 
-        final List<Expression> bindings = new ArrayList<>();
         int varFlags = 0;
         if (varType == LET) {
             varFlags |= VarNode.IS_LET;
@@ -1595,7 +1583,7 @@ public class Parser extends AbstractParser implements Loggable {
             varFlags |= VarNode.IS_CONST;
         }
 
-        Expression missingAssignment = null;
+        final ForVariableDeclarationListResult forResult = isStatement ? null : new ForVariableDeclarationListResult();
         while (true) {
             // Get name of var.
             if (type == YIELD && inGeneratorFunction()) {
@@ -1603,7 +1591,7 @@ public class Parser extends AbstractParser implements Loggable {
             }
 
             final String contextString = "variable name";
-            Expression binding = bindingIdentifierOrPattern(contextString);
+            final Expression binding = bindingIdentifierOrPattern(contextString);
             final boolean isDestructuring = !(binding instanceof IdentNode);
             if (isDestructuring) {
                 final int finalVarFlags = varFlags;
@@ -1625,6 +1613,9 @@ public class Parser extends AbstractParser implements Loggable {
 
             // Look for initializer assignment.
             if (type == ASSIGN) {
+                if (!isStatement) {
+                    forResult.recordDeclarationWithInitializer(varToken);
+                }
                 next();
 
                 // Get initializer expression. Suppress IN if not statement.
@@ -1655,26 +1646,29 @@ public class Parser extends AbstractParser implements Loggable {
                 }
                 // Only set declaration flag on lexically scoped let/const as it adds runtime overhead.
                 final IdentNode name = varType == LET || varType == CONST ? ident.setIsDeclaredHere() : ident;
-                binding = name;
+                if (!isStatement) {
+                    if (init == null && varType == CONST) {
+                        forResult.recordMissingAssignment(name);
+                    }
+                    forResult.addBinding(new IdentNode(name));
+                }
                 final VarNode var = new VarNode(varLine, varToken, sourceOrder, finish, name, init, varFlags);
                 appendStatement(var);
-                if (init == null && varType == CONST) {
-                    if (missingAssignment == null) {
-                        missingAssignment = binding;
-                    }
-                }
             } else {
                 assert init != null || !isStatement;
-                binding = init == null ? binding : verifyAssignment(Token.recast(varToken, ASSIGN), binding, init);
-                if (isStatement) {
-                    appendStatement(new ExpressionStatement(varLine, binding.getToken(), finish, binding, varType));
-                } else if (init == null) {
-                    if (missingAssignment == null) {
-                        missingAssignment = binding;
+                if (init != null) {
+                    final Expression assignment = verifyAssignment(Token.recast(varToken, ASSIGN), binding, init);
+                    if (isStatement) {
+                        appendStatement(new ExpressionStatement(varLine, assignment.getToken(), finish, assignment, varType));
+                    } else {
+                        forResult.addAssignment(assignment);
+                        forResult.addBinding(assignment);
                     }
+                } else if (!isStatement) {
+                    forResult.recordMissingAssignment(binding);
+                    forResult.addBinding(binding);
                 }
             }
-            bindings.add(binding);
 
             if (type != COMMARIGHT) {
                 break;
@@ -1685,20 +1679,9 @@ public class Parser extends AbstractParser implements Loggable {
         // If is a statement then handle end of line.
         if (isStatement) {
             endOfLine();
-        } else {
-            if (type == SEMICOLON) {
-                // late check for missing assignment, now we know it's a for (init; test; modify) loop
-                if (missingAssignment != null) {
-                    if (missingAssignment instanceof IdentNode) {
-                        throw error(AbstractParser.message("missing.const.assignment", ((IdentNode)missingAssignment).getName()));
-                    } else {
-                        throw error(AbstractParser.message("missing.destructuring.assignment"), missingAssignment.getToken());
-                    }
-                }
-            }
         }
 
-        return bindings;
+        return forResult;
     }
 
     private boolean isBindingIdentifier() {
@@ -1729,50 +1712,91 @@ public class Parser extends AbstractParser implements Loggable {
         }
     }
 
+    private abstract class VerifyDestructuringPatternNodeVisitor extends NodeVisitor<LexicalContext> {
+        VerifyDestructuringPatternNodeVisitor(final LexicalContext lc) {
+            super(lc);
+        }
+
+        @Override
+        public boolean enterLiteralNode(final LiteralNode<?> literalNode) {
+            if (literalNode.isArray()) {
+                if (((LiteralNode.ArrayLiteralNode)literalNode).hasSpread() && ((LiteralNode.ArrayLiteralNode)literalNode).hasTrailingComma()) {
+                    throw error("Rest element must be last", literalNode.getElementExpressions().get(literalNode.getElementExpressions().size() - 1).getToken());
+                }
+                boolean restElement = false;
+                for (final Expression element : literalNode.getElementExpressions()) {
+                    if (element != null) {
+                        if (restElement) {
+                            throw error("Unexpected element after rest element", element.getToken());
+                        }
+                        if (element.isTokenType(SPREAD_ARRAY)) {
+                            restElement = true;
+                            final Expression lvalue = ((UnaryNode) element).getExpression();
+                            verifySpreadElement(lvalue);
+                        }
+                        element.accept(this);
+                    }
+                }
+                return false;
+            } else {
+                return enterDefault(literalNode);
+            }
+        }
+
+        protected abstract void verifySpreadElement(Expression lvalue);
+
+        @Override
+        public boolean enterObjectNode(final ObjectNode objectNode) {
+            return true;
+        }
+
+        @Override
+        public boolean enterPropertyNode(final PropertyNode propertyNode) {
+            if (propertyNode.getValue() != null) {
+                propertyNode.getValue().accept(this);
+                return false;
+            } else {
+                return enterDefault(propertyNode);
+            }
+        }
+
+        @Override
+        public boolean enterBinaryNode(final BinaryNode binaryNode) {
+            if (binaryNode.isTokenType(ASSIGN)) {
+                binaryNode.lhs().accept(this);
+                // Initializer(rhs) can be any AssignmentExpression
+                return false;
+            } else {
+                return enterDefault(binaryNode);
+            }
+        }
+
+        @Override
+        public boolean enterUnaryNode(final UnaryNode unaryNode) {
+            if (unaryNode.isTokenType(SPREAD_ARRAY)) {
+                // rest element
+                return true;
+            } else {
+                return enterDefault(unaryNode);
+            }
+        }
+    }
+
     /**
      * Verify destructuring variable declaration binding pattern and extract bound variable declarations.
      */
     private void verifyDestructuringBindingPattern(final Expression pattern, final Consumer<IdentNode> identifierCallback) {
-        assert (pattern instanceof BinaryNode && ((BinaryNode)pattern).isTokenType(ASSIGN)) ||
+        assert (pattern instanceof BinaryNode && pattern.isTokenType(ASSIGN)) ||
                 pattern instanceof ObjectNode || pattern instanceof LiteralNode.ArrayLiteralNode;
-        pattern.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+        pattern.accept(new VerifyDestructuringPatternNodeVisitor(new LexicalContext()) {
             @Override
-            public boolean enterLiteralNode(final LiteralNode<?> literalNode) {
-                if (literalNode.isArray()) {
-                    boolean restElement = false;
-                    for (final Expression element : literalNode.getElementExpressions()) {
-                        if (restElement) {
-                            throw error(String.format("Unexpected element after rest element"), element.getToken());
-                        }
-                        if (element != null) {
-                            if (element.isTokenType(SPREAD_ARRAY)) {
-                                restElement = true;
-                                if (!(((UnaryNode) element).getExpression() instanceof IdentNode)) {
-                                    throw error(String.format("Expected a valid binding identifier"), element.getToken());
-
-                                }
-                            }
-                            element.accept(this);
-                        }
-                    }
-                    return false;
+            protected void verifySpreadElement(final Expression lvalue) {
+                if (lvalue instanceof IdentNode) {
+                    // checked in identifierCallback
+                } else if (isDestructuringLhs(lvalue)) {
+                    verifyDestructuringBindingPattern(lvalue, identifierCallback);
                 } else {
-                    return enterDefault(literalNode);
-                }
-            }
-
-            @Override
-            public boolean enterObjectNode(final ObjectNode objectNode) {
-                return true;
-            }
-
-            @Override
-            public boolean enterPropertyNode(final PropertyNode propertyNode) {
-                if (propertyNode.getValue() != null) {
-                    propertyNode.getValue().accept(this);
-                    return false;
-                } else {
-                    return enterDefault(propertyNode);
+                    throw error("Expected a valid binding identifier", lvalue.getToken());
                 }
             }
 
@@ -1780,27 +1804,6 @@ public class Parser extends AbstractParser implements Loggable {
             public boolean enterIdentNode(final IdentNode identNode) {
                 identifierCallback.accept(identNode);
                 return false;
-            }
-
-            @Override
-            public boolean enterBinaryNode(final BinaryNode binaryNode) {
-                if (binaryNode.isTokenType(ASSIGN)) {
-                    binaryNode.lhs().accept(this);
-                    // Initializer(rhs) can be any AssignmentExpression
-                    return false;
-                } else {
-                    return enterDefault(binaryNode);
-                }
-            }
-
-            @Override
-            public boolean enterUnaryNode(final UnaryNode unaryNode) {
-                if (unaryNode.isTokenType(SPREAD_ARRAY)) {
-                    // rest element
-                    return true;
-                } else {
-                    return enterDefault(unaryNode);
-                }
             }
 
             @Override
@@ -1910,10 +1913,10 @@ public class Parser extends AbstractParser implements Loggable {
         final ParserContextLoopNode forNode = new ParserContextLoopNode();
         lc.push(forNode);
         Block body = null;
-        List<Expression> vars = null;
         Expression init = null;
         JoinPredecessorExpression test = null;
         JoinPredecessorExpression modify = null;
+        ForVariableDeclarationListResult varDeclList = null;
 
         int flags = 0;
         boolean isForOf = false;
@@ -1931,10 +1934,11 @@ public class Parser extends AbstractParser implements Loggable {
 
             expect(LPAREN);
 
+            TokenType varType = null;
             switch (type) {
             case VAR:
                 // Var declaration captured in for outer block.
-                vars = variableDeclarationList(type, false, forStart);
+                varDeclList = variableDeclarationList(varType = type, false, forStart);
                 break;
             case SEMICOLON:
                 break;
@@ -1942,12 +1946,12 @@ public class Parser extends AbstractParser implements Loggable {
                 if (useBlockScope() && (type == LET && lookaheadIsLetDeclaration(true) || type == CONST)) {
                     flags |= ForNode.PER_ITERATION_SCOPE;
                     // LET/CONST declaration captured in container block created above.
-                    vars = variableDeclarationList(type, false, forStart);
+                    varDeclList = variableDeclarationList(varType = type, false, forStart);
                     break;
                 }
                 if (env._const_as_var && type == CONST) {
                     // Var declaration captured in for outer block.
-                    vars = variableDeclarationList(TokenType.VAR, false, forStart);
+                    varDeclList = variableDeclarationList(varType = TokenType.VAR, false, forStart);
                     break;
                 }
 
@@ -1983,37 +1987,29 @@ public class Parser extends AbstractParser implements Loggable {
                     break;
                 }
             case IN:
-
                 flags |= isForOf ? ForNode.IS_FOR_OF : ForNode.IS_FOR_IN;
                 test = new JoinPredecessorExpression();
-                if (vars != null) {
-                    // for (var i in obj)
-                    if (vars.size() == 1) {
-                        init = new IdentNode((IdentNode)vars.get(0));
-                        if (init.isTokenType(ASSIGN)) {
-                            throw error(AbstractParser.message("for.in.loop.initializer"), init.getToken());
-                        }
-                        assert init instanceof IdentNode || isDestructuringLhs(init);
-                    } else {
+                if (varDeclList != null) {
+                    // for (var|let|const ForBinding in|of expression)
+                    if (varDeclList.secondBinding != null) {
                         // for (var i, j in obj) is invalid
-                        throw error(AbstractParser.message("many.vars.in.for.in.loop", isForOf ? "of" : "in"), vars.get(1).getToken());
+                        throw error(AbstractParser.message("many.vars.in.for.in.loop", isForOf ? "of" : "in"), varDeclList.secondBinding.getToken());
                     }
+                    if (varDeclList.declarationWithInitializerToken != 0 && (isStrictMode || type != TokenType.IN || varType != VAR || varDeclList.init != null)) {
+                        // ES5 legacy: for (var i = AssignmentExpressionNoIn in Expression)
+                        // Invalid in ES6, but allow it in non-strict mode if no ES6 features used,
+                        // i.e., error if strict, for-of, let/const, or destructuring
+                        throw error(AbstractParser.message("for.in.loop.initializer", isForOf ? "of" : "in"), varDeclList.declarationWithInitializerToken);
+                    }
+                    init = varDeclList.firstBinding;
+                    assert init instanceof IdentNode || isDestructuringLhs(init);
                 } else {
                     // for (expr in obj)
                     assert init != null : "for..in/of init expression can not be null here";
 
                     // check if initial expression is a valid L-value
-                    if (!(init instanceof AccessNode ||
-                          init instanceof IndexNode ||
-                          init instanceof IdentNode)) {
+                    if (!checkValidLValue(init, isForOf ? "for-of iterator" : "for-in iterator")) {
                         throw error(AbstractParser.message("not.lvalue.for.in.loop", isForOf ? "of" : "in"), init.getToken());
-                    }
-
-                    if (init instanceof IdentNode) {
-                        if (!checkIdentLValue((IdentNode)init)) {
-                            throw error(AbstractParser.message("not.lvalue.for.in.loop", isForOf ? "of" : "in"), init.getToken());
-                        }
-                        verifyStrictIdent((IdentNode)init, isForOf ? "for-of iterator" : "for-in iterator");
                     }
                 }
 
@@ -2856,6 +2852,7 @@ public class Parser extends AbstractParser implements Loggable {
         final List<Expression> elements = new ArrayList<>();
         // Track elisions.
         boolean elision = true;
+        boolean hasSpread = false;
         loop:
         while (true) {
             long spreadToken = 0;
@@ -2879,6 +2876,7 @@ public class Parser extends AbstractParser implements Loggable {
 
             case ELLIPSIS:
                 if (isES6()) {
+                    hasSpread = true;
                     spreadToken = token;
                     next();
                 }
@@ -2905,7 +2903,7 @@ public class Parser extends AbstractParser implements Loggable {
             }
         }
 
-        return LiteralNode.newInstance(arrayToken, finish, elements);
+        return LiteralNode.newInstance(arrayToken, finish, elements, hasSpread, elision);
     }
 
     /**

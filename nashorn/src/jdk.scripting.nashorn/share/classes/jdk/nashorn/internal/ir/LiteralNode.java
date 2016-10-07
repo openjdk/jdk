@@ -635,6 +635,12 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         /** Ranges for splitting up large literals in code generation */
         private final List<Splittable.SplitRange> splitRanges;
 
+        /** Does this array literal have a spread element? */
+        private final boolean hasSpread;
+
+        /** Does this array literal have a trailing comma?*/
+        private final boolean hasTrailingComma;
+
         @Override
         public boolean isArray() {
             return true;
@@ -791,11 +797,26 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
          * @param value   array literal value, a Node array
          */
         protected ArrayLiteralNode(final long token, final int finish, final Expression[] value) {
+            this(token, finish, value, false, false);
+        }
+
+        /**
+         * Constructor
+         *
+         * @param token   token
+         * @param finish  finish
+         * @param value   array literal value, a Node array
+         * @param hasSpread true if the array has a spread element
+         * @param hasTrailingComma true if the array literal has a comma after the last element
+         */
+        protected ArrayLiteralNode(final long token, final int finish, final Expression[] value, final boolean hasSpread, final boolean hasTrailingComma) {
             super(Token.recast(token, TokenType.ARRAY), finish, value);
             this.elementType = Type.UNKNOWN;
             this.presets     = null;
             this.postsets    = null;
             this.splitRanges = null;
+            this.hasSpread        = hasSpread;
+            this.hasTrailingComma = hasTrailingComma;
         }
 
         /**
@@ -808,6 +829,24 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
             this.postsets    = postsets;
             this.presets     = presets;
             this.splitRanges = splitRanges;
+            this.hasSpread        = node.hasSpread;
+            this.hasTrailingComma = node.hasTrailingComma;
+        }
+
+        /**
+         * Returns {@code true} if this array literal has a spread element.
+         * @return true if this literal has a spread element
+         */
+        public boolean hasSpread() {
+            return hasSpread;
+        }
+
+        /**
+         * Returns {@code true} if this array literal has a trailing comma.
+         * @return true if this literal has a trailing comma
+         */
+        public boolean hasTrailingComma() {
+             return hasTrailingComma;
         }
 
         /**
@@ -988,6 +1027,23 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
     public static LiteralNode<?> newInstance(final Node parent, final List<Expression> value) {
         return new ArrayLiteralNode(parent.getToken(), parent.getFinish(), valueToArray(value));
     }
+
+    /*
+     * Create a new array literal of Nodes from a list of Node values
+     *
+     * @param token token
+     * @param finish finish
+     * @param value literal value list
+     * @param hasSpread true if the array has a spread element
+     * @param hasTrailingComma true if the array literal has a comma after the last element
+     *
+     * @return the new literal node
+     */
+    public static LiteralNode<Expression[]> newInstance(final long token, final int finish, final List<Expression> value,
+                                                        final boolean hasSpread, final boolean hasTrailingComma) {
+        return new ArrayLiteralNode(token, finish, valueToArray(value), hasSpread, hasTrailingComma);
+    }
+
 
     /**
      * Create a new array literal of Nodes
