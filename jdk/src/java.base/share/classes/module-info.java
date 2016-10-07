@@ -108,6 +108,7 @@ module java.base {
     uses java.util.spi.ResourceBundleControlProvider;
     uses java.util.spi.ResourceBundleProvider;
     uses java.util.spi.TimeZoneNameProvider;
+    uses java.util.spi.ToolProvider;
     uses javax.security.auth.spi.LoginModule;
 
 
