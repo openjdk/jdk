@@ -70,7 +70,7 @@ public class FilterOptions extends ModuleTestBase {
     @Test
     public void testModuleModeApi(Path base) throws Exception {
         execTask("--module-source-path", src,
-                "--module", "m1", "--show-module-contents:api");
+                "--module", "m1", "--show-module-contents", "api");
 
         checkModuleMode("API");
     }
@@ -78,7 +78,7 @@ public class FilterOptions extends ModuleTestBase {
     @Test
     public void testModuleModeAll(Path base) throws Exception {
         execTask("--module-source-path", src,
-                "--module", "m1", "--show-module-contents:all");
+                "--module", "m1", "--show-module-contents", "all");
 
         checkModuleMode("ALL");
     }
@@ -87,7 +87,7 @@ public class FilterOptions extends ModuleTestBase {
     public void testShowPackagesExported(Path base)  throws Exception {
         execTask("--module-source-path", src,
                 "--module", "m1",
-                "--show-packages:exported"); // default
+                "--show-packages", "exported"); // default
 
         checkModulesSpecified("m1");
         checkModulesIncluded("m1");
@@ -99,7 +99,7 @@ public class FilterOptions extends ModuleTestBase {
     public void testShowPackagesAll(Path base) throws Exception {
         execTask("--module-source-path", src,
                 "--module", "m1",
-                "--show-packages:all");
+                "--show-packages", "all");
         checkModulesSpecified("m1");
         checkModulesIncluded("m1");
         checkPackagesIncluded("pub", "pro");
@@ -112,7 +112,7 @@ public class FilterOptions extends ModuleTestBase {
     public void testShowTypesPrivate(Path base) throws Exception {
         execTask("--module-source-path", src,
                 "--module", "m1",
-                "--show-types:private");
+                "--show-types", "private");
 
         checkModulesSpecified("m1");
         checkModulesIncluded("m1");
@@ -129,7 +129,7 @@ public class FilterOptions extends ModuleTestBase {
     public void testShowTypesPackage(Path base) throws Exception {
         execTask("--module-source-path", src,
                 "--module", "m1",
-                "--show-types:package");
+                "--show-types", "package");
 
         checkModulesSpecified("m1");
         checkModulesIncluded("m1");
@@ -145,7 +145,7 @@ public class FilterOptions extends ModuleTestBase {
     public void testShowTypesProtected(Path base) throws Exception {
         execTask("--module-source-path", src,
                 "--module", "m1",
-                "--show-types:protected");
+                "--show-types", "protected");
 
         checkModulesSpecified("m1");
         checkModulesIncluded("m1");
@@ -162,7 +162,7 @@ public class FilterOptions extends ModuleTestBase {
     public void testShowTypesPublic(Path base) throws Exception {
         execTask("--module-source-path", src,
                 "--module", "m1",
-                "--show-types:public");
+                "--show-types", "public");
 
         checkModulesSpecified("m1");
         checkModulesIncluded("m1");
@@ -179,7 +179,7 @@ public class FilterOptions extends ModuleTestBase {
     public void testShowMembersPrivate(Path base) throws Exception {
         execTask("--module-source-path", src,
                 "--module", "m1",
-                "--show-members:private");
+                "--show-members", "private");
 
         checkMembers(Visibility.PRIVATE);
     }
@@ -188,7 +188,7 @@ public class FilterOptions extends ModuleTestBase {
     public void testShowMembersPackage(Path base) throws Exception {
         execTask("--module-source-path", src,
                 "--module", "m1",
-                "--show-members:package");
+                "--show-members", "package");
 
         checkMembers(Visibility.PACKAGE);
     }
@@ -197,7 +197,7 @@ public class FilterOptions extends ModuleTestBase {
     public void testShowMembersProtected(Path base) throws Exception {
         execTask("--module-source-path", src,
                 "--module", "m1",
-                "--show-members:protected");
+                "--show-members", "protected");
 
         checkMembers(Visibility.PROTECTED);
     }
@@ -206,7 +206,7 @@ public class FilterOptions extends ModuleTestBase {
     public void testShowMembersPublic(Path base) throws Exception {
         execTask("--module-source-path", src,
                 "--module", "m1",
-                "--show-members:public");
+                "--show-members", "public");
 
         checkMembers(Visibility.PUBLIC);
     }

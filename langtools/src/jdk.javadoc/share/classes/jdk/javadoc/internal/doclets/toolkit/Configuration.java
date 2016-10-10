@@ -404,8 +404,9 @@ public abstract class Configuration {
     }
 
     public Set<Doclet.Option> getSupportedOptions() {
+        Resources resources = getResources();
         Doclet.Option[] options = {
-            new Option(this, "-author") {
+            new Option(resources, "-author") {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -413,7 +414,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-d", 1) {
+            new Option(resources, "-d", 1) {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -421,7 +422,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-docencoding", 1) {
+            new Option(resources, "-docencoding", 1) {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -429,7 +430,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-docfilessubdirs") {
+            new Option(resources, "-docfilessubdirs") {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -437,7 +438,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Hidden(this, "-encoding", 1) {
+            new Hidden(resources, "-encoding", 1) {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -445,7 +446,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-excludedocfilessubdir", 1) {
+            new Option(resources, "-excludedocfilessubdir", 1) {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -453,7 +454,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-group", 2) {
+            new Option(resources, "-group", 2) {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -461,7 +462,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Hidden(this, "-javafx") {
+            new Hidden(resources, "-javafx") {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -469,7 +470,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-keywords") {
+            new Option(resources, "-keywords") {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -477,7 +478,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-link", 1) {
+            new Option(resources, "-link", 1) {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -486,7 +487,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-linksource") {
+            new Option(resources, "-linksource") {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -494,7 +495,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-linkoffline", 2) {
+            new Option(resources, "-linkoffline", 2) {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -503,7 +504,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-nocomment") {
+            new Option(resources, "-nocomment") {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -511,7 +512,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-nodeprecated") {
+            new Option(resources, "-nodeprecated") {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -519,7 +520,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-nosince") {
+            new Option(resources, "-nosince") {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -527,7 +528,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-notimestamp") {
+            new Option(resources, "-notimestamp") {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -535,7 +536,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-noqualifier", 1) {
+            new Option(resources, "-noqualifier", 1) {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -543,7 +544,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Hidden(this, "-quiet") {
+            new Hidden(resources, "-quiet") {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -551,7 +552,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-serialwarn") {
+            new Option(resources, "-serialwarn") {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -559,7 +560,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-sourcetab", 1) {
+            new Option(resources, "-sourcetab", 1) {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -578,7 +579,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-tag", 1) {
+            new Option(resources, "-tag", 1) {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -589,7 +590,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-             new Option(this, "-taglet", 1) {
+             new Option(resources, "-taglet", 1) {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -600,7 +601,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-tagletpath", 1) {
+            new Option(resources, "-tagletpath", 1) {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -608,7 +609,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Option(this, "-version") {
+            new Option(resources, "-version") {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -1057,37 +1058,30 @@ public abstract class Configuration {
         private final String description;
         private final int argCount;
 
-        protected final Configuration c;
+        protected Option(Resources resources, String name, int argCount) {
+            this(resources, "doclet.usage." + name.toLowerCase().replaceAll("^-*", ""), name, argCount);
+        }
 
-        protected Option(Configuration config, String keyName, String name, int argCount) {
-            c = config;
+        protected Option(Resources resources, String keyBase, String name, int argCount) {
             this.name = name;
-            String desc = getOptionsMessage(keyName + "description");
+            String desc = getOptionsMessage(resources, keyBase + ".description");
             if (desc.isEmpty()) {
                 this.description = "<MISSING KEY>";
                 this.parameters = "<MISSING KEY>";
             } else {
                 this.description = desc;
-                this.parameters = getOptionsMessage(keyName + "parameters");
+                this.parameters = getOptionsMessage(resources, keyBase + ".parameters");
             }
             this.argCount = argCount;
         }
 
-        protected Option(String prefix, Configuration config, String name, int argCount) {
-            this(config, prefix + name.toLowerCase().replaceAll("^-*", "") + ".", name, argCount);
+        protected Option(Resources resources, String name) {
+            this(resources, name, 0);
         }
 
-        protected Option(Configuration config, String name, int argCount) {
-            this("doclet.usage.", config,  name, argCount);
-        }
-
-        protected Option(Configuration config, String name) {
-            this(config, name, 0);
-        }
-
-        private String getOptionsMessage(String key) {
+        private String getOptionsMessage(Resources resources, String key) {
             try {
-                return c.getResources().getText(key);
+                return resources.getText(key);
             } catch (MissingResourceException ignore) {
                 return "";
             }
@@ -1113,19 +1107,9 @@ public abstract class Configuration {
             return parameters;
         }
 
-        /**
-         * Maintains the formatting for javadoc -help. Note the space
-         * alignment.
-         */
         @Override
         public String toString() {
-            String opt = name + (name.endsWith(":") ? "" : " ") + parameters;
-            StringBuffer sb = new StringBuffer("  ").append(opt).append(" ");
-            for (int i = opt.length(); i < 32; i++) {
-                sb.append(" ");
-            }
-            sb.append(description);
-            return sb.toString();
+            return name;
         }
 
         @Override
@@ -1135,7 +1119,14 @@ public abstract class Configuration {
 
         @Override
         public boolean matches(String option) {
-            return name.toLowerCase().equals(option.toLowerCase());
+            boolean matchCase = name.startsWith("--");
+            if (option.startsWith("--") && option.contains("=")) {
+                return name.equals(option.substring(option.indexOf("=") + 1));
+            } else if (matchCase) {
+                return name.equals(option);
+            } else {
+                return name.toLowerCase().equals(option.toLowerCase());
+            }
         }
 
         @Override
@@ -1146,16 +1137,16 @@ public abstract class Configuration {
 
     public abstract class XOption extends Option {
 
-        public XOption(Configuration config, String keyname, String name, int argCount) {
-            super(config, keyname, name, argCount);
+        public XOption(Resources resources, String prefix, String name, int argCount) {
+            super(resources, prefix, name, argCount);
         }
 
-        public XOption(Configuration config, String name, int argCount) {
-            super("doclet.xusage.", config, name, argCount);
+        public XOption(Resources resources, String name, int argCount) {
+            super(resources, name, argCount);
         }
 
-        public XOption(Configuration config, String name) {
-            this(config, name, 0);
+        public XOption(Resources resources, String name) {
+            this(resources, name, 0);
         }
 
         @Override
@@ -1166,12 +1157,12 @@ public abstract class Configuration {
 
     public abstract class Hidden extends Option {
 
-        public Hidden(Configuration config, String name, int argCount) {
-            super("doclet.xusage.", config, name, argCount);
+        public Hidden(Resources resources, String name, int argCount) {
+            super(resources, name, argCount);
         }
 
-        public Hidden(Configuration config, String name) {
-            this(config, name, 0);
+        public Hidden(Resources resources, String name) {
+            this(resources, name, 0);
         }
 
         @Override

@@ -273,15 +273,16 @@ JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_bind0(JNIEnv *env, jclass clazz, jobject fdo, jboolean preferIPv6,
                           jboolean useExclBind, jobject iao, int port)
 {
-    SOCKADDR sa;
-    int sa_len = SOCKADDR_LEN;
+    SOCKETADDRESS sa;
+    int sa_len = sizeof(SOCKETADDRESS);
     int rv = 0;
 
-    if (NET_InetAddressToSockaddr(env, iao, port, (struct sockaddr *)&sa, &sa_len, preferIPv6) != 0) {
-      return;
+    if (NET_InetAddressToSockaddr(env, iao, port, &sa.sa, &sa_len,
+                                  preferIPv6) != 0) {
+        return;
     }
 
-    rv = NET_Bind(fdval(env, fdo), (struct sockaddr *)&sa, sa_len);
+    rv = NET_Bind(fdval(env, fdo), &sa.sa, sa_len);
     if (rv != 0) {
         handleSocketError(env, errno);
     }
@@ -298,17 +299,16 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_connect0(JNIEnv *env, jclass clazz, jboolean preferIPv6,
                              jobject fdo, jobject iao, jint port)
 {
-    SOCKADDR sa;
-    int sa_len = SOCKADDR_LEN;
+    SOCKETADDRESS sa;
+    int sa_len = sizeof(SOCKETADDRESS);
     int rv;
 
-    if (NET_InetAddressToSockaddr(env, iao, port, (struct sockaddr *) &sa,
-                                  &sa_len, preferIPv6) != 0)
-    {
-      return IOS_THROWN;
+    if (NET_InetAddressToSockaddr(env, iao, port, &sa.sa, &sa_len,
+                                  preferIPv6) != 0) {
+        return IOS_THROWN;
     }
 
-    rv = connect(fdval(env, fdo), (struct sockaddr *)&sa, sa_len);
+    rv = connect(fdval(env, fdo), &sa.sa, sa_len);
     if (rv != 0) {
         if (errno == EINPROGRESS) {
             return IOS_UNAVAILABLE;
@@ -323,9 +323,9 @@ Java_sun_nio_ch_Net_connect0(JNIEnv *env, jclass clazz, jboolean preferIPv6,
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
 {
-    SOCKADDR sa;
-    socklen_t sa_len = SOCKADDR_LEN;
-    if (getsockname(fdval(env, fdo), (struct sockaddr *)&sa, &sa_len) < 0) {
+    SOCKETADDRESS sa;
+    socklen_t sa_len = sizeof(SOCKETADDRESS);
+    if (getsockname(fdval(env, fdo), &sa.sa, &sa_len) < 0) {
 #ifdef _ALLBSD_SOURCE
         /*
          * XXXBSD:
@@ -335,13 +335,11 @@ Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
          * it shouldn't fail. As such, we just fill in generic Linux-compatible values.
          */
         if (errno == ECONNRESET) {
-            struct sockaddr_in *sin;
-            sin = (struct sockaddr_in *) &sa;
-            bzero(sin, sizeof(*sin));
-            sin->sin_len  = sizeof(struct sockaddr_in);
-            sin->sin_family = AF_INET;
-            sin->sin_port = htonl(0);
-            sin->sin_addr.s_addr = INADDR_ANY;
+            bzero(&sa.sa4, sizeof(sa));
+            sa.sa4.sin_len = sizeof(struct sockaddr_in);
+            sa.sa4.sin_family = AF_INET;
+            sa.sa4.sin_port = htonl(0);
+            sa.sa4.sin_addr.s_addr = INADDR_ANY;
         } else {
             handleSocketError(env, errno);
             return -1;
@@ -351,16 +349,16 @@ Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
         return -1;
 #endif /* _ALLBSD_SOURCE */
     }
-    return NET_GetPortFromSockaddr((struct sockaddr *)&sa);
+    return NET_GetPortFromSockaddr(&sa.sa);
 }
 
 JNIEXPORT jobject JNICALL
 Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
 {
-    SOCKADDR sa;
-    socklen_t sa_len = SOCKADDR_LEN;
+    SOCKETADDRESS sa;
+    socklen_t sa_len = sizeof(SOCKETADDRESS);
     int port;
-    if (getsockname(fdval(env, fdo), (struct sockaddr *)&sa, &sa_len) < 0) {
+    if (getsockname(fdval(env, fdo), &sa.sa, &sa_len) < 0) {
 #ifdef _ALLBSD_SOURCE
         /*
          * XXXBSD:
@@ -370,13 +368,11 @@ Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
          * it shouldn't fail. As such, we just fill in generic Linux-compatible values.
          */
         if (errno == ECONNRESET) {
-            struct sockaddr_in *sin;
-            sin = (struct sockaddr_in *) &sa;
-            bzero(sin, sizeof(*sin));
-            sin->sin_len  = sizeof(struct sockaddr_in);
-            sin->sin_family = AF_INET;
-            sin->sin_port = htonl(0);
-            sin->sin_addr.s_addr = INADDR_ANY;
+            bzero(&sa.sa4, sizeof(sa));
+            sa.sa4.sin_len  = sizeof(struct sockaddr_in);
+            sa.sa4.sin_family = AF_INET;
+            sa.sa4.sin_port = htonl(0);
+            sa.sa4.sin_addr.s_addr = INADDR_ANY;
         } else {
             handleSocketError(env, errno);
             return NULL;
@@ -386,7 +382,7 @@ Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
         return NULL;
 #endif /* _ALLBSD_SOURCE */
     }
-    return NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa, &port);
+    return NET_SockaddrToInetAddress(env, &sa.sa, &port);
 }
 
 JNIEXPORT jint JNICALL

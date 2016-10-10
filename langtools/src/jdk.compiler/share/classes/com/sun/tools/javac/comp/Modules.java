@@ -292,15 +292,12 @@ public class Modules extends JCTree.Visitor {
             Name name = TreeInfo.fullName(decl.qualId);
             ModuleSymbol sym;
             if (c != null) {
-               sym = (ModuleSymbol) c.owner;
-               if (sym.name == null) {
-                   //ModuleFinder.findSingleModule creates a stub of a ModuleSymbol without a name,
-                   //fill the name here after the module-info.java has been parsed
-                   //also enter the ModuleSymbol among modules:
-                   syms.enterModule(sym, name);
-               } else {
-                   // TODO: validate name
-               }
+                sym = (ModuleSymbol) c.owner;
+                Assert.checkNonNull(sym.name);
+                Name treeName = TreeInfo.fullName(decl.qualId);
+                if (sym.name != treeName) {
+                    log.error(decl.pos(), Errors.ModuleNameMismatch(name, sym.name));
+                }
             } else {
                 sym = syms.enterModule(name);
                 if (sym.module_info.sourcefile != null && sym.module_info.sourcefile != toplevel.sourcefile) {
@@ -1006,6 +1003,10 @@ public class Modules extends JCTree.Visitor {
         return new Symbol.Completer() {
             @Override
             public void complete(Symbol sym) throws CompletionFailure {
+                if (inInitModules) {
+                    sym.completer = this;
+                    return ;
+                }
                 ModuleSymbol msym = (ModuleSymbol) sym;
                 Set<ModuleSymbol> allModules = allModules();
                 for (ModuleSymbol m : allModules) {

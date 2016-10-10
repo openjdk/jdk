@@ -764,17 +764,6 @@ public class Symtab {
         return msym;
     }
 
-    public void enterModule(ModuleSymbol msym, Name name) {
-        Assert.checkNull(modules.get(name));
-        Assert.checkNull(msym.name);
-        msym.name = name;
-        addRootPackageFor(msym);
-        ClassSymbol info = msym.module_info;
-        info.fullname = msym.name.append('.', names.module_info);
-        info.flatname = info.fullname;
-        modules.put(name, msym);
-    }
-
     public ModuleSymbol getModule(Name name) {
         return modules.get(name);
     }

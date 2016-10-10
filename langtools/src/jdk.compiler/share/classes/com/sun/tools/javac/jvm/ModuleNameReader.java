@@ -22,12 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tools.javac.file;
+package com.sun.tools.javac.jvm;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.jvm.ClassFile;
 
@@ -44,7 +46,7 @@ import static com.sun.tools.javac.jvm.ClassFile.*;
  * notice.</b>
  */
 public class ModuleNameReader {
-    static class BadClassFile extends Exception {
+    public static class BadClassFile extends Exception {
         private static final long serialVersionUID = 0;
         BadClassFile(String msg) {
             super(msg);
@@ -61,35 +63,41 @@ public class ModuleNameReader {
      */
     private int bp;
 
-    /** The objects of the constant pool.
-     */
-    private Object[] poolObj;
-
     /** For every constant pool entry, an index into buf where the
      *  defining section of the entry is found.
      */
     private int[] poolIdx;
 
-    ModuleNameReader() {
+    public ModuleNameReader() {
     }
 
-    String readModuleName(Path p) throws IOException, BadClassFile {
+    public String readModuleName(Path p) throws IOException, BadClassFile {
         try (InputStream in = Files.newInputStream(p)) {
-            bp = 0;
-            buf = readInputStream(buf, in);
-
-            int magic = nextInt();
-            if (magic != JAVA_MAGIC)
-                throw new BadClassFile("illegal.start.of.class.file");
-
-            int minorVersion = nextChar();
-            int majorVersion = nextChar();
-
-            indexPool();
-
-            int accessflags = nextChar();
-            return readModuleInfoName(nextChar());
+            return readModuleName(in);
         }
+    }
+
+    public String readModuleName(JavaFileObject jfo) throws IOException, BadClassFile {
+        try (InputStream in = jfo.openInputStream()) {
+            return readModuleName(in);
+        }
+    }
+
+    public String readModuleName(InputStream in) throws IOException, BadClassFile {
+        bp = 0;
+        buf = readInputStream(buf, in);
+
+        int magic = nextInt();
+        if (magic != JAVA_MAGIC)
+            throw new BadClassFile("illegal.start.of.class.file");
+
+        int minorVersion = nextChar();
+        int majorVersion = nextChar();
+
+        indexPool();
+
+        int accessflags = nextChar();
+        return readModuleInfoName(nextChar());
     }
 
     /** Extract a character at position bp from buf.
@@ -120,7 +128,6 @@ public class ModuleNameReader {
      */
     void indexPool() throws BadClassFile {
         poolIdx = new int[nextChar()];
-        poolObj = new Object[poolIdx.length];
         int i = 1;
         while (i < poolIdx.length) {
             poolIdx[i++] = bp;

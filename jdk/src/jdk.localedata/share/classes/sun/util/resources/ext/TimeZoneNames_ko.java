@@ -189,6 +189,9 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
         String MHT[] = new String[] {"\ub9c8\uc15c\uc81c\ub3c4 \uc2dc\uac04", "MHT",
                                      "\ub9c8\uc15c\uc81c\ub3c4 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "MHST",
                                      "\uB9C8\uC15C \uC81C\uB3C4 \uD45C\uC900\uC2DC", "MHT"};
+        String MMT[] = new String[] {"\ubbf8\uc580\ub9c8 \uc2dc\uac04", "MMT",
+                                     "\ubbf8\uc580\ub9c8 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "MMST",
+                                     "\uBBF8\uC580\uB9C8 \uD45C\uC900\uC2DC", "MMT"};
         String MSK[] = new String[] {"\ubaa8\uc2a4\ud06c\ubc14 \ud45c\uc900\uc2dc", "MSK",
                                      "\ubaa8\uc2a4\ud06c\ubc14 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "MSD",
                                      "\uBAA8\uC2A4\uD06C\uBC14 \uD45C\uC900\uC2DC", "MT"};
@@ -684,9 +687,7 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
             {"Asia/Qyzylorda", new String[] {"Qyzylorda \ud45c\uc900\uc2dc", "QYZT",
                                              "Qyzylorda \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "QYZST",
                                              "\uD0A4\uC9C8\uB85C\uB974\uB2E4 \uD45C\uC900\uC2DC", "QYZT"}},
-            {"Asia/Rangoon", new String[] {"\ubbf8\uc580\ub9c8 \uc2dc\uac04", "MMT",
-                                           "\ubbf8\uc580\ub9c8 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "MMST",
-                                           "\uBBF8\uC580\uB9C8 \uD45C\uC900\uC2DC", "MMT"}},
+            {"Asia/Rangoon", MMT},
             {"Asia/Riyadh", ARAST},
             {"Asia/Saigon", ICT},
             {"Asia/Sakhalin", new String[] {"\uc0ac\ud560\ub9b0 \uc2dc\uac04", "SAKT",
@@ -719,6 +720,7 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
                                                "\ube14\ub77c\ub514\ubcf4\uc2a4\ud1a1 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "VLAST",
                                                "\uBE14\uB77C\uB514\uBCF4\uC2A4\uD1A1 \uD45C\uC900\uC2DC", "VLAT"}},
             {"Asia/Yakutsk", YAKT},
+            {"Asia/Yangon", MMT},
             {"Asia/Yekaterinburg", new String[] {"\uc608\uce74\ud14c\ub9b0\ubc84\uadf8 \uc2dc\uac04", "YEKT",
                                                  "\uc608\uce74\ud14c\ub9b0\ubc84\uadf8 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "YEKST",
                                                  "\uC608\uCE74\uD14C\uB9B0\uBD80\uB974\uD06C \uD45C\uC900\uC2DC", "YEKT"}},

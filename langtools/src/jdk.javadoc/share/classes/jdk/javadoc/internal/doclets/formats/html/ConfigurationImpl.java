@@ -595,8 +595,9 @@ public class ConfigurationImpl extends Configuration {
 
     @Override
     public Set<Doclet.Option> getSupportedOptions() {
+        Resources resources = getResources();
         Doclet.Option[] options = {
-            new Option(this, "-bottom", 1) {
+            new Option(resources, "-bottom", 1) {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -604,7 +605,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-charset", 1) {
+            new Option(resources, "-charset", 1) {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -612,7 +613,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-doctitle", 1) {
+            new Option(resources, "-doctitle", 1) {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -620,7 +621,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-footer", 1) {
+            new Option(resources, "-footer", 1) {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -628,7 +629,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-header", 1) {
+            new Option(resources, "-header", 1) {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -636,7 +637,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-helpfile", 1) {
+            new Option(resources, "-helpfile", 1) {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -644,7 +645,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-html4") {
+            new Option(resources, "-html4") {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -652,7 +653,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-html5") {
+            new Option(resources, "-html5") {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -660,7 +661,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-nohelp") {
+            new Option(resources, "-nohelp") {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -668,7 +669,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-nodeprecatedlist") {
+            new Option(resources, "-nodeprecatedlist") {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -676,7 +677,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-noindex") {
+            new Option(resources, "-noindex") {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -684,7 +685,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-nonavbar") {
+            new Option(resources, "-nonavbar") {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -692,7 +693,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Hidden(this, "-nooverview") {
+            new Hidden(resources, "-nooverview") {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -700,7 +701,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-notree") {
+            new Option(resources, "-notree") {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -708,7 +709,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-overview", 1) {
+            new Option(resources, "-overview", 1) {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -716,7 +717,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "--frames") {
+            new Option(resources, "--frames") {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -724,7 +725,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "--no-frames") {
+            new Option(resources, "--no-frames") {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -732,7 +733,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Hidden(this, "-packagesheader", 1) {
+            new Hidden(resources, "-packagesheader", 1) {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -740,7 +741,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-splitindex") {
+            new Option(resources, "-splitindex") {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -748,7 +749,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-stylesheetfile", 1) {
+            new Option(resources, "-stylesheetfile", 1) {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -756,7 +757,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-top", 1) {
+            new Option(resources, "-top", 1) {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -764,7 +765,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-use") {
+            new Option(resources, "-use") {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -772,7 +773,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new Option(this, "-windowtitle", 1) {
+            new Option(resources, "-windowtitle", 1) {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -780,7 +781,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new XOption(this, "-Xdoclint") {
+            new XOption(resources, "-Xdoclint") {
                 @Override
                 public boolean process(String opt,  ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -788,7 +789,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new XOption(this, "-Xdocrootparent", 1) {
+            new XOption(resources, "-Xdocrootparent", 1) {
                 @Override
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
@@ -796,7 +797,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new XOption(this, "doclet.xusage.xdoclint-extended.", "-Xdoclint:", 0) {
+            new XOption(resources, "doclet.usage.xdoclint-extended", "-Xdoclint:", 0) {
                 @Override
                 public boolean matches(String option) {
                     return option.toLowerCase().startsWith(getName().toLowerCase());
@@ -809,7 +810,7 @@ public class ConfigurationImpl extends Configuration {
                     return true;
                 }
             },
-            new XOption(this, "doclet.xusage.xdoclint-package.", "-Xdoclint/package:", 0) {
+            new XOption(resources, "doclet.usage.xdoclint-package", "-Xdoclint/package:", 0) {
                 @Override
                 public boolean matches(String option) {
                     return option.toLowerCase().startsWith(getName().toLowerCase());
