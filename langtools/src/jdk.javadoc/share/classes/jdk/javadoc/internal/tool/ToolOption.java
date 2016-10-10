@@ -40,6 +40,7 @@ import com.sun.tools.javac.main.OptionHelper;
 import com.sun.tools.javac.util.Options;
 
 import static com.sun.tools.javac.main.Option.OptionKind.*;
+import static jdk.javadoc.internal.tool.Main.Result.*;
 
 /**
  * javadoc tool options.
@@ -226,63 +227,63 @@ public enum ToolOption {
 
     PACKAGE("-package", STANDARD) {
         @Override
-        public void process(Helper helper) {
+        public void process(Helper helper) throws OptionException {
             helper.setSimpleFilter("package");
         }
     },
 
     PRIVATE("-private", STANDARD) {
         @Override
-        public void process(Helper helper) {
+        public void process(Helper helper) throws OptionException {
             helper.setSimpleFilter("private");
         }
     },
 
     PROTECTED("-protected", STANDARD) {
         @Override
-        public void process(Helper helper) {
+        public void process(Helper helper) throws OptionException {
             helper.setSimpleFilter("protected");
         }
     },
 
     PUBLIC("-public", STANDARD) {
         @Override
-        public void process(Helper helper) {
+        public void process(Helper helper) throws OptionException {
             helper.setSimpleFilter("public");
         }
     },
 
     SHOW_MEMBERS("--show-members", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws OptionException {
             helper.setFilter(this, arg);
         }
     },
 
     SHOW_TYPES("--show-types", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws OptionException {
             helper.setFilter(this, arg);
         }
     },
 
     SHOW_PACKAGES("--show-packages", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws OptionException {
             helper.setShowPackageAccess(SHOW_PACKAGES, arg);
         }
     },
 
     SHOW_MODULE_CONTENTS("--show-module-contents", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws OptionException {
             helper.setShowModuleContents(SHOW_MODULE_CONTENTS, arg);
         }
     },
 
     EXPAND_REQUIRES("--expand-requires", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws OptionException {
             helper.setExpandRequires(EXPAND_REQUIRES, arg);
         }
     },
@@ -342,19 +343,26 @@ public enum ToolOption {
         }
     },
 
+    DUMPONERROR("--dump-on-error", HIDDEN) {
+        @Override
+        public void process(Helper helper) {
+            helper.dumpOnError = true;
+        }
+    },
+
     // ----- help options -----
 
     HELP("--help -help", STANDARD) {
         @Override
-        public void process(Helper helper) {
-            helper.usage();
+        public void process(Helper helper) throws OptionException {
+            throw new OptionException(OK, helper::usage);
         }
     },
 
     X("-X", STANDARD) {
         @Override
-        public void process(Helper helper) {
-            helper.Xusage();
+        public void process(Helper helper) throws OptionException {
+           throw new OptionException(OK, helper::Xusage);
         }
     },
 
@@ -395,9 +403,9 @@ public enum ToolOption {
         this.hasSuffix = lastChar == ':' || lastChar == '=';
     }
 
-    void process(Helper helper, String arg) { }
+    void process(Helper helper, String arg) throws OptionException { }
 
-    void process(Helper helper) { }
+    void process(Helper helper) throws OptionException { }
 
     List<String> getNames() {
         return names;
@@ -451,6 +459,9 @@ public enum ToolOption {
         /** Javadoc tool options */
         final Map<ToolOption, Object> jdtoolOpts = new EnumMap<>(ToolOption.class);
 
+        /** dump stack traces for debugging etc.*/
+        boolean dumpOnError = false;
+
         /** Set by -breakiterator. */
         boolean breakiterator = false;
 
@@ -470,7 +481,8 @@ public enum ToolOption {
         abstract void usage();
         abstract void Xusage();
 
-        abstract void usageError(String msg, Object... args);
+        abstract String getLocalizedMessage(String msg, Object... args);
+
         abstract OptionHelper getOptionHelper();
 
         @SuppressWarnings("unchecked")
@@ -480,7 +492,7 @@ public enum ToolOption {
             jdtoolOpts.put(opt, list);
         }
 
-        void setExpandRequires(ToolOption opt, String arg) {
+        void setExpandRequires(ToolOption opt, String arg) throws OptionException {
             switch (arg) {
                 case "public":
                     jdtoolOpts.put(opt, AccessKind.PUBLIC);
@@ -489,11 +501,12 @@ public enum ToolOption {
                     jdtoolOpts.put(opt, AccessKind.PRIVATE);
                     break;
                 default:
-                    usageError("main.illegal_option_value", arg);
+                    String text = getLocalizedMessage("main.illegal_option_value", arg);
+                    throw new IllegalOptionValue(this::usage, text);
             }
         }
 
-        void setShowModuleContents(ToolOption opt, String arg) {
+        void setShowModuleContents(ToolOption opt, String arg) throws OptionException {
             switch (arg) {
                 case "api":
                     jdtoolOpts.put(opt, AccessKind.PUBLIC);
@@ -502,11 +515,12 @@ public enum ToolOption {
                     jdtoolOpts.put(opt, AccessKind.PRIVATE);
                     break;
                 default:
-                    usageError("main.illegal_option_value", arg);
+                    String text = getLocalizedMessage("main.illegal_option_value", arg);
+                    throw new IllegalOptionValue(this::usage, text);
             }
         }
 
-        void setShowPackageAccess(ToolOption opt, String arg) {
+        void setShowPackageAccess(ToolOption opt, String arg) throws OptionException {
             switch (arg) {
                 case "exported":
                     jdtoolOpts.put(opt, AccessKind.PUBLIC);
@@ -515,16 +529,17 @@ public enum ToolOption {
                     jdtoolOpts.put(opt, AccessKind.PRIVATE);
                     break;
                 default:
-                    usageError("main.illegal_option_value", arg);
+                    String text = getLocalizedMessage("main.illegal_option_value", arg);
+                    throw new IllegalOptionValue(this::usage, text);
             }
         }
 
 
-        void setFilter(ToolOption opt, String arg) {
+        void setFilter(ToolOption opt, String arg) throws OptionException {
             jdtoolOpts.put(opt, getAccessValue(arg));
         }
 
-        void setSimpleFilter(String arg) {
+        void setSimpleFilter(String arg) throws OptionException {
             handleSimpleOption(arg);
         }
 
@@ -532,7 +547,7 @@ public enum ToolOption {
             fileManagerOpts.put(opt, arg);
         }
 
-        void handleSimpleOption(String arg) {
+        void handleSimpleOption(String arg) throws OptionException {
             populateSimpleAccessMap(getAccessValue(arg));
         }
 
@@ -541,7 +556,7 @@ public enum ToolOption {
          * -private, so on, in addition to the new ones such as
          * --show-types:public and so on.
          */
-        private AccessKind getAccessValue(String arg) {
+        private AccessKind getAccessValue(String arg) throws OptionException {
             int colon = arg.indexOf(':');
             String value = (colon > 0)
                     ? arg.substring(colon + 1)
@@ -556,8 +571,8 @@ public enum ToolOption {
                 case "private":
                     return AccessKind.PRIVATE;
                 default:
-                    usageError("main.illegal_option_value", value);
-                    return null;
+                    String text = getLocalizedMessage("main.illegal_option_value", value);
+                    throw new IllegalOptionValue(this::usage, text);
             }
         }
 

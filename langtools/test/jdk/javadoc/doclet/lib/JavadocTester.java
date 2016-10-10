@@ -327,15 +327,27 @@ public abstract class JavadocTester {
         outputDirectoryCheck = c;
     }
 
+    /**
+     * The exit codes returned by the javadoc tool.
+     * @see jdk.javadoc.internal.tool.Main.Result
+     */
     public enum Exit {
-        OK(0),
-        FAILED(1);
+        OK(0),        // Javadoc completed with no errors.
+        ERROR(1),     // Completed but reported errors.
+        CMDERR(2),    // Bad command-line arguments
+        SYSERR(3),    // System error or resource exhaustion.
+        ABNORMAL(4);  // Javadoc terminated abnormally
 
         Exit(int code) {
             this.code = code;
         }
 
         final int code;
+
+        @Override
+        public String toString() {
+            return name() + '(' + code + ')';
+        }
     }
 
     /**
@@ -349,7 +361,7 @@ public abstract class JavadocTester {
         if (exitCode == expected.code) {
             passed("return code " + exitCode);
         } else {
-            failed("return code " + exitCode +"; expected " + expected.code + " (" + expected + ")");
+            failed("return code " + exitCode +"; expected " + expected);
         }
     }
 

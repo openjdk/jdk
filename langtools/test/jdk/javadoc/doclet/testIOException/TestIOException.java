@@ -57,7 +57,7 @@ public class TestIOException extends JavadocTester {
         try {
             javadoc("-d", outDir.toString(),
                     new File(testSrc, "TestIOException.java").getPath());
-            checkExit(Exit.FAILED);
+            checkExit(Exit.ERROR);
             checkOutput(Output.OUT, true,
                 "Destination directory not writable: " + outDir);
         } finally {
@@ -85,7 +85,7 @@ public class TestIOException extends JavadocTester {
             javadoc("-d", outDir.toString(),
                     new File(testSrc, "TestIOException.java").getPath());
 
-            checkExit(Exit.FAILED);
+            checkExit(Exit.ERROR);
             checkOutput(Output.OUT, true,
                 "Error writing file: " + index);
         } finally {
@@ -123,7 +123,7 @@ public class TestIOException extends JavadocTester {
             setOutputDirectoryCheck(DirectoryCheck.NONE);
             javadoc("-d", outDir.toString(),
                     src_p_C.getPath());
-            checkExit(Exit.FAILED);
+            checkExit(Exit.ERROR);
             checkOutput(Output.OUT, true,
                 "Error writing file: " + new File(pkgOutDir, "C.html"));
         } finally {
@@ -167,7 +167,7 @@ public class TestIOException extends JavadocTester {
             javadoc("-d", outDir.toString(),
                     "-sourcepath", srcDir.getPath(),
                     "p");
-            checkExit(Exit.FAILED);
+            checkExit(Exit.ERROR);
             checkOutput(Output.OUT, true,
                 "Error writing file: " + new File(docFilesOutDir, "info.txt"));
         } finally {
