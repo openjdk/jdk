@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,17 +80,11 @@ Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
 {
     jint ssfd = (*env)->GetIntField(env, ssfdo, fd_fdID);
     jint newfd;
-    struct sockaddr *sa;
-    int alloc_len;
+    SOCKETADDRESS sa;
+    socklen_t sa_len = sizeof(SOCKETADDRESS);
     jobject remote_ia = 0;
     jobject isa;
     jint remote_port = 0;
-
-    NET_AllocSockaddr(&sa, &alloc_len);
-    if (sa == NULL) {
-        JNU_ThrowOutOfMemoryError(env, NULL);
-        return IOS_THROWN;
-    }
 
     /*
      * accept connection but ignore ECONNABORTED indicating that
@@ -98,8 +92,7 @@ Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
      * accept() was called.
      */
     for (;;) {
-        socklen_t sa_len = alloc_len;
-        newfd = accept(ssfd, sa, &sa_len);
+        newfd = accept(ssfd, &sa.sa, &sa_len);
         if (newfd >= 0) {
             break;
         }
@@ -110,7 +103,6 @@ Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
     }
 
     if (newfd < 0) {
-        free((void *)sa);
         if (errno == EAGAIN)
             return IOS_UNAVAILABLE;
         if (errno == EINTR)
@@ -120,8 +112,7 @@ Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
     }
 
     (*env)->SetIntField(env, newfdo, fd_fdID, newfd);
-    remote_ia = NET_SockaddrToInetAddress(env, sa, (int *)&remote_port);
-    free((void *)sa);
+    remote_ia = NET_SockaddrToInetAddress(env, &sa.sa, (int *)&remote_port);
     CHECK_NULL_RETURN(remote_ia, IOS_THROWN);
     isa = (*env)->NewObject(env, isa_class, isa_ctorID, remote_ia, remote_port);
     CHECK_NULL_RETURN(isa, IOS_THROWN);
