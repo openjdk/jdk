@@ -20,64 +20,38 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.runtime.services;
+package jdk.vm.ci.runtime;
 
 import java.io.PrintStream;
 
-import jdk.vm.ci.runtime.JVMCICompiler;
-import jdk.vm.ci.runtime.JVMCIRuntime;
-import jdk.vm.ci.services.JVMCIPermission;
-
 /**
- * Service-provider class for creating JVMCI compilers.
+ * Factory for creating JVMCI compilers.
  */
-public abstract class JVMCICompilerFactory {
-
-    private static Void checkPermission() {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new JVMCIPermission());
-        }
-        return null;
-    }
-
-    @SuppressWarnings("unused")
-    private JVMCICompilerFactory(Void ignore) {
-    }
-
-    /**
-     * Initializes a new instance of this class.
-     *
-     * @throws SecurityException if a security manager has been installed and it denies
-     *             {@link JVMCIPermission}
-     */
-    protected JVMCICompilerFactory() {
-        this(checkPermission());
-    }
+public interface JVMCICompilerFactory {
 
     /**
      * Get the name of this compiler. The name is used by JVMCI to determine which factory to use.
      */
-    public abstract String getCompilerName();
+    String getCompilerName();
 
     /**
      * Notifies this object that it has been selected to {@linkplain #createCompiler(JVMCIRuntime)
      * create} a compiler and it should now perform any heavy weight initialization that it deferred
      * during construction.
      */
-    public void onSelection() {
+    default void onSelection() {
     }
 
     /**
      * Create a new instance of a {@link JVMCICompiler}.
      */
-    public abstract JVMCICompiler createCompiler(JVMCIRuntime runtime);
+    JVMCICompiler createCompiler(JVMCIRuntime runtime);
 
     /**
      * Prints a description of the properties used to configure this compiler.
      *
      * @param out where to print the message
      */
-    public void printProperties(PrintStream out) {
+    default void printProperties(PrintStream out) {
     }
 }
