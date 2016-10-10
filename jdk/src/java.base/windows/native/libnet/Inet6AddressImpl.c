@@ -83,7 +83,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     jboolean preferIPv6Address;
 
     int error=0;
-    struct addrinfo hints, *res, *resNew = NULL;
+    struct addrinfo hints, *res = NULL, *resNew = NULL;
 
     initInetAddressIDs(env);
     JNU_CHECK_EXCEPTION_RETURN(env, NULL);
@@ -223,7 +223,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
               setInetAddress_addr(env, iaObj, ntohl(((struct sockaddr_in*)iterator->ai_addr)->sin_addr.s_addr));
               setInetAddress_hostName(env, iaObj, host);
               (*env)->SetObjectArrayElement(env, ret, (inetIndex | originalIndex), iaObj);
-                inetIndex ++;
+              inetIndex ++;
             } else if (iterator->ai_family == AF_INET6) {
               jint scope = 0;
               jboolean ret1;

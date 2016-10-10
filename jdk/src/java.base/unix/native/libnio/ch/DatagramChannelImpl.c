@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,58 +87,50 @@ Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jobject this,
     jint fd = fdval(env, fdo);
     int rv;
 
-#ifdef __solaris__
+#if defined(__solaris__)
     rv = connect(fd, 0, 0);
-#endif
+#else
+    int len;
+    SOCKETADDRESS sa;
 
-#if defined(__linux__) || defined(_ALLBSD_SOURCE) || defined(_AIX)
-    {
-        int len;
-        SOCKADDR sa;
-
-        memset(&sa, 0, sizeof(sa));
+    memset(&sa, 0, sizeof(sa));
 
 #ifdef AF_INET6
-        if (isIPv6) {
-            struct sockaddr_in6 *him6 = (struct sockaddr_in6 *)&sa;
+    if (isIPv6) {
 #if defined(_ALLBSD_SOURCE)
-            him6->sin6_family = AF_INET6;
+        sa.sa6.sin6_family = AF_INET6;
 #else
-            him6->sin6_family = AF_UNSPEC;
+        sa.sa6.sin6_family = AF_UNSPEC;
 #endif
-            len = sizeof(struct sockaddr_in6);
-        } else
+        len = sizeof(struct sockaddr_in6);
+    } else
 #endif
-        {
-            struct sockaddr_in *him4 = (struct sockaddr_in*)&sa;
+    {
 #if defined(_ALLBSD_SOURCE)
-            him4->sin_family = AF_INET;
+        sa.sa4.sin_family = AF_INET;
 #else
-            him4->sin_family = AF_UNSPEC;
+        sa.sa4.sin_family = AF_UNSPEC;
 #endif
-            len = sizeof(struct sockaddr_in);
-        }
-
-        rv = connect(fd, (struct sockaddr *)&sa, len);
-
-#if defined(_ALLBSD_SOURCE)
-        if (rv < 0 && errno == EADDRNOTAVAIL)
-                rv = errno = 0;
-#endif
-#if defined(_AIX)
-        /* See W. Richard Stevens, "UNIX Network Programming, Volume 1", p. 254:
-         * 'Setting the address family to AF_UNSPEC might return EAFNOSUPPORT
-         * but that is acceptable.
-         */
-        if (rv < 0 && errno == EAFNOSUPPORT)
-            rv = errno = 0;
-#endif
+        len = sizeof(struct sockaddr_in);
     }
+
+    rv = connect(fd, &sa.sa, len);
+
+#if defined(_ALLBSD_SOURCE)
+    if (rv < 0 && errno == EADDRNOTAVAIL)
+        rv = errno = 0;
+#elif defined(_AIX)
+    /* See W. Richard Stevens, "UNIX Network Programming, Volume 1", p. 254:
+     * 'Setting the address family to AF_UNSPEC might return EAFNOSUPPORT
+     * but that is acceptable.
+     */
+    if (rv < 0 && errno == EAFNOSUPPORT)
+        rv = errno = 0;
+#endif
 #endif
 
     if (rv < 0)
         handleSocketError(env, errno);
-
 }
 
 JNIEXPORT jint JNICALL
@@ -148,8 +140,8 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
 {
     jint fd = fdval(env, fdo);
     void *buf = (void *)jlong_to_ptr(address);
-    SOCKADDR sa;
-    socklen_t sa_len = SOCKADDR_LEN;
+    SOCKETADDRESS sa;
+    socklen_t sa_len = sizeof(SOCKETADDRESS);
     jboolean retry = JNI_FALSE;
     jint n = 0;
     jobject senderAddr;
@@ -160,7 +152,7 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
 
     do {
         retry = JNI_FALSE;
-        n = recvfrom(fd, buf, len, 0, (struct sockaddr *)&sa, &sa_len);
+        n = recvfrom(fd, buf, len, 0, &sa.sa, &sa_len);
         if (n < 0) {
             if (errno == EWOULDBLOCK) {
                 return IOS_UNAVAILABLE;
@@ -189,12 +181,11 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
      */
     senderAddr = (*env)->GetObjectField(env, this, dci_senderAddrID);
     if (senderAddr != NULL) {
-        if (!NET_SockaddrEqualsInetAddress(env, (struct sockaddr *)&sa,
-                                           senderAddr)) {
+        if (!NET_SockaddrEqualsInetAddress(env, &sa.sa, senderAddr)) {
             senderAddr = NULL;
         } else {
             jint port = (*env)->GetIntField(env, this, dci_senderPortID);
-            if (port != NET_GetPortFromSockaddr((struct sockaddr *)&sa)) {
+            if (port != NET_GetPortFromSockaddr(&sa.sa)) {
                 senderAddr = NULL;
             }
         }
@@ -202,7 +193,7 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
     if (senderAddr == NULL) {
         jobject isa = NULL;
         int port = 0;
-        jobject ia = NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa, &port);
+        jobject ia = NET_SockaddrToInetAddress(env, &sa.sa, &port);
         if (ia != NULL) {
             isa = (*env)->NewObject(env, isa_class, isa_ctorID, ia, port);
         }
@@ -210,7 +201,7 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
 
         (*env)->SetObjectField(env, this, dci_senderAddrID, ia);
         (*env)->SetIntField(env, this, dci_senderPortID,
-                            NET_GetPortFromSockaddr((struct sockaddr *)&sa));
+                            NET_GetPortFromSockaddr(&sa.sa));
         (*env)->SetObjectField(env, this, dci_senderID, isa);
     }
     return n;
@@ -223,21 +214,20 @@ Java_sun_nio_ch_DatagramChannelImpl_send0(JNIEnv *env, jobject this,
 {
     jint fd = fdval(env, fdo);
     void *buf = (void *)jlong_to_ptr(address);
-    SOCKADDR sa;
-    int sa_len = SOCKADDR_LEN;
+    SOCKETADDRESS sa;
+    int sa_len = sizeof(SOCKETADDRESS);
     jint n = 0;
 
     if (len > MAX_PACKET_LEN) {
         len = MAX_PACKET_LEN;
     }
 
-    if (NET_InetAddressToSockaddr(env, destAddress, destPort,
-                                  (struct sockaddr *)&sa,
+    if (NET_InetAddressToSockaddr(env, destAddress, destPort, &sa.sa,
                                   &sa_len, preferIPv6) != 0) {
       return IOS_THROWN;
     }
 
-    n = sendto(fd, buf, len, 0, (struct sockaddr *)&sa, sa_len);
+    n = sendto(fd, buf, len, 0, &sa.sa, sa_len);
     if (n < 0) {
         if (errno == EAGAIN) {
             return IOS_UNAVAILABLE;

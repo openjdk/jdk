@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,8 +417,8 @@ void handleMessage
 JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_receive0
   (JNIEnv *env, jclass klass, jint fd, jobject resultContainerObj,
    jlong address, jint length, jboolean peek) {
-    SOCKADDR sa;
-    int sa_len = sizeof(sa);
+    SOCKETADDRESS sa;
+    int sa_len = sizeof(SOCKETADDRESS);
     ssize_t rv = 0;
     jlong *addr = jlong_to_ptr(address);
     struct iovec iov[1];
@@ -501,7 +501,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_receive0
             snp = (union sctp_notification *) bufp;
             if (handleNotification(env, fd, resultContainerObj, snp, rv,
                                    (msg->msg_flags & MSG_EOR),
-                                   (struct sockaddr*)&sa ) == JNI_TRUE) {
+                                   &sa.sa) == JNI_TRUE) {
                 /* We have received a notification that is of interest
                    to the Java API. The appropriate notification will be
                    set in the result container. */
@@ -524,7 +524,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_receive0
     } while (msg->msg_flags & MSG_NOTIFICATION);
 
     handleMessage(env, resultContainerObj, msg, rv,
-            (msg->msg_flags & MSG_EOR), (struct sockaddr*)&sa);
+            (msg->msg_flags & MSG_EOR), &sa.sa);
     return rv;
 }
 
@@ -537,8 +537,8 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_send0
   (JNIEnv *env, jclass klass, jint fd, jlong address, jint length,
    jobject targetAddress, jint targetPort, jint assocId, jint streamNumber,
    jboolean unordered, jint ppid) {
-    SOCKADDR sa;
-    int sa_len = sizeof(sa);
+    SOCKETADDRESS sa;
+    int sa_len = sizeof(SOCKETADDRESS);
     ssize_t rv = 0;
     jlong *addr = jlong_to_ptr(address);
     struct iovec iov[1];
@@ -555,8 +555,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_send0
      *    Association already existing, assocId != -1, targetAddress = preferred addr
      */
     if (targetAddress != NULL /*&& assocId <= 0*/) {
-        if (NET_InetAddressToSockaddr(env, targetAddress, targetPort,
-                                      (struct sockaddr *)&sa,
+        if (NET_InetAddressToSockaddr(env, targetAddress, targetPort, &sa.sa,
                                       &sa_len, JNI_TRUE) != 0) {
             return IOS_THROWN;
         }
