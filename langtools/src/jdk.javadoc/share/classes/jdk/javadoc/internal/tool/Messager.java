@@ -48,10 +48,8 @@ import com.sun.tools.javac.util.Log;
 
 /**
  * Utility for integrating with javadoc tools and for localization.
- * Handle Resources. Access to error and warning counts.
- * Message formatting.
- * <br>
- * Also provides implementation for DocErrorReporter.
+ * Handle resources, access to error and warning counts and
+ * message formatting.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -137,10 +135,6 @@ public class Messager extends Log implements Reporter {
                 printWarning(e, msg);
                 return;
         }
-    }
-
-    public static class ExitJavadoc extends Error {
-        private static final long serialVersionUID = 0;
     }
 
     final String programName;
@@ -240,7 +234,7 @@ public class Messager extends Log implements Reporter {
             report(DiagnosticType.ERROR, prefix, msg);
             return;
         }
-        incrementErrorCount(prefix, msg);
+        printError(prefix, msg);
     }
 
     public void printError(Element e, String msg) {
@@ -249,10 +243,15 @@ public class Messager extends Log implements Reporter {
             report(DiagnosticType.ERROR, prefix, msg);
             return;
         }
-        incrementErrorCount(prefix, msg);
+        printError(prefix, msg);
     }
 
-    private void incrementErrorCount(String prefix, String msg) {
+    public void printErrorUsingKey(String key, Object... args) {
+        printError((Element)null, getText(key, args));
+    }
+
+    // print the error and increment count
+    private void printError(String prefix, String msg) {
         if (nerrors < MaxErrors) {
             PrintWriter errWriter = getWriter(WriterKind.ERROR);
             printRawLines(errWriter, prefix + ": " + getText("javadoc.error") + " - " + msg);
@@ -272,13 +271,21 @@ public class Messager extends Log implements Reporter {
         printWarning((DocTreePath)null, msg);
     }
 
+    public void printWarningUsingKey(String key, Object... args) {
+        printWarning((Element)null, getText(key, args));
+    }
+
+    public void printWarning(Element e, String key, Object... args) {
+        printWarning(getText(key, args));
+    }
+
     public void printWarning(DocTreePath path, String msg) {
         String prefix = getDiagSource(path);
         if (diagListener != null) {
             report(DiagnosticType.WARNING, prefix, msg);
             return;
         }
-        incrementWarningCount(prefix, msg);
+        printWarning(prefix, msg);
     }
 
     public void printWarning(Element e, String msg) {
@@ -287,10 +294,11 @@ public class Messager extends Log implements Reporter {
             report(DiagnosticType.WARNING, prefix, msg);
             return;
         }
-        incrementWarningCount(prefix, msg);
+        printWarning(prefix, msg);
     }
 
-    private void incrementWarningCount(String prefix, String msg) {
+    // print the warning and increment count
+    private void printWarning(String prefix, String msg) {
         if (nwarnings < MaxWarnings) {
             PrintWriter warnWriter = getWriter(WriterKind.WARNING);
             printRawLines(warnWriter, prefix + ": " + getText("javadoc.warning") + " - " + msg);
@@ -342,50 +350,6 @@ public class Messager extends Log implements Reporter {
     }
 
     /**
-     * Print error message, increment error count.
-     *
-     * @param key selects message from resource
-     */
-    public void error(Element e, String key, Object... args) {
-        printError(e, getText(key, args));
-    }
-
-    /**
-     * Print error message, increment error count.
-     *
-     * @param key selects message from resource
-     */
-    public void error(DocTreePath path, String key, Object... args) {
-        printError(path, getText(key, args));
-    }
-
-    public void error(String key, Object... args) {
-        printError((Element)null, getText(key, args));
-    }
-
-    public void warning(String key, Object... args) {
-        printWarning((Element)null, getText(key, args));
-    }
-
-    /**
-     * Print warning message, increment warning count.
-     *
-     * @param key selects message from resource
-     */
-    public void warning(Element e, String key, Object... args) {
-        printWarning(e, getText(key, args));
-    }
-
-    /**
-     * Print warning message, increment warning count.
-     *
-     * @param key selects message from resource
-     */
-    public void warning(DocTreePath path, String key, Object... args) {
-        printWarning(path, getText(key, args));
-    }
-
-    /**
      * Print a message.
      *
      * @param key selects message from resource
@@ -395,21 +359,23 @@ public class Messager extends Log implements Reporter {
     }
 
     /**
-     * Return total number of errors, including those recorded
-     * in the compilation log.
+     * Returns true if errors have been recorded.
      */
-    public int nerrors() { return nerrors; }
+    public boolean hasErrors() {
+        return nerrors != 0;
+    }
 
     /**
-     * Return total number of warnings, including those recorded
-     * in the compilation log.
+     * Returns true if warnings have been recorded.
      */
-    public int nwarnings() { return nwarnings; }
+    public boolean hasWarnings() {
+        return nwarnings != 0;
+    }
 
     /**
      * Print exit message.
      */
-    public void exitNotice() {
+    public void printErrorWarningCounts() {
         if (nerrors > 0) {
             notice((nerrors > 1) ? "main.errors" : "main.error",
                    "" + nerrors);

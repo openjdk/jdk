@@ -42,7 +42,7 @@ public class TestPackageHtml extends JavadocTester {
         javadoc("-d", "out-pkg-html",
                 "-sourcepath", testSrc,
                 "pkg1");
-        checkExit(Exit.FAILED);
+        checkExit(Exit.ERROR);
         checkOutput(Output.OUT, true, "package.html:10: error: bad use of '>'");
     }
 }
