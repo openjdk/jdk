@@ -543,7 +543,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      private static class DenyAfterConstraint extends Constraint {
          private Date denyAfterDate;
          private static final SimpleDateFormat dateFormat =
-                 new SimpleDateFormat("EEE, MMM d HH:mm:ss z YYYY");
+                 new SimpleDateFormat("EEE, MMM d HH:mm:ss z yyyy");
 
          DenyAfterConstraint(String algo, int year, int month, int day) {
              Calendar c;
@@ -593,13 +593,17 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
          public void permits(CertConstraintParameters cp)
                  throws CertPathValidatorException {
              Date currentDate;
+             String errmsg;
 
              if (cp.getJARTimestamp() != null) {
                  currentDate = cp.getJARTimestamp().getTimestamp();
+                 errmsg = "JAR Timestamp date: ";
              } else if (cp.getPKIXParamDate() != null) {
                  currentDate = cp.getPKIXParamDate();
+                 errmsg = "PKIXParameter date: ";
              } else {
                  currentDate = new Date();
+                 errmsg = "Certificate date: ";
              }
 
              if (!denyAfterDate.after(currentDate)) {
@@ -609,10 +613,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                  throw new CertPathValidatorException(
                          "denyAfter constraint check failed.  " +
                                  "Constraint date: " +
-                                 dateFormat.format(denyAfterDate) +
-                                 "; Cert date: " +
-                                 dateFormat.format(currentDate),
-                          null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
+                                 dateFormat.format(denyAfterDate) + "; "
+                                 + errmsg + dateFormat.format(currentDate),
+                         null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
              }
          }
 

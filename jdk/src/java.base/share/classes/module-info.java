@@ -108,6 +108,7 @@ module java.base {
     uses java.util.spi.ResourceBundleControlProvider;
     uses java.util.spi.ResourceBundleProvider;
     uses java.util.spi.TimeZoneNameProvider;
+    uses java.util.spi.ToolProvider;
     uses javax.security.auth.spi.LoginModule;
 
 
@@ -123,6 +124,9 @@ module java.base {
     exports jdk.internal.jimage to
         jdk.jlink;
     exports jdk.internal.jimage.decompressor to
+        jdk.jlink;
+    exports jdk.internal.jmod to
+        jdk.compiler,
         jdk.jlink;
     exports jdk.internal.logger to
         java.logging;

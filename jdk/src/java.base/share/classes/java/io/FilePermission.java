@@ -25,11 +25,20 @@
 
 package java.io;
 
+import java.net.URI;
+import java.nio.file.*;
 import java.security.*;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+
+import jdk.internal.misc.JavaIOFilePermissionAccess;
+import jdk.internal.misc.SharedSecrets;
+import sun.nio.fs.DefaultFileSystemProvider;
+import sun.security.action.GetPropertyAction;
+import sun.security.util.FilePermCompat;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -41,8 +50,11 @@ import sun.security.util.SecurityConstants;
  * the file separator character, <code>File.separatorChar</code>) indicates
  * all the files and directories contained in that directory. A pathname
  * that ends with "/-" indicates (recursively) all files
- * and subdirectories contained in that directory. A pathname consisting of
- * the special token "&lt;&lt;ALL FILES&gt;&gt;" matches <b>any</b> file.
+ * and subdirectories contained in that directory. Such a pathname is called
+ * a wildcard pathname. Otherwise, it's a simple pathname.
+ * <P>
+ * A pathname consisting of the special token {@literal "<<ALL FILES>>"}
+ * matches <b>any</b> file.
  * <P>
  * Note: A pathname consisting of a single "*" indicates all the files
  * in the current directory, while a pathname consisting of a single "-"
@@ -75,12 +87,12 @@ import sun.security.util.SecurityConstants;
  * <P>
  * Be careful when granting FilePermissions. Think about the implications
  * of granting read and especially write access to various files and
- * directories. The "&lt;&lt;ALL FILES&gt;&gt;" permission with write action is
+ * directories. The {@literal "<<ALL FILES>>"} permission with write action is
  * especially dangerous. This grants permission to write to the entire
  * file system. One thing this effectively allows is replacement of the
  * system binary, including the JVM runtime environment.
- *
- * <p>Please note: Code can always read a file from the same
+ * <P>
+ * Please note: Code can always read a file from the same
  * directory it's in (or a subdirectory of that directory); it does not
  * need explicit permission to do so.
  *
@@ -145,32 +157,125 @@ public final class FilePermission extends Permission implements Serializable {
     private String actions; // Left null as long as possible, then
                             // created and re-used in the getAction function.
 
-    // canonicalized dir path. In the case of
-    // directories, it is the name "/blah/*" or "/blah/-" without
-    // the last character (the "*" or "-").
+    // canonicalized dir path. used by the "old" behavior (nb == false).
+    // In the case of directories, it is the name "/blah/*" or "/blah/-"
+    // without the last character (the "*" or "-").
 
     private transient String cpath;
+
+    // Following fields used by the "new" behavior (nb == true), in which
+    // input path is not canonicalized. For compatibility (so that granting
+    // FilePermission on "x" allows reading "`pwd`/x", an alternative path
+    // can be added so that both can be used in an implies() check. Please note
+    // the alternative path only deals with absolute/relative path, and does
+    // not deal with symlink/target.
+
+    private transient Path npath;       // normalized dir path.
+    private transient Path npath2;      // alternative normalized dir path.
+    private transient boolean allFiles; // whether this is <<ALL FILES>>
 
     // static Strings used by init(int mask)
     private static final char RECURSIVE_CHAR = '-';
     private static final char WILD_CHAR = '*';
 
-/*
-    public String toString()
-    {
-        StringBuffer sb = new StringBuffer();
-        sb.append("***\n");
-        sb.append("cpath = "+cpath+"\n");
-        sb.append("mask = "+mask+"\n");
-        sb.append("actions = "+getActions()+"\n");
-        sb.append("directory = "+directory+"\n");
-        sb.append("recursive = "+recursive+"\n");
-        sb.append("***\n");
-        return sb.toString();
-    }
-*/
+//    public String toString() {
+//        StringBuffer sb = new StringBuffer();
+//        sb.append("*** FilePermission on " + getName() + " ***");
+//        for (Field f : FilePermission.class.getDeclaredFields()) {
+//            if (!Modifier.isStatic(f.getModifiers())) {
+//                try {
+//                    sb.append(f.getName() + " = " + f.get(this));
+//                } catch (Exception e) {
+//                    sb.append(f.getName() + " = " + e.toString());
+//                }
+//                sb.append('\n');
+//            }
+//        }
+//        sb.append("***\n");
+//        return sb.toString();
+//    }
 
     private static final long serialVersionUID = 7930732926638008763L;
+
+    /**
+     * Always use the internal default file system, in case it was modified
+     * with java.nio.file.spi.DefaultFileSystemProvider.
+     */
+    private static final java.nio.file.FileSystem builtInFS =
+            DefaultFileSystemProvider.create()
+                    .getFileSystem(URI.create("file:///"));
+
+    /**
+     * Creates FilePermission objects with special internals.
+     * See {@link FilePermCompat#newPermPlusAltPath(Permission)} and
+     * {@link FilePermCompat#newPermUsingAltPath(Permission)}.
+     */
+
+    private static final Path here = builtInFS.getPath(
+            GetPropertyAction.privilegedGetProperty("user.dir"));
+
+    /**
+     * A private constructor like a clone, only npath2 is not touched.
+     * @param input
+     */
+    private FilePermission(FilePermission input) {
+        super(input.getName());
+        this.npath = input.npath;
+        this.actions = input.actions;
+        this.allFiles = input.allFiles;
+        this.recursive = input.recursive;
+        this.directory = input.directory;
+        this.cpath = input.cpath;
+        this.mask = input.mask;
+    }
+
+    /**
+     * Returns the alternative path as a Path object, i.e. absolute path
+     * for a relative one, or vice versa.
+     *
+     * @param in a real path w/o "-" or "*" at the end, and not <<ALL FILES>>.
+     * @return the alternative path, or null if cannot find one.
+     */
+    private static Path altPath(Path in) {
+        try {
+            if (!in.isAbsolute()) {
+                return here.resolve(in).normalize();
+            } else {
+                return here.relativize(in).normalize();
+            }
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    static {
+        SharedSecrets.setJavaIOFilePermissionAccess(
+            new JavaIOFilePermissionAccess() {
+                public FilePermission newPermPlusAltPath(FilePermission input) {
+                    if (input.npath2 == null && !input.allFiles) {
+                        Path npath2 = altPath(input.npath);
+                        if (npath2 != null) {
+                            FilePermission np = new FilePermission(input);
+                            np.npath2 = npath2;
+                            return np;
+                        }
+                    }
+                    return input;
+                }
+                public FilePermission newPermUsingAltPath(FilePermission input) {
+                    if (!input.allFiles) {
+                        Path npath2 = altPath(input.npath);
+                        if (npath2 != null) {
+                            FilePermission np = new FilePermission(input);
+                            np.npath = npath2;
+                            return np;
+                        }
+                    }
+                    return null;
+                }
+            }
+        );
+    }
 
     /**
      * initialize a FilePermission object. Common to all constructors.
@@ -186,60 +291,106 @@ public final class FilePermission extends Permission implements Serializable {
         if (mask == NONE)
                 throw new IllegalArgumentException("invalid actions mask");
 
-        if ((cpath = getName()) == null)
+        if (FilePermCompat.nb) {
+            String name = getName();
+
+            if (name == null)
                 throw new NullPointerException("name can't be null");
 
-        this.mask = mask;
+            this.mask = mask;
 
-        if (cpath.equals("<<ALL FILES>>")) {
-            directory = true;
-            recursive = true;
-            cpath = "";
-            return;
-        }
-
-        // store only the canonical cpath if possible
-        cpath = AccessController.doPrivileged(new PrivilegedAction<>() {
-            public String run() {
-                try {
-                    String path = cpath;
-                    if (cpath.endsWith("*")) {
-                        // call getCanonicalPath with a path with wildcard character
-                        // replaced to avoid calling it with paths that are
-                        // intended to match all entries in a directory
-                        path = path.substring(0, path.length()-1) + "-";
-                        path = new File(path).getCanonicalPath();
-                        return path.substring(0, path.length()-1) + "*";
-                    } else {
-                        return new File(path).getCanonicalPath();
-                    }
-                } catch (IOException ioe) {
-                    return cpath;
-                }
+            if (name.equals("<<ALL FILES>>")) {
+                allFiles = true;
+                npath = builtInFS.getPath("");
+                // other fields remain default
+                return;
             }
-        });
 
-        int len = cpath.length();
-        char last = ((len > 0) ? cpath.charAt(len - 1) : 0);
+            boolean rememberStar = false;
+            if (name.endsWith("*")) {
+                rememberStar = true;
+                recursive = false;
+                name = name.substring(0, name.length()-1) + "-";
+            }
 
-        if (last == RECURSIVE_CHAR &&
-            cpath.charAt(len - 2) == File.separatorChar) {
-            directory = true;
-            recursive = true;
-            cpath = cpath.substring(0, --len);
-        } else if (last == WILD_CHAR &&
-            cpath.charAt(len - 2) == File.separatorChar) {
-            directory = true;
-            //recursive = false;
-            cpath = cpath.substring(0, --len);
+            try {
+                // new File() can "normalize" some name, for example, "/C:/X" on
+                // Windows. Some JDK codes generate such illegal names.
+                npath = builtInFS.getPath(new File(name).getPath())
+                        .normalize();
+            } catch (InvalidPathException ipe) {
+                // Still invalid. For compatibility reason, accept it
+                // but make this permission useless.
+                npath = builtInFS.getPath("-u-s-e-l-e-s-s-");
+                this.mask = NONE;
+            }
+
+            // lastName should always be non-null now
+            Path lastName = npath.getFileName();
+            if (lastName != null && lastName.toString().equals("-")) {
+                directory = true;
+                recursive = !rememberStar;
+                npath = npath.getParent();
+            }
+            if (npath == null) {
+                npath = builtInFS.getPath("");
+            }
         } else {
-            // overkill since they are initialized to false, but
-            // commented out here to remind us...
-            //directory = false;
-            //recursive = false;
-        }
+            if ((cpath = getName()) == null)
+                throw new NullPointerException("name can't be null");
 
-        // XXX: at this point the path should be absolute. die if it isn't?
+            this.mask = mask;
+
+            if (cpath.equals("<<ALL FILES>>")) {
+                directory = true;
+                recursive = true;
+                cpath = "";
+                return;
+            }
+
+            // store only the canonical cpath if possible
+            cpath = AccessController.doPrivileged(new PrivilegedAction<>() {
+                public String run() {
+                    try {
+                        String path = cpath;
+                        if (cpath.endsWith("*")) {
+                            // call getCanonicalPath with a path with wildcard character
+                            // replaced to avoid calling it with paths that are
+                            // intended to match all entries in a directory
+                            path = path.substring(0, path.length() - 1) + "-";
+                            path = new File(path).getCanonicalPath();
+                            return path.substring(0, path.length() - 1) + "*";
+                        } else {
+                            return new File(path).getCanonicalPath();
+                        }
+                    } catch (IOException ioe) {
+                        return cpath;
+                    }
+                }
+            });
+
+            int len = cpath.length();
+            char last = ((len > 0) ? cpath.charAt(len - 1) : 0);
+
+            if (last == RECURSIVE_CHAR &&
+                    cpath.charAt(len - 2) == File.separatorChar) {
+                directory = true;
+                recursive = true;
+                cpath = cpath.substring(0, --len);
+            } else if (last == WILD_CHAR &&
+                    cpath.charAt(len - 2) == File.separatorChar) {
+                directory = true;
+                //recursive = false;
+                cpath = cpath.substring(0, --len);
+            } else {
+                // overkill since they are initialized to false, but
+                // commented out here to remind us...
+                //directory = false;
+                //recursive = false;
+            }
+
+            // XXX: at this point the path should be absolute. die if it isn't?
+        }
     }
 
     /**
@@ -254,7 +405,7 @@ public final class FilePermission extends Permission implements Serializable {
      * indicates all the files and directories contained in that directory.
      * A pathname that ends with "/-" indicates (recursively) all files and
      * subdirectories contained in that directory. The special pathname
-     * "&lt;&lt;ALL FILES&gt;&gt;" matches any file.
+     * {@literal "<<ALL FILES>>"} matches any file.
      *
      * <p>A pathname consisting of a single "*" indicates all the files
      * in the current directory, while a pathname consisting of a single "-"
@@ -263,6 +414,28 @@ public final class FilePermission extends Permission implements Serializable {
      * directory.
      *
      * <p>A pathname containing an empty string represents an empty path.
+     *
+     * @implNote In this implementation, the
+     * {@code jdk.io.permissionsUseCanonicalPath} system property dictates how
+     * the {@code path} argument is processed and stored.
+     * <P>
+     * If the value of the system property is set to {@code true}, {@code path}
+     * is canonicalized and stored as a String object named {@code cpath}.
+     * This means a relative path is converted to an absolute path, a Windows
+     * DOS-style 8.3 path is expanded to a long path, and a symbolic link is
+     * resolved to its target, etc.
+     * <P>
+     * If the value of the system property is set to {@code false}, {@code path}
+     * is converted to a {@link java.nio.file.Path} object named {@code npath}
+     * after {@link Path#normalize() normalization}. No canonicalization is
+     * performed which means the underlying file system is not accessed.
+     * <P>
+     * In either case, the "*" or "-" character at the end of a wildcard
+     * {@code path} is removed before canonicalization or normalization.
+     * It is stored in a separate wildcard flag field.
+     * <P>
+     * The default value of the {@code jdk.io.permissionsUseCanonicalPath}
+     * system property is {@code false} in this implementation.
      *
      * @param path the pathname of the file/directory.
      * @param actions the action string.
@@ -305,6 +478,38 @@ public final class FilePermission extends Permission implements Serializable {
      *      "/tmp/*" encompasses all files in the "/tmp" directory,
      *      including the one named "foo".
      * </ul>
+     * <P>
+     * Precisely, a simple pathname implies another simple pathname
+     * if and only if they are equal. A simple pathname never implies
+     * a wildcard pathname. A wildcard pathname implies another wildcard
+     * pathname if and only if all simple pathnames implied by the latter
+     * are implied by the former. A wildcard pathname implies a simple
+     * pathname if and only if
+     * <ul>
+     *     <li>if the wildcard flag is "*", the simple pathname's path
+     *     must be right inside the wildcard pathname's path.
+     *     <li>if the wildcard flag is "-", the simple pathname's path
+     *     must be recursively inside the wildcard pathname's path.
+     * </ul>
+     * <P>
+     * {@literal "<<ALL FILES>>"} implies every other pathname. No pathname,
+     * except for {@literal "<<ALL FILES>>"} itself, implies
+     * {@literal "<<ALL FILES>>"}.
+     *
+     * @implNote
+     * If {@code jdk.io.permissionsUseCanonicalPath} is {@code true}, a
+     * simple {@code cpath} is inside a wildcard {@code cpath} if and only if
+     * after removing the base name (the last name in the pathname's name
+     * sequence) from the former the remaining part equals to the latter,
+     * a simple {@code cpath} is recursively inside a wildcard {@code cpath}
+     * if and only if the former starts with the latter.
+     * <p>
+     * If {@code jdk.io.permissionsUseCanonicalPath} is {@code false}, a
+     * simple {@code npath} is inside a wildcard {@code npath} if and only if
+     * {@code  simple_npath.relativize(wildcard_npath)} is exactly "..",
+     * a simple {@code npath} is recursively inside a wildcard {@code npath}
+     * if and only if {@code simple_npath.relativize(wildcard_npath)}
+     * is a series of one or more "..".
      *
      * @param p the permission to check against.
      *
@@ -334,51 +539,137 @@ public final class FilePermission extends Permission implements Serializable {
      * @return the effective mask
      */
     boolean impliesIgnoreMask(FilePermission that) {
-        if (this.directory) {
-            if (this.recursive) {
-                // make sure that.path is longer then path so
-                // something like /foo/- does not imply /foo
-                if (that.directory) {
-                    return (that.cpath.length() >= this.cpath.length()) &&
-                            that.cpath.startsWith(this.cpath);
-                }  else {
-                    return ((that.cpath.length() > this.cpath.length()) &&
-                        that.cpath.startsWith(this.cpath));
+        if (FilePermCompat.nb) {
+            if (allFiles) {
+                return true;
+            }
+            if (that.allFiles) {
+                return false;
+            }
+            // Left at least same level of wildness as right
+            if ((this.recursive && that.recursive) != that.recursive
+                    || (this.directory && that.directory) != that.directory) {
+                return false;
+            }
+            // Same npath is good as long as both or neither are directories
+            if (this.npath.equals(that.npath)
+                    && this.directory == that.directory) {
+                return true;
+            }
+            int diff = containsPath(this.npath, that.npath);
+            // Right inside left is good if recursive
+            if (diff >= 1 && recursive) {
+                return true;
+            }
+            // Right right inside left if it is element in set
+            if (diff == 1 && directory && !that.directory) {
+                return true;
+            }
+
+            // Hack: if a npath2 field exists, apply the same checks
+            // on it as a fallback.
+            if (this.npath2 != null) {
+                if (this.npath2.equals(that.npath)
+                        && this.directory == that.directory) {
+                    return true;
                 }
-            } else {
-                if (that.directory) {
-                    // if the permission passed in is a directory
-                    // specification, make sure that a non-recursive
-                    // permission (i.e., this object) can't imply a recursive
-                    // permission.
-                    if (that.recursive)
-                        return false;
-                    else
-                        return (this.cpath.equals(that.cpath));
-                } else {
-                    int last = that.cpath.lastIndexOf(File.separatorChar);
-                    if (last == -1)
-                        return false;
-                    else {
-                        // this.cpath.equals(that.cpath.substring(0, last+1));
-                        // Use regionMatches to avoid creating new string
-                        return (this.cpath.length() == (last + 1)) &&
-                            this.cpath.regionMatches(0, that.cpath, 0, last+1);
-                    }
+                diff = containsPath(this.npath2, that.npath);
+                if (diff >= 1 && recursive) {
+                    return true;
+                }
+                if (diff == 1 && directory && !that.directory) {
+                    return true;
                 }
             }
-        } else if (that.directory) {
-            // if this is NOT recursive/wildcarded,
-            // do not let it imply a recursive/wildcarded permission
+
             return false;
         } else {
-            return (this.cpath.equals(that.cpath));
+            if (this.directory) {
+                if (this.recursive) {
+                    // make sure that.path is longer then path so
+                    // something like /foo/- does not imply /foo
+                    if (that.directory) {
+                        return (that.cpath.length() >= this.cpath.length()) &&
+                                that.cpath.startsWith(this.cpath);
+                    } else {
+                        return ((that.cpath.length() > this.cpath.length()) &&
+                                that.cpath.startsWith(this.cpath));
+                    }
+                } else {
+                    if (that.directory) {
+                        // if the permission passed in is a directory
+                        // specification, make sure that a non-recursive
+                        // permission (i.e., this object) can't imply a recursive
+                        // permission.
+                        if (that.recursive)
+                            return false;
+                        else
+                            return (this.cpath.equals(that.cpath));
+                    } else {
+                        int last = that.cpath.lastIndexOf(File.separatorChar);
+                        if (last == -1)
+                            return false;
+                        else {
+                            // this.cpath.equals(that.cpath.substring(0, last+1));
+                            // Use regionMatches to avoid creating new string
+                            return (this.cpath.length() == (last + 1)) &&
+                                    this.cpath.regionMatches(0, that.cpath, 0, last + 1);
+                        }
+                    }
+                }
+            } else if (that.directory) {
+                // if this is NOT recursive/wildcarded,
+                // do not let it imply a recursive/wildcarded permission
+                return false;
+            } else {
+                return (this.cpath.equals(that.cpath));
+            }
+        }
+    }
+
+    /**
+     * Returns the depth between an outer path p1 and an inner path p2. -1
+     * is returned if
+     *
+     * - p1 does not contains p2.
+     * - this is not decidable. For example, p1="../x", p2="y".
+     * - the depth is not decidable. For example, p1="/", p2="x".
+     *
+     * This method can return 2 if the depth is greater than 2.
+     *
+     * @param p1 the expected outer path, normalized
+     * @param p2 the expected inner path, normalized
+     * @return the depth in between
+     */
+    private static int containsPath(Path p1, Path p2) {
+        Path p;
+        try {
+            p = p2.relativize(p1).normalize();
+            if (p.getName(0).toString().isEmpty()) {
+                return 0;
+            } else {
+                for (Path item: p) {
+                    String s = item.toString();
+                    if (!s.equals("..")) {
+                        return -1;
+                    }
+                }
+                return p.getNameCount();
+            }
+        } catch (IllegalArgumentException iae) {
+            return -1;
         }
     }
 
     /**
      * Checks two FilePermission objects for equality. Checks that <i>obj</i> is
      * a FilePermission, and has the same pathname and actions as this object.
+     *
+     * @implNote More specifically, two pathnames are the same if and only if
+     * they have the same wildcard flag and their {@code cpath}
+     * (if {@code jdk.io.permissionsUseCanonicalPath} is {@code true}) or
+     * {@code npath} (if {@code jdk.io.permissionsUseCanonicalPath}
+     * is {@code false}) are equal. Or they are both {@literal "<<ALL FILES>>"}.
      *
      * @param obj the object we are testing for equality with this object.
      * @return <code>true</code> if obj is a FilePermission, and has the same
@@ -395,10 +686,18 @@ public final class FilePermission extends Permission implements Serializable {
 
         FilePermission that = (FilePermission) obj;
 
-        return (this.mask == that.mask) &&
-            this.cpath.equals(that.cpath) &&
-            (this.directory == that.directory) &&
-            (this.recursive == that.recursive);
+        if (FilePermCompat.nb) {
+            return (this.mask == that.mask) &&
+                    (this.allFiles == that.allFiles) &&
+                    this.npath.equals(that.npath) &&
+                    (this.directory == that.directory) &&
+                    (this.recursive == that.recursive);
+        } else {
+            return (this.mask == that.mask) &&
+                    this.cpath.equals(that.cpath) &&
+                    (this.directory == that.directory) &&
+                    (this.recursive == that.recursive);
+        }
     }
 
     /**
@@ -408,7 +707,11 @@ public final class FilePermission extends Permission implements Serializable {
      */
     @Override
     public int hashCode() {
-        return 0;
+        if (FilePermCompat.nb) {
+            return Objects.hash(mask, allFiles, directory, recursive, npath);
+        } else {
+            return 0;
+        }
     }
 
     /**

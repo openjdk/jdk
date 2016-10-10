@@ -783,7 +783,7 @@ public:
   void set_cached_class_file(JvmtiCachedClassFileData *data) {
     _cached_class_file = data;
   }
-  JvmtiCachedClassFileData * get_cached_class_file() { return _cached_class_file; }
+  JvmtiCachedClassFileData * get_cached_class_file();
   jint get_cached_class_file_len();
   unsigned char * get_cached_class_file_bytes();
 
@@ -795,6 +795,13 @@ public:
     return _jvmti_cached_class_field_map;
   }
 
+#if INCLUDE_CDS
+  void set_archived_class_data(JvmtiCachedClassFileData* data) {
+    _cached_class_file = data;
+  }
+
+  JvmtiCachedClassFileData * get_archived_class_data();
+#endif // INCLUDE_CDS
 #else // INCLUDE_JVMTI
 
   static void purge_previous_versions(InstanceKlass* ik) { return; };

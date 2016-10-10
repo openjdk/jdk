@@ -876,6 +876,7 @@ public class ArrayList<E> extends AbstractList<E>
         int lastRet = -1; // index of last element returned; -1 if no such
         int expectedModCount = modCount;
 
+        // prevent creating a synthetic constructor
         Itr() {}
 
         public boolean hasNext() {

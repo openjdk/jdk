@@ -149,42 +149,98 @@ class G1CMBitMap : public G1CMBitMapRO {
 //
 // Stores oops in a huge buffer in virtual memory that is always fully committed.
 // Resizing may only happen during a STW pause when the stack is empty.
+//
+// Memory is allocated on a "chunk" basis, i.e. a set of oops. For this, the mark
+// stack memory is split into evenly sized chunks of oops. Users can only
+// add or remove entries on that basis.
+// Chunks are filled in increasing address order. Not completely filled chunks
+// have a NULL element as a terminating element.
+//
+// Every chunk has a header containing a single pointer element used for memory
+// management. This wastes some space, but is negligible (< .1% with current sizing).
+//
+// Memory management is done using a mix of tracking a high water-mark indicating
+// that all chunks at a lower address are valid chunks, and a singly linked free
+// list connecting all empty chunks.
 class G1CMMarkStack VALUE_OBJ_CLASS_SPEC {
-  ReservedSpace _reserved_space; // Space currently reserved for the mark stack.
+public:
+  // Number of oops that can fit in a single chunk.
+  static const size_t OopsPerChunk = 1024 - 1 /* One reference for the next pointer */;
+private:
+  struct OopChunk {
+    OopChunk* next;
+    oop data[OopsPerChunk];
+  };
 
-  oop* _base;                    // Bottom address of allocated memory area.
-  size_t _capacity;              // Maximum number of elements.
-  size_t _index;                 // One more than last occupied index.
+  size_t _max_chunk_capacity;    // Maximum number of OopChunk elements on the stack.
 
-  size_t _saved_index;           // Value of _index saved at start of GC to detect mark stack modifications during that time.
+  OopChunk* _base;               // Bottom address of allocated memory area.
+  size_t _chunk_capacity;        // Current maximum number of OopChunk elements.
 
-  bool  _overflow;
+  char _pad0[DEFAULT_CACHE_LINE_SIZE];
+  OopChunk* volatile _free_list;  // Linked list of free chunks that can be allocated by users.
+  char _pad1[DEFAULT_CACHE_LINE_SIZE - sizeof(OopChunk*)];
+  OopChunk* volatile _chunk_list; // List of chunks currently containing data.
+  volatile size_t _chunks_in_chunk_list;
+  char _pad2[DEFAULT_CACHE_LINE_SIZE - sizeof(OopChunk*) - sizeof(size_t)];
+
+  volatile size_t _hwm;          // High water mark within the reserved space.
+  char _pad4[DEFAULT_CACHE_LINE_SIZE - sizeof(size_t)];
+
+  // Allocate a new chunk from the reserved memory, using the high water mark. Returns
+  // NULL if out of memory.
+  OopChunk* allocate_new_chunk();
+
+  volatile bool _out_of_memory;
+
+  // Atomically add the given chunk to the list.
+  void add_chunk_to_list(OopChunk* volatile* list, OopChunk* elem);
+  // Atomically remove and return a chunk from the given list. Returns NULL if the
+  // list is empty.
+  OopChunk* remove_chunk_from_list(OopChunk* volatile* list);
+
+  void add_chunk_to_chunk_list(OopChunk* elem);
+  void add_chunk_to_free_list(OopChunk* elem);
+
+  OopChunk* remove_chunk_from_chunk_list();
+  OopChunk* remove_chunk_from_free_list();
+
   bool  _should_expand;
 
   // Resizes the mark stack to the given new capacity. Releases any previous
   // memory if successful.
   bool resize(size_t new_capacity);
 
-  bool stack_modified() const { return _index != _saved_index; }
  public:
   G1CMMarkStack();
   ~G1CMMarkStack();
 
-  bool allocate(size_t capacity);
+  // Alignment and minimum capacity of this mark stack in number of oops.
+  static size_t capacity_alignment();
 
-  // Pushes the first "n" elements of the given buffer on the stack.
-  void par_push_arr(oop* buffer, size_t n);
+  // Allocate and initialize the mark stack with the given number of oops.
+  bool initialize(size_t initial_capacity, size_t max_capacity);
 
-  // Moves up to max elements from the stack into the given buffer. Returns
-  // the number of elements pushed, and false if the array has been empty.
-  // Returns true if the buffer contains at least one element.
-  bool par_pop_arr(oop* buffer, size_t max, size_t* n);
+  // Pushes the given buffer containing at most OopsPerChunk elements on the mark
+  // stack. If less than OopsPerChunk elements are to be pushed, the array must
+  // be terminated with a NULL.
+  // Returns whether the buffer contents were successfully pushed to the global mark
+  // stack.
+  bool par_push_chunk(oop* buffer);
 
-  bool is_empty() const { return _index == 0; }
-  size_t capacity() const  { return _capacity; }
+  // Pops a chunk from this mark stack, copying them into the given buffer. This
+  // chunk may contain up to OopsPerChunk elements. If there are less, the last
+  // element in the array is a NULL pointer.
+  bool par_pop_chunk(oop* buffer);
 
-  bool overflow() const { return _overflow; }
-  void clear_overflow() { _overflow = false; }
+  // Return whether the chunk list is empty. Racy due to unsynchronized access to
+  // _chunk_list.
+  bool is_empty() const { return _chunk_list == NULL; }
+
+  size_t capacity() const  { return _chunk_capacity; }
+
+  bool is_out_of_memory() const { return _out_of_memory; }
+  void clear_out_of_memory() { _out_of_memory = false; }
 
   bool should_expand() const { return _should_expand; }
   void set_should_expand(bool value) { _should_expand = value; }
@@ -192,20 +248,15 @@ class G1CMMarkStack VALUE_OBJ_CLASS_SPEC {
   // Expand the stack, typically in response to an overflow condition
   void expand();
 
-  size_t size() const { return _index; }
+  // Return the approximate number of oops on this mark stack. Racy due to
+  // unsynchronized access to _chunks_in_chunk_list.
+  size_t size() const { return _chunks_in_chunk_list * OopsPerChunk; }
 
-  void set_empty() { _index = 0; clear_overflow(); }
+  void set_empty();
 
-  // Record the current index.
-  void note_start_of_gc();
-
-  // Make sure that we have not added any entries to the stack during GC.
-  void note_end_of_gc();
-
-  // Apply fn to each oop in the mark stack, up to the bound recorded
-  // via one of the above "note" functions.  The mark stack must not
+  // Apply Fn to every oop on the mark stack. The mark stack must not
   // be modified while iterating.
-  template<typename Fn> void iterate(Fn fn);
+  template<typename Fn> void iterate(Fn fn) const PRODUCT_RETURN;
 };
 
 // Root Regions are regions that are not empty at the beginning of a
@@ -278,7 +329,6 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
   friend class G1CMDrainMarkingStackClosure;
   friend class G1CMBitMapClosure;
   friend class G1CMConcurrentMarkingTask;
-  friend class G1CMMarkStack;
   friend class G1CMRemarkTask;
   friend class G1CMTask;
 
@@ -479,22 +529,20 @@ protected:
 public:
   // Manipulation of the global mark stack.
   // The push and pop operations are used by tasks for transfers
-  // between task-local queues and the global mark stack, and use
-  // locking for concurrency safety.
-  bool mark_stack_push(oop* arr, size_t n) {
-    _global_mark_stack.par_push_arr(arr, n);
-    if (_global_mark_stack.overflow()) {
+  // between task-local queues and the global mark stack.
+  bool mark_stack_push(oop* arr) {
+    if (!_global_mark_stack.par_push_chunk(arr)) {
       set_has_overflown();
       return false;
     }
     return true;
   }
-  void mark_stack_pop(oop* arr, size_t max, size_t* n) {
-    _global_mark_stack.par_pop_arr(arr, max, n);
+  bool mark_stack_pop(oop* arr) {
+    return _global_mark_stack.par_pop_chunk(arr);
   }
   size_t mark_stack_size()                { return _global_mark_stack.size(); }
   size_t partial_mark_stack_size_target() { return _global_mark_stack.capacity()/3; }
-  bool mark_stack_overflow()              { return _global_mark_stack.overflow(); }
+  bool mark_stack_overflow()              { return _global_mark_stack.is_out_of_memory(); }
   bool mark_stack_empty()                 { return _global_mark_stack.is_empty(); }
 
   G1CMRootRegions* root_regions() { return &_root_regions; }
@@ -599,16 +647,6 @@ public:
   // read-only, so use this carefully!
   void clearRangePrevBitmap(MemRegion mr);
 
-  // Notify data structures that a GC has started.
-  void note_start_of_gc() {
-    _global_mark_stack.note_start_of_gc();
-  }
-
-  // Notify data structures that a GC is finished.
-  void note_end_of_gc() {
-    _global_mark_stack.note_end_of_gc();
-  }
-
   // Verify that there are no CSet oops on the stacks (taskqueues /
   // global mark stack) and fingers (global / per-task).
   // If marking is not in progress, it's a no-op.
@@ -670,10 +708,7 @@ private:
     // references reaches this limit
     refs_reached_period           = 384,
     // Initial value for the hash seed, used in the work stealing code
-    init_hash_seed                = 17,
-    // How many entries will be transferred between global stack and
-    // local queues at once.
-    global_stack_transfer_size    = 1024
+    init_hash_seed                = 17
   };
 
   uint                        _worker_id;
@@ -858,9 +893,10 @@ public:
   // It pushes an object on the local queue.
   inline void push(oop obj);
 
-  // These two move entries to/from the global stack.
+  // Move entries to the global stack.
   void move_entries_to_global_stack();
-  void get_entries_from_global_stack();
+  // Move entries from the global stack, return true if we were successful to do so.
+  bool get_entries_from_global_stack();
 
   // It pops and scans objects from the local queue. If partially is
   // true, then it stops when the queue size is of a given limit. If

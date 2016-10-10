@@ -2396,12 +2396,15 @@ public class ClassReader {
         } else {
             c.flags_field = flags;
             Name modInfoName = readModuleInfoName(nextChar());
-            if (c.owner.name == null) {
-                syms.enterModule((ModuleSymbol) c.owner, Convert.packagePart(modInfoName));
-            } else {
-                // TODO: validate name
-            }
             currentModule = (ModuleSymbol) c.owner;
+            if (currentModule.name.append('.', names.module_info) != modInfoName) {
+                //strip trailing .module-info, if exists:
+                int modInfoStart = modInfoName.length() - names.module_info.length();
+                modInfoName = modInfoName.subName(modInfoStart, modInfoName.length()) == names.module_info &&
+                              modInfoName.charAt(modInfoStart - 1) == '.' ?
+                                  modInfoName.subName(0, modInfoStart - 1) : modInfoName;
+                throw badClassFile("module.name.mismatch", modInfoName, currentModule.name);
+            }
         }
 
         // class attributes must be read before class

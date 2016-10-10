@@ -653,17 +653,6 @@ class HeapRegion: public G1ContiguousSpace {
     }
   }
 
-  // Requires that "mr" be entirely within the region.
-  // Apply "cl->do_object" to all objects that intersect with "mr".
-  // If the iteration encounters an unparseable portion of the region,
-  // or if "cl->abort()" is true after a closure application,
-  // terminate the iteration and return the address of the start of the
-  // subregion that isn't done.  (The two can be distinguished by querying
-  // "cl->abort()".)  Return of "NULL" indicates that the iteration
-  // completed.
-  HeapWord*
-  object_iterate_mem_careful(MemRegion mr, ObjectClosure* cl);
-
   // filter_young: if true and the region is a young region then we
   // skip the iteration.
   // card_ptr: if not NULL, and we decide that the card is not young

@@ -1210,16 +1210,12 @@ Klass* SystemDictionary::find_shared_class(Symbol* class_name) {
 
 instanceKlassHandle SystemDictionary::load_shared_class(
                  Symbol* class_name, Handle class_loader, TRAPS) {
-  // Don't load shared class when JvmtiExport::should_post_class_file_load_hook()
-  // is enabled since posting CFLH is not supported when loading shared class.
-  if (!JvmtiExport::should_post_class_file_load_hook()) {
-    instanceKlassHandle ik (THREAD, find_shared_class(class_name));
-    // Make sure we only return the boot class for the NULL classloader.
-    if (ik.not_null() &&
-        ik->is_shared_boot_class() && class_loader.is_null()) {
-      Handle protection_domain;
-      return load_shared_class(ik, class_loader, protection_domain, THREAD);
-    }
+  instanceKlassHandle ik (THREAD, find_shared_class(class_name));
+  // Make sure we only return the boot class for the NULL classloader.
+  if (ik.not_null() &&
+      ik->is_shared_boot_class() && class_loader.is_null()) {
+    Handle protection_domain;
+    return load_shared_class(ik, class_loader, protection_domain, THREAD);
   }
   return instanceKlassHandle();
 }
@@ -1303,11 +1299,6 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
                                                         Handle class_loader,
                                                         Handle protection_domain, TRAPS) {
   instanceKlassHandle nh = instanceKlassHandle(); // null Handle
-  if (JvmtiExport::should_post_class_file_load_hook()) {
-    // Don't load shared class when JvmtiExport::should_post_class_file_load_hook()
-    // is enabled since posting CFLH is not supported when loading shared class.
-    return nh;
-  }
 
   if (ik.not_null()) {
     Symbol* class_name = ik->name();
@@ -1356,6 +1347,14 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
       } else {
         assert(i->is_shared(), "must be");
       }
+    }
+
+    instanceKlassHandle new_ik = KlassFactory::check_shared_class_file_load_hook(
+        ik, class_name, class_loader, protection_domain, CHECK_(nh));
+    if (new_ik.not_null()) {
+      // The class is changed by CFLH. Return the new class. The shared class is
+      // not used.
+      return new_ik;
     }
 
     // Adjust methods to recover missing data.  They need addresses for

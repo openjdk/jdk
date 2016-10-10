@@ -530,7 +530,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
       InstanceKlass* ik = (InstanceKlass*) k;
       module_entry = ik->module();
     } else {
-      module_entry = ModuleEntryTable::javabase_module();
+      module_entry = ModuleEntryTable::javabase_moduleEntry();
     }
     // Obtain java.lang.reflect.Module, if available
     Handle module_handle(THREAD, ((module_entry != NULL) ? JNIHandles::resolve(module_entry->module()) : (oop)NULL));

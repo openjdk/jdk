@@ -193,8 +193,8 @@ Java_java_net_PlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
     /* fd is an int field on fdObj */
     int fd;
     int len = 0;
-    SOCKADDR him;
-    socklen_t slen = sizeof(him);
+    SOCKETADDRESS him;
+    socklen_t slen = sizeof(SOCKETADDRESS);
 
     if (IS_NULL(fdObj)) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
@@ -210,12 +210,12 @@ Java_java_net_PlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
     }
 
     /* bind */
-    if (NET_InetAddressToSockaddr(env, iaObj, localport, (struct sockaddr *)&him, &len, JNI_TRUE) != 0) {
+    if (NET_InetAddressToSockaddr(env, iaObj, localport, &him.sa, &len, JNI_TRUE) != 0) {
       return;
     }
-    setDefaultScopeID(env, (struct sockaddr *)&him);
+    setDefaultScopeID(env, &him.sa);
 
-    if (NET_Bind(fd, (struct sockaddr *)&him, len) < 0)  {
+    if (NET_Bind(fd, &him.sa, len) < 0)  {
         if (errno == EADDRINUSE || errno == EADDRNOTAVAIL ||
             errno == EPERM || errno == EACCES) {
             NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "BindException",
@@ -232,13 +232,13 @@ Java_java_net_PlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
         /* Now that we're a connected socket, let's extract the port number
          * that the system chose for us and store it in the Socket object.
          */
-        if (getsockname(fd, (struct sockaddr *)&him, &slen) == -1) {
+        if (getsockname(fd, &him.sa, &slen) == -1) {
             JNU_ThrowByNameWithMessageAndLastError
                 (env, JNU_JAVANETPKG "SocketException", "Error getting socket name");
             return;
         }
 
-        localport = NET_GetPortFromSockaddr((struct sockaddr *)&him);
+        localport = NET_GetPortFromSockaddr(&him.sa);
 
         (*env)->SetIntField(env, this, pdsi_localPortID, localport);
     } else {
@@ -259,7 +259,7 @@ Java_java_net_PlainDatagramSocketImpl_connect0(JNIEnv *env, jobject this,
     /* The fdObj'fd */
     jint fd;
     /* The packetAddress address, family and port */
-    SOCKADDR rmtaddr;
+    SOCKETADDRESS rmtaddr;
     int len = 0;
 
     if (IS_NULL(fdObj)) {
@@ -274,18 +274,16 @@ Java_java_net_PlainDatagramSocketImpl_connect0(JNIEnv *env, jobject this,
         return;
     }
 
-    if (NET_InetAddressToSockaddr(env, address, port, (struct sockaddr *)&rmtaddr, &len, JNI_TRUE) != 0) {
+    if (NET_InetAddressToSockaddr(env, address, port, &rmtaddr.sa, &len, JNI_TRUE) != 0) {
       return;
     }
 
-    setDefaultScopeID(env, (struct sockaddr *)&rmtaddr);
+    setDefaultScopeID(env, &rmtaddr.sa);
 
-    if (NET_Connect(fd, (struct sockaddr *)&rmtaddr, len) == -1) {
+    if (NET_Connect(fd, &rmtaddr.sa, len) == -1) {
         NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ConnectException",
                         "Connect failed");
-        return;
     }
-
 }
 
 /*
@@ -301,7 +299,7 @@ Java_java_net_PlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject this, jin
     jint fd;
 
 #if defined(__linux__) || defined(_ALLBSD_SOURCE)
-    SOCKADDR addr;
+    SOCKETADDRESS addr;
     socklen_t len;
 #endif
 
@@ -314,36 +312,34 @@ Java_java_net_PlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject this, jin
         memset(&addr, 0, sizeof(addr));
 #ifdef AF_INET6
         if (ipv6_available()) {
-            struct sockaddr_in6 *him6 = (struct sockaddr_in6 *)&addr;
-            him6->sin6_family = AF_UNSPEC;
+            addr.sa6.sin6_family = AF_UNSPEC;
             len = sizeof(struct sockaddr_in6);
         } else
 #endif
         {
-            struct sockaddr_in *him4 = (struct sockaddr_in*)&addr;
-            him4->sin_family = AF_UNSPEC;
+            addr.sa4.sin_family = AF_UNSPEC;
             len = sizeof(struct sockaddr_in);
         }
-        NET_Connect(fd, (struct sockaddr *)&addr, len);
+        NET_Connect(fd, &addr.sa, len);
 
 #ifdef __linux__
         int localPort = 0;
-        if (getsockname(fd, (struct sockaddr *)&addr, &len) == -1)
+        if (getsockname(fd, &addr.sa, &len) == -1)
             return;
 
-        localPort = NET_GetPortFromSockaddr((struct sockaddr *)&addr);
+        localPort = NET_GetPortFromSockaddr(&addr.sa);
         if (localPort == 0) {
             localPort = (*env)->GetIntField(env, this, pdsi_localPortID);
 #ifdef AF_INET6
-            if (((struct sockaddr*)&addr)->sa_family == AF_INET6) {
-                ((struct sockaddr_in6*)&addr)->sin6_port = htons(localPort);
+            if (addr.sa.sa_family == AF_INET6) {
+                addr.sa6.sin6_port = htons(localPort);
             } else
 #endif /* AF_INET6 */
             {
-                ((struct sockaddr_in*)&addr)->sin_port = htons(localPort);
+                addr.sa4.sin_port = htons(localPort);
             }
 
-            NET_Bind(fd, (struct sockaddr *)&addr, len);
+            NET_Bind(fd, &addr.sa, len);
         }
 
 #endif
@@ -376,7 +372,7 @@ Java_java_net_PlainDatagramSocketImpl_send(JNIEnv *env, jobject this,
     /* The fdObj'fd */
     jint fd;
 
-    SOCKADDR rmtaddr, *rmtaddrP=&rmtaddr;
+    SOCKETADDRESS rmtaddr, *rmtaddrP = &rmtaddr;
     int len;
 
     if (IS_NULL(fdObj)) {
@@ -409,11 +405,11 @@ Java_java_net_PlainDatagramSocketImpl_send(JNIEnv *env, jobject this,
         rmtaddrP = 0;
     } else {
         packetPort = (*env)->GetIntField(env, packet, dp_portID);
-        if (NET_InetAddressToSockaddr(env, packetAddress, packetPort, (struct sockaddr *)&rmtaddr, &len, JNI_TRUE) != 0) {
-          return;
+        if (NET_InetAddressToSockaddr(env, packetAddress, packetPort, &rmtaddr.sa, &len, JNI_TRUE) != 0) {
+            return;
         }
     }
-    setDefaultScopeID(env, (struct sockaddr *)&rmtaddr);
+    setDefaultScopeID(env, &rmtaddr.sa);
 
     if (packetBufferLen > MAX_BUFFER_LEN) {
         /* When JNI-ifying the JDK's IO routines, we turned
@@ -449,7 +445,7 @@ Java_java_net_PlainDatagramSocketImpl_send(JNIEnv *env, jobject this,
                                (jbyte *)fullPacket);
 #ifdef AF_INET6
     if (trafficClass != 0 && ipv6_available()) {
-        NET_SetTrafficClass((struct sockaddr *)&rmtaddr, trafficClass);
+        NET_SetTrafficClass(&rmtaddr.sa, trafficClass);
     }
 #endif /* AF_INET6 */
 
@@ -492,8 +488,8 @@ Java_java_net_PlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
     jint timeout = (*env)->GetIntField(env, this, pdsi_timeoutID);
     jint fd;
     ssize_t n;
-    SOCKADDR remote_addr;
-    socklen_t slen = SOCKADDR_LEN;
+    SOCKETADDRESS rmtaddr;
+    socklen_t slen = sizeof(SOCKETADDRESS);
     char buf[1];
     jint family;
     jobject iaObj;
@@ -527,7 +523,7 @@ Java_java_net_PlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
         }
     }
 
-    n = NET_RecvFrom(fd, buf, 1, MSG_PEEK, (struct sockaddr *)&remote_addr, &slen);
+    n = NET_RecvFrom(fd, buf, 1, MSG_PEEK, &rmtaddr.sa, &slen);
 
     if (n == -1) {
 
@@ -552,7 +548,7 @@ Java_java_net_PlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
         return 0;
     }
 
-    iaObj = NET_SockaddrToInetAddress(env, (struct sockaddr *)&remote_addr, &port);
+    iaObj = NET_SockaddrToInetAddress(env, &rmtaddr.sa, &port);
 #ifdef AF_INET6
     family = getInetAddress_family(env, iaObj) == IPv4? AF_INET : AF_INET6;
 #else
@@ -574,16 +570,13 @@ Java_java_net_PlainDatagramSocketImpl_peekData(JNIEnv *env, jobject this,
     int mallocedPacket = JNI_FALSE;
     jobject fdObj = (*env)->GetObjectField(env, this, pdsi_fdID);
     jint timeout = (*env)->GetIntField(env, this, pdsi_timeoutID);
-
     jbyteArray packetBuffer;
     jint packetBufferOffset, packetBufferLen;
-
     int fd;
-
     int n;
-    SOCKADDR remote_addr;
-    socklen_t slen = SOCKADDR_LEN;
-    int port;
+    SOCKETADDRESS rmtaddr;
+    socklen_t slen = sizeof(SOCKETADDRESS);
+    int port = -1;
 
     if (IS_NULL(fdObj)) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
@@ -661,7 +654,7 @@ Java_java_net_PlainDatagramSocketImpl_peekData(JNIEnv *env, jobject this,
     }
 
     n = NET_RecvFrom(fd, fullPacket, packetBufferLen, MSG_PEEK,
-                     (struct sockaddr *)&remote_addr, &slen);
+                     &rmtaddr.sa, &slen);
     /* truncate the data if the packet's length is too small */
     if (n > packetBufferLen) {
         n = packetBufferLen;
@@ -706,18 +699,18 @@ Java_java_net_PlainDatagramSocketImpl_peekData(JNIEnv *env, jobject this,
          */
         packetAddress = (*env)->GetObjectField(env, packet, dp_addressID);
         if (packetAddress != NULL) {
-            if (!NET_SockaddrEqualsInetAddress(env, (struct sockaddr *)&remote_addr, packetAddress)) {
+            if (!NET_SockaddrEqualsInetAddress(env, &rmtaddr.sa, packetAddress)) {
                 /* force a new InetAddress to be created */
                 packetAddress = NULL;
             }
         }
         if (packetAddress == NULL) {
-            packetAddress = NET_SockaddrToInetAddress(env, (struct sockaddr *)&remote_addr, &port);
+            packetAddress = NET_SockaddrToInetAddress(env, &rmtaddr.sa, &port);
             /* stuff the new Inetaddress in the packet */
             (*env)->SetObjectField(env, packet, dp_addressID, packetAddress);
         } else {
             /* only get the new port number */
-            port = NET_GetPortFromSockaddr((struct sockaddr *)&remote_addr);
+            port = NET_GetPortFromSockaddr(&rmtaddr.sa);
         }
         /* and fill in the data, remote address/port and such */
         (*env)->SetByteArrayRegion(env, packetBuffer, packetBufferOffset, n,
@@ -753,8 +746,8 @@ Java_java_net_PlainDatagramSocketImpl_receive0(JNIEnv *env, jobject this,
     int fd;
 
     int n;
-    SOCKADDR remote_addr;
-    socklen_t slen = SOCKADDR_LEN;
+    SOCKETADDRESS rmtaddr;
+    socklen_t slen = sizeof(SOCKETADDRESS);
     jboolean retry;
 #ifdef __linux__
     jboolean connected = JNI_FALSE;
@@ -849,7 +842,7 @@ Java_java_net_PlainDatagramSocketImpl_receive0(JNIEnv *env, jobject this,
         }
 
         n = NET_RecvFrom(fd, fullPacket, packetBufferLen, 0,
-                         (struct sockaddr *)&remote_addr, &slen);
+                         &rmtaddr.sa, &slen);
         /* truncate the data if the packet's length is too small */
         if (n > packetBufferLen) {
             n = packetBufferLen;
@@ -887,18 +880,18 @@ Java_java_net_PlainDatagramSocketImpl_receive0(JNIEnv *env, jobject this,
              */
             packetAddress = (*env)->GetObjectField(env, packet, dp_addressID);
             if (packetAddress != NULL) {
-                if (!NET_SockaddrEqualsInetAddress(env, (struct sockaddr *)&remote_addr, packetAddress)) {
+                if (!NET_SockaddrEqualsInetAddress(env, &rmtaddr.sa, packetAddress)) {
                     /* force a new InetAddress to be created */
                     packetAddress = NULL;
                 }
             }
             if (packetAddress == NULL) {
-                packetAddress = NET_SockaddrToInetAddress(env, (struct sockaddr *)&remote_addr, &port);
+                packetAddress = NET_SockaddrToInetAddress(env, &rmtaddr.sa, &port);
                 /* stuff the new Inetaddress in the packet */
                 (*env)->SetObjectField(env, packet, dp_addressID, packetAddress);
             } else {
                 /* only get the new port number */
-                port = NET_GetPortFromSockaddr((struct sockaddr *)&remote_addr);
+                port = NET_GetPortFromSockaddr(&rmtaddr.sa);
             }
             /* and fill in the data, remote address/port and such */
             (*env)->SetByteArrayRegion(env, packetBuffer, packetBufferOffset, n,
@@ -1729,19 +1722,17 @@ Java_java_net_PlainDatagramSocketImpl_socketGetOption
      */
     if (opt == java_net_SocketOptions_SO_BINDADDR) {
         /* find out local IP address */
-        SOCKADDR him;
-        socklen_t len = 0;
+        SOCKETADDRESS him;
+        socklen_t len = sizeof(SOCKETADDRESS);
         int port;
         jobject iaObj;
 
-        len = SOCKADDR_LEN;
-
-        if (getsockname(fd, (struct sockaddr *)&him, &len) == -1) {
+        if (getsockname(fd, &him.sa, &len) == -1) {
             JNU_ThrowByNameWithMessageAndLastError
                 (env, JNU_JAVANETPKG "SocketException", "Error getting socket name");
             return NULL;
         }
-        iaObj = NET_SockaddrToInetAddress(env, (struct sockaddr *)&him, &port);
+        iaObj = NET_SockaddrToInetAddress(env, &him.sa, &port);
 
         return iaObj;
     }
