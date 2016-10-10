@@ -166,6 +166,7 @@ class CompletenessAnalyzer {
     private static final int XTERM         = 0b100000000;               // Can terminate (last before EOF)
     private static final int XSTART        = 0b1000000000;              // Boundary, must be XTERM before
     private static final int XERRO         = 0b10000000000;             // Is an error
+    private static final int XBRACESNEEDED = 0b100000000000;            // Expect {ANY} LBRACE
 
     /**
      * An extension of the compiler's TokenKind which adds our combined/processed
@@ -190,7 +191,7 @@ class CompletenessAnalyzer {
         ERROR(TokenKind.ERROR, XERRO),  //
         IDENTIFIER(TokenKind.IDENTIFIER, XEXPR1|XDECL1|XTERM),  //
         UNDERSCORE(TokenKind.UNDERSCORE, XERRO),  //  _
-        CLASS(TokenKind.CLASS, XEXPR|XDECL1),  //  class decl (MAPPED: DOTCLASS)
+        CLASS(TokenKind.CLASS, XEXPR|XDECL1|XBRACESNEEDED),  //  class decl (MAPPED: DOTCLASS)
         MONKEYS_AT(TokenKind.MONKEYS_AT, XEXPR|XDECL1),  //  @
         IMPORT(TokenKind.IMPORT, XDECL1|XSTART),  //  import -- consider declaration
         SEMI(TokenKind.SEMI, XSTMT1|XTERM|XSTART),  //  ;
@@ -202,10 +203,10 @@ class CompletenessAnalyzer {
         CUSTOM(TokenKind.CUSTOM, XERRO),  // No uses
 
         // Declarations
-        ENUM(TokenKind.ENUM, XDECL1),  //  enum
+        ENUM(TokenKind.ENUM, XDECL1|XBRACESNEEDED),  //  enum
         IMPLEMENTS(TokenKind.IMPLEMENTS, XDECL),  //  implements
-        INTERFACE(TokenKind.INTERFACE, XDECL1),  //  interface
-        THROWS(TokenKind.THROWS, XDECL),  //  throws
+        INTERFACE(TokenKind.INTERFACE, XDECL1|XBRACESNEEDED),  //  interface
+        THROWS(TokenKind.THROWS, XDECL|XBRACESNEEDED),  //  throws
 
         // Primarive type names
         BOOLEAN(TokenKind.BOOLEAN, XEXPR1|XDECL1),  //  boolean
@@ -379,6 +380,10 @@ class CompletenessAnalyzer {
 
         boolean isStart() {
             return (belongs & XSTART) != 0;
+        }
+
+        boolean isBracesNeeded() {
+            return (belongs & XBRACESNEEDED) != 0;
         }
 
         /**
@@ -641,7 +646,9 @@ class CompletenessAnalyzer {
 
         public Completeness parseDeclaration() {
             boolean isImport = token.kind == IMPORT;
+            boolean isBracesNeeded = false;
             while (token.kind.isDeclaration()) {
+                isBracesNeeded |= token.kind.isBracesNeeded();
                 nextToken();
             }
             switch (token.kind) {
@@ -666,6 +673,9 @@ class CompletenessAnalyzer {
                         case SEMI:
                             return Completeness.COMPLETE;
                         case IDENTIFIER:
+                            return isBracesNeeded
+                                    ? Completeness.DEFINITELY_INCOMPLETE
+                                    : Completeness.COMPLETE_WITH_SEMI;
                         case BRACKETS:
                             return Completeness.COMPLETE_WITH_SEMI;
                         case DOTSTAR:
