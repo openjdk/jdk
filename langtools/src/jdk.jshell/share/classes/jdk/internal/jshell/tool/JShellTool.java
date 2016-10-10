@@ -199,6 +199,7 @@ public class JShellTool implements MessageHandler {
     private boolean feedbackInitialized = false;
     private String commandLineFeedbackMode = null;
     private List<String> remoteVMOptions = new ArrayList<>();
+    private List<String> compilerOptions = new ArrayList<>();
 
     SourceCodeAnalysis analysis;
     JShell state = null;
@@ -558,9 +559,14 @@ public class JShellTool implements MessageHandler {
         parser.accepts("s");
         parser.accepts("v");
         OptionSpec<String> r = parser.accepts("R").withRequiredArg();
+        OptionSpec<String> c = parser.accepts("C").withRequiredArg();
         parser.acceptsAll(asList("h", "help"));
         parser.accepts("version");
         parser.accepts("full-version");
+
+        parser.accepts("X");
+        OptionSpec<String> addExports = parser.accepts("add-exports").withRequiredArg();
+
         NonOptionArgumentSpec<String> loadFileSpec = parser.nonOptions();
 
         OptionSet options;
@@ -583,6 +589,10 @@ public class JShellTool implements MessageHandler {
 
         if (options.has("help")) {
             printUsage();
+            return null;
+        }
+        if (options.has("X")) {
+            printUsageX();
             return null;
         }
         if (options.has("version")) {
@@ -630,7 +640,19 @@ public class JShellTool implements MessageHandler {
             commandLineFeedbackMode = "verbose";
         }
         if (options.has(r)) {
-            remoteVMOptions = options.valuesOf(r);
+            remoteVMOptions.addAll(options.valuesOf(r));
+        }
+        if (options.has(c)) {
+            compilerOptions.addAll(options.valuesOf(c));
+        }
+
+        if (options.has(addExports)) {
+            List<String> exports = options.valuesOf(addExports).stream()
+                    .map(mp -> mp + "=ALL-UNNAMED")
+                    .flatMap(mp -> Stream.of("--add-exports", mp))
+                    .collect(toList());
+            remoteVMOptions.addAll(exports);
+            compilerOptions.addAll(exports);
         }
 
         return options.valuesOf(loadFileSpec);
@@ -638,6 +660,10 @@ public class JShellTool implements MessageHandler {
 
     private void printUsage() {
         cmdout.print(getResourceString("help.usage"));
+    }
+
+    private void printUsageX() {
+        cmdout.print(getResourceString("help.usage.x"));
     }
 
     /**
@@ -683,7 +709,8 @@ public class JShellTool implements MessageHandler {
                 .idGenerator((sn, i) -> (currentNameSpace == startNamespace || state.status(sn).isActive())
                         ? currentNameSpace.tid(sn)
                         : errorNamespace.tid(sn))
-                .remoteVMOptions(remoteVMOptions.toArray(new String[remoteVMOptions.size()]))
+                .remoteVMOptions(remoteVMOptions.stream().toArray(String[]::new))
+                .compilerOptions(compilerOptions.stream().toArray(String[]::new))
                 .build();
         shutdownSubscription = state.onShutdown((JShell deadState) -> {
             if (deadState == state) {

@@ -41,10 +41,6 @@ import sun.net.www.*;
 import java.util.*;
 import java.text.SimpleDateFormat;
 
-import sun.security.action.GetPropertyAction;
-import sun.security.action.GetIntegerAction;
-import sun.security.action.GetBooleanAction;
-
 public class FileURLConnection extends URLConnection {
 
     static String CONTENT_LENGTH = "content-length";
@@ -224,8 +220,13 @@ public class FileURLConnection extends URLConnection {
             if (File.separatorChar == '/') {
                 permission = new FilePermission(decodedPath, "read");
             } else {
+                // decode could return /c:/x/y/z.
+                if (decodedPath.length() > 2 && decodedPath.charAt(0) == '/'
+                        && decodedPath.charAt(2) == ':') {
+                    decodedPath = decodedPath.substring(1);
+                }
                 permission = new FilePermission(
-                        decodedPath.replace('/',File.separatorChar), "read");
+                        decodedPath.replace('/', File.separatorChar), "read");
             }
         }
         return permission;

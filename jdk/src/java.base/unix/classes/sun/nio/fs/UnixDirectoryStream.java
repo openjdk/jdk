@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ class UnixDirectoryStream
         synchronized (this) {
             if (iterator != null)
                 throw new IllegalStateException("Iterator already obtained");
-            iterator = new UnixDirectoryIterator(ds);
+            iterator = new UnixDirectoryIterator();
             return iterator;
         }
     }
@@ -130,17 +130,14 @@ class UnixDirectoryStream
      * Iterator implementation
      */
     private class UnixDirectoryIterator implements Iterator<Path> {
-        private final DirectoryStream<Path> stream;
-
         // true when at EOF
         private boolean atEof;
 
         // next entry to return
         private Path nextEntry;
 
-        UnixDirectoryIterator(DirectoryStream<Path> stream) {
+        UnixDirectoryIterator() {
             atEof = false;
-            this.stream = stream;
         }
 
         // Return true if file name is "." or ".."

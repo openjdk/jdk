@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,14 +197,18 @@ public class InterfaceMethodsTest extends TestScaffold {
         // invoke interface static method A
         testInvokePos(ifaceClass, null, "staticMethodA", "()I", vm().mirrorOf(RESULT_A));
 
-        // try to invoke static method A on the instance
-        testInvokePos(ifaceClass, ref, "staticMethodA", "()I", vm().mirrorOf(RESULT_A));
+        // invoking static method A on the instance fails because static method A is
+        // not inherited by TargetClass.
+        testInvokeNeg(ifaceClass, ref, "staticMethodA", "()I", vm().mirrorOf(RESULT_A),
+                "Invalid MethodID");
 
         // invoke interface static method B
         testInvokePos(ifaceClass, null, "staticMethodB", "()I", vm().mirrorOf(RESULT_A));
 
-        // try to invoke static method B on the instance
-        testInvokePos(ifaceClass, ref, "staticMethodB", "()I", vm().mirrorOf(RESULT_A));
+        // invoking static method B on the instance fails because static method B is
+        // not inherited by TargetClass.
+        testInvokeNeg(ifaceClass, ref, "staticMethodB", "()I", vm().mirrorOf(RESULT_A),
+                "Invalid MethodID");
 
         // try to invoke a virtual method
         testInvokePos(ifaceClass, ref, "implementedMethod", "()I", vm().mirrorOf(RESULT_A), true);
@@ -239,21 +243,25 @@ public class InterfaceMethodsTest extends TestScaffold {
         testInvokeNeg(ifaceClass, null, "staticMethodA", "()I", vm().mirrorOf(RESULT_A),
                 "Static interface methods are not inheritable");
 
-        // however it is possible to call "staticMethodA" on the actual instance
+        // "staticMethodA" is not inherited by InterfaceB even from an actual instance
         testInvokeNeg(ifaceClass, ref, "staticMethodA", "()I", vm().mirrorOf(RESULT_A),
                 "Static interface methods are not inheritable");
 
-        // "staticMethodB" is overridden in InterfaceB
+        // "staticMethodB" is re-defined in InterfaceB
         testInvokePos(ifaceClass, null, "staticMethodB", "()I", vm().mirrorOf(RESULT_B));
 
-        // the instance invokes the overriden form of "staticMethodB" from InterfaceB
-        testInvokePos(ifaceClass, ref, "staticMethodB", "()I", vm().mirrorOf(RESULT_B));
+        // the instance fails to invoke the re-defined form of "staticMethodB" from
+        // InterfaceB because staticMethodB is not inherited by TargetClass
+        testInvokeNeg(ifaceClass, ref, "staticMethodB", "()I", vm().mirrorOf(RESULT_B),
+                "Invalid MethodID");
 
         // "staticMethodC" is present only in InterfaceB
         testInvokePos(ifaceClass, null, "staticMethodC", "()I", vm().mirrorOf(RESULT_B));
 
-        // "staticMethodC" should be reachable from the instance too
-        testInvokePos(ifaceClass, ref, "staticMethodC", "()I", vm().mirrorOf(RESULT_B));
+        // "staticMethodC" is not reachable from the instance because staticMethodC
+        // is not inherited by TargetClass.
+        testInvokeNeg(ifaceClass, ref, "staticMethodC", "()I", vm().mirrorOf(RESULT_B),
+                "Invalid MethodID");
     }
 
     private void testImplementationClass(ReferenceType targetClass, ObjectReference thisObject) {

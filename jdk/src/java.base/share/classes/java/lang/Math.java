@@ -1626,7 +1626,7 @@ public final class Math {
      *
      * @since 9
      */
-    // @HotSpotIntrinsicCandidate
+    @HotSpotIntrinsicCandidate
     public static double fma(double a, double b, double c) {
         /*
          * Infinity and NaN arithmetic is not quite the same with two
@@ -1743,7 +1743,7 @@ public final class Math {
      *
      * @since 9
      */
-    // @HotSpotIntrinsicCandidate
+    @HotSpotIntrinsicCandidate
     public static float fma(float a, float b, float c) {
         /*
          *  Since the double format has more than twice the precision
