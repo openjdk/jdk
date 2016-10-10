@@ -60,9 +60,9 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
 void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                                   const char *defaultDetail);
 
-#define NET_WAIT_READ    0x01
-#define NET_WAIT_WRITE   0x02
-#define NET_WAIT_CONNECT 0x04
+/************************************************************************
+ * Macros and constants
+ */
 
 /* Defines SO_REUSEPORT */
 #ifndef SO_REUSEPORT
@@ -77,12 +77,6 @@ void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
 #endif
 #endif
 
-jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
-
-/************************************************************************
- * Macros and constants
- */
-
 /*
  * On 64-bit JDKs we use a much larger stack and heap buffer.
  */
@@ -95,20 +89,16 @@ jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
 #endif
 
 #ifdef AF_INET6
-
-#define SOCKADDR        union { \
-                            struct sockaddr_in him4; \
-                            struct sockaddr_in6 him6; \
-                        }
-
-#define SOCKADDR_LEN    (ipv6_available() ? sizeof(SOCKADDR) : \
-                         sizeof(struct sockaddr_in))
-
+typedef union {
+    struct sockaddr     sa;
+    struct sockaddr_in  sa4;
+    struct sockaddr_in6 sa6;
+} SOCKETADDRESS;
 #else
-
-#define SOCKADDR        union { struct sockaddr_in him4; }
-#define SOCKADDR_LEN    sizeof(SOCKADDR)
-
+typedef union {
+    struct sockaddr     sa;
+    struct sockaddr_in  sa4;
+} SOCKETADDRESS;
 #endif
 
 /************************************************************************
