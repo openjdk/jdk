@@ -1147,6 +1147,8 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
       // If this is the first failure, the sentinel string will "stick"
       // to the Compile object, and the C2Compiler will see it and retry.
       C->record_failure(C2Compiler::retry_no_subsuming_loads());
+    } else {
+      assert(false, "graph should be schedulable");
     }
     // assert( phi_cnt == end_idx(), "did not schedule all" );
     return false;
