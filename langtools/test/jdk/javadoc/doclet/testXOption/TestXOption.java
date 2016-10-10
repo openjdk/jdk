@@ -31,11 +31,34 @@
  * @run main TestXOption
  */
 
+import java.util.*;
+import java.util.stream.*;
+
 public class TestXOption extends JavadocTester {
 
     public static void main(String... args) throws Exception {
         TestXOption tester = new TestXOption();
         tester.runTests();
+    }
+
+    @Test
+    void testLineLengths() {
+        javadoc("-d", "out1",
+                "-sourcepath", testSrc,
+                "-X",
+                testSrc("TestXOption.java"));
+        checkExit(Exit.OK);
+        List<String> longLines = getOutputLines(Output.OUT).stream()
+                .filter(s -> s.length() > 80)
+                .collect(Collectors.toList());
+        checking("line lengths");
+        if (longLines.isEmpty()) {
+            passed("all lines OK");
+        } else {
+            out.println("long lines:");
+            longLines.stream().forEach(s -> out.println(">>>" + s + "<<<"));
+            failed(longLines.size() + " long lines");
+        }
     }
 
     @Test
@@ -58,14 +81,9 @@ public class TestXOption extends JavadocTester {
     }
 
     private void checkOutput(boolean expectFound) {
-        // TODO: It's an ugly hidden side-effect of the current doclet API
-        // that the -X output from the tool and the -X output from the doclet
-        // come out on different streams!
-        // When we clean up the doclet API, this should be rationalized.
         checkOutput(Output.OUT, expectFound,
                 "-Xmaxerrs ",
-                "-Xmaxwarns ");
-        checkOutput(Output.OUT, expectFound,
+                "-Xmaxwarns ",
                 "-Xdocrootparent ",
                 "-Xdoclint ",
                 "-Xdoclint:");

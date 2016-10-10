@@ -255,7 +255,7 @@ public class Messager extends Log implements Reporter {
     private void incrementErrorCount(String prefix, String msg) {
         if (nerrors < MaxErrors) {
             PrintWriter errWriter = getWriter(WriterKind.ERROR);
-            errWriter.println(prefix + ": " + getText("javadoc.error") + " - " + msg);
+            printRawLines(errWriter, prefix + ": " + getText("javadoc.error") + " - " + msg);
             errWriter.flush();
             prompt();
             nerrors++;
@@ -293,7 +293,7 @@ public class Messager extends Log implements Reporter {
     private void incrementWarningCount(String prefix, String msg) {
         if (nwarnings < MaxWarnings) {
             PrintWriter warnWriter = getWriter(WriterKind.WARNING);
-            warnWriter.println(prefix + ": " + getText("javadoc.warning") + " - " + msg);
+            printRawLines(warnWriter, prefix + ": " + getText("javadoc.warning") + " - " + msg);
             warnWriter.flush();
             nwarnings++;
         }
@@ -318,9 +318,9 @@ public class Messager extends Log implements Reporter {
 
         PrintWriter noticeWriter = getWriter(WriterKind.NOTICE);
         if (path == null) {
-            noticeWriter.println(msg);
+            printRawLines(noticeWriter, msg);
         } else {
-            noticeWriter.println(prefix + ": " + msg);
+            printRawLines(noticeWriter, prefix + ": " + msg);
         }
         noticeWriter.flush();
     }
@@ -334,9 +334,9 @@ public class Messager extends Log implements Reporter {
 
         PrintWriter noticeWriter = getWriter(WriterKind.NOTICE);
         if (e == null) {
-            noticeWriter.println(msg);
+            printRawLines(noticeWriter, msg);
         } else {
-            noticeWriter.println(pos + ": " + msg);
+            printRawLines(noticeWriter, pos + ": " + msg);
         }
         noticeWriter.flush();
     }

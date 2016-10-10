@@ -65,6 +65,7 @@ address MetaspaceShared::_cds_i2i_entry_code_buffers = NULL;
 size_t MetaspaceShared::_cds_i2i_entry_code_buffers_size = 0;
 SharedMiscRegion MetaspaceShared::_mc;
 SharedMiscRegion MetaspaceShared::_md;
+SharedMiscRegion MetaspaceShared::_od;
 
 void SharedMiscRegion::initialize(ReservedSpace rs, size_t committed_byte_size,  SharedSpaceType space_type) {
   _vs.initialize(rs, committed_byte_size);
@@ -93,16 +94,24 @@ void MetaspaceShared::initialize_shared_rs(ReservedSpace* rs) {
   assert(DumpSharedSpaces, "dump time only");
   _shared_rs = rs;
 
-  // Split up and initialize the misc code and data spaces
+  size_t core_spaces_size = FileMapInfo::core_spaces_size();
   size_t metadata_size = SharedReadOnlySize + SharedReadWriteSize;
-  ReservedSpace shared_ro_rw = _shared_rs->first_part(metadata_size);
-  ReservedSpace misc_section = _shared_rs->last_part(metadata_size);
 
-  // Now split into misc sections.
+  // Split into the core and optional sections
+  ReservedSpace core_data = _shared_rs->first_part(core_spaces_size);
+  ReservedSpace optional_data = _shared_rs->last_part(core_spaces_size);
+
+  // The RO/RW and the misc sections
+  ReservedSpace shared_ro_rw = core_data.first_part(metadata_size);
+  ReservedSpace misc_section = core_data.last_part(metadata_size);
+
+  // Now split the misc code and misc data sections.
   ReservedSpace md_rs   = misc_section.first_part(SharedMiscDataSize);
   ReservedSpace mc_rs   = misc_section.last_part(SharedMiscDataSize);
+
   _md.initialize(md_rs, SharedMiscDataSize, SharedMiscData);
-  _mc.initialize(mc_rs, SharedMiscCodeSize, SharedMiscData);
+  _mc.initialize(mc_rs, SharedMiscCodeSize, SharedMiscCode);
+  _od.initialize(optional_data, metadata_size, SharedOptional);
 }
 
 // Read/write a data stream for restoring/preserving metadata pointers and
@@ -521,6 +530,7 @@ private:
   GrowableArray<Klass*> *_class_promote_order;
   VirtualSpace _md_vs;
   VirtualSpace _mc_vs;
+  VirtualSpace _od_vs;
   GrowableArray<MemRegion> *_string_regions;
 
 public:
@@ -598,15 +608,19 @@ void VM_PopulateDumpSharedSpace::doit() {
   remove_unshareable_in_classes();
   tty->print_cr("done. ");
 
-  // Set up the share data and shared code segments.
+  // Set up the misc data, misc code and optional data segments.
   _md_vs = *MetaspaceShared::misc_data_region()->virtual_space();
   _mc_vs = *MetaspaceShared::misc_code_region()->virtual_space();
+  _od_vs = *MetaspaceShared::optional_data_region()->virtual_space();
   char* md_low = _md_vs.low();
   char* md_top = MetaspaceShared::misc_data_region()->alloc_top();
   char* md_end = _md_vs.high();
   char* mc_low = _mc_vs.low();
   char* mc_top = MetaspaceShared::misc_code_region()->alloc_top();
   char* mc_end = _mc_vs.high();
+  char* od_low = _od_vs.low();
+  char* od_top = MetaspaceShared::optional_data_region()->alloc_top();
+  char* od_end = _od_vs.high();
 
   // Reserve space for the list of Klass*s whose vtables are used
   // for patching others as needed.
@@ -661,28 +675,32 @@ void VM_PopulateDumpSharedSpace::doit() {
   const size_t rw_alloced = rw_space->capacity_bytes_slow(Metaspace::NonClassType);
   const size_t md_alloced = md_end-md_low;
   const size_t mc_alloced = mc_end-mc_low;
+  const size_t od_alloced = od_end-od_low;
   const size_t total_alloced = ro_alloced + rw_alloced + md_alloced + mc_alloced
-                             + ss_bytes;
+                             + ss_bytes + od_alloced;
 
   // Occupied size of each space.
   const size_t ro_bytes = ro_space->used_bytes_slow(Metaspace::NonClassType);
   const size_t rw_bytes = rw_space->used_bytes_slow(Metaspace::NonClassType);
   const size_t md_bytes = size_t(md_top - md_low);
   const size_t mc_bytes = size_t(mc_top - mc_low);
+  const size_t od_bytes = size_t(od_top - od_low);
 
   // Percent of total size
-  const size_t total_bytes = ro_bytes + rw_bytes + md_bytes + mc_bytes + ss_bytes;
+  const size_t total_bytes = ro_bytes + rw_bytes + md_bytes + mc_bytes + ss_bytes + od_bytes;
   const double ro_t_perc = ro_bytes / double(total_bytes) * 100.0;
   const double rw_t_perc = rw_bytes / double(total_bytes) * 100.0;
   const double md_t_perc = md_bytes / double(total_bytes) * 100.0;
   const double mc_t_perc = mc_bytes / double(total_bytes) * 100.0;
   const double ss_t_perc = ss_bytes / double(total_bytes) * 100.0;
+  const double od_t_perc = od_bytes / double(total_bytes) * 100.0;
 
   // Percent of fullness of each space
   const double ro_u_perc = ro_bytes / double(ro_alloced) * 100.0;
   const double rw_u_perc = rw_bytes / double(rw_alloced) * 100.0;
   const double md_u_perc = md_bytes / double(md_alloced) * 100.0;
   const double mc_u_perc = mc_bytes / double(mc_alloced) * 100.0;
+  const double od_u_perc = od_bytes / double(od_alloced) * 100.0;
   const double total_u_perc = total_bytes / double(total_alloced) * 100.0;
 
 #define fmt_space "%s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT
@@ -691,6 +709,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   tty->print_cr(fmt_space, "md", md_bytes, md_t_perc, md_alloced, md_u_perc, p2i(md_low));
   tty->print_cr(fmt_space, "mc", mc_bytes, mc_t_perc, mc_alloced, mc_u_perc, p2i(mc_low));
   tty->print_cr(fmt_space, "st", ss_bytes, ss_t_perc, ss_bytes,   100.0,     p2i(ss_low));
+  tty->print_cr(fmt_space, "od", od_bytes, od_t_perc, od_alloced, od_u_perc, p2i(od_low));
   tty->print_cr("total   : " SIZE_FORMAT_W(9) " [100.0%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used]",
                  total_bytes, total_alloced, total_u_perc);
 
@@ -734,6 +753,10 @@ void VM_PopulateDumpSharedSpace::doit() {
                           SharedMiscCodeSize,
                           true, true);
     mapinfo->write_string_regions(_string_regions);
+    mapinfo->write_region(MetaspaceShared::od, _od_vs.low(),
+                          pointer_delta(od_top, _od_vs.low(), sizeof(char)),
+                          pointer_delta(od_end, _od_vs.low(), sizeof(char)),
+                          true, false);
   }
 
   mapinfo->close();
@@ -1049,8 +1072,6 @@ void MetaspaceShared::print_shared_spaces() {
 
 
 // Map shared spaces at requested addresses and return if succeeded.
-// Need to keep the bounds of the ro and rw space for the Metaspace::contains
-// call, or is_in_shared_space.
 bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
   size_t image_alignment = mapinfo->alignment();
 
@@ -1068,6 +1089,7 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
   char* _rw_base = NULL;
   char* _md_base = NULL;
   char* _mc_base = NULL;
+  char* _od_base = NULL;
 
   // Map each shared region
   if ((_ro_base = mapinfo->map_region(ro)) != NULL &&
@@ -1078,6 +1100,8 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
       mapinfo->verify_region_checksum(md) &&
       (_mc_base = mapinfo->map_region(mc)) != NULL &&
       mapinfo->verify_region_checksum(mc) &&
+      (_od_base = mapinfo->map_region(od)) != NULL &&
+      mapinfo->verify_region_checksum(od) &&
       (image_alignment == (size_t)max_alignment()) &&
       mapinfo->validate_classpath_entry_table()) {
     // Success (no need to do anything)
@@ -1089,6 +1113,7 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
     if (_rw_base != NULL) mapinfo->unmap_region(rw);
     if (_md_base != NULL) mapinfo->unmap_region(md);
     if (_mc_base != NULL) mapinfo->unmap_region(mc);
+    if (_od_base != NULL) mapinfo->unmap_region(od);
 #ifndef _WINDOWS
     // Release the entire mapped region
     shared_rs.release();

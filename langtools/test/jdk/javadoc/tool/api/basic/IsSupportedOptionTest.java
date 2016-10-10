@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import javax.tools.DocumentationTool;
 import javax.tools.ToolProvider;
 
 /**
- * Tests for DocumentationTool.usSupportedOption method.
+ * Tests for DocumentationTool.isSupportedOption method.
  */
 public class IsSupportedOptionTest extends APITest {
     public static void main(String... args) throws Exception {

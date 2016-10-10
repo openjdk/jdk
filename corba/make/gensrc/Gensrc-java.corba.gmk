@@ -38,7 +38,7 @@ $(eval $(call SetupJavaCompilation,BUILD_TOOLS_CORBA, \
     SRC := $(CORBA_TOPDIR)/make/src/classes, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/corba_tools_classes))
 
-TOOL_LOGUTIL_CMD := $(JAVA) -cp $(BUILDTOOLS_OUTPUTDIR)/corba_tools_classes \
+TOOL_LOGUTIL_CMD := $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/corba_tools_classes \
     build.tools.logutil.MC
 
 $(eval $(call SetupJavaCompilation,BUILD_IDLJ, \
@@ -50,7 +50,7 @@ $(eval $(call SetupJavaCompilation,BUILD_IDLJ, \
     EXCLUDE_FILES := ResourceBundleUtil.java module-info.java))
 
 # Force the language to english for predictable source code generation.
-TOOL_IDLJ_CMD := $(JAVA) -cp $(BUILDTOOLS_OUTPUTDIR)/idlj_classes \
+TOOL_IDLJ_CMD := $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/idlj_classes \
     -Duser.language=en com.sun.tools.corba.se.idl.toJavaPortable.Compile
 
 ################################################################################

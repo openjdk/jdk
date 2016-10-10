@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,10 +252,27 @@ public:
   bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
   void print_shared_spaces() NOT_CDS_RETURN;
 
+  // The ro+rw+md+mc spaces size
+  static size_t core_spaces_size() {
+    return align_size_up((SharedReadOnlySize + SharedReadWriteSize +
+                          SharedMiscDataSize + SharedMiscCodeSize),
+                          os::vm_allocation_granularity());
+  }
+
+  // The estimated optional space size.
+  //
+  // Currently the optional space only has archived class bytes.
+  // The core_spaces_size is the size of all class metadata, which is a good
+  // estimate of the total class bytes to be archived. Only the portion
+  // containing data is written out to the archive and mapped at runtime.
+  // There is no memory waste due to unused portion in optional space.
+  static size_t optional_space_size() {
+    return core_spaces_size();
+  }
+
+  // Total shared_spaces size includes the ro, rw, md, mc and od spaces
   static size_t shared_spaces_size() {
-    return align_size_up(SharedReadOnlySize + SharedReadWriteSize +
-                         SharedMiscDataSize + SharedMiscCodeSize,
-                         os::vm_allocation_granularity());
+    return core_spaces_size() + optional_space_size();
   }
 
   // Stop CDS sharing and unmap CDS regions.
