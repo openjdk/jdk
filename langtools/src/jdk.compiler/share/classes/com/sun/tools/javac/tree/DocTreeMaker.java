@@ -203,11 +203,10 @@ public class DocTreeMaker implements DocTreeFactory {
      * where the trees are being synthesized by a tool.
      */
     @Override @DefinedBy(Api.COMPILER_TREE)
-    public DCDocComment newDocCommentTree(List<? extends DocTree> firstSentence, List<? extends DocTree> body, List<? extends DocTree> tags) {
+    public DCDocComment newDocCommentTree(List<? extends DocTree> fullBody, List<? extends DocTree> tags) {
         ListBuffer<DCTree> lb = new ListBuffer<>();
-        lb.addAll(cast(firstSentence));
-        lb.addAll(cast(body));
-        List<DCTree> fullBody = lb.toList();
+        lb.addAll(cast(fullBody));
+        List<DCTree> fBody = lb.toList();
 
         // A dummy comment to keep the diagnostics logic happy.
         Comment c = new Comment() {
@@ -231,8 +230,8 @@ public class DocTreeMaker implements DocTreeFactory {
                 return false;
             }
         };
-
-        DCDocComment tree = new DCDocComment(c, fullBody, cast(firstSentence), cast(body), cast(tags));
+        Pair<List<DCTree>, List<DCTree>> pair = splitBody(fullBody);
+        DCDocComment tree = new DCDocComment(c, fBody, pair.fst, pair.snd, cast(tags));
         return tree;
     }
 

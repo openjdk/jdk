@@ -221,7 +221,7 @@ public abstract class TagletWriter {
             List<Taglet> taglets, TagletWriter writer, Content output) {
         Utils utils = writer.configuration().utils;
         tagletManager.checkTags(utils, element, utils.getBlockTags(element), false);
-        tagletManager.checkTags(utils, element, utils.getBody(element), true);
+        tagletManager.checkTags(utils, element, utils.getFullBody(element), true);
         for (Taglet taglet : taglets) {
             if (utils.isTypeElement(element) && taglet instanceof ParamTaglet) {
                 //The type parameters are documented in a special section away

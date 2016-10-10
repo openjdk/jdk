@@ -484,7 +484,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * {@inheritDoc}
      */
     public void addModuleDescription(Content moduleContentTree) {
-        if (!utils.getBody(mdle).isEmpty()) {
+        if (!utils.getFullBody(mdle).isEmpty()) {
             Content tree = configuration.allowTag(HtmlTag.SECTION) ? HtmlTree.SECTION() : moduleContentTree;
             tree.addContent(HtmlConstants.START_OF_MODULE_DESCRIPTION);
             tree.addContent(getMarkerAnchor(SectionName.MODULE_DESCRIPTION));
@@ -528,7 +528,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         li.addContent(Contents.SPACE);
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
         Content liNav = new HtmlTree(HtmlTag.LI);
-        liNav.addContent(!utils.getBody(mdle).isEmpty() && !configuration.nocomment
+        liNav.addContent(!utils.getFullBody(mdle).isEmpty() && !configuration.nocomment
                 ? getHyperLink(SectionName.MODULE_DESCRIPTION, contents.navModuleDescription)
                 : contents.navModuleDescription);
         addNavGap(liNav);

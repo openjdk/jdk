@@ -108,27 +108,22 @@ public class CommentUtils {
         Utils utils = config.utils;
         String klassName = utils.getSimpleName(utils.getEnclosingTypeElement(e));
 
-        List<DocTree> fs = new ArrayList<>();
-        fs.add(treeFactory.newTextTree(config.getText("doclet.enum_values_doc.firstsentence")));
-
-        List<DocTree> body = new ArrayList<>();
-        body.add(treeFactory.newTextTree(config.getText("doclet.enum_values_doc.body", klassName)));
+        List<DocTree> fullBody = new ArrayList<>();
+        fullBody.add(treeFactory.newTextTree(config.getText("doclet.enum_values_doc.fullbody", klassName)));
 
         List<DocTree> descriptions = new ArrayList<>();
         descriptions.add(treeFactory.newTextTree(config.getText("doclet.enum_values_doc.return")));
 
         List<DocTree> tags = new ArrayList<>();
         tags.add(treeFactory.newReturnTree(descriptions));
-        DocCommentTree docTree = treeFactory.newDocCommentTree(fs, body, tags);
+        DocCommentTree docTree = treeFactory.newDocCommentTree(fullBody, tags);
         dcTreesMap.put(e, new DocCommentDuo(null, docTree));
     }
 
     public void setEnumValueOfTree(Configuration config, Element e) {
-        List<DocTree> fs = new ArrayList<>();
-        fs.add(treeFactory.newTextTree(config.getText("doclet.enum_valueof_doc.firstsentence")));
 
-        List<DocTree> body = new ArrayList<>();
-        body.add(treeFactory.newTextTree(config.getText("doclet.enum_valueof_doc.body")));
+        List<DocTree> fullBody = new ArrayList<>();
+        fullBody.add(treeFactory.newTextTree(config.getText("doclet.enum_valueof_doc.fullbody")));
 
         List<DocTree> tags = new ArrayList<>();
 
@@ -156,7 +151,7 @@ public class CommentUtils {
         ref = treeFactory.newReferenceTree("java.lang.NullPointerException");
         tags.add(treeFactory.newThrowsTree(ref, throwsDescs));
 
-        DocCommentTree docTree = treeFactory.newDocCommentTree(fs, body, tags);
+        DocCommentTree docTree = treeFactory.newDocCommentTree(fullBody, tags);
 
         dcTreesMap.put(e, new DocCommentDuo(null, docTree));
     }
@@ -190,11 +185,9 @@ public class CommentUtils {
         return new DocCommentDuo(treePath.getTreePath(), dcTree);
     }
 
-    public void setDocCommentTree(Element element, List<DocTree> firstSentence,
-            List<DocTree> bodyTags, List<DocTree> blockTags, Utils utils) {
-        DocCommentTree docTree = treeFactory.newDocCommentTree(firstSentence,
-                                                      bodyTags,
-                                                      blockTags);
+    public void setDocCommentTree(Element element, List<DocTree> fullBody,
+            List<DocTree> blockTags, Utils utils) {
+        DocCommentTree docTree = treeFactory.newDocCommentTree(fullBody, blockTags);
         dcTreesMap.put(element, new DocCommentDuo(null, docTree));
         // There maybe an entry with the original comments usually null,
         // therefore remove that entry if it exists, and allow a new one
