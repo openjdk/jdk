@@ -147,7 +147,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     @Override
     public void addComments(ExecutableElement property, Content propertyDocTree) {
         TypeElement holder = (TypeElement)property.getEnclosingElement();
-        if (!utils.getBody(property).isEmpty()) {
+        if (!utils.getFullBody(property).isEmpty()) {
             if (holder.equals(typeElement) ||
                     (!utils.isPublic(holder) || utils.isLinkable(holder))) {
                 writer.addInlineComment(property, propertyDocTree);

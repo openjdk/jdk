@@ -251,7 +251,7 @@ public class DocFinder {
             //We want overall documentation.
             output.inlineTags = input.isFirstSentence
                     ? utils.getFirstSentenceTrees(input.element)
-                    : utils.getBody(input.element);
+                    : utils.getFullBody(input.element);
             output.holder = input.element;
         } else {
             input.taglet.inherit(input, output);

@@ -182,7 +182,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
     @Override
     protected void addOverviewHeader(Content body) {
         addConfigurationTitle(body);
-        if (!utils.getBody(configuration.overviewElement).isEmpty()) {
+        if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
             HtmlTree subTitleDiv = new HtmlTree(HtmlTag.DIV);
             subTitleDiv.addStyle(HtmlStyle.subTitle);
             addSummaryComment(configuration.overviewElement, subTitleDiv);
@@ -212,7 +212,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      *                 be added
      */
     protected void addOverviewComment(Content htmltree) {
-        if (!utils.getBody(configuration.overviewElement).isEmpty()) {
+        if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
             htmltree.addContent(getMarkerAnchor(SectionName.OVERVIEW_DESCRIPTION));
             addInlineComment(configuration.overviewElement, htmltree);
         }

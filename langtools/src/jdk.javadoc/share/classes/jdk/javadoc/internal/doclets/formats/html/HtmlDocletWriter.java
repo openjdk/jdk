@@ -1704,7 +1704,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param htmltree the documentation tree to which the inline comments will be added
      */
     public void addInlineComment(Element element, Content htmltree) {
-        addCommentTags(element, utils.getBody(element), false, false, htmltree);
+        addCommentTags(element, utils.getFullBody(element), false, false, htmltree);
     }
 
     /**

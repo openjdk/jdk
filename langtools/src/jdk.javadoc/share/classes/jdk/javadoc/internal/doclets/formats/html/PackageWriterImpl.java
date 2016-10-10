@@ -144,7 +144,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         tHeading.addContent(packageHead);
         div.addContent(tHeading);
         addDeprecationInfo(div);
-        if (!utils.getBody(packageElement).isEmpty() && !configuration.nocomment) {
+        if (!utils.getFullBody(packageElement).isEmpty() && !configuration.nocomment) {
             HtmlTree docSummaryDiv = new HtmlTree(HtmlTag.DIV);
             docSummaryDiv.addStyle(HtmlStyle.docSummary);
             addSummaryComment(packageElement, docSummaryDiv);
@@ -258,7 +258,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     @Override
     public void addPackageDescription(Content packageContentTree) {
-        if (!utils.getBody(packageElement).isEmpty()) {
+        if (!utils.getFullBody(packageElement).isEmpty()) {
             packageContentTree.addContent(
                     getMarkerAnchor(SectionName.PACKAGE_DESCRIPTION));
             Content h2Content = new StringContent(
