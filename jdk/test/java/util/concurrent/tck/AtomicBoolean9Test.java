@@ -162,6 +162,19 @@ public class AtomicBoolean9Test extends JSR166TestCase {
     }
 
     /**
+     * repeated weakCompareAndSetPlain succeeds in changing value when equal
+     * to expected
+     */
+    public void testWeakCompareAndSetPlain() {
+        AtomicBoolean ai = new AtomicBoolean(true);
+        do {} while (!ai.weakCompareAndSetPlain(true, false));
+        do {} while (!ai.weakCompareAndSetPlain(false, false));
+        assertFalse(ai.get());
+        do {} while (!ai.weakCompareAndSetPlain(false, true));
+        assertTrue(ai.get());
+    }
+
+    /**
      * repeated weakCompareAndSetVolatile succeeds in changing value when equal
      * to expected
      */

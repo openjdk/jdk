@@ -162,6 +162,19 @@ public class AtomicInteger9Test extends JSR166TestCase {
     }
 
     /**
+     * repeated weakCompareAndSetPlain succeeds in changing value when equal
+     * to expected
+     */
+    public void testWeakCompareAndSetPlain() {
+        AtomicInteger ai = new AtomicInteger(1);
+        do {} while (!ai.weakCompareAndSetPlain(1, 2));
+        do {} while (!ai.weakCompareAndSetPlain(2, -4));
+        assertEquals(-4, ai.get());
+        do {} while (!ai.weakCompareAndSetPlain(-4, 7));
+        assertEquals(7, ai.get());
+    }
+
+    /**
      * repeated weakCompareAndSetVolatile succeeds in changing value when equal
      * to expected
      */
