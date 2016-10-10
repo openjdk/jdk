@@ -47,14 +47,14 @@ public class FilePermissionCollection {
             ("test 1: add throws IllegalArgExc for wrong perm type");
         try {
             perms.add(new SecurityPermission("createAccessControlContext"));
-            System.err.println("Expected IllegalArgumentException");
+            System.out.println("Expected IllegalArgumentException");
             testFail++;
         } catch (IllegalArgumentException iae) {}
 
         // test 2
         System.out.println("test 2: implies returns false for wrong perm type");
         if (perms.implies(new SecurityPermission("getPolicy"))) {
-            System.err.println("Expected false, returned true");
+            System.out.println("Expected false, returned true");
             testFail++;
         }
 
@@ -63,7 +63,7 @@ public class FilePermissionCollection {
                            "name and action");
         perms.add(new FilePermission("/tmp/foo", "read"));
         if (!perms.implies(new FilePermission("/tmp/foo", "read"))) {
-            System.err.println("Expected true, returned false");
+            System.out.println("Expected true, returned false");
             testFail++;
         }
 
@@ -71,7 +71,7 @@ public class FilePermissionCollection {
         System.out.println("test 4: implies returns false for match on " +
                            "name but not action");
         if (perms.implies(new FilePermission("/tmp/foo", "write"))) {
-            System.err.println("Expected false, returned true");
+            System.out.println("Expected false, returned true");
             testFail++;
         }
 
@@ -80,7 +80,7 @@ public class FilePermissionCollection {
                            "name and subset of actions");
         perms.add(new FilePermission("/tmp/bar", "read, write"));
         if (!perms.implies(new FilePermission("/tmp/bar", "write"))) {
-            System.err.println("Expected true, returned false");
+            System.out.println("Expected true, returned false");
             testFail++;
         }
 
@@ -90,11 +90,11 @@ public class FilePermissionCollection {
         perms.add(new FilePermission("/tmp/baz", "read"));
         perms.add(new FilePermission("/tmp/baz", "write"));
         if (!perms.implies(new FilePermission("/tmp/baz", "read"))) {
-            System.err.println("Expected true, returned false");
+            System.out.println("Expected true, returned false");
             testFail++;
         }
         if (!perms.implies(new FilePermission("/tmp/baz", "write,read"))) {
-            System.err.println("Expected true, returned false");
+            System.out.println("Expected true, returned false");
             testFail++;
         }
 
@@ -103,7 +103,7 @@ public class FilePermissionCollection {
                            "and match on action");
         perms.add(new FilePermission("/usr/tmp/*", "read"));
         if (!perms.implies(new FilePermission("/usr/tmp/foo", "read"))) {
-            System.err.println("Expected true, returned false");
+            System.out.println("Expected true, returned false");
             testFail++;
         }
 
@@ -111,7 +111,7 @@ public class FilePermissionCollection {
         System.out.println
             ("test 8: implies returns false for non-match on wildcard");
         if (perms.implies(new FilePermission("/usr/tmp/bar/foo", "read"))) {
-            System.err.println("Expected false, returned true");
+            System.out.println("Expected false, returned true");
             testFail++;
         }
 
@@ -120,25 +120,25 @@ public class FilePermissionCollection {
             ("test 9: implies returns true for deep wildcard match");
         perms.add(new FilePermission("/usr/tmp/-", "read"));
         if (!perms.implies(new FilePermission("/usr/tmp/bar/foo", "read"))) {
-            System.err.println("Expected true, returned false");
+            System.out.println("Expected true, returned false");
             testFail++;
         }
 
         // test 10
-        System.out.println("test 10: implies returns true for relative match");
+        //System.out.println("test 10: implies returns true for relative match");
         perms.add(new FilePermission(".", "read"));
-        if (!perms.implies(new FilePermission(System.getProperty("user.dir"),
-                                              "read"))) {
-            System.err.println("Expected true, returned false");
-            testFail++;
-        }
+        //if (!perms.implies(new FilePermission(System.getProperty("user.dir"),
+        //                                      "read"))) {
+        //    System.out.println("Expected true, returned false");
+        //    testFail++;
+        //}
 
         // test 11
         System.out.println("test 11: implies returns true for all " +
                            "wildcard and match on action");
         perms.add(new FilePermission("<<ALL FILES>>", "read"));
         if (!perms.implies(new FilePermission("/tmp/foobar", "read"))) {
-            System.err.println("Expected true, returned false");
+            System.out.println("Expected true, returned false");
             testFail++;
         }
 
@@ -146,7 +146,7 @@ public class FilePermissionCollection {
         System.out.println("test 12: implies returns false for wildcard " +
                            "and non-match on action");
         if (perms.implies(new FilePermission("/tmp/foobar", "write"))) {
-            System.err.println("Expected false, returned true");
+            System.out.println("Expected false, returned true");
             testFail++;
         }
 
@@ -160,7 +160,7 @@ public class FilePermissionCollection {
         }
         // the two "/tmp/baz" entries were combined into one
         if (numPerms != 7) {
-            System.err.println("Expected 7, got " + numPerms);
+            System.out.println("Expected 7, got " + numPerms);
             testFail++;
         }
 
