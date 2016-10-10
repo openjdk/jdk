@@ -39,18 +39,33 @@ POLICY
 
 checkExit () {
     if [ $? != 0 ]; then
-	exit 1;
+	exit $1;
     fi
 }
 
 ${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . ${TESTSRC}/Test.java
 cp ${TESTSRC}/test.jar .
 
-${TESTJAVA}/bin/java ${TESTVMOPTS} Test
-checkExit 
+${TESTJAVA}/bin/java ${TESTVMOPTS} Test ./test.jar
+checkExit 1
 
 # try with security manager
 
-${TESTJAVA}/bin/java ${TESTVMOPTS} -Djava.security.policy=file:./policy -Djava.security.manager Test
-checkExit 
+${TESTJAVA}/bin/java ${TESTVMOPTS} -Djava.security.policy=file:./policy \
+		-Djava.security.manager Test ./test.jar
+checkExit 2
+
+mkdir tmp
+cd tmp
+${TESTJAVA}/bin/java ${TESTVMOPTS} -Djava.security.policy=file:../policy \
+		-cp .. -Djava.security.manager Test ../test.jar
+checkExit 3
+
+cd ..
+THISDIR=$(basename $(pwd))
+cd ..
+${TESTJAVA}/bin/java ${TESTVMOPTS} -Djava.security.policy=file:$THISDIR/policy \
+		-cp $THISDIR -Djava.security.manager Test $THISDIR/test.jar
+checkExit 4
+
 exit 0

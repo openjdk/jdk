@@ -45,11 +45,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import jdk.internal.misc.JavaSecurityProtectionDomainAccess;
 import static jdk.internal.misc.JavaSecurityProtectionDomainAccess.ProtectionDomainCache;
 import jdk.internal.misc.SharedSecrets;
-import sun.security.util.PolicyUtil;
-import sun.security.util.PropertyExpander;
-import sun.security.util.Debug;
-import sun.security.util.ResourcesMgr;
-import sun.security.util.SecurityConstants;
+import sun.security.util.*;
 import sun.net.www.ParseUtil;
 
 /**
@@ -534,8 +530,6 @@ public class PolicyFile extends java.security.Policy {
     /**
      * Reads a policy configuration into the Policy object using a
      * Reader object.
-     *
-     * @param policyFile the policy Reader object.
      */
     private boolean init(URL policy, PolicyInfo newInfo, boolean defPolicy) {
 
@@ -1099,7 +1093,7 @@ public class PolicyFile extends java.security.Policy {
             synchronized (pc) {
                 Enumeration<Permission> e = pc.elements();
                 while (e.hasMoreElements()) {
-                    perms.add(e.nextElement());
+                    perms.add(FilePermCompat.newPermPlusAltPath(e.nextElement()));
                 }
             }
         }
@@ -1127,7 +1121,7 @@ public class PolicyFile extends java.security.Policy {
      * object with additional permissions granted to the specified
      * ProtectionDomain.
      *
-     * @param perm the Permissions to populate
+     * @param perms the Permissions to populate
      * @param pd the ProtectionDomain associated with the caller.
      *
      * @return the set of Permissions according to the policy.
@@ -1157,8 +1151,8 @@ public class PolicyFile extends java.security.Policy {
      * object with additional permissions granted to the specified
      * CodeSource.
      *
-     * @param permissions the permissions to populate
-     * @param codesource the codesource associated with the caller.
+     * @param perms the permissions to populate
+     * @param cs the codesource associated with the caller.
      * This encapsulates the original location of the code (where the code
      * came from) and the public key(s) of its signer.
      *
@@ -1386,7 +1380,7 @@ public class PolicyFile extends java.security.Policy {
                         accPs,
                         perms);
             } else {
-                perms.add(p);
+                perms.add(FilePermCompat.newPermPlusAltPath(p));
             }
         }
     }
@@ -1458,9 +1452,9 @@ public class PolicyFile extends java.security.Policy {
         }
         try {
             // first try to instantiate the permission
-            perms.add(getInstance(sp.getSelfType(),
+            perms.add(FilePermCompat.newPermPlusAltPath(getInstance(sp.getSelfType(),
                                   sb.toString(),
-                                  sp.getSelfActions()));
+                                  sp.getSelfActions())));
         } catch (ClassNotFoundException cnfe) {
             // ok, the permission is not in the bootclasspath.
             // before we add an UnresolvedPermission, check to see
