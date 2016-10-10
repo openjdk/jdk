@@ -20,58 +20,36 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspot.services;
+package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.hotspot.services.EmptyEventProvider.EmptyCompilationEvent;
-import jdk.vm.ci.hotspot.services.EmptyEventProvider.EmptyCompilerFailureEvent;
+import jdk.vm.ci.hotspot.EmptyEventProvider.EmptyCompilationEvent;
+import jdk.vm.ci.hotspot.EmptyEventProvider.EmptyCompilerFailureEvent;
 import jdk.vm.ci.services.JVMCIPermission;
 
 /**
  * Service-provider class for logging compiler related events.
  */
-public abstract class EventProvider {
-
-    private static Void checkPermission() {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new JVMCIPermission());
-        }
-        return null;
-    }
-
-    @SuppressWarnings("unused")
-    EventProvider(Void ignore) {
-    }
-
-    /**
-     * Initializes a new instance of this class.
-     *
-     * @throws SecurityException if a security manager has been installed and it denies
-     *             {@link JVMCIPermission}
-     */
-    protected EventProvider() {
-        this(checkPermission());
-    }
+public interface EventProvider {
 
     /**
      * Creates and returns an empty implementation for {@link EventProvider}. This implementation
      * can be used when no logging is requested.
      */
-    public static EventProvider createEmptyEventProvider() {
+    static EventProvider createEmptyEventProvider() {
         return new EmptyEventProvider();
     }
 
     /**
      * Creates and returns an empty implementation for {@link CompilationEvent}.
      */
-    public static CompilationEvent createEmptyCompilationEvent() {
+    static CompilationEvent createEmptyCompilationEvent() {
         return new EmptyCompilationEvent();
     }
 
     /**
      * Creates and returns an empty implementation for {@link CompilationEvent}.
      */
-    public static CompilerFailureEvent createEmptyCompilerFailureEvent() {
+    static CompilerFailureEvent createEmptyCompilerFailureEvent() {
         return new EmptyCompilerFailureEvent();
     }
 
