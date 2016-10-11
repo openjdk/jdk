@@ -1234,7 +1234,7 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
   SharedClassPathEntry* ent =
             (SharedClassPathEntry*)FileMapInfo::shared_classpath(path_index);
   if (!Universe::is_module_initialized()) {
-    assert(ent->is_jrt(),
+    assert(ent != NULL && ent->is_jrt(),
            "Loading non-bootstrap classes before the module system is initialized");
     assert(class_loader.is_null(), "sanity");
     return true;
@@ -1257,6 +1257,7 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
   }
 
   if (class_loader.is_null()) {
+    assert(ent != NULL, "Shared class for NULL classloader must have valid SharedClassPathEntry");
     // The NULL classloader can load archived class originated from the
     // "modules" jimage and the -Xbootclasspath/a. For class from the
     // "modules" jimage, the PackageEntry/ModuleEntry must be defined
