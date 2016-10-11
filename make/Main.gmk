@@ -237,7 +237,7 @@ ALL_TARGETS += $(LAUNCHER_TARGETS)
 # Build hotspot target
 
 ifeq ($(BUILD_HOTSPOT),true)
-hotspot:
+  hotspot:
 	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f BuildHotspot.gmk)
 endif
 
