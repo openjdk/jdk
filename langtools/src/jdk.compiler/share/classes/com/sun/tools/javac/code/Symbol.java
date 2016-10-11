@@ -949,6 +949,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public java.util.List<Directive> getDirectives() {
+            complete();
             completeUsesProvides();
             return Collections.unmodifiableList(directives);
         }
