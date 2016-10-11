@@ -23,14 +23,14 @@
 
 /*
  * @test
- * @bug 8081431 8080069
+ * @bug 8081431 8080069 8167128
  * @summary Test of JShell#drop().
  * @build KullaTesting TestingInputStream
  * @run testng DropTest
  */
 
 import jdk.jshell.DeclarationSnippet;
-import jdk.jshell.PersistentSnippet;
+import jdk.jshell.Snippet;
 import jdk.jshell.VarSnippet;
 import org.testng.annotations.Test;
 
@@ -40,9 +40,9 @@ import static jdk.jshell.Snippet.Status.*;
 public class DropTest extends KullaTesting {
 
     public void testDrop() {
-        PersistentSnippet var = varKey(assertEval("int x;"));
-        PersistentSnippet method = methodKey(assertEval("int mu() { return x * 4; }"));
-        PersistentSnippet clazz = classKey(assertEval("class C { String v() { return \"#\" + mu(); } }"));
+        Snippet var = varKey(assertEval("int x;"));
+        Snippet method = methodKey(assertEval("int mu() { return x * 4; }"));
+        Snippet clazz = classKey(assertEval("class C { String v() { return \"#\" + mu(); } }"));
         assertDrop(var,
                 ste(var, VALID, DROPPED, true, null),
                 ste(method, VALID, RECOVERABLE_DEFINED, false, var));
@@ -62,7 +62,7 @@ public class DropTest extends KullaTesting {
         assertEval("int x = 10;", "10",
                 added(VALID),
                 ste(method, RECOVERABLE_DEFINED, VALID, false, MAIN_SNIPPET));
-        PersistentSnippet c0 = varKey(assertEval("C c0 = new C();"));
+        Snippet c0 = varKey(assertEval("C c0 = new C();"));
         assertEval("c0.v();", "\"#40\"");
         assertEval("C c = new C();",
                 ste(MAIN_SNIPPET, VALID, VALID, false, null),
@@ -88,8 +88,8 @@ public class DropTest extends KullaTesting {
     }
 
     public void testDropImport() {
-        PersistentSnippet imp = importKey(assertEval("import java.util.*;"));
-        PersistentSnippet decl = varKey(
+        Snippet imp = importKey(assertEval("import java.util.*;"));
+        Snippet decl = varKey(
                 assertEval("List<Integer> list = Arrays.asList(1, 2, 3);", "[1, 2, 3]"));
         assertEval("list;", "[1, 2, 3]");
         assertDrop(imp,
@@ -100,8 +100,13 @@ public class DropTest extends KullaTesting {
         assertDeclareFail("list;", "compiler.err.cant.resolve.location");
     }
 
+    public void testDropStatement() {
+        Snippet x = key(assertEval("if (true);"));
+        assertDrop(x, ste(x, VALID, DROPPED, true, null));
+    }
+
     public void testDropVarToMethod() {
-        PersistentSnippet x = varKey(assertEval("int x;"));
+        Snippet x = varKey(assertEval("int x;"));
         DeclarationSnippet method = methodKey(assertEval("double mu() { return x * 4; }"));
         assertEval("x == 0;", "true");
         assertEval("mu() == 0.0;", "true");
@@ -118,7 +123,7 @@ public class DropTest extends KullaTesting {
     }
 
     public void testDropMethodToMethod() {
-        PersistentSnippet a = methodKey(assertEval("double a() { return 2; }"));
+        Snippet a = methodKey(assertEval("double a() { return 2; }"));
         DeclarationSnippet b = methodKey(assertEval("double b() { return a() * 10; }"));
         assertEval("double c() { return b() * 3; }");
         DeclarationSnippet d = methodKey(assertEval("double d() { return c() + 1000; }"));
@@ -134,7 +139,7 @@ public class DropTest extends KullaTesting {
     }
 
     public void testDropClassToMethod() {
-        PersistentSnippet c = classKey(assertEval("class C { int f() { return 7; } }"));
+        Snippet c = classKey(assertEval("class C { int f() { return 7; } }"));
         DeclarationSnippet m = methodKey(assertEval("int m() { return new C().f(); }"));
         assertDrop(c,
                 ste(c, VALID, DROPPED, true, null),
@@ -145,7 +150,7 @@ public class DropTest extends KullaTesting {
     }
 
     public void testDropVarToClass() {
-        PersistentSnippet x = varKey(assertEval("int x;"));
+        Snippet x = varKey(assertEval("int x;"));
         DeclarationSnippet a = classKey(assertEval("class A { double a = 4 * x; }"));
         assertDrop(x,
                 DiagCheck.DIAG_OK,
@@ -160,7 +165,7 @@ public class DropTest extends KullaTesting {
     }
 
     public void testDropMethodToClass() {
-        PersistentSnippet x = methodKey(assertEval("int x() { return 0; }"));
+        Snippet x = methodKey(assertEval("int x() { return 0; }"));
         DeclarationSnippet a = classKey(assertEval("class A { double a = 4 * x(); }"));
         assertDrop(x,
                 DiagCheck.DIAG_OK,
@@ -174,10 +179,10 @@ public class DropTest extends KullaTesting {
     }
 
     public void testDropClassToClass() {
-        PersistentSnippet a = classKey(assertEval("class A {}"));
-        PersistentSnippet b = classKey(assertEval("class B extends A {}"));
-        PersistentSnippet c = classKey(assertEval("class C extends B {}"));
-        PersistentSnippet d = classKey(assertEval("class D extends C {}"));
+        Snippet a = classKey(assertEval("class A {}"));
+        Snippet b = classKey(assertEval("class B extends A {}"));
+        Snippet c = classKey(assertEval("class C extends B {}"));
+        Snippet d = classKey(assertEval("class D extends C {}"));
         assertDrop(a,
                 DiagCheck.DIAG_OK,
                 DiagCheck.DIAG_ERROR,
@@ -201,9 +206,9 @@ public class DropTest extends KullaTesting {
     public void testDropNoUpdate() {
         String as1 = "class A {}";
         String as2 = "class A extends java.util.ArrayList<Boolean> {}";
-        PersistentSnippet a = classKey(assertEval(as1, added(VALID)));
-        PersistentSnippet b = classKey(assertEval("class B extends A {}", added(VALID)));
-        PersistentSnippet ax = classKey(assertEval(as2,
+        Snippet a = classKey(assertEval(as1, added(VALID)));
+        Snippet b = classKey(assertEval("class B extends A {}", added(VALID)));
+        Snippet ax = classKey(assertEval(as2,
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
                 ste(a, VALID, OVERWRITTEN, false, MAIN_SNIPPET),
                 ste(b, VALID, VALID, true, MAIN_SNIPPET)));

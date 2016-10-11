@@ -54,7 +54,6 @@ import jdk.jshell.ExpressionSnippet;
 import jdk.jshell.ImportSnippet;
 import jdk.jshell.Snippet.Kind;
 import jdk.jshell.MethodSnippet;
-import jdk.jshell.PersistentSnippet;
 import jdk.jshell.Snippet.Status;
 import jdk.jshell.Snippet.SubKind;
 import jdk.jshell.TypeDeclSnippet;
@@ -733,15 +732,15 @@ public class KullaTesting {
         assertEquals(expectedSubKind.kind(), expectedKind, "Checking kind: ");
     }
 
-    public void assertDrop(PersistentSnippet key, STEInfo mainInfo, STEInfo... updates) {
+    public void assertDrop(Snippet key, STEInfo mainInfo, STEInfo... updates) {
         assertDrop(key, DiagCheck.DIAG_OK, DiagCheck.DIAG_OK, mainInfo, updates);
     }
 
-    public void assertDrop(PersistentSnippet key, DiagCheck diagMain, DiagCheck diagUpdates, STEInfo mainInfo, STEInfo... updates) {
+    public void assertDrop(Snippet key, DiagCheck diagMain, DiagCheck diagUpdates, STEInfo mainInfo, STEInfo... updates) {
         assertDrop(key, diagMain, diagUpdates, new EventChain(mainInfo, null, null, updates));
     }
 
-    public void assertDrop(PersistentSnippet key, DiagCheck diagMain, DiagCheck diagUpdates, EventChain... eventChains) {
+    public void assertDrop(Snippet key, DiagCheck diagMain, DiagCheck diagUpdates, EventChain... eventChains) {
         checkEvents(() -> getState().drop(key), "drop(" + key + ")", diagMain, diagUpdates, eventChains);
     }
 
