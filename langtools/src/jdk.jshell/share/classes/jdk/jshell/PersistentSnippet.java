@@ -28,8 +28,8 @@ package jdk.jshell;
 /**
  * Grouping for Snippets which persist and influence future code.
  * A persistent snippet can be
- * {@linkplain jdk.jshell.Snippet.Status#OVERWRITTEN overwritten)}
- * with new input and can be dropped {@link JShell#drop}.
+ * {@linkplain jdk.jshell.Snippet.Status#OVERWRITTEN overwritten}
+ * with new input.
  * <p>
  * <code>PersistentSnippet</code> is immutable: an access to
  * any of its methods will always return the same result.
