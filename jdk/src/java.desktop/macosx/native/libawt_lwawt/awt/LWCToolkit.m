@@ -93,8 +93,8 @@ static long eventCount;
         case NSEventPhaseBegan: return SCROLL_PHASE_BEGAN;
         case NSEventPhaseCancelled: return SCROLL_PHASE_CANCELLED;
         case NSEventPhaseEnded: return SCROLL_PHASE_ENDED;
+        default: return SCROLL_PHASE_CONTINUED;
     }
-    return SCROLL_PHASE_CONTINUED;
 }
 @end
 
