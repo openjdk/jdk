@@ -232,6 +232,11 @@ public abstract class Log {
             }
         }
 
+        public String toString() {
+            return logger.toString() + ", level: " + logger.getLevel() +
+                    ", name: " + logger.getName();
+        }
+
         /**
          * Set the output stream associated with the RMI server call
          * logger.
