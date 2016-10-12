@@ -287,7 +287,8 @@ var getJibProfilesProfiles = function (input, common) {
             target_os: "solaris",
             target_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit", "cups"),
-            configure_args: concat(common.configure_args, "--with-zlib=system"),
+            configure_args: concat(common.configure_args, "--with-zlib=system",
+                "--enable-dtrace"),
             default_make_targets: common.default_make_targets
         },
 
@@ -295,7 +296,8 @@ var getJibProfilesProfiles = function (input, common) {
             target_os: "solaris",
             target_cpu: "sparcv9",
             dependencies: concat(common.dependencies, "devkit", "cups"),
-            configure_args: concat(common.configure_args, "--with-zlib=system"),
+            configure_args: concat(common.configure_args, "--with-zlib=system",
+                "--enable-dtrace"),
             default_make_targets: common.default_make_targets
         },
 
