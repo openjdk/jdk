@@ -5103,7 +5103,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1476172133
+DATE_WHEN_GENERATED=1476265696
 
 ###############################################################################
 #
@@ -65251,7 +65251,6 @@ if test "${enable_ccache+set}" = set; then :
 fi
 
 
-  CCACHE=
   CCACHE_STATUS=
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking is ccache enabled" >&5
 $as_echo_n "checking is ccache enabled... " >&6; }
