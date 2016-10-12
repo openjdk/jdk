@@ -39,6 +39,7 @@ import jdk.dynalink.NamedOperation;
 import jdk.dynalink.NoSuchDynamicMethodException;
 import jdk.dynalink.Operation;
 import jdk.dynalink.StandardOperation;
+import jdk.dynalink.beans.StaticClass;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.GuardingDynamicLinker;
 import jdk.dynalink.linker.LinkRequest;
@@ -234,6 +235,15 @@ public class DynamicLinkerFactoryTest {
 
     @Test
     public void autoLoadedLinkerTest() {
+        testAutoLoadedLinkerInvoked(new Object(), "toString");
+    }
+
+    @Test
+    public void autoLoadedLinkerSeesStaticMethod() {
+        testAutoLoadedLinkerInvoked(StaticClass.forClass(System.class), "currentTimeMillis");
+    }
+
+    private static void testAutoLoadedLinkerInvoked(final Object target, final String methodName) {
         final DynamicLinkerFactory factory = newDynamicLinkerFactory(false);
         final DynamicLinker linker = factory.createLinker();
 
@@ -241,22 +251,21 @@ public class DynamicLinkerFactoryTest {
         checkOneAutoLoadingError(factory);
 
         final MethodType mt = MethodType.methodType(Object.class, Object.class);
-        // create a callsite with TestLinkerOperation
-        final CallSite cs = linker.link(new SimpleRelinkableCallSite(new CallSiteDescriptor(
-                MethodHandles.publicLookup(), new TestLinkerOperation(), mt)));
-        boolean reachedAutoLinker = false;
+        final CallSiteDescriptor testDescriptor = new CallSiteDescriptor(MethodHandles.publicLookup(),
+                new NamedOperation(StandardOperation.GET_METHOD, methodName), mt);
+        final CallSite cs = linker.link(new SimpleRelinkableCallSite(testDescriptor));
 
-
+        TrustedGuardingDynamicLinkerExporter.enable();
         try {
-            cs.getTarget().invoke(new Object());
-        } catch (final ReachedAutoLoadedDynamicLinkerException e) {
-            // TrustedGuardingDynamicLinkerExporter threw exception on TestLinkerOperation as expected!
-            reachedAutoLinker = true;
+            cs.getTarget().invoke(target);
+            // The linker was loaded and it observed our invocation
+            Assert.assertTrue(TrustedGuardingDynamicLinkerExporter.isLastCallSiteDescriptor(testDescriptor));
         } catch (final Throwable th) {
             throw new RuntimeException(th);
+        } finally {
+            TrustedGuardingDynamicLinkerExporter.disable();
         }
 
-        Assert.assertTrue(reachedAutoLinker);
     }
 
     @Test
