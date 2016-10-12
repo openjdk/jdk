@@ -376,14 +376,14 @@ public class Base64 {
             return null;
         }
 
-        int lengthDataBits = binaryData.length * EIGHTBIT;
-        if (lengthDataBits == 0) {
+        long lengthDataBits = ((long) binaryData.length) * ((long) EIGHTBIT);
+        if (lengthDataBits == 0L) {
             return "";
         }
 
-        int fewerThan24bits = lengthDataBits % TWENTYFOURBITGROUP;
-        int numberTriplets = lengthDataBits / TWENTYFOURBITGROUP;
-        int numberQuartet = fewerThan24bits != 0 ? numberTriplets + 1 : numberTriplets;
+        long fewerThan24bits = lengthDataBits % TWENTYFOURBITGROUP;
+        int numberTriplets = (int) (lengthDataBits / TWENTYFOURBITGROUP);
+        int numberQuartet = fewerThan24bits != 0L ? numberTriplets + 1 : numberTriplets;
         int quartesPerLine = length / 4;
         int numberLines = (numberQuartet - 1) / quartesPerLine;
         char encodedData[] = null;
