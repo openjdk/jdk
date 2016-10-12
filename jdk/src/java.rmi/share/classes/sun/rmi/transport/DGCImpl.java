@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package sun.rmi.transport;
 
+import java.io.ObjectInputFilter;
 import java.net.SocketPermission;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -34,11 +35,13 @@ import java.rmi.server.LogStream;
 import java.rmi.server.ObjID;
 import java.rmi.server.RemoteServer;
 import java.rmi.server.ServerNotActiveException;
+import java.rmi.server.UID;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HashMap;
@@ -97,6 +100,46 @@ final class DGCImpl implements DGC {
      */
     static DGCImpl getDGCImpl() {
         return dgc;
+    }
+
+    /**
+     * Property name of the DGC serial filter to augment
+     * the built-in list of allowed types.
+     * Setting the property in the {@code conf/security/java.security} file
+     * or system property will enable the augmented filter.
+     */
+    private static final String DGC_FILTER_PROPNAME = "sun.rmi.transport.dgcFilter";
+
+    /** Registry max depth of remote invocations. **/
+    private static int DGC_MAX_DEPTH = 5;
+
+    /** Registry maximum array size in remote invocations. **/
+    private static int DGC_MAX_ARRAY_SIZE = 10000;
+
+    /**
+     * The dgcFilter created from the value of the {@code  "sun.rmi.transport.dgcFilter"}
+     * property.
+     */
+    private static final ObjectInputFilter dgcFilter =
+            AccessController.doPrivileged((PrivilegedAction<ObjectInputFilter>)DGCImpl::initDgcFilter);
+
+    /**
+     * Initialize the dgcFilter from the security properties or system property; if any
+     * @return an ObjectInputFilter, or null
+     */
+    private static ObjectInputFilter initDgcFilter() {
+        ObjectInputFilter filter = null;
+        String props = System.getProperty(DGC_FILTER_PROPNAME);
+        if (props == null) {
+            props = Security.getProperty(DGC_FILTER_PROPNAME);
+        }
+        if (props != null) {
+            filter = ObjectInputFilter.Config.createFilter(props);
+            if (dgcLog.isLoggable(Log.BRIEF)) {
+                dgcLog.log(Log.BRIEF, "dgcFilter = " + filter);
+            }
+        }
+        return filter;
     }
 
     /**
@@ -293,7 +336,8 @@ final class DGCImpl implements DGC {
                         dgc = new DGCImpl();
                         ObjID dgcID = new ObjID(ObjID.DGC_ID);
                         LiveRef ref = new LiveRef(dgcID, 0);
-                        UnicastServerRef disp = new UnicastServerRef(ref);
+                        UnicastServerRef disp = new UnicastServerRef(ref,
+                                DGCImpl::checkInput);
                         Remote stub =
                             Util.createProxy(DGCImpl.class,
                                              new UnicastRef(ref), true);
@@ -323,6 +367,53 @@ final class DGCImpl implements DGC {
             }
         });
     }
+
+    /**
+     * ObjectInputFilter to filter DGC input objects.
+     * The list of acceptable classes is very short and explicit.
+     * The depth and array sizes are limited.
+     *
+     * @param filterInfo access to class, arrayLength, etc.
+     * @return  {@link ObjectInputFilter.Status#ALLOWED} if allowed,
+     *          {@link ObjectInputFilter.Status#REJECTED} if rejected,
+     *          otherwise {@link ObjectInputFilter.Status#UNDECIDED}
+     */
+    private static ObjectInputFilter.Status checkInput(ObjectInputFilter.FilterInfo filterInfo) {
+        if (dgcFilter != null) {
+            ObjectInputFilter.Status status = dgcFilter.checkInput(filterInfo);
+            if (status != ObjectInputFilter.Status.UNDECIDED) {
+                // The DGC filter can override the built-in white-list
+                return status;
+            }
+        }
+
+        if (filterInfo.depth() > DGC_MAX_DEPTH) {
+            return ObjectInputFilter.Status.REJECTED;
+        }
+        Class<?> clazz = filterInfo.serialClass();
+        if (clazz != null) {
+            while (clazz.isArray()) {
+                if (filterInfo.arrayLength() >= 0 && filterInfo.arrayLength() > DGC_MAX_ARRAY_SIZE) {
+                    return ObjectInputFilter.Status.REJECTED;
+                }
+                // Arrays are allowed depending on the component type
+                clazz = clazz.getComponentType();
+            }
+            if (clazz.isPrimitive()) {
+                // Arrays of primitives are allowed
+                return ObjectInputFilter.Status.ALLOWED;
+            }
+            return (clazz == ObjID.class ||
+                    clazz == UID.class ||
+                    clazz == VMID.class ||
+                    clazz == Lease.class)
+                    ? ObjectInputFilter.Status.ALLOWED
+                    : ObjectInputFilter.Status.REJECTED;
+        }
+        // Not a class, not size limited
+        return ObjectInputFilter.Status.UNDECIDED;
+    }
+
 
     private static class LeaseInfo {
         VMID vmid;
