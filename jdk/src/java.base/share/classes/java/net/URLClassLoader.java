@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@ import java.util.jar.Manifest;
 
 import jdk.internal.loader.Resource;
 import jdk.internal.loader.URLClassPath;
+import jdk.internal.misc.JavaNetURLClassLoaderAccess;
+import jdk.internal.misc.SharedSecrets;
 import jdk.internal.perf.PerfCounter;
 import sun.net.www.ParseUtil;
 import sun.security.util.SecurityConstants;
@@ -765,6 +767,14 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     }
 
     static {
+        SharedSecrets.setJavaNetURLClassLoaderAccess(
+            new JavaNetURLClassLoaderAccess() {
+                @Override
+                public AccessControlContext getAccessControlContext(URLClassLoader u) {
+                    return u.acc;
+                }
+            }
+        );
         ClassLoader.registerAsParallelCapable();
     }
 }
