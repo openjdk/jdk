@@ -58,10 +58,6 @@ else
 
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), solaris)
-  UNPACKEXE_TOOLCHAIN := TOOLCHAIN_LINK_CXX
-endif
-
 UNPACK_MAPFILE_DIR := $(JDK_TOPDIR)/make/mapfiles/libunpack
 UNPACK_MAPFILE_PLATFORM_FILE := \
     $(UNPACK_MAPFILE_DIR)/mapfile-vers-unpack200-$(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH)
@@ -79,7 +75,7 @@ endif
 
 $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
     SRC := $(UNPACKEXE_SRC), \
-    TOOLCHAIN := $(UNPACKEXE_TOOLCHAIN), \
+    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(UNPACKEXE_CFLAGS) $(CXXFLAGS_JDKEXE) -DFULL, \
     CFLAGS_release := -DPRODUCT, \
