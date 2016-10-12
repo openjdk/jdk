@@ -68,7 +68,7 @@ final class NashornStaticClassLinker implements TypeBasedGuardingDynamicLinker {
     @Override
     public GuardedInvocation getGuardedInvocation(final LinkRequest request, final LinkerServices linkerServices) throws Exception {
         final Object self = request.getReceiver();
-        if (self.getClass() != StaticClass.class) {
+        if (self == null || self.getClass() != StaticClass.class) {
             return null;
         }
         final Class<?> receiverClass = ((StaticClass) self).getRepresentedClass();
