@@ -76,13 +76,13 @@ import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.zone.ZoneRules;
 import java.time.zone.ZoneRulesException;
 import java.time.zone.ZoneRulesProvider;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
+
+import static java.util.Map.entry;
 
 /**
  * A time-zone ID, such as {@code Europe/Paris}.
@@ -220,39 +220,36 @@ public abstract class ZoneId implements Serializable {
      * </ul>
      * The map is unmodifiable.
      */
-    public static final Map<String, String> SHORT_IDS;
-    static {
-        Map<String, String> map = new HashMap<>(64);
-        map.put("ACT", "Australia/Darwin");
-        map.put("AET", "Australia/Sydney");
-        map.put("AGT", "America/Argentina/Buenos_Aires");
-        map.put("ART", "Africa/Cairo");
-        map.put("AST", "America/Anchorage");
-        map.put("BET", "America/Sao_Paulo");
-        map.put("BST", "Asia/Dhaka");
-        map.put("CAT", "Africa/Harare");
-        map.put("CNT", "America/St_Johns");
-        map.put("CST", "America/Chicago");
-        map.put("CTT", "Asia/Shanghai");
-        map.put("EAT", "Africa/Addis_Ababa");
-        map.put("ECT", "Europe/Paris");
-        map.put("IET", "America/Indiana/Indianapolis");
-        map.put("IST", "Asia/Kolkata");
-        map.put("JST", "Asia/Tokyo");
-        map.put("MIT", "Pacific/Apia");
-        map.put("NET", "Asia/Yerevan");
-        map.put("NST", "Pacific/Auckland");
-        map.put("PLT", "Asia/Karachi");
-        map.put("PNT", "America/Phoenix");
-        map.put("PRT", "America/Puerto_Rico");
-        map.put("PST", "America/Los_Angeles");
-        map.put("SST", "Pacific/Guadalcanal");
-        map.put("VST", "Asia/Ho_Chi_Minh");
-        map.put("EST", "-05:00");
-        map.put("MST", "-07:00");
-        map.put("HST", "-10:00");
-        SHORT_IDS = Collections.unmodifiableMap(map);
-    }
+    public static final Map<String, String> SHORT_IDS = Map.ofEntries(
+        entry("ACT", "Australia/Darwin"),
+        entry("AET", "Australia/Sydney"),
+        entry("AGT", "America/Argentina/Buenos_Aires"),
+        entry("ART", "Africa/Cairo"),
+        entry("AST", "America/Anchorage"),
+        entry("BET", "America/Sao_Paulo"),
+        entry("BST", "Asia/Dhaka"),
+        entry("CAT", "Africa/Harare"),
+        entry("CNT", "America/St_Johns"),
+        entry("CST", "America/Chicago"),
+        entry("CTT", "Asia/Shanghai"),
+        entry("EAT", "Africa/Addis_Ababa"),
+        entry("ECT", "Europe/Paris"),
+        entry("IET", "America/Indiana/Indianapolis"),
+        entry("IST", "Asia/Kolkata"),
+        entry("JST", "Asia/Tokyo"),
+        entry("MIT", "Pacific/Apia"),
+        entry("NET", "Asia/Yerevan"),
+        entry("NST", "Pacific/Auckland"),
+        entry("PLT", "Asia/Karachi"),
+        entry("PNT", "America/Phoenix"),
+        entry("PRT", "America/Puerto_Rico"),
+        entry("PST", "America/Los_Angeles"),
+        entry("SST", "Pacific/Guadalcanal"),
+        entry("VST", "Asia/Ho_Chi_Minh"),
+        entry("EST", "-05:00"),
+        entry("MST", "-07:00"),
+        entry("HST", "-10:00")
+    );
     /**
      * Serialization version.
      */
