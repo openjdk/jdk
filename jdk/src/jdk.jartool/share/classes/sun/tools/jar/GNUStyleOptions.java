@@ -254,7 +254,8 @@ class GNUStyleOptions {
 
         // process options
         for (; count < args.length; count++) {
-            if (args[count].charAt(0) != '-' || args[count].equals("-C"))
+            if (args[count].charAt(0) != '-' || args[count].equals("-C")
+                || args[count].equals("--release"))
                 break;
 
             String name = args[count];
