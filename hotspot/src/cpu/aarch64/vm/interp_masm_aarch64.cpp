@@ -692,7 +692,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     }
 
     // Load (object->mark() | 1) into swap_reg
-    ldr(rscratch1, Address(obj_reg, 0));
+    ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     orr(swap_reg, rscratch1, 1);
 
     // Save (object->mark() | 1) into BasicLock's displaced header
@@ -704,14 +704,14 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     Label fail;
     if (PrintBiasedLockingStatistics) {
       Label fast;
-      cmpxchgptr(swap_reg, lock_reg, obj_reg, rscratch1, fast, &fail);
+      cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, rscratch1, fast, &fail);
       bind(fast);
       atomic_incw(Address((address)BiasedLocking::fast_path_entry_count_addr()),
                   rscratch2, rscratch1, tmp);
       b(done);
       bind(fail);
     } else {
-      cmpxchgptr(swap_reg, lock_reg, obj_reg, rscratch1, done, /*fallthrough*/NULL);
+      cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, rscratch1, done, /*fallthrough*/NULL);
     }
 
     // Test if the oopMark is an obvious stack pointer, i.e.,
@@ -801,7 +801,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
     cbz(header_reg, done);
 
     // Atomic swap back the old header
-    cmpxchgptr(swap_reg, header_reg, obj_reg, rscratch1, done, /*fallthrough*/NULL);
+    cmpxchg_obj_header(swap_reg, header_reg, obj_reg, rscratch1, done, /*fallthrough*/NULL);
 
     // Call the runtime routine for slow case.
     str(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes())); // restore obj

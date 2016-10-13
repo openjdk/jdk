@@ -974,6 +974,8 @@ public:
 
   // Various forms of CAS
 
+  void cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp,
+                          Label &suceed, Label *fail);
   void cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
                   Label &suceed, Label *fail);
 
