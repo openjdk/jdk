@@ -34,20 +34,34 @@
 
 extern "C" {
 
-static int init_jvm(int argc, char **argv, bool is_executing_death_test) {
+static bool is_prefix(const char* prefix, const char* str) {
+  return strncmp(str, prefix, strlen(prefix)) == 0;
+}
+
+static bool is_suffix(const char* suffix, const char* str) {
+  size_t suffix_len = strlen(suffix);
+  size_t str_len = strlen(str);
+  if (str_len < suffix_len) {
+      return false;
+  }
+  return strncmp(str + (str_len - suffix_len), suffix, suffix_len) == 0;
+}
+
+
+static int init_jvm(int argc, char **argv, bool disable_error_handling) {
   // don't care about the program name
   argc--;
   argv++;
 
-  int extra_jvm_args = is_executing_death_test ? 4 : 2;
+  int extra_jvm_args = disable_error_handling ? 4 : 2;
   int num_jvm_options = argc + extra_jvm_args;
 
   JavaVMOption* options = new JavaVMOption[num_jvm_options];
   options[0].optionString = (char*) "-Dsun.java.launcher.is_altjvm=true";
   options[1].optionString = (char*) "-XX:+ExecutingUnitTests";
 
-  if (is_executing_death_test) {
-    // don't create core files or hs_err files when executing death tests
+  if (disable_error_handling) {
+    // don't create core files or hs_err files executing assert tests
     options[2].optionString = (char*) "-XX:+SuppressFatalErrorMessage";
     options[3].optionString = (char*) "-XX:-CreateCoredumpOnCrash";
   }
@@ -83,16 +97,13 @@ class JVMInitializerListener : public ::testing::EmptyTestEventListener {
 
   virtual void OnTestStart(const ::testing::TestInfo& test_info) {
     const char* name = test_info.name();
-    if (strstr(name, "_test_vm") != NULL && !_is_initialized) {
-      ASSERT_EQ(init_jvm(_argc, _argv, false), 0) << "Could not initialize the JVM";
+    if (!_is_initialized && is_suffix("_test_vm", name)) {
+      // we want to have hs_err and core files when we execute regular tests
+      ASSERT_EQ(0, init_jvm(_argc, _argv, false)) << "Could not initialize the JVM";
       _is_initialized = true;
     }
   }
 };
-
-static bool is_prefix(const char* prefix, const char* str) {
-  return strncmp(str, prefix, strlen(prefix)) == 0;
-}
 
 static char* get_java_home_arg(int argc, char** argv) {
   for (int i = 0; i < argc; i++) {
@@ -144,19 +155,23 @@ static char** remove_test_runner_arguments(int* argcp, char **argv) {
 }
 
 JNIEXPORT void JNICALL runUnitTests(int argc, char** argv) {
-  // Must look at googletest options before initializing googletest, since
-  // InitGoogleTest removes googletest options from argv.
-  bool is_executing_death_test = true;
-  for (int i = 0; i < argc; i++) {
-    const char* death_test_flag = "--gtest_internal_run_death_test";
-    if (is_prefix(death_test_flag, argv[i])) {
-      is_executing_death_test = true;
-    }
-  }
-
   ::testing::InitGoogleTest(&argc, argv);
   ::testing::GTEST_FLAG(death_test_style) = "threadsafe";
-//  ::testing::GTEST_FLAG(death_test_output_prefix) = "Other VM";
+
+  bool is_vmassert_test = false;
+  bool is_othervm_test = false;
+  // death tests facility is used for both regular death tests, other vm and vmassert tests
+  if (::testing::internal::GTEST_FLAG(internal_run_death_test).length() > 0) {
+    // when we execute death test, filter value equals to test name
+    const char* test_name = ::testing::GTEST_FLAG(filter).c_str();
+    const char* const othervm_suffix = "_other_vm_test"; // TEST_OTHER_VM
+    const char* const vmassert_suffix = "_vm_assert_test"; // TEST_VM_ASSERT(_MSG)
+    if (is_suffix(othervm_suffix, test_name)) {
+      is_othervm_test = true;
+    } else if (is_suffix(vmassert_suffix, test_name)) {
+      is_vmassert_test = true;
+    }
+  }
 
   char* java_home = get_java_home_arg(argc, argv);
   if (java_home == NULL) {
@@ -184,8 +199,10 @@ JNIEXPORT void JNICALL runUnitTests(int argc, char** argv) {
 #endif // _WIN32
   argv = remove_test_runner_arguments(&argc, argv);
 
-  if (is_executing_death_test) {
-    if (init_jvm(argc, argv, true) != 0) {
+  if (is_vmassert_test || is_othervm_test) {
+    // both vmassert and other vm tests require inited jvm
+    // but only vmassert tests disable hs_err and core file generation
+    if (init_jvm(argc, argv, is_vmassert_test) != 0) {
       abort();
     }
   } else {

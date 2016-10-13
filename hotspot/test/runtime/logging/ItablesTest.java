@@ -47,7 +47,7 @@ public class ItablesTest {
             output.shouldContain(": Initializing itable indices for interface ");
             output.shouldContain("itable index ");
             output.shouldContain("target: ClassB.Method1()V, method_holder: ClassB target_method flags: public");
-            output.shouldContain("invokeinterface resolved method: caller-class");
+            output.shouldContain("invokeinterface resolved interface method: caller-class");
             output.shouldContain("invokespecial resolved method: caller-class:ClassB");
             output.shouldContain("invokespecial selected method: resolved-class:ClassB");
             output.shouldContain("invokeinterface selected method: receiver-class");

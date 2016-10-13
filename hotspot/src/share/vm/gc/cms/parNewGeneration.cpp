@@ -605,14 +605,10 @@ void ParNewGenTask::work(uint worker_id) {
                                            false);
 
   par_scan_state.start_strong_roots();
-  gch->gen_process_roots(_strong_roots_scope,
-                         GenCollectedHeap::YoungGen,
-                         true,  // Process younger gens, if any, as strong roots.
-                         GenCollectedHeap::SO_ScavengeCodeCache,
-                         GenCollectedHeap::StrongAndWeakRoots,
-                         &par_scan_state.to_space_root_closure(),
-                         &par_scan_state.older_gen_closure(),
-                         &cld_scan_closure);
+  gch->young_process_roots(_strong_roots_scope,
+                           &par_scan_state.to_space_root_closure(),
+                           &par_scan_state.older_gen_closure(),
+                           &cld_scan_closure);
 
   par_scan_state.end_strong_roots();
 

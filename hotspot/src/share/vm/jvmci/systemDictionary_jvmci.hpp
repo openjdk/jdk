@@ -29,6 +29,7 @@
 #else
 #define JVMCI_WK_KLASSES_DO(do_klass)                                                                                           \
   /* JVMCI classes. These are loaded on-demand. */                                                                              \
+  do_klass(JVMCI_klass,                                  jdk_vm_ci_runtime_JVMCI,                               Jvmci) \
   do_klass(HotSpotCompiledCode_klass,                    jdk_vm_ci_hotspot_HotSpotCompiledCode,                 Jvmci) \
   do_klass(HotSpotCompiledCode_Comment_klass,            jdk_vm_ci_hotspot_HotSpotCompiledCode_Comment,         Jvmci) \
   do_klass(HotSpotCompiledNmethod_klass,                 jdk_vm_ci_hotspot_HotSpotCompiledNmethod,              Jvmci) \
