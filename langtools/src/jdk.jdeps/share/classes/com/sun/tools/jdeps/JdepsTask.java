@@ -680,20 +680,21 @@ class JdepsTask {
     private boolean genModuleInfo(JdepsConfiguration config) throws IOException {
         // check if any JAR file contains unnamed package
         for (String arg : inputArgs) {
-            Optional<String> classInUnnamedPackage =
-                ClassFileReader.newInstance(Paths.get(arg))
-                    .entries().stream()
-                    .filter(n -> n.endsWith(".class"))
-                    .filter(cn -> toPackageName(cn).isEmpty())
-                    .findFirst();
+            try (ClassFileReader reader = ClassFileReader.newInstance(Paths.get(arg))) {
+                Optional<String> classInUnnamedPackage =
+                    reader.entries().stream()
+                        .filter(n -> n.endsWith(".class"))
+                        .filter(cn -> toPackageName(cn).isEmpty())
+                        .findFirst();
 
-            if (classInUnnamedPackage.isPresent()) {
-                if (classInUnnamedPackage.get().equals("module-info.class")) {
-                    reportError("err.genmoduleinfo.not.jarfile", arg);
-                } else {
-                    reportError("err.genmoduleinfo.unnamed.package", arg);
+                if (classInUnnamedPackage.isPresent()) {
+                    if (classInUnnamedPackage.get().equals("module-info.class")) {
+                        reportError("err.genmoduleinfo.not.jarfile", arg);
+                    } else {
+                        reportError("err.genmoduleinfo.unnamed.package", arg);
+                    }
+                    return false;
                 }
-                return false;
             }
         }
 
