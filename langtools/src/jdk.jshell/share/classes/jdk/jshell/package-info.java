@@ -46,7 +46,7 @@
  * {@link jdk.jshell.SnippetEvent}.  There are three major kinds of
  * changes to the status of a snippet: it can created with <code>eval</code>,
  * it can be dropped from the active source state with
- * {@link jdk.jshell.JShell#drop(jdk.jshell.PersistentSnippet)}, and it can have
+ * {@link jdk.jshell.JShell#drop(jdk.jshell.Snippet)}, and it can have
  * its status updated as a result of a status change in another snippet.
  * For
  * example: given <code>js</code>, an instance of <code>JShell</code>, executing

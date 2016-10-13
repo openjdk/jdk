@@ -275,7 +275,7 @@
                classpath="${ant.core.lib}"
                bootclasspath="${langtools.jdk.home}/jre/lib/rt.jar"
                includeantruntime="false">
-            <compilerarg line="${javac.opts} -XDstringConcat=inline"/>
+            <compilerarg line="${javac.build.opts} -XDstringConcat=inline"/>
         </javac>
         <taskdef name="pparse"
                  classname="anttasks.PropertiesParserTask"
@@ -291,7 +291,7 @@
                destdir="${build.dir}/toolclasses/"
                classpath="${ant.core.lib}"
                includeantruntime="false">
-            <compilerarg line="${javac.opts} -XDstringConcat=inline"/>
+            <compilerarg line="${javac.build.opts} -XDstringConcat=inline"/>
         </javac>
         <taskdef name="pcompile"
                  classname="anttasks.CompilePropertiesTask"

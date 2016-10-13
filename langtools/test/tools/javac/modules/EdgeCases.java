@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154283
+ * @bug 8154283 8167320
  * @summary tests for multi-module mode compilation
  * @library /tools/lib
  * @modules
@@ -54,6 +54,7 @@ import com.sun.source.tree.CompilationUnitTree;
 //import com.sun.source.util.JavacTask; // conflicts with toolbox.JavacTask
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
+import com.sun.tools.javac.code.Symtab;
 
 import toolbox.JarTask;
 import toolbox.JavacTask;
@@ -449,4 +450,12 @@ public class EdgeCases extends ModuleTestBase {
         }
     }
 
+    @Test
+    public void testGetDirectivesComplete(Path base) throws Exception {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        JavacTaskImpl task = (JavacTaskImpl) compiler.getTask(null, null, null, null, null, null);
+        Symtab syms = Symtab.instance(task.getContext());
+
+        syms.java_base.getDirectives();
+    }
 }
