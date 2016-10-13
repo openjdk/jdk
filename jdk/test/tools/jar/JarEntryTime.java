@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4225317 6969651
- * @modules jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool
  * @summary Check extracted files have date as per those in the .jar file
  */
 
@@ -33,9 +33,14 @@ import java.io.PrintWriter;
 import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import java.util.TimeZone;
-import sun.tools.jar.Main;
+import java.util.spi.ToolProvider;
 
 public class JarEntryTime {
+    static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
+        .orElseThrow(() ->
+            new RuntimeException("jar tool not found")
+        );
+
 
     // ZipEntry's mod date has 2 seconds precision: give extra time to
     // allow for e.g. rounding/truncation and networked/samba drives.
@@ -114,10 +119,8 @@ public class JarEntryTime {
         check(fileInner.setLastModified(earlier));
 
         // Make a jar file from that directory structure
-        Main jartool = new Main(System.out, System.err, "jar");
-        check(jartool.run(new String[] {
-                "cf",
-                jarFile.getName(), dirOuter.getName() } ));
+        check(JAR_TOOL.run(System.out, System.err,
+                           "cf", jarFile.getName(), dirOuter.getName()) == 0);
         check(jarFile.exists());
 
         check(cleanup(dirInner));
@@ -142,7 +145,6 @@ public class JarEntryTime {
         final long start = testFile.lastModified();
 
         // Extract and check the last modified values are the current times.
-        // See sun.tools.jar.Main
         extractJar(jarFile, true);
 
         try (PrintWriter pw = new PrintWriter(testFile)) {

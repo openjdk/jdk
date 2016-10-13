@@ -2491,34 +2491,29 @@ public abstract class ResourceBundle {
         /**
          * The default format <code>List</code>, which contains the strings
          * <code>"java.class"</code> and <code>"java.properties"</code>, in
-         * this order. This <code>List</code> is {@linkplain
-         * Collections#unmodifiableList(List) unmodifiable}.
+         * this order. This <code>List</code> is unmodifiable.
          *
          * @see #getFormats(String)
          */
         public static final List<String> FORMAT_DEFAULT
-            = Collections.unmodifiableList(Arrays.asList("java.class",
-                                                         "java.properties"));
+            = List.of("java.class", "java.properties");
 
         /**
          * The class-only format <code>List</code> containing
-         * <code>"java.class"</code>. This <code>List</code> is {@linkplain
-         * Collections#unmodifiableList(List) unmodifiable}.
+         * <code>"java.class"</code>. This <code>List</code> is unmodifiable.
          *
          * @see #getFormats(String)
          */
-        public static final List<String> FORMAT_CLASS
-            = Collections.unmodifiableList(Arrays.asList("java.class"));
+        public static final List<String> FORMAT_CLASS = List.of("java.class");
 
         /**
          * The properties-only format <code>List</code> containing
-         * <code>"java.properties"</code>. This <code>List</code> is
-         * {@linkplain Collections#unmodifiableList(List) unmodifiable}.
+         * <code>"java.properties"</code>. This <code>List</code> is unmodifiable.
          *
          * @see #getFormats(String)
          */
         public static final List<String> FORMAT_PROPERTIES
-            = Collections.unmodifiableList(Arrays.asList("java.properties"));
+            = List.of("java.properties");
 
         /**
          * The time-to-live constant for not caching loaded resource bundle
