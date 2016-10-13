@@ -2372,7 +2372,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ movl(swap_reg, 1);
 
     // Load (object->mark() | 1) into swap_reg %rax
-    __ orptr(swap_reg, Address(obj_reg, 0));
+    __ orptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
 
     // Save (object->mark() | 1) into BasicLock's displaced header
     __ movptr(Address(lock_reg, mark_word_offset), swap_reg);
@@ -2382,7 +2382,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
 
     // src -> dest iff dest == rax else rax <- dest
-    __ cmpxchgptr(lock_reg, Address(obj_reg, 0));
+    __ cmpxchgptr(lock_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     __ jcc(Assembler::equal, lock_done);
 
     // Hmm should this move to the slow path code area???
@@ -2560,7 +2560,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     if (os::is_MP()) {
       __ lock();
     }
-    __ cmpxchgptr(old_hdr, Address(obj_reg, 0));
+    __ cmpxchgptr(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     __ jcc(Assembler::notEqual, slow_path_unlock);
 
     // slow path re-enters here

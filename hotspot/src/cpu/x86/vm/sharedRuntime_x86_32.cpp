@@ -1998,7 +1998,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ movptr(swap_reg, 1);
 
     // Load (object->mark() | 1) into swap_reg %rax,
-    __ orptr(swap_reg, Address(obj_reg, 0));
+    __ orptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
 
     // Save (object->mark() | 1) into BasicLock's displaced header
     __ movptr(Address(lock_reg, mark_word_offset), swap_reg);
@@ -2009,7 +2009,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // src -> dest iff dest == rax, else rax, <- dest
     // *obj_reg = lock_reg iff *obj_reg == rax, else rax, = *(obj_reg)
-    __ cmpxchgptr(lock_reg, Address(obj_reg, 0));
+    __ cmpxchgptr(lock_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     __ jcc(Assembler::equal, lock_done);
 
     // Test if the oopMark is an obvious stack pointer, i.e.,
@@ -2204,7 +2204,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // src -> dest iff dest == rax, else rax, <- dest
     // *obj_reg = rbx, iff *obj_reg == rax, else rax, = *(obj_reg)
-    __ cmpxchgptr(rbx, Address(obj_reg, 0));
+    __ cmpxchgptr(rbx, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     __ jcc(Assembler::notEqual, slow_path_unlock);
 
     // slow path re-enters here
