@@ -32,11 +32,34 @@
  * @run main TestHelpOption
  */
 
+import java.util.*;
+import java.util.stream.*;
+
 public class TestHelpOption extends JavadocTester {
 
     public static void main(String... args) throws Exception {
         TestHelpOption tester = new TestHelpOption();
         tester.runTests();
+    }
+
+    @Test
+    void testLineLengths() {
+        javadoc("-d", "out1",
+                "-sourcepath", testSrc,
+                "-X",
+                testSrc("TestXOption.java"));
+        checkExit(Exit.OK);
+        List<String> longLines = getOutputLines(Output.OUT).stream()
+                .filter(s -> s.length() > 80)
+                .collect(Collectors.toList());
+        checking("line lengths");
+        if (longLines.isEmpty()) {
+            passed("all lines OK");
+        } else {
+            out.println("long lines:");
+            longLines.stream().forEach(s -> out.println(">>>" + s + "<<<"));
+            failed(longLines.size() + " long lines");
+        }
     }
 
     @Test
@@ -88,7 +111,7 @@ public class TestHelpOption extends JavadocTester {
                 "-helpfile", testSrc("test-help.html"),
                 "-helpfile", testSrc("test-help.html"),
                 testSrc("Sample.java"));
-        checkExit(Exit.FAILED);
+        checkExit(Exit.ERROR);
     }
 
     @Test
@@ -98,7 +121,7 @@ public class TestHelpOption extends JavadocTester {
                 "-helpfile", testSrc("test-help.html"),
                 "-nohelp",
                 testSrc("Sample.java"));
-        checkExit(Exit.FAILED);
+        checkExit(Exit.ERROR);
     }
 
     private void checkOutput(boolean withOption) {
@@ -107,7 +130,7 @@ public class TestHelpOption extends JavadocTester {
                 "-use ",
                 "-version ",
                 "-author ",
-                "-docfilessubdirs ",
+                "-docfilessubdirs\n",
                 "-splitindex ",
                 "-windowtitle ",
                 "-doctitle ",
@@ -119,11 +142,11 @@ public class TestHelpOption extends JavadocTester {
                 "-excludedocfilessubdir ",
                 "-group ",
                 "-nocomment ",
-                "-nodeprecated ",
+                "-nodeprecated\n",
                 "-noqualifier ",
                 "-nosince ",
                 "-notimestamp ",
-                "-nodeprecatedlist ",
+                "-nodeprecatedlist\n",
                 "-notree ",
                 "-noindex ",
                 "-nohelp ",

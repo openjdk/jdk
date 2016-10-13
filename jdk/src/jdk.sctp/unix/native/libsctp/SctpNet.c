@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,20 +210,20 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpNet_socket0
 JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_bindx
   (JNIEnv *env, jclass klass, jint fd, jobjectArray addrs, jint port,
    jint addrsLength, jboolean add, jboolean preferIPv6) {
-    SOCKADDR *sap, *tmpSap;
-    int i, sa_len = sizeof(SOCKADDR);
+    SOCKETADDRESS *sap, *tmpSap;
+    int i, sa_len = sizeof(SOCKETADDRESS);
     jobject ia;
 
     if (addrsLength < 1)
         return;
 
-    if ((sap = calloc(addrsLength,  sa_len)) == NULL) {
+    if ((sap = calloc(addrsLength, sa_len)) == NULL) {
           JNU_ThrowOutOfMemoryError(env, "heap allocation failure");
         return;
     }
 
     tmpSap = sap;
-    for (i=0; i<addrsLength; i++) {
+    for (i = 0; i < addrsLength; i++) {
         ia = (*env)->GetObjectArrayElement(env, addrs, i);
         if (NET_InetAddressToSockaddr(env, ia, port, (struct sockaddr*)tmpSap,
                                       &sa_len, preferIPv6) != 0) {
@@ -233,7 +233,7 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_bindx
         tmpSap++;
     }
 
-    if (nio_sctp_bindx(fd, (void*)sap, addrsLength, add ? SCTP_BINDX_ADD_ADDR :
+    if (nio_sctp_bindx(fd, (void *)sap, addrsLength, add ? SCTP_BINDX_ADD_ADDR :
                        SCTP_BINDX_REM_ADDR) != 0) {
         handleSocketError(env, errno);
     }
@@ -261,16 +261,16 @@ Java_sun_nio_ch_sctp_SctpNet_listen0
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_sctp_SctpNet_connect0
   (JNIEnv *env, jclass clazz, int fd, jobject iao, jint port) {
-    SOCKADDR sa;
-    int sa_len = SOCKADDR_LEN;
+    SOCKETADDRESS sa;
+    int sa_len = sizeof(SOCKETADDRESS);
     int rv;
 
-    if (NET_InetAddressToSockaddr(env, iao, port, (struct sockaddr *) &sa,
+    if (NET_InetAddressToSockaddr(env, iao, port, &sa.sa,
                                   &sa_len, JNI_TRUE) != 0) {
         return IOS_THROWN;
     }
 
-    rv = connect(fd, (struct sockaddr *)&sa, sa_len);
+    rv = connect(fd, &sa.sa, sa_len);
     if (rv != 0) {
         if (errno == EINPROGRESS) {
             return IOS_UNAVAILABLE;

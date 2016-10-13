@@ -530,7 +530,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
       InstanceKlass* ik = (InstanceKlass*) k;
       module_entry = ik->module();
     } else {
-      module_entry = ModuleEntryTable::javabase_module();
+      module_entry = ModuleEntryTable::javabase_moduleEntry();
     }
     // Obtain java.lang.reflect.Module, if available
     Handle module_handle(THREAD, ((module_entry != NULL) ? JNIHandles::resolve(module_entry->module()) : (oop)NULL));
@@ -734,27 +734,3 @@ bool Klass::verify_itable_index(int i) {
 }
 
 #endif
-
-/////////////// Unit tests ///////////////
-
-#ifndef PRODUCT
-
-class TestKlass {
- public:
-  static void test_oop_is_instanceClassLoader() {
-    Klass* klass = SystemDictionary::ClassLoader_klass();
-    guarantee(klass->is_instance_klass(), "assert");
-    guarantee(InstanceKlass::cast(klass)->is_class_loader_instance_klass(), "test failed");
-
-    klass = SystemDictionary::String_klass();
-    guarantee(!klass->is_instance_klass() ||
-              !InstanceKlass::cast(klass)->is_class_loader_instance_klass(),
-              "test failed");
-  }
-};
-
-void TestKlass_test() {
-  TestKlass::test_oop_is_instanceClassLoader();
-}
-
-#endif  // PRODUCT

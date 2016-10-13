@@ -341,6 +341,27 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   //        [ lo(arg) ]
   //        [ hi(arg) ]
   //
+  if (kind == Interpreter::java_lang_math_fmaD) {
+    __ movdbl(xmm2, Address(rsp, 5 * wordSize));
+    __ movdbl(xmm1, Address(rsp, 3 * wordSize));
+    __ movdbl(xmm0, Address(rsp, 1 * wordSize));
+    __ fmad(xmm0, xmm1, xmm2, xmm0);
+    __ pop(rdi);                               // get return address
+    __ mov(rsp, rsi);                          // set sp to sender sp
+    __ jmp(rdi);
+
+    return entry_point;
+  } else if (kind == Interpreter::java_lang_math_fmaF) {
+    __ movflt(xmm2, Address(rsp, 3 * wordSize));
+    __ movflt(xmm1, Address(rsp, 2 * wordSize));
+    __ movflt(xmm0, Address(rsp, 1 * wordSize));
+    __ fmaf(xmm0, xmm1, xmm2, xmm0);
+    __ pop(rdi);                               // get return address
+    __ mov(rsp, rsi);                          // set sp to sender sp
+    __ jmp(rdi);
+
+    return entry_point;
+ }
 
   __ fld_d(Address(rsp, 1*wordSize));
   switch (kind) {

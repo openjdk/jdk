@@ -775,9 +775,9 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
         case ENETUNREACH: /* Network Unreachable */
         case EAFNOSUPPORT: /* Address Family not supported */
         case EADDRNOTAVAIL: /* address is not available on  the  remote machine */
-#ifdef __linux__
+#if defined(__linux__) || defined(_AIX)
         case EINVAL:
-        case EHOSTUNREACH:
+        case EHOSTUNREACH: /* No route to host */
           /*
            * On some Linux versions, when  a socket is bound to the
            * loopback interface, connect will fail and errno will
@@ -804,7 +804,7 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
                          &optlen) <0) {
             connect_rv = errno;
           }
-          if (connect_rv == 0 || ECONNREFUSED) {
+          if (connect_rv == 0 || connect_rv == ECONNREFUSED) {
             close(fd);
             return JNI_TRUE;
           }

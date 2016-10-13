@@ -45,7 +45,7 @@ public class TestSinceTag extends JavadocTester {
         javadoc("-d", "out-since",
                 "-sourcepath", testSrc,
                 "pkg1");
-        checkExit(Exit.FAILED); // TODO: investigate
+        checkExit(Exit.OK);
 
         checkSince(true);
     }
@@ -56,7 +56,7 @@ public class TestSinceTag extends JavadocTester {
                 "-sourcepath", testSrc,
                 "-nosince",
                 "pkg1");
-        checkExit(Exit.FAILED); // TODO: investigate
+        checkExit(Exit.OK);
 
         checkSince(false);
     }

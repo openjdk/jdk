@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
 #define SHARE_VM_GC_PARALLEL_VMSTRUCTS_PARALLELGC_HPP
 
 #define VM_STRUCTS_PARALLELGC(nonstatic_field, \
-                   static_field) \
+                              volatile_nonstatic_field, \
+                              static_field) \
                                                                                                                                      \
   /**********************/                                                                                                           \
   /* Parallel GC fields */                                                                                                           \
@@ -40,7 +41,7 @@
   nonstatic_field(ImmutableSpace,              _bottom,                                       HeapWord*)                             \
   nonstatic_field(ImmutableSpace,              _end,                                          HeapWord*)                             \
                                                                                                                                      \
-  nonstatic_field(MutableSpace,                _top,                                          HeapWord*)                             \
+  volatile_nonstatic_field(MutableSpace,       _top,                                          HeapWord*)                             \
                                                                                                                                      \
   nonstatic_field(PSYoungGen,                  _reserved,                                     MemRegion)                             \
   nonstatic_field(PSYoungGen,                  _virtual_space,                                PSVirtualSpace*)                       \

@@ -41,6 +41,9 @@ module jdk.javadoc {
     exports jdk.javadoc.doclet.taglet;
     exports jdk.javadoc.doclets;
 
+    provides java.util.spi.ToolProvider
+        with jdk.javadoc.internal.tool.JavadocToolProvider;
+
     provides javax.tools.DocumentationTool
         with jdk.javadoc.internal.api.JavadocTool;
 }

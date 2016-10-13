@@ -659,6 +659,9 @@ public:
   product(bool, UseAES, false,                                              \
           "Control whether AES instructions can be used on x86/x64")        \
                                                                             \
+  product(bool, UseFMA, false,                                              \
+          "Control whether FMA instructions can be used")                   \
+                                                                            \
   product(bool, UseSHA, false,                                              \
           "Control whether SHA instructions can be used "                   \
           "on SPARC, on ARM and on x86")                                    \
@@ -1595,6 +1598,10 @@ public:
                                                                             \
   product(bool, AlwaysPreTouch, false,                                      \
           "Force all freshly committed pages to be pre-touched")            \
+                                                                            \
+  product(size_t, PreTouchParallelChunkSize, 1 * G,                         \
+          "Per-thread chunk size for parallel memory pre-touch.")           \
+          range(1, SIZE_MAX / 2)                                            \
                                                                             \
   product_pd(size_t, CMSYoungGenPerWorker,                                  \
           "The maximum size of young gen chosen by default per GC worker "  \

@@ -449,6 +449,10 @@ class MacroAssembler: public Assembler {
   // tmp is a temporary register, if none is available use noreg
   void fremr(Register tmp);
 
+  // dst = c = a * b + c
+  void fmad(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c);
+  void fmaf(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c);
+
 
   // same as fcmp2int, but using SSE2
   void cmpss2int(XMMRegister opr1, XMMRegister opr2, Register dst, bool unordered_is_less);

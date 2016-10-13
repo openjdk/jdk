@@ -440,7 +440,7 @@ public class Modules extends ModuleTestBase {
 
         execTask("--module-source-path", src.toString(),
                 "--module", "M",
-                "--expand-requires:public");
+                "--expand-requires", "public");
 
         checkModulesSpecified("M", "N", "O");
         checkModulesIncluded("M", "N", "O");
@@ -465,7 +465,7 @@ public class Modules extends ModuleTestBase {
 
         execTask("--module-source-path", src.toString(),
                 "--module", "M",
-                "--expand-requires:all");
+                "--expand-requires", "all");
 
         checkModulesSpecified("M", "java.base", "N", "L", "O");
         checkModulesIncluded("M", "java.base", "N", "L", "O");
@@ -493,7 +493,7 @@ public class Modules extends ModuleTestBase {
 
         execNegativeTask("--module-source-path", src.toString(),
                 "--module", "MIA",
-                "--expand-requires:all");
+                "--expand-requires", "all");
 
         assertErrorPresent("javadoc: error - module MIA not found.");
     }
@@ -515,7 +515,7 @@ public class Modules extends ModuleTestBase {
 
         execNegativeTask("--module-source-path", src.toString(),
                 "--module", "M,N,L,MIA,O,P",
-                "--expand-requires:all");
+                "--expand-requires", "all");
 
         assertErrorPresent("javadoc: error - module MIA not found");
     }

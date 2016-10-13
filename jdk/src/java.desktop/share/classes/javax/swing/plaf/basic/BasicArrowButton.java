@@ -27,9 +27,13 @@ package javax.swing.plaf.basic;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Path2D;
 
 import javax.swing.*;
 import javax.swing.plaf.UIResource;
+import sun.swing.SwingUtilities2;
 
 /**
  * JButton object that draws a scaled Arrow in one of the cardinal directions.
@@ -236,6 +240,16 @@ public class BasicArrowButton extends JButton implements SwingConstants
          */
         public void paintTriangle(Graphics g, int x, int y, int size,
                                         int direction, boolean isEnabled) {
+            if (SwingUtilities2.isScaledGraphics(g)) {
+                paintScaledTriangle(g, x, y, size, direction, isEnabled);
+            } else {
+                paintUnscaledTriangle(g, x, y, size, direction, isEnabled);
+            }
+        }
+
+        private void paintUnscaledTriangle(Graphics g, int x, int y, int size,
+                                           int direction, boolean isEnabled)
+        {
             Color oldColor = g.getColor();
             int mid, i, j;
 
@@ -309,4 +323,32 @@ public class BasicArrowButton extends JButton implements SwingConstants
             g.setColor(oldColor);
         }
 
+    private void paintScaledTriangle(Graphics g, double x, double y, double size,
+                                     int direction, boolean isEnabled) {
+        size = Math.max(size, 2);
+        Path2D.Double path = new Path2D.Double();
+        path.moveTo(-size, size / 2);
+        path.lineTo(size, size / 2);
+        path.lineTo(0, -size / 2);
+        path.closePath();
+        AffineTransform affineTransform = new AffineTransform();
+        affineTransform.rotate(Math.PI * (direction - 1) / 4);
+        path.transform(affineTransform);
+
+        Graphics2D g2d = (Graphics2D) g;
+        double tx = x + size / 2;
+        double ty = y + size / 2;
+        g2d.translate(tx, ty);
+        Color oldColor = g.getColor();
+        if (!isEnabled) {
+            g2d.translate(1, 0);
+            g2d.setColor(highlight);
+            g2d.fill(path);
+            g2d.translate(-1, 0);
+        }
+        g2d.setColor(isEnabled ? darkShadow : shadow);
+        g2d.fill(path);
+        g2d.translate(-tx, -ty);
+        g2d.setColor(oldColor);
+    }
 }

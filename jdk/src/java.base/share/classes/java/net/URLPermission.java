@@ -217,7 +217,7 @@ public final class URLPermission extends Permission {
      * where method-names is the list of methods separated by commas
      * and header-names is the list of permitted headers separated by commas.
      * There is no white space in the returned String. If header-names is empty
-     * then the colon separator will not be present.
+     * then the colon separator may not be present.
      */
     public String getActions() {
         return actions;

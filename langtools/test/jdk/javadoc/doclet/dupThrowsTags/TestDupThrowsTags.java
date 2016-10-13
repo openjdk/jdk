@@ -42,7 +42,7 @@ public class TestDupThrowsTags extends JavadocTester {
     void test() {
         javadoc("-d", "out",
                 testSrc("TestDupThrowsTags.java"));
-        checkExit(Exit.FAILED);
+        checkExit(Exit.ERROR);
 
         checkOutput("TestDupThrowsTags.html", true,
                 "Test 1 passes",

@@ -41,6 +41,7 @@
 #include "memory/heapInspection.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/fieldStreams.hpp"
@@ -516,7 +517,11 @@ bool InstanceKlass::link_class_or_fail(TRAPS) {
 
 bool InstanceKlass::link_class_impl(
     instanceKlassHandle this_k, bool throw_verifyerror, TRAPS) {
-  // check for error state
+  // check for error state.
+  // This is checking for the wrong state.  If the state is initialization_error,
+  // then this class *was* linked.  The CDS code does a try_link_class and uses
+  // initialization_error to mark classes to not include in the archive during
+  // DumpSharedSpaces.  This should be removed when the CDS bug is fixed.
   if (this_k->is_in_error_state()) {
     ResourceMark rm(THREAD);
     THROW_MSG_(vmSymbols::java_lang_NoClassDefFoundError(),
@@ -669,36 +674,21 @@ void InstanceKlass::link_methods(TRAPS) {
 
 // Eagerly initialize superinterfaces that declare default methods (concrete instance: any access)
 void InstanceKlass::initialize_super_interfaces(instanceKlassHandle this_k, TRAPS) {
-  if (this_k->has_default_methods()) {
-    for (int i = 0; i < this_k->local_interfaces()->length(); ++i) {
-      Klass* iface = this_k->local_interfaces()->at(i);
-      InstanceKlass* ik = InstanceKlass::cast(iface);
-      if (ik->should_be_initialized()) {
-        if (ik->has_default_methods()) {
-          ik->initialize_super_interfaces(ik, THREAD);
-        }
-        // Only initialize() interfaces that "declare" concrete methods.
-        // has_default_methods drives searching superinterfaces since it
-        // means has_default_methods in its superinterface hierarchy
-        if (!HAS_PENDING_EXCEPTION && ik->declares_default_methods()) {
-          ik->initialize(THREAD);
-        }
-        if (HAS_PENDING_EXCEPTION) {
-          Handle e(THREAD, PENDING_EXCEPTION);
-          CLEAR_PENDING_EXCEPTION;
-          {
-            EXCEPTION_MARK;
-            // Locks object, set state, and notify all waiting threads
-            this_k->set_initialization_state_and_notify(
-                initialization_error, THREAD);
+  assert (this_k->has_default_methods(), "caller should have checked this");
+  for (int i = 0; i < this_k->local_interfaces()->length(); ++i) {
+    Klass* iface = this_k->local_interfaces()->at(i);
+    InstanceKlass* ik = InstanceKlass::cast(iface);
 
-            // ignore any exception thrown, superclass initialization error is
-            // thrown below
-            CLEAR_PENDING_EXCEPTION;
-          }
-          THROW_OOP(e());
-        }
-      }
+    // Initialization is depth first search ie. we start with top of the inheritance tree
+    // has_default_methods drives searching superinterfaces since it
+    // means has_default_methods in its superinterface hierarchy
+    if (ik->has_default_methods()) {
+      ik->initialize_super_interfaces(ik, CHECK);
+    }
+
+    // Only initialize() interfaces that "declare" concrete methods.
+    if (ik->should_be_initialized() && ik->declares_default_methods()) {
+      ik->initialize(CHECK);
     }
   }
 }
@@ -764,32 +754,36 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
   }
 
   // Step 7
-  Klass* super_klass = this_k->super();
-  if (super_klass != NULL && !this_k->is_interface() && super_klass->should_be_initialized()) {
-    super_klass->initialize(THREAD);
+  // Next, if C is a class rather than an interface, initialize it's super class and super
+  // interfaces.
+  if (!this_k->is_interface()) {
+    Klass* super_klass = this_k->super();
+    if (super_klass != NULL && super_klass->should_be_initialized()) {
+      super_klass->initialize(THREAD);
+    }
+    // If C implements any interfaces that declares a non-abstract, non-static method,
+    // the initialization of C triggers initialization of its super interfaces.
+    // Only need to recurse if has_default_methods which includes declaring and
+    // inheriting default methods
+    if (!HAS_PENDING_EXCEPTION && this_k->has_default_methods()) {
+      this_k->initialize_super_interfaces(this_k, THREAD);
+    }
 
+    // If any exceptions, complete abruptly, throwing the same exception as above.
     if (HAS_PENDING_EXCEPTION) {
       Handle e(THREAD, PENDING_EXCEPTION);
       CLEAR_PENDING_EXCEPTION;
       {
         EXCEPTION_MARK;
-        this_k->set_initialization_state_and_notify(initialization_error, THREAD); // Locks object, set state, and notify all waiting threads
-        CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, superclass initialization error is thrown below
+        // Locks object, set state, and notify all waiting threads
+        this_k->set_initialization_state_and_notify(initialization_error, THREAD);
+        CLEAR_PENDING_EXCEPTION;
       }
       DTRACE_CLASSINIT_PROBE_WAIT(super__failed, this_k(), -1,wait);
       THROW_OOP(e());
     }
   }
 
-  // If C is an interface that declares a non-abstract, non-static method,
-  // the initialization of a class (not an interface) that implements C directly or
-  // indirectly.
-  // Recursively initialize any superinterfaces that declare default methods
-  // Only need to recurse if has_default_methods which includes declaring and
-  // inheriting default methods
-  if (!this_k->is_interface() && this_k->has_default_methods()) {
-    this_k->initialize_super_interfaces(this_k, CHECK);
-  }
 
   // Step 8
   {
@@ -851,10 +845,15 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
 
 void InstanceKlass::set_initialization_state_and_notify_impl(instanceKlassHandle this_k, ClassState state, TRAPS) {
   oop init_lock = this_k->init_lock();
-  ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
-  this_k->set_init_state(state);
-  this_k->fence_and_clear_init_lock();
-  ol.notify_all(CHECK);
+  if (init_lock != NULL) {
+    ObjectLocker ol(init_lock, THREAD);
+    this_k->set_init_state(state);
+    this_k->fence_and_clear_init_lock();
+    ol.notify_all(CHECK);
+  } else {
+    assert(init_lock != NULL, "The initialization state should never be set twice");
+    this_k->set_init_state(state);
+  }
 }
 
 // The embedded _implementor field can only record one implementor.
@@ -1972,11 +1971,6 @@ void InstanceKlass::remove_unshareable_info() {
     m->remove_unshareable_info();
   }
 
-  // cached_class_file might be pointing to a malloc'ed buffer allocated by
-  // event-based tracing code at CDS dump time. It's not usable at runtime
-  // so let's clear it.
-  set_cached_class_file(NULL);
-
   // do array classes also.
   array_klasses_do(remove_unshareable_in_class);
 }
@@ -2070,6 +2064,7 @@ void InstanceKlass::release_C_heap_structures(InstanceKlass* ik) {
 }
 
 void InstanceKlass::release_C_heap_structures() {
+  assert(!this->is_shared(), "should not be called for a shared class");
 
   // Can't release the constant pool here because the constant pool can be
   // deallocated separately from the InstanceKlass for default methods and
@@ -2250,8 +2245,8 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
         // the java.base module.  If a non-java.base package is erroneously placed
         // in the java.base module it will be caught later when java.base
         // is defined by ModuleEntryTable::verify_javabase_packages check.
-        assert(ModuleEntryTable::javabase_module() != NULL, "java.base module is NULL");
-        _package_entry = loader_data->packages()->lookup(pkg_name, ModuleEntryTable::javabase_module());
+        assert(ModuleEntryTable::javabase_moduleEntry() != NULL, "java.base module is NULL");
+        _package_entry = loader_data->packages()->lookup(pkg_name, ModuleEntryTable::javabase_moduleEntry());
       } else {
         assert(loader_data->modules()->unnamed_module() != NULL, "unnamed module is NULL");
         _package_entry = loader_data->packages()->lookup(pkg_name,
@@ -3653,6 +3648,15 @@ Method* InstanceKlass::method_with_orig_idnum(int idnum, int version) {
 }
 
 #if INCLUDE_JVMTI
+JvmtiCachedClassFileData* InstanceKlass::get_cached_class_file() {
+  if (MetaspaceShared::is_in_shared_space(_cached_class_file)) {
+    // Ignore the archived class stream data
+    return NULL;
+  } else {
+    return _cached_class_file;
+  }
+}
+
 jint InstanceKlass::get_cached_class_file_len() {
   return VM_RedefineClasses::get_cached_class_file_len(_cached_class_file);
 }
@@ -3660,4 +3664,15 @@ jint InstanceKlass::get_cached_class_file_len() {
 unsigned char * InstanceKlass::get_cached_class_file_bytes() {
   return VM_RedefineClasses::get_cached_class_file_bytes(_cached_class_file);
 }
+
+#if INCLUDE_CDS
+JvmtiCachedClassFileData* InstanceKlass::get_archived_class_data() {
+  assert(this->is_shared(), "class should be shared");
+  if (MetaspaceShared::is_in_shared_space(_cached_class_file)) {
+    return _cached_class_file;
+  } else {
+    return NULL;
+  }
+}
+#endif
 #endif

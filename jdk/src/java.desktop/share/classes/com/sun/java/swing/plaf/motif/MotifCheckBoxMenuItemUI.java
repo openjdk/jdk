@@ -33,6 +33,7 @@ import javax.swing.plaf.basic.BasicCheckBoxMenuItemUI;
 
 import java.awt.*;
 import java.awt.event.*;
+import sun.swing.SwingUtilities2;
 
 
 /**
@@ -89,7 +90,8 @@ public class MotifCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI
             Point p = e.getPoint();
             if(p.x >= 0 && p.x < menuItem.getWidth() &&
                p.y >= 0 && p.y < menuItem.getHeight()) {
-                if (UIManager.getBoolean("CheckBoxMenuItem.closeOnMouseClick")) {
+                String property = "CheckBoxMenuItem.doNotCloseOnMouseClick";
+                if (!SwingUtilities2.getBoolean(menuItem, property)) {
                     manager.clearSelectedPath();
                 }
                 menuItem.doClick(0);

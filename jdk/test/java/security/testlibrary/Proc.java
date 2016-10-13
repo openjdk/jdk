@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Permission;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -37,6 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -49,7 +51,8 @@ import java.util.stream.Stream;
  *        .args("x")            // with args
  *        .env("env", "value")  // and an environment variable
  *        .prop("key","value")  // and a system property
- *        .perm(perm)           // with granted permissions
+ *        .grant(file)          // grant codes in this codebase
+ *        .perm(perm)           // with the permission
  *        .start();             // and start
  *
  * create/start must be called, args/env/prop/perm can be called zero or
@@ -57,7 +60,7 @@ import java.util.stream.Stream;
  *
  * The controller can call inheritIO to share its I/O to the process.
  * Otherwise, it can send data into a proc's stdin with write/println, and
- * read its stdout with readLine. stderr is always redirected to DFILE
+ * read its stdout with readLine. stderr is always redirected to a file
  * unless nodump() is called. A protocol is designed to make
  * data exchange among the controller and the processes super easy, in which
  * useful data are always printed with a special prefix ("PROCISFUN:").
@@ -84,10 +87,10 @@ import java.util.stream.Stream;
  *
  * As the Proc objects are hidden so deeply, two static methods, d(String) and
  * d(Throwable) are provided to output info into stderr, where they will
- * normally be appended messages to DFILE (unless nodump() is called).
+ * normally be appended messages to a debug file (unless nodump() is called).
  * Developers can view the messages in real time by calling
  *
- *    tail -f proc.debug
+ *    {@code tail -f stderr.<debug>}
  *
  * TODO:
  *
@@ -104,19 +107,24 @@ public class Proc {
     private BufferedReader br;      // the stdout of a process
     private String launcher;        // Optional: the java program
 
-    private List<Permission> perms = new ArrayList<>();
     private List<String> args = new ArrayList<>();
     private Map<String,String> env = new HashMap<>();
     private Map<String,String> prop = new HashMap();
     private boolean inheritIO = false;
     private boolean noDump = false;
 
+    private List<String> cp;        // user-provided classpath
     private String clazz;           // Class to launch
     private String debug;           // debug flag, controller will show data
-                                    // transfer between procs
+                                    // transfer between procs. If debug is set,
+                                    // it MUST be different between Procs.
 
     final private static String PREFIX = "PROCISFUN:";
-    final private static String DFILE = "proc.debug";
+
+    // policy file
+    final private StringBuilder perms = new StringBuilder();
+    // temporary saving the grant line in a policy file
+    final private StringBuilder grant = new StringBuilder();
 
     // The following methods are called by controllers
 
@@ -168,10 +176,68 @@ public class Proc {
         prop.put(a, b);
         return this;
     }
-    // Adds a perm to policy. Can be called multiple times. In order to make it
-    // effective, please also call prop("java.security.manager", "").
+    // Sets classpath. If not called, Proc will choose a classpath. If called
+    // with no arg, no classpath will be used. Can be called multiple times.
+    public Proc cp(String... s) {
+        if (cp == null) {
+            cp = new ArrayList<>();
+        }
+        cp.addAll(Arrays.asList(s));
+        return this;
+    }
+    // Adds a permission to policy. Can be called multiple times.
+    // All perm() calls after a series of grant() calls are grouped into
+    // a single grant block. perm() calls before any grant() call are grouped
+    // into a grant block with no restriction.
+    // Please note that in order to make permissions effective, also call
+    // prop("java.security.manager", "").
     public Proc perm(Permission p) {
-        perms.add(p);
+        if (grant.length() != 0) {      // Right after grant(s)
+            if (perms.length() != 0) {  // Not first block
+                perms.append("};\n");
+            }
+            perms.append("grant ").append(grant).append(" {\n");
+            grant.setLength(0);
+        } else {
+            if (perms.length() == 0) {  // First block w/o restriction
+                perms.append("grant {\n");
+            }
+        }
+        if (p.getActions().isEmpty()) {
+            String s = String.format("%s \"%s\"",
+                    p.getClass().getCanonicalName(),
+                    p.getName()
+                            .replace("\\", "\\\\").replace("\"", "\\\""));
+            perms.append("    permission ").append(s).append(";\n");
+        } else {
+            String s = String.format("%s \"%s\", \"%s\"",
+                    p.getClass().getCanonicalName(),
+                    p.getName()
+                            .replace("\\", "\\\\").replace("\"", "\\\""),
+                    p.getActions());
+            perms.append("    permission ").append(s).append(";\n");
+        }
+        return this;
+    }
+
+    // Adds a grant option to policy. If called in a row, a single grant block
+    // with all options will be created. If there are perm() call(s) between
+    // grant() calls, they belong to different grant blocks
+
+    // grant on a principal
+    public Proc grant(Principal p) {
+        grant.append("principal ").append(p.getClass().getName())
+                .append(" \"").append(p.getName()).append("\", ");
+        return this;
+    }
+    // grant on a codebase
+    public Proc grant(File f) {
+        grant.append("codebase \"").append(f.toURI()).append("\", ");
+        return this;
+    }
+    // arbitrary grant
+    public Proc grant(String v) {
+        grant.append(v).append(", ");
         return this;
     }
     // Starts the proc
@@ -191,30 +257,22 @@ public class Proc {
         Collections.addAll(cmd, splitProperty("test.vm.opts"));
         Collections.addAll(cmd, splitProperty("test.java.opts"));
 
-        cmd.add("-cp");
-        cmd.add(System.getProperty("test.class.path") + File.pathSeparator +
-                System.getProperty("test.src.path"));
+        if (cp == null) {
+            cmd.add("-cp");
+            cmd.add(System.getProperty("test.class.path") + File.pathSeparator +
+                    System.getProperty("test.src.path"));
+        } else if (!cp.isEmpty()) {
+            cmd.add("-cp");
+            cmd.add(cp.stream().collect(Collectors.joining(File.pathSeparator)));
+        }
 
         for (Entry<String,String> e: prop.entrySet()) {
             cmd.add("-D" + e.getKey() + "=" + e.getValue());
         }
-        if (!perms.isEmpty()) {
-            Path p = Files.createTempFile(
-                    Paths.get(".").toAbsolutePath(), "policy", null);
-            StringBuilder sb = new StringBuilder();
-            sb.append("grant {\n");
-            for (Permission perm: perms) {
-                // Sometimes a permission has no name or actions.
-                // but it's safe to use an empty string.
-                String s = String.format("%s \"%s\", \"%s\"",
-                        perm.getClass().getCanonicalName(),
-                        perm.getName()
-                                .replace("\\", "\\\\").replace("\"", "\\\""),
-                        perm.getActions());
-                sb.append("    permission ").append(s).append(";\n");
-            }
-            sb.append("};\n");
-            Files.write(p, sb.toString().getBytes());
+        if (perms.length() > 0) {
+            Path p = Paths.get(getId("policy")).toAbsolutePath();
+            perms.append("};\n");
+            Files.write(p, perms.toString().getBytes());
             cmd.add("-Djava.security.policy=" + p.toString());
         }
         cmd.add(clazz);
@@ -223,6 +281,15 @@ public class Proc {
         }
         if (debug != null) {
             System.out.println("PROC: " + debug + " cmdline: " + cmd);
+            for (String c : cmd) {
+                if (c.indexOf('\\') >= 0 || c.indexOf(' ') > 0) {
+                    System.out.print('\'' + c + '\'');
+                } else {
+                    System.out.print(c);
+                }
+                System.out.print(' ');
+            }
+            System.out.println();
         }
         ProcessBuilder pb = new ProcessBuilder(cmd);
         for (Entry<String,String> e: env.entrySet()) {
@@ -233,11 +300,16 @@ public class Proc {
         } else if (noDump) {
             pb.redirectError(ProcessBuilder.Redirect.INHERIT);
         } else {
-            pb.redirectError(ProcessBuilder.Redirect.appendTo(new File(DFILE)));
+            pb.redirectError(ProcessBuilder.Redirect
+                    .appendTo(new File(getId("stderr"))));
         }
         p = pb.start();
         br = new BufferedReader(new InputStreamReader(p.getInputStream()));
         return this;
+    }
+    String getId(String prefix) {
+        if (debug != null) return prefix + "." + debug;
+        else return prefix + "." + System.identityHashCode(this);
     }
     // Reads a line from stdout of proc
     public String readLine() throws IOException {

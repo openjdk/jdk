@@ -47,7 +47,7 @@ public class TestWarnings extends JavadocTester {
         javadoc("-d", "out-default",
                 "-sourcepath", testSrc,
                 "pkg");
-        checkExit(Exit.FAILED);
+        checkExit(Exit.ERROR);
 
         checkOutput(Output.OUT, true,
                 "X.java:23: error: self-closing element not allowed");
@@ -75,7 +75,7 @@ public class TestWarnings extends JavadocTester {
                 "-private",
                 "-sourcepath", testSrc,
                 "pkg");
-        checkExit(Exit.FAILED);
+        checkExit(Exit.ERROR);
 
         checkOutput("pkg/X.html", true,
             "<a href=\"../pkg/X.html#m--\"><code>m()</code></a><br/>",

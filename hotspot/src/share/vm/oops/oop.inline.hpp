@@ -109,11 +109,21 @@ Klass* oopDesc::klass() const {
 }
 
 Klass* oopDesc::klass_or_null() const volatile {
-  // can be NULL in CMS
   if (UseCompressedClassPointers) {
     return Klass::decode_klass(_metadata._compressed_klass);
   } else {
     return _metadata._klass;
+  }
+}
+
+Klass* oopDesc::klass_or_null_acquire() const volatile {
+  if (UseCompressedClassPointers) {
+    // Workaround for non-const load_acquire parameter.
+    const volatile narrowKlass* addr = &_metadata._compressed_klass;
+    volatile narrowKlass* xaddr = const_cast<volatile narrowKlass*>(addr);
+    return Klass::decode_klass(OrderAccess::load_acquire(xaddr));
+  } else {
+    return (Klass*)OrderAccess::load_ptr_acquire(&_metadata._klass);
   }
 }
 
@@ -129,16 +139,32 @@ narrowKlass* oopDesc::compressed_klass_addr() {
   return &_metadata._compressed_klass;
 }
 
+#define CHECK_SET_KLASS(k)                                                \
+  do {                                                                    \
+    assert(Universe::is_bootstrapping() || k != NULL, "NULL Klass");      \
+    assert(Universe::is_bootstrapping() || k->is_klass(), "not a Klass"); \
+  } while (0)
+
 void oopDesc::set_klass(Klass* k) {
-  // since klasses are promoted no store check is needed
-  assert(Universe::is_bootstrapping() || k != NULL, "must be a real Klass*");
-  assert(Universe::is_bootstrapping() || k->is_klass(), "not a Klass*");
+  CHECK_SET_KLASS(k);
   if (UseCompressedClassPointers) {
     *compressed_klass_addr() = Klass::encode_klass_not_null(k);
   } else {
     *klass_addr() = k;
   }
 }
+
+void oopDesc::release_set_klass(Klass* k) {
+  CHECK_SET_KLASS(k);
+  if (UseCompressedClassPointers) {
+    OrderAccess::release_store(compressed_klass_addr(),
+                               Klass::encode_klass_not_null(k));
+  } else {
+    OrderAccess::release_store_ptr(klass_addr(), k);
+  }
+}
+
+#undef CHECK_SET_KLASS
 
 int oopDesc::klass_gap() const {
   return *(int*)(((intptr_t)this) + klass_gap_offset_in_bytes());

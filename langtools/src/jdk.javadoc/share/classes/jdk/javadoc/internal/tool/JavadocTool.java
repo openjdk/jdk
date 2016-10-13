@@ -27,7 +27,6 @@ package jdk.javadoc.internal.tool;
 
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -50,6 +49,8 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Position;
 import jdk.javadoc.doclet.DocletEnvironment;
+
+import static jdk.javadoc.internal.tool.Main.Result.*;
 
 /**
  *  This class could be the main entry point for Javadoc when Javadoc is used as a
@@ -120,9 +121,10 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         }
     }
 
-    public DocletEnvironment getEnvironment(Map<ToolOption, Object> jdtoolOpts,
-                                      List<String> javaNames,
-                                      Iterable<? extends JavaFileObject> fileObjects) throws IOException {
+    public DocletEnvironment getEnvironment(Map<ToolOption,
+            Object> jdtoolOpts,
+            List<String> javaNames,
+            Iterable<? extends JavaFileObject> fileObjects) throws ToolException {
         toolEnv = ToolEnvironment.instance(context);
         toolEnv.initialize(jdtoolOpts);
         ElementsTable etable = new ElementsTable(context, jdtoolOpts);
@@ -133,10 +135,12 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         if (etable.xclasses) {
             // If -Xclasses is set, the args should be a list of class names
             for (String arg: javaNames) {
-                if (!isValidPackageName(arg)) // checks
-                    toolEnv.error("main.illegal_class_name", arg);
+                if (!isValidPackageName(arg)) { // checks
+                    String text = messager.getText("main.illegal_class_name", arg);
+                    throw new ToolException(CMDERR, text);
+                }
             }
-            if (messager.nerrors() != 0) {
+            if (messager.hasErrors()) {
                 return null;
             }
             etable.setClassArgList(javaNames);
@@ -157,19 +161,23 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             for (String arg: javaNames) {
                 if (fm != null && arg.endsWith(".java") && new File(arg).exists()) {
                     if (new File(arg).getName().equals("module-info.java")) {
-                        toolEnv.warning("main.file_ignored", arg);
+                        messager.printWarningUsingKey("main.file_ignored", arg);
                     } else {
                         parse(fm.getJavaFileObjects(arg), classTrees, true);
                     }
                 } else if (isValidPackageName(arg)) {
                     packageNames.add(arg);
                 } else if (arg.endsWith(".java")) {
-                    if (fm == null)
-                        throw new IllegalArgumentException();
-                    else
-                        toolEnv.error("main.file_not_found", arg);
+                    if (fm == null) {
+                        String text = messager.getText("main.assertion.error", "fm == null");
+                        throw new ToolException(ABNORMAL, text);
+                    } else {
+                        String text = messager.getText("main.file_not_found", arg);
+                        throw new ToolException(ERROR, text);
+                    }
                 } else {
-                    toolEnv.error("main.illegal_package_name", arg);
+                    String text = messager.getText("main.illegal_package_name", arg);
+                    throw new ToolException(CMDERR, text);
                 }
             }
 
@@ -185,7 +193,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             parse(etable.getFilesToParse(), packageTrees, false);
             modules.enter(packageTrees.toList(), null);
 
-            if (messager.nerrors() != 0) {
+            if (messager.hasErrors()) {
                 return null;
             }
 
@@ -197,10 +205,19 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             enterDone = true;
             etable.analyze();
         } catch (CompletionFailure cf) {
-            toolEnv.printError(cf.getMessage());
-        } catch (Abort ex) {}
+            throw new ToolException(ABNORMAL, cf.getMessage(), cf);
+        } catch (Abort abort) {
+            if (messager.hasErrors()) {
+                // presumably a message has been emitted, keep silent
+                throw new ToolException(ABNORMAL, "", abort);
+            } else {
+                String text = messager.getText("main.internal.error");
+                Throwable t = abort.getCause() == null ? abort : abort.getCause();
+                throw new ToolException(ABNORMAL, text, t);
+            }
+        }
 
-        if (messager.nerrors() != 0)
+        if (messager.hasErrors())
             return null;
 
         toolEnv.docEnv = new DocEnvImpl(toolEnv, etable);

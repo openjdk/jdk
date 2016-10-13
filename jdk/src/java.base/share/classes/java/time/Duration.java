@@ -88,8 +88,6 @@ import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -578,8 +576,7 @@ public final class Duration
      * the simple initialization in Duration.
      */
     private static class DurationUnits {
-        static final List<TemporalUnit> UNITS =
-                Collections.unmodifiableList(Arrays.<TemporalUnit>asList(SECONDS, NANOS));
+        static final List<TemporalUnit> UNITS = List.of(SECONDS, NANOS);
     }
 
     //-----------------------------------------------------------------------

@@ -23,15 +23,21 @@
  * questions.
  */
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
 
 /*
   @test
-  @bug       8160570
-  @summary   Tests that a modal dialog receives WINDOW_ACTIVATED & WINDOW_GAINED_FOCUS on first show.
+  @key headful
+  @bug 8160570 8166015
+  @summary Tests that a modal dialog receives WINDOW_ACTIVATED
+            & WINDOW_GAINED_FOCUS on first show.
 */
+
 public class ModalDialogActivationTest {
     static final Object lock = new Object();
     static volatile boolean activated;
@@ -48,7 +54,8 @@ public class ModalDialogActivationTest {
             }
         }
         if (!activated || !focused) {
-            throw new RuntimeException("Test FAILED: activated: " + activated + ", focused: " + focused);
+            throw new RuntimeException("Test FAILED: activated: " + activated
+                                        + ", focused: " + focused);
         }
         System.out.println("Test PASSED");
     }
@@ -79,7 +86,7 @@ public class ModalDialogActivationTest {
     }
 
     static class MyModalDialog extends JDialog {
-        public MyModalDialog(Frame owner, String title)ª {
+        public MyModalDialog(Frame owner, String title) {
             super(owner, title, true);
         }
 

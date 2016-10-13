@@ -26,6 +26,7 @@
 package jdk.tools.jmod;
 
 import java.io.*;
+import java.util.spi.ToolProvider;
 
 public class Main {
     public static void main(String... args) throws Exception {
@@ -37,13 +38,24 @@ public class Main {
     /**
      * Entry point that does <i>not</i> call System.exit.
      *
-     * @param args command line arguments
      * @param out output stream
+     * @param err error output stream
+     * @param args command line arguments
      * @return an exit code. 0 means success, non-zero means an error occurred.
      */
-    public static int run(String[] args, PrintStream out) {
+    public static int run(PrintWriter out, PrintWriter err, String... args) {
         JmodTask t = new JmodTask();
-        t.setLog(out);
+        t.setLog(out, err);
         return t.run(args);
+    }
+
+    public static class JmodToolProvider implements ToolProvider {
+        public String name() {
+            return "jmod";
+        }
+
+        public int run(PrintWriter out, PrintWriter err, String... args) {
+            return Main.run(out, err, args);
+        }
     }
 }

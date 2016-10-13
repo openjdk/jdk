@@ -42,6 +42,8 @@
 
     <PackageDoc>
         <Content>
+            <PackageDescription/>
+            <PackageTags/>
             <Summary>
                 <InterfaceSummary/>
                 <ClassSummary/>
@@ -50,8 +52,6 @@
                 <ErrorSummary/>
                 <AnnotationTypeSummary/>
             </Summary>
-            <PackageDescription/>
-            <PackageTags/>
         </Content>
     </PackageDoc>
 

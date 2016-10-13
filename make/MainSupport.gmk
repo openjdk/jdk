@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -88,9 +88,7 @@ define Clean-native
 	@$(PRINTF) "\n" $(LOG_DEBUG)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/native/$(strip $1)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)
-	$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_libs-stripped/$(strip $1)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_cmds/$(strip $1)
-	$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_cmds-stripped/$(strip $1)
 	@$(PRINTF) " done\n"
 endef
 
@@ -137,7 +135,6 @@ MAKE_MAKEDIR_LIST := make
 define DeclareRecipeForModuleMakefile
   ifeq ($$($1_MULTIPLE_MAKEFILES), true)
     $2-$$($1_TARGET_SUFFIX): $2-$$($1_TARGET_SUFFIX)-$$(notdir $3)
-    $1 += $2-$$($1_TARGET_SUFFIX)-$$(notdir $3)
 
     $2-$$($1_TARGET_SUFFIX)-$$(notdir $3):
   else
@@ -173,6 +170,12 @@ define DeclareRecipesForPhaseAndModule
 
   # Only declare recipes if there are makefiles to call
   ifneq ($$($1_$2_TOPDIRS), )
+    # Add the top dir specific target to target list regardless of if recipe
+    # generation is disabled.
+    ifeq ($$($1_MULTIPLE_MAKEFILES), true)
+      $$(foreach d, $$($1_$2_TOPDIRS), \
+        $$(eval $1 += $2-$$($1_TARGET_SUFFIX)-$$(notdir $$d)))
+    endif
     ifeq ($(NO_RECIPES),)
       $$(foreach d, $$($1_$2_TOPDIRS), \
           $$(eval $$(call DeclareRecipeForModuleMakefile,$1,$2,$$d)))

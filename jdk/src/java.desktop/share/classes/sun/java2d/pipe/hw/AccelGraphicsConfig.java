@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,26 +70,4 @@ public interface AccelGraphicsConfig extends BufferedContextProvider {
      * @see ContextCapabilities
      */
     public ContextCapabilities getContextCapabilities();
-
-    /**
-     * Adds an {@code AccelDeviceEventListener} to listen to accelerated
-     * device's (which is associated with this {@code AccelGraphicsConfig})
-     * events.
-     *
-     * Note: a hard link to the listener may be kept so it must be explicitly
-     * removed via {@link #removeDeviceEventListener}.
-     *
-     * @param l the listener
-     * @see AccelDeviceEventListener
-     */
-    public void addDeviceEventListener(AccelDeviceEventListener l);
-
-    /**
-     * Removes an {@code AccelDeviceEventListener} from the list of listeners
-     * for this device's events.
-     *
-     * @param l the listener
-     * @see AccelDeviceEventListener
-     */
-    public void removeDeviceEventListener(AccelDeviceEventListener l);
 }

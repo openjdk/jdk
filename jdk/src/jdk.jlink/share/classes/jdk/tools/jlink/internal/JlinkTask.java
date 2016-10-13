@@ -153,7 +153,7 @@ public class JlinkTask {
             = taskHelper.newOptionsHelper(JlinkTask.class, recognizedOptions);
     private PrintWriter log;
 
-    void setLog(PrintWriter out) {
+    void setLog(PrintWriter out, PrintWriter err) {
         log = out;
         taskHelper.setLog(log);
     }
@@ -182,7 +182,8 @@ public class JlinkTask {
 
     int run(String[] args) {
         if (log == null) {
-            setLog(new PrintWriter(System.out, true));
+            setLog(new PrintWriter(System.out, true),
+                   new PrintWriter(System.err, true));
         }
         try {
             optionsHelper.handleOptions(this, args);

@@ -50,6 +50,6 @@ public class TestBadSourceFile extends JavadocTester {
         javadoc("-Xdoclint:none",
                 "-d", "out",
                 testSrc("C2.java"));
-        checkExit(Exit.FAILED);
+        checkExit(Exit.ERROR);
     }
 }

@@ -61,6 +61,7 @@ public class AtomicReferenceArray9Test extends JSR166TestCase {
                 () -> aa.compareAndExchange(j, null, null),
                 () -> aa.compareAndExchangeAcquire(j, null, null),
                 () -> aa.compareAndExchangeRelease(j, null, null),
+                () -> aa.weakCompareAndSetPlain(j, null, null),
                 () -> aa.weakCompareAndSetVolatile(j, null, null),
                 () -> aa.weakCompareAndSetAcquire(j, null, null),
                 () -> aa.weakCompareAndSetRelease(j, null, null),
@@ -210,6 +211,22 @@ public class AtomicReferenceArray9Test extends JSR166TestCase {
             assertEquals(m4, aa.compareAndExchangeRelease(i,m5, seven));
             assertEquals(m4, aa.get(i));
             assertEquals(m4, aa.compareAndExchangeRelease(i, m4, seven));
+            assertEquals(seven, aa.get(i));
+        }
+    }
+
+    /**
+     * repeated weakCompareAndSetPlain succeeds in changing value when equal
+     * to expected
+     */
+    public void testWeakCompareAndSetPlain() {
+        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(SIZE);
+        for (int i = 0; i < SIZE; i++) {
+            aa.set(i, one);
+            do {} while (!aa.weakCompareAndSetPlain(i, one, two));
+            do {} while (!aa.weakCompareAndSetPlain(i, two, m4));
+            assertEquals(m4, aa.get(i));
+            do {} while (!aa.weakCompareAndSetPlain(i, m4, seven));
             assertEquals(seven, aa.get(i));
         }
     }

@@ -436,11 +436,42 @@ Zone America/Denver	-6:59:56 -	LMT	1883 Nov 18 12:00:04
 # north of the Salmon River, and the towns of Burgdorf and Warren),
 # Nevada (except West Wendover), Oregon (except the northern 3/4 of
 # Malheur county), and Washington
+
+# From Paul Eggert (2016-08-20):
+# In early February 1948, in response to California's electricity shortage,
+# PG&E changed power frequency from 60 to 59.5 Hz during daylight hours,
+# causing electric clocks to lose six minutes per day.  (This did not change
+# legal time, and is not part of the data here.)  See:
+# Ross SA. An energy crisis from the past: Northern California in 1948.
+# Working Paper No. 8, Institute of Governmental Studies, UC Berkeley,
+# 1973-11.  http://escholarship.org/uc/item/8x22k30c
+#
+# In another measure to save electricity, DST was instituted from 1948-03-14
+# at 02:01 to 1949-01-16 at 02:00, with the governor having the option to move
+# the fallback transition earlier.  See pages 3-4 of:
+# http://clerk.assembly.ca.gov/sites/clerk.assembly.ca.gov/files/archive/Statutes/1948/48Vol1_Chapters.pdf
+#
+# In response:
+#
+#   Governor Warren received a torrent of objecting mail, and it is not too much
+#   to speculate that the objections to Daylight Saving Time were one important
+#   factor in the defeat of the Dewey-Warren Presidential ticket in California.
+#     -- Ross, p 25
+#
+# On December 8 the governor exercised the option, setting the date to January 1
+# (LA Times 1948-12-09).  The transition time was 02:00 (LA Times 1949-01-01).
+#
+# Despite the controversy, in 1949 California voters approved Proposition 12,
+# which established DST from April's last Sunday at 01:00 until September's
+# last Sunday at 02:00. This was amended by 1962's Proposition 6, which changed
+# the fall-back date to October's last Sunday. See:
+# http://repository.uchastings.edu/cgi/viewcontent.cgi?article=1501&context=ca_ballot_props
+# http://repository.uchastings.edu/cgi/viewcontent.cgi?article=1636&context=ca_ballot_props
 #
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
-Rule	CA	1948	only	-	Mar	14	2:00	1:00	D
+Rule	CA	1948	only	-	Mar	14	2:01	1:00	D
 Rule	CA	1949	only	-	Jan	 1	2:00	0	S
-Rule	CA	1950	1966	-	Apr	lastSun	2:00	1:00	D
+Rule	CA	1950	1966	-	Apr	lastSun	1:00	1:00	D
 Rule	CA	1950	1961	-	Sep	lastSun	2:00	0	S
 Rule	CA	1962	1966	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -3304,7 +3335,7 @@ Zone America/Miquelon	-3:44:40 -	LMT	1911 May 15 # St Pierre
 # indicating that the normal ET rules are followed.
 #
 # From Paul Eggert (2014-08-19):
-# The 2014-08-13 Cabinet meeting decided to stay on UTC-4 year-round.  See:
+# The 2014-08-13 Cabinet meeting decided to stay on UT -04 year-round.  See:
 # http://tcweeklynews.com/daylight-savings-time-to-be-maintained-p5353-127.htm
 # Model this as a switch from EST/EDT to AST ...
 # From Chris Walton (2014-11-04):

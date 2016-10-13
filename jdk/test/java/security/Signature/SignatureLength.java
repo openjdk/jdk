@@ -21,15 +21,20 @@
  * questions.
  */
 
-import java.security.*;
-
 /*
  * @test
  * @bug 8161571
  * @summary Reject signatures presented for verification that contain extra
  *          bytes.
+ * @modules jdk.crypto.ec
  * @run main SignatureLength
  */
+
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.Signature;
+import java.security.SignatureException;
+
 public class SignatureLength {
 
     public static void main(String[] args) throws Exception {

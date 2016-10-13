@@ -172,7 +172,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public void addComments(TypeMirror holderType, ExecutableElement method, Content methodDocTree) {
         TypeElement holder = utils.asTypeElement(holderType);
-        if (!utils.getBody(method).isEmpty()) {
+        if (!utils.getFullBody(method).isEmpty()) {
             if (holder.equals(typeElement) ||
                     !(utils.isPublic(holder) ||
                     utils.isLinkable(holder))) {
