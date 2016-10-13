@@ -776,19 +776,21 @@ int InstructForm::memory_operand(FormDict &globals) const {
 // This instruction captures the machine-independent bottom_type
 // Expected use is for pointer vs oop determination for LoadP
 bool InstructForm::captures_bottom_type(FormDict &globals) const {
-  if( _matrule && _matrule->_rChild &&
-       (!strcmp(_matrule->_rChild->_opType,"CastPP")       ||  // new result type
-        !strcmp(_matrule->_rChild->_opType,"CastX2P")      ||  // new result type
-        !strcmp(_matrule->_rChild->_opType,"DecodeN")      ||
-        !strcmp(_matrule->_rChild->_opType,"EncodeP")      ||
-        !strcmp(_matrule->_rChild->_opType,"DecodeNKlass") ||
-        !strcmp(_matrule->_rChild->_opType,"EncodePKlass") ||
-        !strcmp(_matrule->_rChild->_opType,"LoadN")        ||
-        !strcmp(_matrule->_rChild->_opType,"LoadNKlass")   ||
-        !strcmp(_matrule->_rChild->_opType,"CreateEx")     ||  // type of exception
-        !strcmp(_matrule->_rChild->_opType,"CheckCastPP")  ||
-        !strcmp(_matrule->_rChild->_opType,"GetAndSetP")   ||
-        !strcmp(_matrule->_rChild->_opType,"GetAndSetN")) )  return true;
+  if (_matrule && _matrule->_rChild &&
+      (!strcmp(_matrule->_rChild->_opType,"CastPP")       ||  // new result type
+       !strcmp(_matrule->_rChild->_opType,"CastX2P")      ||  // new result type
+       !strcmp(_matrule->_rChild->_opType,"DecodeN")      ||
+       !strcmp(_matrule->_rChild->_opType,"EncodeP")      ||
+       !strcmp(_matrule->_rChild->_opType,"DecodeNKlass") ||
+       !strcmp(_matrule->_rChild->_opType,"EncodePKlass") ||
+       !strcmp(_matrule->_rChild->_opType,"LoadN")        ||
+       !strcmp(_matrule->_rChild->_opType,"LoadNKlass")   ||
+       !strcmp(_matrule->_rChild->_opType,"CreateEx")     ||  // type of exception
+       !strcmp(_matrule->_rChild->_opType,"CheckCastPP")  ||
+       !strcmp(_matrule->_rChild->_opType,"GetAndSetP")   ||
+       !strcmp(_matrule->_rChild->_opType,"GetAndSetN")   ||
+       !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeP") ||
+       !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeN")))  return true;
   else if ( is_ideal_load() == Form::idealP )                return true;
   else if ( is_ideal_store() != Form::none  )                return true;
 
