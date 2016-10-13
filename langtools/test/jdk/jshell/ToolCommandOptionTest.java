@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8157395 8157393 8157517 8158738
+ * @bug 8157395 8157393 8157517 8158738  8167128
  * @summary Tests of jshell comand options, and undoing operations
  * @modules jdk.jshell/jdk.internal.jshell.tool
  * @build ToolCommandOptionTest ReplToolTesting
@@ -101,13 +101,17 @@ public class ToolCommandOptionTest extends ReplToolTesting {
                         "|  Unknown option: -all -- /drop -all"),
                 (a) -> assertCommandOutputStartsWith(a, "/drop z",
                         "|  No such snippet: z"),
-                (a) -> assertCommandOutputStartsWith(a, "/drop 2",
-                        "|  This command does not accept the snippet '2' : x"),
+                (a) -> assertCommand(a, "/drop 2",
+                        ""),
+                (a) -> assertCommandOutputStartsWith(a, "23qwl",
+                        "|  Error:"),
+                (a) -> assertCommandOutputStartsWith(a, "/drop e1",
+                        "|  This command does not accept the snippet 'e1' : 23qwl"),
                 (a) -> assertCommand(a, "/dr x y",
                         "|  dropped variable x\n" +
                         "|  dropped variable y"),
                 (a) -> assertCommand(a, "/list",
-                        "2 : x")
+                        "")
         );
     }
 

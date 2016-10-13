@@ -321,6 +321,7 @@ jtreg-tests: check-jtreg FRC
 	  $(JTREG_EXCLUSIONS) \
 	  $(JTREG_OPTIONS) \
 	  $(JTREG_TESTDIRS) \
+	    2>&1 | tee $(JTREG_OUTPUT_DIR)/output.txt \
 	|| ( $(call EXIT_IF_FATAL,$(FATAL_JTREG_EXIT)) ; \
 	    echo $$status > $(JTREG_OUTPUT_DIR)/status.txt \
 	)
