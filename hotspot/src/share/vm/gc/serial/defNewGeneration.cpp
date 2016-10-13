@@ -648,15 +648,10 @@ void DefNewGeneration::collect(bool   full,
     // See: CardTableModRefBSForCTRS::non_clean_card_iterate_possibly_parallel.
     StrongRootsScope srs(0);
 
-    gch->gen_process_roots(&srs,
-                           GenCollectedHeap::YoungGen,
-                           true,  // Process younger gens, if any,
-                                  // as strong roots.
-                           GenCollectedHeap::SO_ScavengeCodeCache,
-                           GenCollectedHeap::StrongAndWeakRoots,
-                           &fsc_with_no_gc_barrier,
-                           &fsc_with_gc_barrier,
-                           &cld_scan_closure);
+    gch->young_process_roots(&srs,
+                             &fsc_with_no_gc_barrier,
+                             &fsc_with_gc_barrier,
+                             &cld_scan_closure);
   }
 
   // "evacuate followers".

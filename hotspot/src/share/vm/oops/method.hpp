@@ -584,6 +584,7 @@ class Method : public Metadata {
   // checks method and its method holder
   bool is_final_method() const;
   bool is_final_method(AccessFlags class_access_flags) const;
+  // interface method declared with 'default' - excludes private interface methods
   bool is_default_method() const;
 
   // true if method needs no dynamic dispatch (final and/or no vtable entry)

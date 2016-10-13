@@ -277,7 +277,8 @@ int Method::validate_bci_from_bcp(address bcp) const {
 }
 
 address Method::bcp_from(int bci) const {
-  assert((is_native() && bci == 0) || (!is_native() && 0 <= bci && bci < code_size()), "illegal bci: %d", bci);
+  assert((is_native() && bci == 0) || (!is_native() && 0 <= bci && bci < code_size()),
+         "illegal bci: %d for %s method", bci, is_native() ? "native" : "non-native");
   address bcp = code_base() + bci;
   assert(is_native() && bcp == code_base() || contains(bcp), "bcp doesn't belong to this method");
   return bcp;
@@ -558,7 +559,7 @@ bool Method::compute_has_loops_flag() {
 bool Method::is_final_method(AccessFlags class_access_flags) const {
   // or "does_not_require_vtable_entry"
   // default method or overpass can occur, is not final (reuses vtable entry)
-  // private methods get vtable entries for backward class compatibility.
+  // private methods in classes get vtable entries for backward class compatibility.
   if (is_overpass() || is_default_method())  return false;
   return is_final() || class_access_flags.is_final();
 }
@@ -570,7 +571,7 @@ bool Method::is_final_method() const {
 bool Method::is_default_method() const {
   if (method_holder() != NULL &&
       method_holder()->is_interface() &&
-      !is_abstract()) {
+      !is_abstract() && !is_private()) {
     return true;
   } else {
     return false;
@@ -583,7 +584,9 @@ bool Method::can_be_statically_bound(AccessFlags class_access_flags) const {
   ResourceMark rm;
   bool is_nonv = (vtable_index() == nonvirtual_vtable_index);
   if (class_access_flags.is_interface()) {
-    assert(is_nonv == is_static(), "is_nonv=%s", name_and_sig_as_C_string());
+      assert(is_nonv == is_static() || is_nonv == is_private(),
+             "nonvirtual unexpected for non-static, non-private: %s",
+             name_and_sig_as_C_string());
   }
 #endif
   assert(valid_vtable_index() || valid_itable_index(), "method must be linked before we ask this question");

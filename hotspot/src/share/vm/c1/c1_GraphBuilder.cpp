@@ -1929,7 +1929,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
         // number of implementors for decl_interface is 0 or 1. If
         // it's 0 then no class implements decl_interface and there's
         // no point in inlining.
-        if (!holder->is_loaded() || decl_interface->nof_implementors() != 1 || decl_interface->has_default_methods()) {
+        if (!holder->is_loaded() || decl_interface->nof_implementors() != 1 || decl_interface->has_nonstatic_concrete_methods()) {
           singleton = NULL;
         }
       }
@@ -4308,7 +4308,7 @@ void GraphBuilder::print_stats() {
 void GraphBuilder::profile_call(ciMethod* callee, Value recv, ciKlass* known_holder, Values* obj_args, bool inlined) {
   assert(known_holder == NULL || (known_holder->is_instance_klass() &&
                                   (!known_holder->is_interface() ||
-                                   ((ciInstanceKlass*)known_holder)->has_default_methods())), "should be default method");
+                                   ((ciInstanceKlass*)known_holder)->has_nonstatic_concrete_methods())), "should be non-static concrete method");
   if (known_holder != NULL) {
     if (known_holder->exact_klass() == NULL) {
       known_holder = compilation()->cha_exact_type(known_holder);
