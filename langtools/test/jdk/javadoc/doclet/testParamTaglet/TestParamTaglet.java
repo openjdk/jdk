@@ -46,7 +46,7 @@ public class TestParamTaglet extends JavadocTester {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg");
-        checkExit(Exit.FAILED);
+        checkExit(Exit.ERROR);
 
         checkOutput("pkg/C.html", true,
                 //Regular param tags.

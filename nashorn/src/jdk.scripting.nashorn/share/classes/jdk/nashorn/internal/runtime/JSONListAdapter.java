@@ -155,7 +155,7 @@ public final class JSONListAdapter extends ListAdapter implements JSObject {
     }
 
     @Override
-    public Object getDefaultValue(Class<?> hint) throws UnsupportedOperationException {
+    public Object getDefaultValue(final Class<?> hint) throws UnsupportedOperationException {
         return obj.getDefaultValue(hint);
     }
 }

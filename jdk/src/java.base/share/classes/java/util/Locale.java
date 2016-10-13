@@ -1027,7 +1027,7 @@ public final class Locale implements Cloneable, Serializable {
      * not contain ALL valid codes that can be used to create Locales.
      * </ul>
      *
-     * @return Am array of ISO 639 two-letter language codes.
+     * @return An array of ISO 639 two-letter language codes.
      */
     public static String[] getISOLanguages() {
         if (isoLanguages == null) {

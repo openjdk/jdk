@@ -574,7 +574,7 @@ public final class MemberInfo implements Cloneable {
 
     String getDocumentationKey(final String objName) {
         if (kind == Kind.FUNCTION) {
-            StringBuilder buf = new StringBuilder(objName);
+            final StringBuilder buf = new StringBuilder(objName);
             switch (where) {
                 case CONSTRUCTOR:
                     break;

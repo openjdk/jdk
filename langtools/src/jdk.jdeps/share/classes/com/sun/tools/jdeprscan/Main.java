@@ -89,8 +89,6 @@ import javax.lang.model.element.TypeElement;
  *  - multi-version jar
  */
 public class Main implements DiagnosticListener<JavaFileObject> {
-    public static Main instance;
-
     final PrintStream out;
     final PrintStream err;
     final List<File> bootClassPath = new ArrayList<>();
@@ -415,13 +413,6 @@ public class Main implements DiagnosticListener<JavaFileObject> {
     }
 
     /**
-     * Prints a usage message to the err stream.
-     */
-    void usage() {
-
-    }
-
-    /**
      * An enum denoting the mode in which the tool is running.
      * Different modes correspond to the different process* methods.
      * The exception is UNKNOWN, which indicates that a mode wasn't
@@ -504,7 +495,6 @@ public class Main implements DiagnosticListener<JavaFileObject> {
                     args.remove();
                     switch (a) {
                         case "--class-path":
-                        case "-cp":
                             classPath.clear();
                             Arrays.stream(args.remove().split(File.pathSeparator))
                                   .map(File::new)
@@ -699,12 +689,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
      * @return true on success, false otherwise
      */
     public static boolean call(PrintStream out, PrintStream err, String... args) {
-        try {
-            instance = new Main(out, err);
-            return instance.run(args);
-        } finally {
-            instance = null;
-        }
+        return new Main(out, err).run(args);
     }
 
     /**

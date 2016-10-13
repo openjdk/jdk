@@ -39,37 +39,17 @@ import java.io.UncheckedIOException;
 import java.lang.module.ModuleDescriptor;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * Utilities to run jdeps command
  */
 public final class JdepsUtil {
-    /*
-     * Runs jdeps with the given arguments
-     */
-    public static String[] jdeps(String... args) {
-        String lineSep =     System.getProperty("line.separator");
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        System.err.println("jdeps " + Arrays.stream(args).collect(Collectors.joining(" ")));
-        int rc = com.sun.tools.jdeps.Main.run(args, pw);
-        pw.close();
-        String out = sw.toString();
-        if (!out.isEmpty())
-            System.err.println(out);
-        if (rc != 0)
-            throw new Error("jdeps failed: rc=" + rc);
-        return out.split(lineSep);
-    }
-
     public static Command newCommand(String cmd) {
         return new Command(cmd);
     }

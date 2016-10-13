@@ -29,22 +29,18 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.CompositeOperation;
 import jdk.dynalink.NamedOperation;
 import jdk.dynalink.Operation;
-import jdk.dynalink.CompositeOperation;
 import jdk.dynalink.StandardOperation;
+import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.GuardingDynamicLinker;
 import jdk.dynalink.linker.GuardingDynamicLinkerExporter;
-import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.LinkRequest;
 import jdk.dynalink.linker.LinkerServices;
 import jdk.dynalink.linker.support.SimpleLinkRequest;
@@ -62,9 +58,9 @@ public final class UnderscoreNameLinkerExporter extends GuardingDynamicLinkerExp
     private static final Pattern UNDERSCORE_NAME = Pattern.compile("_(.)");
 
     // translate underscore_separated name as a CamelCase name
-    private static String translateToCamelCase(String name) {
-        Matcher m = UNDERSCORE_NAME.matcher(name);
-        StringBuilder buf = new StringBuilder();
+    private static String translateToCamelCase(final String name) {
+        final Matcher m = UNDERSCORE_NAME.matcher(name);
+        final StringBuilder buf = new StringBuilder();
         while (m.find()) {
             m.appendReplacement(buf, m.group(1).toUpperCase());
         }
@@ -94,28 +90,28 @@ public final class UnderscoreNameLinkerExporter extends GuardingDynamicLinkerExp
         final ArrayList<GuardingDynamicLinker> linkers = new ArrayList<>();
         linkers.add(new GuardingDynamicLinker() {
             @Override
-            public GuardedInvocation getGuardedInvocation(LinkRequest request,
-                LinkerServices linkerServices) throws Exception {
+            public GuardedInvocation getGuardedInvocation(final LinkRequest request,
+                final LinkerServices linkerServices) throws Exception {
                 final Object self = request.getReceiver();
-                CallSiteDescriptor desc = request.getCallSiteDescriptor();
-                Operation op = desc.getOperation();
-                Object name = NamedOperation.getName(op);
+                final CallSiteDescriptor desc = request.getCallSiteDescriptor();
+                final Operation op = desc.getOperation();
+                final Object name = NamedOperation.getName(op);
                 // is this a named GET_METHOD?
-                boolean isGetMethod = getFirstStandardOperation(desc) == StandardOperation.GET_METHOD;
+                final boolean isGetMethod = getFirstStandardOperation(desc) == StandardOperation.GET_METHOD;
                 if (isGetMethod && name instanceof String) {
-                    String str = (String)name;
+                    final String str = (String)name;
                     if (str.indexOf('_') == -1) {
                         return null;
                     }
 
-                    String nameStr = translateToCamelCase(str);
+                    final String nameStr = translateToCamelCase(str);
                     // create a new call descriptor to use translated name
-                    CallSiteDescriptor newDesc = new CallSiteDescriptor(
+                    final CallSiteDescriptor newDesc = new CallSiteDescriptor(
                         desc.getLookup(),
                         new NamedOperation(NamedOperation.getBaseOperation(op), nameStr),
                         desc.getMethodType());
                     // create a new Link request to link the call site with translated name
-                    LinkRequest newRequest = new SimpleLinkRequest(newDesc,
+                    final LinkRequest newRequest = new SimpleLinkRequest(newDesc,
                         request.isCallSiteUnstable(), request.getArguments());
                     // return guarded invocation linking the translated request
                     return linkerServices.getGuardedInvocation(newRequest);

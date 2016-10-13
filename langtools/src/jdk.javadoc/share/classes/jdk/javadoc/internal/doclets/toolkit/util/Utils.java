@@ -1453,7 +1453,7 @@ public class Utils {
     public void setEnumDocumentation(TypeElement elem) {
         for (Element e : getMethods(elem)) {
             ExecutableElement ee = (ExecutableElement)e;
-            if (!getBody(e).isEmpty()) // if already set skip it please
+            if (!getFullBody(e).isEmpty()) // ignore if already set
                 continue;
             if (ee.getSimpleName().contentEquals("values") && ee.getParameters().isEmpty()) {
                 configuration.cmtUtils.setEnumValuesTree(configuration, e);
@@ -2939,12 +2939,18 @@ public class Utils {
         return dcTree;
     }
 
+    public List<? extends DocTree> getFullBody(Element element) {
+        DocCommentTree docCommentTree = getDocCommentTree(element);
+            return (docCommentTree == null)
+                    ? Collections.emptyList()
+                    : docCommentTree.getFullBody();
+    }
+
     public List<? extends DocTree> getBody(Element element) {
         DocCommentTree docCommentTree = getDocCommentTree(element);
-        if (docCommentTree == null)
-            return Collections.emptyList();
-
-        return docCommentTree.getFullBody();
+        return (docCommentTree == null)
+                ? Collections.emptyList()
+                : docCommentTree.getFullBody();
     }
 
     public List<? extends DocTree> getDeprecatedTrees(Element element) {

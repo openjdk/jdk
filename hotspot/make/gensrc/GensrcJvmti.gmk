@@ -67,7 +67,8 @@ define SetupXslTransformBody
   $$($1_OUTPUT_DIR)/$1: $$($1_XML_FILE) $$($1_XSL_FILE) $$($1_DEPS) $$(BUILD_JVMTI_TOOLS)
 	$$(call LogInfo, Generating $$(@F))
 	$$(call MakeDir, $$(@D))
-	$$(call ExecuteWithLog, $$@, $$(TOOL_JVMTI_GEN) -IN $$($1_XML_FILE) -XSL $$($1_XSL_FILE) -OUT $$@ $$($1_ARGS))
+	$$(call ExecuteWithLog, $$@, $$(TOOL_JVMTI_GEN) -IN $$($1_XML_FILE) \
+	    -XSL $$($1_XSL_FILE) -OUT $$@ $$($1_ARGS))
         # jvmtiGen does not return error code properly on fail.
         # NOTE: We should really fix jvmtiGen.java instead.
 	test -f $$@
@@ -129,13 +130,28 @@ $(JVMTI_OUTPUTDIR)/jvmtiEnvRecommended.cpp: $(JVMTI_SRCDIR)/jvmtiEnv.cpp \
 TARGETS += $(JVMTI_OUTPUTDIR)/jvmtiEnvRecommended.cpp
 
 ################################################################################
+# Disable copy of jvmti.h from hotspot until this has been cleared up. The file
+# is currently being copied from the jdk repository. See JDK-8167078.
+# Copy jvmti.h to include dir
+
+# The file is the same regardless of jvm variant. Only let one do the copy.
+#ifeq ($(JVM_VARIANT), $(firstword $(JVM_VARIANTS)))
+#  $(eval $(call SetupCopyFiles, COPY_JVMTI_H, \
+#      DEST := $(SUPPORT_OUTPUTDIR)/modules_include/java.base, \
+#      FILES := $(JVMTI_OUTPUTDIR)/jvmti.h, \
+#  ))
+
+#  TARGETS += $(COPY_JVMTI_H)
+#endif
+
+################################################################################
 # Create trace files in gensrc/tracefiles
 
 TRACE_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/gensrc/tracefiles
 TRACE_SRCDIR := $(HOTSPOT_TOPDIR)/src/share/vm/trace
 
-# Append directories to search (might have been set by custom extensions)
-TRACE_SEARCH_DIRS += $(TRACE_SRCDIR)
+# Append list of XSL files to search (might have been set by custom extensions)
+TRACE_XSL_FILES += $(wildcard $(TRACE_SRCDIR)/*.xsl)
 
 TRACE_XML ?= $(TRACE_SRCDIR)/trace.xml
 
@@ -155,7 +171,7 @@ TRACE_DEPS += \
 define SetupTraceGeneration
   $$(eval $$(call SetupXslTransform, $1, \
       XML_FILE := $$(TRACE_XML), \
-      XSL_FILE := $$(firstword $$(wildcard $$(addsuffix /$$(basename $1).xsl, $$(TRACE_SEARCH_DIRS)))), \
+      XSL_FILE := $$(firstword $$(filter %/$$(basename $1).xsl, $$(TRACE_XSL_FILES))), \
       OUTPUT_DIR := $$(TRACE_OUTPUTDIR), \
       DEPS := $$(TRACE_DEPS), \
   ))

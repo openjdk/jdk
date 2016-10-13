@@ -43,11 +43,54 @@
     <xsl:call-template name="microversion"/>
   </xsl:template>
 
+  <xsl:variable name="GPL_header">
+    <!-- The Copyright comment from jvmti.xml -->
+    <xsl:value-of select="/comment()[position()=1]"/>
+  </xsl:variable>
+
+  <xsl:variable name="GPL_CP_header_body">
+    <xsl:text> * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.&#xA;</xsl:text>
+    <xsl:text> *&#xA;</xsl:text>
+    <xsl:text> * This code is free software; you can redistribute it and/or modify it&#xA;</xsl:text>
+    <xsl:text> * under the terms of the GNU General Public License version 2 only, as&#xA;</xsl:text>
+    <xsl:text> * published by the Free Software Foundation.  Oracle designates this&#xA;</xsl:text>
+    <xsl:text> * particular file as subject to the "Classpath" exception as provided&#xA;</xsl:text>
+    <xsl:text> * by Oracle in the LICENSE file that accompanied this code.&#xA;</xsl:text>
+    <xsl:text> *&#xA;</xsl:text>
+    <xsl:text> * This code is distributed in the hope that it will be useful, but WITHOUT&#xA;</xsl:text>
+    <xsl:text> * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or&#xA;</xsl:text>
+    <xsl:text> * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License&#xA;</xsl:text>
+    <xsl:text> * version 2 for more details (a copy is included in the LICENSE file that&#xA;</xsl:text>
+    <xsl:text> * accompanied this code).&#xA;</xsl:text>
+    <xsl:text> *&#xA;</xsl:text>
+    <xsl:text> * You should have received a copy of the GNU General Public License version&#xA;</xsl:text>
+    <xsl:text> * 2 along with this work; if not, write to the Free Software Foundation,&#xA;</xsl:text>
+    <xsl:text> * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.&#xA;</xsl:text>
+    <xsl:text> *&#xA;</xsl:text>
+    <xsl:text> * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA&#xA;</xsl:text>
+    <xsl:text> * or visit www.oracle.com if you need additional information or have any&#xA;</xsl:text>
+    <xsl:text> * questions.&#xA;</xsl:text>
+  </xsl:variable>
+
   <xsl:template name="copyrightComment">
     <xsl:text>/*</xsl:text>
-    <!-- Copy the Copyright comment from jvmti.xml -->
-    <xsl:value-of select="/comment()[position()=1]"/>
+    <!-- The Copyright comment from jvmti.xml -->
+    <xsl:value-of select="$GPL_header"/>
     <xsl:text> */&#xA;&#xA;</xsl:text>
+  </xsl:template>
+
+  <xsl:template name="GPL_CP_copyrightComment">
+    <xsl:text>/*&#xA; *</xsl:text>
+    <!-- The Copyright year from jvmti.xml -->
+    <xsl:value-of select="substring-after(substring-before($GPL_header, ' DO NOT ALTER'), '&#xA;')"/>
+    <!-- The GPL+CP Copyright header body -->
+    <xsl:value-of select="$GPL_CP_header_body"/>
+    <xsl:text> */&#xA;&#xA;</xsl:text>
+  </xsl:template>
+
+  <xsl:template name="include_GPL_CP_Header">
+    <xsl:call-template name="GPL_CP_copyrightComment"/>
+    <xsl:text> /* AUTOMATICALLY GENERATED FILE - DO NOT EDIT */&#xA;</xsl:text>    
   </xsl:template>
 
   <xsl:template name="includeHeader">

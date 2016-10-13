@@ -214,7 +214,7 @@ public class LinkerCallSite extends ChainedCallSite {
                 // new target uses a more precise 'self' type than Object.class. We need to
                 // convert the filter type. Note that the profileEntry method returns "self"
                 // argument "as is" and so the cast introduced will succeed for any type.
-                MethodType selfFilterType = MethodType.methodType(newSelfType, newSelfType);
+                final MethodType selfFilterType = MethodType.methodType(newSelfType, newSelfType);
                 selfFilter = selfFilter.asType(selfFilterType);
             }
 

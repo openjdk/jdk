@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import test.java.awt.regtesthelpers.Util;
 /*
  @test
  @key headful
- @bug 7079254
+ @bug 7079254 8163261
  @summary Toolkit eventListener leaks memory
  @library ../regtesthelpers
  @build Util
@@ -93,8 +93,15 @@ public class LWDispatcherMemoryLeakTest {
             }
         }
         alloc = null;
+        String leakObjs = "";
         if (button.get() != null) {
-            throw new Exception("Test failed: JButton was not collected");
+            leakObjs = "JButton";
+        }
+        if (p.get() != null) {
+            leakObjs += " JPanel";
+        }
+        if (leakObjs != "") {
+            throw new Exception("Test failed: " + leakObjs + " not collected");
         }
     }
 

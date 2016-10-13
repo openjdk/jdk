@@ -34,7 +34,7 @@ import java.beans.*;
 import java.util.*;
 import java.util.List;
 import sun.util.logging.PlatformLogger;
-
+import java.awt.geom.AffineTransform;
 import sun.awt.*;
 
 import sun.java2d.pipe.Region;
@@ -391,6 +391,11 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
             int h = getSysIconHeight();
             int smw = getSysSmIconWidth();
             int smh = getSysSmIconHeight();
+            AffineTransform tx = getGraphicsConfiguration().getDefaultTransform();
+            w = Region.clipScale(w, tx.getScaleX());
+            h = Region.clipScale(h, tx.getScaleY());
+            smw = Region.clipScale(smw, tx.getScaleX());
+            smh = Region.clipScale(smh, tx.getScaleY());
             DataBufferInt iconData = SunToolkit.getScaledIconData(imageList,
                                                                   w, h);
             DataBufferInt iconSmData = SunToolkit.getScaledIconData(imageList,

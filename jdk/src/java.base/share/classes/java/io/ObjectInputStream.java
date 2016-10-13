@@ -26,6 +26,7 @@
 package java.io;
 
 import java.io.ObjectStreamClass.WeakClassKey;
+import java.lang.System.Logger;
 import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
@@ -37,10 +38,12 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
 import static java.io.ObjectStreamClass.processQueue;
-import jdk.internal.misc.JavaObjectInputStreamAccess;
+
 import jdk.internal.misc.ObjectStreamClassValidator;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.Unsafe;
@@ -172,6 +175,16 @@ import sun.reflect.misc.ReflectUtil;
  * protected) or that there are get and set methods that can be used to restore
  * the state.
  *
+ * <p>The contents of the stream can be filtered during deserialization.
+ * If a {@linkplain #setObjectInputFilter(ObjectInputFilter) filter is set}
+ * on an ObjectInputStream, the {@link ObjectInputFilter} can check that
+ * the classes, array lengths, number of references in the stream, depth, and
+ * number of bytes consumed from the input stream are allowed and
+ * if not, can terminate deserialization.
+ * A {@linkplain ObjectInputFilter.Config#setSerialFilter(ObjectInputFilter) process-wide filter}
+ * can be configured that is applied to each {@code ObjectInputStream} unless replaced
+ * using {@link #setObjectInputFilter(ObjectInputFilter) setObjectInputFilter}.
+ *
  * <p>Any exception that occurs while deserializing an object will be caught by
  * the ObjectInputStream and abort the reading process.
  *
@@ -240,12 +253,32 @@ public class ObjectInputStream
             new ReferenceQueue<>();
     }
 
+    /*
+     * Separate class to defer initialization of logging until needed.
+     */
+    private static class Logging {
+        /*
+         * Logger for ObjectInputFilter results.
+         * Setup the filter logger if it is set to DEBUG or TRACE.
+         * (Assuming it will not change).
+         */
+        static final System.Logger filterLogger;
+
+        static {
+            Logger filterLog = System.getLogger("java.io.serialization");
+            filterLogger = (filterLog.isLoggable(Logger.Level.DEBUG)
+                    || filterLog.isLoggable(Logger.Level.TRACE)) ? filterLog : null;
+        }
+    }
+
     /** filter stream for handling block data conversion */
     private final BlockDataInputStream bin;
     /** validation callback list */
     private final ValidationList vlist;
     /** recursion depth */
-    private int depth;
+    private long depth;
+    /** Total number of references to any type of object, class, enum, proxy, etc. */
+    private long totalObjectRefs;
     /** whether stream is closed */
     private boolean closed;
 
@@ -269,10 +302,19 @@ public class ObjectInputStream
     private SerialCallbackContext curContext;
 
     /**
+     * Filter of class descriptors and classes read from the stream;
+     * may be null.
+     */
+    private ObjectInputFilter serialFilter;
+
+    /**
      * Creates an ObjectInputStream that reads from the specified InputStream.
      * A serialization stream header is read from the stream and verified.
      * This constructor will block until the corresponding ObjectOutputStream
      * has written and flushed the header.
+     *
+     * <p>The serialization filter is initialized to the value of
+     * {@linkplain ObjectInputFilter.Config#getSerialFilter() the process-wide filter}.
      *
      * <p>If a security manager is installed, this constructor will check for
      * the "enableSubclassImplementation" SerializablePermission when invoked
@@ -295,6 +337,7 @@ public class ObjectInputStream
         bin = new BlockDataInputStream(in);
         handles = new HandleTable(10);
         vlist = new ValidationList();
+        serialFilter = ObjectInputFilter.Config.getSerialFilter();
         enableOverride = false;
         readStreamHeader();
         bin.setBlockDataMode(true);
@@ -304,6 +347,9 @@ public class ObjectInputStream
      * Provide a way for subclasses that are completely reimplementing
      * ObjectInputStream to not have to allocate private data just used by this
      * implementation of ObjectInputStream.
+     *
+     * <p>The serialization filter is initialized to the value of
+     * {@linkplain ObjectInputFilter.Config#getSerialFilter() the process-wide filter}.
      *
      * <p>If there is a security manager installed, this method first calls the
      * security manager's <code>checkPermission</code> method with the
@@ -325,6 +371,7 @@ public class ObjectInputStream
         bin = null;
         handles = null;
         vlist = null;
+        serialFilter = ObjectInputFilter.Config.getSerialFilter();
         enableOverride = true;
     }
 
@@ -332,7 +379,7 @@ public class ObjectInputStream
      * Read an object from the ObjectInputStream.  The class of the object, the
      * signature of the class, and the values of the non-transient and
      * non-static fields of the class and all of its supertypes are read.
-     * Default deserializing for a class can be overriden using the writeObject
+     * Default deserializing for a class can be overridden using the writeObject
      * and readObject methods.  Objects referenced by this object are read
      * transitively so that a complete equivalent graph of objects is
      * reconstructed by readObject.
@@ -342,6 +389,10 @@ public class ObjectInputStream
      * validation callbacks are executed in order based on their registered
      * priorities. The callbacks are registered by objects (in the readObject
      * special methods) as they are individually restored.
+     *
+     * <p>The serialization filter, when not {@code null}, is invoked for
+     * each object (regular or class) read to reconstruct the root object.
+     * See {@link #setObjectInputFilter(ObjectInputFilter) setObjectInputFilter} for details.
      *
      * <p>Exceptions are thrown for problems with the InputStream and for
      * classes that should not be deserialized.  All exceptions are fatal to
@@ -437,6 +488,10 @@ public class ObjectInputStream
      * array object is unique and cannot be obtained a second time from an
      * invocation of readObject or readUnshared on the ObjectInputStream,
      * even if the underlying data stream has been manipulated.
+     *
+     * <p>The serialization filter, when not {@code null}, is invoked for
+     * each object (regular or class) read to reconstruct the root object.
+     * See {@link #setObjectInputFilter(ObjectInputFilter) setObjectInputFilter} for details.
      *
      * <p>ObjectInputStream subclasses which override this method can only be
      * constructed in security contexts possessing the
@@ -1094,6 +1149,134 @@ public class ObjectInputStream
     }
 
     /**
+     * Returns the serialization filter for this stream.
+     * The serialization filter is the most recent filter set in
+     * {@link #setObjectInputFilter setObjectInputFilter} or
+     * the initial process-wide filter from
+     * {@link ObjectInputFilter.Config#getSerialFilter() ObjectInputFilter.Config.getSerialFilter}.
+     *
+     * @return the serialization filter for the stream; may be null
+     * @since 9
+     */
+    public final ObjectInputFilter getObjectInputFilter() {
+        return serialFilter;
+    }
+
+    /**
+     * Set the serialization filter for the stream.
+     * The filter's {@link ObjectInputFilter#checkInput checkInput} method is called
+     * for each class and reference in the stream.
+     * The filter can check any or all of the class, the array length, the number
+     * of references, the depth of the graph, and the size of the input stream.
+     * <p>
+     * If the filter returns {@link ObjectInputFilter.Status#REJECTED Status.REJECTED},
+     * {@code null} or throws a {@link RuntimeException},
+     * the active {@code readObject} or {@code readUnshared}
+     * throws {@link InvalidClassException}, otherwise deserialization
+     * continues uninterrupted.
+     * <p>
+     * The serialization filter is initialized to the value of
+     * {@link ObjectInputFilter.Config#getSerialFilter() ObjectInputFilter.Config.getSerialFilter}
+     * when the {@code  ObjectInputStream} is constructed and can be set
+     * to a custom filter only once.
+     *
+     * @implSpec
+     * The filter, when not {@code null}, is invoked during {@link #readObject readObject}
+     * and {@link #readUnshared readUnshared} for each object
+     * (regular or class) in the stream including the following:
+     * <ul>
+     *     <li>each object reference previously deserialized from the stream
+     *     (class is {@code null}, arrayLength is -1),
+     *     <li>each regular class (class is not {@code null}, arrayLength is -1),
+     *     <li>each interface of a dynamic proxy and the dynamic proxy class itself
+     *     (class is not {@code null}, arrayLength is -1),
+     *     <li>each array is filtered using the array type and length of the array
+     *     (class is the array type, arrayLength is the requested length),
+     *     <li>each object replaced by its class' {@code readResolve} method
+     *         is filtered using the replacement object's class, if not {@code null},
+     *         and if it is an array, the arrayLength, otherwise -1,
+     *     <li>and each object replaced by {@link #resolveObject resolveObject}
+     *         is filtered using the replacement object's class, if not {@code null},
+     *         and if it is an array, the arrayLength, otherwise -1.
+     * </ul>
+     *
+     * When the {@link ObjectInputFilter#checkInput checkInput} method is invoked
+     * it is given access to the current class, the array length,
+     * the current number of references already read from the stream,
+     * the depth of nested calls to {@link #readObject readObject} or
+     * {@link #readUnshared readUnshared},
+     * and the implementation dependent number of bytes consumed from the input stream.
+     * <p>
+     * Each call to {@link #readObject readObject} or
+     * {@link #readUnshared readUnshared} increases the depth by 1
+     * before reading an object and decreases by 1 before returning
+     * normally or exceptionally.
+     * The depth starts at {@code 1} and increases for each nested object and
+     * decrements when each nested call returns.
+     * The count of references in the stream starts at {@code 1} and
+     * is increased before reading an object.
+     *
+     * @param filter the filter, may be null
+     * @throws SecurityException if there is security manager and the
+     *       {@code SerializablePermission("serialFilter")} is not granted
+     * @throws IllegalStateException if the {@linkplain #getObjectInputFilter() current filter}
+     *       is not {@code null} and is not the process-wide filter
+     * @since 9
+     */
+    public final void setObjectInputFilter(ObjectInputFilter filter) {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(ObjectStreamConstants.SERIAL_FILTER_PERMISSION);
+        }
+        // Allow replacement of the process-wide filter if not already set
+        if (serialFilter != null &&
+                serialFilter != ObjectInputFilter.Config.getSerialFilter()) {
+            throw new IllegalStateException("filter can not be set more than once");
+        }
+        this.serialFilter = filter;
+    }
+
+    /**
+     * Invoke the serialization filter if non-null.
+     * If the filter rejects or an exception is thrown, throws InvalidClassException.
+     *
+     * @param clazz the class; may be null
+     * @param arrayLength the array length requested; use {@code -1} if not creating an array
+     * @throws InvalidClassException if it rejected by the filter or
+     *        a {@link RuntimeException} is thrown
+     */
+    private void filterCheck(Class<?> clazz, int arrayLength)
+            throws InvalidClassException {
+        if (serialFilter != null) {
+            RuntimeException ex = null;
+            ObjectInputFilter.Status status;
+            try {
+                status = serialFilter.checkInput(new FilterValues(clazz, arrayLength,
+                        totalObjectRefs, depth, bin.getBytesRead()));
+            } catch (RuntimeException e) {
+                // Preventive interception of an exception to log
+                status = ObjectInputFilter.Status.REJECTED;
+                ex = e;
+            }
+            if (Logging.filterLogger != null) {
+                // Debug logging of filter checks that fail; Tracing for those that succeed
+                Logging.filterLogger.log(status == null || status == ObjectInputFilter.Status.REJECTED
+                                ? Logger.Level.DEBUG
+                                : Logger.Level.TRACE,
+                        "ObjectInputFilter {0}: {1}, array length: {2}, nRefs: {3}, depth: {4}, bytes: {5}, ex: {6}",
+                        status, clazz, arrayLength, totalObjectRefs, depth, bin.getBytesRead(),
+                        Objects.toString(ex, "n/a"));
+            }
+            if (status == null ||
+                    status == ObjectInputFilter.Status.REJECTED) {
+                InvalidClassException ice = new InvalidClassException("filter status: " + status);
+                ice.initCause(ex);
+                throw ice;
+            }
+        }
+    }
+
+    /**
      * Provide access to the persistent fields read from the input stream.
      */
     public abstract static class GetField {
@@ -1280,7 +1463,7 @@ public class ObjectInputStream
      */
     private static Boolean auditSubclass(Class<?> subcl) {
         return AccessController.doPrivileged(
-            new PrivilegedAction<>() {
+            new PrivilegedAction<Boolean>() {
                 public Boolean run() {
                     for (Class<?> cl = subcl;
                          cl != ObjectInputStream.class;
@@ -1340,6 +1523,7 @@ public class ObjectInputStream
         }
 
         depth++;
+        totalObjectRefs++;
         try {
             switch (tc) {
                 case TC_NULL:
@@ -1416,6 +1600,15 @@ public class ObjectInputStream
         }
         Object rep = resolveObject(obj);
         if (rep != obj) {
+            // The type of the original object has been filtered but resolveObject
+            // may have replaced it;  filter the replacement's type
+            if (rep != null) {
+                if (rep.getClass().isArray()) {
+                    filterCheck(rep.getClass(), Array.getLength(rep));
+                } else {
+                    filterCheck(rep.getClass(), -1);
+                }
+            }
             handles.setObject(passHandle, rep);
         }
         return rep;
@@ -1486,6 +1679,7 @@ public class ObjectInputStream
             throw new InvalidObjectException(
                 "cannot read back reference to unshared object");
         }
+        filterCheck(null, -1);       // just a check for number of references, depth, no class
         return obj;
     }
 
@@ -1590,6 +1784,10 @@ public class ObjectInputStream
                 ReflectUtil.checkProxyPackageAccess(
                         getClass().getClassLoader(),
                         cl.getInterfaces());
+                // Filter the interfaces
+                for (Class<?> clazz : cl.getInterfaces()) {
+                    filterCheck(clazz, -1);
+                }
             }
         } catch (ClassNotFoundException ex) {
             resolveEx = ex;
@@ -1597,6 +1795,9 @@ public class ObjectInputStream
         skipCustomData();
 
         desc.initProxy(cl, resolveEx, readClassDesc(false));
+
+        // Call filterCheck on the definition
+        filterCheck(desc.forClass(), -1);
 
         handles.finish(descHandle);
         passHandle = descHandle;
@@ -1645,8 +1846,12 @@ public class ObjectInputStream
 
         desc.initNonProxy(readDesc, cl, resolveEx, readClassDesc(false));
 
+        // Call filterCheck on the definition
+        filterCheck(desc.forClass(), -1);
+
         handles.finish(descHandle);
         passHandle = descHandle;
+
         return desc;
     }
 
@@ -1686,6 +1891,8 @@ public class ObjectInputStream
 
         ObjectStreamClass desc = readClassDesc(false);
         int len = bin.readInt();
+
+        filterCheck(desc.forClass(), len);
 
         Object array = null;
         Class<?> cl, ccl = null;
@@ -1835,6 +2042,14 @@ public class ObjectInputStream
                 rep = cloneArray(rep);
             }
             if (rep != obj) {
+                // Filter the replacement object
+                if (rep != null) {
+                    if (rep.getClass().isArray()) {
+                        filterCheck(rep.getClass(), Array.getLength(rep));
+                    } else {
+                        filterCheck(rep.getClass(), -1);
+                    }
+                }
                 handles.setObject(passHandle, obj = rep);
             }
         }
@@ -2360,7 +2575,7 @@ public class ObjectInputStream
             try {
                 while (list != null) {
                     AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<>()
+                        new PrivilegedExceptionAction<Void>()
                     {
                         public Void run() throws InvalidObjectException {
                             list.obj.validateObject();
@@ -2384,6 +2599,51 @@ public class ObjectInputStream
     }
 
     /**
+     * Hold a snapshot of values to be passed to an ObjectInputFilter.
+     */
+    static class FilterValues implements ObjectInputFilter.FilterInfo {
+        final Class<?> clazz;
+        final long arrayLength;
+        final long totalObjectRefs;
+        final long depth;
+        final long streamBytes;
+
+        public FilterValues(Class<?> clazz, long arrayLength, long totalObjectRefs,
+                            long depth, long streamBytes) {
+            this.clazz = clazz;
+            this.arrayLength = arrayLength;
+            this.totalObjectRefs = totalObjectRefs;
+            this.depth = depth;
+            this.streamBytes = streamBytes;
+        }
+
+        @Override
+        public Class<?> serialClass() {
+            return clazz;
+        }
+
+        @Override
+        public long arrayLength() {
+            return arrayLength;
+        }
+
+        @Override
+        public long references() {
+            return totalObjectRefs;
+        }
+
+        @Override
+        public long depth() {
+            return depth;
+        }
+
+        @Override
+        public long streamBytes() {
+            return streamBytes;
+        }
+    }
+
+    /**
      * Input stream supporting single-byte peek operations.
      */
     private static class PeekInputStream extends InputStream {
@@ -2392,6 +2652,8 @@ public class ObjectInputStream
         private final InputStream in;
         /** peeked byte */
         private int peekb = -1;
+        /** total bytes read from the stream */
+        private long totalBytesRead = 0;
 
         /**
          * Creates new PeekInputStream on top of given underlying stream.
@@ -2405,7 +2667,12 @@ public class ObjectInputStream
          * that it does not consume the read value.
          */
         int peek() throws IOException {
-            return (peekb >= 0) ? peekb : (peekb = in.read());
+            if (peekb >= 0) {
+                return peekb;
+            }
+            peekb = in.read();
+            totalBytesRead += peekb >= 0 ? 1 : 0;
+            return peekb;
         }
 
         public int read() throws IOException {
@@ -2414,21 +2681,27 @@ public class ObjectInputStream
                 peekb = -1;
                 return v;
             } else {
-                return in.read();
+                int nbytes = in.read();
+                totalBytesRead += nbytes >= 0 ? 1 : 0;
+                return nbytes;
             }
         }
 
         public int read(byte[] b, int off, int len) throws IOException {
+            int nbytes;
             if (len == 0) {
                 return 0;
             } else if (peekb < 0) {
-                return in.read(b, off, len);
+                nbytes = in.read(b, off, len);
+                totalBytesRead += nbytes >= 0 ? nbytes : 0;
+                return nbytes;
             } else {
                 b[off++] = (byte) peekb;
                 len--;
                 peekb = -1;
-                int n = in.read(b, off, len);
-                return (n >= 0) ? (n + 1) : 1;
+                nbytes = in.read(b, off, len);
+                totalBytesRead += nbytes >= 0 ? nbytes : 0;
+                return (nbytes >= 0) ? (nbytes + 1) : 1;
             }
         }
 
@@ -2453,7 +2726,9 @@ public class ObjectInputStream
                 skipped++;
                 n--;
             }
-            return skipped + in.skip(n);
+            n = skipped + in.skip(n);
+            totalBytesRead += n;
+            return n;
         }
 
         public int available() throws IOException {
@@ -2462,6 +2737,10 @@ public class ObjectInputStream
 
         public void close() throws IOException {
             in.close();
+        }
+
+        public long getBytesRead() {
+            return totalBytesRead;
         }
     }
 
@@ -3345,6 +3624,14 @@ public class ObjectInputStream
                 default:   // 10xx xxxx, 1111 xxxx
                     throw new UTFDataFormatException();
             }
+        }
+
+        /**
+         * Returns the number of bytes read from the input stream.
+         * @return the number of bytes read from the input stream
+         */
+        long getBytesRead() {
+            return in.getBytesRead();
         }
     }
 

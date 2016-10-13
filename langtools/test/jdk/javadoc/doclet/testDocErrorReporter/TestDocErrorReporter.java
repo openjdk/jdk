@@ -52,6 +52,8 @@ public class TestDocErrorReporter extends JavadocTester {
                 "-encoding", "xyz",
                 testSrc("TestDocErrorReporter.java"));
 
-        checkExit(Exit.FAILED);
+        checkExit(Exit.ERROR);
+
+        checkOutput(Output.OUT, true, "error: unsupported encoding: xyz");
     }
 }

@@ -304,9 +304,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   inline static oop array_allocate_nozero(KlassHandle klass, int size, int length, TRAPS);
   inline static oop class_allocate(KlassHandle klass, int size, TRAPS);
 
-  inline static void post_allocation_install_obj_klass(KlassHandle klass,
-                                                       oop obj);
-
   // Raw memory allocation facilities
   // The obj and array allocate methods are covers for these methods.
   // mem_allocate() should never be
@@ -353,7 +350,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // These functions return the addresses of the fields that define the
   // boundaries of the contiguous allocation area.  (These fields should be
   // physically near to one another.)
-  virtual HeapWord** top_addr() const {
+  virtual HeapWord* volatile* top_addr() const {
     guarantee(false, "inline contiguous allocation not supported");
     return NULL;
   }

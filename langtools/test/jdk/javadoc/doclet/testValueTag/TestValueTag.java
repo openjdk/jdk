@@ -46,7 +46,7 @@ public class TestValueTag extends JavadocTester {
                 "-sourcepath", testSrc,
                 "-tag", "todo",
                 "pkg1", "pkg2");
-        checkExit(Exit.FAILED);
+        checkExit(Exit.ERROR);
 
         checkOutput("pkg1/Class1.html", true,
                 // Base case:  using @value on a constant.

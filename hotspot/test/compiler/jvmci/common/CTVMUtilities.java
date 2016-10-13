@@ -57,18 +57,7 @@ public class CTVMUtilities {
         if (!(method instanceof Method || method instanceof Constructor)) {
             throw new Error("wrong executable type " + method.getClass());
         }
-        Field slotField;
-        int slot;
-        try {
-            slotField = method.getClass().getDeclaredField("slot");
-            boolean old = slotField.isAccessible();
-            slotField.setAccessible(true);
-            slot = slotField.getInt(method);
-            slotField.setAccessible(old);
-        } catch (ReflectiveOperationException e) {
-            throw new Error("TEST BUG: Can't get slot field", e);
-        }
-        return CompilerToVMHelper.getResolvedJavaMethodAtSlot(cls, slot);
+        return CompilerToVMHelper.asResolvedJavaMethod(method);
     }
 
     public static HotSpotResolvedJavaMethod getResolvedMethod(

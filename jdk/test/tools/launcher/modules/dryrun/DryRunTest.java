@@ -26,7 +26,7 @@
  * @bug 8159596
  * @library /lib/testlibrary
  * @modules jdk.compiler
- *          jdk.jartool/sun.tools.jar
+ *          jdk.jartool
  * @build DryRunTest CompilerUtils jdk.testlibrary.ProcessTools
  * @run testng DryRunTest
  * @summary Test java --dry-run
@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.spi.ToolProvider;
 
 import jdk.testlibrary.ProcessTools;
 
@@ -78,8 +79,8 @@ public class DryRunTest {
         Files.createDirectories(LIBS_DIR);
 
         // create JAR files with no module-info.class
-        assertTrue(jar(M_MODULE, "p/Lib.class"));
-        assertTrue(jar(TEST_MODULE, "jdk/test/Main.class"));
+        assertTrue(jar(M_MODULE, "p/Lib.class") == 0);
+        assertTrue(jar(TEST_MODULE, "jdk/test/Main.class") == 0);
     }
 
     /**
@@ -197,7 +198,12 @@ public class DryRunTest {
         assertTrue(exitValue != 0);
     }
 
-    private static boolean jar(String name, String entries) throws IOException {
+    private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
+        .orElseThrow(() ->
+            new RuntimeException("jar tool not found")
+        );
+
+    private static int jar(String name, String entries) throws IOException {
         Path jar = LIBS_DIR.resolve(name + ".jar");
 
         // jar --create ...
@@ -207,8 +213,6 @@ public class DryRunTest {
             "--file=" + jar,
             "-C", classes, entries
         };
-        boolean success
-            = new sun.tools.jar.Main(System.out, System.out, "jar").run(args);
-        return success;
+        return JAR_TOOL.run(System.out, System.out, args);
     }
 }

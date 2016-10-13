@@ -44,7 +44,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
         javadoc("-d", "out-default",
                 "-sourcepath", testSrc,
                 "pkg1");
-        checkExit(Exit.FAILED); // TODO: should be OK
+        checkExit(Exit.OK);
 
         checkCommentDeprecated(true);
         checkNoComment(false);
@@ -56,7 +56,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                 "-nocomment",
                 "-sourcepath", testSrc,
                 "pkg1");
-        checkExit(Exit.FAILED); // TODO: should be OK
+        checkExit(Exit.OK);
 
         checkNoComment(true);
         checkCommentDeprecated(false);
@@ -68,7 +68,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                 "-nodeprecated",
                 "-sourcepath", testSrc,
                 "pkg1");
-        checkExit(Exit.FAILED); // TODO: should be OK
+        checkExit(Exit.OK);
 
         checkNoDeprecated(true);
         checkNoCommentNoDeprecated(false);
@@ -81,7 +81,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                 "-nodeprecated",
                 "-sourcepath", testSrc,
                 "pkg1");
-        checkExit(Exit.FAILED); // TODO: should be OK
+        checkExit(Exit.OK);
         checkNoCommentNoDeprecated(true);
         checkNoDeprecated(false);
     }
@@ -93,7 +93,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                 "<dl>\n"
                 + "<dt><span class=\"throwsLabel\">Throws:</span></dt>\n"
                 + "<dd><code>"
-                + "java.io.IOException</code></dd>\n"
+                + "java.io.IOException</code> - on error</dd>\n"
                 + "<dt><span class=\"seeLabel\">See Also:</span>"
                 + "</dt>\n"
                 + "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
@@ -121,7 +121,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                 + "<div class=\"block\">Reads the object stream.</div>\n"
                 + "<dl>\n"
                 + "<dt><span class=\"throwsLabel\">Throws:</span></dt>\n"
-                + "<dd><code>java.io.IOException</code></dd>\n"
+                + "<dd><code>java.io.IOException</code> - on error</dd>\n"
                 + "</dl>",
                 "<span class=\"deprecatedLabel\">Deprecated.</span>"
                 + "&nbsp;</div>\n"

@@ -415,10 +415,10 @@ public class TransTypes extends TreeTranslator {
                 if (!isSameMemberWhenErased(dest, impl, impl_erasure))
                     return true;
 
-                // If the erasure of the return type is different, a
-                // bridge is needed.
-                return !types.isSameType(impl_erasure.getReturnType(),
-                                         method_erasure.getReturnType());
+                /* Bottom line: A bridge is needed if the erasure of the implementation
+                   is different from that of the method that it overrides.
+                */
+                return !types.isSameType(impl_erasure, method_erasure);
             } else {
                // method and impl are the same...
                 if ((method.flags() & ABSTRACT) != 0) {

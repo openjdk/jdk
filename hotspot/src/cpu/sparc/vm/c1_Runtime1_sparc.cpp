@@ -881,20 +881,15 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ delayed()->st_ptr(tmp, G2_thread, satb_q_index_byte_offset);
 
         __ bind(refill);
-        __ save_frame(0);
 
-        __ mov(pre_val, L0);
-        __ mov(tmp,     L1);
-        __ mov(tmp2,    L2);
+        save_live_registers(sasm);
 
         __ call_VM_leaf(L7_thread_cache,
                         CAST_FROM_FN_PTR(address,
                                          SATBMarkQueueSet::handle_zero_index_for_thread),
                                          G2_thread);
 
-        __ mov(L0, pre_val);
-        __ mov(L1, tmp);
-        __ mov(L2, tmp2);
+        restore_live_registers(sasm);
 
         __ br(Assembler::always, /*annul*/false, Assembler::pt, restart);
         __ delayed()->restore();
@@ -986,20 +981,15 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ delayed()->st_ptr(tmp3, G2_thread, dirty_card_q_index_byte_offset);
 
         __ bind(refill);
-        __ save_frame(0);
 
-        __ mov(tmp2, L0);
-        __ mov(tmp3, L1);
-        __ mov(tmp4, L2);
+        save_live_registers(sasm);
 
         __ call_VM_leaf(L7_thread_cache,
                         CAST_FROM_FN_PTR(address,
                                          DirtyCardQueueSet::handle_zero_index_for_thread),
                                          G2_thread);
 
-        __ mov(L0, tmp2);
-        __ mov(L1, tmp3);
-        __ mov(L2, tmp4);
+        restore_live_registers(sasm);
 
         __ br(Assembler::always, /*annul*/false, Assembler::pt, restart);
         __ delayed()->restore();

@@ -55,7 +55,7 @@ endif
 # Disabling switch warning for clang because of test source.
 
 $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
-    TOOLCHAIN := $(JVM_TOOLCHAIN), \
+    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     LIBRARY := jvm, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/gtest/objs, \
@@ -95,7 +95,7 @@ TARGETS += $(BUILD_GTEST_LIBJVM)
 ################################################################################
 
 $(eval $(call SetupNativeCompilation, BUILD_GTEST_LAUNCHER, \
-    TOOLCHAIN := $(JVM_TOOLCHAIN), \
+    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     PROGRAM := gtestLauncher, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
     EXTRA_FILES := $(GTEST_LAUNCHER_SRC), \

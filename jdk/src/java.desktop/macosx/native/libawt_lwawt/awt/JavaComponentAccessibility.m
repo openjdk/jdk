@@ -323,11 +323,15 @@ static NSObject *sAttributeNamesLOCK = nil;
 
 + (JavaComponentAccessibility *)createWithAccessible:(jobject)jaccessible withEnv:(JNIEnv *)env withView:(NSView *)view
 {
+    JavaComponentAccessibility *ret = nil;
     jobject jcomponent = [(AWTView *)view awtComponent:env];
     jint index = JNFCallStaticIntMethod(env, sjm_getAccessibleIndexInParent, jaccessible, jcomponent);
-    NSString *javaRole = getJavaRole(env, jaccessible, jcomponent);
+    if (index >= 0) {
+      NSString *javaRole = getJavaRole(env, jaccessible, jcomponent);
+      ret = [self createWithAccessible:jaccessible role:javaRole index:index withEnv:env withView:view];
+    }
     (*env)->DeleteLocalRef(env, jcomponent);
-    return [self createWithAccessible:jaccessible role:javaRole index:index withEnv:env withView:view];
+    return ret;
 }
 
 + (JavaComponentAccessibility *) createWithAccessible:(jobject)jaccessible role:(NSString *)javaRole index:(jint)index withEnv:(JNIEnv *)env withView:(NSView *)view
