@@ -274,6 +274,14 @@ public class ErrorMessages extends ListResourceBundle {
         "Circular import/include. Stylesheet ''{0}'' already loaded."},
 
         /*
+         * Note to translators:  "xsl:import" and "xsl:include" are keywords that
+         * should not be translated.
+         */
+        {ErrorMsg.IMPORT_PRECEDE_OTHERS_ERR,
+        "The xsl:import element children must precede all other element children of "
+              + "an xsl:stylesheet element, including any xsl:include element children."},
+
+        /*
          * Note to translators:  A result-tree fragment is a portion of a
          * resulting XML document represented as a tree.  "<xsl:sort>" is a
          * keyword and should not be translated.
