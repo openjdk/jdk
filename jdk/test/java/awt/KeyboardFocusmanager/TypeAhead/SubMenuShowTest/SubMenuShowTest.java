@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
   test
-  @bug       6380743
+  @bug       6380743 8158380
   @summary   Submenu should be shown by mnemonic key press.
   @author    anton.tarasov@...: area=awt.focus
   @run       applet SubMenuShowTest.html
@@ -55,6 +55,8 @@ public class SubMenuShowTest extends Applet {
 
     public void init() {
         robot = Util.createRobot();
+        robot.setAutoDelay(200);
+        robot.setAutoWaitForIdle(true);
 
         // Create instructions for the user here, as well as set up
         // the environment -- set the layout manager, add buttons,
@@ -85,35 +87,24 @@ public class SubMenuShowTest extends Applet {
             });
 
         frame.setVisible(true);
-        Util.waitForIdle(robot);
 
         boolean isMacOSX = (OSInfo.getOSType() == OSInfo.OSType.MACOSX);
         if (isMacOSX) {
             robot.keyPress(KeyEvent.VK_CONTROL);
-            robot.delay(20);
         }
         robot.keyPress(KeyEvent.VK_ALT);
-        robot.delay(20);
         robot.keyPress(KeyEvent.VK_F);
-        robot.delay(20);
         robot.keyRelease(KeyEvent.VK_F);
-        robot.delay(20);
         robot.keyRelease(KeyEvent.VK_ALT);
+
         if (isMacOSX) {
             robot.keyRelease(KeyEvent.VK_CONTROL);
-            robot.delay(20);
         }
-        Util.waitForIdle(robot);
 
         robot.keyPress(KeyEvent.VK_M);
-        robot.delay(20);
         robot.keyRelease(KeyEvent.VK_M);
-        Util.waitForIdle(robot);
-
         robot.keyPress(KeyEvent.VK_SPACE);
-        robot.delay(20);
         robot.keyRelease(KeyEvent.VK_SPACE);
-        Util.waitForIdle(robot);
 
         if (!Util.waitForCondition(activated, 2000)) {
             throw new TestFailedException("a submenu wasn't activated by mnemonic key press");
