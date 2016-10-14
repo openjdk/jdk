@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,7 +272,7 @@ public class CallSite {
         MethodHandleNatives.setCallSiteTargetVolatile(this, newTarget);
     }
 
-    // this implements the upcall from the JVM, MethodHandleNatives.makeDynamicCallSite:
+    // this implements the upcall from the JVM, MethodHandleNatives.linkCallSite:
     static CallSite makeSite(MethodHandle bootstrapMethod,
                              // Callee information:
                              String name, MethodType type,
@@ -293,59 +293,72 @@ public class CallSite {
                 Object[] argv = (Object[]) info;
                 maybeReBoxElements(argv);
                 switch (argv.length) {
-                case 0:
-                    binding = bootstrapMethod.invoke(caller, name, type);
-                    break;
-                case 1:
-                    binding = bootstrapMethod.invoke(caller, name, type,
-                                                     argv[0]);
-                    break;
-                case 2:
-                    binding = bootstrapMethod.invoke(caller, name, type,
-                                                     argv[0], argv[1]);
-                    break;
-                case 3:
-                    binding = bootstrapMethod.invoke(caller, name, type,
-                                                     argv[0], argv[1], argv[2]);
-                    break;
-                case 4:
-                    binding = bootstrapMethod.invoke(caller, name, type,
-                                                     argv[0], argv[1], argv[2], argv[3]);
-                    break;
-                case 5:
-                    binding = bootstrapMethod.invoke(caller, name, type,
-                                                     argv[0], argv[1], argv[2], argv[3], argv[4]);
-                    break;
-                case 6:
-                    binding = bootstrapMethod.invoke(caller, name, type,
-                                                     argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
-                    break;
-                default:
-                    final int NON_SPREAD_ARG_COUNT = 3;  // (caller, name, type)
-                    if (NON_SPREAD_ARG_COUNT + argv.length > MethodType.MAX_MH_ARITY)
-                        throw new BootstrapMethodError("too many bootstrap method arguments");
-                    MethodType bsmType = bootstrapMethod.type();
-                    MethodType invocationType = MethodType.genericMethodType(NON_SPREAD_ARG_COUNT + argv.length);
-                    MethodHandle typedBSM = bootstrapMethod.asType(invocationType);
-                    MethodHandle spreader = invocationType.invokers().spreadInvoker(NON_SPREAD_ARG_COUNT);
-                    binding = spreader.invokeExact(typedBSM, (Object)caller, (Object)name, (Object)type, argv);
+                    case 0:
+                        binding = bootstrapMethod.invoke(caller, name, type);
+                        break;
+                    case 1:
+                        binding = bootstrapMethod.invoke(caller, name, type,
+                                                         argv[0]);
+                        break;
+                    case 2:
+                        binding = bootstrapMethod.invoke(caller, name, type,
+                                                         argv[0], argv[1]);
+                        break;
+                    case 3:
+                        binding = bootstrapMethod.invoke(caller, name, type,
+                                                         argv[0], argv[1], argv[2]);
+                        break;
+                    case 4:
+                        binding = bootstrapMethod.invoke(caller, name, type,
+                                                         argv[0], argv[1], argv[2], argv[3]);
+                        break;
+                    case 5:
+                        binding = bootstrapMethod.invoke(caller, name, type,
+                                                         argv[0], argv[1], argv[2], argv[3], argv[4]);
+                        break;
+                    case 6:
+                        binding = bootstrapMethod.invoke(caller, name, type,
+                                                         argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
+                        break;
+                    default:
+                        final int NON_SPREAD_ARG_COUNT = 3;  // (caller, name, type)
+                        if (NON_SPREAD_ARG_COUNT + argv.length > MethodType.MAX_MH_ARITY)
+                            throw new BootstrapMethodError("too many bootstrap method arguments");
+                        MethodType bsmType = bootstrapMethod.type();
+                        MethodType invocationType = MethodType.genericMethodType(NON_SPREAD_ARG_COUNT + argv.length);
+                        MethodHandle typedBSM = bootstrapMethod.asType(invocationType);
+                        MethodHandle spreader = invocationType.invokers().spreadInvoker(NON_SPREAD_ARG_COUNT);
+                        binding = spreader.invokeExact(typedBSM, (Object) caller, (Object) name, (Object) type, argv);
                 }
             }
-            //System.out.println("BSM for "+name+type+" => "+binding);
             if (binding instanceof CallSite) {
                 site = (CallSite) binding;
-            }  else {
+            } else {
+                // See the "Linking Exceptions" section for the invokedynamic
+                // instruction in JVMS 6.5.
+                // Throws a runtime exception defining the cause that is then
+                // in the "catch (Throwable ex)" a few lines below wrapped in
+                // BootstrapMethodError
                 throw new ClassCastException("bootstrap method failed to produce a CallSite");
             }
-            if (!site.getTarget().type().equals(type))
+            if (!site.getTarget().type().equals(type)) {
+                // See the "Linking Exceptions" section for the invokedynamic
+                // instruction in JVMS 6.5.
+                // Throws a runtime exception defining the cause that is then
+                // in the "catch (Throwable ex)" a few lines below wrapped in
+                // BootstrapMethodError
                 throw wrongTargetType(site.getTarget(), type);
+            }
+        } catch (Error e) {
+            // Pass through an Error, including BootstrapMethodError, any other
+            // form of linkage error, such as IllegalAccessError if the bootstrap
+            // method is inaccessible, or say ThreadDeath/OutOfMemoryError
+            // See the "Linking Exceptions" section for the invokedynamic
+            // instruction in JVMS 6.5.
+            throw e;
         } catch (Throwable ex) {
-            BootstrapMethodError bex;
-            if (ex instanceof BootstrapMethodError)
-                bex = (BootstrapMethodError) ex;
-            else
-                bex = new BootstrapMethodError("call site initialization exception", ex);
-            throw bex;
+            // Wrap anything else in BootstrapMethodError
+            throw new BootstrapMethodError("call site initialization exception", ex);
         }
         return site;
     }
