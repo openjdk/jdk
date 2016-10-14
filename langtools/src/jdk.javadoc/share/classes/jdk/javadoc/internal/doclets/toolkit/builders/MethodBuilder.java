@@ -210,7 +210,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
     public void buildMethodComments(XMLNode node, Content methodDocTree) {
         if (!configuration.nocomment) {
             ExecutableElement method = currentMethod;
-            if (utils.getBody(currentMethod).isEmpty()) {
+            if (utils.getFullBody(currentMethod).isEmpty()) {
                 DocFinder.Output docs = DocFinder.search(configuration,
                         new DocFinder.Input(utils, currentMethod));
                 if (docs.inlineTags != null && !docs.inlineTags.isEmpty())

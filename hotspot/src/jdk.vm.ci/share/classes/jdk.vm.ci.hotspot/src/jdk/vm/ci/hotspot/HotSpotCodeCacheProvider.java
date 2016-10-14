@@ -22,7 +22,7 @@
  */
 package jdk.vm.ci.hotspot;
 
-import java.lang.reflect.Field;
+import java.util.Map;
 
 import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.code.BytecodeFrame;
@@ -56,16 +56,11 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
     @Override
     public String getMarkName(Mark mark) {
         int markId = (int) mark.id;
-        Field[] fields = runtime.getConfig().getClass().getDeclaredFields();
-        for (Field f : fields) {
-            if (f.getName().startsWith("MARKID_")) {
-                f.setAccessible(true);
-                try {
-                    if (f.getInt(runtime.getConfig()) == markId) {
-                        return f.getName();
-                    }
-                } catch (Exception e) {
-                }
+        HotSpotVMConfigStore store = runtime.getConfigStore();
+        for (Map.Entry<String, Long> e : store.getConstants().entrySet()) {
+            String name = e.getKey();
+            if (name.startsWith("MARKID_") && e.getValue() == markId) {
+                return name;
             }
         }
         return CodeCacheProvider.super.getMarkName(mark);
@@ -76,17 +71,13 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
      */
     @Override
     public String getTargetName(Call call) {
-        Field[] fields = runtime.getConfig().getClass().getDeclaredFields();
-        for (Field f : fields) {
-            if (f.getName().endsWith("Stub")) {
-                f.setAccessible(true);
-                Object address;
-                try {
-                    address = f.get(runtime.getConfig());
-                    if (address.equals(call.target)) {
-                        return f.getName() + ":0x" + Long.toHexString((Long) address);
-                    }
-                } catch (IllegalArgumentException | IllegalAccessException e) {
+        if (call.target instanceof HotSpotForeignCallTarget) {
+            long address = ((HotSpotForeignCallTarget) call.target).address;
+            HotSpotVMConfigStore store = runtime.getConfigStore();
+            for (Map.Entry<String, VMField> e : store.getFields().entrySet()) {
+                VMField field = e.getValue();
+                if (field.isStatic() && field.value != null && field.value == address) {
+                    return e.getValue() + ":0x" + Long.toHexString(address);
                 }
             }
         }

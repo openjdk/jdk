@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,10 +45,7 @@ $(VARIANT_TARGETS): variant-%: variant-%-gensrc variant-%-libs
 jsig:
 	+$(MAKE) -f lib/CompileLibjsig.gmk
 
-dist: $(VARIANT_TARGETS) jsig
-	+$(MAKE) -f Dist.gmk
-
-all: dist
+all: $(VARIANT_TARGETS) jsig
 
 .PHONY: $(VARIANT_TARGETS) $(VARIANT_GENSRC_TARGETS) $(VARIANT_LIBS_TARGETS) \
-    jsig dist all
+    jsig all

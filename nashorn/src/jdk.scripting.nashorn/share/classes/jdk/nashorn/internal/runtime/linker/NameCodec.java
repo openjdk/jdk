@@ -283,7 +283,7 @@ public final class NameCodec {
      * @return the mangled form of the symbolic name.
      */
     public static String encode(final String name) {
-        String bn = mangle(name);
+        final String bn = mangle(name);
         assert((Object)bn == name || looksMangled(bn)) : bn;
         assert(name.equals(decode(bn))) : name;
         return bn;
@@ -303,11 +303,11 @@ public final class NameCodec {
         return sn;
     }
 
-    private static boolean looksMangled(String s) {
+    private static boolean looksMangled(final String s) {
         return s.charAt(0) == ESCAPE_C;
     }
 
-    private static String mangle(String s) {
+    private static String mangle(final String s) {
         if (s.length() == 0)
             return NULL_ESCAPE;
 
@@ -315,12 +315,12 @@ public final class NameCodec {
         StringBuilder sb = null;
 
         for (int i = 0, slen = s.length(); i < slen; i++) {
-            char c = s.charAt(i);
+            final char c = s.charAt(i);
 
             boolean needEscape = false;
             if (c == ESCAPE_C) {
                 if (i+1 < slen) {
-                    char c1 = s.charAt(i+1);
+                    final char c1 = s.charAt(i+1);
                     if ((i == 0 && c1 == NULL_ESCAPE_C)
                         || c1 != originalOfReplacement(c1)) {
                         // an accidental escape
@@ -356,7 +356,7 @@ public final class NameCodec {
         return s;
     }
 
-    private static String demangle(String s) {
+    private static String demangle(final String s) {
         // build this lazily, when we first meet an escape:
         StringBuilder sb = null;
 
@@ -369,8 +369,8 @@ public final class NameCodec {
 
             if (c == ESCAPE_C && i+1 < slen) {
                 // might be an escape sequence
-                char rc = s.charAt(i+1);
-                char oc = originalOfReplacement(rc);
+                final char rc = s.charAt(i+1);
+                final char oc = originalOfReplacement(rc);
                 if (oc != rc) {
                     // build sb if this is the first escape
                     if (sb == null) {
@@ -398,34 +398,34 @@ public final class NameCodec {
 
     private static final long[] SPECIAL_BITMAP = new long[2];  // 128 bits
     static {
-        String SPECIAL = DANGEROUS_CHARS + REPLACEMENT_CHARS;
-        for (char c : SPECIAL.toCharArray()) {
+        final String SPECIAL = DANGEROUS_CHARS + REPLACEMENT_CHARS;
+        for (final char c : SPECIAL.toCharArray()) {
             SPECIAL_BITMAP[c >>> 6] |= 1L << c;
         }
     }
 
-    private static boolean isSpecial(char c) {
+    private static boolean isSpecial(final char c) {
         if ((c >>> 6) < SPECIAL_BITMAP.length)
             return ((SPECIAL_BITMAP[c >>> 6] >> c) & 1) != 0;
         else
             return false;
     }
 
-    private static char replacementOf(char c) {
+    private static char replacementOf(final char c) {
         if (!isSpecial(c))  return c;
-        int i = DANGEROUS_CHARS.indexOf(c);
+        final int i = DANGEROUS_CHARS.indexOf(c);
         if (i < 0)  return c;
         return REPLACEMENT_CHARS.charAt(i);
     }
 
-    private static char originalOfReplacement(char c) {
+    private static char originalOfReplacement(final char c) {
         if (!isSpecial(c))  return c;
-        int i = REPLACEMENT_CHARS.indexOf(c);
+        final int i = REPLACEMENT_CHARS.indexOf(c);
         if (i < 0)  return c;
         return DANGEROUS_CHARS.charAt(i);
     }
 
-    private static boolean isDangerous(char c) {
+    private static boolean isDangerous(final char c) {
         if (!isSpecial(c))  return false;
         return (DANGEROUS_CHARS.indexOf(c) >= DANGEROUS_CHAR_FIRST_INDEX);
     }

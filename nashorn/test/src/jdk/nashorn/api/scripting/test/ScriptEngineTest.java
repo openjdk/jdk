@@ -683,7 +683,7 @@ public class ScriptEngineTest {
         final ScriptEngineManager manager = new ScriptEngineManager();
         final ScriptEngine e = manager.getEngineByName("nashorn");
         // no exception expected here!
-        Object value = e.getFactory().getParameter("no value assigned to this key");
+        final Object value = e.getFactory().getParameter("no value assigned to this key");
         assertNull(value);
     }
 
@@ -695,7 +695,7 @@ public class ScriptEngineTest {
         final AtomicBoolean invoked = new AtomicBoolean(false);
         e.put("f", new Function<String, String>() {
             @Override
-            public String apply(String t) {
+            public String apply(final String t) {
                 invoked.set(true);
                 return t;
             }
@@ -712,7 +712,7 @@ public class ScriptEngineTest {
         final AtomicBoolean invoked = new AtomicBoolean(false);
         e.put("c", new Consumer<Object>() {
             @Override
-            public void accept(Object t) {
+            public void accept(final Object t) {
                 assertTrue(t instanceof ScriptObjectMirror);
                 assertEquals(((ScriptObjectMirror)t).get("a"), "xyz");
                 invoked.set(true);
@@ -740,14 +740,14 @@ public class ScriptEngineTest {
         try {
             e.put(null, "null-value");
             fail();
-        } catch (NullPointerException x) {
+        } catch (final NullPointerException x) {
             // expected
         }
 
         try {
             e.put("", "empty-value");
             fail();
-        } catch (IllegalArgumentException x) {
+        } catch (final IllegalArgumentException x) {
             // expected
         }
 
@@ -757,98 +757,98 @@ public class ScriptEngineTest {
         try {
             b.put(null, "null-value");
             fail();
-        } catch (NullPointerException x) {
+        } catch (final NullPointerException x) {
             // expected
         }
 
         try {
             b.put("", "empty-value");
             fail();
-        } catch (IllegalArgumentException x) {
+        } catch (final IllegalArgumentException x) {
             // expected
         }
 
         try {
             b.get(null);
             fail();
-        } catch (NullPointerException x) {
+        } catch (final NullPointerException x) {
             // expected
         }
 
         try {
             b.get("");
             fail();
-        } catch (IllegalArgumentException x) {
+        } catch (final IllegalArgumentException x) {
             // expected
         }
 
         try {
             b.get(1);
             fail();
-        } catch (ClassCastException x) {
+        } catch (final ClassCastException x) {
             // expected
         }
 
         try {
             b.remove(null);
             fail();
-        } catch (NullPointerException x) {
+        } catch (final NullPointerException x) {
             // expected
         }
 
         try {
             b.remove("");
             fail();
-        } catch (IllegalArgumentException x) {
+        } catch (final IllegalArgumentException x) {
             // expected
         }
 
         try {
             b.remove(1);
             fail();
-        } catch (ClassCastException x) {
+        } catch (final ClassCastException x) {
             // expected
         }
 
         try {
             b.containsKey(null);
             fail();
-        } catch (NullPointerException x) {
+        } catch (final NullPointerException x) {
             // expected
         }
 
         try {
             b.containsKey("");
             fail();
-        } catch (IllegalArgumentException x) {
+        } catch (final IllegalArgumentException x) {
             // expected
         }
 
         try {
             b.containsKey(1);
             fail();
-        } catch (ClassCastException x) {
+        } catch (final ClassCastException x) {
             // expected
         }
 
         try {
             b.putAll(null);
             fail();
-        } catch (NullPointerException x) {
+        } catch (final NullPointerException x) {
             // expected
         }
 
         try {
             b.putAll(Collections.singletonMap((String)null, "null-value"));
             fail();
-        } catch (NullPointerException x) {
+        } catch (final NullPointerException x) {
             // expected
         }
 
         try {
             b.putAll(Collections.singletonMap("", "empty-value"));
             fail();
-        } catch (IllegalArgumentException x) {
+        } catch (final IllegalArgumentException x) {
             // expected
         }
     }

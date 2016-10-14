@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6786682
+ * @bug 6786682 4649116
  * @summary This test verifies the use of lang attribute by <HTML>.
  * @author Bhavesh Patel
  * @library ../lib
@@ -106,7 +106,7 @@ public class TestHtmlTag extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg3/package-summary.html", true,
-                "<h2 title=\"Package pkg3 Description\">Package pkg3 Description</h2>\n"
+                "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\"><p>This is the first line."
                 + " Note the newlines before the &lt;p&gt; is relevant.</div>");
 

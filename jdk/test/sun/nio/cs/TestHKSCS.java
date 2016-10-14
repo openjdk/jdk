@@ -21,18 +21,29 @@
  * questions.
  */
 
-/**
- * This class is launched in a sub-process by the main test,
- * SASymbolTableTest.java.
- *
- * This class does nothing in particular. It just sleeps for 120
- * seconds so SASymbolTableTestAgent can have a chance to examine its
- * SymbolTable. This process should be killed by the parent process
- * after SASymbolTableTestAgent has completed testing.
+/*
+ * @test
+ * @bug 8166258
+ * @summary Some corner cases for hkscs charsets
+ * @modules jdk.charsets
+ * @run main TestHKSCS
  */
-public class SASymbolTableTestAttachee {
-    public static void main(String args[]) throws Throwable {
-        System.out.println("SASymbolTableTestAttachee: sleeping to wait for SA tool to attach ...");
-        Thread.sleep(120 * 1000);
+
+import java.util.Arrays;
+
+public class TestHKSCS {
+    public static void main(String args[]) throws Exception {
+        String[] charsets = { "x-MS950-HKSCS-XP",
+                              "x-MS950-HKSCS",
+                              "Big5-HKSCS",
+                              "x-Big5-HKSCS-2001"
+        };
+        String s = "\ufffd\ud87f\udffd";
+        byte[] bytes = new byte[] { 0x3f, 0x3f };
+        for (String cs : charsets) {
+            if (!Arrays.equals(bytes, s.getBytes(cs))) {
+                throw new RuntimeException(cs + " failed to decode u+fffd");
+            }
+        }
     }
 }

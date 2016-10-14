@@ -24,17 +24,21 @@
 /*
  * @test
  * @bug 4408526 6854795
- * @modules jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool
  * @summary Index the non-meta files in META-INF, such as META-INF/services.
  */
 
 import java.io.*;
 import java.util.Arrays;
 import java.util.jar.*;
-import sun.tools.jar.Main;
+import java.util.spi.ToolProvider;
 import java.util.zip.ZipFile;
 
 public class MetaInf {
+    static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
+        .orElseThrow(() ->
+            new RuntimeException("jar tool not found")
+        );
 
     static String jarName = "a.jar";
     static String INDEX = "META-INF/INDEX.LIST";
@@ -43,7 +47,7 @@ public class MetaInf {
         System.getProperty("test.src") + File.separatorChar + "jarcontents";
 
     static void run(String ... args) {
-        if (! new Main(System.out, System.err, "jar").run(args))
+        if (JAR_TOOL.run(System.out, System.err, args) != 0)
             throw new Error("jar failed: args=" + Arrays.toString(args));
     }
 

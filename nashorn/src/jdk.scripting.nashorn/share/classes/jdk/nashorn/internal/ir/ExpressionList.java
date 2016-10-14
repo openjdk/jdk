@@ -71,10 +71,10 @@ public final class ExpressionList extends Expression {
     }
 
     @Override
-    public void toString(StringBuilder sb, boolean printType) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append("(");
         boolean first = true;
-        for (Expression expression : expressions) {
+        for (final Expression expression : expressions) {
             if (first) {
                 first = false;
             } else {

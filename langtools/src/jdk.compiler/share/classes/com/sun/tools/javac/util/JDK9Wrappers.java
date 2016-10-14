@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.util;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
@@ -361,6 +362,43 @@ public class JDK9Wrappers {
                 try {
                     vmClass = Class.forName(VM_CLASSNAME, false, null);
                     getRuntimeArgumentsMethod = vmClass.getDeclaredMethod("getRuntimeArguments");
+                } catch (ClassNotFoundException | NoSuchMethodException | SecurityException ex) {
+                    throw new Abort(ex);
+                }
+            }
+        }
+    }
+
+    /**
+     * Helper class for new method in jdk.internal.jmod.JmodFile
+     */
+    public static final class JmodFile {
+        public static final String JMOD_FILE_CLASSNAME = "jdk.internal.jmod.JmodFile";
+
+        public static void checkMagic(Path file) throws IOException {
+            try {
+                init();
+                checkMagicMethod.invoke(null, file);
+            } catch (InvocationTargetException ex) {
+                if (ex.getCause() instanceof IOException) {
+                    throw IOException.class.cast(ex.getCause());
+                }
+                throw new Abort(ex);
+            } catch (IllegalAccessException | IllegalArgumentException | SecurityException ex) {
+                throw new Abort(ex);
+            }
+        }
+
+        // -----------------------------------------------------------------------------------------
+
+        private static Class<?> jmodFileClass = null;
+        private static Method checkMagicMethod = null;
+
+        private static void init() {
+            if (jmodFileClass == null) {
+                try {
+                    jmodFileClass = Class.forName(JMOD_FILE_CLASSNAME, false, null);
+                    checkMagicMethod = jmodFileClass.getDeclaredMethod("checkMagic", Path.class);
                 } catch (ClassNotFoundException | NoSuchMethodException | SecurityException ex) {
                     throw new Abort(ex);
                 }

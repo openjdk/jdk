@@ -303,7 +303,6 @@ public final class ZoneRules implements Serializable {
      * Creates an instance of ZoneRules that has fixed zone rules.
      *
      * @param offset  the offset this fixed zone rules is based on, not null
-     * @return the zone rules, not null
      * @see #isFixedOffset()
      */
     private ZoneRules(ZoneOffset offset) {
@@ -970,7 +969,7 @@ public final class ZoneRules implements Serializable {
      * @return an immutable list of transition rules, not null
      */
     public List<ZoneOffsetTransitionRule> getTransitionRules() {
-        return Collections.unmodifiableList(Arrays.asList(lastRules));
+        return List.of(lastRules);
     }
 
     /**

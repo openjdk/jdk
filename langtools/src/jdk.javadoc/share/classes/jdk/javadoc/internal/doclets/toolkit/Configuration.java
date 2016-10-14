@@ -281,6 +281,8 @@ public abstract class Configuration {
 
     private String pkglistUrlForLinkOffline;
 
+    public boolean dumpOnError = false;
+
     private List<GroupContainer> groups;
 
     public abstract Messages getMessages();
@@ -614,6 +616,13 @@ public abstract class Configuration {
                 public boolean process(String opt, ListIterator<String> args) {
                     optionsProcessed.add(this);
                     showversion = true;
+                    return true;
+                }
+            },
+            new Hidden(resources, "--dump-on-error") {
+                @Override
+                public boolean process(String opt, ListIterator<String> args) {
+                    dumpOnError = true;
                     return true;
                 }
             }

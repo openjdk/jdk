@@ -69,7 +69,7 @@
                                                                                                                                      \
   static_field(CompilerToVM::Data,             _supports_inline_contig_alloc,          bool)                                         \
   static_field(CompilerToVM::Data,             _heap_end_addr,                         HeapWord**)                                   \
-  static_field(CompilerToVM::Data,             _heap_top_addr,                         HeapWord**)                                   \
+  static_field(CompilerToVM::Data,             _heap_top_addr,                         HeapWord* volatile*)                          \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             _max_oop_map_stack_offset,              int)                                          \
                                                                                                                                      \
@@ -327,8 +327,11 @@
   declare_constant(JVM_ACC_FIELD_INTERNAL)                                \
   declare_constant(JVM_ACC_FIELD_STABLE)                                  \
   declare_constant(JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE)                   \
+  declare_preprocessor_constant("JVM_ACC_VARARGS", JVM_ACC_VARARGS)       \
+  declare_preprocessor_constant("JVM_ACC_BRIDGE", JVM_ACC_BRIDGE)         \
+  declare_preprocessor_constant("JVM_ACC_ANNOTATION", JVM_ACC_ANNOTATION) \
+  declare_preprocessor_constant("JVM_ACC_ENUM", JVM_ACC_ENUM)             \
   declare_preprocessor_constant("JVM_ACC_SYNTHETIC", JVM_ACC_SYNTHETIC)   \
-  declare_preprocessor_constant("JVM_RECOGNIZED_FIELD_MODIFIERS", JVM_RECOGNIZED_FIELD_MODIFIERS) \
                                                                           \
   declare_constant(JVM_CONSTANT_Utf8)                                     \
   declare_constant(JVM_CONSTANT_Unicode)                                  \
@@ -660,7 +663,8 @@
 #define VM_LONG_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
   declare_preprocessor_constant("VM_Version::CPU_AVX512BW", CPU_AVX512BW) \
   declare_preprocessor_constant("VM_Version::CPU_AVX512VL", CPU_AVX512VL) \
-  declare_preprocessor_constant("VM_Version::CPU_SHA", CPU_SHA)
+  declare_preprocessor_constant("VM_Version::CPU_SHA", CPU_SHA)           \
+  declare_preprocessor_constant("VM_Version::CPU_FMA", CPU_FMA)
 
 #endif
 

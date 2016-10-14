@@ -408,7 +408,7 @@ public class Lexer extends Scanner {
     /**
      * Test if char is a template literal delimiter ('`').
      */
-    private static boolean isTemplateDelimiter(char ch) {
+    private static boolean isTemplateDelimiter(final char ch) {
         return ch == '`';
     }
 
@@ -1077,7 +1077,7 @@ public class Lexer extends Scanner {
                 add(type == TEMPLATE ? TEMPLATE_HEAD : type, stringState.position, stringState.limit);
 
                 // scan to RBRACE
-                Lexer expressionLexer = new Lexer(this, saveState());
+                final Lexer expressionLexer = new Lexer(this, saveState());
                 expressionLexer.templateExpressionOpenBraces = 1;
                 expressionLexer.lexify();
                 restoreState(expressionLexer.saveState());

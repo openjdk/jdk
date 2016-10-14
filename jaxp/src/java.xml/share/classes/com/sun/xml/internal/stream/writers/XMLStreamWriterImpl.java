@@ -71,7 +71,7 @@ import com.sun.xml.internal.stream.util.ReadOnlyIterator;
  * @author Santiago.Pericas-Geertsen@sun.com
  * @author Sunitha.Reddy@sun.com
  */
-public final class XMLStreamWriterImpl extends AbstractMap implements XMLStreamWriter {
+public final class XMLStreamWriterImpl extends AbstractMap implements XMLStreamWriterBase {
 
     public static final String START_COMMENT = "<!--";
     public static final String END_COMMENT = "-->";
@@ -1112,89 +1112,54 @@ public final class XMLStreamWriterImpl extends AbstractMap implements XMLStreamW
     }
 
     /**
-     * @throws XMLStreamException
+     * Writes the XML declaration.
+     *
+     * @throws XMLStreamException in case of an IOException
      */
     public void writeStartDocument() throws XMLStreamException {
-        try {
-            fWriter.write(DEFAULT_XMLDECL);
-        } catch (IOException ex) {
-            throw new XMLStreamException(ex);
-        }
+        writeStartDocument(null, null, false, false);
     }
 
     /**
-     * @param version
-     * @throws XMLStreamException
+     * Writes the XML declaration.
+     *
+     * @param version the specified version
+     * @throws XMLStreamException in case of an IOException
      */
     public void writeStartDocument(String version) throws XMLStreamException {
-        try {
-            if ((version == null) || version.equals("")) {
-                writeStartDocument();
-
-                return;
-            }
-
-            fWriter.write("<?xml version=\"");
-            fWriter.write(version);
-            fWriter.write("\"");
-
-            //fWriter.write(DEFAULT_ENCODING);
-            fWriter.write("?>");
-        } catch (IOException ex) {
-            throw new XMLStreamException(ex);
-        }
+        writeStartDocument(null, version, false, false);
     }
 
     /**
-     * @param encoding
-     * @param version
-     * @throws XMLStreamException
+     * Writes the XML declaration.
+     *
+     * @param encoding the specified encoding
+     * @param version the specified version
+     * @throws XMLStreamException in case of an IOException
      */
+    @Override
     public void writeStartDocument(String encoding, String version)
         throws XMLStreamException {
-        //Revisit : What about standalone ?
+        writeStartDocument(encoding, version, false, false);
+    }
+
+    @Override
+    public void writeStartDocument(String encoding, String version,
+            boolean standalone, boolean standaloneSet)
+        throws XMLStreamException {
+
         try {
-            if ((encoding == null) && (version == null)) {
-                writeStartDocument();
-
+            if ((encoding == null || encoding.length() == 0)
+                    && (version == null || version.length() == 0)
+                    && (!standaloneSet)) {
+                fWriter.write(DEFAULT_XMLDECL);
                 return;
             }
 
-            if (encoding == null) {
-                writeStartDocument(version);
-
-                return;
+            // Verify the encoding before writing anything
+            if (encoding != null && !encoding.equals("")) {
+                verifyEncoding(encoding);
             }
-
-            String streamEncoding = null;
-            if (fWriter instanceof OutputStreamWriter) {
-                streamEncoding = ((OutputStreamWriter) fWriter).getEncoding();
-            }
-            else if (fWriter instanceof UTF8OutputStreamWriter) {
-                streamEncoding = ((UTF8OutputStreamWriter) fWriter).getEncoding();
-            }
-            else if (fWriter instanceof XMLWriter) {
-                streamEncoding = ((OutputStreamWriter) ((XMLWriter)fWriter).getWriter()).getEncoding();
-            }
-
-            if (streamEncoding != null && !streamEncoding.equalsIgnoreCase(encoding)) {
-                // If the equality check failed, check for charset encoding aliases
-                boolean foundAlias = false;
-                Set aliases = Charset.forName(encoding).aliases();
-                for (Iterator it = aliases.iterator(); !foundAlias && it.hasNext(); ) {
-                    if (streamEncoding.equalsIgnoreCase((String) it.next())) {
-                        foundAlias = true;
-                    }
-                }
-                // If no alias matches the encoding name, then report error
-                if (!foundAlias) {
-                    throw new XMLStreamException("Underlying stream encoding '"
-                            + streamEncoding
-                            + "' and input paramter for writeStartDocument() method '"
-                            + encoding + "' do not match.");
-                }
-            }
-
 
             fWriter.write("<?xml version=\"");
 
@@ -1204,14 +1169,62 @@ public final class XMLStreamWriterImpl extends AbstractMap implements XMLStreamW
                 fWriter.write(version);
             }
 
-            if (!encoding.equals("")) {
+            if (encoding != null && !encoding.equals("")) {
                 fWriter.write("\" encoding=\"");
                 fWriter.write(encoding);
+            }
+
+            if (standaloneSet) {
+                fWriter.write("\" standalone=\"");
+                if (standalone) {
+                    fWriter.write("yes");
+                } else {
+                    fWriter.write("no");
+                }
             }
 
             fWriter.write("\"?>");
         } catch (IOException ex) {
             throw new XMLStreamException(ex);
+        }
+    }
+
+    /**
+     * Verifies that the encoding is consistent between the underlying encoding
+     * and that specified.
+     *
+     * @param encoding the specified encoding
+     * @throws XMLStreamException if they do not match
+     */
+    private void verifyEncoding(String encoding) throws XMLStreamException {
+
+        String streamEncoding = null;
+        if (fWriter instanceof OutputStreamWriter) {
+            streamEncoding = ((OutputStreamWriter) fWriter).getEncoding();
+        }
+        else if (fWriter instanceof UTF8OutputStreamWriter) {
+            streamEncoding = ((UTF8OutputStreamWriter) fWriter).getEncoding();
+        }
+        else if (fWriter instanceof XMLWriter) {
+            streamEncoding = ((OutputStreamWriter) ((XMLWriter)fWriter).getWriter()).getEncoding();
+        }
+
+        if (streamEncoding != null && !streamEncoding.equalsIgnoreCase(encoding)) {
+            // If the equality check failed, check for charset encoding aliases
+            boolean foundAlias = false;
+            Set aliases = Charset.forName(encoding).aliases();
+            for (Iterator it = aliases.iterator(); !foundAlias && it.hasNext(); ) {
+                if (streamEncoding.equalsIgnoreCase((String) it.next())) {
+                    foundAlias = true;
+                }
+            }
+            // If no alias matches the encoding name, then report error
+            if (!foundAlias) {
+                throw new XMLStreamException("Underlying stream encoding '"
+                        + streamEncoding
+                        + "' and input paramter for writeStartDocument() method '"
+                        + encoding + "' do not match.");
+            }
         }
     }
 

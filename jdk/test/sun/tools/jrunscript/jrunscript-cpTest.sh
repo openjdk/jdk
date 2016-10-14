@@ -33,14 +33,14 @@
 . ${TESTSRC-.}/common.sh
 
 setup
-${JAVA} -cp ${TESTCLASSES} CheckEngine
+${JAVA} ${TESTVMOPTS} ${TESTJAVAOPTS} -cp ${TESTCLASSES} CheckEngine
 if [ $? -eq 2 ]; then
     echo "No js engine found and engine not required; test vacuously passes."
     exit 0
 fi
 
 rm -f Hello.class
-${JAVAC} ${TESTSRC}/Hello.java -d .
+${JAVAC} ${TESTTOOLVMOPTS} ${TESTJAVACOPTS} ${TESTSRC}/Hello.java -d .
 
 # we check whether classpath setting for app classes
 # work with jrunscript. Script should be able to

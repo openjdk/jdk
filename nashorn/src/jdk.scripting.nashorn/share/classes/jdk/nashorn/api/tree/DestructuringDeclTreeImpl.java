@@ -36,7 +36,7 @@ final class DestructuringDeclTreeImpl extends StatementTreeImpl
     private final ExpressionTree lhs;
     private final ExpressionTree init;
 
-    DestructuringDeclTreeImpl(ExpressionStatement exprStat, final ExpressionTree lhs, final ExpressionTree init) {
+    DestructuringDeclTreeImpl(final ExpressionStatement exprStat, final ExpressionTree lhs, final ExpressionTree init) {
         super(exprStat);
         assert exprStat.destructuringDeclarationType() != null : "expecting a destructuring decl. statement";
 

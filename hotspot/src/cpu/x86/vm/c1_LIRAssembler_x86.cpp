@@ -1345,6 +1345,18 @@ void LIR_Assembler::emit_op3(LIR_Op3* op) {
                       op->result_opr(),
                       op->info());
       break;
+    case lir_fmad:
+      __ fmad(op->result_opr()->as_xmm_double_reg(),
+              op->in_opr1()->as_xmm_double_reg(),
+              op->in_opr2()->as_xmm_double_reg(),
+              op->in_opr3()->as_xmm_double_reg());
+      break;
+    case lir_fmaf:
+      __ fmaf(op->result_opr()->as_xmm_float_reg(),
+              op->in_opr1()->as_xmm_float_reg(),
+              op->in_opr2()->as_xmm_float_reg(),
+              op->in_opr3()->as_xmm_float_reg());
+      break;
     default:      ShouldNotReachHere(); break;
   }
 }
