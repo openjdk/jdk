@@ -82,6 +82,7 @@ final class HotSpotJVMCICompilerConfig {
                 // Auto select a single available compiler
                 for (JVMCICompilerFactory f : Services.load(JVMCICompilerFactory.class)) {
                     if (factory == null) {
+                        Services.exportJVMCITo(f.getClass());
                         factory = f;
                     } else {
                         // Multiple factories seen - cancel auto selection
