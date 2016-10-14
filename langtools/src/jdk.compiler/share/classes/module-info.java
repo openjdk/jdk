@@ -70,6 +70,9 @@ module jdk.compiler {
     uses com.sun.source.util.Plugin;
     uses com.sun.tools.javac.platform.PlatformProvider;
 
+    provides java.util.spi.ToolProvider
+        with com.sun.tools.javac.main.JavacToolProvider;
+
     provides com.sun.tools.javac.platform.PlatformProvider
         with com.sun.tools.javac.platform.JDKPlatformProvider;
 

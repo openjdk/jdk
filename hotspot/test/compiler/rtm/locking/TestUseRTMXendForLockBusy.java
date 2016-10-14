@@ -46,6 +46,7 @@ import compiler.testlibrary.rtm.CompilableTest;
 import compiler.testlibrary.rtm.RTMLockingStatistics;
 import compiler.testlibrary.rtm.RTMTestBase;
 import compiler.testlibrary.rtm.predicate.SupportedCPU;
+import compiler.testlibrary.rtm.predicate.SupportedOS;
 import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -62,7 +63,7 @@ public class TestUseRTMXendForLockBusy extends CommandLineOptionTest {
     private final static int LOCKING_TIME = 5000;
 
     private TestUseRTMXendForLockBusy() {
-        super(new AndPredicate(new SupportedVM(), new SupportedCPU()));
+        super(new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM()));
     }
 
     @Override

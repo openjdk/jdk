@@ -368,7 +368,7 @@ public abstract class AbstractMemberWriter {
      * @param htmltree the content tree to which the comment will be added.
      */
     protected void addComment(Element member, Content htmltree) {
-        if (!utils.getBody(member).isEmpty()) {
+        if (!utils.getFullBody(member).isEmpty()) {
             writer.addInlineComment(member, htmltree);
         }
     }

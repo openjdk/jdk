@@ -119,6 +119,18 @@ public class Main {
         this.stdOut = this.stdErr = out;
     }
 
+    /**
+     * Construct a compiler instance.
+     * @param name the name of this tool
+     * @param out a stream to which to write expected output
+     * @param err a stream to which to write diagnostic output
+     */
+    public Main(String name, PrintWriter out, PrintWriter err) {
+        this.ownName = name;
+        this.stdOut = out;
+        this.stdErr = err;
+    }
+
     /** Report a usage error.
      */
     void error(String key, Object... args) {

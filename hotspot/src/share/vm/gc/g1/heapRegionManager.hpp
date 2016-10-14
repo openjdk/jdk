@@ -259,9 +259,9 @@ public:
 // The HeapRegionClaimer is used during parallel iteration over heap regions,
 // allowing workers to claim heap regions, gaining exclusive rights to these regions.
 class HeapRegionClaimer : public StackObj {
-  uint  _n_workers;
-  uint  _n_regions;
-  uint* _claims;
+  uint           _n_workers;
+  uint           _n_regions;
+  volatile uint* _claims;
 
   static const uint Unclaimed = 0;
   static const uint Claimed   = 1;
@@ -285,4 +285,3 @@ class HeapRegionClaimer : public StackObj {
   bool claim_region(uint region_index);
 };
 #endif // SHARE_VM_GC_G1_HEAPREGIONMANAGER_HPP
-

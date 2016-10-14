@@ -773,19 +773,17 @@ $(JDWP_DOCDIR)/jdwp-protocol.html : $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-pro
 # jvmtidocs
 #
 
-ALL_OTHER_TARGETS += jvmtidocs
+JVMTI_DOCDIR := $(PLATFORM_DOCSDIR)/jvmti
+# Pick jvmti.html from any jvm variant, they are all the same.
+JVMTI_HTML := $(firstword \
+    $(wildcard $(HOTSPOT_OUTPUTDIR)/variant-*/gensrc/jvmtifiles/jvmti.html))
 
-JVMTI_DOCDIR = $(PLATFORM_DOCSDIR)/jvmti
-JVMTI_HTML = $(HOTSPOT_DIST)/docs/platform/jvmti/jvmti.html
+$(eval $(call SetupCopyFiles, COPY_JVMTI_HTML, \
+    FILES := $(JVMTI_HTML), \
+    DEST := $(PLATFORM_DOCSDIR)/jvmti, \
+))
 
-jvmtidocs: $(JVMTI_DOCDIR)/jvmti.html
-$(JVMTI_DOCDIR)/jvmti.html:
-	@$(prep-javadoc)
-	@if [ -f $(JVMTI_HTML) ] ; then \
-	  $(CP) $(JVMTI_HTML) $@; \
-	else \
-	  $(ECHO) "WARNING: Generated file does not exist: $(JVMTI_HTML)"; \
-	fi
+jvmtidocs: $(COPY_JVMTI_HTML)
 
 #############################################################
 #

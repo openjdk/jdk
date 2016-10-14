@@ -33,7 +33,7 @@ final class TemplateLiteralTreeImpl extends ExpressionTreeImpl
 
     private final List<? extends ExpressionTree> expressions;
 
-    TemplateLiteralTreeImpl(Expression node, List<? extends ExpressionTree> expressions) {
+    TemplateLiteralTreeImpl(final Expression node, final List<? extends ExpressionTree> expressions) {
         super(node);
         this.expressions = expressions;
     }

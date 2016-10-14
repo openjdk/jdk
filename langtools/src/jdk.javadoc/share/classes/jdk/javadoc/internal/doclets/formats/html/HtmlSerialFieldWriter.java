@@ -159,7 +159,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      * @param contentTree the tree to which the deprecated info will be added
      */
     public void addMemberDescription(VariableElement field, Content contentTree) {
-        if (!utils.getBody(field).isEmpty()) {
+        if (!utils.getFullBody(field).isEmpty()) {
             writer.addInlineComment(field, contentTree);
         }
         List<? extends DocTree> tags = utils.getBlockTags(field, DocTree.Kind.SERIAL);
@@ -210,7 +210,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      */
     public boolean shouldPrintOverview(VariableElement field) {
         if (!configuration.nocomment) {
-            if(!utils.getBody(field).isEmpty() ||
+            if(!utils.getFullBody(field).isEmpty() ||
                     writer.hasSerializationOverviewTags(field))
                 return true;
         }

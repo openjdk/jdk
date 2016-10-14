@@ -87,7 +87,7 @@ public class ToolEnvironment {
         return instance;
     }
 
-    private final Messager messager;
+    final Messager messager;
 
     /** Predefined symbols known to the compiler. */
     public final Symtab syms;
@@ -204,182 +204,8 @@ public class ToolEnvironment {
         return path != null;
     }
 
-    //---------------- print forwarders ----------------//
-
-    // ERRORS
     /**
-     * Print error message, increment error count.
-     *
-     * @param msg message to print.
-     */
-    public void printError(String msg) {
-        messager.printError(msg);
-    }
-
-//    /**
-//     * Print error message, increment error count.
-//     *
-//     * @param key selects message from resource
-//     */
-//    public void error(Element element, String key) {
-//        if (element == null)
-//            messager.error(key);
-//        else
-//            messager.error(element, key);
-//    }
-//
-//    public void error(String prefix, String key) {
-//        printError(prefix + ":" + messager.getText(key));
-//    }
-//
-//    /**
-//     * Print error message, increment error count.
-//     *
-//     * @param path the path to the source
-//     * @param key selects message from resource
-//     */
-//    public void error(DocTreePath path, String key) {
-//        messager.error(path, key);
-//    }
-//
-//    /**
-//     * Print error message, increment error count.
-//     *
-//     * @param path the path to the source
-//     * @param msg message to print.
-//     */
-//    public void printError(DocTreePath path, String msg) {
-//        messager.printError(path, msg);
-//    }
-//
-//    /**
-//     * Print error message, increment error count.
-//     * @param e the target element
-//     * @param msg message to print.
-//     */
-//    public void printError(Element e, String msg) {
-//        messager.printError(e, msg);
-//    }
-
-    /**
-     * Print error message, increment error count.
-     * @param key selects message from resource
-     * @param args replacement arguments
-     */
-    public void error(String key, String... args) {
-        error(null, key, args);
-    }
-
-    /**
-     * Print error message, increment error count.
-     *
-     * @param element the source element
-     * @param key selects message from resource
-     * @param args replacement arguments
-     */
-    public void error(Element element, String key, String... args) {
-        if (element == null)
-            messager.error(key, (Object[]) args);
-        else
-            messager.error(element, key, (Object[]) args);
-    }
-
-    // WARNINGS
-
-//    /**
-//     * Print warning message, increment warning count.
-//     *
-//     * @param msg message to print.
-//     */
-//    public void printWarning(String msg) {
-//        messager.printWarning(msg);
-//    }
-//
-//    public void warning(String key) {
-//        warning((Element)null, key);
-//    }
-
-    public void warning(String key, String... args) {
-        warning((Element)null, key, args);
-    }
-
-//    /**
-//     * Print warning message, increment warning count.
-//     *
-//     * @param element the source element
-//     * @param key selects message from resource
-//     */
-//    public void warning(Element element, String key) {
-//        if (element == null)
-//            messager.warning(key);
-//        else
-//            messager.warning(element, key);
-//    }
-//
-//    /**
-//     * Print warning message, increment warning count.
-//     *
-//     * @param path the path to the source
-//     * @param msg message to print.
-//     */
-//    public void printWarning(DocTreePath path, String msg) {
-//        messager.printWarning(path, msg);
-//    }
-//
-//    /**
-//     * Print warning message, increment warning count.
-//     *
-//     * @param e  the source element
-//     * @param msg message to print.
-//     */
-//    public void printWarning(Element e, String msg) {
-//        messager.printWarning(e, msg);
-//    }
-
-    /**
-     * Print warning message, increment warning count.
-     *
-     * @param e    the source element
-     * @param key  selects message from resource
-     * @param args the replace arguments
-     */
-    public void warning(Element e, String key, String... args) {
-        if (e == null)
-            messager.warning(key, (Object[]) args);
-        else
-            messager.warning(e, key, (Object[]) args);
-    }
-
-//    Note: no longer required
-//    /**
-//     * Print a message.
-//     *
-//     * @param msg message to print.
-//     */
-//    public void printNotice(String msg) {
-//        if (quiet) {
-//            return;
-//        }
-//        messager.printNotice(msg);
-//    }
-
-//  Note: no longer required
-//    /**
-//     * Print a message.
-//     *
-//     * @param e the source element
-//     * @param msg message to print.
-//     */
-//    public void printNotice(Element e, String msg) {
-//        if (quiet) {
-//            return;
-//        }
-//        messager.printNotice(e, msg);
-//    }
-
-    //  NOTICES
-    /**
-     * Print a message.
+     * Print a notice, iff <em>quiet</em> is not specified.
      *
      * @param key selects message from resource
      */
@@ -390,22 +216,8 @@ public class ToolEnvironment {
         messager.notice(key);
     }
 
-//    Note: not used anymore
-//    /**
-//     * Print a message.
-//     *
-//     * @param path the path to the source
-//     * @param msg message to print.
-//     */
-//    public void printNotice(DocTreePath path, String msg) {
-//        if (quiet) {
-//            return;
-//        }
-//        messager.printNotice(path, msg);
-//    }
-
     /**
-     * Print a message.
+     * Print a notice, iff <em>quiet</em> is not specified.
      *
      * @param key selects message from resource
      * @param a1 first argument
@@ -415,48 +227,6 @@ public class ToolEnvironment {
             return;
         }
         messager.notice(key, a1);
-    }
-
-//    Note: not used anymore
-//    /**
-//     * Print a message.
-//     *
-//     * @param key selects message from resource
-//     * @param a1 first argument
-//     * @param a2 second argument
-//     */
-//    public void notice(String key, String a1, String a2) {
-//        if (quiet) {
-//            return;
-//        }
-//        messager.notice(key, a1, a2);
-//    }
-//
-
-//    Note: not used anymore
-//    /**
-//     * Print a message.
-//     *
-//     * @param key selects message from resource
-//     * @param a1 first argument
-//     * @param a2 second argument
-//     * @param a3 third argument
-//     */
-//    public void notice(String key, String a1, String a2, String a3) {
-//        if (quiet) {
-//            return;
-//        }
-//        messager.notice(key, a1, a2, a3);
-//    }
-
-    /**
-     * Exit, reporting errors and warnings.
-     */
-    public void exit() {
-        // Messager should be replaced by a more general
-        // compilation environment.  This can probably
-        // subsume DocEnv as well.
-        throw new Messager.ExitJavadoc();
     }
 
     TreePath getTreePath(JCCompilationUnit tree) {

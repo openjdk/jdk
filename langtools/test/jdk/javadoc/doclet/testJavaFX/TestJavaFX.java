@@ -61,8 +61,14 @@ public class TestJavaFX extends JavadocTester {
                     + "<div class=\"block\">Gets the value of the property rate.</div>\n"
                     + "<dl>\n"
                     + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>",
-                "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                    + "<a href=\"../pkg1/C.html#rateProperty\">rate</a></span></code>",
+                "<td class=\"colFirst\"><code><a href=\"../pkg1/C.DoubleProperty.html\" "
+                    + "title=\"class in pkg1\">C.DoubleProperty</a></code></td>\n"
+                    + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                    + "<a href=\"../pkg1/C.html#rateProperty\">rate</a></span></code></th>\n"
+                    + "<td class=\"colLast\">\n"
+                    + "<div class=\"block\">Defines the direction/speed at which the "
+                    + "<code>Timeline</code> is expected to\n"
+                    + " be played.</div>\n</td>",
                 "<span class=\"simpleTagLabel\">Default value:</span>",
                 "<span class=\"simpleTagLabel\">Since:</span></dt>\n"
                     + "<dd>JavaFX 8.0</dd>",
@@ -72,12 +78,69 @@ public class TestJavaFX extends JavadocTester {
                 "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
                     + "<a href=\"../pkg1/C.html#setTestMethodProperty--\">"
                     + "setTestMethodProperty</a></span>()</code></th>",
+                "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                    + "<a href=\"../pkg1/C.html#pausedProperty\">paused</a></span></code></th>\n"
+                    + "<td class=\"colLast\">\n"
+                    + "<div class=\"block\">Defines if paused.</div>",
+                "<h4>paused</h4>\n"
+                    + "<pre>public final&nbsp;<a href=\"../pkg1/C.BooleanProperty.html\" "
+                    + "title=\"class in pkg1\">C.BooleanProperty</a> pausedProperty</pre>\n"
+                    + "<div class=\"block\">Defines if paused. The second line.</div>",
                 "<h4>isPaused</h4>\n"
                     + "<pre>public final&nbsp;double&nbsp;isPaused()</pre>\n"
-                    + "<div class=\"block\">Gets the value of the property paused.</div>");
+                    + "<div class=\"block\">Gets the value of the property paused.</div>",
+                "<h4>setPaused</h4>\n"
+                    + "<pre>public final&nbsp;void&nbsp;setPaused(boolean&nbsp;value)</pre>\n"
+                    + "<div class=\"block\">Sets the value of the property paused.</div>\n"
+                    + "<dl>\n"
+                    + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>\n"
+                    + "<dd>Defines if paused. The second line.</dd>\n"
+                    + "<dt><span class=\"simpleTagLabel\">Default value:</span></dt>\n"
+                    + "<dd>false</dd>",
+                "<h4>isPaused</h4>\n"
+                    + "<pre>public final&nbsp;double&nbsp;isPaused()</pre>\n"
+                    + "<div class=\"block\">Gets the value of the property paused.</div>\n"
+                    + "<dl>\n"
+                    + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>\n"
+                    + "<dd>Defines if paused. The second line.</dd>\n"
+                    + "<dt><span class=\"simpleTagLabel\">Default value:</span></dt>\n"
+                    + "<dd>false</dd>",
+                "<h4>rate</h4>\n"
+                    + "<pre>public final&nbsp;<a href=\"../pkg1/C.DoubleProperty.html\" "
+                    + "title=\"class in pkg1\">C.DoubleProperty</a> rateProperty</pre>\n"
+                    + "<div class=\"block\">Defines the direction/speed at which the "
+                    + "<code>Timeline</code> is expected to\n"
+                    + " be played. This is the second line.</div>",
+                "<h4>setRate</h4>\n"
+                    + "<pre>public final&nbsp;void&nbsp;setRate(double&nbsp;value)</pre>\n"
+                    + "<div class=\"block\">Sets the value of the property rate.</div>\n"
+                    + "<dl>\n"
+                    + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>\n"
+                    + "<dd>Defines the direction/speed at which the <code>Timeline</code> is expected to\n"
+                    + " be played. This is the second line.</dd>\n"
+                    + "<dt><span class=\"simpleTagLabel\">Default value:</span></dt>\n"
+                    + "<dd>11</dd>\n"
+                    + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                    + "<dd>JavaFX 8.0</dd>",
+                "<h4>getRate</h4>\n"
+                    + "<pre>public final&nbsp;double&nbsp;getRate()</pre>\n"
+                    + "<div class=\"block\">Gets the value of the property rate.</div>\n"
+                    + "<dl>\n"
+                    + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>\n"
+                    + "<dd>Defines the direction/speed at which the <code>Timeline</code> is expected to\n"
+                    + " be played. This is the second line.</dd>\n"
+                    + "<dt><span class=\"simpleTagLabel\">Default value:</span></dt>\n"
+                    + "<dd>11</dd>\n"
+                    + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                    + "<dd>JavaFX 8.0</dd>",
+                "");
 
         checkOutput("pkg1/C.html", false,
                 "A()");
+
+        checkOutput("index-all.html", true,
+                "<div class=\"block\">Gets the value of the property paused.</div>",
+                "<div class=\"block\">Defines if paused.</div>");
 
         checkOutput("pkg1/D.html", true,
                 "<h3>Properties inherited from class&nbsp;pkg1."

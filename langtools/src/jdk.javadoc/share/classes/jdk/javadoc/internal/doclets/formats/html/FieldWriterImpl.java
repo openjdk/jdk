@@ -146,7 +146,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
      */
     @Override
     public void addComments(VariableElement field, Content fieldTree) {
-        if (!utils.getBody(field).isEmpty()) {
+        if (!utils.getFullBody(field).isEmpty()) {
             writer.addInlineComment(field, fieldTree);
         }
     }

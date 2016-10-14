@@ -45,7 +45,7 @@ public class TestThrowsTag extends JavadocTester {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg");
-        checkExit(Exit.FAILED);  // TODO: investigate why failed
+        checkExit(Exit.OK);
 
         checkOutput("pkg/C.html", true,
             "<dd><code><a href=\"../pkg/T1.html\" title=\"class in pkg\">T1</a></code> - the first throws tag.</dd>\n" +

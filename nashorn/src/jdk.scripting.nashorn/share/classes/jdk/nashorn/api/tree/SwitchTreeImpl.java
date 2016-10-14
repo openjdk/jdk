@@ -33,7 +33,7 @@ final class SwitchTreeImpl extends StatementTreeImpl implements SwitchTree {
     private final List<? extends CaseTree> cases;
     SwitchTreeImpl(final SwitchNode node,
             final ExpressionTree expr,
-            List<? extends CaseTree> cases) {
+            final List<? extends CaseTree> cases) {
         super(node);
         this.expr = expr;
         this.cases = cases;

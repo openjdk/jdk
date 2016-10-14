@@ -59,7 +59,7 @@ public class LookupTest {
     private static void privateStaticFunc() {}
 
     @SuppressWarnings("unused")
-    private int myIntField = 0;
+    private final int myIntField = 0;
 
     @SuppressWarnings("unused")
     @DataProvider
@@ -72,26 +72,26 @@ public class LookupTest {
 
     @Test(dataProvider = "flags")
     public void unreflectTest(final boolean publicLookup) throws NoSuchMethodException {
-        MethodHandle mh = Lookup.unreflect(getLookup(publicLookup), LookupTest.class.getMethod("unreflectTest", Boolean.TYPE));
+        final MethodHandle mh = Lookup.unreflect(getLookup(publicLookup), LookupTest.class.getMethod("unreflectTest", Boolean.TYPE));
         Assert.assertNotNull(mh);
     }
 
     @Test
     public void unreflectTest2() throws NoSuchMethodException {
-        MethodHandle mh = Lookup.PUBLIC.unreflect(LookupTest.class.getMethod("unreflectTest", Boolean.TYPE));
+        final MethodHandle mh = Lookup.PUBLIC.unreflect(LookupTest.class.getMethod("unreflectTest", Boolean.TYPE));
         Assert.assertNotNull(mh);
     }
 
     @Test(dataProvider = "flags")
     public void unreflectNegativeTest(final boolean publicLookup) throws NoSuchMethodException {
         try {
-            MethodHandle mh = Lookup.unreflect(getLookup(publicLookup),
+            final MethodHandle mh = Lookup.unreflect(getLookup(publicLookup),
                 LookupTest.class.getDeclaredMethod("privateFunc"));
             if (publicLookup) {
                 throw new RuntimeException("should have thrown Error");
             }
             Assert.assertNotNull(mh);
-        } catch (Error err) {
+        } catch (final Error err) {
             Assert.assertTrue(publicLookup);
             Assert.assertTrue(err instanceof NoSuchMethodError || err instanceof IllegalAccessError);
         }
@@ -102,33 +102,33 @@ public class LookupTest {
         try {
             Lookup.PUBLIC.unreflect(LookupTest.class.getDeclaredMethod("privateFunc"));
             throw new RuntimeException("should have thrown Error");
-        } catch (Error err) {
+        } catch (final Error err) {
             Assert.assertTrue(err instanceof NoSuchMethodError || err instanceof IllegalAccessError);
         }
     }
 
     @Test(dataProvider = "flags")
     public void unreflectConstructorTest(final boolean publicLookup) throws NoSuchMethodException {
-        MethodHandle mh = Lookup.unreflectConstructor(getLookup(publicLookup), LookupTest.class.getConstructor());
+        final MethodHandle mh = Lookup.unreflectConstructor(getLookup(publicLookup), LookupTest.class.getConstructor());
         Assert.assertNotNull(mh);
     }
 
     @Test
     public void unreflectConstructorTest2() throws NoSuchMethodException {
-        MethodHandle mh = Lookup.PUBLIC.unreflectConstructor(LookupTest.class.getConstructor());
+        final MethodHandle mh = Lookup.PUBLIC.unreflectConstructor(LookupTest.class.getConstructor());
         Assert.assertNotNull(mh);
     }
 
     @Test(dataProvider = "flags")
     public void unreflectConstructorNegativeTest(final boolean publicLookup) throws NoSuchMethodException {
         try {
-            MethodHandle mh = Lookup.unreflectConstructor(getLookup(publicLookup),
+            final MethodHandle mh = Lookup.unreflectConstructor(getLookup(publicLookup),
                 LookupTest.class.getDeclaredConstructor(Integer.TYPE));
             if (publicLookup) {
                 throw new RuntimeException("should have thrown Error");
             }
             Assert.assertNotNull(mh);
-        } catch (Error err) {
+        } catch (final Error err) {
             Assert.assertTrue(publicLookup);
             Assert.assertTrue(err instanceof NoSuchMethodError || err instanceof IllegalAccessError);
         }
@@ -140,7 +140,7 @@ public class LookupTest {
             Lookup.PUBLIC.unreflectConstructor(
                 LookupTest.class.getDeclaredConstructor(Integer.TYPE));
             throw new RuntimeException("should have thrown Error");
-        } catch (Error err) {
+        } catch (final Error err) {
             Assert.assertTrue(err instanceof NoSuchMethodError || err instanceof IllegalAccessError);
         }
     }
@@ -148,13 +148,13 @@ public class LookupTest {
     @Test(dataProvider = "flags")
     public void findOwnStaticTest(final boolean publicLookup) {
         try {
-            MethodHandle mh = Lookup.findOwnStatic(getLookup(publicLookup), "getLookup",
+            final MethodHandle mh = Lookup.findOwnStatic(getLookup(publicLookup), "getLookup",
                     MethodHandles.Lookup.class, Boolean.TYPE);
             if (publicLookup) {
                 throw new RuntimeException("should have thrown Error");
             }
             Assert.assertNotNull(mh);
-        } catch (Error err) {
+        } catch (final Error err) {
             Assert.assertTrue(publicLookup);
             Assert.assertTrue(err instanceof NoSuchMethodError || err instanceof IllegalAccessError);
         }
@@ -166,7 +166,7 @@ public class LookupTest {
             Lookup.PUBLIC.findStatic(LookupTest.class, "getLookup",
                     MethodType.methodType(MethodHandles.Lookup.class, Boolean.TYPE));
             throw new RuntimeException("should have thrown Error");
-        } catch (Error err) {
+        } catch (final Error err) {
             Assert.assertTrue(err instanceof NoSuchMethodError || err instanceof IllegalAccessError);
         }
     }
@@ -174,12 +174,12 @@ public class LookupTest {
     @Test(dataProvider = "flags")
     public void findOwnSepcialTest(final boolean publicLookup) {
         try {
-            MethodHandle mh = Lookup.findOwnSpecial(getLookup(publicLookup), "privateFunc", Void.TYPE);
+            final MethodHandle mh = Lookup.findOwnSpecial(getLookup(publicLookup), "privateFunc", Void.TYPE);
             if (publicLookup) {
                 throw new RuntimeException("should have thrown Error");
             }
             Assert.assertNotNull(mh);
-        } catch (Error err) {
+        } catch (final Error err) {
             Assert.assertTrue(publicLookup);
             Assert.assertTrue(err instanceof NoSuchMethodError || err instanceof IllegalAccessError);
         }
@@ -190,7 +190,7 @@ public class LookupTest {
         try {
             Lookup.PUBLIC.findOwnSpecial("privateFunc", Void.TYPE);
             throw new RuntimeException("should have thrown Error");
-        } catch (Error err) {
+        } catch (final Error err) {
             Assert.assertTrue(err instanceof NoSuchMethodError || err instanceof IllegalAccessError);
         }
     }
@@ -198,12 +198,12 @@ public class LookupTest {
     @Test(dataProvider = "flags")
     public void findGetterTest(final boolean publicLookup) {
         try {
-            MethodHandle mh = new Lookup(getLookup(publicLookup)).findGetter(LookupTest.class, "myIntField", Integer.TYPE);
+            final MethodHandle mh = new Lookup(getLookup(publicLookup)).findGetter(LookupTest.class, "myIntField", Integer.TYPE);
             if (publicLookup) {
                 throw new RuntimeException("should have thrown Error");
             }
             Assert.assertNotNull(mh);
-        } catch (Error err) {
+        } catch (final Error err) {
             Assert.assertTrue(publicLookup);
             Assert.assertTrue(err instanceof NoSuchMethodError || err instanceof IllegalAccessError);
         }
@@ -214,7 +214,7 @@ public class LookupTest {
         try {
             Lookup.PUBLIC.findGetter(LookupTest.class, "myIntField", Integer.TYPE);
             throw new RuntimeException("should have thrown Error");
-        } catch (Error err) {
+        } catch (final Error err) {
             Assert.assertTrue(err instanceof NoSuchMethodError || err instanceof IllegalAccessError);
         }
     }
@@ -222,13 +222,13 @@ public class LookupTest {
     @Test(dataProvider = "flags")
     public void findVirtualTest(final boolean publicLookup) {
         try {
-            MethodHandle mh = new Lookup(getLookup(publicLookup)).findVirtual(LookupTest.class, "protectedFunc",
+            final MethodHandle mh = new Lookup(getLookup(publicLookup)).findVirtual(LookupTest.class, "protectedFunc",
                     MethodType.methodType(Void.TYPE));
             if (publicLookup) {
                 throw new RuntimeException("should have thrown Error");
             }
             Assert.assertNotNull(mh);
-        } catch (Error err) {
+        } catch (final Error err) {
             Assert.assertTrue(publicLookup);
             Assert.assertTrue(err instanceof NoSuchMethodError || err instanceof IllegalAccessError);
         }
@@ -240,7 +240,7 @@ public class LookupTest {
             Lookup.PUBLIC.findVirtual(LookupTest.class, "protectedFunc",
                     MethodType.methodType(Void.TYPE));
             throw new RuntimeException("should have thrown Error");
-        } catch (Error err) {
+        } catch (final Error err) {
             Assert.assertTrue(err instanceof NoSuchMethodError || err instanceof IllegalAccessError);
         }
     }
@@ -248,13 +248,13 @@ public class LookupTest {
     @Test(dataProvider = "flags")
     public void findStaticTest(final boolean publicLookup) {
         try {
-            MethodHandle mh = new Lookup(getLookup(publicLookup)).findStatic(LookupTest.class, "privateStaticFunc",
+            final MethodHandle mh = new Lookup(getLookup(publicLookup)).findStatic(LookupTest.class, "privateStaticFunc",
                     MethodType.methodType(Void.TYPE));
             if (publicLookup) {
                 throw new RuntimeException("should have thrown Error");
             }
             Assert.assertNotNull(mh);
-        } catch (Error err) {
+        } catch (final Error err) {
             Assert.assertTrue(publicLookup);
             Assert.assertTrue(err instanceof NoSuchMethodError || err instanceof IllegalAccessError);
         }
@@ -266,7 +266,7 @@ public class LookupTest {
             Lookup.PUBLIC.findStatic(LookupTest.class, "privateStaticFunc",
                     MethodType.methodType(Void.TYPE));
             throw new RuntimeException("should have thrown Error");
-        } catch (Error err) {
+        } catch (final Error err) {
             Assert.assertTrue(err instanceof NoSuchMethodError || err instanceof IllegalAccessError);
         }
     }

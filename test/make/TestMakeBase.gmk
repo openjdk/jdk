@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -263,5 +263,82 @@ $(eval $(call assert-equals, \
     $(call PathList, $(call PathList, $(PATHLIST_INPUT))), \
     $(call PathList, $(PATHLIST_INPUT)), \
     PathList call not safe for calling twice))
+
+################################################################################
+# Test FindCommonPathPrefix
+
+$(eval $(call assert-equals, \
+    $(call FindCommonPathPrefix, /foo/bar/baz, /foo/bar/banan), \
+    /foo/bar, \
+    FindCommonPathPrefix, \
+))
+
+$(eval $(call assert-equals, \
+    $(call FindCommonPathPrefix, /foo/bar/baz, /foo/bar), \
+    /foo/bar, \
+    FindCommonPathPrefix, \
+))
+
+$(eval $(call assert-equals, \
+    $(call FindCommonPathPrefix, /foo/bar/baz, /foo/bar/), \
+    /foo/bar, \
+    FindCommonPathPrefix, \
+))
+
+$(eval $(call assert-equals, \
+    $(call FindCommonPathPrefix, foo/bar/baz, foo/bar/banan), \
+    foo/bar, \
+    FindCommonPathPrefix, \
+))
+
+$(eval $(call assert-equals, \
+    $(call FindCommonPathPrefix, foo/bar/baz, /foo/bar/banan), \
+    , \
+    FindCommonPathPrefix, \
+))
+
+################################################################################
+# DirToDotDot
+
+$(eval $(call assert-equals, \
+    $(call DirToDotDot, foo/bar/baz/), \
+    ../../.., \
+    DirToDotDot, \
+))
+
+$(eval $(call assert-equals, \
+    $(call DirToDotDot, foo/bar), \
+    ../.., \
+    DirToDotDot, \
+))
+
+$(eval $(call assert-equals, \
+    $(call DirToDotDot, /foo), \
+    .., \
+    DirToDotDot, \
+))
+
+################################################################################
+# RelativePath
+
+$(eval $(call assert-equals, \
+    $(call RelativePath, foo/bar/baz, foo/bar/banan), \
+    ../baz, \
+    RelativePath, \
+))
+
+$(eval $(call assert-equals, \
+    $(call RelativePath, foo/bar/baz/banan/kung, foo/bar/banan/kung), \
+    ../../baz/banan/kung, \
+    RelativePath, \
+))
+
+$(eval $(call assert-equals, \
+    $(call RelativePath, /foo/bar/baz/banan/kung, /foo/bar/banan/kung/), \
+    ../../baz/banan/kung, \
+    RelativePath, \
+))
+
+################################################################################
 
 all: $(TEST_TARGETS)

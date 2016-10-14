@@ -4769,6 +4769,22 @@ void Assembler::vdivss(XMMRegister dst, XMMRegister nds, XMMRegister src) {
   emit_int8((unsigned char)(0xC0 | encode));
 }
 
+void Assembler::vfmadd231sd(XMMRegister dst, XMMRegister src1, XMMRegister src2) {
+  assert(VM_Version::supports_fma(), "");
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int8((unsigned char)0xB9);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::vfmadd231ss(XMMRegister dst, XMMRegister src1, XMMRegister src2) {
+  assert(VM_Version::supports_fma(), "");
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int8((unsigned char)0xB9);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
 void Assembler::vmulsd(XMMRegister dst, XMMRegister nds, Address src) {
   assert(VM_Version::supports_avx(), "");
   InstructionMark im(this);

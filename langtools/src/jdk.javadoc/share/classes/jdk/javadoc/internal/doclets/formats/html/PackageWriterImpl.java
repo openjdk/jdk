@@ -143,19 +143,6 @@ public class PackageWriterImpl extends HtmlDocletWriter
         Content packageHead = new StringContent(heading);
         tHeading.addContent(packageHead);
         div.addContent(tHeading);
-        addDeprecationInfo(div);
-        if (!utils.getBody(packageElement).isEmpty() && !configuration.nocomment) {
-            HtmlTree docSummaryDiv = new HtmlTree(HtmlTag.DIV);
-            docSummaryDiv.addStyle(HtmlStyle.docSummary);
-            addSummaryComment(packageElement, docSummaryDiv);
-            div.addContent(docSummaryDiv);
-            Content space = Contents.SPACE;
-            Content descLink = getHyperLink(getDocLink(
-                    SectionName.PACKAGE_DESCRIPTION),
-                    contents.descriptionLabel, "", "");
-            Content descPara = new HtmlTree(HtmlTag.P, contents.seeLabel, space, descLink);
-            div.addContent(descPara);
-        }
         if (configuration.allowTag(HtmlTag.MAIN)) {
             mainTree.addContent(div);
         } else {
@@ -259,19 +246,9 @@ public class PackageWriterImpl extends HtmlDocletWriter
     @Override
     public void addPackageDescription(Content packageContentTree) {
         if (!utils.getBody(packageElement).isEmpty()) {
-            packageContentTree.addContent(
-                    getMarkerAnchor(SectionName.PACKAGE_DESCRIPTION));
-            Content h2Content = new StringContent(
-                    configuration.getText("doclet.Package_Description",
-                    packageElement.isUnnamed() ? "" : utils.getPackageName(packageElement)));
-            Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true, h2Content);
-            if (configuration.allowTag(HtmlTag.SECTION)) {
-                sectionTree.addContent(heading);
-                addInlineComment(packageElement, sectionTree);
-            } else {
-                packageContentTree.addContent(heading);
-                addInlineComment(packageElement, packageContentTree);
-            }
+            Content tree = configuration.allowTag(HtmlTag.SECTION) ? sectionTree : packageContentTree;
+            addDeprecationInfo(tree);
+            addInlineComment(packageElement, tree);
         }
     }
 
@@ -284,6 +261,9 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 ? sectionTree
                 : packageContentTree;
         addTagsInfo(packageElement, htmlTree);
+        if (configuration.allowTag(HtmlTag.SECTION)) {
+            packageContentTree.addContent(sectionTree);
+        }
     }
 
     /**
@@ -292,7 +272,6 @@ public class PackageWriterImpl extends HtmlDocletWriter
     @Override
     public void addPackageContent(Content contentTree, Content packageContentTree) {
         if (configuration.allowTag(HtmlTag.MAIN)) {
-            packageContentTree.addContent(sectionTree);
             mainTree.addContent(packageContentTree);
             contentTree.addContent(mainTree);
         } else {

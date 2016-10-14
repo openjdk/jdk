@@ -438,7 +438,6 @@ public class TestResolvedJavaMethod extends MethodUniverse {
 
     // @formatter:off
     private static final String[] untestedApiMethods = {
-        "invoke",
         "newInstance",
         "getDeclaringClass",
         "getEncoding",

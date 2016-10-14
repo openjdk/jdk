@@ -345,6 +345,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         Files.createDirectories(classpathOut);
 
+        System.err.println("Compiling classpath-src files:");
         new JavacTask(tb)
                 .outdir(classpathOut)
                 .files(findJavaFiles(classpathSrc))
@@ -360,6 +361,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         Files.createDirectories(automaticOut);
 
+        System.err.println("Compiling automatic-src files:");
         new JavacTask(tb)
                 .outdir(automaticOut)
                 .files(findJavaFiles(automaticSrc))
@@ -373,6 +375,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         Path automaticJar = modulePath.resolve("automatic.jar");
 
+        System.err.println("Creating automatic.jar:");
         new JarTask(tb, automaticJar)
           .baseDir(automaticOut)
           .files("automatic/Automatic.class")
@@ -385,6 +388,7 @@ public class AddLimitMods extends ModuleTestBase {
                           "module m1 { exports api; }",
                           "package api; public class Api { public void test() { } }");
 
+        System.err.println("Compiling module-src files:");
         new JavacTask(tb)
                 .options("--module-source-path", moduleSrc.toString())
                 .outdir(modulePath)
@@ -399,7 +403,7 @@ public class AddLimitMods extends ModuleTestBase {
             for (String[] options : OPTIONS_VARIANTS) {
                 index++;
 
-                System.err.println("running check: " + moduleInfo + "; " + Arrays.asList(options));
+                System.err.println("Running check: " + moduleInfo + "; " + Arrays.asList(options));
 
                 Path m2Runtime = base.resolve(index + "-runtime").resolve("m2");
                 Path out = base.resolve(index + "-runtime").resolve("out").resolve("m2");
@@ -427,6 +431,7 @@ public class AddLimitMods extends ModuleTestBase {
 
                 tb.writeJavaFiles(m2Runtime, moduleInfo, testClassNamed.toString());
 
+                System.err.println("Compiling " + m2Runtime + " files:");
                 new JavacTask(tb)
                    .options("--module-path", modulePath.toString())
                    .outdir(out)
@@ -438,6 +443,7 @@ public class AddLimitMods extends ModuleTestBase {
                 String output;
 
                 try {
+                    System.err.println("Running m2/test.Test:");
                     output = new JavaTask(tb)
                        .vmOptions(augmentOptions(options,
                                                  Collections.emptyList(),
@@ -468,6 +474,8 @@ public class AddLimitMods extends ModuleTestBase {
                     "-Aoutput=" + output,
                     "-XDaccessInternalAPI=true"
                 ) : Collections.emptyList();
+
+                System.err.println("Compiling/processing m2 files:");
                 new JavacTask(tb)
                    .options(augmentOptions(options,
                                            auxOptions,
@@ -510,8 +518,6 @@ public class AddLimitMods extends ModuleTestBase {
         MODULES_TO_CHECK_TO_SAMPLE_CLASS.put("m1", "api.Api");
         MODULES_TO_CHECK_TO_SAMPLE_CLASS.put("m2", "test.Test");
         MODULES_TO_CHECK_TO_SAMPLE_CLASS.put("java.base", "java.lang.Object");
-        MODULES_TO_CHECK_TO_SAMPLE_CLASS.put("java.compiler", "javax.tools.ToolProvider");
-        MODULES_TO_CHECK_TO_SAMPLE_CLASS.put("jdk.compiler", "com.sun.tools.javac.Main");
     };
 
     @SupportedAnnotationTypes("*")
@@ -573,8 +579,7 @@ public class AddLimitMods extends ModuleTestBase {
 
     private static final String[] MODULE_INFO_VARIANTS = {
         "module m2 { exports test; }",
-        "module m2 { requires m1; exports test; }",
-        "module m2 { requires jdk.compiler; exports test; }",
+        "module m2 { requires m1; exports test; }"
     };
 
     private static final String[][] OPTIONS_VARIANTS = {

@@ -97,8 +97,8 @@ public class BignumTest {
     @Test
     public void testAssign() throws Exception {
 
-        Object bignum = ctor.newInstance();
-        Object bignum2 = ctor.newInstance();
+        final Object bignum = ctor.newInstance();
+        final Object bignum2 = ctor.newInstance();
 
         final Method assignUInt16 = method("assignUInt16", char.class);
         final Method assignUInt64 = method("assignUInt64", long.class);

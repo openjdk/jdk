@@ -266,6 +266,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
+  if (UseFMA) {
+    warning("FMA instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(UseFMA, false);
+  }
+
   // SHA1, SHA256, and SHA512 instructions were added to SPARC T-series at different times
   if (has_sha1() || has_sha256() || has_sha512()) {
     if (UseVIS > 0) { // SHA intrinsics use VIS1 instructions

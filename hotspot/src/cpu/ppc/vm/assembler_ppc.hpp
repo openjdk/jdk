@@ -506,6 +506,8 @@ class Assembler : public AbstractAssembler {
     // Vector-Scalar (VSX) instruction support.
     LXVD2X_OPCODE  = (31u << OPCODE_SHIFT |  844u << 1),
     STXVD2X_OPCODE = (31u << OPCODE_SHIFT |  972u << 1),
+    MTVSRD_OPCODE  = (31u << OPCODE_SHIFT |  179u << 1),
+    MFVSRD_OPCODE  = (31u << OPCODE_SHIFT |   51u << 1),
 
     // Vector Permute and Formatting
     VPKPX_OPCODE   = (4u  << OPCODE_SHIFT |  782u     ),
@@ -1573,6 +1575,9 @@ class Assembler : public AbstractAssembler {
   inline void stdu( Register d, int si16,    Register s1);
   inline void stdux(Register s, Register a,  Register b);
 
+  inline void st_ptr(Register d, int si16,    Register s1);
+  DEBUG_ONLY(inline void st_ptr(Register d, ByteSize b, Register s1);)
+
   // PPC 1, section 3.3.13 Move To/From System Register Instructions
   inline void mtlr( Register s1);
   inline void mflr( Register d);
@@ -2099,6 +2104,8 @@ class Assembler : public AbstractAssembler {
   // Vector-Scalar (VSX) instructions.
   inline void lxvd2x(   VectorSRegister d, Register a, Register b);
   inline void stxvd2x(  VectorSRegister d, Register a, Register b);
+  inline void mtvrd(    VectorRegister  d, Register a);
+  inline void mfvrd(    Register        a, VectorRegister d);
 
   // AES (introduced with Power 8)
   inline void vcipher(     VectorRegister d, VectorRegister a, VectorRegister b);

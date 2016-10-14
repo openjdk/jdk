@@ -111,7 +111,7 @@ public class TestHelpOption extends JavadocTester {
                 "-helpfile", testSrc("test-help.html"),
                 "-helpfile", testSrc("test-help.html"),
                 testSrc("Sample.java"));
-        checkExit(Exit.FAILED);
+        checkExit(Exit.ERROR);
     }
 
     @Test
@@ -121,7 +121,7 @@ public class TestHelpOption extends JavadocTester {
                 "-helpfile", testSrc("test-help.html"),
                 "-nohelp",
                 testSrc("Sample.java"));
-        checkExit(Exit.FAILED);
+        checkExit(Exit.ERROR);
     }
 
     private void checkOutput(boolean withOption) {
