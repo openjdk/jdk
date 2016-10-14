@@ -154,6 +154,10 @@ import static sun.font.EAttribute.*;
  * associated with a font face, each differing in size, style, transform
  * and font features.
  * <p>
+ * Glyphs may not always be rendered with the requested properties (e.g, font
+ * and style) due to platform limitations such as the absence of suitable
+ * platform fonts to implement a logical font.
+ * <p>
  * The {@link GraphicsEnvironment#getAllFonts() getAllFonts} method
  * of the {@code GraphicsEnvironment} class returns an
  * array of all font faces available in the system. These font faces are
