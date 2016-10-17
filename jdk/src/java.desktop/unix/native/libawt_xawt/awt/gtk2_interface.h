@@ -449,17 +449,6 @@ static GList* (*fp_g_list_append) (GList *list, gpointer data);
 static void (*fp_g_list_free) (GList *list);
 static void (*fp_g_list_free_full) (GList *list, GDestroyNotify free_func);
 
-/**
- * This function is available for GLIB > 2.20, so it MUST be
- * called within GLIB_CHECK_VERSION(2, 20, 0) check.
- */
-static gboolean (*fp_g_thread_get_initialized)(void);
-
-static void (*fp_g_thread_init)(GThreadFunctions *vtable);
-static void (*fp_gdk_threads_init)(void);
-static void (*fp_gdk_threads_enter)(void);
-static void (*fp_gdk_threads_leave)(void);
-
 static gboolean (*fp_gtk_show_uri)(GdkScreen *screen, const gchar *uri,
     guint32 timestamp, GError **error);
 
