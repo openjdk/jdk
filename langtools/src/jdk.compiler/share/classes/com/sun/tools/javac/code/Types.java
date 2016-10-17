@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.function.BiPredicate;
@@ -468,89 +469,14 @@ public class Types {
          * and return-type substitutable with each method in the original list.
          */
         private FunctionDescriptor mergeDescriptors(TypeSymbol origin, List<Symbol> methodSyms) {
-            //pick argument types - simply take the signature that is a
-            //subsignature of all other signatures in the list (as per JLS 8.4.2)
-            List<Symbol> mostSpecific = List.nil();
-            outer: for (Symbol msym1 : methodSyms) {
-                Type mt1 = memberType(origin.type, msym1);
-                for (Symbol msym2 : methodSyms) {
-                    Type mt2 = memberType(origin.type, msym2);
-                    if (!isSubSignature(mt1, mt2)) {
-                        continue outer;
-                    }
-                }
-                mostSpecific = mostSpecific.prepend(msym1);
-            }
-            if (mostSpecific.isEmpty()) {
-                return null;
-            }
-
-
-            //pick return types - this is done in two phases: (i) first, the most
-            //specific return type is chosen using strict subtyping; if this fails,
-            //a second attempt is made using return type substitutability (see JLS 8.4.5)
-            boolean phase2 = false;
-            Symbol bestSoFar = null;
-            while (bestSoFar == null) {
-                outer: for (Symbol msym1 : mostSpecific) {
-                    Type mt1 = memberType(origin.type, msym1);
-                    for (Symbol msym2 : methodSyms) {
-                        Type mt2 = memberType(origin.type, msym2);
-                        if (phase2 ?
-                                !returnTypeSubstitutable(mt1, mt2) :
-                                !isSubtypeInternal(mt1.getReturnType(), mt2.getReturnType())) {
-                            continue outer;
+            return mergeAbstracts(methodSyms, origin.type, false)
+                    .map(bestSoFar -> new FunctionDescriptor(bestSoFar.baseSymbol()) {
+                        @Override
+                        public Type getType(Type origin) {
+                            Type mt = memberType(origin, getSymbol());
+                            return createMethodTypeWithThrown(mt, bestSoFar.type.getThrownTypes());
                         }
-                    }
-                    bestSoFar = msym1;
-                }
-                if (phase2) {
-                    break;
-                } else {
-                    phase2 = true;
-                }
-            }
-            if (bestSoFar == null) return null;
-
-            //merge thrown types - form the intersection of all the thrown types in
-            //all the signatures in the list
-            List<Type> thrown = null;
-            Type mt1 = memberType(origin.type, bestSoFar);
-            boolean toErase = !mt1.hasTag(FORALL);
-            for (Symbol msym2 : methodSyms) {
-                Type mt2 = memberType(origin.type, msym2);
-                List<Type> thrown_mt2 = mt2.getThrownTypes();
-                if (toErase) {
-                    thrown_mt2 = erasure(thrown_mt2);
-                } else {
-                    /* If bestSoFar is generic then all the methods are generic.
-                     * The opposite is not true: a non generic method can override
-                     * a generic method (raw override) so it's safe to cast mt1 and
-                     * mt2 to ForAll.
-                     */
-                    ForAll fa1 = (ForAll)mt1;
-                    ForAll fa2 = (ForAll)mt2;
-                    thrown_mt2 = subst(thrown_mt2, fa2.tvars, fa1.tvars);
-                }
-                thrown = (thrown == null) ?
-                    thrown_mt2 :
-                    chk.intersect(thrown_mt2, thrown);
-            }
-
-            final List<Type> thrown1 = thrown;
-            return new FunctionDescriptor(bestSoFar) {
-                @Override
-                public Type getType(Type origin) {
-                    Type mt = memberType(origin, getSymbol());
-                    return createMethodTypeWithThrown(mt, thrown1);
-                }
-            };
-        }
-
-        boolean isSubtypeInternal(Type s, Type t) {
-            return (s.isPrimitive() && t.isPrimitive()) ?
-                    isSameType(t, s) :
-                    isSubtype(s, t);
+                    }).orElse(null);
         }
 
         FunctionDescriptorLookupError failure(String msg, Object... args) {
@@ -2602,6 +2528,106 @@ public class Types {
             }
         }
         return false;
+    }
+
+    /**
+     * This enum defines the strategy for implementing most specific return type check
+     * during the most specific and functional interface checks.
+     */
+    public enum MostSpecificReturnCheck {
+        /**
+         * Return r1 is more specific than r2 if {@code r1 <: r2}. Extra care required for (i) handling
+         * method type variables (if either method is generic) and (ii) subtyping should be replaced
+         * by type-equivalence for primitives. This is essentially an inlined version of
+         * {@link Types#resultSubtype(Type, Type, Warner)}, where the assignability check has been
+         * replaced with a strict subtyping check.
+         */
+        BASIC() {
+            @Override
+            public boolean test(Type mt1, Type mt2, Types types) {
+                List<Type> tvars = mt1.getTypeArguments();
+                List<Type> svars = mt2.getTypeArguments();
+                Type t = mt1.getReturnType();
+                Type s = types.subst(mt2.getReturnType(), svars, tvars);
+                return types.isSameType(t, s) ||
+                    !t.isPrimitive() &&
+                    !s.isPrimitive() &&
+                    types.isSubtype(t, s);
+            }
+        },
+        /**
+         * Return r1 is more specific than r2 if r1 is return-type-substitutable for r2.
+         */
+        RTS() {
+            @Override
+            public boolean test(Type mt1, Type mt2, Types types) {
+                return types.returnTypeSubstitutable(mt1, mt2);
+            }
+        };
+
+        public abstract boolean test(Type mt1, Type mt2, Types types);
+    }
+
+    /**
+     * Merge multiple abstract methods. The preferred method is a method that is a subsignature
+     * of all the other signatures and whose return type is more specific {@see MostSpecificReturnCheck}.
+     * The resulting preferred method has a thrown clause that is the intersection of the merged
+     * methods' clauses.
+     */
+    public Optional<Symbol> mergeAbstracts(List<Symbol> ambiguousInOrder, Type site, boolean sigCheck) {
+        //first check for preconditions
+        boolean shouldErase = false;
+        List<Type> erasedParams = ambiguousInOrder.head.erasure(this).getParameterTypes();
+        for (Symbol s : ambiguousInOrder) {
+            if ((s.flags() & ABSTRACT) == 0 ||
+                    (sigCheck && !isSameTypes(erasedParams, s.erasure(this).getParameterTypes()))) {
+                return Optional.empty();
+            } else if (s.type.hasTag(FORALL)) {
+                shouldErase = true;
+            }
+        }
+        //then merge abstracts
+        for (MostSpecificReturnCheck mostSpecificReturnCheck : MostSpecificReturnCheck.values()) {
+            outer: for (Symbol s : ambiguousInOrder) {
+                Type mt = memberType(site, s);
+                List<Type> allThrown = mt.getThrownTypes();
+                for (Symbol s2 : ambiguousInOrder) {
+                    if (s != s2) {
+                        Type mt2 = memberType(site, s2);
+                        if (!isSubSignature(mt, mt2) ||
+                                !mostSpecificReturnCheck.test(mt, mt2, this)) {
+                            //ambiguity cannot be resolved
+                            continue outer;
+                        } else {
+                            List<Type> thrownTypes2 = mt2.getThrownTypes();
+                            if (!mt.hasTag(FORALL) && shouldErase) {
+                                thrownTypes2 = erasure(thrownTypes2);
+                            } else if (mt.hasTag(FORALL)) {
+                                //subsignature implies that if most specific is generic, then all other
+                                //methods are too
+                                Assert.check(mt2.hasTag(FORALL));
+                                // if both are generic methods, adjust thrown types ahead of intersection computation
+                                thrownTypes2 = subst(thrownTypes2, mt2.getTypeArguments(), mt.getTypeArguments());
+                            }
+                            allThrown = chk.intersect(allThrown, thrownTypes2);
+                        }
+                    }
+                }
+                return (allThrown == mt.getThrownTypes()) ?
+                        Optional.of(s) :
+                        Optional.of(new MethodSymbol(
+                                s.flags(),
+                                s.name,
+                                createMethodTypeWithThrown(s.type, allThrown),
+                                s.owner) {
+                            @Override
+                            public Symbol baseSymbol() {
+                                return s;
+                            }
+                        });
+            }
+        }
+        return Optional.empty();
     }
 
     // <editor-fold defaultstate="collapsed" desc="Determining method implementation in given site">
