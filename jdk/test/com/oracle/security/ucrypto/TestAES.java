@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
 
 /*
  * @test
- * @bug 7088989 8014374
+ * @bug 7088989 8014374 8167512
  * @summary Ensure the AES ciphers of OracleUcrypto provider works correctly
  * @key randomness
+ * @run main TestAES
+ * @run main/othervm/java.security.policy==empty.policy TestAES
  */
 
 import java.io.*;
