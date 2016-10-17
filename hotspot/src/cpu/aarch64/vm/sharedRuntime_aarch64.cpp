@@ -1962,6 +1962,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       // due to cache line collision.
       __ serialize_memory(rthread, r2);
     }
+  } else {
+    __ strw(rscratch1, Address(rthread, JavaThread::thread_state_offset()));
   }
 
   // check for safepoint operation in progress and/or pending suspend requests
