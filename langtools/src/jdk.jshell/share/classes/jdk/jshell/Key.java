@@ -74,7 +74,7 @@ abstract class Key {
     /**
      * Grouping for snippets which persist and influence future code.
      * They are keyed off at least the name.  They may be Modified/Replaced
-     * with new input and can be dropped (JShell#drop).
+     * with new input.
      */
     static abstract class PersistentKey extends Key {
 

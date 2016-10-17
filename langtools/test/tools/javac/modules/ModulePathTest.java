@@ -29,7 +29,7 @@
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.jdeps/com.sun.tools.javap
- *      jdk.jlink/jdk.tools.jmod
+ *      jdk.jlink
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask toolbox.ModuleBuilder
  *      ModuleTestBase
  * @run main ModulePathTest
@@ -39,6 +39,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.spi.ToolProvider;
 
 import toolbox.JarTask;
 import toolbox.JavacTask;
@@ -420,6 +421,9 @@ public class ModulePathTest extends ModuleTestBase {
                 "--class-path", dir.toString(),
                 jmod.toString()
         };
-        jdk.tools.jmod.Main.run(args, System.out);
+        ToolProvider jmodTool = ToolProvider.findFirst("jmod").orElseThrow(() ->
+                new RuntimeException("jmod tool not found")
+        );
+        jmodTool.run(System.out, System.err, args);
     }
 }

@@ -27,8 +27,7 @@
  * @author Andrei Eremeev
  * @library /lib/testlibrary
  * @modules java.base/jdk.internal.module
- *          jdk.jlink/jdk.tools.jlink.internal
- *          jdk.jlink/jdk.tools.jmod
+ *          jdk.jlink
  *          jdk.compiler
  * @build jdk.testlibrary.ProcessTools
  *        jdk.testlibrary.OutputAnalyzer
@@ -44,11 +43,21 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.spi.ToolProvider;
 
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
 
 public class BasicTest {
+    static final ToolProvider JMOD_TOOL = ToolProvider.findFirst("jmod")
+        .orElseThrow(() ->
+            new RuntimeException("jmod tool not found")
+        );
+
+    static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
+        .orElseThrow(() ->
+            new RuntimeException("jlink tool not found")
+        );
 
     private final Path jdkHome = Paths.get(System.getProperty("test.jdk"));
     private final Path jdkMods = jdkHome.resolve("jmods");
@@ -110,20 +119,22 @@ public class BasicTest {
                 "--add-modules", modName,
                 "--output", image.toString());
         Collections.addAll(args, options);
-        int rc = jdk.tools.jlink.internal.Main.run(args.toArray(new String[args.size()]), new PrintWriter(System.out));
+
+        PrintWriter pw = new PrintWriter(System.out);
+        int rc = JLINK_TOOL.run(pw, pw, args.toArray(new String[args.size()]));
         if (rc != 0) {
             throw new AssertionError("Jlink failed: rc = " + rc);
         }
     }
 
     private void runJmod(String cp, String modName) {
-        int rc = jdk.tools.jmod.Main.run(new String[] {
+        int rc = JMOD_TOOL.run(System.out, System.out, new String[] {
                 "create",
                 "--class-path", cp,
                 "--module-version", "1.0",
                 "--main-class", "jdk.test.Test",
                 jmods.resolve(modName + ".jmod").toString(),
-        }, System.out);
+        });
         if (rc != 0) {
             throw new AssertionError("Jmod failed: rc = " + rc);
         }

@@ -384,14 +384,14 @@ public class Main implements DiagnosticListener<JavaFileObject> {
                      .collect(toList()));
         } else {
             // TODO: kind of a hack...
-            // Create a throwaway compilation task with options "-release N"
+            // Create a throwaway compilation task with options "--release N"
             // which has the side effect of setting the file manager's
             // PLATFORM_CLASS_PATH to the right value.
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
             StandardJavaFileManager fm =
                 compiler.getStandardFileManager(this, null, StandardCharsets.UTF_8);
             JavaCompiler.CompilationTask task =
-                compiler.getTask(null, fm, this, List.of("-release", release), null, null);
+                compiler.getTask(null, fm, this, List.of("--release", release), null, null);
             List<Path> paths = new ArrayList<>();
             for (Path p : fm.getLocationAsPaths(StandardLocation.PLATFORM_CLASS_PATH)) {
                 try (Stream<Path> str = Files.walk(p)) {

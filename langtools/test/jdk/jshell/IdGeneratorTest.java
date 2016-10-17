@@ -35,7 +35,6 @@ import java.util.function.Supplier;
 
 import jdk.jshell.EvalException;
 import jdk.jshell.JShell;
-import jdk.jshell.PersistentSnippet;
 import jdk.jshell.SnippetEvent;
 import jdk.jshell.UnresolvedReferenceException;
 import jdk.jshell.VarSnippet;
@@ -88,7 +87,7 @@ public class IdGeneratorTest {
         try (JShell jShell = builder.build()) {
             List<SnippetEvent> eval = jShell.eval("int a, b;");
             checkIds(eval);
-            checkIds(jShell.drop((PersistentSnippet) eval.get(0).snippet()));
+            checkIds(jShell.drop(eval.get(0).snippet()));
         }
     }
 

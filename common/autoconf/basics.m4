@@ -428,9 +428,10 @@ AC_DEFUN([BASIC_SETUP_TOOL],
 # Call BASIC_SETUP_TOOL with AC_PATH_PROGS to locate the tool
 # $1: variable to set
 # $2: executable name (or list of names) to look for
+# $3: [path]
 AC_DEFUN([BASIC_PATH_PROGS],
 [
-  BASIC_SETUP_TOOL($1, [AC_PATH_PROGS($1, $2)])
+  BASIC_SETUP_TOOL($1, [AC_PATH_PROGS($1, $2, , $3)])
 ])
 
 # Call BASIC_SETUP_TOOL with AC_CHECK_TOOLS to locate the tool
@@ -444,9 +445,10 @@ AC_DEFUN([BASIC_CHECK_TOOLS],
 # Like BASIC_PATH_PROGS but fails if no tool was found.
 # $1: variable to set
 # $2: executable name (or list of names) to look for
+# $3: [path]
 AC_DEFUN([BASIC_REQUIRE_PROGS],
 [
-  BASIC_PATH_PROGS($1, $2)
+  BASIC_PATH_PROGS($1, $2, , $3)
   BASIC_CHECK_NONEMPTY($1)
 ])
 
@@ -1065,7 +1067,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
   BASIC_PATH_PROGS(HG, hg)
   BASIC_PATH_PROGS(STAT, stat)
   BASIC_PATH_PROGS(TIME, time)
-  BASIC_PATH_PROGS(DTRACE, dtrace)
+  # Dtrace is usually found in /usr/sbin on Solaris, but that directory may not
+  # be in the user path.
+  BASIC_PATH_PROGS(DTRACE, dtrace, $PATH:/usr/sbin)
   BASIC_PATH_PROGS(PATCH, [gpatch patch])
   # Check if it's GNU time
   IS_GNU_TIME=`$TIME --version 2>&1 | $GREP 'GNU time'`

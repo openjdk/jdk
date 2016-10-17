@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleReader;
@@ -136,8 +137,8 @@ public class JmodTask {
     private static final String MODULE_INFO = "module-info.class";
 
     private Options options;
-    private PrintStream out = System.out;
-    void setLog(PrintStream out) {
+    private PrintWriter out = new PrintWriter(System.out, true);
+    void setLog(PrintWriter out, PrintWriter err) {
         this.out = out;
     }
 

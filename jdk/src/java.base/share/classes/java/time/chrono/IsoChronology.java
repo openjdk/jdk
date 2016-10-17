@@ -90,7 +90,6 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.ValueRange;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -492,7 +491,7 @@ public final class IsoChronology extends AbstractChronology implements Serializa
 
     @Override
     public List<Era> eras() {
-        return Arrays.<Era>asList(IsoEra.values());
+        return List.of(IsoEra.values());
     }
 
     //-----------------------------------------------------------------------
