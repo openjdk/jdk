@@ -440,36 +440,39 @@ int VM_Version::platform_features(int features) {
     features |= sun4v_m;
   }
 
-  bool use_solaris_12_api = false;
-  Sysinfo impl(SI_CPUBRAND);
-  if (impl.valid()) {
-    // If SI_CPUBRAND works, that means Solaris 12 API to get the cache line sizes
-    // is available to us as well
-    use_solaris_12_api = true;
-    features |= parse_features(impl.value());
+  // If SI_CPUBRAND works, that means Solaris 12 API to get the cache line sizes
+  // is available to us as well
+  Sysinfo cpu_info(SI_CPUBRAND);
+  bool use_solaris_12_api = cpu_info.valid();
+  const char* impl;
+  int impl_m = 0;
+  if (use_solaris_12_api) {
+    impl = cpu_info.value();
+    log_info(os, cpu)("Parsing CPU implementation from %s", impl);
+    impl_m = parse_features(impl);
   } else {
     // Otherwise use kstat to determine the machine type.
     kstat_ctl_t* kc = kstat_open();
-    kstat_t* ksp = kstat_lookup(kc, (char*)"cpu_info", -1, NULL);
-    const char* implementation;
-    bool has_implementation = false;
-    if (ksp != NULL) {
-      if (kstat_read(kc, ksp, NULL) != -1 && ksp->ks_data != NULL) {
-        kstat_named_t* knm = (kstat_named_t *)ksp->ks_data;
-        for (int i = 0; i < ksp->ks_ndata; i++) {
-          if (strcmp((const char*)&(knm[i].name),"implementation") == 0) {
-            implementation = KSTAT_NAMED_STR_PTR(&knm[i]);
-            has_implementation = true;
-            log_info(os, cpu)("cpu_info.implementation: %s", implementation);
-            features |= parse_features(implementation);
-            break;
+    if (kc != NULL) {
+      kstat_t* ksp = kstat_lookup(kc, (char*)"cpu_info", -1, NULL);
+      if (ksp != NULL) {
+        if (kstat_read(kc, ksp, NULL) != -1 && ksp->ks_data != NULL) {
+          kstat_named_t* knm = (kstat_named_t *)ksp->ks_data;
+          for (int i = 0; i < ksp->ks_ndata; i++) {
+            if (strcmp((const char*)&(knm[i].name), "implementation") == 0) {
+              impl = KSTAT_NAMED_STR_PTR(&knm[i]);
+              log_info(os, cpu)("Parsing CPU implementation from %s", impl);
+              impl_m = parse_features(impl);
+              break;
+            }
           }
-        } // for(
+        }
       }
+      kstat_close(kc);
     }
-    assert(has_implementation, "unknown cpu info (changed kstat interface?)");
-    kstat_close(kc);
   }
+  assert(impl_m != 0, "Unknown CPU implementation %s", impl);
+  features |= impl_m;
 
   bool is_sun4v = (features & sun4v_m) != 0;
   if (use_solaris_12_api && is_sun4v) {
