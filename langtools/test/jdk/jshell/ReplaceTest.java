@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.stream.Stream;
 import jdk.jshell.Snippet;
 import jdk.jshell.MethodSnippet;
-import jdk.jshell.PersistentSnippet;
 import jdk.jshell.TypeDeclSnippet;
 import jdk.jshell.VarSnippet;
 import jdk.jshell.DeclarationSnippet;
@@ -585,14 +584,14 @@ public class ReplaceTest extends KullaTesting {
     }
 
     public void testForwardSingleImportMethodToClass1() {
-        PersistentSnippet a = classKey(assertEval("class A { String s = format(\"%d\", 10); }",
+        Snippet a = classKey(assertEval("class A { String s = format(\"%d\", 10); }",
                 added(RECOVERABLE_DEFINED)));
         assertEvalUnresolvedException("new A();", "A", 1, 0);
         assertEval("import static java.lang.String.format;",
                 added(VALID),
                 ste(a, RECOVERABLE_DEFINED, VALID, false, null));
         assertEval("new A().s;", "\"10\"");
-        PersistentSnippet format = methodKey(assertEval("void format(String s, int d) { }",
+        Snippet format = methodKey(assertEval("void format(String s, int d) { }",
                 DiagCheck.DIAG_OK,
                 DiagCheck.DIAG_ERROR,
                 added(VALID),
@@ -605,14 +604,14 @@ public class ReplaceTest extends KullaTesting {
     }
 
     public void testForwardSingleImportMethodToClass2() {
-        PersistentSnippet a = classKey(assertEval("class A { String s() { return format(\"%d\", 10); } }",
+        Snippet a = classKey(assertEval("class A { String s() { return format(\"%d\", 10); } }",
                 added(RECOVERABLE_DEFINED)));
         assertEvalUnresolvedException("new A();", "A", 1, 0);
         assertEval("import static java.lang.String.format;",
                 added(VALID),
                 ste(a, RECOVERABLE_DEFINED, VALID, false, null));
         assertEval("new A().s();", "\"10\"");
-        PersistentSnippet format = methodKey(assertEval("void format(String s, int d) { }",
+        Snippet format = methodKey(assertEval("void format(String s, int d) { }",
                 DiagCheck.DIAG_OK,
                 DiagCheck.DIAG_ERROR,
                 added(VALID),
@@ -625,7 +624,7 @@ public class ReplaceTest extends KullaTesting {
     }
 
     public void testForwardSingleImportClassToClass1() {
-        PersistentSnippet a = classKey(assertEval("class A { static List<Integer> list; }",
+        Snippet a = classKey(assertEval("class A { static List<Integer> list; }",
                 added(RECOVERABLE_NOT_DEFINED)));
         assertDeclareFail("new A();", "compiler.err.cant.resolve.location");
         assertEval("import java.util.List;",
@@ -634,7 +633,7 @@ public class ReplaceTest extends KullaTesting {
         assertEval("import java.util.Arrays;", added(VALID));
         assertEval("A.list = Arrays.asList(1, 2, 3);", "[1, 2, 3]");
 
-        PersistentSnippet list = classKey(assertEval("class List {}",
+        Snippet list = classKey(assertEval("class List {}",
                 DiagCheck.DIAG_OK,
                 DiagCheck.DIAG_ERROR,
                 added(VALID),
@@ -647,7 +646,7 @@ public class ReplaceTest extends KullaTesting {
     }
 
     public void testForwardSingleImportClassToClass2() {
-        PersistentSnippet clsA = classKey(assertEval("class A extends ArrayList<Integer> { }",
+        Snippet clsA = classKey(assertEval("class A extends ArrayList<Integer> { }",
                 added(RECOVERABLE_NOT_DEFINED)));
         assertDeclareFail("new A();", "compiler.err.cant.resolve.location");
         assertEval("import java.util.ArrayList;",
@@ -655,7 +654,7 @@ public class ReplaceTest extends KullaTesting {
                 ste(clsA, RECOVERABLE_NOT_DEFINED, VALID, true, MAIN_SNIPPET));
         Snippet vara = varKey(assertEval("A a = new A();", "[]"));
 
-        PersistentSnippet arraylist = classKey(assertEval("class ArrayList {}",
+        Snippet arraylist = classKey(assertEval("class ArrayList {}",
                 DiagCheck.DIAG_OK,
                 DiagCheck.DIAG_ERROR,
                 added(VALID),
@@ -671,7 +670,7 @@ public class ReplaceTest extends KullaTesting {
     }
 
     public void testForwardImportOnDemandMethodToClass1() {
-        PersistentSnippet a = classKey(assertEval("class A { String s = format(\"%d\", 10); }",
+        Snippet a = classKey(assertEval("class A { String s = format(\"%d\", 10); }",
                 added(RECOVERABLE_DEFINED)));
         assertEvalUnresolvedException("new A();", "A", 1, 0);
         assertEval("import static java.lang.String.*;",
@@ -679,7 +678,7 @@ public class ReplaceTest extends KullaTesting {
                 ste(a, RECOVERABLE_DEFINED, VALID, false, null));
         assertEval("A x = new A();");
         assertEval("x.s;", "\"10\"");
-        PersistentSnippet format = methodKey(assertEval("void format(String s, int d) { }",
+        Snippet format = methodKey(assertEval("void format(String s, int d) { }",
                 DiagCheck.DIAG_OK,
                 DiagCheck.DIAG_ERROR,
                 added(VALID),
@@ -693,14 +692,14 @@ public class ReplaceTest extends KullaTesting {
     }
 
     public void testForwardImportOnDemandMethodToClass2() {
-        PersistentSnippet a = classKey(assertEval("class A { String s() { return format(\"%d\", 10); } }",
+        Snippet a = classKey(assertEval("class A { String s() { return format(\"%d\", 10); } }",
                 added(RECOVERABLE_DEFINED)));
         assertEvalUnresolvedException("new A();", "A", 1, 0);
         assertEval("import static java.lang.String.*;",
                 added(VALID),
                 ste(a, RECOVERABLE_DEFINED, VALID, false, null));
         assertEval("new A().s();", "\"10\"");
-        PersistentSnippet format = methodKey(assertEval("void format(String s, int d) { }",
+        Snippet format = methodKey(assertEval("void format(String s, int d) { }",
                 DiagCheck.DIAG_OK,
                 DiagCheck.DIAG_ERROR,
                 added(VALID),
@@ -713,7 +712,7 @@ public class ReplaceTest extends KullaTesting {
     }
 
     public void testForwardImportOnDemandClassToClass1() {
-        PersistentSnippet a = classKey(assertEval("class A { static List<Integer> list; }",
+        Snippet a = classKey(assertEval("class A { static List<Integer> list; }",
                 added(RECOVERABLE_NOT_DEFINED)));
         assertDeclareFail("new A();", "compiler.err.cant.resolve.location");
         assertEval("import java.util.*;",
@@ -721,7 +720,7 @@ public class ReplaceTest extends KullaTesting {
                 ste(a, RECOVERABLE_NOT_DEFINED, VALID, true, null));
         assertEval("A.list = Arrays.asList(1, 2, 3);", "[1, 2, 3]");
 
-        PersistentSnippet list = classKey(assertEval("class List {}",
+        Snippet list = classKey(assertEval("class List {}",
                 DiagCheck.DIAG_OK,
                 DiagCheck.DIAG_ERROR,
                 added(VALID),
@@ -734,7 +733,7 @@ public class ReplaceTest extends KullaTesting {
     }
 
     public void testForwardImportOnDemandClassToClass2() {
-        PersistentSnippet clsA = classKey(assertEval("class A extends ArrayList<Integer> { }",
+        Snippet clsA = classKey(assertEval("class A extends ArrayList<Integer> { }",
                 added(RECOVERABLE_NOT_DEFINED)));
         assertDeclareFail("new A();", "compiler.err.cant.resolve.location");
         assertEval("import java.util.*;",
@@ -742,7 +741,7 @@ public class ReplaceTest extends KullaTesting {
                 ste(clsA, RECOVERABLE_NOT_DEFINED, VALID, true, MAIN_SNIPPET));
         Snippet vara = varKey(assertEval("A a = new A();", "[]"));
 
-        PersistentSnippet arraylist = classKey(assertEval("class ArrayList {}",
+        Snippet arraylist = classKey(assertEval("class ArrayList {}",
                 DiagCheck.DIAG_OK,
                 DiagCheck.DIAG_ERROR,
                 added(VALID),
@@ -757,7 +756,7 @@ public class ReplaceTest extends KullaTesting {
     }
 
     public void testForwardSingleImportFieldToClass1() {
-        PersistentSnippet a = classKey(assertEval("class A { static double pi() { return PI; } }",
+        Snippet a = classKey(assertEval("class A { static double pi() { return PI; } }",
                 added(RECOVERABLE_DEFINED)));
         assertEvalUnresolvedException("new A();", "A", 1, 0);
         assertEval("import static java.lang.Math.PI;",
@@ -765,7 +764,7 @@ public class ReplaceTest extends KullaTesting {
                 ste(a, RECOVERABLE_DEFINED, VALID, false, null));
         assertEval("Math.abs(A.pi() - 3.1415) < 0.001;", "true");
 
-        PersistentSnippet list = varKey(assertEval("String PI;",
+        Snippet list = varKey(assertEval("String PI;",
                 DiagCheck.DIAG_OK,
                 DiagCheck.DIAG_ERROR,
                 added(VALID),
@@ -778,7 +777,7 @@ public class ReplaceTest extends KullaTesting {
     }
 
     public void testForwardSingleImportFieldToClass2() {
-        PersistentSnippet a = classKey(assertEval("class A { static double pi = PI; }",
+        Snippet a = classKey(assertEval("class A { static double pi = PI; }",
                 added(RECOVERABLE_DEFINED)));
         assertEvalUnresolvedException("new A();", "A", 1, 0);
         assertEval("import static java.lang.Math.PI;",
@@ -786,7 +785,7 @@ public class ReplaceTest extends KullaTesting {
                 ste(a, RECOVERABLE_DEFINED, VALID, true, null));
         assertEval("Math.abs(A.pi - 3.1415) < 0.001;", "true");
 
-        PersistentSnippet list = varKey(assertEval("String PI;",
+        Snippet list = varKey(assertEval("String PI;",
                 DiagCheck.DIAG_OK,
                 DiagCheck.DIAG_ERROR,
                 added(VALID),
@@ -799,7 +798,7 @@ public class ReplaceTest extends KullaTesting {
     }
 
     public void testForwardImportOnDemandFieldToClass1() {
-        PersistentSnippet a = classKey(assertEval("class A { static double pi() { return PI; } }",
+        Snippet a = classKey(assertEval("class A { static double pi() { return PI; } }",
                 added(RECOVERABLE_DEFINED)));
         assertEvalUnresolvedException("new A();", "A", 1, 0);
         assertEval("import static java.lang.Math.*;",
@@ -807,7 +806,7 @@ public class ReplaceTest extends KullaTesting {
                 ste(a, RECOVERABLE_DEFINED, VALID, false, null));
         assertEval("Math.abs(A.pi() - 3.1415) < 0.001;", "true");
 
-        PersistentSnippet list = varKey(assertEval("String PI;",
+        Snippet list = varKey(assertEval("String PI;",
                 DiagCheck.DIAG_OK,
                 DiagCheck.DIAG_ERROR,
                 added(VALID),
@@ -820,7 +819,7 @@ public class ReplaceTest extends KullaTesting {
     }
 
     public void testForwardImportOnDemandFieldToClass2() {
-        PersistentSnippet a = classKey(assertEval("class A { static double pi = PI; }",
+        Snippet a = classKey(assertEval("class A { static double pi = PI; }",
                 added(RECOVERABLE_DEFINED)));
         assertEvalUnresolvedException("new A();", "A", 1, 0);
         assertEval("import static java.lang.Math.*;",
@@ -828,7 +827,7 @@ public class ReplaceTest extends KullaTesting {
                 ste(a, RECOVERABLE_DEFINED, VALID, true, null));
         assertEval("Math.abs(A.pi - 3.1415) < 0.001;", "true");
 
-        PersistentSnippet list = varKey(assertEval("String PI;",
+        Snippet list = varKey(assertEval("String PI;",
                 DiagCheck.DIAG_OK,
                 DiagCheck.DIAG_ERROR,
                 added(VALID),

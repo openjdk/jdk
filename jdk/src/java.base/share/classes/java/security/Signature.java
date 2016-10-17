@@ -37,7 +37,6 @@ import java.nio.ByteBuffer;
 import java.security.Provider.Service;
 
 import javax.crypto.Cipher;
-import javax.crypto.CipherSpi;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.NoSuchPaddingException;
@@ -180,15 +179,12 @@ public abstract class Signature extends SignatureSpi {
     private static final String RSA_CIPHER = "RSA/ECB/PKCS1Padding";
 
     // all the services we need to lookup for compatibility with Cipher
-    private static final List<ServiceId> rsaIds = Arrays.asList(
-        new ServiceId[] {
-            new ServiceId("Signature", "NONEwithRSA"),
-            new ServiceId("Cipher", "RSA/ECB/PKCS1Padding"),
-            new ServiceId("Cipher", "RSA/ECB"),
-            new ServiceId("Cipher", "RSA//PKCS1Padding"),
-            new ServiceId("Cipher", "RSA"),
-        }
-    );
+    private static final List<ServiceId> rsaIds = List.of(
+        new ServiceId("Signature", "NONEwithRSA"),
+        new ServiceId("Cipher", "RSA/ECB/PKCS1Padding"),
+        new ServiceId("Cipher", "RSA/ECB"),
+        new ServiceId("Cipher", "RSA//PKCS1Padding"),
+        new ServiceId("Cipher", "RSA"));
 
     /**
      * Returns a Signature object that implements the specified signature

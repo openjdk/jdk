@@ -168,7 +168,6 @@ AC_DEFUN([BPERF_SETUP_CCACHE],
       [AS_HELP_STRING([--enable-ccache],
       [enable using ccache to speed up recompilations @<:@disabled@:>@])])
 
-  CCACHE=
   CCACHE_STATUS=
   AC_MSG_CHECKING([is ccache enabled])
   if test "x$enable_ccache" = xyes; then

@@ -33,7 +33,6 @@ import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -333,7 +332,7 @@ public interface ModuleFinder {
      *
      * <p> When locating modules then any exceptions or errors thrown by the
      * {@code find} or {@code findAll} methods of the underlying module finders
-     * will be propogated to the caller of the resulting module finder's
+     * will be propagated to the caller of the resulting module finder's
      * {@code find} or {@code findAll} methods. </p>
      *
      * @param finders
@@ -342,8 +341,8 @@ public interface ModuleFinder {
      * @return A {@code ModuleFinder} that composes a sequence of module finders
      */
     static ModuleFinder compose(ModuleFinder... finders) {
-        final List<ModuleFinder> finderList = Arrays.asList(finders);
-        finderList.forEach(Objects::requireNonNull);
+        // copy the list, also checking for nulls
+        final List<ModuleFinder> finderList = List.of(finders);
 
         return new ModuleFinder() {
             private final Map<String, ModuleReference> nameToModule = new HashMap<>();

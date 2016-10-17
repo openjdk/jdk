@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -242,7 +242,7 @@ define SetupJarArchiveBody
         # potential changes.
 	$$(if $$(filter $$($1_VARDEPS_FILE) $$($1_MANIFEST), $$?), \
 	  $$(if $$($1_MANIFEST), \
-	    $(SED) -e '$(DOLLAR)$(DOLLAR)a\' $$($1_MANIFEST) > $$($1_MANIFEST_FILE) $$(NEWLINE) \
+	    $(CP) $$($1_MANIFEST) $$($1_MANIFEST_FILE) $$(NEWLINE) \
 	  , \
 	    $(RM) $$($1_MANIFEST_FILE) && $(TOUCH) $$($1_MANIFEST_FILE) $$(NEWLINE)) \
 	  $$(if $$($1_JARMAIN), \

@@ -24,9 +24,9 @@
 /**
  * @test
  * @library /lib/testlibrary
- * @modules jdk.jartool/sun.tools.jar
- *          jdk.jlink/jdk.tools.jmod
- *          jdk.compiler
+ * @modules jdk.compiler
+ *          jdk.jartool
+ *          jdk.jlink
  * @build BasicTest CompilerUtils jdk.testlibrary.*
  * @run testng BasicTest
  * @summary Basic test of starting an application as a module
@@ -36,6 +36,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.spi.ToolProvider;
 
 import jdk.testlibrary.ProcessTools;
 
@@ -46,6 +47,14 @@ import static org.testng.Assert.*;
 
 @Test
 public class BasicTest {
+    private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
+        .orElseThrow(() ->
+            new RuntimeException("jar tool not found")
+        );
+    private static final ToolProvider JMOD_TOOL = ToolProvider.findFirst("jmod")
+        .orElseThrow(() ->
+            new RuntimeException("jmod tool not found")
+        );
 
     private static final Path USER_DIR = Paths.get(System.getProperty("user.dir"));
 
@@ -132,10 +141,8 @@ public class BasicTest {
             "--main-class=" + MAIN_CLASS,
             "-C", classes, "."
         };
-        boolean success
-            = new sun.tools.jar.Main(System.out, System.out, "jar")
-                .run(args);
-        assertTrue(success);
+        int rc = JAR_TOOL.run(System.out, System.out, args);
+        assertTrue(rc == 0);
 
         // java --module-path mlib -module $TESTMODULE
         int exitValue = exec("--module-path", dir.toString(),
@@ -164,8 +171,8 @@ public class BasicTest {
             "--main-class", MAIN_CLASS,
             jmod
         };
-        jdk.tools.jmod.JmodTask task = new jdk.tools.jmod.JmodTask();
-        assertEquals(task.run(args), 0);
+
+        assertEquals(JMOD_TOOL.run(System.out, System.out, args), 0);
 
         // java --module-path mods --module $TESTMODULE
         int exitValue = exec("--module-path", dir.toString(),
@@ -229,10 +236,8 @@ public class BasicTest {
             "--file=" + jar,
             "-C", classes, "."
         };
-        boolean success
-            = new sun.tools.jar.Main(System.out, System.out, "jar")
-                .run(args);
-        assertTrue(success);
+        int rc = JAR_TOOL.run(System.out, System.out, args);
+        assertTrue(rc == 0);
 
         // java --module-path mods -m $TESTMODULE
         int exitValue = exec("--module-path", dir.toString(), "-m", TEST_MODULE);

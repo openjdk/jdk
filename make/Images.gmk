@@ -412,7 +412,7 @@ endif
 ################################################################################
 # /sample dir
 
-$(eval $(call SetupCopyFiles,COPY_SAMPLES, \
+$(eval $(call SetupCopyFiles, COPY_SAMPLES, \
     SRC := $(SUPPORT_OUTPUTDIR)/sample/image, \
     DEST := $(JDK_IMAGE_DIR)/sample, \
     FILES := $(if $(wildcard $(SUPPORT_OUTPUTDIR)/sample/image), \
