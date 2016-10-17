@@ -24,8 +24,8 @@
 /*
  * @test TestUseAutoGCSelectPolicy
  * @key gc
- * @bug 8166461
- * @summary Test that UseAutoGCSelectPolicy does print a warning message
+ * @bug 8166461 8167494
+ * @summary Test that UseAutoGCSelectPolicy and AutoGCSelectPauseMillis do print a warning message
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -37,9 +37,10 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestUseAutoGCSelectPolicy {
 
   public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseAutoGCSelectPolicy", "-version");
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseAutoGCSelectPolicy", "-XX:AutoGCSelectPauseMillis=3000", "-version");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("deprecated");
+    output.shouldContain("UseAutoGCSelectPolicy was deprecated in version 9.0");
+    output.shouldContain("AutoGCSelectPauseMillis was deprecated in version 9.0");
     output.shouldNotContain("error");
     output.shouldHaveExitValue(0);
   }
