@@ -351,9 +351,6 @@ struct _GtkProgressBar
   guint ellipsize : 3;
 };
 
-
-typedef struct _GThreadFunctions GThreadFunctions;
-
 /**
  * Returns :
  * NULL if the GLib library is compatible with the given version, or a string
