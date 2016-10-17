@@ -343,8 +343,15 @@ public:
 #define _SC_L2CACHE_LINESZ      527     /* Size of L2 cache line */
 #endif
 
+// Hardware capability bits that appeared after Solaris 11.1
+#ifndef AV_SPARC_FMAF
+#define AV_SPARC_FMAF    0x00000100 /* Fused Multiply-Add */
+#endif
+#ifndef AV2_SPARC_SPARC5
+#define AV2_SPARC_SPARC5 0x00000008 /* The 29 new fp and sub instructions */
+#endif
+
 int VM_Version::platform_features(int features) {
-  assert(os::Solaris::supports_getisax(), "getisax() must be available");
 
   // Check 32-bit architecture.
   if (Sysinfo(SI_ARCHITECTURE_32).match("sparc")) {
@@ -357,83 +364,36 @@ int VM_Version::platform_features(int features) {
   }
 
   // Extract valid instruction set extensions.
-  uint_t avs[2];
-  uint_t avn = os::Solaris::getisax(avs, 2);
-  assert(avn <= 2, "should return two or less av's");
-  uint_t av = avs[0];
+  uint_t avs[AV_HW2_IDX + 1];
+  uint_t avn = getisax(avs, ARRAY_SIZE(avs));
 
-  log_info(os, cpu)("getisax(2) returned: " PTR32_FORMAT, av);
-  if (avn > 1) {
-    log_info(os, cpu)(" " PTR32_FORMAT, avs[1]);
+  log_info(os, cpu)("getisax(2) returned %d words:", avn);
+  for (int i = 0; i < avn; i++) {
+    log_info(os, cpu)("    word %d: " PTR32_FORMAT, i, avs[i]);
   }
 
-  if (av & AV_SPARC_MUL32)  features |= hardware_mul32_m;
-  if (av & AV_SPARC_DIV32)  features |= hardware_div32_m;
-  if (av & AV_SPARC_FSMULD) features |= hardware_fsmuld_m;
-  if (av & AV_SPARC_V8PLUS) features |= v9_instructions_m;
-  if (av & AV_SPARC_POPC)   features |= hardware_popc_m;
-  if (av & AV_SPARC_VIS)    features |= vis1_instructions_m;
-  if (av & AV_SPARC_VIS2)   features |= vis2_instructions_m;
-  if (avn > 1) {
-    uint_t av2 = avs[1];
-#ifndef AV2_SPARC_SPARC5
-#define AV2_SPARC_SPARC5 0x00000008 /* The 29 new fp and sub instructions */
-#endif
-    if (av2 & AV2_SPARC_SPARC5)       features |= sparc5_instructions_m;
+  uint_t av1 = avs[AV_HW1_IDX];
+  if (av1 & AV_SPARC_MUL32)        features |= hardware_mul32_m;
+  if (av1 & AV_SPARC_DIV32)        features |= hardware_div32_m;
+  if (av1 & AV_SPARC_FSMULD)       features |= hardware_fsmuld_m;
+  if (av1 & AV_SPARC_V8PLUS)       features |= v9_instructions_m;
+  if (av1 & AV_SPARC_POPC)         features |= hardware_popc_m;
+  if (av1 & AV_SPARC_VIS)          features |= vis1_instructions_m;
+  if (av1 & AV_SPARC_VIS2)         features |= vis2_instructions_m;
+  if (av1 & AV_SPARC_ASI_BLK_INIT) features |= blk_init_instructions_m;
+  if (av1 & AV_SPARC_FMAF)         features |= fmaf_instructions_m;
+  if (av1 & AV_SPARC_VIS3)         features |= vis3_instructions_m;
+  if (av1 & AV_SPARC_CBCOND)       features |= cbcond_instructions_m;
+  if (av1 & AV_SPARC_CRC32C)       features |= crc32c_instruction_m;
+  if (av1 & AV_SPARC_AES)          features |= aes_instructions_m;
+  if (av1 & AV_SPARC_SHA1)         features |= sha1_instruction_m;
+  if (av1 & AV_SPARC_SHA256)       features |= sha256_instruction_m;
+  if (av1 & AV_SPARC_SHA512)       features |= sha512_instruction_m;
+
+  if (avn > AV_HW2_IDX) {
+    uint_t av2 = avs[AV_HW2_IDX];
+    if (av2 & AV2_SPARC_SPARC5)    features |= sparc5_instructions_m;
   }
-
-  // We only build on Solaris 10 and up, but some of the values below
-  // are not defined on all versions of Solaris 10, so we define them,
-  // if necessary.
-#ifndef AV_SPARC_ASI_BLK_INIT
-#define AV_SPARC_ASI_BLK_INIT 0x0080  /* ASI_BLK_INIT_xxx ASI */
-#endif
-  if (av & AV_SPARC_ASI_BLK_INIT) features |= blk_init_instructions_m;
-
-#ifndef AV_SPARC_FMAF
-#define AV_SPARC_FMAF 0x0100        /* Fused Multiply-Add */
-#endif
-  if (av & AV_SPARC_FMAF)         features |= fmaf_instructions_m;
-
-#ifndef AV_SPARC_FMAU
-#define AV_SPARC_FMAU    0x0200  /* Unfused Multiply-Add */
-#endif
-  if (av & AV_SPARC_FMAU)         features |= fmau_instructions_m;
-
-#ifndef AV_SPARC_VIS3
-#define AV_SPARC_VIS3    0x0400  /* VIS3 instruction set extensions */
-#endif
-  if (av & AV_SPARC_VIS3)         features |= vis3_instructions_m;
-
-#ifndef AV_SPARC_CBCOND
-#define AV_SPARC_CBCOND 0x10000000  /* compare and branch instrs supported */
-#endif
-  if (av & AV_SPARC_CBCOND)       features |= cbcond_instructions_m;
-
-#ifndef AV_SPARC_CRC32C
-#define AV_SPARC_CRC32C 0x20000000  /* crc32c instruction supported */
-#endif
-  if (av & AV_SPARC_CRC32C)       features |= crc32c_instruction_m;
-
-#ifndef AV_SPARC_AES
-#define AV_SPARC_AES 0x00020000  /* aes instrs supported */
-#endif
-  if (av & AV_SPARC_AES)       features |= aes_instructions_m;
-
-#ifndef AV_SPARC_SHA1
-#define AV_SPARC_SHA1   0x00400000  /* sha1 instruction supported */
-#endif
-  if (av & AV_SPARC_SHA1)         features |= sha1_instruction_m;
-
-#ifndef AV_SPARC_SHA256
-#define AV_SPARC_SHA256 0x00800000  /* sha256 instruction supported */
-#endif
-  if (av & AV_SPARC_SHA256)       features |= sha256_instruction_m;
-
-#ifndef AV_SPARC_SHA512
-#define AV_SPARC_SHA512 0x01000000  /* sha512 instruction supported */
-#endif
-  if (av & AV_SPARC_SHA512)       features |= sha512_instruction_m;
 
   // Determine the machine type.
   if (Sysinfo(SI_MACHINE).match("sun4v")) {
