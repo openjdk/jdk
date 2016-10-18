@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.tools.jlink;
+package jdk.tools.jlink.internal;
 
 import java.security.BasicPermission;
 

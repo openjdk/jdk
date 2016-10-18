@@ -26,8 +26,8 @@
 package jdk.tools.jlink.internal.packager;
 
 
-import jdk.tools.jlink.Jlink;
 import jdk.tools.jlink.builder.DefaultImageBuilder;
+import jdk.tools.jlink.internal.Jlink;
 import jdk.tools.jlink.internal.JlinkTask;
 import jdk.tools.jlink.plugin.Plugin;
 
