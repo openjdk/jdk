@@ -639,7 +639,6 @@ const char* ClassLoaderData::loader_name() {
 #undef CLD_DUMP_KLASSES
 
 void ClassLoaderData::dump(outputStream * const out) {
-  ResourceMark rm;
   out->print("ClassLoaderData CLD: " PTR_FORMAT ", loader: " PTR_FORMAT ", loader_klass: " PTR_FORMAT " %s {",
       p2i(this), p2i((void *)class_loader()),
       p2i(class_loader() != NULL ? class_loader()->klass() : NULL), loader_name());
@@ -656,7 +655,6 @@ void ClassLoaderData::dump(outputStream * const out) {
 
 #ifdef CLD_DUMP_KLASSES
   if (Verbose) {
-    ResourceMark rm;
     Klass* k = _klasses;
     while (k != NULL) {
       out->print_cr("klass " PTR_FORMAT ", %s, CT: %d, MUT: %d", k, k->name()->as_C_string(),
