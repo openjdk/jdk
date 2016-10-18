@@ -47,6 +47,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
 
@@ -112,7 +113,7 @@ public abstract class PKCS11Test {
                     found = true;
                     break;
                 }
-            } catch (Exception e) {
+            } catch (Exception | ServiceConfigurationError e) {
                 // ignore and move on to the next one
             }
         }
