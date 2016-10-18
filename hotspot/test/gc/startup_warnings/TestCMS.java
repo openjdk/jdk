@@ -24,8 +24,8 @@
 /*
 * @test TestCMS
 * @key gc
-* @bug 8006398
-* @summary Test that CMS does not print a warning message
+* @bug 8006398 8155948
+* @summary Test that CMS prints a warning message only for a commercial build
 * @library /test/lib
 * @modules java.base/jdk.internal.misc
 *          java.management
@@ -33,16 +33,27 @@
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-
+import jdk.test.lib.BuildHelper;
 
 public class TestCMS {
 
-  public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseConcMarkSweepGC", "-version");
+  public static void runTest(String[] args) throws Exception {
+    boolean isCommercial = BuildHelper.isCommercialBuild();
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("deprecated");
+    if (isCommercial) {
+      output.shouldContain("deprecated");
+    } else {
+      output.shouldNotContain("deprecated");
+    }
     output.shouldNotContain("error");
     output.shouldHaveExitValue(0);
+  }
+
+  public static void main(String args[]) throws Exception {
+    runTest(new String[] {"-XX:+UseConcMarkSweepGC", "-version"});
+    runTest(new String[] {"-Xconcgc", "-version"});
+    runTest(new String[] {"-Xnoconcgc", "-version"});
   }
 
 }
