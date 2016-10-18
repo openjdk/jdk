@@ -1380,7 +1380,7 @@ methodHandle Method::clone_with_new_data(methodHandle m, u_char* new_code, int n
   }
 
   // copy annotations over to new method
-  newcm->copy_annotations_from(cm);
+  newcm->copy_annotations_from(loader_data, cm, CHECK_NULL);
   return newm;
 }
 
