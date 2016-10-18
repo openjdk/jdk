@@ -454,8 +454,9 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
 
 #if INCLUDE_JVMCI
-  // Check if we need to take lock at entry of synchronized method.
-  if (UseJVMCICompiler) {
+  // Check if we need to take lock at entry of synchronized method.  This can
+  // only occur on method entry so emit it only for vtos with step 0.
+  if (UseJVMCICompiler && state == vtos && step == 0) {
     Label L;
     __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
     __ cbz(rscratch1, L);
@@ -464,8 +465,17 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
     // Take lock.
     lock_method();
     __ bind(L);
-  }
+  } else {
+#ifdef ASSERT
+    if (UseJVMCICompiler) {
+      Label L;
+      __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
+      __ cbz(rscratch1, L);
+      __ stop("unexpected pending monitor in deopt entry");
+      __ bind(L);
+    }
 #endif
+  }
   // handle exceptions
   {
     Label L;
