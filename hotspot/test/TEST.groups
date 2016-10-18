@@ -370,6 +370,7 @@ hotspot_fast_runtime = \
  -runtime/modules/ModuleStress/ModuleStressGC.java \
  -runtime/NMT \
  -runtime/RedefineObject/TestRedefineObject.java \
+ -runtime/RedefineTests/RedefineLeak.java \
  -runtime/RedefineTests/RedefinePreviousVersions.java \
  -runtime/RedefineTests/RedefineRunningMethods.java \
  -runtime/RedefineTests/RedefineRunningMethodsWithBacktrace.java \
