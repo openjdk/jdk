@@ -35,7 +35,6 @@
 #include "prims/jni_md.h"
 #include "utilities/ticks.hpp"
 
-#define LOG_STOP_TIME_FORMAT "(%.3fs, %.3fs) %.3fms"
 #define LOG_STOP_HEAP_FORMAT SIZE_FORMAT "M->" SIZE_FORMAT "M("  SIZE_FORMAT "M)"
 
 inline void GCTraceTimeImpl::log_start(jlong start_counter) {
@@ -46,7 +45,7 @@ inline void GCTraceTimeImpl::log_start(jlong start_counter) {
     if (_gc_cause != GCCause::_no_gc) {
       out.print(" (%s)", GCCause::to_string(_gc_cause));
     }
-    out.print_cr(" (%.3fs)", TimeHelper::counter_to_seconds(start_counter));
+    out.cr();
   }
 }
 
@@ -71,7 +70,7 @@ inline void GCTraceTimeImpl::log_stop(jlong start_counter, jlong stop_counter) {
     out.print(" " LOG_STOP_HEAP_FORMAT, used_before_m, used_m, capacity_m);
   }
 
-  out.print_cr(" " LOG_STOP_TIME_FORMAT, start_time_in_secs, stop_time_in_secs, duration_in_ms);
+  out.print_cr(" %.3fms", duration_in_ms);
 }
 
 inline void GCTraceTimeImpl::time_stamp(Ticks& ticks) {
@@ -117,7 +116,7 @@ template <LogLevelType Level, LogTagType T0, LogTagType T1, LogTagType T2, LogTa
 GCTraceConcTimeImpl<Level, T0, T1, T2, T3, T4, GuardTag>::GCTraceConcTimeImpl(const char* title) :
   _enabled(LogImpl<T0, T1, T2, T3, T4, GuardTag>::is_level(Level)), _start_time(os::elapsed_counter()), _title(title) {
   if (_enabled) {
-    LogImpl<T0, T1, T2, T3, T4>::template write<Level>("%s (%.3fs)", _title, TimeHelper::counter_to_seconds(_start_time));
+    LogImpl<T0, T1, T2, T3, T4>::template write<Level>("%s", _title);
   }
 }
 
@@ -125,11 +124,8 @@ template <LogLevelType Level, LogTagType T0, LogTagType T1, LogTagType T2, LogTa
 GCTraceConcTimeImpl<Level, T0, T1, T2, T3, T4, GuardTag>::~GCTraceConcTimeImpl() {
   if (_enabled) {
     jlong stop_time = os::elapsed_counter();
-    LogImpl<T0, T1, T2, T3, T4>::template write<Level>("%s " LOG_STOP_TIME_FORMAT,
-                                                   _title,
-                                                   TimeHelper::counter_to_seconds(_start_time),
-                                                   TimeHelper::counter_to_seconds(stop_time),
-                                                   TimeHelper::counter_to_millis(stop_time - _start_time));
+    LogImpl<T0, T1, T2, T3, T4>::template write<Level>("%s %0.3fms", _title,
+                                                       TimeHelper::counter_to_millis(stop_time - _start_time));
   }
 }
 
