@@ -21,7 +21,10 @@
  * questions.
  */
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
@@ -83,7 +86,7 @@ public class KullaTesting {
 
     private SourceCodeAnalysis analysis = null;
     private JShell state = null;
-    private TestingInputStream inStream = null;
+    private InputStream inStream = null;
     private ByteArrayOutputStream outStream = null;
     private ByteArrayOutputStream errStream = null;
 
@@ -106,7 +109,11 @@ public class KullaTesting {
     }
 
     public void setInput(String s) {
-        inStream.setInput(s);
+        setInput(new ByteArrayInputStream(s.getBytes()));
+    }
+
+    public void setInput(InputStream in) {
+        inStream = in;
     }
 
     public String getOutput() {
@@ -159,11 +166,27 @@ public class KullaTesting {
     }
 
     public void setUp(Consumer<JShell.Builder> bc) {
-        inStream = new TestingInputStream();
+        InputStream in = new InputStream() {
+            @Override
+            public int read() throws IOException {
+                assertNotNull(inStream);
+                return inStream.read();
+            }
+            @Override
+            public int read(byte[] b) throws IOException {
+                assertNotNull(inStream);
+                return inStream.read(b);
+            }
+            @Override
+            public int read(byte[] b, int off, int len) throws IOException {
+                assertNotNull(inStream);
+                return inStream.read(b, off, len);
+            }
+        };
         outStream = new ByteArrayOutputStream();
         errStream = new ByteArrayOutputStream();
         JShell.Builder builder = JShell.builder()
-                .in(inStream)
+                .in(in)
                 .out(new PrintStream(outStream))
                 .err(new PrintStream(errStream));
         bc.accept(builder);
