@@ -25,12 +25,9 @@
 
 module jdk.vm.ci {
     exports jdk.vm.ci.services;
-    exports jdk.vm.ci.runtime.services;
-    exports jdk.vm.ci.hotspot.services;
 
-    uses jdk.vm.ci.hotspot.services.HotSpotVMEventListener;
+    uses jdk.vm.ci.services.JVMCIServiceLocator;
     uses jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory;
-    uses jdk.vm.ci.runtime.services.JVMCICompilerFactory;
 
     provides jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory with
         jdk.vm.ci.hotspot.aarch64.AArch64HotSpotJVMCIBackendFactory;

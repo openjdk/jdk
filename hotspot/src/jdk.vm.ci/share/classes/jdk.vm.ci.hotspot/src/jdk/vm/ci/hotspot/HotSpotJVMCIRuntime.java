@@ -27,13 +27,11 @@ import static jdk.vm.ci.common.InitTimer.timer;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.ServiceLoader;
 import java.util.TreeMap;
 
 import jdk.internal.misc.VM;
@@ -43,16 +41,15 @@ import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.hotspot.services.HotSpotJVMCICompilerFactory;
-import jdk.vm.ci.hotspot.services.HotSpotJVMCICompilerFactory.CompilationLevel;
-import jdk.vm.ci.hotspot.services.HotSpotVMEventListener;
+import jdk.vm.ci.hotspot.HotSpotJVMCICompilerFactory.CompilationLevel;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import jdk.vm.ci.runtime.JVMCICompiler;
-import jdk.vm.ci.runtime.services.JVMCICompilerFactory;
+import jdk.vm.ci.runtime.JVMCICompilerFactory;
+import jdk.vm.ci.services.JVMCIServiceLocator;
 import jdk.vm.ci.services.Services;
 
 /**
@@ -246,11 +243,7 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
         if (vmEventListeners == null) {
             synchronized (this) {
                 if (vmEventListeners == null) {
-                    List<HotSpotVMEventListener> listeners = new ArrayList<>();
-                    for (HotSpotVMEventListener vmEventListener : ServiceLoader.load(HotSpotVMEventListener.class)) {
-                        listeners.add(vmEventListener);
-                    }
-                    vmEventListeners = listeners;
+                    vmEventListeners = JVMCIServiceLocator.getProviders(HotSpotVMEventListener.class);
                 }
             }
         }
