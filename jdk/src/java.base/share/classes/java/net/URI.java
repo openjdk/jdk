@@ -37,6 +37,9 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.CharacterCodingException;
 import java.text.Normalizer;
+import jdk.internal.loader.URLClassPath;
+import jdk.internal.misc.JavaNetUriAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.nio.cs.ThreadLocalCoders;
 
 import java.lang.Character;             // for javadoc
@@ -817,6 +820,25 @@ public final class URI
                             null, null, null, -1,
                             null, null, fragment))
             .parse(false);
+    }
+
+    /**
+     * Constructs a simple URI consisting of only a scheme and a pre-validated
+     * path. Provides a fast-path for some internal cases.
+     */
+    URI(String scheme, String path) {
+        assert validSchemeAndPath(scheme, path);
+        this.scheme = scheme;
+        this.path = path;
+    }
+
+    private static boolean validSchemeAndPath(String scheme, String path) {
+        try {
+            URI u = new URI(scheme + ":" + path);
+            return scheme.equals(u.scheme) && path.equals(u.path);
+        } catch (URISyntaxException e) {
+            return false;
+        }
     }
 
     /**
@@ -3571,5 +3593,13 @@ public final class URI
         }
 
     }
-
+    static {
+        SharedSecrets.setJavaNetUriAccess(
+            new JavaNetUriAccess() {
+                public URI create(String scheme, String path) {
+                    return new URI(scheme, path);
+                }
+            }
+        );
+    }
 }
