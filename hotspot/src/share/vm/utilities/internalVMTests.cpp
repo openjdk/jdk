@@ -64,7 +64,6 @@ void InternalVMTests::run() {
   run_unit_test(VMStructs_test);
 #endif
 #if INCLUDE_ALL_GCS
-  run_unit_test(TestG1BiasedArray_test);
   run_unit_test(TestBufferingOopClosure_test);
   if (UseG1GC) {
     run_unit_test(FreeRegionList_test);
