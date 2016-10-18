@@ -40,6 +40,7 @@
   LOG_TAG(attach) \
   LOG_TAG(barrier) \
   LOG_TAG(biasedlocking) \
+  LOG_TAG(blocks) \
   LOG_TAG(bot) \
   LOG_TAG(breakpoint) \
   LOG_TAG(census) \
