@@ -153,6 +153,12 @@ public final class ScriptEnvironment {
     /** Create a new class loaded for each compilation */
     public final boolean _loader_per_compile;
 
+    /** --module-path, if any */
+    public final String _module_path;
+
+    /** --add-modules, if any */
+    public final String _add_modules;
+
     /** Do not support Java support extensions. */
     public final boolean _no_java;
 
@@ -285,6 +291,8 @@ public final class ScriptEnvironment {
             _lazy_compilation = lazy_compilation;
         }
         _loader_per_compile   = options.getBoolean("loader.per.compile");
+        _module_path          = options.getString("module.path");
+        _add_modules          = options.getString("add.modules");
         _no_java              = options.getBoolean("no.java");
         _no_syntax_extensions = options.getBoolean("no.syntax.extensions");
         _no_typed_arrays      = options.getBoolean("no.typed.arrays");

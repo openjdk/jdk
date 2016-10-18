@@ -654,10 +654,10 @@ compare_bin_file() {
             OTHER_DIZ_FILE="$OTHER/support/native/java.base/java_objs/java.diz"
         elif [ "$NAME" = "jimage.exe" ] \
                && [ -f "$OTHER/support/native/jdk.jlink/jimage_objs/jimage.diz" ]; then
-            OTHER_DIZ_FILE="$OTHER/support/native/jdk.jlink/jimage_objs/jimage.diz"
+            OTHER_DIZ_FILE="$OTHER/support/modules_cmds/jdk.jlink/jimage.diz"
         elif [ "$NAME" = "javacpl.exe" ] \
                && [ -f "$OTHER/support/native/jdk.plugin/javacpl/javacpl.diz" ]; then
-            OTHER_DIZ_FILE="$OTHER/support/native/jdk.plugin/javacpl/javacpl.diz"
+            OTHER_DIZ_FILE="$OTHER/support/modules_cmds/jdk.deploy.controlpanel/javacpl.diz"
         elif [ -f "${OTHER_FILE_BASE}.diz" ]; then
             OTHER_DIZ_FILE=${OTHER_FILE_BASE}.diz
         else
@@ -686,10 +686,10 @@ compare_bin_file() {
             THIS_DIZ_FILE="$THIS/support/native/java.base/java_objs/java.diz"
         elif [ "$NAME" = "jimage.exe" ] \
                && [ -f "$THIS/support/native/jdk.jlink/jimage_objs/jimage.diz" ]; then
-            THIS_DIZ_FILE="$THIS/support/native/jdk.jlink/jimage_objs/jimage.diz"
+            THIS_DIZ_FILE="$THIS/support/modules_cmds/jdk.jlink/jimage.diz"
         elif [ "$NAME" = "javacpl.exe" ] \
                && [ -f "$THIS/support/native/jdk.plugin/javacpl/javacpl.diz" ]; then
-            THIS_DIZ_FILE="$THIS/support/native/jdk.plugin/javacpl/javacpl.diz"
+            THIS_DIZ_FILE="$THIS/support/modules_cmds/jdk.deploy.controlpanel/javacpl.diz"
         elif [ -f "${THIS_FILE_BASE}.diz" ]; then
             THIS_DIZ_FILE=${THIS_FILE/.dll/}.diz
         else

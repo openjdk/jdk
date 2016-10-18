@@ -737,52 +737,52 @@ public class ScopeTest {
         try {
             c.getAttribute("");
             throw new AssertionError("should have thrown IAE");
-        } catch (IllegalArgumentException iae1) {}
+        } catch (final IllegalArgumentException iae1) {}
 
         try {
             c.getAttribute(null);
             throw new AssertionError("should have thrown NPE");
-        } catch (NullPointerException npe1) {}
+        } catch (final NullPointerException npe1) {}
 
         try {
             c.getAttribute("", ScriptContext.ENGINE_SCOPE);
             throw new AssertionError("should have thrown IAE");
-        } catch (IllegalArgumentException iae2) {}
+        } catch (final IllegalArgumentException iae2) {}
 
         try {
             c.getAttribute(null, ScriptContext.ENGINE_SCOPE);
             throw new AssertionError("should have thrown NPE");
-        } catch (NullPointerException npe2) {}
+        } catch (final NullPointerException npe2) {}
 
         try {
             c.removeAttribute("", ScriptContext.ENGINE_SCOPE);
             throw new AssertionError("should have thrown IAE");
-        } catch (IllegalArgumentException iae3) {}
+        } catch (final IllegalArgumentException iae3) {}
 
         try {
             c.removeAttribute(null, ScriptContext.ENGINE_SCOPE);
             throw new AssertionError("should have thrown NPE");
-        } catch (NullPointerException npe3) {}
+        } catch (final NullPointerException npe3) {}
 
         try {
             c.setAttribute("", "value", ScriptContext.ENGINE_SCOPE);
             throw new AssertionError("should have thrown IAE");
-        } catch (IllegalArgumentException iae4) {}
+        } catch (final IllegalArgumentException iae4) {}
 
         try {
             c.setAttribute(null, "value", ScriptContext.ENGINE_SCOPE);
             throw new AssertionError("should have thrown NPE");
-        } catch (NullPointerException npe4) {}
+        } catch (final NullPointerException npe4) {}
 
         try {
             c.getAttributesScope("");
             throw new AssertionError("should have thrown IAE");
-        } catch (IllegalArgumentException iae5) {}
+        } catch (final IllegalArgumentException iae5) {}
 
         try {
             c.getAttributesScope(null);
             throw new AssertionError("should have thrown NPE");
-        } catch (NullPointerException npe5) {}
+        } catch (final NullPointerException npe5) {}
     }
 
     public static class RecursiveEval {
@@ -791,8 +791,8 @@ public class ScopeTest {
         private final Bindings engineBindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
 
         public void program() throws ScriptException {
-            ScriptContext sc = new SimpleScriptContext();
-            Bindings global = new SimpleBindings();
+            final ScriptContext sc = new SimpleScriptContext();
+            final Bindings global = new SimpleBindings();
             sc.setBindings(global, ScriptContext.GLOBAL_SCOPE);
             sc.setBindings(engineBindings, ScriptContext.ENGINE_SCOPE);
             global.put("text", "programText");
@@ -812,7 +812,7 @@ public class ScopeTest {
             sc.setBindings(global, ScriptContext.GLOBAL_SCOPE);
             sc.setBindings(engineBindings, ScriptContext.ENGINE_SCOPE);
             global.put("text", "methodText");
-            String value = engine.eval("text", sc).toString();
+            final String value = engine.eval("text", sc).toString();
             Assert.assertEquals(value, "methodText");
         }
     }
@@ -878,7 +878,7 @@ public class ScopeTest {
          engine.eval("newfunc = function() { return func() }");
 
          // call "newfunc" and check the return value
-         Object value = ((Invocable)engine).invokeFunction("newfunc");
+         final Object value = ((Invocable)engine).invokeFunction("newfunc");
          assertTrue(((Number)value).intValue() == 42);
     }
 
@@ -910,7 +910,7 @@ public class ScopeTest {
          engine.eval("newfunc = function() { return func() }");
 
          // call "newfunc" and check the return value
-         Object value = ((Invocable)engine).invokeFunction("newfunc");
+         final Object value = ((Invocable)engine).invokeFunction("newfunc");
          assertTrue(((Number)value).intValue() == 42);
     }
 
@@ -922,18 +922,18 @@ public class ScopeTest {
         final ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
 
         // create an engine and a ScriptContext, but don't set it as default
-        ScriptContext scriptContext = new SimpleScriptContext();
+        final ScriptContext scriptContext = new SimpleScriptContext();
 
         // Set some value in the context
         scriptContext.setAttribute("myString", "foo", ScriptContext.ENGINE_SCOPE);
 
         // Evaluate script with custom context and get back a function
         final String script = "function (c) { return myString.indexOf(c); }";
-        CompiledScript compiledScript = ((Compilable)engine).compile(script);
-        Object func = compiledScript.eval(scriptContext);
+        final CompiledScript compiledScript = ((Compilable)engine).compile(script);
+        final Object func = compiledScript.eval(scriptContext);
 
         // Invoked function should be able to see context it was evaluated with
-        Object result = ((Invocable) engine).invokeMethod(func, "call", func, "o", null);
+        final Object result = ((Invocable) engine).invokeMethod(func, "call", func, "o", null);
         assertTrue(((Number)result).intValue() == 1);
     }
 }

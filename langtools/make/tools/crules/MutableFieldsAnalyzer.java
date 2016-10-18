@@ -111,6 +111,8 @@ public class MutableFieldsAnalyzer extends AbstractCodingRulesAnalyzer {
                 "loadMethod");
         ignoreFields("com.sun.tools.javac.util.JDK9Wrappers$VMHelper",
                 "vmClass", "getRuntimeArgumentsMethod");
+        ignoreFields("com.sun.tools.javac.util.JDK9Wrappers$JmodFile",
+                "jmodFileClass", "checkMagicMethod");
     }
 
 }

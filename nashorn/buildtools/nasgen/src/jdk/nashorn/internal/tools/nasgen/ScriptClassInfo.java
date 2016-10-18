@@ -42,7 +42,7 @@ import static jdk.nashorn.internal.tools.nasgen.StringConstants.RUNTIME_PKG;
  *
  */
 public final class ScriptClassInfo {
-    private static String getTypeDescriptor(String pkg, String name) {
+    private static String getTypeDescriptor(final String pkg, final String name) {
         return "L" + pkg + name + ";";
     }
 

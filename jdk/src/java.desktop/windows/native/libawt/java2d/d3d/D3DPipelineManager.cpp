@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,41 +171,6 @@ HRESULT D3DPipelineManager::ReleaseAdapters()
     }
     currentFSFocusAdapter = -1;
     return S_OK;
-}
-
-// static
-void D3DPipelineManager::NotifyAdapterEventListeners(UINT adapter,
-                                                     jint eventType)
-{
-    HMONITOR hMon;
-    int gdiScreen;
-    D3DPipelineManager *pMgr;
-
-    // fix for 6946559: if d3d preloading fails jmv may be NULL
-    if (jvm == NULL) {
-        return;
-    }
-
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    RETURN_IF_NULL(env);
-
-    pMgr = D3DPipelineManager::GetInstance();
-    RETURN_IF_NULL(pMgr);
-    hMon = pMgr->pd3d9->GetAdapterMonitor(adapter);
-
-    /*
-     * If we don't have devices initialized yet, no sense to clear them.
-     */
-    if (!Devices::GetInstance()){
-         return;
-    }
-
-    gdiScreen = AwtWin32GraphicsDevice::GetScreenFromHMONITOR(hMon);
-
-    JNU_CallStaticMethodByName(env, NULL,
-        "sun/java2d/pipe/hw/AccelDeviceEventNotifier",
-        "eventOccured", "(II)V",
-        gdiScreen, eventType);
 }
 
 UINT D3DPipelineManager::GetAdapterOrdinalForScreen(jint gdiScreen)

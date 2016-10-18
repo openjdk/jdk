@@ -71,7 +71,7 @@ void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle constant, T
   if (HotSpotMetaspaceConstantImpl::compressed(constant)) {
 #ifdef _LP64
     NativeMovConstReg32* move = nativeMovConstReg32_at(pc);
-    narrowKlass narrowOop = record_narrow_metadata_reference(constant, CHECK);
+    narrowKlass narrowOop = record_narrow_metadata_reference(_instructions, pc, constant, CHECK);
     move->set_data((intptr_t)narrowOop);
     TRACE_jvmci_3("relocating (narrow metaspace constant) at " PTR_FORMAT "/0x%x", p2i(pc), narrowOop);
 #else
@@ -79,7 +79,7 @@ void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle constant, T
 #endif
   } else {
     NativeMovConstReg* move = nativeMovConstReg_at(pc);
-    void* reference = record_metadata_reference(constant, CHECK);
+    void* reference = record_metadata_reference(_instructions, pc, constant, CHECK);
     move->set_data((intptr_t)reference);
     TRACE_jvmci_3("relocating (metaspace constant) at " PTR_FORMAT "/" PTR_FORMAT, p2i(pc), p2i(reference));
   }

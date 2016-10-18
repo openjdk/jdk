@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class C2 implements Serializable {
      * Reads the object stream.
      *
      * @param s ObjectInputStream
-     * @throws IOException
+     * @throws IOException on error
      * @deprecated As of JDK version 1.5, replaced by
      * {@link C1#setUndecorated(boolean) setUndecorated(boolean)}.
      */

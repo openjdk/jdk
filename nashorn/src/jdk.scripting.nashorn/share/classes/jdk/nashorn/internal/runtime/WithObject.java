@@ -183,7 +183,7 @@ public final class WithObject extends Scope {
      * @return FindPropertyData or null if not found.
      */
     @Override
-    protected FindProperty findProperty(final Object key, final boolean deep, boolean isScope, final ScriptObject start) {
+    protected FindProperty findProperty(final Object key, final boolean deep, final boolean isScope, final ScriptObject start) {
         // We call findProperty on 'expression' with 'expression' itself as start parameter.
         // This way in ScriptObject.setObject we can tell the property is from a 'with' expression
         // (as opposed from another non-scope object in the proto chain such as Object.prototype).

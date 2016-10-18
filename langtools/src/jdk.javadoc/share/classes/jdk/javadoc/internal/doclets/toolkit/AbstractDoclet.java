@@ -40,7 +40,6 @@ import jdk.javadoc.internal.doclets.toolkit.builders.AbstractBuilder;
 import jdk.javadoc.internal.doclets.toolkit.builders.BuilderFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.InternalException;
 import jdk.javadoc.internal.doclets.toolkit.util.PackageListWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.ResourceIOException;
@@ -112,8 +111,6 @@ public abstract class AbstractDoclet implements Doclet {
             return false;
         }
 
-        boolean dumpOnError = false;  // set true to always show stack traces
-
         try {
             startGeneration(docEnv);
             return true;
@@ -128,16 +125,16 @@ public abstract class AbstractDoclet implements Doclet {
                     messages.error("doclet.exception.write.file",
                             e.fileName.getPath(), e.getCause());
             }
-            dumpStack(dumpOnError, e);
+            dumpStack(configuration.dumpOnError, e);
 
         } catch (ResourceIOException e) {
             messages.error("doclet.exception.read.resource",
                     e.resource.getPath(), e.getCause());
-            dumpStack(dumpOnError, e);
+            dumpStack(configuration.dumpOnError, e);
 
         } catch (SimpleDocletException e) {
             configuration.reporter.print(ERROR, e.getMessage());
-            dumpStack(dumpOnError, e);
+            dumpStack(configuration.dumpOnError, e);
 
         } catch (InternalException e) {
             configuration.reporter.print(ERROR, e.getMessage());

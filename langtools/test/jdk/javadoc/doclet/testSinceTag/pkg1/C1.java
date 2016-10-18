@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,6 @@ public class C1 implements Serializable {
      * @param test boolean value
      * @exception IllegalArgumentException if the <code>owner</code>'s
      *     <code>GraphicsConfiguration</code> is not from a screen device
-     * @exception HeadlessException
      */
     public C1(String title, boolean test) {
     }
@@ -93,6 +92,7 @@ public class C1 implements Serializable {
     }
 
     /**
+     * @throws java.io.IOException on error
      * @see #setUndecorated(boolean)
      */
     public void readObject() throws IOException {

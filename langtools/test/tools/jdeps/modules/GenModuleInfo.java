@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @summary Tests jdeps --gen-module-info option
+ * @summary Tests jdeps --generate-module-info option
  * @library ../lib
- * @build CompilerUtils JdepsUtil
+ * @build CompilerUtils JdepsUtil JdepsRunner
  * @modules jdk.jdeps/com.sun.tools.jdeps
  * @run testng GenModuleInfo
  */
@@ -97,7 +97,7 @@ public class GenModuleInfo {
         Stream<String> files = Arrays.stream(modules)
                 .map(mn -> LIBS_DIR.resolve(mn + ".jar"))
                 .map(Path::toString);
-        JdepsUtil.jdeps(Stream.concat(Stream.of("-cp"), files).toArray(String[]::new));
+        JdepsRunner.run(Stream.concat(Stream.of("-cp"), files).toArray(String[]::new));
     }
 
     @Test
@@ -106,7 +106,7 @@ public class GenModuleInfo {
                 .map(mn -> LIBS_DIR.resolve(mn + ".jar"))
                 .map(Path::toString);
 
-        JdepsUtil.jdeps(Stream.concat(Stream.of("--gen-module-info", DEST_DIR.toString()),
+        JdepsRunner.run(Stream.concat(Stream.of("--generate-module-info", DEST_DIR.toString()),
                                       files).toArray(String[]::new));
 
         // check file exists

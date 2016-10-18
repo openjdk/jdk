@@ -26,7 +26,6 @@
  * @bug 6279846
  * @summary Verifies that transform between the same ICC color spaces does not
  * change pixels
- * @run main ColorConvertTest
  */
 
 import java.awt.image.*;

@@ -95,15 +95,15 @@ abstract class XRPaints {
         private XRGradient() {
         }
 
-        /**
-         * There are no restrictions for accelerating GradientPaint, so this
-         * method always returns true.
-         */
         @Override
         boolean isPaintValid(SunGraphics2D sg2d) {
-            return true;
+            GradientPaint paint = (GradientPaint) sg2d.paint;
+
+            return XRUtils.isPointCoordInShortRange(paint.getPoint1())
+                    && XRUtils.isPointCoordInShortRange(paint.getPoint2());
         }
 
+        @Override
         void setXRPaint(SunGraphics2D sg2d, Paint pt) {
             GradientPaint paint = (GradientPaint) pt;
 
@@ -130,24 +130,27 @@ abstract class XRPaints {
 
         @Override
         boolean isPaintValid(SunGraphics2D sg2d) {
-            return ((LinearGradientPaint) sg2d.getPaint()).getColorSpace() == ColorSpaceType.SRGB;
+            LinearGradientPaint paint = (LinearGradientPaint) sg2d.getPaint();
+
+            return paint.getColorSpace() == ColorSpaceType.SRGB
+                    && XRUtils.isPointCoordInShortRange(paint.getStartPoint())
+                    && XRUtils.isPointCoordInShortRange(paint.getEndPoint())
+                    && paint.getTransform().getDeterminant() != 0.0;
         }
 
         @Override
         void setXRPaint(SunGraphics2D sg2d, Paint pt) {
             LinearGradientPaint paint = (LinearGradientPaint) pt;
-
             Color[] colors = paint.getColors();
             Point2D pt1 = paint.getStartPoint();
             Point2D pt2 = paint.getEndPoint();
-
             int repeat = XRUtils.getRepeatForCycleMethod(paint.getCycleMethod());
             float[] fractions = paint.getFractions();
             int[] pixels = convertToIntArgbPixels(colors);
-
             AffineTransform at = paint.getTransform();
+
             try {
-                at.invert();
+               at.invert();
             } catch (NoninvertibleTransformException ex) {
                 ex.printStackTrace();
             }
@@ -165,8 +168,12 @@ abstract class XRPaints {
         @Override
         boolean isPaintValid(SunGraphics2D sg2d) {
             RadialGradientPaint grad = (RadialGradientPaint) sg2d.paint;
-            return grad.getFocusPoint().equals(grad.getCenterPoint())
-                   && grad.getColorSpace() == ColorSpaceType.SRGB;
+
+            return grad.getColorSpace() == ColorSpaceType.SRGB
+                   && grad.getFocusPoint().equals(grad.getCenterPoint())
+                   && XRUtils.isPointCoordInShortRange(grad.getCenterPoint())
+                   && grad.getRadius() <= Short.MAX_VALUE
+                   && grad.getTransform().getDeterminant() != 0.0;
         }
 
         @Override
@@ -174,18 +181,17 @@ abstract class XRPaints {
             RadialGradientPaint paint = (RadialGradientPaint) pt;
             Color[] colors = paint.getColors();
             Point2D center = paint.getCenterPoint();
+            float cx = (float) center.getX();
+            float cy = (float) center.getY();
 
+            AffineTransform at = paint.getTransform();
             int repeat = XRUtils.getRepeatForCycleMethod(paint.getCycleMethod());
             float[] fractions = paint.getFractions();
             int[] pixels = convertToIntArgbPixels(colors);
             float radius = paint.getRadius();
 
-            float cx = (float) center.getX();
-            float cy = (float) center.getY();
-
-            AffineTransform at = paint.getTransform();
             try {
-                at.invert();
+               at.invert();
             } catch (NoninvertibleTransformException ex) {
                 ex.printStackTrace();
             }

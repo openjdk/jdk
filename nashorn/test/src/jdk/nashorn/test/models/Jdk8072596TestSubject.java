@@ -49,7 +49,7 @@ public class Jdk8072596TestSubject {
     }
 
     // Test having to wrap some arguments but not others, and a vararg array
-    public void test2(String x, final Object y, final ScriptObject w, final Object... z) {
+    public void test2(final String x, final Object y, final ScriptObject w, final Object... z) {
         test1(x, y, w);
 
         Assert.assertEquals(z.length, 2);

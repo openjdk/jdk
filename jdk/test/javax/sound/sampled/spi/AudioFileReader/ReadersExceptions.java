@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,11 +74,56 @@ public final class ReadersExceptions {
     // empty channels
     static byte[] wrongAUCh =
             {0x2e, 0x73, 0x6e, 0x64,//AiffFileFormat.AU_SUN_MAGIC
-             0, 0, 0, 0, // headerSize
+             0, 0, 0, 24, // headerSize
+             0, 0, 0, 0, // dataSize
+             0, 0, 0, 1, // encoding_local AuFileFormat.AU_ULAW_8
+             0, 0, 0, 1, // sampleRate
+             0, 0, 0, 0 // channels
+            };
+    // empty sample rate
+    static byte[] wrongAUSR =
+            {0x2e, 0x73, 0x6e, 0x64,//AiffFileFormat.AU_SUN_MAGIC
+             0, 0, 0, 24, // headerSize
              0, 0, 0, 0, // dataSize
              0, 0, 0, 1, // encoding_local AuFileFormat.AU_ULAW_8
              0, 0, 0, 0, // sampleRate
-             0, 0, 0, 0 // channels
+             0, 0, 0, 1 // channels
+            };
+    // empty header size
+    static byte[] wrongAUEmptyHeader =
+            {0x2e, 0x73, 0x6e, 0x64,//AiffFileFormat.AU_SUN_MAGIC
+             0, 0, 0, 0, // headerSize
+             0, 0, 0, 0, // dataSize
+             0, 0, 0, 1, // encoding_local AuFileFormat.AU_ULAW_8
+             0, 0, 0, 1, // sampleRate
+             0, 0, 0, 1 // channels
+            };
+    // small header size
+    static byte[] wrongAUSmallHeader =
+            {0x2e, 0x73, 0x6e, 0x64,//AiffFileFormat.AU_SUN_MAGIC
+             0, 0, 0, 7, // headerSize
+             0, 0, 0, 0, // dataSize
+             0, 0, 0, 1, // encoding_local AuFileFormat.AU_ULAW_8
+             0, 0, 0, 1, // sampleRate
+             0, 0, 0, 1 // channels
+            };
+    // frame size overflow, when result negative
+    static byte[] wrongAUFrameSizeOverflowNegativeResult =
+            {0x2e, 0x73, 0x6e, 0x64,//AiffFileFormat.AU_SUN_MAGIC
+             0, 0, 0, 24, // headerSize
+             0, 0, 0, 0, // dataSize
+             0, 0, 0, 5, // encoding_local AuFileFormat.AU_LINEAR_32
+             0, 0, 0, 1, // sampleRate
+             0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF // channels
+            };
+    // frame size overflow, when result positive
+    static byte[] wrongAUFrameSizeOverflowPositiveResult =
+            {0x2e, 0x73, 0x6e, 0x64,//AiffFileFormat.AU_SUN_MAGIC
+             0, 0, 0, 24, // headerSize
+             0, 0, 0, 0, // dataSize
+             0, 0, 0, 4, // encoding_local AuFileFormat.AU_LINEAR_24
+             0, 0, 0, 1, // sampleRate
+             0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF // channels
             };
     // empty channels
     static byte[] wrongWAVCh =
@@ -113,8 +158,12 @@ public final class ReadersExceptions {
              0, 0, 0, 0, // dataLength
             };
 
-    static byte[][] data = {wrongAIFFCh, wrongAIFFSSL, wrongAIFFSSH, wrongAUCh,
-                            wrongWAVCh, wrongWAVSSB};
+    static byte[][] data = {
+            wrongAIFFCh, wrongAIFFSSL, wrongAIFFSSH, wrongAUCh, wrongAUSR,
+            wrongAUEmptyHeader, wrongAUSmallHeader,
+            wrongAUFrameSizeOverflowNegativeResult,
+            wrongAUFrameSizeOverflowPositiveResult, wrongWAVCh, wrongWAVSSB
+    };
 
     public static void main(final String[] args) throws IOException {
         for (final byte[] bytes : data) {

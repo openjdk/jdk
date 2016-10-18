@@ -112,12 +112,11 @@ public interface DocTreeFactory {
 
     /**
      * Create a new {@code DocCommentTree} object, to represent a complete doc comment.
-     * @param firstSentence the first sentence of the doc comment
-     * @param body the body of the doc comment following the first sentence
+     * @param fullBody the entire body of the doc comment
      * @param tags the block tags in the doc comment
      * @return a {@code DocCommentTree} object
      */
-    DocCommentTree newDocCommentTree(List<? extends DocTree> firstSentence, List<? extends DocTree> body, List<? extends DocTree> tags);
+    DocCommentTree newDocCommentTree(List<? extends DocTree> fullBody, List<? extends DocTree> tags);
 
     /**
      * Create a new {@code DocRootTree} object, to represent an {@code {@docroot} } tag.

@@ -916,7 +916,6 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         /**
          * Create a ModuleSymbol with an associated module-info ClassSymbol.
-         * The name of the module may be null, if it is not known yet.
          */
         public static ModuleSymbol create(Name name, Name module_info) {
             ModuleSymbol msym = new ModuleSymbol(name, null);
@@ -930,6 +929,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         public ModuleSymbol(Name name, Symbol owner) {
             super(MDL, 0, name, null, owner);
+            Assert.checkNonNull(name);
             this.type = new ModuleType(this);
         }
 

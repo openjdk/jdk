@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347
+ * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714
  * @summary Tests for Basic tests for REPL tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -572,6 +572,22 @@ public class ToolBasicTest extends ReplToolTesting {
         } finally {
             System.setProperty("java.awt.headless", prevHeadless==null? "false" : prevHeadless);
         }
+    }
+
+    public void testAddExports() {
+        test(false, new String[]{"--no-startup"},
+                a -> assertCommandOutputStartsWith(a, "import jdk.internal.misc.VM;", "|  Error:")
+        );
+        test(false, new String[]{"--no-startup",
+            "-R--add-exports", "-Rjava.base/jdk.internal.misc=ALL-UNNAMED",
+            "-C--add-exports", "-Cjava.base/jdk.internal.misc=ALL-UNNAMED"},
+                a -> assertImport(a, "import jdk.internal.misc.VM;", "", "jdk.internal.misc.VM"),
+                a -> assertCommand(a, "System.err.println(VM.isBooted())", "", "", null, "", "true\n")
+        );
+        test(false, new String[]{"--no-startup", "--add-exports", "java.base/jdk.internal.misc"},
+                a -> assertImport(a, "import jdk.internal.misc.VM;", "", "jdk.internal.misc.VM"),
+                a -> assertCommand(a, "System.err.println(VM.isBooted())", "", "", null, "", "true\n")
+        );
     }
 
 }

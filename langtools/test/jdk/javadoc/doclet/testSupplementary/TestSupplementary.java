@@ -52,7 +52,7 @@ public class TestSupplementary extends JavadocTester {
         javadoc("-locale", "en_US",
                 "-d", "out",
                 testSrc("C.java"));
-        checkExit(Exit.FAILED);
+        checkExit(Exit.ERROR);
 
         checkOutput(Output.OUT, true,
             "C.java:36: error: unexpected text",

@@ -135,7 +135,7 @@ public class APIDeps {
                            "java.util.Set",
                            "c.C", "d.D", "c.I", "e.E", "m.Bar"},
              new String[] {"compact1", testDirBasename, mDir.getName()},
-             new String[] {"-classpath", testDir.getPath(), "-verbose", "-P", "-apionly"});
+             new String[] {"-classpath", testDir.getPath(), "-verbose", "-P", "--api-only"});
         return errors;
     }
 

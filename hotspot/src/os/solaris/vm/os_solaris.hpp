@@ -73,8 +73,6 @@ class Solaris {
     LGRP_VIEW_OS            // what's available to operating system
   } lgrp_view_t;
 
-  typedef uint_t (*getisax_func_t)(uint32_t* array, uint_t n);
-
   typedef lgrp_id_t (*lgrp_home_func_t)(idtype_t idtype, id_t id);
   typedef lgrp_cookie_t (*lgrp_init_func_t)(lgrp_view_t view);
   typedef int (*lgrp_fini_func_t)(lgrp_cookie_t cookie);
@@ -86,11 +84,6 @@ class Solaris {
                                        lgrp_rsrc_t type);
   typedef int (*lgrp_nlgrps_func_t)(lgrp_cookie_t cookie);
   typedef int (*lgrp_cookie_stale_func_t)(lgrp_cookie_t cookie);
-  typedef int (*meminfo_func_t)(const uint64_t inaddr[],   int addr_count,
-                                const uint_t  info_req[],  int info_count,
-                                uint64_t  outdata[], uint_t validity[]);
-
-  static getisax_func_t _getisax;
 
   static lgrp_home_func_t _lgrp_home;
   static lgrp_init_func_t _lgrp_init;
@@ -101,8 +94,6 @@ class Solaris {
   static lgrp_nlgrps_func_t _lgrp_nlgrps;
   static lgrp_cookie_stale_func_t _lgrp_cookie_stale;
   static lgrp_cookie_t _lgrp_cookie;
-
-  static meminfo_func_t _meminfo;
 
   // Large Page Support
   static bool is_valid_page_size(size_t bytes);
@@ -191,8 +182,6 @@ class Solaris {
   static void libthread_init();
   static void synchronization_init();
   static bool liblgrp_init();
-  // Load miscellaneous symbols.
-  static void misc_sym_init();
   // This boolean allows users to forward their own non-matching signals
   // to JVM_handle_solaris_signal, harmlessly.
   static bool signal_handlers_are_installed;
@@ -271,17 +260,6 @@ class Solaris {
     return _lgrp_cookie_stale != NULL ? _lgrp_cookie_stale(cookie) : -1;
   }
   static lgrp_cookie_t lgrp_cookie()                 { return _lgrp_cookie; }
-
-  static bool supports_getisax()                     { return _getisax != NULL; }
-  static uint_t getisax(uint32_t* array, uint_t n);
-
-  static void set_meminfo(meminfo_func_t func)       { _meminfo = func; }
-  static int meminfo (const uint64_t inaddr[],   int addr_count,
-                      const uint_t  info_req[],  int info_count,
-                      uint64_t  outdata[], uint_t validity[]) {
-    return _meminfo != NULL ? _meminfo(inaddr, addr_count, info_req, info_count,
-                                       outdata, validity) : -1;
-  }
 
   static sigset_t* unblocked_signals();
   static sigset_t* vm_signals();

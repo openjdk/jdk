@@ -122,15 +122,6 @@ public class JLinkTest {
         }
 
         {
-            String moduleName = "filter";
-            Path jmod = helper.generateDefaultJModule(moduleName).assertSuccess();
-            String className = "_A.class";
-            JImageGenerator.addFiles(jmod, new InMemoryFile(className, new byte[0]));
-            Path image = helper.generateDefaultImage(moduleName).assertSuccess();
-            helper.checkImage(image, moduleName, new String[] {"/" + moduleName + "/" + className}, null);
-        }
-
-        {
             String moduleName = "m"; // 8163382
             Path jmod = helper.generateDefaultJModule(moduleName).assertSuccess();
             JImageGenerator.getJLinkTask()
@@ -146,6 +137,43 @@ public class JLinkTest {
                     .output(helper.createNewImageDir(moduleName))
                     .addMods("m")
                     .option("")
+                    .call().assertSuccess();
+        }
+
+        {
+            String moduleName = "m_8165735"; // JDK-8165735
+            helper.generateDefaultJModule(moduleName+"dependency").assertSuccess();
+            Path jmod = helper.generateDefaultJModule(moduleName, moduleName+"dependency").assertSuccess();
+            JImageGenerator.getJLinkTask()
+                    .modulePath(helper.defaultModulePath())
+                    .repeatedModulePath(".") // second --module-path overrides the first one
+                    .output(helper.createNewImageDir(moduleName))
+                    .addMods(moduleName)
+                    // second --module-path does not have that module
+                    .call().assertFailure("Error: Module m_8165735 not found");
+
+            JImageGenerator.getJLinkTask()
+                    .modulePath(".") // first --module-path overridden later
+                    .repeatedModulePath(helper.defaultModulePath())
+                    .output(helper.createNewImageDir(moduleName))
+                    .addMods(moduleName)
+                    // second --module-path has that module
+                    .call().assertSuccess();
+
+            JImageGenerator.getJLinkTask()
+                    .modulePath(helper.defaultModulePath())
+                    .output(helper.createNewImageDir(moduleName))
+                    .limitMods(moduleName)
+                    .repeatedLimitMods("java.base") // second --limit-modules overrides first
+                    .addMods(moduleName)
+                    .call().assertFailure("Error: Module m_8165735dependency not found, required by m_8165735");
+
+            JImageGenerator.getJLinkTask()
+                    .modulePath(helper.defaultModulePath())
+                    .output(helper.createNewImageDir(moduleName))
+                    .limitMods("java.base")
+                    .repeatedLimitMods(moduleName) // second --limit-modules overrides first
+                    .addMods(moduleName)
                     .call().assertSuccess();
         }
 

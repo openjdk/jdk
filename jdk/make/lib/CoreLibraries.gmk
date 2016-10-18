@@ -218,7 +218,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := -export:ZIP_Open -export:ZIP_Close -export:ZIP_FindEntry \
         -export:ZIP_ReadEntry -export:ZIP_GetNextEntry \
-        -export:ZIP_InflateFully -export:ZIP_CRC32, \
+        -export:ZIP_InflateFully -export:ZIP_CRC32 -export:ZIP_FreeEntry, \
     LIBS_unix := -ljvm -ljava $(LIBZ), \
     LIBS_solaris := -lc, \
     LIBS_windows := jvm.lib $(WIN_JAVA_LIB), \
@@ -236,10 +236,6 @@ TARGETS += $(BUILD_LIBZIP)
 
 ##########################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), aix)
-  LIBJIMAGE_TOOLCHAIN := TOOLCHAIN_LINK_CXX
-endif # OPENJDK_TARGET_OS aix
-
 JIMAGELIB_CPPFLAGS := \
     -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
     -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava \
@@ -249,7 +245,7 @@ JIMAGELIB_CPPFLAGS := \
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBJIMAGE, \
     LIBRARY := jimage, \
-    TOOLCHAIN := $(LIBJIMAGE_TOOLCHAIN), \
+    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     OPTIMIZATION := LOW, \
     SRC := $(JDK_TOPDIR)/src/java.base/share/native/libjimage \

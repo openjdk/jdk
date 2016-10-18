@@ -48,8 +48,8 @@ TEST_VM_F(GCTraceTimeTest, full) {
   }
 
   const char* expected[] = {
-    "[gc,start", "] Test GC (Allocation Failure) (", "s)",
-    "[gc", "] Test GC (Allocation Failure) ", "M) (", "s, ", "s) ", "ms",
+    "[gc,start", "] Test GC (Allocation Failure)",
+    "[gc", "] Test GC (Allocation Failure) ", "M) ", "ms",
     NULL
   };
   EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, expected));
@@ -71,8 +71,8 @@ TEST_VM_F(GCTraceTimeTest, full_multitag) {
   }
 
   const char* expected[] = {
-    "[gc,ref,start", "] Test GC (Allocation Failure) (", "s)",
-    "[gc,ref", "] Test GC (Allocation Failure) ", "M) (", "s, ", "s) ", "ms",
+    "[gc,ref,start", "] Test GC (Allocation Failure)",
+    "[gc,ref", "] Test GC (Allocation Failure) ", "M) ", "ms",
     NULL
   };
   EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, expected));
@@ -92,17 +92,17 @@ TEST_VM_F(GCTraceTimeTest, no_heap) {
   }
 
   const char* expected[] = {
-    // [2.975s][debug][gc,start] Test GC (Allocation Failure) (2.975s)
-    "[gc,start", "] Test GC (Allocation Failure) (", "s)",
-    // [2.975s][debug][gc      ] Test GC (Allocation Failure) (2.975s, 2.975s) 0.026ms
-    "[gc", "] Test GC (Allocation Failure) ", "(", "s, ", "s) ", "ms",
+    // [2.975s][debug][gc,start] Test GC (Allocation Failure)
+    "[gc,start", "] Test GC (Allocation Failure)",
+    // [2.975s][debug][gc      ] Test GC (Allocation Failure) 0.026ms
+    "[gc", "] Test GC (Allocation Failure) ", "ms",
     NULL
   };
   EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, expected));
 
   const char* not_expected[] = {
-      // [2.975s][debug][gc      ] Test GC 59M->59M(502M) (2.975s, 2.975s) 0.026ms
-      "[gc", "] Test GC ", "M) (", "s, ", "s) ", "ms",
+      // [2.975s][debug][gc      ] Test GC 59M->59M(502M) 0.026ms
+      "[gc", "] Test GC ", "M) ", "ms",
   };
   EXPECT_FALSE(file_contains_substrings_in_order(TestLogFileName, not_expected));
 }
@@ -123,10 +123,10 @@ TEST_VM_F(GCTraceTimeTest, no_cause) {
   }
 
   const char* expected[] = {
-    // [2.975s][debug][gc,start] Test GC (2.975s)
-    "[gc,start", "] Test GC ", "s)",
-    // [2.975s][debug][gc      ] Test GC 59M->59M(502M) (2.975s, 2.975s) 0.026ms
-    "[gc", "] Test GC ", "M) (", "s, ", "s) ", "ms",
+    // [2.975s][debug][gc,start] Test GC
+    "[gc,start", "] Test GC",
+    // [2.975s][debug][gc      ] Test GC 59M->59M(502M) 0.026ms
+    "[gc", "] Test GC ", "M) ", "ms",
     NULL
   };
   EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, expected));
@@ -146,17 +146,17 @@ TEST_VM_F(GCTraceTimeTest, no_heap_no_cause) {
   }
 
   const char* expected[] = {
-    // [2.975s][debug][gc,start] Test GC (2.975s)
-    "[gc,start", "] Test GC ", "s)",
-    // [2.975s][debug][gc      ] Test GC (2.975s, 2.975s) 0.026ms
-    "[gc", "] Test GC ", "(", "s, ", "s) ", "ms",
+    // [2.975s][debug][gc,start] Test GC
+    "[gc,start", "] Test GC",
+    // [2.975s][debug][gc      ] Test GC 0.026ms
+    "[gc", "] Test GC ", "ms",
     NULL
   };
   EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, expected));
 
   const char* not_expected[] = {
-      // [2.975s][debug][gc      ] Test GC 59M->59M(502M) (2.975s, 2.975s) 0.026ms
-      "[gc", "] Test GC ", "M) (", "s, ", "s) ", "ms",
+      // [2.975s][debug][gc      ] Test GC 59M->59M(502M) 0.026ms
+      "[gc", "] Test GC ", "M) ", "ms",
   };
   EXPECT_FALSE(file_contains_substrings_in_order(TestLogFileName, not_expected));
 }

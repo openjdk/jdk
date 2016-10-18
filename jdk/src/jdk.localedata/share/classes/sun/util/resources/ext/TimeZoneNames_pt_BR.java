@@ -189,6 +189,9 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
         String MSK[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o de Moscou", "MSK",
                                      "Hor\u00e1rio de luz natural de Moscou", "MSD",
                                      "Hor\u00E1rio de Moscou", "MT"};
+        String MMT[] = new String[] {"Fuso hor\u00e1rio de Mianmar", "MMT",
+                                     "Fuso hor\u00e1rio de ver\u00e3o de Mianmar", "MMST",
+                                     "Hor\u00E1rio de Mianmar", "MMT"};
         String MST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o das montanhas", "MST",
                                      "Hor\u00e1rio de luz natural das montanhas", "MDT",
                                      "Hor\u00E1rio das Montanhas Rochosas", "MT"};
@@ -684,9 +687,7 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"Asia/Qyzylorda", new String[] {"Fuso hor\u00e1rio de Kizil-Orda", "QYZT",
                                              "Fuso hor\u00e1rio de ver\u00e3o de Kizil-Orda", "QYZST",
                                              "Hor\u00E1rio de Qyzylorda", "QYZT"}},
-            {"Asia/Rangoon", new String[] {"Fuso hor\u00e1rio de Mianmar", "MMT",
-                                           "Fuso hor\u00e1rio de ver\u00e3o de Mianmar", "MMST",
-                                           "Hor\u00E1rio de Mianmar", "MMT"}},
+            {"Asia/Rangoon", MMT},
             {"Asia/Riyadh", ARAST},
             {"Asia/Saigon", ICT},
             {"Asia/Sakhalin", new String[] {"Fuso hor\u00e1rio de Sakhalina", "SAKT",
@@ -719,6 +720,7 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
                                                "Fuso hor\u00e1rio de ver\u00e3o de Vladivostok", "VLAST",
                                                "Hor\u00E1rio de Vladivostok", "VLAT"}},
             {"Asia/Yakutsk", YAKT},
+            {"Asia/Yangon", MMT},
             {"Asia/Yekaterinburg", new String[] {"Fuso hor\u00e1rio de Yekaterinburgo", "YEKT",
                                                  "Fuso hor\u00e1rio de ver\u00e3o de Yekaterinburgo", "YEKST",
                                                  "Hor\u00E1rio de Yekaterinburg", "YEKT"}},

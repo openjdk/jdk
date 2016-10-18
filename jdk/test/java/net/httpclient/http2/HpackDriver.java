@@ -33,7 +33,6 @@
  * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.CircularBufferTest
  * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.DecoderTest
  * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.EncoderTest
- * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.HeaderTableTest
  * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.HuffmanTest
  * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.TestHelper
  */

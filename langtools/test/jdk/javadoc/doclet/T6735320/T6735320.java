@@ -42,7 +42,7 @@ public class T6735320 extends JavadocTester {
     void test() {
         javadoc("-d", "out",
                 testSrc("SerialFieldTest.java"));
-        checkExit(Exit.FAILED);
+        checkExit(Exit.ERROR);
         checkOutput(Output.STDERR, false,
                 "OutOfBoundsException");
     }

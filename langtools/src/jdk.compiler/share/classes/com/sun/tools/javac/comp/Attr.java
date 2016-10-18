@@ -4415,6 +4415,7 @@ public class Attr extends JCTree.Visitor {
                 chk.checkDeprecatedAnnotation(env.tree.pos(), c);
                 chk.checkClassOverrideEqualsAndHashIfNeeded(env.tree.pos(), c);
                 chk.checkFunctionalInterface((JCClassDecl) env.tree, c);
+                chk.checkLeaksNotAccessible(env, (JCClassDecl) env.tree);
             } finally {
                 env.info.returnResult = prevReturnRes;
                 log.useSource(prev);

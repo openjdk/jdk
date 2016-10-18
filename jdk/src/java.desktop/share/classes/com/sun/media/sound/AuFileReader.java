@@ -44,7 +44,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 public final class AuFileReader extends SunFileReader {
 
     @Override
-    public StandardFileFormat getAudioFileFormatImpl(final InputStream stream)
+    StandardFileFormat getAudioFileFormatImpl(final InputStream stream)
             throws UnsupportedAudioFileException, IOException {
         final DataInputStream dis = new DataInputStream(stream);
         final int magic = dis.readInt();
@@ -55,9 +55,15 @@ public final class AuFileReader extends SunFileReader {
         }
 
         final int headerSize = dis.readInt();
+        if (headerSize < AuFileFormat.AU_HEADERSIZE) {
+            throw new UnsupportedAudioFileException("Invalid header size");
+        }
         final long /* unsigned int */ dataSize = dis.readInt() & 0xffffffffL;
         final int auType = dis.readInt();
         final int sampleRate = dis.readInt();
+        if (sampleRate <= 0) {
+            throw new UnsupportedAudioFileException("Invalid sample rate");
+        }
         final int channels = dis.readInt();
         if (channels <= 0) {
             throw new UnsupportedAudioFileException("Invalid number of channels");
@@ -119,10 +125,19 @@ public final class AuFileReader extends SunFileReader {
                 // unsupported filetype, throw exception
                 throw new UnsupportedAudioFileException("not a valid AU file");
         }
-        // now seek past the header
+
+        // Skip the variable-length annotation field. The content of this field
+        // is currently undefined by AU specification and is unsupported by
+        // JavaSound, so seek past the header
         dis.skipBytes(headerSize - AuFileFormat.AU_HEADERSIZE);
 
+        // Even if the sampleSizeInBits and channels are supported we can get an
+        // unsupported frameSize because of overflow
         final int frameSize = calculatePCMFrameSize(sampleSizeInBits, channels);
+        if (frameSize <= 0) {
+            throw new UnsupportedAudioFileException("Invalid frame size");
+        }
+
         //$$fb 2002-11-02: fix for 4629669: AU file reader: problems with empty files
         //$$fb 2003-10-20: fix for 4940459: AudioInputStream.getFrameLength() returns 0 instead of NOT_SPECIFIED
         long frameLength = AudioSystem.NOT_SPECIFIED;

@@ -45,7 +45,7 @@ public class TestConstantValuesPage extends JavadocTester {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "foo");
-        checkExit(Exit.FAILED);
+        checkExit(Exit.CMDERR);
 
         checkOutput(Output.OUT, false,
                 "constant-values.html...");

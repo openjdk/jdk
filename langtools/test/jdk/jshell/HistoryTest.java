@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8166744
  * @summary Test Completion
  * @modules jdk.internal.le/jdk.internal.jline.extra
  *          jdk.jshell/jdk.internal.jshell.tool
@@ -67,6 +68,44 @@ public class HistoryTest extends ReplToolTesting {
                          previousSnippetAndAssert(getHistory(), "/exit");
                          previousSnippetAndAssert(getHistory(), "int dummy;");
                          previousSnippetAndAssert(getHistory(), "void test() {");
+                     } catch (Exception ex) {
+                         throw new IllegalStateException(ex);
+                     }
+                 }
+                 assertCommand(a, "int dummy;", "dummy ==> 0");
+             });
+    }
+
+    public void test8166744() {
+        test(
+             a -> {if (!a) setCommandInput("class C {\n");},
+             a -> {if (!a) setCommandInput("void f() {\n");},
+             a -> {if (!a) setCommandInput("}\n");},
+             a -> {assertCommand(a, "}", "|  created class C");},
+             a -> {
+                 if (!a) {
+                     try {
+                         previousAndAssert(getHistory(), "}");
+                         previousAndAssert(getHistory(), "}");
+                         previousAndAssert(getHistory(), "void f() {");
+                         previousAndAssert(getHistory(), "class C {");
+                         getHistory().add("class C{");
+                     } catch (Exception ex) {
+                         throw new IllegalStateException(ex);
+                     }
+                 }
+                 assertCommand(a, "int dummy;", "dummy ==> 0");
+             });
+        test(
+             a -> {if (!a) setCommandInput("class C {\n");},
+             a -> {if (!a) setCommandInput("void f() {\n");},
+             a -> {if (!a) setCommandInput("}\n");},
+             a -> {assertCommand(a, "}", "|  created class C");},
+             a -> {
+                 if (!a) {
+                     try {
+                         previousSnippetAndAssert(getHistory(), "class C {");
+                         getHistory().add("class C{");
                      } catch (Exception ex) {
                          throw new IllegalStateException(ex);
                      }
