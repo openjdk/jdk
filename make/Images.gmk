@@ -131,35 +131,41 @@ JLINK_TOOL := $(JLINK) --module-path $(IMAGES_OUTPUTDIR)/jmods \
     $(JLINK_JLI_CLASSES) \
     #
 
+JLINK_JRE_EXTRA_OPTS := --no-man-pages --no-header-files
+
 ifeq ($(JLINK_KEEP_PACKAGED_MODULES), true)
-  JLINK_EXTRA_OPTS := --keep-packaged-modules $(JDK_IMAGE_DIR)/jmods
+  JLINK_JDK_EXTRA_OPTS := --keep-packaged-modules $(JDK_IMAGE_DIR)/jmods
 endif
 
 $(JDK_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JDK_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jdk jimage
 	$(RM) -r $(JDK_IMAGE_DIR)
-	$(JLINK_TOOL) --output $(JDK_IMAGE_DIR) \
-	    --add-modules $(JDK_MODULES_LIST) $(JLINK_EXTRA_OPTS)
+	$(JLINK_TOOL) --add-modules $(JDK_MODULES_LIST) \
+ 	    $(JLINK_JDK_EXTRA_OPTS) \
+	    --output $(JDK_IMAGE_DIR)
 	$(TOUCH) $@
 
 $(JRE_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JRE_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jre jimage
 	$(RM) -r $(JRE_IMAGE_DIR)
-	$(JLINK_TOOL) --output $(JRE_IMAGE_DIR) \
-	    --add-modules $(JRE_MODULES_LIST)
+	$(JLINK_TOOL) --add-modules $(JRE_MODULES_LIST) \
+	    $(JLINK_JRE_EXTRA_OPTS) \
+ 	    --output $(JRE_IMAGE_DIR)
 	$(TOUCH) $@
 
 JRE_COMPACT1_IMAGE_DIR := $(JRE_IMAGE_DIR)-compact1
 JRE_COMPACT2_IMAGE_DIR := $(JRE_IMAGE_DIR)-compact2
 JRE_COMPACT3_IMAGE_DIR := $(JRE_IMAGE_DIR)-compact3
 
+
 $(JRE_COMPACT1_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JRE_COMPACT1_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jre compact1 jimage
 	$(RM) -r $(JRE_COMPACT1_IMAGE_DIR)
 	$(JLINK_TOOL) --add-modules $(JRE_COMPACT1_MODULES_LIST) \
+	    $(JLINK_JRE_EXTRA_OPTS) \
 	    --output $(JRE_COMPACT1_IMAGE_DIR)
 	$(TOUCH) $@
 
@@ -168,6 +174,7 @@ $(JRE_COMPACT2_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
 	$(ECHO) Creating jre compact2 jimage
 	$(RM) -r $(JRE_COMPACT2_IMAGE_DIR)
 	$(JLINK_TOOL) --add-modules $(JRE_COMPACT2_MODULES_LIST) \
+	    $(JLINK_JRE_EXTRA_OPTS) \
 	    --output $(JRE_COMPACT2_IMAGE_DIR)
 	$(TOUCH) $@
 
@@ -176,6 +183,7 @@ $(JRE_COMPACT3_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
 	$(ECHO) Creating jre compact3 jimage
 	$(RM) -r $(JRE_COMPACT3_IMAGE_DIR)
 	$(JLINK_TOOL) --add-modules $(JRE_COMPACT3_MODULES_LIST) \
+	    $(JLINK_JRE_EXTRA_OPTS) \
 	    --output $(JRE_COMPACT3_IMAGE_DIR)
 	$(TOUCH) $@
 
@@ -311,16 +319,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
   JRE_TARGETS += $(JRE_MAN_PAGE_LIST)
   JDK_TARGETS += $(JDK_MAN_PAGE_LIST)
 endif # Windows
-
-################################################################################
-# /include dir
-
-$(eval $(call SetupCopyFiles,COPY_INCLUDES, \
-    SRC := $(JDK_OUTPUTDIR)/include, \
-    DEST := $(JDK_IMAGE_DIR)/include, \
-    FILES := $(call CacheFind,$(JDK_OUTPUTDIR)/include)))
-
-JDK_TARGETS += $(COPY_INCLUDES)
 
 ################################################################################
 # doc files
