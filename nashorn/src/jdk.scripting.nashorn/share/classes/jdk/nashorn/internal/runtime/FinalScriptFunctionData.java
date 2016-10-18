@@ -87,7 +87,7 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
 
     @Override
     String getDocumentation() {
-        String doc = docKey != null?
+        final String doc = docKey != null?
             FunctionDocumentation.getDoc(docKey) : null;
         return doc != null? doc : super.getDocumentation();
     }
@@ -109,7 +109,7 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
     }
 
     @Override
-    CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope, final Collection<CompiledFunction> forbidden, boolean linkLogicOkay) {
+    CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope, final Collection<CompiledFunction> forbidden, final boolean linkLogicOkay) {
         assert isValidCallSite(callSiteType) : callSiteType;
 
         CompiledFunction best = null;

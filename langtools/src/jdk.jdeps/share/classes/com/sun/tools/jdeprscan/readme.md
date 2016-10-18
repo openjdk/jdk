@@ -39,7 +39,6 @@ JDeprScan Tool Command Reference
 
 **OPTIONS**
 
-        -cp PATH
         --class-path PATH
 
             Sets the classpath to PATH.
@@ -103,7 +102,7 @@ For example, the `Thread.State` enum would be specified using the string
 
         java.lang.Thread$State
 
-The `--class-path` and `-cp` options specify the classpath used for
+The `--class-path` option specifies the classpath used for
 class searching. The classpath is used for classes named on the
 command line, as well as for dependencies of the classes in jar file
 or directory hierarchy to be scanned.

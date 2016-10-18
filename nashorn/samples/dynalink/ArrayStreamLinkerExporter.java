@@ -30,7 +30,6 @@
  */
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,12 +42,12 @@ import jdk.dynalink.CompositeOperation;
 import jdk.dynalink.NamedOperation;
 import jdk.dynalink.Operation;
 import jdk.dynalink.StandardOperation;
+import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.GuardingDynamicLinker;
 import jdk.dynalink.linker.GuardingDynamicLinkerExporter;
-import jdk.dynalink.linker.GuardedInvocation;
-import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.dynalink.linker.LinkRequest;
 import jdk.dynalink.linker.LinkerServices;
+import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.dynalink.linker.support.Guards;
 import jdk.dynalink.linker.support.Lookup;
 
@@ -65,7 +64,7 @@ public final class ArrayStreamLinkerExporter extends GuardingDynamicLinkerExport
         System.out.println("pluggable dynalink array stream linker loaded");
     }
 
-    public static Object arrayToStream(Object array) {
+    public static Object arrayToStream(final Object array) {
         if (array instanceof int[]) {
             return IntStream.of((int[])array);
         } else if (array instanceof long[]) {
@@ -95,17 +94,17 @@ public final class ArrayStreamLinkerExporter extends GuardingDynamicLinkerExport
             }
 
             @Override
-            public GuardedInvocation getGuardedInvocation(LinkRequest request,
-                LinkerServices linkerServices) throws Exception {
+            public GuardedInvocation getGuardedInvocation(final LinkRequest request,
+                final LinkerServices linkerServices) throws Exception {
                 final Object self = request.getReceiver();
                 if (self == null || !canLinkType(self.getClass())) {
                     return null;
                 }
 
-                CallSiteDescriptor desc = request.getCallSiteDescriptor();
-                Operation op = desc.getOperation();
-                Object name = NamedOperation.getName(op);
-                boolean getProp = CompositeOperation.contains(
+                final CallSiteDescriptor desc = request.getCallSiteDescriptor();
+                final Operation op = desc.getOperation();
+                final Object name = NamedOperation.getName(op);
+                final boolean getProp = CompositeOperation.contains(
                         NamedOperation.getBaseOperation(op),
                         StandardOperation.GET_PROPERTY);
                 if (getProp && "stream".equals(name)) {

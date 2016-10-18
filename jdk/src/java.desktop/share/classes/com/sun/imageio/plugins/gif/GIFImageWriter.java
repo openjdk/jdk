@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -574,7 +574,6 @@ public class GIFImageWriter extends ImageWriter {
                        IIOMetadata sm,
                        IIOImage iioimage,
                        ImageWriteParam p) throws IOException {
-        clearAbortRequest();
 
         RenderedImage image = iioimage.getRenderedImage();
 
@@ -829,11 +828,11 @@ public class GIFImageWriter extends ImageWriter {
             image.getTile(0, 0) : image.getData();
         for (int y = dy; y < dh; y += ddy) {
             if (numRowsWritten % progressReportRowPeriod == 0) {
+                processImageProgress((numRowsWritten*100.0F)/dh);
                 if (abortRequested()) {
                     processWriteAborted();
                     return;
                 }
-                processImageProgress((numRowsWritten*100.0F)/dh);
             }
 
             raster.getSamples(sx, sy, sw, 1, 0, sbuf);
@@ -857,11 +856,11 @@ public class GIFImageWriter extends ImageWriter {
         lineStride *= ddy;
         for (int y = dy; y < dh; y += ddy) {
             if (numRowsWritten % progressReportRowPeriod == 0) {
+                processImageProgress((numRowsWritten*100.0F)/dh);
                 if (abortRequested()) {
                     processWriteAborted();
                     return;
                 }
-                processImageProgress((numRowsWritten*100.0F)/dh);
             }
 
             compressor.compress(data, offset, dw);
@@ -924,7 +923,12 @@ public class GIFImageWriter extends ImageWriter {
 
         int progressReportRowPeriod = Math.max(destHeight/20, 1);
 
+        clearAbortRequest();
         processImageStarted(imageIndex);
+        if (abortRequested()) {
+            processWriteAborted();
+            return;
+        }
 
         if (interlaceFlag) {
             if (DEBUG) System.out.println("Writing interlaced");
@@ -973,6 +977,9 @@ public class GIFImageWriter extends ImageWriter {
                 writeRowsOpt(data, offset, lineStride, compressor,
                              1, 2, destWidth, destHeight,
                              numRowsWritten, progressReportRowPeriod);
+                if (abortRequested()) {
+                    return;
+                }
             } else {
                 writeRows(image, compressor,
                           sourceXOffset, periodX,
@@ -1016,6 +1023,9 @@ public class GIFImageWriter extends ImageWriter {
                           sourceWidth,
                           1, 2, destWidth, destHeight,
                           numRowsWritten, progressReportRowPeriod);
+                if (abortRequested()) {
+                    return;
+                }
             }
         } else {
             if (DEBUG) System.out.println("Writing non-interlaced");
@@ -1031,6 +1041,9 @@ public class GIFImageWriter extends ImageWriter {
                 writeRowsOpt(data, offset, lineStride, compressor,
                              0, 1, destWidth, destHeight,
                              numRowsWritten, progressReportRowPeriod);
+                if (abortRequested()) {
+                    return;
+                }
             } else {
                 writeRows(image, compressor,
                           sourceXOffset, periodX,
@@ -1038,14 +1051,11 @@ public class GIFImageWriter extends ImageWriter {
                           sourceWidth,
                           0, 1, destWidth, destHeight,
                           numRowsWritten, progressReportRowPeriod);
+                if (abortRequested()) {
+                    return;
+                }
             }
         }
-
-        if (abortRequested()) {
-            return;
-        }
-
-        processImageProgress(100.0F);
 
         compressor.flush();
 

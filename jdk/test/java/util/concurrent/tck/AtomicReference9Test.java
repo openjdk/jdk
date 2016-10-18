@@ -162,6 +162,19 @@ public class AtomicReference9Test extends JSR166TestCase {
     }
 
     /**
+     * repeated weakCompareAndSetPlain succeeds in changing value when equal
+     * to expected
+     */
+    public void testWeakCompareAndSetPlain() {
+        AtomicReference<Integer> ai = new AtomicReference<>(one);
+        do {} while (!ai.weakCompareAndSetPlain(one, two));
+        do {} while (!ai.weakCompareAndSetPlain(two, m4));
+        assertEquals(m4, ai.get());
+        do {} while (!ai.weakCompareAndSetPlain(m4, seven));
+        assertEquals(seven, ai.get());
+    }
+
+    /**
      * repeated weakCompareAndSetVolatile succeeds in changing value when equal
      * to expected
      */

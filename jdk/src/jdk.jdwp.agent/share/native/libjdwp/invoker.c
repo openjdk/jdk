@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,6 +211,62 @@ createGlobalRefs(JNIEnv *env, InvokeRequest *request)
     return error;
 }
 
+/*
+ * Delete saved global references - if any - for:
+ * - a potentially thrown Exception
+ * - a returned refernce/array value
+ * See invoker_doInvoke() and invoke* methods where global references
+ * are being saved.
+ */
+static void
+deletePotentiallySavedGlobalRefs(JNIEnv *env, InvokeRequest *request)
+{
+    /* Delete potentially saved return value */
+    if ((request->invokeType == INVOKE_CONSTRUCTOR) ||
+        (returnTypeTag(request->methodSignature) == JDWP_TAG(OBJECT)) ||
+        (returnTypeTag(request->methodSignature) == JDWP_TAG(ARRAY))) {
+        if (request->returnValue.l != NULL) {
+            tossGlobalRef(env, &(request->returnValue.l));
+        }
+    }
+    /* Delete potentially saved exception */
+    if (request->exception != NULL) {
+        tossGlobalRef(env, &(request->exception));
+    }
+}
+
+/*
+ * Delete global argument references from the request which got put there before a
+ * invoke request was carried out. See fillInvokeRequest().
+ */
+static void
+deleteGlobalArgumentRefs(JNIEnv *env, InvokeRequest *request)
+{
+    void *cursor;
+    jint argIndex = 0;
+    jvalue *argument = request->arguments;
+    jbyte argumentTag = firstArgumentTypeTag(request->methodSignature, &cursor);
+
+    if (request->clazz != NULL) {
+        tossGlobalRef(env, &(request->clazz));
+    }
+    if (request->instance != NULL) {
+        tossGlobalRef(env, &(request->instance));
+    }
+    /* Delete global argument references */
+    while (argIndex < request->argumentCount) {
+        if ((argumentTag == JDWP_TAG(OBJECT)) ||
+            (argumentTag == JDWP_TAG(ARRAY))) {
+            if (argument->l != NULL) {
+                tossGlobalRef(env, &(argument->l));
+            }
+        }
+        argument++;
+        argIndex++;
+        argumentTag = nextArgumentTypeTag(&cursor);
+    }
+}
+
 static jvmtiError
 fillInvokeRequest(JNIEnv *env, InvokeRequest *request,
                   jbyte invokeType, jbyte options, jint id,
@@ -287,6 +343,35 @@ invoker_enableInvokeRequests(jthread thread)
     debugMonitorExit(invokerLock);
 }
 
+/*
+ * Check that method is in the specified clazz or one of its super classes.
+ * We have to enforce this check at the JDWP layer because the JNI layer
+ * has different requirements.
+ */
+static jvmtiError check_methodClass(JNIEnv *env, jclass clazz, jmethodID method)
+{
+    jclass containing_class = NULL;
+    jvmtiError error;
+
+    error = JVMTI_FUNC_PTR(gdata->jvmti,GetMethodDeclaringClass)
+                (gdata->jvmti, method, &containing_class);
+    if (error != JVMTI_ERROR_NONE) {
+        return JVMTI_ERROR_NONE;  /* Bad jmethodID ?  This will be handled elsewhere */
+    }
+
+    if (JNI_FUNC_PTR(env,IsSameObject)(env, clazz, containing_class)) {
+        return JVMTI_ERROR_NONE;
+    }
+
+    // If not the same class then check that containing_class is a superclass of
+    // clazz (not a superinterface).
+    if (JNI_FUNC_PTR(env,IsAssignableFrom)(env, clazz, containing_class) &&
+        referenceTypeTag(containing_class) != JDWP_TYPE_TAG(INTERFACE)) {
+        return JVMTI_ERROR_NONE;
+    }
+    return JVMTI_ERROR_INVALID_METHODID;
+}
+
 jvmtiError
 invoker_requestInvoke(jbyte invokeType, jbyte options, jint id,
                       jthread thread, jclass clazz, jmethodID method,
@@ -296,6 +381,13 @@ invoker_requestInvoke(jbyte invokeType, jbyte options, jint id,
     JNIEnv *env = getEnv();
     InvokeRequest *request;
     jvmtiError error = JVMTI_ERROR_NONE;
+
+    if (invokeType == INVOKE_STATIC) {
+        error = check_methodClass(env, clazz, method);
+        if (error != JVMTI_ERROR_NONE) {
+            return error;
+        }
+    }
 
     debugMonitorEnter(invokerLock);
     request = threadControl_getInvokeRequest(thread);
@@ -322,6 +414,8 @@ static void
 invokeConstructor(JNIEnv *env, InvokeRequest *request)
 {
     jobject object;
+
+    JDI_ASSERT_MSG(request->clazz, "Request clazz null");
     object = JNI_FUNC_PTR(env,NewObjectA)(env, request->clazz,
                                      request->method,
                                      request->arguments);
@@ -338,6 +432,7 @@ invokeStatic(JNIEnv *env, InvokeRequest *request)
         case JDWP_TAG(OBJECT):
         case JDWP_TAG(ARRAY): {
             jobject object;
+            JDI_ASSERT_MSG(request->clazz, "Request clazz null");
             object = JNI_FUNC_PTR(env,CallStaticObjectMethodA)(env,
                                        request->clazz,
                                        request->method,
@@ -426,6 +521,7 @@ invokeVirtual(JNIEnv *env, InvokeRequest *request)
         case JDWP_TAG(OBJECT):
         case JDWP_TAG(ARRAY): {
             jobject object;
+            JDI_ASSERT_MSG(request->instance, "Request instance null");
             object = JNI_FUNC_PTR(env,CallObjectMethodA)(env,
                                  request->instance,
                                  request->method,
@@ -513,6 +609,8 @@ invokeNonvirtual(JNIEnv *env, InvokeRequest *request)
         case JDWP_TAG(OBJECT):
         case JDWP_TAG(ARRAY): {
             jobject object;
+            JDI_ASSERT_MSG(request->clazz, "Request clazz null");
+            JDI_ASSERT_MSG(request->instance, "Request instance null");
             object = JNI_FUNC_PTR(env,CallNonvirtualObjectMethodA)(env,
                                            request->instance,
                                            request->clazz,
@@ -609,6 +707,8 @@ invoker_doInvoke(jthread thread)
     JNIEnv *env;
     jboolean startNow;
     InvokeRequest *request;
+    jbyte options;
+    jbyte invokeType;
 
     JDI_ASSERT(thread);
 
@@ -625,6 +725,9 @@ invoker_doInvoke(jthread thread)
     if (startNow) {
         request->started = JNI_TRUE;
     }
+    options = request->options;
+    invokeType = request->invokeType;
+
     debugMonitorExit(invokerLock);
 
     if (!startNow) {
@@ -639,7 +742,7 @@ invoker_doInvoke(jthread thread)
 
         JNI_FUNC_PTR(env,ExceptionClear)(env);
 
-        switch (request->invokeType) {
+        switch (invokeType) {
             case INVOKE_CONSTRUCTOR:
                 invokeConstructor(env, request);
                 break;
@@ -647,7 +750,7 @@ invoker_doInvoke(jthread thread)
                 invokeStatic(env, request);
                 break;
             case INVOKE_INSTANCE:
-                if (request->options & JDWP_INVOKE_OPTIONS(NONVIRTUAL) ) {
+                if (options & JDWP_INVOKE_OPTIONS(NONVIRTUAL) ) {
                     invokeNonvirtual(env, request);
                 } else {
                     invokeVirtual(env, request);
@@ -725,11 +828,22 @@ invoker_completeInvokeRequest(jthread thread)
     }
 
     /*
+     * At this time, there's no need to retain global references on
+     * arguments since the reply is processed. No one will deal with
+     * this request ID anymore, so we must call deleteGlobalArgumentRefs().
+     *
+     * We cannot delete saved exception or return value references
+     * since otherwise a deleted handle would escape when writing
+     * the response to the stream. Instead, we clean those refs up
+     * after writing the respone.
+     */
+    deleteGlobalArgumentRefs(env, request);
+
+    /*
      * Give up the lock before I/O operation
      */
     debugMonitorExit(invokerLock);
     eventHandler_unlock();
-
 
     if (!detached) {
         outStream_initReply(&out, id);
@@ -738,6 +852,16 @@ invoker_completeInvokeRequest(jthread thread)
         (void)outStream_writeObjectRef(env, &out, exc);
         outStream_sendReply(&out);
     }
+
+    /*
+     * Delete potentially saved global references of return value
+     * and exception
+     */
+    eventHandler_lock(); // for proper lock order
+    debugMonitorEnter(invokerLock);
+    deletePotentiallySavedGlobalRefs(env, request);
+    debugMonitorExit(invokerLock);
+    eventHandler_unlock();
 }
 
 jboolean

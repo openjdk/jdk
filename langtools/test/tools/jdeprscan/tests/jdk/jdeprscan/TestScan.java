@@ -74,7 +74,7 @@ public class TestScan {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (PrintStream out = new PrintStream(baos, false, "UTF-8")) {
             boolean r = Main.call(out, System.err,
-                "-cp", deprcases, "--Xload-dir", deprcases, deprusage);
+                "--class-path", deprcases, "--Xload-dir", deprcases, deprusage);
             assertTrue(r);
         }
         byte[] bytes = baos.toByteArray();

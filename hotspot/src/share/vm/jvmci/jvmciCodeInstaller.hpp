@@ -189,9 +189,9 @@ protected:
   ScopeValue* get_scope_value(Handle value, BasicType type, GrowableArray<ScopeValue*>* objects, ScopeValue* &second, TRAPS);
   MonitorValue* get_monitor_value(Handle value, GrowableArray<ScopeValue*>* objects, TRAPS);
 
-  void* record_metadata_reference(Handle constant, TRAPS);
+  void* record_metadata_reference(CodeSection* section, address dest, Handle constant, TRAPS);
 #ifdef _LP64
-  narrowKlass record_narrow_metadata_reference(Handle constant, TRAPS);
+  narrowKlass record_narrow_metadata_reference(CodeSection* section, address dest, Handle constant, TRAPS);
 #endif
 
   // extract the fields of the HotSpotCompiledCode

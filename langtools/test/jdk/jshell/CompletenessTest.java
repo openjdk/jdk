@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8149524 8131024 8165211 8080071 8130454
+ * @bug 8149524 8131024 8165211 8080071 8130454 8167343
  * @summary Test SourceCodeAnalysis
  * @build KullaTesting TestingInputStream
  * @run testng CompletenessTest
@@ -117,6 +117,7 @@ public class CompletenessTest extends KullaTesting {
         "bar: g()",
         "baz: while (true) if (t()) printf('-'); else break baz",
         "java.util.function.IntFunction<int[]> ggg = int[]::new",
+        "List<? extends Object> l",
     };
 
     static final String[] considered_incomplete = new String[] {
@@ -162,7 +163,19 @@ public class CompletenessTest extends KullaTesting {
         "enum TK { EOF(TokenKind.EOF, 0),",
         "enum TK { EOF(TokenKind.EOF, 0), NEW_MIDDLE(XEXPR1|XTERM)",
         "enum TK { EOF(TokenKind.EOF, 0), NEW_MIDDLE(XEXPR1|XTERM); ",
-        "enum Tt { FOO, BAR, BAZ,;"
+        "enum Tt { FOO, BAR, BAZ,;",
+        "class C",
+        "class C extends D",
+        "class C implements D",
+        "class C implements D, E",
+        "interface I extends D",
+        "interface I extends D, E",
+        "enum E",
+        "enum E implements I1",
+        "enum E implements I1, I2",
+        "@interface Anno",
+        "void f()",
+        "void f() throws E",
     };
 
     static final String[] unknown = new String[] {

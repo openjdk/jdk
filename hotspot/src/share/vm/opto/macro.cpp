@@ -439,12 +439,6 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
     Node* adr = _igvn.transform(new AddPNode(base, base, MakeConX(offset)));
     const TypePtr* adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
     Node* m = ac->in(TypeFunc::Memory);
-    while (m->is_MergeMem()) {
-      m = m->as_MergeMem()->memory_at(C->get_alias_index(adr_type));
-      if (m->is_Proj() && m->in(0)->is_MemBar()) {
-        m = m->in(0)->in(TypeFunc::Memory);
-      }
-    }
     res = LoadNode::make(_igvn, ctl, m, adr, adr_type, type, bt, MemNode::unordered, LoadNode::Pinned);
   } else {
     if (ac->modifies(offset, offset, &_igvn, true)) {
@@ -978,6 +972,17 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
   return true;
 }
 
+static void disconnect_projections(MultiNode* n, PhaseIterGVN& igvn) {
+  Node* ctl_proj = n->proj_out(TypeFunc::Control);
+  Node* mem_proj = n->proj_out(TypeFunc::Memory);
+  if (ctl_proj != NULL) {
+    igvn.replace_node(ctl_proj, n->in(0));
+  }
+  if (mem_proj != NULL) {
+    igvn.replace_node(mem_proj, n->in(TypeFunc::Memory));
+  }
+}
+
 // Process users of eliminated allocation.
 void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
   Node* res = alloc->result_cast();
@@ -1008,13 +1013,13 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
             // Disconnect ArrayCopy node
             ArrayCopyNode* ac = n->as_ArrayCopy();
             assert(ac->is_clonebasic(), "unexpected array copy kind");
-            Node* ctl_proj = ac->proj_out(TypeFunc::Control);
-            Node* mem_proj = ac->proj_out(TypeFunc::Memory);
-            if (ctl_proj != NULL) {
-              _igvn.replace_node(ctl_proj, n->in(0));
-            }
-            if (mem_proj != NULL) {
-              _igvn.replace_node(mem_proj, n->in(TypeFunc::Memory));
+            Node* membar_after = ac->proj_out(TypeFunc::Control)->unique_ctrl_out();
+            disconnect_projections(ac, _igvn);
+            assert(alloc->in(0)->is_Proj() && alloc->in(0)->in(0)->Opcode() == Op_MemBarCPUOrder, "mem barrier expected before allocation");
+            Node* membar_before = alloc->in(0)->in(0);
+            disconnect_projections(membar_before->as_MemBar(), _igvn);
+            if (membar_after->is_MemBar()) {
+              disconnect_projections(membar_after->as_MemBar(), _igvn);
             }
           } else {
             eliminate_card_mark(n);

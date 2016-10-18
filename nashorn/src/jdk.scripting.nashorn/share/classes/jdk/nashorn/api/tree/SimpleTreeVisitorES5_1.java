@@ -70,7 +70,7 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
      * @return the result of {@code visitUnknown}
      */
     @Override
-    public R visitModule(ModuleTree node, P p) {
+    public R visitModule(final ModuleTree node, final P p) {
         return visitUnknown(node, p);
     }
 
@@ -83,7 +83,7 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
      * @return the result of {@code visitUnknown}
      */
     @Override
-    public R visitExportEntry(ExportEntryTree node, P p) {
+    public R visitExportEntry(final ExportEntryTree node, final P p) {
         return visitUnknown(node, p);
     }
 
@@ -96,7 +96,7 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
      * @return the result of {@code visitUnknown}
      */
     @Override
-    public R visitImportEntry(ImportEntryTree node, P p) {
+    public R visitImportEntry(final ImportEntryTree node, final P p) {
         return visitUnknown(node, p);
     }
 
@@ -153,7 +153,7 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
      * @return the result of {@code visitUnknown}
      */
     @Override
-    public R visitClassDeclaration(ClassDeclarationTree node, P p) {
+    public R visitClassDeclaration(final ClassDeclarationTree node, final P p) {
         return visitUnknown(node, p);
     }
 
@@ -166,7 +166,7 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
      * @return the result of {@code visitUnknown}
      */
     @Override
-    public R visitClassExpression(ClassExpressionTree node, P p) {
+    public R visitClassExpression(final ClassExpressionTree node, final P p) {
         return visitUnknown(node, p);
     }
 
@@ -247,7 +247,7 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
      * @return the result of {@code visitUnknown}
      */
     @Override
-    public R visitForOfLoop(ForOfLoopTree node, P p) {
+    public R visitForOfLoop(final ForOfLoopTree node, final P p) {
         return visitUnknown(node, p);
     }
 
@@ -357,21 +357,21 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
 
     @Override
     public R visitProperty(final PropertyTree node, final P r) {
-        FunctionExpressionTree getter = node.getGetter();
+        final FunctionExpressionTree getter = node.getGetter();
         if (getter != null) {
             getter.accept(this, r);
         }
-        ExpressionTree key = node.getKey();
+        final ExpressionTree key = node.getKey();
         if (key != null) {
             key.accept(this, r);
         }
 
-        FunctionExpressionTree setter = node.getSetter();
+        final FunctionExpressionTree setter = node.getSetter();
         if (setter != null) {
             setter.accept(this, r);
         }
 
-        ExpressionTree value = node.getValue();
+        final ExpressionTree value = node.getValue();
         if (value != null) {
             value.accept(this, r);
         }
@@ -392,7 +392,7 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
      * @return the result of {@code visitUnknown}
      */
     @Override
-    public R visitTemplateLiteral(TemplateLiteralTree node, P p) {
+    public R visitTemplateLiteral(final TemplateLiteralTree node, final P p) {
         return visitUnknown(node, p);
     }
 
@@ -410,7 +410,7 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
      * @return the result of {@code visitUnknown}
      */
     @Override
-    public R visitSpread(SpreadTree node, P p) {
+    public R visitSpread(final SpreadTree node, final P p) {
         return visitUnknown(node, p);
     }
 
@@ -495,7 +495,7 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
      * @return the result of {@code visitUnknown}
      */
     @Override
-    public R visitYield(YieldTree node, P p) {
+    public R visitYield(final YieldTree node, final P p) {
         return visitUnknown(node, p);
     }
 

@@ -60,18 +60,61 @@ public class Main {
      */
     public static int execute(String... args) {
         Start jdoc = new Start();
-        return jdoc.begin(args);
+        return jdoc.begin(args).exitCode;
     }
 
     /**
      * Programmatic interface.
      *
-     * @param writer PrintWriter to receive notice messages.
+     * @param writer a stream for all output
      * @param args The command line parameters.
      * @return The return code.
      */
     public static int execute(String[] args, PrintWriter writer) {
-        Start jdoc = new Start(writer);
-        return jdoc.begin(args);
+        Start jdoc = new Start(writer, writer);
+        return jdoc.begin(args).exitCode;
+    }
+
+    /**
+     * Programmatic interface.
+     *
+     * @param outWriter a stream for expected output
+     * @param errWriter a stream for diagnostic output
+     * @param args The command line parameters.
+     * @return The return code.
+     */
+    public static int execute(String[] args, PrintWriter outWriter, PrintWriter errWriter) {
+        Start jdoc = new Start(outWriter, errWriter);
+        return jdoc.begin(args).exitCode;
+    }
+
+    public static enum Result {
+        /** completed with no errors */
+        OK(0),
+        /** Completed with reported errors */
+        ERROR(1),
+        /** Bad command-line arguments */
+        CMDERR(2),
+        /** System error or resource exhaustion */
+        SYSERR(3),
+        /** Terminated abnormally */
+        ABNORMAL(4);
+
+        private static final long serialVersionUID = 1L;
+
+        Result(int exitCode) {
+            this.exitCode = exitCode;
+        }
+
+        public boolean isOK() {
+            return (exitCode == 0);
+        }
+
+        public final int exitCode;
+
+        @Override
+        public String toString() {
+            return name() + '(' + exitCode + ')';
+        }
     }
 }

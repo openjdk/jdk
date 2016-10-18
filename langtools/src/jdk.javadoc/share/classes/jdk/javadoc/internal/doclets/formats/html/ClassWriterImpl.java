@@ -353,7 +353,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     public void addClassDescription(Content classInfoTree) {
         if(!configuration.nocomment) {
             // generate documentation for the class.
-            if (!utils.getBody(typeElement).isEmpty()) {
+            if (!utils.getFullBody(typeElement).isEmpty()) {
                 addInlineComment(typeElement, classInfoTree);
             }
         }

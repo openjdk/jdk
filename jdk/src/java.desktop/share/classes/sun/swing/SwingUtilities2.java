@@ -31,6 +31,8 @@ import static java.awt.RenderingHints.*;
 import java.awt.event.*;
 import java.awt.font.*;
 import java.awt.geom.AffineTransform;
+import static java.awt.geom.AffineTransform.TYPE_FLIP;
+import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
 import java.awt.print.PrinterGraphics;
 import java.text.BreakIterator;
 import java.text.CharacterIterator;
@@ -2034,6 +2036,33 @@ public class SwingUtilities2 {
             }
         }
         return path;
+    }
+
+    public static boolean isScaledGraphics(Graphics g) {
+        if (g instanceof Graphics2D) {
+            AffineTransform tx = ((Graphics2D) g).getTransform();
+            return (tx.getType() & ~(TYPE_TRANSLATION | TYPE_FLIP)) != 0;
+        }
+        return false;
+    }
+
+    /**
+     * Returns the client property for the given key if it is set; otherwise
+     * returns the {@L&F} property.
+     *
+     * @param component the component
+     * @param key an {@code String} specifying the key for the desired boolean value
+     * @return the boolean value of the client property if it is set or the {@L&F}
+     *         property in other case.
+     */
+    public static boolean getBoolean(JComponent component, String key) {
+        Object clientProperty = component.getClientProperty(key);
+
+        if (clientProperty instanceof Boolean) {
+            return Boolean.TRUE.equals(clientProperty);
+        }
+
+        return UIManager.getBoolean(key);
     }
 
     /**

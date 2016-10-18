@@ -84,7 +84,6 @@
   declare_constant(VM_Version::sun4v_m)                                   \
   declare_constant(VM_Version::blk_init_instructions_m)                   \
   declare_constant(VM_Version::fmaf_instructions_m)                       \
-  declare_constant(VM_Version::fmau_instructions_m)                       \
   declare_constant(VM_Version::sparc64_family_m)                          \
   declare_constant(VM_Version::M_family_m)                                \
   declare_constant(VM_Version::T_family_m)                                \

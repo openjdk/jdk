@@ -73,9 +73,9 @@ final class ParserImpl implements Parser {
 
         // append "--parse-only to signal to the Nashorn that it
         // is being used in "parse only" mode.
-        String[] newArgs = Arrays.copyOf(args, args.length + 1, String[].class);
+        final String[] newArgs = Arrays.copyOf(args, args.length + 1, String[].class);
         newArgs[args.length] = "--parse-only";
-        Options options = new Options("nashorn");
+        final Options options = new Options("nashorn");
         options.process(newArgs);
         this.env = new ScriptEnvironment(options,
                 new PrintWriter(System.out), new PrintWriter(System.err));
@@ -142,32 +142,32 @@ final class ParserImpl implements Parser {
         }
     }
 
-    private CompilationUnitTree parseModule(File file, DiagnosticListener listener) throws IOException, NashornException {
+    private CompilationUnitTree parseModule(final File file, final DiagnosticListener listener) throws IOException, NashornException {
         final Source src = Source.sourceFor(Objects.requireNonNull(file).getName(), file);
         return makeModule(src, listener);
     }
 
-    private CompilationUnitTree parseModule(Path path, DiagnosticListener listener) throws IOException, NashornException {
+    private CompilationUnitTree parseModule(final Path path, final DiagnosticListener listener) throws IOException, NashornException {
         final Source src = Source.sourceFor(Objects.requireNonNull(path).toString(), path);
         return makeModule(src, listener);
     }
 
-    private CompilationUnitTree parseModule(URL url, DiagnosticListener listener) throws IOException, NashornException {
+    private CompilationUnitTree parseModule(final URL url, final DiagnosticListener listener) throws IOException, NashornException {
         final Source src = Source.sourceFor(url.toString(), url);
         return makeModule(src, listener);
     }
 
-    private CompilationUnitTree parseModule(String name, Reader reader, DiagnosticListener listener) throws IOException, NashornException {
+    private CompilationUnitTree parseModule(final String name, final Reader reader, final DiagnosticListener listener) throws IOException, NashornException {
         final Source src = Source.sourceFor(Objects.requireNonNull(name), Objects.requireNonNull(reader));
         return makeModule(src, listener);
     }
 
-    private CompilationUnitTree parseModule(String name, String code, DiagnosticListener listener) throws NashornException {
+    private CompilationUnitTree parseModule(final String name, final String code, final DiagnosticListener listener) throws NashornException {
         final Source src = Source.sourceFor(name, code);
         return makeModule(src, listener);
     }
 
-    private CompilationUnitTree parseModule(ScriptObjectMirror scriptObj, DiagnosticListener listener) throws NashornException {
+    private CompilationUnitTree parseModule(final ScriptObjectMirror scriptObj, final DiagnosticListener listener) throws NashornException {
         final Map<?, ?> map = Objects.requireNonNull(scriptObj);
         if (map.containsKey("script") && map.containsKey("name")) {
             final String script = JSType.toString(map.get("script"));
@@ -179,7 +179,7 @@ final class ParserImpl implements Parser {
         }
     }
 
-    private CompilationUnitTree makeModule(Source src, DiagnosticListener listener) {
+    private CompilationUnitTree makeModule(final Source src, final DiagnosticListener listener) {
         final FunctionNode modFunc = makeParser(src, listener).parseModule(src.getName());
         return new IRTranslator().translate(modFunc);
     }

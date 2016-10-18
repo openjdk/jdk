@@ -334,6 +334,7 @@ AwtToolkit::AwtToolkit() {
     ::GetKeyboardState(m_lastKeyboardState);
 
     m_waitEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
+    isInDoDragDropLoop = FALSE;
     eventNumber = 0;
 }
 
@@ -2752,7 +2753,12 @@ Java_sun_awt_windows_WToolkit_syncNativeQueue(JNIEnv *env, jobject self, jlong t
     AwtToolkit & tk = AwtToolkit::GetInstance();
     DWORD eventNumber = tk.eventNumber;
     tk.PostMessage(WM_SYNC_WAIT, 0, 0);
-    ::WaitForSingleObject(tk.m_waitEvent, INFINITE);
+    for(long t = 2; t < timeout &&
+               WAIT_TIMEOUT == ::WaitForSingleObject(tk.m_waitEvent, 2); t+=2) {
+        if (tk.isInDoDragDropLoop) {
+            break;
+        }
+    }
     DWORD newEventNumber = tk.eventNumber;
     return (newEventNumber - eventNumber) > 2;
 }

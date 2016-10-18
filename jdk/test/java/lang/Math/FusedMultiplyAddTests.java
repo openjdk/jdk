@@ -221,6 +221,9 @@ public class FusedMultiplyAddTests {
 
             {Double.MIN_VALUE, -0.0, +0.0,
              +0.0},
+
+            {1.0+Math.ulp(1.0), 1.0+Math.ulp(1.0), -1.0-2.0*Math.ulp(1.0),
+             Math.ulp(1.0)*Math.ulp(1.0)},
         };
 
         for (double[] testCase: testCases)
@@ -344,6 +347,9 @@ public class FusedMultiplyAddTests {
 
             {Float.MAX_VALUE, 2.0f, 1.0f,
              InfinityF},
+
+            {1.0f+Math.ulp(1.0f), 1.0f+Math.ulp(1.0f), -1.0f-2.0f*Math.ulp(1.0f),
+             Math.ulp(1.0f)*Math.ulp(1.0f)},
         };
 
         for (float[] testCase: testCases)

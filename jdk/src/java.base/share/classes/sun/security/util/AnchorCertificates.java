@@ -31,8 +31,10 @@ import java.security.AccessController;
 import java.security.KeyStore;
 import java.security.PrivilegedAction;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Set;
 
 import sun.security.x509.X509CertImpl;
 
@@ -44,7 +46,7 @@ public class AnchorCertificates {
 
     private static final Debug debug = Debug.getInstance("certpath");
     private static final String HASH = "SHA-256";
-    private static HashSet<String> certs;
+    private static Set<String> certs = Collections.emptySet();
 
     static  {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {

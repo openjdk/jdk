@@ -31,10 +31,13 @@ import javax.tools.JavaFileManager;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.Compound;
+import com.sun.tools.javac.code.Directive.ExportsDirective;
+import com.sun.tools.javac.code.Directive.RequiresDirective;
 import com.sun.tools.javac.comp.Annotate.AnnotationTypeMetadata;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
@@ -3661,4 +3664,178 @@ public class Check {
         }
     }
 
+    public void checkLeaksNotAccessible(Env<AttrContext> env, JCClassDecl check) {
+        JCCompilationUnit toplevel = env.toplevel;
+
+        if (   toplevel.modle == syms.unnamedModule
+            || toplevel.modle == syms.noModule
+            || (check.sym.flags() & COMPOUND) != 0) {
+            return ;
+        }
+
+        ExportsDirective currentExport = findExport(toplevel.packge);
+
+        if (   currentExport == null //not exported
+            || currentExport.modules != null) //don't check classes in qualified export
+            return ;
+
+        new TreeScanner() {
+            Lint lint = env.info.lint;
+            boolean inSuperType;
+
+            @Override
+            public void visitBlock(JCBlock tree) {
+            }
+            @Override
+            public void visitMethodDef(JCMethodDecl tree) {
+                if (!isAPISymbol(tree.sym))
+                    return;
+                Lint prevLint = lint;
+                try {
+                    lint = lint.augment(tree.sym);
+                    if (lint.isEnabled(LintCategory.EXPORTS)) {
+                        super.visitMethodDef(tree);
+                    }
+                } finally {
+                    lint = prevLint;
+                }
+            }
+            @Override
+            public void visitVarDef(JCVariableDecl tree) {
+                if (!isAPISymbol(tree.sym) && tree.sym.owner.kind != MTH)
+                    return;
+                Lint prevLint = lint;
+                try {
+                    lint = lint.augment(tree.sym);
+                    if (lint.isEnabled(LintCategory.EXPORTS)) {
+                        scan(tree.mods);
+                        scan(tree.vartype);
+                    }
+                } finally {
+                    lint = prevLint;
+                }
+            }
+            @Override
+            public void visitClassDef(JCClassDecl tree) {
+                if (tree != check)
+                    return ;
+
+                if (!isAPISymbol(tree.sym))
+                    return ;
+
+                Lint prevLint = lint;
+                try {
+                    lint = lint.augment(tree.sym);
+                    if (lint.isEnabled(LintCategory.EXPORTS)) {
+                        scan(tree.mods);
+                        scan(tree.typarams);
+                        try {
+                            inSuperType = true;
+                            scan(tree.extending);
+                            scan(tree.implementing);
+                        } finally {
+                            inSuperType = false;
+                        }
+                        scan(tree.defs);
+                    }
+                } finally {
+                    lint = prevLint;
+                }
+            }
+            @Override
+            public void visitTypeApply(JCTypeApply tree) {
+                scan(tree.clazz);
+                boolean oldInSuperType = inSuperType;
+                try {
+                    inSuperType = false;
+                    scan(tree.arguments);
+                } finally {
+                    inSuperType = oldInSuperType;
+                }
+            }
+            @Override
+            public void visitIdent(JCIdent tree) {
+                Symbol sym = TreeInfo.symbol(tree);
+                if (sym.kind == TYP && !sym.type.hasTag(TYPEVAR)) {
+                    checkVisible(tree.pos(), sym, toplevel.packge, inSuperType);
+                }
+            }
+
+            @Override
+            public void visitSelect(JCFieldAccess tree) {
+                Symbol sym = TreeInfo.symbol(tree);
+                Symbol sitesym = TreeInfo.symbol(tree.selected);
+                if (sym.kind == TYP && sitesym.kind == PCK) {
+                    checkVisible(tree.pos(), sym, toplevel.packge, inSuperType);
+                } else {
+                    super.visitSelect(tree);
+                }
+            }
+
+            @Override
+            public void visitAnnotation(JCAnnotation tree) {
+                if (tree.attribute.type.tsym.getAnnotation(java.lang.annotation.Documented.class) != null)
+                    super.visitAnnotation(tree);
+            }
+
+        }.scan(check);
+    }
+        //where:
+        private ExportsDirective findExport(PackageSymbol pack) {
+            for (ExportsDirective d : pack.modle.exports) {
+                if (d.packge == pack)
+                    return d;
+            }
+
+            return null;
+        }
+        private boolean isAPISymbol(Symbol sym) {
+            while (sym.kind != PCK) {
+                if ((sym.flags() & Flags.PUBLIC) == 0 && (sym.flags() & Flags.PROTECTED) == 0) {
+                    return false;
+                }
+                sym = sym.owner;
+            }
+            return true;
+        }
+        private void checkVisible(DiagnosticPosition pos, Symbol what, PackageSymbol inPackage, boolean inSuperType) {
+            if (!isAPISymbol(what) && !inSuperType) { //package private/private element
+                log.warning(LintCategory.EXPORTS, pos, Warnings.LeaksNotAccessible(kindName(what), what, what.packge().modle));
+                return ;
+            }
+
+            PackageSymbol whatPackage = what.packge();
+            ExportsDirective whatExport = findExport(whatPackage);
+            ExportsDirective inExport = findExport(inPackage);
+
+            if (whatExport == null) { //package not exported:
+                log.warning(LintCategory.EXPORTS, pos, Warnings.LeaksNotAccessibleUnexported(kindName(what), what, what.packge().modle));
+                return ;
+            }
+
+            if (whatExport.modules != null) {
+                if (inExport.modules == null || !whatExport.modules.containsAll(inExport.modules)) {
+                    log.warning(LintCategory.EXPORTS, pos, Warnings.LeaksNotAccessibleUnexportedQualified(kindName(what), what, what.packge().modle));
+                }
+            }
+
+            if (whatPackage.modle != inPackage.modle && whatPackage.modle != syms.java_base) {
+                //check that relativeTo.modle requires public what.modle, somehow:
+                List<ModuleSymbol> todo = List.of(inPackage.modle);
+
+                while (todo.nonEmpty()) {
+                    ModuleSymbol current = todo.head;
+                    todo = todo.tail;
+                    if (current == whatPackage.modle)
+                        return ; //OK
+                    for (RequiresDirective req : current.requires) {
+                        if (req.isPublic()) {
+                            todo = todo.prepend(req.module);
+                        }
+                    }
+                }
+
+                log.warning(LintCategory.EXPORTS, pos, Warnings.LeaksNotAccessibleNotRequiredPublic(kindName(what), what, what.packge().modle));
+            }
+        }
 }

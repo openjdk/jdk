@@ -382,14 +382,28 @@ endif
 
 ################################################################################
 # /demo dir
-ifneq ($(findstring images, $(MAKECMDGOALS)), )
+# Avoid doing the expensive find unless called with "jdk" as target.
+ifneq ($(filter jdk, $(MAKECMDGOALS)), )
+
+  DEMO_FILES := \
+      $(if $(wildcard $(SUPPORT_OUTPUTDIR)/demos/image), \
+        $(call DoubleDollar, $(call DoubleDollar, \
+        $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/demos/image \
+            -type f -a ! \( -name "_the*" -o -name "javac_state" \) ))) \
+      )
+
+  ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
+    ifeq ($(OPENJDK_TARGET_OS), macosx)
+      DEMO_FILES := $(call not-containing, .dSYM, $(DEMO_FILES))
+    else
+      DEMO_FILES := $(filter-out %.debuginfo %.pdb %.map, $(DEMO_FILES))
+    endif
+  endif
+
   $(eval $(call SetupCopyFiles, JDK_COPY_DEMOS, \
       SRC := $(SUPPORT_OUTPUTDIR)/demos/image, \
       DEST := $(JDK_IMAGE_DIR)/demo, \
-      FILES := $(if $(wildcard $(SUPPORT_OUTPUTDIR)/demos/image), \
-          $(call DoubleDollar, $(call DoubleDollar, \
-      $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/demos/image \
-          -type f -a ! \( -name "_the*" -o -name "javac_state" \) )))), \
+      FILES := $(DEMO_FILES), \
   ))
 
   JDK_TARGETS += $(JDK_COPY_DEMOS)
@@ -454,21 +468,25 @@ else
   LIBS_TARGET_SUBDIR := lib
 endif
 
-DEBUGINFO_SUFFIXES := .diz .debuginfo .pdb .map
-
 # Param 1 - dir to find debuginfo files in
 FindDebuginfoFiles = \
     $(wildcard $(addprefix $1/*, $(DEBUGINFO_SUFFIXES)) \
         $(addprefix $1/*/*, $(DEBUGINFO_SUFFIXES)) \
         $(addprefix $1/*/*/*, $(DEBUGINFO_SUFFIXES)))
 
-# On Macosx, if debug symbols have not been zipped, find all files inside *.dSYM
-# dirs.
-ifeq ($(OPENJDK_TARGET_OS)-$(ZIP_EXTERNAL_DEBUG_SYMBOLS), macosx-false)
-  $(eval $(call FillCacheFind, \
-      $(SUPPORT_OUTPUTDIR)/modules_cmds $(SUPPORT_OUTPUTDIR)/modules_libs/))
-  FindDebuginfoFiles = \
-      $(if $(wildcard $1), $(call containing, .dSYM/, $(call CacheFind, $1)))
+# Pick the correct debug info files to copy, either zipped or not.
+ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
+  DEBUGINFO_SUFFIXES += .diz
+else
+  DEBUGINFO_SUFFIXES := .debuginfo .pdb .map
+  # On Macosx, if debug symbols have not been zipped, find all files inside *.dSYM
+  # dirs.
+  ifeq ($(OPENJDK_TARGET_OS), macosx)
+    $(eval $(call FillCacheFind, \
+        $(SUPPORT_OUTPUTDIR)/modules_cmds $(SUPPORT_OUTPUTDIR)/modules_libs))
+    FindDebuginfoFiles = \
+        $(if $(wildcard $1), $(call containing, .dSYM/, $(call CacheFind, $1)))
+  endif
 endif
 
 # Param 1 - either JDK or JRE
@@ -499,8 +517,11 @@ $(eval $(call IncludeCustomExtension, , Images-post.gmk))
 $(JRE_TARGETS): $(TOOL_JRE_TARGETS)
 $(JDK_TARGETS): $(TOOL_JDK_TARGETS)
 
-jimages: $(TOOL_JRE_TARGETS) $(TOOL_JDK_TARGETS) $(JRE_TARGETS) $(JDK_TARGETS) \
-    $(SYMBOLS_TARGETS)
+jdk: $(JDK_TARGETS)
+jre: $(JRE_TARGETS)
+symbols: $(SYMBOLS_TARGETS)
+
+all: jdk jre symbols
 
 $(JRE_COMPACT1_TARGETS): $(TOOL_JRE_COMPACT1_TARGETS)
 $(JRE_COMPACT2_TARGETS): $(TOOL_JRE_COMPACT2_TARGETS)
@@ -513,4 +534,4 @@ profiles: $(TOOL_JRE_COMPACT1_TARGETS) \
     $(JRE_COMPACT2_TARGETS) \
     $(JRE_COMPACT3_TARGETS)
 
-.PHONY: default all jimages profiles
+.PHONY: default all jdk jre symbols profiles

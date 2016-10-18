@@ -73,7 +73,7 @@ public class TestSearch extends JavadocTester {
     void test2a() {
         javadoc("-d", "out-2a", "-Xdoclint:all", "-sourcepath", testSrc,
                 "-use", "pkg", "pkg1", "pkg2", "pkg3");
-        checkExit(Exit.FAILED);
+        checkExit(Exit.ERROR);
         checkDocLintErrors();
         checkSearchOutput(true);
         checkSingleIndex(true);

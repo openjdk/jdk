@@ -91,7 +91,7 @@ public class InverseDeps {
     @DataProvider(name = "testrequires")
     public Object[][] expected1() {
         return new Object[][] {
-            // -requires and result
+            // --require and result
             { "java.sql", new String[][] {
                     new String[] { "java.sql", "m5" },
                 }
@@ -117,7 +117,7 @@ public class InverseDeps {
 
     @Test(dataProvider = "testrequires")
     public void testrequires(String name, String[][] expected) throws Exception {
-        String cmd1 = String.format("jdeps -inverse --module-path %s -requires %s --add-modules %s%n",
+        String cmd1 = String.format("jdeps --inverse --module-path %s --require %s --add-modules %s%n",
                 MODS_DIR, name, modules.stream().collect(Collectors.joining(",")));
 
         try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd1)) {
@@ -128,7 +128,7 @@ public class InverseDeps {
             runJdeps(jdeps, expected);
         }
 
-        String cmd2 = String.format("jdeps -inverse --module-path %s -requires %s" +
+        String cmd2 = String.format("jdeps --inverse --module-path %s --require %s" +
             " --add-modules ALL-MODULE-PATH%n", LIBS_DIR, name);
 
             // automatic module
@@ -164,7 +164,7 @@ public class InverseDeps {
 
     @Test(dataProvider = "testpackage")
     public void testpackage(String name, String[][] expected) throws Exception {
-        String cmd = String.format("jdeps -inverse --module-path %s -package %s --add-modules %s%n",
+        String cmd = String.format("jdeps --inverse --module-path %s -package %s --add-modules %s%n",
             MODS_DIR, name, modules.stream().collect(Collectors.joining(",")));
         try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd)) {
             jdeps.appModulePath(MODS_DIR.toString())
@@ -195,7 +195,7 @@ public class InverseDeps {
 
     @Test(dataProvider = "testregex")
     public void testregex(String name, String[][] expected) throws Exception {
-        String cmd = String.format("jdeps -inverse --module-path %s -regex %s --add-modules %s%n",
+        String cmd = String.format("jdeps --inverse --module-path %s -regex %s --add-modules %s%n",
                 MODS_DIR, name, modules.stream().collect(Collectors.joining(",")));
 
         try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd)) {
@@ -240,7 +240,7 @@ public class InverseDeps {
 
         Path jarfile = LIBS_DIR.resolve("m7.jar");
 
-        String cmd1 = String.format("jdeps -inverse -classpath %s -regex %s %s%n",
+        String cmd1 = String.format("jdeps --inverse -classpath %s -regex %s %s%n",
             cpath, name, jarfile);
         try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd1)) {
             jdeps.verbose("-verbose:class")
@@ -253,7 +253,7 @@ public class InverseDeps {
         Set<Path> paths = modules.stream()
                                  .map(mn -> LIBS_DIR.resolve(mn + ".jar"))
                                  .collect(Collectors.toSet());
-        String cmd2 = String.format("jdeps -inverse -regex %s %s%n", name, paths);
+        String cmd2 = String.format("jdeps --inverse -regex %s %s%n", name, paths);
         try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd2)) {
             jdeps.verbose("-verbose:class").regex(name);
             paths.forEach(jdeps::addRoot);

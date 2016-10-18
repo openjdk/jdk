@@ -62,6 +62,7 @@ public class AtomicIntegerArray9Test extends JSR166TestCase {
                 () -> aa.compareAndExchange(j, 1, 2),
                 () -> aa.compareAndExchangeAcquire(j, 1, 2),
                 () -> aa.compareAndExchangeRelease(j, 1, 2),
+                () -> aa.weakCompareAndSetPlain(j, 1, 2),
                 () -> aa.weakCompareAndSetVolatile(j, 1, 2),
                 () -> aa.weakCompareAndSetAcquire(j, 1, 2),
                 () -> aa.weakCompareAndSetRelease(j, 1, 2),
@@ -211,6 +212,22 @@ public class AtomicIntegerArray9Test extends JSR166TestCase {
             assertEquals(-4, aa.compareAndExchangeRelease(i,-5, 7));
             assertEquals(-4, aa.get(i));
             assertEquals(-4, aa.compareAndExchangeRelease(i, -4, 7));
+            assertEquals(7, aa.get(i));
+        }
+    }
+
+    /**
+     * repeated weakCompareAndSetPlain succeeds in changing value when equal
+     * to expected
+     */
+    public void testWeakCompareAndSetPlain() {
+        AtomicIntegerArray aa = new AtomicIntegerArray(SIZE);
+        for (int i = 0; i < SIZE; i++) {
+            aa.set(i, 1);
+            do {} while (!aa.weakCompareAndSetPlain(i, 1, 2));
+            do {} while (!aa.weakCompareAndSetPlain(i, 2, -4));
+            assertEquals(-4, aa.get(i));
+            do {} while (!aa.weakCompareAndSetPlain(i, -4, 7));
             assertEquals(7, aa.get(i));
         }
     }

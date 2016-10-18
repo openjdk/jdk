@@ -39,18 +39,17 @@ import jdk.dynalink.CompositeOperation;
 import jdk.dynalink.NamedOperation;
 import jdk.dynalink.Operation;
 import jdk.dynalink.StandardOperation;
+import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.GuardingDynamicLinker;
 import jdk.dynalink.linker.GuardingDynamicLinkerExporter;
-import jdk.dynalink.linker.GuardedInvocation;
-import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.dynalink.linker.LinkRequest;
 import jdk.dynalink.linker.LinkerServices;
+import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.dynalink.linker.support.Guards;
 import jdk.dynalink.linker.support.Lookup;
-import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.Element;
 
 /**
  * This is a dynalink pluggable linker (see http://openjdk.java.net/jeps/276).
@@ -65,12 +64,12 @@ public final class DOMLinkerExporter extends GuardingDynamicLinkerExporter {
     }
 
     // return List of child Elements of the given Element matching the given name.
-    private static List<Element> getChildElements(Element elem, String name) {
-        NodeList nodeList = elem.getChildNodes();
-        List<Element> childElems = new ArrayList<>();
-        int len = nodeList.getLength();
+    private static List<Element> getChildElements(final Element elem, final String name) {
+        final NodeList nodeList = elem.getChildNodes();
+        final List<Element> childElems = new ArrayList<>();
+        final int len = nodeList.getLength();
         for (int i = 0; i < len; i++) {
-            Node node = nodeList.item(i);
+            final Node node = nodeList.item(i);
             if (node.getNodeType() == Node.ELEMENT_NODE &&
                 ((Element)node).getTagName().equals(name)) {
                 childElems.add((Element)node);
@@ -81,18 +80,18 @@ public final class DOMLinkerExporter extends GuardingDynamicLinkerExporter {
 
     // method that returns either unique child element matching given name
     // or a list of child elements of that name (if there are more than one matches).
-    public static Object getElementsByName(Object elem, final String name) {
-        List<Element> elems = getChildElements((Element)elem, name);
+    public static Object getElementsByName(final Object elem, final String name) {
+        final List<Element> elems = getChildElements((Element)elem, name);
         return elems.size() == 1? elems.get(0) : elems;
     }
 
     // method to extract text context under a given DOM Element
-    public static Object getElementText(Object elem) {
-        NodeList nodeList = ((Element)elem).getChildNodes();
-        int len = nodeList.getLength();
-        StringBuilder text = new StringBuilder();
+    public static Object getElementText(final Object elem) {
+        final NodeList nodeList = ((Element)elem).getChildNodes();
+        final int len = nodeList.getLength();
+        final StringBuilder text = new StringBuilder();
         for (int i = 0; i < len; i++) {
-            Node node = nodeList.item(i);
+            final Node node = nodeList.item(i);
             if (node.getNodeType() == Node.TEXT_NODE) {
                 text.append(node.getNodeValue());
             }
@@ -123,21 +122,21 @@ public final class DOMLinkerExporter extends GuardingDynamicLinkerExporter {
             }
 
             @Override
-            public GuardedInvocation getGuardedInvocation(LinkRequest request,
-                LinkerServices linkerServices) throws Exception {
+            public GuardedInvocation getGuardedInvocation(final LinkRequest request,
+                final LinkerServices linkerServices) throws Exception {
                 final Object self = request.getReceiver();
                 if (! (self instanceof Element)) {
                     return null;
                 }
 
-                CallSiteDescriptor desc = request.getCallSiteDescriptor();
-                Operation op = desc.getOperation();
-                Object name = NamedOperation.getName(op);
-                boolean getProp = CompositeOperation.contains(
+                final CallSiteDescriptor desc = request.getCallSiteDescriptor();
+                final Operation op = desc.getOperation();
+                final Object name = NamedOperation.getName(op);
+                final boolean getProp = CompositeOperation.contains(
                         NamedOperation.getBaseOperation(op),
                         StandardOperation.GET_PROPERTY);
                 if (getProp && name instanceof String) {
-                    String nameStr = (String)name;
+                    final String nameStr = (String)name;
 
                     // Treat names starting with "_" as special names.
                     // Everything else is linked other dynalink bean linker!

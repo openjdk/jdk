@@ -226,7 +226,7 @@ class SystemDictionary : AllStatic {
     WKID_LIMIT,
 
 #if INCLUDE_JVMCI
-    FIRST_JVMCI_WKID = WK_KLASS_ENUM_NAME(HotSpotCompiledCode_klass),
+    FIRST_JVMCI_WKID = WK_KLASS_ENUM_NAME(JVMCI_klass),
     LAST_JVMCI_WKID  = WK_KLASS_ENUM_NAME(Value_klass),
 #endif
 
