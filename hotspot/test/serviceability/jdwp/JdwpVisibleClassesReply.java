@@ -20,22 +20,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
- * The reply to the JDWP CANREAD command
+ * The reply to the JDWP VISIBLE CLASSES command
  */
-public class JdwpCanReadReply extends JdwpReply {
+public class JdwpVisibleClassesReply extends JdwpReply {
 
-    private boolean canRead;
+    private long[] visibleClasses;
 
     protected void parseData(DataInputStream ds) throws IOException {
-        canRead = (ds.read() != 0);
+        int numOfClasses = ds.readInt();
+        visibleClasses = new long[numOfClasses];
+        for (int i = 0; i < numOfClasses; ++i) {
+            byte type = ds.readByte();
+            long refId = readRefId(ds);
+            visibleClasses[i] = refId;
+        }
     }
 
-    public boolean canRead() {
-        return canRead;
+    public long[] getVisibleClasses() {
+        return Arrays.copyOf(visibleClasses, visibleClasses.length);
     }
 
 }
