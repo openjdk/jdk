@@ -437,7 +437,7 @@ class RevocationChecker extends PKIXRevocationChecker {
     private void updateState(X509Certificate cert)
         throws CertPathValidatorException
     {
-        issuerInfo = new OCSPResponse.IssuerInfo(cert);
+        issuerInfo = new OCSPResponse.IssuerInfo(anchor, cert);
 
         // Make new public key if parameters are missing
         PublicKey pubKey = cert.getPublicKey();
@@ -740,8 +740,8 @@ class RevocationChecker extends PKIXRevocationChecker {
                 }
 
                 response = OCSP.check(Collections.singletonList(certId),
-                                      responderURI, issuerInfo,
-                                      responderCert, null, ocspExtensions);
+                        responderURI, issuerInfo, responderCert, params.date(),
+                        ocspExtensions);
             }
         } catch (IOException e) {
             throw new CertPathValidatorException(
