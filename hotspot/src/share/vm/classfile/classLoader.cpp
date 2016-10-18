@@ -945,11 +945,11 @@ ClassPathZipEntry* ClassLoader::create_class_path_zip_entry(const char *path, bo
 }
 
 // returns true if entry already on class path
-bool ClassLoader::contains_entry(ClassPathEntry *entry) {
+bool ClassLoader::contains_append_entry(const char* name) {
   ClassPathEntry* e = _first_append_entry;
   while (e != NULL) {
     // assume zip entries have been canonicalized
-    if (strcmp(entry->name(), e->name()) == 0) {
+    if (strcmp(name, e->name()) == 0) {
       return true;
     }
     e = e->next();
@@ -991,7 +991,7 @@ bool ClassLoader::update_class_path_entry_list(const char *path,
 
     // Do not reorder the bootclasspath which would break get_system_package().
     // Add new entry to linked list
-    if (!check_for_duplicates || !contains_entry(new_entry)) {
+    if (!check_for_duplicates || !contains_append_entry(new_entry->name())) {
       ClassLoaderExt::add_class_path_entry(path, check_for_duplicates, new_entry);
     }
     return true;
