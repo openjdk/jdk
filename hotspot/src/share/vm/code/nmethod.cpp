@@ -1252,7 +1252,7 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
     if (method() != NULL && (method()->code() == this ||
                              method()->from_compiled_entry() == verified_entry_point())) {
       HandleMark hm;
-      method()->clear_code();
+      method()->clear_code(false /* already owns Patching_lock */);
     }
   } // leave critical region under Patching_lock
 
