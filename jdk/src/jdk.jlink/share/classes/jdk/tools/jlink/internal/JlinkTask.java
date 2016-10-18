@@ -213,8 +213,8 @@ public class JlinkTask {
             }
 
             return EXIT_OK;
-        } catch (UncheckedIOException | PluginException | IllegalArgumentException |
-                 IOException | ResolutionException e) {
+        } catch (PluginException | IllegalArgumentException |
+                 UncheckedIOException |IOException | ResolutionException e) {
             log.println(taskHelper.getMessage("error.prefix") + " " + e.getMessage());
             if (DEBUG) {
                 e.printStackTrace(log);
