@@ -372,6 +372,7 @@ static SpecialFlag const special_jvm_flags[] = {
   // -------------- Deprecated Flags --------------
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
   { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "UseAutoGCSelectPolicy",        JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "UseParNewGC",                  JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "ConvertSleepToYield",          JDK_Version::jdk(9), JDK_Version::jdk(10),     JDK_Version::jdk(11) },
   { "ConvertYieldToSleep",          JDK_Version::jdk(9), JDK_Version::jdk(10),     JDK_Version::jdk(11) },
@@ -1801,11 +1802,15 @@ bool Arguments::gc_selected() {
 void Arguments::select_gc_ergonomically() {
 #if INCLUDE_ALL_GCS
   if (os::is_server_class_machine()) {
-    if (should_auto_select_low_pause_collector()) {
-      FLAG_SET_ERGO_IF_DEFAULT(bool, UseConcMarkSweepGC, true);
-      FLAG_SET_ERGO_IF_DEFAULT(bool, UseParNewGC, true);
+    if (!UseAutoGCSelectPolicy) {
+       FLAG_SET_ERGO_IF_DEFAULT(bool, UseG1GC, true);
     } else {
-      FLAG_SET_ERGO_IF_DEFAULT(bool, UseG1GC, true);
+      if (should_auto_select_low_pause_collector()) {
+        FLAG_SET_ERGO_IF_DEFAULT(bool, UseConcMarkSweepGC, true);
+        FLAG_SET_ERGO_IF_DEFAULT(bool, UseParNewGC, true);
+      } else {
+        FLAG_SET_ERGO_IF_DEFAULT(bool, UseParallelGC, true);
+      }
     }
   } else {
     FLAG_SET_ERGO_IF_DEFAULT(bool, UseSerialGC, true);
