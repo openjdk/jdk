@@ -28,6 +28,7 @@ import jdk.jshell.spi.ExecutionEnv;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
@@ -42,6 +43,7 @@ import java.util.function.Consumer;
 
 import com.sun.jdi.VirtualMachine;
 import jdk.jshell.spi.ExecutionControl;
+import jdk.jshell.spi.ExecutionControl.ExecutionControlException;
 
 
 /**
@@ -53,6 +55,10 @@ import jdk.jshell.spi.ExecutionControl;
  * @author Robert Field
  */
 public class Util {
+
+    private static final int TAG_DATA = 0;
+    private static final int TAG_CLOSED = 1;
+    private static final int TAG_EXCEPTION = 2;
 
     // never instanciated
     private Util() {}
@@ -131,6 +137,25 @@ public class Util {
                     inputSignal.write('1');
                     inputSignal.flush();
                 }
+                @Override
+                public synchronized int read() throws IOException {
+                    int tag = super.read();
+                    switch (tag) {
+                        case TAG_DATA: return super.read();
+                        case TAG_CLOSED: close(); return -1;
+                        case TAG_EXCEPTION:
+                            int len = (super.read() << 0) + (super.read() << 8) + (super.read() << 16) + (super.read() << 24);
+                            byte[] message = new byte[len];
+                            for (int i = 0; i < len; i++) {
+                                message[i] = (byte) super.read();
+                            }
+                            throw new IOException(new String(message, "UTF-8"));
+                        case -1:
+                            return -1;
+                        default:
+                            throw new IOException("Internal error: unrecognized message tag: " + tag);
+                    }
+                }
             };
             inputs.put(e.getKey(), inputPipe.createOutput());
             e.getValue().accept(inputPipe);
@@ -163,6 +188,7 @@ public class Util {
     public static ExecutionControl remoteInputOutput(InputStream input, OutputStream output,
             Map<String, OutputStream> outputStreamMap, Map<String, InputStream> inputStreamMap,
             BiFunction<ObjectInput, ObjectOutput, ExecutionControl> factory) throws IOException {
+        ExecutionControl[] result = new ExecutionControl[1];
         Map<String, OutputStream> augmentedStreamMap = new HashMap<>(outputStreamMap);
         ObjectOutput commandOut = new ObjectOutputStream(Util.multiplexingOutputStream("$command", output));
         for (Entry<String, InputStream> e : inputStreamMap.entrySet()) {
@@ -172,7 +198,28 @@ public class Util {
                 @Override
                 public void write(int b) throws IOException {
                     //value ignored, just a trigger to read from the input
-                    inTarget.write(in.read());
+                    try {
+                        int r = in.read();
+                        if (r == (-1)) {
+                            inTarget.write(TAG_CLOSED);
+                        } else {
+                            inTarget.write(new byte[] {TAG_DATA, (byte) r});
+                        }
+                    } catch (InterruptedIOException exc) {
+                        try {
+                            result[0].stop();
+                        } catch (ExecutionControlException ex) {
+                            debug(ex, "$" + e.getKey() + "-input-requested.write");
+                        }
+                    } catch (IOException exc) {
+                        byte[] message = exc.getMessage().getBytes("UTF-8");
+                        inTarget.write(TAG_EXCEPTION);
+                        inTarget.write((message.length >>  0) & 0xFF);
+                        inTarget.write((message.length >>  8) & 0xFF);
+                        inTarget.write((message.length >> 16) & 0xFF);
+                        inTarget.write((message.length >> 24) & 0xFF);
+                        inTarget.write(message);
+                    }
                 }
             });
         }
@@ -180,7 +227,7 @@ public class Util {
         OutputStream commandInTarget = commandIn.createOutput();
         augmentedStreamMap.put("$command", commandInTarget);
         new DemultiplexInput(input, augmentedStreamMap, Arrays.asList(commandInTarget)).start();
-        return factory.apply(new ObjectInputStream(commandIn), commandOut);
+        return result[0] = factory.apply(new ObjectInputStream(commandIn), commandOut);
     }
 
     /**
@@ -198,4 +245,13 @@ public class Util {
         }
     }
 
+    /**
+     * Log a serious unexpected internal exception.
+     *
+     * @param ex the exception
+     * @param where a description of the context of the exception
+     */
+    private static void debug(Throwable ex, String where) {
+        // Reserved for future logging
+    }
 }
