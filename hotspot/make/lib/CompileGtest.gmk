@@ -69,7 +69,7 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
     CFLAGS := $(JVM_CFLAGS) -I$(GTEST_FRAMEWORK_SRC) \
         -I$(GTEST_FRAMEWORK_SRC)/include \
         $(addprefix -I,$(GTEST_TEST_SRC)), \
-    CFLAGS_windows := /EHsc, \
+    CFLAGS_windows := -EHsc, \
     CFLAGS_solaris := -DGTEST_HAS_EXCEPTIONS=0 -library=stlport4, \
     CFLAGS_macosx := -DGTEST_OS_MAC=1, \
     CFLAGS_DEBUG_SYMBOLS := $(JVM_CFLAGS_SYMBOLS), \

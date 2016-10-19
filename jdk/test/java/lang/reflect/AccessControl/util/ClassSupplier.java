@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,10 +20,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package util;
 
-package jdk.dynalink.test;
+import java.util.function.Supplier;
 
-import jdk.dynalink.Operation;
+/**
+ * An enumeration of suppliers of test classes.
+ */
+public enum ClassSupplier implements Supplier<Class<?>> {
+    PACKAGE_CLASS_IN_PKG_A("a.Package"),
+    PUBLIC_SUPERCLASS_IN_PKG_A("a.PublicSuper"),
+    PACKAGE_CLASS_IN_PKG_B("b.Package"),
+    PUBLIC_SUBCLASS_IN_PKG_B("b.PublicSub");
 
-public final class TestLinkerOperation implements Operation {
+    private final String className;
+
+    ClassSupplier(String className) {
+        this.className = className;
+    }
+
+    @Override
+    public Class<?> get() {
+        try {
+            return Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            throw (Error) new NoClassDefFoundError(className).initCause(e);
+        }
+    }
 }

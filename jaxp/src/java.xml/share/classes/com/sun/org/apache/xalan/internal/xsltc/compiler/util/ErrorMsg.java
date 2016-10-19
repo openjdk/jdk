@@ -70,6 +70,7 @@ public final class ErrorMsg {
     public static final String STRAY_ATTRIBUTE_ERR = "STRAY_ATTRIBUTE_ERR";
     public static final String ILLEGAL_ATTRIBUTE_ERR = "ILLEGAL_ATTRIBUTE_ERR";
     public static final String CIRCULAR_INCLUDE_ERR = "CIRCULAR_INCLUDE_ERR";
+    public static final String IMPORT_PRECEDE_OTHERS_ERR = "IMPORT_PRECEDE_OTHERS_ERR";
     public static final String RESULT_TREE_SORT_ERR = "RESULT_TREE_SORT_ERR";
     public static final String SYMBOLS_REDEF_ERR = "SYMBOLS_REDEF_ERR";
     public static final String XSL_VERSION_ERR = "XSL_VERSION_ERR";

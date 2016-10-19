@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.tools.jlink;
 
-import java.security.BasicPermission;
+package jdk.internal.misc;
 
-/**
- * The permission required to use jlink API. The permission target_name is
- * "jlink". e.g.: permission jdk.tools.jlink.plugins.JlinkPermission "jlink";
- *
- */
-public final class JlinkPermission extends BasicPermission {
+import java.net.URI;
 
-    private static final long serialVersionUID = -3687912306077727801L;
-
-    public JlinkPermission(String name) {
-        super(name);
-    }
-
+public interface JavaNetUriAccess {
+    /**
+     * Create a URI of pre-validated scheme and path.
+     */
+    URI create(String scheme, String path);
 }

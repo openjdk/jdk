@@ -120,10 +120,10 @@ public class GenericOverrideTest extends ComboInstance<GenericOverrideTest> {
             }
         }
 
-        boolean moreSpecificThan(TypeArgumentKind that, boolean strict) {
+        boolean moreSpecificThan(TypeArgumentKind that) {
             switch (this) {
                 case NONE:
-                    return that == this || !strict;
+                    return that == this;
                 case UNBOUND:
                     return that == this || that == NONE;
                 case INTEGER:
@@ -198,6 +198,7 @@ public class GenericOverrideTest extends ComboInstance<GenericOverrideTest> {
 
     void check(Result<?> res) {
         boolean errorExpected = false;
+        boolean loose = false;
         int mostSpecific = 0;
 
         //first check that either |R1| <: |R2| or |R2| <: |R1|
@@ -208,39 +209,43 @@ public class GenericOverrideTest extends ComboInstance<GenericOverrideTest> {
             } else {
                 mostSpecific = rets[0].moreSpecificThan(rets[1]) ? 1 : 2;
             }
+        } else if (sigs[0] != sigs[1]) {
+            mostSpecific = sigs[0] == SignatureKind.GENERIC ? 2 : 1;
+            loose = true;
         }
 
         //check that either TA1 <= TA2 or TA2 <= TA1 (unless most specific return found above is raw)
         if (!errorExpected) {
             if (targs[0] != targs[1]) {
-                boolean useStrictCheck = targs[0].moreSpecificThan(targs[1], true) ||
-                        targs[1].moreSpecificThan(targs[0], true);
-                if (!targs[0].moreSpecificThan(targs[1], useStrictCheck) &&
-                        !targs[1].moreSpecificThan(targs[0], useStrictCheck)) {
+                boolean ta1ms = targs[0].moreSpecificThan(targs[1]);
+                boolean ta2ms = targs[1].moreSpecificThan(targs[0]);
+                if (!ta1ms && !ta2ms) {
                     errorExpected = true;
+                } else if (mostSpecific != 0) {
+                    errorExpected = !loose && targs[mostSpecific - 1] != TypeArgumentKind.NONE &&
+                            (mostSpecific == 1 ? !ta1ms : !ta2ms);
                 } else {
-                    int mostSpecific2 = targs[0].moreSpecificThan(targs[1], useStrictCheck) ? 1 : 2;
-                    if (mostSpecific != 0 && mostSpecific2 != mostSpecific) {
-                        errorExpected = mostSpecific == 1 ?
-                                targs[0] != TypeArgumentKind.NONE :
-                                targs[1] != TypeArgumentKind.NONE;
-                    } else {
-                        mostSpecific = mostSpecific2;
-                    }
+                    mostSpecific = ta1ms ? 1 : 2;
                 }
-            } else if (mostSpecific == 0) {
-                //when no signature is better than the other, an arbitrary choice
-                //must be made - javac always picks the second signature
-                mostSpecific = 2;
             }
         }
 
-        //finally, check that most specific return type is compatible with expected type
+        if (mostSpecific == 0) {
+            //when no signature is better than the other, an arbitrary choice
+            //must be made - javac always picks the second signature
+            mostSpecific = 2;
+        }
+
         if (!errorExpected) {
             ReturnTypeKind msrt = mostSpecific == 1 ? rets[0] : rets[1];
             TypeArgumentKind msta = mostSpecific == 1 ? targs[0] : targs[1];
             SignatureKind mssig = mostSpecific == 1 ? sigs[0] : sigs[1];
 
+            //check that most specific is subsignature
+            errorExpected = sigs[0] != sigs[1] &&
+                    mssig == SignatureKind.GENERIC;
+
+            //finally, check that most specific return type is compatible with expected type
             if (!msrt.moreSpecificThan(rets[2]) ||
                     !msta.assignableTo(targs[2], mssig, level)) {
                 errorExpected = true;

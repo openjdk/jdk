@@ -521,10 +521,13 @@ class Eval {
 
     List<SnippetEvent> drop(Snippet si) {
         Unit c = new Unit(state, si);
-
-        Set<Unit> ins = c.dependents().collect(toSet());
-        Set<Unit> outs = compileAndLoad(ins);
-
+        Set<Unit> outs;
+        if (si instanceof PersistentSnippet) {
+            Set<Unit> ins = c.dependents().collect(toSet());
+            outs = compileAndLoad(ins);
+        } else {
+            outs = Collections.emptySet();
+        }
         return events(c, outs, null, null);
     }
 
