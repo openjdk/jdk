@@ -20,22 +20,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 import java.io.DataInputStream;
 import java.io.IOException;
 
 /**
- * The reply to the JDWP CANREAD command
+ * The reply to the JDWP MODULE command
  */
-public class JdwpCanReadReply extends JdwpReply {
+public class JdwpModuleReply extends JdwpReply {
 
-    private boolean canRead;
+    private long moduleId;
 
     protected void parseData(DataInputStream ds) throws IOException {
-        canRead = (ds.read() != 0);
+        moduleId = readRefId(ds);
     }
 
-    public boolean canRead() {
-        return canRead;
+    public long getModuleId() {
+        return moduleId;
     }
 
 }
