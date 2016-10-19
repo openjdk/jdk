@@ -52,3 +52,27 @@ Java_PrivateInterfaceMethods_callIntVoid(JNIEnv *env, jclass unused, jobject imp
     else
         return (*env)->CallIntMethod(env, impl, m_id);
 }
+
+// Private interface methods lookup test
+JNIEXPORT void JNICALL
+Java_PrivateInterfaceMethods_lookupIntVoid(JNIEnv *env, jclass unused,
+                                           jstring defining_class_name, jstring method_name) {
+
+    // Lookup int method_name() in defining_class_name
+
+    jmethodID m_id = NULL;
+    jclass clazz = NULL;
+    const char* name = NULL;
+
+    name = (*env)->GetStringUTFChars(env, defining_class_name, NULL);
+    if (name == NULL) return;
+    clazz = (*env)->FindClass(env, name);
+    (*env)->ReleaseStringUTFChars(env, defining_class_name, name);
+    if ((*env)->ExceptionCheck(env)) return;
+
+    name = (*env)->GetStringUTFChars(env, method_name, NULL);
+    if (name == NULL) return;
+    m_id = (*env)->GetMethodID(env, clazz, name, "()I");
+    (*env)->ReleaseStringUTFChars(env, method_name, name);
+}
+
