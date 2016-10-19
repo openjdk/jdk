@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8081800
+ * @bug 8081800 8165827
  * @summary Add JNI invocation tests for private interface methods
  * @run main/native PrivateInterfaceMethods
  */
@@ -34,19 +34,23 @@ public class PrivateInterfaceMethods {
     }
 
     static native int callIntVoid(Object target, String definingClassName, String methodName, boolean virtual);
+    static native void lookupIntVoid(String definingClassName, String methodName);
 
     static interface A {
         static final int AmResult = 1;
         private int m() { return AmResult; }
+        private int onlyA() { return 0; }
     }
 
     static interface B extends A {
         // No m() here
+        private int onlyB() { return 0; }
     }
 
     static interface C extends B {
         static final int CmResult = 2;
         private int m() { return CmResult; }  // unrelated to A.m
+        private int onlyC() { return 0; }
     }
 
     public static class Impl implements C {
@@ -62,6 +66,29 @@ public class PrivateInterfaceMethods {
     }
 
     public static void main(String[] args) {
+
+        // JNI getMethodID only works for methods declared in or inherited by a type.
+        // Private interface methods are not inherited and so should only be found
+        // in the declaring interface.
+
+        lookup(A.class.getName(), "onlyA", null); // should succeed
+        lookup(B.class.getName(), "onlyA", NoSuchMethodError.class); // should fail
+        lookup(C.class.getName(), "onlyA", NoSuchMethodError.class); // should fail
+        lookup(Impl.class.getName(), "onlyA", NoSuchMethodError.class); // should fail
+        lookup(Impl2.class.getName(), "onlyA", NoSuchMethodError.class); // should fail
+
+        lookup(B.class.getName(), "onlyB", null); // should succeed
+        lookup(A.class.getName(), "onlyB", NoSuchMethodError.class); // should fail
+        lookup(C.class.getName(), "onlyB", NoSuchMethodError.class); // should fail
+        lookup(Impl.class.getName(), "onlyB", NoSuchMethodError.class); // should fail
+        lookup(Impl2.class.getName(), "onlyB", NoSuchMethodError.class); // should fail
+
+        lookup(C.class.getName(), "onlyC", null); // should succeed
+        lookup(A.class.getName(), "onlyC", NoSuchMethodError.class); // should fail
+        lookup(B.class.getName(), "onlyC", NoSuchMethodError.class); // should fail
+        lookup(Impl.class.getName(), "onlyC", NoSuchMethodError.class); // should fail
+        lookup(Impl2.class.getName(), "onlyC", NoSuchMethodError.class); // should fail
+
         Impl impl = new Impl();
 
         // Note: JNI doesn't enforce access control so we can make
@@ -106,6 +133,25 @@ public class PrivateInterfaceMethods {
         test(impl2, Impl2.class.getName(), "m", -1, false, NoSuchMethodError.class);
     }
 
+    static void lookup(String definingClass, String method, Class<?> expectedException) {
+
+        String desc = "Lookup of " + definingClass + "." + method;
+        try {
+            lookupIntVoid(definingClass, method);
+            if (expectedException != null)
+                throw new Error(desc + " succeeded - but expected exception "
+                                + expectedException.getSimpleName());
+            System.out.println(desc + " - passed");
+        }
+        catch (Throwable t) {
+           if (t.getClass() != expectedException)
+               throw new Error(desc + " failed: got exception " + t + " but expected exception "
+                               + expectedException.getSimpleName());
+           else
+              System.out.println(desc + " threw " + expectedException.getSimpleName() + " as expected");
+        }
+    }
+
     static void test(Object target, String definingClass, String method,
                      int expected, boolean virtual, Class<?> expectedException) {
 
@@ -115,16 +161,19 @@ public class PrivateInterfaceMethods {
         try {
             int res = callIntVoid(target, definingClass, method, virtual);
             if (expectedException != null)
-                throw new Error(desc + " succeeded - but expected exception " + expectedException.getSimpleName());
+                throw new Error(desc + " succeeded - but expected exception "
+                                + expectedException.getSimpleName());
             if (res != expected)
                 throw new Error(desc + " got wrong result: " + res + " instead of " + expected);
             System.out.println(desc + " - passed");
         }
         catch (Throwable t) {
            if (t.getClass() != expectedException)
-               throw new Error(desc + " failed", t);
+               throw new Error(desc + " failed: got exception " + t + " but expected exception "
+                               + expectedException.getSimpleName());
            else
               System.out.println(desc + " threw " + expectedException.getSimpleName() + " as expected");
         }
     }
+
 }
