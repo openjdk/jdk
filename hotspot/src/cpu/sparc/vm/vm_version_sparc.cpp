@@ -457,9 +457,10 @@ void VM_Version::revert() {
 
 unsigned int VM_Version::calc_parallel_worker_threads() {
   unsigned int result;
-  if (is_M_series()) {
-    // for now, use same gc thread calculation for M-series as for niagara-plus
-    // in future, we may want to tweak parameters for nof_parallel_worker_thread
+  if (is_M_series() || is_S_series()) {
+    // for now, use same gc thread calculation for M-series and S-series as for
+    // niagara-plus. In future, we may want to tweak parameters for
+    // nof_parallel_worker_thread
     result = nof_parallel_worker_threads(5, 16, 8);
   } else if (is_niagara_plus()) {
     result = nof_parallel_worker_threads(5, 16, 8);
@@ -483,6 +484,9 @@ int VM_Version::parse_features(const char* implementation) {
   } else if (strstr(impl, "SPARC-M") != NULL) {
     // M-series SPARC is based on T-series.
     features |= (M_family_m | T_family_m);
+  } else if (strstr(impl, "SPARC-S") != NULL) {
+    // S-series SPARC is based on T-series.
+    features |= (S_family_m | T_family_m);
   } else if (strstr(impl, "SPARC-T") != NULL) {
     features |= T_family_m;
     if (strstr(impl, "SPARC-T1") != NULL) {
