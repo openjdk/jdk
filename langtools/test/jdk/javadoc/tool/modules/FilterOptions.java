@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8159305
+ * @bug 8159305 8167383
  * @summary Tests elements filtering options
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.api
