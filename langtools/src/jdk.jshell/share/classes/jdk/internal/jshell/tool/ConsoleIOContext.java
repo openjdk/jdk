@@ -62,6 +62,8 @@ import jdk.internal.jline.console.history.History;
 import jdk.internal.jline.console.history.MemoryHistory;
 import jdk.internal.jline.extra.EditingHistory;
 import jdk.internal.jshell.tool.StopDetectingInputStream.State;
+import jdk.internal.misc.Signal;
+import jdk.internal.misc.Signal.Handler;
 
 class ConsoleIOContext extends IOContext {
 
@@ -170,6 +172,21 @@ class ConsoleIOContext extends IOContext {
             for (String shortcuts : SHORTCUT_FIXES) {
                 bind(shortcuts + computer.shortcut, (ActionListener) evt -> fixes(computer));
             }
+        }
+        try {
+            Signal.handle(new Signal("CONT"), new Handler() {
+                @Override public void handle(Signal sig) {
+                    try {
+                        in.getTerminal().reset();
+                        in.redrawLine();
+                        in.flush();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            });
+        } catch (IllegalArgumentException ignored) {
+            //the CONT signal does not exist on this platform
         }
     }
 
