@@ -171,8 +171,10 @@ module java.base {
         jdk.jartool,
         jdk.jdeps,
         jdk.jlink,
+        jdk.jshell,
         jdk.net,
         jdk.scripting.nashorn,
+        jdk.scripting.nashorn.shell,
         jdk.unsupported,
         jdk.vm.ci;
     exports jdk.internal.perf to
