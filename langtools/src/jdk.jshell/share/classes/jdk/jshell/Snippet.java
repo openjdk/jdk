@@ -443,9 +443,7 @@ public abstract class Snippet {
 
         /**
          * The snippet is inactive because of an explicit call to
-         * the {@link JShell#drop(PersistentSnippet)}.
-         * Only a {@link jdk.jshell.PersistentSnippet} can have this
-         * {@code Status}.
+         * the {@link JShell#drop(Snippet)}.
          * <p>
          * The snippet is not visible to other snippets
          * ({@link Status#isDefined() isDefined() == false})
@@ -525,10 +523,11 @@ public abstract class Snippet {
 
         /**
          * Indicates whether the Snippet is active, that is,
-         * will the snippet be re-evaluated when a new
+         * will a {@linkplain jdk.jshell.PersistentSnippet persistent}
+         * snippet be re-evaluated when a new
          * {@link JShell#eval(java.lang.String) JShell.eval(String)} or
-         * {@link JShell#drop(jdk.jshell.PersistentSnippet)
-         * JShell.drop(PersistentSnippet)} that could change
+         * {@link JShell#drop(jdk.jshell.Snippet)
+         * JShell.drop(Snippet)} that could change
          * its status is invoked.  This is more broad than
          * {@link Status#isDefined()} since a Snippet which is
          * {@link Status#RECOVERABLE_NOT_DEFINED}

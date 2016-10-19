@@ -526,7 +526,9 @@ public final class Method extends Executable {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, clazz,
+                        Modifier.isStatic(modifiers) ? null : obj.getClass(),
+                        modifiers);
         }
         MethodAccessor ma = methodAccessor;             // read volatile
         if (ma == null) {

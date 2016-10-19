@@ -73,7 +73,6 @@ import jdk.jshell.ImportSnippet;
 import jdk.jshell.JShell;
 import jdk.jshell.JShell.Subscription;
 import jdk.jshell.MethodSnippet;
-import jdk.jshell.PersistentSnippet;
 import jdk.jshell.Snippet;
 import jdk.jshell.Snippet.Status;
 import jdk.jshell.SnippetEvent;
@@ -1137,10 +1136,9 @@ public class JShellTool implements MessageHandler {
         return state.snippets();
     }
 
-    Stream<PersistentSnippet> dropableSnippets() {
+    Stream<Snippet> dropableSnippets() {
         return state.snippets()
-                .filter(sn -> state.status(sn).isActive() && sn instanceof PersistentSnippet)
-                .map(sn -> (PersistentSnippet) sn);
+                .filter(sn -> state.status(sn).isActive());
     }
 
     Stream<VarSnippet> allVarSnippets() {
@@ -1761,13 +1759,13 @@ public class JShellTool implements MessageHandler {
             errormsg("jshell.err.drop.arg");
             return false;
         }
-        Stream<PersistentSnippet> stream = argsToSnippets(this::dropableSnippets, args);
+        Stream<Snippet> stream = argsToSnippets(this::dropableSnippets, args);
         if (stream == null) {
             // Snippet not found. Error already printed
             fluffmsg("jshell.msg.see.classes.etc");
             return false;
         }
-        List<PersistentSnippet> snippets = stream.collect(toList());
+        List<Snippet> snippets = stream.collect(toList());
         if (snippets.size() > args.size()) {
             // One of the args references more thean one snippet
             errormsg("jshell.err.drop.ambiguous");

@@ -23,15 +23,23 @@
 
 /*
  * @test
- * @bug 4323990 4413069
+ * @bug 4323990 4413069 8160838
  * @summary HttpsURLConnection doesn't send Proxy-Authorization on CONNECT
  *     Incorrect checking of proxy server response
  * @modules java.base/sun.net.www
- * @run main/othervm ProxyAuthTest
- *
- *     No way to reserve and restore java.lang.Authenticator, need to run this
- *     test in othervm mode.
+ * @run main/othervm ProxyAuthTest fail
+ * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=Basic ProxyAuthTest fail
+ * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=Basic, ProxyAuthTest fail
+ * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=BAsIc ProxyAuthTest fail
+ * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=Basic,Digest ProxyAuthTest fail
+ * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=Unknown,bAsIc ProxyAuthTest fail
+ * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes= ProxyAuthTest succeed
+ * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=Digest,NTLM,Negotiate ProxyAuthTest succeed
+ * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=UNKNOWN,notKnown ProxyAuthTest succeed
  */
+
+// No way to reserve and restore java.lang.Authenticator, as well as read-once
+// system properties, so this tests needs to run in othervm mode.
 
 import java.io.*;
 import java.net.*;
@@ -39,6 +47,7 @@ import java.security.KeyStore;
 import javax.net.*;
 import javax.net.ssl.*;
 import java.security.cert.*;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /*
  * ProxyAuthTest.java -- includes a simple server that can serve
@@ -75,7 +84,7 @@ public class ProxyAuthTest {
          */
         public byte[] getBytes() {
             return "Proxy authentication for tunneling succeeded ..".
-                        getBytes();
+                        getBytes(US_ASCII);
         }
     }
 
@@ -83,6 +92,13 @@ public class ProxyAuthTest {
      * Main method to create the server and the client
      */
     public static void main(String args[]) throws Exception {
+        boolean expectSuccess;
+        if (args[0].equals("succeed")) {
+            expectSuccess = true;
+        } else {
+            expectSuccess = false;
+        }
+
         String keyFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + keyStoreFile;
@@ -99,12 +115,13 @@ public class ProxyAuthTest {
         /*
          * setup the server
          */
+        Closeable server;
         try {
             ServerSocketFactory ssf =
                 ProxyAuthTest.getServerSocketFactory(useSSL);
             ServerSocket ss = ssf.createServerSocket(serverPort);
             serverPort = ss.getLocalPort();
-            new TestServer(ss);
+            server = new TestServer(ss);
         } catch (Exception e) {
             System.out.println("Server side failed:" +
                                 e.getMessage());
@@ -113,9 +130,27 @@ public class ProxyAuthTest {
         // trigger the client
         try {
             doClientSide();
-        } catch (Exception e) {
-            System.out.println("Client side failed: " + e.getMessage());
-            throw e;
+            if (!expectSuccess) {
+                throw new RuntimeException(
+                        "Expected exception/failure to connect, but succeeded.");
+            }
+        } catch (IOException e) {
+            if (expectSuccess) {
+                System.out.println("Client side failed: " + e.getMessage());
+                throw e;
+            }
+
+            if (! (e.getMessage().contains("Unable to tunnel through proxy") &&
+                   e.getMessage().contains("407")) ) {
+                throw new RuntimeException(
+                        "Expected exception about cannot tunnel, 407, etc, but got", e);
+            } else {
+                // Informative
+                System.out.println("Caught expected exception: " + e.getMessage());
+            }
+        } finally {
+            if (server != null)
+                server.close();
         }
     }
 
@@ -145,11 +180,11 @@ public class ProxyAuthTest {
         }
     }
 
-    static void doClientSide() throws Exception {
+    static void doClientSide() throws IOException {
         /*
          * setup up a proxy with authentication information
          */
-        setupProxy();
+        ProxyTunnelServer ps = setupProxy();
 
         /*
          * we want to avoid URLspoofCheck failures in cases where the cert
@@ -157,18 +192,28 @@ public class ProxyAuthTest {
          */
         HttpsURLConnection.setDefaultHostnameVerifier(
                                       new NameVerifier());
+
+        InetSocketAddress paddr = new InetSocketAddress("localhost", ps.getPort());
+        Proxy proxy = new Proxy(Proxy.Type.HTTP, paddr);
+
         URL url = new URL("https://" + "localhost:" + serverPort
                                 + "/index.html");
         BufferedReader in = null;
+        HttpsURLConnection uc = (HttpsURLConnection) url.openConnection(proxy);
         try {
-            in = new BufferedReader(new InputStreamReader(
-                               url.openStream()));
+            in = new BufferedReader(new InputStreamReader(uc.getInputStream()));
             String inputLine;
             System.out.print("Client recieved from the server: ");
             while ((inputLine = in.readLine()) != null)
                 System.out.println(inputLine);
             in.close();
-        } catch (SSLException e) {
+        } catch (IOException e) {
+            // Assert that the error stream is not accessible from the failed
+            // tunnel setup.
+            if (uc.getErrorStream() != null) {
+                throw new RuntimeException("Unexpected error stream.");
+            }
+
             if (in != null)
                 in.close();
             throw e;
@@ -181,7 +226,7 @@ public class ProxyAuthTest {
         }
     }
 
-    static void setupProxy() throws IOException {
+    static ProxyTunnelServer setupProxy() throws IOException {
         ProxyTunnelServer pserver = new ProxyTunnelServer();
         /*
          * register a system wide authenticator and setup the proxy for
@@ -194,9 +239,7 @@ public class ProxyAuthTest {
         pserver.setUserAuth("Test", "test123");
 
         pserver.start();
-        System.setProperty("https.proxyHost", "localhost");
-        System.setProperty("https.proxyPort", String.valueOf(
-                                        pserver.getPort()));
+        return pserver;
     }
 
     public static class TestAuthenticator extends Authenticator {

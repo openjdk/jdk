@@ -77,9 +77,7 @@ public final class StopDetectingInputStream extends InputStream {
                 } catch (IOException ex) {
                     errorHandler.accept(ex);
                 } finally {
-                    synchronized (StopDetectingInputStream.this) {
-                        state = StopDetectingInputStream.State.CLOSED;
-                    }
+                    shutdown();
                 }
             }
         };
@@ -140,8 +138,10 @@ public final class StopDetectingInputStream extends InputStream {
     }
 
     public synchronized void setState(State state) {
-        this.state = state;
-        notifyAll();
+        if (this.state != State.CLOSED) {
+            this.state = state;
+            notifyAll();
+        }
     }
 
     private synchronized State waitInputNeeded() {

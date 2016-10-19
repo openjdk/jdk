@@ -817,6 +817,10 @@ void* DAUDIO_Open(INT32 mixerIndex, INT32 deviceID, int isSource,
         ERROR1("<<DAUDIO_Open: ERROR: unsupported encoding (%d)\n", encoding);
         return NULL;
     }
+    if (channels <= 0) {
+        ERROR1("<<DAUDIO_Open: ERROR: Invalid number of channels=%d!\n", channels);
+        return NULL;
+    }
 
     OSX_DirectAudioDevice *device = new OSX_DirectAudioDevice();
 
