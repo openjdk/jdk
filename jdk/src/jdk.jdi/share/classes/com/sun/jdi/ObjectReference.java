@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,9 +246,9 @@ public interface ObjectReference extends Value {
      * @throws java.lang.IllegalArgumentException if the method is not
      * a member of this object's class, if the size of the argument list
      * does not match the number of declared arguments for the method,
-     * if the method is a constructor or static intializer, or
+     * if the method is a constructor or static initializer, or
      * if {@link #INVOKE_NONVIRTUAL} is specified and the method is
-     * either abstract or a non-default interface member.
+     * abstract.
      * @throws {@link InvalidTypeException} if any argument in the
      * argument list is not assignable to the corresponding method argument
      * type.
