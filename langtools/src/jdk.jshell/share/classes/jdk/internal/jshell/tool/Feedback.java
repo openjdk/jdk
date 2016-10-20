@@ -28,16 +28,26 @@ package jdk.internal.jshell.tool;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
+import java.util.StringJoiner;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collector;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static jdk.internal.jshell.tool.ContinuousCompletionProvider.PERFECT_MATCHER;
@@ -114,8 +124,8 @@ class Feedback {
         return mode.getContinuationPrompt(nextId);
     }
 
-    public boolean setFeedback(MessageHandler messageHandler, ArgTokenizer at) {
-        return new Setter(messageHandler, at).setFeedback();
+    public boolean setFeedback(MessageHandler messageHandler, ArgTokenizer at, Consumer<String> retainer) {
+        return new Setter(messageHandler, at).setFeedback(retainer);
     }
 
     public boolean setFormat(MessageHandler messageHandler, ArgTokenizer at) {
@@ -126,20 +136,12 @@ class Feedback {
         return new Setter(messageHandler, at).setTruncation();
     }
 
-    public boolean setMode(MessageHandler messageHandler, ArgTokenizer at) {
-        return new Setter(messageHandler, at).setMode();
+    public boolean setMode(MessageHandler messageHandler, ArgTokenizer at, Consumer<String> retainer) {
+        return new Setter(messageHandler, at).setMode(retainer);
     }
 
     public boolean setPrompt(MessageHandler messageHandler, ArgTokenizer at) {
         return new Setter(messageHandler, at).setPrompt();
-    }
-
-    public String retainFeedback(MessageHandler messageHandler, ArgTokenizer at) {
-        return new Setter(messageHandler, at).retainFeedback();
-    }
-
-    public String retainMode(MessageHandler messageHandler, ArgTokenizer at) {
-        return new Setter(messageHandler, at).retainMode();
     }
 
     public boolean restoreEncodedModes(MessageHandler messageHandler, String encoded) {
@@ -177,6 +179,15 @@ class Feedback {
             selectorMap.put(e.name().toLowerCase(Locale.US), e);
     }
 
+    private static class SelectorSets {
+        Set<FormatCase> cc;
+        Set<FormatAction> ca;
+        Set<FormatWhen> cw;
+        Set<FormatResolve> cr;
+        Set<FormatUnresolved> cu;
+        Set<FormatErrors> ce;
+    }
+
     /**
      * Holds all the context of a mode mode
      */
@@ -197,11 +208,31 @@ class Feedback {
         String continuationPrompt = ">> ";
 
         static class Setting {
+
             final long enumBits;
             final String format;
+
             Setting(long enumBits, String format) {
                 this.enumBits = enumBits;
                 this.format = format;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (o instanceof Setting) {
+                    Setting ing = (Setting) o;
+                    return enumBits == ing.enumBits && format.equals(ing.format);
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public int hashCode() {
+                int hash = 7;
+                hash = 67 * hash + (int) (this.enumBits ^ (this.enumBits >>> 32));
+                hash = 67 * hash + Objects.hashCode(this.format);
+                return hash;
             }
         }
 
@@ -274,6 +305,25 @@ class Feedback {
             }
         }
 
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof Mode) {
+                Mode m = (Mode) o;
+                return name.equals((m.name))
+                        && commandFluff == m.commandFluff
+                        && prompt.equals((m.prompt))
+                        && continuationPrompt.equals((m.continuationPrompt))
+                        && cases.equals((m.cases));
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(name);
+        }
+
         /**
          * Set if this mode displays informative/confirmational messages on
          * commands.
@@ -308,13 +358,17 @@ class Feedback {
             return String.join(RECORD_SEPARATOR, el);
         }
 
-        private boolean add(String field, Setting ing) {
-            List<Setting> settings =  cases.computeIfAbsent(field, k -> new ArrayList<>());
+        private void add(String field, Setting ing) {
+            List<Setting> settings = cases.get(field);
             if (settings == null) {
-                return false;
+                settings = new ArrayList<>();
+                cases.put(field, settings);
+            } else {
+                // remove obscured settings
+                long mask = ~ing.enumBits;
+                settings.removeIf(t -> (t.enumBits & mask) == 0);
             }
             settings.add(ing);
-            return true;
         }
 
         void set(String field,
@@ -463,6 +517,37 @@ class Feedback {
         for (FormatErrors fe : ce)
             res |= 1 << fe.ordinal();
         return res;
+    }
+
+    private static SelectorSets unpackEnumbits(long enumBits) {
+        class Unpacker {
+
+            SelectorSets u = new SelectorSets();
+            long b = enumBits;
+
+            <E extends Enum<E>> Set<E> unpackEnumbits(E[] values) {
+                Set<E> c = new HashSet<>();
+                for (int i = 0; i < values.length; ++i) {
+                    if ((b & (1 << i)) != 0) {
+                        c.add(values[i]);
+                    }
+                }
+                b >>>= values.length;
+                return c;
+            }
+
+            SelectorSets unpack() {
+                // inverseof the order they were packed
+                u.ce = unpackEnumbits(FormatErrors.values());
+                u.cu = unpackEnumbits(FormatUnresolved.values());
+                u.cr = unpackEnumbits(FormatResolve.values());
+                u.cw = unpackEnumbits(FormatWhen.values());
+                u.ca = unpackEnumbits(FormatAction.values());
+                u.cc = unpackEnumbits(FormatCase.values());
+                return u;
+            }
+        }
+        return new Unpacker().unpack();
     }
 
     interface Selector<E extends Enum<E> & Selector<E>> {
@@ -675,31 +760,197 @@ class Feedback {
         Setter(MessageHandler messageHandler, ArgTokenizer at) {
             this.messageHandler = messageHandler;
             this.at = at;
+            at.allowedOptions("-retain");
         }
 
         void fluff(String format, Object... args) {
             messageHandler.fluff(format, args);
         }
 
+        void hard(String format, Object... args) {
+            messageHandler.hard(format, args);
+        }
+
         void fluffmsg(String messageKey, Object... args) {
             messageHandler.fluffmsg(messageKey, args);
         }
 
+        void hardmsg(String messageKey, Object... args) {
+            messageHandler.hardmsg(messageKey, args);
+        }
+
+        boolean showFluff() {
+            return messageHandler.showFluff();
+        }
+
         void errorat(String messageKey, Object... args) {
+            if (!valid) {
+                // no spew of errors
+                return;
+            }
+            valid = false;
             Object[] a2 = Arrays.copyOf(args, args.length + 2);
             a2[args.length] = at.whole();
             messageHandler.errormsg(messageKey, a2);
         }
 
+        String selectorsToString(SelectorSets u) {
+            StringBuilder sb = new StringBuilder();
+            selectorToString(sb, u.cc, FormatCase.values());
+            selectorToString(sb, u.ca, FormatAction.values());
+            selectorToString(sb, u.cw, FormatWhen.values());
+            selectorToString(sb, u.cr, FormatResolve.values());
+            selectorToString(sb, u.cu, FormatUnresolved.values());
+            selectorToString(sb, u.ce, FormatErrors.values());
+            return sb.toString();
+        }
+
+        private <E extends Enum<E>> void selectorToString(StringBuilder sb, Set<E> c, E[] values) {
+            if (!c.containsAll(Arrays.asList(values))) {
+                sb.append(c.stream()
+                        .sorted((x, y) -> x.ordinal() - y.ordinal())
+                        .map(v -> v.name().toLowerCase(Locale.US))
+                        .collect(new Collector<CharSequence, StringJoiner, String>() {
+                            @Override
+                            public BiConsumer<StringJoiner, CharSequence> accumulator() {
+                                return StringJoiner::add;
+                            }
+
+                            @Override
+                            public Supplier<StringJoiner> supplier() {
+                                return () -> new StringJoiner(",", (sb.length() == 0)? "" : "-", "")
+                                        .setEmptyValue("");
+                            }
+
+                            @Override
+                            public BinaryOperator<StringJoiner> combiner() {
+                                return StringJoiner::merge;
+                            }
+
+                            @Override
+                            public Function<StringJoiner, String> finisher() {
+                                return StringJoiner::toString;
+                            }
+
+                            @Override
+                            public Set<Characteristics> characteristics() {
+                                return Collections.emptySet();
+                            }
+                        }));
+            }
+        }
+
+        // Show format settings -- in a predictable order, for testing...
+        void showFormatSettings(Mode sm, String f) {
+            if (sm == null) {
+                modeMap.entrySet().stream()
+                        .sorted((es1, es2) -> es1.getKey().compareTo(es2.getKey()))
+                        .forEach(m -> showFormatSettings(m.getValue(), f));
+            } else {
+                sm.cases.entrySet().stream()
+                        .filter(ec -> (f == null)
+                            ? !ec.getKey().equals(TRUNCATION_FIELD)
+                            : ec.getKey().equals(f))
+                        .sorted((ec1, ec2) -> ec1.getKey().compareTo(ec2.getKey()))
+                        .forEach(ec -> {
+                            ec.getValue().forEach(s -> {
+                                hard("/set format %s %s %s %s",
+                                        sm.name, ec.getKey(), toStringLiteral(s.format),
+                                        selectorsToString(unpackEnumbits(s.enumBits)));
+
+                            });
+                        });
+            }
+        }
+
+        void showTruncationSettings(Mode sm) {
+            if (sm == null) {
+                modeMap.values().forEach(m -> showTruncationSettings(m));
+            } else {
+                List<Mode.Setting> trunc = sm.cases.get(TRUNCATION_FIELD);
+                if (trunc != null) {
+                    trunc.forEach(s -> {
+                        hard("/set truncation %s %s %s",
+                                sm.name, s.format,
+                                selectorsToString(unpackEnumbits(s.enumBits)));
+                    });
+                }
+            }
+        }
+
+        void showPromptSettings(Mode sm) {
+            if (sm == null) {
+                modeMap.values().forEach(m -> showPromptSettings(m));
+            } else {
+                hard("/set prompt %s %s %s",
+                        sm.name,
+                        toStringLiteral(sm.prompt),
+                        toStringLiteral(sm.continuationPrompt));
+            }
+        }
+
+        void showModeSettings(String umode, String msg) {
+            if (umode == null) {
+                modeMap.values().forEach(n -> showModeSettings(n));
+            } else {
+                Mode m;
+                String retained = retainedMap.get(umode);
+                if (retained == null) {
+                    m = searchForMode(umode, msg);
+                    if (m == null) {
+                        return;
+                    }
+                    umode = m.name;
+                    retained = retainedMap.get(umode);
+                } else {
+                    m = modeMap.get(umode);
+                }
+                if (retained != null) {
+                    Mode rm = new Mode(encodedModeIterator(retained));
+                    showModeSettings(rm);
+                    hard("/set mode -retain %s", umode);
+                    if (m != null && !m.equals(rm)) {
+                        hard("");
+                        showModeSettings(m);
+                    }
+                } else {
+                    showModeSettings(m);
+                }
+            }
+        }
+
+        void showModeSettings(Mode sm) {
+            hard("/set mode %s %s",
+                    sm.name, sm.commandFluff ? "-command" : "-quiet");
+            showPromptSettings(sm);
+            showFormatSettings(sm, null);
+            showTruncationSettings(sm);
+        }
+
+        void showFeedbackSetting() {
+            if (retainedCurrentMode != null) {
+                hard("/set feedback -retain %s", retainedCurrentMode.name);
+            }
+            if (mode != retainedCurrentMode) {
+                hard("/set feedback %s", mode.name);
+            }
+        }
+
         // For /set prompt <mode> "<prompt>" "<continuation-prompt>"
         boolean setPrompt() {
             Mode m = nextMode();
+            String prompt = nextFormat();
+            String continuationPrompt = nextFormat();
+            checkOptionsAndRemainingInput();
+            if (valid && prompt == null) {
+                showPromptSettings(m);
+                return valid;
+            }
             if (valid && m.readOnly) {
                 errorat("jshell.err.not.valid.with.predefined.mode", m.name);
-                valid = false;
+            } else if (continuationPrompt == null) {
+                errorat("jshell.err.continuation.prompt.required");
             }
-            String prompt = valid ? nextFormat() : null;
-            String continuationPrompt = valid ? nextFormat() : null;
             if (valid) {
                 m.setPrompts(prompt, continuationPrompt);
             } else {
@@ -714,210 +965,210 @@ class Feedback {
          *
          * @return true if successful
          */
-        boolean setMode() {
-            at.allowedOptions("-command", "-quiet", "-delete");
-            String umode = nextModeIdentifier();
-            Mode om = null;
-            String omode = at.next();
-            if (valid && omode != null) {
-                om = toMode(omode);
-            }
-            checkOptionsAndRemainingInput();
-            boolean commandOption = at.hasOption("-command");
-            boolean quietOption = at.hasOption("-quiet");
-            boolean deleteOption = at.hasOption("-delete");
-            // Only one (or zero) of the options can be used
-            if (valid && at.optionCount() > 1) {
-                errorat("jshell.err.conflicting.options");
-                valid = false;
-            }
-            if (valid) {
-                Mode m = modeMap.get(umode);
-                if (m != null && m.readOnly) {
-                    // Cannot make changes to a the built-in modes
-                    errorat("jshell.err.not.valid.with.predefined.mode", m.name);
-                    valid = false;
-                } else if (deleteOption) {
-                    if (m == null) {
+        boolean setMode(Consumer<String> retainer) {
+            class SetMode {
+
+                final String umode;
+                final String omode;
+                final boolean commandOption;
+                final boolean quietOption;
+                final boolean deleteOption;
+                final boolean retainOption;
+
+                SetMode() {
+                    at.allowedOptions("-command", "-quiet", "-delete", "-retain");
+                    umode = nextModeIdentifier();
+                    omode = nextModeIdentifier();
+                    checkOptionsAndRemainingInput();
+                    commandOption = at.hasOption("-command");
+                    quietOption = at.hasOption("-quiet");
+                    deleteOption = at.hasOption("-delete");
+                    retainOption = at.hasOption("-retain");
+                }
+
+                void delete() {
+                    // Note: delete, for safety reasons, does NOT do name matching
+                    if (commandOption || quietOption) {
+                        errorat("jshell.err.conflicting.options");
+                    } else if (!(retainOption ? retainedMap : modeMap).containsKey(umode)) {
                         // Cannot delete a mode that does not exist
                         errorat("jshell.err.mode.unknown", umode);
-                        valid = false;
-                    } else if (mode.name.equals(m.name)) {
+                    } else if (omode != null) {
+                        // old mode is for creation
+                        errorat("jshell.err.unexpected.at.end", omode);
+                    } else if (mode.name.equals(umode)) {
                         // Cannot delete the current mode out from under us
                         errorat("jshell.err.cannot.delete.current.mode", umode);
-                        valid = false;
+                    } else if (retainOption && retainedCurrentMode != null &&
+                             retainedCurrentMode.name.equals(umode)) {
+                        // Cannot delete the retained mode or re-start will have an error
+                        errorat("jshell.err.cannot.delete.retained.mode", umode);
                     } else {
-                        // Remove the mode
-                        modeMap.remove(umode);
-                    }
-                } else {
-                    if (om != null || m == null) {
-                        // We are copying and existing mode and/or creating a
-                        // brand-new mode -- in either case create from scratch
-                        m = (om != null)
-                                ? new Mode(umode, om)
-                                : new Mode(umode);
-                        modeMap.put(umode, m);
-                        fluffmsg("jshell.msg.feedback.new.mode", m.name);
-                        // Set the current mode by name, in case we just smashed
-                        // the current mode
-                        if (umode.equals(mode.name)) {
-                            mode = modeMap.get(mode.name);
+                        Mode m = modeMap.get(umode);
+                        if (m != null && m.readOnly) {
+                            errorat("jshell.err.not.valid.with.predefined.mode", umode);
+                        } else {
+                            // Remove the mode
+                            modeMap.remove(umode);
+                            if (retainOption) {
+                                // Remove the retained mode
+                                retainedMap.remove(umode);
+                                updateRetainedModes();
+                            }
                         }
                     }
-                    if (commandOption || quietOption || om == null) {
-                        // set command fluff, if explicit, or wholly new
-                        m.setCommandFluff(!quietOption);
+                }
+
+                void retain() {
+                    if (commandOption || quietOption) {
+                        errorat("jshell.err.conflicting.options");
+                    } else if (omode != null) {
+                        // old mode is for creation
+                        errorat("jshell.err.unexpected.at.end", omode);
+                    } else {
+                        Mode m = modeMap.get(umode);
+                        if (m == null) {
+                            // can only retain existing modes
+                            errorat("jshell.err.mode.unknown", umode);
+                        } else if (m.readOnly) {
+                            errorat("jshell.err.not.valid.with.predefined.mode", umode);
+                        } else {
+                            // Add to local cache of retained current encodings
+                            retainedMap.put(m.name, m.encode());
+                            updateRetainedModes();
+                        }
                     }
                 }
+
+                void updateRetainedModes() {
+                    // Join all the retained encodings
+                    String encoded = String.join(RECORD_SEPARATOR, retainedMap.values());
+                    // Retain it
+                    retainer.accept(encoded);
+                }
+
+                void create() {
+                    if (commandOption && quietOption) {
+                        errorat("jshell.err.conflicting.options");
+                    } else if (!commandOption && !quietOption) {
+                        errorat("jshell.err.mode.creation");
+                    } else if (modeMap.containsKey(umode)) {
+                        // Mode already exists
+                        errorat("jshell.err.mode.exists", umode);
+                    } else {
+                        Mode om = searchForMode(omode);
+                        if (valid) {
+                            // We are copying an existing mode and/or creating a
+                            // brand-new mode -- in either case create from scratch
+                            Mode m = (om != null)
+                                    ? new Mode(umode, om)
+                                    : new Mode(umode);
+                            modeMap.put(umode, m);
+                            fluffmsg("jshell.msg.feedback.new.mode", m.name);
+                            m.setCommandFluff(commandOption);
+                        }
+                    }
+                }
+
+                boolean set() {
+                    if (valid && !commandOption && !quietOption && !deleteOption &&
+                            omode == null && !retainOption) {
+                        // Not a creation, deletion, or retain -- show mode(s)
+                        showModeSettings(umode, "jshell.err.mode.creation");
+                    } else if (valid && umode == null) {
+                        errorat("jshell.err.missing.mode");
+                    } else if (valid && deleteOption) {
+                        delete();
+                    } else if (valid && retainOption) {
+                        retain();
+                    } else if (valid) {
+                        create();
+                    }
+                    if (!valid) {
+                        fluffmsg("jshell.msg.see", "/help /set mode");
+                    }
+                    return valid;
+                }
             }
-            if (!valid) {
-                fluffmsg("jshell.msg.see", "/help /set mode");
-            }
-            return valid;
+            return new SetMode().set();
         }
 
-        // For /set feedback <mode>
-        boolean setFeedback() {
-            Mode m = nextMode();
-            if (valid) {
-                mode = m;
-                fluffmsg("jshell.msg.feedback.mode", mode.name);
-            } else {
-                fluffmsg("jshell.msg.see", "/help /set feedback");
-                printFeedbackModes();
-            }
-            return valid;
-        }
-
-        // For /set format <mode> "<format>" <selector>...
+        // For /set format <mode> <field> "<format>" <selector>...
         boolean setFormat() {
             Mode m = nextMode();
-            if (valid && m.readOnly) {
-                errorat("jshell.err.not.valid.with.predefined.mode", m.name);
-                valid = false;
+            String field = toIdentifier(next(), "jshell.err.field.name");
+            String format = nextFormat();
+            if (valid && format == null) {
+                if (field != null && m != null && !m.cases.containsKey(field)) {
+                    errorat("jshell.err.field.name", field);
+                } else {
+                    showFormatSettings(m, field);
+                }
+            } else {
+                installFormat(m, field, format, "/help /set format");
             }
-            String field = valid
-                    ? toIdentifier(at.next(), "jshell.err.missing.field", "jshell.err.field.name")
-                    : null;
-            String format = valid ? nextFormat() : null;
-            return installFormat(m, field, format, "/help /set format");
+            return valid;
         }
 
         // For /set truncation <mode> <length> <selector>...
         boolean setTruncation() {
             Mode m = nextMode();
-            if (valid && m.readOnly) {
-                errorat("jshell.err.not.valid.with.predefined.mode", m.name);
-                valid = false;
-            }
-            String length = at.next();
+            String length = next();
             if (length == null) {
-                errorat("jshell.err.truncation.expected.length");
-                valid = false;
+                showTruncationSettings(m);
             } else {
                 try {
                     // Assure that integer format is correct
                     Integer.parseUnsignedInt(length);
                 } catch (NumberFormatException ex) {
                     errorat("jshell.err.truncation.length.not.integer", length);
-                    valid = false;
                 }
+                // install length into an internal format field
+                installFormat(m, TRUNCATION_FIELD, length, "/help /set truncation");
             }
-            // install length into an internal format field
-            return installFormat(m, TRUNCATION_FIELD, length, "/help /set truncation");
+            return valid;
         }
 
-        String retainFeedback() {
-            String umode = at.next();
-            if (umode != null) {
-                toModeIdentifier(umode);
-                Mode m = valid ? toMode(umode) : null;
-                if (valid && !m.readOnly && !retainedMap.containsKey(m.name)) {
+        // For /set feedback <mode>
+        boolean setFeedback(Consumer<String> retainer) {
+            String umode = next();
+            checkOptionsAndRemainingInput();
+            boolean retainOption = at.hasOption("-retain");
+            if (valid && umode == null && !retainOption) {
+                showFeedbackSetting();
+                hard("");
+                showFeedbackModes();
+                return true;
+            }
+            if (valid) {
+                Mode m = umode == null
+                        ? mode
+                        : searchForMode(toModeIdentifier(umode));
+                if (valid && retainOption && !m.readOnly && !retainedMap.containsKey(m.name)) {
                     errorat("jshell.err.retained.feedback.mode.must.be.retained.or.predefined");
-                    valid = false;
                 }
                 if (valid) {
-                    mode = m;
-                    retainedCurrentMode = m;
-                    fluffmsg("jshell.msg.feedback.mode", mode.name);
-                } else {
-                    fluffmsg("jshell.msg.see", "/help /retain feedback");
-                    return null;
-                }
-            }
-            return mode.name;
-        }
-
-        /**
-         * Retain (or delete from retention) a previously set mode.
-         *
-         * @return all retained modes encoded into a String
-         */
-        String retainMode() {
-            at.allowedOptions("-delete");
-            String umode = nextModeIdentifier();
-            // -delete is the only valid option, fail for anything else
-            checkOptionsAndRemainingInput();
-            boolean deleteOption = at.hasOption("-delete");
-            // Lookup the mode
-            Mode m;
-            if (!valid) {
-                m = null;
-                // Skip this stuff, we have failed already
-            } else if (deleteOption) {
-                // If delete, allow for deleting, from retention, a mode that
-                // has been locally deleted but is retained.
-                // Also require the full name.
-                m = modeMap.get(umode);
-                if (m == null && !retainedMap.containsKey(umode)) {
-                    errorat("jshell.err.mode.unknown", umode);
-                    valid = false;
-                }
-            } else {
-                // For retain do normal lookup and checking
-                m = toMode(umode);
-            }
-
-            // Built-in modes cannot be retained or deleted
-            if (valid && m != null && m.readOnly) {
-                errorat("jshell.err.not.valid.with.predefined.mode", umode);
-                valid = false;
-            }
-            if (valid) {
-                if (deleteOption) {
-                    if (mode.name.equals(umode)) {
-                        // Cannot delete the current mode out from under us
-                        errorat("jshell.err.cannot.delete.current.mode", umode);
-                        valid = false;
-                    } else if (retainedCurrentMode != null && retainedCurrentMode.name.equals(umode)) {
-                        // Cannot delete the retained mode or re-start has error
-                        errorat("jshell.err.cannot.delete.retained.mode", umode);
-                        valid = false;
-                    } else {
-                        // Delete the mode
-                        modeMap.remove(umode);
-                        retainedMap.remove(umode);
+                    if (umode != null) {
+                        mode = m;
+                        fluffmsg("jshell.msg.feedback.mode", mode.name);
                     }
-                } else {
-                    // Retain the current encoding
-                    retainedMap.put(m.name, m.encode());
+                    if (retainOption) {
+                        retainedCurrentMode = m;
+                        retainer.accept(m.name);
+                    }
                 }
             }
-            if (valid) {
-                // Join all the retained encodings
-                return String.join(RECORD_SEPARATOR, retainedMap.values());
-            } else {
-                fluffmsg("jshell.msg.see", "/help /retain mode");
-                return null;
+            if (!valid) {
+                fluffmsg("jshell.msg.see", "/help /set feedback");
+                return false;
             }
+            return true;
         }
 
         boolean restoreEncodedModes(String allEncoded) {
             try {
                 // Iterate over each record in each encoded mode
-                String[] ms = allEncoded.split(RECORD_SEPARATOR);
-                Iterator<String> itr = Arrays.asList(ms).iterator();
+                Iterator<String> itr = encodedModeIterator(allEncoded);
                 while (itr.hasNext()) {
                     // Reconstruct the encoded mode
                     Mode m = new Mode(itr);
@@ -934,48 +1185,58 @@ class Feedback {
             }
         }
 
+        Iterator<String> encodedModeIterator(String encoded) {
+            String[] ms = encoded.split(RECORD_SEPARATOR);
+            return Arrays.asList(ms).iterator();
+        }
+
         // install the format of a field under parsed selectors
-        boolean installFormat(Mode m, String field, String format, String help) {
+        void installFormat(Mode m, String field, String format, String help) {
             String slRaw;
             List<SelectorList> slList = new ArrayList<>();
-            while (valid && (slRaw = at.next()) != null) {
+            while (valid && (slRaw = next()) != null) {
                 SelectorList sl = new SelectorList();
                 sl.parseSelectorList(slRaw);
                 slList.add(sl);
             }
+            checkOptionsAndRemainingInput();
             if (valid) {
-                if (slList.isEmpty()) {
+                if (m.readOnly) {
+                    errorat("jshell.err.not.valid.with.predefined.mode", m.name);
+                } else if (slList.isEmpty()) {
                     // No selectors specified, then always the format
                     m.set(field, ALWAYS, format);
                 } else {
                     // Set the format of the field for specified selector
                     slList.stream()
                             .forEach(sl -> m.set(field,
-                                sl.cases.getSet(), sl.actions.getSet(), sl.whens.getSet(),
-                                sl.resolves.getSet(), sl.unresolvedCounts.getSet(), sl.errorCounts.getSet(),
-                                format));
+                            sl.cases.getSet(), sl.actions.getSet(), sl.whens.getSet(),
+                            sl.resolves.getSet(), sl.unresolvedCounts.getSet(), sl.errorCounts.getSet(),
+                            format));
                 }
             } else {
                 fluffmsg("jshell.msg.see", help);
             }
-            return valid;
         }
 
         void checkOptionsAndRemainingInput() {
-            if (!valid) {
-                return;
-            }
             String junk = at.remainder();
             if (!junk.isEmpty()) {
                 errorat("jshell.err.unexpected.at.end", junk);
-                valid = false;
             } else {
                 String bad = at.badOptions();
                 if (!bad.isEmpty()) {
                     errorat("jshell.err.unknown.option", bad);
-                    valid = false;
                 }
             }
+        }
+
+        String next() {
+            String s = at.next();
+            if (s == null) {
+                checkOptionsAndRemainingInput();
+            }
+            return s;
         }
 
         /**
@@ -985,45 +1246,41 @@ class Feedback {
          *
          * @param id the string to check, MUST be the most recently retrieved
          * token from 'at'.
-         * @param missing the resource error to display if null
+         * @param missing null for no null error, otherwise the resource error to display if id is null
          * @param err the resource error to display if not an identifier
          * @return the identifier string, or null if null or not an identifier
          */
-        String toIdentifier(String id, String missing, String err) {
-            if (id == null) {
-                errorat(missing);
-                valid = false;
+        private String toIdentifier(String id, String err) {
+            if (!valid || id == null) {
                 return null;
             }
             if (at.isQuoted() ||
                     !id.codePoints().allMatch(cp -> Character.isJavaIdentifierPart(cp))) {
                 errorat(err, id);
-                valid = false;
                 return null;
             }
             return id;
         }
 
-        String toModeIdentifier(String id) {
-            return toIdentifier(id, "jshell.err.missing.mode", "jshell.err.mode.name");
+        private String toModeIdentifier(String id) {
+            return toIdentifier(id, "jshell.err.mode.name");
         }
 
-        String nextModeIdentifier() {
-            return toModeIdentifier(at.next());
+        private String nextModeIdentifier() {
+            return toModeIdentifier(next());
         }
 
-        Mode nextMode() {
+        private Mode nextMode() {
             String umode = nextModeIdentifier();
-            return toMode(umode);
+            return searchForMode(umode);
         }
 
-        Mode toMode(String umode) {
-            if (!valid) {
-                return null;
-            }
-            if (umode == null) {
-                errorat("jshell.err.missing.mode");
-                valid = false;
+        private Mode searchForMode(String umode) {
+            return searchForMode(umode, null);
+        }
+
+        private Mode searchForMode(String umode, String msg) {
+            if (!valid || umode == null) {
                 return null;
             }
             Mode m = modeMap.get(umode);
@@ -1038,37 +1295,99 @@ class Feedback {
             if (matches.length == 1) {
                 return matches[0];
             } else {
-                valid = false;
+                if (msg != null) {
+                    hardmsg(msg, "");
+                }
                 if (matches.length == 0) {
                     errorat("jshell.err.feedback.does.not.match.mode", umode);
                 } else {
                     errorat("jshell.err.feedback.ambiguous.mode", umode);
                 }
-                printFeedbackModes();
+                if (showFluff()) {
+                    showFeedbackModes();
+                }
                 return null;
             }
         }
 
-        void printFeedbackModes() {
-            fluffmsg("jshell.msg.feedback.mode.following");
+        void showFeedbackModes() {
+            if (!retainedMap.isEmpty()) {
+                hardmsg("jshell.msg.feedback.retained.mode.following");
+                retainedMap.keySet().stream()
+                        .sorted()
+                        .forEach(mk -> hard("   %s", mk));
+            }
+            hardmsg("jshell.msg.feedback.mode.following");
             modeMap.keySet().stream()
-                    .forEach(mk -> fluff("   %s", mk));
+                    .sorted()
+                    .forEach(mk -> hard("   %s", mk));
+        }
+
+        // Read and test if the format string is correctly
+        private String nextFormat() {
+            return toFormat(next());
         }
 
         // Test if the format string is correctly
-        final String nextFormat() {
-            String format = at.next();
-            if (format == null) {
-                errorat("jshell.err.feedback.expected.format");
-                valid = false;
+        private String toFormat(String format) {
+            if (!valid || format == null) {
                 return null;
             }
             if (!at.isQuoted()) {
                 errorat("jshell.err.feedback.must.be.quoted", format);
-                valid = false;
-                return null;
+               return null;
             }
             return format;
+        }
+
+        // Convert to a quoted string
+        private String toStringLiteral(String s) {
+            StringBuilder sb = new StringBuilder();
+            sb.append('"');
+            final int length = s.length();
+            for (int offset = 0; offset < length;) {
+                final int codepoint = s.codePointAt(offset);
+
+                switch (codepoint) {
+                    case '\b':
+                        sb.append("\\b");
+                        break;
+                    case '\t':
+                        sb.append("\\t");
+                        break;
+                    case '\n':
+                        sb.append("\\n");
+                        break;
+                    case '\f':
+                        sb.append("\\f");
+                        break;
+                    case '\r':
+                        sb.append("\\r");
+                        break;
+                    case '\"':
+                        sb.append("\\\"");
+                        break;
+                    case '\'':
+                        sb.append("\\'");
+                        break;
+                    case '\\':
+                        sb.append("\\\\");
+                        break;
+                    default:
+                        if (codepoint < 040) {
+                            sb.append(String.format("\\%o", codepoint));
+                        } else {
+                            sb.appendCodePoint(codepoint);
+                        }
+                        break;
+                }
+
+                // do something with the codepoint
+                offset += Character.charCount(codepoint);
+
+            }
+            sb.append('"');
+            return sb.toString();
         }
 
         class SelectorList {
@@ -1088,19 +1407,16 @@ class Feedback {
                             Selector<?> sel = selectorMap.get(as);
                             if (sel == null) {
                                 errorat("jshell.err.feedback.not.a.valid.selector", as, s);
-                                valid = false;
                                 return;
                             }
                             SelectorCollector<?> collector = sel.collector(this);
                             if (lastCollector == null) {
                                 if (!collector.isEmpty()) {
                                     errorat("jshell.err.feedback.multiple.sections", as, s);
-                                    valid = false;
                                     return;
                                 }
                             } else if (collector != lastCollector) {
                                 errorat("jshell.err.feedback.different.selector.kinds", as, s);
-                                valid = false;
                                 return;
                             }
                             collector.add(sel);
