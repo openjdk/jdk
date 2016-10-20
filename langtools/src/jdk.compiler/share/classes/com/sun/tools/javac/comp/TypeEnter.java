@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,6 @@ public class TypeEnter implements Completer {
     private final TypeAnnotations typeAnnotations;
     private final Types types;
     private final JCDiagnostic.Factory diags;
-    private final Source source;
     private final DeferredLintHandler deferredLintHandler;
     private final Lint lint;
     private final TypeEnvs typeEnvs;
@@ -131,7 +130,6 @@ public class TypeEnter implements Completer {
         typeAnnotations = TypeAnnotations.instance(context);
         types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
-        source = Source.instance(context);
         deferredLintHandler = DeferredLintHandler.instance(context);
         lint = Lint.instance(context);
         typeEnvs = TypeEnvs.instance(context);
@@ -178,6 +176,7 @@ public class TypeEnter implements Completer {
     /** Complete entering a class.
      *  @param sym         The symbol of the class to be completed.
      */
+    @Override
     public void complete(Symbol sym) throws CompletionFailure {
         // Suppress some (recursive) MemberEnter invocations
         if (!completionEnabled) {
@@ -414,7 +413,7 @@ public class TypeEnter implements Completer {
         Type attribImportType(JCTree tree, Env<AttrContext> env) {
             Assert.check(completionEnabled);
             Lint prevLint = chk.setLint(allowDeprecationOnImport ?
-                    lint : lint.suppress(LintCategory.DEPRECATION));
+                    lint : lint.suppress(LintCategory.DEPRECATION, LintCategory.REMOVAL));
             try {
                 // To prevent deep recursion, suppress completion of some
                 // types.
@@ -751,12 +750,12 @@ public class TypeEnter implements Completer {
             // can attribute the annotation types and then check to see if the
             // @Deprecated annotation is present.
             attr.attribAnnotationTypes(tree.mods.annotations, baseEnv);
-            if (hasDeprecatedAnnotation(tree.mods.annotations))
-                sym.flags_field |= DEPRECATED;
+            handleDeprecatedAnnotation(tree.mods.annotations, sym);
 
             chk.checkNonCyclicDecl(tree);
         }
             //where:
+            @Override
             protected JCExpression clearTypeParams(JCExpression superType) {
                 switch (superType.getTag()) {
                     case TYPEAPPLY:
@@ -767,16 +766,29 @@ public class TypeEnter implements Completer {
             }
 
             /**
-             * Check if a list of annotations contains a reference to
-             * java.lang.Deprecated.
+             * If a list of annotations contains a reference to java.lang.Deprecated,
+             * set the DEPRECATED flag.
+             * If the annotation is marked forRemoval=true, also set DEPRECATED_REMOVAL.
              **/
-            private boolean hasDeprecatedAnnotation(List<JCAnnotation> annotations) {
+            private void handleDeprecatedAnnotation(List<JCAnnotation> annotations, Symbol sym) {
                 for (List<JCAnnotation> al = annotations; !al.isEmpty(); al = al.tail) {
                     JCAnnotation a = al.head;
-                    if (a.annotationType.type == syms.deprecatedType && a.args.isEmpty())
-                        return true;
+                    if (a.annotationType.type == syms.deprecatedType) {
+                        sym.flags_field |= Flags.DEPRECATED;
+                        a.args.stream()
+                                .filter(e -> e.hasTag(ASSIGN))
+                                .map(e -> (JCAssign) e)
+                                .filter(assign -> TreeInfo.name(assign.lhs) == names.forRemoval)
+                                .findFirst()
+                                .ifPresent(assign -> {
+                                    JCExpression rhs = TreeInfo.skipParens(assign.rhs);
+                                    if (rhs.hasTag(LITERAL)
+                                            && Boolean.TRUE.equals(((JCLiteral) rhs).getValue())) {
+                                        sym.flags_field |= DEPRECATED_REMOVAL;
+                                    }
+                                });
+                    }
                 }
-                return false;
             }
 
         @Override
