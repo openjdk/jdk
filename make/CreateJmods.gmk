@@ -44,6 +44,10 @@ CMDS_DIR := $(firstword $(wildcard $(addsuffix /$(MODULE), \
 CONF_DIR := $(firstword $(wildcard $(addsuffix /$(MODULE), \
     $(SUPPORT_OUTPUTDIR)/modules_conf $(IMPORT_MODULES_CONF))))
 CLASSES_DIR := $(wildcard $(JDK_OUTPUTDIR)/modules/$(MODULE))
+INCLUDE_HEADERS_DIR := $(firstword $(wildcard $(addsuffix /$(MODULE), \
+    $(SUPPORT_OUTPUTDIR)/modules_include $(IMPORT_MODULES_INCLUDE_HEADERS))))
+MAN_DIR := $(firstword $(wildcard $(addsuffix /$(MODULE), \
+    $(SUPPORT_OUTPUTDIR)/modules_man $(IMPORT_MODULES_MAN))))
 
 $(eval $(call FillCacheFind, \
     $(LIBS_DIR) $(CMDS_DIR) $(CONF_DIR) $(CLASSES_DIR) \
@@ -64,6 +68,14 @@ endif
 ifneq ($(CLASSES_DIR), )
   JMOD_FLAGS += --class-path $(CLASSES_DIR)
   DEPS += $(call CacheFind, $(CLASSES_DIR))
+endif
+ifneq ($(INCLUDE_HEADERS_DIR), )
+  JMOD_FLAGS += --header-files $(INCLUDE_HEADERS_DIR)
+  DEPS += $(call CacheFind, $(INCLUDE_HEADERS_DIR))
+endif
+ifneq ($(MAN_DIR), )
+  JMOD_FLAGS += --man-pages $(MAN_DIR)
+  DEPS += $(call CacheFind, $(MAN_DIR))
 endif
 
 # Add dependencies on other jmod files. Only java.base needs access to other
@@ -103,7 +115,7 @@ $(JMODS_DIR)/$(MODULE).jmod: $(DEPS)
             --os-arch $(OPENJDK_TARGET_CPU_LEGACY) \
             --os-version $(REQUIRED_OS_VERSION) \
             --module-path $(JMODS_DIR) \
-            --exclude '**{_the.*,*.diz,*.debuginfo,*.dSYM/**,*.dSYM,*.pdb,*.map}' \
+	    --exclude '**{_the.*,*.diz,*.debuginfo,*.dSYM/**,*.dSYM,*.pdb,*.map}' \
 	    $(JMOD_FLAGS) $(SUPPORT_OUTPUTDIR)/jmods/$(notdir $@)
 	$(MV) $(SUPPORT_OUTPUTDIR)/jmods/$(notdir $@) $@
 
