@@ -4313,7 +4313,10 @@ void *Type_MPEclut_Read(struct _cms_typehandler_struct* self, cmsIOHANDLER* io, 
 
     // Copy MAX_INPUT_DIMENSIONS at most. Expand to cmsUInt32Number
     nMaxGrids = InputChans > MAX_INPUT_DIMENSIONS ? MAX_INPUT_DIMENSIONS : InputChans;
-    for (i=0; i < nMaxGrids; i++) GridPoints[i] = (cmsUInt32Number) Dimensions8[i];
+    for (i=0; i < nMaxGrids; i++) {
+        if (Dimensions8[i] == 1) goto Error; // Impossible value, 0 for no CLUT and then 2 at least
+        GridPoints[i] = (cmsUInt32Number)Dimensions8[i];
+    }
 
     // Allocate the true CLUT
     mpe = cmsStageAllocCLutFloatGranular(self ->ContextID, GridPoints, InputChans, OutputChans, NULL);

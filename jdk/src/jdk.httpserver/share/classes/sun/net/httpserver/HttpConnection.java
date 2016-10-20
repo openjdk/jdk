@@ -28,7 +28,8 @@ package sun.net.httpserver;
 import java.io.*;
 import javax.net.ssl.*;
 import java.nio.channels.*;
-import java.util.logging.Logger;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import com.sun.net.httpserver.*;
 import com.sun.net.httpserver.spi.*;
 
@@ -119,7 +120,7 @@ class HttpConnection {
         }
         closed = true;
         if (logger != null && chan != null) {
-            logger.finest ("Closing connection: " + chan.toString());
+            logger.log (Level.TRACE, "Closing connection: " + chan.toString());
         }
 
         if (!chan.isOpen()) {

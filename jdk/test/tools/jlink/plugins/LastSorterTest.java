@@ -37,11 +37,11 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.tools.jlink.internal.ImagePluginConfiguration;
-import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.internal.ImagePluginStack;
+import jdk.tools.jlink.internal.Jlink;
+import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
+import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.internal.ResourcePoolManager;
-import jdk.tools.jlink.Jlink;
-import jdk.tools.jlink.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
