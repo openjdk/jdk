@@ -351,14 +351,6 @@ void Arguments::init_version_specific_system_properties() {
  *         Deprecated options should be tested in VMDeprecatedOptions.java.
  */
 
-// Obsolete or deprecated -XX flag.
-typedef struct {
-  const char* name;
-  JDK_Version deprecated_in; // When the deprecation warning started (or "undefined").
-  JDK_Version obsolete_in;   // When the obsolete warning started (or "undefined").
-  JDK_Version expired_in;    // When the option expires (or "undefined").
-} SpecialFlag;
-
 // The special_jvm_flags table declares options that are being deprecated and/or obsoleted. The
 // "deprecated_in" or "obsolete_in" fields may be set to "undefined", but not both.
 // When the JDK version reaches 'deprecated_in' limit, the JVM will process this flag on
@@ -380,6 +372,8 @@ static SpecialFlag const special_jvm_flags[] = {
   // -------------- Deprecated Flags --------------
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
   { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "AutoGCSelectPauseMillis",      JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
+  { "UseAutoGCSelectPolicy",        JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "UseParNewGC",                  JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "ConvertSleepToYield",          JDK_Version::jdk(9), JDK_Version::jdk(10),     JDK_Version::jdk(11) },
   { "ConvertYieldToSleep",          JDK_Version::jdk(9), JDK_Version::jdk(10),     JDK_Version::jdk(11) },
@@ -500,7 +494,14 @@ static bool version_less_than(JDK_Version v, JDK_Version other) {
   }
 }
 
+extern bool lookup_special_flag_ext(const char *flag_name, SpecialFlag& flag);
+
 static bool lookup_special_flag(const char *flag_name, SpecialFlag& flag) {
+  // Allow extensions to have priority
+  if (lookup_special_flag_ext(flag_name, flag)) {
+    return true;
+  }
+
   for (size_t i = 0; special_jvm_flags[i].name != NULL; i++) {
     if ((strcmp(special_jvm_flags[i].name, flag_name) == 0)) {
       flag = special_jvm_flags[i];
@@ -1805,10 +1806,15 @@ bool Arguments::gc_selected() {
 void Arguments::select_gc_ergonomically() {
 #if INCLUDE_ALL_GCS
   if (os::is_server_class_machine()) {
-    if (should_auto_select_low_pause_collector()) {
-      FLAG_SET_ERGO_IF_DEFAULT(bool, UseConcMarkSweepGC, true);
+    if (!UseAutoGCSelectPolicy) {
+       FLAG_SET_ERGO_IF_DEFAULT(bool, UseG1GC, true);
     } else {
-      FLAG_SET_ERGO_IF_DEFAULT(bool, UseG1GC, true);
+      if (should_auto_select_low_pause_collector()) {
+        FLAG_SET_ERGO_IF_DEFAULT(bool, UseConcMarkSweepGC, true);
+        FLAG_SET_ERGO_IF_DEFAULT(bool, UseParNewGC, true);
+      } else {
+        FLAG_SET_ERGO_IF_DEFAULT(bool, UseParallelGC, true);
+      }
     }
   } else {
     FLAG_SET_ERGO_IF_DEFAULT(bool, UseSerialGC, true);
@@ -2875,11 +2881,13 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (FLAG_SET_CMDLINE(bool, UseConcMarkSweepGC, true) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
+      handle_extra_cms_flags("-Xconcgc uses UseConcMarkSweepGC");
     // -Xnoconcgc
     } else if (match_option(option, "-Xnoconcgc")) {
       if (FLAG_SET_CMDLINE(bool, UseConcMarkSweepGC, false) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
+      handle_extra_cms_flags("-Xnoconcgc uses UseConcMarkSweepGC");
     // -Xbatch
     } else if (match_option(option, "-Xbatch")) {
       if (FLAG_SET_CMDLINE(bool, BackgroundCompilation, false) != Flag::SUCCESS) {
@@ -4167,6 +4175,15 @@ bool Arguments::handle_deprecated_print_gc_flags() {
     LogConfiguration::configure_stdout(LogLevel::Info, !PrintGCDetails, LOG_TAGS(gc));
   }
   return true;
+}
+
+void Arguments::handle_extra_cms_flags(const char* msg) {
+  SpecialFlag flag;
+  const char *flag_name = "UseConcMarkSweepGC";
+  if (lookup_special_flag(flag_name, flag)) {
+    handle_aliases_and_deprecation(flag_name, /* print warning */ true);
+    warning("%s", msg);
+  }
 }
 
 // Parse entry point called from JNI_CreateJavaVM
