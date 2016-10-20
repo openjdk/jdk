@@ -4,7 +4,7 @@
  * @summary Enhance compiler warnings for Lambda
  *     Checks that the warning for accessing non public members of a class is
  *     fired correctly.
- * @compile/fail/ref=WarnSerializableLambdaTestb.out -XDrawDiagnostics -Werror -XDwarnOnAccessToSensitiveMembers WarnSerializableLambdaTestb.java
+ * @compile/fail/ref=WarnSerializableLambdaTestb.out -XDrawDiagnostics -Werror -XDwarnOnAccessToMembers WarnSerializableLambdaTestb.java
  */
 
 import java.io.Serializable;

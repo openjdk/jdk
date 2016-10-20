@@ -234,11 +234,12 @@ public class HtmlWriter {
     protected Content getFramesJavaScript() {
         HtmlTree scriptTree = HtmlTree.SCRIPT();
         String scriptCode = "\n" +
-                "    targetPage = \"\" + window.location.search;\n" +
-                "    if (targetPage != \"\" && targetPage != \"undefined\")\n" +
-                "        targetPage = targetPage.substring(1);\n" +
-                "    if (targetPage.indexOf(\":\") != -1 || (targetPage != \"\" && !validURL(targetPage)))\n" +
-                "        targetPage = \"undefined\";\n" +
+                "    tmpTargetPage = \"\" + window.location.search;\n" +
+                "    if (tmpTargetPage != \"\" && tmpTargetPage != \"undefined\")\n" +
+                "        tmpTargetPage = tmpTargetPage.substring(1);\n" +
+                "    if (tmpTargetPage.indexOf(\":\") != -1 || (tmpTargetPage != \"\" && !validURL(tmpTargetPage)))\n" +
+                "        tmpTargetPage = \"undefined\";\n" +
+                "    targetPage = tmpTargetPage;\n" +
                 "    function validURL(url) {\n" +
                 "        try {\n" +
                 "            url = decodeURIComponent(url);\n" +
