@@ -498,6 +498,23 @@ public class SignerInfo implements DerEncoder {
         return unauthenticatedAttributes;
     }
 
+    /**
+     * Returns the timestamp PKCS7 data unverified.
+     * @return a PKCS7 object
+     */
+    public PKCS7 getTsToken() throws IOException {
+        if (unauthenticatedAttributes == null) {
+            return null;
+        }
+        PKCS9Attribute tsTokenAttr =
+                unauthenticatedAttributes.getAttribute(
+                        PKCS9Attribute.SIGNATURE_TIMESTAMP_TOKEN_OID);
+        if (tsTokenAttr == null) {
+            return null;
+        }
+        return new PKCS7((byte[])tsTokenAttr.getValue());
+    }
+
     /*
      * Extracts a timestamp from a PKCS7 SignerInfo.
      *
@@ -525,19 +542,12 @@ public class SignerInfo implements DerEncoder {
         if (timestamp != null || !hasTimestamp)
             return timestamp;
 
-        if (unauthenticatedAttributes == null) {
-            hasTimestamp = false;
-            return null;
-        }
-        PKCS9Attribute tsTokenAttr =
-            unauthenticatedAttributes.getAttribute(
-                PKCS9Attribute.SIGNATURE_TIMESTAMP_TOKEN_OID);
-        if (tsTokenAttr == null) {
+        PKCS7 tsToken = getTsToken();
+        if (tsToken == null) {
             hasTimestamp = false;
             return null;
         }
 
-        PKCS7 tsToken = new PKCS7((byte[])tsTokenAttr.getValue());
         // Extract the content (an encoded timestamp token info)
         byte[] encTsTokenInfo = tsToken.getContentInfo().getData();
         // Extract the signer (the Timestamping Authority)
