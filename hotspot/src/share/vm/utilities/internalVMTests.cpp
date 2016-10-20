@@ -61,9 +61,6 @@ void InternalVMTests::run() {
 #endif
 #if INCLUDE_ALL_GCS
   run_unit_test(TestBufferingOopClosure_test);
-  if (UseG1GC) {
-    run_unit_test(FreeRegionList_test);
-  }
   run_unit_test(WorkerDataArray_test);
   run_unit_test(ParallelCompact_test);
 #endif
