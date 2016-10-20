@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,8 @@
 package jdk.internal.misc;
 
 import java.net.URLClassLoader;
-import jdk.internal.loader.URLClassPath;
+import java.security.AccessControlContext;
 
-public interface JavaNetAccess {
-    /**
-     * return the URLClassPath belonging to the given loader
-     */
-    URLClassPath getURLClassPath (URLClassLoader u);
+public interface JavaNetURLClassLoaderAccess {
+    AccessControlContext getAccessControlContext(URLClassLoader u);;
 }

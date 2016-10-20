@@ -38,6 +38,7 @@ module jdk.jlink {
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.StripDebugPlugin;
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.ExcludePlugin;
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.ExcludeFilesPlugin;
+    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.ExcludeJmodSectionPlugin;
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.SystemModuleDescriptorPlugin;
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.StripNativeCommandsPlugin;
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.OrderResourcesPlugin;
