@@ -19,14 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+
 #include "precompiled.hpp"
 #include "logging/logLevel.hpp"
 #include "logging/logTagLevelExpression.hpp"
 #include "logging/logTagSet.hpp"
 #include "unittest.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+TEST(LogTagLevelExpression, combination_limit) {
+  size_t max_combinations = LogTagLevelExpression::MaxCombinations;
+  EXPECT_GT(max_combinations, LogTagSet::ntagsets())
+      << "Combination limit not sufficient for configuring all available tag sets";
+}
 
 TEST(LogTagLevelExpression, parse) {
   char buf[256];

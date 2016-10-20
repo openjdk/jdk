@@ -20,14 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspot.services;
+package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.runtime.services.JVMCICompilerFactory;
+import jdk.vm.ci.runtime.JVMCICompilerFactory;
 
 /**
  * HotSpot extensions to {@link JVMCICompilerFactory}.
  */
-public abstract class HotSpotJVMCICompilerFactory extends JVMCICompilerFactory {
+public abstract class HotSpotJVMCICompilerFactory implements JVMCICompilerFactory {
 
     /**
      * Gets 0 or more prefixes identifying classes that should by compiled by C1 in simple mode

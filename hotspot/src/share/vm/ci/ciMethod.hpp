@@ -256,6 +256,14 @@ class ciMethod : public ciMetadata {
     return get_method_at_bci(bci, ignored_will_link, &ignored_declared_signature);
   }
 
+  ciSignature*  get_declared_signature_at_bci(int bci) {
+    bool ignored_will_link;
+    ciSignature* declared_signature;
+    get_method_at_bci(bci, ignored_will_link, &declared_signature);
+    assert(declared_signature != NULL, "cannot be null");
+    return declared_signature;
+  }
+
   // Given a certain calling environment, find the monomorphic target
   // for the call.  Return NULL if the call is not monomorphic in
   // its calling environment.
