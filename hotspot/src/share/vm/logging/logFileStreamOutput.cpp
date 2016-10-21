@@ -28,8 +28,20 @@
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.inline.hpp"
 
-LogStdoutOutput LogStdoutOutput::_instance;
-LogStderrOutput LogStderrOutput::_instance;
+static bool initialized;
+static char stdoutmem[sizeof(LogStdoutOutput)];
+static char stderrmem[sizeof(LogStderrOutput)];
+
+LogStdoutOutput &StdoutLog = reinterpret_cast<LogStdoutOutput&>(stdoutmem);
+LogStderrOutput &StderrLog = reinterpret_cast<LogStderrOutput&>(stderrmem);
+
+LogFileStreamInitializer::LogFileStreamInitializer() {
+  if (!initialized) {
+    ::new (&StdoutLog) LogStdoutOutput();
+    ::new (&StderrLog) LogStderrOutput();
+    initialized = true;
+  }
+}
 
 int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
   int total_written = 0;
