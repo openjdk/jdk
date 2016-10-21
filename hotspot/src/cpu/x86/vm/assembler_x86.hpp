@@ -1550,6 +1550,7 @@ private:
   void vpermq(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
   void vpermq(XMMRegister dst, XMMRegister src, int imm8);
   void vperm2i128(XMMRegister dst,  XMMRegister nds, XMMRegister src, int imm8);
+  void vperm2f128(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
 
   void pause();
 
@@ -2105,7 +2106,8 @@ private:
 
   // AVX support for vectorized conditional move (double). The following two instructions used only coupled.
   void cmppd(XMMRegister dst, XMMRegister nds, XMMRegister src, int cop, int vector_len);
-  void vpblendd(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMMRegister src2, int vector_len);
+  void blendvpd(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMMRegister src2, int vector_len);
+  void vpblendd(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8, int vector_len);
 
  protected:
   // Next instructions require address alignment 16 bytes SSE mode.

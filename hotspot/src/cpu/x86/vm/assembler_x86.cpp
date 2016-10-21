@@ -3298,6 +3298,15 @@ void Assembler::vperm2i128(XMMRegister dst,  XMMRegister nds, XMMRegister src, i
   emit_int8(imm8);
 }
 
+void Assembler::vperm2f128(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionAttr attributes(AVX_256bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int8(0x06);
+  emit_int8(0xC0 | encode);
+  emit_int8(imm8);
+}
+
 
 void Assembler::pause() {
   emit_int8((unsigned char)0xF3);
@@ -7359,7 +7368,7 @@ void Assembler::cmppd(XMMRegister dst, XMMRegister nds, XMMRegister src, int cop
   emit_int8((unsigned char)(0xF & cop));
 }
 
-void Assembler::vpblendd(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMMRegister src2, int vector_len) {
+void Assembler::blendvpd(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMMRegister src2, int vector_len) {
   assert(VM_Version::supports_avx(), "");
   assert(!VM_Version::supports_evex(), "");
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
@@ -7368,6 +7377,15 @@ void Assembler::vpblendd(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMM
   emit_int8((unsigned char)(0xC0 | encode));
   int src2_enc = src2->encoding();
   emit_int8((unsigned char)(0xF0 & src2_enc<<4));
+}
+
+void Assembler::vpblendd(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8, int vector_len) {
+  assert(VM_Version::supports_avx2(), "");
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int8((unsigned char)0x02);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8((unsigned char)imm8);
 }
 
 void Assembler::shlxl(Register dst, Register src1, Register src2) {
