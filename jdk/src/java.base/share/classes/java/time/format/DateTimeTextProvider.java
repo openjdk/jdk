@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -349,25 +349,40 @@ class DateTimeTextProvider {
 
         if (field == MONTH_OF_YEAR) {
             for (TextStyle textStyle : TextStyle.values()) {
-                Map<String, Integer> displayNames = CalendarDataUtility.retrieveJavaTimeFieldValueNames(
-                        "gregory", Calendar.MONTH, textStyle.toCalendarStyle(), locale);
                 Map<Long, String> map = new HashMap<>();
-                if (displayNames != null) {
-                    for (Entry<String, Integer> entry : displayNames.entrySet()) {
-                        map.put((long) (entry.getValue() + 1), entry.getKey());
-                    }
-
-                } else {
-                    // Narrow names may have duplicated names, such as "J" for January, Jun, July.
-                    // Get names one by one in that case.
+                // Narrow names may have duplicated names, such as "J" for January, June, July.
+                // Get names one by one in that case.
+                if ((textStyle.equals(TextStyle.NARROW) ||
+                        textStyle.equals(TextStyle.NARROW_STANDALONE))) {
                     for (int month = Calendar.JANUARY; month <= Calendar.DECEMBER; month++) {
                         String name;
                         name = CalendarDataUtility.retrieveJavaTimeFieldValueName(
-                                "gregory", Calendar.MONTH, month, textStyle.toCalendarStyle(), locale);
+                                "gregory", Calendar.MONTH,
+                                month, textStyle.toCalendarStyle(), locale);
                         if (name == null) {
                             break;
                         }
-                        map.put((long) (month + 1), name);
+                        map.put((month + 1L), name);
+                    }
+                } else {
+                    Map<String, Integer> displayNames = CalendarDataUtility.retrieveJavaTimeFieldValueNames(
+                            "gregory", Calendar.MONTH, textStyle.toCalendarStyle(), locale);
+                    if (displayNames != null) {
+                        for (Entry<String, Integer> entry : displayNames.entrySet()) {
+                            map.put((long)(entry.getValue() + 1), entry.getKey());
+                        }
+                    } else {
+                        // Although probability is very less, but if other styles have duplicate names.
+                        // Get names one by one in that case.
+                        for (int month = Calendar.JANUARY; month <= Calendar.DECEMBER; month++) {
+                            String name;
+                            name = CalendarDataUtility.retrieveJavaTimeFieldValueName(
+                                    "gregory", Calendar.MONTH, month, textStyle.toCalendarStyle(), locale);
+                            if (name == null) {
+                                break;
+                            }
+                            map.put((month + 1L), name);
+                        }
                     }
                 }
                 if (!map.isEmpty()) {
@@ -379,25 +394,40 @@ class DateTimeTextProvider {
 
         if (field == DAY_OF_WEEK) {
             for (TextStyle textStyle : TextStyle.values()) {
-                Map<String, Integer> displayNames = CalendarDataUtility.retrieveJavaTimeFieldValueNames(
-                        "gregory", Calendar.DAY_OF_WEEK, textStyle.toCalendarStyle(), locale);
                 Map<Long, String> map = new HashMap<>();
-                if (displayNames != null) {
-                    for (Entry<String, Integer> entry : displayNames.entrySet()) {
-                        map.put((long)toWeekDay(entry.getValue()), entry.getKey());
-                    }
-
-                } else {
-                    // Narrow names may have duplicated names, such as "S" for Sunday and Saturday.
-                    // Get names one by one in that case.
+                // Narrow names may have duplicated names, such as "S" for Sunday and Saturday.
+                // Get names one by one in that case.
+                if ((textStyle.equals(TextStyle.NARROW) ||
+                        textStyle.equals(TextStyle.NARROW_STANDALONE))) {
                     for (int wday = Calendar.SUNDAY; wday <= Calendar.SATURDAY; wday++) {
                         String name;
                         name = CalendarDataUtility.retrieveJavaTimeFieldValueName(
-                            "gregory", Calendar.DAY_OF_WEEK, wday, textStyle.toCalendarStyle(), locale);
+                                "gregory", Calendar.DAY_OF_WEEK,
+                                wday, textStyle.toCalendarStyle(), locale);
                         if (name == null) {
                             break;
                         }
                         map.put((long)toWeekDay(wday), name);
+                    }
+                } else {
+                    Map<String, Integer> displayNames = CalendarDataUtility.retrieveJavaTimeFieldValueNames(
+                            "gregory", Calendar.DAY_OF_WEEK, textStyle.toCalendarStyle(), locale);
+                    if (displayNames != null) {
+                        for (Entry<String, Integer> entry : displayNames.entrySet()) {
+                            map.put((long)toWeekDay(entry.getValue()), entry.getKey());
+                        }
+                    } else {
+                        // Although probability is very less, but if other styles have duplicate names.
+                        // Get names one by one in that case.
+                        for (int wday = Calendar.SUNDAY; wday <= Calendar.SATURDAY; wday++) {
+                            String name;
+                            name = CalendarDataUtility.retrieveJavaTimeFieldValueName(
+                                    "gregory", Calendar.DAY_OF_WEEK, wday, textStyle.toCalendarStyle(), locale);
+                            if (name == null) {
+                                break;
+                            }
+                            map.put((long)toWeekDay(wday), name);
+                        }
                     }
                 }
                 if (!map.isEmpty()) {
