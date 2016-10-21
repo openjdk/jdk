@@ -164,8 +164,8 @@ protected:
 
   virtual void flush() = 0;
 protected:
-  CompiledMethod(Method* method, const char* name, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments);
-  CompiledMethod(Method* method, const char* name, int size, int header_size, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
+  CompiledMethod(Method* method, const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments);
+  CompiledMethod(Method* method, const char* name, CompilerType type, int size, int header_size, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
 
 public:
   virtual bool is_compiled() const                { return true; }
@@ -191,11 +191,9 @@ public:
                              // will be transformed to zombie immediately
   };
 
-  virtual AbstractCompiler* compiler() const = 0;
   virtual bool  is_in_use() const = 0;
   virtual int   comp_level() const = 0;
   virtual int   compile_id() const = 0;
-
 
   virtual address verified_entry_point() const = 0;
   virtual void log_identity(xmlStream* log) const = 0;

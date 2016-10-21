@@ -444,28 +444,12 @@ const  uint64_t KlassEncodingMetaspaceMax = (uint64_t(max_juint) + 1) << LogKlas
 
 // Machine dependent stuff
 
-// States of Restricted Transactional Memory usage.
-enum RTMState {
-  NoRTM      = 0x2, // Don't use RTM
-  UseRTM     = 0x1, // Use RTM
-  ProfileRTM = 0x0  // Use RTM with abort ratio calculation
-};
-
 // The maximum size of the code cache.  Can be overridden by targets.
 #define CODE_CACHE_SIZE_LIMIT (2*G)
 // Allow targets to reduce the default size of the code cache.
 #define CODE_CACHE_DEFAULT_LIMIT CODE_CACHE_SIZE_LIMIT
 
 #include CPU_HEADER(globalDefinitions)
-
-#ifndef INCLUDE_RTM_OPT
-#define INCLUDE_RTM_OPT 0
-#endif
-#if INCLUDE_RTM_OPT
-#define RTM_OPT_ONLY(code) code
-#else
-#define RTM_OPT_ONLY(code)
-#endif
 
 // To assure the IRIW property on processors that are not multiple copy
 // atomic, sync instructions must be issued between volatile reads to
@@ -923,55 +907,6 @@ enum JavaThreadState {
 };
 
 
-// Handy constants for deciding which compiler mode to use.
-enum MethodCompilation {
-  InvocationEntryBci = -1     // i.e., not a on-stack replacement compilation
-};
-
-// Enumeration to distinguish tiers of compilation
-enum CompLevel {
-  CompLevel_any               = -1,
-  CompLevel_all               = -1,
-  CompLevel_none              = 0,         // Interpreter
-  CompLevel_simple            = 1,         // C1
-  CompLevel_limited_profile   = 2,         // C1, invocation & backedge counters
-  CompLevel_full_profile      = 3,         // C1, invocation & backedge counters + mdo
-  CompLevel_full_optimization = 4,         // C2, Shark or JVMCI
-
-#if defined(COMPILER2) || defined(SHARK)
-  CompLevel_highest_tier      = CompLevel_full_optimization,  // pure C2 and tiered or JVMCI and tiered
-#elif defined(COMPILER1)
-  CompLevel_highest_tier      = CompLevel_simple,             // pure C1 or JVMCI
-#else
-  CompLevel_highest_tier      = CompLevel_none,
-#endif
-
-#if defined(TIERED)
-  CompLevel_initial_compile   = CompLevel_full_profile        // tiered
-#elif defined(COMPILER1) || INCLUDE_JVMCI
-  CompLevel_initial_compile   = CompLevel_simple              // pure C1 or JVMCI
-#elif defined(COMPILER2) || defined(SHARK)
-  CompLevel_initial_compile   = CompLevel_full_optimization   // pure C2
-#else
-  CompLevel_initial_compile   = CompLevel_none
-#endif
-};
-
-inline bool is_c1_compile(int comp_level) {
-  return comp_level > CompLevel_none && comp_level < CompLevel_full_optimization;
-}
-
-inline bool is_c2_compile(int comp_level) {
-  return comp_level == CompLevel_full_optimization;
-}
-
-inline bool is_highest_tier_compile(int comp_level) {
-  return comp_level == CompLevel_highest_tier;
-}
-
-inline bool is_compile(int comp_level) {
-  return is_c1_compile(comp_level) || is_c2_compile(comp_level);
-}
 
 //----------------------------------------------------------------------------------------------------
 // 'Forward' declarations of frequently used classes
