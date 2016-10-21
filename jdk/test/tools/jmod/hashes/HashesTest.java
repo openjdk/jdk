@@ -27,8 +27,7 @@
  * @author Andrei Eremeev
  * @library /lib/testlibrary
  * @modules java.base/jdk.internal.module
- *          jdk.jlink/jdk.tools.jlink.internal
- *          jdk.jlink/jdk.tools.jmod
+ *          jdk.jlink
  *          jdk.compiler
  * @build CompilerUtils
  * @run testng HashesTest
@@ -53,6 +52,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 
 import jdk.internal.module.ConfigurableModuleFinder;
@@ -63,6 +63,10 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 public class HashesTest {
+    static final ToolProvider JMOD_TOOL = ToolProvider.findFirst("jmod")
+        .orElseThrow(() ->
+            new RuntimeException("jmod tool not found")
+        );
 
     private final Path testSrc = Paths.get(System.getProperty("test.src"));
     private final Path modSrc = testSrc.resolve("src");
@@ -204,7 +208,7 @@ public class HashesTest {
     }
 
     private void runJmod(List<String> args) {
-        int rc = jdk.tools.jmod.Main.run(args.toArray(new String[args.size()]), System.out);
+        int rc = JMOD_TOOL.run(System.out, System.out, args.toArray(new String[args.size()]));
         System.out.println("jmod options: " + args.stream().collect(Collectors.joining(" ")));
         if (rc != 0) {
             throw new AssertionError("Jmod failed: rc = " + rc);

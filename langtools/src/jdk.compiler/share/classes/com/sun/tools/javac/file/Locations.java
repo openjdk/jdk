@@ -42,7 +42,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.ProviderNotFoundException;
-import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -63,7 +62,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.zip.ZipFile;
 
 import javax.lang.model.SourceVersion;
 import javax.tools.JavaFileManager;
@@ -159,10 +157,9 @@ public class Locations {
         }
     }
 
-    // could replace Lint by "boolean warn"
-    void update(Log log, Lint lint, FSInfo fsInfo) {
+    void update(Log log, boolean warn, FSInfo fsInfo) {
         this.log = log;
-        warn = lint.isEnabled(Lint.LintCategory.PATH);
+        this.warn = warn;
         this.fsInfo = fsInfo;
     }
 

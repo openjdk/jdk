@@ -5869,6 +5869,11 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   assert(cp != NULL, "invariant");
   assert(_loader_data != NULL, "invariant");
 
+  if (_class_name == vmSymbols::java_lang_Object()) {
+    check_property(_local_interfaces == Universe::the_empty_klass_array(),
+                   "java.lang.Object cannot implement an interface in class file %s",
+                   CHECK);
+  }
   // We check super class after class file is parsed and format is checked
   if (_super_class_index > 0 && NULL ==_super_klass) {
     Symbol* const super_class_name = cp->klass_name_at(_super_class_index);

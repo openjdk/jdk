@@ -342,7 +342,7 @@ public final class ThaiBuddhistChronology extends AbstractChronology implements 
 
     @Override
     public List<Era> eras() {
-        return Arrays.<Era>asList(ThaiBuddhistEra.values());
+        return List.of(ThaiBuddhistEra.values());
     }
 
     //-----------------------------------------------------------------------

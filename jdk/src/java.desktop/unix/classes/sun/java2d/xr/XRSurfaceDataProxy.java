@@ -59,9 +59,12 @@ public class XRSurfaceDataProxy extends SurfaceDataProxy implements Transparency
     public SurfaceData validateSurfaceData(SurfaceData srcData,
             SurfaceData cachedData, int w, int h) {
         if (cachedData == null) {
-            cachedData = XRSurfaceData.createData(xrgc, w, h,
-                                                  xrgc.getColorModel(), null, 0,
-                                                  getTransparency(), true);
+            try {
+                cachedData = XRSurfaceData.createData(xrgc, w, h,
+                                                      xrgc.getColorModel(), null, 0,
+                                                      getTransparency(), true);
+            } catch (OutOfMemoryError oome) {
+            }
         }
         return cachedData;
     }

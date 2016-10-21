@@ -80,7 +80,7 @@ public class ExternalEditor {
     private void setupWatch(String initialText) throws IOException {
         this.watcher = FileSystems.getDefault().newWatchService();
         this.dir = Files.createTempDirectory("jshelltemp");
-        this.tmpfile = Files.createTempFile(dir, null, ".edit");
+        this.tmpfile = Files.createTempFile(dir, null, ".java");
         Files.write(tmpfile, initialText.getBytes(Charset.forName("UTF-8")));
         dir.register(watcher,
                 ENTRY_CREATE,

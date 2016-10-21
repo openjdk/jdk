@@ -182,6 +182,10 @@ void* DAUDIO_Open(INT32 mixerIndex, INT32 deviceID, int isSource,
         ERROR1(" DAUDIO_Open: invalid encoding %d\n", (int) encoding);
         return NULL;
     }
+    if (channels <= 0) {
+        ERROR1(" DAUDIO_Open: Invalid number of channels=%d!\n", channels);
+        return NULL;
+    }
 
     info = (SolPcmInfo*) malloc(sizeof(SolPcmInfo));
     if (!info) {

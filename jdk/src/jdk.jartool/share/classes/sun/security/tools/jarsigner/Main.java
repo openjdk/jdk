@@ -50,6 +50,9 @@ import java.util.Map.Entry;
 
 import jdk.security.jarsigner.JarSigner;
 import jdk.security.jarsigner.JarSignerException;
+import sun.security.pkcs.PKCS7;
+import sun.security.pkcs.SignerInfo;
+import sun.security.timestamp.TimestampToken;
 import sun.security.tools.KeyStoreUtil;
 import sun.security.x509.*;
 import sun.security.util.*;
@@ -86,6 +89,15 @@ public class Main {
     private static final String P11KEYSTORE = "PKCS11";
 
     private static final long SIX_MONTHS = 180*24*60*60*1000L; //milliseconds
+
+    private static final DisabledAlgorithmConstraints DISABLED_CHECK =
+            new DisabledAlgorithmConstraints(
+                    DisabledAlgorithmConstraints.PROPERTY_JAR_DISABLED_ALGS);
+
+    private static final Set<CryptoPrimitive> DIGEST_PRIMITIVE_SET = Collections
+            .unmodifiableSet(EnumSet.of(CryptoPrimitive.MESSAGE_DIGEST));
+    private static final Set<CryptoPrimitive> SIG_PRIMITIVE_SET = Collections
+            .unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
 
     // Attention:
     // This is the entry that get launched by the security tool jarsigner.
@@ -162,6 +174,8 @@ public class Main {
     private boolean signerSelfSigned = false;
 
     private Throwable chainNotValidatedReason = null;
+
+    private boolean seeWeak = false;
 
     CertificateFactory certificateFactory;
     CertPathValidator validator;
@@ -628,6 +642,10 @@ public class Main {
     {
         boolean anySigned = false;  // if there exists entry inside jar signed
         JarFile jf = null;
+        Map<String,String> digestMap = new HashMap<>();
+        Map<String,PKCS7> sigMap = new HashMap<>();
+        Map<String,String> sigNameMap = new HashMap<>();
+        Map<String,String> unparsableSignatures = new HashMap<>();
 
         try {
             jf = new JarFile(jarName, true);
@@ -638,21 +656,50 @@ public class Main {
             while (entries.hasMoreElements()) {
                 JarEntry je = entries.nextElement();
                 entriesVec.addElement(je);
-                InputStream is = null;
-                try {
-                    is = jf.getInputStream(je);
-                    while (is.read(buffer, 0, buffer.length) != -1) {
-                        // we just read. this will throw a SecurityException
-                        // if  a signature/digest check fails.
-                    }
-                } finally {
-                    if (is != null) {
-                        is.close();
+                try (InputStream is = jf.getInputStream(je)) {
+                    String name = je.getName();
+                    if (signatureRelated(name)
+                            && SignatureFileVerifier.isBlockOrSF(name)) {
+                        String alias = name.substring(name.lastIndexOf('/') + 1,
+                                name.lastIndexOf('.'));
+                        try {
+                            if (name.endsWith(".SF")) {
+                                Manifest sf = new Manifest(is);
+                                boolean found = false;
+                                for (Object obj : sf.getMainAttributes().keySet()) {
+                                    String key = obj.toString();
+                                    if (key.endsWith("-Digest-Manifest")) {
+                                        digestMap.put(alias,
+                                                key.substring(0, key.length() - 16));
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                if (!found) {
+                                    unparsableSignatures.putIfAbsent(alias,
+                                        String.format(
+                                            rb.getString("history.unparsable"),
+                                            name));
+                                }
+                            } else {
+                                sigNameMap.put(alias, name);
+                                sigMap.put(alias, new PKCS7(is));
+                            }
+                        } catch (IOException ioe) {
+                            unparsableSignatures.putIfAbsent(alias, String.format(
+                                    rb.getString("history.unparsable"), name));
+                        }
+                    } else {
+                        while (is.read(buffer, 0, buffer.length) != -1) {
+                            // we just read. this will throw a SecurityException
+                            // if  a signature/digest check fails.
+                        }
                     }
                 }
             }
 
             Manifest man = jf.getManifest();
+            boolean hasSignature = false;
 
             // The map to record display info, only used when -verbose provided
             //      key: signer info string
@@ -668,6 +715,10 @@ public class Main {
                 while (e.hasMoreElements()) {
                     JarEntry je = e.nextElement();
                     String name = je.getName();
+
+                    hasSignature = hasSignature
+                            || SignatureFileVerifier.isBlockOrSF(name);
+
                     CodeSigner[] signers = je.getCodeSigners();
                     boolean isSigned = (signers != null);
                     anySigned |= isSigned;
@@ -800,10 +851,11 @@ public class Main {
                     System.out.println(rb.getString(
                         ".X.not.signed.by.specified.alias.es."));
                 }
-                System.out.println();
             }
-            if (man == null)
+            if (man == null) {
+                System.out.println();
                 System.out.println(rb.getString("no.manifest."));
+            }
 
             // If signer is a trusted cert or private entry in user's own
             // keystore, it can be self-signed.
@@ -811,9 +863,103 @@ public class Main {
                 signerSelfSigned = false;
             }
 
+            // Even if the verbose option is not specified, all out strings
+            // must be generated so seeWeak can be updated.
+            if (!digestMap.isEmpty()
+                    || !sigMap.isEmpty()
+                    || !unparsableSignatures.isEmpty()) {
+                if (verbose != null) {
+                    System.out.println();
+                }
+                for (String s : sigMap.keySet()) {
+                    if (!digestMap.containsKey(s)) {
+                        unparsableSignatures.putIfAbsent(s, String.format(
+                                rb.getString("history.nosf"), s));
+                    }
+                }
+                for (String s : digestMap.keySet()) {
+                    PKCS7 p7 = sigMap.get(s);
+                    if (p7 != null) {
+                        String history;
+                        try {
+                            SignerInfo si = p7.getSignerInfos()[0];
+                            X509Certificate signer = si.getCertificate(p7);
+                            String digestAlg = digestMap.get(s);
+                            String sigAlg = AlgorithmId.makeSigAlg(
+                                    si.getDigestAlgorithmId().getName(),
+                                    si.getDigestEncryptionAlgorithmId().getName());
+                            PublicKey key = signer.getPublicKey();
+                            PKCS7 tsToken = si.getTsToken();
+                            if (tsToken != null) {
+                                SignerInfo tsSi = tsToken.getSignerInfos()[0];
+                                X509Certificate tsSigner = tsSi.getCertificate(tsToken);
+                                byte[] encTsTokenInfo = tsToken.getContentInfo().getData();
+                                TimestampToken tsTokenInfo = new TimestampToken(encTsTokenInfo);
+                                PublicKey tsKey = tsSigner.getPublicKey();
+                                String tsDigestAlg = tsTokenInfo.getHashAlgorithm().getName();
+                                String tsSigAlg = AlgorithmId.makeSigAlg(
+                                        tsSi.getDigestAlgorithmId().getName(),
+                                        tsSi.getDigestEncryptionAlgorithmId().getName());
+                                Calendar c = Calendar.getInstance(
+                                        TimeZone.getTimeZone("UTC"),
+                                        Locale.getDefault(Locale.Category.FORMAT));
+                                c.setTime(tsTokenInfo.getDate());
+                                history = String.format(
+                                        rb.getString("history.with.ts"),
+                                        signer.getSubjectX500Principal(),
+                                        withWeak(digestAlg, DIGEST_PRIMITIVE_SET),
+                                        withWeak(sigAlg, SIG_PRIMITIVE_SET),
+                                        withWeak(key),
+                                        c,
+                                        tsSigner.getSubjectX500Principal(),
+                                        withWeak(tsDigestAlg, DIGEST_PRIMITIVE_SET),
+                                        withWeak(tsSigAlg, SIG_PRIMITIVE_SET),
+                                        withWeak(tsKey));
+                            } else {
+                                history = String.format(
+                                        rb.getString("history.without.ts"),
+                                        signer.getSubjectX500Principal(),
+                                        withWeak(digestAlg, DIGEST_PRIMITIVE_SET),
+                                        withWeak(sigAlg, SIG_PRIMITIVE_SET),
+                                        withWeak(key));
+                            }
+                        } catch (Exception e) {
+                            // The only usage of sigNameMap, remember the name
+                            // of the block file if it's invalid.
+                            history = String.format(
+                                    rb.getString("history.unparsable"),
+                                    sigNameMap.get(s));
+                        }
+                        if (verbose != null) {
+                            System.out.println(history);
+                        }
+                    } else {
+                        unparsableSignatures.putIfAbsent(s, String.format(
+                                rb.getString("history.nobk"), s));
+                    }
+                }
+                if (verbose != null) {
+                    for (String s : unparsableSignatures.keySet()) {
+                        System.out.println(unparsableSignatures.get(s));
+                    }
+                }
+            }
+            System.out.println();
             if (!anySigned) {
-                System.out.println(rb.getString(
-                      "jar.is.unsigned.signatures.missing.or.not.parsable."));
+                if (seeWeak) {
+                    if (verbose != null) {
+                        System.out.println(rb.getString("jar.treated.unsigned.see.weak.verbose"));
+                        System.out.println("\n  " +
+                                DisabledAlgorithmConstraints.PROPERTY_JAR_DISABLED_ALGS +
+                                "=" + Security.getProperty(DisabledAlgorithmConstraints.PROPERTY_JAR_DISABLED_ALGS));
+                    } else {
+                        System.out.println(rb.getString("jar.treated.unsigned.see.weak"));
+                    }
+                } else if (hasSignature) {
+                    System.out.println(rb.getString("jar.treated.unsigned"));
+                } else {
+                    System.out.println(rb.getString("jar.is.unsigned"));
+                }
             } else {
                 boolean warningAppeared = false;
                 boolean errorAppeared = false;
@@ -837,7 +983,9 @@ public class Main {
                     if (weakAlg != 0) {
                         // In fact, jarsigner verification did not catch this
                         // since it has not read the JarFile content itself.
-                        // Everything is done with JarFile API.
+                        // Everything is done with JarFile API. The signing
+                        // history (digestMap etc) will show these info and
+                        // print out proper warnings.
                     }
 
                     if (badKeyUsage) {
@@ -926,6 +1074,26 @@ public class Main {
         }
 
         System.exit(1);
+    }
+
+    private String withWeak(String alg, Set<CryptoPrimitive> primitiveSet) {
+        if (DISABLED_CHECK.permits(primitiveSet, alg, null)) {
+            return alg;
+        } else {
+            seeWeak = true;
+            return String.format(rb.getString("with.weak"), alg);
+        }
+    }
+
+    private String withWeak(PublicKey key) {
+        if (DISABLED_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
+            return String.format(
+                    rb.getString("key.bit"), KeyUtil.getKeySize(key));
+        } else {
+            seeWeak = true;
+            return String.format(
+                    rb.getString("key.bit.weak"), KeyUtil.getKeySize(key));
+        }
     }
 
     private static MessageFormat validityTimeForm = null;
@@ -1117,21 +1285,21 @@ public class Main {
     void signJar(String jarName, String alias)
             throws Exception {
 
-        DisabledAlgorithmConstraints dac =
-                new DisabledAlgorithmConstraints(
-                        DisabledAlgorithmConstraints.PROPERTY_CERTPATH_DISABLED_ALGS);
-
-        if (digestalg != null && !dac.permits(
-                Collections.singleton(CryptoPrimitive.MESSAGE_DIGEST), digestalg, null)) {
+        if (digestalg != null && !DISABLED_CHECK.permits(
+                DIGEST_PRIMITIVE_SET, digestalg, null)) {
             weakAlg |= 1;
         }
-        if (tSADigestAlg != null && !dac.permits(
-                Collections.singleton(CryptoPrimitive.MESSAGE_DIGEST), tSADigestAlg, null)) {
+        if (tSADigestAlg != null && !DISABLED_CHECK.permits(
+                DIGEST_PRIMITIVE_SET, tSADigestAlg, null)) {
             weakAlg |= 4;
         }
-        if (sigalg != null && !dac.permits(
-                Collections.singleton(CryptoPrimitive.SIGNATURE), sigalg, null)) {
+        if (sigalg != null && !DISABLED_CHECK.permits(
+                SIG_PRIMITIVE_SET , sigalg, null)) {
             weakAlg |= 2;
+        }
+        if (!DISABLED_CHECK.permits(
+                SIG_PRIMITIVE_SET, privateKey)) {
+            weakAlg |= 8;
         }
 
         boolean aliasUsed = false;
@@ -1376,6 +1544,11 @@ public class Main {
                     System.out.println(String.format(
                             rb.getString("The.1.algorithm.specified.for.the.2.option.is.considered.a.security.risk."),
                             tSADigestAlg, "-tsadigestalg"));
+                }
+                if ((weakAlg & 8) == 8) {
+                    System.out.println(String.format(
+                            rb.getString("The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk."),
+                            privateKey.getAlgorithm(), KeyUtil.getKeySize(privateKey)));
                 }
             } else {
                 System.out.println(rb.getString("jar.signed."));

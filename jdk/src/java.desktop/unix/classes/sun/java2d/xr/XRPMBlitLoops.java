@@ -138,6 +138,9 @@ public class XRPMBlitLoops {
             vImg = (SunVolatileImage) dst.getGraphicsConfig().createCompatibleVolatileImage(w, h, src.getTransparency());
             vImg.setAccelerationPriority(1.0f);
 
+            if (!(vImg.getDestSurface() instanceof XRSurfaceData)) {
+                throw new InvalidPipeException("Could not create XRSurfaceData");
+            }
             if (src.getTransparency() == SurfaceData.OPAQUE) {
                 rgbTmpPM = new WeakReference<SunVolatileImage>(vImg);
             } else {

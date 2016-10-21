@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8141492 8071982
+ * @bug 8141492 8071982 8141636
  * @summary Test the search feature of javadoc.
  * @author bpatel
  * @library ../lib
@@ -45,6 +45,7 @@ public class TestSearch extends JavadocTester {
         checkExit(Exit.OK);
         checkSearchOutput("UnnamedPkgClass.html", true);
         checkJqueryAndImageFiles(true);
+        checkSearchJS();
         checkFiles(false,
                 "package-search-index.zip",
                 "tag-search-index.zip");
@@ -62,6 +63,7 @@ public class TestSearch extends JavadocTester {
         checkSearchOutput(true);
         checkSingleIndex(true);
         checkJqueryAndImageFiles(true);
+        checkSearchJS();
         checkFiles(true,
                 "member-search-index.zip",
                 "package-search-index.zip",
@@ -78,6 +80,7 @@ public class TestSearch extends JavadocTester {
         checkSearchOutput(true);
         checkSingleIndex(true);
         checkJqueryAndImageFiles(true);
+        checkSearchJS();
         checkFiles(true,
                 "member-search-index.zip",
                 "package-search-index.zip",
@@ -110,6 +113,7 @@ public class TestSearch extends JavadocTester {
         checkSearchOutput(true);
         checkSingleIndex(true);
         checkJqueryAndImageFiles(true);
+        checkSearchJS();
         checkFiles(true,
                 "member-search-index.zip",
                 "package-search-index.zip",
@@ -142,6 +146,7 @@ public class TestSearch extends JavadocTester {
         checkSearchOutput(true);
         checkIndexNoComment();
         checkJqueryAndImageFiles(true);
+        checkSearchJS();
         checkFiles(true,
                 "member-search-index.zip",
                 "package-search-index.zip",
@@ -158,6 +163,7 @@ public class TestSearch extends JavadocTester {
         checkSearchOutput(true);
         checkIndexNoDeprecated();
         checkJqueryAndImageFiles(true);
+        checkSearchJS();
         checkFiles(true,
                 "member-search-index.zip",
                 "package-search-index.zip",
@@ -174,6 +180,7 @@ public class TestSearch extends JavadocTester {
         checkSearchOutput(true);
         checkSplitIndex();
         checkJqueryAndImageFiles(true);
+        checkSearchJS();
         checkFiles(true,
                 "member-search-index.zip",
                 "package-search-index.zip",
@@ -189,6 +196,7 @@ public class TestSearch extends JavadocTester {
         checkSearchOutput(true);
         checkJavaFXOutput();
         checkJqueryAndImageFiles(true);
+        checkSearchJS();
         checkFiles(false,
                 "tag-search-index.zip");
         checkFiles(true,
@@ -419,5 +427,12 @@ public class TestSearch extends JavadocTester {
                 "jquery/images/ui-bg_flat_75_ffffff_40x100.png",
                 "resources/x.png",
                 "resources/glass.png");
+    }
+
+    void checkSearchJS() {
+        checkOutput("search.js", true,
+                "camelCaseRegexp = ($.ui.autocomplete.escapeRegex(request.term)).split(/(?=[A-Z])/).join(\"([a-z0-9_$]*?)\");",
+                "var camelCaseMatcher = new RegExp(\"^\" + camelCaseRegexp);",
+                "camelCaseMatcher.test(item.l)");
     }
 }

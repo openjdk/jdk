@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,6 +31,7 @@ import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.xml.transform.dom.DOMSource;
 
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
@@ -1533,15 +1534,24 @@ public final class BasisLibrary {
     }
 
     /**
-     * This function is used in the execution of xsl:element
+     * These functions are used in the execution of xsl:element to generate
+     * and reset namespace prefix index local to current transformation process
      */
-    private static int prefixIndex = 0;
-
     public static String generatePrefix() {
-        synchronized (BasisLibrary.class) {
-            return ("ns" + prefixIndex++);
-        }
+        return ("ns" + threadLocalPrefixIndex.get().getAndIncrement());
     }
+
+    public static void resetPrefixIndex() {
+        threadLocalPrefixIndex.get().set(0);
+    }
+
+    private static final ThreadLocal<AtomicInteger> threadLocalPrefixIndex =
+        new ThreadLocal<AtomicInteger>() {
+            @Override
+            protected AtomicInteger initialValue() {
+                return new AtomicInteger();
+            }
+        };
 
     public static final String RUN_TIME_INTERNAL_ERR =
                                            "RUN_TIME_INTERNAL_ERR";

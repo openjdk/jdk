@@ -31,6 +31,7 @@ import jdk.jshell.SourceCodeAnalysis.Suggestion;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Method;
@@ -61,6 +62,8 @@ import jdk.internal.jline.console.history.History;
 import jdk.internal.jline.console.history.MemoryHistory;
 import jdk.internal.jline.extra.EditingHistory;
 import jdk.internal.jshell.tool.StopDetectingInputStream.State;
+import jdk.internal.misc.Signal;
+import jdk.internal.misc.Signal.Handler;
 
 class ConsoleIOContext extends IOContext {
 
@@ -169,6 +172,21 @@ class ConsoleIOContext extends IOContext {
             for (String shortcuts : SHORTCUT_FIXES) {
                 bind(shortcuts + computer.shortcut, (ActionListener) evt -> fixes(computer));
             }
+        }
+        try {
+            Signal.handle(new Signal("CONT"), new Handler() {
+                @Override public void handle(Signal sig) {
+                    try {
+                        in.getTerminal().reset();
+                        in.redrawLine();
+                        in.flush();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            });
+        } catch (IllegalArgumentException ignored) {
+            //the CONT signal does not exist on this platform
         }
     }
 
@@ -390,7 +408,7 @@ class ConsoleIOContext extends IOContext {
     private int inputBytesPointer;
 
     @Override
-    public synchronized int readUserInput() {
+    public synchronized int readUserInput() throws IOException {
         while (inputBytes == null || inputBytes.length <= inputBytesPointer) {
             boolean prevHandleUserInterrupt = in.getHandleUserInterrupt();
             History prevHistory = in.getHistory();
@@ -401,12 +419,8 @@ class ConsoleIOContext extends IOContext {
                 in.setHistory(userInputHistory);
                 inputBytes = (in.readLine("") + System.getProperty("line.separator")).getBytes();
                 inputBytesPointer = 0;
-            } catch (IOException ex) {
-                ex.printStackTrace();
-                return -1;
             } catch (UserInterruptException ex) {
-                repl.state.stop();
-                return -1;
+                throw new InterruptedIOException();
             } finally {
                 in.setHistory(prevHistory);
                 in.setHandleUserInterrupt(prevHandleUserInterrupt);

@@ -109,9 +109,15 @@ CheckFiles BadZip/Lib.zip BadJar/Lib.jar BadSrc/Lib.java
 echo 'public class Main {public static void main(String[] a) {Lib.f();}}' > Main.java
 
 # Create a jar file that is good enough to put on the javac boot class path (i.e. contains java.lang.**)
-Sys "$jimage" extract --dir modules ${TESTJAVA}/lib/modules
-Sys "$jar" cf java-lang.jar -C modules/java.base java/lang
-Sys rm -rf modules
+if [ -r ${TESTJAVA}/lib/modules ]; then
+  Sys "$jimage" extract --dir modules ${TESTJAVA}/lib/modules
+  Sys "$jar" cf java-lang.jar -C modules/java.base java/lang
+  Sys rm -rf modules
+elif [ -d ${TESTJAVA}/modules ]; then
+  Sys "$jar" cf java-lang.jar -C ${TESTJAVA}/modules/java.base java/lang
+else
+  echo 'cannot create java-lang.jar' ; exit 1
+fi
 
 #----------------------------------------------------------------
 # Verify that javac class search order is the same as java's

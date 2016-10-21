@@ -25,7 +25,7 @@
  * @test
  * @bug 8038455
  * @summary Verify that annotation processor can overwrite source and class files it generated
- *          during previous compilations, and that the Symbols are updated appropriatelly.
+ *          during previous compilations, and that the Symbols are updated appropriately.
  * @library /tools/lib /tools/javac/lib/
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main

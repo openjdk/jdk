@@ -37,5 +37,11 @@ public interface MessageHandler {
 
     void fluffmsg(String messageKey, Object... args);
 
+    void hard(String format, Object... args);
+
+    void hardmsg(String messageKey, Object... args);
+
     void errormsg(String messageKey, Object... args);
+
+    boolean showFluff();
 }

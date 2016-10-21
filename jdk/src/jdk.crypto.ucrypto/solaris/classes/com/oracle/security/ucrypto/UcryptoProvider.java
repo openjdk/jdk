@@ -50,12 +50,13 @@ public final class UcryptoProvider extends Provider {
         try {
             // cannot use LoadLibraryAction because that would make the native
             // library available to the bootclassloader, but we run in the
-            // extension classloader.
-            String osname = System.getProperty("os.name");
-            if (osname.startsWith("SunOS")) {
-                provProp = AccessController.doPrivileged
-                    (new PrivilegedAction<HashMap<String, ServiceDesc>>() {
-                        public HashMap<String, ServiceDesc> run() {
+            // platform classloader.
+            provProp = AccessController.doPrivileged
+                (new PrivilegedAction<>() {
+                    @Override
+                    public HashMap<String, ServiceDesc> run() {
+                        String osname = System.getProperty("os.name");
+                        if (osname.startsWith("SunOS")) {
                             try {
                                 DEBUG = Boolean.parseBoolean(System.getProperty("com.oracle.security.ucrypto.debug"));
                                 String javaHome = System.getProperty("java.home");
@@ -66,14 +67,13 @@ public final class UcryptoProvider extends Provider {
                                 return new HashMap<>();
                             } catch (Error err) {
                                 if (DEBUG) err.printStackTrace();
-                                return null;
                             } catch (SecurityException se) {
                                 if (DEBUG) se.printStackTrace();
-                                return null;
                             }
                         }
-                    });
-            }
+                        return null;
+                    }
+                });
             if (provProp != null) {
                 boolean[] result = loadLibraries();
                 if (result.length == 2) {

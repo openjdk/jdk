@@ -859,6 +859,10 @@ void* DAUDIO_Open(INT32 mixerIndex, INT32 deviceID, int isSource,
         ERROR1("DAUDIO_Open: ERROR: cannot open the device with encoding=%d!\n", encoding);
         return NULL;
     }
+    if (channels <= 0) {
+        ERROR1("DAUDIO_Open: ERROR: Invalid number of channels=%d!\n", channels);
+        return NULL;
+    }
     if (sampleSizeInBits > 8 &&
 #ifdef _LITTLE_ENDIAN
         isBigEndian

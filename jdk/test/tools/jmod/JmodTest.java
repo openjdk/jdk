@@ -24,8 +24,8 @@
 /*
  * @test
  * @library /lib/testlibrary
- * @modules jdk.jlink/jdk.tools.jmod
- *          jdk.compiler
+ * @modules jdk.compiler
+ *          jdk.jlink
  * @build jdk.testlibrary.FileUtils CompilerUtils
  * @run testng JmodTest
  * @summary Basic test for jmod
@@ -38,6 +38,7 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import jdk.testlibrary.FileUtils;
 import org.testng.annotations.BeforeTest;
@@ -50,6 +51,11 @@ import static java.util.stream.Collectors.toSet;
 import static org.testng.Assert.*;
 
 public class JmodTest {
+
+    static final ToolProvider JMOD_TOOL = ToolProvider.findFirst("jmod")
+        .orElseThrow(() ->
+            new RuntimeException("jmod tool not found")
+        );
 
     static final String TEST_SRC = System.getProperty("test.src", ".");
     static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
@@ -479,7 +485,7 @@ public class JmodTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream ps = new PrintStream(baos);
         System.out.println("jmod " + Arrays.asList(args));
-        int ec = jdk.tools.jmod.Main.run(args, ps);
+        int ec = JMOD_TOOL.run(ps, ps, args);
         return new JmodResult(ec, new String(baos.toByteArray(), UTF_8));
     }
 

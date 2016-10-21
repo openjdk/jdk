@@ -31,33 +31,23 @@
 
 package com.sun.corba.se.impl.io;
 
-import org.omg.CORBA.INTERNAL;
 import org.omg.CORBA.portable.OutputStream;
 
 import java.security.AccessController ;
 import java.security.PrivilegedAction ;
 
 import java.io.IOException;
-import java.io.DataOutputStream;
-import java.io.Serializable;
 import java.io.InvalidClassException;
-import java.io.StreamCorruptedException;
 import java.io.Externalizable;
-import java.io.ObjectStreamException;
 import java.io.NotSerializableException;
 import java.io.NotActiveException;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Field;
-
-import java.util.Stack;
 
 import javax.rmi.CORBA.Util;
-import javax.rmi.CORBA.ValueHandlerMultiFormat;
 
 import sun.corba.Bridge ;
 
-import com.sun.corba.se.impl.io.ObjectStreamClass;
 import com.sun.corba.se.impl.util.Utility;
 import com.sun.corba.se.impl.util.RepositoryId;
 
@@ -621,7 +611,7 @@ public class IIOPOutputStream
             writeObjectState.enterWriteObject(this);
 
             // writeObject(obj, c, this);
-            osc.writeObjectMethod.invoke( obj, writeObjectArgList ) ;
+            osc.invokeWriteObject( obj, this ) ;
 
             writeObjectState.exitWriteObject(this);
 
@@ -636,8 +626,6 @@ public class IIOPOutputStream
             else
                 // XXX I18N, Logging needed.
                 throw new Error("invokeObjectWriter internal error",e);
-        } catch (IllegalAccessException e) {
-            // cannot happen
         }
     }
 
@@ -761,59 +749,52 @@ public class IIOPOutputStream
      */
     private void outputClassFields(Object o, Class cl,
                                    ObjectStreamField[] fields)
-        throws IOException, InvalidClassException {
+        throws IOException {
 
         for (int i = 0; i < fields.length; i++) {
             if (fields[i].getField() == null)
-                // XXX I18N, Logging needed.
                 throw new InvalidClassException(cl.getName(),
                                                 "Nonexistent field " + fields[i].getName());
-
-            try {
-                switch (fields[i].getTypeCode()) {
-                    case 'B':
-                        byte byteValue = fields[i].getField().getByte( o ) ;
-                        orbStream.write_octet(byteValue);
-                        break;
-                    case 'C':
-                        char charValue = fields[i].getField().getChar( o ) ;
-                        orbStream.write_wchar(charValue);
-                        break;
-                    case 'F':
-                        float floatValue = fields[i].getField().getFloat( o ) ;
-                        orbStream.write_float(floatValue);
-                        break;
-                    case 'D' :
-                        double doubleValue = fields[i].getField().getDouble( o ) ;
-                        orbStream.write_double(doubleValue);
-                        break;
-                    case 'I':
-                        int intValue = fields[i].getField().getInt( o ) ;
-                        orbStream.write_long(intValue);
-                        break;
-                    case 'J':
-                        long longValue = fields[i].getField().getLong( o ) ;
-                        orbStream.write_longlong(longValue);
-                        break;
-                    case 'S':
-                        short shortValue = fields[i].getField().getShort( o ) ;
-                        orbStream.write_short(shortValue);
-                        break;
-                    case 'Z':
-                        boolean booleanValue = fields[i].getField().getBoolean( o ) ;
-                        orbStream.write_boolean(booleanValue);
-                        break;
-                    case '[':
-                    case 'L':
-                        Object objectValue = fields[i].getField().get( o ) ;
-                        writeObjectField(fields[i], objectValue);
-                        break;
-                    default:
-                        // XXX I18N, Logging needed.
-                        throw new InvalidClassException(cl.getName());
-                }
-            } catch (IllegalAccessException exc) {
-                throw wrapper.illegalFieldAccess( exc, fields[i].getName() ) ;
+            switch (fields[i].getTypeCode()) {
+                case 'B':
+                    byte byteValue = bridge.getByte(o, fields[i].getFieldID()) ;
+                    orbStream.write_octet(byteValue);
+                    break;
+                case 'C':
+                    char charValue = bridge.getChar(o, fields[i].getFieldID()) ;
+                    orbStream.write_wchar(charValue);
+                    break;
+                case 'F':
+                    float floatValue = bridge.getFloat(o, fields[i].getFieldID()) ;
+                    orbStream.write_float(floatValue);
+                    break;
+                case 'D' :
+                    double doubleValue = bridge.getDouble(o, fields[i].getFieldID()) ;
+                    orbStream.write_double(doubleValue);
+                    break;
+                case 'I':
+                    int intValue = bridge.getInt(o, fields[i].getFieldID()) ;
+                    orbStream.write_long(intValue);
+                    break;
+                case 'J':
+                    long longValue = bridge.getLong(o, fields[i].getFieldID()) ;
+                    orbStream.write_longlong(longValue);
+                    break;
+                case 'S':
+                    short shortValue = bridge.getShort(o, fields[i].getFieldID()) ;
+                    orbStream.write_short(shortValue);
+                    break;
+                case 'Z':
+                    boolean booleanValue = bridge.getBoolean(o, fields[i].getFieldID()) ;
+                    orbStream.write_boolean(booleanValue);
+                    break;
+                case '[':
+                case 'L':
+                    Object objectValue = bridge.getObject(o, fields[i].getFieldID()) ;
+                    writeObjectField(fields[i], objectValue);
+                    break;
+                default:
+                    throw new InvalidClassException(cl.getName());
             }
         }
     }

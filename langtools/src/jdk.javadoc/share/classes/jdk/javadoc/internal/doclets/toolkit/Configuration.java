@@ -308,9 +308,7 @@ public abstract class Configuration {
     public CommentUtils cmtUtils;
 
     /**
-     * A sorted set of packages specified on the command-line merged with a
-     * collection of packages that contain the classes specified on the
-     * command-line.
+     * A sorted set of included packages.
      */
     public SortedSet<PackageElement> packages = null;
 
@@ -399,10 +397,8 @@ public abstract class Configuration {
 
     private void initPackages() {
         packages = new TreeSet<>(utils.makePackageComparator());
-        packages.addAll(getSpecifiedPackages());
-        for (TypeElement aClass : getSpecifiedClasses()) {
-            packages.add(utils.containingPackage(aClass));
-        }
+        // add all the included packages
+        packages.addAll(docEnv.getIncludedPackageElements());
     }
 
     public Set<Doclet.Option> getSupportedOptions() {
@@ -647,7 +643,7 @@ public abstract class Configuration {
         if (docencoding == null) {
             docencoding = encoding;
         }
-        typeElementCatalog = new TypeElementCatalog(getSpecifiedClasses(), this);
+        typeElementCatalog = new TypeElementCatalog(docEnv.getIncludedTypeElements(), this);
         initTagletManager(customTagStrs);
         groups.stream().forEach((grp) -> {
             group.checkPackageGroups(grp.value1, grp.value2);
