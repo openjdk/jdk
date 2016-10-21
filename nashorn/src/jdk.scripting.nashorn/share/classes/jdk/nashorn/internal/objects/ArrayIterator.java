@@ -47,11 +47,23 @@ public class ArrayIterator extends AbstractIterator {
     private final Global global;
 
 
-    ArrayIterator(final Object iteratedObject, final IterationKind iterationKind, final Global global) {
+    private ArrayIterator(final Object iteratedObject, final IterationKind iterationKind, final Global global) {
         super(global.getArrayIteratorPrototype(), $nasgenmap$);
         this.iteratedObject = iteratedObject instanceof ScriptObject ? (ScriptObject) iteratedObject : null;
         this.iterationKind = iterationKind;
         this.global = global;
+    }
+
+    static ArrayIterator newArrayValueIterator(final Object iteratedObject) {
+        return new ArrayIterator(Global.toObject(iteratedObject), IterationKind.VALUE, Global.instance());
+    }
+
+    static ArrayIterator newArrayKeyIterator(final Object iteratedObject) {
+        return new ArrayIterator(Global.toObject(iteratedObject), IterationKind.KEY, Global.instance());
+    }
+
+    static ArrayIterator newArrayKeyValueIterator(final Object iteratedObject) {
+        return new ArrayIterator(Global.toObject(iteratedObject), IterationKind.KEY_VALUE, Global.instance());
     }
 
     /**
