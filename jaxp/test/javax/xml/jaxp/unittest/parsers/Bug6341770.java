@@ -28,6 +28,7 @@ import static jaxp.library.JAXPTestUtilities.tryRunWithTmpPermission;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.nio.file.Paths;
 import java.util.PropertyPermission;
 
 import javax.xml.parsers.SAXParserFactory;
@@ -53,8 +54,14 @@ public class Bug6341770 {
     // naming a file "aux" would fail on windows.
     @Test
     public void testNonAsciiURI() {
+        if (!isNonAsciiSupported()) {
+            // @bug 8167478
+            // if it doesn't support non-ascii, the following test is invalid even if test is passed.
+            System.out.println("Current environment doesn't support non-ascii, exit the test.");
+            return;
+        }
         try {
-            File dir = new File("sko\u0159ice");
+            File dir = new File(ALPHA);
             dir.delete();
             dir.mkdir();
             File main = new File(dir, "main.xml");
@@ -82,4 +89,18 @@ public class Bug6341770 {
         }
         System.out.println("OK.");
     }
+
+    private boolean isNonAsciiSupported() {
+        // Use Paths.get method to test if the path is valid in current environment
+        try {
+            Paths.get(ALPHA);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    // Select alpha because it's a very common non-ascii character in different charsets.
+    // That this test can run in as many as possible environments if it's possible.
+    private static final String ALPHA = "\u03b1";
 }

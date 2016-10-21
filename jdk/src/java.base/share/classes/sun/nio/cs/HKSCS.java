@@ -432,6 +432,8 @@ public class HKSCS {
                     continue;
                 for (int i = 0; i < s.length(); i++) {
                     char c = s.charAt(i);
+                    if (c == UNMAPPABLE_DECODING)
+                        continue;
                     int hi = c >> 8;
                     if (c2b[hi] == C2B_UNMAPPABLE) {
                         c2b[hi] = new char[0x100];

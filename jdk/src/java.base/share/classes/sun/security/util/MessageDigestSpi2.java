@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,22 @@
  * questions.
  */
 
-package jdk.dynalink.test;
+package sun.security.util;
 
-import jdk.dynalink.Operation;
+import java.security.InvalidKeyException;
+import javax.crypto.SecretKey;
 
-public final class TestLinkerOperation implements Operation {
+/**
+ * Special interface for additional MessageDigestSpi method(s).
+ */
+public interface MessageDigestSpi2 {
+
+    /**
+     * Updates the digest using the specified key.
+     * This is used for SSL 3.0 only, we may deprecate and remove the support
+     * of this in the future
+     *
+     * @param key  the key whose value is to be digested.
+     */
+    void engineUpdate(SecretKey key) throws InvalidKeyException;
 }
