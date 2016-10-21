@@ -224,30 +224,6 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return progress;
   }
 
-  // transform:
-  // (CastII (AddI x const)) -> (AddI (CastII x) const)
-  // So the AddI has a chance to be optimized out
-  if (in(1)->Opcode() == Op_AddI) {
-    Node* in2 = in(1)->in(2);
-    const TypeInt* in2_t = phase->type(in2)->isa_int();
-    if (in2_t != NULL && in2_t->singleton()) {
-      int in2_const = in2_t->_lo;
-      const TypeInt* current_type = _type->is_int();
-      jlong new_lo_long = ((jlong)current_type->_lo) - in2_const;
-      jlong new_hi_long = ((jlong)current_type->_hi) - in2_const;
-      int new_lo = (int)new_lo_long;
-      int new_hi = (int)new_hi_long;
-      if (((jlong)new_lo) == new_lo_long && ((jlong)new_hi) == new_hi_long) {
-        Node* in1 = in(1)->in(1);
-        CastIINode* new_cast = (CastIINode*)clone();
-        AddINode* new_add = (AddINode*)in(1)->clone();
-        new_cast->set_type(TypeInt::make(new_lo, new_hi, current_type->_widen));
-        new_cast->set_req(1, in1);
-        new_add->set_req(1, phase->transform(new_cast));
-        return new_add;
-      }
-    }
-  }
   // Similar to ConvI2LNode::Ideal() for the same reasons
   if (can_reshape && !phase->C->major_progress()) {
     const TypeInt* this_type = this->type()->is_int();
