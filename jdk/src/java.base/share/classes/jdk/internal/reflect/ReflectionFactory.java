@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,25 @@
 
 package jdk.internal.reflect;
 
+import java.io.Externalizable;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
+import java.io.OptionalDataException;
+import java.io.Serializable;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Executable;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.security.Permission;
 import java.security.PrivilegedAction;
+import java.util.Objects;
 import java.util.Properties;
+
 import sun.reflect.misc.ReflectUtil;
 import sun.security.action.GetPropertyAction;
 
@@ -56,6 +67,9 @@ public class ReflectionFactory {
     private static final ReflectionFactory soleInstance = new ReflectionFactory();
     // Provides access to package-private mechanisms in java.lang.reflect
     private static volatile LangReflectAccess langReflectAccess;
+
+    /* Method for static class initializer <clinit>, or null */
+    private static volatile Method hasStaticInitializerMethod;
 
     //
     // "Inflation" mechanism. Loading bytecodes to implement
@@ -337,16 +351,41 @@ public class ReflectionFactory {
     //
     //
 
-    public Constructor<?> newConstructorForSerialization
-        (Class<?> classToInstantiate, Constructor<?> constructorToCall)
-    {
-        // Fast path
-        if (constructorToCall.getDeclaringClass() == classToInstantiate) {
-            return constructorToCall;
+    public final Constructor<?> newConstructorForExternalization(Class<?> cl) {
+        if (!Externalizable.class.isAssignableFrom(cl)) {
+            return null;
+        }
+        try {
+            Constructor<?> cons = cl.getConstructor();
+            cons.setAccessible(true);
+            return cons;
+        } catch (NoSuchMethodException ex) {
+            return null;
+        }
+    }
+
+    public final Constructor<?> newConstructorForSerialization(Class<?> cl) {
+        Class<?> initCl = cl;
+        while (Serializable.class.isAssignableFrom(initCl)) {
+            if ((initCl = initCl.getSuperclass()) == null) {
+                return null;
+            }
+        }
+        Constructor<?> constructorToCall;
+        try {
+            constructorToCall = initCl.getDeclaredConstructor();
+            int mods = constructorToCall.getModifiers();
+            if ((mods & Modifier.PRIVATE) != 0 ||
+                    ((mods & (Modifier.PUBLIC | Modifier.PROTECTED)) == 0 &&
+                            !packageEquals(cl, initCl))) {
+                return null;
+            }
+        } catch (NoSuchMethodException ex) {
+            return null;
         }
 
         ConstructorAccessor acc = new MethodAccessorGenerator().
-            generateSerializationConstructor(classToInstantiate,
+            generateSerializationConstructor(cl,
                                              constructorToCall.getParameterTypes(),
                                              constructorToCall.getExceptionTypes(),
                                              constructorToCall.getModifiers(),
@@ -364,7 +403,149 @@ public class ReflectionFactory {
                                           langReflectAccess().
                                           getConstructorParameterAnnotations(constructorToCall));
         setConstructorAccessor(c, acc);
+        c.setAccessible(true);
         return c;
+    }
+
+    public final MethodHandle readObjectForSerialization(Class<?> cl) {
+        return findReadWriteObjectForSerialization(cl, "readObject", ObjectInputStream.class);
+    }
+
+    public final MethodHandle readObjectNoDataForSerialization(Class<?> cl) {
+        return findReadWriteObjectForSerialization(cl, "readObjectNoData", ObjectInputStream.class);
+    }
+
+    public final MethodHandle writeObjectForSerialization(Class<?> cl) {
+        return findReadWriteObjectForSerialization(cl, "writeObject", ObjectOutputStream.class);
+    }
+
+    private final MethodHandle findReadWriteObjectForSerialization(Class<?> cl,
+                                                                   String methodName,
+                                                                   Class<?> streamClass) {
+        if (!Serializable.class.isAssignableFrom(cl)) {
+            return null;
+        }
+
+        try {
+            Method meth = cl.getDeclaredMethod(methodName, streamClass);
+            int mods = meth.getModifiers();
+            if (meth.getReturnType() != Void.TYPE ||
+                    Modifier.isStatic(mods) ||
+                    !Modifier.isPrivate(mods)) {
+                return null;
+            }
+            meth.setAccessible(true);
+            return MethodHandles.lookup().unreflect(meth);
+        } catch (NoSuchMethodException ex) {
+            return null;
+        } catch (IllegalAccessException ex1) {
+            throw new InternalError("Error", ex1);
+        }
+    }
+
+    /**
+     * Returns a MethodHandle for {@code writeReplace} on the serializable class
+     * or null if no match found.
+     * @param cl a serializable class
+     * @returnss the {@code writeReplace} MethodHandle or {@code null} if not found
+     */
+    public final MethodHandle writeReplaceForSerialization(Class<?> cl) {
+        return getReplaceResolveForSerialization(cl, "writeReplace");
+    }
+
+    /**
+     * Returns a MethodHandle for {@code readResolve} on the serializable class
+     * or null if no match found.
+     * @param cl a serializable class
+     * @returns the {@code writeReplace} MethodHandle or {@code null} if not found
+     */
+    public final MethodHandle readResolveForSerialization(Class<?> cl) {
+        return getReplaceResolveForSerialization(cl, "readResolve");
+    }
+
+    /**
+     * Lookup readResolve or writeReplace on a class with specified
+     * signature constraints.
+     * @param cl a serializable class
+     * @param methodName the method name to find
+     * @returns a MethodHandle for the method or {@code null} if not found or
+     *       has the wrong signature.
+     */
+    private MethodHandle getReplaceResolveForSerialization(Class<?> cl,
+                                                           String methodName) {
+        if (!Serializable.class.isAssignableFrom(cl)) {
+            return null;
+        }
+
+        Class<?> defCl = cl;
+        while (defCl != null) {
+            try {
+                Method m = defCl.getDeclaredMethod(methodName);
+                if (m.getReturnType() != Object.class) {
+                    return null;
+                }
+                int mods = m.getModifiers();
+                if (Modifier.isStatic(mods) | Modifier.isAbstract(mods)) {
+                    return null;
+                } else if (Modifier.isPublic(mods) | Modifier.isProtected(mods)) {
+                    // fall through
+                } else if (Modifier.isPrivate(mods) && (cl != defCl)) {
+                    return null;
+                } else if (!packageEquals(cl, defCl)) {
+                    return null;
+                }
+                try {
+                    // Normal return
+                    m.setAccessible(true);
+                    return MethodHandles.lookup().unreflect(m);
+                } catch (IllegalAccessException ex0) {
+                    // setAccessible should prevent IAE
+                    throw new InternalError("Error", ex0);
+                }
+            } catch (NoSuchMethodException ex) {
+                defCl = defCl.getSuperclass();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns true if the given class defines a static initializer method,
+     * false otherwise.
+     */
+    public final boolean hasStaticInitializerForSerialization(Class<?> cl) {
+        Method m = hasStaticInitializerMethod;
+        if (m == null) {
+            try {
+                m = ObjectStreamClass.class.getDeclaredMethod("hasStaticInitializer",
+                        new Class<?>[]{Class.class});
+                m.setAccessible(true);
+                hasStaticInitializerMethod = m;
+            } catch (NoSuchMethodException ex) {
+                throw new InternalError("No such method hasStaticInitializer on "
+                        + ObjectStreamClass.class, ex);
+            }
+        }
+        try {
+            return (Boolean) m.invoke(null, cl);
+        } catch (InvocationTargetException | IllegalAccessException ex) {
+            throw new InternalError("Exception invoking hasStaticInitializer", ex);
+        }
+    }
+
+    /**
+     * Return the accessible constructor for OptionalDataException signaling eof.
+     * @returns the eof constructor for OptionalDataException
+     */
+    public final Constructor<OptionalDataException> newOptionalDataExceptionForSerialization() {
+        try {
+            Constructor<OptionalDataException> boolCtor =
+                    OptionalDataException.class.getDeclaredConstructor(Boolean.TYPE);
+            boolCtor.setAccessible(true);
+            return boolCtor;
+        } catch (NoSuchMethodException ex) {
+            throw new InternalError("Constructor not found", ex);
+        }
     }
 
     //--------------------------------------------------------------------------
@@ -426,4 +607,17 @@ public class ReflectionFactory {
         }
         return langReflectAccess;
     }
+
+    /**
+     * Returns true if classes are defined in the classloader and same package, false
+     * otherwise.
+     * @param cl1 a class
+     * @param cl2 another class
+     * @returns true if the two classes are in the same classloader and package
+     */
+    private static boolean packageEquals(Class<?> cl1, Class<?> cl2) {
+        return cl1.getClassLoader() == cl2.getClassLoader() &&
+                Objects.equals(cl1.getPackage(), cl2.getPackage());
+    }
+
 }

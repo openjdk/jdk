@@ -4,7 +4,10 @@ grant codeBase "jrt:/jdk.crypto.ucrypto" {
     permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
     permission java.lang.RuntimePermission "loadLibrary.j2ucrypto";
     // need "com.oracle.security.ucrypto.debug" for debugging
-    permission java.util.PropertyPermission "*", "read";
+    permission java.util.PropertyPermission "com.oracle.security.ucrypto.debug", "read";
+    permission java.util.PropertyPermission "file.separator", "read";
+    permission java.util.PropertyPermission "java.home", "read";
+    permission java.util.PropertyPermission "os.name", "read";
     permission java.security.SecurityPermission
                    "putProviderProperty.OracleUcrypto";
     permission java.security.SecurityPermission

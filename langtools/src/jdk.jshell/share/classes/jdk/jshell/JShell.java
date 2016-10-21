@@ -28,6 +28,7 @@ package jdk.jshell;
 import jdk.jshell.spi.ExecutionControl;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.PrintStream;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -58,7 +59,7 @@ import static jdk.jshell.Util.expunge;
  * API.  A {@code JShell} instance holds the evolving compilation and
  * execution state.  The state is changed with the instance methods
  * {@link jdk.jshell.JShell#eval(java.lang.String) eval(String)},
- * {@link jdk.jshell.JShell#drop(jdk.jshell.PersistentSnippet) drop(PersistentSnippet)} and
+ * {@link jdk.jshell.JShell#drop(jdk.jshell.Snippet) drop(Snippet)} and
  * {@link jdk.jshell.JShell#addToClasspath(java.lang.String) addToClasspath(String)}.
  * The majority of methods query the state.
  * A {@code JShell} instance also allows registering for events with
@@ -166,6 +167,10 @@ public class JShell implements AutoCloseable {
          * applications that use {@code System.in} for snippet or other
          * user input cannot use {@code System.in} as the input stream for
          * the remote process.
+         * <p>
+         * The {@code read} method of the {@code InputStream} may throw the {@link InterruptedIOException}
+         * to signal the user canceled the input. The currently running snippet will be automatically
+         * {@link JShell#stop() stopped}.
          * <p>
          * The default, if this is not set, is to provide an empty input stream
          * -- {@code new ByteArrayInputStream(new byte[0])}.
@@ -428,7 +433,12 @@ public class JShell implements AutoCloseable {
     }
 
     /**
-     * Remove a declaration from the state.
+     * Remove a declaration from the state.  That is, if the snippet is an
+     * {@linkplain jdk.jshell.Snippet.Status#isActive() active}
+     * {@linkplain jdk.jshell.PersistentSnippet persistent} snippet, remove the
+     * snippet and update the JShell evaluation state accordingly.
+     * For all active snippets, change the {@linkplain #status status} to
+     * {@link jdk.jshell.Snippet.Status#DROPPED DROPPED}.
      * @param snippet The snippet to remove
      * @return The list of events from updating declarations dependent on the
      * dropped snippet.
@@ -436,7 +446,7 @@ public class JShell implements AutoCloseable {
      * @throws IllegalArgumentException if the snippet is not associated with
      * this {@code JShell} instance.
      */
-    public List<SnippetEvent> drop(PersistentSnippet snippet) throws IllegalStateException {
+    public List<SnippetEvent> drop(Snippet snippet) throws IllegalStateException {
         checkIfAlive();
         checkValidSnippet(snippet);
         List<SnippetEvent> events = eval.drop(snippet);

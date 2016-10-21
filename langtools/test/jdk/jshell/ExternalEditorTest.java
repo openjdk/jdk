@@ -193,7 +193,6 @@ public class ExternalEditorTest extends EditorTestBase {
     @Test
     public void setUnknownEditor() {
         test(
-                a -> assertCommand(a, "/set editor", "|  The '/set editor' command requires a path argument"),
                 a -> assertCommand(a, "/set editor UNKNOWN", "|  Editor set to: UNKNOWN"),
                 a -> assertCommand(a, "int a;", null),
                 a -> assertCommandOutputStartsWith(a, "/ed 1",

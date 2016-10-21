@@ -587,18 +587,28 @@ public class ElementsTable {
     }
 
     private Set<PackageElement> computeModulePackages() throws ToolException {
-        final AccessKind accessValue = accessFilter.getAccessValue(ElementKind.PACKAGE);
+        AccessKind accessValue = accessFilter.getAccessValue(ElementKind.PACKAGE);
         final boolean documentAllModulePackages = (accessValue == AccessKind.PACKAGE ||
                 accessValue == AccessKind.PRIVATE);
 
+        accessValue = accessFilter.getAccessValue(ElementKind.MODULE);
+        final boolean moduleDetailedMode = (accessValue == AccessKind.PACKAGE ||
+                accessValue == AccessKind.PRIVATE);
         Set<PackageElement> expandedModulePackages = new LinkedHashSet<>();
 
         for (ModuleElement mdle : specifiedModuleElements) {
-            // add all exported packages belonging to a specified module
-            if (specifiedModuleElements.contains(mdle)) {
+            if (documentAllModulePackages) { // include all packages
+                List<PackageElement> packages = ElementFilter.packagesIn(mdle.getEnclosedElements());
+                expandedModulePackages.addAll(packages);
+                expandedModulePackages.addAll(getAllModulePackages(mdle));
+            } else { // selectively include required packages
                 List<ExportsDirective> exports = ElementFilter.exportsIn(mdle.getDirectives());
                 for (ExportsDirective export : exports) {
-                    expandedModulePackages.add(export.getPackage());
+                    // add if fully exported or add qualified exports only if desired
+                    if (export.getTargetModules() == null
+                            || documentAllModulePackages || moduleDetailedMode) {
+                        expandedModulePackages.add(export.getPackage());
+                    }
                 }
             }
 
@@ -612,27 +622,6 @@ public class ElementsTable {
                         expandedModulePackages.add(pkg);
                     }
                 }
-            }
-
-            if (!documentAllModulePackages) {
-                List<ExportsDirective> exports = ElementFilter.exportsIn(mdle.getDirectives());
-                // check exported packages
-                for (ExportsDirective export : exports) {
-                    List<? extends ModuleElement> targetModules = export.getTargetModules();
-                    if (targetModules == null) { // no qualified exports, add 'em all
-                        expandedModulePackages.add(export.getPackage());
-                    } else { // qualified export, add only if target module is being considered
-                        for (ModuleElement target : targetModules) {
-                            if (specifiedModuleElements.contains(target)) {
-                                expandedModulePackages.add(export.getPackage());
-                            }
-                        }
-                    }
-                }
-            } else { // add all exported and module private packages
-                List<PackageElement> packages = ElementFilter.packagesIn(mdle.getEnclosedElements());
-                expandedModulePackages.addAll(packages);
-                expandedModulePackages.addAll(getAllModulePackages(mdle));
             }
         }
         return expandedModulePackages;
@@ -668,8 +657,7 @@ public class ElementsTable {
             if (!mdle.isUnnamed())
                 imodules.add(mdle);
             PackageElement pkg = toolEnv.elements.getPackageOf(klass);
-            if (!pkg.isUnnamed())
-                ipackages.add(pkg);
+            ipackages.add(pkg);
             addAllClasses(iclasses, klass, true);
         });
 

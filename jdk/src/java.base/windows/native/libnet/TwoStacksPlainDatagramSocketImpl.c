@@ -830,6 +830,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
     }
     if (IS_NULL(addressObj)) {
         JNU_ThrowNullPointerException(env, "Null address in peek()");
+        return -1;
     } else {
         address = getInetAddress_addr(env, addressObj);
         /* We only handle IPv4 for now. Will support IPv6 once its in the os */
@@ -1127,11 +1128,23 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_peekData(JNIEnv *env, jobject thi
     }
     if (n == -1) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "socket closed");
+        if (packetBufferLen > MAX_BUFFER_LEN) {
+            free(fullPacket);
+        }
+        return -1;
     } else if (n == -2) {
         JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
                         "operation interrupted");
+        if (packetBufferLen > MAX_BUFFER_LEN) {
+            free(fullPacket);
+        }
+        return -1;
     } else if (n < 0) {
         NET_ThrowCurrent(env, "Datagram receive failed");
+        if (packetBufferLen > MAX_BUFFER_LEN) {
+            free(fullPacket);
+        }
+        return -1;
     } else {
         jobject packetAddress;
 
@@ -1882,7 +1895,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_socketNativeSetOption
         default :
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                 "Socket option not supported by PlainDatagramSocketImp");
-            break;
+            return;
 
     }
 
@@ -2325,6 +2338,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_setTimeToLive(JNIEnv *env, jobjec
       if (NET_SetSockOpt(fd, IPPROTO_IP, IP_MULTICAST_TTL, (char*)&ittl,
                          sizeof (ittl)) < 0) {
         NET_ThrowCurrent(env, "set IP_MULTICAST_TTL failed");
+        return;
       }
     }
 
@@ -2518,6 +2532,9 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
         } else {
             ifindex = getIndexFromIf (env, niObj);
             if (ifindex == -1) {
+                if ((*env)->ExceptionOccurred(env)) {
+                    return;
+                }
                 NET_ThrowCurrent(env, "get ifindex failed");
                 return;
             }

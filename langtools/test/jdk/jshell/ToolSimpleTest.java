@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -193,8 +193,8 @@ public class ToolSimpleTest extends ReplToolTesting {
                         "|  '/save' requires a filename argument."),
                 (a) -> assertCommand(a, "/open",
                         "|  '/open' requires a filename argument."),
-                (a) -> assertCommand(a, "/set start",
-                        "|  Specify either one option or a startup file name -- /set start")
+                (a) -> assertCommandOutputStartsWith(a, "/drop",
+                        "|  In the /drop argument, please specify an import, variable, method, or class to drop.")
         );
     }
 
@@ -217,6 +217,9 @@ public class ToolSimpleTest extends ReplToolTesting {
                 a -> dropClass(a, "/drop 3", "class A", "|  dropped class A"),
                 a -> assertImport(a, "import java.util.stream.*;", "", "java.util.stream.*"),
                 a -> dropImport(a, "/drop 4", "import java.util.stream.*", ""),
+                a -> assertCommand(a, "for (int i = 0; i < 10; ++i) {}", ""),
+                a -> assertCommand(a, "/drop 5", ""),
+                a -> assertCommand(a, "/list", ""),
                 a -> assertCommandCheckOutput(a, "/vars", assertVariables()),
                 a -> assertCommandCheckOutput(a, "/methods", assertMethods()),
                 a -> assertCommandCheckOutput(a, "/types", assertClasses()),
@@ -244,6 +247,7 @@ public class ToolSimpleTest extends ReplToolTesting {
                         assertStartsWith("|  In the /drop argument, please specify an import, variable, method, or class to drop.")),
                 a -> assertVariable(a, "int", "a"),
                 a -> assertCommand(a, "a", "a ==> 0"),
+                a -> assertCommand(a, "/drop 2", ""),
                 a -> assertCommand(a, "/drop 2",
                         "|  This command does not accept the snippet '2' : a\n" +
                         "|  See /types, /methods, /vars, or /list")

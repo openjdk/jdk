@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ final class WMenuBarPeer extends WMenuPeer implements MenuBarPeer {
 
     // MenuBarPeer implementation
 
+    final WFramePeer framePeer;
+
     @Override
     public native void addMenu(Menu m);
     @Override
@@ -44,8 +46,11 @@ final class WMenuBarPeer extends WMenuPeer implements MenuBarPeer {
     // Toolkit & peer internals
     WMenuBarPeer(MenuBar target) {
         this.target = target;
-        WFramePeer framePeer = (WFramePeer)
+        framePeer = (WFramePeer)
             WToolkit.targetToPeer(target.getParent());
+        if (framePeer != null) {
+            framePeer.addChildPeer(this);
+        }
         create(framePeer);
         // fix for 5088782: check if menu object is created successfully
         checkMenuCreation();

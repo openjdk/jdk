@@ -29,7 +29,7 @@
  *          duplicates that sometimes cause exceptions and other times do not,
  *          demonstrating identical behavior to JDK 8 jar tool.
  * @library /lib/testlibrary
- * @modules jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool
  * @build jdk.testlibrary.FileUtils
  * @run testng InputFilesTest
  */
@@ -47,12 +47,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import java.util.zip.ZipException;
 
 import jdk.testlibrary.FileUtils;
 
 public class InputFilesTest {
+    private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
+        .orElseThrow(() ->
+            new RuntimeException("jar tool not found")
+        );
+
     private final String nl = System.lineSeparator();
     private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     private final PrintStream out = new PrintStream(baos);
@@ -195,9 +201,9 @@ public class InputFilesTest {
         PrintStream err = new PrintStream(baes);
         PrintStream saveErr = System.err;
         System.setErr(err);
-        boolean ok = new sun.tools.jar.Main(out, err, "jar").run(cmdline.split(" +"));
+        int rc = JAR_TOOL.run(out, err, cmdline.split(" +"));
         System.setErr(saveErr);
-        if (!ok) {
+        if (rc != 0) {
             String s = baes.toString();
             if (s.startsWith("java.util.zip.ZipException: duplicate entry: ")) {
                 throw new ZipException(s);

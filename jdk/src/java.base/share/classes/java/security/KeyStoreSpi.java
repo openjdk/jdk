@@ -479,6 +479,10 @@ public abstract class KeyStoreSpi {
             } else if (engineIsKeyEntry(alias)) {
                 KeyStore.PasswordProtection pp =
                         (KeyStore.PasswordProtection)protParam;
+                if (pp.getProtectionAlgorithm() != null) {
+                    throw new KeyStoreException(
+                        "unsupported password protection algorithm");
+                }
                 char[] password = pp.getPassword();
 
                 Key key = engineGetKey(alias, password);
@@ -524,6 +528,10 @@ public abstract class KeyStoreSpi {
         KeyStore.PasswordProtection pProtect = null;
         if (protParam != null) {
             pProtect = (KeyStore.PasswordProtection)protParam;
+            if (pProtect.getProtectionAlgorithm() != null) {
+                throw new KeyStoreException(
+                    "unsupported password protection algorithm");
+            }
         }
 
         // set entry

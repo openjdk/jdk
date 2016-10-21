@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,24 @@
  * questions.
  */
 
-// key: compiler.warn.access.to.sensitive.member.from.serializable.element
-// options: -XDwarnOnAccessToSensitiveMembers
+// key: compiler.warn.access.to.member.from.serializable.element
+// options: -XDwarnOnAccessToMembers
 
 import java.io.Serializable;
 
 public class WarnSerializableLambda {
-    interface SAM {
-        void apply(String s);
-    }
-
     private void m1() {
-        SAM s = (SAM & Serializable) c -> {
-            packageField = "";
+        new SerializableClass() {
+            @Override
+            public void m() {
+                packageField = "";
+            }
         };
     }
 
     String packageField;
+
+    class SerializableClass implements Serializable {
+        public void m() {}
+    }
 }

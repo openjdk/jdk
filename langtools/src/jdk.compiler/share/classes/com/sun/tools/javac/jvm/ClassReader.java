@@ -1460,7 +1460,6 @@ public class ClassReader {
             ListBuffer<CompoundAnnotationProxy> proxies = new ListBuffer<>();
             for (int i = 0; i<numAttributes; i++) {
                 CompoundAnnotationProxy proxy = readCompoundAnnotation();
-
                 if (proxy.type.tsym == syms.proprietaryType.tsym)
                     sym.flags_field |= PROPRIETARY;
                 else if (proxy.type.tsym == syms.profileType.tsym) {
@@ -1479,6 +1478,16 @@ public class ClassReader {
                         target = proxy;
                     } else if (proxy.type.tsym == syms.repeatableType.tsym) {
                         repeatable = proxy;
+                    } else if (proxy.type.tsym == syms.deprecatedType.tsym) {
+                        sym.flags_field |= DEPRECATED;
+                        for (Pair<Name, Attribute> v : proxy.values) {
+                            if (v.fst == names.forRemoval && v.snd instanceof Attribute.Constant) {
+                                Attribute.Constant c = (Attribute.Constant) v.snd;
+                                if (c.type == syms.booleanType && ((Integer) c.value) != 0) {
+                                    sym.flags_field |= DEPRECATED_REMOVAL;
+                                }
+                            }
+                        }
                     }
 
                     proxies.append(proxy);

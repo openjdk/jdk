@@ -387,9 +387,9 @@ public final class ZoneOffsetTransition
      */
     List<ZoneOffset> getValidOffsets() {
         if (isGap()) {
-            return Collections.emptyList();
+            return List.of();
         }
-        return Arrays.asList(getOffsetBefore(), getOffsetAfter());
+        return List.of(getOffsetBefore(), getOffsetAfter());
     }
 
     //-----------------------------------------------------------------------

@@ -4,14 +4,17 @@
     <entry_points version="2.0" />
   </component>
   <component name="JTRegService">
-    <option name="JTRegDir" value="@IDEA_JTREG_HOME@" />
-    <option name="JTRegOptions" value='@XPATCH@' />
-    <option name="alternativeJrePath" value="@IDEA_TARGET_JDK@" />
-    <option name="alternativeJrePathEnabled" value="true" />
-    <option name="workDir" value="build" />
+    <path>@IDEA_JTREG_HOME@</path>
+    <workDir>build</workDir>
+    <jre alt="true" value="@IDEA_TARGET_JDK@" />
+    <options>@XPATCH@</options>
+    <ant>
+      <target file="file://$PROJECT_DIR$/.idea/build.xml" name="build-all-classes" />
+    </ant>
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" assert-keyword="true" jdk-15="true" project-jdk-name="1.8" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/.idea/out" />
   </component>
 </project>
+
 

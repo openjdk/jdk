@@ -21,41 +21,38 @@
  * questions.
  */
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.security.AccessControlException;
+import java.util.spi.ToolProvider;
+
 /*
  * @test
- * @bug 8137058
- * @summary Basic test for the unsupported newConstructorForSerialization
- * @modules jdk.unsupported
+ * @build JLinkToolProviderTest
+ * @run main/othervm/java.security.policy=toolprovider.policy JLinkToolProviderTest
  */
+public class JLinkToolProviderTest {
+    static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
+        .orElseThrow(() ->
+            new RuntimeException("jlink tool not found")
+        );
 
-import java.lang.reflect.Constructor;
-import sun.reflect.ReflectionFactory;
+    private static void checkJlinkOptions(String... options) {
+        StringWriter writer = new StringWriter();
+        PrintWriter pw = new PrintWriter(writer);
 
-public class NewConstructorForSerialization {
-
-    private static Constructor<?> getConstructor(Class<?> type)
-        throws NoSuchMethodException
-    {
-        ReflectionFactory factory = ReflectionFactory.getReflectionFactory();
-        Constructor<?> objectConstructor = type.getConstructor((Class[]) null);
-
-        @SuppressWarnings("unchecked")
-        Constructor<?> c = (Constructor<?>) factory
-                .newConstructorForSerialization(type, objectConstructor);
-        return c;
+        try {
+            JLINK_TOOL.run(pw, pw, options);
+            throw new AssertionError("SecurityException should have been thrown!");
+        } catch (AccessControlException ace) {
+            if (! ace.getPermission().getClass().getName().contains("JlinkPermission")) {
+                throw new AssertionError("expected JlinkPermission check failure");
+            }
+        }
     }
 
     public static void main(String[] args) throws Exception {
-        System.out.println(getConstructor(Object.class).newInstance());
-        System.out.println(getConstructor(Foo.class).newInstance());
-        System.out.println(getConstructor(Bar.class).newInstance());
-    }
-
-    static class Foo {
-        public Foo() { }
-    }
-
-    static class Bar extends Foo {
-        public Bar() { }
+        checkJlinkOptions("--help");
+        checkJlinkOptions("--list-plugins");
     }
 }

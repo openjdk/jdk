@@ -1172,11 +1172,18 @@ final class ServerHandshaker extends Handshaker {
             if (trySetCipherSuite(suite) == false) {
                 continue;
             }
+
+            if (debug != null && Debug.isOn("handshake")) {
+                System.out.println("Standard ciphersuite chosen: " + suite);
+            }
             return;
         }
 
         for (CipherSuite suite : legacySuites) {
             if (trySetCipherSuite(suite)) {
+                if (debug != null && Debug.isOn("handshake")) {
+                    System.out.println("Legacy ciphersuite chosen: " + suite);
+                }
                 return;
             }
         }

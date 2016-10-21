@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ final class WPopupMenuPeer extends WMenuPeer implements PopupMenuPeer {
                 parent = WToolkit.getNativeContainer((Component)parent);
                 parentPeer = (WComponentPeer) WToolkit.targetToPeer(parent);
             }
+            parentPeer.addChildPeer(this);
             createMenu(parentPeer);
             // fix for 5088782: check if menu object is created successfully
             checkMenuCreation();

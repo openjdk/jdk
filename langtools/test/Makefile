@@ -157,11 +157,6 @@ ifdef TESTBOOTCLASSPATH
 	-refvmoptions:-Xbootclasspath/p:$(TESTBOOTCLASSPATH)
 endif
 
-ifeq ($(ARCH_DATA_MODEL),32)
-  # Set the GC options for test vms
-  JTREG_GC_OPTION = -vmoption:-XX:+UseSerialGC
-  JTREG_OPTIONS += $(JTREG_GC_OPTION)
-endif
 # Set the max memory for jtreg target test JVMs
 JTREG_TESTVM_MEMORY_OPTION = -vmoption:-Xmx768m
 JTREG_OPTIONS += $(JTREG_TESTVM_MEMORY_OPTION)
@@ -256,6 +251,17 @@ JTREG_OUTPUT_DIR = $(ABS_TEST_OUTPUT_DIR)/jtreg
 JCK_COMPILER_OUTPUT_DIR = $(ABS_TEST_OUTPUT_DIR)/jck-compiler
 JCK_RUNTIME_OUTPUT_DIR = $(ABS_TEST_OUTPUT_DIR)/jck-runtime-Xcompile
 
+# Is the test JVM 32-bit?
+DATA_MODEL := \
+	$(shell $(JT_JAVA)/bin/java -XshowSettings:properties -version 2>&1 | \
+		grep 'sun\.arch\.data\.model' | \
+		awk '{print $$3}')
+ifeq ($(DATA_MODEL), 32)
+  # Set the GC options for test vms having a smaller address space
+  JTREG_GC_OPTION = -vmoption:-XX:+UseSerialGC
+  JTREG_OPTIONS += $(JTREG_GC_OPTION)
+endif
+
 # Default make rule -- warning, may take a while
 all: $(JPRT_CLEAN) jtreg-tests jck-compiler-tests jck-runtime-tests $(JPRT_ARCHIVE_BUNDLE) all-summary
 	@echo "Testing completed successfully"
@@ -321,6 +327,7 @@ jtreg-tests: check-jtreg FRC
 	  $(JTREG_EXCLUSIONS) \
 	  $(JTREG_OPTIONS) \
 	  $(JTREG_TESTDIRS) \
+	    2>&1 | tee $(JTREG_OUTPUT_DIR)/output.txt \
 	|| ( $(call EXIT_IF_FATAL,$(FATAL_JTREG_EXIT)) ; \
 	    echo $$status > $(JTREG_OUTPUT_DIR)/status.txt \
 	)

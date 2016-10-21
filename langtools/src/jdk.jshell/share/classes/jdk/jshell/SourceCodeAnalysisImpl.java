@@ -116,6 +116,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.QualifiedNameable;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.ExecutableType;
@@ -132,6 +133,7 @@ import javax.tools.ToolProvider;
 import static jdk.jshell.Util.REPL_DOESNOTMATTER_CLASS_NAME;
 import static java.util.stream.Collectors.joining;
 import static jdk.jshell.SourceCodeAnalysis.Completeness.DEFINITELY_INCOMPLETE;
+import static jdk.jshell.TreeDissector.printType;
 
 /**
  * The concrete implementation of SourceCodeAnalysis.
@@ -1185,7 +1187,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             proc.debug(ex, "SourceCodeAnalysisImpl.element2String(..., " + el + ")");
         }
 
-        return Util.expunge(elementHeader(el));
+        return Util.expunge(elementHeader(sourceCache.originalTask, el, !hasSyntheticParameterNames(el)));
     }
 
     private boolean hasSyntheticParameterNames(Element el) {
@@ -1248,7 +1250,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 topLevelName2Signature2Method.put(binaryName, cache = createMethodCache(binaryName));
             }
 
-            String handle = elementHeader(method, false);
+            String handle = elementHeader(originalTask, method, false);
 
             return cache.getOrDefault(handle, method);
         }
@@ -1276,7 +1278,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     Element currentMethod = trees.getElement(getCurrentPath());
 
                     if (currentMethod != null) {
-                        signature2Method.put(elementHeader(currentMethod, false), currentMethod);
+                        signature2Method.put(elementHeader(originalTask, currentMethod, false), currentMethod);
                     }
 
                     return null;
@@ -1331,39 +1333,79 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         return availableSources = result;
     }
 
-    private String elementHeader(Element el) {
-        return elementHeader(el, true);
+    private String elementHeader(AnalyzeTask at, Element el) {
+        return elementHeader(at, el, true);
     }
 
-    private String elementHeader(Element el, boolean includeParameterNames) {
+    private String elementHeader(AnalyzeTask at, Element el, boolean includeParameterNames) {
         switch (el.getKind()) {
-            case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE:
-                return ((TypeElement) el).getQualifiedName().toString();
+            case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE: {
+                TypeElement type = (TypeElement)el;
+                String fullname = type.getQualifiedName().toString();
+                Element pkg = at.getElements().getPackageOf(el);
+                String name = pkg == null ? fullname :
+                        proc.maps.fullClassNameAndPackageToClass(fullname, ((PackageElement)pkg).getQualifiedName().toString());
+
+                return name + typeParametersOpt(at, type.getTypeParameters());
+            }
+            case TYPE_PARAMETER: {
+                TypeParameterElement tp = (TypeParameterElement)el;
+                String name = tp.getSimpleName().toString();
+
+                List<? extends TypeMirror> bounds = tp.getBounds();
+                boolean boundIsObject = bounds.isEmpty() ||
+                        bounds.size() == 1 && at.getTypes().isSameType(bounds.get(0), Symtab.instance(at.getContext()).objectType);
+
+                return boundIsObject
+                        ? name
+                        : name + " extends " + bounds.stream()
+                                .map(bound -> printType(at, proc, bound))
+                                .collect(joining(" & "));
+            }
             case FIELD:
-                return elementHeader(el.getEnclosingElement()) + "." + el.getSimpleName() + ":" + el.asType();
+                return elementHeader(at, el.getEnclosingElement()) + "." + el.getSimpleName() + ":" + el.asType();
             case ENUM_CONSTANT:
-                return elementHeader(el.getEnclosingElement()) + "." + el.getSimpleName();
+                return elementHeader(at, el.getEnclosingElement()) + "." + el.getSimpleName();
             case EXCEPTION_PARAMETER: case LOCAL_VARIABLE: case PARAMETER: case RESOURCE_VARIABLE:
                 return el.getSimpleName() + ":" + el.asType();
-            case CONSTRUCTOR: case METHOD:
+            case CONSTRUCTOR: case METHOD: {
                 StringBuilder header = new StringBuilder();
-                header.append(elementHeader(el.getEnclosingElement()));
-                if (el.getKind() == ElementKind.METHOD) {
-                    header.append(".");
-                    header.append(el.getSimpleName());
+
+                boolean isMethod = el.getKind() == ElementKind.METHOD;
+                ExecutableElement method = (ExecutableElement) el;
+
+                if (isMethod) {
+                    // return type
+                    header.append(printType(at, proc, method.getReturnType())).append(" ");
+                } else {
+                    // type parameters for the constructor
+                    String typeParameters = typeParametersOpt(at, method.getTypeParameters());
+                    if (!typeParameters.isEmpty()) {
+                        header.append(typeParameters).append(" ");
+                    }
                 }
+
+                // receiver type
+                String clazz = elementHeader(at, el.getEnclosingElement());
+                header.append(clazz);
+
+                if (isMethod) {
+                    //method name with type parameters
+                    (clazz.isEmpty() ? header : header.append("."))
+                            .append(typeParametersOpt(at, method.getTypeParameters()))
+                            .append(el.getSimpleName());
+                }
+
+                // arguments
                 header.append("(");
                 String sep = "";
-                ExecutableElement method = (ExecutableElement) el;
                 for (Iterator<? extends VariableElement> i = method.getParameters().iterator(); i.hasNext();) {
                     VariableElement p = i.next();
                     header.append(sep);
                     if (!i.hasNext() && method.isVarArgs()) {
-                        header.append(unwrapArrayType(p.asType()));
-                        header.append("...");
-
+                        header.append(printType(at, proc, unwrapArrayType(p.asType()))).append("...");
                     } else {
-                        header.append(p.asType());
+                        header.append(printType(at, proc, p.asType()));
                     }
                     if (includeParameterNames) {
                         header.append(" ");
@@ -1372,8 +1414,18 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     sep = ", ";
                 }
                 header.append(")");
+
+                // throws
+                List<? extends TypeMirror> thrownTypes = method.getThrownTypes();
+                if (!thrownTypes.isEmpty()) {
+                    header.append(" throws ")
+                            .append(thrownTypes.stream()
+                                    .map(type -> printType(at, proc, type))
+                                    .collect(joining(", ")));
+                }
                 return header.toString();
-           default:
+            }
+            default:
                 return el.toString();
         }
     }
@@ -1382,6 +1434,12 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             return ((ArrayType)arrayType).getComponentType();
         }
         return arrayType;
+    }
+    private String typeParametersOpt(AnalyzeTask at, List<? extends TypeParameterElement> typeParameters) {
+        return typeParameters.isEmpty() ? ""
+                : typeParameters.stream()
+                        .map(tp -> elementHeader(at, tp))
+                        .collect(joining(", ", "<", ">"));
     }
 
     @Override

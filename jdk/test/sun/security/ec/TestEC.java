@@ -28,7 +28,7 @@
 
 /**
  * @test
- * @bug 6840752
+ * @bug 6840752 8168078
  * @summary  Provide out-of-the-box support for ECC algorithms
  * @library ../pkcs11
  * @library ../pkcs11/ec
@@ -37,6 +37,7 @@
  * @modules jdk.crypto.pkcs11/sun.security.pkcs11.wrapper
  * @compile -XDignore.symbol.file TestEC.java
  * @run main/othervm -Djdk.tls.namedGroups="secp256r1,sect193r1" TestEC
+ * @run main/othervm/java.security.policy=TestEC.policy -Djdk.tls.namedGroups="secp256r1,sect193r1" TestEC
  */
 
 import java.security.NoSuchProviderException;

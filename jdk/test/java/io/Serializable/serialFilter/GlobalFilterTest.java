@@ -126,9 +126,7 @@ public class GlobalFilterTest {
                 ObjectInputFilter.Config.setSerialFilter(filter);
                 Assert.fail("set only once process-wide filter");
             } catch (IllegalStateException ise) {
-                if (sm != null) {
-                    Assert.fail("wrong exception when security manager is set", ise);
-                }
+                // Normal, once set can never be re-set even if no security manager
             } catch (SecurityException se) {
                 if (sm == null) {
                     Assert.fail("wrong exception when security manager is not set", se);

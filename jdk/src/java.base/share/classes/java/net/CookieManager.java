@@ -81,7 +81,7 @@ import sun.util.logging.PlatformLogger;
  *   <li>
  *     Currently, only CookieStore.add(URI, HttpCookie) and CookieStore.get(URI)
  *     are used by CookieManager. Others are for completeness and might be needed
- *     by a more sophisticated CookieStore implementation, e.g. a NetscapeCookieSotre.
+ *     by a more sophisticated CookieStore implementation, e.g. a NetscapeCookieStore.
  *   </li>
  * </ul>
  * </blockquote>
@@ -201,10 +201,9 @@ public class CookieManager extends CookieHandler
             throw new IllegalArgumentException("Argument is null");
         }
 
-        Map<String, List<String>> cookieMap = new java.util.HashMap<>();
         // if there's no default CookieStore, no way for us to get any cookie
         if (cookieJar == null)
-            return Collections.unmodifiableMap(cookieMap);
+            return Map.of();
 
         boolean secureLink = "https".equalsIgnoreCase(uri.getScheme());
         List<HttpCookie> cookies = new java.util.ArrayList<>();
@@ -244,8 +243,7 @@ public class CookieManager extends CookieHandler
         // apply sort rule (RFC 2965 sec. 3.3.4)
         List<String> cookieHeader = sortByPath(cookies);
 
-        cookieMap.put("Cookie", cookieHeader);
-        return Collections.unmodifiableMap(cookieMap);
+        return Map.of("Cookie", cookieHeader);
     }
 
     public void

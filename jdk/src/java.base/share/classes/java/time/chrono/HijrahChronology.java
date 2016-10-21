@@ -59,10 +59,7 @@ package java.time.chrono;
 
 import static java.time.temporal.ChronoField.EPOCH_DAY;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FilePermission;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -83,7 +80,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 
 import sun.util.logging.PlatformLogger;
@@ -512,7 +508,7 @@ public final class HijrahChronology extends AbstractChronology implements Serial
 
     @Override
     public List<Era> eras() {
-        return Arrays.<Era>asList(HijrahEra.values());
+        return List.of(HijrahEra.values());
     }
 
     //-----------------------------------------------------------------------

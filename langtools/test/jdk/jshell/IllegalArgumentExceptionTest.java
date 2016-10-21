@@ -31,7 +31,6 @@
 import java.util.function.Consumer;
 
 import jdk.jshell.DeclarationSnippet;
-import jdk.jshell.PersistentSnippet;
 import jdk.jshell.Snippet;
 import jdk.jshell.VarSnippet;
 import org.testng.annotations.Test;
@@ -64,7 +63,7 @@ public class IllegalArgumentExceptionTest extends KullaTesting {
     }
 
     public void testDrop() {
-        testIllegalArgumentException((key) -> getState().drop((PersistentSnippet) key));
+        testIllegalArgumentException((key) -> getState().drop(key));
     }
 
     public void testUnresolved() {

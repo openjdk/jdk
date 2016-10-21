@@ -37,6 +37,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.function.Consumer;
 
@@ -63,9 +64,11 @@ public class StartOptionTest {
                 new PrintStream(cmdout),
                 new PrintStream(cmderr),
                 new PrintStream(console),
+                null,
                 new PrintStream(userout),
                 new PrintStream(usererr),
                 new ReplToolTesting.MemoryPreferences(),
+                new HashMap<>(),
                 Locale.ROOT);
     }
 

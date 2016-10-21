@@ -610,7 +610,7 @@ public final class Instant
      * <p>
      * The epoch second count is a simple incrementing count of seconds where
      * second 0 is 1970-01-01T00:00:00Z.
-     * The nanosecond part of the day is returned by {@code getNanosOfSecond}.
+     * The nanosecond part of the day is returned by {@link #getNano}.
      *
      * @return the seconds from the epoch of 1970-01-01T00:00:00Z
      */
@@ -623,7 +623,7 @@ public final class Instant
      * of the second.
      * <p>
      * The nanosecond-of-second value measures the total number of nanoseconds from
-     * the second returned by {@code getEpochSecond}.
+     * the second returned by {@link #getEpochSecond}.
      *
      * @return the nanoseconds within the second, always positive, never exceeds 999,999,999
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,6 +31,7 @@ import com.sun.org.apache.bcel.internal.generic.GETFIELD;
 import com.sun.org.apache.bcel.internal.generic.GETSTATIC;
 import com.sun.org.apache.bcel.internal.generic.INVOKEINTERFACE;
 import com.sun.org.apache.bcel.internal.generic.INVOKESPECIAL;
+import com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
 import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
 import com.sun.org.apache.bcel.internal.generic.ISTORE;
 import com.sun.org.apache.bcel.internal.generic.InstructionHandle;
@@ -1251,6 +1252,10 @@ public final class Stylesheet extends SyntaxTreeNode {
                                 il,
                                 classGen.getConstantPool());
         transf.addException("com.sun.org.apache.xalan.internal.xsltc.TransletException");
+
+        // call resetPrefixIndex at the beginning of transform
+        final int check = cpg.addMethodref(BASIS_LIBRARY_CLASS, "resetPrefixIndex", "()V");
+        il.append(new INVOKESTATIC(check));
 
         // Define and initialize current with the root node
         final LocalVariableGen current =

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,14 @@ public class AttrContext {
      */
     boolean selectSuper = false;
 
-    /** Is the current target of lambda expression or method reference serializable?
+    /** Is the current target of lambda expression or method reference serializable or is this a
+     *  serializable class?
      */
     boolean isSerializable = false;
+
+    /** Is this a lambda environment?
+     */
+    boolean isLambda = false;
 
     /** Is this a speculative attribution environment?
      */
@@ -117,6 +122,7 @@ public class AttrContext {
         info.returnResult = returnResult;
         info.defaultSuperCallSite = defaultSuperCallSite;
         info.isSerializable = isSerializable;
+        info.isLambda = isLambda;
         info.isSpeculative = isSpeculative;
         info.isAnonymousDiamond = isAnonymousDiamond;
         info.isNewClass = isNewClass;
