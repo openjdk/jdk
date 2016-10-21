@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
  * questions.
  */
 
-package jdk.dynalink.test;
+package jdk.internal.misc;
 
-import jdk.dynalink.Operation;
+import java.net.URLClassLoader;
+import java.security.AccessControlContext;
 
-public final class TestLinkerOperation implements Operation {
+public interface JavaNetURLClassLoaderAccess {
+    AccessControlContext getAccessControlContext(URLClassLoader u);;
 }

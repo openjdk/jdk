@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,14 +21,38 @@
  * questions.
  */
 
-package jdk.internal.misc;
+/*
+ * @test
+ * @bug 8167965
+ * @summary Test proper handling of the --release option.
+ * @modules jdk.jdeps/com.sun.tools.jdeprscan
+ * @build jdk.jdeprscan.TestRelease
+ * @run testng jdk.jdeprscan.TestRelease
+ */
 
-import java.net.URLClassLoader;
-import jdk.internal.loader.URLClassPath;
+package jdk.jdeprscan;
 
-public interface JavaNetAccess {
-    /**
-     * return the URLClassPath belonging to the given loader
-     */
-    URLClassPath getURLClassPath (URLClassLoader u);
+import com.sun.tools.jdeprscan.Main;
+import org.testng.annotations.Test;
+
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+
+public class TestRelease {
+    static boolean invoke(String arg) {
+        return Main.call(System.out, System.err, "--list", "--release", arg);
+    }
+
+    @Test
+    public void testSuccess() {
+        assertTrue(invoke("6"));
+        assertTrue(invoke("7"));
+        assertTrue(invoke("8"));
+        assertTrue(invoke("9"));
+    }
+
+    @Test
+    public void testFailure() {
+        assertFalse(invoke("5"));
+    }
 }
