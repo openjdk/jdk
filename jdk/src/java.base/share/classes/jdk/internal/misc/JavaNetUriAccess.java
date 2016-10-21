@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
  * questions.
  */
 
-package jdk.dynalink.test;
+package jdk.internal.misc;
 
-/**
- * Exception used to signal to the test method that the control has reached auto loaded
- * dynamic linker.
- */
-public final class ReachedAutoLoadedDynamicLinkerException extends RuntimeException {
+import java.net.URI;
+
+public interface JavaNetUriAccess {
+    /**
+     * Create a URI of pre-validated scheme and path.
+     */
+    URI create(String scheme, String path);
 }

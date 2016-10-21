@@ -94,12 +94,22 @@ public class SSLTest {
     /*
      * Is the server ready to serve?
      */
-    private final CountDownLatch serverCondition = new CountDownLatch(1);
+    private final CountDownLatch serverReadyCondition = new CountDownLatch(1);
 
     /*
      * Is the client ready to handshake?
      */
-    private final CountDownLatch clientCondition = new CountDownLatch(1);
+    private final CountDownLatch clientReadyCondition = new CountDownLatch(1);
+
+    /*
+     * Is the server done?
+     */
+    private final CountDownLatch serverDoneCondition = new CountDownLatch(1);
+
+    /*
+     * Is the client done?
+     */
+    private final CountDownLatch clientDoneCondition = new CountDownLatch(1);
 
     /*
      * Public API.
@@ -162,6 +172,25 @@ public class SSLTest {
         return keystore;
     }
 
+    // Try to accept a connection in 30 seconds.
+    public static SSLSocket accept(SSLServerSocket sslServerSocket)
+            throws IOException {
+
+        return accept(sslServerSocket, SERVER_TIMEOUT);
+    }
+
+    public static SSLSocket accept(SSLServerSocket sslServerSocket, int timeout)
+            throws IOException {
+
+        try {
+            sslServerSocket.setSoTimeout(timeout);
+            return (SSLSocket) sslServerSocket.accept();
+        } catch (SocketTimeoutException ste) {
+            sslServerSocket.close();
+            return null;
+        }
+    }
+
     public SSLTest setSeparateServerThread(boolean separateServerThread) {
         this.separateServerThread = separateServerThread;
         return this;
@@ -202,31 +231,59 @@ public class SSLTest {
     }
 
     public void signalServerReady() {
-        serverCondition.countDown();
+        serverReadyCondition.countDown();
+    }
+
+    public void signalServerDone() {
+        serverDoneCondition.countDown();
     }
 
     public boolean waitForClientSignal(long timeout, TimeUnit unit)
             throws InterruptedException {
 
-        return clientCondition.await(timeout, unit);
+        return clientReadyCondition.await(timeout, unit);
     }
 
     public boolean waitForClientSignal() throws InterruptedException {
         return waitForClientSignal(CLIENT_SIGNAL_TIMEOUT, TimeUnit.SECONDS);
     }
 
+    public boolean waitForClientDone(long timeout, TimeUnit unit)
+            throws InterruptedException {
+
+        return clientDoneCondition.await(timeout, unit);
+    }
+
+    public boolean waitForClientDone() throws InterruptedException {
+        return waitForClientDone(CLIENT_SIGNAL_TIMEOUT, TimeUnit.SECONDS);
+    }
+
     public void signalClientReady() {
-        clientCondition.countDown();
+        clientReadyCondition.countDown();
+    }
+
+    public void signalClientDone() {
+        clientDoneCondition.countDown();
     }
 
     public boolean waitForServerSignal(long timeout, TimeUnit unit)
             throws InterruptedException {
 
-        return serverCondition.await(timeout, unit);
+        return serverReadyCondition.await(timeout, unit);
     }
 
     public boolean waitForServerSignal() throws InterruptedException {
         return waitForServerSignal(SERVER_SIGNAL_TIMEOUT, TimeUnit.SECONDS);
+    }
+
+    public boolean waitForServerDone(long timeout, TimeUnit unit)
+            throws InterruptedException {
+
+        return serverDoneCondition.await(timeout, unit);
+    }
+
+    public boolean waitForServerDone() throws InterruptedException {
+        return waitForServerDone(SERVER_SIGNAL_TIMEOUT, TimeUnit.SECONDS);
     }
 
     public SSLTest setServerPeer(Peer serverPeer) {
@@ -310,19 +367,14 @@ public class SSLTest {
         test.signalServerReady();
 
         // Try to accept a connection in 30 seconds.
-        SSLSocket sslSocket;
-        try {
-            sslServerSocket.setSoTimeout(SERVER_TIMEOUT);
-            sslSocket = (SSLSocket) sslServerSocket.accept();
-            print("Server accepted connection");
-        } catch (SocketTimeoutException ste) {
-            sslServerSocket.close();
-
+        SSLSocket sslSocket = accept(sslServerSocket);
+        if (sslSocket == null) {
             // Ignore the test case if no connection within 30 seconds.
             print("No incoming client connection in 30 seconds. "
-                    + "Ignore in server side.", ste);
+                    + "Ignore in server side.");
             return;
         }
+        print("Server accepted connection");
 
         // handle the connection
         try {
@@ -353,6 +405,8 @@ public class SSLTest {
             sslSocket.close();
             sslServerSocket.close();
         }
+
+        test.signalServerDone();
     }
 
     /*
@@ -419,6 +473,8 @@ public class SSLTest {
             print("Run client application");
             test.getClientApplication().run(sslSocket, test);
         }
+
+        test.signalClientDone();
     }
 
     /*

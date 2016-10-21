@@ -26,6 +26,7 @@
  * @bug 8157464
  * @summary Basic test for StackWalker.getCallerClass()
  * @library src
+ * @modules java.base/jdk.internal.reflect
  * @build java.base/java.util.CSM csm/*
  * @run main/othervm csm/jdk.test.CallerSensitiveTest
  * @run main/othervm csm/jdk.test.CallerSensitiveTest sm

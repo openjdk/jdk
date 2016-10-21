@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,6 +153,19 @@ class WFramePeer extends WWindowPeer implements FramePeer {
     @Override
     public void setMenuBar(MenuBar mb) {
         WMenuBarPeer mbPeer = (WMenuBarPeer) WToolkit.targetToPeer(mb);
+        if (mbPeer != null) {
+            if (mbPeer.framePeer != this) {
+                mb.removeNotify();
+                mb.addNotify();
+                mbPeer = (WMenuBarPeer) WToolkit.targetToPeer(mb);
+                if (mbPeer != null && mbPeer.framePeer != this) {
+                    throw new IllegalStateException("Wrong parent peer");
+                }
+            }
+            if (mbPeer != null) {
+                addChildPeer(mbPeer);
+            }
+        }
         setMenuBar0(mbPeer);
         updateInsets(insets_);
     }
