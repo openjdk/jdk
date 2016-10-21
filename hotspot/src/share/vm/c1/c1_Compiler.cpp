@@ -42,7 +42,7 @@
 #include "runtime/sharedRuntime.hpp"
 
 
-Compiler::Compiler() : AbstractCompiler(c1) {
+Compiler::Compiler() : AbstractCompiler(compiler_c1) {
 }
 
 void Compiler::init_c1_runtime() {

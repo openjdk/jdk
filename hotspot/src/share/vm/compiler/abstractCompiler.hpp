@@ -26,6 +26,7 @@
 #define SHARE_VM_COMPILER_ABSTRACTCOMPILER_HPP
 
 #include "ci/compilerInterface.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "compiler/compilerDirectives.hpp"
 
 typedef void (*initializer)(void);
@@ -82,24 +83,15 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // This thread will initialize the compiler runtime.
   bool should_perform_init();
 
-  // The (closed set) of concrete compiler classes.
-  enum Type {
-    none,
-    c1,
-    c2,
-    jvmci,
-    shark
-  };
-
  private:
-  Type _type;
+  const CompilerType _type;
 
 #if INCLUDE_JVMCI
   CompilerStatistics _stats;
 #endif
 
  public:
-  AbstractCompiler(Type type) : _type(type), _compiler_state(uninitialized), _num_compiler_threads(0) {}
+  AbstractCompiler(CompilerType type) : _type(type), _compiler_state(uninitialized), _num_compiler_threads(0) {}
 
   // This function determines the compiler thread that will perform the
   // shutdown of the corresponding compiler runtime.
@@ -157,10 +149,11 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   }
 
   // Compiler type queries.
-  bool is_c1()                                   { return _type == c1; }
-  bool is_c2()                                   { return _type == c2; }
-  bool is_jvmci()                                { return _type == jvmci; }
-  bool is_shark()                                { return _type == shark; }
+  const bool is_c1()                             { return _type == compiler_c1; }
+  const bool is_c2()                             { return _type == compiler_c2; }
+  const bool is_jvmci()                          { return _type == compiler_jvmci; }
+  const bool is_shark()                          { return _type == compiler_shark; }
+  const CompilerType type()                      { return _type; }
 
   // Extra tests to identify trivial methods for the tiered compilation policy.
   virtual bool is_trivial(Method* method) { return false; }

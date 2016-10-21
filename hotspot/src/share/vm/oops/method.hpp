@@ -27,6 +27,7 @@
 
 #include "classfile/vmSymbols.hpp"
 #include "code/compressedStream.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "compiler/oopMap.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "oops/annotations.hpp"
