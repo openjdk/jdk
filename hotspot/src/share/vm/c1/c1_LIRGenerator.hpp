@@ -441,6 +441,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
 #ifdef TRACE_HAVE_INTRINSICS
   void do_ClassIDIntrinsic(Intrinsic* x);
+  void do_getBufferWriter(Intrinsic* x);
 #endif
 
   void do_RuntimeCall(address routine, Intrinsic* x);
