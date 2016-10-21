@@ -223,6 +223,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_putCharStringU:
 #ifdef TRACE_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
+  case vmIntrinsics::_getBufferWriter:
 #if defined(_LP64) || !defined(TRACE_ID_CLASS_SHIFT)
   case vmIntrinsics::_getClassId:
 #endif
