@@ -1691,28 +1691,6 @@ public class Resolve {
         }
     }
     //where
-    Type mostSpecificReturnType(Type mt1, Type mt2) {
-        Type rt1 = mt1.getReturnType();
-        Type rt2 = mt2.getReturnType();
-
-        if (mt1.hasTag(FORALL) && mt2.hasTag(FORALL)) {
-            //if both are generic methods, adjust return type ahead of subtyping check
-            rt1 = types.subst(rt1, mt1.getTypeArguments(), mt2.getTypeArguments());
-        }
-        //first use subtyping, then return type substitutability
-        if (types.isSubtype(rt1, rt2)) {
-            return mt1;
-        } else if (types.isSubtype(rt2, rt1)) {
-            return mt2;
-        } else if (types.returnTypeSubstitutable(mt1, mt2)) {
-            return mt1;
-        } else if (types.returnTypeSubstitutable(mt2, mt1)) {
-            return mt2;
-        } else {
-            return null;
-        }
-    }
-    //where
     Symbol ambiguityError(Symbol m1, Symbol m2) {
         if (((m1.flags() | m2.flags()) & CLASH) != 0) {
             return (m1.flags() & CLASH) == 0 ? m1 : m2;
@@ -4112,43 +4090,7 @@ public class Resolve {
          */
         Symbol mergeAbstracts(Type site) {
             List<Symbol> ambiguousInOrder = ambiguousSyms.reverse();
-            for (Symbol s : ambiguousInOrder) {
-                Type mt = types.memberType(site, s);
-                boolean found = true;
-                List<Type> allThrown = mt.getThrownTypes();
-                for (Symbol s2 : ambiguousInOrder) {
-                    Type mt2 = types.memberType(site, s2);
-                    if ((s2.flags() & ABSTRACT) == 0 ||
-                        !types.overrideEquivalent(mt, mt2) ||
-                        !types.isSameTypes(s.erasure(types).getParameterTypes(),
-                                       s2.erasure(types).getParameterTypes())) {
-                        //ambiguity cannot be resolved
-                        return this;
-                    }
-                    Type mst = mostSpecificReturnType(mt, mt2);
-                    if (mst == null || mst != mt) {
-                        found = false;
-                        break;
-                    }
-                    List<Type> thrownTypes2 = mt2.getThrownTypes();
-                    if (mt.hasTag(FORALL) && mt2.hasTag(FORALL)) {
-                        // if both are generic methods, adjust thrown types ahead of intersection computation
-                        thrownTypes2 = types.subst(thrownTypes2, mt2.getTypeArguments(), mt.getTypeArguments());
-                    }
-                    allThrown = chk.intersect(allThrown, thrownTypes2);
-                }
-                if (found) {
-                    //all ambiguous methods were abstract and one method had
-                    //most specific return type then others
-                    return (allThrown == mt.getThrownTypes()) ?
-                            s : new MethodSymbol(
-                                s.flags(),
-                                s.name,
-                                types.createMethodTypeWithThrown(s.type, allThrown),
-                                s.owner);
-                }
-            }
-            return this;
+            return types.mergeAbstracts(ambiguousInOrder, site, true).orElse(this);
         }
 
         @Override

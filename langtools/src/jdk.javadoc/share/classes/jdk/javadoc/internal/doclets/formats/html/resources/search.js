@@ -30,6 +30,9 @@ var catPackages = "Packages";
 var catTypes = "Types";
 var catMembers = "Members";
 var catSearchTags = "SearchTags";
+var highlight = "<span class=\"resultHighlight\">$&</span>";
+var camelCaseRegexp = "";
+var secondaryMatcher = "";
 function getName(name) {
     var anchor = "";
     var ch = '';
@@ -65,27 +68,35 @@ function getName(name) {
     }
     return anchor;
 }
+function getHighlightedText(item) {
+    var ccMatcher = new RegExp(camelCaseRegexp);
+    var label = item.replace(ccMatcher, highlight);
+    if (label === item) {
+        label = item.replace(secondaryMatcher, highlight);
+    }
+    return label;
+}
 var watermark = 'Search';
 $(function() {
     $("#search").prop("disabled", false);
     $("#reset").prop("disabled", false);
     $("#search").val(watermark).addClass('watermark');
-    $("#search").blur(function(){
+    $("#search").blur(function() {
         if ($(this).val().length == 0) {
             $(this).val(watermark).addClass('watermark');
         }
     });
-    $("#search").keydown(function(){
-       if ($(this).val() == watermark) {
+    $("#search").keydown(function() {
+        if ($(this).val() == watermark) {
             $(this).val('').removeClass('watermark');
         }
     });
-    $("#reset").click(function(){
-       $("#search").val('');
-       $("#search").focus();
+    $("#reset").click(function() {
+        $("#search").val('');
+        $("#search").focus();
     });
     $("#search").focus();
-    $("#search")[0].setSelectionRange(0,0);
+    $("#search")[0].setSelectionRange(0, 0);
 });
 $.widget("custom.catcomplete", $.ui.autocomplete, {
     _create: function() {
@@ -112,22 +123,19 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
         });
     },
     _renderItem: function(ul, item) {
-        var result = this.element.val();
-        var regexp = new RegExp($.ui.autocomplete.escapeRegex(result), "i");
-        highlight = "<span class=\"resultHighlight\">$&</span>";
         var label = "";
         if (item.category === catModules) {
-            label = item.l.replace(regexp, highlight);
+            label = getHighlightedText(item.l);
         } else if (item.category === catPackages) {
             label = (item.m)
-                    ? (item.m + "/" + item.l).replace(regexp, highlight)
-                    : item.l.replace(regexp, highlight);
+                    ? getHighlightedText(item.m + "/" + item.l)
+                    : getHighlightedText(item.l);
         } else if (item.category === catTypes) {
-            label += (item.p + "." + item.l).replace(regexp, highlight);
+            label = getHighlightedText(item.p + "." + item.l);
         } else if (item.category === catMembers) {
-            label += item.p + "." + (item.c + "." + item.l).replace(regexp, highlight);
+            label = getHighlightedText(item.p + "." + (item.c + "." + item.l));
         } else if (item.category === catSearchTags) {
-            label = item.l.replace(regexp, highlight);
+            label = getHighlightedText(item.l);
         } else {
             label = item.l;
         }
@@ -163,7 +171,9 @@ $(function() {
             var tgresult = new Array();
             var displayCount = 0;
             var exactMatcher = new RegExp("^" + $.ui.autocomplete.escapeRegex(request.term) + "$", "i");
-            var secondaryMatcher = new RegExp($.ui.autocomplete.escapeRegex(request.term), "i");
+            camelCaseRegexp = ($.ui.autocomplete.escapeRegex(request.term)).split(/(?=[A-Z])/).join("([a-z0-9_$]*?)");
+            var camelCaseMatcher = new RegExp("^" + camelCaseRegexp);
+            secondaryMatcher = new RegExp($.ui.autocomplete.escapeRegex(request.term), "i");
             if (moduleSearchIndex) {
                 var mdleCount = 0;
                 $.each(moduleSearchIndex, function(index, item) {
@@ -171,6 +181,8 @@ $(function() {
                     if (exactMatcher.test(item.l)) {
                         result.unshift(item);
                         mdleCount++;
+                    } else if (camelCaseMatcher.test(item.l)) {
+                        result.unshift(item);
                     } else if (secondaryMatcher.test(item.l)) {
                         result.push(item);
                     }
@@ -188,6 +200,8 @@ $(function() {
                     if (exactMatcher.test(item.l)) {
                         presult.unshift(item);
                         pCount++;
+                    } else if (camelCaseMatcher.test(pkg)) {
+                        presult.unshift(item);
                     } else if (secondaryMatcher.test(pkg)) {
                         presult.push(item);
                     }
@@ -202,6 +216,8 @@ $(function() {
                     if (exactMatcher.test(item.l)) {
                         tresult.unshift(item);
                         tCount++;
+                    } else if (camelCaseMatcher.test(item.l)) {
+                        tresult.unshift(item);
                     } else if (secondaryMatcher.test(item.p + "." + item.l)) {
                         tresult.push(item);
                     }
@@ -216,6 +232,8 @@ $(function() {
                     if (exactMatcher.test(item.l)) {
                         mresult.unshift(item);
                         mCount++;
+                    } else if (camelCaseMatcher.test(item.l)) {
+                        mresult.unshift(item);
                     } else if (secondaryMatcher.test(item.c + "." + item.l)) {
                         mresult.push(item);
                     }

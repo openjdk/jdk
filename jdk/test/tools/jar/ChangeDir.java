@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4806786 8023113
- * @modules jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool
  * @summary jar -C doesn't ignore multiple // in path
  */
 
@@ -32,10 +32,15 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.jar.*;
+import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
-import sun.tools.jar.Main;
 
 public class ChangeDir {
+    private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
+        .orElseThrow(() ->
+            new RuntimeException("jar tool not found")
+        );
+
     private final static String jarName = "test.jar";
     private final static String fileName = "hello.txt";
 
@@ -88,8 +93,9 @@ public class ChangeDir {
             argList.add(topDir.toString() + sep + "a" + sep + sep + "b"); // Note double 'sep' is intentional
             argList.add(fileName);
 
-            Main jarTool = new Main(System.out, System.err, "jar");
-            if (!jarTool.run(argList.toArray(new String[argList.size()]))) {
+            int rc = JAR_TOOL.run(System.out, System.err,
+                                  argList.toArray(new String[argList.size()]));
+            if (rc != 0) {
                 fail("Could not create jar file.");
             }
 
