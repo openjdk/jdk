@@ -29,9 +29,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 
-LogOutput* const LogOutput::Stdout = &LogStdoutOutput::_instance;
-LogOutput* const LogOutput::Stderr = &LogStderrOutput::_instance;
-
 LogOutput::~LogOutput() {
   os::free(_config_string);
 }
