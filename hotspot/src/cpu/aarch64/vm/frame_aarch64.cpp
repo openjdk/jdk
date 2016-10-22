@@ -142,6 +142,10 @@ bool frame::safe_for_sender(JavaThread *thread) {
       }
 
       sender_sp = _unextended_sp + _cb->frame_size();
+      // Is sender_sp safe?
+      if ((address)sender_sp >= thread->stack_base()) {
+        return false;
+      }
       sender_unextended_sp = sender_sp;
       sender_pc = (address) *(sender_sp-1);
       // Note: frame::sender_sp_offset is only valid for compiled frame
