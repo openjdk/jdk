@@ -86,7 +86,7 @@ classes: require_env
 test: require_env build
 	rm -rf "${RUN_DIR}"
 	mkdir -p "${RUN_DIR}"
-	"${JTREG_HOME}"/bin/jtreg                                               \
+	"${JTREG_HOME}"/bin/jtreg                                           \
         -jdk:"${JAVA_HOME}"                                                 \
         ${JTREG_TEST_OPTS}                                                  \
         -timeout:0.1 -va -retain:all                                        \
@@ -94,6 +94,7 @@ test: require_env build
         -agentvm                                                            \
         -thd:"${TARGET_JAR}"                                                \
         -th:jdk.test.failurehandler.jtreg.GatherProcessInfoTimeoutHandler   \
+        -thtimeout:0                                                        \
         -od:"${TARGET_JAR}"                                                 \
         -o:jdk.test.failurehandler.jtreg.GatherDiagnosticInfoObserver       \
         -w:"${RUN_DIR}/JTwork"                                              \
