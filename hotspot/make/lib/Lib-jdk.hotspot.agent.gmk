@@ -74,7 +74,7 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
       -mstack-alignment=16 -fPIC
   SA_LDFLAGS := $(LDFLAGS_JDKLIB)
   SA_LIBS := -framework Foundation -framework JavaNativeFoundation \
-      -framework Security -framework CoreFoundation
+      -framework JavaRuntimeSupport -framework Security -framework CoreFoundation
 
 else ifeq ($(OPENJDK_TARGET_OS), windows)
   SA_NAME := sawindbg
