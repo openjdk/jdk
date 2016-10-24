@@ -101,6 +101,7 @@ void G1GCPhaseTimes::note_gc_start() {
   _gc_start_counter = os::elapsed_counter();
   _cur_expand_heap_time_ms = 0.0;
   _external_accounted_time_ms = 0.0;
+  _recorded_clear_claimed_marks_time_ms = 0.0;
 
   for (int i = 0; i < GCParPhasesSentinel; i++) {
     if (_gc_par_phases[i] != NULL) {
@@ -306,6 +307,10 @@ void G1GCPhaseTimes::print() {
   debug_line("Reference Processing", _cur_ref_proc_time_ms);
   debug_line("Reference Enqueuing", _cur_ref_enq_time_ms);
   debug_line("Redirty Cards", _recorded_redirty_logged_cards_time_ms);
+  if (_recorded_clear_claimed_marks_time_ms > 0.0) {
+    debug_line("Clear Claimed Marks", _recorded_clear_claimed_marks_time_ms);
+  }
+
   trace_phase(_gc_par_phases[RedirtyCards]);
   if (G1EagerReclaimHumongousObjects) {
     debug_line("Humongous Register", _cur_fast_reclaim_humongous_register_time_ms);
