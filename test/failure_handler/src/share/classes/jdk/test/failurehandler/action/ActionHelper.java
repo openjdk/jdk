@@ -164,7 +164,8 @@ public class ActionHelper {
         Stopwatch stopwatch = new Stopwatch();
         stopwatch.start();
 
-        log.printf("%s%n[%tF %<tT] %s%n%1$s%n", line, new Date(), pb.command());
+        log.printf("%s%n[%tF %<tT] %s timeout=%s%n%1$s%n", line, new Date(), pb.command(), params.timeout);
+
         Process process;
         KillerTask killer;
 
@@ -178,30 +179,28 @@ public class ActionHelper {
                     out);
             try {
                 result = new ExitCode(process.waitFor());
-                killer.cancel();
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                if (!killer.cancel()) {
-                    log.println(
-                            "WARNING: interrupted when waiting for the tool:");
-                    e.printStackTrace(log);
-                }
+                log.println("WARNING: interrupted when waiting for the tool:%n");
+                e.printStackTrace(log);
+            } finally {
+                killer.cancel();
             }
             if (killer.hasTimedOut()) {
                 log.printf(
                         "WARNING: tool timed out: killed process after %d ms%n",
-                        TimeUnit.MILLISECONDS.toMicros(params.timeout));
+                        params.timeout);
                 result = ExitCode.TIMED_OUT;
             }
         } catch (IOException e) {
+            log.printf("WARNING: caught IOException while running tool%n");
             e.printStackTrace(log);
             result = ExitCode.LAUNCH_ERROR;
         }
 
         stopwatch.stop();
-        log.printf("%s%n[%tF %<tT] exit code : %d time : %d ms%n%1$s%n",
+        log.printf("%s%n[%tF %<tT] exit code: %d time: %d ms%n%1$s%n",
                 line, new Date(), result.value,
-                TimeUnit.MILLISECONDS.toSeconds(stopwatch.getElapsedTimeNs()));
+                TimeUnit.NANOSECONDS.toMillis(stopwatch.getElapsedTimeNs()));
         return result;
     }
 
@@ -247,7 +246,7 @@ public class ActionHelper {
             log.printf("WARNING: can't run jps : %s%n", e.getMessage());
             e.printStackTrace(log);
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            log.printf("WARNING: interrupted%n");
             e.printStackTrace(log);
         }
         return result;
@@ -266,8 +265,7 @@ public class ActionHelper {
             try {
                 process.exitValue();
             } catch (IllegalThreadStateException e) {
-                // !prepareProcess.isAlive()
-                process.destroy();
+                process.destroyForcibly();
                 timedOut = true;
             }
         }
@@ -301,11 +299,15 @@ public class ActionHelper {
                             exitCode.value);
                     break;
                 }
-                try {
-                    Thread.sleep(params.pause);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    e.printStackTrace(sectionWriter);
+                // sleep, if this is not the last iteration
+                if (i < n - 1) {
+                    try {
+                        Thread.sleep(params.pause);
+                    } catch (InterruptedException e) {
+                        sectionWriter.printf(
+                                "WARNING: interrupted while sleeping between invocations");
+                        e.printStackTrace(sectionWriter);
+                    }
                 }
             }
         } else {
