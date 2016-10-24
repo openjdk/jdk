@@ -55,9 +55,7 @@ public final class ExifGPSTagSet extends TIFFTagSet {
      *
      * @see #TAG_GPS_VERSION_ID
      */
-    public static final String GPS_VERSION_2_2 =
-        new String(new byte[] { '2', '2', '0', '0' },
-        StandardCharsets.US_ASCII);
+    public static final String GPS_VERSION_2_2 = "2200";
 
     /**
      * A tag indicating the North or South latitude (type ASCII, count = 2).
