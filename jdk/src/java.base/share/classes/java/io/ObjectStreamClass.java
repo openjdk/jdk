@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1413,27 +1413,7 @@ public class ObjectStreamClass implements Serializable {
      * returned constructor (if any).
      */
     private static Constructor<?> getSerializableConstructor(Class<?> cl) {
-        Class<?> initCl = cl;
-        while (Serializable.class.isAssignableFrom(initCl)) {
-            if ((initCl = initCl.getSuperclass()) == null) {
-                return null;
-            }
-        }
-        try {
-            Constructor<?> cons = initCl.getDeclaredConstructor((Class<?>[]) null);
-            int mods = cons.getModifiers();
-            if ((mods & Modifier.PRIVATE) != 0 ||
-                ((mods & (Modifier.PUBLIC | Modifier.PROTECTED)) == 0 &&
-                 !packageEquals(cl, initCl)))
-            {
-                return null;
-            }
-            cons = reflFactory.newConstructorForSerialization(cl, cons);
-            cons.setAccessible(true);
-            return cons;
-        } catch (NoSuchMethodException ex) {
-            return null;
-        }
+        return reflFactory.newConstructorForSerialization(cl);
     }
 
     /**
