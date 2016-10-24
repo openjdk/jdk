@@ -193,7 +193,7 @@ public class ObjectStreamTest {
     /**
      * Test that objects can be echoed to a server and come back equivalent.
      */
-    @Test(dataProvider = "Objects", enabled = true, dependsOnMethods = {"factCheck"})
+    @Test(dataProvider = "Objects", enabled = false, dependsOnMethods = {"factCheck"})
     static void echoObjects(Serializable value) throws Exception {
         Context initialNamingContext = Server.init();
         Echo echo = (Echo) PortableRemoteObject.narrow(
