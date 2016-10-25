@@ -33,7 +33,8 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary RMID ActivationLibrary
+ *          java.base/sun.nio.ch
+ * @build TestLibrary RMID RMIDSelectorProvider ActivationLibrary
  * @run main/othervm/timeout=240 LookupActivationSystem
  */
 
@@ -55,7 +56,7 @@ public class LookupActivationSystem implements Remote, Serializable {
 
         try {
             RMID.removeLog();
-            rmid = RMID.createRMID();
+            rmid = RMID.createRMIDOnEphemeralPort();
             rmid.start();
 
             System.err.println("look up activation system");

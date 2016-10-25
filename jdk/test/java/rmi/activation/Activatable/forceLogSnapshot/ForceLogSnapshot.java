@@ -31,7 +31,8 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary RMID ActivationLibrary
+ *          java.base/sun.nio.ch
+ * @build TestLibrary RMID RMIDSelectorProvider ActivationLibrary
  *     ActivateMe ForceLogSnapshot_Stub
  * @run main/othervm/policy=security.policy/timeout=640 ForceLogSnapshot
  */
@@ -129,7 +130,7 @@ public class ForceLogSnapshot
                 SNAPSHOT_INTERVAL;
 
             RMID.removeLog();
-            rmid = RMID.createRMID();
+            rmid = RMID.createRMIDOnEphemeralPort();
             rmid.addOptions(new String[] {option, "-Djava.compiler="});
             rmid.start();
 
