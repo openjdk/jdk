@@ -80,6 +80,7 @@ class Main {
     String fname, mname, ename;
     String zname = "";
     String rootjar = null;
+    Set<String> concealedPackages = new HashSet<>();
 
     private static final int BASE_VERSION = 0;
 
@@ -821,22 +822,21 @@ class Main {
         return true;
     }
 
-    private static Set<String> findPackages(ZipFile zf) {
-        return zf.stream()
-                 .filter(e -> e.getName().endsWith(".class"))
-                 .map(e -> toPackageName(e))
-                 .filter(pkg -> pkg.length() > 0)
-                 .distinct()
-                 .collect(Collectors.toSet());
-    }
-
     private static String toPackageName(ZipEntry entry) {
         return toPackageName(entry.getName());
     }
 
     private static String toPackageName(String path) {
         assert path.endsWith(".class");
-        int index = path.lastIndexOf('/');
+        int index;
+        if (path.startsWith(VERSIONS_DIR)) {
+            index = path.indexOf('/', VERSIONS_DIR.length());
+            if (index <= 0) {
+                return "";
+            }
+            path = path.substring(index + 1);
+        }
+        index = path.lastIndexOf('/');
         if (index != -1) {
             return path.substring(0, index).replace('/', '.');
         } else {
@@ -875,7 +875,7 @@ class Main {
                         entryMap.put(entryName, entry);
                 } else if (entries.add(entry)) {
                     jarEntries.add(entryName);
-                    if (entry.basename.endsWith(".class") && !entryName.startsWith(VERSIONS_DIR))
+                    if (entry.basename.endsWith(".class"))
                         packages.add(toPackageName(entry.basename));
                     if (isUpdate)
                         entryMap.put(entryName, entry);
@@ -1068,7 +1068,7 @@ class Main {
                 }
 
                 jarEntries.add(name);
-                if (name.endsWith(".class") && !(name.startsWith(VERSIONS_DIR)))
+                if (name.endsWith(".class"))
                     packages.add(toPackageName(name));
             }
         }
@@ -1762,6 +1762,13 @@ class Main {
     }
 
     /**
+     * Print a warning message
+     */
+    void warn(String s) {
+        err.println(s);
+    }
+
+    /**
      * Main routine to start program.
      */
     public static void main(String args[]) {
@@ -1975,22 +1982,28 @@ class Main {
         ByteBuffer bb = ByteBuffer.wrap(moduleInfos.get(MODULE_INFO));
         ModuleDescriptor rd = ModuleDescriptor.read(bb);
 
-        Set<String> exports = rd.exports()
-                                .stream()
-                                .map(Exports::source)
-                                .collect(toSet());
-
-        Set<String> conceals = packages.stream()
-                                       .filter(p -> !exports.contains(p))
-                                       .collect(toSet());
+        concealedPackages = findConcealedPackages(rd);
 
         for (Map.Entry<String,byte[]> e: moduleInfos.entrySet()) {
             ModuleDescriptor vd = ModuleDescriptor.read(ByteBuffer.wrap(e.getValue()));
             if (!(isValidVersionedDescriptor(vd, rd)))
                 return false;
-            e.setValue(extendedInfoBytes(rd, vd, e.getValue(), conceals));
+            e.setValue(extendedInfoBytes(rd, vd, e.getValue(), concealedPackages));
         }
         return true;
+    }
+
+    private Set<String> findConcealedPackages(ModuleDescriptor md){
+        Objects.requireNonNull(md);
+
+        Set<String> exports = md.exports()
+                .stream()
+                .map(Exports::source)
+                .collect(toSet());
+
+        return packages.stream()
+                .filter(p -> !exports.contains(p))
+                .collect(toSet());
     }
 
     private static boolean isPlatformModule(String name) {
