@@ -61,7 +61,7 @@
   /*  data segment when placing the java heap. If that space is too small, we  */   \
   /*  reduce our chance of getting a low heap address (needed for compressed   */   \
   /*  Oops).                                                                   */   \
-  product(uintx, MaxExpectedDataSegmentSize, (SIZE_4G * 2),                         \
+  product(uintx, MaxExpectedDataSegmentSize, 8*G,                                   \
           "Maximum expected Data Segment Size.")                                    \
                                                                                     \
   /* Use optimized addresses for the polling page.                             */   \
