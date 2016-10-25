@@ -133,32 +133,26 @@ public class JShellTool implements MessageHandler {
     final PrintStream userout;
     final PrintStream usererr;
     final Preferences prefs;
+    final Map<String, String> envvars;
     final Locale locale;
 
     final Feedback feedback = new Feedback();
 
     /**
-     * The constructor for the tool (used by tool launch via main and by test
-     * harnesses to capture ins and outs.
-     * @param in command line input -- snippets, commands and user input
-     * @param cmdout command line output, feedback including errors
-     * @param cmderr start-up errors and debugging info
-     * @param console console control interaction
-     * @param userout code execution output  -- System.out.printf("hi")
-     * @param usererr code execution error stream  -- System.err.printf("Oops")
-     * @param prefs preferences to use
-     * @param locale locale to use
+     * Simple constructor for the tool used by main.
+     * @param in command line input
+     * @param out command line output, feedback including errors, user System.out
+     * @param err start-up errors and debugging info, user System.err
      */
-    public JShellTool(InputStream in, PrintStream cmdout, PrintStream cmderr,
-            PrintStream console,
-            PrintStream userout, PrintStream usererr,
-            Preferences prefs, Locale locale) {
-        this(in, cmdout, cmderr, console, null, userout, usererr, prefs, locale);
+    public JShellTool(InputStream in, PrintStream out, PrintStream err) {
+        this(in, out, err, out, null, out, err,
+                Preferences.userRoot().node("tool/JShell"),
+                System.getenv(),
+                Locale.getDefault());
     }
 
     /**
-     * The constructor for the tool (used by tool launch via main and by test
-     * harnesses to capture ins and outs.
+     * The complete constructor for the tool (used by test harnesses).
      * @param cmdin command line input -- snippets and commands
      * @param cmdout command line output, feedback including errors
      * @param cmderr start-up errors and debugging info
@@ -167,12 +161,13 @@ public class JShellTool implements MessageHandler {
      * @param userout code execution output  -- System.out.printf("hi")
      * @param usererr code execution error stream  -- System.err.printf("Oops")
      * @param prefs preferences to use
+     * @param envvars environment variable mapping to use
      * @param locale locale to use
      */
     public JShellTool(InputStream cmdin, PrintStream cmdout, PrintStream cmderr,
             PrintStream console,
             InputStream userin, PrintStream userout, PrintStream usererr,
-            Preferences prefs, Locale locale) {
+            Preferences prefs, Map<String, String> envvars, Locale locale) {
         this.cmdin = cmdin;
         this.cmdout = cmdout;
         this.cmderr = cmderr;
@@ -186,6 +181,7 @@ public class JShellTool implements MessageHandler {
         this.userout = userout;
         this.usererr = usererr;
         this.prefs = prefs;
+        this.envvars = envvars;
         this.locale = locale;
     }
 
@@ -211,6 +207,9 @@ public class JShellTool implements MessageHandler {
     private String cmdlineClasspath = null;
     private String startup = null;
     private EditorSetting editor = BUILT_IN_EDITOR;
+
+    private static final String[] EDITOR_ENV_VARS = new String[] {
+        "JSHELLEDITOR", "VISUAL", "EDITOR"};
 
     // Commands and snippets which should be replayed
     private List<String> replayableHistory;
@@ -486,10 +485,7 @@ public class JShellTool implements MessageHandler {
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
-        new JShellTool(System.in, System.out, System.err, System.out,
-                 System.out, System.err,
-                 Preferences.userRoot().node("tool/JShell"),
-                 Locale.getDefault())
+        new JShellTool(System.in, System.out, System.err)
                 .start(args);
     }
 
@@ -513,11 +509,7 @@ public class JShellTool implements MessageHandler {
             }
         }
 
-        // Read retained editor setting (if any)
-        editor = EditorSetting.fromPrefs(prefs);
-        if (editor == null) {
-            editor = BUILT_IN_EDITOR;
-        }
+        configEditor();
 
         resetState(); // Initialize
 
@@ -545,6 +537,23 @@ public class JShellTool implements MessageHandler {
         } finally {
             closeState();
         }
+    }
+
+    private EditorSetting configEditor() {
+        // Read retained editor setting (if any)
+        editor = EditorSetting.fromPrefs(prefs);
+        if (editor != null) {
+            return editor;
+        }
+        // Try getting editor setting from OS environment variables
+        for (String envvar : EDITOR_ENV_VARS) {
+            String v = envvars.get(envvar);
+            if (v != null) {
+                return editor = new EditorSetting(v.split("\\s+"), false);
+            }
+        }
+        // Default to the built-in editor
+        return editor = BUILT_IN_EDITOR;
     }
 
     /**
@@ -1418,6 +1427,10 @@ public class JShellTool implements MessageHandler {
             }
         }
 
+        static void removePrefs(Preferences prefs) {
+            prefs.remove(EDITOR_KEY);
+        }
+
         void toPrefs(Preferences prefs) {
             prefs.put(EDITOR_KEY, (this == BUILT_IN_EDITOR)
                     ? BUILT_IN_REP
@@ -1449,11 +1462,13 @@ public class JShellTool implements MessageHandler {
         private final String[] command;
         private final boolean hasCommand;
         private final boolean defaultOption;
+        private final boolean deleteOption;
         private final boolean waitOption;
         private final boolean retainOption;
+        private final int primaryOptionCount;
 
         SetEditor(ArgTokenizer at) {
-            at.allowedOptions("-default", "-wait", "-retain");
+            at.allowedOptions("-default", "-wait", "-retain", "-delete");
             String prog = at.next();
             List<String> ed = new ArrayList<>();
             while (at.val() != null) {
@@ -1464,8 +1479,10 @@ public class JShellTool implements MessageHandler {
             this.command = ed.toArray(new String[ed.size()]);
             this.hasCommand = command.length > 0;
             this.defaultOption = at.hasOption("-default");
+            this.deleteOption = at.hasOption("-delete");
             this.waitOption = at.hasOption("-wait");
             this.retainOption = at.hasOption("-retain");
+            this.primaryOptionCount = (hasCommand? 1 : 0) + (defaultOption? 1 : 0) + (deleteOption? 1 : 0);
         }
 
         SetEditor() {
@@ -1476,7 +1493,7 @@ public class JShellTool implements MessageHandler {
             if (!check()) {
                 return false;
             }
-            if (!hasCommand && !defaultOption && !retainOption) {
+            if (primaryOptionCount == 0 && !retainOption) {
                 // No settings or -retain, so this is a query
                 EditorSetting retained = EditorSetting.fromPrefs(prefs);
                 if (retained != null) {
@@ -1489,8 +1506,11 @@ public class JShellTool implements MessageHandler {
                 }
                 return true;
             }
+            if (retainOption && deleteOption) {
+                EditorSetting.removePrefs(prefs);
+            }
             install();
-            if (retainOption) {
+            if (retainOption && !deleteOption) {
                 editor.toPrefs(prefs);
                 fluffmsg("jshell.msg.set.editor.retain", format(editor));
             }
@@ -1501,7 +1521,7 @@ public class JShellTool implements MessageHandler {
             if (!checkOptionsAndRemainingInput(at)) {
                 return false;
             }
-            if (hasCommand && defaultOption) {
+            if (primaryOptionCount > 1) {
                 errormsg("jshell.err.default.option.or.program", at.whole());
                 return false;
             }
@@ -1517,6 +1537,8 @@ public class JShellTool implements MessageHandler {
                 editor = new EditorSetting(command, waitOption);
             } else if (defaultOption) {
                 editor = BUILT_IN_EDITOR;
+            } else if (deleteOption) {
+                configEditor();
             } else {
                 return;
             }
