@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8157395 8157393 8157517 8158738 8167128 8163840
+ * @bug 8157395 8157393 8157517 8158738 8167128 8163840 8167637
  * @summary Tests of jshell comand options, and undoing operations
  * @modules jdk.jshell/jdk.internal.jshell.tool
  * @build ToolCommandOptionTest ReplToolTesting
@@ -124,7 +124,7 @@ public class ToolCommandOptionTest extends ReplToolTesting {
                 (a) -> assertCommand(a, "/set editor -furball -mattress",
                         "|  Unknown option: -furball -mattress -- /set editor -furball -mattress"),
                 (a) -> assertCommand(a, "/set editor -default prog",
-                        "|  Specify -default option or program, not both -- /set editor -default prog"),
+                        "|  Specify -default option, -delete option, or program -- /set editor -default prog"),
                 (a) -> assertCommand(a, "/set editor prog",
                         "|  Editor set to: prog"),
                 (a) -> assertCommand(a, "/set editor prog -default",
@@ -135,6 +135,10 @@ public class ToolCommandOptionTest extends ReplToolTesting {
                         "|  Editor set to: prog -furball"),
                 (a) -> assertCommand(a, "/set editor",
                         "|  /set editor prog -furball"),
+                (a) -> assertCommand(a, "/se ed -delete",
+                        "|  Editor set to: -default"),
+                (a) -> assertCommand(a, "/set editor",
+                        "|  /set editor -default"),
                 (a) -> assertCommand(a, "/set editor prog arg1 -furball arg3 -default arg4",
                         "|  Editor set to: prog arg1 -furball arg3 -default arg4"),
                 (a) -> assertCommand(a, "/set editor",
@@ -157,7 +161,7 @@ public class ToolCommandOptionTest extends ReplToolTesting {
                 (a) -> assertCommand(a, "/set editor -retain -furball -mattress",
                         "|  Unknown option: -furball -mattress -- /set editor -retain -furball -mattress"),
                 (a) -> assertCommand(a, "/set editor -retain -default prog",
-                        "|  Specify -default option or program, not both -- /set editor -retain -default prog"),
+                        "|  Specify -default option, -delete option, or program -- /set editor -retain -default prog"),
                 (a) -> assertCommand(a, "/set editor -retain -wait",
                         "|  -wait applies to external editors"),
                 (a) -> assertCommand(a, "/set editor -retain -default -wait",
@@ -172,6 +176,10 @@ public class ToolCommandOptionTest extends ReplToolTesting {
                 (a) -> assertCommand(a, "/set editor",
                         "|  /set editor -retain prog\n" +
                         "|  /set editor other"),
+                (a) -> assertCommand(a, "/se ed -delete",
+                        "|  Editor set to: prog"),
+                (a) -> assertCommand(a, "/set editor",
+                        "|  /set editor -retain prog"),
                 (a) -> assertCommand(a, "/set editor -retain prog -default",
                         "|  Editor set to: prog -default\n" +
                         "|  Editor setting retained: prog -default"),
@@ -195,6 +203,39 @@ public class ToolCommandOptionTest extends ReplToolTesting {
                         "|  Editor setting retained: -default"),
                 (a) -> assertCommand(a, "/set editor -retain",
                         "|  Editor setting retained: -default")
+        );
+    }
+
+    public void setEditorEnvTest() {
+        setEnvVar("EDITOR", "best one");
+        setEditorEnvSubtest();
+        setEnvVar("EDITOR", "not this");
+        setEnvVar("VISUAL", "best one");
+        setEditorEnvSubtest();
+        setEnvVar("VISUAL", "not this");
+        setEnvVar("JSHELLEDITOR", "best one");
+        setEditorEnvSubtest();
+    }
+
+    private void setEditorEnvSubtest() {
+        test(
+                (a) -> assertCommand(a, "/set editor",
+                        "|  /set editor best one"),
+                (a) -> assertCommand(a, "/set editor prog",
+                        "|  Editor set to: prog"),
+                (a) -> assertCommand(a, "/set editor",
+                        "|  /set editor prog"),
+                (a) -> assertCommand(a, "/set editor -delete",
+                        "|  Editor set to: best one"),
+                (a) -> assertCommand(a, "/set editor -retain stored editor",
+                        "|  Editor set to: stored editor\n" +
+                        "|  Editor setting retained: stored editor")
+        );
+        test(
+                (a) -> assertCommand(a, "/set editor",
+                        "|  /set editor -retain stored editor"),
+                (a) -> assertCommand(a, "/set editor -delete -retain",
+                        "|  Editor set to: best one")
         );
     }
 
