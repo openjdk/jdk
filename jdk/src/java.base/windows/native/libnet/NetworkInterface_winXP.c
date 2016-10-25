@@ -627,11 +627,12 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
             (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
         } else /* AF_INET6 */ {
             int scope;
+            jboolean ret;
             iaObj = (*env)->NewObject(env, ia6_class, ia6_ctrID);
             if (iaObj == NULL) {
                 return NULL;
             }
-            jboolean ret = setInet6Address_ipaddress(env, iaObj, (jbyte *)&(addrs->addr.sa6.sin6_addr.s6_addr));
+            ret = setInet6Address_ipaddress(env, iaObj, (jbyte *)&(addrs->addr.sa6.sin6_addr.s6_addr));
             if (ret == JNI_FALSE) {
                 return NULL;
             }

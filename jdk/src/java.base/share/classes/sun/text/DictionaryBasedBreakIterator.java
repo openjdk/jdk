@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,8 @@
  * Taligent is a registered trademark of Taligent, Inc.
  */
 
-package sun.util.locale.provider;
+package sun.text;
 
-import java.io.IOException;
-import java.lang.reflect.Module;
 import java.text.CharacterIterator;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,7 +70,7 @@ import java.util.Stack;
  * slow) BuildDictionaryFile utility for creating dictionary files, but aren't
  * currently making it public.  Contact us for help.
  */
-class DictionaryBasedBreakIterator extends RuleBasedBreakIterator {
+public class DictionaryBasedBreakIterator extends RuleBasedBreakIterator {
 
     /**
      * a list of known words that is used to divide up contiguous ranges of letters,
@@ -109,18 +107,22 @@ class DictionaryBasedBreakIterator extends RuleBasedBreakIterator {
 
     /**
      * Constructs a DictionaryBasedBreakIterator.
-     * @param module The module where the dictionary file resides
-     * @param dictionaryFilename The filename of the dictionary file to use
+     *
+     * @param ruleFile       the name of the rule data file
+     * @param ruleData       the rule data loaded from the rule data file
+     * @param dictionaryFile the name of the dictionary file
+     * @param dictionartData the dictionary data loaded from the dictionary file
+     * @throws MissingResourceException if rule data or dictionary initialization failed
      */
-    DictionaryBasedBreakIterator(Module module, String dataFile, String dictionaryFile)
-                                        throws IOException {
-        super(module, dataFile);
+    public DictionaryBasedBreakIterator(String ruleFile, byte[] ruleData,
+                                        String dictionaryFile, byte[] dictionaryData) {
+        super(ruleFile, ruleData);
         byte[] tmp = super.getAdditionalData();
         if (tmp != null) {
             prepareCategoryFlags(tmp);
             super.setAdditionalData(null);
         }
-        dictionary = new BreakDictionary(module, dictionaryFile);
+        dictionary = new BreakDictionary(dictionaryFile, dictionaryData);
     }
 
     private void prepareCategoryFlags(byte[] data) {

@@ -40,7 +40,7 @@ import tests.Result;
 
 /*
  * @test
- * @bug 8152143 8152704 8155649
+ * @bug 8152143 8152704 8155649 8165804
  * @summary IncludeLocalesPlugin tests
  * @author Naoto Sato
  * @library ../../lib
@@ -236,6 +236,7 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/ext/thai_dict",
                 "/jdk.localedata/sun/text/resources/ext/WordBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/BreakIteratorInfo_th.class",
+                "/jdk.localedata/sun/text/resources/ext/BreakIteratorResources_th.class",
                 "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
                 "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/ext/FormatData_th.class",
@@ -261,6 +262,7 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/ext/thai_dict",
                 "/jdk.localedata/sun/text/resources/ext/WordBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/BreakIteratorInfo_th.class",
+                "/jdk.localedata/sun/text/resources/ext/BreakIteratorResources_th.class",
                 "/jdk.localedata/sun/text/resources/ext/FormatData_th.class"),
             List.of(
                 "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
