@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.tools.jlink;
+package jdk.tools.jlink.internal;
 
 import java.lang.reflect.Layer;
 import java.nio.ByteOrder;
@@ -32,12 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import jdk.tools.jlink.internal.ExecutableImage;
-import jdk.tools.jlink.internal.JlinkTask;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.builder.ImageBuilder;
-import jdk.tools.jlink.internal.PluginRepository;
 
 /**
  * API to call jlink.

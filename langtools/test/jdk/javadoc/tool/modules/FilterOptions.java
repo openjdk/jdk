@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8159305
+ * @bug 8159305 8167383
  * @summary Tests elements filtering options
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.api
@@ -73,6 +73,10 @@ public class FilterOptions extends ModuleTestBase {
                 "--module", "m1", "--show-module-contents", "api");
 
         checkModuleMode("API");
+        checkModulesSpecified("m1");
+        checkModulesIncluded("m1");
+        checkPackagesIncluded("pub");
+        checkPackagesNotIncluded("pro", "pqe");
     }
 
     @Test
@@ -81,6 +85,10 @@ public class FilterOptions extends ModuleTestBase {
                 "--module", "m1", "--show-module-contents", "all");
 
         checkModuleMode("ALL");
+        checkModulesSpecified("m1");
+        checkModulesIncluded("m1");
+        checkPackagesIncluded("pub", "pqe");
+        checkPackagesNotIncluded("pro");
     }
 
     @Test
@@ -92,6 +100,7 @@ public class FilterOptions extends ModuleTestBase {
         checkModulesSpecified("m1");
         checkModulesIncluded("m1");
         checkPackagesIncluded("pub");
+        checkPackagesNotIncluded("pqe", "pro");
         checkTypesIncluded("pub.A", "pub.A.ProtectedNested", "pub.A.PublicNested");
     }
 
@@ -102,9 +111,10 @@ public class FilterOptions extends ModuleTestBase {
                 "--show-packages", "all");
         checkModulesSpecified("m1");
         checkModulesIncluded("m1");
-        checkPackagesIncluded("pub", "pro");
+        checkPackagesIncluded("pub", "pqe", "pro");
 
         checkTypesIncluded("pub.A", "pub.A.ProtectedNested", "pub.A.PublicNested",
+                           "pqe.A", "pqe.A.ProtectedNested", "pqe.A.PublicNested",
                            "pro.A", "pro.A.ProtectedNested", "pro.A.PublicNested");
     }
 
@@ -221,6 +231,7 @@ public class FilterOptions extends ModuleTestBase {
         checkModulesSpecified("m1");
         checkModulesIncluded("m1");
         checkPackagesIncluded("pub");
+        checkPackagesNotIncluded("pqe", "pro");
         checkTypesIncluded("pub.A", "pub.A.PublicNested");
 
         checkMembers(Visibility.PUBLIC);
@@ -235,6 +246,7 @@ public class FilterOptions extends ModuleTestBase {
         checkModulesSpecified("m1");
         checkModulesIncluded("m1");
         checkPackagesIncluded("pub");
+        checkPackagesNotIncluded("pqe", "pro");
         checkTypesIncluded("pub.A", "pub.A.ProtectedNested", "pub.A.PublicNested");
 
         checkMembers(Visibility.PROTECTED);
@@ -250,6 +262,7 @@ public class FilterOptions extends ModuleTestBase {
         checkModulesSpecified("m1");
         checkModulesIncluded("m1");
         checkPackagesIncluded("pub");
+        checkPackagesNotIncluded("pqe", "pro");
         checkTypesIncluded("pub.A", "pub.A.ProtectedNested", "pub.A.PublicNested");
 
         checkMembers(Visibility.PROTECTED);
@@ -264,10 +277,10 @@ public class FilterOptions extends ModuleTestBase {
         checkModuleMode("ALL");
         checkModulesSpecified("m1");
         checkModulesIncluded("m1");
-        checkPackagesIncluded("pub");
-        checkPackagesIncluded("pro");
+        checkPackagesIncluded("pub", "pqe", "pro");
         checkTypesIncluded("pub.B", "pub.B.Nested", "pub.B.ProtectedNested", "pub.B.PublicNested",
                            "pub.A", "pub.A.Nested", "pub.A.ProtectedNested", "pub.A.PublicNested",
+                           "pqe.A", "pqe.A.Nested", "pqe.A.ProtectedNested", "pqe.A.PublicNested",
                            "pro.B", "pro.B.Nested", "pro.B.ProtectedNested", "pro.B.PublicNested",
                            "pro.A", "pro.A.Nested", "pro.A.ProtectedNested", "pro.A.PublicNested");
 
@@ -283,12 +296,13 @@ public class FilterOptions extends ModuleTestBase {
         checkModuleMode("ALL");
         checkModulesSpecified("m1");
         checkModulesIncluded("m1");
-        checkPackagesIncluded("pub");
-        checkPackagesIncluded("pro");
+        checkPackagesIncluded("pub", "pqe", "pro");
         checkTypesIncluded("pub.B", "pub.B.PrivateNested", "pub.B.Nested", "pub.B.ProtectedNested",
                            "pub.B.PublicNested",
                            "pub.A", "pub.A.PrivateNested", "pub.A.Nested", "pub.A.ProtectedNested",
                            "pub.A.PublicNested",
+                           "pqe.A", "pqe.A.PrivateNested", "pqe.A.Nested", "pqe.A.ProtectedNested",
+                           "pqe.A.PublicNested",
                            "pro.B", "pro.B.PrivateNested", "pro.B.Nested", "pro.B.ProtectedNested",
                            "pro.B.PublicNested",
                            "pro.A", "pro.A.PrivateNested", "pro.A.Nested", "pro.A.ProtectedNested",
@@ -365,8 +379,17 @@ public class FilterOptions extends ModuleTestBase {
                 .classes(createClass("pub", "B", false))
                 .classes(createClass("pro", "A", true))
                 .classes(createClass("pro", "B", false))
+                .classes(createClass("pqe", "A", true))
                 .exports("pub")
+                .exportsTo("pqe", "m2")
                 .write(src);
+
+        ModuleBuilder mb2 = new ModuleBuilder(tb, "m2");
+        mb2.comment("The second module")
+                .classes(createClass("m2pub", "A", true))
+                .requires("m1")
+                .write(src);
+
         return src.toString();
     }
 

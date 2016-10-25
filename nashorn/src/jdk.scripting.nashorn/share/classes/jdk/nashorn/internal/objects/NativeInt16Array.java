@@ -225,6 +225,17 @@ public final class NativeInt16Array extends ArrayBufferView {
         return (NativeInt16Array)ArrayBufferView.subarrayImpl(self, begin, end);
     }
 
+    /**
+     * ECMA 6 22.2.3.30 %TypedArray%.prototype [ @@iterator ] ( )
+     *
+     * @param self the self reference
+     * @return an iterator over the array's values
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, name = "@@iterator")
+    public static Object getIterator(final Object self) {
+        return ArrayIterator.newArrayValueIterator(self);
+    }
+
     @Override
     protected ScriptObject getPrototype(final Global global) {
         return global.getInt16ArrayPrototype();

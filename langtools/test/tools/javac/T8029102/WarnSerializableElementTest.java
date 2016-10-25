@@ -4,36 +4,36 @@
  * @summary Enhance compiler warnings for Lambda
  *     Checks that the warning for accessing non public members of a class is
  *     fired correctly.
- * @compile/fail/ref=WarnSerializableLambdaTest.out -XDrawDiagnostics -Werror -XDwarnOnAccessToSensitiveMembers WarnSerializableLambdaTest.java
+ * @compile/fail/ref=WarnSerializableElementTest.out -XDrawDiagnostics -Werror -XDwarnOnAccessToMembers WarnSerializableElementTest.java
  */
 
 import java.io.Serializable;
 
-public class WarnSerializableLambdaTest {
+public class WarnSerializableElementTest {
 
     void warnLambda() throws Exception {
-        SAM t3 = (SAM & Serializable)WarnSerializableLambdaTest::packageClassMethod;
-        SAM t4 = (SAM & Serializable)WarnSerializableLambdaTest::protectedClassMethod;
-        SAM t5 = (SAM & Serializable)WarnSerializableLambdaTest::privateClassMethod;
+        SAM t3 = (SAM & Serializable)WarnSerializableElementTest::packageClassMethod;
+        SAM t4 = (SAM & Serializable)WarnSerializableElementTest::protectedClassMethod;
+        SAM t5 = (SAM & Serializable)WarnSerializableElementTest::privateClassMethod;
 
-        WarnSerializableLambdaTest test = new WarnSerializableLambdaTest();
+        WarnSerializableElementTest test = new WarnSerializableElementTest();
         SAM t6 = (SAM & Serializable)test::packageInstanceMethod;
         SAM t7 = (SAM & Serializable)test::protectedInstanceMethod;
         SAM t8 = (SAM & Serializable)test::privateInstanceMethod;
 
         SAM t9 = (SAM & Serializable) c -> {
 
-            WarnSerializableLambdaTest.staticPackageField = "";
-            WarnSerializableLambdaTest.staticProtectedField = "";
-            WarnSerializableLambdaTest.staticPrivateField = "";
+            WarnSerializableElementTest.staticPackageField = "";
+            WarnSerializableElementTest.staticProtectedField = "";
+            WarnSerializableElementTest.staticPrivateField = "";
 
             packageField = "";
             protectedField = "";
             privateField = "";
 
-            WarnSerializableLambdaTest.packageClassMethod(null);
-            WarnSerializableLambdaTest.protectedClassMethod(null);
-            WarnSerializableLambdaTest.privateClassMethod(null);
+            WarnSerializableElementTest.packageClassMethod(null);
+            WarnSerializableElementTest.protectedClassMethod(null);
+            WarnSerializableElementTest.privateClassMethod(null);
 
             packageInstanceMethod(null);
             protectedInstanceMethod(null);
@@ -53,17 +53,17 @@ public class WarnSerializableLambdaTest {
     private void warnAnoInnerClass() throws Exception {
         new SerializableDesc() {
             public void m(Object param) throws Exception {
-                WarnSerializableLambdaTest.staticPackageField = "";
-                WarnSerializableLambdaTest.staticProtectedField = "";
-                WarnSerializableLambdaTest.staticPrivateField = "";
+                WarnSerializableElementTest.staticPackageField = "";
+                WarnSerializableElementTest.staticProtectedField = "";
+                WarnSerializableElementTest.staticPrivateField = "";
 
                 packageField = "";
                 protectedField = "";
                 privateField = "";
 
-                WarnSerializableLambdaTest.packageClassMethod(null);
-                WarnSerializableLambdaTest.protectedClassMethod(null);
-                WarnSerializableLambdaTest.privateClassMethod(null);
+                WarnSerializableElementTest.packageClassMethod(null);
+                WarnSerializableElementTest.protectedClassMethod(null);
+                WarnSerializableElementTest.privateClassMethod(null);
 
                 packageInstanceMethod(null);
                 protectedInstanceMethod(null);
@@ -80,9 +80,9 @@ public class WarnSerializableLambdaTest {
     }
 
     void dontWarnLambda() throws Exception {
-        SAM t1 = (SAM & Serializable)WarnSerializableLambdaTest::publicClassMethod;
+        SAM t1 = (SAM & Serializable)WarnSerializableElementTest::publicClassMethod;
 
-        WarnSerializableLambdaTest test = new WarnSerializableLambdaTest();
+        WarnSerializableElementTest test = new WarnSerializableElementTest();
         SAM t2 = (SAM & Serializable)test::publicInstanceMethod;
 
         int[] buffer = {0};
@@ -92,9 +92,9 @@ public class WarnSerializableLambdaTest {
             localVar = null;
             param = null;
 
-            WarnSerializableLambdaTest.staticPublicField = "";
+            WarnSerializableElementTest.staticPublicField = "";
             publicField = "";
-            WarnSerializableLambdaTest.publicClassMethod(null);
+            WarnSerializableElementTest.publicClassMethod(null);
             publicInstanceMethod(null);
 
             PublicClass.effectivelyPublicStaticField = "";
@@ -118,9 +118,9 @@ public class WarnSerializableLambdaTest {
                 localVar = null;
                 param = null;
 
-                WarnSerializableLambdaTest.staticPublicField = "";
+                WarnSerializableElementTest.staticPublicField = "";
                 publicField = "";
-                WarnSerializableLambdaTest.publicClassMethod(null);
+                WarnSerializableElementTest.publicClassMethod(null);
                 publicInstanceMethod(null);
 
                 PublicClass.effectivelyPublicStaticField = "";
@@ -138,20 +138,20 @@ public class WarnSerializableLambdaTest {
     enum WarnEnum {
         A {
             public void m() throws Exception {
-                WarnSerializableLambdaTest.staticPackageField = "";
-                WarnSerializableLambdaTest.staticProtectedField = "";
-                WarnSerializableLambdaTest.staticPrivateField = "";
+                WarnSerializableElementTest.staticPackageField = "";
+                WarnSerializableElementTest.staticProtectedField = "";
+                WarnSerializableElementTest.staticPrivateField = "";
 
-                WarnSerializableLambdaTest test =
-                        new WarnSerializableLambdaTest();
+                WarnSerializableElementTest test =
+                        new WarnSerializableElementTest();
 
                 test.packageField = "";
                 test.protectedField = "";
                 test.privateField = "";
 
-                WarnSerializableLambdaTest.packageClassMethod(null);
-                WarnSerializableLambdaTest.protectedClassMethod(null);
-                WarnSerializableLambdaTest.privateClassMethod(null);
+                WarnSerializableElementTest.packageClassMethod(null);
+                WarnSerializableElementTest.protectedClassMethod(null);
+                WarnSerializableElementTest.privateClassMethod(null);
 
                 test.packageInstanceMethod(null);
                 test.protectedInstanceMethod(null);

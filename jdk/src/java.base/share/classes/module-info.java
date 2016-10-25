@@ -171,8 +171,10 @@ module java.base {
         jdk.jartool,
         jdk.jdeps,
         jdk.jlink,
+        jdk.jshell,
         jdk.net,
         jdk.scripting.nashorn,
+        jdk.scripting.nashorn.shell,
         jdk.unsupported,
         jdk.vm.ci;
     exports jdk.internal.perf to
@@ -238,8 +240,7 @@ module java.base {
         java.xml.ws;
     exports sun.security.action to
         java.desktop,
-        java.security.jgss,
-        jdk.crypto.pkcs11;
+        java.security.jgss;
     exports sun.security.internal.interfaces to
         jdk.crypto.pkcs11;
     exports sun.security.internal.spec to
@@ -265,6 +266,8 @@ module java.base {
         jdk.crypto.pkcs11;
     exports sun.security.ssl to
         java.security.jgss;
+    exports sun.security.timestamp to
+        jdk.jartool;
     exports sun.security.tools to
         jdk.jartool;
     exports sun.security.util to

@@ -48,6 +48,10 @@ static jboolean GetJVMPath(const char *jrepath, const char *jvmtype,
                            char *jvmpath, jint jvmpathsize);
 static jboolean GetJREPath(char *path, jint pathsize);
 
+#ifdef USE_REGISTRY_LOOKUP
+jboolean GetPublicJREHome(char *buf, jint bufsize);
+#endif
+
 /* We supports warmup for UI stack that is performed in parallel
  * to VM initialization.
  * This helps to improve startup of UI application as warmup phase
@@ -345,6 +349,14 @@ GetJREPath(char *path, jint pathsize)
             return JNI_TRUE;
         }
     }
+
+#ifdef USE_REGISTRY_LOOKUP
+    /* Lookup public JRE using Windows registry. */
+    if (GetPublicJREHome(path, pathsize)) {
+        JLI_TraceLauncher("JRE path is %s\n", path);
+        return JNI_TRUE;
+    }
+#endif
 
     JLI_ReportErrorMessage(JRE_ERROR8 JAVA_DLL);
     return JNI_FALSE;

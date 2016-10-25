@@ -193,8 +193,8 @@ public class ToolSimpleTest extends ReplToolTesting {
                         "|  '/save' requires a filename argument."),
                 (a) -> assertCommand(a, "/open",
                         "|  '/open' requires a filename argument."),
-                (a) -> assertCommand(a, "/set start",
-                        "|  Specify either one option or a startup file name -- /set start")
+                (a) -> assertCommandOutputStartsWith(a, "/drop",
+                        "|  In the /drop argument, please specify an import, variable, method, or class to drop.")
         );
     }
 

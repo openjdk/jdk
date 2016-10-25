@@ -213,7 +213,8 @@ public class SimpleScriptContext  implements ScriptContext {
     }
 
     /**
-     * Sets the value of an attribute in a given scope.
+     * Sets the value of an attribute in a given scope. If the scope is <code>GLOBAL_SCOPE</code>
+     * and no Bindings is set for <code>GLOBAL_SCOPE</code>, then setAttribute call is a no-op.
      *
      * @param name The name of the attribute to set
      * @param value The value of the attribute

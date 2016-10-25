@@ -321,6 +321,13 @@ class InetAddress implements java.io.Serializable {
                     public String getOriginalHostName(InetAddress ia) {
                         return ia.holder.getOriginalHostName();
                     }
+
+                    public InetAddress getByName(String hostName,
+                                                 InetAddress hostAddress)
+                            throws UnknownHostException
+                    {
+                        return InetAddress.getByName(hostName, hostAddress);
+                    }
                 }
         );
         init();
