@@ -2034,6 +2034,27 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ delayed()->nop();
   }
 
+  // If the compiler was not able to prove that exact type of the source or the destination
+  // of the arraycopy is an array type, check at runtime if the source or the destination is
+  // an instance type.
+  if (flags & LIR_OpArrayCopy::type_check) {
+    if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::dst_objarray)) {
+      __ load_klass(dst, tmp);
+      __ lduw(tmp, in_bytes(Klass::layout_helper_offset()), tmp2);
+      __ cmp(tmp2, Klass::_lh_neutral_value);
+      __ br(Assembler::greaterEqual, false, Assembler::pn, *stub->entry());
+      __ delayed()->nop();
+    }
+
+    if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::src_objarray)) {
+      __ load_klass(src, tmp);
+      __ lduw(tmp, in_bytes(Klass::layout_helper_offset()), tmp2);
+      __ cmp(tmp2, Klass::_lh_neutral_value);
+      __ br(Assembler::greaterEqual, false, Assembler::pn, *stub->entry());
+      __ delayed()->nop();
+    }
+  }
+
   if (flags & LIR_OpArrayCopy::src_pos_positive_check) {
     // test src_pos register
     __ cmp_zero_and_br(Assembler::less, src_pos, *stub->entry());

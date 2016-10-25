@@ -49,20 +49,31 @@ public class RMID extends JavaVM {
 
     public static String MANAGER_OPTION="-Djava.security.manager=";
 
-    /** Test port for rmid */
-    private final int port;
+    /**
+     * Test port for rmid.
+     *
+     * May initially be 0, which means that the child rmid process will choose
+     * an ephemeral port and report it back to the parent process. This field
+     * will then be set to the child rmid's ephemeral port value.
+     */
+    private volatile int port;
+    //private final boolean ephemeralPort
 
     /** Initial log name */
     protected static String log = "log";
     /** rmid's logfile directory; currently must be "." */
     protected static String LOGDIR = ".";
 
+    /** The output message from the child rmid process that directly precedes
+     * the ephemeral port number.*/
+    public static final String EPHEMERAL_MSG = "RmidSelectorProvider-listening-On:";
+
     private static void mesg(Object mesg) {
         System.err.println("RMID: " + mesg.toString());
     }
 
     /** make test options and arguments */
-    private static String makeOptions(boolean debugExec) {
+    private static String makeOptions(int port, boolean debugExec) {
 
         String options = " -Dsun.rmi.server.activation.debugExec=" +
             debugExec;
@@ -87,6 +98,17 @@ public class RMID extends JavaVM {
         // to avoid spurious timeouts on slow machines.
         options += " -Dsun.rmi.activation.execTimeout=60000";
 
+        if (port == 0) {
+            // Ephemeral port, so have the rmid child process create the
+            // server socket channel and report its port number, over stdin.
+            options += " -classpath " + TestParams.testClassPath;
+            options += " --add-exports=java.base/sun.nio.ch=ALL-UNNAMED";
+            options += " -Djava.nio.channels.spi.SelectorProvider=RMIDSelectorProvider";
+
+            // Disable redirection of System.err to /tmp
+            options += " -Dsun.rmi.server.activation.disableErrRedirect=true";
+        }
+
         return options;
     }
 
@@ -107,7 +129,8 @@ public class RMID extends JavaVM {
         String args =
             " -log " + (new File(LOGDIR, log)).getAbsolutePath();
 
-        if (includePortArg) {
+        // 0 = ephemeral port, do not include an explicit port number
+        if (includePortArg && port != 0) {
             args += " -port " + port;
         }
 
@@ -160,13 +183,24 @@ public class RMID extends JavaVM {
                                   boolean debugExec, boolean includePortArg,
                                   int port)
     {
-        String options = makeOptions(debugExec);
+        String options = makeOptions(port, debugExec);
         String args = makeArgs(includePortArg, port);
         RMID rmid = new RMID("sun.rmi.server.Activation", options, args,
                              out, err, port);
         rmid.setPolicyFile(TestParams.defaultRmidPolicy);
 
         return rmid;
+    }
+
+    public static RMID createRMIDOnEphemeralPort() {
+        return createRMID(System.out, System.err, true, true, 0);
+    }
+
+    public static RMID createRMIDOnEphemeralPort(OutputStream out,
+                                                 OutputStream err,
+                                                 boolean debugExec)
+    {
+        return createRMID(out, err, debugExec, true, 0);
     }
 
 
@@ -247,7 +281,10 @@ public class RMID extends JavaVM {
         // a well recognized exception (port already in use...).
 
         mesg("Starting rmid on port " + port + ".");
-        super.start();
+        int p = super.startAndGetPort();
+        if (p != -1)
+            port = p;
+        mesg("Started rmid on port " + port + ".");
 
         // int slopFactor = 1;
         // try {
@@ -271,8 +308,11 @@ public class RMID extends JavaVM {
 
             try {
                 int status = vm.exitValue();
+                waitFor(TIMEOUT_SHUTDOWN_MS);
                 TestLibrary.bomb("Rmid process exited with status " + status + " after " +
                     (System.currentTimeMillis() - startTime) + "ms.");
+            } catch (InterruptedException | TimeoutException e) {
+                mesg(e);
             } catch (IllegalThreadStateException ignore) { }
 
             // The rmid process is alive; check to see whether
@@ -307,6 +347,8 @@ public class RMID extends JavaVM {
      */
     public void restart() throws IOException {
         destroy();
+        options = makeOptions(port, true);
+        args = makeArgs(true, port);
         start();
     }
 

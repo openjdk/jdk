@@ -240,8 +240,7 @@ module java.base {
         java.xml.ws;
     exports sun.security.action to
         java.desktop,
-        java.security.jgss,
-        jdk.crypto.pkcs11;
+        java.security.jgss;
     exports sun.security.internal.interfaces to
         jdk.crypto.pkcs11;
     exports sun.security.internal.spec to

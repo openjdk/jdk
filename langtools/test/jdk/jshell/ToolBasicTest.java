@@ -431,12 +431,12 @@ public class ToolBasicTest extends ReplToolTesting {
                     (a) -> assertMethod(a, "void f() {}", "()V", "f"),
                     (a) -> assertImport(a, "import java.util.stream.*;", "", "java.util.stream.*"),
                     (a) -> assertCommand(a, "/save " + startUpFile.toString(), null),
-                    (a) -> assertCommand(a, "/retain start " + startUpFile.toString(), null)
+                    (a) -> assertCommand(a, "/set start -retain " + startUpFile.toString(), null)
             );
             Path unknown = compiler.getPath("UNKNOWN");
             test(
-                    (a) -> assertCommandOutputStartsWith(a, "/retain start " + unknown.toString(),
-                            "|  File '" + unknown + "' for '/retain start' is not found.")
+                    (a) -> assertCommandOutputStartsWith(a, "/set start -retain " + unknown.toString(),
+                            "|  File '" + unknown + "' for '/set start' is not found.")
             );
             test(false, new String[0],
                     (a) -> {
