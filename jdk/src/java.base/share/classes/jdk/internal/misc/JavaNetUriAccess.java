@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
 
 package jdk.internal.misc;
 
-import java.net.URLClassLoader;
-import jdk.internal.loader.URLClassPath;
+import java.net.URI;
 
-public interface JavaNetAccess {
+public interface JavaNetUriAccess {
     /**
-     * return the URLClassPath belonging to the given loader
+     * Create a URI of pre-validated scheme and path.
      */
-    URLClassPath getURLClassPath (URLClassLoader u);
+    URI create(String scheme, String path);
 }

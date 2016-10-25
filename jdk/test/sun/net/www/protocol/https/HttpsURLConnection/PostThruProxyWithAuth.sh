@@ -57,5 +57,6 @@ ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ${EXTRAOPTS}
     ${TESTSRC}${FS}ProxyTunnelServer.java \
     ${TESTSRC}${FS}PostThruProxyWithAuth.java
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ${EXTRAOPTS} \
+    -Djdk.http.auth.tunneling.disabledSchemes= \
     PostThruProxyWithAuth ${HOSTNAME} ${TESTSRC}
 exit
