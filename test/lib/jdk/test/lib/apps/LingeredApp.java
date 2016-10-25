@@ -67,12 +67,13 @@ import java.util.UUID;
 public class LingeredApp {
 
     private static final long spinDelay = 1000;
-    private static final int appWaitTime = 100;
 
-    private final String lockFileName;
     private long lockCreationTime;
-    private Process appProcess;
     private final ArrayList<String> storedAppOutput;
+
+    protected Process appProcess;
+    protected static final int appWaitTime = 100;
+    protected final String lockFileName;
 
     /*
      * Drain child process output, store it into string array
@@ -255,14 +256,10 @@ public class LingeredApp {
     }
 
     /**
-     * Run the app
-     *
-     * @param vmArguments
-     * @throws IOException
+     * Analyze an environment and prepare a command line to
+     * run the app, app name should be added explicitly
      */
-    public void runApp(List<String> vmArguments)
-            throws IOException {
-
+    public List<String> runAppPrepare(List<String> vmArguments) {
         // We should always use testjava or throw an exception,
         // so we can't use JDKToolFinder.getJDKTool("java");
         // that falls back to compile java on error
@@ -303,28 +300,52 @@ public class LingeredApp {
         String classpath = System.getProperty("test.class.path");
         cmd.add((classpath == null) ? "." : classpath);
 
-        cmd.add(this.getAppName());
-        cmd.add(lockFileName);
+        return cmd;
+    }
 
-        // Reporting
+    /**
+     * Assemble command line to a printable string
+     */
+    public void printCommandLine(List<String> cmd) {
+        // A bit of verbosity
         StringBuilder cmdLine = new StringBuilder();
         for (String strCmd : cmd) {
             cmdLine.append("'").append(strCmd).append("' ");
         }
 
-        // A bit of verbosity
         System.out.println("Command line: [" + cmdLine.toString() + "]");
+    }
+
+    public void startGobblerPipe() {
+      // Create pipe reader for process, and read stdin and stderr to array of strings
+      InputGobbler gb = new InputGobbler(appProcess.getInputStream(), storedAppOutput);
+      gb.start();
+    }
+
+    /**
+     * Run the app.
+     *
+     * @param vmArguments
+     * @throws IOException
+     */
+    public void runApp(List<String> vmArguments)
+            throws IOException {
+
+        List<String> cmd = runAppPrepare(vmArguments);
+
+        cmd.add(this.getAppName());
+        cmd.add(lockFileName);
+
+        printCommandLine(cmd);
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
         // we don't expect any error output but make sure we are not stuck on pipe
         // pb.redirectErrorStream(false);
+        // ProcessBuilder.start can throw IOException
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-
         appProcess = pb.start();
 
-        // Create pipe reader for process, and read stdin and stderr to array of strings
-        InputGobbler gb = new InputGobbler(appProcess.getInputStream(), storedAppOutput);
-        gb.start();
+        startGobblerPipe();
     }
 
     /**
@@ -334,10 +355,14 @@ public class LingeredApp {
      */
     public void stopApp() throws IOException {
         deleteLock();
-        waitAppTerminate();
-        int exitcode = appProcess.exitValue();
-        if (exitcode != 0) {
-            throw new IOException("LingeredApp terminated with non-zero exit code " + exitcode);
+        // The startApp() of the derived app can throw
+        // an exception before the LA actually starts
+        if (appProcess != null) {
+            waitAppTerminate();
+            int exitcode = appProcess.exitValue();
+            if (exitcode != 0) {
+                throw new IOException("LingeredApp terminated with non-zero exit code " + exitcode);
+            }
         }
     }
 
