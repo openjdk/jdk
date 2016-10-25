@@ -193,6 +193,16 @@ inline size_t heap_word_size(size_t byte_size) {
   return (byte_size + (HeapWordSize-1)) >> LogHeapWordSize;
 }
 
+//-------------------------------------------
+// Constant for jlong (standardized by C++11)
+
+// Build a 64bit integer constant
+#define CONST64(x)  (x ## LL)
+#define UCONST64(x) (x ## ULL)
+
+const jlong min_jlong = CONST64(0x8000000000000000);
+const jlong max_jlong = CONST64(0x7fffffffffffffff);
+
 const size_t K                  = 1024;
 const size_t M                  = K*K;
 const size_t G                  = M*K;

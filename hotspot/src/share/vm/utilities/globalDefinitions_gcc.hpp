@@ -160,17 +160,6 @@ typedef uint32_t juint;
 typedef uint64_t julong;
 
 
-//----------------------------------------------------------------------------------------------------
-// Constant for jlong (specifying a long long constant is C++ compiler specific)
-
-// Build a 64bit integer constant
-#define CONST64(x)  (x ## LL)
-#define UCONST64(x) (x ## ULL)
-
-const jlong min_jlong = CONST64(0x8000000000000000);
-const jlong max_jlong = CONST64(0x7fffffffffffffff);
-
-
 #ifdef SOLARIS
 //----------------------------------------------------------------------------------------------------
 // ANSI C++ fixes
