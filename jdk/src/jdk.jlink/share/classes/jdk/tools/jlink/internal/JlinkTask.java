@@ -186,7 +186,7 @@ public class JlinkTask {
                    new PrintWriter(System.err, true));
         }
         try {
-            optionsHelper.handleOptions(this, args);
+            optionsHelper.handleOptionsNoUnhandled(this, args);
             if (options.help) {
                 optionsHelper.showHelp(PROGNAME);
                 return EXIT_OK;
