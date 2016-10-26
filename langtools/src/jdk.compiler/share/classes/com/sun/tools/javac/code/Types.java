@@ -1004,7 +1004,7 @@ public class Types {
        List<Type> argtypes = msym.type.getParameterTypes();
        return (msym.flags_field & NATIVE) != 0 &&
               (msym.owner == syms.methodHandleType.tsym || msym.owner == syms.varHandleType.tsym) &&
-               argtypes.tail.tail == null &&
+               argtypes.length() == 1 &&
                argtypes.head.hasTag(TypeTag.ARRAY) &&
                ((ArrayType)argtypes.head).elemtype.tsym == syms.objectType.tsym;
    }
