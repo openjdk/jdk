@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8075118
- * @summary Allow a ctor to call super() from a switch bytecode.
+ * @summary JVM stuck in infinite loop during verification
  * @compile HandlerInTry.jasm
  * @compile IsolatedHandlerInTry.jasm
  * @run main/othervm -Xverify:all LoadHandlerInTry
@@ -70,9 +70,10 @@ public class LoadHandlerInTry {
         System.out.println("Regression test for bug 8075118");
         try {
             Class newClass = Class.forName("HandlerInTry");
-        } catch (Exception e) {
-            System.out.println("Failed: Exception was thrown: " + e.toString());
-            throw e;
+            throw new RuntimeException(
+                 "Failed to throw VerifyError for HandlerInTry");
+        } catch (java.lang.VerifyError e) {
+            System.out.println("Passed: VerifyError exception was thrown");
         }
 
         try {

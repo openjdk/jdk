@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,8 +167,7 @@ class StackMapFrame : public ResourceObj {
 
   // Return true if this stack map frame is assignable to target.
   bool is_assignable_to(
-      const StackMapFrame* target, bool is_exception_handler,
-      ErrorContext* ctx, TRAPS) const;
+      const StackMapFrame* target, ErrorContext* ctx, TRAPS) const;
 
   inline void set_mark() {
 #ifdef ASSERT
@@ -289,8 +288,6 @@ class StackMapFrame : public ResourceObj {
   // Returns true if src is assignable to target.
   int is_assignable_to(
     VerificationType* src, VerificationType* target, int32_t len, TRAPS) const;
-
-  bool has_flag_match_exception(const StackMapFrame* target) const;
 
   TypeOrigin stack_top_ctx();
 
