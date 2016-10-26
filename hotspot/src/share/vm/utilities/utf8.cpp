@@ -411,61 +411,46 @@ bool UNICODE::is_latin1(jchar* base, int length) {
 }
 
 int UNICODE::utf8_size(jchar c) {
-  if ((0x0001 <= c) && (c <= 0x007F)) return 1;
-  if (c <= 0x07FF) return 2;
-  return 3;
+  if ((0x0001 <= c) && (c <= 0x007F)) {
+    // ASCII character
+    return 1;
+  } else  if (c <= 0x07FF) {
+    return 2;
+  } else {
+    return 3;
+  }
 }
 
 int UNICODE::utf8_size(jbyte c) {
-  if (c >= 0x0001) return 1;
-  return 2;
-}
-
-int UNICODE::utf8_length(jchar* base, int length) {
-  int result = 0;
-  for (int index = 0; index < length; index++) {
-    jchar c = base[index];
-    if ((0x0001 <= c) && (c <= 0x007F)) result += 1;
-    else if (c <= 0x07FF) result += 2;
-    else result += 3;
+  if (c >= 0x01) {
+    // ASCII character. Check is equivalent to
+    // (0x01 <= c) && (c <= 0x7F) because c is signed.
+    return 1;
+  } else {
+    // Non-ASCII character or 0x00 which needs to be
+    // two-byte encoded as 0xC080 in modified UTF-8.
+    return 2;
   }
-  return result;
 }
 
-int UNICODE::utf8_length(jbyte* base, int length) {
+template<typename T>
+int UNICODE::utf8_length(T* base, int length) {
   int result = 0;
   for (int index = 0; index < length; index++) {
-    jbyte c = base[index];
+    T c = base[index];
     result += utf8_size(c);
   }
   return result;
 }
 
-char* UNICODE::as_utf8(jchar* base, int length) {
+template<typename T>
+char* UNICODE::as_utf8(T* base, int& length) {
   int utf8_len = utf8_length(base, length);
   u_char* buf = NEW_RESOURCE_ARRAY(u_char, utf8_len + 1);
   char* result = as_utf8(base, length, (char*) buf, utf8_len + 1);
   assert((int) strlen(result) == utf8_len, "length prediction must be correct");
-  return result;
-}
-
-char* UNICODE::as_utf8(jbyte* base, int length) {
-  int utf8_len = utf8_length(base, length);
-  u_char* result = NEW_RESOURCE_ARRAY(u_char, utf8_len + 1);
-  u_char* p = result;
-  if (utf8_len == length) {
-    for (int index = 0; index < length; index++) {
-      *p++ = base[index];
-    }
-  } else {
-    // Unicode string contains U+0000 which should
-    // be encoded as 0xC080 in "modified" UTF8.
-    for (int index = 0; index < length; index++) {
-      p = utf8_write(p, ((jchar) base[index]) & 0xff);
-    }
-  }
-  *p = '\0';
-  assert(p == &result[utf8_len], "length prediction must be correct");
+  // Set string length to uft8 length
+  length = utf8_len;
   return (char*) result;
 }
 
@@ -490,9 +475,10 @@ char* UNICODE::as_utf8(jbyte* base, int length, char* buf, int buflen) {
     buflen -= sz;
     if (buflen <= 0) break; // string is truncated
     if (sz == 1) {
+      // Copy ASCII characters (UTF-8 is ASCII compatible)
       *p++ = c;
     } else {
-      // Unicode string contains U+0000 which should
+      // Non-ASCII character or 0x00 which should
       // be encoded as 0xC080 in "modified" UTF8.
       p = utf8_write(p, ((jchar) c) & 0xff);
     }
@@ -543,6 +529,10 @@ void UNICODE::as_quoted_ascii(const T* base, int length, char* buf, int buflen) 
 }
 
 // Explicit instantiation for all supported types.
+template int UNICODE::utf8_length(jbyte* base, int length);
+template int UNICODE::utf8_length(jchar* base, int length);
+template char* UNICODE::as_utf8(jbyte* base, int& length);
+template char* UNICODE::as_utf8(jchar* base, int& length);
 template int UNICODE::quoted_ascii_length<jbyte>(jbyte* base, int length);
 template int UNICODE::quoted_ascii_length<jchar>(jchar* base, int length);
 template void UNICODE::as_quoted_ascii<jbyte>(const jbyte* base, int length, char* buf, int buflen);
