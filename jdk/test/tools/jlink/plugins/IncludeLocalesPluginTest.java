@@ -433,13 +433,23 @@ public class IncludeLocalesPluginTest {
 
         for (Object[] data : testData) {
             // create image for each test data
-            System.out.println("Invoking jlink with \"" + data[INCLUDE_LOCALES_OPTION] + "\"");
-            Result result = JImageGenerator.getJLinkTask()
+            Result result;
+            if (data[INCLUDE_LOCALES_OPTION].toString().isEmpty()) {
+                System.out.println("Invoking jlink with no --include-locales option");
+                result = JImageGenerator.getJLinkTask()
+                    .modulePath(helper.defaultModulePath())
+                    .output(helper.createNewImageDir(moduleName))
+                    .addMods((String) data[ADDMODS_OPTION])
+                    .call();
+            } else {
+                System.out.println("Invoking jlink with \"" + data[INCLUDE_LOCALES_OPTION] + "\"");
+                result = JImageGenerator.getJLinkTask()
                     .modulePath(helper.defaultModulePath())
                     .output(helper.createNewImageDir(moduleName))
                     .addMods((String) data[ADDMODS_OPTION])
                     .option((String) data[INCLUDE_LOCALES_OPTION])
                     .call();
+            }
 
             String errorMsg = (String) data[ERROR_MESSAGE];
             if (errorMsg.isEmpty()) {
