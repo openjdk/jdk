@@ -77,12 +77,10 @@ class PseudoScope : public ResourceObj {
 };
 
 static void print_slot(outputStream* str, Symbol* name, Symbol* signature) {
-  ResourceMark rm;
   str->print("%s%s", name->as_C_string(), signature->as_C_string());
 }
 
 static void print_method(outputStream* str, Method* mo, bool with_class=true) {
-  ResourceMark rm;
   if (with_class) {
     str->print("%s.", mo->klass_name()->as_C_string());
   }
