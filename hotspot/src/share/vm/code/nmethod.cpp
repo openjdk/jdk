@@ -82,32 +82,6 @@
 
 #endif
 
-bool nmethod::is_compiled_by_c1() const {
-  if (compiler() == NULL) {
-    return false;
-  }
-  return compiler()->is_c1();
-}
-bool nmethod::is_compiled_by_jvmci() const {
-  if (compiler() == NULL || method() == NULL)  return false;  // can happen during debug printing
-  if (is_native_method()) return false;
-  return compiler()->is_jvmci();
-}
-bool nmethod::is_compiled_by_c2() const {
-  if (compiler() == NULL) {
-    return false;
-  }
-  return compiler()->is_c2();
-}
-bool nmethod::is_compiled_by_shark() const {
-  if (compiler() == NULL) {
-    return false;
-  }
-  return compiler()->is_shark();
-}
-
-
-
 //---------------------------------------------------------------------------------
 // NMethod statistics
 // They are printed under various flags, including:
@@ -440,7 +414,6 @@ void nmethod::init_defaults() {
     _scavenge_root_link    = NULL;
   }
   _scavenge_root_state     = 0;
-  _compiler                = NULL;
 #if INCLUDE_RTM_OPT
   _rtm_state               = NoRTM;
 #endif
@@ -468,7 +441,7 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
     CodeOffsets offsets;
     offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
     offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
-    nm = new (native_nmethod_size, CompLevel_none) nmethod(method(), native_nmethod_size,
+    nm = new (native_nmethod_size, CompLevel_none) nmethod(method(), compiler_none, native_nmethod_size,
                                             compile_id, &offsets,
                                             code_buffer, frame_size,
                                             basic_lock_owner_sp_offset,
@@ -518,7 +491,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
       + round_to(debug_info->data_size()       , oopSize);
 
     nm = new (nmethod_size, comp_level)
-    nmethod(method(), nmethod_size, compile_id, entry_bci, offsets,
+    nmethod(method(), compiler->type(), nmethod_size, compile_id, entry_bci, offsets,
             orig_pc_offset, debug_info, dependencies, code_buffer, frame_size,
             oop_maps,
             handler_table,
@@ -569,6 +542,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 // For native wrappers
 nmethod::nmethod(
   Method* method,
+  CompilerType type,
   int nmethod_size,
   int compile_id,
   CodeOffsets* offsets,
@@ -577,7 +551,7 @@ nmethod::nmethod(
   ByteSize basic_lock_owner_sp_offset,
   ByteSize basic_lock_sp_offset,
   OopMapSet* oop_maps )
-  : CompiledMethod(method, "native nmethod", nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
+  : CompiledMethod(method, "native nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
   _native_receiver_sp_offset(basic_lock_owner_sp_offset),
   _native_basic_lock_sp_offset(basic_lock_sp_offset)
 {
@@ -666,6 +640,7 @@ void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw
 
 nmethod::nmethod(
   Method* method,
+  CompilerType type,
   int nmethod_size,
   int compile_id,
   int entry_bci,
@@ -685,7 +660,7 @@ nmethod::nmethod(
   Handle speculation_log
 #endif
   )
-  : CompiledMethod(method, "nmethod", nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
+  : CompiledMethod(method, "nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
   _native_receiver_sp_offset(in_ByteSize(-1)),
   _native_basic_lock_sp_offset(in_ByteSize(-1))
 {
@@ -701,7 +676,6 @@ nmethod::nmethod(
     _entry_bci               = entry_bci;
     _compile_id              = compile_id;
     _comp_level              = comp_level;
-    _compiler                = compiler;
     _orig_pc_offset          = orig_pc_offset;
     _hotness_counter         = NMethodSweeper::hotness_counter_reset_val();
 
@@ -803,9 +777,7 @@ void nmethod::log_identity(xmlStream* log) const {
   log->print(" compile_id='%d'", compile_id());
   const char* nm_kind = compile_kind();
   if (nm_kind != NULL)  log->print(" compile_kind='%s'", nm_kind);
-  if (compiler() != NULL) {
-    log->print(" compiler='%s'", compiler()->name());
-  }
+  log->print(" compiler='%s'", compiler_name());
   if (TieredCompilation) {
     log->print(" level='%d'", comp_level());
   }

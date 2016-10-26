@@ -1550,6 +1550,7 @@ private:
   void vpermq(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
   void vpermq(XMMRegister dst, XMMRegister src, int imm8);
   void vperm2i128(XMMRegister dst,  XMMRegister nds, XMMRegister src, int imm8);
+  void vperm2f128(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
 
   void pause();
 
@@ -2105,7 +2106,8 @@ private:
 
   // AVX support for vectorized conditional move (double). The following two instructions used only coupled.
   void cmppd(XMMRegister dst, XMMRegister nds, XMMRegister src, int cop, int vector_len);
-  void vpblendd(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMMRegister src2, int vector_len);
+  void blendvpd(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMMRegister src2, int vector_len);
+  void vpblendd(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8, int vector_len);
 
  protected:
   // Next instructions require address alignment 16 bytes SSE mode.
@@ -2139,7 +2141,7 @@ public:
       _input_size_in_bits(Assembler::EVEX_NObit),
       _is_evex_instruction(false),
       _evex_encoding(0),
-      _is_clear_context(false),
+      _is_clear_context(true),
       _is_extended_context(false),
       _current_assembler(NULL),
       _embedded_opmask_register_specifier(1) { // hard code k1, it will be initialized for now
@@ -2205,7 +2207,7 @@ public:
   void set_evex_encoding(int value) { _evex_encoding = value; }
 
   // Set the Evex.Z field to be used to clear all non directed XMM/YMM/ZMM components
-  void set_is_clear_context(void) { _is_clear_context = true; }
+  void reset_is_clear_context(void) { _is_clear_context = false; }
 
   // Map back to current asembler so that we can manage object level assocation
   void set_current_assembler(Assembler *current_assembler) { _current_assembler = current_assembler; }

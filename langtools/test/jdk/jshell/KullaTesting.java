@@ -21,7 +21,10 @@
  * questions.
  */
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
@@ -54,7 +57,6 @@ import jdk.jshell.ExpressionSnippet;
 import jdk.jshell.ImportSnippet;
 import jdk.jshell.Snippet.Kind;
 import jdk.jshell.MethodSnippet;
-import jdk.jshell.PersistentSnippet;
 import jdk.jshell.Snippet.Status;
 import jdk.jshell.Snippet.SubKind;
 import jdk.jshell.TypeDeclSnippet;
@@ -84,7 +86,7 @@ public class KullaTesting {
 
     private SourceCodeAnalysis analysis = null;
     private JShell state = null;
-    private TestingInputStream inStream = null;
+    private InputStream inStream = null;
     private ByteArrayOutputStream outStream = null;
     private ByteArrayOutputStream errStream = null;
 
@@ -107,7 +109,11 @@ public class KullaTesting {
     }
 
     public void setInput(String s) {
-        inStream.setInput(s);
+        setInput(new ByteArrayInputStream(s.getBytes()));
+    }
+
+    public void setInput(InputStream in) {
+        inStream = in;
     }
 
     public String getOutput() {
@@ -160,11 +166,27 @@ public class KullaTesting {
     }
 
     public void setUp(Consumer<JShell.Builder> bc) {
-        inStream = new TestingInputStream();
+        InputStream in = new InputStream() {
+            @Override
+            public int read() throws IOException {
+                assertNotNull(inStream);
+                return inStream.read();
+            }
+            @Override
+            public int read(byte[] b) throws IOException {
+                assertNotNull(inStream);
+                return inStream.read(b);
+            }
+            @Override
+            public int read(byte[] b, int off, int len) throws IOException {
+                assertNotNull(inStream);
+                return inStream.read(b, off, len);
+            }
+        };
         outStream = new ByteArrayOutputStream();
         errStream = new ByteArrayOutputStream();
         JShell.Builder builder = JShell.builder()
-                .in(inStream)
+                .in(in)
                 .out(new PrintStream(outStream))
                 .err(new PrintStream(errStream));
         bc.accept(builder);
@@ -733,15 +755,15 @@ public class KullaTesting {
         assertEquals(expectedSubKind.kind(), expectedKind, "Checking kind: ");
     }
 
-    public void assertDrop(PersistentSnippet key, STEInfo mainInfo, STEInfo... updates) {
+    public void assertDrop(Snippet key, STEInfo mainInfo, STEInfo... updates) {
         assertDrop(key, DiagCheck.DIAG_OK, DiagCheck.DIAG_OK, mainInfo, updates);
     }
 
-    public void assertDrop(PersistentSnippet key, DiagCheck diagMain, DiagCheck diagUpdates, STEInfo mainInfo, STEInfo... updates) {
+    public void assertDrop(Snippet key, DiagCheck diagMain, DiagCheck diagUpdates, STEInfo mainInfo, STEInfo... updates) {
         assertDrop(key, diagMain, diagUpdates, new EventChain(mainInfo, null, null, updates));
     }
 
-    public void assertDrop(PersistentSnippet key, DiagCheck diagMain, DiagCheck diagUpdates, EventChain... eventChains) {
+    public void assertDrop(Snippet key, DiagCheck diagMain, DiagCheck diagUpdates, EventChain... eventChains) {
         checkEvents(() -> getState().drop(key), "drop(" + key + ")", diagMain, diagUpdates, eventChains);
     }
 

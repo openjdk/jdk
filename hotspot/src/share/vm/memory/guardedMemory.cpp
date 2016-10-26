@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,87 +79,3 @@ void GuardedMemory::print_on(outputStream* st) const {
     break;
   }
 }
-
-// test code...
-
-#ifndef PRODUCT
-
-static void guarded_memory_test_check(void* p, size_t sz, void* tag) {
-  assert(p != NULL, "NULL pointer given to check");
-  u_char* c = (u_char*) p;
-  GuardedMemory guarded(c);
-  assert(guarded.get_tag() == tag, "Tag is not the same as supplied");
-  assert(guarded.get_user_ptr() == c, "User pointer is not the same as supplied");
-  assert(guarded.get_user_size() == sz, "User size is not the same as supplied");
-  assert(guarded.verify_guards(), "Guard broken");
-}
-
-void GuardedMemory::test_guarded_memory() {
-  // Test the basic characteristics...
-  size_t total_sz = GuardedMemory::get_total_size(1);
-  assert(total_sz > 1 && total_sz >= (sizeof(GuardHeader) + 1 + sizeof(Guard)), "Unexpected size");
-  u_char* basep = (u_char*) os::malloc(total_sz, mtInternal);
-
-  GuardedMemory guarded(basep, 1, (void*)0xf000f000);
-
-  assert(*basep == badResourceValue, "Expected guard in the form of badResourceValue");
-  u_char* userp = guarded.get_user_ptr();
-  assert(*userp == uninitBlockPad, "Expected uninitialized data in the form of uninitBlockPad");
-  guarded_memory_test_check(userp, 1, (void*)0xf000f000);
-
-  void* freep = guarded.release_for_freeing();
-  assert((u_char*)freep == basep, "Expected the same pointer guard was ");
-  assert(*userp == freeBlockPad, "Expected user data to be free block padded");
-  assert(!guarded.verify_guards(), "Expected failed");
-  os::free(freep);
-
-  // Test a number of odd sizes...
-  size_t sz = 0;
-  do {
-    void* p = os::malloc(GuardedMemory::get_total_size(sz), mtInternal);
-    void* up = guarded.wrap_with_guards(p, sz, (void*)1);
-    memset(up, 0, sz);
-    guarded_memory_test_check(up, sz, (void*)1);
-    os::free(guarded.release_for_freeing());
-    sz = (sz << 4) + 1;
-  } while (sz < (256 * 1024));
-
-  // Test buffer overrun into head...
-  basep = (u_char*) os::malloc(GuardedMemory::get_total_size(1), mtInternal);
-  guarded.wrap_with_guards(basep, 1);
-  *basep = 0;
-  assert(!guarded.verify_guards(), "Expected failure");
-  os::free(basep);
-
-  // Test buffer overrun into tail with a number of odd sizes...
-  sz = 1;
-  do {
-    void* p = os::malloc(GuardedMemory::get_total_size(sz), mtInternal);
-    void* up = guarded.wrap_with_guards(p, sz, (void*)1);
-    memset(up, 0, sz + 1); // Buffer-overwrite (within guard)
-    assert(!guarded.verify_guards(), "Guard was not broken as expected");
-    os::free(guarded.release_for_freeing());
-    sz = (sz << 4) + 1;
-  } while (sz < (256 * 1024));
-
-  // Test wrap_copy/wrap_free...
-  assert(GuardedMemory::free_copy(NULL), "Expected free NULL to be OK");
-
-  const char* str = "Check my bounds out";
-  size_t str_sz = strlen(str) + 1;
-  char* str_copy = (char*) GuardedMemory::wrap_copy(str, str_sz);
-  guarded_memory_test_check(str_copy, str_sz, NULL);
-  assert(strcmp(str, str_copy) == 0, "Not identical copy");
-  assert(GuardedMemory::free_copy(str_copy), "Free copy failed to verify");
-
-  void* no_data = NULL;
-  void* no_data_copy = GuardedMemory::wrap_copy(no_data, 0);
-  assert(GuardedMemory::free_copy(no_data_copy), "Expected valid guards even for no data copy");
-}
-
-void GuardedMemory_test() {
-  GuardedMemory::test_guarded_memory();
-}
-
-#endif // !PRODUCT
-

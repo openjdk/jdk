@@ -97,16 +97,15 @@ class UNICODE : AllStatic {
   static int utf8_size(jbyte c);
 
   // returns the utf8 length of a unicode string
-  static int utf8_length(jchar* base, int length);
-  static int utf8_length(jbyte* base, int length);
+  template<typename T> static int utf8_length(T* base, int length);
 
   // converts a unicode string to utf8 string
   static void convert_to_utf8(const jchar* base, int length, char* utf8_buffer);
 
   // converts a unicode string to a utf8 string; result is allocated
-  // in resource area unless a buffer is provided.
-  static char* as_utf8(jchar* base, int length);
-  static char* as_utf8(jbyte* base, int length);
+  // in resource area unless a buffer is provided. The unicode 'length'
+  // parameter is set to the length of the result utf8 string.
+  template<typename T> static char* as_utf8(T* base, int& length);
   static char* as_utf8(jchar* base, int length, char* buf, int buflen);
   static char* as_utf8(jbyte* base, int length, char* buf, int buflen);
 

@@ -3120,6 +3120,22 @@ void LIRGenerator::do_ClassIDIntrinsic(Intrinsic* x) {
 
   __ move(id, rlock_result(x));
 }
+
+void LIRGenerator::do_getBufferWriter(Intrinsic* x) {
+  LabelObj* L_end = new LabelObj();
+
+  LIR_Address* jobj_addr = new LIR_Address(getThreadPointer(),
+                                           in_bytes(TRACE_THREAD_DATA_WRITER_OFFSET),
+                                           T_OBJECT);
+  LIR_Opr result = rlock_result(x);
+  __ move_wide(jobj_addr, result);
+  __ cmp(lir_cond_equal, result, LIR_OprFact::oopConst(NULL));
+  __ branch(lir_cond_equal, T_OBJECT, L_end->label());
+  __ move_wide(new LIR_Address(result, T_OBJECT), result);
+
+  __ branch_destination(L_end->label());
+}
+
 #endif
 
 
@@ -3150,6 +3166,9 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
 #ifdef TRACE_HAVE_INTRINSICS
   case vmIntrinsics::_getClassId:
     do_ClassIDIntrinsic(x);
+    break;
+  case vmIntrinsics::_getBufferWriter:
+    do_getBufferWriter(x);
     break;
   case vmIntrinsics::_counterTime:
     do_RuntimeCall(CAST_FROM_FN_PTR(address, TRACE_TIME_METHOD), x);

@@ -31,10 +31,14 @@ module jdk.jlink {
 
     uses jdk.tools.jlink.plugin.Plugin;
 
+    provides java.util.spi.ToolProvider with jdk.tools.jmod.Main.JmodToolProvider;
+    provides java.util.spi.ToolProvider with jdk.tools.jlink.internal.Main.JlinkToolProvider;
+
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.FileCopierPlugin;
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.StripDebugPlugin;
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.ExcludePlugin;
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.ExcludeFilesPlugin;
+    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.ExcludeJmodSectionPlugin;
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.SystemModuleDescriptorPlugin;
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.StripNativeCommandsPlugin;
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.OrderResourcesPlugin;

@@ -49,6 +49,7 @@ import sun.security.internal.spec.TlsPrfParameterSpec;
 import sun.security.ssl.CipherSuite.*;
 import static sun.security.ssl.CipherSuite.PRF.*;
 import sun.security.util.KeyUtil;
+import sun.security.util.MessageDigestSpi2;
 import sun.security.provider.certpath.OCSPResponse;
 
 /**
@@ -2124,63 +2125,14 @@ static final class CertificateVerify extends HandshakeMessage {
         md.update(temp);
     }
 
-    private static final Class<?> delegate;
-    private static final Field spiField;
-
-    static {
-        try {
-            delegate = Class.forName("java.security.MessageDigest$Delegate");
-            spiField = delegate.getDeclaredField("digestSpi");
-        } catch (Exception e) {
-            throw new RuntimeException("Reflection failed", e);
-        }
-        makeAccessible(spiField);
-    }
-
-    private static void makeAccessible(final AccessibleObject o) {
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-            @Override
-            public Object run() {
-                o.setAccessible(true);
-                return null;
-            }
-        });
-    }
-
-    // ConcurrentHashMap does not allow null values, use this marker object
-    private static final Object NULL_OBJECT = new Object();
-
-    // cache Method objects per Spi class
-    // Note that this will prevent the Spi classes from being GC'd. We assume
-    // that is not a problem.
-    private static final Map<Class<?>,Object> methodCache =
-                                        new ConcurrentHashMap<>();
-
     private static void digestKey(MessageDigest md, SecretKey key) {
         try {
-            // Verify that md is implemented via MessageDigestSpi, not
-            // via JDK 1.1 style MessageDigest subclassing.
-            if (md.getClass() != delegate) {
-                throw new Exception("Digest is not a MessageDigestSpi");
-            }
-            MessageDigestSpi spi = (MessageDigestSpi)spiField.get(md);
-            Class<?> clazz = spi.getClass();
-            Object r = methodCache.get(clazz);
-            if (r == null) {
-                try {
-                    r = clazz.getDeclaredMethod("implUpdate", SecretKey.class);
-                    makeAccessible((Method)r);
-                } catch (NoSuchMethodException e) {
-                    r = NULL_OBJECT;
-                }
-                methodCache.put(clazz, r);
-            }
-            if (r == NULL_OBJECT) {
+            if (md instanceof MessageDigestSpi2) {
+                ((MessageDigestSpi2)md).engineUpdate(key);
+            } else {
                 throw new Exception(
                     "Digest does not support implUpdate(SecretKey)");
             }
-            Method update = (Method)r;
-            update.invoke(spi, key);
         } catch (Exception e) {
             throw new RuntimeException(
                 "Could not obtain encoded key and "

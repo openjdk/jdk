@@ -743,7 +743,9 @@ address virtual_call_Relocation::cached_value() {
 }
 
 Method* virtual_call_Relocation::method_value() {
-  Metadata* m = code()->metadata_at(_method_index);
+  CompiledMethod* cm = code();
+  if (cm == NULL) return (Method*)NULL;
+  Metadata* m = cm->metadata_at(_method_index);
   assert(m != NULL || _method_index == 0, "should be non-null for non-zero index");
   assert(m == NULL || m->is_method(), "not a method");
   return (Method*)m;
@@ -769,7 +771,9 @@ void opt_virtual_call_Relocation::unpack_data() {
 }
 
 Method* opt_virtual_call_Relocation::method_value() {
-  Metadata* m = code()->metadata_at(_method_index);
+  CompiledMethod* cm = code();
+  if (cm == NULL) return (Method*)NULL;
+  Metadata* m = cm->metadata_at(_method_index);
   assert(m != NULL || _method_index == 0, "should be non-null for non-zero index");
   assert(m == NULL || m->is_method(), "not a method");
   return (Method*)m;
@@ -800,7 +804,9 @@ address opt_virtual_call_Relocation::static_stub() {
 }
 
 Method* static_call_Relocation::method_value() {
-  Metadata* m = code()->metadata_at(_method_index);
+  CompiledMethod* cm = code();
+  if (cm == NULL) return (Method*)NULL;
+  Metadata* m = cm->metadata_at(_method_index);
   assert(m != NULL || _method_index == 0, "should be non-null for non-zero index");
   assert(m == NULL || m->is_method(), "not a method");
   return (Method*)m;
@@ -970,7 +976,9 @@ void RelocIterator::print_current() {
       // work even during GC or other inconvenient times.
       if (WizardMode && oop_value != NULL) {
         tty->print("oop_value=" INTPTR_FORMAT ": ", p2i(oop_value));
-        oop_value->print_value_on(tty);
+        if (oop_value->is_oop()) {
+          oop_value->print_value_on(tty);
+        }
       }
       break;
     }

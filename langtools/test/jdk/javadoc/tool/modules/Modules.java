@@ -222,7 +222,10 @@ public class Modules extends ModuleTestBase {
                 .classes("package pkg2; /** @see pkg1.A */ public class B { }")
                 .write(src);
 
+        Path out = base.resolve("out-1");
+        Files.createDirectories(out);
         String log = new JavadocTask(tb)
+                .outdir(out)
                 .options("--module-source-path", src.toString(),
                         "--module-path", modulePath.toString(),
                         "--module", "m2")
@@ -233,7 +236,10 @@ public class Modules extends ModuleTestBase {
             throw new Exception("Error not found");
         }
 
+        out = base.resolve("out-2");
+        Files.createDirectories(out);
         new JavadocTask(tb)
+                .outdir(out)
                 .options("--module-source-path", src.toString(),
                         "--module-path", modulePath.toString(),
                         "--add-modules", "m1",

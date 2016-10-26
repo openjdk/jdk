@@ -100,7 +100,6 @@ import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.SecureLookupSupplier;
 import jdk.dynalink.internal.AccessControlContextFactory;
 import jdk.dynalink.linker.support.Lookup;
-import jdk.internal.module.Modules;
 import jdk.internal.reflect.CallerSensitive;
 
 
@@ -180,57 +179,10 @@ class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
     }
 
     private static MethodHandle unreflect(final MethodHandles.Lookup lookup, final Method m) {
-        try {
-            return Lookup.unreflect(lookup, m);
-        } catch (final IllegalAccessError iae) {
-            if (addModuleRead(lookup, m)) {
-                try {
-                    return Lookup.unreflect(lookup, m);
-                } catch (final IllegalAccessError e2) {
-                    // fall through and throw original error as cause
-                }
-            }
-            throw iae;
-        }
+        return Lookup.unreflect(lookup, m);
     }
 
     private static MethodHandle unreflectConstructor(final MethodHandles.Lookup lookup, final Constructor<?> c) {
-        try {
-            return Lookup.unreflectConstructor(lookup, c);
-        } catch (final IllegalAccessError iae) {
-            if (addModuleRead(lookup, c)) {
-                try {
-                    return Lookup.unreflectConstructor(lookup, c);
-                } catch (final IllegalAccessError e2) {
-                    // fall through and throw original error as cause
-                }
-            }
-            throw iae;
-        }
-    }
-
-
-    private static boolean addModuleRead(final MethodHandles.Lookup lookup, final Executable e) {
-        // Don't add module read link if this is not a CallerSensitive member
-        if (!e.isAnnotationPresent(CallerSensitive.class)) {
-            return false;
-        }
-
-        // If the lookup is public lookup, don't bother adding module read link!
-        // public lookup cannot unreflect caller sensitives anyway!
-        if (lookup == MethodHandles.publicLookup()) {
-            return false;
-        }
-
-        // try to add missing module read from using module to declararing module!
-        final Class<?> declClass = e.getDeclaringClass();
-        final Module useModule = lookup.lookupClass().getModule();
-        final Module declModule = declClass.getModule();
-        if (useModule != null && declModule != null && declModule.isExported(declClass.getPackageName())) {
-            Modules.addReads(useModule, declModule);
-            return true;
-        }
-
-        return false;
+        return Lookup.unreflectConstructor(lookup, c);
     }
 }

@@ -359,6 +359,10 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         return (flags_field & DEPRECATED) != 0;
     }
 
+    public boolean isDeprecatedForRemoval() {
+        return (flags_field & DEPRECATED_REMOVAL) != 0;
+    }
+
     public boolean isDeprecatableViaAnnotation() {
         switch (getKind()) {
             case LOCAL_VARIABLE:
@@ -949,6 +953,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public java.util.List<Directive> getDirectives() {
+            complete();
             completeUsesProvides();
             return Collections.unmodifiableList(directives);
         }

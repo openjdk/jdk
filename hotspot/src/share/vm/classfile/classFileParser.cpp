@@ -5775,9 +5775,22 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
       // Anonymous classes such as generated LambdaForm classes are also not included.
       if (SystemDictionaryShared::is_sharing_possible(_loader_data) &&
           _host_klass == NULL) {
+        oop class_loader = _loader_data->class_loader();
         ResourceMark rm(THREAD);
-        classlist_file->print_cr("%s", _class_name->as_C_string());
-        classlist_file->flush();
+        // For the boot and platform class loaders, check if the class is not found in the
+        // java runtime image. Additional check for the boot class loader is if the class
+        // is not found in the boot loader's appended entries. This indicates that the class
+        // is not useable during run time, such as the ones found in the --patch-module entries,
+        // so it should not be included in the classlist file.
+        if (((class_loader == NULL && !ClassLoader::contains_append_entry(stream->source())) ||
+             SystemDictionary::is_platform_class_loader(class_loader)) &&
+            !ClassLoader::is_jrt(stream->source())) {
+          tty->print_cr("skip writing class %s from source %s to classlist file",
+            _class_name->as_C_string(), stream->source());
+        } else {
+          classlist_file->print_cr("%s", _class_name->as_C_string());
+          classlist_file->flush();
+        }
       }
     }
 #endif
@@ -5856,6 +5869,11 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   assert(cp != NULL, "invariant");
   assert(_loader_data != NULL, "invariant");
 
+  if (_class_name == vmSymbols::java_lang_Object()) {
+    check_property(_local_interfaces == Universe::the_empty_klass_array(),
+                   "java.lang.Object cannot implement an interface in class file %s",
+                   CHECK);
+  }
   // We check super class after class file is parsed and format is checked
   if (_super_class_index > 0 && NULL ==_super_klass) {
     Symbol* const super_class_name = cp->klass_name_at(_super_class_index);

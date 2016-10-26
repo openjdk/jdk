@@ -88,6 +88,7 @@ fi
 
 ${TESTJAVA}${FS}bin${FS}java \
     ${TESTVMOPTS} \
+    -Djava.security.properties=${TESTSRC}${FS}security.properties \
     -classpath "${TESTSRC}${FS}P1.jar${PS}${TESTSRC}${FS}P2.jar${PS}." \
     FailOverTest
 result=$?

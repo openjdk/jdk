@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,8 +420,6 @@ extern uintptr_t Ppltdest(struct ps_prochandle *, uintptr_t, int *);
 /*
  * Stack frame iteration interface.
  */
-#ifdef SOLARIS_11_B159_OR_LATER
-/* building on Nevada-B159 or later so define the new callback */
 typedef int proc_stack_f(
     void *,             /* the cookie given to Pstack_iter() */
     const prgregset_t,  /* the frame's registers */
@@ -432,10 +430,6 @@ typedef int proc_stack_f(
 
 #define PR_SIGNAL_FRAME    1    /* called by a signal handler */
 #define PR_FOUND_SIGNAL    2    /* we found the corresponding signal number */
-#else
-/* building on Nevada-B158 or earlier so define the old callback */
-typedef int proc_stack_f(void *, const prgregset_t, uint_t, const long *);
-#endif
 
 extern int Pstack_iter(struct ps_prochandle *,
     const prgregset_t, proc_stack_f *, void *);

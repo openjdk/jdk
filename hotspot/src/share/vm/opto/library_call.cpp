@@ -256,6 +256,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_time_funcs(address method, const char* funcName);
 #ifdef TRACE_HAVE_INTRINSICS
   bool inline_native_classID();
+  bool inline_native_getBufferWriter();
 #endif
   bool inline_native_isInterrupted();
   bool inline_native_Class_query(vmIntrinsics::ID id);
@@ -713,6 +714,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 #ifdef TRACE_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:              return inline_native_time_funcs(CAST_FROM_FN_PTR(address, TRACE_TIME_METHOD), "counterTime");
   case vmIntrinsics::_getClassId:               return inline_native_classID();
+  case vmIntrinsics::_getBufferWriter:          return inline_native_getBufferWriter();
 #endif
   case vmIntrinsics::_currentTimeMillis:        return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeMillis), "currentTimeMillis");
   case vmIntrinsics::_nanoTime:                 return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeNanos), "nanoTime");
@@ -3196,6 +3198,44 @@ bool LibraryCallKit::inline_native_classID() {
   set_result(tvalue);
   return true;
 
+}
+
+bool LibraryCallKit::inline_native_getBufferWriter() {
+  Node* tls_ptr = _gvn.transform(new ThreadLocalNode());
+
+  Node* jobj_ptr = basic_plus_adr(top(), tls_ptr,
+                                  in_bytes(TRACE_THREAD_DATA_WRITER_OFFSET)
+                                  );
+
+  Node* jobj = make_load(control(), jobj_ptr, TypeRawPtr::BOTTOM, T_ADDRESS, MemNode::unordered);
+
+  Node* jobj_cmp_null = _gvn.transform( new CmpPNode(jobj, null()) );
+  Node* test_jobj_eq_null  = _gvn.transform( new BoolNode(jobj_cmp_null, BoolTest::eq) );
+
+  IfNode* iff_jobj_null =
+    create_and_map_if(control(), test_jobj_eq_null, PROB_NEVER, COUNT_UNKNOWN);
+
+   enum { _normal_path = 1,
+          _null_path = 2,
+          PATH_LIMIT };
+
+  RegionNode* result_rgn = new RegionNode(PATH_LIMIT);
+  PhiNode*    result_val = new PhiNode(result_rgn, TypePtr::BOTTOM);
+  record_for_igvn(result_rgn);
+
+  Node* jobj_is_null = _gvn.transform( new IfTrueNode(iff_jobj_null) );
+  result_rgn->init_req(_null_path, jobj_is_null);
+  result_val->init_req(_null_path, null());
+
+  Node* jobj_is_not_null = _gvn.transform( new IfFalseNode(iff_jobj_null) );
+  result_rgn->init_req(_normal_path, jobj_is_not_null);
+
+  Node* res = make_load(NULL, jobj, TypeInstPtr::BOTTOM, T_OBJECT, MemNode::unordered);
+  result_val->init_req(_normal_path, res);
+
+  set_result(result_rgn, result_val);
+
+  return true;
 }
 
 #endif

@@ -50,7 +50,7 @@ public class GcProvokerImpl implements GcProvoker {
                 used += memoryChunk;
             } catch (OutOfMemoryError e) {
                 list = null;
-                throw new RuntimeException("Unexpected OOME while eating " + targetUsage + " of heap memory.");
+                throw new RuntimeException("Unexpected OOME '" + e.getMessage() + "' while eating " + targetUsage + " of heap memory.");
             }
         }
         return list;
@@ -73,8 +73,10 @@ public class GcProvokerImpl implements GcProvoker {
 
     @Override
     public void eatMetaspaceAndHeap(float targetMemoryUsagePercent) {
-        eatenMemory = eatHeapMemory(targetMemoryUsagePercent);
+        // Metaspace should be filled before Java Heap to prevent unexpected OOME
+        // in the Java Heap while filling Metaspace
         eatenMetaspace = eatMetaspace(targetMemoryUsagePercent);
+        eatenMemory = eatHeapMemory(targetMemoryUsagePercent);
     }
 
     private static List<Object> eatMetaspace(float targetUsage) {
@@ -97,7 +99,7 @@ public class GcProvokerImpl implements GcProvoker {
                 list.add(gp.create(0));
             } catch (OutOfMemoryError oome) {
                 list = null;
-                throw new RuntimeException("Unexpected OOME while eating " + targetUsage + " of Metaspace.");
+                throw new RuntimeException("Unexpected OOME '" + oome.getMessage() + "' while eating " + targetUsage + " of Metaspace.");
             }
             MemoryUsage memoryUsage = metaspacePool.getUsage();
             currentUsage = (((float) memoryUsage.getUsed()) / memoryUsage.getMax());
