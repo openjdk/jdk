@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,12 +60,12 @@ class StackMapTable : public StackObj {
   // specified offset. Return true if the two frames match.
   bool match_stackmap(
     StackMapFrame* current_frame, int32_t offset,
-    bool match, bool update, bool handler, ErrorContext* ctx, TRAPS) const;
+    bool match, bool update, ErrorContext* ctx, TRAPS) const;
   // Match and/or update current_frame to the frame in stackmap table with
   // specified offset and frame index. Return true if the two frames match.
   bool match_stackmap(
     StackMapFrame* current_frame, int32_t offset, int32_t frame_index,
-    bool match, bool update, bool handler, ErrorContext* ctx, TRAPS) const;
+    bool match, bool update, ErrorContext* ctx, TRAPS) const;
 
   // Check jump instructions. Make sure there are no uninitialized
   // instances on backward branch.
