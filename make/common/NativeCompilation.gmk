@@ -746,9 +746,10 @@ define SetupNativeCompilationBody
   # This is a rough heuristic and may not always print accurate information.
   $$($1_BUILD_INFO): $$($1_SRCS) $$($1_COMPILE_VARDEPS_FILE)
         ifeq ($$(wildcard $$($1_TARGET)),)
-	  $(ECHO) 'Creating $$($1_BASENAME) from $$(words $$(filter-out %.vardeps, $$?)) file(s)'
+	  $(ECHO) 'Creating $$(subst $$(BUILD_OUTPUT)/,,$$($1_TARGET)) from $$(words \
+	      $$(filter-out %.vardeps, $$?)) file(s)'
         else
-	  $(ECHO) $$(strip 'Updating $$($1_BASENAME)' \
+	  $(ECHO) $$(strip 'Updating $$(subst $$(BUILD_OUTPUT)/,,$$($1_TARGET))' \
 	      $$(if $$(filter-out %.vardeps, $$?), \
 	        'due to $$(words $$(filter-out %.vardeps, $$?)) file(s)', \
 	      $$(if $$(filter %.vardeps, $$?), 'due to makefile changes')))
