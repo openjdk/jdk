@@ -195,7 +195,8 @@ ifneq ($(FAILURE_HANDLER_DIR), )
       -timeoutHandlerDir:$(FAILURE_HANDLER_DIR_MIXED)/jtregFailureHandler.jar \
       -observerDir:$(FAILURE_HANDLER_DIR_MIXED)/jtregFailureHandler.jar \
       -timeoutHandler:jdk.test.failurehandler.jtreg.GatherProcessInfoTimeoutHandler \
-      -observer:jdk.test.failurehandler.jtreg.GatherDiagnosticInfoObserver
+      -observer:jdk.test.failurehandler.jtreg.GatherDiagnosticInfoObserver \
+      -timeoutHandlerTimeout:0
   ifeq ($(PLATFORM), windows)
     JTREG_FAILURE_HANDLER_OPTIONS += -J-Djava.library.path="$(FAILURE_HANDLER_DIR_MIXED)"
   endif

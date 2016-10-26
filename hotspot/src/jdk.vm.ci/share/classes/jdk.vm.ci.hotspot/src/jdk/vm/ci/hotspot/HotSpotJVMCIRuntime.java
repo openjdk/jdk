@@ -171,6 +171,9 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
             return (String) getValue();
         }
 
+        private static final int PROPERTY_LINE_WIDTH = 80;
+        private static final int PROPERTY_HELP_INDENT = 10;
+
         /**
          * Prints a description of the properties used to configure shared JVMCI code.
          *
@@ -178,24 +181,26 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
          */
         public static void printProperties(PrintStream out) {
             out.println("[JVMCI properties]");
-            int typeWidth = 0;
-            int nameWidth = 0;
             Option[] values = values();
-            for (Option option : values) {
-                typeWidth = Math.max(typeWidth, option.type.getSimpleName().length());
-                nameWidth = Math.max(nameWidth, option.getPropertyName().length());
-            }
             for (Option option : values) {
                 Object value = option.getValue();
                 if (value instanceof String) {
                     value = '"' + String.valueOf(value) + '"';
                 }
-                String assign = option.isDefault ? " =" : ":=";
-                String format = "%" + (typeWidth + 1) + "s %-" + (nameWidth + 1) + "s %s %s%n";
-                out.printf(format, option.type.getSimpleName(), option.getPropertyName(), assign, value);
-                String helpFormat = "%" + (typeWidth + 1) + "s %s%n";
+
+                String name = option.getPropertyName();
+                String assign = option.isDefault ? "=" : ":=";
+                String typeName = option.type.getSimpleName();
+                String linePrefix = String.format("%s %s %s ", name, assign, value);
+                int typeStartPos = PROPERTY_LINE_WIDTH - typeName.length();
+                int linePad = typeStartPos - linePrefix.length();
+                if (linePad > 0) {
+                    out.printf("%s%-" + linePad + "s[%s]%n", linePrefix, "", typeName);
+                } else {
+                    out.printf("%s[%s]%n", linePrefix, typeName);
+                }
                 for (String line : option.helpLines) {
-                    out.printf(helpFormat, "", line);
+                    out.printf("%" + PROPERTY_HELP_INDENT + "s%s%n", "", line);
                 }
             }
         }
@@ -306,6 +311,7 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
             PrintStream out = new PrintStream(getLogStream());
             Option.printProperties(out);
             compilerFactory.printProperties(out);
+            System.exit(0);
         }
 
         if (Option.PrintConfig.getBoolean()) {

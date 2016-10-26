@@ -2102,7 +2102,9 @@ class Assembler : public AbstractAssembler {
   inline void mfvscr(   VectorRegister d);
 
   // Vector-Scalar (VSX) instructions.
+  inline void lxvd2x(   VectorSRegister d, Register a);
   inline void lxvd2x(   VectorSRegister d, Register a, Register b);
+  inline void stxvd2x(  VectorSRegister d, Register a);
   inline void stxvd2x(  VectorSRegister d, Register a, Register b);
   inline void mtvrd(    VectorRegister  d, Register a);
   inline void mfvrd(    Register        a, VectorRegister d);

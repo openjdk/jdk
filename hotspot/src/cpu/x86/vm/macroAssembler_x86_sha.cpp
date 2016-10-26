@@ -674,6 +674,11 @@ void MacroAssembler::addm(int disp, Register r1, Register r2) {
   movl(Address(r1, disp), r2);
 }
 
+void MacroAssembler::addmq(int disp, Register r1, Register r2) {
+  addq(r2, Address(r1, disp));
+  movq(Address(r1, disp), r2);
+}
+
 void MacroAssembler::sha256_AVX2(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
   XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
   Register buf, Register state, Register ofs, Register limit, Register rsp,
@@ -1026,4 +1031,488 @@ bind(compute_size1);
 bind(compute_size_end1);
   }
 }
+
+void MacroAssembler::sha512_AVX2_one_round_compute(Register  old_h, Register a, Register b, Register c,
+                                                   Register d, Register e, Register f, Register g, Register h,
+                                                   int iteration)
+{
+
+    const Register& y0 = r13;
+    const Register& y1 = r14;
+    const Register& y2 = r15;
+#ifdef _WIN64
+    const Register& y3 = rcx;
+#else
+    const Register& y3 = rdi;
+#endif
+    const Register& T1 = r12;
+
+    if (iteration % 4 > 0) {
+      addq(old_h, y2); //h = k + w + h + S0 + S1 + CH = t1 + S0;
+    }
+    movq(y2, f); //y2 = f; CH
+    rorxq(y0, e, 41); //y0 = e >> 41; S1A
+    rorxq(y1, e, 18); //y1 = e >> 18; S1B
+    xorq(y2, g); //y2 = f^g; CH
+
+    xorq(y0, y1); //y0 = (e >> 41) ^ (e >> 18); S1
+    rorxq(y1, e, 14); //y1 = (e >> 14); S1
+    andq(y2, e); //y2 = (f^g)&e; CH
+
+    if (iteration % 4 > 0 ) {
+      addq(old_h, y3); //h = t1 + S0 + MAJ
+    }
+    xorq(y0, y1); //y0 = (e >> 41) ^ (e >> 18) ^ (e >> 14); S1
+    rorxq(T1, a, 34); //T1 = a >> 34; S0B
+    xorq(y2, g); //y2 = CH = ((f^g)&e) ^g; CH
+    rorxq(y1, a, 39); //y1 = a >> 39; S0A
+    movq(y3, a); //y3 = a; MAJA
+
+    xorq(y1, T1); //y1 = (a >> 39) ^ (a >> 34); S0
+    rorxq(T1, a, 28); //T1 = (a >> 28); S0
+    addq(h, Address(rsp, (8 * iteration))); //h = k + w + h; --
+    orq(y3, c); //y3 = a | c; MAJA
+
+    xorq(y1, T1); //y1 = (a >> 39) ^ (a >> 34) ^ (a >> 28); S0
+    movq(T1, a); //T1 = a; MAJB
+    andq(y3, b); //y3 = (a | c)&b; MAJA
+    andq(T1, c); //T1 = a&c; MAJB
+    addq(y2, y0); //y2 = S1 + CH; --
+
+    addq(d, h); //d = k + w + h + d; --
+    orq(y3, T1); //y3 = MAJ = (a | c)&b) | (a&c); MAJ
+    addq(h, y1); //h = k + w + h + S0; --
+
+    addq(d, y2); //d = k + w + h + d + S1 + CH = d + t1; --
+
+    if (iteration % 4 == 3) {
+      addq(h, y2); //h = k + w + h + S0 + S1 + CH = t1 + S0; --
+      addq(h, y3); //h = t1 + S0 + MAJ; --
+    }
+}
+
+void MacroAssembler::sha512_AVX2_one_round_and_schedule(
+    XMMRegister xmm4, // ymm4
+    XMMRegister xmm5, // ymm5
+    XMMRegister xmm6, // ymm6
+    XMMRegister xmm7, // ymm7
+    Register a, //rax
+    Register b, //rbx
+    Register c, //rdi
+    Register d, //rsi
+    Register e, //r8
+    Register f, //r9
+    Register g, //r10
+    Register h, //r11
+    int iteration)
+{
+
+    const Register& y0 = r13;
+    const Register& y1 = r14;
+    const Register& y2 = r15;
+#ifdef _WIN64
+    const Register& y3 = rcx;
+#else
+    const Register& y3 = rdi;
+#endif
+    const Register& T1 = r12;
+
+    if (iteration % 4 == 0) {
+      // Extract w[t - 7]
+      // xmm0 = W[-7]
+      vperm2f128(xmm0, xmm7, xmm6, 3);
+      vpalignr(xmm0, xmm0, xmm6, 8, AVX_256bit);
+
+      // Calculate w[t - 16] + w[t - 7]
+      vpaddq(xmm0, xmm0, xmm4, AVX_256bit); //xmm0 = W[-7] + W[-16]
+      // Extract w[t - 15]
+      //xmm1 = W[-15]
+      vperm2f128(xmm1, xmm5, xmm4, 3);
+      vpalignr(xmm1, xmm1, xmm4, 8, AVX_256bit);
+
+      // Calculate sigma0
+      // Calculate w[t - 15] ror 1
+      vpsrlq(xmm2, xmm1, 1, AVX_256bit);
+      vpsllq(xmm3, xmm1, (64 - 1), AVX_256bit);
+      vpor(xmm3, xmm3, xmm2, AVX_256bit); //xmm3 = W[-15] ror 1
+      // Calculate w[t - 15] shr 7
+      vpsrlq(xmm8, xmm1, 7, AVX_256bit); //xmm8 = W[-15] >> 7
+
+    } else if (iteration % 4 == 1) {
+      //Calculate w[t - 15] ror 8
+      vpsrlq(xmm2, xmm1, 8, AVX_256bit);
+      vpsllq(xmm1, xmm1, (64 - 8), AVX_256bit);
+      vpor(xmm1, xmm1, xmm2, AVX_256bit); //xmm1 = W[-15] ror 8
+
+      //XOR the three components
+      vpxor(xmm3, xmm3, xmm8, AVX_256bit); //xmm3 = W[-15] ror 1 ^ W[-15] >> 7
+      vpxor(xmm1, xmm3, xmm1, AVX_256bit); //xmm1 = s0
+
+      //Add three components, w[t - 16], w[t - 7] and sigma0
+      vpaddq(xmm0, xmm0, xmm1, AVX_256bit); //xmm0 = W[-16] + W[-7] + s0
+
+      // Move to appropriate lanes for calculating w[16] and w[17]
+      vperm2f128(xmm4, xmm0, xmm0, 0); //xmm4 = W[-16] + W[-7] + s0{ BABA }
+
+      address MASK_YMM_LO = StubRoutines::x86::pshuffle_byte_flip_mask_addr_sha512();
+      //Move to appropriate lanes for calculating w[18] and w[19]
+      vpand(xmm0, xmm0, ExternalAddress(MASK_YMM_LO + 32), AVX_256bit); //xmm0 = W[-16] + W[-7] + s0{ DC00 }
+      //Calculate w[16] and w[17] in both 128 bit lanes
+      //Calculate sigma1 for w[16] and w[17] on both 128 bit lanes
+      vperm2f128(xmm2, xmm7, xmm7, 17); //xmm2 = W[-2] {BABA}
+      vpsrlq(xmm8, xmm2, 6, AVX_256bit); //xmm8 = W[-2] >> 6 {BABA}
+
+    } else if (iteration % 4 == 2) {
+      vpsrlq(xmm3, xmm2, 19, AVX_256bit); //xmm3 = W[-2] >> 19 {BABA}
+      vpsllq(xmm1, xmm2, (64 - 19), AVX_256bit); //xmm1 = W[-2] << 19 {BABA}
+      vpor(xmm3, xmm3, xmm1, AVX_256bit); //xmm3 = W[-2] ror 19 {BABA}
+      vpxor(xmm8, xmm8, xmm3, AVX_256bit);// xmm8 = W[-2] ror 19 ^ W[-2] >> 6 {BABA}
+      vpsrlq(xmm3, xmm2, 61, AVX_256bit); //xmm3 = W[-2] >> 61 {BABA}
+      vpsllq(xmm1, xmm2, (64 - 61), AVX_256bit); //xmm1 = W[-2] << 61 {BABA}
+      vpor(xmm3, xmm3, xmm1, AVX_256bit); //xmm3 = W[-2] ror 61 {BABA}
+      vpxor(xmm8, xmm8, xmm3, AVX_256bit); //xmm8 = s1 = (W[-2] ror 19) ^ (W[-2] ror 61) ^ (W[-2] >> 6) { BABA }
+
+      //Add sigma1 to the other components to get w[16] and w[17]
+      vpaddq(xmm4, xmm4, xmm8, AVX_256bit); //xmm4 = { W[1], W[0], W[1], W[0] }
+
+      //Calculate sigma1 for w[18] and w[19] for upper 128 bit lane
+      vpsrlq(xmm8, xmm4, 6, AVX_256bit); //xmm8 = W[-2] >> 6 {DC--}
+
+    } else if (iteration % 4 == 3){
+      vpsrlq(xmm3, xmm4, 19, AVX_256bit); //xmm3 = W[-2] >> 19 {DC--}
+      vpsllq(xmm1, xmm4, (64 - 19), AVX_256bit); //xmm1 = W[-2] << 19 {DC--}
+      vpor(xmm3, xmm3, xmm1, AVX_256bit); //xmm3 = W[-2] ror 19 {DC--}
+      vpxor(xmm8, xmm8, xmm3, AVX_256bit); //xmm8 = W[-2] ror 19 ^ W[-2] >> 6 {DC--}
+      vpsrlq(xmm3, xmm4, 61, AVX_256bit); //xmm3 = W[-2] >> 61 {DC--}
+      vpsllq(xmm1, xmm4, (64 - 61), AVX_256bit); //xmm1 = W[-2] << 61 {DC--}
+      vpor(xmm3, xmm3, xmm1, AVX_256bit); //xmm3 = W[-2] ror 61 {DC--}
+      vpxor(xmm8, xmm8, xmm3, AVX_256bit); //xmm8 = s1 = (W[-2] ror 19) ^ (W[-2] ror 61) ^ (W[-2] >> 6) { DC-- }
+
+      //Add the sigma0 + w[t - 7] + w[t - 16] for w[18] and w[19] to newly calculated sigma1 to get w[18] and w[19]
+      vpaddq(xmm2, xmm0, xmm8, AVX_256bit); //xmm2 = { W[3], W[2], --, -- }
+
+      //Form w[19, w[18], w17], w[16]
+      vpblendd(xmm4, xmm4, xmm2, 0xF0, AVX_256bit); //xmm4 = { W[3], W[2], W[1], W[0] }
+    }
+
+    movq(y3, a); //y3 = a; MAJA
+    rorxq(y0, e, 41); // y0 = e >> 41; S1A
+    rorxq(y1, e, 18); //y1 = e >> 18; S1B
+    addq(h, Address(rsp, (iteration * 8))); //h = k + w + h; --
+    orq(y3, c); //y3 = a | c; MAJA
+    movq(y2, f); //y2 = f; CH
+
+    xorq(y2, g); //y2 = f^g; CH
+
+    rorxq(T1, a, 34); //T1 = a >> 34; S0B
+    xorq(y0, y1); //y0 = (e >> 41) ^ (e >> 18); S1
+
+    rorxq(y1, e, 14); //y1 = (e >> 14); S1
+
+    andq(y2, e); //y2 = (f^g) & e; CH
+    addq(d, h); //d = k + w + h + d; --
+
+    andq(y3, b); //y3 = (a | c)&b; MAJA
+    xorq(y0, y1); //y0 = (e >> 41) ^ (e >> 18) ^ (e >> 14); S1
+    rorxq(y1, a, 39); //y1 = a >> 39; S0A
+
+    xorq(y1, T1); //y1 = (a >> 39) ^ (a >> 34); S0
+    rorxq(T1, a, 28); //T1 = (a >> 28); S0
+    xorq(y2, g); //y2 = CH = ((f^g)&e) ^ g; CH
+
+    xorq(y1, T1); //y1 = (a >> 39) ^ (a >> 34) ^ (a >> 28); S0
+    movq(T1, a); //T1 = a; MAJB
+
+    andq(T1, c); //T1 = a&c; MAJB
+    addq(y2, y0); //y2 = S1 + CH; --
+
+    orq(y3, T1); //y3 = MAJ = (a | c)&b) | (a&c); MAJ
+    addq(h, y1); //h = k + w + h + S0; --
+
+    addq(d, y2); //d = k + w + h + d + S1 + CH = d + t1; --
+    addq(h, y2); //h = k + w + h + S0 + S1 + CH = t1 + S0; --
+    addq(h, y3); //h = t1 + S0 + MAJ; --
+}
+
+void MacroAssembler::sha512_AVX2(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
+                                 XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
+                                 Register buf, Register state, Register ofs, Register limit, Register rsp,
+                                 bool multi_block, XMMRegister shuf_mask)
+{
+
+    Label loop0, loop1, loop2, done_hash,
+    compute_block_size, compute_size,
+    compute_block_size_end, compute_size_end;
+
+    address K512_W = StubRoutines::x86::k512_W_addr();
+    address pshuffle_byte_flip_mask_sha512 = StubRoutines::x86::pshuffle_byte_flip_mask_addr_sha512();
+    address pshuffle_byte_flip_mask_addr = 0;
+
+    const XMMRegister& XFER = xmm0; // YTMP0
+    const XMMRegister& BYTE_FLIP_MASK = xmm9; // ymm9
+#ifdef _WIN64
+    const Register& INP = rcx; //1st arg
+    const Register& CTX = rdx; //2nd arg
+    const Register& NUM_BLKS = r8; //3rd arg
+    const Register& c = rdi;
+    const Register& d = rsi;
+    const Register& e = r8;
+    const Register& y3 = rcx;
+    const Register& offset = r8;
+    const Register& input_limit = r9;
+#else
+    const Register& INP = rdi; //1st arg
+    const Register& CTX = rsi; //2nd arg
+    const Register& NUM_BLKS = rdx; //3rd arg
+    const Register& c  = rcx;
+    const Register& d  = r8;
+    const Register& e  = rdx;
+    const Register& y3 = rdi;
+    const Register& offset = rdx;
+    const Register& input_limit = rcx;
+#endif
+
+    const Register& TBL = rbp;
+
+    const Register& a = rax;
+    const Register& b = rbx;
+
+    const Register& f = r9;
+    const Register& g = r10;
+    const Register& h = r11;
+
+    //Local variables as defined in assembly file.
+    enum
+    {
+      _XFER_SIZE = 4 * 8, // resq 4 => reserve 4 quadwords. Hence 4 * 8
+      _SRND_SIZE = 8, // resq 1
+      _INP_SIZE = 8,
+      _INP_END_SIZE = 8,
+      _RSP_SAVE_SIZE = 8,  // defined as resq 1
+
+#ifdef _WIN64
+      _GPR_SAVE_SIZE = 8 * 8, // defined as resq 8
+#else
+      _GPR_SAVE_SIZE = 6 * 8 // resq 6
+#endif
+    };
+
+    enum
+    {
+      _XFER = 0,
+      _SRND = _XFER + _XFER_SIZE, // 32
+      _INP = _SRND + _SRND_SIZE, // 40
+      _INP_END = _INP + _INP_SIZE, // 48
+      _RSP = _INP_END + _INP_END_SIZE, // 56
+      _GPR = _RSP + _RSP_SAVE_SIZE, // 64
+      _STACK_SIZE = _GPR + _GPR_SAVE_SIZE // 128 for windows and 112 for linux.
+    };
+
+//Saving offset and limit as it will help with blocksize calculation for multiblock SHA512.
+#ifdef _WIN64
+    push(r8);    // win64: this is ofs
+    push(r9);    // win64: this is limit, we need them again at the very end.
+#else
+    push(rdx);   // linux : this is ofs, need at the end for multiblock calculation
+    push(rcx);   // linux: This is the limit.
+#endif
+
+    //Allocate Stack Space
+    movq(rax, rsp);
+    subq(rsp, _STACK_SIZE);
+    andq(rsp, -32);
+    movq(Address(rsp, _RSP), rax);
+
+    //Save GPRs
+    movq(Address(rsp, _GPR), rbp);
+    movq(Address(rsp, (_GPR + 8)), rbx);
+    movq(Address(rsp, (_GPR + 16)), r12);
+    movq(Address(rsp, (_GPR + 24)), r13);
+    movq(Address(rsp, (_GPR + 32)), r14);
+    movq(Address(rsp, (_GPR + 40)), r15);
+
+#ifdef _WIN64
+    movq(Address(rsp, (_GPR + 48)), rsi);
+    movq(Address(rsp, (_GPR + 56)), rdi);
+#endif
+
+    vpblendd(xmm0, xmm0, xmm1, 0xF0, AVX_128bit);
+    vpblendd(xmm0, xmm0, xmm1, 0xF0, AVX_256bit);
+
+    if (multi_block) {
+      xorq(rax, rax);
+      bind(compute_block_size);
+      cmpptr(offset, input_limit); // Assuming that offset is less than limit.
+      jccb(Assembler::aboveEqual, compute_block_size_end);
+      addq(offset, 128);
+      addq(rax, 128);
+      jmpb(compute_block_size);
+
+      bind(compute_block_size_end);
+      movq(NUM_BLKS, rax);
+
+      cmpq(NUM_BLKS, 0);
+      jcc(Assembler::equal, done_hash);
+    } else {
+      xorq(NUM_BLKS, NUM_BLKS); //If single block.
+      addq(NUM_BLKS, 128);
+    }
+
+    addq(NUM_BLKS, INP); //pointer to end of data
+    movq(Address(rsp, _INP_END), NUM_BLKS);
+
+    //load initial digest
+    movq(a, Address(CTX, 8 * 0));
+    movq(b, Address(CTX, 8 * 1));
+    movq(c, Address(CTX, 8 * 2));
+    movq(d, Address(CTX, 8 * 3));
+    movq(e, Address(CTX, 8 * 4));
+    movq(f, Address(CTX, 8 * 5));
+    movq(g, Address(CTX, 8 * 6));
+    movq(h, Address(CTX, 8 * 7));
+
+    pshuffle_byte_flip_mask_addr = pshuffle_byte_flip_mask_sha512;
+    vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr + 0)); //PSHUFFLE_BYTE_FLIP_MASK wrt rip
+
+    bind(loop0);
+    lea(TBL, ExternalAddress(K512_W));
+
+    //byte swap first 16 dwords
+    vmovdqu(xmm4, Address(INP, 32 * 0));
+    vpshufb(xmm4, xmm4, BYTE_FLIP_MASK, AVX_256bit);
+    vmovdqu(xmm5, Address(INP, 32 * 1));
+    vpshufb(xmm5, xmm5, BYTE_FLIP_MASK, AVX_256bit);
+    vmovdqu(xmm6, Address(INP, 32 * 2));
+    vpshufb(xmm6, xmm6, BYTE_FLIP_MASK, AVX_256bit);
+    vmovdqu(xmm7, Address(INP, 32 * 3));
+    vpshufb(xmm7, xmm7, BYTE_FLIP_MASK, AVX_256bit);
+
+    movq(Address(rsp, _INP), INP);
+
+    movslq(Address(rsp, _SRND), 4);
+    align(16);
+
+    //Schedule 64 input dwords, by calling sha512_AVX2_one_round_and_schedule
+    bind(loop1);
+    vpaddq(xmm0, xmm4, Address(TBL, 0 * 32), AVX_256bit);
+    vmovdqu(Address(rsp, _XFER), xmm0);
+    //four rounds and schedule
+    sha512_AVX2_one_round_and_schedule(xmm4, xmm5, xmm6, xmm7, a, b, c, d, e, f, g, h, 0);
+    sha512_AVX2_one_round_and_schedule(xmm4, xmm5, xmm6, xmm7, h, a, b, c, d, e, f, g, 1);
+    sha512_AVX2_one_round_and_schedule(xmm4, xmm5, xmm6, xmm7, g, h, a, b, c, d, e, f, 2);
+    sha512_AVX2_one_round_and_schedule(xmm4, xmm5, xmm6, xmm7, f, g, h, a, b, c, d, e, 3);
+
+    vpaddq(xmm0, xmm5, Address(TBL, 1 * 32), AVX_256bit);
+    vmovdqu(Address(rsp, _XFER), xmm0);
+    //four rounds and schedule
+    sha512_AVX2_one_round_and_schedule(xmm5, xmm6, xmm7, xmm4, e, f, g, h, a, b, c, d, 0);
+    sha512_AVX2_one_round_and_schedule(xmm5, xmm6, xmm7, xmm4, d, e, f, g, h, a, b, c, 1);
+    sha512_AVX2_one_round_and_schedule(xmm5, xmm6, xmm7, xmm4, c, d, e, f, g, h, a, b, 2);
+    sha512_AVX2_one_round_and_schedule(xmm5, xmm6, xmm7, xmm4, b, c, d, e, f, g, h, a, 3);
+
+    vpaddq(xmm0, xmm6, Address(TBL, 2 * 32), AVX_256bit);
+    vmovdqu(Address(rsp, _XFER), xmm0);
+    //four rounds and schedule
+    sha512_AVX2_one_round_and_schedule(xmm6, xmm7, xmm4, xmm5, a, b, c, d, e, f, g, h, 0);
+    sha512_AVX2_one_round_and_schedule(xmm6, xmm7, xmm4, xmm5, h, a, b, c, d, e, f, g, 1);
+    sha512_AVX2_one_round_and_schedule(xmm6, xmm7, xmm4, xmm5, g, h, a, b, c, d, e, f, 2);
+    sha512_AVX2_one_round_and_schedule(xmm6, xmm7, xmm4, xmm5, f, g, h, a, b, c, d, e, 3);
+
+    vpaddq(xmm0, xmm7, Address(TBL, 3 * 32), AVX_256bit);
+    vmovdqu(Address(rsp, _XFER), xmm0);
+    addq(TBL, 4 * 32);
+    //four rounds and schedule
+    sha512_AVX2_one_round_and_schedule(xmm7, xmm4, xmm5, xmm6, e, f, g, h, a, b, c, d, 0);
+    sha512_AVX2_one_round_and_schedule(xmm7, xmm4, xmm5, xmm6, d, e, f, g, h, a, b, c, 1);
+    sha512_AVX2_one_round_and_schedule(xmm7, xmm4, xmm5, xmm6, c, d, e, f, g, h, a, b, 2);
+    sha512_AVX2_one_round_and_schedule(xmm7, xmm4, xmm5, xmm6, b, c, d, e, f, g, h, a, 3);
+
+    subq(Address(rsp, _SRND), 1);
+    jcc(Assembler::notEqual, loop1);
+
+    movslq(Address(rsp, _SRND), 2);
+
+    bind(loop2);
+    vpaddq(xmm0, xmm4, Address(TBL, 0 * 32), AVX_256bit);
+    vmovdqu(Address(rsp, _XFER), xmm0);
+    //four rounds and compute.
+    sha512_AVX2_one_round_compute(a, a, b, c, d, e, f, g, h, 0);
+    sha512_AVX2_one_round_compute(h, h, a, b, c, d, e, f, g, 1);
+    sha512_AVX2_one_round_compute(g, g, h, a, b, c, d, e, f, 2);
+    sha512_AVX2_one_round_compute(f, f, g, h, a, b, c, d, e, 3);
+
+    vpaddq(xmm0, xmm5, Address(TBL, 1 * 32), AVX_256bit);
+    vmovdqu(Address(rsp, _XFER), xmm0);
+    addq(TBL, 2 * 32);
+    // four rounds and compute.
+    sha512_AVX2_one_round_compute(e, e, f, g, h, a, b, c, d, 0);
+    sha512_AVX2_one_round_compute(d, d, e, f, g, h, a, b, c, 1);
+    sha512_AVX2_one_round_compute(c, c, d, e, f, g, h, a, b, 2);
+    sha512_AVX2_one_round_compute(b, b, c, d, e, f, g, h, a, 3);
+
+    vmovdqu(xmm4, xmm6);
+    vmovdqu(xmm5, xmm7);
+
+    subq(Address(rsp, _SRND), 1);
+    jcc(Assembler::notEqual, loop2);
+
+    addmq(8 * 0, CTX, a);
+    addmq(8 * 1, CTX, b);
+    addmq(8 * 2, CTX, c);
+    addmq(8 * 3, CTX, d);
+    addmq(8 * 4, CTX, e);
+    addmq(8 * 5, CTX, f);
+    addmq(8 * 6, CTX, g);
+    addmq(8 * 7, CTX, h);
+
+    movq(INP, Address(rsp, _INP));
+    addq(INP, 128);
+    cmpq(INP, Address(rsp, _INP_END));
+    jcc(Assembler::notEqual, loop0);
+
+    bind(done_hash);
+
+    //Restore GPRs
+    movq(rbp, Address(rsp, (_GPR + 0)));
+    movq(rbx, Address(rsp, (_GPR + 8)));
+    movq(r12, Address(rsp, (_GPR + 16)));
+    movq(r13, Address(rsp, (_GPR + 24)));
+    movq(r14, Address(rsp, (_GPR + 32)));
+    movq(r15, Address(rsp, (_GPR + 40)));
+
+#ifdef _WIN64
+    movq(rsi, Address(rsp, (_GPR + 48)));
+    movq(rdi, Address(rsp, (_GPR + 56)));
+#endif
+
+    //Restore Stack Pointer
+    movq(rsp, Address(rsp, _RSP));
+
+#ifdef _WIN64
+    pop(r9);
+    pop(r8);
+#else
+    pop(rcx);
+    pop(rdx);
+#endif
+
+    if (multi_block) {
+#ifdef _WIN64
+      const Register& limit_end = r9;
+      const Register& ofs_end = r8;
+#else
+      const Register& limit_end = rcx;
+      const Register& ofs_end   = rdx;
+#endif
+      movq(rax, ofs_end);
+      bind(compute_size);
+      cmpptr(rax, limit_end);
+      jccb(Assembler::aboveEqual, compute_size_end);
+      addq(rax, 128);
+      jmpb(compute_size);
+      bind(compute_size_end);
+    }
+}
+
 #endif //#ifdef _LP64
+

@@ -46,11 +46,11 @@ import jdk.internal.module.ConfigurableModuleFinder;
 import jdk.internal.module.ConfigurableModuleFinder.Phase;
 import jdk.tools.jlink.internal.TaskHelper.BadArgs;
 import static jdk.tools.jlink.internal.TaskHelper.JLINK_BUNDLE;
+import jdk.tools.jlink.internal.Jlink.JlinkConfiguration;
+import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.internal.TaskHelper.Option;
 import jdk.tools.jlink.internal.TaskHelper.OptionsHelper;
 import jdk.tools.jlink.internal.ImagePluginStack.ImageProvider;
-import jdk.tools.jlink.Jlink.JlinkConfiguration;
-import jdk.tools.jlink.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 import jdk.tools.jlink.plugin.Plugin;
@@ -153,7 +153,7 @@ public class JlinkTask {
             = taskHelper.newOptionsHelper(JlinkTask.class, recognizedOptions);
     private PrintWriter log;
 
-    void setLog(PrintWriter out) {
+    void setLog(PrintWriter out, PrintWriter err) {
         log = out;
         taskHelper.setLog(log);
     }
@@ -182,7 +182,8 @@ public class JlinkTask {
 
     int run(String[] args) {
         if (log == null) {
-            setLog(new PrintWriter(System.out, true));
+            setLog(new PrintWriter(System.out, true),
+                   new PrintWriter(System.err, true));
         }
         try {
             optionsHelper.handleOptions(this, args);
@@ -212,8 +213,8 @@ public class JlinkTask {
             }
 
             return EXIT_OK;
-        } catch (UncheckedIOException | PluginException | IllegalArgumentException |
-                 IOException | ResolutionException e) {
+        } catch (PluginException | IllegalArgumentException |
+                 UncheckedIOException |IOException | ResolutionException e) {
             log.println(taskHelper.getMessage("error.prefix") + " " + e.getMessage());
             if (DEBUG) {
                 e.printStackTrace(log);

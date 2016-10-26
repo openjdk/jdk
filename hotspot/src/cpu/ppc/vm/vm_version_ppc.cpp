@@ -656,7 +656,7 @@ void VM_Version::determine_features() {
   a->vpmsumb(VR0, VR1, VR2);                   // code[11] -> vpmsumb
   a->tcheck(0);                                // code[12] -> tcheck
   a->mfdscr(R0);                               // code[13] -> mfdscr
-  a->lxvd2x(VSR0, 0, R3_ARG1);                 // code[14] -> vsx
+  a->lxvd2x(VSR0, R3_ARG1);                    // code[14] -> vsx
   a->blr();
 
   // Emit function to set one cache line to zero. Emit function descriptor and get pointer to it.

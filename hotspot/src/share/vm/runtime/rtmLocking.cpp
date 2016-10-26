@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "compiler/compilerDefinitions.hpp"
 
 #if INCLUDE_RTM_OPT
 

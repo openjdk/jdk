@@ -27,6 +27,7 @@ package sun.tools.jar;
 
 import java.io.File;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleDescriptor.Version;
 import java.nio.file.Path;
@@ -253,7 +254,8 @@ class GNUStyleOptions {
 
         // process options
         for (; count < args.length; count++) {
-            if (args[count].charAt(0) != '-' || args[count].equals("-C"))
+            if (args[count].charAt(0) != '-' || args[count].equals("-C")
+                || args[count].equals("--release"))
                 break;
 
             String name = args[count];
@@ -289,7 +291,7 @@ class GNUStyleOptions {
         throw new BadArgs("error.unrecognized.option", name).showUsage(true);
     }
 
-    static void printHelp(PrintStream out) {
+    static void printHelp(PrintWriter out) {
         out.format("%s%n", Main.getMsg("main.help.preopt"));
         for (OptionType type : OptionType.values()) {
             boolean typeHeadingWritten = false;
@@ -312,16 +314,16 @@ class GNUStyleOptions {
         out.format("%n%s%n%n", Main.getMsg("main.help.postopt"));
     }
 
-    static void printCompatHelp(PrintStream out) {
+    static void printCompatHelp(PrintWriter out) {
         out.format("%s%n", Main.getMsg("usage.compat"));
     }
 
-    static void printUsageSummary(PrintStream out) {
+    static void printUsageSummary(PrintWriter out) {
         out.format("%s%n", Main.getMsg("main.usage.summary"));
         out.format("%s%n", Main.getMsg("main.usage.summary.try"));
     }
 
-    static void printVersion(PrintStream out) {
+    static void printVersion(PrintWriter out) {
         out.format("%s %s%n", "jar", System.getProperty("java.version"));
     }
 }

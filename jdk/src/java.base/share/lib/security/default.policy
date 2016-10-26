@@ -91,7 +91,6 @@ grant codeBase "jrt:/java.xml.ws" {
 };
 
 grant codeBase "jrt:/jdk.charsets" {
-    permission java.io.FilePermission "${java.home}/-", "read";
     permission java.util.PropertyPermission "os.name", "read";
     permission java.util.PropertyPermission "sun.nio.cs.map", "read";
     permission java.lang.RuntimePermission "charsetProvider";
@@ -104,7 +103,6 @@ grant codeBase "jrt:/jdk.crypto.ec" {
     permission java.lang.RuntimePermission
                    "accessClassInPackage.sun.security.*";
     permission java.lang.RuntimePermission "loadLibrary.sunec";
-    permission java.util.PropertyPermission "*", "read";
     permission java.security.SecurityPermission "putProviderProperty.SunEC";
     permission java.security.SecurityPermission "clearProviderProperties.SunEC";
     permission java.security.SecurityPermission "removeProviderProperty.SunEC";
@@ -113,11 +111,11 @@ grant codeBase "jrt:/jdk.crypto.ec" {
 grant codeBase "jrt:/jdk.crypto.pkcs11" {
     permission java.lang.RuntimePermission
                    "accessClassInPackage.sun.security.*";
-    permission java.lang.RuntimePermission "accessClassInPackage.sun.misc";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
     permission java.lang.RuntimePermission "loadLibrary.j2pkcs11";
-    // needs "security.pkcs11.allowSingleThreadedModules"
-    permission java.util.PropertyPermission "*", "read";
+    permission java.util.PropertyPermission "sun.security.pkcs11.allowSingleThreadedModules", "read";
+    permission java.util.PropertyPermission "os.name", "read";
+    permission java.util.PropertyPermission "os.arch", "read";
     permission java.security.SecurityPermission "putProviderProperty.*";
     permission java.security.SecurityPermission "clearProviderProperties.*";
     permission java.security.SecurityPermission "removeProviderProperty.*";

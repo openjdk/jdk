@@ -517,12 +517,14 @@ bool InstanceKlass::link_class_or_fail(TRAPS) {
 
 bool InstanceKlass::link_class_impl(
     instanceKlassHandle this_k, bool throw_verifyerror, TRAPS) {
-  // check for error state.
-  // This is checking for the wrong state.  If the state is initialization_error,
-  // then this class *was* linked.  The CDS code does a try_link_class and uses
-  // initialization_error to mark classes to not include in the archive during
-  // DumpSharedSpaces.  This should be removed when the CDS bug is fixed.
-  if (this_k->is_in_error_state()) {
+  if (DumpSharedSpaces && this_k->is_in_error_state()) {
+    // This is for CDS dumping phase only -- we use the in_error_state to indicate that
+    // the class has failed verification. Throwing the NoClassDefFoundError here is just
+    // a convenient way to stop repeat attempts to verify the same (bad) class.
+    //
+    // Note that the NoClassDefFoundError is not part of the JLS, and should not be thrown
+    // if we are executing Java code. This is not a problem for CDS dumping phase since
+    // it doesn't execute any Java code.
     ResourceMark rm(THREAD);
     THROW_MSG_(vmSymbols::java_lang_NoClassDefFoundError(),
                this_k->external_name(), false);

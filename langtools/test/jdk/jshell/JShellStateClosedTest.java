@@ -33,7 +33,6 @@ import java.util.function.Consumer;
 import jdk.jshell.DeclarationSnippet;
 import jdk.jshell.ImportSnippet;
 import jdk.jshell.MethodSnippet;
-import jdk.jshell.PersistentSnippet;
 import jdk.jshell.Snippet;
 import jdk.jshell.TypeDeclSnippet;
 import jdk.jshell.VarSnippet;
@@ -127,7 +126,7 @@ public class JShellStateClosedTest extends KullaTesting {
     }
 
     public void testDrop() {
-        testStateClosedException((key) -> getState().drop((PersistentSnippet) key));
+        testStateClosedException((key) -> getState().drop(key));
     }
 
     public void testUnresolved() {

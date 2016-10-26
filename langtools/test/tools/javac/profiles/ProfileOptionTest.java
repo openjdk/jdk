@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,9 +176,14 @@ public class ProfileOptionTest {
                             Arrays.asList(fo));
                     task.analyze();
 
-                    List<String> expectDiagCodes = (p.value >= e.getKey().value)
-                            ? Collections.<String>emptyList()
-                            : Arrays.asList("compiler.err.not.in.profile");
+                    List<String> expectDiagCodes = new ArrayList<>();
+                    if (fo.getName().equals("TPolicyFile.java")) {
+                        expectDiagCodes.add("compiler.warn.has.been.deprecated.for.removal");
+                    }
+
+                    if (p.value < e.getKey().value) {
+                        expectDiagCodes.add("compiler.err.not.in.profile");
+                    }
 
                     checkDiags(opts + " " + fo.getName(), dl.getDiagnostics(), expectDiagCodes);
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,61 +111,3 @@ void Metachunk::verify() {
   return;
 }
 
-/////////////// Unit tests ///////////////
-
-#ifndef PRODUCT
-
-class TestMetachunk {
- public:
-  static void test() {
-    size_t size = 2 * 1024 * 1024;
-    void* memory = malloc(size);
-    assert(memory != NULL, "Failed to malloc 2MB");
-
-    Metachunk* metachunk = ::new (memory) Metachunk(size / BytesPerWord, NULL);
-
-    assert(metachunk->bottom() == (MetaWord*)metachunk, "assert");
-    assert(metachunk->end() == (uintptr_t*)metachunk + metachunk->size(), "assert");
-
-    // Check sizes
-    assert(metachunk->size() == metachunk->word_size(), "assert");
-    assert(metachunk->word_size() == pointer_delta(metachunk->end(), metachunk->bottom(),
-        sizeof(MetaWord*)), "assert");
-
-    // Check usage
-    assert(metachunk->used_word_size() == metachunk->overhead(), "assert");
-    assert(metachunk->free_word_size() == metachunk->word_size() - metachunk->used_word_size(), "assert");
-    assert(metachunk->top() == metachunk->initial_top(), "assert");
-    assert(metachunk->is_empty(), "assert");
-
-    // Allocate
-    size_t alloc_size = 64; // Words
-    assert(is_size_aligned(alloc_size, Metachunk::object_alignment()), "assert");
-
-    MetaWord* mem = metachunk->allocate(alloc_size);
-
-    // Check post alloc
-    assert(mem == metachunk->initial_top(), "assert");
-    assert(mem + alloc_size == metachunk->top(), "assert");
-    assert(metachunk->used_word_size() == metachunk->overhead() + alloc_size, "assert");
-    assert(metachunk->free_word_size() == metachunk->word_size() - metachunk->used_word_size(), "assert");
-    assert(!metachunk->is_empty(), "assert");
-
-    // Clear chunk
-    metachunk->reset_empty();
-
-    // Check post clear
-    assert(metachunk->used_word_size() == metachunk->overhead(), "assert");
-    assert(metachunk->free_word_size() == metachunk->word_size() - metachunk->used_word_size(), "assert");
-    assert(metachunk->top() == metachunk->initial_top(), "assert");
-    assert(metachunk->is_empty(), "assert");
-
-    free(memory);
-  }
-};
-
-void TestMetachunk_test() {
-  TestMetachunk::test();
-}
-
-#endif

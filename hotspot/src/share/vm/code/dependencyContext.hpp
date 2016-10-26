@@ -29,6 +29,7 @@
 #include "oops/oop.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"
+#include "runtime/safepoint.hpp"
 
 class nmethod;
 class DepChange;

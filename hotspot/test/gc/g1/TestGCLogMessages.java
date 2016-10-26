@@ -23,7 +23,7 @@
 
 /*
  * @test TestGCLogMessages
- * @bug 8035406 8027295 8035398 8019342 8027959 8048179 8027962 8069330 8076463 8150630
+ * @bug 8035406 8027295 8035398 8019342 8027959 8048179 8027962 8069330 8076463 8150630 8160055
  * @summary Ensure the output for a minor GC with G1
  * includes the expected necessary messages.
  * @key gc
@@ -31,6 +31,9 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @build sun.hotspot.WhiteBox
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main TestGCLogMessages
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -122,6 +125,7 @@ public class TestGCLogMessages {
     public static void main(String[] args) throws Exception {
         new TestGCLogMessages().testNormalLogs();
         new TestGCLogMessages().testWithToSpaceExhaustionLogs();
+        new TestGCLogMessages().testWithInitialMark();
     }
 
     private void testNormalLogs() throws Exception {
@@ -183,6 +187,20 @@ public class TestGCLogMessages {
         output.shouldHaveExitValue(0);
     }
 
+    private void testWithInitialMark() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+                                                                  "-Xmx10M",
+                                                                  "-Xbootclasspath/a:.",
+                                                                  "-Xlog:gc*=debug",
+                                                                  "-XX:+UnlockDiagnosticVMOptions",
+                                                                  "-XX:+WhiteBoxAPI",
+                                                                  GCTestWithInitialMark.class.getName());
+
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Clear Claimed Marks");
+        output.shouldHaveExitValue(0);
+    }
+
     static class GCTest {
         private static byte[] garbage;
         public static void main(String [] args) {
@@ -209,5 +227,13 @@ public class TestGCLogMessages {
             System.out.println("Done");
         }
     }
+
+    static class GCTestWithInitialMark {
+        public static void main(String [] args) {
+            sun.hotspot.WhiteBox WB = sun.hotspot.WhiteBox.getWhiteBox();
+            WB.g1StartConcMarkCycle();
+        }
+    }
+
 }
 

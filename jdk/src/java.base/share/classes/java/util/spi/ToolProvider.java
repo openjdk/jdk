@@ -56,8 +56,8 @@ public interface ToolProvider {
     /**
      * Returns the name of this tool provider.
      *
-     * @apiNote It is recommended that the name be the same as would be used on
-     *      the command line: for example, "javac", "jar", "jlink".
+     * @apiNote It is recommended that the name be the same as would be
+     * used on the command line: for example, "javac", "jar", "jlink".
      *
      * @return the name of this tool provider
      */
@@ -67,12 +67,13 @@ public interface ToolProvider {
      * Runs an instance of the tool, returning zero for a successful run.
      * Any non-zero return value indicates a tool-specific error during the
      * execution.
+     *
      * Two streams should be provided, for "expected" output, and for any
      * error messages. If it is not necessary to distinguish the output,
      * the same stream may be used for both.
      *
      * @apiNote The interpretation of the arguments will be specific to
-     *      each tool.
+     * each tool.
      *
      * @param out a stream to which "expected" output should be written
      *
@@ -81,12 +82,13 @@ public interface ToolProvider {
      * @param args the command-line arguments for the tool
      *
      * @return the result of executing the tool.
-     *      A return value of 0 means the tool did not encounter any errors;
-     *      any other value indicates that at least one error occurred during
-     *      execution.
+     *         A return value of 0 means the tool did not encounter any errors;
+     *         any other value indicates that at least one error occurred
+     *         during execution.
      *
      * @throws NullPointerException if any of the arguments are {@code null},
-     *      or if there are any {@code null} values in the {@code args} array
+     *         or if there are any {@code null} values in the {@code args}
+     *         array
      */
     int run(PrintWriter out, PrintWriter err, String... args);
 
@@ -94,16 +96,17 @@ public interface ToolProvider {
      * Runs an instance of the tool, returning zero for a successful run.
      * Any non-zero return value indicates a tool-specific error during the
      * execution.
+     *
      * Two streams should be provided, for "expected" output, and for any
      * error messages. If it is not necessary to distinguish the output,
      * the same stream may be used for both.
      *
      * @apiNote The interpretation of the arguments will be specific to
-     *      each tool.
+     * each tool.
      *
      * @implNote This implementation wraps the {@code out} and {@code err}
-     *      streams within {@link PrintWriter}s, and then calls
-     *      {@link run(PrintWriter, PrintWriter, String[])}.
+     * streams within {@link PrintWriter}s, and then calls
+     * {@link #run(PrintWriter, PrintWriter, String[])}.
      *
      * @param out a stream to which "expected" output should be written
      *
@@ -112,12 +115,13 @@ public interface ToolProvider {
      * @param args the command-line arguments for the tool
      *
      * @return the result of executing the tool.
-     *      A return value of 0 means the tool did not encounter any errors;
-     *      any other value indicates that at least one error occurred during
-     *      execution.
+     *         A return value of 0 means the tool did not encounter any errors;
+     *         any other value indicates that at least one error occurred
+     *         during execution.
      *
      * @throws NullPointerException if any of the arguments are {@code null},
-     *      or if there are any {@code null} values in the {@code args} array
+     *         or if there are any {@code null} values in the {@code args}
+     *         array
      */
     default int run(PrintStream out, PrintStream err, String... args) {
         Objects.requireNonNull(out);

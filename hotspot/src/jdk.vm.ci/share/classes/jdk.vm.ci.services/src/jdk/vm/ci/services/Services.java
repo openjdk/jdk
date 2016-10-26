@@ -22,7 +22,8 @@
  */
 package jdk.vm.ci.services;
 
-import java.lang.reflect.Module;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Formatter;
 import java.util.Iterator;
 import java.util.ServiceConfigurationError;
@@ -36,11 +37,62 @@ public final class Services {
     private Services() {
     }
 
+    private static int getJavaSpecificationVersion() {
+        String value = System.getProperty("java.specification.version");
+        if (value.startsWith("1.")) {
+            value = value.substring(2);
+        }
+        return Integer.parseInt(value);
+    }
+
+    /**
+     * The integer value corresponding to the value of the {@code java.specification.version} system
+     * property after any leading {@code "1."} has been stripped.
+     */
+    public static final int JAVA_SPECIFICATION_VERSION = getJavaSpecificationVersion();
+
+    // Use reflection so that this compiles on Java 8
+    private static final Method getModule;
+    private static final Method getPackages;
+    private static final Method addUses;
+    private static final Method isExported;
+    private static final Method addExports;
+
+    static {
+        if (JAVA_SPECIFICATION_VERSION >= 9) {
+            try {
+                getModule = Class.class.getMethod("getModule");
+                Class<?> moduleClass = getModule.getReturnType();
+                getPackages = moduleClass.getMethod("getPackages");
+                addUses = moduleClass.getMethod("addUses", Class.class);
+                isExported = moduleClass.getMethod("isExported", String.class, moduleClass);
+                addExports = moduleClass.getMethod("addExports", String.class, moduleClass);
+            } catch (NoSuchMethodException | SecurityException e) {
+                throw new InternalError(e);
+            }
+        } else {
+            getModule = null;
+            getPackages = null;
+            addUses = null;
+            isExported = null;
+            addExports = null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T> T invoke(Method method, Object receiver, Object... args) {
+        try {
+            return (T) method.invoke(receiver, args);
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            throw new InternalError(e);
+        }
+    }
+
     /**
      * Performs any required security checks and dynamic reconfiguration to allow the module of a
      * given class to access the classes in the JVMCI module.
      *
-     * Note: This API uses {@link Class} instead of {@link Module} to provide backwards
+     * Note: This API uses {@link Class} instead of {@code Module} to provide backwards
      * compatibility for JVMCI clients compiled against a JDK release earlier than 9.
      *
      * @param requestor a class requesting access to the JVMCI module for its module
@@ -52,15 +104,19 @@ public final class Services {
         if (sm != null) {
             sm.checkPermission(new JVMCIPermission());
         }
-        Module jvmci = Services.class.getModule();
-        Module requestorModule = requestor.getModule();
-        if (jvmci != requestorModule) {
-            for (String pkg : jvmci.getPackages()) {
-                // Export all JVMCI packages dynamically instead
-                // of requiring a long list of --add-exports
-                // options on the JVM command line.
-                if (!jvmci.isExported(pkg, requestorModule)) {
-                    jvmci.addExports(pkg, requestorModule);
+        if (JAVA_SPECIFICATION_VERSION >= 9) {
+            Object jvmci = invoke(getModule, Services.class);
+            Object requestorModule = invoke(getModule, requestor);
+            if (jvmci != requestorModule) {
+                String[] packages = invoke(getPackages, jvmci);
+                for (String pkg : packages) {
+                    // Export all JVMCI packages dynamically instead
+                    // of requiring a long list of --add-exports
+                    // options on the JVM command line.
+                    boolean exported = invoke(isExported, jvmci, pkg, requestorModule);
+                    if (!exported) {
+                        invoke(addExports, jvmci, pkg, requestorModule);
+                    }
                 }
             }
         }
@@ -77,8 +133,10 @@ public final class Services {
         if (sm != null) {
             sm.checkPermission(new JVMCIPermission());
         }
-        Module jvmci = Services.class.getModule();
-        jvmci.addUses(service);
+        if (JAVA_SPECIFICATION_VERSION >= 9) {
+            Object jvmci = invoke(getModule, Services.class);
+            invoke(addUses, jvmci, service);
+        }
 
         // Restrict JVMCI clients to be on the class path or module path
         return ServiceLoader.load(service, ClassLoader.getSystemClassLoader());
@@ -98,8 +156,10 @@ public final class Services {
         if (sm != null) {
             sm.checkPermission(new JVMCIPermission());
         }
-        Module jvmci = Services.class.getModule();
-        jvmci.addUses(service);
+        if (JAVA_SPECIFICATION_VERSION >= 9) {
+            Object jvmci = invoke(getModule, Services.class);
+            invoke(addUses, jvmci, service);
+        }
         // Restrict JVMCI clients to be on the class path or module path
         Iterable<S> providers = ServiceLoader.load(service, ClassLoader.getSystemClassLoader());
         S singleProvider = null;

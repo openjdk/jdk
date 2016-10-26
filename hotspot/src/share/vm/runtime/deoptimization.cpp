@@ -171,7 +171,6 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   assert(thread->deopt_compiled_method() == NULL, "Pending deopt!");
   CompiledMethod* cm = deoptee.cb()->as_compiled_method_or_null();
   thread->set_deopt_compiled_method(cm);
-  bool skip_internal = (cm != NULL) && !cm->is_compiled_by_jvmci();
 
   if (VerifyStack) {
     thread->validate_frame_layout();
@@ -241,6 +240,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
         JRT_BLOCK
           realloc_failures = realloc_objects(thread, &deoptee, objects, THREAD);
         JRT_END
+        bool skip_internal = (cm != NULL) && !cm->is_compiled_by_jvmci();
         reassign_fields(&deoptee, &map, objects, realloc_failures, skip_internal);
 #ifndef PRODUCT
         if (TraceDeoptimization) {
@@ -1651,7 +1651,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
       if (TraceDeoptimization) {  // make noise on the tty
         tty->print("Uncommon trap occurred in");
         nm->method()->print_short_name(tty);
-        tty->print(" compiler=%s compile_id=%d", nm->compiler() == NULL ? "" : nm->compiler()->name(), nm->compile_id());
+        tty->print(" compiler=%s compile_id=%d", nm->compiler_name(), nm->compile_id());
 #if INCLUDE_JVMCI
         if (nm->is_nmethod()) {
           oop installedCode = nm->as_nmethod()->jvmci_installed_code();

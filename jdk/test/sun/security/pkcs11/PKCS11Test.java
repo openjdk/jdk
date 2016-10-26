@@ -47,6 +47,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
 
@@ -112,7 +113,7 @@ public abstract class PKCS11Test {
                     found = true;
                     break;
                 }
-            } catch (Exception e) {
+            } catch (Exception | ServiceConfigurationError e) {
                 // ignore and move on to the next one
             }
         }
@@ -299,11 +300,12 @@ public abstract class PKCS11Test {
                 + props.getProperty("os.arch") + "-" + props.getProperty("sun.arch.data.model");
         String[] nssLibDirs = osMap.get(osid);
         if (nssLibDirs == null) {
-            System.out.println("Unsupported OS, skipping: " + osid);
+            System.out.println("Warning: unsupported OS: " + osid
+                    + ", please initialize NSS librarys location firstly, skipping test");
             return null;
         }
         if (nssLibDirs.length == 0) {
-            System.out.println("NSS not supported on this platform, skipping test");
+            System.out.println("Warning: NSS not supported on this platform, skipping test");
             return null;
         }
         String nssLibDir = null;
@@ -314,6 +316,10 @@ public abstract class PKCS11Test {
                 System.setProperty("pkcs11test.nss.libdir", nssLibDir);
                 break;
             }
+        }
+        if (nssLibDir == null) {
+            System.out.println("Warning: can't find NSS librarys on this machine, skipping test");
+            return null;
         }
         return nssLibDir;
     }
@@ -624,6 +630,11 @@ public abstract class PKCS11Test {
             PKCS11_BASE + "/nss/lib/windows-amd64/".replace('/', SEP)});
         osMap.put("MacOSX-x86_64-64", new String[]{
             PKCS11_BASE + "/nss/lib/macosx-x86_64/"});
+        osMap.put("Linux-arm-32", new String[]{
+            "/usr/lib/arm-linux-gnueabi/nss/",
+            "/usr/lib/arm-linux-gnueabihf/nss/"});
+        osMap.put("Linux-aarch64-64", new String[]{
+            "/usr/lib/aarch64-linux-gnu/nss/"});
     }
 
     private final static char[] hexDigits = "0123456789abcdef".toCharArray();

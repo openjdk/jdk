@@ -416,6 +416,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseAltSigs",                    JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "SegmentedHeapDumpThreshold",    JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "PrintOopAddress",               JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "PermSize",                      JDK_Version::undefined(), JDK_Version::jdk(8), JDK_Version::jdk(10) },
+  { "MaxPermSize",                   JDK_Version::undefined(), JDK_Version::jdk(8), JDK_Version::jdk(10) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },
@@ -793,9 +795,10 @@ static bool append_to_string_flag(const char* name, const char* new_value, Flag:
   } else if (new_len == 0) {
     value = old_value;
   } else {
-    char* buf = NEW_C_HEAP_ARRAY(char, old_len + 1 + new_len + 1, mtArguments);
+     size_t length = old_len + 1 + new_len + 1;
+     char* buf = NEW_C_HEAP_ARRAY(char, length, mtArguments);
     // each new setting adds another LINE to the switch:
-    sprintf(buf, "%s\n%s", old_value, new_value);
+    jio_snprintf(buf, length, "%s\n%s", old_value, new_value);
     value = buf;
     free_this_too = buf;
   }
@@ -1013,15 +1016,17 @@ const char* Arguments::build_resource_string(char** args, int count) {
   if (args == NULL || count == 0) {
     return NULL;
   }
-  size_t length = strlen(args[0]) + 1; // add 1 for the null terminator
-  for (int i = 1; i < count; i++) {
-    length += strlen(args[i]) + 1; // add 1 for a space
+  size_t length = 0;
+  for (int i = 0; i < count; i++) {
+    length += strlen(args[i]) + 1; // add 1 for a space or NULL terminating character
   }
   char* s = NEW_RESOURCE_ARRAY(char, length);
-  strcpy(s, args[0]);
-  for (int j = 1; j < count; j++) {
-    strcat(s, " ");
-    strcat(s, args[j]);
+  char* dst = s;
+  for (int j = 0; j < count; j++) {
+    size_t offset = strlen(args[j]) + 1; // add 1 for a space or NULL terminating character
+    jio_snprintf(dst, length, "%s ", args[j]); // jio_snprintf will replace the last space character with NULL character
+    dst += offset;
+    length -= offset;
   }
   return (const char*) s;
 }
@@ -1105,9 +1110,8 @@ bool Arguments::process_argument(const char* arg,
   // Only make the obsolete check for valid arguments.
   if (arg_len <= BUFLEN) {
     // Construct a string which consists only of the argument name without '+', '-', or '='.
-    char stripped_argname[BUFLEN+1];
-    strncpy(stripped_argname, argname, arg_len);
-    stripped_argname[arg_len] = '\0';  // strncpy may not null terminate.
+    char stripped_argname[BUFLEN+1]; // +1 for '\0'
+    jio_snprintf(stripped_argname, arg_len+1, "%s", argname); // +1 for '\0'
     if (is_obsolete_flag(stripped_argname, &since)) {
       char version[256];
       since.to_string(version, sizeof(version));
@@ -1259,8 +1263,7 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
     size_t key_len = eq - prop;
     char* tmp_key = AllocateHeap(key_len + 1, mtArguments);
 
-    strncpy(tmp_key, prop, key_len);
-    tmp_key[key_len] = '\0';
+    jio_snprintf(tmp_key, key_len + 1, "%s", prop);
     key = tmp_key;
 
     value = &prop[key_len + 1];
@@ -2260,7 +2263,7 @@ jint Arguments::set_aggressive_opts_flags() {
 
     // Feed the cache size setting into the JDK
     char buffer[1024];
-    sprintf(buffer, "java.lang.Integer.IntegerCache.high=" INTX_FORMAT, AutoBoxCacheMax);
+    jio_snprintf(buffer, 1024, "java.lang.Integer.IntegerCache.high=" INTX_FORMAT, AutoBoxCacheMax);
     if (!add_property(buffer)) {
       return JNI_ENOMEM;
     }
@@ -2781,8 +2784,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (tail != NULL) {
         const char* pos = strchr(tail, ':');
         size_t len = (pos == NULL) ? strlen(tail) : pos - tail;
-        char* name = (char*)memcpy(NEW_C_HEAP_ARRAY(char, len + 1, mtArguments), tail, len);
-        name[len] = '\0';
+        char* name = NEW_C_HEAP_ARRAY(char, len + 1, mtArguments);
+        jio_snprintf(name, len + 1, "%s", tail);
 
         char *options = NULL;
         if(pos != NULL) {
@@ -2858,7 +2861,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       return JNI_ERR;
 #else
       if (tail != NULL) {
-        char *options = strcpy(NEW_C_HEAP_ARRAY(char, strlen(tail) + 1, mtArguments), tail);
+        size_t length = strlen(tail) + 1;
+        char *options = NEW_C_HEAP_ARRAY(char, length, mtArguments);
+        jio_snprintf(options, length, "%s", tail);
         add_init_agent("instrument", options, false);
         // java agents need module java.instrument
         if (!create_numbered_property("jdk.module.addmods", "java.instrument", addmods_count++)) {
@@ -3518,7 +3523,7 @@ jint Arguments::finalize_vm_init_args() {
   // check if the default lib/endorsed directory exists; if so, error
   char path[JVM_MAXPATHLEN];
   const char* fileSep = os::file_separator();
-  sprintf(path, "%s%slib%sendorsed", Arguments::get_java_home(), fileSep, fileSep);
+  jio_snprintf(path, JVM_MAXPATHLEN, "%s%slib%sendorsed", Arguments::get_java_home(), fileSep, fileSep);
 
   if (CheckEndorsedAndExtDirs) {
     int nonEmptyDirs = 0;
@@ -3540,7 +3545,7 @@ jint Arguments::finalize_vm_init_args() {
     return JNI_ERR;
   }
 
-  sprintf(path, "%s%slib%sext", Arguments::get_java_home(), fileSep, fileSep);
+  jio_snprintf(path, JVM_MAXPATHLEN, "%s%slib%sext", Arguments::get_java_home(), fileSep, fileSep);
   dir = os::opendir(path);
   if (dir != NULL) {
     jio_fprintf(defaultStream::output_stream(),
@@ -3905,6 +3910,13 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
 
 void Arguments::set_shared_spaces_flags() {
   if (DumpSharedSpaces) {
+    if (FailOverToOldVerifier) {
+      // Don't fall back to the old verifier on verification failure. If a
+      // class fails verification with the split verifier, it might fail the
+      // CDS runtime verifier constraint check. In that case, we don't want
+      // to share the class. We only archive classes that pass the split verifier.
+      FLAG_SET_DEFAULT(FailOverToOldVerifier, false);
+    }
 
     if (RequireSharedSpaces) {
       warning("Cannot dump shared archive while using shared archive");
