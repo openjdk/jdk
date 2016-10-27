@@ -58,7 +58,7 @@ package sun.security.pkcs11.wrapper;
  */
 public class Constants {
 
-    public static final String NEWLINE = System.getProperty("line.separator");
+    public static final String NEWLINE = System.lineSeparator();
 
     public static final String INDENT = "  ";
 

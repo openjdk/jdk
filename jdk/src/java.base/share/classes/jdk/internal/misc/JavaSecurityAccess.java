@@ -27,6 +27,7 @@ package jdk.internal.misc;
 
 import java.security.AccessControlContext;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 
 public interface JavaSecurityAccess {
 
@@ -37,4 +38,5 @@ public interface JavaSecurityAccess {
     <T> T doIntersectionPrivilege(PrivilegedAction<T> action,
                                   AccessControlContext context);
 
+    ProtectionDomain[] getProtectDomains(AccessControlContext context);
 }

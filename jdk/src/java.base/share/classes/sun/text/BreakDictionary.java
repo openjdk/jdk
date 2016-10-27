@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,15 +37,10 @@
  * This notice and attribution to Taligent may not be removed.
  * Taligent is a registered trademark of Taligent, Inc.
  */
-package sun.util.locale.provider;
+package sun.text;
 
-import java.io.BufferedInputStream;
-import java.io.InputStream;
-import java.io.IOException;
-import java.lang.reflect.Module;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
 import java.util.MissingResourceException;
 import sun.text.CompactByteArray;
 import sun.text.SupplementaryCharacterData;
@@ -137,131 +132,90 @@ class BreakDictionary {
     // deserialization
     //=========================================================================
 
-    BreakDictionary(Module module, String dictionaryName)
-        throws IOException, MissingResourceException {
-
-        readDictionaryFile(module, dictionaryName);
+    BreakDictionary(String dictionaryName, byte[] dictionaryData) {
+        try {
+            setupDictionary(dictionaryName, dictionaryData);
+        } catch (BufferUnderflowException bue) {
+            MissingResourceException e;
+            e = new MissingResourceException("Corrupted dictionary data",
+                                             dictionaryName, "");
+            e.initCause(bue);
+            throw e;
+        }
     }
 
-    private void readDictionaryFile(final Module module, final String dictionaryName)
-        throws IOException, MissingResourceException {
-
-        BufferedInputStream in;
-        try {
-            PrivilegedExceptionAction<BufferedInputStream> pa = () -> {
-                String pathName = "jdk.localedata".equals(module.getName()) ?
-                     "sun/text/resources/ext/" :
-                     "sun/text/resources/";
-                InputStream is = module.getResourceAsStream(pathName + dictionaryName);
-                if (is == null) {
-                    // Try to load the file with "java.base" module instance. Assumption
-                    // here is that the fall back data files to be read should reside in
-                    // java.base.
-                    is = BreakDictionary.class.getModule().getResourceAsStream("sun/text/resources/" + dictionaryName);
-                }
-
-                return new BufferedInputStream(is);
-            };
-            in = AccessController.doPrivileged(pa);
-        }
-        catch (PrivilegedActionException e) {
-            throw new InternalError(e.toString(), e);
-        }
-
-        byte[] buf = new byte[8];
-        if (in.read(buf) != 8) {
-            throw new MissingResourceException("Wrong data length",
-                                               dictionaryName, "");
-        }
+    private void setupDictionary(String dictionaryName, byte[] dictionaryData) {
+        ByteBuffer bb = ByteBuffer.wrap(dictionaryData);
 
         // check version
-        int version = RuleBasedBreakIterator.getInt(buf, 0);
+        int version = bb.getInt();
         if (version != supportedVersion) {
             throw new MissingResourceException("Dictionary version(" + version + ") is unsupported",
-                                                           dictionaryName, "");
-        }
-
-        // get data size
-        int len = RuleBasedBreakIterator.getInt(buf, 4);
-        buf = new byte[len];
-        if (in.read(buf) != len) {
-            throw new MissingResourceException("Wrong data length",
                                                dictionaryName, "");
         }
 
-        // close the stream
-        in.close();
-
-        int l;
-        int offset = 0;
+        // Check data size
+        int len = bb.getInt();
+        if (bb.position() + len != bb.limit()) {
+            throw new MissingResourceException("Dictionary size is wrong: " + bb.limit(),
+                                               dictionaryName, "");
+        }
 
         // read in the column map for BMP characteres (this is serialized in
         // its internal form: an index array followed by a data array)
-        l = RuleBasedBreakIterator.getInt(buf, offset);
-        offset += 4;
-        short[] temp = new short[l];
-        for (int i = 0; i < l; i++, offset+=2) {
-            temp[i] = RuleBasedBreakIterator.getShort(buf, offset);
+        len = bb.getInt();
+        short[] temp = new short[len];
+        for (int i = 0; i < len; i++) {
+            temp[i] = bb.getShort();
         }
-        l = RuleBasedBreakIterator.getInt(buf, offset);
-        offset += 4;
-        byte[] temp2 = new byte[l];
-        for (int i = 0; i < l; i++, offset++) {
-            temp2[i] = buf[offset];
-        }
+        len = bb.getInt();
+        byte[] temp2 = new byte[len];
+        bb.get(temp2);
         columnMap = new CompactByteArray(temp, temp2);
 
         // read in numCols and numColGroups
-        numCols = RuleBasedBreakIterator.getInt(buf, offset);
-        offset += 4;
-        numColGroups = RuleBasedBreakIterator.getInt(buf, offset);
-        offset += 4;
+        numCols = bb.getInt();
+        numColGroups = bb.getInt();
 
         // read in the row-number index
-        l = RuleBasedBreakIterator.getInt(buf, offset);
-        offset += 4;
-        rowIndex = new short[l];
-        for (int i = 0; i < l; i++, offset+=2) {
-            rowIndex[i] = RuleBasedBreakIterator.getShort(buf, offset);
+        len = bb.getInt();
+        rowIndex = new short[len];
+        for (int i = 0; i < len; i++) {
+            rowIndex[i] = bb.getShort();
         }
 
         // load in the populated-cells bitmap: index first, then bitmap list
-        l = RuleBasedBreakIterator.getInt(buf, offset);
-        offset += 4;
-        rowIndexFlagsIndex = new short[l];
-        for (int i = 0; i < l; i++, offset+=2) {
-            rowIndexFlagsIndex[i] = RuleBasedBreakIterator.getShort(buf, offset);
+        len = bb.getInt();
+        rowIndexFlagsIndex = new short[len];
+        for (int i = 0; i < len; i++) {
+            rowIndexFlagsIndex[i] = bb.getShort();
         }
-        l = RuleBasedBreakIterator.getInt(buf, offset);
-        offset += 4;
-        rowIndexFlags = new int[l];
-        for (int i = 0; i < l; i++, offset+=4) {
-            rowIndexFlags[i] = RuleBasedBreakIterator.getInt(buf, offset);
+        len = bb.getInt();
+        rowIndexFlags = new int[len];
+        for (int i = 0; i < len; i++) {
+            rowIndexFlags[i] = bb.getInt();
         }
 
         // load in the row-shift index
-        l = RuleBasedBreakIterator.getInt(buf, offset);
-        offset += 4;
-        rowIndexShifts = new byte[l];
-        for (int i = 0; i < l; i++, offset++) {
-            rowIndexShifts[i] = buf[offset];
-        }
+        len = bb.getInt();
+        rowIndexShifts = new byte[len];
+        bb.get(rowIndexShifts);
 
         // load in the actual state table
-        l = RuleBasedBreakIterator.getInt(buf, offset);
-        offset += 4;
-        table = new short[l];
-        for (int i = 0; i < l; i++, offset+=2) {
-            table[i] = RuleBasedBreakIterator.getShort(buf, offset);
+        len = bb.getInt();
+        table = new short[len];
+        for (int i = 0; i < len; i++) {
+            table[i] = bb.getShort();
         }
 
         // finally, prepare the column map for supplementary characters
-        l = RuleBasedBreakIterator.getInt(buf, offset);
-        offset += 4;
-        int[] temp3 = new int[l];
-        for (int i = 0; i < l; i++, offset+=4) {
-            temp3[i] = RuleBasedBreakIterator.getInt(buf, offset);
+        len = bb.getInt();
+        int[] temp3 = new int[len];
+        for (int i = 0; i < len; i++) {
+            temp3[i] = bb.getInt();
         }
+        assert bb.position() == bb.limit();
+
         supplementaryCharColumnMap = new SupplementaryCharacterData(temp3);
     }
 

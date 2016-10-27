@@ -57,6 +57,7 @@ public class SharedSecrets {
     private static JavaNetHttpCookieAccess javaNetHttpCookieAccess;
     private static JavaNetSocketAccess javaNetSocketAccess;
     private static JavaNetUriAccess javaNetUriAccess;
+    private static JavaNetURLClassLoaderAccess javaNetURLClassLoaderAccess;
     private static JavaNioAccess javaNioAccess;
     private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
     private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
@@ -142,6 +143,16 @@ public class SharedSecrets {
         if (javaNetUriAccess == null)
             unsafe.ensureClassInitialized(java.net.URI.class);
         return javaNetUriAccess;
+    }
+
+    public static void setJavaNetURLClassLoaderAccess(JavaNetURLClassLoaderAccess jnua) {
+        javaNetURLClassLoaderAccess = jnua;
+    }
+
+    public static JavaNetURLClassLoaderAccess getJavaNetURLClassLoaderAccess() {
+        if (javaNetURLClassLoaderAccess == null)
+            unsafe.ensureClassInitialized(java.net.URLClassLoader.class);
+        return javaNetURLClassLoaderAccess;
     }
 
     public static void setJavaNetInetAddressAccess(JavaNetInetAddressAccess jna) {

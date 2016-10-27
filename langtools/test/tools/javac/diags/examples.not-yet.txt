@@ -111,6 +111,7 @@ compiler.warn.file.from.future                          # warning for future mod
 compiler.err.cant.inherit.from.anon                     # error for subclass of anonymous class
 compiler.misc.bad.class.file                            # class file is malformed
 compiler.misc.bad.const.pool.entry                      # constant pool entry has wrong type
+compiler.warn.access.to.member.from.serializable.lambda # in order to generate it we need to modify a restricted package
 
 # The following module-related messages will have to stay on the not-yet list for various reasons:
 compiler.warn.locn.unknown.file.on.module.path                # Never issued ATM (short circuited with an if (false))

@@ -22,29 +22,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 #include <errno.h>
-#include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+#include <sys/ioctl.h>
 
-#ifdef __solaris__
-#include <fcntl.h>
-#include <unistd.h>
-#include <stropts.h>
+#if defined(__solaris__)
+#include <sys/filio.h>
+#endif
 
-#ifndef BSD_COMP
-#define BSD_COMP
-#endif
-#endif
+#include "net_util.h"
+
+#include "java_net_PlainDatagramSocketImpl.h"
+#include "java_net_InetAddress.h"
+#include "java_net_NetworkInterface.h"
+#include "java_net_SocketOptions.h"
+
 #ifdef __linux__
-#include <unistd.h>
-#include <sys/sysctl.h>
-#include <sys/utsname.h>
-#include <netinet/ip.h>
-
 #define IPV6_MULTICAST_IF 17
 #ifndef SO_BSDCOMPAT
 #define SO_BSDCOMPAT  14
@@ -58,7 +52,11 @@
 #endif
 #endif  //  __linux__
 
-#include <sys/ioctl.h>
+#ifdef __solaris__
+#ifndef BSD_COMP
+#define BSD_COMP
+#endif
+#endif
 
 #ifndef IPTOS_TOS_MASK
 #define IPTOS_TOS_MASK 0x1e
@@ -67,12 +65,6 @@
 #define IPTOS_PREC_MASK 0xe0
 #endif
 
-#include "jvm.h"
-#include "jni_util.h"
-#include "net_util.h"
-#include "java_net_SocketOptions.h"
-#include "java_net_PlainDatagramSocketImpl.h"
-#include "java_net_NetworkInterface.h"
 /************************************************************************
  * PlainDatagramSocketImpl
  */
@@ -151,9 +143,6 @@ static int getFD(JNIEnv *env, jobject this) {
 JNIEXPORT void JNICALL
 Java_java_net_PlainDatagramSocketImpl_init(JNIEnv *env, jclass cls) {
 
-#ifdef __linux__
-    struct utsname sysinfo;
-#endif
     pdsi_fdID = (*env)->GetFieldID(env, cls, "fd",
                                    "Ljava/io/FileDescriptor;");
     CHECK_NULL(pdsi_fdID);
@@ -550,7 +539,8 @@ Java_java_net_PlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
 
     iaObj = NET_SockaddrToInetAddress(env, &rmtaddr.sa, &port);
 #ifdef AF_INET6
-    family = getInetAddress_family(env, iaObj) == IPv4? AF_INET : AF_INET6;
+    family = getInetAddress_family(env, iaObj) == java_net_InetAddress_IPv4 ?
+        AF_INET : AF_INET6;
 #else
     family = AF_INET;
 #endif
@@ -1071,7 +1061,7 @@ static void mcast_set_if_by_if_v4(JNIEnv *env, jobject this, int fd, jobject val
      */
     for (i = 0; i < len; i++) {
         addr = (*env)->GetObjectArrayElement(env, addrArray, i);
-        if (getInetAddress_family(env, addr) == IPv4) {
+        if (getInetAddress_family(env, addr) == java_net_InetAddress_IPv4) {
             in.s_addr = htonl(getInetAddress_addr(env, addr));
             break;
         }
@@ -1970,7 +1960,7 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
     ipv6_join_leave = ipv6_available();
 
 #ifdef __linux__
-    if (getInetAddress_family(env, iaObj) == IPv4) {
+    if (getInetAddress_family(env, iaObj) == java_net_InetAddress_IPv4) {
         ipv6_join_leave = JNI_FALSE;
     }
 #endif
@@ -2162,7 +2152,8 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
         jbyte caddr[16];
         jint family;
         jint address;
-        family = getInetAddress_family(env, iaObj) == IPv4? AF_INET : AF_INET6;
+        family = getInetAddress_family(env, iaObj) == java_net_InetAddress_IPv4 ?
+            AF_INET : AF_INET6;
         if (family == AF_INET) { /* will convert to IPv4-mapped address */
             memset((char *) caddr, 0, 16);
             address = getInetAddress_addr(env, iaObj);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package java.io;
 
 import java.nio.channels.FileChannel;
-import java.util.concurrent.atomic.AtomicBoolean;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.JavaIOFileDescriptorAccess;
 import sun.nio.ch.FileChannelImpl;
@@ -77,7 +76,9 @@ class FileOutputStream extends OutputStream
      */
     private final String path;
 
-    private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final Object closeLock = new Object();
+
+    private volatile boolean closed;
 
     /**
      * Creates a file output stream to write to the file with the
@@ -341,14 +342,21 @@ class FileOutputStream extends OutputStream
      * @spec JSR-51
      */
     public void close() throws IOException {
-        if (!closed.compareAndSet(false, true)) {
-            // if compareAndSet() returns false closed was already true
+        if (closed) {
             return;
+        }
+        synchronized (closeLock) {
+            if (closed) {
+                return;
+            }
+            closed = true;
         }
 
         FileChannel fc = channel;
         if (fc != null) {
-           fc.close();
+            // possible race with getChannel(), benign since
+            // FileChannel.close is final and idempotent
+            fc.close();
         }
 
         fd.closeAll(new Closeable() {
@@ -399,8 +407,10 @@ class FileOutputStream extends OutputStream
                 fc = this.channel;
                 if (fc == null) {
                     this.channel = fc = FileChannelImpl.open(fd, path, false, true, this);
-                    if (closed.get()) {
+                    if (closed) {
                         try {
+                            // possible race with close(), benign since
+                            // FileChannel.close is final and idempotent
                             fc.close();
                         } catch (IOException ioe) {
                             throw new InternalError(ioe); // should not happen

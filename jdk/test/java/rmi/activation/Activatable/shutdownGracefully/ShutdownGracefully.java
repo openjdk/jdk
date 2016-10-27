@@ -32,7 +32,8 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary RMID
+ *          java.base/sun.nio.ch
+ * @build TestLibrary RMID RMIDSelectorProvider
  *     TestSecurityManager RegisteringActivatable ShutdownGracefully_Stub
  * @run main/othervm/policy=security.policy/timeout=700 ShutdownGracefully
  */
@@ -76,7 +77,7 @@ public class ShutdownGracefully
 
             // start an rmid.
             RMID.removeLog();
-            rmid = RMID.createRMID();
+            rmid = RMID.createRMIDOnEphemeralPort();
 
             // rmid needs to run with a security manager that
             // simulates a log problem; rmid should also snapshot
