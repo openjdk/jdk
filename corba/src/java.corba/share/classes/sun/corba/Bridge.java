@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,24 @@
 
 package sun.corba ;
 
+import java.io.OptionalDataException;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field ;
-import java.lang.reflect.Method ;
 import java.lang.reflect.Constructor ;
-import java.lang.reflect.InvocationTargetException ;
-
-import java.io.ObjectInputStream ;
 
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
 
-import jdk.internal.misc.Unsafe ;
-import jdk.internal.reflect.ReflectionFactory;
+import sun.misc.Unsafe;
+import sun.reflect.ReflectionFactory;
 
 /** This class provides the methods for fundamental JVM operations
  * needed in the ORB that are not part of the public Java API.  This includes:
  * <ul>
  * <li>throwException, which can throw undeclared checked exceptions.
- * This is needed to handle throwing arbitrary exceptions across a standardized OMG interface that (incorrectly) does not specify appropriate exceptions.</li>
+ * This is needed to handle throwing arbitrary exceptions across a standardized
+ * OMG interface that (incorrectly) does not specify appropriate exceptions.</li>
  * <li>putXXX/getXXX methods that allow unchecked access to fields of objects.
  * This is used for setting uninitialzed non-static final fields (which is
  * impossible with reflection) and for speed.</li>
@@ -71,88 +70,28 @@ import jdk.internal.reflect.ReflectionFactory;
  */
 public final class Bridge
 {
-    private static final Class[] NO_ARGS = new Class[] {};
     private static final Permission getBridgePermission =
-        new BridgePermission( "getBridge" ) ;
+            new BridgePermission("getBridge");
     private static Bridge bridge = null ;
 
-    // latestUserDefinedLoader() is a private static method
-    // in ObjectInputStream in JDK 1.3 through 1.5.
-    // We use reflection in a doPrivileged block to get a
-    // Method reference and make it accessible.
-    private final Method latestUserDefinedLoaderMethod ;
-    private final Unsafe unsafe ;
+    /** Access to Unsafe to read/write fields. */
+    private static final Unsafe unsafe = AccessController.doPrivileged(
+            (PrivilegedAction<Unsafe>)() -> {
+                try {
+                    Field field = Unsafe.class.getDeclaredField("theUnsafe");
+                    field.setAccessible(true);
+                    return (Unsafe)field.get(null);
+
+                } catch (NoSuchFieldException |IllegalAccessException ex) {
+                    throw new InternalError("Unsafe.theUnsafe field not available", ex);
+                }
+            }
+    ) ;
+
     private final ReflectionFactory reflectionFactory ;
 
-    private Method getLatestUserDefinedLoaderMethod()
-    {
-        return (Method) AccessController.doPrivileged(
-            new PrivilegedAction()
-            {
-                public Object run()
-                {
-                    Method result = null;
-
-                    try {
-                        Class io = ObjectInputStream.class;
-                        result = io.getDeclaredMethod(
-                            "latestUserDefinedLoader", NO_ARGS);
-                        result.setAccessible(true);
-                    } catch (NoSuchMethodException nsme) {
-                        Error err = new Error( "java.io.ObjectInputStream" +
-                            " latestUserDefinedLoader " + nsme );
-                        err.initCause(nsme) ;
-                        throw err ;
-                    }
-
-                    return result;
-                }
-            }
-        );
-    }
-
-    private Unsafe getUnsafe() {
-        Field fld = (Field)AccessController.doPrivileged(
-            new PrivilegedAction()
-            {
-                public Object run()
-                {
-                    Field fld = null ;
-
-                    try {
-                        Class unsafeClass = jdk.internal.misc.Unsafe.class ;
-                        fld = unsafeClass.getDeclaredField( "theUnsafe" ) ;
-                        fld.setAccessible( true ) ;
-                        return fld ;
-                    } catch (NoSuchFieldException exc) {
-                        Error err = new Error( "Could not access Unsafe" ) ;
-                        err.initCause( exc ) ;
-                        throw err ;
-                    }
-                }
-            }
-        ) ;
-
-        Unsafe unsafe = null;
-
-        try {
-            unsafe = (Unsafe)(fld.get( null )) ;
-        } catch (Throwable t) {
-            Error err = new Error( "Could not access Unsafe" ) ;
-            err.initCause( t ) ;
-            throw err ;
-        }
-
-        return unsafe ;
-    }
-
-
-    private Bridge()
-    {
-        latestUserDefinedLoaderMethod = getLatestUserDefinedLoaderMethod();
-        unsafe = getUnsafe() ;
-        reflectionFactory = (ReflectionFactory)AccessController.doPrivileged(
-            new ReflectionFactory.GetReflectionFactoryAction());
+    private Bridge() {
+        reflectionFactory = ReflectionFactory.getReflectionFactory();
     }
 
     /** Fetch the Bridge singleton.  This requires the following
@@ -182,23 +121,8 @@ public final class Bridge
     /** Obtain the latest user defined ClassLoader from the call stack.
      * This is required by the RMI-IIOP specification.
      */
-    public final ClassLoader getLatestUserDefinedLoader()
-    {
-        try {
-            // Invoke the ObjectInputStream.latestUserDefinedLoader method
-            return (ClassLoader)latestUserDefinedLoaderMethod.invoke(null,
-                                                                     (Object[])NO_ARGS);
-        } catch (InvocationTargetException ite) {
-            Error err = new Error(
-                "sun.corba.Bridge.latestUserDefinedLoader: " + ite ) ;
-            err.initCause( ite ) ;
-            throw err ;
-        } catch (IllegalAccessException iae) {
-            Error err = new Error(
-                "sun.corba.Bridge.latestUserDefinedLoader: " + iae ) ;
-            err.initCause( iae ) ;
-            throw err ;
-        }
+    public final ClassLoader getLatestUserDefinedLoader() {
+        return jdk.internal.misc.VM.latestUserDefinedLoader();
     }
 
     /**
@@ -345,6 +269,23 @@ public final class Bridge
         return unsafe.objectFieldOffset( f ) ;
     }
 
+    /**
+     * Returns the offset of a static field.
+     */
+    public final long staticFieldOffset(Field f)
+    {
+        return unsafe.staticFieldOffset( f ) ;
+    }
+
+    /**
+     * Ensure that the class has been initalized.
+     * @param cl the class to ensure is initialized
+     */
+    public final void ensureClassInitialized(Class<?> cl) {
+        unsafe.ensureClassInitialized(cl);
+    }
+
+
     /** Throw the exception.
      * The exception may be an undeclared checked exception.
      */
@@ -353,16 +294,55 @@ public final class Bridge
         unsafe.throwException( ee ) ;
     }
 
-    /** Obtain a constructor for Class cl using constructor cons which
-     * may be the constructor defined in a superclass of cl.  This is
-     * used to create a constructor for Serializable classes that
-     * constructs an instance of the Serializable class using the
+    /**
+     * Obtain a constructor for Class cl.
+     * This is used to create a constructor for Serializable classes that
+     * construct an instance of the Serializable class using the
      * no args constructor of the first non-Serializable superclass
      * of the Serializable class.
      */
-    public final Constructor newConstructorForSerialization( Class cl,
-        Constructor cons )
-    {
-        return reflectionFactory.newConstructorForSerialization( cl, cons ) ;
+    public final Constructor<?> newConstructorForSerialization( Class<?> cl ) {
+        return reflectionFactory.newConstructorForSerialization( cl ) ;
     }
+
+    public final Constructor<?> newConstructorForExternalization(Class<?> cl) {
+        return reflectionFactory.newConstructorForExternalization( cl ) ;
+    }
+
+    /**
+     * Returns true if the given class defines a static initializer method,
+     * false otherwise.
+     */
+    public final boolean hasStaticInitializerForSerialization(Class<?> cl) {
+        return reflectionFactory.hasStaticInitializerForSerialization(cl);
+    }
+
+    public final MethodHandle writeObjectForSerialization(Class<?> cl) {
+        return reflectionFactory.writeObjectForSerialization(cl);
+    }
+
+    public final MethodHandle readObjectForSerialization(Class<?> cl) {
+        return reflectionFactory.readObjectForSerialization(cl);
+    }
+
+    public final MethodHandle readObjectNoDataForSerialization(Class<?> cl) {
+        return reflectionFactory.readObjectNoDataForSerialization(cl);
+    }
+
+    public final MethodHandle readResolveForSerialization(Class<?> cl) {
+        return reflectionFactory.readResolveForSerialization(cl);
+    }
+
+    public final MethodHandle writeReplaceForSerialization(Class<?> cl) {
+        return reflectionFactory.writeReplaceForSerialization(cl);
+    }
+
+    /**
+     * Return a new OptionalDataException instance.
+     * @return a new OptionalDataException instance
+     */
+    public final OptionalDataException newOptionalDataExceptionForSerialization(boolean bool) {
+        return reflectionFactory.newOptionalDataExceptionForSerialization(bool);
+    }
+
 }

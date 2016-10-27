@@ -701,13 +701,9 @@ public final class NativeRegExp extends ScriptObject {
             }
 
             thisIndex = matcher.end();
-            if (thisIndex == string.length() && matcher.start() == matcher.end()) {
-                // Avoid getting empty match at end of string twice
-                break;
-            }
 
-            // ECMA 15.5.4.10 String.prototype.match(regexp)
-            if (thisIndex == previousLastIndex) {
+            // ECMA6 21.2.5.6 step 8.g.iv.5: If matchStr is empty advance index by one
+            if (matcher.start() == matcher.end()) {
                 setLastIndex(thisIndex + 1);
                 previousLastIndex = thisIndex + 1;
             } else {

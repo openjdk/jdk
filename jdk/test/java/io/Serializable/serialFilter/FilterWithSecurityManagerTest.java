@@ -28,6 +28,7 @@ import java.security.AccessControlException;
 
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import org.testng.Assert;
 
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -65,20 +66,21 @@ public class FilterWithSecurityManagerTest {
      */
     @Test
     public void testGlobalFilter() throws Exception {
-        if (ObjectInputFilter.Config.getSerialFilter() == null) {
-            return;
-        }
-        try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-                ObjectInputStream ois = new ObjectInputStream(bais)) {
+        ObjectInputFilter global = ObjectInputFilter.Config.getSerialFilter();
+
+        try  {
             ObjectInputFilter.Config.setSerialFilter(filter);
             assertFalse(setSecurityManager,
                     "When SecurityManager exists, without "
-                    + "java.security.SerializablePermission(serialFilter) Exception should be thrown");
-            Object o = ois.readObject();
+                    + "java.io.SerializablePermission(serialFilter) "
+                    + "IllegalStateException should be thrown");
         } catch (AccessControlException ex) {
             assertTrue(setSecurityManager);
             assertTrue(ex.getMessage().contains("java.io.SerializablePermission"));
             assertTrue(ex.getMessage().contains("serialFilter"));
+        } catch (IllegalStateException ise) {
+            // ISE should occur only if global filter already set
+            Assert.assertNotNull(global, "Global filter should be non-null");
         }
     }
 

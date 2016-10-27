@@ -554,14 +554,20 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
      * Create a NetworkInterface object and populate it
      */
     netifObj = (*env)->NewObject(env, ni_class, ni_ctor);
+    if (netifObj == NULL) {
+        return NULL;
+    }
     name = (*env)->NewStringUTF(env, ifs->name);
+    if (name == NULL) {
+        return NULL;
+    }
     if (ifs->dNameIsUnicode) {
         displayName = (*env)->NewString(env, (PWCHAR)ifs->displayName,
                                         (jsize)wcslen ((PWCHAR)ifs->displayName));
     } else {
         displayName = (*env)->NewStringUTF(env, ifs->displayName);
     }
-    if (netifObj == NULL || name == NULL || displayName == NULL) {
+    if (displayName == NULL) {
         return NULL;
     }
     (*env)->SetObjectField(env, netifObj, ni_nameID, name);
@@ -621,26 +627,28 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
             (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
         } else /* AF_INET6 */ {
             int scope;
+            jboolean ret;
             iaObj = (*env)->NewObject(env, ia6_class, ia6_ctrID);
-            if (iaObj) {
-                jboolean ret = setInet6Address_ipaddress(env, iaObj, (jbyte *)&(addrs->addr.sa6.sin6_addr.s6_addr));
-                if (ret == JNI_FALSE) {
-                    return NULL;
-                }
-                scope = addrs->addr.sa6.sin6_scope_id;
-                if (scope != 0) { /* zero is default value, no need to set */
-                    setInet6Address_scopeid(env, iaObj, scope);
-                    setInet6Address_scopeifname(env, iaObj, netifObj);
-                }
-                ibObj = (*env)->NewObject(env, ni_ibcls, ni_ibctrID);
-                if (ibObj == NULL) {
-                  free_netaddr(netaddrP);
-                  return NULL;
-                }
-                (*env)->SetObjectField(env, ibObj, ni_ibaddressID, iaObj);
-                (*env)->SetShortField(env, ibObj, ni_ibmaskID, addrs->mask);
-                (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
+            if (iaObj == NULL) {
+                return NULL;
             }
+            ret = setInet6Address_ipaddress(env, iaObj, (jbyte *)&(addrs->addr.sa6.sin6_addr.s6_addr));
+            if (ret == JNI_FALSE) {
+                return NULL;
+            }
+            scope = addrs->addr.sa6.sin6_scope_id;
+            if (scope != 0) { /* zero is default value, no need to set */
+                setInet6Address_scopeid(env, iaObj, scope);
+                setInet6Address_scopeifname(env, iaObj, netifObj);
+            }
+            ibObj = (*env)->NewObject(env, ni_ibcls, ni_ibctrID);
+            if (ibObj == NULL) {
+              free_netaddr(netaddrP);
+              return NULL;
+            }
+            (*env)->SetObjectField(env, ibObj, ni_ibaddressID, iaObj);
+            (*env)->SetShortField(env, ibObj, ni_ibmaskID, addrs->mask);
+            (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
         }
         (*env)->SetObjectArrayElement(env, addrArr, addr_index, iaObj);
         addrs = addrs->next;
