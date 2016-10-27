@@ -98,14 +98,14 @@ void LogConfiguration::initialize(jlong vm_start_time) {
   LogDecorations::initialize(vm_start_time);
   assert(_outputs == NULL, "Should not initialize _outputs before this function, initialize called twice?");
   _outputs = NEW_C_HEAP_ARRAY(LogOutput*, 2, mtLogging);
-  _outputs[0] = LogOutput::Stdout;
-  _outputs[1] = LogOutput::Stderr;
+  _outputs[0] = &StdoutLog;
+  _outputs[1] = &StderrLog;
   _n_outputs = 2;
 }
 
 void LogConfiguration::finalize() {
-  for (size_t i = 2; i < _n_outputs; i++) {
-    delete _outputs[i];
+  for (size_t i = _n_outputs; i > 0; i--) {
+    disable_output(i - 1);
   }
   FREE_C_HEAP_ARRAY(LogOutput*, _outputs);
 }
@@ -279,8 +279,8 @@ void LogConfiguration::disable_output(size_t idx) {
     ts->update_decorators();
   }
 
-  // Delete the output unless stdout/stderr
-  if (out != LogOutput::Stderr && out != LogOutput::Stdout) {
+  // Delete the output unless stdout or stderr (idx 0 or 1)
+  if (idx > 1) {
     delete_output(idx);
   } else {
     out->set_config_string("all=off");
@@ -322,7 +322,7 @@ void LogConfiguration::configure_stdout(LogLevelType level, bool exact_match, ..
 
   // Apply configuration to stdout (output #0), with the same decorators as before.
   ConfigurationLock cl;
-  configure_output(0, expr, LogOutput::Stdout->decorators());
+  configure_output(0, expr, _outputs[0]->decorators());
   notify_update_listeners();
 }
 
