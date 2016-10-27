@@ -22,38 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-#include <windows.h>
-#include <winsock2.h>
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <malloc.h>
-#include <sys/types.h>
-#include <process.h>
-#include <iphlpapi.h>
-#include <icmpapi.h>
+
+#include "net_util.h"
 
 #include "java_net_InetAddress.h"
 #include "java_net_Inet4AddressImpl.h"
 #include "java_net_Inet6AddressImpl.h"
-#include "net_util.h"
-#include "icmp.h"
-
-#ifdef WIN32
-#ifndef _WIN64
-
-/* Retain this code a little longer to support building in
- * old environments.  _MSC_VER is defined as:
- *     1200 for MSVC++ 6.0
- *     1310 for Vc7
- */
-#if defined(_MSC_VER) && _MSC_VER < 1310
-#define sockaddr_in6 SOCKADDR_IN6
-#endif
-#endif
-#define uint32_t UINT32
-#endif
 
 /*
  * Inet6AddressImpl
@@ -300,7 +275,7 @@ Java_java_net_Inet6AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
         addr |= ((caddr[2] <<8) & 0xff00);
         addr |= (caddr[3] & 0xff);
         memset((char *) &him4, 0, sizeof(him4));
-        him4.sin_addr.s_addr = (uint32_t) htonl(addr);
+        him4.sin_addr.s_addr = htonl(addr);
         him4.sin_family = AF_INET;
         sa = (struct sockaddr *) &him4;
         len = sizeof(him4);

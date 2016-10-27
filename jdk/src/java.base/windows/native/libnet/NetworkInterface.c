@@ -22,17 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-#include <stdlib.h>
-#include <windows.h>
-#include <winsock2.h>           /* needed for htonl */
-#include <iprtrmib.h>
-#include <assert.h>
+#include "net_util.h"
+#include "NetworkInterface.h"
 
 #include "java_net_NetworkInterface.h"
-#include "jni_util.h"
-
-#include "NetworkInterface.h"
 
 /*
  * Windows implementation of the java.net.NetworkInterface native methods.

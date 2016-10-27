@@ -21,8 +21,11 @@
  * questions.
  */
 
+import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.StringTokenizer;
@@ -39,8 +42,8 @@ public class JavaVM {
     protected Process vm = null;
 
     private String classname = "";
-    private String args = "";
-    private String options = "";
+    protected String args = "";
+    protected String options = "";
     private OutputStream outputStream = System.out;
     private OutputStream errorStream = System.err;
     private String policyFileName = null;
@@ -113,7 +116,7 @@ public class JavaVM {
     /**
      * Exec the VM as specified in this object's constructor.
      */
-    public void start() throws IOException {
+    private void start0() throws IOException {
 
         if (vm != null)
             throw new IllegalStateException("JavaVM already started");
@@ -152,10 +155,48 @@ public class JavaVM {
         mesg("command = " + Arrays.asList(javaCommand).toString());
 
         vm = Runtime.getRuntime().exec(javaCommand);
+    }
 
-        /* output from the execed process may optionally be captured. */
+    public void start() throws IOException {
+        start0();
+
+        /* output from the exec'ed process may optionally be captured. */
         outPipe = StreamPipe.plugTogether(vm.getInputStream(), this.outputStream);
         errPipe = StreamPipe.plugTogether(vm.getErrorStream(), this.errorStream);
+    }
+
+    public int startAndGetPort() throws IOException {
+        start0();
+
+        int port = -1;
+        if (options.contains("java.nio.channels.spi.SelectorProvider=RMIDSelectorProvider")) {
+            // Obtain the server socket channel's ephemeral port number of the
+            // child rmid process.
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(vm.getInputStream()));
+            String s;
+            while ((s = reader.readLine()) != null) {
+                System.out.println(s);
+                int i = s.indexOf(RMID.EPHEMERAL_MSG);
+                if (i != -1) {
+                    String v = s.substring(RMID.EPHEMERAL_MSG.length());
+                    port = Integer.valueOf(v);
+                    break;
+                }
+            }
+            if (port == -1) {
+                // something failed
+                reader = new BufferedReader(new InputStreamReader(vm.getErrorStream()));
+                while ((s = reader.readLine()) != null)
+                    System.err.println(s);
+            }
+        }
+
+        /* output from the exec'ed process may optionally be captured. */
+        outPipe = StreamPipe.plugTogether(vm.getInputStream(), this.outputStream);
+        errPipe = StreamPipe.plugTogether(vm.getErrorStream(), this.errorStream);
+
+        return port;
     }
 
     public void destroy() {

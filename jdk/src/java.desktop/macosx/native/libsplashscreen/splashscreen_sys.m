@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,10 @@
 
 #include <sizecalc.h>
 #import "ThreadUtilities.h"
+
+NSString* findScaledImageName(NSString *fileName,
+                              NSUInteger dotIndex,
+                              NSString *strToAppend);
 
 static NSScreen* SplashNSScreen()
 {
@@ -134,8 +138,8 @@ BOOL isSWTRunning() {
 }
 
 jboolean SplashGetScaledImageName(const char* jar, const char* file,
-                                    float *scaleFactor, char *scaledFile,
-                                    const size_t scaledImageLength) {
+                                  float *scaleFactor, char *scaledFile,
+                                  const size_t scaledImageLength) {
     *scaleFactor = 1;
 
     if(isSWTRunning()){
@@ -158,18 +162,14 @@ jboolean SplashGetScaledImageName(const char* jar, const char* file,
                                         options:NSBackwardsSearch];
         NSUInteger dotIndex = range.location;
         NSString *fileName2x = nil;
-        
-        if (dotIndex == NSNotFound) {
-            fileName2x = [fileName stringByAppendingString: @"@2x"];
-        } else {
-            fileName2x = [fileName substringToIndex: dotIndex];
-            fileName2x = [fileName2x stringByAppendingString: @"@2x"];
-            fileName2x = [fileName2x stringByAppendingString:
-                          [fileName substringFromIndex: dotIndex]];
+
+        fileName2x = findScaledImageName(fileName, dotIndex, @"@2x");
+        if(![[NSFileManager defaultManager]
+                fileExistsAtPath: fileName2x]) {
+            fileName2x = findScaledImageName(fileName, dotIndex, @"@200pct");
         }
-        
-        if ((fileName2x != nil) && (jar || [[NSFileManager defaultManager]
-                    fileExistsAtPath: fileName2x])){
+        if (jar || [[NSFileManager defaultManager]
+                fileExistsAtPath: fileName2x]){
             if (strlen([fileName2x UTF8String]) > scaledImageLength) {
                 [pool drain];
                 return JNI_FALSE;
@@ -456,5 +456,18 @@ SplashUpdate(Splash * splash) {
 void
 SplashReconfigure(Splash * splash) {
     sendctl(splash, SPLASHCTL_RECONFIGURE);
+}
+
+NSString* findScaledImageName(NSString *fileName, NSUInteger dotIndex, NSString *strToAppend) {
+    NSString *fileName2x = nil;
+    if (dotIndex == NSNotFound) {
+        fileName2x = [fileName stringByAppendingString: strToAppend];
+    } else {
+        fileName2x = [fileName substringToIndex: dotIndex];
+        fileName2x = [fileName2x stringByAppendingString: strToAppend];
+        fileName2x = [fileName2x stringByAppendingString:
+                      [fileName substringFromIndex: dotIndex]];
+    }
+    return fileName2x;
 }
 

@@ -22,12 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-#include <winsock2.h>
-#include <ws2tcpip.h>
-
 #include "net_util.h"
-#include "jni.h"
+
+#include "java_net_InetAddress.h"
+#include "java_net_SocketOptions.h"
 
 // Taken from mstcpip.h in Windows SDK 8.0 or newer.
 #define SIO_LOOPBACK_FAST_PATH              _WSAIOW(IOC_VENDOR,16)
@@ -593,7 +591,7 @@ NET_Timeout2(int fd, int fd1, long timeout, int *fdret) {
 
 
 void dumpAddr (char *str, void *addr) {
-    struct SOCKADDR_IN6 *a = (struct SOCKADDR_IN6 *)addr;
+    struct sockaddr_in6 *a = (struct sockaddr_in6 *)addr;
     int family = a->sin6_family;
     printf ("%s\n", str);
     if (family == AF_INET) {
@@ -812,7 +810,7 @@ NET_BindV6(struct ipv6bind *b, jboolean exclBind) {
  *      0 if error
  *      > 0 interface index to use
  */
-jint getDefaultIPv6Interface(JNIEnv *env, struct SOCKADDR_IN6 *target_addr)
+jint getDefaultIPv6Interface(JNIEnv *env, struct sockaddr_in6 *target_addr)
 {
     int ret;
     DWORD b;
@@ -866,9 +864,9 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
                           int *len, jboolean v4MappedAddress) {
     jint family, iafam;
     iafam = getInetAddress_family(env, iaObj);
-    family = (iafam == IPv4)? AF_INET : AF_INET6;
+    family = (iafam == java_net_InetAddress_IPv4)? AF_INET : AF_INET6;
     if (ipv6_available() && !(family == AF_INET && v4MappedAddress == JNI_FALSE)) {
-        struct SOCKADDR_IN6 *him6 = (struct SOCKADDR_IN6 *)him;
+        struct sockaddr_in6 *him6 = (struct sockaddr_in6 *)him;
         jbyte caddr[16];
         jint address, scopeid = 0;
         jint cached_scope_id = 0;
@@ -894,7 +892,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
             cached_scope_id = (jint)(*env)->GetIntField(env, iaObj, ia6_cachedscopeidID);
         }
 
-        memset((char *)him6, 0, sizeof(struct SOCKADDR_IN6));
+        memset((char *)him6, 0, sizeof(struct sockaddr_in6));
         him6->sin6_port = (u_short) htons((u_short)port);
         memcpy((void *)&(him6->sin6_addr), caddr, sizeof(struct in6_addr) );
         him6->sin6_family = AF_INET6;
@@ -904,7 +902,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
             (*env)->SetIntField(env, iaObj, ia6_cachedscopeidID, cached_scope_id);
         }
         him6->sin6_scope_id = scopeid != 0 ? scopeid : cached_scope_id;
-        *len = sizeof(struct SOCKADDR_IN6) ;
+        *len = sizeof(struct sockaddr_in6) ;
     } else {
         struct sockaddr_in *him4 = (struct sockaddr_in *)him;
         jint address;
@@ -964,12 +962,12 @@ NET_IsEqual(jbyte* caddr1, jbyte* caddr2) {
 }
 
 int getScopeID(struct sockaddr *him) {
-    struct SOCKADDR_IN6 *him6 = (struct SOCKADDR_IN6 *)him;
+    struct sockaddr_in6 *him6 = (struct sockaddr_in6 *)him;
     return him6->sin6_scope_id;
 }
 
 int cmpScopeID(unsigned int scope, struct sockaddr *him) {
-    struct SOCKADDR_IN6 *him6 = (struct SOCKADDR_IN6 *)him;
+    struct sockaddr_in6 *him6 = (struct sockaddr_in6 *)him;
     return him6->sin6_scope_id == scope;
 }
 
