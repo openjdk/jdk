@@ -201,13 +201,13 @@ class InetAddress implements java.io.Serializable {
      * Specify the address family: Internet Protocol, Version 4
      * @since 1.4
      */
-    static final int IPv4 = 1;
+    @Native static final int IPv4 = 1;
 
     /**
      * Specify the address family: Internet Protocol, Version 6
      * @since 1.4
      */
-    static final int IPv6 = 2;
+    @Native static final int IPv6 = 2;
 
     /* Specify address family preference */
     static transient final int preferIPv6Address;

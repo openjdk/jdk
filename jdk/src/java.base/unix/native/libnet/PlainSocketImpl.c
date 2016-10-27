@@ -22,32 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 #include <errno.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#if defined(__linux__)
-#include <sys/poll.h>
-#endif
-#include <netinet/tcp.h>        /* Defines TCP_NODELAY, needed for 2.6 */
-#include <netinet/in.h>
-#ifdef __linux__
-#include <netinet/ip.h>
-#endif
-#include <netdb.h>
-#include <stdlib.h>
 
-#ifdef __solaris__
-#include <fcntl.h>
-#endif
-#ifdef __linux__
-#include <unistd.h>
-#include <sys/sysctl.h>
-#endif
-
-#include "jvm.h"
-#include "jni_util.h"
 #include "net_util.h"
 
 #include "java_net_SocketOptions.h"
