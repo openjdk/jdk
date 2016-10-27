@@ -257,8 +257,7 @@
 
   struct ijava_state {
 #ifdef ASSERT
-    uint64_t ijava_reserved;  // Used for assertion.
-    uint64_t ijava_reserved2; // Inserted for alignment.
+    uint64_t ijava_reserved; // Used for assertion.
 #endif
     uint64_t method;
     uint64_t mirror;
@@ -274,7 +273,6 @@
     uint64_t oop_tmp;
     uint64_t lresult;
     uint64_t fresult;
-    // Aligned to frame::alignment_in_bytes (16).
   };
 
   enum {
