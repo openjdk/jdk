@@ -597,7 +597,7 @@ void ProtectionDomainCacheTable::verify() {
   }
   guarantee(number_of_entries() == element_count,
             "Verify of protection domain cache table failed");
-  DEBUG_ONLY(verify_lookup_length((double)number_of_entries() / table_size()));
+  DEBUG_ONLY(verify_lookup_length((double)number_of_entries() / table_size(), "Domain Cache Table"));
 }
 
 void ProtectionDomainCacheEntry::verify() {
@@ -738,50 +738,9 @@ void Dictionary::print(bool details) {
                    table_size(), number_of_entries());
     tty->print_cr("^ indicates that initiating loader is different from "
                   "defining loader");
-    tty->print_cr("1st number: th bucket index");
-    tty->print_cr("2nd number: the entry's index within this bucket");
-#ifdef ASSERT
-    tty->print_cr("3rd number: the hit percentage of this entry");
-    tty->print_cr("4th number: the hash index of this entry");
-#endif
   }
-
-#ifdef ASSERT
-  // find top buckets with highest lookup count
-  #define TOP_COUNT 16
-  int topItemsIndicies[TOP_COUNT];
-  for (int i = 0; i < TOP_COUNT; i++) {
-    topItemsIndicies[i] = i;
-  }
-  double total = 0.0;
-  for (int i = 0; i < table_size(); i++) {
-    // find the total count number, so later on we can
-    // express bucket lookup count as a percentage of all lookups
-    unsigned value = bucket_hits(i);
-    total += value;
-
-    // find the entry with min value
-    int index = 0;
-    unsigned min = bucket_hits(topItemsIndicies[index]);
-    for (int j = 1; j < TOP_COUNT; j++) {
-      if (bucket_hits(topItemsIndicies[j]) < min) {
-        min = bucket_hits(topItemsIndicies[j]);
-        index = j;
-      }
-    }
-    // if the bucket loookup value is bigger than the current min
-    // move that bucket index into the top list
-    if (value > min) {
-      topItemsIndicies[index] = i;
-    }
-  }
-#endif
 
   for (int index = 0; index < table_size(); index++) {
-#ifdef ASSERT
-    double percentage = 100.0 * (double)bucket_hits(index)/total;
-#endif
-    int chain = 0;
     for (DictionaryEntry* probe = bucket(index);
                           probe != NULL;
                           probe = probe->next()) {
@@ -790,10 +749,7 @@ void Dictionary::print(bool details) {
       bool is_defining_class =
          (loader_data == e->class_loader_data());
       if (details) {
-        tty->print("%4d: %3d: ", index, chain);
-#ifdef ASSERT
-        tty->print("%5.2f%%: %10u:", percentage, probe->hash());
-#endif
+        tty->print("%4d: ", index);
       }
       tty->print("%s%s", ((!details) || is_defining_class) ? " " : "^",
                  e->external_name());
@@ -807,29 +763,8 @@ void Dictionary::print(bool details) {
         }
       }
       tty->cr();
-
-      chain++;
-    }
-    if (details && (chain == 0)) {
-      tty->print("%4d:", index);
-      tty->cr();
     }
   }
-
-#ifdef ASSERT
-  // print out the TOP_COUNT of buckets with highest lookup count (unsorted)
-  if (details) {
-    tty->cr();
-    tty->print("Top %d buckets:", TOP_COUNT);
-    tty->cr();
-    for (int i = 0; i < TOP_COUNT; i++) {
-      tty->print("%4d: hits %5.2f%%",
-                 topItemsIndicies[i],
-                 100.0*(double)bucket_hits(topItemsIndicies[i])/total);
-      tty->cr();
-    }
-  }
-#endif
 
   if (details) {
     tty->cr();
@@ -837,6 +772,84 @@ void Dictionary::print(bool details) {
   }
   tty->cr();
 }
+
+#ifdef ASSERT
+void Dictionary::printPerformanceInfoDetails() {
+  if (log_is_enabled(Info, hashtables)) {
+    ResourceMark rm;
+    HandleMark   hm;
+
+    log_info(hashtables)(" ");
+    log_info(hashtables)("Java system dictionary (table_size=%d, classes=%d)",
+                            table_size(), number_of_entries());
+    log_info(hashtables)("1st number: the bucket index");
+    log_info(hashtables)("2nd number: the hit percentage for this bucket");
+    log_info(hashtables)("3rd number: the entry's index within this bucket");
+    log_info(hashtables)("4th number: the hash index of this entry");
+    log_info(hashtables)(" ");
+
+    // find top buckets with highest lookup count
+#define TOP_COUNT 16
+    int topItemsIndicies[TOP_COUNT];
+    for (int i = 0; i < TOP_COUNT; i++) {
+      topItemsIndicies[i] = i;
+    }
+    double total = 0.0;
+    for (int i = 0; i < table_size(); i++) {
+      // find the total count number, so later on we can
+      // express bucket lookup count as a percentage of all lookups
+      unsigned value = bucket_hits(i);
+      total += value;
+
+      // find the top entry with min value
+      int min_index = 0;
+      unsigned min_value = bucket_hits(topItemsIndicies[min_index]);
+      for (int j = 1; j < TOP_COUNT; j++) {
+        unsigned top_value = bucket_hits(topItemsIndicies[j]);
+        if (top_value < min_value) {
+          min_value = top_value;
+          min_index = j;
+        }
+      }
+      // if the bucket loookup value is bigger than the top buckets min
+      // move that bucket index into the top list
+      if (value > min_value) {
+        topItemsIndicies[min_index] = i;
+      }
+    }
+
+    for (int index = 0; index < table_size(); index++) {
+      double percentage = 100.0 * (double)bucket_hits(index)/total;
+      int chain = 0;
+      for (DictionaryEntry* probe = bucket(index);
+           probe != NULL;
+           probe = probe->next()) {
+        Klass* e = probe->klass();
+        ClassLoaderData* loader_data =  probe->loader_data();
+        bool is_defining_class =
+        (loader_data == e->class_loader_data());
+        log_info(hashtables)("%4d: %5.2f%%: %3d: %10u: %s, loader %s",
+                                index, percentage, chain, probe->hash(), e->external_name(),
+                                (loader_data != NULL) ? loader_data->loader_name() : "NULL");
+
+        chain++;
+      }
+      if (chain == 0) {
+        log_info(hashtables)("%4d:", index+1);
+      }
+    }
+    log_info(hashtables)(" ");
+
+    // print out the TOP_COUNT of buckets with highest lookup count (unsorted)
+    log_info(hashtables)("Top %d buckets:", TOP_COUNT);
+    for (int i = 0; i < TOP_COUNT; i++) {
+      log_info(hashtables)("%4d: hits %5.2f%%",
+                              topItemsIndicies[i],
+                                100.0*(double)bucket_hits(topItemsIndicies[i])/total);
+    }
+  }
+}
+#endif // ASSERT
 
 void Dictionary::verify() {
   guarantee(number_of_entries() >= 0, "Verify of system dictionary failed");
@@ -863,7 +876,11 @@ void Dictionary::verify() {
   }
   guarantee(number_of_entries() == element_count,
             "Verify of system dictionary failed");
-  DEBUG_ONLY(if (!verify_lookup_length((double)number_of_entries() / table_size())) this->print(true));
+#ifdef ASSERT
+  if (!verify_lookup_length((double)number_of_entries() / table_size(), "System Dictionary")) {
+    this->printPerformanceInfoDetails();
+  }
+#endif // ASSERT
 
   _pd_cache_table->verify();
 }

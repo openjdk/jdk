@@ -131,6 +131,9 @@ public:
   ProtectionDomainCacheEntry* cache_get(oop protection_domain);
 
   void print(bool details = true);
+#ifdef ASSERT
+  void printPerformanceInfoDetails();
+#endif // ASSERT
   void verify();
 };
 
