@@ -759,6 +759,10 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
         # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
         $2CFLAGS_JDK="${$2CFLAGS_JDK} -fno-strict-aliasing"
         ;;
+      s390 )
+        $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer -mbackchain -march=z10"
+        $2CFLAGS_JDK="${$2CFLAGS_JDK} -fno-strict-aliasing"
+        ;;
       * )
         $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer"
         $2CFLAGS_JDK="${$2CFLAGS_JDK} -fno-strict-aliasing"
@@ -895,7 +899,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
   elif test "x$OPENJDK_$1_OS" = xsolaris; then
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -DSOLARIS"
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -template=no%extdef -features=no%split_init \
-        -D_Crun_inline_placement -library=%none -KPIC -mt -xwe -features=no%except"
+        -D_Crun_inline_placement -library=%none -KPIC -mt -features=no%except"
   elif test "x$OPENJDK_$1_OS" = xmacosx; then
     $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -D_ALLBSD_SOURCE"
@@ -939,6 +943,10 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
       $2JVM_CFLAGS="[$]$2JVM_CFLAGS -DABI_ELFv2"
       # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
       $2JVM_CFLAGS="[$]$2JVM_CFLAGS -mcpu=power7 -mtune=power8"
+    fi
+  elif test "x$OPENJDK_$1_CPU" = xs390x; then
+    if test "x$OPENJDK_$1_OS" = xlinux; then
+      $2JVM_CFLAGS="[$]$2JVM_CFLAGS -mbackchain -march=z10"
     fi
   fi
 

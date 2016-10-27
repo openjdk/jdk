@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,7 @@ public class Names {
     public final Name family;
     public final Name finalize;
     public final Name forName;
+    public final Name forRemoval;
     public final Name getClass;
     public final Name getClassLoader;
     public final Name getComponentType;
@@ -242,6 +243,7 @@ public class Names {
         family = fromString("family");
         finalize = fromString("finalize");
         forName = fromString("forName");
+        forRemoval = fromString("forRemoval");
         getClass = fromString("getClass");
         getClassLoader = fromString("getClassLoader");
         getComponentType = fromString("getComponentType");

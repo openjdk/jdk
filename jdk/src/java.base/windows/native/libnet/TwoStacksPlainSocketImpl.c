@@ -108,7 +108,7 @@ Java_java_net_TwoStacksPlainSocketImpl_initProto(JNIEnv *env, jclass cls) {
     psi_portID = (*env)->GetFieldID(env, cls, "port", "I");
     CHECK_NULL(psi_portID);
     psi_lastfdID = (*env)->GetFieldID(env, cls, "lastfd", "I");
-    CHECK_NULL(psi_portID);
+    CHECK_NULL(psi_lastfdID);
     psi_localportID = (*env)->GetFieldID(env, cls, "localport", "I");
     CHECK_NULL(psi_localportID);
     psi_timeoutID = (*env)->GetFieldID(env, cls, "timeout", "I");
@@ -153,17 +153,17 @@ Java_java_net_TwoStacksPlainSocketImpl_socketCreate(JNIEnv *env, jobject this,
         fd1Obj = (*env)->GetObjectField(env, this, psi_fd1ID);
 
         if (IS_NULL(fd1Obj)) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
-                            "null fd1 object");
             (*env)->SetIntField(env, fdObj, IO_fd_fdID, -1);
             NET_SocketClose(fd);
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+                            "null fd1 object");
             return;
         }
         fd1 = socket(AF_INET6, (stream ? SOCK_STREAM: SOCK_DGRAM), 0);
         if (fd1 == -1) {
-            NET_ThrowCurrent(env, "create");
             (*env)->SetIntField(env, fdObj, IO_fd_fdID, -1);
             NET_SocketClose(fd);
+            NET_ThrowCurrent(env, "create");
             return;
         } else {
             /* Set socket attribute so it is not passed to any child process */
@@ -907,6 +907,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketNativeSetOption
                     isRcvTimeoutSupported = JNI_FALSE;
                 } else {
                     NET_ThrowCurrent(env, "setsockopt SO_RCVTIMEO");
+                    return;
                 }
             }
             if (fd1 != -1) {
