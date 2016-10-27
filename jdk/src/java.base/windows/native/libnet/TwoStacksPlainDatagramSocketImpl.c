@@ -22,15 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-#include <windows.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <malloc.h>
-#include <sys/types.h>
+
+#include "net_util.h"
+#include "NetworkInterface.h"
+
+#include "java_net_TwoStacksPlainDatagramSocketImpl.h"
+#include "java_net_SocketOptions.h"
+#include "java_net_NetworkInterface.h"
+#include "java_net_InetAddress.h"
 
 #ifndef IPTOS_TOS_MASK
 #define IPTOS_TOS_MASK 0x1e
@@ -39,14 +39,6 @@
 #define IPTOS_PREC_MASK 0xe0
 #endif
 
-#include "java_net_TwoStacksPlainDatagramSocketImpl.h"
-#include "java_net_SocketOptions.h"
-#include "java_net_NetworkInterface.h"
-
-#include "NetworkInterface.h"
-#include "jvm.h"
-#include "jni_util.h"
-#include "net_util.h"
 
 #define IN_CLASSD(i)    (((long)(i) & 0xf0000000) == 0xe0000000)
 #define IN_MULTICAST(i) IN_CLASSD(i)
@@ -439,7 +431,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
     memset((char *)&lcladdr, 0, sizeof(lcladdr));
 
     family = getInetAddress_family(env, addressObj);
-    if (family == IPv6 && !ipv6_supported) {
+    if (family == java_net_InetAddress_IPv6 && !ipv6_supported) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                         "Protocol family not supported");
         return;
@@ -561,13 +553,13 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_connect0(JNIEnv *env, jobject thi
     addr = getInetAddress_addr(env, address);
 
     family = getInetAddress_family(env, address);
-    if (family == IPv6 && !ipv6_supported) {
+    if (family == java_net_InetAddress_IPv6 && !ipv6_supported) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                         "Protocol family not supported");
         return;
     }
 
-    fdc = family == IPv4? fd: fd1;
+    fdc = family == java_net_InetAddress_IPv4 ? fd : fd1;
 
     if (xp_or_later) {
         /* SIO_UDP_CONNRESET fixes a bug introduced in Windows 2000, which
@@ -605,12 +597,12 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject 
     jint fd, len;
     SOCKETADDRESS addr;
 
-    if (family == IPv4) {
+    if (family == java_net_InetAddress_IPv4) {
         fdObj = (*env)->GetObjectField(env, this, pdsi_fdID);
-        len = sizeof (struct sockaddr_in);
+        len = sizeof(struct sockaddr_in);
     } else {
         fdObj = (*env)->GetObjectField(env, this, pdsi_fd1ID);
-        len = sizeof (struct SOCKADDR_IN6);
+        len = sizeof(struct sockaddr_in6);
     }
 
     if (IS_NULL(fdObj)) {
@@ -678,7 +670,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_send(JNIEnv *env, jobject this,
     }
 
     family = getInetAddress_family(env, iaObj);
-    if (family == IPv4) {
+    if (family == java_net_InetAddress_IPv4) {
         fdObj = (*env)->GetObjectField(env, this, pdsi_fdID);
     } else {
         if (!ipv6_available()) {
@@ -830,6 +822,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
     }
     if (IS_NULL(addressObj)) {
         JNU_ThrowNullPointerException(env, "Null address in peek()");
+        return -1;
     } else {
         address = getInetAddress_addr(env, addressObj);
         /* We only handle IPv4 for now. Will support IPv6 once its in the os */
@@ -905,7 +898,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
         return 0;
     }
     setInetAddress_addr(env, addressObj, ntohl(remote_addr.sa4.sin_addr.s_addr));
-    setInetAddress_family(env, addressObj, IPv4);
+    setInetAddress_family(env, addressObj, java_net_InetAddress_IPv4);
 
     /* return port */
     return ntohs(remote_addr.sa4.sin_port);
@@ -1127,11 +1120,23 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_peekData(JNIEnv *env, jobject thi
     }
     if (n == -1) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "socket closed");
+        if (packetBufferLen > MAX_BUFFER_LEN) {
+            free(fullPacket);
+        }
+        return -1;
     } else if (n == -2) {
         JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
                         "operation interrupted");
+        if (packetBufferLen > MAX_BUFFER_LEN) {
+            free(fullPacket);
+        }
+        return -1;
     } else if (n < 0) {
         NET_ThrowCurrent(env, "Datagram receive failed");
+        if (packetBufferLen > MAX_BUFFER_LEN) {
+            free(fullPacket);
+        }
+        return -1;
     } else {
         jobject packetAddress;
 
@@ -1597,7 +1602,7 @@ static int getInet4AddrFromIf (JNIEnv *env, jobject nif, struct in_addr *iaddr)
 {
     jobject addr;
 
-    int ret = getInetAddrFromIf (env, IPv4, nif, &addr);
+    int ret = getInetAddrFromIf(env, java_net_InetAddress_IPv4, nif, &addr);
     if (ret == -1) {
         return -1;
     }
@@ -1882,7 +1887,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_socketNativeSetOption
         default :
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                 "Socket option not supported by PlainDatagramSocketImp");
-            break;
+            return;
 
     }
 
@@ -2272,9 +2277,9 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_socketLocalAddress
     len = sizeof(struct sockaddr_in);
 
     /* family==-1 when socket is not connected */
-    if ((family == IPv6) || (family == -1 && fd == -1)) {
+    if ((family == java_net_InetAddress_IPv6) || (family == -1 && fd == -1)) {
         fd = fd1; /* must be IPv6 only */
-        len = sizeof (struct SOCKADDR_IN6);
+        len = sizeof(struct sockaddr_in6);
     }
 
     if (fd == -1) {
@@ -2325,6 +2330,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_setTimeToLive(JNIEnv *env, jobjec
       if (NET_SetSockOpt(fd, IPPROTO_IP, IP_MULTICAST_TTL, (char*)&ittl,
                          sizeof (ittl)) < 0) {
         NET_ThrowCurrent(env, "set IP_MULTICAST_TTL failed");
+        return;
       }
     }
 
@@ -2518,6 +2524,9 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
         } else {
             ifindex = getIndexFromIf (env, niObj);
             if (ifindex == -1) {
+                if ((*env)->ExceptionOccurred(env)) {
+                    return;
+                }
                 NET_ThrowCurrent(env, "get ifindex failed");
                 return;
             }

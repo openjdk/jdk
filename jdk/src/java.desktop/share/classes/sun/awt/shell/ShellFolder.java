@@ -30,10 +30,6 @@ import java.awt.Image;
 import java.awt.Toolkit;
 import java.io.*;
 import java.io.FileNotFoundException;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -244,11 +240,10 @@ public abstract class ShellFolder extends File {
      * @exception FileNotFoundException if file does not exist
      */
     public static ShellFolder getShellFolder(File file) throws FileNotFoundException {
-        Path path = Paths.get(file.getPath());
         if (file instanceof ShellFolder) {
             return (ShellFolder)file;
         }
-        if (!Files.exists(path, LinkOption.NOFOLLOW_LINKS)) {
+        if (!file.exists()) {
             throw new FileNotFoundException();
         }
         return shellFolderManager.createShellFolder(file);
