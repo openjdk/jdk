@@ -97,10 +97,7 @@ static gboolean unity_load() {
 
 void callback(DbusmenuMenuitem* mi, guint ts, jobject data) {
     JNIEnv* env = (JNIEnv*) JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    (*env)->CallStaticVoidMethod(env, jTaskbarCls, jTaskbarCallback, data,
-            fp_dbusmenu_menuitem_property_get_int(mi, "toggle-state")
-            ? JNI_FALSE
-            : JNI_TRUE);
+    (*env)->CallStaticVoidMethod(env, jTaskbarCls, jTaskbarCallback, data);
 }
 
 /*
@@ -243,9 +240,8 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XTaskbarPeer_setNativeMenu
 
     if (!menu) {
         menu = fp_dbusmenu_menuitem_new();
+        fp_unity_launcher_entry_set_quicklist(entry, menu);
     }
-
-    fp_unity_launcher_entry_set_quicklist(entry, menu);
 
     GList* list = fp_dbusmenu_menuitem_take_children(menu);
     gtk->g_list_free_full(list, gtk->g_object_unref);

@@ -41,13 +41,13 @@ import javax.swing.plaf.TreeUI;
 
 import javax.accessibility.*;
 import com.sun.java.accessibility.util.*;
+import java.awt.geom.Rectangle2D;
 import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 
 /*
  * Note: This class has to be public.  It's loaded from the VM like this:
@@ -1754,7 +1754,7 @@ final public class AccessBridge {
                     if (child instanceof JTextComponent) {
                         JTextComponent text = (JTextComponent) child;
                         try {
-                            r = text.modelToView(text.getCaretPosition());
+                            r = text.modelToView2D(text.getCaretPosition()).getBounds();
                             if (r != null) {
                                 Point p = text.getLocationOnScreen();
                                 r.translate(p.x, p.y);

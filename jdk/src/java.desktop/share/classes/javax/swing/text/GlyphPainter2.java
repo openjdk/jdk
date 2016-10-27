@@ -145,8 +145,9 @@ class GlyphPainter2 extends GlyphView.GlyphPainter {
 
         // vertical at the baseline, should use slope and check if glyphs
         // are being rendered vertically.
-        alloc.setRect(alloc.getX() + locs[0], alloc.getY(), 1, alloc.getHeight());
-        return alloc;
+        Rectangle2D rect = new Rectangle2D.Float();
+        rect.setRect(alloc.getX() + locs[0], alloc.getY(), 1, alloc.getHeight());
+        return rect;
     }
 
     /**
