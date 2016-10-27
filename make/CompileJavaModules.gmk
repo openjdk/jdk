@@ -436,10 +436,6 @@ jdk.jdi_EXCLUDE_FILES += jdi-overview.html
 
 ################################################################################
 
-jdk.jsobject_ADD_JAVAC_FLAGS := -Xlint:-exports
-
-################################################################################
-
 jdk.dev_CLEAN_FILES := $(wildcard \
     $(patsubst %, $(JDK_TOPDIR)/src/jdk.dev/share/classes/%/*.properties, \
         com/sun/tools/script/shell))
