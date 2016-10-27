@@ -30,6 +30,14 @@
 
 class LogDecorations;
 
+class LogFileStreamInitializer {
+ public:
+  LogFileStreamInitializer();
+};
+
+// Ensure the default log streams have been initialized (stdout, stderr) using the static initializer below
+static LogFileStreamInitializer log_stream_initializer;
+
 // Base class for all FileStream-based log outputs.
 class LogFileStreamOutput : public LogOutput {
  protected:
@@ -50,9 +58,8 @@ class LogFileStreamOutput : public LogOutput {
 };
 
 class LogStdoutOutput : public LogFileStreamOutput {
-  friend class LogOutput;
+  friend class LogFileStreamInitializer;
  private:
-  static LogStdoutOutput _instance;
   LogStdoutOutput() : LogFileStreamOutput(stdout) {
     set_config_string("all=warning");
   }
@@ -66,9 +73,8 @@ class LogStdoutOutput : public LogFileStreamOutput {
 };
 
 class LogStderrOutput : public LogFileStreamOutput {
-  friend class LogOutput;
+  friend class LogFileStreamInitializer;
  private:
-  static LogStderrOutput _instance;
   LogStderrOutput() : LogFileStreamOutput(stderr) {
     set_config_string("all=off");
   }
@@ -80,5 +86,8 @@ class LogStderrOutput : public LogFileStreamOutput {
     return "stderr";
   }
 };
+
+extern LogStderrOutput &StderrLog;
+extern LogStdoutOutput &StdoutLog;
 
 #endif // SHARE_VM_LOGGING_LOGFILESTREAMOUTPUT_HPP

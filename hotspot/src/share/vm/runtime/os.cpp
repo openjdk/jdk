@@ -97,7 +97,7 @@ void os_init_globals() {
 // except that on Windows the %z behaves badly, so we do it ourselves.
 // Also, people wanted milliseconds on there,
 // and strftime doesn't do milliseconds.
-char* os::iso8601_time(char* buffer, size_t buffer_length) {
+char* os::iso8601_time(char* buffer, size_t buffer_length, bool utc) {
   // Output will be of the form "YYYY-MM-DDThh:mm:ss.mmm+zzzz\0"
   //                                      1         2
   //                             12345678901234567890123456789
@@ -122,9 +122,16 @@ char* os::iso8601_time(char* buffer, size_t buffer_length) {
     milliseconds_since_19700101 % milliseconds_per_microsecond;
   // Convert the time value to a tm and timezone variable
   struct tm time_struct;
-  if (localtime_pd(&seconds_since_19700101, &time_struct) == NULL) {
-    assert(false, "Failed localtime_pd");
-    return NULL;
+  if (utc) {
+    if (gmtime_pd(&seconds_since_19700101, &time_struct) == NULL) {
+      assert(false, "Failed gmtime_pd");
+      return NULL;
+    }
+  } else {
+    if (localtime_pd(&seconds_since_19700101, &time_struct) == NULL) {
+      assert(false, "Failed localtime_pd");
+      return NULL;
+    }
   }
 #if defined(_ALLBSD_SOURCE)
   const time_t zone = (time_t) time_struct.tm_gmtoff;
@@ -141,6 +148,12 @@ char* os::iso8601_time(char* buffer, size_t buffer_length) {
   if (time_struct.tm_isdst > 0) {
     UTC_to_local = UTC_to_local - seconds_per_hour;
   }
+
+  // No offset when dealing with UTC
+  if (utc) {
+    UTC_to_local = 0;
+  }
+
   // Compute the time zone offset.
   //    localtime_pd() sets timezone to the difference (in seconds)
   //    between UTC and and local time.
