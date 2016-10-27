@@ -74,7 +74,7 @@ instanceKlassHandle KlassFactory::check_shared_class_file_load_hook(
         (SharedClassPathEntry*)FileMapInfo::shared_classpath(path_index);
       ClassFileStream* stream = new ClassFileStream(ptr,
                                                     end_ptr - ptr,
-                                                    ent->_name,
+                                                    ent == NULL ? NULL : ent->_name,
                                                     ClassFileStream::verify);
       ClassFileParser parser(stream,
                              class_name,

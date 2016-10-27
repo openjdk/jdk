@@ -283,11 +283,15 @@ public:
   bool validate_classpath_entry_table();
 
   static SharedClassPathEntry* shared_classpath(int index) {
+    if (index < 0) {
+      return NULL;
+    }
     char* p = (char*)_classpath_entry_table;
     p += _classpath_entry_size * index;
     return (SharedClassPathEntry*)p;
   }
   static const char* shared_classpath_name(int index) {
+    assert(index >= 0, "Sanity");
     return shared_classpath(index)->_name;
   }
 

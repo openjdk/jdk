@@ -64,17 +64,16 @@ void C1_MacroAssembler::explicit_null_check(Register base) {
 
 
 void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes) {
-  assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
+  // Avoid stack bang as first instruction. It may get overwritten by patch_verified_entry.
+  const Register return_pc = R20;
+  mflr(return_pc);
+
   // Make sure there is enough stack space for this method's activation.
+  assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
   generate_stack_overflow_check(bang_size_in_bytes);
 
-  // Create the frame.
-  const Register return_pc  = R0;
-
-  mflr(return_pc);
-  // Get callers sp.
-  std(return_pc, _abi(lr), R1_SP);           // SP->lr = return_pc
-  push_frame(frame_size_in_bytes, R0);       // SP -= frame_size_in_bytes
+  std(return_pc, _abi(lr), R1_SP);     // SP->lr = return_pc
+  push_frame(frame_size_in_bytes, R0); // SP -= frame_size_in_bytes
 }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,27 @@
  * questions.
  */
 
-#include <jni.h>
+/*
+ * @test TestUseAutoGCSelectPolicy
+ * @key gc
+ * @bug 8166461 8167494
+ * @summary Test that UseAutoGCSelectPolicy and AutoGCSelectPauseMillis do print a warning message
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
-JNIEXPORT jfloat JNICALL Java_compiler_floatingpoint_Test15FloatJNIArgs_add15floats
-  (JNIEnv *env, jclass cls,
-   jfloat  f1, jfloat  f2, jfloat  f3, jfloat  f4,
-   jfloat  f5, jfloat  f6, jfloat  f7, jfloat  f8,
-   jfloat  f9, jfloat f10, jfloat f11, jfloat f12,
-   jfloat f13, jfloat f14, jfloat f15) {
-  return f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8 + f9 + f10 + f11 + f12 + f13 + f14 + f15;
+public class TestUseAutoGCSelectPolicy {
+
+  public static void main(String args[]) throws Exception {
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseAutoGCSelectPolicy", "-XX:AutoGCSelectPauseMillis=3000", "-version");
+    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    output.shouldContain("UseAutoGCSelectPolicy was deprecated in version 9.0");
+    output.shouldContain("AutoGCSelectPauseMillis was deprecated in version 9.0");
+    output.shouldNotContain("error");
+    output.shouldHaveExitValue(0);
+  }
 }
-
-#ifdef __cplusplus
-}
-#endif
