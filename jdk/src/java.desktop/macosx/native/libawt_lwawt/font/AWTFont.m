@@ -193,6 +193,44 @@ GetFamilyNameForFontName(NSString* fontname)
     return [sFontFamilyTable objectForKey:fontname];
 }
 
+static void addFont(CTFontUIFontType uiType, 
+                    NSMutableArray *allFonts,
+                    NSMutableDictionary* fontFamilyTable) {
+
+        CTFontRef font = CTFontCreateUIFontForLanguage(uiType, 0.0, NULL);
+        if (font == NULL) {
+            return;
+        }
+        CTFontDescriptorRef desc = CTFontCopyFontDescriptor(font);
+        if (desc == NULL) {
+            CFRelease(font);
+            return;
+        }
+        CFStringRef family = CTFontDescriptorCopyAttribute(desc, kCTFontFamilyNameAttribute);
+        if (family == NULL) {
+            CFRelease(desc);
+            CFRelease(font);
+            return;
+        }
+        CFStringRef name = CTFontDescriptorCopyAttribute(desc, kCTFontNameAttribute);
+        if (name == NULL) {
+            CFRelease(family);
+            CFRelease(desc);
+            CFRelease(font);
+            return;
+        }
+        [allFonts addObject:name];
+        [fontFamilyTable setObject:family forKey:name];
+#ifdef DEBUG
+        NSLog(@"name is : %@", (NSString*)name);
+        NSLog(@"family is : %@", (NSString*)family);
+#endif
+        CFRelease(family);
+        CFRelease(name);
+        CFRelease(desc);
+        CFRelease(font);
+}
+ 
 static NSArray*
 GetFilteredFonts()
 {
@@ -226,6 +264,16 @@ GetFilteredFonts()
                 }
             }
         }
+
+        /*
+         * JavaFX registers these fonts and so JDK needs to do so as well.
+         * If this isn't done we will have mis-matched rendering, since
+         * although these may include fonts that are enumerated normally
+         * they also demonstrably includes fonts that are not.
+         */
+        addFont(kCTFontUIFontSystem, allFonts, fontFamilyTable);
+        addFont(kCTFontUIFontEmphasizedSystem, allFonts, fontFamilyTable);
+        addFont(kCTFontUIFontUserFixedPitch, allFonts, fontFamilyTable);
 
         sFilteredFonts = allFonts;
         sFontFamilyTable = fontFamilyTable;

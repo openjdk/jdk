@@ -26,13 +26,9 @@
 #ifndef NET_UTILS_MD_H
 #define NET_UTILS_MD_H
 
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <netdb.h>
-#include <netinet/in.h>
-#include <unistd.h>
-
 #include <sys/poll.h>
+#include <sys/socket.h>
 
 int NET_Timeout(int s, long timeout);
 int NET_Timeout0(int s, long timeout, long currentTime);

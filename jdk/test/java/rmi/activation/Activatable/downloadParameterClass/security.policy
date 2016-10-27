@@ -35,4 +35,7 @@ grant {
 
   // allow exporting of remote objects on an arbitrary port.
   permission java.net.SocketPermission "*:1024-", "connect,accept,listen";
+
+  permission java.lang.RuntimePermission "selectorProvider";
+  permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
 };

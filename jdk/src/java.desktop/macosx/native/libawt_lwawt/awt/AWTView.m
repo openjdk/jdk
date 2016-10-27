@@ -383,7 +383,7 @@ static BOOL shouldUsePressAndHold() {
     }
     
     static JNF_CLASS_CACHE(jc_NSEvent, "sun/lwawt/macosx/NSEvent");
-    static JNF_CTOR_CACHE(jctor_NSEvent, jc_NSEvent, "(IIIIIIIIDD)V");
+    static JNF_CTOR_CACHE(jctor_NSEvent, jc_NSEvent, "(IIIIIIIIDDI)V");
     jobject jEvent = JNFNewObject(env, jctor_NSEvent,
                                   [event type],
                                   [event modifierFlags],
@@ -392,7 +392,8 @@ static BOOL shouldUsePressAndHold() {
                                   (jint)localPoint.x, (jint)localPoint.y,
                                   (jint)absP.x, (jint)absP.y,
                                   [event deltaY],
-                                  [event deltaX]);
+                                  [event deltaX],
+                                  [AWTToolkit scrollStateWithEvent: event]);
     CHECK_NULL(jEvent);
     
     static JNF_CLASS_CACHE(jc_PlatformView, "sun/lwawt/macosx/CPlatformView");

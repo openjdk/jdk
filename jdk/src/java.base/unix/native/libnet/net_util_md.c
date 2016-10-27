@@ -22,59 +22,41 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-#include <errno.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/tcp.h>        /* Defines TCP_NODELAY, needed for 2.6 */
-#include <netinet/in.h>
-#include <net/if.h>
-#include <netdb.h>
-#include <stdlib.h>
 #include <dlfcn.h>
+#include <errno.h>
+#include <net/if.h>
+#include <netinet/tcp.h> // defines TCP_NODELAY
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ioctl.h>
 #include <sys/time.h>
 
-#ifndef _ALLBSD_SOURCE
-#include <values.h>
-#else
-#include <limits.h>
-#include <sys/param.h>
-#include <sys/sysctl.h>
-#include <sys/ioctl.h>
-#ifndef MAXINT
-#define MAXINT INT_MAX
-#endif
-#endif
-
-#ifdef __solaris__
-#include <sys/filio.h>
-#include <sys/sockio.h>
-#include <stropts.h>
-#include <inet/nd.h>
-#endif
-
-#ifdef __linux__
-#include <sys/ioctl.h>
+#if defined(__linux__)
 #include <arpa/inet.h>
 #include <net/route.h>
 #include <sys/utsname.h>
-
-#ifndef IPV6_FLOWINFO_SEND
-#define IPV6_FLOWINFO_SEND      33
 #endif
 
+#if defined(__solaris__)
+#include <inet/nd.h>
+#include <limits.h>
+#include <stropts.h>
+#include <sys/filio.h>
+#include <sys/sockio.h>
 #endif
 
-#ifdef _AIX
-#include <sys/ioctl.h>
-#endif
-
-#include "jni_util.h"
-#include "jvm.h"
 #include "net_util.h"
 
 #include "java_net_SocketOptions.h"
+#include "java_net_InetAddress.h"
+
+#if defined(__linux__) && !defined(IPV6_FLOWINFO_SEND)
+#define IPV6_FLOWINFO_SEND      33
+#endif
+
+#if defined(__solaris__) && !defined(MAXINT)
+#define MAXINT INT_MAX
+#endif
 
 /*
  * EXCLBIND socket options only on Solaris
@@ -806,13 +788,15 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
     family = getInetAddress_family(env, iaObj);
 #ifdef AF_INET6
     /* needs work. 1. family 2. clean up him6 etc deallocate memory */
-    if (ipv6_available() && !(family == IPv4 && v4MappedAddress == JNI_FALSE)) {
+    if (ipv6_available() && !(family == java_net_InetAddress_IPv4 &&
+                              v4MappedAddress == JNI_FALSE)) {
         struct sockaddr_in6 *him6 = (struct sockaddr_in6 *)him;
         jbyte caddr[16];
         jint address;
 
 
-        if (family == IPv4) { /* will convert to IPv4-mapped address */
+        if (family == java_net_InetAddress_IPv4) {
+            // convert to IPv4-mapped address
             memset((char *) caddr, 0, 16);
             address = getInetAddress_addr(env, iaObj);
             if (address == INADDR_ANY) {
@@ -906,7 +890,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
 #else
         /* handle scope_id for solaris */
 
-        if (family != IPv4) {
+        if (family != java_net_InetAddress_IPv4) {
             if (ia6_scopeidID) {
                 him6->sin6_scope_id = getInet6Address_scopeid(env, iaObj);
             }
@@ -917,14 +901,14 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
         {
             struct sockaddr_in *him4 = (struct sockaddr_in*)him;
             jint address;
-            if (family == IPv6) {
+            if (family == java_net_InetAddress_IPv6) {
               JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Protocol family unavailable");
               return -1;
             }
             memset((char *) him4, 0, sizeof(struct sockaddr_in));
             address = getInetAddress_addr(env, iaObj);
             him4->sin_port = htons((short) port);
-            him4->sin_addr.s_addr = (uint32_t) htonl(address);
+            him4->sin_addr.s_addr = htonl(address);
             him4->sin_family = AF_INET;
             *len = sizeof(struct sockaddr_in);
         }

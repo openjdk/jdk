@@ -23,20 +23,19 @@
  * questions.
  */
 
-#include "jni.h"
-#include "jvm.h"
-#include "jni_util.h"
 #include "net_util.h"
 
-int IPv6_supported() ;
-int reuseport_supported() ;
+#include "java_net_InetAddress.h"
+
+int IPv6_supported();
+int reuseport_supported();
 
 static int IPv6_available;
 static int REUSEPORT_available;
 
 JNIEXPORT jint JNICALL ipv6_available()
 {
-    return IPv6_available ;
+    return IPv6_available;
 }
 
 JNIEXPORT jint JNICALL reuseport_available()
@@ -206,11 +205,7 @@ NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port) {
     jobject iaObj;
 #ifdef AF_INET6
     if (him->sa_family == AF_INET6) {
-#ifdef WIN32
-        struct SOCKADDR_IN6 *him6 = (struct SOCKADDR_IN6 *)him;
-#else
         struct sockaddr_in6 *him6 = (struct sockaddr_in6 *)him;
-#endif
         jbyte *caddr = (jbyte *)&(him6->sin6_addr);
         if (NET_IsIPv4Mapped(caddr)) {
             int address;
@@ -218,7 +213,7 @@ NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port) {
             CHECK_NULL_RETURN(iaObj, NULL);
             address = NET_IPv4MappedToIPv4(caddr);
             setInetAddress_addr(env, iaObj, address);
-            setInetAddress_family(env, iaObj, IPv4);
+            setInetAddress_family(env, iaObj, java_net_InetAddress_IPv4);
         } else {
             jint scope;
             jboolean ret;
@@ -227,7 +222,7 @@ NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port) {
             ret = setInet6Address_ipaddress(env, iaObj, (char *)&(him6->sin6_addr));
             if (ret == JNI_FALSE)
                 return NULL;
-            setInetAddress_family(env, iaObj, IPv6);
+            setInetAddress_family(env, iaObj, java_net_InetAddress_IPv6);
             scope = getScopeID(him);
             setInet6Address_scopeid(env, iaObj, scope);
         }
@@ -238,7 +233,7 @@ NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port) {
             struct sockaddr_in *him4 = (struct sockaddr_in *)him;
             iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
             CHECK_NULL_RETURN(iaObj, NULL);
-            setInetAddress_family(env, iaObj, IPv4);
+            setInetAddress_family(env, iaObj, java_net_InetAddress_IPv4);
             setInetAddress_addr(env, iaObj, ntohl(him4->sin_addr.s_addr));
             *port = ntohs(him4->sin_port);
         }
@@ -251,13 +246,10 @@ NET_SockaddrEqualsInetAddress(JNIEnv *env, struct sockaddr *him, jobject iaObj)
     jint family = AF_INET;
 
 #ifdef AF_INET6
-    family = getInetAddress_family(env, iaObj) == IPv4? AF_INET : AF_INET6;
+    family = getInetAddress_family(env, iaObj) == java_net_InetAddress_IPv4 ?
+        AF_INET : AF_INET6;
     if (him->sa_family == AF_INET6) {
-#ifdef WIN32
-        struct SOCKADDR_IN6 *him6 = (struct SOCKADDR_IN6 *)him;
-#else
         struct sockaddr_in6 *him6 = (struct sockaddr_in6 *)him;
-#endif
         jbyte *caddrNew = (jbyte *)&(him6->sin6_addr);
         if (NET_IsIPv4Mapped(caddrNew)) {
             int addrNew;

@@ -22,29 +22,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
+#include <ctype.h>
 #include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <sys/socket.h>
 #include <netinet/in.h>
-#include <netdb.h>
-#include <string.h>
-#include <strings.h>
-#include <stdlib.h>
-#include <ctype.h>
-#ifdef MACOSX
+#include <netinet/icmp6.h>
+
+#if defined(_ALLBSD_SOURCE)
 #include <ifaddrs.h>
 #include <net/if.h>
-#include <unistd.h> /* gethostname */
 #endif
 
-#include "jvm.h"
-#include "jni_util.h"
 #include "net_util.h"
-#ifndef IPV6_DEFS_H
-#include <netinet/icmp6.h>
-#endif
 
 #include "java_net_Inet4AddressImpl.h"
 #include "java_net_Inet6AddressImpl.h"
@@ -504,24 +496,23 @@ Java_java_net_Inet6AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
         addr |= ((caddr[2] <<8) & 0xff00);
         addr |= (caddr[3] & 0xff);
         memset((void *) &him4, 0, sizeof(him4));
-        him4.sin_addr.s_addr = (uint32_t) htonl(addr);
+        him4.sin_addr.s_addr = htonl(addr);
         him4.sin_family = AF_INET;
-        sa = (struct sockaddr *) &him4;
+        sa = (struct sockaddr *)&him4;
         len = sizeof(him4);
     } else {
         /*
          * For IPv6 address construct a sockaddr_in6 structure.
          */
         (*env)->GetByteArrayRegion(env, addrArray, 0, 16, caddr);
-        memset((void *) &him6, 0, sizeof(him6));
-        memcpy((void *)&(him6.sin6_addr), caddr, sizeof(struct in6_addr) );
+        memset((void *)&him6, 0, sizeof(him6));
+        memcpy((void *)&(him6.sin6_addr), caddr, sizeof(struct in6_addr));
         him6.sin6_family = AF_INET6;
-        sa = (struct sockaddr *) &him6 ;
-        len = sizeof(him6) ;
+        sa = (struct sockaddr *)&him6;
+        len = sizeof(him6);
     }
 
-    error = getnameinfo(sa, len, host, NI_MAXHOST, NULL, 0,
-                        NI_NAMEREQD);
+    error = getnameinfo(sa, len, host, NI_MAXHOST, NULL, 0, NI_NAMEREQD);
 
     if (!error) {
         ret = (*env)->NewStringUTF(env, host);
