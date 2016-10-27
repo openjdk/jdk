@@ -30,6 +30,7 @@ import java.awt.*;
 import static java.awt.RenderingHints.*;
 import java.awt.event.*;
 import java.awt.font.*;
+import java.awt.geom.Rectangle2D;
 import java.awt.geom.AffineTransform;
 import static java.awt.geom.AffineTransform.TYPE_FLIP;
 import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
@@ -723,10 +724,31 @@ public class SwingUtilities2 {
                                  int length,
                                  int x,
                                  int y) {
+        return (int) drawChars(c, g, data, offset, length, x, y, false);
+    }
+
+    public static float drawChars(JComponent c, Graphics g,
+                                 char[] data,
+                                 int offset,
+                                 int length,
+                                 float x,
+                                 float y) {
+        return drawChars(c, g, data, offset, length, x, y, true);
+    }
+
+    public static float drawChars(JComponent c, Graphics g,
+                                 char[] data,
+                                 int offset,
+                                 int length,
+                                 float x,
+                                 float y,
+                                 boolean useFPAPI) {
         if ( length <= 0 ) { //no need to paint empty strings
             return x;
         }
-        int nextX = x + getFontMetrics(c, g).charsWidth(data, offset, length);
+        float nextX = x + getFontCharsWidth(data, offset, length,
+                                            getFontMetrics(c, g),
+                                            useFPAPI);
         if (isPrinting(g)) {
             Graphics2D g2d = getGraphics2D(g);
             if (g2d != null) {
@@ -766,8 +788,14 @@ public class SwingUtilities2 {
         Object aaHint = (c == null)
                             ? null
                             : c.getClientProperty(KEY_TEXT_ANTIALIASING);
-        if (aaHint != null && (g instanceof Graphics2D)) {
-            Graphics2D g2 = (Graphics2D)g;
+
+        if (!(g instanceof Graphics2D)) {
+            g.drawChars(data, offset, length, (int) x, (int) y);
+            return nextX;
+        }
+
+        Graphics2D g2 = (Graphics2D) g;
+        if (aaHint != null) {
 
             Object oldContrast = null;
             Object oldAAValue = g2.getRenderingHint(KEY_TEXT_ANTIALIASING);
@@ -788,7 +816,7 @@ public class SwingUtilities2 {
                 }
             }
 
-            g.drawChars(data, offset, length, x, y);
+            g2.drawString(new String(data, offset, length), x, y);
 
             if (oldAAValue != null) {
                 g2.setRenderingHint(KEY_TEXT_ANTIALIASING, oldAAValue);
@@ -798,9 +826,35 @@ public class SwingUtilities2 {
             }
         }
         else {
-            g.drawChars(data, offset, length, x, y);
+            g2.drawString(new String(data, offset, length), x, y);
         }
         return nextX;
+    }
+
+    public static float getFontCharWidth(char c, FontMetrics fm,
+                                         boolean useFPAPI)
+    {
+        return getFontCharsWidth(new char[]{c}, 0, 1, fm, useFPAPI);
+    }
+
+    public static float getFontCharsWidth(char[] data, int offset, int len,
+                                          FontMetrics fm,
+                                          boolean useFPAPI)
+    {
+        return len == 0 ? 0 : getFontStringWidth(new String(data, offset, len),
+                                                 fm, useFPAPI);
+    }
+
+    public static float getFontStringWidth(String data, FontMetrics fm,
+                                           boolean useFPAPI)
+    {
+        if (useFPAPI) {
+            Rectangle2D bounds = fm.getFont()
+                    .getStringBounds(data, fm.getFontRenderContext());
+            return (float) bounds.getWidth();
+        } else {
+            return fm.stringWidth(data);
+        }
     }
 
     /*
@@ -809,8 +863,22 @@ public class SwingUtilities2 {
      */
     public static float drawString(JComponent c, Graphics g,
                                    AttributedCharacterIterator iterator,
-                                   int x,
-                                   int y) {
+                                   int x, int y)
+    {
+        return drawStringImpl(c, g, iterator, x, y);
+    }
+
+    public static float drawString(JComponent c, Graphics g,
+                                   AttributedCharacterIterator iterator,
+                                   float x, float y)
+    {
+        return drawStringImpl(c, g, iterator, x, y);
+    }
+
+    private static float drawStringImpl(JComponent c, Graphics g,
+                                   AttributedCharacterIterator iterator,
+                                   float x, float y)
+    {
 
         float retVal;
         boolean isPrinting = isPrinting(g);
@@ -825,8 +893,8 @@ public class SwingUtilities2 {
 
         Graphics2D g2d = getGraphics2D(g);
         if (g2d == null) {
-            g.drawString(iterator,x,y); //for the cases where advance
-                                        //matters it should not happen
+            g.drawString(iterator, (int)x, (int)y); //for the cases where advance
+                                                    //matters it should not happen
             retVal = x;
 
         } else {

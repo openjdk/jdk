@@ -1314,7 +1314,7 @@ class GIFImageWriteParam extends ImageWriteParam {
         super(locale);
         this.canWriteCompressed = true;
         this.canWriteProgressive = true;
-        this.compressionTypes = new String[] {"LZW", "lzw"};
+        this.compressionTypes = new String[] {"LZW"};
         this.compressionType = compressionTypes[0];
     }
 
