@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,15 +38,10 @@
  * Taligent is a registered trademark of Taligent, Inc.
  */
 
-package sun.util.locale.provider;
+package sun.text;
 
-import java.io.BufferedInputStream;
-import java.io.InputStream;
-import java.io.IOException;
-import java.lang.reflect.Module;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
 import java.text.BreakIterator;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
@@ -218,7 +213,7 @@ import sun.text.SupplementaryCharacterData;
  *
  * @author Richard Gillam
  */
-class RuleBasedBreakIterator extends BreakIterator {
+public class RuleBasedBreakIterator extends BreakIterator {
 
     /**
      * A token used as a character-category value to identify ignore characters
@@ -248,11 +243,6 @@ class RuleBasedBreakIterator extends BreakIterator {
      * Version number of the dictionary that was read in.
      */
     static final byte supportedVersion = 1;
-
-    /**
-     * Header size in byte count
-     */
-    private static final int HEADER_LENGTH = 36;
 
     /**
      * An array length of indices for BMP characters
@@ -315,16 +305,26 @@ class RuleBasedBreakIterator extends BreakIterator {
     //=======================================================================
 
     /**
-     * Constructs a RuleBasedBreakIterator according to the module and the datafile
-     * provided.
+     * Constructs a RuleBasedBreakIterator using the given rule data.
+     *
+     * @throws MissingResourceException if the rule data is invalid or corrupted
      */
-    RuleBasedBreakIterator(Module module, String datafile)
-        throws IOException, MissingResourceException {
-        readTables(module, datafile);
+    public RuleBasedBreakIterator(String ruleFile, byte[] ruleData) {
+        ByteBuffer bb = ByteBuffer.wrap(ruleData);
+        try {
+            validateRuleData(ruleFile, bb);
+            setupTables(ruleFile, bb);
+        } catch (BufferUnderflowException bue) {
+            MissingResourceException e;
+            e = new MissingResourceException("Corrupted rule data file", ruleFile, "");
+            e.initCause(bue);
+            throw e;
+        }
     }
 
     /**
-     * Read datafile. The datafile's format is as follows:
+     * Initializes the fields with the given rule data.
+     * The data format is as follows:
      * <pre>
      *   BreakIteratorData {
      *       u1           magic[7];
@@ -370,133 +370,101 @@ class RuleBasedBreakIterator extends BreakIterator {
      *       u1           additionalData[additionalDataLength];
      *   }
      * </pre>
+     *
+     * @throws BufferUnderflowException if the end-of-data is reached before
+     *                                  setting up all the tables
      */
-    protected final void readTables(Module module, String datafile)
-        throws IOException, MissingResourceException {
-
-        byte[] buffer = readFile(module, datafile);
-
+    private void setupTables(String ruleFile, ByteBuffer bb) {
         /* Read header_info. */
-        int stateTableLength = getInt(buffer, 0);
-        int backwardsStateTableLength = getInt(buffer, 4);
-        int endStatesLength = getInt(buffer, 8);
-        int lookaheadStatesLength = getInt(buffer, 12);
-        int BMPdataLength = getInt(buffer, 16);
-        int nonBMPdataLength = getInt(buffer, 20);
-        int additionalDataLength = getInt(buffer, 24);
-        checksum = getLong(buffer, 28);
+        int stateTableLength = bb.getInt();
+        int backwardsStateTableLength = bb.getInt();
+        int endStatesLength = bb.getInt();
+        int lookaheadStatesLength = bb.getInt();
+        int BMPdataLength = bb.getInt();
+        int nonBMPdataLength = bb.getInt();
+        int additionalDataLength = bb.getInt();
+        checksum = bb.getLong();
 
         /* Read stateTable[numCategories * numRows] */
         stateTable = new short[stateTableLength];
-        int offset = HEADER_LENGTH;
-        for (int i = 0; i < stateTableLength; i++, offset+=2) {
-           stateTable[i] = getShort(buffer, offset);
+        for (int i = 0; i < stateTableLength; i++) {
+            stateTable[i] = bb.getShort();
         }
 
         /* Read backwardsStateTable[numCategories * numRows] */
         backwardsStateTable = new short[backwardsStateTableLength];
-        for (int i = 0; i < backwardsStateTableLength; i++, offset+=2) {
-           backwardsStateTable[i] = getShort(buffer, offset);
+        for (int i = 0; i < backwardsStateTableLength; i++) {
+            backwardsStateTable[i] = bb.getShort();
         }
 
         /* Read endStates[numRows] */
         endStates = new boolean[endStatesLength];
-        for (int i = 0; i < endStatesLength; i++, offset++) {
-           endStates[i] = buffer[offset] == 1;
+        for (int i = 0; i < endStatesLength; i++) {
+            endStates[i] = bb.get() == 1;
         }
 
         /* Read lookaheadStates[numRows] */
         lookaheadStates = new boolean[lookaheadStatesLength];
-        for (int i = 0; i < lookaheadStatesLength; i++, offset++) {
-           lookaheadStates[i] = buffer[offset] == 1;
+        for (int i = 0; i < lookaheadStatesLength; i++) {
+            lookaheadStates[i] = bb.get() == 1;
         }
 
         /* Read a category table and indices for BMP characters. */
         short[] temp1 = new short[BMP_INDICES_LENGTH];  // BMPindices
-        for (int i = 0; i < BMP_INDICES_LENGTH; i++, offset+=2) {
-            temp1[i] = getShort(buffer, offset);
+        for (int i = 0; i < BMP_INDICES_LENGTH; i++) {
+            temp1[i] = bb.getShort();
         }
         byte[] temp2 = new byte[BMPdataLength];  // BMPdata
-        System.arraycopy(buffer, offset, temp2, 0, BMPdataLength);
-        offset += BMPdataLength;
+        bb.get(temp2);
         charCategoryTable = new CompactByteArray(temp1, temp2);
 
         /* Read a category table for non-BMP characters. */
         int[] temp3 = new int[nonBMPdataLength];
-        for (int i = 0; i < nonBMPdataLength; i++, offset+=4) {
-            temp3[i] = getInt(buffer, offset);
+        for (int i = 0; i < nonBMPdataLength; i++) {
+            temp3[i] = bb.getInt();
         }
         supplementaryCharCategoryTable = new SupplementaryCharacterData(temp3);
 
         /* Read additional data */
         if (additionalDataLength > 0) {
             additionalData = new byte[additionalDataLength];
-            System.arraycopy(buffer, offset, additionalData, 0, additionalDataLength);
+            bb.get(additionalData);
         }
+        assert bb.position() == bb.limit();
 
         /* Set numCategories */
         numCategories = stateTable.length / endStates.length;
     }
 
-    protected byte[] readFile(final Module module, final String datafile)
-        throws IOException, MissingResourceException {
-
-        BufferedInputStream is;
-        try {
-            PrivilegedExceptionAction<BufferedInputStream> pa = () -> {
-                String pathName = "jdk.localedata".equals(module.getName()) ?
-                     "sun/text/resources/ext/" :
-                     "sun/text/resources/";
-                InputStream in = module.getResourceAsStream(pathName + datafile);
-                if (in == null) {
-                    // Try to load the file with "java.base" module instance. Assumption
-                    // here is that the fall back data files to be read should reside in
-                    // java.base.
-                    in = RuleBasedBreakIterator.class.getModule().getResourceAsStream("sun/text/resources/" + datafile);
-                }
-
-                return new BufferedInputStream(in);
-            };
-            is = AccessController.doPrivileged(pa);
-        } catch (PrivilegedActionException e) {
-            throw new InternalError(e.toString(), e);
-        }
-
-        int offset = 0;
-
-        /* First, read magic, version, and header_info. */
-        int len = LABEL_LENGTH + 5;
-        byte[] buf = new byte[len];
-        if (is.read(buf) != len) {
-            throw new MissingResourceException("Wrong header length",
-                                               datafile, "");
-        }
-
-        /* Validate the magic number. */
-        for (int i = 0; i < LABEL_LENGTH; i++, offset++) {
-            if (buf[offset] != LABEL[offset]) {
+    /**
+     * Validates the magic number, version, and the length of the given data.
+     *
+     * @throws BufferUnderflowException if the end-of-data is reached while
+     *                                  validating data
+     * @throws MissingResourceException if valification failed
+     */
+    void validateRuleData(String ruleFile, ByteBuffer bb) {
+        /* Verify the magic number. */
+        for (int i = 0; i < LABEL_LENGTH; i++) {
+            if (bb.get() != LABEL[i]) {
                 throw new MissingResourceException("Wrong magic number",
-                                                   datafile, "");
+                                                   ruleFile, "");
             }
         }
 
-        /* Validate the version number. */
-        if (buf[offset] != supportedVersion) {
-            throw new MissingResourceException("Unsupported version(" + buf[offset] + ")",
-                                               datafile, "");
+        /* Verify the version number. */
+        byte version = bb.get();
+        if (version != supportedVersion) {
+            throw new MissingResourceException("Unsupported version(" + version + ")",
+                                               ruleFile, "");
         }
 
-        /* Read data: totalDataSize + 8(for checksum) */
-        len = getInt(buf, ++offset);
-        buf = new byte[len];
-        if (is.read(buf) != len) {
+        // Check the length of the rest of data
+        int len = bb.getInt();
+        if (bb.position() + len != bb.limit()) {
             throw new MissingResourceException("Wrong data length",
-                                               datafile, "");
+                                               ruleFile, "");
         }
-
-        is.close();
-
-        return buf;
     }
 
     byte[] getAdditionalData() {
@@ -1059,28 +1027,6 @@ class RuleBasedBreakIterator extends BreakIterator {
      */
     protected int lookupBackwardState(int state, int category) {
         return backwardsStateTable[state * numCategories + category];
-    }
-
-    static long getLong(byte[] buf, int offset) {
-        long num = buf[offset]&0xFF;
-        for (int i = 1; i < 8; i++) {
-            num = num<<8 | (buf[offset+i]&0xFF);
-        }
-        return num;
-    }
-
-    static int getInt(byte[] buf, int offset) {
-        int num = buf[offset]&0xFF;
-        for (int i = 1; i < 4; i++) {
-            num = num<<8 | (buf[offset+i]&0xFF);
-        }
-        return num;
-    }
-
-    static short getShort(byte[] buf, int offset) {
-        short num = (short)(buf[offset]&0xFF);
-        num = (short)(num<<8 | (buf[offset+1]&0xFF));
-        return num;
     }
 
     /*

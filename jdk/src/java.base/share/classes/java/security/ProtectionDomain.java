@@ -89,6 +89,11 @@ public class ProtectionDomain {
                 AccessController.getContext(), context);
         }
 
+        @Override
+        public ProtectionDomain[] getProtectDomains(AccessControlContext context) {
+            return context.getContext();
+        }
+
         private static AccessControlContext getCombinedACC(
             AccessControlContext context, AccessControlContext stack) {
             AccessControlContext acc =
