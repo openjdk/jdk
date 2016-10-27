@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8148316 8148317 8151755 8152246 8153551 8154812 8157261
+ * @bug 8148316 8148317 8151755 8152246 8153551 8154812 8157261 8163840
  * @summary Tests for output customization
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -33,10 +33,17 @@
  * @build KullaTesting TestingInputStream toolbox.ToolBox Compiler
  * @run testng ToolFormatTest
  */
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 @Test
 public class ToolFormatTest extends ReplToolTesting {
@@ -79,6 +86,58 @@ public class ToolFormatTest extends ReplToolTesting {
             assertCommandCheckOutput(false, "/set feedback normal", s -> {
             });
         }
+    }
+
+    public void testSetFormatOverride() {
+        test(
+                (a) -> assertCommand(a, "/set mode tm -c", "|  Created new feedback mode: tm"),
+                (a) -> assertCommand(a, "/se fo tm x \"aaa\"", ""),
+                (a) -> assertCommand(a, "/se fo tm x \"bbb\" class,method-added", ""),
+                (a) -> assertCommand(a, "/se fo tm x",
+                        "|  /set format tm x \"aaa\" \n" +
+                        "|  /set format tm x \"bbb\" class,method-added"),
+                (a) -> assertCommand(a, "/se fo tm x \"ccc\" class,method-added,modified", ""),
+                (a) -> assertCommand(a, "/se fo tm x \"ddd\" class,method-added", ""),
+                (a) -> assertCommand(a, "/se fo tm x \"eee\" method-added", ""),
+                (a) -> assertCommand(a, "/se fo tm x",
+                        "|  /set format tm x \"aaa\" \n" +
+                        "|  /set format tm x \"ccc\" class,method-added,modified\n" +
+                        "|  /set format tm x \"ddd\" class,method-added\n" +
+                        "|  /set format tm x \"eee\" method-added"),
+                (a) -> assertCommand(a, "/se fo tm x \"EEE\" method-added,replaced", ""),
+                (a) -> assertCommand(a, "/se fo tm x",
+                        "|  /set format tm x \"aaa\" \n" +
+                        "|  /set format tm x \"ccc\" class,method-added,modified\n" +
+                        "|  /set format tm x \"ddd\" class,method-added\n" +
+                        "|  /set format tm x \"EEE\" method-added,replaced"),
+                (a) -> assertCommand(a, "/se fo tm x \"fff\" method-added,replaced-ok", ""),
+                (a) -> assertCommand(a, "/se fo tm x",
+                        "|  /set format tm x \"aaa\" \n" +
+                        "|  /set format tm x \"ccc\" class,method-added,modified\n" +
+                        "|  /set format tm x \"ddd\" class,method-added\n" +
+                        "|  /set format tm x \"EEE\" method-added,replaced\n" +
+                        "|  /set format tm x \"fff\" method-added,replaced-ok"),
+                (a) -> assertCommand(a, "/se fo tm x \"ggg\" method-ok", ""),
+                (a) -> assertCommand(a, "/se fo tm x",
+                        "|  /set format tm x \"aaa\" \n" +
+                        "|  /set format tm x \"ccc\" class,method-added,modified\n" +
+                        "|  /set format tm x \"ddd\" class,method-added\n" +
+                        "|  /set format tm x \"EEE\" method-added,replaced\n" +
+                        "|  /set format tm x \"ggg\" method-ok"),
+                (a) -> assertCommand(a, "/se fo tm x \"hhh\" method", ""),
+                (a) -> assertCommand(a, "/se fo tm x",
+                        "|  /set format tm x \"aaa\" \n" +
+                        "|  /set format tm x \"ccc\" class,method-added,modified\n" +
+                        "|  /set format tm x \"ddd\" class,method-added\n" +
+                        "|  /set format tm x \"hhh\" method"),
+                (a) -> assertCommand(a, "/se fo tm x \"iii\" method,class", ""),
+                (a) -> assertCommand(a, "/se fo tm x",
+                        "|  /set format tm x \"aaa\" \n" +
+                        "|  /set format tm x \"iii\" class,method"),
+                (a) -> assertCommand(a, "/se fo tm x \"jjj\"", ""),
+                (a) -> assertCommand(a, "/se fo tm x",
+                        "|  /set format tm x \"jjj\"")
+        );
     }
 
     public void testSetFormatSelector() {
@@ -167,8 +226,14 @@ public class ToolFormatTest extends ReplToolTesting {
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback test", ""),
                     (a) -> assertCommand(a, "/set format test display '{type}:{value}' primary", ""),
                     (a) -> assertCommand(a, "/set truncation test 20", ""),
+                    (a) -> assertCommand(a, "/set truncation test", "|  /set truncation test 20"),
+                    (a) -> assertCommandOutputContains(a, "/set truncation", "/set truncation test 20"),
                     (a) -> assertCommand(a, "/set trunc test 10 varvalue", ""),
                     (a) -> assertCommand(a, "/set trunc test 3 assignment", ""),
+                    (a) -> assertCommandOutputContains(a, "/set truncation",
+                            "/set truncation test 10 varvalue"),
+                    (a) -> assertCommandOutputContains(a, "/set truncation test",
+                            "/set truncation test 10 varvalue"),
                     (a) -> assertCommand(a, "String r = s", "String:\"ABACABADABACABA ..."),
                     (a) -> assertCommand(a, "r", "String:\"ABACA ..."),
                     (a) -> assertCommand(a, "r=s", "String:\"AB")
@@ -201,6 +266,45 @@ public class ToolFormatTest extends ReplToolTesting {
         );
     }
 
+    public void testPrompt() {
+        test(
+                (a) -> assertCommand(a, "/set mode tp -quiet", "|  Created new feedback mode: tp"),
+                (a) -> assertCommand(a, "/set prompt tp 'aaa' 'bbb'", ""),
+                (a) -> assertCommand(a, "/set prompt tp",
+                        "|  /set prompt tp \"aaa\" \"bbb\""),
+                (a) -> assertCommandOutputContains(a, "/set prompt",
+                        "|  /set prompt tp \"aaa\" \"bbb\""),
+                (a) -> assertCommand(a, "/set mode -retain tp", ""),
+                (a) -> assertCommand(a, "/set prompt tp 'ccc' 'ddd'", ""),
+                (a) -> assertCommand(a, "/set prompt tp",
+                        "|  /set prompt tp \"ccc\" \"ddd\""),
+                (a) -> assertCommandCheckOutput(a, "/set mode tp",
+                        (s) -> {
+                            try {
+                                BufferedReader rdr = new BufferedReader(new StringReader(s));
+                                assertEquals(rdr.readLine(), "|  /set mode tp -quiet",
+                                        "|  /set mode tp -quiet");
+                                assertEquals(rdr.readLine(), "|  /set prompt tp \"aaa\" \"bbb\"",
+                                        "|  /set prompt tp \"aaa\" \"bbb\"");
+                                String l = rdr.readLine();
+                                while (l.startsWith("|  /set format tp ")) {
+                                    l = rdr.readLine();
+                                }
+                                assertEquals(l, "|  /set mode -retain tp",
+                                        "|  /set mode -retain tp");
+                                assertEquals(rdr.readLine(), "|  ",
+                                        "|  ");
+                                assertEquals(rdr.readLine(), "|  /set mode tp -quiet",
+                                        "|  /set mode tp -quiet");
+                                assertEquals(rdr.readLine(), "|  /set prompt tp \"ccc\" \"ddd\"",
+                                        "|  /set prompt tp \"ccc\" \"ddd\"");
+                            } catch (IOException ex) {
+                                fail("threw " + ex);
+                            }
+                        })
+        );
+    }
+
     public void testShowFeedbackModes() {
         test(
                 (a) -> assertCommandOutputContains(a, "/set feedback", "normal")
@@ -216,7 +320,8 @@ public class ToolFormatTest extends ReplToolTesting {
                     (a) -> assertCommand(a, "/se fee nmq2", ""),
                     (a) -> assertCommand(a, "/set mode nmc -command normal", ""),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback nmc", "|  Feedback mode: nmc"),
-                    (a) -> assertCommandOutputStartsWith(a, "/set mode nm", "|  Created new feedback mode: nm"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set mode nm -command",
+                            "|  Created new feedback mode: nm"),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback nm", "|  Feedback mode: nm"),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback normal", "|  Feedback mode: normal")
             );
@@ -231,37 +336,35 @@ public class ToolFormatTest extends ReplToolTesting {
             test(
                     (a) -> assertCommandOutputStartsWith(a, "/set mode tee -command foo",
                             "|  Does not match any current feedback mode: foo"),
-                    (a) -> assertCommandOutputStartsWith(a, "/set mode tee flurb",
+                    (a) -> assertCommandOutputStartsWith(a, "/set mode tee -quiet flurb",
                             "|  Does not match any current feedback mode: flurb"),
-                    (a) -> assertCommandOutputStartsWith(a, "/set mode tee",
+                    (a) -> assertCommandOutputStartsWith(a, "/set mode -command tee",
                             "|  Created new feedback mode: tee"),
-                    (a) -> assertCommandOutputStartsWith(a, "/set mode verbose",
-                            "|  Not valid with a predefined mode: verbose"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set mode verbose -command",
+                            "|  Mode to be created already exists: verbose"),
                     (a) -> assertCommandOutputStartsWith(a, "/set mode te -command normal",
                             "|  Created new feedback mode: te"),
                     (a) -> assertCommand(a, "/set format te errorpre 'ERROR: '", ""),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback te",
                             ""),
-                    (a) -> assertCommandOutputStartsWith(a, "/set ",
-                            "ERROR: The '/set' command requires a sub-command"),
                     (a) -> assertCommandOutputStartsWith(a, "/set xyz",
                             "ERROR: Invalid '/set' argument: xyz"),
                     (a) -> assertCommandOutputStartsWith(a, "/set f",
                             "ERROR: Ambiguous sub-command argument to '/set': f"),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback",
-                            "ERROR: Missing the feedback mode"),
+                            "|  /set feedback te"),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback xyz",
                             "ERROR: Does not match any current feedback mode"),
-                    (a) -> assertCommandOutputStartsWith(a, "/set format",
-                            "ERROR: Missing the feedback mode"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set feed",
+                            "|  /set feedback te"),
                     (a) -> assertCommandOutputStartsWith(a, "/set format xyz",
                             "ERROR: Does not match any current feedback mode"),
                     (a) -> assertCommandOutputStartsWith(a, "/set format t",
                             "ERROR: Matches more then one current feedback mode: t"),
-                    (a) -> assertCommandOutputStartsWith(a, "/set format te",
-                            "ERROR: Missing the field name"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set format qqq",
+                            "ERROR: Does not match any current feedback mode: qqq"),
                     (a) -> assertCommandOutputStartsWith(a, "/set format te fld",
-                            "ERROR: Expected format missing"),
+                            "ERROR: Expected a field name:"),
                     (a) -> assertCommandOutputStartsWith(a, "/set format te fld aaa",
                             "ERROR: Format 'aaa' must be quoted"),
                     (a) -> assertCommandOutputStartsWith(a, "/set format te fld 'aaa' frog",
@@ -274,30 +377,28 @@ public class ToolFormatTest extends ReplToolTesting {
                             "ERROR: Different selector kinds in same sections of"),
                     (a) -> assertCommandOutputStartsWith(a, "/set trunc te 20x",
                             "ERROR: Truncation length must be an integer: 20x"),
-                    (a) -> assertCommandOutputStartsWith(a, "/set trunc te",
-                            "ERROR: Expected truncation length"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set trunc qaz",
+                            "ERROR: Does not match any current feedback mode: qaz -- /set trunc qaz"),
                     (a) -> assertCommandOutputStartsWith(a, "/set truncation te 111 import,added",
                             "ERROR: Different selector kinds in same sections of"),
-                    (a) -> assertCommandOutputStartsWith(a, "/set mode",
+                    (a) -> assertCommandOutputContains(a, "/set mode",
+                            "|  /set truncation verbose"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set mode -command",
                             "ERROR: Missing the feedback mode"),
                     (a) -> assertCommandOutputStartsWith(a, "/set mode x -quiet y",
                             "ERROR: Does not match any current feedback mode"),
                     (a) -> assertCommandOutputStartsWith(a, "/set prompt",
-                            "ERROR: Missing the feedback mode"),
+                            "|  /set prompt"),
                     (a) -> assertCommandOutputStartsWith(a, "/set prompt te",
-                            "ERROR: Expected format missing"),
+                            "|  /set prompt te "),
                     (a) -> assertCommandOutputStartsWith(a, "/set prompt te aaa xyz",
                             "ERROR: Format 'aaa' must be quoted"),
                     (a) -> assertCommandOutputStartsWith(a, "/set prompt te 'aaa' xyz",
                             "ERROR: Format 'xyz' must be quoted"),
-                    (a) -> assertCommandOutputStartsWith(a, "/set prompt",
-                            "ERROR: Missing the feedback mode"),
-                    (a) -> assertCommandOutputStartsWith(a, "/set prompt te",
-                            "ERROR: Expected format missing"),
                     (a) -> assertCommandOutputStartsWith(a, "/set prompt te aaa",
                             "ERROR: Format 'aaa' must be quoted"),
                     (a) -> assertCommandOutputStartsWith(a, "/set prompt te 'aaa'",
-                            "ERROR: Expected format missing"),
+                            "ERROR: Continuation prompt required"),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback normal",
                             "|  Feedback mode: normal")
             );

@@ -82,7 +82,6 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
         private static final MethodHandle SET_ELEM = specialCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "setElem", void.class, int.class, int.class).methodHandle();
         private static final MethodHandle RINT_D   = staticCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "rint", double.class, double.class).methodHandle();
         private static final MethodHandle RINT_O   = staticCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "rint", Object.class, Object.class).methodHandle();
-        private static final MethodHandle CLAMP_LONG = staticCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "clampLong", long.class, long.class).methodHandle();
 
         private Uint8ClampedArrayData(final ByteBuffer nb, final int start, final int end) {
             super((nb.position(start).limit(end)).slice(), end - start);
@@ -124,8 +123,6 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
                     return MH.filterArguments(setter, 2, RINT_O);
                 } else if (elementType == double.class) {
                     return MH.filterArguments(setter, 2, RINT_D);
-                } else if (elementType == long.class) {
-                    return MH.filterArguments(setter, 2, CLAMP_LONG);
                 }
             }
             return setter;
@@ -195,7 +192,7 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
 
         @Override
         public ArrayData set(final int index, final double value, final boolean strict) {
-            return set(index, rint(value), strict);
+            return set(index, (int) rint(value), strict);
         }
 
         private static double rint(final double rint) {
@@ -207,15 +204,6 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
             return rint(JSType.toNumber(rint));
         }
 
-        @SuppressWarnings("unused")
-        private static long clampLong(final long l) {
-            if(l < 0L) {
-                return 0L;
-            } else if(l > 0xffL) {
-                return 0xffL;
-            }
-            return l;
-        }
     }
 
     /**
@@ -276,6 +264,17 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     protected static NativeUint8ClampedArray subarray(final Object self, final Object begin, final Object end) {
         return (NativeUint8ClampedArray)ArrayBufferView.subarrayImpl(self, begin, end);
+    }
+
+    /**
+     * ECMA 6 22.2.3.30 %TypedArray%.prototype [ @@iterator ] ( )
+     *
+     * @param self the self reference
+     * @return an iterator over the array's values
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, name = "@@iterator")
+    public static Object getIterator(final Object self) {
+        return ArrayIterator.newArrayValueIterator(self);
     }
 
     @Override
