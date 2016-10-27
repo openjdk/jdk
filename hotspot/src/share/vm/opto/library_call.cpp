@@ -3213,24 +3213,23 @@ bool LibraryCallKit::inline_native_getBufferWriter() {
   Node* test_jobj_eq_null  = _gvn.transform( new BoolNode(jobj_cmp_null, BoolTest::eq) );
 
   IfNode* iff_jobj_null =
-    create_and_map_if(control(), test_jobj_eq_null, PROB_NEVER, COUNT_UNKNOWN);
+    create_and_map_if(control(), test_jobj_eq_null, PROB_MIN, COUNT_UNKNOWN);
 
-   enum { _normal_path = 1,
-          _null_path = 2,
-          PATH_LIMIT };
+  enum { _normal_path = 1,
+         _null_path = 2,
+         PATH_LIMIT };
 
   RegionNode* result_rgn = new RegionNode(PATH_LIMIT);
   PhiNode*    result_val = new PhiNode(result_rgn, TypePtr::BOTTOM);
-  record_for_igvn(result_rgn);
 
-  Node* jobj_is_null = _gvn.transform( new IfTrueNode(iff_jobj_null) );
+  Node* jobj_is_null = _gvn.transform(new IfTrueNode(iff_jobj_null));
   result_rgn->init_req(_null_path, jobj_is_null);
   result_val->init_req(_null_path, null());
 
-  Node* jobj_is_not_null = _gvn.transform( new IfFalseNode(iff_jobj_null) );
+  Node* jobj_is_not_null = _gvn.transform(new IfFalseNode(iff_jobj_null));
   result_rgn->init_req(_normal_path, jobj_is_not_null);
 
-  Node* res = make_load(NULL, jobj, TypeInstPtr::BOTTOM, T_OBJECT, MemNode::unordered);
+  Node* res = make_load(jobj_is_not_null, jobj, TypeInstPtr::NOTNULL, T_OBJECT, MemNode::unordered);
   result_val->init_req(_normal_path, res);
 
   set_result(result_rgn, result_val);
