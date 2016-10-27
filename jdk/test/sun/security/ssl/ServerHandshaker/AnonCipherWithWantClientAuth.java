@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,29 +29,20 @@
 /*
  * @test
  * @bug 4392475
+ * @library /javax/net/ssl/templates
  * @summary Calling setWantClientAuth(true) disables anonymous suites
  * @run main/othervm/timeout=180 AnonCipherWithWantClientAuth
  */
 
-import java.io.*;
-import java.net.*;
-import javax.net.ssl.*;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.Security;
 
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+
 public class AnonCipherWithWantClientAuth {
-
-    /*
-     * =============================================================
-     * Set the various variables needed for the tests, then
-     * specify what tests to run on each side.
-     */
-
-    /*
-     * Should we run the client or server in a separate thread?
-     * Both sides can throw exceptions, but do you have a preference
-     * as to which side should be the main thread.
-     */
-    static boolean separateServerThread = false;
 
     /*
      * Where do we find the keystores?
@@ -61,106 +52,7 @@ public class AnonCipherWithWantClientAuth {
     static String trustStoreFile = "truststore";
     static String passwd = "passphrase";
 
-    /*
-     * Is the server ready to serve?
-     */
-    volatile static boolean serverReady = false;
-
-    /*
-     * Turn on SSL debugging?
-     */
-    static boolean debug = false;
-
-    /*
-     * If the client or server is doing some kind of object creation
-     * that the other side depends on, and that thread prematurely
-     * exits, you may experience a hang.  The test harness will
-     * terminate all hung threads after its timeout has expired,
-     * currently 3 minutes by default, but you might try to be
-     * smart about it....
-     */
-
-    /*
-     * Define the server side of the test.
-     *
-     * If the server prematurely exits, serverReady will be set to true
-     * to avoid infinite hangs.
-     */
-    void doServerSide() throws Exception {
-        SSLServerSocketFactory sslssf =
-            (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-        SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
-        serverPort = sslServerSocket.getLocalPort();
-        String ciphers[]={"SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
-                          "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
-                          "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA"};
-        sslServerSocket.setEnabledCipherSuites(ciphers);
-        sslServerSocket.setWantClientAuth(true);
-        /*
-         * Signal Client, we're ready for his connect.
-         */
-        serverReady = true;
-
-        SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
-        InputStream sslIS = sslSocket.getInputStream();
-        OutputStream sslOS = sslSocket.getOutputStream();
-
-        sslIS.read();
-        sslOS.write(85);
-        sslOS.flush();
-
-        sslSocket.close();
-    }
-
-    /*
-     * Define the client side of the test.
-     *
-     * If the server prematurely exits, serverReady will be set to true
-     * to avoid infinite hangs.
-     */
-    void doClientSide() throws Exception {
-
-        /*
-         * Wait for server to get started.
-         */
-        while (!serverReady) {
-            Thread.sleep(50);
-        }
-
-        SSLSocketFactory sslsf =
-            (SSLSocketFactory) SSLSocketFactory.getDefault();
-        SSLSocket sslSocket = (SSLSocket)
-            sslsf.createSocket("localhost", serverPort);
-        String ciphers[] = {"SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
-                            "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5"};
-        sslSocket.setEnabledCipherSuites(ciphers);
-        sslSocket.setUseClientMode(true);
-
-        InputStream sslIS = sslSocket.getInputStream();
-        OutputStream sslOS = sslSocket.getOutputStream();
-
-        sslOS.write(280);
-        sslOS.flush();
-        sslIS.read();
-
-        sslSocket.close();
-    }
-
-    /*
-     * =============================================================
-     * The remainder is just support stuff
-     */
-
-    // use any free port by default
-    volatile int serverPort = 0;
-
-    volatile Exception serverException = null;
-    volatile Exception clientException = null;
-
     public static void main(String[] args) throws Exception {
-        // reset security properties to make sure that the algorithms
-        // and keys used in this test are not disabled.
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
         Security.setProperty("jdk.certpath.disabledAlgorithms", "");
 
@@ -170,100 +62,84 @@ public class AnonCipherWithWantClientAuth {
         String trustFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + trustStoreFile;
+        SSLTest.setup(keyFilename, trustFilename, passwd);
 
-        System.setProperty("javax.net.ssl.keyStore", keyFilename);
-        System.setProperty("javax.net.ssl.keyStorePassword", passwd);
-        System.setProperty("javax.net.ssl.trustStore", trustFilename);
-        System.setProperty("javax.net.ssl.trustStorePassword", passwd);
+        new SSLTest()
+            .setServerPeer(test -> {
+                SSLServerSocketFactory sslssf =
+                        (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+                SSLServerSocket sslServerSocket =
+                        (SSLServerSocket) sslssf.createServerSocket(SSLTest.FREE_PORT);
+                test.setServerPort(sslServerSocket.getLocalPort());
+                SSLTest.print("Server is listening on port "
+                        + test.getServerPort());
 
-        if (debug)
-            System.setProperty("javax.net.debug", "all");
+                String ciphers[] = {
+                        "SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
+                        "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
+                        "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA" };
+                sslServerSocket.setEnabledCipherSuites(ciphers);
+                sslServerSocket.setWantClientAuth(true);
 
-        /*
-         * Start the tests.
-         */
-        new AnonCipherWithWantClientAuth();
-    }
+                // Signal the client, the server is ready to accept connection.
+                test.signalServerReady();
 
-    Thread clientThread = null;
-    Thread serverThread = null;
-
-    /*
-     * Primary constructor, used to drive remainder of the test.
-     *
-     * Fork off the other side, then do your work.
-     */
-    AnonCipherWithWantClientAuth () throws Exception {
-        if (separateServerThread) {
-            startServer(true);
-            startClient(false);
-        } else {
-            startClient(true);
-            startServer(false);
-        }
-
-        /*
-         * Wait for other side to close down.
-         */
-        if (separateServerThread) {
-            serverThread.join();
-        } else {
-            clientThread.join();
-        }
-
-        /*
-         * When we get here, the test is pretty much over.
-         *
-         * If the main thread excepted, that propagates back
-         * immediately.  If the other thread threw an exception, we
-         * should report back.
-         */
-        if (serverException != null)
-            throw serverException;
-        if (clientException != null)
-            throw clientException;
-    }
-
-    void startServer(boolean newThread) throws Exception {
-        if (newThread) {
-            serverThread = new Thread() {
-                public void run() {
-                    try {
-                        doServerSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our server thread just died.
-                         */
-                        System.err.println("Server died...");
-                        serverReady = true;
-                        serverException = e;
-                    }
+                // Try to accept a connection in 30 seconds.
+                SSLSocket sslSocket = SSLTest.accept(sslServerSocket);
+                if (sslSocket == null) {
+                    // Ignore the test case if no connection within 30 seconds.
+                    SSLTest.print("No incoming client connection in 30 seconds."
+                            + " Ignore in server side.");
+                    return;
                 }
-            };
-            serverThread.start();
-        } else {
-            doServerSide();
-        }
-    }
+                SSLTest.print("Server accepted connection");
 
-    void startClient(boolean newThread) throws Exception {
-        if (newThread) {
-            clientThread = new Thread() {
-                public void run() {
-                    try {
-                        doClientSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our client thread just died.
-                         */
-                        System.err.println("Client died...");
-                        clientException = e;
+                // handle the connection
+                try {
+                    // Is it the expected client connection?
+                    //
+                    // Naughty test cases or third party routines may try to
+                    // connection to this server port unintentionally.  In
+                    // order to mitigate the impact of unexpected client
+                    // connections and avoid intermittent failure, it should
+                    // be checked that the accepted connection is really linked
+                    // to the expected client.
+                    boolean clientIsReady = test.waitForClientSignal();
+
+                    if (clientIsReady) {
+                        // Run the application in server side.
+                        SSLTest.print("Run server application");
+
+                        InputStream sslIS = sslSocket.getInputStream();
+                        OutputStream sslOS = sslSocket.getOutputStream();
+
+                        sslIS.read();
+                        sslOS.write(85);
+                        sslOS.flush();
+                    } else {
+                        System.out.println(
+                                "The client is not the expected one or timeout. "
+                                        + "Ignore in server side.");
                     }
+                } finally {
+                    sslSocket.close();
+                    sslServerSocket.close();
                 }
-            };
-            clientThread.start();
-        } else {
-            doClientSide();
-        }
+            })
+            .setClientApplication((socket, test) -> {
+                String ciphers[] = {
+                        "SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
+                        "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5" };
+                socket.setEnabledCipherSuites(ciphers);
+                socket.setUseClientMode(true);
+
+                InputStream sslIS = socket.getInputStream();
+                OutputStream sslOS = socket.getOutputStream();
+
+                sslOS.write(280);
+                sslOS.flush();
+                sslIS.read();
+            })
+            .runTest();
     }
 }
