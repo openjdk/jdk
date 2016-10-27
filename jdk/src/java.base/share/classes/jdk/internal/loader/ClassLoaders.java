@@ -69,15 +69,16 @@ public class ClassLoaders {
             bcp = toURLClassPath(s);
 
         // we have a class path if -cp is specified or -m is not specified.
-        // If neither is specified then default to -cp <working directory>.
+        // If neither is specified then default to -cp <working directory>
+        // If -cp is not specified and -m is specified, the value of
+        // java.class.path is an empty string, then no class path.
         URLClassPath ucp = null;
         String mainMid = System.getProperty("jdk.module.main");
         String cp = System.getProperty("java.class.path");
-        if (mainMid == null && cp == null)
+        if (cp == null)
             cp = "";
-        if (cp != null)
+        if (mainMid == null || cp.length() > 0)
             ucp = toURLClassPath(cp);
-
 
         // create the class loaders
         BOOT_LOADER = new BootClassLoader(bcp);
