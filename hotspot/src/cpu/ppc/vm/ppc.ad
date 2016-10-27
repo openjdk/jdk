@@ -11237,6 +11237,17 @@ instruct cmpP_reg_reg(flagsReg crx, iRegP_N2P src1, iRegP_N2P src2) %{
   ins_pipe(pipe_class_compare);
 %}
 
+instruct cmpP_reg_null(flagsReg crx, iRegP_N2P src1, immP_0or1 src2) %{
+  match(Set crx (CmpP src1 src2));
+  format %{ "CMPLDI   $crx, $src1, $src2 \t// ptr" %}
+  size(4);
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_cmpl);
+    __ cmpldi($crx$$CondRegister, $src1$$Register, (int)((short)($src2$$constant & 0xFFFF)));
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
 // Used in postalloc expand.
 instruct cmpP_reg_imm16(flagsReg crx, iRegPsrc src1, immL16 src2) %{
   // This match rule prevents reordering of node before a safepoint.
