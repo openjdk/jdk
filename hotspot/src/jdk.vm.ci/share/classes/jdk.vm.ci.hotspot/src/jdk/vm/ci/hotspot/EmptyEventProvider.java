@@ -20,17 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspot.services;
+package jdk.vm.ci.hotspot;
 
 /**
  * An empty implementation for {@link EventProvider}. This implementation is used when no logging is
  * requested.
  */
-final class EmptyEventProvider extends EventProvider {
-
-    EmptyEventProvider() {
-        super(null);
-    }
+final class EmptyEventProvider implements EventProvider {
 
     static InternalError shouldNotReachHere() {
         throw new InternalError("should not reach here");

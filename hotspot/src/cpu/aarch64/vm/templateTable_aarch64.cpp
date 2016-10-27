@@ -3717,19 +3717,15 @@ void TemplateTable::monitorenter()
 
   // allocate one if there's no free slot
   {
-    Label entry, loop, no_adjust;
+    Label entry, loop;
     // 1. compute new pointers            // rsp: old expression stack top
     __ ldr(c_rarg1, monitor_block_bot);   // c_rarg1: old expression stack bottom
-    __ sub(esp, esp, entry_size);           // move expression stack top
+    __ sub(esp, esp, entry_size);         // move expression stack top
     __ sub(c_rarg1, c_rarg1, entry_size); // move expression stack bottom
     __ mov(c_rarg3, esp);                 // set start value for copy loop
     __ str(c_rarg1, monitor_block_bot);   // set new monitor block bottom
 
-    __ cmp(sp, c_rarg3);                  // Check if we need to move sp
-    __ br(Assembler::LO, no_adjust);      // to allow more stack space
-                                          // for our new esp
-    __ sub(sp, sp, 2 * wordSize);
-    __ bind(no_adjust);
+    __ sub(sp, sp, entry_size);           // make room for the monitor
 
     __ b(entry);
     // 2. move expression stack contents
