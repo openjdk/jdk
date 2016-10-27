@@ -74,13 +74,14 @@ jdk_% core_%s svc_%:
 jaxp_%:
 	@$(NO_STOPPING)$(call SUBDIR_TEST, $(JAXP_DIR), CONCURRENCY=$(JDK_TEST_JOBS) TEST="$@" $@)
 
-ifeq ($(TEST_JOBS), 0)
-  HOTSPOT_TEST_JOBS=1
-else
-  HOTSPOT_TEST_JOBS=$(TEST_JOBS)
+SUB_MAKE_ARGS :=
+ifneq ($(TEST_JOBS), 0)
+  ifneq ($(TEST_JOBS), )
+    SUB_MAKE_ARGS += CONCURRENCY=$(TEST_JOBS)
+  endif
 endif
 hotspot_%:
-	@$(NO_STOPPING)$(call SUBDIR_TEST, $(HOTSPOT_DIR), CONCURRENCY=$(HOTSPOT_TEST_JOBS) TEST="$@" $@)
+	@$(NO_STOPPING)$(call SUBDIR_TEST, $(HOTSPOT_DIR), $(SUB_MAKE_ARGS) TEST="$@" $@)
 
 #
 # jtreg_tests
