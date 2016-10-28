@@ -365,7 +365,7 @@ public final class NativeJSAdapter extends ScriptObject {
 
         Object obj;
         if (func instanceof ScriptFunction) {
-            obj = ScriptRuntime.apply((ScriptFunction)func, adaptee);
+            obj = ScriptRuntime.apply((ScriptFunction)func, this);
         } else {
             obj = new NativeArray(0);
         }
@@ -544,7 +544,7 @@ public final class NativeJSAdapter extends ScriptObject {
     private Object callAdaptee(final Object retValue, final String name, final Object... args) {
         final Object func = adaptee.get(name);
         if (func instanceof ScriptFunction) {
-            return ScriptRuntime.apply((ScriptFunction)func, adaptee, args);
+            return ScriptRuntime.apply((ScriptFunction)func, this, args);
         }
         return retValue;
     }
