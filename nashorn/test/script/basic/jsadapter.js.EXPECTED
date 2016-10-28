@@ -20,3 +20,12 @@ js
 setter called for 'js' with javascript
 getter called for 'javascript'
 javascript
+__isExtensible__ called
+true
+__isSealed__ called
+false
+__isFrozen__ called
+false
+__freeze__ called
+__seal__ called
+__preventExtensions__ called
