@@ -672,6 +672,7 @@ public:
     static void _RemoveNativeDropTarget(void *param);
     static jintArray _CreatePrintedPixels(void *param);
     static jboolean _NativeHandlesWheelScrolling(void *param);
+    static void _SetParent(void * param);
     static void _SetRectangularShape(void *param);
     static void _SetZOrder(void *param);
 

@@ -57,28 +57,10 @@ typedef AwtObject* PDATA;
     }                                                                     \
 }
 
-#define JNI_CHECK_PEER_GOTO(peer, where) {                                \
-    JNI_CHECK_NULL_GOTO(peer, "peer", where);                             \
-    pData = JNI_GET_PDATA(peer);                                          \
-    if (pData == NULL) {                                                  \
-        THROW_NULL_PDATA_IF_NOT_DESTROYED(peer);                          \
-        goto where;                                                       \
-    }                                                                     \
-}
-
 #define JNI_CHECK_NULL_RETURN(obj, msg) {                                 \
     if (obj == NULL) {                                                    \
         env->ExceptionClear();                                            \
         JNU_ThrowNullPointerException(env, msg);                          \
-        return;                                                           \
-    }                                                                     \
-}
-
-#define JNI_CHECK_PEER_RETURN(peer) {                                     \
-    JNI_CHECK_NULL_RETURN(peer, "peer");                                  \
-    pData = JNI_GET_PDATA(peer);                                          \
-    if (pData == NULL) {                                                  \
-        THROW_NULL_PDATA_IF_NOT_DESTROYED(peer);                          \
         return;                                                           \
     }                                                                     \
 }
@@ -109,6 +91,33 @@ typedef AwtObject* PDATA;
     }                                                                     \
 }
 
+/**
+ * This macros must be used under SyncCall or on the Toolkit thread.
+ */
+#define JNI_CHECK_PEER_GOTO(peer, where) {                                \
+    JNI_CHECK_NULL_GOTO(peer, "peer", where);                             \
+    pData = JNI_GET_PDATA(peer);                                          \
+    if (pData == NULL) {                                                  \
+        THROW_NULL_PDATA_IF_NOT_DESTROYED(peer);                          \
+        goto where;                                                       \
+    }                                                                     \
+}
+
+/**
+ * This macros must be used under SyncCall or on the Toolkit thread.
+ */
+#define JNI_CHECK_PEER_RETURN(peer) {                                     \
+    JNI_CHECK_NULL_RETURN(peer, "peer");                                  \
+    pData = JNI_GET_PDATA(peer);                                          \
+    if (pData == NULL) {                                                  \
+        THROW_NULL_PDATA_IF_NOT_DESTROYED(peer);                          \
+        return;                                                           \
+    }                                                                     \
+}
+
+/**
+ * This macros must be used under SyncCall or on the Toolkit thread.
+ */
 #define JNI_CHECK_PEER_RETURN_NULL(peer) {                                \
     JNI_CHECK_NULL_RETURN_NULL(peer, "peer");                             \
     pData = JNI_GET_PDATA(peer);                                          \
@@ -118,6 +127,9 @@ typedef AwtObject* PDATA;
     }                                                                     \
 }
 
+/**
+ * This macros must be used under SyncCall or on the Toolkit thread.
+ */
 #define JNI_CHECK_PEER_RETURN_VAL(peer, val) {                            \
     JNI_CHECK_NULL_RETURN_VAL(peer, "peer", val);                         \
     pData = JNI_GET_PDATA(peer);                                          \

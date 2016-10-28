@@ -70,6 +70,7 @@ LPCTSTR AwtCheckbox::GetClassName() {
 
 AwtCheckbox* AwtCheckbox::Create(jobject peer, jobject parent)
 {
+    DASSERT(AwtToolkit::IsMainThread());
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     jstring label = NULL;
@@ -81,11 +82,10 @@ AwtCheckbox* AwtCheckbox::Create(jobject peer, jobject parent)
             return NULL;
         }
 
+        PDATA pData;
         AwtComponent* awtParent;
-        JNI_CHECK_NULL_GOTO(parent, "null parent", done);
-
-        awtParent = (AwtComponent*)JNI_GET_PDATA(parent);
-        JNI_CHECK_NULL_GOTO(awtParent, "null awtParent", done);
+        JNI_CHECK_PEER_GOTO(parent, done);
+        awtParent = (AwtCanvas*)pData;
 
         target = env->GetObjectField(peer, AwtObject::targetID);
         JNI_CHECK_NULL_GOTO(target, "null target", done);
@@ -669,11 +669,10 @@ Java_sun_awt_windows_WCheckboxPeer_create(JNIEnv *env, jobject self,
 {
     TRY;
 
-    PDATA pData;
-    JNI_CHECK_PEER_RETURN(parent);
     AwtToolkit::CreateComponent(self, parent,
                                 (AwtToolkit::ComponentFactory)
                                 AwtCheckbox::Create);
+    PDATA pData;
     JNI_CHECK_PEER_CREATION_RETURN(self);
 
 #ifdef DEBUG

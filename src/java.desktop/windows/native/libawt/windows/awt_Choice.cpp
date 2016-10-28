@@ -104,7 +104,7 @@ void AwtChoice::Dispose() {
 }
 
 AwtChoice* AwtChoice::Create(jobject peer, jobject parent) {
-
+    DASSERT(AwtToolkit::IsMainThread());
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     jobject target = NULL;
@@ -115,12 +115,10 @@ AwtChoice* AwtChoice::Create(jobject peer, jobject parent) {
         if (env->EnsureLocalCapacity(1) < 0) {
             return NULL;
         }
+        PDATA pData;
         AwtCanvas* awtParent;
-
-        JNI_CHECK_NULL_GOTO(parent, "null parent", done);
-
-        awtParent = (AwtCanvas*)JNI_GET_PDATA(parent);
-        JNI_CHECK_NULL_GOTO(awtParent, "null awtParent", done);
+        JNI_CHECK_PEER_GOTO(parent, done);
+        awtParent = (AwtCanvas*)pData;
 
         target = env->GetObjectField(peer, AwtObject::targetID);
         JNI_CHECK_NULL_GOTO(target, "null target", done);
@@ -830,12 +828,9 @@ Java_sun_awt_windows_WChoicePeer_create(JNIEnv *env, jobject self,
 {
     TRY;
 
-    PDATA pData;
-    JNI_CHECK_PEER_RETURN(parent);
     AwtToolkit::CreateComponent(self, parent,
                                 (AwtToolkit::ComponentFactory)
                                 AwtChoice::Create);
-    JNI_CHECK_PEER_CREATION_RETURN(self);
 
     CATCH_BAD_ALLOC;
 }
