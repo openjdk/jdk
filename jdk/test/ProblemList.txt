@@ -285,10 +285,6 @@ java/util/BitSet/BitSetStreamTest.java                          8079538 generic-
 
 sun/tools/jcmd/TestJcmdSanity.java                              8031482 windows-all
 
-sun/tools/jhsdb/BasicLauncherTest.java                          8159806 macosx-all
-
-sun/tools/jhsdb/HeapDumpTest.java                               8168397 macosx-all
-
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    8057732 generic-all
 
 demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java       8151899 generic-all
