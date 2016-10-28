@@ -53,6 +53,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+import java.util.stream.Stream;
 
 import jdk.internal.module.ModulePatcher.PatchedModuleReader;
 import jdk.internal.misc.VM;
@@ -747,6 +748,10 @@ public class BuiltinClassLoader
         @Override
         public Optional<URI> find(String name) {
             return Optional.empty();
+        }
+        @Override
+        public Stream<String> list() {
+            return Stream.empty();
         }
         @Override
         public void close() {
