@@ -247,14 +247,11 @@ public class ClassesTest extends KullaTesting {
     }
 
     public void classesIgnoredModifiers() {
-        assertDeclareWarn1("public interface A { }",
-                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 6, 0, -1, -1, Diagnostic.Kind.WARNING));
+        assertEval("public interface A { }");
         assertDeclareWarn1("static class B implements A { }",
                 new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 6, 0, -1, -1, Diagnostic.Kind.WARNING));
         assertDeclareWarn1("final interface C extends A { }",
                 new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 5, 0, -1, -1, Diagnostic.Kind.WARNING));
-        assertDeclareWarn1("protected enum D implements C { }",
-                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 9, 0, -1, -1, Diagnostic.Kind.WARNING));
         assertActiveKeys();
     }
 

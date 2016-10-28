@@ -957,43 +957,33 @@ public class KullaTesting {
     }
 
     public enum ClassType {
-        CLASS("CLASS_SUBKIND") {
-            @Override
-            public String toString() {
-                return "class";
-            }
-        },
-        ENUM("ENUM_SUBKIND") {
-            @Override
-            public String toString() {
-                return "enum";
-            }
-        },
-        INTERFACE("INTERFACE_SUBKIND") {
-            @Override
-            public String toString() {
-                return "interface";
-            }
-        },
-        ANNOTATION("ANNOTATION_TYPE_SUBKIND") {
-            @Override
-            public String toString() {
-                return "@interface";
-            }
-        };
+        CLASS("CLASS_SUBKIND", "class", "class"),
+        ENUM("ENUM_SUBKIND", "enum", "enum"),
+        INTERFACE("INTERFACE_SUBKIND", "interface", "interface"),
+        ANNOTATION("ANNOTATION_TYPE_SUBKIND", "@interface", "annotation interface");
 
         private final String classType;
+        private final String name;
+        private final String displayed;
 
-        ClassType(String classType) {
+        ClassType(String classType, String name, String displayed) {
             this.classType = classType;
+            this.name = name;
+            this.displayed = displayed;
         }
 
         public String getClassType() {
             return classType;
         }
 
+        public String getDisplayed() {
+            return displayed;
+        }
+
         @Override
-        public abstract String toString();
+        public String toString() {
+            return name;
+        }
     }
 
     public static MemberInfo variable(String type, String name) {
