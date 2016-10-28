@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test 8167643
  * @summary Tests for modifiers
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng ModifiersTest
@@ -43,7 +43,7 @@ public class ModifiersTest extends KullaTesting {
     public Object[][] getTestCases() {
         List<Object[]> testCases = new ArrayList<>();
         String[] ignoredModifiers = new String[] {
-            "public", "protected", "private", "static", "final"
+            "static", "final"
         };
         for (String ignoredModifier : ignoredModifiers) {
             for (ClassType classType : ClassType.values()) {
@@ -57,6 +57,28 @@ public class ModifiersTest extends KullaTesting {
     public void ignoredModifiers(String modifier, ClassType classType) {
         assertDeclareWarn1(
                 String.format("%s %s A {}", modifier, classType), "jdk.eval.warn.illegal.modifiers");
+        assertNumberOfActiveClasses(1);
+        assertClasses(clazz(classType, "A"));
+        assertActiveKeys();
+    }
+
+    @DataProvider(name = "silentlyIgnoredModifiers")
+    public Object[][] getSilentTestCases() {
+        List<Object[]> testCases = new ArrayList<>();
+        String[] ignoredModifiers = new String[] {
+            "public", "protected", "private"
+        };
+        for (String ignoredModifier : ignoredModifiers) {
+            for (ClassType classType : ClassType.values()) {
+                testCases.add(new Object[] { ignoredModifier, classType });
+            }
+        }
+        return testCases.toArray(new Object[testCases.size()][]);
+    }
+
+    @Test(dataProvider = "silentlyIgnoredModifiers")
+    public void silentlyIgnoredModifiers(String modifier, ClassType classType) {
+        assertEval(String.format("%s %s A {}", modifier, classType));
         assertNumberOfActiveClasses(1);
         assertClasses(clazz(classType, "A"));
         assertActiveKeys();
