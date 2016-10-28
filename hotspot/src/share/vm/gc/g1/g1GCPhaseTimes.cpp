@@ -36,7 +36,9 @@
 static const char* Indents[5] = {"", "  ", "    ", "      ", "        "};
 
 G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
-  _max_gc_threads(max_gc_threads)
+  _max_gc_threads(max_gc_threads),
+  _gc_start_counter(0),
+  _gc_pause_time_ms(0.0)
 {
   assert(max_gc_threads > 0, "Must have some GC threads");
 
@@ -95,19 +97,51 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _gc_par_phases[NonYoungFreeCSet] = new WorkerDataArray<double>(max_gc_threads, "Non-Young Free Collection Set (ms):");
 
   _gc_par_phases[PreserveCMReferents] = new WorkerDataArray<double>(max_gc_threads, "Parallel Preserve CM Refs (ms):");
+
+  reset();
 }
 
-void G1GCPhaseTimes::note_gc_start() {
-  _gc_start_counter = os::elapsed_counter();
+void G1GCPhaseTimes::reset() {
+  _cur_collection_par_time_ms = 0.0;
+  _cur_collection_code_root_fixup_time_ms = 0.0;
+  _cur_strong_code_root_purge_time_ms = 0.0;
+  _cur_evac_fail_recalc_used = 0.0;
+  _cur_evac_fail_restore_remsets = 0.0;
+  _cur_evac_fail_remove_self_forwards = 0.0;
+  _cur_string_dedup_fixup_time_ms = 0.0;
+  _cur_clear_ct_time_ms = 0.0;
   _cur_expand_heap_time_ms = 0.0;
+  _cur_ref_proc_time_ms = 0.0;
+  _cur_ref_enq_time_ms = 0.0;
+  _cur_collection_start_sec = 0.0;
+  _root_region_scan_wait_time_ms = 0.0;
   _external_accounted_time_ms = 0.0;
   _recorded_clear_claimed_marks_time_ms = 0.0;
+  _recorded_young_cset_choice_time_ms = 0.0;
+  _recorded_non_young_cset_choice_time_ms = 0.0;
+  _recorded_redirty_logged_cards_time_ms = 0.0;
+  _recorded_preserve_cm_referents_time_ms = 0.0;
+  _recorded_merge_pss_time_ms = 0.0;
+  _recorded_total_free_cset_time_ms = 0.0;
+  _recorded_serial_free_cset_time_ms = 0.0;
+  _cur_fast_reclaim_humongous_time_ms = 0.0;
+  _cur_fast_reclaim_humongous_register_time_ms = 0.0;
+  _cur_fast_reclaim_humongous_total = 0;
+  _cur_fast_reclaim_humongous_candidates = 0;
+  _cur_fast_reclaim_humongous_reclaimed = 0;
+  _cur_verify_before_time_ms = 0.0;
+  _cur_verify_after_time_ms = 0.0;
 
   for (int i = 0; i < GCParPhasesSentinel; i++) {
     if (_gc_par_phases[i] != NULL) {
       _gc_par_phases[i]->reset();
     }
   }
+}
+
+void G1GCPhaseTimes::note_gc_start() {
+  _gc_start_counter = os::elapsed_counter();
+  reset();
 }
 
 #define ASSERT_PHASE_UNINITIALIZED(phase) \

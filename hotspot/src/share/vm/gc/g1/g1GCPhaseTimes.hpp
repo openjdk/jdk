@@ -129,6 +129,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double worker_time(GCParPhases phase, uint worker);
   void note_gc_end();
+  void reset();
 
   template <class T>
   void details(T* phase, const char* indent);
