@@ -33,6 +33,7 @@
 
 package jdk.vm.ci.runtime.test;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -60,6 +61,7 @@ import org.junit.Test;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.ExceptionHandler;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaMethod.Parameter;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
@@ -263,6 +265,26 @@ public class TestResolvedJavaMethod extends MethodUniverse {
             ResolvedJavaMethod m = e.getValue();
             ConstantPool cp = m.getConstantPool();
             assertTrue(cp.length() > 0);
+        }
+    }
+
+    @Test
+    public void getParametersTest() {
+        for (Map.Entry<Method, ResolvedJavaMethod> e : methods.entrySet()) {
+            java.lang.reflect.Parameter[] expected = e.getKey().getParameters();
+            Parameter[] actual = e.getValue().getParameters();
+            assertEquals(actual.length, expected.length);
+            for (int i = 0; i < actual.length; i++) {
+                java.lang.reflect.Parameter exp = expected[i];
+                Parameter act = actual[i];
+                assertEquals(exp.getName(), act.getName());
+                assertEquals(exp.getModifiers(), act.getModifiers());
+                assertEquals(exp.getModifiers(), act.getModifiers());
+                assertArrayEquals(exp.getAnnotations(), act.getAnnotations());
+                assertEquals(exp.getType().getName(), act.getType().toClassName());
+                assertEquals(exp.getParameterizedType(), act.getParameterizedType());
+                assertEquals(metaAccess.lookupJavaMethod(exp.getDeclaringExecutable()), act.getDeclaringMethod());
+            }
         }
     }
 
