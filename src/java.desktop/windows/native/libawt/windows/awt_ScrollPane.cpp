@@ -96,10 +96,9 @@ AwtScrollPane* AwtScrollPane::Create(jobject self, jobject parent)
 
         PDATA pData;
         AwtComponent* awtParent;
-        JNI_CHECK_PEER_GOTO(parent, done);
 
+        JNI_CHECK_PEER_GOTO(parent, done);
         awtParent = (AwtComponent*)pData;
-        JNI_CHECK_NULL_GOTO(awtParent, "null awtParent", done);
 
         target = env->GetObjectField(self, AwtObject::targetID);
         JNI_CHECK_NULL_GOTO(target, "null target", done);
@@ -679,11 +678,10 @@ Java_sun_awt_windows_WScrollPanePeer_create(JNIEnv *env, jobject self,
 
     DTRACE_PRINTLN2("%x: WScrollPanePeer.create(%x)", self, parent);
 
-    PDATA pData;
-    JNI_CHECK_PEER_RETURN(parent);
     AwtToolkit::CreateComponent(self, parent,
                                 (AwtToolkit::ComponentFactory)
                                 AwtScrollPane::Create);
+    PDATA pData;
     JNI_CHECK_PEER_CREATION_RETURN(self);
     ((AwtScrollPane*)pData)->VerifyState();
 

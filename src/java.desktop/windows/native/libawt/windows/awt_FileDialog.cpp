@@ -691,7 +691,7 @@ Java_sun_awt_windows_WFileDialogPeer_getLocationOnScreen(JNIEnv *env,
     jobject peerRef = env->NewGlobalRef(peer);
     jobject resultRef = (jobject)AwtToolkit::GetInstance().SyncCall(
         (void*(*)(void*))AwtFileDialog::_GetLocationOnScreen, (void *)peerRef);
-    env->DeleteLocalRef(peerRef);
+    env->DeleteGlobalRef(peerRef);
 
     if (resultRef != NULL)
     {

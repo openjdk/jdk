@@ -80,7 +80,7 @@ AwtLabel* AwtLabel::Create(jobject labelPeer, jobject parent)
 
         JNI_CHECK_PEER_GOTO(parent, done);
         awtParent = (AwtCanvas*)pData;
-        JNI_CHECK_NULL_GOTO(awtParent, "awtParent", done);
+
         target  = env->GetObjectField(labelPeer, AwtObject::targetID);
         JNI_CHECK_NULL_GOTO(target, "target", done);
 
@@ -392,12 +392,9 @@ Java_sun_awt_windows_WLabelPeer_create(JNIEnv *env, jobject self,
 {
     TRY;
 
-    PDATA pData;
-    JNI_CHECK_PEER_RETURN(parent);
     AwtToolkit::CreateComponent(self, parent,
                                 (AwtToolkit::ComponentFactory)
                                 AwtLabel::Create);
-    JNI_CHECK_PEER_CREATION_RETURN(self);
 
     CATCH_BAD_ALLOC;
 }

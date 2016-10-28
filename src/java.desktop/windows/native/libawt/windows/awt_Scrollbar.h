@@ -77,6 +77,8 @@ public:
 
     INLINE virtual BOOL IsScrollbar() { return TRUE; }
 
+    static void _SetLineIncrement(void *param);
+    static void _SetPageIncrement(void *param);
     // invoked on Toolkit thread
     static void _SetValues(void *param);
 

@@ -3400,12 +3400,9 @@ Java_sun_awt_windows_WWindowPeer_createAwtWindow(JNIEnv *env, jobject self,
 {
     TRY;
 
-    PDATA pData;
-//    JNI_CHECK_PEER_RETURN(parent);
     AwtToolkit::CreateComponent(self, parent,
                                 (AwtToolkit::ComponentFactory)
                                 AwtWindow::Create);
-    JNI_CHECK_PEER_CREATION_RETURN(self);
 
     CATCH_BAD_ALLOC;
 }
