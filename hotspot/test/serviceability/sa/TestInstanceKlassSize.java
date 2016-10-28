@@ -98,7 +98,6 @@ public class TestInstanceKlassSize {
         OutputAnalyzer output = null;
         try {
             List<String> vmArgs = new ArrayList<String>();
-            vmArgs.add("-XX:+UnlockDiagnosticVMOptions");
             vmArgs.add("-XX:+UsePerfData");
             vmArgs.addAll(Utils.getVmOptions());
             app = LingeredApp.startApp(vmArgs);
