@@ -73,6 +73,11 @@ define SetupZipArchiveBody
     else
       $1_ZIP_INCLUDES := $$(addprefix -i$(SPACE)$(DQUOTE),$$(addsuffix /*$(DQUOTE),$$($1_INCLUDES)))
     endif
+  else
+    ifneq ($$($1_SUFFIXES),)
+      $1_ZIP_INCLUDES := $$(foreach s,$$($1_SUFFIXES), \
+          $$(addprefix -i$(SPACE)$(DQUOTE),*$$s$(DQUOTE)))
+    endif
   endif
   ifneq ($$($1_INCLUDE_FILES),)
     $1_ZIP_INCLUDES += $$(addprefix -i$(SPACE),$$($1_INCLUDE_FILES))
