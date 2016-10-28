@@ -32,6 +32,7 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 
 /**
@@ -44,6 +45,11 @@ import java.util.Optional;
  * module. A module reader is also intended to be used by {@code ClassLoader}
  * implementations that load classes and resources from modules. </p>
  *
+ * <p> A resource in a module is identified by a name that is a
+ * '{@code /}'-separated path string. For example, module {@code java.base} may
+ * have a resource "{@code java/lang/Object.class}" that, by convention, is the
+ * class file for {@code java.lang.Object}. </p>
+ *
  * <p> A {@code ModuleReader} is {@linkplain ModuleReference#open open} upon
  * creation and is closed by invoking the {@link #close close} method.  Failure
  * to close a module reader may result in a resource leak.  The {@code
@@ -52,8 +58,8 @@ import java.util.Optional;
  *
  * <p> A {@code ModuleReader} implementation may require permissions to access
  * resources in the module. Consequently the {@link #find find}, {@link #open
- * open} and {@link #read read} methods may throw {@code SecurityException} if
- * access is denied by the security manager. </p>
+ * open}, {@link #read read}, and {@link #list list} methods may throw {@code
+ * SecurityException} if access is denied by the security manager. </p>
  *
  * @see ModuleReference
  * @since 9
@@ -83,6 +89,9 @@ public interface ModuleReader extends Closeable {
     /**
      * Opens a resource, returning an input stream to read the resource in
      * the module.
+     *
+     * <p> The behavior of the input stream when used after the module reader
+     * is closed is implementation specific and therefore not specified. </p>
      *
      * @implSpec The default implementation invokes the {@link #find(String)
      * find} method to get a URI to the resource. If found, then it attempts
@@ -172,17 +181,37 @@ public interface ModuleReader extends Closeable {
     }
 
     /**
+     * Lists the contents of the module, returning a stream of elements that
+     * are the names of all resources in the module.
+     *
+     * <p> In lazy implementations then an {@code IOException} may be thrown
+     * when using the stream to list the module contents. If this occurs then
+     * the {@code IOException} will be wrapped in an {@link
+     * java.io.UncheckedIOException} and thrown from the method that caused the
+     * access to be attempted. {@code SecurityException} may also be thrown
+     * when using the stream to list the module contents and access is denied
+     * by the security manager. </p>
+     *
+     * <p> The behavior of the stream when used after the module reader is
+     * closed is implementation specific and therefore not specified. </p>
+     *
+     * @return A stream of elements that are the names of all resources
+     *         in the module
+     *
+     * @throws IOException
+     *         If an I/O error occurs or the module reader is closed
+     * @throws SecurityException
+     *         If denied by the security manager
+     */
+    Stream<String> list() throws IOException;
+
+    /**
      * Closes the module reader. Once closed then subsequent calls to locate or
-     * read a resource will fail by returning {@code Optional.empty()} or
-     * throwing {@code IOException}.
+     * read a resource will fail by throwing {@code IOException}.
      *
      * <p> A module reader is not required to be asynchronously closeable. If a
      * thread is reading a resource and another thread invokes the close method,
-     * then the second thread may block until the read operation is complete.
-     *
-     * <p> The behavior of {@code InputStream}s obtained using the {@link
-     * #open(String) open} method and used after the module reader is closed
-     * is implementation specific and therefore not specified.
+     * then the second thread may block until the read operation is complete. </p>
      */
     @Override
     void close() throws IOException;

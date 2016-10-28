@@ -42,8 +42,6 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import jdk.internal.module.ConfigurableModuleFinder;
-import jdk.internal.module.ConfigurableModuleFinder.Phase;
 import jdk.tools.jlink.internal.TaskHelper.BadArgs;
 import static jdk.tools.jlink.internal.TaskHelper.JLINK_BUNDLE;
 import jdk.tools.jlink.internal.Jlink.JlinkConfiguration;
@@ -54,6 +52,7 @@ import jdk.tools.jlink.internal.ImagePluginStack.ImageProvider;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 import jdk.tools.jlink.plugin.Plugin;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * Implementation for the jlink tool.
@@ -252,8 +251,9 @@ public class JlinkTask {
             throw new Exception("Empty module paths");
         }
 
-        ModuleFinder finder
-                = newModuleFinder(config.getModulepaths(), config.getLimitmods(), config.getModules());
+        ModuleFinder finder = newModuleFinder(config.getModulepaths(),
+                                              config.getLimitmods(),
+                                              config.getModules());
 
         // First create the image provider
         ImageProvider imageProvider
@@ -328,24 +328,41 @@ public class JlinkTask {
         return addMods;
     }
 
-    public static ModuleFinder newModuleFinder(List<Path> paths,
-                                               Set<String> limitMods,
-                                               Set<String> addMods)
-    {
-        ModuleFinder finder = ModuleFinder.of(paths.toArray(new Path[0]));
+    /**
+     * Returns a module finder to find the observable modules specified in
+     * the --module-path and --limit-modules options
+     */
+    private ModuleFinder modulePathFinder() {
+        Path[] entries = options.modulePath.toArray(new Path[0]);
+        ModuleFinder finder = SharedSecrets.getJavaLangModuleAccess()
+            .newModulePath(Runtime.version(), true, entries);
 
-        // jmods are located at link-time
-        if (finder instanceof ConfigurableModuleFinder) {
-            ((ConfigurableModuleFinder) finder).configurePhase(Phase.LINK_TIME);
-        }
-
-        // if limitmods is specified then limit the universe
-        if (!limitMods.isEmpty()) {
-            finder = limitFinder(finder, limitMods, addMods);
+        if (!options.limitMods.isEmpty()) {
+            finder = limitFinder(finder, options.limitMods, Collections.emptySet());
         }
         return finder;
     }
 
+    /**
+     * Returns a module finder of the given module path that limits
+     * the observable modules to those in the transitive closure of
+     * the modules specified in {@code limitMods} plus other modules
+     * specified in the {@code roots} set.
+     */
+    public static ModuleFinder newModuleFinder(List<Path> paths,
+                                               Set<String> limitMods,
+                                               Set<String> roots)
+    {
+        Path[] entries = paths.toArray(new Path[0]);
+        ModuleFinder finder = SharedSecrets.getJavaLangModuleAccess()
+            .newModulePath(Runtime.version(), true, entries);
+
+        // if limitmods is specified then limit the universe
+        if (!limitMods.isEmpty()) {
+            finder = limitFinder(finder, limitMods, roots);
+        }
+        return finder;
+    }
 
     private static Path toPathLocation(ResolvedModule m) {
         Optional<URI> ouri = m.reference().location();

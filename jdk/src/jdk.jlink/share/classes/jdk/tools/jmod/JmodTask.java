@@ -98,8 +98,6 @@ import jdk.internal.joptsimple.OptionSpec;
 import jdk.internal.joptsimple.ValueConverter;
 import jdk.internal.misc.JavaLangModuleAccess;
 import jdk.internal.misc.SharedSecrets;
-import jdk.internal.module.ConfigurableModuleFinder;
-import jdk.internal.module.ConfigurableModuleFinder.Phase;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.tools.jlink.internal.Utils;
@@ -1298,9 +1296,7 @@ public class JmodTask {
                 options.manPages = opts.valuesOf(manPages);
             if (opts.has(modulePath)) {
                 Path[] dirs = opts.valuesOf(modulePath).toArray(new Path[0]);
-                options.moduleFinder = ModuleFinder.of(dirs);
-                if (options.moduleFinder instanceof ConfigurableModuleFinder)
-                    ((ConfigurableModuleFinder)options.moduleFinder).configurePhase(Phase.LINK_TIME);
+                options.moduleFinder = JLMA.newModulePath(Runtime.version(), true, dirs);
             }
             if (opts.has(moduleVersion))
                 options.moduleVersion = opts.valueOf(moduleVersion);
