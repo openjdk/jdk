@@ -152,19 +152,19 @@ public class SecretKeyFactory {
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
-     * @return the new {@code SecretKeyFactory} object.
+     * @return the new {@code SecretKeyFactory} object
      *
-     * @exception NullPointerException if the specified algorithm
-     *          is null.
+     * @throws NoSuchAlgorithmException if no {@code Provider} supports a
+     *         {@code SecretKeyFactorySpi} implementation for the
+     *         specified algorithm
      *
-     * @exception NoSuchAlgorithmException if no Provider supports a
-     *          SecretKeyFactorySpi implementation for the
-     *          specified algorithm.
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static final SecretKeyFactory getInstance(String algorithm)
             throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         return new SecretKeyFactory(algorithm);
     }
 
@@ -189,26 +189,26 @@ public class SecretKeyFactory {
      *
      * @param provider the name of the provider.
      *
-     * @return the new {@code SecretKeyFactory} object.
+     * @return the new {@code SecretKeyFactory} object
      *
-     * @exception NoSuchAlgorithmException if a SecretKeyFactorySpi
-     *          implementation for the specified algorithm is not
-     *          available from the specified provider.
+     * @throws IllegalArgumentException if the {@code provider}
+     *         is {@code null} or empty
      *
-     * @exception NullPointerException if the specified algorithm
-     *          is null.
+     * @throws NoSuchAlgorithmException if a {@code SecretKeyFactorySpi}
+     *         implementation for the specified algorithm is not
+     *         available from the specified provider
      *
      * @throws NoSuchProviderException if the specified provider is not
-     *          registered in the security provider list.
+     *         registered in the security provider list
      *
-     * @exception IllegalArgumentException if the {@code provider}
-     *          is null or empty.
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static final SecretKeyFactory getInstance(String algorithm,
             String provider) throws NoSuchAlgorithmException,
             NoSuchProviderException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = JceSecurity.getInstance("SecretKeyFactory",
                 SecretKeyFactorySpi.class, algorithm, provider);
         return new SecretKeyFactory((SecretKeyFactorySpi)instance.impl,
@@ -233,22 +233,22 @@ public class SecretKeyFactory {
      *
      * @param provider the provider.
      *
-     * @return the new {@code SecretKeyFactory} object.
+     * @return the new {@code SecretKeyFactory} object
      *
-     * @exception NullPointerException if the specified algorithm
-     * is null.
+     * @throws IllegalArgumentException if the {@code provider}
+     *         is {@code null}
      *
-     * @exception NoSuchAlgorithmException if a SecretKeyFactorySpi
-     *          implementation for the specified algorithm is not available
-     *          from the specified Provider object.
+     * @throws NoSuchAlgorithmException if a {@code SecretKeyFactorySpi}
+     *         implementation for the specified algorithm is not available
+     *         from the specified {@code Provider} object
      *
-     * @exception IllegalArgumentException if the {@code provider}
-     *          is null.
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static final SecretKeyFactory getInstance(String algorithm,
             Provider provider) throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = JceSecurity.getInstance("SecretKeyFactory",
                 SecretKeyFactorySpi.class, algorithm, provider);
         return new SecretKeyFactory((SecretKeyFactorySpi)instance.impl,

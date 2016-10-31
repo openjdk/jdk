@@ -329,27 +329,29 @@ public abstract class Configuration {
      *
      * @param params parameters for the Configuration, which may be null.
      *
-     * @return the new Configuration object.
+     * @return the new {@code Configuration} object
      *
-     * @exception SecurityException if the caller does not have permission
-     *          to get a Configuration instance for the specified type.
+     * @throws IllegalArgumentException if the specified parameters
+     *         are not understood by the {@code ConfigurationSpi}
+     *         implementation from the selected {@code Provider}
      *
-     * @exception NullPointerException if the specified type is null.
+     * @throws NoSuchAlgorithmException if no {@code Provider} supports a
+     *         {@code ConfigurationSpi} implementation for the specified type
      *
-     * @exception IllegalArgumentException if the specified parameters
-     *          are not understood by the ConfigurationSpi implementation
-     *          from the selected Provider.
+     * @throws NullPointerException if {@code type} is {@code null}
      *
-     * @exception NoSuchAlgorithmException if no Provider supports a
-     *          ConfigurationSpi implementation for the specified type.
+     * @throws SecurityException if the caller does not have permission
+     *         to get a {@code Configuration} instance for the specified type
      *
      * @see Provider
+     *
      * @since 1.6
      */
     public static Configuration getInstance(String type,
                                 Configuration.Parameters params)
                 throws NoSuchAlgorithmException {
 
+        Objects.requireNonNull(type, "null type name");
         checkPermission(type);
         try {
             GetInstance.Instance instance = GetInstance.getInstance
@@ -387,24 +389,24 @@ public abstract class Configuration {
      *
      * @param provider the provider.
      *
-     * @return the new Configuration object.
+     * @return the new {@code Configuration} object
      *
-     * @exception SecurityException if the caller does not have permission
-     *          to get a Configuration instance for the specified type.
+     * @throws IllegalArgumentException if the specified provider
+     *         is {@code null} or empty, or if the specified parameters
+     *         are not understood by the {@code ConfigurationSpi}
+     *         implementation from the specified provider
      *
-     * @exception NullPointerException if the specified type is null.
+     * @throws NoSuchProviderException if the specified provider is not
+     *         registered in the security provider list
      *
-     * @exception IllegalArgumentException if the specified provider
-     *          is null or empty,
-     *          or if the specified parameters are not understood by
-     *          the ConfigurationSpi implementation from the specified provider.
+     * @throws NoSuchAlgorithmException if the specified provider does not
+     *         support a {@code ConfigurationSpi} implementation for the
+     *         specified type
      *
-     * @exception NoSuchProviderException if the specified provider is not
-     *          registered in the security provider list.
+     * @throws NullPointerException if {@code type} is {@code null}
      *
-     * @exception NoSuchAlgorithmException if the specified provider does not
-     *          support a ConfigurationSpi implementation for the specified
-     *          type.
+     * @throws SecurityException if the caller does not have permission
+     *         to get a {@code Configuration} instance for the specified type
      *
      * @see Provider
      * @since 1.6
@@ -414,6 +416,7 @@ public abstract class Configuration {
                                 String provider)
                 throws NoSuchProviderException, NoSuchAlgorithmException {
 
+        Objects.requireNonNull(type, "null type name");
         if (provider == null || provider.length() == 0) {
             throw new IllegalArgumentException("missing provider");
         }
@@ -453,20 +456,21 @@ public abstract class Configuration {
      *
      * @param provider the Provider.
      *
-     * @return the new Configuration object.
+     * @return the new {@code Configuration} object
      *
-     * @exception SecurityException if the caller does not have permission
-     *          to get a Configuration instance for the specified type.
+     * @throws IllegalArgumentException if the specified {@code Provider}
+     *         is {@code null}, or if the specified parameters are not
+     *         understood by the {@code ConfigurationSpi} implementation
+     *         from the specified Provider
      *
-     * @exception NullPointerException if the specified type is null.
+     * @throws NoSuchAlgorithmException if the specified {@code Provider}
+     *         does not support a {@code ConfigurationSpi} implementation
+     *         for the specified type
      *
-     * @exception IllegalArgumentException if the specified Provider is null,
-     *          or if the specified parameters are not understood by
-     *          the ConfigurationSpi implementation from the specified Provider.
+     * @throws NullPointerException if {@code type} is {@code null}
      *
-     * @exception NoSuchAlgorithmException if the specified Provider does not
-     *          support a ConfigurationSpi implementation for the specified
-     *          type.
+     * @throws SecurityException if the caller does not have permission
+     *         to get a {@code Configuration} instance for the specified type
      *
      * @see Provider
      * @since 1.6
@@ -476,6 +480,7 @@ public abstract class Configuration {
                                 Provider provider)
                 throws NoSuchAlgorithmException {
 
+        Objects.requireNonNull(type, "null type name");
         if (provider == null) {
             throw new IllegalArgumentException("missing provider");
         }
