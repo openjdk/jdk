@@ -3173,65 +3173,45 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     break;
 #endif
 
-  case Op_ModI: {
-    Node* di = NULL;
+  case Op_ModI:
     if (UseDivMod) {
       // Check if a%b and a/b both exist
-      di = n->find_similar(Op_DivI);
-      if (di) {
+      Node* d = n->find_similar(Op_DivI);
+      if (d) {
         // Replace them with a fused divmod if supported
         if (Matcher::has_match_rule(Op_DivModI)) {
           DivModINode* divmod = DivModINode::make(n);
-          di->subsume_by(divmod->div_proj(), this);
+          d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
           // replace a%b with a-((a/b)*b)
-          Node* mult = new MulINode(di, di->in(2));
-          Node* sub  = new SubINode(di->in(1), mult);
+          Node* mult = new MulINode(d, d->in(2));
+          Node* sub  = new SubINode(d->in(1), mult);
           n->subsume_by(sub, this);
         }
       }
     }
-    if (di == NULL) {
-      // Remove useless control edge in case of not mod-zero.
-      const Type *t = n->in(2)->bottom_type();
-      const TypeInt *ti = t->is_int();
-      if (n->in(0) && (ti->_hi < 0 || ti->_lo > 0)) {
-        n->set_req(0, NULL);
-      }
-    }
     break;
-  }
 
-  case Op_ModL: {
-    Node* dl = NULL;
+  case Op_ModL:
     if (UseDivMod) {
       // Check if a%b and a/b both exist
-      dl = n->find_similar(Op_DivL);
-      if (dl) {
+      Node* d = n->find_similar(Op_DivL);
+      if (d) {
         // Replace them with a fused divmod if supported
         if (Matcher::has_match_rule(Op_DivModL)) {
           DivModLNode* divmod = DivModLNode::make(n);
-          dl->subsume_by(divmod->div_proj(), this);
+          d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
           // replace a%b with a-((a/b)*b)
-          Node* mult = new MulLNode(dl, dl->in(2));
-          Node* sub  = new SubLNode(dl->in(1), mult);
+          Node* mult = new MulLNode(d, d->in(2));
+          Node* sub  = new SubLNode(d->in(1), mult);
           n->subsume_by(sub, this);
         }
       }
     }
-    if (dl == NULL) {
-      // Remove useless control edge in case of not mod-zero.
-      const Type *t = n->in(2)->bottom_type();
-      const TypeLong *tl = t->is_long();
-      if (n->in(0) && (tl->_hi < 0 || tl->_lo > 0)) {
-        n->set_req(0, NULL);
-      }
-    }
     break;
-  }
 
   case Op_LoadVector:
   case Op_StoreVector:
