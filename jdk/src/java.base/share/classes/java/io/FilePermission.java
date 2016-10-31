@@ -218,8 +218,8 @@ public final class FilePermission extends Permission implements Serializable {
      * A private constructor like a clone, only npath2 is not touched.
      * @param input
      */
-    private FilePermission(FilePermission input) {
-        super(input.getName());
+    private FilePermission(String name, FilePermission input) {
+        super(name);
         this.npath = input.npath;
         this.actions = input.actions;
         this.allFiles = input.allFiles;
@@ -255,7 +255,12 @@ public final class FilePermission extends Permission implements Serializable {
                     if (input.npath2 == null && !input.allFiles) {
                         Path npath2 = altPath(input.npath);
                         if (npath2 != null) {
-                            FilePermission np = new FilePermission(input);
+                            // Please note the name of the new permission is
+                            // different than the original so that when one is
+                            // added to a FilePermissionCollection it will not
+                            // be merged with the original one.
+                            FilePermission np = new FilePermission(
+                                    input.getName()+"#plus", input);
                             np.npath2 = npath2;
                             return np;
                         }
@@ -266,7 +271,9 @@ public final class FilePermission extends Permission implements Serializable {
                     if (!input.allFiles) {
                         Path npath2 = altPath(input.npath);
                         if (npath2 != null) {
-                            FilePermission np = new FilePermission(input);
+                            // New name, see above.
+                            FilePermission np = new FilePermission(
+                                    input.getName()+"#using", input);
                             np.npath = npath2;
                             return np;
                         }
@@ -690,6 +697,7 @@ public final class FilePermission extends Permission implements Serializable {
             return (this.mask == that.mask) &&
                     (this.allFiles == that.allFiles) &&
                     this.npath.equals(that.npath) &&
+                    Objects.equals(npath2, that.npath2) &&
                     (this.directory == that.directory) &&
                     (this.recursive == that.recursive);
         } else {
@@ -708,7 +716,8 @@ public final class FilePermission extends Permission implements Serializable {
     @Override
     public int hashCode() {
         if (FilePermCompat.nb) {
-            return Objects.hash(mask, allFiles, directory, recursive, npath);
+            return Objects.hash(
+                    mask, allFiles, directory, recursive, npath, npath2);
         } else {
             return 0;
         }
