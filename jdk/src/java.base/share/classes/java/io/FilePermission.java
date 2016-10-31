@@ -173,6 +173,7 @@ public final class FilePermission extends Permission implements Serializable {
     private transient Path npath;       // normalized dir path.
     private transient Path npath2;      // alternative normalized dir path.
     private transient boolean allFiles; // whether this is <<ALL FILES>>
+    private transient boolean invalid;  // whether input path is invalid
 
     // static Strings used by init(int mask)
     private static final char RECURSIVE_CHAR = '-';
@@ -223,6 +224,7 @@ public final class FilePermission extends Permission implements Serializable {
         this.npath = input.npath;
         this.actions = input.actions;
         this.allFiles = input.allFiles;
+        this.invalid = input.invalid;
         this.recursive = input.recursive;
         this.directory = input.directory;
         this.cpath = input.cpath;
@@ -325,11 +327,12 @@ public final class FilePermission extends Permission implements Serializable {
                 // Windows. Some JDK codes generate such illegal names.
                 npath = builtInFS.getPath(new File(name).getPath())
                         .normalize();
+                invalid = false;
             } catch (InvalidPathException ipe) {
                 // Still invalid. For compatibility reason, accept it
                 // but make this permission useless.
                 npath = builtInFS.getPath("-u-s-e-l-e-s-s-");
-                this.mask = NONE;
+                invalid = true;
             }
 
             // lastName should always be non-null now
@@ -547,6 +550,12 @@ public final class FilePermission extends Permission implements Serializable {
      */
     boolean impliesIgnoreMask(FilePermission that) {
         if (FilePermCompat.nb) {
+            if (this == that) {
+                return true;
+            }
+            if (this.invalid || that.invalid) {
+                return false;
+            }
             if (allFiles) {
                 return true;
             }
@@ -694,6 +703,9 @@ public final class FilePermission extends Permission implements Serializable {
         FilePermission that = (FilePermission) obj;
 
         if (FilePermCompat.nb) {
+            if (this.invalid || that.invalid) {
+                return false;
+            }
             return (this.mask == that.mask) &&
                     (this.allFiles == that.allFiles) &&
                     this.npath.equals(that.npath) &&
@@ -717,7 +729,7 @@ public final class FilePermission extends Permission implements Serializable {
     public int hashCode() {
         if (FilePermCompat.nb) {
             return Objects.hash(
-                    mask, allFiles, directory, recursive, npath, npath2);
+                    mask, allFiles, directory, recursive, npath, npath2, invalid);
         } else {
             return 0;
         }
