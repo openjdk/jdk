@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,13 +137,20 @@ public class DefaultLoggerFinder extends LoggerFinder {
     }
 
     public static boolean isSystem(Module m) {
-        ClassLoader cl = AccessController.doPrivileged(new PrivilegedAction<>() {
+        return AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
-            public ClassLoader run() {
-                return m.getClassLoader();
+            public Boolean run() {
+                final ClassLoader moduleCL = m.getClassLoader();
+                if (moduleCL == null) return true;
+                ClassLoader cl = ClassLoader.getPlatformClassLoader();
+                while (cl != null && moduleCL != cl) {
+                    cl = cl.getParent();
+                }
+                // returns true if moduleCL is the platform class loader
+                // or one of its ancestors.
+                return moduleCL == cl;
             }
         });
-        return cl == null;
     }
 
     @Override
