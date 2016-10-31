@@ -29,6 +29,7 @@
  * @summary Basic tests for java.lang.module.ModuleFinder
  */
 
+import java.io.File;
 import java.io.OutputStream;
 import java.lang.module.FindException;
 import java.lang.module.InvalidModuleDescriptorException;
@@ -38,6 +39,7 @@ import java.lang.module.ModuleReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -313,6 +315,111 @@ public class ModuleFinderTest {
         assertEquals(m3.version().get().toString(), "2.0");
         ModuleDescriptor m4 = finder.find("m4").get().descriptor();
         assertEquals(m4.version().get().toString(), "2.0");
+    }
+
+
+    /**
+     * Test ModuleFinder with a JAR file containing a mix of class and
+     * non-class resources.
+     */
+    public void testOfOneJarFileWithResources() throws Exception {
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        Path jar = createModularJar(dir.resolve("m.jar"), "m",
+                "LICENSE",
+                "README",
+                "WEB-INF/tags",
+                "p/Type.class",
+                "p/resources/m.properties",
+                "q-/Type.class",                // not a legal package name
+                "q-/resources/m/properties");
+
+        ModuleFinder finder = ModuleFinder.of(jar);
+        Optional<ModuleReference> mref = finder.find("m");
+        assertTrue(mref.isPresent(), "m not found");
+
+        ModuleDescriptor descriptor = mref.get().descriptor();
+
+        assertTrue(descriptor.packages().size() == 2);
+        assertTrue(descriptor.packages().contains("p"));
+        assertTrue(descriptor.packages().contains("p.resources"));
+    }
+
+
+    /**
+     * Test ModuleFinder with an exploded module containing a mix of class
+     * and non-class resources
+     */
+    public void testOfOneExplodedModuleWithResources() throws Exception {
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        Path m_dir = createExplodedModule(dir.resolve("m"), "m",
+                "LICENSE",
+                "README",
+                "WEB-INF/tags",
+                "p/Type.class",
+                "p/resources/m.properties",
+                "q-/Type.class",                 // not a legal package name
+                "q-/resources/m/properties");
+
+        ModuleFinder finder = ModuleFinder.of(m_dir);
+        Optional<ModuleReference> mref = finder.find("m");
+        assertTrue(mref.isPresent(), "m not found");
+
+        ModuleDescriptor descriptor = mref.get().descriptor();
+
+        assertTrue(descriptor.packages().size() == 2);
+        assertTrue(descriptor.packages().contains("p"));
+        assertTrue(descriptor.packages().contains("p.resources"));
+    }
+
+
+    /**
+     * Test ModuleModule with a JAR file containing a .class file in the top
+     * level directory.
+     */
+    public void testOfOneJarFileWithTopLevelClass() throws Exception {
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        Path jar = createModularJar(dir.resolve("m.jar"), "m", "Mojo.class");
+
+        ModuleFinder finder = ModuleFinder.of(jar);
+        try {
+            finder.find("m");
+            assertTrue(false);
+        } catch (FindException e) {
+            assertTrue(e.getCause() instanceof InvalidModuleDescriptorException);
+        }
+
+        finder = ModuleFinder.of(jar);
+        try {
+            finder.findAll();
+            assertTrue(false);
+        } catch (FindException e) {
+            assertTrue(e.getCause() instanceof InvalidModuleDescriptorException);
+        }
+    }
+
+    /**
+     * Test ModuleModule with a JAR file containing a .class file in the top
+     * level directory.
+     */
+    public void testOfOneExplodedModuleWithTopLevelClass() throws Exception {
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        Path m_dir = createExplodedModule(dir.resolve("m"), "m", "Mojo.class");
+
+        ModuleFinder finder = ModuleFinder.of(m_dir);
+        try {
+            finder.find("m");
+            assertTrue(false);
+        } catch (FindException e) {
+            assertTrue(e.getCause() instanceof InvalidModuleDescriptorException);
+        }
+
+        finder = ModuleFinder.of(m_dir);
+        try {
+            finder.findAll();
+            assertTrue(false);
+        } catch (FindException e) {
+            assertTrue(e.getCause() instanceof InvalidModuleDescriptorException);
+        }
     }
 
 
@@ -641,7 +748,7 @@ public class ModuleFinderTest {
             vs = mid.substring(i+1);
         }
         ModuleDescriptor.Builder builder
-                = new ModuleDescriptor.Builder(mn).requires("java.base");
+            = new ModuleDescriptor.Builder(mn).requires("java.base");
         if (vs != null)
             builder.version(vs);
         return builder.build();
@@ -651,13 +758,22 @@ public class ModuleFinderTest {
      * Creates an exploded module in the given directory and containing a
      * module descriptor with the given module name/version.
      */
-    static Path createExplodedModule(Path dir, String mid) throws Exception {
+    static Path createExplodedModule(Path dir, String mid, String... entries)
+        throws Exception
+    {
         ModuleDescriptor descriptor = newModuleDescriptor(mid);
         Files.createDirectories(dir);
         Path mi = dir.resolve("module-info.class");
         try (OutputStream out = Files.newOutputStream(mi)) {
             ModuleInfoWriter.write(descriptor, out);
         }
+
+        for (String entry : entries) {
+            Path file = dir.resolve(entry.replace('/', File.separatorChar));
+            Files.createDirectories(file.getParent());
+            Files.createFile(file);
+        }
+
         return dir;
     }
 

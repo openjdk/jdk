@@ -24,9 +24,8 @@
 /**
  * @test
  * @library /lib/testlibrary
- * @modules java.base/jdk.internal.module
+ * @modules java.base/jdk.internal.misc
  *          jdk.compiler
- *          jdk.jlink
  * @build ModuleReaderTest CompilerUtils JarUtils
  * @run testng ModuleReaderTest
  * @summary Basic tests for java.lang.module.ModuleReader
@@ -47,11 +46,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.spi.ToolProvider;
 
-import jdk.internal.module.ConfigurableModuleFinder;
-import jdk.internal.module.ConfigurableModuleFinder.Phase;
+import jdk.internal.misc.SharedSecrets;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -101,7 +103,7 @@ public class ModuleReaderTest {
     /**
      * Test ModuleReader to module in runtime image
      */
-    public void testImage() throws Exception {
+    public void testImage() throws IOException {
 
         ModuleFinder finder = ModuleFinder.ofSystem();
         ModuleReference mref = finder.find(BASE_MODULE).get();
@@ -119,6 +121,7 @@ public class ModuleReaderTest {
                 testFind(reader, name, expectedBytes);
                 testOpen(reader, name, expectedBytes);
                 testRead(reader, name, expectedBytes);
+                testList(reader, name);
 
             }
 
@@ -168,7 +171,7 @@ public class ModuleReaderTest {
     /**
      * Test ModuleReader to exploded module
      */
-    public void testExplodedModule() throws Exception {
+    public void testExplodedModule() throws IOException {
         test(MODS_DIR);
     }
 
@@ -176,7 +179,7 @@ public class ModuleReaderTest {
     /**
      * Test ModuleReader to modular JAR
      */
-    public void testModularJar() throws Exception {
+    public void testModularJar() throws IOException {
         Path dir = Files.createTempDirectory(USER_DIR, "mlib");
 
         // jar cf mlib/${TESTMODULE}.jar -C mods .
@@ -190,7 +193,7 @@ public class ModuleReaderTest {
     /**
      * Test ModuleReader to JMOD
      */
-    public void testJMod() throws Exception {
+    public void testJMod() throws IOException {
         Path dir = Files.createTempDirectory(USER_DIR, "mlib");
 
         // jmod create --class-path mods/${TESTMODULE}  mlib/${TESTMODULE}.jmod
@@ -211,13 +214,10 @@ public class ModuleReaderTest {
      * The test module is found on the given module path. Open a ModuleReader
      * to the test module and test the reader.
      */
-    void test(Path mp) throws Exception {
+    void test(Path mp) throws IOException {
 
-        ModuleFinder finder = ModuleFinder.of(mp);
-        if (finder instanceof ConfigurableModuleFinder) {
-            // need ModuleFinder to be in the phase to find JMOD files
-            ((ConfigurableModuleFinder)finder).configurePhase(Phase.LINK_TIME);
-        }
+        ModuleFinder finder = SharedSecrets.getJavaLangModuleAccess()
+            .newModulePath(Runtime.version(), true, mp);
 
         ModuleReference mref = finder.find(TEST_MODULE).get();
         ModuleReader reader = mref.open();
@@ -234,6 +234,7 @@ public class ModuleReaderTest {
                 testFind(reader, name, expectedBytes);
                 testOpen(reader, name, expectedBytes);
                 testRead(reader, name, expectedBytes);
+                testList(reader, name);
             }
 
             // test "not found"
@@ -275,13 +276,18 @@ public class ModuleReaderTest {
             reader.read(TEST_RESOURCES[0]);
             assertTrue(false);
         } catch (IOException expected) { }
+
+        try {
+            reader.list();
+            assertTrue(false);
+        } catch (IOException expected) { }
     }
 
     /**
      * Test ModuleReader#find
      */
     void testFind(ModuleReader reader, String name, byte[] expectedBytes)
-        throws Exception
+        throws IOException
     {
         Optional<URI> ouri = reader.find(name);
         assertTrue(ouri.isPresent());
@@ -301,7 +307,7 @@ public class ModuleReaderTest {
      * Test ModuleReader#open
      */
     void testOpen(ModuleReader reader, String name, byte[] expectedBytes)
-        throws Exception
+        throws IOException
     {
         Optional<InputStream> oin = reader.open(name);
         assertTrue(oin.isPresent());
@@ -317,7 +323,7 @@ public class ModuleReaderTest {
      * Test ModuleReader#read
      */
     void testRead(ModuleReader reader, String name, byte[] expectedBytes)
-        throws Exception
+        throws IOException
     {
         Optional<ByteBuffer> obb = reader.read(name);
         assertTrue(obb.isPresent());
@@ -332,6 +338,26 @@ public class ModuleReaderTest {
         } finally {
             reader.release(bb);
         }
+    }
+
+    /**
+     * Test ModuleReader#list
+     */
+    void testList(ModuleReader reader, String name) throws IOException {
+        List<String> list = reader.list().collect(Collectors.toList());
+        Set<String> names = new HashSet<>(list);
+        assertTrue(names.size() == list.size()); // no duplicates
+
+        assertTrue(names.contains("module-info.class"));
+        assertTrue(names.contains(name));
+
+        // all resources should be locatable via find
+        for (String e : names) {
+            assertTrue(reader.find(e).isPresent());
+        }
+
+        // should not contain directories
+        names.forEach(e -> assertFalse(e.endsWith("/")));
     }
 
 }

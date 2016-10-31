@@ -1681,6 +1681,15 @@ public abstract class ClassLoader {
      * this method during startup should take care not to cache the return
      * value until the system is fully initialized.
      *
+     * <p> The class path used by the built-in system class loader is determined
+     * by the system property "{@code java.class.path}" during early
+     * initialization of the VM. If the system property is not defined,
+     * or its value is an empty string, then there is no class path
+     * when the initial module is a module on the application module path,
+     * i.e. <em>a named module</em>. If the initial module is not on
+     * the application module path then the class path defaults to
+     * the current working directory.
+     *
      * @return  The system <tt>ClassLoader</tt> for delegation
      *
      * @throws  SecurityException
