@@ -30,7 +30,7 @@ import java.util.Map;
 
 import jdk.test.lib.apps.LingeredApp;
 import jdk.testlibrary.Utils;
-import jdk.testlibrary.Platform;
+import jdk.test.lib.Platform;
 
 /*
  * @test
