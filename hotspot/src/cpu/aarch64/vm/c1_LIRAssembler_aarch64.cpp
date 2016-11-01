@@ -2277,14 +2277,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ br(Assembler::HI, *stub->entry());
   }
 
-  // FIXME: The logic in LIRGenerator::arraycopy_helper clears
-  // length_positive_check if the source of our length operand is an
-  // arraylength.  However, that arraylength might be zero, and the
-  // stub that we're about to call contains an assertion that count !=
-  // 0 .  So we make this check purely in order not to trigger an
-  // assertion failure.
-  __ cbzw(length, *stub->continuation());
-
   if (flags & LIR_OpArrayCopy::type_check) {
     // We don't know the array types are compatible
     if (basic_type != T_OBJECT) {
