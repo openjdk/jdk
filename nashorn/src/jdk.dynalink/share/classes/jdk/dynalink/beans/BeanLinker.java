@@ -92,7 +92,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import jdk.dynalink.CallSiteDescriptor;
+import jdk.dynalink.Namespace;
 import jdk.dynalink.Operation;
+import jdk.dynalink.StandardNamespace;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.beans.GuardedInvocationComponent.ValidationType;
 import jdk.dynalink.linker.GuardedInvocation;
@@ -112,10 +114,11 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         if(clazz.isArray()) {
             // Some languages won't have a notion of manipulating collections. Exposing "length" on arrays as an
             // explicit property is beneficial for them.
-            // REVISIT: is it maybe a code smell that StandardOperation.GET_LENGTH is not needed?
             setPropertyGetter("length", MethodHandles.arrayLength(clazz), ValidationType.EXACT_CLASS);
-        } else if(List.class.isAssignableFrom(clazz)) {
+        } else if(Collection.class.isAssignableFrom(clazz)) {
             setPropertyGetter("length", GET_COLLECTION_LENGTH, ValidationType.INSTANCE_OF);
+        } else if(Map.class.isAssignableFrom(clazz)) {
+            setPropertyGetter("length", GET_MAP_LENGTH, ValidationType.INSTANCE_OF);
         }
     }
 
@@ -135,14 +138,14 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         if(superGic != null) {
             return superGic;
         }
-        if (!req.operations.isEmpty()) {
-            final Operation op = req.operations.get(0);
-            if (op instanceof StandardOperation) {
-                switch ((StandardOperation)op) {
-                case GET_ELEMENT: return getElementGetter(req.popOperations());
-                case SET_ELEMENT: return getElementSetter(req.popOperations());
-                case GET_LENGTH:  return getLengthGetter(req.getDescriptor());
-                default:
+        if (!req.namespaces.isEmpty()) {
+            final Operation op = req.baseOperation;
+            final Namespace ns = req.namespaces.get(0);
+            if (ns == StandardNamespace.ELEMENT) {
+                if (op == StandardOperation.GET) {
+                    return getElementGetter(req.popNamespace());
+                } else if (op == StandardOperation.SET) {
+                    return getElementSetter(req.popNamespace());
                 }
             }
         }
@@ -523,38 +526,6 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
 
     private static final MethodHandle GET_MAP_LENGTH = Lookup.PUBLIC.findVirtual(Map.class, "size",
             MethodType.methodType(int.class));
-
-    private static final MethodHandle COLLECTION_GUARD = Guards.getInstanceOfGuard(Collection.class);
-
-    private GuardedInvocationComponent getLengthGetter(final CallSiteDescriptor callSiteDescriptor) {
-        assertParameterCount(callSiteDescriptor, 1);
-        final MethodType callSiteType = callSiteDescriptor.getMethodType();
-        final Class<?> declaredType = callSiteType.parameterType(0);
-        // If declared type of receiver at the call site is already an array, collection, or map, bind without guard.
-        // Thing is, it'd be quite stupid of a call site creator to go though invokedynamic when it knows in advance
-        // they're dealing with an array, collection, or map, but hey...
-        if(declaredType.isArray()) {
-            return new GuardedInvocationComponent(MethodHandles.arrayLength(declaredType).asType(callSiteType));
-        } else if(Collection.class.isAssignableFrom(declaredType)) {
-            return new GuardedInvocationComponent(GET_COLLECTION_LENGTH.asType(callSiteType));
-        } else if(Map.class.isAssignableFrom(declaredType)) {
-            return new GuardedInvocationComponent(GET_MAP_LENGTH.asType(callSiteType));
-        }
-
-        // Otherwise, create a binding based on the actual type of the argument with an appropriate guard.
-        if(clazz.isArray()) {
-            return new GuardedInvocationComponent(MethodHandles.arrayLength(clazz).asType(callSiteType),
-                    Guards.isArray(0, callSiteType), ValidationType.EXACT_CLASS);
-        } if(Collection.class.isAssignableFrom(clazz)) {
-            return new GuardedInvocationComponent(GET_COLLECTION_LENGTH.asType(callSiteType), Guards.asType(
-                    COLLECTION_GUARD, callSiteType), Collection.class, ValidationType.INSTANCE_OF);
-        } if(Map.class.isAssignableFrom(clazz)) {
-            return new GuardedInvocationComponent(GET_MAP_LENGTH.asType(callSiteType), Guards.asType(MAP_GUARD,
-                    callSiteType), Map.class, ValidationType.INSTANCE_OF);
-        }
-        // Can't retrieve length for objects that are neither arrays, nor collections, nor maps.
-        return null;
-    }
 
     private static void assertParameterCount(final CallSiteDescriptor descriptor, final int paramCount) {
         if(descriptor.getMethodType().parameterCount() != paramCount) {

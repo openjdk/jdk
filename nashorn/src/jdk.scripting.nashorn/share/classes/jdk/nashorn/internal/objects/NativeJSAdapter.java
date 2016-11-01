@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import jdk.dynalink.CallSiteDescriptor;
-import jdk.dynalink.StandardOperation;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.lookup.Lookup;
@@ -473,11 +472,11 @@ public final class NativeJSAdapter extends ScriptObject {
     }
 
     @Override
-    protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final StandardOperation operation) {
+    protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         final String name = NashornCallSiteDescriptor.getOperand(desc);
         if (overrides && super.hasOwnProperty(name)) {
             try {
-                final GuardedInvocation inv = super.findGetMethod(desc, request, operation);
+                final GuardedInvocation inv = super.findGetMethod(desc, request);
                 if (inv != null) {
                     return inv;
                 }
@@ -486,11 +485,9 @@ public final class NativeJSAdapter extends ScriptObject {
             }
         }
 
-        switch(operation) {
-        case GET_PROPERTY:
-        case GET_ELEMENT:
+        if (!NashornCallSiteDescriptor.isMethodFirstOperation(desc)) {
             return findHook(desc, __get__);
-        case GET_METHOD:
+        } else {
             final FindProperty find = adaptee.findProperty(__call__, true);
             if (find != null) {
                 final Object value = find.getObjectValue();
@@ -505,11 +502,7 @@ public final class NativeJSAdapter extends ScriptObject {
                 }
             }
             throw typeError("no.such.function", name, ScriptRuntime.safeToString(this));
-        default:
-            break;
         }
-
-        throw new AssertionError("should not reach here");
     }
 
     @Override

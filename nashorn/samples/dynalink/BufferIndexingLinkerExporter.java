@@ -29,6 +29,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+import static jdk.dynalink.StandardNamespace.ELEMENT;
+import static jdk.dynalink.StandardNamespace.PROPERTY;
+import static jdk.dynalink.StandardOperation.GET;
+import static jdk.dynalink.StandardOperation.SET;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.nio.Buffer;
@@ -42,10 +47,10 @@ import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import jdk.dynalink.CallSiteDescriptor;
-import jdk.dynalink.CompositeOperation;
 import jdk.dynalink.NamedOperation;
+import jdk.dynalink.NamespaceOperation;
 import jdk.dynalink.Operation;
-import jdk.dynalink.StandardOperation;
+import jdk.dynalink.StandardNamespace;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.GuardingDynamicLinker;
 import jdk.dynalink.linker.GuardingDynamicLinkerExporter;
@@ -135,23 +140,6 @@ public final class BufferIndexingLinkerExporter extends GuardingDynamicLinkerExp
         IS_DOUBLEBUFFER = Guards.isInstance(DoubleBuffer.class, GUARD_TYPE);
     }
 
-    // locate the first standard operation from the call descriptor
-    private static StandardOperation getFirstStandardOperation(final CallSiteDescriptor desc) {
-        final Operation base = NamedOperation.getBaseOperation(desc.getOperation());
-        if (base instanceof StandardOperation) {
-            return (StandardOperation)base;
-        } else if (base instanceof CompositeOperation) {
-            final CompositeOperation cop = (CompositeOperation)base;
-            for(int i = 0; i < cop.getOperationCount(); ++i) {
-                final Operation op = cop.getOperation(i);
-                if (op instanceof StandardOperation) {
-                    return (StandardOperation)op;
-                }
-            }
-        }
-        return null;
-    }
-
     @Override
     public List<GuardingDynamicLinker> get() {
         final ArrayList<GuardingDynamicLinker> linkers = new ArrayList<>();
@@ -170,22 +158,25 @@ public final class BufferIndexingLinkerExporter extends GuardingDynamicLinkerExp
                 }
 
                 final CallSiteDescriptor desc = request.getCallSiteDescriptor();
-                final StandardOperation op = getFirstStandardOperation(desc);
-                if (op == null) {
+                final Operation namedOp = desc.getOperation();
+                final Operation namespaceOp = NamedOperation.getBaseOperation(namedOp);
+                final Operation op = NamespaceOperation.getBaseOperation(namespaceOp);
+                final StandardNamespace ns = StandardNamespace.findFirst(namespaceOp);
+                if (ns == null) {
                     return null;
                 }
 
-                switch (op) {
-                    case GET_ELEMENT:
+                if (op == GET) {
+                    if (ns == ELEMENT) {
                         return linkGetElement(self);
-                    case SET_ELEMENT:
-                        return linkSetElement(self);
-                    case GET_PROPERTY: {
+                    } else if (ns == PROPERTY) {
                         final Object name = NamedOperation.getName(desc.getOperation());
                         if ("length".equals(name)) {
                             return linkLength();
                         }
                     }
+                } else if (op == SET && ns == ELEMENT) {
+                    return linkSetElement(self);
                 }
 
                 return null;

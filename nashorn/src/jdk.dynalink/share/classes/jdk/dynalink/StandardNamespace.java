@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * license:
  */
 /*
-   Copyright 2009-2013 Attila Szegedi
+   Copyright 2016 Attila Szegedi
 
    Licensed under both the Apache License, Version 2.0 (the "Apache License")
    and the BSD License (the "BSD License"), with licensee being free to
@@ -81,65 +81,50 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.dynalink.beans;
-
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import jdk.dynalink.CallSiteDescriptor;
-import jdk.dynalink.NamedOperation;
-import jdk.dynalink.Operation;
-import jdk.dynalink.StandardNamespace;
-import jdk.dynalink.StandardOperation;
-import jdk.dynalink.linker.GuardedInvocation;
-import jdk.dynalink.linker.LinkRequest;
-import jdk.dynalink.linker.LinkerServices;
-import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
-import jdk.dynalink.linker.support.Guards;
+package jdk.dynalink;
 
 /**
- * Simple linker that implements the {@link StandardOperation#CALL} operation
- * for {@link DynamicMethod} objects - the objects returned by
- * {@link StandardOperation#GET} on {@link StandardNamespace#METHOD} namespace through
- * {@link AbstractJavaLinker}.
+ * An enumeration of standard namespaces defined by Dynalink.
  */
-class DynamicMethodLinker implements TypeBasedGuardingDynamicLinker {
-    @Override
-    public boolean canLinkType(final Class<?> type) {
-        return DynamicMethod.class.isAssignableFrom(type);
-    }
+public enum StandardNamespace implements Namespace {
+    /**
+     * Standard namespace for properties of an object.
+     */
+    PROPERTY,
+    /**
+     * Standard namespace for elements of a collection object.
+     */
+    ELEMENT,
+    /**
+     * Standard namespace for methods of an object. The method objects retrieved
+     * through a {@link StandardOperation#GET} on this namespace can be (and where
+     * object semantics allows they should be) unbound, that is: not bound to the
+     * object they were retrieved through. When they are used with
+     * {@link StandardOperation#CALL} an explicit "this" receiver argument is always
+     * passed to them. Of course bound methods can be returned if the object semantics
+     * requires them and such methods are free to ignore the receiver passed in the
+     * {@code CALL} operation or even raise an error when it is different from the one
+     * the method is bound to, or exhibit any other behavior their semantics requires
+     * in such case.
+     */
+    METHOD;
 
-    @Override
-    public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest, final LinkerServices linkerServices) {
-        final Object receiver = linkRequest.getReceiver();
-        if(!(receiver instanceof DynamicMethod)) {
-            return null;
-        }
-        final DynamicMethod dynMethod = (DynamicMethod)receiver;
-        final boolean constructor = dynMethod.isConstructor();
-        final MethodHandle invocation;
-
-        final CallSiteDescriptor desc = linkRequest.getCallSiteDescriptor();
-        final Operation op = NamedOperation.getBaseOperation(desc.getOperation());
-        if (op == StandardOperation.CALL && !constructor) {
-            invocation = dynMethod.getInvocation(desc.changeMethodType(
-                    desc.getMethodType().dropParameterTypes(0, 1)), linkerServices);
-        } else if (op == StandardOperation.NEW && constructor) {
-            final MethodHandle ctorInvocation = dynMethod.getInvocation(desc, linkerServices);
-            if(ctorInvocation == null) {
-                return null;
+    /**
+     * If the passed in operation is a {@link NamespaceOperation}, or a
+     * {@link NamedOperation} wrapping a {@link NamespaceOperation}, then it
+     * returns the first (if any) {@link StandardNamespace} in its namespace
+     * list. If the passed operation is not a namespace operation (optionally
+     * wrapped in a named operation), or if it doesn't have any standard
+     * namespaces in it, returns {@code null}.
+     * @param op the operation
+     * @return the first standard namespace in the operation's namespace list
+     */
+    public static StandardNamespace findFirst(final Operation op) {
+        for(final Namespace ns: NamespaceOperation.getNamespaces(NamedOperation.getBaseOperation(op))) {
+            if (ns instanceof StandardNamespace) {
+                return (StandardNamespace)ns;
             }
-
-            // Insert null for StaticClass parameter
-            invocation = MethodHandles.insertArguments(ctorInvocation, 0, (Object)null);
-        } else {
-            return null;
         }
-
-        if (invocation != null) {
-            return new GuardedInvocation(MethodHandles.dropArguments(invocation, 0,
-                desc.getMethodType().parameterType(0)), Guards.getIdentityGuard(receiver));
-        }
-
         return null;
     }
 }

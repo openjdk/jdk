@@ -35,7 +35,9 @@ import java.lang.reflect.Modifier;
 import java.util.function.Supplier;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.NamedOperation;
+import jdk.dynalink.Operation;
 import jdk.dynalink.SecureLookupSupplier;
+import jdk.dynalink.StandardNamespace;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.beans.BeansLinker;
 import jdk.dynalink.linker.ConversionComparator.Comparison;
@@ -46,6 +48,7 @@ import jdk.dynalink.linker.LinkerServices;
 import jdk.dynalink.linker.MethodHandleTransformer;
 import jdk.dynalink.linker.support.DefaultInternalObjectFilter;
 import jdk.dynalink.linker.support.Lookup;
+import jdk.dynalink.linker.support.SimpleLinkRequest;
 import jdk.nashorn.api.scripting.ScriptUtils;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
@@ -67,6 +70,9 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
     // System property to control whether to wrap ScriptObject->ScriptObjectMirror for
     // Object type arguments of Java method calls, field set and array set.
     private static final boolean MIRROR_ALWAYS = Options.getBooleanProperty("nashorn.mirror.always", true);
+
+    private static final Operation GET_METHOD = StandardOperation.GET.withNamespace(StandardNamespace.METHOD);
+    private static final MethodType GET_METHOD_TYPE = MethodType.methodType(Object.class, Object.class);
 
     private static final MethodHandle EXPORT_ARGUMENT;
     private static final MethodHandle IMPORT_RESULT;
@@ -114,20 +120,38 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
             // those are script functions.
             final String name = getFunctionalInterfaceMethodName(self.getClass());
             if (name != null) {
-                final MethodType callType = desc.getMethodType();
-                // drop callee (Undefined ScriptFunction) and change the request to be CALL_METHOD:<name>
-                final CallSiteDescriptor newDesc = new CallSiteDescriptor(
+                // Obtain the method
+                final CallSiteDescriptor getMethodDesc = new CallSiteDescriptor(
                         NashornCallSiteDescriptor.getLookupInternal(desc),
-                        new NamedOperation(StandardOperation.CALL_METHOD, name),
-                        desc.getMethodType().dropParameterTypes(1, 2));
-                final GuardedInvocation gi = getGuardedInvocation(beansLinker,
-                        linkRequest.replaceArguments(newDesc, linkRequest.getArguments()),
+                        GET_METHOD.named(name), GET_METHOD_TYPE);
+                final GuardedInvocation getMethodInv = linkerServices.getGuardedInvocation(
+                        new SimpleLinkRequest(getMethodDesc, false, self));
+                final Object method;
+                try {
+                    method = getMethodInv.getInvocation().invokeExact(self);
+                } catch (final Exception|Error e) {
+                    throw e;
+                } catch (final Throwable t) {
+                    throw new RuntimeException(t);
+                }
+
+                final Object[] args = linkRequest.getArguments();
+                args[1] = args[0]; // callee (the functional object) becomes this
+                args[0] = method; // the method becomes the callee
+
+                final MethodType callType = desc.getMethodType();
+
+                final CallSiteDescriptor newDesc = desc.changeMethodType(
+                        desc.getMethodType().changeParameterType(0, Object.class).changeParameterType(1, callType.parameterType(0)));
+                final GuardedInvocation gi = getGuardedInvocation(beansLinker, linkRequest.replaceArguments(newDesc, args),
                         new NashornBeansLinkerServices(linkerServices));
 
-                // drop 'thiz' passed from the script.
-                return gi.replaceMethods(
-                    MH.dropArguments(linkerServices.filterInternalObjects(gi.getInvocation()), 1, callType.parameterType(1)),
-                    gi.getGuard());
+                // Bind to the method, drop the original "this" and use original "callee" as this:
+                final MethodHandle inv = linkerServices.filterInternalObjects(gi
+                        .getInvocation()  // (method, this, args...)
+                        .bindTo(method)); // (this, args...)
+                final MethodHandle calleeToThis = MH.dropArguments(inv, 1, callType.parameterType(1)); // (callee->this, <drop>, args...)
+                return gi.replaceMethods(calleeToThis, gi.getGuard());
             }
         }
         return getGuardedInvocation(beansLinker, linkRequest, linkerServices);
