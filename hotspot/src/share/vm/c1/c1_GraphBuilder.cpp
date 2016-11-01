@@ -1813,14 +1813,10 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   ciKlass*              holder = stream()->get_declared_method_holder();
   const Bytecodes::Code bc_raw = stream()->cur_bc_raw();
   assert(declared_signature != NULL, "cannot be null");
+  assert(will_link == target->is_loaded(), "");
 
   ciInstanceKlass* klass = target->holder();
-
-  // Make sure there are no evident problems with linking the instruction.
-  bool is_resolved = true;
-  if (klass->is_loaded() && !target->is_loaded()) {
-    is_resolved = false; // method not found
-  }
+  assert(!target->is_loaded() || klass->is_loaded(), "loaded target must imply loaded klass");
 
   // check if CHA possible: if so, change the code to invoke_special
   ciInstanceKlass* calling_klass = method()->holder();
@@ -1868,7 +1864,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   ciMethod* cha_monomorphic_target = NULL;
   ciMethod* exact_target = NULL;
   Value better_receiver = NULL;
-  if (UseCHA && DeoptC1 && klass->is_loaded() && target->is_loaded() &&
+  if (UseCHA && DeoptC1 && target->is_loaded() &&
       !(// %%% FIXME: Are both of these relevant?
         target->is_method_handle_intrinsic() ||
         target->is_compiled_lambda_form()) &&
@@ -1988,8 +1984,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   }
 
   // check if we could do inlining
-  if (!PatchALot && Inline && is_resolved &&
-      klass->is_loaded() && target->is_loaded() &&
+  if (!PatchALot && Inline && target->is_loaded() &&
       (klass->is_initialized() || klass->is_interface() && target->holder()->is_initialized())
       && !patch_for_appendix) {
     // callee is known => check if we have static binding
@@ -2032,7 +2027,6 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   CHECK_BAILOUT();
 
   // inlining not successful => standard invoke
-  bool is_loaded = target->is_loaded();
   ValueType* result_type = as_ValueType(declared_signature->return_type());
   ValueStack* state_before = copy_state_exhandling();
 
@@ -2049,7 +2043,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   // Currently only supported on Sparc.
   // The UseInlineCaches only controls dispatch to invokevirtuals for
   // loaded classes which we weren't able to statically bind.
-  if (!UseInlineCaches && is_resolved && is_loaded && code == Bytecodes::_invokevirtual
+  if (!UseInlineCaches && target->is_loaded() && code == Bytecodes::_invokevirtual
       && !target->can_be_statically_bound()) {
     // Find a vtable index if one is available
     // For arrays, callee_holder is Object. Resolving the call with
@@ -2062,18 +2056,17 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   }
 #endif
 
-  if (is_resolved) {
-    // invokespecial always needs a NULL check. invokevirtual where the target is
-    // final or where it's not known whether the target is final requires a NULL check.
-    // Otherwise normal invokevirtual will perform the null check during the lookup
-    // logic or the unverified entry point.  Profiling of calls requires that
-    // the null check is performed in all cases.
-    bool do_null_check = (recv != NULL) &&
-        (code == Bytecodes::_invokespecial || !is_loaded || target->is_final() || (is_profiling() && profile_calls()));
+  // invokespecial always needs a NULL check. invokevirtual where the target is
+  // final or where it's not known whether the target is final requires a NULL check.
+  // Otherwise normal invokevirtual will perform the null check during the lookup
+  // logic or the unverified entry point.  Profiling of calls requires that
+  // the null check is performed in all cases.
 
-    if (do_null_check) {
-      null_check(recv);
-    }
+  bool do_null_check = (recv != NULL) &&
+        (code == Bytecodes::_invokespecial || (target->is_loaded() && (target->is_final() || (is_profiling() && profile_calls()))));
+
+  if (do_null_check) {
+    null_check(recv);
 
     if (is_profiling()) {
       // Note that we'd collect profile data in this method if we wanted it.
@@ -2090,9 +2083,6 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
         profile_call(target, recv, target_klass, collect_args_for_profiling(args, NULL, false), false);
       }
     }
-  } else {
-    // No need in null check or profiling: linkage error will be thrown at runtime
-    // during resolution.
   }
 
   Invoke* result = new Invoke(code, result_type, recv, args, vtable_index, target, state_before);
