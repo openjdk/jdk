@@ -2976,7 +2976,6 @@ void LIRGenerator::do_Invoke(Invoke* x) {
   }
 
   // emit invoke code
-  bool optimized = x->target_is_loaded() && x->target_is_final();
   assert(receiver->is_illegal() || receiver->is_equal(LIR_Assembler::receiverOpr()), "must match");
 
   // JSR 292
@@ -3001,9 +3000,9 @@ void LIRGenerator::do_Invoke(Invoke* x) {
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokeinterface:
-      // for final target we still produce an inline cache, in order
-      // to be able to call mixed mode
-      if (x->code() == Bytecodes::_invokespecial || optimized) {
+      // for loaded and final (method or class) target we still produce an inline cache,
+      // in order to be able to call mixed mode
+      if (x->code() == Bytecodes::_invokespecial || x->target_is_final()) {
         __ call_opt_virtual(target, receiver, result_register,
                             SharedRuntime::get_resolve_opt_virtual_call_stub(),
                             arg_list, info);
