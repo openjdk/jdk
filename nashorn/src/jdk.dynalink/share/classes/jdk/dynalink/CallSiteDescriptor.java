@@ -83,9 +83,11 @@
 
 package jdk.dynalink;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * Call site descriptors contain all the information necessary for linking a
@@ -148,41 +150,79 @@ public class CallSiteDescriptor extends SecureLookupSupplier {
     }
 
     /**
-     * Creates a new call site descriptor from this descriptor, which is
-     * identical to this, except it changes the method type. Invokes
-     * {@link #changeMethodTypeInternal(MethodType)} and checks that it returns
-     * a descriptor of the same class as this descriptor.
+     * Finds or creates a call site descriptor that only differs in its
+     * method type from this descriptor.
+     * Invokes {@link #changeMethodTypeInternal(MethodType)}.
      *
      * @param newMethodType the new method type
-     * @return a new call site descriptor, with the method type changed.
-     * @throws RuntimeException if {@link #changeMethodTypeInternal(MethodType)}
-     * returned a descriptor of different class than this object.
-     * @throws NullPointerException if {@link #changeMethodTypeInternal(MethodType)}
-     * returned null.
+     * @return a call site descriptor with changed method type.
+     * @throws NullPointerException if {@code newMethodType} is null.
      */
     public final CallSiteDescriptor changeMethodType(final MethodType newMethodType) {
-        final CallSiteDescriptor changed = Objects.requireNonNull(
-                changeMethodTypeInternal(newMethodType),
-                "changeMethodTypeInternal() must not return null.");
+        final CallSiteDescriptor changed = changeMethodTypeInternal(newMethodType);
 
-        if (getClass() != changed.getClass()) {
-            throw new RuntimeException(
-                    "changeMethodTypeInternal() must return an object of the same class it is invoked on.");
+        if (getClass() != CallSiteDescriptor.class) {
+            assertChangeInvariants(changed, "changeMethodTypeInternal");
+            alwaysAssert(operation == changed.operation, () -> "changeMethodTypeInternal must not change the descriptor's operation");
+            alwaysAssert(newMethodType == changed.methodType, () -> "changeMethodTypeInternal didn't set the correct new method type");
         }
-
         return changed;
     }
 
     /**
-     * Creates a new call site descriptor from this descriptor, which is
-     * identical to this, except it changes the method type. Subclasses must
-     * override this method to return an object of their exact class.
+     * Finds or creates a call site descriptor that only differs in its
+     * method type from this descriptor. Subclasses must override this method
+     * to return an object of their exact class. If an overridden method changes
+     * something other than the method type in the descriptor (its class, lookup,
+     * or operation), or returns null, an {@code AssertionError} will be thrown
+     * from {@link #changeMethodType(MethodType)}.
      *
      * @param newMethodType the new method type
-     * @return a new call site descriptor, with the method type changed.
+     * @return a call site descriptor with the changed method type.
      */
     protected CallSiteDescriptor changeMethodTypeInternal(final MethodType newMethodType) {
         return new CallSiteDescriptor(getLookupPrivileged(), operation, newMethodType);
+    }
+
+    /**
+     * Finds or creates a call site descriptor that only differs in its
+     * operation from this descriptor.
+     * Invokes {@link #changeOperationInternal(Operation)}.
+     *
+     * @param newOperation the new operation
+     * @return a call site descriptor with the changed operation.
+     * @throws NullPointerException if {@code newOperation} is null.
+     * @throws SecurityException if the descriptor's lookup isn't the
+     * {@link MethodHandles#publicLookup()}, and a security manager is present,
+     * and a check for {@code RuntimePermission("dynalink.getLookup")} fails.
+     * This is necessary as changing the operation in the call site descriptor
+     * allows fabrication of descriptors for arbitrary operations with the lookup.
+     */
+    public final CallSiteDescriptor changeOperation(final Operation newOperation) {
+        getLookup(); // force security check
+        final CallSiteDescriptor changed = changeOperationInternal(newOperation);
+
+        if (getClass() != CallSiteDescriptor.class) {
+            assertChangeInvariants(changed, "changeOperationInternal");
+            alwaysAssert(methodType == changed.methodType, () -> "changeOperationInternal must not change the descriptor's method type");
+            alwaysAssert(newOperation == changed.operation, () -> "changeOperationInternal didn't set the correct new operation");
+        }
+        return changed;
+    }
+
+    /**
+     * Finds or creates a call site descriptor that only differs in its
+     * operation from this descriptor. Subclasses must override this method
+     * to return an object of their exact class. If an overridden method changes
+     * something other than the operation in the descriptor (its class, lookup,
+     * or method type), or returns null, an {@code AssertionError} will be thrown
+     * from {@link #changeOperation(Operation)}.
+     *
+     * @param newOperation the new operation
+     * @return a call site descriptor with the changed operation.
+     */
+    protected CallSiteDescriptor changeOperationInternal(final Operation newOperation) {
+        return new CallSiteDescriptor(getLookupPrivileged(), newOperation, methodType);
     }
 
     /**
@@ -254,5 +294,17 @@ public class CallSiteDescriptor extends SecureLookupSupplier {
         final String o = operation.toString();
         final StringBuilder b = new StringBuilder(o.length() + mt.length() + 1 + l.length());
         return b.append(o).append(mt).append('@').append(l).toString();
+    }
+
+    private void assertChangeInvariants(final CallSiteDescriptor changed, final String caller) {
+        alwaysAssert(changed != null, () -> caller + " must not return null.");
+        alwaysAssert(getClass() == changed.getClass(), () -> caller + " must not change the descriptor's class");
+        alwaysAssert(lookupsEqual(getLookupPrivileged(), changed.getLookupPrivileged()), () -> caller + " must not change the descriptor's lookup");
+    }
+
+    private static void alwaysAssert(final boolean cond, final Supplier<String> errorMessage) {
+        if (!cond) {
+            throw new AssertionError(errorMessage.get());
+        }
     }
 }
