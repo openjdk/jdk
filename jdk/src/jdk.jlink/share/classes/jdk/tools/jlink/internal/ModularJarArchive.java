@@ -54,13 +54,9 @@ public class ModularJarArchive extends JarArchive {
 
     @Override
     Entry toEntry(ZipEntry ze) {
-        if (ze.isDirectory()) {
-            return null;
-        }
-
         String name = ze.getName();
         EntryType type = toEntryType(name);
-        return new JarEntry(ze.getName(), getFileName(name), type, zipFile, ze);
+        return new JarEntry(ze.getName(), getFileName(name), type, getJarFile(), ze);
     }
 
     @Override
