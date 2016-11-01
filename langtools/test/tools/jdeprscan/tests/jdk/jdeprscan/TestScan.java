@@ -89,6 +89,7 @@ public class TestScan {
                 new InputStreamReader(
                     new ByteArrayInputStream(bytes), StandardCharsets.UTF_8))
                         .lines()
+                        .filter(line -> !line.endsWith(":"))
                         .map(line -> line.split(" +"))
                         .map(array -> array[1])
                         .collect(Collectors.toSet());
