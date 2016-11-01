@@ -41,10 +41,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -179,50 +177,43 @@ public class ModuleAnalyzer {
             return builder.build();
         }
 
-        ModuleDescriptor reduced() {
-            Graph.Builder<Module> bd = new Graph.Builder<>();
+        private Graph<Module> buildReducedGraph() {
+            ModuleGraphBuilder rpBuilder = new ModuleGraphBuilder(configuration);
+            rpBuilder.addModule(root);
             requiresPublic.stream()
-                .forEach(m -> {
-                    bd.addNode(m);
-                    bd.addEdge(root, m);
-                });
+                          .forEach(m -> rpBuilder.addEdge(root, m));
 
             // requires public graph
-            Graph<Module> rbg = bd.build().reduce();
+            Graph<Module> rbg = rpBuilder.build().reduce();
+
+            ModuleGraphBuilder gb = new ModuleGraphBuilder(configuration);
+            gb.addModule(root);
+            requires.stream()
+                    .forEach(m -> gb.addEdge(root, m));
 
             // transitive reduction
-            Graph<Module> newGraph = buildGraph(requires).reduce(rbg);
+            Graph<Module> newGraph = gb.buildGraph().reduce(rbg);
             if (DEBUG) {
                 System.err.println("after transitive reduction: ");
                 newGraph.printGraph(log);
             }
-
-            return descriptor(requiresPublic, newGraph.adjacentNodes(root));
+            return newGraph;
         }
 
+        /**
+         * Apply the transitive reduction on the module graph
+         * and returns the corresponding ModuleDescriptor
+         */
+        ModuleDescriptor reduced() {
+            Graph<Module> g = buildReducedGraph();
+            return descriptor(requiresPublic, g.adjacentNodes(root));
+        }
 
         /**
          * Apply transitive reduction on the resulting graph and reports
          * recommended requires.
          */
         private void analyzeDeps() {
-            Graph.Builder<Module> builder = new Graph.Builder<>();
-            requiresPublic.stream()
-                .forEach(m -> {
-                    builder.addNode(m);
-                    builder.addEdge(root, m);
-                });
-
-            // requires public graph
-            Graph<Module> rbg = buildGraph(requiresPublic).reduce();
-
-            // transitive reduction
-            Graph<Module> newGraph = buildGraph(requires).reduce(builder.build().reduce());
-            if (DEBUG) {
-                System.err.println("after transitive reduction: ");
-                newGraph.printGraph(log);
-            }
-
             printModuleDescriptor(log, root);
 
             ModuleDescriptor analyzedDescriptor = descriptor();
@@ -275,45 +266,6 @@ public class ModuleAnalyzer {
                 .forEach(req -> out.format("    requires %s;%n", req));
         }
 
-
-        /**
-         * Returns a graph of modules required by the specified module.
-         *
-         * Requires public edges of the dependences are added to the graph.
-         */
-        private Graph<Module> buildGraph(Set<Module> deps) {
-            Graph.Builder<Module> builder = new Graph.Builder<>();
-            builder.addNode(root);
-            Set<Module> visited = new HashSet<>();
-            visited.add(root);
-            Deque<Module> deque = new LinkedList<>();
-            deps.stream()
-                .forEach(m -> {
-                    deque.add(m);
-                    builder.addEdge(root, m);
-                });
-
-            // read requires public from ModuleDescription
-            Module source;
-            while ((source = deque.poll()) != null) {
-                if (visited.contains(source))
-                    continue;
-
-                visited.add(source);
-                builder.addNode(source);
-                Module from = source;
-                source.descriptor().requires().stream()
-                    .filter(req -> req.modifiers().contains(PUBLIC))
-                    .map(ModuleDescriptor.Requires::name)
-                    .map(configuration::findModule)
-                    .flatMap(Optional::stream)
-                    .forEach(m -> {
-                        deque.add(m);
-                        builder.addEdge(from, m);
-                    });
-            }
-            return builder.build();
-        }
 
         /**
          * Detects any qualified exports not used by the target module.

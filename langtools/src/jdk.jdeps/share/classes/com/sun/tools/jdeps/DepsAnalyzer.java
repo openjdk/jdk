@@ -50,7 +50,7 @@ import static java.util.stream.Collectors.*;
  *
  * Type of filters:
  * source filter: -include <pattern>
- * target filter: -package, -regex, -requires
+ * target filter: -package, -regex, --require
  *
  * The initial archive set for analysis includes
  * 1. archives specified in the command line arguments
@@ -146,7 +146,9 @@ public class DepsAnalyzer {
             // analyze the dependencies collected
             analyzer.run(archives, finder.locationToArchive());
 
-            writer.generateOutput(archives, analyzer);
+            if (writer != null) {
+                writer.generateOutput(archives, analyzer);
+            }
         } finally {
             finder.shutdown();
         }
@@ -156,7 +158,7 @@ public class DepsAnalyzer {
     /**
      * Returns the archives for reporting that has matching dependences.
      *
-     * If -requires is set, they should be excluded.
+     * If --require is set, they should be excluded.
      */
     Set<Archive> archives() {
         if (filter.requiresFilter().isEmpty()) {
@@ -165,7 +167,7 @@ public class DepsAnalyzer {
                 .filter(Archive::hasDependences)
                 .collect(Collectors.toSet());
         } else {
-            // use the archives that have dependences and not specified in -requires
+            // use the archives that have dependences and not specified in --require
             return archives.stream()
                 .filter(filter::include)
                 .filter(source -> !filter.requiresFilter().contains(source))
@@ -360,16 +362,17 @@ public class DepsAnalyzer {
         Archive source = dep.originArchive();
         Archive target = dep.targetArchive();
         String pn = dep.target();
-        if ((verbose == CLASS || verbose == VERBOSE)) {
+        if (verbose == CLASS || verbose == VERBOSE) {
             int i = dep.target().lastIndexOf('.');
             pn = i > 0 ? dep.target().substring(0, i) : "";
         }
         final Info info;
+        Module targetModule = target.getModule();
         if (source == target) {
             info = Info.MODULE_PRIVATE;
-        } else if (!target.getModule().isNamed()) {
+        } else if (!targetModule.isNamed()) {
             info = Info.EXPORTED_API;
-        } else if (target.getModule().isExported(pn)) {
+        } else if (targetModule.isExported(pn) && !targetModule.isJDKUnsupported()) {
             info = Info.EXPORTED_API;
         } else {
             Module module = target.getModule();
