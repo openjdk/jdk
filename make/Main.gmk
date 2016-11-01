@@ -683,7 +683,8 @@ else
 
   docs-javadoc: $(GENSRC_TARGETS) rmic
 
-  docs-copy: hotspot
+  # The gensrc step for jdk.jdi creates an html file that is used by docs-copy.
+  docs-copy: hotspot jdk.jdi-gensrc
 
   docs-zip: docs-javadoc docs-copy
 
