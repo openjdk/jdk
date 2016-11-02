@@ -348,7 +348,7 @@ jdk.accessibility_ADD_JAVAC_FLAGS := -Xlint:-exports
 
 ################################################################################
 
-jdk.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:-com.sun.tools.*' \
+jdk.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:-com.sun.tools.*,-jdk.internal.*' \
     -XDstringConcat=inline
 jdk.compiler_CLEAN_FILES := $(wildcard \
     $(patsubst %, $(JDK_TOPDIR)/src/jdk.compiler/share/classes/%/*.properties, \
