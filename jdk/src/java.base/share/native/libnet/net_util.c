@@ -203,7 +203,6 @@ jobject getInetAddress_hostName(JNIEnv *env, jobject iaObj) {
 JNIEXPORT jobject JNICALL
 NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port) {
     jobject iaObj;
-#ifdef AF_INET6
     if (him->sa_family == AF_INET6) {
         struct sockaddr_in6 *him6 = (struct sockaddr_in6 *)him;
         jbyte *caddr = (jbyte *)&(him6->sin6_addr);
@@ -227,16 +226,14 @@ NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port) {
             setInet6Address_scopeid(env, iaObj, scope);
         }
         *port = ntohs(him6->sin6_port);
-    } else
-#endif /* AF_INET6 */
-        {
-            struct sockaddr_in *him4 = (struct sockaddr_in *)him;
-            iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
-            CHECK_NULL_RETURN(iaObj, NULL);
-            setInetAddress_family(env, iaObj, java_net_InetAddress_IPv4);
-            setInetAddress_addr(env, iaObj, ntohl(him4->sin_addr.s_addr));
-            *port = ntohs(him4->sin_port);
-        }
+    } else {
+        struct sockaddr_in *him4 = (struct sockaddr_in *)him;
+        iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
+        CHECK_NULL_RETURN(iaObj, NULL);
+        setInetAddress_family(env, iaObj, java_net_InetAddress_IPv4);
+        setInetAddress_addr(env, iaObj, ntohl(him4->sin_addr.s_addr));
+        *port = ntohs(him4->sin_port);
+    }
     return iaObj;
 }
 
@@ -245,7 +242,6 @@ NET_SockaddrEqualsInetAddress(JNIEnv *env, struct sockaddr *him, jobject iaObj)
 {
     jint family = AF_INET;
 
-#ifdef AF_INET6
     family = getInetAddress_family(env, iaObj) == java_net_InetAddress_IPv4 ?
         AF_INET : AF_INET6;
     if (him->sa_family == AF_INET6) {
@@ -279,22 +275,20 @@ NET_SockaddrEqualsInetAddress(JNIEnv *env, struct sockaddr *him, jobject iaObj)
                 return JNI_FALSE;
             }
         }
-    } else
-#endif /* AF_INET6 */
-        {
-            struct sockaddr_in *him4 = (struct sockaddr_in *)him;
-            int addrNew, addrCur;
-            if (family != AF_INET) {
-                return JNI_FALSE;
-            }
-            addrNew = ntohl(him4->sin_addr.s_addr);
-            addrCur = getInetAddress_addr(env, iaObj);
-            if (addrNew == addrCur) {
-                return JNI_TRUE;
-            } else {
-                return JNI_FALSE;
-            }
+    } else {
+        struct sockaddr_in *him4 = (struct sockaddr_in *)him;
+        int addrNew, addrCur;
+        if (family != AF_INET) {
+            return JNI_FALSE;
         }
+        addrNew = ntohl(him4->sin_addr.s_addr);
+        addrCur = getInetAddress_addr(env, iaObj);
+        if (addrNew == addrCur) {
+            return JNI_TRUE;
+        } else {
+            return JNI_FALSE;
+        }
+    }
 }
 
 unsigned short
