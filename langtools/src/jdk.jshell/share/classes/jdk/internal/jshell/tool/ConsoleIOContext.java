@@ -29,7 +29,6 @@ import jdk.jshell.SourceCodeAnalysis.Documentation;
 import jdk.jshell.SourceCodeAnalysis.QualifiedNames;
 import jdk.jshell.SourceCodeAnalysis.Suggestion;
 
-import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
@@ -171,10 +170,10 @@ class ConsoleIOContext extends IOContext {
                 return anchor[0];
             }
         });
-        bind(DOCUMENTATION_SHORTCUT, (ActionListener) evt -> documentation(repl));
+        bind(DOCUMENTATION_SHORTCUT, (Runnable) () -> documentation(repl));
         for (FixComputer computer : FIX_COMPUTERS) {
             for (String shortcuts : SHORTCUT_FIXES) {
-                bind(shortcuts + computer.shortcut, (ActionListener) evt -> fixes(computer));
+                bind(shortcuts + computer.shortcut, (Runnable) () -> fixes(computer));
             }
         }
         try {

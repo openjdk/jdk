@@ -89,6 +89,7 @@ import static java.nio.file.StandardOpenOption.WRITE;
 import java.util.MissingResourceException;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.ServiceLoader;
 import java.util.Spliterators;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -99,6 +100,8 @@ import jdk.internal.jshell.tool.Feedback.FormatErrors;
 import jdk.internal.jshell.tool.Feedback.FormatResolve;
 import jdk.internal.jshell.tool.Feedback.FormatUnresolved;
 import jdk.internal.jshell.tool.Feedback.FormatWhen;
+import jdk.internal.editor.spi.BuildInEditorProvider;
+import jdk.internal.editor.external.ExternalEditor;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
@@ -323,7 +326,7 @@ public class JShellTool implements MessageHandler {
     }
 
     /**
-     * Print using resource bundle look-up and adding prefix and postfix
+     * Resource bundle look-up
      *
      * @param key the resource key
      */
@@ -1978,18 +1981,57 @@ public class JShellTool implements MessageHandler {
         Consumer<String> saveHandler = new SaveHandler(src, srcSet);
         Consumer<String> errorHandler = s -> hard("Edit Error: %s", s);
         if (editor == BUILT_IN_EDITOR) {
-            try {
-                EditPad.edit(errorHandler, src, saveHandler);
-            } catch (RuntimeException ex) {
-                errormsg("jshell.err.cant.launch.editor", ex);
-                fluffmsg("jshell.msg.try.set.editor");
-                return false;
-            }
+            return builtInEdit(src, saveHandler, errorHandler);
         } else {
-            ExternalEditor.edit(editor.cmd, errorHandler, src, saveHandler, input,
-                    editor.wait, this::hardrb);
+            // Changes have occurred in temp edit directory,
+            // transfer the new sources to JShell (unless the editor is
+            // running directly in JShell's window -- don't make a mess)
+            String[] buffer = new String[1];
+            Consumer<String> extSaveHandler = s -> {
+                if (input.terminalEditorRunning()) {
+                    buffer[0] = s;
+                } else {
+                    saveHandler.accept(s);
+                }
+            };
+            ExternalEditor.edit(editor.cmd, src,
+                    errorHandler, extSaveHandler,
+                    () -> input.suspend(),
+                    () -> input.resume(),
+                    editor.wait,
+                    () -> hardrb("jshell.msg.press.return.to.leave.edit.mode"));
+            if (buffer[0] != null) {
+                saveHandler.accept(buffer[0]);
+            }
         }
         return true;
+    }
+    //where
+    // start the built-in editor
+    private boolean builtInEdit(String initialText,
+            Consumer<String> saveHandler, Consumer<String> errorHandler) {
+        try {
+            ServiceLoader<BuildInEditorProvider> sl
+                    = ServiceLoader.load(BuildInEditorProvider.class);
+            // Find the highest ranking provider
+            BuildInEditorProvider provider = null;
+            for (BuildInEditorProvider p : sl) {
+                if (provider == null || p.rank() > provider.rank()) {
+                    provider = p;
+                }
+            }
+            if (provider != null) {
+                provider.edit(getResourceString("jshell.label.editpad"),
+                        initialText, saveHandler, errorHandler);
+                return true;
+            } else {
+                errormsg("jshell.err.no.builtin.editor");
+            }
+        } catch (RuntimeException ex) {
+            errormsg("jshell.err.cant.launch.editor", ex);
+        }
+        fluffmsg("jshell.msg.try.set.editor");
+        return false;
     }
     //where
     // receives editor requests to save
