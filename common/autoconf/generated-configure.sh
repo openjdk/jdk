@@ -5093,7 +5093,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1477490418
+DATE_WHEN_GENERATED=1478079760
 
 ###############################################################################
 #
@@ -50278,6 +50278,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
 
   # Setup some hard coded includes
   COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
+      -I\$(SUPPORT_OUTPUTDIR)/modules_include/java.base \
       -I${JDK_TOPDIR}/src/java.base/share/native/include \
       -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS/native/include \
       -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/include \
@@ -51101,6 +51102,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
 
   # Setup some hard coded includes
   OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK \
+      -I\$(SUPPORT_OUTPUTDIR)/modules_include/java.base \
       -I${JDK_TOPDIR}/src/java.base/share/native/include \
       -I${JDK_TOPDIR}/src/java.base/$OPENJDK_BUILD_OS/native/include \
       -I${JDK_TOPDIR}/src/java.base/$OPENJDK_BUILD_OS_TYPE/native/include \
