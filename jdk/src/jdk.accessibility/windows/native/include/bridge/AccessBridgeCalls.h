@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/* Note: In addition to this header file AccessBridgeCalls.c must be compiled and
+ * linked to your application.  AccessBridgeCalls.c implements the Java Access
+ * Bridge API and also hides the complexities associated with interfacing to the
+ * associated Java Access Bridge DLL which is installed when Java is installed.
+ *
+ * AccessBridgeCalls.c is available for download from the OpenJDK repository using
+ * the following link:
+ *
+ * http://hg.openjdk.java.net/jdk9/jdk9/jdk/raw-file/tip/src/jdk.accessibility/windows/native/bridge/AccessBridgeCalls.c
+ *
+ * Also note that the API is used in the jaccessinspector and jaccesswalker tools.
+ * The source for those tools is available in the OpenJDK repository at these links:
+ *
+ * http://hg.openjdk.java.net/jdk9/jdk9/jdk/file/tip/src/jdk.accessibility/windows/native/jaccessinspector/jaccessinspector.cpp
+ * http://hg.openjdk.java.net/jdk9/jdk9/jdk/file/tip/src/jdk.accessibility/windows/native/jaccesswalker/jaccesswalker.cpp
+ *
+ *
  */
 
 /*
