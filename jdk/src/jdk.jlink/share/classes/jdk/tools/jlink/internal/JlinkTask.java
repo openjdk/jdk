@@ -526,30 +526,16 @@ public class JlinkTask {
     }
 
     private static enum Section {
-        NATIVE_LIBS("native", nativeDir()),
-        NATIVE_CMDS("bin", "bin"),
-        CLASSES("classes", "classes"),
-        CONFIG("conf", "conf"),
-        UNKNOWN("unknown", "unknown");
-
-        private static String nativeDir() {
-            if (System.getProperty("os.name").startsWith("Windows")) {
-                return "bin";
-            } else {
-                return "lib";
-            }
-        }
+        NATIVE_LIBS("native"),
+        NATIVE_CMDS("bin"),
+        CLASSES("classes"),
+        CONFIG("conf"),
+        UNKNOWN("unknown");
 
         private final String jmodDir;
-        private final String imageDir;
 
-        Section(String jmodDir, String imageDir) {
+        Section(String jmodDir) {
             this.jmodDir = jmodDir;
-            this.imageDir = imageDir;
-        }
-
-        String imageDir() {
-            return imageDir;
         }
 
         String jmodDir() {
