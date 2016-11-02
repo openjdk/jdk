@@ -96,6 +96,8 @@ import sun.security.krb5.internal.ReplayCache;
  * Java also does this way.
  *
  * See src/lib/krb5/rcache/rc_io.c and src/lib/krb5/rcache/rc_dfl.c.
+ *
+ * Update: New version can use other hash algorithms.
  */
 public class DflCache extends ReplayCache {
 
@@ -300,7 +302,7 @@ public class DflCache extends ReplayCache {
                         if (time.equals(a)) {
                             // Exact match, must be a replay
                             throw new KrbApErrException(Krb5.KRB_AP_ERR_REPEAT);
-                        } else if (time.isSameIgnoresHash(a)) {
+                        } else if (time.sameTimeDiffHash((AuthTimeWithHash)a)) {
                             // Two different authenticators in the same second.
                             // Remember it
                             seeNewButNotSame = true;
