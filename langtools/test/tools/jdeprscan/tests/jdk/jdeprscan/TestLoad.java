@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8145464 8164837
  * @summary Test of jdeprscan tool loading and printing to aCSV file.
  * @modules jdk.jdeps/com.sun.tools.jdeprscan
  * @library ../../../cases

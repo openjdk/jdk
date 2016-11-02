@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8145464 8164837 8165646
  * @summary Basic test of jdeprscan's scanning phase.
  * @modules jdk.jdeps/com.sun.tools.jdeprscan
  * @library ../../../cases
