@@ -104,11 +104,11 @@ public class ArrayConversionTest {
     @Test
     public void testVarArgs() throws ScriptException {
         // Sole NativeArray in vararg position becomes vararg array itself
-        runTest("assertVarArg_42_17", "[42, 17]");
+        runTest("assertVarArgWith42And17", "[42, 17]");
         // NativeArray in vararg position becomes an argument if there are more arguments
-        runTest("assertVarArg_array_17", "[42], 18");
+        runTest("assertVarArgArray7", "[42], 18");
         // Only NativeArray is converted to vararg array, other objects (e.g. a function) aren't
-        runTest("assertVarArg_function", "function() { return 'Hello' }");
+        runTest("assertVarArgFunction", "function() { return 'Hello' }");
     }
 
     private static void runTest(final String testMethodName, final String argument) throws ScriptException {
@@ -209,20 +209,20 @@ public class ArrayConversionTest {
         assertEquals(Arrays.asList("apple", "orange"), array[1]);
     }
 
-    public static void assertVarArg_42_17(final Object... args) {
+    public static void assertVarArgWith42And17(final Object... args) {
         assertEquals(2, args.length);
         assertEquals(42, ((Number)args[0]).intValue());
         assertEquals(17, ((Number)args[1]).intValue());
     }
 
-    public static void assertVarArg_array_17(final Object... args) throws ScriptException {
+    public static void assertVarArgArray7(final Object... args) throws ScriptException {
         assertEquals(2, args.length);
         e.getBindings(ScriptContext.ENGINE_SCOPE).put("arr", args[0]);
         assertTrue((Boolean)e.eval("arr instanceof Array && arr.length == 1 && arr[0] == 42"));
         assertEquals(18, ((Number)args[1]).intValue());
     }
 
-    public static void assertVarArg_function(final Object... args) throws ScriptException {
+    public static void assertVarArgFunction(final Object... args) throws ScriptException {
         assertEquals(1, args.length);
         e.getBindings(ScriptContext.ENGINE_SCOPE).put("fn", args[0]);
         assertEquals("Hello", e.eval("fn()"));
