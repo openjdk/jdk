@@ -239,8 +239,10 @@ public class RunExamples {
                     srcFiles.remove(e.infoFile);
                     showFiles(e, srcFiles);
                     showFiles(e, e.srcPathFiles);
+                    showFiles(e, e.moduleSourcePathFiles);
+                    showFiles(e, e.modulePathFiles);
+                    showFiles(e, e.classPathFiles);
                     showFiles(e, e.procFiles);
-                    showFiles(e, e.supportFiles);
                 }
                 run(e);
             }

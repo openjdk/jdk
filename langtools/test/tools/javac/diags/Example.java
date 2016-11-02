@@ -61,9 +61,10 @@ class Example implements Comparable<Example> {
         declaredKeys = new TreeSet<String>();
         srcFiles = new ArrayList<File>();
         procFiles = new ArrayList<File>();
-        supportFiles = new ArrayList<File>();
         srcPathFiles = new ArrayList<File>();
         moduleSourcePathFiles = new ArrayList<File>();
+        modulePathFiles = new ArrayList<File>();
+        classPathFiles = new ArrayList<File>();
         additionalFiles = new ArrayList<File>();
 
         findFiles(file, srcFiles);
@@ -89,10 +90,13 @@ class Example implements Comparable<Example> {
                 } else if (files == srcFiles && c.getName().equals("additional")) {
                     additionalFilesDir = c;
                     findFiles(c, additionalFiles);
-                } else if (files == srcFiles && c.getName().equals("support"))
-                    findFiles(c, supportFiles);
-                else
+                } else if (files == srcFiles && c.getName().equals("modulepath")) {
+                    findFiles(c, modulePathFiles);
+                } else if (files == srcFiles && c.getName().equals("classpath")) {
+                    findFiles(c, classPathFiles);
+                } else {
                     findFiles(c, files);
+                }
             }
         } else if (f.isFile()) {
                 if (f.getName().endsWith(".java")) {
@@ -194,23 +198,32 @@ class Example implements Comparable<Example> {
      */
     private void run(PrintWriter out, Set<String> keys, boolean raw, boolean verbose)
             throws IOException {
-        ClassLoader loader = getClass().getClassLoader();
-        if (supportFiles.size() > 0) {
-            File supportDir = new File(tempDir, "support");
-            supportDir.mkdirs();
-            clean(supportDir);
-            List<String> sOpts = Arrays.asList("-d", supportDir.getPath());
-            new Jsr199Compiler(verbose).run(null, null, false, sOpts, procFiles);
-            URLClassLoader ucl =
-                    new URLClassLoader(new URL[] { supportDir.toURI().toURL() }, loader);
-            loader = ucl;
+        List<String> opts = new ArrayList<String>();
+        if (!modulePathFiles.isEmpty()) {
+            File modulepathDir = new File(tempDir, "modulepath");
+            modulepathDir.mkdirs();
+            clean(modulepathDir);
+            List<String> sOpts = Arrays.asList("-d", modulepathDir.getPath(),
+                                               "--module-source-path", new File(file, "modulepath").getAbsolutePath());
+            new Jsr199Compiler(verbose).run(null, null, false, sOpts, modulePathFiles);
+            opts.add("--module-path");
+            opts.add(modulepathDir.getAbsolutePath());
+        }
+
+        if (!classPathFiles.isEmpty()) {
+            File classpathDir = new File(tempDir, "classpath");
+            classpathDir.mkdirs();
+            clean(classpathDir);
+            List<String> sOpts = Arrays.asList("-d", classpathDir.getPath());
+            new Jsr199Compiler(verbose).run(null, null, false, sOpts, classPathFiles);
+            opts.add("--class-path");
+            opts.add(classpathDir.getAbsolutePath());
         }
 
         File classesDir = new File(tempDir, "classes");
         classesDir.mkdirs();
         clean(classesDir);
 
-        List<String> opts = new ArrayList<String>();
         opts.add("-d");
         opts.add(classesDir.getPath());
         if (options != null)
@@ -327,8 +340,9 @@ class Example implements Comparable<Example> {
     File additionalFilesDir;
     List<File> srcPathFiles;
     List<File> moduleSourcePathFiles;
+    List<File> modulePathFiles;
+    List<File> classPathFiles;
     List<File> additionalFiles;
-    List<File> supportFiles;
     File infoFile;
     private List<String> runOpts;
     private List<String> options;
