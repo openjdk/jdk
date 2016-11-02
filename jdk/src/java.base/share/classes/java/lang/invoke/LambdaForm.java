@@ -855,7 +855,11 @@ class LambdaForm {
                 System.out.println("LambdaForm compilation failed: " + this);
                 bge.printStackTrace(System.out);
             }
-        } catch (Error | Exception e) {
+        } catch (Error e) {
+            // Pass through any error
+            throw e;
+        } catch (Exception e) {
+            // Wrap any exception
             throw newInternalError(this.toString(), e);
         }
     }

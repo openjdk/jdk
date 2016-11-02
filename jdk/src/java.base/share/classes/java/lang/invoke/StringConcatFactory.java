@@ -723,6 +723,9 @@ public final class StringConcatFactory {
                 default:
                     throw new StringConcatException("Concatenation strategy " + STRATEGY + " is not implemented");
             }
+        } catch (Error | StringConcatException e) {
+            // Pass through any error or existing StringConcatException
+            throw e;
         } catch (Throwable t) {
             throw new StringConcatException("Generator failed", t);
         }
@@ -1092,9 +1095,9 @@ public final class StringConcatFactory {
                 UNSAFE.ensureClassInitialized(innerClass);
                 dumpIfEnabled(innerClass.getName(), classBytes);
                 return Lookup.IMPL_LOOKUP.findStatic(innerClass, METHOD_NAME, args);
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 dumpIfEnabled(className + "$$FAILED", classBytes);
-                throw new StringConcatException("Error while spinning the class", e);
+                throw new StringConcatException("Exception while spinning the class", e);
             }
         }
 
