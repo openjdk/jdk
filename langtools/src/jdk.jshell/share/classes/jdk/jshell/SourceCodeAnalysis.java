@@ -63,12 +63,16 @@ public abstract class SourceCodeAnalysis {
     public abstract List<Suggestion> completionSuggestions(String input, int cursor, int[] anchor);
 
     /**
-     * Compute a description/help string for the given user's input.
+     * Compute documentation for the given user's input. Multiple {@code Documentation} objects may
+     * be returned when multiple elements match the user's input (like for overloaded methods).
      * @param input the snippet the user wrote so far
      * @param cursor the current position of the cursors in the given {@code input} text
-     * @return description/help string for the given user's input
+     * @param computeJavadoc true if the javadoc for the given input should be computed in
+     *                       addition to the signature
+     * @return the documentations for the given user's input, if multiple elements match the input,
+     *         multiple {@code Documentation} objects are returned.
      */
-    public abstract String documentation(String input, int cursor);
+    public abstract List<Documentation> documentation(String input, int cursor, boolean computeJavadoc);
 
     /**
      * Infer the type of the given expression. The expression spans from the beginning of {@code code}
@@ -263,6 +267,26 @@ public abstract class SourceCodeAnalysis {
          * target type; otherwise {@code false}
          */
         boolean matchesType();
+    }
+
+    /**
+     * A documentation for a candidate for continuation of the given user's input.
+     */
+    public interface Documentation {
+
+        /**
+         * The signature of the given element.
+         *
+         * @return the signature
+         */
+        String signature();
+
+        /**
+         * The javadoc of the given element.
+         *
+         * @return the javadoc, or null if not found or not requested
+         */
+        String javadoc();
     }
 
     /**

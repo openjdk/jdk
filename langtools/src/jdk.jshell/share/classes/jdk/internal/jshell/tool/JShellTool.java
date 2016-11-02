@@ -1308,7 +1308,7 @@ public class JShellTool implements MessageHandler {
         return commandCompletions.completionSuggestions(code, cursor, anchor);
     }
 
-    public String commandDocumentation(String code, int cursor) {
+    public String commandDocumentation(String code, int cursor, boolean shortDescription) {
         code = code.substring(0, cursor);
         int space = code.indexOf(' ');
 
@@ -1316,7 +1316,7 @@ public class JShellTool implements MessageHandler {
             String cmd = code.substring(0, space);
             Command command = commands.get(cmd);
             if (command != null) {
-                return getResourceString(command.helpKey + ".summary");
+                return getResourceString(command.helpKey + (shortDescription ? ".summary" : ""));
             }
         }
 

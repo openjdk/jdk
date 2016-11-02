@@ -65,6 +65,9 @@ module jdk.compiler {
         jdk.jdeps,
         jdk.javadoc,
         jdk.jshell;
+    exports jdk.internal.shellsupport.doc to
+        jdk.jshell,
+        jdk.scripting.nashorn.shell;
 
     uses javax.annotation.processing.Processor;
     uses com.sun.source.util.Plugin;

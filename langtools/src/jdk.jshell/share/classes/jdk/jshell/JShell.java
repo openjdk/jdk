@@ -506,6 +506,9 @@ public class JShell implements AutoCloseable {
         if (!closed) {
             closeDown();
             executionControl().close();
+            if (sourceCodeAnalysis != null) {
+                sourceCodeAnalysis.close();
+            }
         }
     }
 
