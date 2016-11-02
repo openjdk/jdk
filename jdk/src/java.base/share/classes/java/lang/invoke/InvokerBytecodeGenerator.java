@@ -1021,7 +1021,7 @@ class InvokerBytecodeGenerator {
             try {
                 emptyArray = name.function.resolvedHandle().invoke();
             } catch (Throwable ex) {
-                throw newInternalError(ex);
+                throw uncaughtException(ex);
             }
             assert(java.lang.reflect.Array.getLength(emptyArray) == 0);
             assert(emptyArray.getClass() == rtype);  // exact typing
