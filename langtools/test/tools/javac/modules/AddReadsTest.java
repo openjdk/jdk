@@ -80,7 +80,7 @@ public class AddReadsTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("Test.java:1:41: compiler.err.package.not.visible: api, (compiler.misc.not.def.access.does.not.read: m2, api, m1)"))
+        if (!log.contains("Test.java:1:44: compiler.err.not.def.access.package.cant.access: api.Api, api"))
             throw new Exception("expected output not found");
 
         //test add dependencies:

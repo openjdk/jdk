@@ -914,7 +914,6 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         public PackageSymbol unnamedPackage;
         public Map<Name, PackageSymbol> visiblePackages;
-        public Set<ModuleSymbol> readModules;
         public List<Symbol> enclosedPackages = List.nil();
 
         public Completer usesProvidesCompleter = Completer.NULL_COMPLETER;

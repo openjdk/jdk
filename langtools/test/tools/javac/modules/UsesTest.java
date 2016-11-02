@@ -262,7 +262,7 @@ public class UsesTest extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expected = Arrays.asList("module-info.java:1:31: compiler.err.package.not.visible: p, (compiler.misc.not.def.access.not.exported: p, m1)",
+        List<String> expected = Arrays.asList("module-info.java:1:32: compiler.err.not.def.access.package.cant.access: p.C, p",
                 "1 error");
         if (!output.containsAll(expected)) {
             throw new Exception("Expected output not found");
@@ -286,7 +286,7 @@ public class UsesTest extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expected = Arrays.asList("module-info.java:1:31: compiler.err.package.not.visible: p, (compiler.misc.not.def.access.not.exported: p, m1)",
+        List<String> expected = Arrays.asList("module-info.java:1:32: compiler.err.not.def.access.package.cant.access: p.C, p",
                 "1 error");
         if (!output.containsAll(expected)) {
             throw new Exception("Expected output not found");
