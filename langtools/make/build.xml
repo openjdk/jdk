@@ -84,17 +84,21 @@
     <property name="build.prevsrc" location="${build.dir}/prevsrc"/>
 
     <pathconvert property="modules.names" pathsep=",">
-        <globmapper from="${src.dir}/*" to="*" />
+        <globmapper from="${src.dir}/*" to="*" handledirsep="yes"/>
         <dirset dir="${src.dir}" includes="*.*"/>
     </pathconvert>
 
     <pathconvert property="xpatch.rest" pathsep=" --patch-module=">
-        <regexpmapper from="${file.separator}([^${file.separator}]+)$" to='\1="${build.modules}${file.separator}\1"' />
+        <regexpmapper from="/([^$/]+)$"
+                      to='\1="${build.modules}/\1"'
+                      handledirsep="yes"/>
         <dirset dir="${src.dir}" includes="*.*"/>
     </pathconvert>
 
     <pathconvert property="xpatch.noquotes.rest" pathsep=" --patch-module=">
-        <regexpmapper from="${file.separator}([^${file.separator}]+)$" to="\1=${build.modules}${file.separator}\1" />
+        <regexpmapper from="/([^$/]+)$"
+                      to="\1=${build.modules}/\1"
+                      handledirsep="yes"/>
         <dirset dir="${src.dir}" includes="*.*"/>
     </pathconvert>
 
@@ -207,7 +211,9 @@
             <arg line="-source ${javac.source} -target ${javac.target}" />
             <arg value="-d" />
             <arg value="${build.modules}" />
-            <arg line="${javac.opts} --module-source-path ${src.dir}${file.separator}*${file.separator}share${file.separator}classes:${build.gensrc} -m ${modules.names}" />
+            <arg line="${javac.opts}" />
+            <arg line="--module-source-path ${src.dir}${file.separator}*${file.separator}share${file.separator}classes${path.separator}${build.gensrc}" />
+            <arg line="-m ${modules.names}" />
         </exec>
         <delete>
             <fileset dir="${build.modules}" includes="**/module-info.class"/>
