@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package javax.sound.sampled;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * An instance of the {@code AudioFileFormat} class describes an audio file,
@@ -344,7 +345,7 @@ public class AudioFileFormat {
          * @param  extension the string that commonly marks the file type
          *         without leading dot
          */
-        public Type(String name, String extension) {
+        public Type(final String name, final String extension) {
             this.name = name;
             this.extension = extension;
         }
@@ -353,14 +354,14 @@ public class AudioFileFormat {
          * Finalizes the equals method.
          */
         @Override
-        public final boolean equals(Object obj) {
-            if (toString() == null) {
-                return (obj != null) && (obj.toString() == null);
+        public final boolean equals(final Object obj) {
+            if (this == obj) {
+                return true;
             }
-            if (obj instanceof Type) {
-                return toString().equals(obj.toString());
+            if (!(obj instanceof Type)) {
+                return false;
             }
-            return false;
+            return Objects.equals(name, ((Type) obj).name);
         }
 
         /**
@@ -368,10 +369,7 @@ public class AudioFileFormat {
          */
         @Override
         public final int hashCode() {
-            if (toString() == null) {
-                return 0;
-            }
-            return toString().hashCode();
+            return name != null ? name.hashCode() : 0;
         }
 
         /**
