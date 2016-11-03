@@ -307,7 +307,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
     return member_index;
   }
 
-  int invokeDynamicNameAndTypeRefIndexAt(int which) {
+  public int invokeDynamicNameAndTypeRefIndexAt(int which) {
     // assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
     return extractHighShortFromInt(getIntAt(which));
   }
