@@ -27,6 +27,12 @@ package javax.swing;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.AffineTransform;
+import static java.awt.geom.AffineTransform.TYPE_FLIP;
+import static java.awt.geom.AffineTransform.TYPE_MASK_SCALE;
+import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
+import java.awt.image.AbstractMultiResolutionImage;
+import java.awt.image.ImageObserver;
 import java.awt.peer.ComponentPeer;
 import java.beans.BeanProperty;
 import java.beans.Transient;
@@ -37,6 +43,8 @@ import javax.swing.border.*;
 import javax.accessibility.*;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collections;
 
 import sun.awt.AWTAccessor;
 
@@ -739,7 +747,43 @@ public class JViewport extends JComponent implements Accessible
             g.clipRect(0, 0, viewBounds.width, viewBounds.height);
         }
 
-        if (backingStoreImage == null) {
+        boolean recreateBackingStoreImage = (backingStoreImage == null);
+        int scaledWidth = width;
+        int scaledHeight = height;
+
+        if (g instanceof Graphics2D) {
+            double sw = width;
+            double sh = height;
+            Graphics2D g2d = (Graphics2D) g;
+            AffineTransform tx = g2d.getTransform();
+            int type = tx.getType();
+            if ((type & ~(TYPE_TRANSLATION | TYPE_FLIP)) == 0) {
+                // skip
+            } else if ((type & ~(TYPE_TRANSLATION | TYPE_FLIP | TYPE_MASK_SCALE)) == 0) {
+                sw = Math.abs(width * tx.getScaleX());
+                sh = Math.abs(height * tx.getScaleY());
+            } else {
+                sw = Math.abs(width * Math.hypot(tx.getScaleX(), tx.getShearY()));
+                sh = Math.abs(height * Math.hypot(tx.getShearX(), tx.getScaleY()));
+            }
+
+            scaledWidth = (int) Math.ceil(sw);
+            scaledHeight = (int) Math.ceil(sh);
+
+            if (!recreateBackingStoreImage) {
+                if (backingStoreImage instanceof BackingStoreMultiResolutionImage) {
+                    BackingStoreMultiResolutionImage mrImage
+                            = (BackingStoreMultiResolutionImage) backingStoreImage;
+                    recreateBackingStoreImage = (mrImage.scaledWidth != scaledWidth
+                            || mrImage.scaledHeight != scaledHeight);
+                } else {
+                    recreateBackingStoreImage = (width != scaledWidth
+                            || height != scaledHeight);
+                }
+            }
+        }
+
+        if (recreateBackingStoreImage) {
             // Backing store is enabled but this is the first call to paint.
             // Create the backing store, paint it and then copy to g.
             // The backing store image will be created with the size of
@@ -747,7 +791,8 @@ public class JViewport extends JComponent implements Accessible
             // same size, otherwise when scrolling the backing image
             // the region outside of the clipped region will not be painted,
             // and result in empty areas.
-            backingStoreImage = createImage(width, height);
+            backingStoreImage = createScaledImage(width, height,
+                                                  scaledWidth, scaledHeight);
             Rectangle clip = g.getClipBounds();
             if (clip.width != width || clip.height != height) {
                 if (!isOpaque()) {
@@ -813,6 +858,74 @@ public class JViewport extends JComponent implements Accessible
         }
         lastPaintPosition = getViewLocation();
         scrollUnderway = false;
+    }
+
+    private Image createScaledImage(final int width, final int height,
+                                    int scaledWidth, int scaledHeight)
+    {
+        if (scaledWidth == width && scaledHeight == height) {
+            return createImage(width, height);
+        }
+
+        Image rvImage = createImage(scaledWidth, scaledHeight);
+
+        return new BackingStoreMultiResolutionImage(width, height,
+                scaledWidth, scaledHeight, rvImage);
+    }
+
+    static class BackingStoreMultiResolutionImage
+            extends AbstractMultiResolutionImage {
+
+        private final int width;
+        private final int height;
+        private final int scaledWidth;
+        private final int scaledHeight;
+        private final Image rvImage;
+
+        public BackingStoreMultiResolutionImage(int width, int height,
+                int scaledWidth, int scaledHeight, Image rvImage) {
+            this.width = width;
+            this.height = height;
+            this.scaledWidth = scaledWidth;
+            this.scaledHeight = scaledHeight;
+            this.rvImage = rvImage;
+        }
+
+        @Override
+        public int getWidth(ImageObserver observer) {
+            return width;
+        }
+
+        @Override
+        public int getHeight(ImageObserver observer) {
+            return height;
+        }
+
+        @Override
+        protected Image getBaseImage() {
+            return rvImage;
+        }
+
+        @Override
+        public Graphics getGraphics() {
+            Graphics graphics = rvImage.getGraphics();
+            if (graphics instanceof Graphics2D) {
+                double sx = (double) scaledWidth / width;
+                double sy = (double) scaledHeight / height;
+                ((Graphics2D) graphics).scale(sx, sy);
+            }
+            return graphics;
+        }
+
+        @Override
+        public Image getResolutionVariant(double w, double h) {
+            return rvImage;
+        }
+
+        @Override
+        public java.util.List<Image> getResolutionVariants() {
+            return Collections.unmodifiableList(Arrays.asList(rvImage));
+        }
     }
 
 
