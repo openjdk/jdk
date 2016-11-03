@@ -526,7 +526,7 @@ public class JShellTool implements MessageHandler {
             runFile(loadFile, "jshell");
         }
 
-        if (regenerateOnDeath) {
+        if (regenerateOnDeath && feedback.shouldDisplayCommandFluff()) {
             hardmsg("jshell.msg.welcome", version());
         }
 
@@ -2240,7 +2240,7 @@ public class JShellTool implements MessageHandler {
         stream.forEachOrdered(vk ->
         {
             String val = state.status(vk) == Status.VALID
-                    ? state.varValue(vk)
+                    ? feedback.truncateVarValue(state.varValue(vk))
                     : getResourceString("jshell.msg.vars.not.active");
             hard("  %s %s = %s", vk.typeName(), vk.name(), val);
         });
