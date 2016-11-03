@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -691,17 +691,21 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                                 } else {
                                     buf.append(instrStr);
                                 }
-                             } else if(instr instanceof BytecodeInvoke) {
+                             } else if (instr instanceof BytecodeInvoke) {
                                 BytecodeInvoke invokeBytecode = (BytecodeInvoke) instr;
-                                Method m = invokeBytecode.getInvokedMethod();
-                                if (m != null) {
-                                   buf.link(genMethodHref(m), instrStr);
-                                   buf.append(" of ");
-                                   InstanceKlass klass = (InstanceKlass) m.getMethodHolder();
-                                   buf.link(genKlassHref(klass), genKlassTitle(klass));
+                                if (invokeBytecode.isInvokedynamic()) {
+                                  buf.append(instrStr);
                                 } else {
-                                   buf.append(instrStr);
-                                }
+                                  Method m = invokeBytecode.getInvokedMethod();
+                                  if (m != null) {
+                                    buf.link(genMethodHref(m), instrStr);
+                                    buf.append(" of ");
+                                    InstanceKlass klass = (InstanceKlass) m.getMethodHolder();
+                                    buf.link(genKlassHref(klass), genKlassTitle(klass));
+                                  } else {
+                                    buf.append(instrStr);
+                                  }
+                               }
                              } else if (instr instanceof BytecodeGetPut) {
                                 BytecodeGetPut getPut = (BytecodeGetPut) instr;
                                 sun.jvm.hotspot.oops.Field f = getPut.getField();
