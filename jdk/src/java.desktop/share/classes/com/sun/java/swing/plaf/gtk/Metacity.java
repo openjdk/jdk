@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import com.sun.java.swing.plaf.gtk.GTKConstants.ArrowType;
 import com.sun.java.swing.plaf.gtk.GTKConstants.ShadowType;
 
 import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import javax.swing.plaf.synth.*;
 
 import java.awt.*;
@@ -40,7 +41,6 @@ import java.security.*;
 import java.util.*;
 
 import javax.swing.*;
-import javax.swing.border.*;
 
 import javax.xml.parsers.*;
 import org.xml.sax.SAXException;
@@ -226,12 +226,8 @@ class Metacity implements SynthConstants {
         JComponent titlePane = (JComponent)button.getParent();
         Container titlePaneParent = titlePane.getParent();
 
-        JInternalFrame jif;
-        if (titlePaneParent instanceof JInternalFrame) {
-            jif = (JInternalFrame)titlePaneParent;
-        } else if (titlePaneParent instanceof JInternalFrame.JDesktopIcon) {
-            jif = ((JInternalFrame.JDesktopIcon)titlePaneParent).getInternalFrame();
-        } else {
+        JInternalFrame jif = findInternalFrame(titlePaneParent);
+        if (jif == null) {
             return;
         }
 
@@ -332,6 +328,19 @@ class Metacity implements SynthConstants {
         }
     }
 
+    JInternalFrame findInternalFrame(Component comp) {
+        if (comp.getParent() instanceof BasicInternalFrameTitlePane) {
+            comp = comp.getParent();
+        }
+        if (comp instanceof JInternalFrame) {
+            return  (JInternalFrame)comp;
+        } else if (comp instanceof JInternalFrame.JDesktopIcon) {
+            return ((JInternalFrame.JDesktopIcon)comp).getInternalFrame();
+        }
+        assert false : "cannot find the internal frame";
+        return null;
+    }
+
     void paintFrameBorder(SynthContext context, Graphics g, int x0, int y0, int width, int height) {
         updateFrameGeometry(context);
 
@@ -343,13 +352,8 @@ class Metacity implements SynthConstants {
             return;
         }
 
-        JInternalFrame jif = null;
-        if (comp instanceof JInternalFrame) {
-            jif = (JInternalFrame)comp;
-        } else if (comp instanceof JInternalFrame.JDesktopIcon) {
-            jif = ((JInternalFrame.JDesktopIcon)comp).getInternalFrame();
-        } else {
-            assert false : "component is not JInternalFrame or JInternalFrame.JDesktopIcon";
+        JInternalFrame jif = findInternalFrame(comp);
+        if (jif == null) {
             return;
         }
 
@@ -1467,13 +1471,8 @@ class Metacity implements SynthConstants {
         JComponent comp = context.getComponent();
         JComponent titlePane = findChild(comp, "InternalFrame.northPane");
 
-        JInternalFrame jif = null;
-        if (comp instanceof JInternalFrame) {
-            jif = (JInternalFrame)comp;
-        } else if (comp instanceof JInternalFrame.JDesktopIcon) {
-            jif = ((JInternalFrame.JDesktopIcon)comp).getInternalFrame();
-        } else {
-            assert false : "component is not JInternalFrame or JInternalFrame.JDesktopIcon";
+        JInternalFrame jif = findInternalFrame(comp);
+        if (jif == null) {
             return;
         }
 
