@@ -62,7 +62,7 @@ public class MetalScrollBarUI extends BasicScrollBarUI
     /**
      * The metal bumps.
      */
-    protected MetalBumps bumps;
+    private MetalBumps bumps;
 
     /**
      * The increase button.
