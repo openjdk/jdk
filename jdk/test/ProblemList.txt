@@ -218,6 +218,8 @@ sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java         8161232 macosx-a
 
 # jdk_sound
 
+javax/sound/sampled/Clip/OpenNonIntegralNumberOfSampleframes.java 8168881 generic-all
+
 ############################################################################
 
 # jdk_imageio
