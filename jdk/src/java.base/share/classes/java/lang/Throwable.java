@@ -24,7 +24,6 @@
  */
 
 package java.lang;
-import jdk.internal.misc.VM;
 
 import  java.io.*;
 import  java.util.*;
@@ -826,11 +825,7 @@ public class Throwable implements Serializable {
         // backtrace if this is the first call to this method
         if (stackTrace == UNASSIGNED_STACK ||
             (stackTrace == null && backtrace != null) /* Out of protocol state */) {
-            stackTrace = new StackTraceElement[depth];
-            for (int i = 0; i < depth; i++) {
-                stackTrace[i] = new StackTraceElement();
-            }
-            getStackTraceElements(stackTrace);
+            stackTrace = StackTraceElement.of(this, depth);
         } else if (stackTrace == null) {
             return UNASSIGNED_STACK;
         }
@@ -880,13 +875,6 @@ public class Throwable implements Serializable {
             this.stackTrace = defensiveCopy;
         }
     }
-
-    /**
-     * Gets the stack trace elements.
-     * @param  elements
-     * @throws IndexOutOfBoundsException if {@code elements.length != depth }
-     */
-    private native void getStackTraceElements(StackTraceElement[] elements);
 
     /**
      * Reads a {@code Throwable} from a stream, enforcing
