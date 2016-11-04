@@ -24,8 +24,9 @@
 /*
  * @test
  * @summary Test java.* class defined by the platform class loader
- * @build jdk.zipfs/java.fake.Fake
  * @modules jdk.zipfs/java.fake
+ * @build   jdk.zipfs/java.fake.Fake
+ * @compile --add-modules jdk.zipfs DefinePlatformClass.java
  * @run main DefinePlatformClass
  */
 
