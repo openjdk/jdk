@@ -21,8 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.xaddreads.too.many
-// options: --add-reads jdk.compiler=ALL-UNNAMED  --add-reads jdk.compiler=ALL-UNNAMED
+// key: compiler.warn.bad.name.for.option
+// options: --add-exports Bad!Name/p=java.base
 
-public class XaddreadsTooMany {
-}
+class BadNameForOption { }
+

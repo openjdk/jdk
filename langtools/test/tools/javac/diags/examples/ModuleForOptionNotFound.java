@@ -21,8 +21,12 @@
  * questions.
  */
 
-// key: compiler.err.xaddexports.malformed.entry
-// options: --add-exports jdk.compiler/com.sun.tools.javac.util
+// key: compiler.warn.module.for.option.not.found
+// key: compiler.err.doesnt.exist
 
-public class XaddexportsMalformedEntry {
-}
+// options: --add-exports undefModule/undefPackage=ALL-UNNAMED
+
+import undefPackage.Any;
+
+class Test {}
+
