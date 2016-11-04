@@ -117,7 +117,7 @@ final class StdAppletViewerFactory implements AppletViewerFactory {
  * (The document named appletviewertags.html in the JDK's docs/tooldocs directory,
  *  once the JDK docs have been installed.)
  */
-@SuppressWarnings("serial") // JDK implementation class
+@SuppressWarnings({"serial", "deprecation"}) // JDK-implementation class
 public class AppletViewer extends Frame implements AppletContext, Printable {
 
     /**
@@ -157,7 +157,6 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
     /**
      * Create the applet viewer.
      */
-    @SuppressWarnings("deprecation")
     public AppletViewer(int x, int y, URL doc, Hashtable<String, String> atts,
                         PrintStream statusMsgStream, AppletViewerFactory factory) {
         this.factory = factory;

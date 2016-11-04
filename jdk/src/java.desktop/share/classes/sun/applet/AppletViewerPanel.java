@@ -197,6 +197,7 @@ class AppletViewerPanel extends AppletPanel {
      * Get the applet context. For now this is
      * also implemented by the AppletPanel class.
      */
+    @SuppressWarnings("deprecation")
     public AppletContext getAppletContext() {
         return (AppletContext)getParent();
     }
