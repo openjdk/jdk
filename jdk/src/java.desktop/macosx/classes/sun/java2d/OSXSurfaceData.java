@@ -672,7 +672,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
                 TexturePaint color = (TexturePaint) sg2d.paint;
                 this.fGraphicsStatesInt.put(kColorStateIndex, kColorTexture);
                 texturePaintImage = color.getImage();
-                SurfaceData textureSurfaceData = BufImgSurfaceData.createData(texturePaintImage);
+                SurfaceData textureSurfaceData = OSXOffScreenSurfaceData.createNewSurface(texturePaintImage);
                 this.fGraphicsStatesInt.put(kColorWidthIndex, texturePaintImage.getWidth());
                 this.fGraphicsStatesInt.put(kColorHeightIndex, texturePaintImage.getHeight());
                 Rectangle2D anchor = color.getAnchorRect();
