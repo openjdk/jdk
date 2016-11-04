@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,8 @@ class TIFFFaxDecompressor extends TIFFDecompressor {
         0xff  // 8
     };
 
-    // Table to be used when fillOrder = 2, for flipping bytes.
+    // Table to be used for flipping bytes when fillOrder is
+    // BaselineTIFFTagSet.FILL_ORDER_RIGHT_TO_LEFT (2).
     static byte flipTable[] = {
          0,  -128,    64,   -64,    32,   -96,    96,   -32,
         16,  -112,    80,   -48,    48,   -80,   112,   -16,
@@ -597,7 +598,8 @@ class TIFFFaxDecompressor extends TIFFDecompressor {
             TIFFField f;
 
             f = tmetadata.getTIFFField(BaselineTIFFTagSet.TAG_FILL_ORDER);
-            this.fillOrder = f == null ? 1 : f.getAsInt(0);
+            this.fillOrder = f == null ?
+               BaselineTIFFTagSet.FILL_ORDER_LEFT_TO_RIGHT : f.getAsInt(0);
 
             f = tmetadata.getTIFFField(BaselineTIFFTagSet.TAG_COMPRESSION);
             this.compression = f == null ?
@@ -612,7 +614,7 @@ class TIFFFaxDecompressor extends TIFFDecompressor {
             f = tmetadata.getTIFFField(BaselineTIFFTagSet.TAG_T6_OPTIONS);
             this.t6Options = f == null ? 0 : f.getAsInt(0);
         } else {
-            this.fillOrder = 1; // MSB-to-LSB
+            this.fillOrder = BaselineTIFFTagSet.FILL_ORDER_LEFT_TO_RIGHT;
 
             this.compression = BaselineTIFFTagSet.COMPRESSION_CCITT_RLE; // RLE
 
@@ -1458,7 +1460,7 @@ class TIFFFaxDecompressor extends TIFFDecompressor {
         int l = data.length - 1;
         int bp = this.bytePointer;
 
-        if (fillOrder == 1) {
+        if (fillOrder == BaselineTIFFTagSet.FILL_ORDER_LEFT_TO_RIGHT) {
             b = data[bp];
 
             if (bp == l) {
@@ -1471,7 +1473,7 @@ class TIFFFaxDecompressor extends TIFFDecompressor {
                 next = data[bp + 1];
                 next2next = data[bp + 2];
             }
-        } else if (fillOrder == 2) {
+        } else if (fillOrder == BaselineTIFFTagSet.FILL_ORDER_RIGHT_TO_LEFT) {
             b = flipTable[data[bp] & 0xff];
 
             if (bp == l) {
@@ -1527,14 +1529,14 @@ class TIFFFaxDecompressor extends TIFFDecompressor {
         int l = data.length - 1;
         int bp = this.bytePointer;
 
-        if (fillOrder == 1) {
+        if (fillOrder == BaselineTIFFTagSet.FILL_ORDER_LEFT_TO_RIGHT) {
             b = data[bp];
             if (bp == l) {
                 next = 0x00;
             } else {
                 next = data[bp + 1];
             }
-        } else if (fillOrder == 2) {
+        } else if (fillOrder == BaselineTIFFTagSet.FILL_ORDER_RIGHT_TO_LEFT) {
             b = flipTable[data[bp] & 0xff];
             if (bp == l) {
                 next = 0x00;
