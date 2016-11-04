@@ -41,6 +41,7 @@ import com.sun.media.sound.JavaSoundAudioClip;
  * @author Arthur van Hoff, Kara Kytle
  */
 
+@SuppressWarnings("deprecation")
 public class AppletAudioClip implements AudioClip {
 
     // url that this AudioClip is based on

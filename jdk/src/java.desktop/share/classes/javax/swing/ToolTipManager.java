@@ -753,6 +753,7 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
   // Returns: 0 no adjust
   //         -1 can't fit
   //         >0 adjust value by amount returned
+ @SuppressWarnings("deprecation")
   private int getPopupFitWidth(Rectangle popupRectInScreen, Component invoker){
     if (invoker != null){
       Container parent;
@@ -778,6 +779,7 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
 
   // Returns:  0 no adjust
   //          >0 adjust by value return
+  @SuppressWarnings("deprecation")
   private int getPopupFitHeight(Rectangle popupRectInScreen, Component invoker){
     if (invoker != null){
       Container parent;
