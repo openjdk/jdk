@@ -118,7 +118,7 @@ public class ClassLoaders {
      */
     private static class BootClassLoader extends BuiltinClassLoader {
         BootClassLoader(URLClassPath bcp) {
-            super(null, bcp);
+            super(null, null, bcp);
         }
 
         @Override
@@ -138,7 +138,7 @@ public class ClassLoaders {
         }
 
         PlatformClassLoader(BootClassLoader parent) {
-            super(parent, null);
+            super("platform", parent, null);
         }
 
         /**
@@ -165,7 +165,7 @@ public class ClassLoaders {
         final URLClassPath ucp;
 
         AppClassLoader(PlatformClassLoader parent, URLClassPath ucp) {
-            super(parent, ucp);
+            super("app", parent, ucp);
             this.ucp = ucp;
         }
 

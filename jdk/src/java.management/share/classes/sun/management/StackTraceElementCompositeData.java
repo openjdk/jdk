@@ -58,7 +58,8 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
                                          getString(cd, FILE_NAME),
                                          getInt(cd, LINE_NUMBER));
         } else {
-            return new StackTraceElement(getString(cd, MODULE_NAME),
+            return new StackTraceElement(getString(cd, CLASS_LOADER_NAME),
+                                         getString(cd, MODULE_NAME),
                                          getString(cd, MODULE_VERSION),
                                          getString(cd, CLASS_NAME),
                                          getString(cd, METHOD_NAME),
@@ -76,13 +77,14 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
         // CONTENTS OF THIS ARRAY MUST BE SYNCHRONIZED WITH
         // stackTraceElementItemNames!
         final Object[] stackTraceElementItemValues = {
+            ste.getClassLoaderName(),
+            ste.getModuleName(),
+            ste.getModuleVersion(),
             ste.getClassName(),
             ste.getMethodName(),
             ste.getFileName(),
             ste.getLineNumber(),
             ste.isNativeMethod(),
-            ste.getModuleName(),
-            ste.getModuleVersion(),
         };
         try {
             return new CompositeDataSupport(stackTraceElementCompositeType,
@@ -95,25 +97,29 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
     }
 
     // Attribute names
-    private static final String CLASS_NAME      = "className";
-    private static final String METHOD_NAME     = "methodName";
-    private static final String FILE_NAME       = "fileName";
-    private static final String LINE_NUMBER     = "lineNumber";
-    private static final String NATIVE_METHOD   = "nativeMethod";
-    private static final String MODULE_NAME     = "moduleName";
-    private static final String MODULE_VERSION  = "moduleVersion";
+    private static final String CLASS_LOADER_NAME = "classLoaderName";
+    private static final String MODULE_NAME       = "moduleName";
+    private static final String MODULE_VERSION    = "moduleVersion";
+    private static final String CLASS_NAME        = "className";
+    private static final String METHOD_NAME       = "methodName";
+    private static final String FILE_NAME         = "fileName";
+    private static final String LINE_NUMBER       = "lineNumber";
+    private static final String NATIVE_METHOD     = "nativeMethod";
+
 
     private static final String[] stackTraceElementItemNames = {
+        CLASS_LOADER_NAME,
+        MODULE_NAME,
+        MODULE_VERSION,
         CLASS_NAME,
         METHOD_NAME,
         FILE_NAME,
         LINE_NUMBER,
         NATIVE_METHOD,
-        MODULE_NAME,
-        MODULE_VERSION,
     };
 
     private static final String[] stackTraceElementV9ItemNames = {
+        CLASS_LOADER_NAME,
         MODULE_NAME,
         MODULE_VERSION,
     };

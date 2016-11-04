@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,21 @@
  * questions.
  */
 
-/*
- *      Implementation of class Throwable
- *
- *      former classruntime.c, Wed Jun 26 18:43:20 1991
- */
-
 #include <stdio.h>
 #include <signal.h>
 
 #include "jni.h"
 #include "jvm.h"
 
-#include "java_lang_Throwable.h"
+#include "java_lang_StackTraceElement.h"
 
-/*
- * Fill in the current stack trace in this exception.  This is
- * usually called automatically when the exception is created but it
- * may also be called explicitly by the user.  This routine returns
- * `this' so you can write 'throw e.fillInStackTrace();'
- */
-JNIEXPORT jobject JNICALL
-Java_java_lang_Throwable_fillInStackTrace(JNIEnv *env, jobject throwable, jint dummy)
+JNIEXPORT void JNICALL Java_java_lang_StackTraceElement_initStackTraceElement
+  (JNIEnv *env, jobject dummy, jobject element, jobject stackframeinfo) {
+     JVM_InitStackTraceElement(env, element, stackframeinfo);
+}
+
+JNIEXPORT void JNICALL Java_java_lang_StackTraceElement_initStackTraceElements
+  (JNIEnv *env, jobject dummy, jobjectArray elements, jobject throwable)
 {
-    JVM_FillInStackTrace(env, throwable);
-    return throwable;
+    JVM_InitStackTraceElementArray(env, elements, throwable);
 }
