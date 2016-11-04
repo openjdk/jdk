@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8149524 8131024 8165211 8080071 8130454 8167343
+ * @bug 8149524 8131024 8165211 8080071 8130454 8167343 8129559
  * @summary Test SourceCodeAnalysis
  * @build KullaTesting TestingInputStream
  * @run testng CompletenessTest
@@ -176,6 +176,7 @@ public class CompletenessTest extends KullaTesting {
         "@interface Anno",
         "void f()",
         "void f() throws E",
+        "@A(",
     };
 
     static final String[] unknown = new String[] {
