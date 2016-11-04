@@ -1715,12 +1715,17 @@ public final class SSLEngineImpl extends SSLEngine {
 
     synchronized void fatal(byte description, String diagnostic)
             throws SSLException {
-        fatal(description, diagnostic, null);
+        fatal(description, diagnostic, null, false);
     }
 
     synchronized void fatal(byte description, Throwable cause)
             throws SSLException {
-        fatal(description, null, cause);
+        fatal(description, null, cause, false);
+    }
+
+    synchronized void fatal(byte description, String diagnostic,
+            Throwable cause) throws SSLException {
+        fatal(description, diagnostic, cause, false);
     }
 
     /*
@@ -1732,12 +1737,12 @@ public final class SSLEngineImpl extends SSLEngine {
      * levels which then call here.  This code needs to determine
      * if one of the lower levels has already started the process.
      *
-     * We won't worry about Error's, if we have one of those,
+     * We won't worry about Errors, if we have one of those,
      * we're in worse trouble.  Note:  the networking code doesn't
      * deal with Errors either.
      */
     synchronized void fatal(byte description, String diagnostic,
-            Throwable cause) throws SSLException {
+            Throwable cause, boolean recvFatalAlert) throws SSLException {
 
         /*
          * If we have no further information, make a general-purpose
@@ -1798,10 +1803,11 @@ public final class SSLEngineImpl extends SSLEngine {
         }
 
         /*
-         * If we haven't even started handshaking yet, no need
-         * to generate the fatal close alert.
+         * If we haven't even started handshaking yet, or we are the
+         * recipient of a fatal alert, no need to generate a fatal close
+         * alert.
          */
-        if (oldState != cs_START) {
+        if (oldState != cs_START && !recvFatalAlert) {
             sendAlert(Alerts.alert_fatal, description);
         }
 
@@ -1841,10 +1847,6 @@ public final class SSLEngineImpl extends SSLEngine {
         byte level = fragment.get();
         byte description = fragment.get();
 
-        if (description == -1) { // check for short message
-            fatal(Alerts.alert_illegal_parameter, "Short alert message");
-        }
-
         if (debug != null && (Debug.isOn("record") ||
                 Debug.isOn("handshake"))) {
             synchronized (System.out) {
@@ -1862,7 +1864,9 @@ public final class SSLEngineImpl extends SSLEngine {
         }
 
         if (level == Alerts.alert_warning) {
-            if (description == Alerts.alert_close_notify) {
+            if (description == -1) {    // check for short message
+                fatal(Alerts.alert_illegal_parameter, "Short alert message");
+            } else if (description == Alerts.alert_close_notify) {
                 if (connectionState == cs_HANDSHAKE) {
                     fatal(Alerts.alert_unexpected_message,
                                 "Received close_notify during handshake");
@@ -1885,10 +1889,14 @@ public final class SSLEngineImpl extends SSLEngine {
         } else { // fatal or unknown level
             String reason = "Received fatal alert: "
                 + Alerts.alertDescription(description);
-            if (closeReason == null) {
-                closeReason = Alerts.getSSLException(description, reason);
-            }
-            fatal(Alerts.alert_unexpected_message, reason);
+
+            // The inbound and outbound queues will be closed as part of
+            // the call to fatal.  The handhaker to needs to be set to null
+            // so subsequent calls to getHandshakeStatus will return
+            // NOT_HANDSHAKING.
+            handshaker = null;
+            Throwable cause = Alerts.getSSLException(description, reason);
+            fatal(description, null, cause, true);
         }
     }
 

@@ -38,7 +38,7 @@ import java.util.stream.Stream;
 import java.util.stream.TestData;
 import java.util.stream.TestData.Factory;
 
-import static java.util.stream.ThowableHelper.checkNPE;
+import static java.util.stream.ThrowableHelper.checkNPE;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;

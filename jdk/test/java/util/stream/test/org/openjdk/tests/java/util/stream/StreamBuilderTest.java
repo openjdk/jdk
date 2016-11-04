@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.util.stream.Stream;
 import java.util.stream.TestData;
 
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.ThowableHelper.checkISE;
+import static java.util.stream.ThrowableHelper.checkISE;
 
 @Test
 public class StreamBuilderTest extends OpTestCase {

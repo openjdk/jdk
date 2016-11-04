@@ -24,11 +24,10 @@
 /*
  * @test
  * @key headful
- * @bug 6796710 7124242
+ * @bug 6796710 7124242 8168540
  * @summary Html content in JEditorPane is overlapping on swing components while resizing the application.
  * @library ../../../regtesthelpers
  * @build Util
- * @author Pavel Porvatov
    @run main bug6796710
  */
 
@@ -109,7 +108,7 @@ public class bug6796710 {
             }
         });
 
-        robot.waitForIdle();
+        robot.delay(1000);
 
         // On Linux platforms realSync doesn't guaranties setSize completion
         Thread.sleep(1000);

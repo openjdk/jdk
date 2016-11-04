@@ -102,6 +102,11 @@ public class TCPTransport extends Transport {
         AccessController.doPrivileged((PrivilegedAction<Long>) () ->
             Long.getLong("sun.rmi.transport.tcp.threadKeepAliveTime", 60000));
 
+    /** enable multiplexing protocol */
+    private static final boolean enableMultiplexProtocol =     // default false
+            AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
+                    Boolean.getBoolean("sun.rmi.transport.tcp.enableMultiplexProtocol"));
+
     /** thread pool for connection handlers */
     private static final ExecutorService connectionThreadPool =
         new ThreadPoolExecutor(0, maxConnectionThreads,
@@ -796,6 +801,19 @@ public class TCPTransport extends Transport {
                     break;
 
                 case TransportConstants.MultiplexProtocol:
+
+                    if (!enableMultiplexProtocol) {
+                        if (tcpLog.isLoggable(Log.VERBOSE)) {
+                            tcpLog.log(Log.VERBOSE, "(port " + port +
+                                    ") rejecting multiplex protocol");
+                        }
+
+                        // If MultiplexProtocol is disabled, send NACK immediately.
+                        out.writeByte(TransportConstants.ProtocolNack);
+                        out.flush();
+                        break;
+                    }
+
                     if (tcpLog.isLoggable(Log.VERBOSE)) {
                         tcpLog.log(Log.VERBOSE, "(port " + port +
                             ") accepting multiplex protocol");

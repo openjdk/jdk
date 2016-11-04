@@ -28,6 +28,7 @@
  * @bug 8087112
  * @library /lib/testlibrary/
  * @modules java.httpclient
+ *          java.logging
  *          jdk.httpserver
  * @build jdk.testlibrary.SimpleSSLContext jdk.testlibrary.Utils
  * @compile ../../../../com/sun/net/httpserver/LogFilter.java
