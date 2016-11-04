@@ -53,4 +53,12 @@ public class ModuleTestBase extends TestRunner {
     Path[] findJavaFiles(Path... paths) throws IOException {
         return tb.findJavaFiles(paths);
     }
+
+    void checkOutputContains(String log, String... expect) throws Exception {
+        for (String e : expect) {
+            if (!log.contains(e)) {
+                throw new Exception("expected output not found: " + e);
+            }
+        }
+    }
 }
