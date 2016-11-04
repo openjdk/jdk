@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8162817
+ * @bug 8162817 8168921
  * @summary Test of toString on normal annotations
  */
 
@@ -70,6 +70,8 @@ public class AnnotationToStringTest {
         "d1=1.0/0.0, " +
         "l0=5, " +
         "l1=9223372036854775807L, " +
+        "l2=-9223372036854775808L, " +
+        "l3=-2147483648, " +
         "s0=\"Hello world.\", " +
         "s1=\"a\\\"b\", " +
         "class0=Obj[].class)")
@@ -84,6 +86,8 @@ public class AnnotationToStringTest {
         d1=2.0/0.0,
         l0=5,
         l1=Long.MAX_VALUE,
+        l2=Long.MIN_VALUE,
+        l3=Integer.MIN_VALUE,
         s0="Hello world.",
         s1="a\"b",
         class0=Obj[].class
@@ -185,8 +189,10 @@ public class AnnotationToStringTest {
         public int[]       f6;
 
         @ExpectedString(
-       "@LongArray(value={-2147483647, 2147483648L, 9223372036854775807L})")
-        @LongArray(value={-Integer.MAX_VALUE, Integer.MAX_VALUE+1L, Long.MAX_VALUE})
+       "@LongArray(value={-9223372036854775808L, -2147483649L, -2147483648," +
+                " -2147483647, 2147483648L, 9223372036854775807L})")
+        @LongArray(value={Long.MIN_VALUE, Integer.MIN_VALUE-1L, Integer.MIN_VALUE,
+                -Integer.MAX_VALUE, Integer.MAX_VALUE+1L, Long.MAX_VALUE})
         public long[]      f7;
 
         @ExpectedString(
@@ -287,6 +293,8 @@ class Obj {}
     double d1();
     long   l0();
     long   l1();
+    long   l2();
+    long   l3();
     String s0();
     String s1();
     Class<?> class0();
