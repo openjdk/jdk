@@ -177,7 +177,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
     /**
      * A {@code Parameter} provides information about method parameters.
      */
-    public static class Parameter implements AnnotatedElement {
+    class Parameter implements AnnotatedElement {
         private final String name;
         private final ResolvedJavaMethod method;
         private final int modifiers;
@@ -186,7 +186,9 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
         /**
          * Constructor for {@code Parameter}.
          *
-         * @param name the name of the parameter
+         * @param name the name of the parameter or {@code null} if there is no
+         *            {@literal MethodParameters} class file attribute providing a non-empty name
+         *            for the parameter
          * @param modifiers the modifier flags for the parameter
          * @param method the method which defines this parameter
          * @param index the index of the parameter
@@ -195,6 +197,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
                         int modifiers,
                         ResolvedJavaMethod method,
                         int index) {
+            assert name == null || !name.isEmpty();
             this.name = name;
             this.modifiers = modifiers;
             this.method = method;
@@ -202,10 +205,20 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
         }
 
         /**
-         * Gets the name of the parameter.
+         * Gets the name of the parameter. If the parameter's name is {@linkplain #isNamePresent()
+         * present}, then this method returns the name provided by the class file. Otherwise, this
+         * method synthesizes a name of the form argN, where N is the index of the parameter in the
+         * descriptor of the method which declares the parameter.
+         *
+         * @return the name of the parameter, either provided by the class file or synthesized if
+         *         the class file does not provide a name
          */
         public String getName() {
-            return name;
+            if (name == null) {
+                return "arg" + index;
+            } else {
+                return name;
+            }
         }
 
         /**
@@ -216,7 +229,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
         }
 
         /**
-         * Get the modifier flags for the parameter
+         * Get the modifier flags for the parameter.
          */
         public int getModifiers() {
             return modifiers;
@@ -241,6 +254,16 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
          */
         public JavaType getType() {
             return method.getSignature().getParameterType(index, method.getDeclaringClass());
+        }
+
+        /**
+         * Determines if the parameter has a name according to a {@literal MethodParameters} class
+         * file attribute.
+         *
+         * @return true if and only if the parameter has a name according to the class file.
+         */
+        public boolean isNamePresent() {
+            return name != null;
         }
 
         /**
