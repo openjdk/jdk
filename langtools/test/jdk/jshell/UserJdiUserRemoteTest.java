@@ -26,7 +26,7 @@
  * @bug 8160128 8159935
  * @summary Tests for Aux channel, custom remote agents, custom JDI implementations.
  * @build KullaTesting ExecutionControlTestBase
- * @run testng UserJDIUserRemoteTest
+ * @run testng UserJdiUserRemoteTest
  */
 import java.io.ByteArrayOutputStream;
 import org.testng.annotations.Test;
@@ -44,8 +44,8 @@ import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
 import jdk.jshell.VarSnippet;
 import jdk.jshell.execution.DirectExecutionControl;
-import jdk.jshell.execution.JDIExecutionControl;
-import jdk.jshell.execution.JDIInitiator;
+import jdk.jshell.execution.JdiExecutionControl;
+import jdk.jshell.execution.JdiInitiator;
 import jdk.jshell.execution.Util;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -64,7 +64,7 @@ import static jdk.jshell.execution.Util.forwardExecutionControlAndIO;
 import static jdk.jshell.execution.Util.remoteInputOutput;
 
 @Test
-public class UserJDIUserRemoteTest extends ExecutionControlTestBase {
+public class UserJdiUserRemoteTest extends ExecutionControlTestBase {
 
     ExecutionControl currentEC;
     ByteArrayOutputStream auxStream;
@@ -115,7 +115,7 @@ public class UserJDIUserRemoteTest extends ExecutionControlTestBase {
     }
 }
 
-class MyExecutionControl extends JDIExecutionControl {
+class MyExecutionControl extends JdiExecutionControl {
 
     private static final String REMOTE_AGENT = MyRemoteExecutionControl.class.getName();
 
@@ -128,7 +128,7 @@ class MyExecutionControl extends JDIExecutionControl {
      *
      * @return the generator
      */
-    public static ExecutionControl.Generator create(UserJDIUserRemoteTest test) {
+    public static ExecutionControl.Generator create(UserJdiUserRemoteTest test) {
         return env -> make(env, test);
     }
 
@@ -145,7 +145,7 @@ class MyExecutionControl extends JDIExecutionControl {
      * @return the channel
      * @throws IOException if there are errors in set-up
      */
-    static ExecutionControl make(ExecutionEnv env, UserJDIUserRemoteTest test) throws IOException {
+    static ExecutionControl make(ExecutionEnv env, UserJdiUserRemoteTest test) throws IOException {
         try (final ServerSocket listener = new ServerSocket(0)) {
             // timeout after 60 seconds
             listener.setSoTimeout(60000);
@@ -157,14 +157,14 @@ class MyExecutionControl extends JDIExecutionControl {
             opts.add(System.getProperty("java.class.path")
                     + System.getProperty("path.separator")
                     + System.getProperty("user.dir"));
-            JDIInitiator jdii = new JDIInitiator(port,
+            JdiInitiator jdii = new JdiInitiator(port,
                     opts, REMOTE_AGENT, true, null);
             VirtualMachine vm = jdii.vm();
             Process process = jdii.process();
 
             List<Consumer<String>> deathListeners = new ArrayList<>();
             deathListeners.add(s -> env.closeDown());
-            Util.detectJDIExitEvent(vm, s -> {
+            Util.detectJdiExitEvent(vm, s -> {
                 for (Consumer<String> h : deathListeners) {
                     h.accept(s);
                 }

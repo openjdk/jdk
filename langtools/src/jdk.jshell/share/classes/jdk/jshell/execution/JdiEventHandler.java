@@ -34,7 +34,7 @@ import com.sun.jdi.event.*;
  * Adapted from jdb EventHandler.
  * Only exit and disconnect events processed.
  */
-class JDIEventHandler implements Runnable {
+class JdiEventHandler implements Runnable {
 
     private final Thread thread;
     private volatile boolean connected = true;
@@ -49,7 +49,7 @@ class JDIEventHandler implements Runnable {
      * @param reportVMExit callback to report exit/disconnect
      * (passed true if the VM has died)
      */
-    JDIEventHandler(VirtualMachine vm, Consumer<String> reportVMExit) {
+    JdiEventHandler(VirtualMachine vm, Consumer<String> reportVMExit) {
         this.vm = vm;
         this.reportVMExit = reportVMExit;
         this.thread = new Thread(this, "event-handler");

@@ -23,24 +23,24 @@
 
 /*
  * @test
- * @bug 8164518
- * @summary Tests for standard JDI connector (without failover) -- launching
+ * @bug 8131029 8159935 8160127 8164518
+ * @summary Tests for alternate JDI connector -- listening
  * @modules jdk.jshell/jdk.jshell.execution
  * @build KullaTesting ExecutionControlTestBase
- * @run testng JDILaunchingExecutionControlTest
+ * @run testng JdiListeningExecutionControlTest
  */
 
 
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeMethod;
-import jdk.jshell.execution.JDIDefaultExecutionControl;
+import jdk.jshell.execution.JdiDefaultExecutionControl;
 
 @Test
-public class JDILaunchingExecutionControlTest extends ExecutionControlTestBase {
+public class JdiListeningExecutionControlTest extends ExecutionControlTestBase {
 
     @BeforeMethod
     @Override
     public void setUp() {
-        setUp(builder -> builder.executionEngine(JDIDefaultExecutionControl.launch()));
+        setUp(builder -> builder.executionEngine(JdiDefaultExecutionControl.listen(null)));
     }
 }

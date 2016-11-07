@@ -40,7 +40,7 @@ import com.sun.jdi.connect.ListeningConnector;
  * Sets up a JDI connection, providing the resulting JDI {@link VirtualMachine}
  * and the {@link Process} the remote agent is running in.
  */
-public class JDIInitiator {
+public class JdiInitiator {
 
     private VirtualMachine vm;
     private Process process = null;
@@ -59,7 +59,7 @@ public class JDIInitiator {
      * @param host explicit hostname to use, if null use discovered
      * hostname, applies to listening only (!isLaunch)
      */
-    public JDIInitiator(int port, List<String> remoteVMOptions, String remoteAgent,
+    public JdiInitiator(int port, List<String> remoteVMOptions, String remoteAgent,
             boolean isLaunch, String host) {
         this.remoteAgent = remoteAgent;
         String connectorName
