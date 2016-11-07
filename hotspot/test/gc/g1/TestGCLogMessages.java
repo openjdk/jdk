@@ -73,6 +73,11 @@ public class TestGCLogMessages {
     };
 
     private LogMessageWithLevel allLogMessages[] = new LogMessageWithLevel[] {
+        new LogMessageWithLevel("Pre Evacuate Collection Set", Level.INFO),
+        new LogMessageWithLevel("Evacuate Collection Set", Level.INFO),
+        new LogMessageWithLevel("Post Evacuate Collection Set", Level.INFO),
+        new LogMessageWithLevel("Other", Level.INFO),
+
         // Update RS
         new LogMessageWithLevel("Scan HCC", Level.TRACE),
         // Ext Root Scan
@@ -96,20 +101,20 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Redirtied Cards", Level.TRACE),
         // Misc Top-level
         new LogMessageWithLevel("Code Roots Purge", Level.DEBUG),
-        new LogMessageWithLevel("String Dedup Fixup", Level.INFO),
-        new LogMessageWithLevel("Expand Heap After Collection", Level.INFO),
+        new LogMessageWithLevel("String Dedup Fixup", Level.DEBUG),
+        new LogMessageWithLevel("Expand Heap After Collection", Level.DEBUG),
         // Free CSet
-        new LogMessageWithLevel("Free Collection Set", Level.INFO),
-        new LogMessageWithLevel("Free Collection Set Serial", Level.DEBUG),
-        new LogMessageWithLevel("Young Free Collection Set", Level.DEBUG),
-        new LogMessageWithLevel("Non-Young Free Collection Set", Level.DEBUG),
+        new LogMessageWithLevel("Free Collection Set", Level.DEBUG),
+        new LogMessageWithLevel("Free Collection Set Serial", Level.TRACE),
+        new LogMessageWithLevel("Young Free Collection Set", Level.TRACE),
+        new LogMessageWithLevel("Non-Young Free Collection Set", Level.TRACE),
         // Humongous Eager Reclaim
         new LogMessageWithLevel("Humongous Reclaim", Level.DEBUG),
         new LogMessageWithLevel("Humongous Register", Level.DEBUG),
         // Preserve CM Referents
         new LogMessageWithLevel("Preserve CM Refs", Level.DEBUG),
         // Merge PSS
-        new LogMessageWithLevel("Merge Per-Thread State", Level.INFO),
+        new LogMessageWithLevel("Merge Per-Thread State", Level.DEBUG),
     };
 
     void checkMessagesAtLevel(OutputAnalyzer output, LogMessageWithLevel messages[], Level level) throws Exception {
