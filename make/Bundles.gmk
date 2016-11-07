@@ -256,7 +256,7 @@ ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
 
   $(eval $(call SetupBundleFile, BUILD_DEMOS_BUNDLE, \
       BUNDLE_NAME := $(DEMOS_BUNDLE_NAME), \
-      FILES := $(call DoubleDollar, $(DEMOS_BUNDLE_FILES)), \
+      FILES := $(DEMOS_BUNDLE_FILES), \
       BASE_DIR := $(JDK_IMAGE_DIR), \
       SUBDIR := $(JDK_BUNDLE_SUBDIR), \
   ))
@@ -271,7 +271,7 @@ ifneq ($(filter test-bundles, $(MAKECMDGOALS)), )
 
   $(eval $(call SetupBundleFile, BUILD_TEST_BUNDLE, \
       BUNDLE_NAME := $(TEST_BUNDLE_NAME), \
-      FILES := $(call DoubleDollar, $(TEST_BUNDLE_FILES)), \
+      FILES := $(TEST_BUNDLE_FILES), \
       BASE_DIR := $(TEST_IMAGE_DIR), \
   ))
 
