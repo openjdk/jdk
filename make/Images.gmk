@@ -366,9 +366,9 @@ ifneq ($(filter jdk, $(MAKECMDGOALS)), )
 
   DEMO_FILES := \
       $(if $(wildcard $(SUPPORT_OUTPUTDIR)/demos/image), \
-        $(call DoubleDollar, $(call DoubleDollar, \
+        $(call DoubleDollar, \
         $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/demos/image \
-            -type f -a ! \( -name "_the*" -o -name "javac_state" \) ))) \
+            -type f -a ! \( -name "_the*" -o -name "javac_state" \) )) \
       )
 
   ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
