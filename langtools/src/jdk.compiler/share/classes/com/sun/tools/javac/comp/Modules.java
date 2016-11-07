@@ -777,8 +777,6 @@ public class Modules extends JCTree.Visitor {
                 log.error(tree.implName.pos(), Errors.ServiceImplementationIsAbstract(impl));
             } else if (impl.isInner()) {
                 log.error(tree.implName.pos(), Errors.ServiceImplementationIsInner(impl));
-            } else if (service.isInner()) {
-                log.error(tree.serviceName.pos(), Errors.ServiceDefinitionIsInner(service));
             } else {
                 MethodSymbol constr = noArgsConstructor(impl);
                 if (constr == null) {
