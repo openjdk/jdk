@@ -278,7 +278,7 @@ public class TestResolvedJavaMethod extends MethodUniverse {
                 java.lang.reflect.Parameter exp = expected[i];
                 Parameter act = actual[i];
                 assertEquals(exp.getName(), act.getName());
-                assertEquals(exp.getModifiers(), act.getModifiers());
+                assertEquals(exp.isNamePresent(), act.isNamePresent());
                 assertEquals(exp.getModifiers(), act.getModifiers());
                 assertArrayEquals(exp.getAnnotations(), act.getAnnotations());
                 assertEquals(exp.getType().getName(), act.getType().toClassName());

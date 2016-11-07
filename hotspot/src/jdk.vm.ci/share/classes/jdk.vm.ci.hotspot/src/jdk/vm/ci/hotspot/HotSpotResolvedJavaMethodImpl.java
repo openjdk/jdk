@@ -472,7 +472,8 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         Parameter[] res = new Parameter[javaParameters.length];
         for (int i = 0; i < res.length; i++) {
             java.lang.reflect.Parameter src = javaParameters[i];
-            res[i] = new Parameter(src.getName(), src.getModifiers(), this, i);
+            String paramName = src.isNamePresent() ? src.getName() : null;
+            res[i] = new Parameter(paramName, src.getModifiers(), this, i);
         }
         return res;
     }
