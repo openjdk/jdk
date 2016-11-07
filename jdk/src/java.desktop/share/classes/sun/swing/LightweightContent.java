@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,10 @@ public interface LightweightContent {
      * @param height the logical height of the image
      * @param linestride the line stride of the pixel buffer
      * @param scale the scale factor of the pixel buffer
+     * @Depricated replaced by
+     * {@link #imageBufferReset(int[],int,int,int,int,int,double,double)}
      */
+    @Deprecated(since = "9")
     default public void imageBufferReset(int[] data,
                                  int x, int y,
                                  int width, int height,
@@ -128,11 +131,54 @@ public interface LightweightContent {
     }
 
     /**
+     * {@code JLightweightFrame} calls this method to notify the client
+     * application that a new data buffer has been set as a content pixel
+     * buffer. Typically this occurs when a buffer of a larger size is
+     * created in response to a content resize event.
+     * <p>
+     * The method reports a reference to the pixel data buffer, the content
+     * image bounds within the buffer and the line stride of the buffer.
+     * These values have the following correlation.
+     * The {@code width} and {@code height} matches the layout size of the
+     * content (the component returned from the {@link #getComponent} method).
+     * The {@code x} and {@code y} is the origin of the content, {@code (0, 0)}
+     * in the layout coordinate space of the content, appearing at
+     * {@code data[y * scaleY * linestride + x * scaleX]} in the buffer.
+     * A pixel with indices {@code (i, j)}, where {@code (0 <= i < width)} and
+     * {@code (0 <= j < height)}, in the layout coordinate space of the content
+     * is represented by a {@code scaleX * scaleY} square of pixels in the
+     * physical coordinate space of the buffer. The top-left corner of the
+     * square has the following physical coordinate in the buffer:
+     * {@code data[(y + j) * scaleY * linestride + (x + i) * scaleX]}.
+     *
+     * @param data the content pixel data buffer of INT_ARGB_PRE type
+     * @param x the logical x coordinate of the image
+     * @param y the logical y coordinate of the image
+     * @param width the logical width of the image
+     * @param height the logical height of the image
+     * @param linestride the line stride of the pixel buffer
+     * @param scaleX the x coordinate scale factor of the pixel buffer
+     * @param scaleY the y coordinate scale factor of the pixel buffer
+     * @since 9
+     */
+    @SuppressWarnings("deprecation")
+    default public void imageBufferReset(int[] data,
+                                         int x, int y,
+                                         int width, int height,
+                                         int linestride,
+                                         double scaleX, double scaleY)
+    {
+        imageBufferReset(data, x, y, width, height, linestride,
+                                                       (int)Math.round(scaleX));
+    }
+
+    /**
      * The default implementation for #imageBufferReset uses a hard-coded value
      * of 1 for the scale factor. Both the old and the new methods provide
      * default implementations in order to allow a client application to run
      * with any JDK version without breaking backward compatibility.
      */
+    @SuppressWarnings("deprecation")
     default public void imageBufferReset(int[] data,
                                  int x, int y,
                                  int width, int height,
