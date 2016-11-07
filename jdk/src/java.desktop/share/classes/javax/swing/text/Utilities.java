@@ -107,7 +107,7 @@ public class Utilities {
                                              TabExpander e,
                                              int startOffset)
     {
-        return drawTabbedText(s, (int) x, (int) y, (Graphics) g, e, startOffset);
+        return drawTabbedText(null, s, x, y, g, e, startOffset, null, true);
     }
 
     /**
