@@ -3831,17 +3831,17 @@ void TemplateTable::newarray() {
 
   // Call runtime.
   __ z_llgc(Z_ARG2, at_bcp(1));   // type
-  // size in Z_tos
+  __ z_lgfr(Z_ARG3, Z_tos);       // size
   call_VM(Z_RET,
           CAST_FROM_FN_PTR(address, InterpreterRuntime::newarray),
-          Z_ARG2, Z_tos);
+          Z_ARG2, Z_ARG3);
 }
 
 void TemplateTable::anewarray() {
   transition(itos, atos);
   __ get_2_byte_integer_at_bcp(Z_ARG3, 1, InterpreterMacroAssembler::Unsigned);
   __ get_constant_pool(Z_ARG2);
-  __ z_llgfr(Z_ARG4, Z_tos);
+  __ z_lgfr(Z_ARG4, Z_tos);
   call_VM(Z_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::anewarray),
           Z_ARG2, Z_ARG3, Z_ARG4);
 }

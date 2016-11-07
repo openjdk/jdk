@@ -1489,8 +1489,8 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_CountLeadingZerosL:
     case Op_CountTrailingZerosI:
     case Op_CountTrailingZerosL:
-      // Implementation requires FLOGR instruction.
-      return UseCountLeadingZerosInstruction;
+      // Implementation requires FLOGR instruction, which is available since z9.
+      return true;
 
     case Op_ReverseBytesI:
     case Op_ReverseBytesL:
@@ -9897,7 +9897,6 @@ instruct string_compareUL(iRegP str1, iRegP str2, rarg2RegI cnt1, rarg5RegI cnt2
 
 // String IndexOfChar
 instruct indexOfChar_U(iRegP haystack, iRegI haycnt, iRegI ch, iRegI result, roddRegL oddReg, revenRegL evenReg, flagsReg cr) %{
-  predicate(CompactStrings);
   match(Set result (StrIndexOfChar (Binary haystack haycnt) ch));
   effect(TEMP_DEF result, TEMP evenReg, TEMP oddReg, KILL cr); // R0, R1 are killed, too.
   ins_cost(200);
@@ -10590,7 +10589,6 @@ instruct bytes_reverse_long(iRegL dst, iRegL src) %{
 instruct countLeadingZerosI(revenRegI dst, iRegI src, roddRegI tmp, flagsReg cr) %{
   match(Set dst (CountLeadingZerosI src));
   effect(KILL tmp, KILL cr);
-  predicate(UseCountLeadingZerosInstruction);  // See Matcher::match_rule_supported
   ins_cost(3 * DEFAULT_COST);
   size(14);
   format %{ "SLLG    $dst,$src,32\t# no need to always count 32 zeroes first\n\t"
@@ -10629,7 +10627,6 @@ instruct countLeadingZerosI(revenRegI dst, iRegI src, roddRegI tmp, flagsReg cr)
 instruct countLeadingZerosL(revenRegI dst, iRegL src, roddRegI tmp, flagsReg cr) %{
   match(Set dst (CountLeadingZerosL src));
   effect(KILL tmp, KILL cr);
-  predicate(UseCountLeadingZerosInstruction);  // See Matcher::match_rule_supported
   ins_cost(DEFAULT_COST);
   size(4);
   format %{ "FLOGR   $dst,$src \t# count leading zeros (long)\n\t" %}
@@ -10655,7 +10652,6 @@ instruct countLeadingZerosL(revenRegI dst, iRegL src, roddRegI tmp, flagsReg cr)
 instruct countTrailingZerosI(revenRegI dst, iRegI src, roddRegI tmp, flagsReg cr) %{
   match(Set dst (CountTrailingZerosI src));
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
-  predicate(UseCountLeadingZerosInstruction);  // See Matcher::match_rule_supported
   ins_cost(8 * DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);  // Emitted code depends on PreferLAoverADD being on/off.
   format %{ "LLGFR   $dst,$src  \t# clear upper 32 bits (we are dealing with int)\n\t"
@@ -10709,7 +10705,6 @@ instruct countTrailingZerosI(revenRegI dst, iRegI src, roddRegI tmp, flagsReg cr
 instruct countTrailingZerosL(revenRegI dst, iRegL src, roddRegL tmp, flagsReg cr) %{
   match(Set dst (CountTrailingZerosL src));
   effect(TEMP_DEF dst, KILL tmp, KILL cr);
-  predicate(UseCountLeadingZerosInstruction);  // See Matcher::match_rule_supported
   ins_cost(8 * DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);  // Emitted code depends on PreferLAoverADD being on/off.
   format %{ "LCGR    $dst,$src  \t# preserve src\n\t"
