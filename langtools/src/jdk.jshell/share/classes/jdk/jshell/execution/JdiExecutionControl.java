@@ -39,7 +39,7 @@ import static java.util.stream.Collectors.toMap;
 /**
  * Abstract JDI implementation of {@link jdk.jshell.spi.ExecutionControl}
  */
-public abstract class JDIExecutionControl extends StreamingExecutionControl implements ExecutionControl {
+public abstract class JdiExecutionControl extends StreamingExecutionControl implements ExecutionControl {
 
     /**
      * Mapping from class names to JDI {@link ReferenceType}.
@@ -51,7 +51,7 @@ public abstract class JDIExecutionControl extends StreamingExecutionControl impl
      * @param out the output from the remote agent
      * @param in the input to the remote agent
      */
-    protected JDIExecutionControl(ObjectOutput out, ObjectInput in) {
+    protected JdiExecutionControl(ObjectOutput out, ObjectInput in) {
         super(out, in);
     }
 

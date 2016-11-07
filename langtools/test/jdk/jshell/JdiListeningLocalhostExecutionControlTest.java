@@ -27,20 +27,20 @@
  * @summary Tests for alternate JDI connector -- listening to "localhost"
  * @modules jdk.jshell/jdk.jshell.execution
  * @build KullaTesting ExecutionControlTestBase
- * @run testng JDIListeningLocalhostExecutionControlTest
+ * @run testng JdiListeningLocalhostExecutionControlTest
  */
 
 
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeMethod;
-import jdk.jshell.execution.JDIDefaultExecutionControl;
+import jdk.jshell.execution.JdiDefaultExecutionControl;
 
 @Test
-public class JDIListeningLocalhostExecutionControlTest extends ExecutionControlTestBase {
+public class JdiListeningLocalhostExecutionControlTest extends ExecutionControlTestBase {
 
     @BeforeMethod
     @Override
     public void setUp() {
-        setUp(builder -> builder.executionEngine(JDIDefaultExecutionControl.listen("localhost")));
+        setUp(builder -> builder.executionEngine(JdiDefaultExecutionControl.listen("localhost")));
     }
 }

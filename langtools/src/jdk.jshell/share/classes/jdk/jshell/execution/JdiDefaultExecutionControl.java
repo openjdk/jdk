@@ -60,7 +60,7 @@ import static jdk.jshell.execution.Util.remoteInputOutput;
  * @author Robert Field
  * @author Jan Lahoda
  */
-public class JDIDefaultExecutionControl extends JDIExecutionControl {
+public class JdiDefaultExecutionControl extends JdiExecutionControl {
 
     private static final String REMOTE_AGENT = RemoteExecutionControl.class.getName();
 
@@ -117,14 +117,14 @@ public class JDIDefaultExecutionControl extends JDIExecutionControl {
             int port = listener.getLocalPort();
 
             // Set-up the JDI connection
-            JDIInitiator jdii = new JDIInitiator(port,
+            JdiInitiator jdii = new JdiInitiator(port,
                     env.extraRemoteVMOptions(), REMOTE_AGENT, isLaunch, host);
             VirtualMachine vm = jdii.vm();
             Process process = jdii.process();
 
             List<Consumer<String>> deathListeners = new ArrayList<>();
             deathListeners.add(s -> env.closeDown());
-            Util.detectJDIExitEvent(vm, s -> {
+            Util.detectJdiExitEvent(vm, s -> {
                 for (Consumer<String> h : deathListeners) {
                     h.accept(s);
                 }
@@ -140,7 +140,7 @@ public class JDIDefaultExecutionControl extends JDIExecutionControl {
             outputs.put("err", env.userErr());
             Map<String, InputStream> input = new HashMap<>();
             input.put("in", env.userIn());
-            return remoteInputOutput(socket.getInputStream(), out, outputs, input, (objIn, objOut) -> new JDIDefaultExecutionControl(objOut, objIn, vm, process, deathListeners));
+            return remoteInputOutput(socket.getInputStream(), out, outputs, input, (objIn, objOut) -> new JdiDefaultExecutionControl(objOut, objIn, vm, process, deathListeners));
         }
     }
 
@@ -150,7 +150,7 @@ public class JDIDefaultExecutionControl extends JDIExecutionControl {
      * @param cmdout the output for commands
      * @param cmdin the input for responses
      */
-    private JDIDefaultExecutionControl(ObjectOutput cmdout, ObjectInput cmdin,
+    private JdiDefaultExecutionControl(ObjectOutput cmdout, ObjectInput cmdin,
             VirtualMachine vm, Process process, List<Consumer<String>> deathListeners) {
         super(cmdout, cmdin);
         this.vm = vm;
