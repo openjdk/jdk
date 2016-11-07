@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,15 +141,50 @@ public abstract class LightweightFrame extends Frame {
      *
      * @return the scale factor
      * @see #notifyDisplayChanged(int)
+     * @Depricated replaced by {@link #getScaleFactorX()} and
+     * {@link #getScaleFactorY}
      */
+    @Deprecated(since = "9")
     public abstract int getScaleFactor();
+
+    /**
+     * Returns the scale factor of this frame along x coordinate. The default
+     * value is 1.
+     *
+     * @return the x coordinate scale factor
+     * @see #notifyDisplayChanged(double, double)
+     * @since 9
+     */
+    public abstract double getScaleFactorX();
+
+    /**
+     * Returns the scale factor of this frame along y coordinate. The default
+     * value is 1.
+     *
+     * @return the y coordinate scale factor
+     * @see #notifyDisplayChanged(double, double)
+     * @since 9
+     */
+    public abstract double getScaleFactorY();
 
     /**
      * Called when display of the hosted frame is changed.
      *
      * @param scaleFactor the scale factor
+     * @Depricated replaced by {@link #notifyDisplayChanged(double, double)}
      */
+    @Deprecated(since = "9")
     public abstract void notifyDisplayChanged(int scaleFactor);
+
+    /**
+     * Called when display of the hosted frame is changed.
+     *
+     * @param scaleFactorX the scale factor
+     * @param scaleFactorY the scale factor
+     * @since 9
+     */
+    public abstract void notifyDisplayChanged(double scaleFactorX,
+                                              double scaleFactorY);
 
     /**
      * Host window absolute bounds.
@@ -202,4 +237,5 @@ public abstract class LightweightFrame extends Frame {
      * Removes a drop target from the lightweight frame.
      */
     public abstract void removeDropTarget(DropTarget dt);
+
 }
