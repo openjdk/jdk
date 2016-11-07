@@ -26,6 +26,7 @@
 #include <jni.h>
 #import <Foundation/Foundation.h>
 #import <AppKit/AppKit.h>
+#import <AppKit/NSTrackingArea.h>
 
 #import "CPopupMenu.h"
 
@@ -64,12 +65,14 @@ extern "C" {
 @public
     AWTTrayIcon *trayIcon;
     NSImage* image;
+    NSTrackingArea *trackingArea;
     BOOL isHighlighted;
 }
 -(id)initWithTrayIcon:(AWTTrayIcon *)theTrayIcon;
 -(void)setHighlighted:(BOOL)aFlag;
 -(void)setImage:(NSImage*)anImage;
 -(void)setTrayIcon:(AWTTrayIcon*)theTrayIcon;
+-(void)addTrackingArea;
 
 @end //AWTTrayIconView
 

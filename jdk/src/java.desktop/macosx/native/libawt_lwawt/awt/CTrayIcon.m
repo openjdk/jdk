@@ -171,12 +171,27 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     [self setTrayIcon: theTrayIcon];
     isHighlighted = NO;
     image = nil;
-
+    trackingArea = nil;
+	
+    [self addTrackingArea];
+	
     return self;
+}
+
+- (void)addTrackingArea {
+    NSTrackingAreaOptions options = NSTrackingMouseMoved | 
+                                    NSTrackingInVisibleRect | 
+                                    NSTrackingActiveAlways;
+    trackingArea = [[NSTrackingArea alloc] initWithRect: CGRectZero
+                                                options: options
+                                                owner: self
+                                                userInfo: nil];
+    [self addTrackingArea:trackingArea];
 }
 
 -(void) dealloc {
     [image release];
+    [trackingArea release];
     [super dealloc];
 }
 
@@ -266,6 +281,10 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
 }
 
 - (void) mouseDragged:(NSEvent *)event {
+    [trayIcon deliverJavaMouseEvent: event];
+}
+
+- (void) mouseMoved: (NSEvent *)event {
     [trayIcon deliverJavaMouseEvent: event];
 }
 
