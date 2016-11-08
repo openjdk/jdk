@@ -339,6 +339,10 @@ class JarFile extends ZipFile {
 
     /**
      * Returns the maximum version used when searching for versioned entries.
+     * <p>
+     * If this {@code JarFile} is not a multi-release jar file or is not
+     * configured to be processed as such, then the version returned will be the
+     * same as that returned from {@link #baseVersion()}.
      *
      * @return the maximum version
      * @since 9
