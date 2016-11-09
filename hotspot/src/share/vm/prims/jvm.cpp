@@ -503,13 +503,24 @@ JVM_ENTRY(void, JVM_FillInStackTrace(JNIEnv *env, jobject receiver))
 JVM_END
 
 
-JVM_ENTRY(void, JVM_GetStackTraceElements(JNIEnv *env, jobject throwable, jobjectArray stackTrace))
-  JVMWrapper("JVM_GetStackTraceElements");
+// java.lang.StackTraceElement //////////////////////////////////////////////
+
+
+JVM_ENTRY(void, JVM_InitStackTraceElementArray(JNIEnv *env, jobjectArray elements, jobject throwable))
+  JVMWrapper("JVM_InitStackTraceElementArray");
   Handle exception(THREAD, JNIHandles::resolve(throwable));
-  objArrayOop st = objArrayOop(JNIHandles::resolve(stackTrace));
+  objArrayOop st = objArrayOop(JNIHandles::resolve(elements));
   objArrayHandle stack_trace(THREAD, st);
   // Fill in the allocated stack trace
   java_lang_Throwable::get_stack_trace_elements(exception, stack_trace, CHECK);
+JVM_END
+
+
+JVM_ENTRY(void, JVM_InitStackTraceElement(JNIEnv* env, jobject element, jobject stackFrameInfo))
+  JVMWrapper("JVM_InitStackTraceElement");
+  Handle stack_frame_info(THREAD, JNIHandles::resolve_non_null(stackFrameInfo));
+  Handle stack_trace_element(THREAD, JNIHandles::resolve_non_null(element));
+  java_lang_StackFrameInfo::to_stack_trace_element(stack_frame_info, stack_trace_element, THREAD);
 JVM_END
 
 
@@ -564,13 +575,6 @@ JVM_ENTRY(jint, JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jlong mode, 
   Handle stackStream_h(THREAD, JNIHandles::resolve_non_null(stackStream));
   return StackWalk::fetchNextBatch(stackStream_h, mode, anchor, frame_count,
                                    start_index, frames_array_h, THREAD);
-JVM_END
-
-JVM_ENTRY(void, JVM_ToStackTraceElement(JNIEnv *env, jobject frame, jobject stack))
-  JVMWrapper("JVM_ToStackTraceElement");
-  Handle stack_frame_info(THREAD, JNIHandles::resolve_non_null(frame));
-  Handle stack_trace_element(THREAD, JNIHandles::resolve_non_null(stack));
-  java_lang_StackFrameInfo::to_stack_trace_element(stack_frame_info, stack_trace_element, THREAD);
 JVM_END
 
 // java.lang.Object ///////////////////////////////////////////////
@@ -2524,7 +2528,6 @@ JVM_ENTRY(const char*, JVM_GetCPMethodNameUTF(JNIEnv *env, jclass cls, jint cp_i
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_InterfaceMethodref:
     case JVM_CONSTANT_Methodref:
-    case JVM_CONSTANT_NameAndType:  // for invokedynamic
       return cp->uncached_name_ref_at(cp_index)->as_utf8();
     default:
       fatal("JVM_GetCPMethodNameUTF: illegal constant");
@@ -2542,7 +2545,6 @@ JVM_ENTRY(const char*, JVM_GetCPMethodSignatureUTF(JNIEnv *env, jclass cls, jint
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_InterfaceMethodref:
     case JVM_CONSTANT_Methodref:
-    case JVM_CONSTANT_NameAndType:  // for invokedynamic
       return cp->uncached_signature_ref_at(cp_index)->as_utf8();
     default:
       fatal("JVM_GetCPMethodSignatureUTF: illegal constant");

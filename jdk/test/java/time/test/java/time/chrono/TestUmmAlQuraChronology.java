@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -624,7 +624,7 @@ public class TestUmmAlQuraChronology {
     @Test
     public void test_chronoFields() {
         ChronoLocalDate hdate = HijrahChronology.INSTANCE.date(1434, 6, 28);
-        assertEquals(hdate.get(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH), 3);
+        assertEquals(hdate.get(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH), 7);
         assertEquals(hdate.get(ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR), 7);
         assertEquals(hdate.get(ChronoField.ALIGNED_WEEK_OF_MONTH), 4);
         assertEquals(hdate.get(ChronoField.ALIGNED_WEEK_OF_YEAR), 25);
@@ -784,5 +784,33 @@ public class TestUmmAlQuraChronology {
     @Test(dataProvider="hijrahToJapanese")
       public void test_hijrahToJapanese(HijrahDate hijrah, String japanese) {
           assertEquals(JapaneseChronology.INSTANCE.date(hijrah).toString(), japanese);
+    }
+
+    @DataProvider(name="alignedDayOfWeekInMonthTestDates")
+    Object[][] data_alignedDayOfWeekInMonth() {
+        return new Object[][] {
+            {1437, 9, 1, 1, 1},
+            {1437, 10, 1, 1, 1},
+            {1437, 10, 11, 2, 4},
+            {1437, 10, 29, 5, 1},
+        };
+    }
+
+    //-----------------------------------------------------------------------
+    // Test for aligned-week-of-month calculation based on the day-of-month
+    //-----------------------------------------------------------------------
+    @Test(dataProvider="alignedDayOfWeekInMonthTestDates")
+    public void test_alignedWeekOfMonth(int year, int month, int dom, int wom, int dowm) {
+        HijrahDate date = HijrahChronology.INSTANCE.date(year, month, dom);
+        assertEquals(date.getLong(ChronoField.ALIGNED_WEEK_OF_MONTH), wom);
+    }
+
+    //-----------------------------------------------------------------------
+    // Test for aligned-day-of-week calculation based on the day-of-month
+    //-----------------------------------------------------------------------
+    @Test(dataProvider="alignedDayOfWeekInMonthTestDates")
+    public void test_alignedDayOfWeekInMonth(int year, int month, int dom, int wom, int dowm) {
+        HijrahDate date = HijrahChronology.INSTANCE.date(year, month, dom);
+        assertEquals(date.getLong(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH), dowm);
     }
 }

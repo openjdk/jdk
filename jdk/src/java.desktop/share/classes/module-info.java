@@ -88,6 +88,9 @@ module java.desktop {
     exports sun.awt to
         jdk.accessibility;
 
+    exports com.sun.awt to
+        jdk.desktop;
+
     uses java.awt.im.spi.InputMethodDescriptor;
     uses javax.accessibility.AccessibilityProvider;
     uses javax.imageio.spi.ImageInputStreamSpi;

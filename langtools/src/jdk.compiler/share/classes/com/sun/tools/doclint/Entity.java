@@ -297,17 +297,21 @@ public enum Entity {
     rsaquo(8250),
     euro(8364);
 
-    int code;
+    public final int code;
 
     private Entity(int code) {
         this.code = code;
     }
 
-    static boolean isValid(String name) {
+    public static boolean isValid(String name) {
         return names.containsKey(name);
     }
 
-    static boolean isValid(int code) {
+    public static Entity get(String name) {
+        return names.get(name);
+    }
+
+    public static boolean isValid(int code) {
         // allow numeric codes for standard ANSI characters
         return codes.containsKey(code) || ( 32 <= code && code < 2127);
     }

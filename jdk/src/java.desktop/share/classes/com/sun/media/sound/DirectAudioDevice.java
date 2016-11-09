@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1034,6 +1034,7 @@ final class DirectAudioDevice extends AbstractMixer {
 
             // $$fb part of fix for 4679187: Clip.open() throws unexpected Exceptions
             Toolkit.isFullySpecifiedAudioFormat(format);
+            Toolkit.validateBuffer(format.getFrameSize(), bufferSize);
 
             byte[] newData = new byte[bufferSize];
             System.arraycopy(data, offset, newData, 0, bufferSize);

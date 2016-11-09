@@ -485,7 +485,7 @@ public final class Class<T> implements java.io.Serializable,
      * can be replaced by
      *
      * <pre>{@code
-     * clazz.getConstructor().newInstance()
+     * clazz.getDeclaredConstructor().newInstance()
      * }</pre>
      *
      * The latter sequence of calls is inferred to be able to throw
@@ -557,7 +557,7 @@ public final class Class<T> implements java.io.Serializable,
         Class<?> caller = Reflection.getCallerClass();
         if (newInstanceCallerCache != caller) {
             int modifiers = tmpConstructor.getModifiers();
-            Reflection.ensureMemberAccess(caller, this, null, modifiers);
+            Reflection.ensureMemberAccess(caller, this, this, modifiers);
             newInstanceCallerCache = caller;
         }
         // Run constructor

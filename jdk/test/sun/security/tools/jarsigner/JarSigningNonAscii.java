@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,12 @@
  * @bug 4924188
  * @summary sign a JAR file that has entry names with non-ASCII characters.
  * @modules jdk.jartool/sun.security.tools.jarsigner
+ * @run main/othervm JarSigningNonAscii
  */
 
 import sun.security.tools.*;
 import java.io.*;
+import java.security.Security;
 import java.util.*;
 import java.util.jar.*;
 import java.security.cert.Certificate;
@@ -40,6 +42,7 @@ public class JarSigningNonAscii {
     private static String keystore;
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.jar.disabledAlgorithms", "");
 
         String srcDir = System.getProperty("test.src", ".");
         String destDir = System.getProperty("test.classes", ".");

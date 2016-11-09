@@ -41,7 +41,7 @@ public class TestPrintReferences {
     OutputAnalyzer output = new OutputAnalyzer(pb_enabled.start());
 
     String countRegex = "[0-9]+ refs";
-    String timeRegex = "\\([0-9]+[.,][0-9]+s, [0-9]+[.,][0-9]+s\\) [0-9]+[.,][0-9]+ms";
+    String timeRegex = "[0-9]+[.,][0-9]+ms";
 
     output.shouldMatch(".* GC\\([0-9]+\\) SoftReference " + timeRegex + "\n" +
                        ".* GC\\([0-9]+\\) WeakReference " + timeRegex + "\n" +

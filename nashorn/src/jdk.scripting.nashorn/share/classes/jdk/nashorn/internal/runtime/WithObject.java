@@ -97,9 +97,6 @@ public final class WithObject extends Scope {
             return super.lookup(desc, request);
         }
 
-        // With scopes can never be observed outside of Nashorn code, so all call sites that can address it will of
-        // necessity have a Nashorn descriptor - it is safe to cast.
-        final NashornCallSiteDescriptor ndesc = (NashornCallSiteDescriptor)desc;
         GuardedInvocation link = null;
         final Operation op = desc.getOperation();
 
@@ -111,7 +108,7 @@ public final class WithObject extends Scope {
         if (find != null) {
             link = expression.lookup(desc, request);
             if (link != null) {
-                return fixExpressionCallSite(ndesc, link);
+                return fixExpressionCallSite(desc, link);
             }
         }
 
@@ -126,39 +123,30 @@ public final class WithObject extends Scope {
         // __noSuchProperty__ and __noSuchMethod__ in expression
         final String fallBack;
 
-        final StandardOperation firstOp = ndesc.getFirstOperation();
-        switch (firstOp) {
-        case GET_METHOD:
-            fallBack = NO_SUCH_METHOD_NAME;
-            break;
-        case GET_PROPERTY:
-        case GET_ELEMENT:
-            fallBack = NO_SUCH_PROPERTY_NAME;
-            break;
-        default:
+        final Operation firstOp = NashornCallSiteDescriptor.getBaseOperation(desc);
+        if (firstOp == StandardOperation.GET) {
+            if (NashornCallSiteDescriptor.isMethodFirstOperation(desc)) {
+                fallBack = NO_SUCH_METHOD_NAME;
+            } else {
+                fallBack = NO_SUCH_PROPERTY_NAME;
+            }
+        } else {
             fallBack = null;
-            break;
         }
 
         if (fallBack != null) {
             find = expression.findProperty(fallBack, true);
             if (find != null) {
-                switch (firstOp) {
-                case GET_METHOD:
+                if (NO_SUCH_METHOD_NAME.equals(fallBack)) {
                     link = expression.noSuchMethod(desc, request);
-                    break;
-                case GET_PROPERTY:
-                case GET_ELEMENT:
+                } else if (NO_SUCH_PROPERTY_NAME.equals(fallBack)) {
                     link = expression.noSuchProperty(desc, request);
-                    break;
-                default:
-                    break;
                 }
             }
         }
 
         if (link != null) {
-            return fixExpressionCallSite(ndesc, link);
+            return fixExpressionCallSite(desc, link);
         }
 
         // still not found, may be scope can handle with it's own
@@ -245,10 +233,10 @@ public final class WithObject extends Scope {
         return link.asType(newInvType);
     }
 
-    private static GuardedInvocation fixExpressionCallSite(final NashornCallSiteDescriptor desc, final GuardedInvocation link) {
+    private static GuardedInvocation fixExpressionCallSite(final CallSiteDescriptor desc, final GuardedInvocation link) {
         // If it's not a getMethod, just add an expression filter that converts WithObject in "this" position to its
         // expression.
-        if (desc.getFirstOperation() != StandardOperation.GET_METHOD) {
+        if (NashornCallSiteDescriptor.getBaseOperation(desc) != StandardOperation.GET || !NashornCallSiteDescriptor.isMethodFirstOperation(desc)) {
             return fixReceiverType(link, WITHEXPRESSIONFILTER).filterArguments(0, WITHEXPRESSIONFILTER);
         }
 

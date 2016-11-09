@@ -116,14 +116,14 @@ public class AuthTime {
             if (st.countTokens() != 6) {
                 throw new IOException("Incorrect rcache style");
             }
-            st.nextToken();
+            String hashAlg = st.nextToken();
             String hash = st.nextToken();
             st.nextToken();
             client = st.nextToken();
             st.nextToken();
             server = st.nextToken();
             return new AuthTimeWithHash(
-                    client, server, ctime, cusec, hash);
+                    client, server, ctime, cusec, hashAlg, hash);
         } else {
             return new AuthTime(
                     client, server, ctime, cusec);

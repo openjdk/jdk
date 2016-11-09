@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,14 @@ import java.util.HashSet;
 import java.util.StringTokenizer;
 import java.security.*;
 import java.lang.reflect.*;
+import jdk.internal.misc.JavaNetURLClassLoaderAccess;
+import jdk.internal.misc.JavaSecurityAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.awt.AWTSecurityManager;
 import sun.awt.AppContext;
 import sun.awt.AWTPermissions;
 import sun.security.util.SecurityConstants;
+
 
 
 /**
@@ -52,24 +56,9 @@ import sun.security.util.SecurityConstants;
  */
 public
 class AppletSecurity extends AWTSecurityManager {
-
-    //URLClassLoader.acc
-    private static Field facc = null;
-
-    //AccessControlContext.context;
-    private static Field fcontext = null;
-
-    static {
-        try {
-            facc = URLClassLoader.class.getDeclaredField("acc");
-            facc.setAccessible(true);
-            fcontext = AccessControlContext.class.getDeclaredField("context");
-            fcontext.setAccessible(true);
-        } catch (NoSuchFieldException e) {
-            throw new UnsupportedOperationException(e);
-        }
-    }
-
+    private static final JavaNetURLClassLoaderAccess JNUCLA
+            = SharedSecrets.getJavaNetURLClassLoaderAccess();
+    private static final JavaSecurityAccess JSA = SharedSecrets.getJavaSecurityAccess();
 
     /**
      * Construct and initialize.
@@ -148,6 +137,7 @@ class AppletSecurity extends AWTSecurityManager {
             final ClassLoader currentLoader = context[i].getClassLoader();
 
             if (currentLoader instanceof URLClassLoader) {
+                URLClassLoader ld = (URLClassLoader)currentLoader;
                 loader = AccessController.doPrivileged(
                     new PrivilegedAction<ClassLoader>() {
                         public ClassLoader run() {
@@ -156,12 +146,12 @@ class AppletSecurity extends AWTSecurityManager {
                             ProtectionDomain[] pds = null;
 
                             try {
-                                acc = (AccessControlContext) facc.get(currentLoader);
+                                acc = JNUCLA.getAccessControlContext(ld);
                                 if (acc == null) {
                                     return null;
                                 }
 
-                                pds = (ProtectionDomain[]) fcontext.get(acc);
+                                pds = JSA.getProtectDomains(acc);
                                 if (pds == null) {
                                     return null;
                                 }

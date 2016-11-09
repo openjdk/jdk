@@ -504,11 +504,12 @@ class Thread implements Runnable {
     }
 
     /**
-     * Creates a new Thread that inherits the given AccessControlContext.
+     * Creates a new Thread that inherits the given AccessControlContext
+     * but thread-local variables are not inherited.
      * This is not a public constructor.
      */
     Thread(Runnable target, AccessControlContext acc) {
-        init(null, target, "Thread-" + nextThreadNum(), 0, acc, true);
+        init(null, target, "Thread-" + nextThreadNum(), 0, acc, false);
     }
 
     /**

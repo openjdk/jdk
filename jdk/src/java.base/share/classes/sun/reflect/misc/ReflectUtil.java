@@ -44,9 +44,21 @@ public final class ReflectUtil {
         return Class.forName(name);
     }
 
-    /*
-     * Reflection.ensureMemberAccess is overly-restrictive
-     * due to a bug. We awkwardly work around it for now.
+    /**
+     * Ensures that access to a method or field is granted and throws
+     * IllegalAccessException if not. This method is not suitable for checking
+     * access to constructors.
+     *
+     * @param currentClass the class performing the access
+     * @param memberClass the declaring class of the member being accessed
+     * @param target the target object if accessing instance field or method;
+     *               or null if accessing static field or method or if target
+     *               object access rights will be checked later
+     * @param modifiers the member's access modifiers
+     * @throws IllegalAccessException if access to member is denied
+     * @implNote Delegates directly to
+     *           {@link Reflection#ensureMemberAccess(Class, Class, Class, int)}
+     *           which should be used instead.
      */
     public static void ensureMemberAccess(Class<?> currentClass,
                                           Class<?> memberClass,
@@ -54,62 +66,10 @@ public final class ReflectUtil {
                                           int modifiers)
         throws IllegalAccessException
     {
-        if (target == null && Modifier.isProtected(modifiers)) {
-            int mods = modifiers;
-            mods = mods & (~Modifier.PROTECTED);
-            mods = mods | Modifier.PUBLIC;
-
-            /*
-             * See if we fail because of class modifiers
-             */
-            Reflection.ensureMemberAccess(currentClass,
-                                          memberClass,
-                                          target,
-                                          mods);
-            try {
-                /*
-                 * We're still here so class access was ok.
-                 * Now try with default field access.
-                 */
-                mods = mods & (~Modifier.PUBLIC);
-                Reflection.ensureMemberAccess(currentClass,
-                                              memberClass,
-                                              target,
-                                              mods);
-                /*
-                 * We're still here so access is ok without
-                 * checking for protected.
-                 */
-                return;
-            } catch (IllegalAccessException e) {
-                /*
-                 * Access failed but we're 'protected' so
-                 * if the test below succeeds then we're ok.
-                 */
-                if (isSubclassOf(currentClass, memberClass)) {
-                    return;
-                } else {
-                    throw e;
-                }
-            }
-        } else {
-            Reflection.ensureMemberAccess(currentClass,
-                                          memberClass,
-                                          target,
-                                          modifiers);
-        }
-    }
-
-    private static boolean isSubclassOf(Class<?> queryClass,
-                                        Class<?> ofClass)
-    {
-        while (queryClass != null) {
-            if (queryClass == ofClass) {
-                return true;
-            }
-            queryClass = queryClass.getSuperclass();
-        }
-        return false;
+        Reflection.ensureMemberAccess(currentClass,
+                                      memberClass,
+                                      target == null ? null : target.getClass(),
+                                      modifiers);
     }
 
     /**

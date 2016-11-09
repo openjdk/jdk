@@ -1902,11 +1902,7 @@ public final class SunGraphics2D
             clipRegion = devClip;
         } else if (usrClip instanceof Rectangle2D) {
             clipState = CLIP_RECTANGULAR;
-            if (usrClip instanceof Rectangle) {
-                clipRegion = devClip.getIntersection((Rectangle)usrClip);
-            } else {
-                clipRegion = devClip.getIntersection(usrClip.getBounds());
-            }
+            clipRegion = devClip.getIntersection((Rectangle2D) usrClip);
         } else {
             PathIterator cpi = usrClip.getPathIterator(null);
             int box[] = new int[4];

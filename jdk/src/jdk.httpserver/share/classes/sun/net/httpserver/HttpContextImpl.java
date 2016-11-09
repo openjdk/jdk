@@ -26,7 +26,7 @@
 package sun.net.httpserver;
 import java.io.*;
 import java.util.*;
-import java.util.logging.Logger;
+import java.lang.System.Logger;
 import com.sun.net.httpserver.*;
 import com.sun.net.httpserver.spi.*;
 

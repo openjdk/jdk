@@ -109,19 +109,16 @@ public class JLinkTest {
                     .modulePath(helper.defaultModulePath())
                     .output(helper.createNewImageDir(moduleName))
                     .addMods("leaf1")
-                    .option("")
                     .call().assertSuccess();
             JImageGenerator.getJLinkTask()
                     .modulePath(helper.defaultModulePath())
                     .addMods("leaf1")
                     .option("--output")
-                    .option("")
                     .call().assertFailure("Error: no value given for --output");
             JImageGenerator.getJLinkTask()
                     .modulePath("")
                     .output(helper.createNewImageDir(moduleName))
                     .addMods("leaf1")
-                    .option("")
                     .call().assertFailure("Error: no value given for --module-path");
         }
 
@@ -132,7 +129,6 @@ public class JLinkTest {
                     .modulePath(helper.defaultModulePath())
                     .output(helper.createNewImageDir(moduleName))
                     .addMods("m")
-                    .option("")
                     .call().assertSuccess();
             moduleName = "mod";
             jmod = helper.generateDefaultJModule(moduleName).assertSuccess();
@@ -140,7 +136,6 @@ public class JLinkTest {
                     .modulePath(helper.defaultModulePath())
                     .output(helper.createNewImageDir(moduleName))
                     .addMods("m")
-                    .option("")
                     .call().assertSuccess();
         }
 
@@ -282,18 +277,21 @@ public class JLinkTest {
             helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: Invalid compression level invalid");
         }
 
-        // @file
+        // orphan argument - JDK-8166810
         {
-            Path path = Paths.get("embedded.properties");
-            Files.write(path, Collections.singletonList("--strip-debug --add-modules " +
-                    "toto.unknown --compress UNKNOWN\n"));
-            String[] userOptions = {"@", path.toAbsolutePath().toString()};
-            String moduleName = "configembeddednocompresscomposite2";
+            String[] userOptions = {"--compress", "2", "foo" };
+            String moduleName = "orphanarg1";
             helper.generateDefaultJModule(moduleName, "composite2");
-            Path imageDir = helper.generateDefaultImage(userOptions, moduleName).assertSuccess();
-            helper.checkImage(imageDir, moduleName, null, null);
+            helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: orphan argument: foo");
         }
 
+        // orphan argument - JDK-8166810
+        {
+            String[] userOptions = {"--output", "foo", "bar" };
+            String moduleName = "orphanarg2";
+            helper.generateDefaultJModule(moduleName, "composite2");
+            helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: orphan argument: bar");
+        }
     }
 
     private static void testCompress(Helper helper, String moduleName, String... userOptions) throws IOException {

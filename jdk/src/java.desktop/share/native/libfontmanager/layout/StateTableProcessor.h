@@ -53,7 +53,7 @@ public:
 
     virtual void beginStateTable() = 0;
 
-    virtual ByteOffset processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex index) = 0;
+    virtual ByteOffset processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex index, LEErrorCode &success) = 0;
 
     virtual void endStateTable() = 0;
 

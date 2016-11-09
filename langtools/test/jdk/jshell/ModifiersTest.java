@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test 8167643 8129559
  * @summary Tests for modifiers
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng ModifiersTest
@@ -31,6 +31,7 @@
 import java.util.ArrayList;
 import java.util.List;
 
+import java.util.function.Consumer;
 import javax.tools.Diagnostic;
 
 import org.testng.annotations.DataProvider;
@@ -43,22 +44,55 @@ public class ModifiersTest extends KullaTesting {
     public Object[][] getTestCases() {
         List<Object[]> testCases = new ArrayList<>();
         String[] ignoredModifiers = new String[] {
-            "public", "protected", "private", "static", "final"
+            "static", "final"
         };
+        String[] silentlyIgnoredModifiers = new String[] {
+            "public", "protected", "private"
+        };
+        String[] before = new String[] {
+            "strictfp", "abstract", "@X", "@X(value=9)"
+        };
+        String context = "@interface X { int value() default 0; }";
+        Consumer<String> eval = this::assertEval;
+        Consumer<String> evalWarn = s -> assertDeclareWarn1(s, "jdk.eval.warn.illegal.modifiers");
         for (String ignoredModifier : ignoredModifiers) {
             for (ClassType classType : ClassType.values()) {
-                testCases.add(new Object[] { ignoredModifier, classType });
+                testCases.add(new Object[] { ignoredModifier, classType, evalWarn, "", null });
+            }
+        }
+        for (String ignoredModifier : ignoredModifiers) {
+            for (String preface : before) {
+                testCases.add(new Object[] { ignoredModifier, ClassType.CLASS, evalWarn, preface, context});
+            }
+        }
+        for (String ignoredModifier : silentlyIgnoredModifiers) {
+            for (ClassType classType : ClassType.values()) {
+                testCases.add(new Object[] { ignoredModifier, classType, eval, "", null });
+            }
+        }
+        for (String ignoredModifier : silentlyIgnoredModifiers) {
+            for (String preface : before) {
+                testCases.add(new Object[] { ignoredModifier, ClassType.CLASS, eval, preface, context});
             }
         }
         return testCases.toArray(new Object[testCases.size()][]);
     }
 
     @Test(dataProvider = "ignoredModifiers")
-    public void ignoredModifiers(String modifier, ClassType classType) {
-        assertDeclareWarn1(
-                String.format("%s %s A {}", modifier, classType), "jdk.eval.warn.illegal.modifiers");
-        assertNumberOfActiveClasses(1);
-        assertClasses(clazz(classType, "A"));
+    public void ignoredModifiers(String modifier, ClassType classType,
+            Consumer<String> eval, String preface, String context) {
+        if (context != null) {
+            assertEval(context);
+        }
+        String decl = String.format("%s %s %s A {}", preface, modifier, classType);
+        eval.accept(decl);
+        if (context != null) {
+            assertNumberOfActiveClasses(2);
+            assertClasses(clazz(ClassType.ANNOTATION, "X"), clazz(classType, "A"));
+        } else {
+            assertNumberOfActiveClasses(1);
+            assertClasses(clazz(classType, "A"));
+        }
         assertActiveKeys();
     }
 

@@ -19,9 +19,10 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+
 #include "precompiled.hpp"
+#include "logTestUtils.inline.hpp"
 #include "logging/logFileOutput.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
@@ -32,7 +33,7 @@
 static const char* name = "file=testlog.pid%p.%t.log";
 
 // Test parsing a bunch of valid file output options
-TEST(LogFileOutput, parse_valid) {
+TEST_VM(LogFileOutput, parse_valid) {
   const char* valid_options[] = {
     "", "filecount=10", "filesize=512",
     "filecount=11,filesize=256",
@@ -64,7 +65,7 @@ TEST(LogFileOutput, parse_valid) {
 }
 
 // Test parsing a bunch of invalid file output options
-TEST(LogFileOutput, parse_invalid) {
+TEST_VM(LogFileOutput, parse_invalid) {
   const char* invalid_options[] = {
     "invalidopt", "filecount=",
     "filesize=,filecount=10",
@@ -91,7 +92,7 @@ TEST(LogFileOutput, parse_invalid) {
 }
 
 // Test for overflows with filesize
-TEST(LogFileOutput, filesize_overflow) {
+TEST_VM(LogFileOutput, filesize_overflow) {
   char buf[256];
   int ret = jio_snprintf(buf, sizeof(buf), "filesize=" SIZE_FORMAT "K", SIZE_MAX);
   ASSERT_GT(ret, 0) << "Buffer too small";
@@ -100,4 +101,83 @@ TEST(LogFileOutput, filesize_overflow) {
   stringStream ss;
   LogFileOutput fo(name);
   EXPECT_FALSE(fo.initialize(buf, &ss)) << "Accepted filesize that overflows";
+}
+
+TEST(LogFileOutput, startup_rotation) {
+  const size_t rotations = 5;
+  const char* filename = "start-rotate-test";
+  char* rotated_file[rotations];
+
+  ResourceMark rm;
+  for (size_t i = 0; i < rotations; i++) {
+    size_t len = strlen(filename) + 3;
+    rotated_file[i] = NEW_RESOURCE_ARRAY(char, len);
+    int ret = jio_snprintf(rotated_file[i], len, "%s." SIZE_FORMAT, filename, i);
+    ASSERT_NE(-1, ret);
+    delete_file(rotated_file[i]);
+  }
+
+  delete_file(filename);
+  init_log_file(filename);
+  ASSERT_TRUE(file_exists(filename))
+    << "configured logging to file '" << filename << "' but file was not found";
+
+  // Initialize the same file a bunch more times to trigger rotations
+  for (size_t i = 0; i < rotations; i++) {
+    init_log_file(filename);
+    EXPECT_TRUE(file_exists(rotated_file[i]));
+  }
+
+  // Remove a file and expect its slot to be re-used
+  delete_file(rotated_file[1]);
+  init_log_file(filename);
+  EXPECT_TRUE(file_exists(rotated_file[1]));
+
+  // Clean up after test
+  delete_file(filename);
+  for (size_t i = 0; i < rotations; i++) {
+    delete_file(rotated_file[i]);
+  }
+}
+
+TEST(LogFileOutput, startup_truncation) {
+  const char* filename = "start-truncate-test";
+  const char* archived_filename = "start-truncate-test.0";
+
+  delete_file(filename);
+  delete_file(archived_filename);
+
+  // Use the same log file twice and expect it to be overwritten/truncated
+  init_log_file(filename, "filecount=0");
+  ASSERT_TRUE(file_exists(filename))
+    << "configured logging to file '" << filename << "' but file was not found";
+
+  init_log_file(filename, "filecount=0");
+  ASSERT_TRUE(file_exists(filename))
+    << "configured logging to file '" << filename << "' but file was not found";
+  EXPECT_FALSE(file_exists(archived_filename))
+    << "existing log file was not properly truncated when filecount was 0";
+
+  // Verify that the file was really truncated and not just appended
+  EXPECT_TRUE(file_contains_substring(filename, LOG_TEST_STRING_LITERAL));
+  const char* repeated[] = { LOG_TEST_STRING_LITERAL, LOG_TEST_STRING_LITERAL };
+  EXPECT_FALSE(file_contains_substrings_in_order(filename, repeated))
+    << "log file " << filename << " appended rather than truncated";
+
+  delete_file(filename);
+  delete_file(archived_filename);
+}
+
+TEST(LogFileOutput, invalid_file) {
+  ResourceMark rm;
+  stringStream ss;
+
+  // Attempt to log to a directory (existing log not a regular file)
+  create_directory("tmplogdir");
+  LogFileOutput bad_file("file=tmplogdir");
+  EXPECT_FALSE(bad_file.initialize("", &ss))
+    << "file was initialized when there was an existing directory with the same name";
+  EXPECT_TRUE(string_contains_substring(ss.as_string(), "tmplogdir is not a regular file"))
+    << "missing expected error message, received msg: %s" << ss.as_string();
+  remove("tmplogdir");
 }

@@ -66,7 +66,6 @@ static JNF_CLASS_CACHE(sjc_CAccessible, "sun/lwawt/macosx/CAccessible");
 static JNF_MEMBER_CACHE(jf_ptr, sjc_CAccessible, "ptr", "J");
 static JNF_STATIC_MEMBER_CACHE(sjm_getCAccessible, sjc_CAccessible, "getCAccessible", "(Ljavax/accessibility/Accessible;)Lsun/lwawt/macosx/CAccessible;");
 
-
 static jobject sAccessibilityClass = NULL;
 
 // sAttributeNamesForRoleCache holds the names of the attributes to which each java
@@ -213,6 +212,24 @@ static NSObject *sAttributeNamesLOCK = nil;
     NSAccessibilityPostNotification(self, NSAccessibilitySelectedChildrenChangedNotification);
 }
 
+- (void)postMenuOpened
+{
+    AWT_ASSERT_APPKIT_THREAD;
+    NSAccessibilityPostNotification(self, (NSString *)kAXMenuOpenedNotification);
+}
+
+- (void)postMenuClosed
+{
+    AWT_ASSERT_APPKIT_THREAD;
+    NSAccessibilityPostNotification(self, (NSString *)kAXMenuClosedNotification);
+}
+
+- (void)postMenuItemSelected
+{
+    AWT_ASSERT_APPKIT_THREAD;
+    NSAccessibilityPostNotification(self, (NSString *)kAXMenuItemSelectedNotification);
+}
+
 - (BOOL)isEqual:(id)anObject
 {
     if (![anObject isKindOfClass:[self class]]) return NO;
@@ -278,8 +295,7 @@ static NSObject *sAttributeNamesLOCK = nil;
 + (jobject) getCAccessible:(jobject)jaccessible withEnv:(JNIEnv *)env {
     if (JNFIsInstanceOf(env, jaccessible, &sjc_CAccessible)) {
         return jaccessible;
-    }
-    else if (JNFIsInstanceOf(env, jaccessible, &sjc_Accessible)) {
+    } else if (JNFIsInstanceOf(env, jaccessible, &sjc_Accessible)) {
         return JNFCallStaticObjectMethod(env, sjm_getCAccessible, jaccessible);
     }
     return NULL;
@@ -367,6 +383,14 @@ static NSObject *sAttributeNamesLOCK = nil;
 
     // must init freshly -alloc'd object
     [newChild initWithParent:parent withEnv:env withAccessible:jCAX withIndex:index withView:view withJavaRole:javaRole]; // must init new instance
+
+    // If creating a JPopupMenu (not a combobox popup list) need to fire menuOpened.
+    // This is the only way to know if the menu is opening; visible state change
+    // can't be caught because the listeners are not set up in time.
+    if ( [javaRole isEqualToString:@"popupmenu"] &&
+         ![[parent javaRole] isEqualToString:@"combobox"] ) {
+        [newChild postMenuOpened];
+    }
 
     // must hard retain pointer poked into Java object
     [newChild retain];
@@ -634,6 +658,15 @@ static NSObject *sAttributeNamesLOCK = nil;
                 return moreNames;
             }
         }
+        // popupmenu's return values not selected children
+        if ( [javaRole isEqualToString:@"popupmenu"] &&
+             ![[[self parent] javaRole] isEqualToString:@"combobox"] ) {
+            NSMutableArray *moreNames =
+                [[NSMutableArray alloc] initWithCapacity: [names count] + 1];
+            [moreNames addObjectsFromArray: names];
+            [moreNames addObject:NSAccessibilityValueAttribute];
+            return moreNames;
+        }
         return names;
 
     }  // end @synchronized
@@ -707,6 +740,7 @@ static NSObject *sAttributeNamesLOCK = nil;
 
     return value;
 }
+
 - (BOOL)accessibilityIsChildrenAttributeSettable
 {
     return NO;
@@ -939,6 +973,13 @@ static NSObject *sAttributeNamesLOCK = nil;
     if (fNSRole == nil) {
         NSString *javaRole = [self javaRole];
         fNSRole = [sRoles objectForKey:javaRole];
+        // The sRoles NSMutableDictionary maps popupmenu to Mac's popup button.
+        // JComboBox behavior currently relies on this.  However this is not the
+        // proper mapping for a JPopupMenu so fix that.
+        if ( [javaRole isEqualToString:@"popupmenu"] &&
+             ![[[self parent] javaRole] isEqualToString:@"combobox"] ) {
+             fNSRole = NSAccessibilityMenuRole;
+        }
         if (fNSRole == nil) {
             // this component has assigned itself a custom AccessibleRole not in the sRoles array
             fNSRole = javaRole;
@@ -947,6 +988,7 @@ static NSObject *sAttributeNamesLOCK = nil;
     }
     return fNSRole;
 }
+
 - (BOOL)accessibilityIsRoleAttributeSettable
 {
     return NO;
@@ -1046,8 +1088,7 @@ static NSObject *sAttributeNamesLOCK = nil;
 - (NSString *)accessibilitySubroleAttribute
 {
     NSString *value = nil;
-    if ([[self javaRole] isEqualToString:@"passwordtext"])
-    {
+    if ([[self javaRole] isEqualToString:@"passwordtext"]) {
         value = NSAccessibilitySecureTextFieldSubrole;
     }
     /*
@@ -1122,6 +1163,45 @@ static NSObject *sAttributeNamesLOCK = nil;
     static JNF_STATIC_MEMBER_CACHE(jm_getCurrentAccessibleValue, sjc_CAccessibility, "getCurrentAccessibleValue", "(Ljavax/accessibility/AccessibleValue;Ljava/awt/Component;)Ljava/lang/Number;");
 
     JNIEnv* env = [ThreadUtilities getJNIEnv];
+
+    // Need to handle popupmenus differently.
+    //
+    // At least for now don't handle combo box menus.
+    // This may change when later fixing issues which currently 
+    // exist for combo boxes, but for now the following is only
+    // for JPopupMenus, not for combobox menus.
+    id parent = [self parent];
+    if ( [[self javaRole] isEqualToString:@"popupmenu"] &&
+         ![[parent javaRole] isEqualToString:@"combobox"] ) {
+        NSArray *children =
+            [JavaComponentAccessibility childrenOfParent:self
+                                        withEnv:env
+                                        withChildrenCode:JAVA_AX_ALL_CHILDREN
+                                        allowIgnored:YES];
+        if ([children count] > 0) {
+            // handle case of AXMenuItem
+            // need to ask menu what is selected
+            NSArray *selectedChildrenOfMenu =
+            	[self accessibilitySelectedChildrenAttribute];
+            JavaComponentAccessibility *selectedMenuItem =
+            	[selectedChildrenOfMenu objectAtIndex:0];
+            if (selectedMenuItem != nil) {
+                jobject itemValue =
+                	JNFCallStaticObjectMethod( env,
+                                                   sjm_getAccessibleName,
+                                                   selectedMenuItem->fAccessible,
+                                                   selectedMenuItem->fComponent ); // AWT_THREADING Safe (AWTRunLoop)
+                if (itemValue == NULL) {
+                    return nil;
+                }
+                NSString* itemString = JNFJavaToNSString(env, itemValue);
+                (*env)->DeleteLocalRef(env, itemValue);
+                return itemString;
+            } else {
+            	return nil;
+            }
+        }
+    }
 
     // ask Java for the component's accessibleValue. In java, the "accessibleValue" just means a numerical value
     // a text value is taken care of in JavaTextAccessibility
@@ -1340,6 +1420,54 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_selectionChanged
 {
 JNF_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(postSelectionChanged) on:(JavaComponentAccessibility *)jlong_to_ptr(element) withObject:nil waitUntilDone:NO];
+JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CAccessible
+ * Method:    menuOpened
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuOpened
+(JNIEnv *env, jclass jklass, jlong element)
+{
+JNF_COCOA_ENTER(env);
+    [ThreadUtilities performOnMainThread:@selector(postMenuOpened)
+                     on:(JavaComponentAccessibility *)jlong_to_ptr(element)
+                     withObject:nil
+                     waitUntilDone:NO];
+JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CAccessible
+ * Method:    menuClosed
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuClosed
+(JNIEnv *env, jclass jklass, jlong element)
+{
+JNF_COCOA_ENTER(env);
+    [ThreadUtilities performOnMainThread:@selector(postMenuClosed)
+                     on:(JavaComponentAccessibility *)jlong_to_ptr(element)
+                     withObject:nil
+                     waitUntilDone:NO];
+JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CAccessible
+ * Method:    menuItemSelected
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuItemSelected
+(JNIEnv *env, jclass jklass, jlong element)
+{
+JNF_COCOA_ENTER(env);
+    [ThreadUtilities performOnMainThread:@selector(postMenuItemSelected)
+                     on:(JavaComponentAccessibility *)jlong_to_ptr(element)
+                     withObject:nil
+                     waitUntilDone:NO];
 JNF_COCOA_EXIT(env);
 }
 

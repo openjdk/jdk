@@ -454,7 +454,7 @@ define NamedParamsMacroTemplate
       Too many named arguments to macro, please update MAX_PARAMS in MakeBase.gmk))
   # Iterate over 2 3 4... and evaluate the named parameters with $1_ as prefix
   $(foreach i,$(PARAM_SEQUENCE), $(if $(strip $($i)),\
-    $(strip $1)_$(strip $($i)))$(NEWLINE))
+    $(strip $1)_$(strip $(call DoubleDollar, $($i))))$(NEWLINE))
   # Debug print all named parameter names and values
   $(if $(findstring $(LOG_LEVEL),debug trace), \
     $(info $0 $(strip $1) $(foreach i,$(PARAM_SEQUENCE), \
@@ -575,25 +575,21 @@ RelativePath = \
     $($(strip $1)_dotdots)/$($(strip $1)_suffix)
 
 ################################################################################
-# link-file-* works similarly to install file but creates a symlink instead on
-# platforms that support it. There are two versions, either creating a relative
-# or an absolute link.
-ifeq ($(OPENJDK_BUILD_OS), windows)
-  link-file-absolute = $(install-file)
-  link-file-relative = $(install-file)
-else
-  define link-file-relative
+# link-file-* works similarly to install-file but creates a symlink instead.
+# There are two versions, either creating a relative or an absolute link. Be
+# careful when using this on Windows since the symlink created is only valid in
+# the unix emulation environment.
+define link-file-relative
 	$(call MakeDir, $(@D))
 	$(RM) $@
 	$(LN) -s $(call RelativePath, $<, $(@D)) $@
-  endef
+endef
 
-  define link-file-absolute
+define link-file-absolute
 	$(call MakeDir, $(@D))
 	$(RM) $@
 	$(LN) -s $< $@
-  endef
-endif
+endef
 
 ################################################################################
 # Filter out duplicate sub strings while preserving order. Keeps the first occurance.

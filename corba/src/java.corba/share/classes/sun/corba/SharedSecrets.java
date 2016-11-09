@@ -25,12 +25,12 @@
 
 package sun.corba;
 
-import com.sun.corba.se.impl.io.ValueUtility;
-import jdk.internal.misc.Unsafe;
-
 import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+
+import com.sun.corba.se.impl.io.ValueUtility;
+import sun.misc.Unsafe;
 
 /** A repository of "shared secrets", which are a mechanism for
     calling implementation-private methods in another package without
@@ -43,22 +43,22 @@ import java.security.PrivilegedAction;
 
 // SharedSecrets cloned in corba repo to avoid build issues
 public class SharedSecrets {
-    private static final Unsafe unsafe = getUnsafe();
-    private static JavaCorbaAccess javaCorbaAccess;
 
-     private static Unsafe getUnsafe() {
-          PrivilegedAction<Unsafe> pa = () -> {
-               Class<?> unsafeClass = jdk.internal.misc.Unsafe.class ;
-               try {
-                    Field f = unsafeClass.getDeclaredField("theUnsafe");
-                    f.setAccessible(true);
-                    return (Unsafe) f.get(null);
-               } catch (Exception e) {
-                    throw new Error(e);
-               }
-          };
-          return AccessController.doPrivileged(pa);
-     }
+    /** Access to Unsafe to read/write fields. */
+    private static final Unsafe unsafe = AccessController.doPrivileged(
+            (PrivilegedAction<Unsafe>)() -> {
+                try {
+                    Field field = Unsafe.class.getDeclaredField("theUnsafe");
+                    field.setAccessible(true);
+                    return (Unsafe)field.get(null);
+
+                } catch (NoSuchFieldException |IllegalAccessException ex) {
+                    throw new InternalError("Unsafe.theUnsafe field not available", ex);
+                }
+            }
+    );
+
+    private static JavaCorbaAccess javaCorbaAccess;
 
     public static JavaCorbaAccess getJavaCorbaAccess() {
         if (javaCorbaAccess == null) {

@@ -303,11 +303,13 @@ public class SecureRandom extends java.util.Random {
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard RNG algorithm names.
      *
-     * @return the new {@code SecureRandom} object.
+     * @return the new {@code SecureRandom} object
      *
-     * @exception NoSuchAlgorithmException if no Provider supports a
-     *          {@code SecureRandomSpi} implementation for the
-     *          specified algorithm.
+     * @throws NoSuchAlgorithmException if no {@code Provider} supports a
+     *         {@code SecureRandomSpi} implementation for the
+     *         specified algorithm
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      *
@@ -315,6 +317,7 @@ public class SecureRandom extends java.util.Random {
      */
     public static SecureRandom getInstance(String algorithm)
             throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = GetInstance.getInstance("SecureRandom",
                 SecureRandomSpi.class, algorithm);
         return new SecureRandom((SecureRandomSpi)instance.impl,
@@ -341,17 +344,19 @@ public class SecureRandom extends java.util.Random {
      *
      * @param provider the name of the provider.
      *
-     * @return the new {@code SecureRandom} object.
+     * @return the new {@code SecureRandom} object
+     *
+     * @throws IllegalArgumentException if the provider name is {@code null}
+     *         or empty
      *
      * @throws NoSuchAlgorithmException if a {@code SecureRandomSpi}
      *         implementation for the specified algorithm is not
-     *         available from the specified provider.
+     *         available from the specified provider
      *
      * @throws NoSuchProviderException if the specified provider is not
-     *         registered in the security provider list.
+     *         registered in the security provider list
      *
-     * @throws IllegalArgumentException if the provider name is null
-     *         or empty.
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      *
@@ -359,6 +364,7 @@ public class SecureRandom extends java.util.Random {
      */
     public static SecureRandom getInstance(String algorithm, String provider)
             throws NoSuchAlgorithmException, NoSuchProviderException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = GetInstance.getInstance("SecureRandom",
             SecureRandomSpi.class, algorithm, provider);
         return new SecureRandom((SecureRandomSpi)instance.impl,
@@ -382,13 +388,16 @@ public class SecureRandom extends java.util.Random {
      *
      * @param provider the provider.
      *
-     * @return the new {@code SecureRandom} object.
+     * @return the new {@code SecureRandom} object
+     *
+     * @throws IllegalArgumentException if the specified provider is
+     *         {@code null}
      *
      * @throws NoSuchAlgorithmException if a {@code SecureRandomSpi}
      *         implementation for the specified algorithm is not available
-     *         from the specified {@code Provider} object.
+     *         from the specified {@code Provider} object
      *
-     * @throws IllegalArgumentException if the specified provider is null.
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      *
@@ -396,6 +405,7 @@ public class SecureRandom extends java.util.Random {
      */
     public static SecureRandom getInstance(String algorithm,
             Provider provider) throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = GetInstance.getInstance("SecureRandom",
             SecureRandomSpi.class, algorithm, provider);
         return new SecureRandom((SecureRandomSpi)instance.impl,
@@ -433,13 +443,16 @@ public class SecureRandom extends java.util.Random {
      * @param params the {@code SecureRandomParameters}
      *               the newly created {@code SecureRandom} object must support.
      *
-     * @return the new {@code SecureRandom} object.
+     * @return the new {@code SecureRandom} object
+     *
+     * @throws IllegalArgumentException if the specified params is
+     *         {@code null}
      *
      * @throws NoSuchAlgorithmException if no Provider supports a
      *         {@code SecureRandomSpi} implementation for the specified
-     *         algorithm and parameters.
+     *         algorithm and parameters
      *
-     * @throws IllegalArgumentException if the specified params is null.
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      *
@@ -448,6 +461,7 @@ public class SecureRandom extends java.util.Random {
     public static SecureRandom getInstance(
             String algorithm, SecureRandomParameters params)
             throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         if (params == null) {
             throw new IllegalArgumentException("params cannot be null");
         }
@@ -481,17 +495,19 @@ public class SecureRandom extends java.util.Random {
      *
      * @param provider the name of the provider.
      *
-     * @return the new {@code SecureRandom} object.
+     * @return the new {@code SecureRandom} object
+     *
+     * @throws IllegalArgumentException if the provider name is {@code null}
+     *         or empty, or params is {@code null}
      *
      * @throws NoSuchAlgorithmException if the specified provider does not
      *         support a {@code SecureRandomSpi} implementation for the
-     *         specified algorithm and parameters.
+     *         specified algorithm and parameters
      *
      * @throws NoSuchProviderException if the specified provider is not
-     *         registered in the security provider list.
+     *         registered in the security provider list
      *
-     * @throws IllegalArgumentException if the provider name is null
-     *         or empty, or params is null.
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      *
@@ -500,6 +516,7 @@ public class SecureRandom extends java.util.Random {
     public static SecureRandom getInstance(String algorithm,
             SecureRandomParameters params, String provider)
             throws NoSuchAlgorithmException, NoSuchProviderException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         if (params == null) {
             throw new IllegalArgumentException("params cannot be null");
         }
@@ -531,14 +548,16 @@ public class SecureRandom extends java.util.Random {
      *
      * @param provider the provider.
      *
-     * @return the new {@code SecureRandom} object.
+     * @return the new {@code SecureRandom} object
+     *
+     * @throws IllegalArgumentException if the specified provider or params
+     *         is {@code null}
      *
      * @throws NoSuchAlgorithmException if the specified provider does not
      *         support a {@code SecureRandomSpi} implementation for the
-     *         specified algorithm and parameters.
+     *         specified algorithm and parameters
      *
-     * @throws IllegalArgumentException if the specified provider or params
-     *         is null.
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      *
@@ -547,6 +566,7 @@ public class SecureRandom extends java.util.Random {
     public static SecureRandom getInstance(String algorithm,
             SecureRandomParameters params, Provider provider)
             throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         if (params == null) {
             throw new IllegalArgumentException("params cannot be null");
         }

@@ -261,7 +261,7 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  * @see   TIFFDirectory
  * @see   TIFFTag
  */
-public class TIFFField implements Cloneable {
+public final class TIFFField implements Cloneable {
 
     private static final String[] typeNames = {
         null,

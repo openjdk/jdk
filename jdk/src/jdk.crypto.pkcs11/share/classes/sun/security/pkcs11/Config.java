@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.util.*;
 
 import java.security.*;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.util.PropertyExpander;
 
 import sun.security.pkcs11.wrapper.*;
@@ -58,15 +57,30 @@ final class Config {
     // will accept single threaded modules regardless of the setting in their
     // config files.
     private static final boolean staticAllowSingleThreadedModules;
+    private static final String osName;
+    private static final String osArch;
 
     static {
-        String p = "sun.security.pkcs11.allowSingleThreadedModules";
-        String s = AccessController.doPrivileged(new GetPropertyAction(p));
-        if ("false".equalsIgnoreCase(s)) {
+        List<String> props = AccessController.doPrivileged(
+            new PrivilegedAction<>() {
+                @Override
+                public List<String> run() {
+                    return List.of(
+                        System.getProperty(
+                            "sun.security.pkcs11.allowSingleThreadedModules",
+                            "true"),
+                        System.getProperty("os.name"),
+                        System.getProperty("os.arch"));
+                }
+            }
+        );
+        if ("false".equalsIgnoreCase(props.get(0))) {
             staticAllowSingleThreadedModules = false;
         } else {
             staticAllowSingleThreadedModules = true;
         }
+        osName = props.get(1);
+        osArch = props.get(2);
     }
 
     private final static boolean DEBUG = false;
@@ -650,8 +664,6 @@ final class Config {
             // replace "/$ISA/" with "/sparcv9/" on 64-bit Solaris SPARC
             // and with "/amd64/" on Solaris AMD64.
             // On all other platforms, just turn it into a "/"
-            String osName = System.getProperty("os.name", "");
-            String osArch = System.getProperty("os.arch", "");
             String prefix = lib.substring(0, i);
             String suffix = lib.substring(i + 5);
             if (osName.equals("SunOS") && osArch.equals("sparcv9")) {

@@ -40,7 +40,8 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary RMID ActivateMe CheckActivateRef_Stub
+ *          java.base/sun.nio.ch
+ * @build TestLibrary RMID RMIDSelectorProvider ActivateMe CheckActivateRef_Stub
  * @run main/othervm/policy=security.policy/timeout=240 -Djava.rmi.server.ignoreStubClasses=true CheckActivateRef
  * @run main/othervm/policy=security.policy/timeout=240 -Djava.rmi.server.ignoreStubClasses=false CheckActivateRef
  * @key intermittent
@@ -118,7 +119,7 @@ public class CheckActivateRef
 
             // start an rmid.
             RMID.removeLog();
-            rmid = RMID.createRMID();
+            rmid = RMID.createRMIDOnEphemeralPort();
             rmid.start();
 
             /* Cause activation groups to have a security policy that will

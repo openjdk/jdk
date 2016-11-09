@@ -28,6 +28,7 @@ package jdk.jshell;
 import jdk.jshell.spi.ExecutionControl;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.PrintStream;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -46,7 +47,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import jdk.internal.jshell.debug.InternalDebugControl;
 import jdk.jshell.Snippet.Status;
-import jdk.jshell.execution.JDIDefaultExecutionControl;
+import jdk.jshell.execution.JdiDefaultExecutionControl;
 import jdk.jshell.spi.ExecutionControl.EngineTerminationException;
 import jdk.jshell.spi.ExecutionControl.ExecutionControlException;
 import jdk.jshell.spi.ExecutionEnv;
@@ -116,10 +117,9 @@ public class JShell implements AutoCloseable {
         this.extraRemoteVMOptions = b.extraRemoteVMOptions;
         this.extraCompilerOptions = b.extraCompilerOptions;
         this.executionControlGenerator = b.executionControlGenerator==null
-                ? failOverExecutionControlGenerator(
-                        JDIDefaultExecutionControl.launch(),
-                        JDIDefaultExecutionControl.listen("localhost"),
-                        JDIDefaultExecutionControl.listen(null))
+                ? failOverExecutionControlGenerator(JdiDefaultExecutionControl.launch(),
+                        JdiDefaultExecutionControl.listen("localhost"),
+                        JdiDefaultExecutionControl.listen(null))
                 : b.executionControlGenerator;
 
         this.maps = new SnippetMaps(this);
@@ -166,6 +166,10 @@ public class JShell implements AutoCloseable {
          * applications that use {@code System.in} for snippet or other
          * user input cannot use {@code System.in} as the input stream for
          * the remote process.
+         * <p>
+         * The {@code read} method of the {@code InputStream} may throw the {@link InterruptedIOException}
+         * to signal the user canceled the input. The currently running snippet will be automatically
+         * {@link JShell#stop() stopped}.
          * <p>
          * The default, if this is not set, is to provide an empty input stream
          * -- {@code new ByteArrayInputStream(new byte[0])}.
@@ -501,6 +505,9 @@ public class JShell implements AutoCloseable {
         if (!closed) {
             closeDown();
             executionControl().close();
+            if (sourceCodeAnalysis != null) {
+                sourceCodeAnalysis.close();
+            }
         }
     }
 

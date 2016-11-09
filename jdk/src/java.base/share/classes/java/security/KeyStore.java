@@ -26,7 +26,6 @@
 package java.security;
 
 import java.io.*;
-import java.net.URI;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
@@ -855,17 +854,20 @@ public class KeyStore {
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard keystore types.
      *
-     * @return a keystore object of the specified type.
+     * @return a keystore object of the specified type
      *
-     * @exception KeyStoreException if no Provider supports a
-     *          KeyStoreSpi implementation for the
-     *          specified type.
+     * @throws KeyStoreException if no {@code Provider} supports a
+     *         {@code KeyStoreSpi} implementation for the
+     *         specified type
+     *
+     * @throws NullPointerException if {@code type} is {@code null}
      *
      * @see Provider
      */
     public static KeyStore getInstance(String type)
         throws KeyStoreException
     {
+        Objects.requireNonNull(type, "null type name");
         try {
             Object[] objs = Security.getImpl(type, "KeyStore", (String)null);
             return new KeyStore((KeyStoreSpi)objs[0], (Provider)objs[1], type);
@@ -895,23 +897,26 @@ public class KeyStore {
      *
      * @param provider the name of the provider.
      *
-     * @return a keystore object of the specified type.
+     * @return a keystore object of the specified type
      *
-     * @exception KeyStoreException if a KeyStoreSpi
-     *          implementation for the specified type is not
-     *          available from the specified provider.
+     * @throws IllegalArgumentException if the provider name is {@code null}
+     *         or empty
      *
-     * @exception NoSuchProviderException if the specified provider is not
-     *          registered in the security provider list.
+     * @throws KeyStoreException if a {@code KeyStoreSpi}
+     *         implementation for the specified type is not
+     *         available from the specified provider
      *
-     * @exception IllegalArgumentException if the provider name is null
-     *          or empty.
+     * @throws NoSuchProviderException if the specified provider is not
+     *         registered in the security provider list
+     *
+     * @throws NullPointerException if {@code type} is {@code null}
      *
      * @see Provider
      */
     public static KeyStore getInstance(String type, String provider)
         throws KeyStoreException, NoSuchProviderException
     {
+        Objects.requireNonNull(type, "null type name");
         if (provider == null || provider.length() == 0)
             throw new IllegalArgumentException("missing provider");
         try {
@@ -938,13 +943,16 @@ public class KeyStore {
      *
      * @param provider the provider.
      *
-     * @return a keystore object of the specified type.
+     * @return a keystore object of the specified type
      *
-     * @exception KeyStoreException if KeyStoreSpi
-     *          implementation for the specified type is not available
-     *          from the specified Provider object.
+     * @throws IllegalArgumentException if the specified provider is
+     *         {@code null}
      *
-     * @exception IllegalArgumentException if the specified provider is null.
+     * @throws KeyStoreException if {@code KeyStoreSpi}
+     *         implementation for the specified type is not available
+     *         from the specified {@code Provider} object
+     *
+     * @throws NullPointerException if {@code type} is {@code null}
      *
      * @see Provider
      *
@@ -953,6 +961,7 @@ public class KeyStore {
     public static KeyStore getInstance(String type, Provider provider)
         throws KeyStoreException
     {
+        Objects.requireNonNull(type, "null type name");
         if (provider == null)
             throw new IllegalArgumentException("missing provider");
         try {

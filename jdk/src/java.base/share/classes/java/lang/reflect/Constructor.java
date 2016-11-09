@@ -443,7 +443,7 @@ public final class Constructor<T> extends Executable {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, null, modifiers);
+            checkAccess(caller, clazz, clazz, modifiers);
         }
         if ((clazz.getModifiers() & Modifier.ENUM) != 0)
             throw new IllegalArgumentException("Cannot reflectively create enum objects");

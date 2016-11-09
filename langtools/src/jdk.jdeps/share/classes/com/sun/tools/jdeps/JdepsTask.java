@@ -221,6 +221,12 @@ class JdepsTask {
                 }
             }
         },
+        new Option(false, "--list-deps", "--list-reduced-deps") {
+            void process(JdepsTask task, String opt, String arg) {
+                task.options.showModulesAddExports = true;
+                task.options.reduced = opt.equals("--list-reduced-deps");
+            }
+        },
 
         // ---- paths option ----
         new Option(true, "-cp", "-classpath", "--class-path") {
@@ -517,13 +523,13 @@ class JdepsTask {
                 .forEach(e -> System.out.format("split package: %s %s%n", e.getKey(),
                     e.getValue().toString()));
 
-            // check if any module specified in -requires is missing
+            // check if any module specified in --require is missing
             Stream.concat(options.addmods.stream(), options.requires.stream())
                 .filter(mn -> !config.isValidToken(mn))
                 .forEach(mn -> config.findModule(mn).orElseThrow(() ->
                     new UncheckedBadArgs(new BadArgs("err.module.not.found", mn))));
 
-            // --gen-module-info
+            // --generate-module-info
             if (options.genModuleInfo != null) {
                 return genModuleInfo(config);
             }
@@ -531,6 +537,13 @@ class JdepsTask {
             // --check
             if (options.checkModuleDeps != null) {
                 return new ModuleAnalyzer(config, log, options.checkModuleDeps).run();
+            }
+
+            if (options.showModulesAddExports) {
+                return new ModuleExportsAnalyzer(config,
+                                                 dependencyFilter(config),
+                                                 options.reduced,
+                                                 log).run();
             }
 
             if (options.dotOutputDir != null &&
@@ -555,7 +568,7 @@ class JdepsTask {
                .appModulePath(options.modulePath)
                .addmods(options.addmods);
 
-        if (options.checkModuleDeps != null) {
+        if (options.checkModuleDeps != null || options.showModulesAddExports) {
             // check all system modules in the image
             builder.allModules();
         }
@@ -597,10 +610,10 @@ class JdepsTask {
 
         // analyze the dependencies
         DepsAnalyzer analyzer = new DepsAnalyzer(config,
-                                        dependencyFilter(config),
-                                        writer,
-                                        options.verbose,
-                                        options.apiOnly);
+                                                 dependencyFilter(config),
+                                                 writer,
+                                                 options.verbose,
+                                                 options.apiOnly);
 
         boolean ok = analyzer.run(options.compileTimeView, options.depth);
 
@@ -727,7 +740,7 @@ class JdepsTask {
      * Returns a filter used during dependency analysis
      */
     private JdepsFilter dependencyFilter(JdepsConfiguration config) {
-        // Filter specified by -filter, -package, -regex, and -requires options
+        // Filter specified by -filter, -package, -regex, and --require options
         JdepsFilter.Builder builder = new JdepsFilter.Builder();
 
         // source filters
@@ -737,7 +750,7 @@ class JdepsTask {
         builder.filter(options.filterSamePackage, options.filterSameArchive);
         builder.findJDKInternals(options.findJDKInternals);
 
-        // -requires
+        // --require
         if (!options.requires.isEmpty()) {
             options.requires.stream()
                 .forEach(mn -> {
@@ -757,8 +770,8 @@ class JdepsTask {
 
         // check if system module is set
         config.rootModules().stream()
-            .map(Module::name)
-            .forEach(builder::includeIfSystemModule);
+              .map(Module::name)
+              .forEach(builder::includeIfSystemModule);
 
         return builder.build();
     }
@@ -886,6 +899,8 @@ class JdepsTask {
         String rootModule;
         Set<String> addmods = new HashSet<>();
         Runtime.Version multiRelease;
+        boolean showModulesAddExports;
+        boolean reduced;
 
         boolean hasFilter() {
             return numFilters() > 0;

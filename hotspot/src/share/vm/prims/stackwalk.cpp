@@ -26,6 +26,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -105,10 +106,8 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
                               int max_nframes, int start_index,
                               objArrayHandle  frames_array,
                               int& end_index, TRAPS) {
-  if (TraceStackWalk) {
-    tty->print_cr("fill_in_frames limit=%d start=%d frames length=%d",
-                  max_nframes, start_index, frames_array->length());
-  }
+  log_debug(stackwalk)("fill_in_frames limit=%d start=%d frames length=%d",
+                       max_nframes, start_index, frames_array->length());
   assert(max_nframes > 0, "invalid max_nframes");
   assert(start_index + max_nframes <= frames_array->length(), "oob");
 
@@ -122,18 +121,24 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
     // not set) and when StackWalker::getCallerClass is called
     if (!ShowHiddenFrames && (skip_hidden_frames(mode) || get_caller_class(mode))) {
       if (method->is_hidden()) {
-        if (TraceStackWalk) {
-          tty->print("  hidden method: "); method->print_short_name();
-          tty->print("\n");
+        if (log_is_enabled(Debug, stackwalk)) {
+          ResourceMark rm(THREAD);
+          outputStream* st = Log(stackwalk)::debug_stream();
+          st->print("  hidden method: ");
+          method->print_short_name(st);
+          st->cr();
         }
         continue;
       }
     }
 
     int index = end_index++;
-    if (TraceStackWalk) {
-      tty->print("  %d: frame method: ", index); method->print_short_name();
-      tty->print_cr(" bci=%d", stream.bci());
+    if (log_is_enabled(Debug, stackwalk)) {
+      ResourceMark rm(THREAD);
+      outputStream* st = Log(stackwalk)::debug_stream();
+      st->print("  %d: frame method: ", index);
+      method->print_short_name(st);
+      st->print_cr(" bci=%d", stream.bci());
     }
 
     if (!need_method_info(mode) && get_caller_class(mode) &&
@@ -317,10 +322,8 @@ oop StackWalk::walk(Handle stackStream, jlong mode,
                     TRAPS) {
   ResourceMark rm(THREAD);
   JavaThread* jt = (JavaThread*)THREAD;
-  if (TraceStackWalk) {
-    tty->print_cr("Start walking: mode " JLONG_FORMAT " skip %d frames batch size %d",
-                  mode, skip_frames, frame_count);
-  }
+  log_debug(stackwalk)("Start walking: mode " JLONG_FORMAT " skip %d frames batch size %d",
+                       mode, skip_frames, frame_count);
 
   if (frames_array.is_null()) {
     THROW_MSG_(vmSymbols::java_lang_NullPointerException(), "frames_array is NULL", NULL);
@@ -355,8 +358,12 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
         break;
       }
 
-      if (TraceStackWalk) {
-        tty->print("  skip "); stream.method()->print_short_name(); tty->print("\n");
+      if (log_is_enabled(Debug, stackwalk)) {
+        ResourceMark rm(THREAD);
+        outputStream* st = Log(stackwalk)::debug_stream();
+        st->print("  skip ");
+        stream.method()->print_short_name(st);
+        st->cr();
       }
       stream.next();
     }
@@ -364,8 +371,12 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
     // stack frame has been traversed individually and resume stack walk
     // from the stack frame at depth == skip_frames.
     for (int n=0; n < skip_frames && !stream.at_end(); stream.next(), n++) {
-      if (TraceStackWalk) {
-        tty->print("  skip "); stream.method()->print_short_name(); tty->cr();
+      if (log_is_enabled(Debug, stackwalk)) {
+        ResourceMark rm(THREAD);
+        outputStream* st = Log(stackwalk)::debug_stream();
+        st->print("  skip ");
+        stream.method()->print_short_name(st);
+        st->cr();
       }
     }
   }
@@ -438,10 +449,9 @@ jint StackWalk::fetchNextBatch(Handle stackStream, jlong mode, jlong magic,
     THROW_MSG_(vmSymbols::java_lang_NullPointerException(), "frames_array is NULL", 0L);
   }
 
-  if (TraceStackWalk) {
-    tty->print_cr("StackWalk::fetchNextBatch frame_count %d existing_stream " PTR_FORMAT " start %d frames %d",
-                  frame_count, p2i(existing_stream), start_index, frames_array->length());
-  }
+  log_debug(stackwalk)("StackWalk::fetchNextBatch frame_count %d existing_stream "
+                       PTR_FORMAT " start %d frames %d",
+                       frame_count, p2i(existing_stream), start_index, frames_array->length());
   int end_index = start_index;
   if (frame_count <= 0) {
     return end_index;        // No operation.

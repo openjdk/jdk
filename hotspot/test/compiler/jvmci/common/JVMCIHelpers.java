@@ -25,17 +25,29 @@ package compiler.jvmci.common;
 
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompilationRequestResult;
-import jdk.vm.ci.hotspot.services.HotSpotVMEventListener;
+import jdk.vm.ci.hotspot.HotSpotVMEventListener;
+import jdk.vm.ci.services.JVMCIServiceLocator;
 import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.runtime.JVMCIRuntime;
-import jdk.vm.ci.runtime.services.JVMCICompilerFactory;
+import jdk.vm.ci.runtime.JVMCICompilerFactory;
 
 /*
  * A stub classes to be able to use jvmci
  */
-public class JVMCIHelpers {
+public class JVMCIHelpers extends JVMCIServiceLocator {
 
-    public static class EmptyVMEventListener extends HotSpotVMEventListener {
+    @Override
+    public <S> S getProvider(Class<S> service) {
+        if (service == JVMCICompilerFactory.class) {
+            return service.cast(new EmptyCompilerFactory());
+        }
+        if (service == HotSpotVMEventListener.class) {
+            return service.cast(new EmptyVMEventListener());
+        }
+        return null;
+    }
+
+    public static class EmptyVMEventListener implements HotSpotVMEventListener {
         // just empty, using default interface methods
     }
 
@@ -54,7 +66,7 @@ public class JVMCIHelpers {
         }
     }
 
-    public static class EmptyCompilerFactory extends JVMCICompilerFactory {
+    public static class EmptyCompilerFactory implements JVMCICompilerFactory {
 
         @Override
         public String getCompilerName() {

@@ -91,9 +91,10 @@ public class DummyScriptEngineFactory implements ScriptEngineFactory {
     }
 
     public String getProgram(String... statements) {
+        Objects.requireNonNull(statements);
         StringBuffer buf = new StringBuffer();
-        for (int i = 0; i < statements.length; i++) {
-            buf.append(statements[i]);
+        for (String stat : statements) {
+            buf.append(Objects.requireNonNull(stat));
         }
         return buf.toString();
     }

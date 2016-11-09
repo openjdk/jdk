@@ -178,12 +178,6 @@ public final class CPrinterJob extends RasterPrinterJob {
             return;
         }
 
-        // See if this has an NSPrintInfo in it.
-        NSPrintInfo nsPrintInfo = (NSPrintInfo)attributes.get(NSPrintInfo.class);
-        if (nsPrintInfo != null) {
-            fNSPrintInfo = nsPrintInfo.getValue();
-        }
-
         PageRanges pageRangesAttr =  (PageRanges)attributes.get(PageRanges.class);
         if (isSupportedValue(pageRangesAttr, attributes)) {
             SunPageSelection rangeSelect = (SunPageSelection)attributes.get(SunPageSelection.class);
@@ -563,8 +557,11 @@ public final class CPrinterJob extends RasterPrinterJob {
 
     @Override
     protected void finalize() {
-        if (fNSPrintInfo != -1) {
-            dispose(fNSPrintInfo);
+        synchronized (fNSPrintInfoLock) {
+            if (fNSPrintInfo != -1) {
+                dispose(fNSPrintInfo);
+            }
+            fNSPrintInfo = -1;
         }
     }
 

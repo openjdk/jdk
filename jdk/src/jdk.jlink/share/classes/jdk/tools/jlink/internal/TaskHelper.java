@@ -47,18 +47,18 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-import jdk.internal.module.ConfigurableModuleFinder;
-import jdk.internal.module.ConfigurableModuleFinder.Phase;
-import jdk.tools.jlink.Jlink;
-import jdk.tools.jlink.Jlink.PluginsConfiguration;
+import jdk.tools.jlink.internal.plugins.ExcludeFilesPlugin;
+import jdk.tools.jlink.internal.plugins.ExcludeJmodSectionPlugin;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.Plugin.Category;
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 import jdk.tools.jlink.builder.ImageBuilder;
 import jdk.tools.jlink.plugin.PluginException;
+import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
 import jdk.tools.jlink.internal.plugins.DefaultCompressPlugin;
 import jdk.tools.jlink.internal.plugins.StripDebugPlugin;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  *
@@ -161,6 +161,7 @@ public final class TaskHelper {
         private static final String POST_PROCESS = "--post-process-path";
 
         private Layer pluginsLayer = Layer.boot();
+        private final List<Plugin> plugins;
         private String lastSorter;
         private boolean listPlugins;
         private Path existingImage;
@@ -184,9 +185,10 @@ public final class TaskHelper {
                 pluginsLayer = createPluginsLayer(paths);
             }
 
+            plugins = PluginRepository.getPlugins(pluginsLayer);
+
             Set<String> optionsSeen = new HashSet<>();
-            for (Plugin plugin : PluginRepository.
-                    getPlugins(pluginsLayer)) {
+            for (Plugin plugin : plugins) {
                 if (!Utils.isDisabled(plugin)) {
                     addOrderedPluginOptions(plugin, optionsSeen);
                 }
@@ -198,9 +200,19 @@ public final class TaskHelper {
                     },
                     "--plugin-module-path"));
             mainOptions.add(new PlugOption(true, (task, opt, arg) -> {
+                    for (Plugin plugin : plugins) {
+                        if (plugin.getName().equals(arg)) {
+                            pluginToMaps.remove(plugin);
+                            return;
+                        }
+                    }
+                    throw newBadArgs("err.no.such.plugin", arg);
+                },
+                "--disable-plugin"));
+            mainOptions.add(new PlugOption(true, (task, opt, arg) -> {
                 Path path = Paths.get(arg);
                 if (!Files.exists(path) || !Files.isDirectory(path)) {
-                    throw newBadArgs("err.existing.image.must.exist");
+                    throw newBadArgs("err.image.must.exist");
                 }
                 existingImage = path.toAbsolutePath();
             }, true, POST_PROCESS));
@@ -322,6 +334,20 @@ public final class TaskHelper {
                             (task, opt, arg) -> {
                                 addArgumentMap(plugin);
                             }, "-G");
+                    mainOptions.add(plugOption);
+                } else if (plugin instanceof ExcludeJmodSectionPlugin) {
+                    plugOption = new PlugOption(false, (task, opt, arg) -> {
+                            Map<String, String> m = addArgumentMap(plugin);
+                            m.put(ExcludeJmodSectionPlugin.NAME,
+                                  ExcludeJmodSectionPlugin.MAN_PAGES);
+                        }, "--no-man-pages");
+                    mainOptions.add(plugOption);
+
+                    plugOption = new PlugOption(false, (task, opt, arg) -> {
+                        Map<String, String> m = addArgumentMap(plugin);
+                        m.put(ExcludeJmodSectionPlugin.NAME,
+                              ExcludeJmodSectionPlugin.INCLUDE_HEADER_FILES);
+                    }, "--no-header-files");
                     mainOptions.add(plugOption);
                 }
             }
@@ -451,7 +477,21 @@ public final class TaskHelper {
             return pp;
         }
 
+        // used by jimage. Return unhandled arguments like "create", "describe".
         public List<String> handleOptions(T task, String[] args) throws BadArgs {
+            return handleOptions(task, args, true);
+        }
+
+        // used by jlink. No unhandled arguments like "create", "describe".
+        void handleOptionsNoUnhandled(T task, String[] args) throws BadArgs {
+            handleOptions(task, args, false);
+        }
+
+        // shared code that handles options for both jlink and jimage. jimage uses arguments like
+        // "create", "describe" etc. as "task names". Those arguments are unhandled here and returned
+        // as "unhandled arguments list". jlink does not want such arguments. "collectUnhandled" flag
+        // tells whether to allow for unhandled arguments or not.
+        private List<String> handleOptions(T task, String[] args, boolean collectUnhandled) throws BadArgs {
             // findbugs warning, copy instead of keeping a reference.
             command = Arrays.copyOf(args, args.length);
 
@@ -484,10 +524,10 @@ public final class TaskHelper {
             String[] arr = new String[filteredArgs.size()];
             args = filteredArgs.toArray(arr);
 
-            List<String> rest = new ArrayList<>();
+            List<String> rest = collectUnhandled? new ArrayList<>() : null;
             // process options
             for (int i = 0; i < args.length; i++) {
-                if (!args[i].isEmpty() && args[i].charAt(0) == '-') {
+                if (args[i].charAt(0) == '-') {
                     String name = args[i];
                     PlugOption pluginOption = null;
                     Option<T> option = getOption(name);
@@ -524,7 +564,12 @@ public final class TaskHelper {
                         i = args.length;
                     }
                 } else {
-                    rest.add(args[i]);
+                    if (collectUnhandled) {
+                        rest.add(args[i]);
+                    } else {
+                        throw new BadArgs("err.orphan.argument", args[i]).
+                            showUsage(true);
+                    }
                 }
             }
             return rest;
@@ -692,14 +737,10 @@ public final class TaskHelper {
     }
 
     static Layer createPluginsLayer(List<Path> paths) {
-        Path[] arr = new Path[paths.size()];
-        paths.toArray(arr);
-        ModuleFinder finder = ModuleFinder.of(arr);
 
-        // jmods are located at link-time
-        if (finder instanceof ConfigurableModuleFinder) {
-            ((ConfigurableModuleFinder) finder).configurePhase(Phase.LINK_TIME);
-        }
+        Path[] dirs = paths.toArray(new Path[0]);
+        ModuleFinder finder = SharedSecrets.getJavaLangModuleAccess()
+            .newModulePath(Runtime.version(), true, dirs);
 
         Configuration bootConfiguration = Layer.boot().configuration();
         try {

@@ -32,6 +32,7 @@ module java.corba {
     requires java.logging;
     requires java.naming;
     requires java.transaction;
+    requires jdk.unsupported;
 
     exports javax.activity;
     exports javax.rmi;

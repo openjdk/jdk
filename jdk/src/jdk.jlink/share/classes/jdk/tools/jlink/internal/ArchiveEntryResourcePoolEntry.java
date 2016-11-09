@@ -73,6 +73,10 @@ final class ArchiveEntryResourcePoolEntry extends AbstractResourcePoolEntry {
                 return ResourcePoolEntry.Type.NATIVE_CMD;
             case NATIVE_LIB:
                 return ResourcePoolEntry.Type.NATIVE_LIB;
+            case HEADER_FILE:
+                return ResourcePoolEntry.Type.HEADER_FILE;
+            case MAN_PAGE:
+                return ResourcePoolEntry.Type.MAN_PAGE;
             default:
                 return ResourcePoolEntry.Type.OTHER;
         }

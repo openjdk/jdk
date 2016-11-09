@@ -43,6 +43,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import javax.lang.model.SourceVersion;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
@@ -400,7 +401,7 @@ public class Arguments {
     /**
      * Validates the overall consistency of the options and operands
      * processed by processOptions.
-     * @return true if all args are successfully validating; false otherwise.
+     * @return true if all args are successfully validated; false otherwise.
      * @throws IllegalStateException if a problem is found and errorMode is set to
      *      ILLEGAL_STATE
      */
@@ -610,62 +611,143 @@ public class Arguments {
         if (obsoleteOptionFound)
             log.warning(LintCategory.OPTIONS, "option.obsolete.suppression");
 
+        SourceVersion sv = Source.toSourceVersion(source);
+        validateAddExports(sv);
+        validateAddModules(sv);
+        validateAddReads(sv);
+        validateLimitModules(sv);
+
+        return !errors && (log.nerrors == 0);
+    }
+
+    private void validateAddExports(SourceVersion sv) {
         String addExports = options.get(Option.ADD_EXPORTS);
         if (addExports != null) {
-            // Each entry must be of the form module/package=target-list where target-list is a
-            // comma-separated list of module or ALL-UNNAMED.
-            // All module/package pairs must be unique.
-            Pattern p = Pattern.compile("([^/]+)/([^=]+)=(.*)");
-            Map<String,List<String>> map = new LinkedHashMap<>();
-            for (String e: addExports.split("\0")) {
+            // Each entry must be of the form sourceModule/sourcePackage=target-list where
+            // target-list is a comma separated list of module or ALL-UNNAMED.
+            // Empty items in the target-list are ignored.
+            // There must be at least one item in the list; this is handled in Option.ADD_EXPORTS.
+            Pattern p = Option.ADD_EXPORTS.getPattern();
+            for (String e : addExports.split("\0")) {
                 Matcher m = p.matcher(e);
-                if (!m.matches()) {
-                    log.error(Errors.XaddexportsMalformedEntry(e));
-                    continue;
-                }
-                String eModule = m.group(1);  // TODO: check a valid dotted identifier
-                String ePackage = m.group(2); // TODO: check a valid dotted identifier
-                String eTargets = m.group(3);  // TODO: check a valid list of dotted identifier or ALL-UNNAMED
-                String eModPkg = eModule + '/' + ePackage;
-                List<String> l = map.get(eModPkg);
-                map.put(eModPkg, (l == null) ? List.of(eTargets) : l.prepend(eTargets));
-            }
-            map.forEach((key, value) -> {
-                if (value.size() > 1) {
-                    log.error(Errors.XaddexportsTooMany(key));
-                    // TODO: consider adding diag fragments for the entries
-                }
-            });
-        }
+                if (m.matches()) {
+                    String sourceModuleName = m.group(1);
+                    if (!SourceVersion.isName(sourceModuleName, sv)) {
+                        // syntactically invalid source name:  e.g. --add-exports m!/p1=m2
+                        log.warning(Warnings.BadNameForOption(Option.ADD_EXPORTS, sourceModuleName));
+                    }
+                    String sourcePackageName = m.group(2);
+                    if (!SourceVersion.isName(sourcePackageName, sv)) {
+                        // syntactically invalid source name:  e.g. --add-exports m1/p!=m2
+                        log.warning(Warnings.BadNameForOption(Option.ADD_EXPORTS, sourcePackageName));
+                    }
 
+                    String targetNames = m.group(3);
+                    for (String targetName : targetNames.split(",")) {
+                        switch (targetName) {
+                            case "":
+                            case "ALL-UNNAMED":
+                                break;
+
+                            default:
+                                if (!SourceVersion.isName(targetName, sv)) {
+                                    // syntactically invalid target name:  e.g. --add-exports m1/p1=m!
+                                    log.warning(Warnings.BadNameForOption(Option.ADD_EXPORTS, targetName));
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void validateAddReads(SourceVersion sv) {
         String addReads = options.get(Option.ADD_READS);
         if (addReads != null) {
-            // Each entry must be of the form module=source-list where source-list is a
-            // comma separated list of module or ALL-UNNAMED.
-            // All target modules (i.e. on left of '=')  must be unique.
-            Pattern p = Pattern.compile("([^=]+)=(.*)");
-            Map<String,List<String>> map = new LinkedHashMap<>();
-            for (String e: addReads.split("\0")) {
+            // Each entry must be of the form source=target-list where target-list is a
+            // comma-separated list of module or ALL-UNNAMED.
+            // Empty items in the target list are ignored.
+            // There must be at least one item in the list; this is handled in Option.ADD_READS.
+            Pattern p = Option.ADD_READS.getPattern();
+            for (String e : addReads.split("\0")) {
                 Matcher m = p.matcher(e);
-                if (!m.matches()) {
-                    log.error(Errors.XaddreadsMalformedEntry(e));
-                    continue;
+                if (m.matches()) {
+                    String sourceName = m.group(1);
+                    if (!SourceVersion.isName(sourceName, sv)) {
+                        // syntactically invalid source name:  e.g. --add-reads m!=m2
+                        log.warning(Warnings.BadNameForOption(Option.ADD_READS, sourceName));
+                    }
+
+                    String targetNames = m.group(2);
+                    for (String targetName : targetNames.split(",", -1)) {
+                        switch (targetName) {
+                            case "":
+                            case "ALL-UNNAMED":
+                                break;
+
+                            default:
+                                if (!SourceVersion.isName(targetName, sv)) {
+                                    // syntactically invalid target name:  e.g. --add-reads m1=m!
+                                    log.warning(Warnings.BadNameForOption(Option.ADD_READS, targetName));
+                                }
+                                break;
+                        }
+                    }
                 }
-                String eModule = m.group(1);  // TODO: check a valid dotted identifier
-                String eSources = m.group(2);  // TODO: check a valid list of dotted identifier or ALL-UNNAMED
-                List<String> l = map.get(eModule);
-                map.put(eModule, (l == null) ? List.of(eSources) : l.prepend(eSources));
             }
-            map.forEach((key, value) -> {
-                if (value.size() > 1) {
-                    log.error(Errors.XaddreadsTooMany(key));
-                    // TODO: consider adding diag fragments for the entries
-                }
-            });
         }
+    }
 
+    private void validateAddModules(SourceVersion sv) {
+        String addModules = options.get(Option.ADD_MODULES);
+        if (addModules != null) {
+            // Each entry must be of the form target-list where target-list is a
+            // comma separated list of module names, or ALL-DEFAULT, ALL-SYSTEM,
+            // or ALL-MODULE_PATH.
+            // Empty items in the target list are ignored.
+            // There must be at least one item in the list; this is handled in Option.ADD_MODULES.
+            for (String moduleName : addModules.split(",")) {
+                switch (moduleName) {
+                    case "":
+                    case "ALL-DEFAULT":
+                    case "ALL-SYSTEM":
+                    case "ALL-MODULE-PATH":
+                        break;
 
-        return !errors;
+                    default:
+                        if (!SourceVersion.isName(moduleName, sv)) {
+                            // syntactically invalid module name:  e.g. --add-modules m1,m!
+                            log.warning(Warnings.BadNameForOption(Option.ADD_MODULES, moduleName));
+                        }
+                        break;
+                }
+            }
+        }
+    }
+
+    private void validateLimitModules(SourceVersion sv) {
+        String limitModules = options.get(Option.LIMIT_MODULES);
+        if (limitModules != null) {
+            // Each entry must be of the form target-list where target-list is a
+            // comma separated list of module names, or ALL-DEFAULT, ALL-SYSTEM,
+            // or ALL-MODULE_PATH.
+            // Empty items in the target list are ignored.
+            // There must be at least one item in the list; this is handled in Option.LIMIT_EXPORTS.
+            for (String moduleName : limitModules.split(",")) {
+                switch (moduleName) {
+                    case "":
+                        break;
+
+                    default:
+                        if (!SourceVersion.isName(moduleName, sv)) {
+                            // syntactically invalid module name:  e.g. --limit-modules m1,m!
+                            log.warning(Warnings.BadNameForOption(Option.LIMIT_MODULES, moduleName));
+                        }
+                        break;
+                }
+            }
+        }
     }
 
     /**

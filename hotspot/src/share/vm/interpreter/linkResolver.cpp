@@ -858,8 +858,10 @@ methodHandle LinkResolver::resolve_interface_method(const LinkInfo& link_info, B
   }
 
   if (log_develop_is_enabled(Trace, itables)) {
-    trace_method_resolution("invokeinterface resolved method: caller-class",
-                            link_info.current_klass(), resolved_klass,
+    char buf[200];
+    jio_snprintf(buf, sizeof(buf), "%s resolved interface method: caller-class:",
+                 Bytecodes::name(code));
+    trace_method_resolution(buf, link_info.current_klass(), resolved_klass,
                             resolved_method, true);
   }
 
@@ -1424,7 +1426,7 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result,
   }
 
   if (log_develop_is_enabled(Trace, itables)) {
-    trace_method_resolution("invokeinterface selected method: receiver-class",
+    trace_method_resolution("invokeinterface selected method: receiver-class:",
                             recv_klass, resolved_klass, sel_method, true);
   }
   // setup result

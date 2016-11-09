@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,26 +30,26 @@ import java.util.Objects;
 import java.util.Vector;
 
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioFormat.Encoding;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.spi.FormatConversionProvider;
 
 /**
  * U-law encodes linear data, and decodes u-law data to linear data.
  *
  * @author Kara Kytle
  */
-public final class UlawCodec extends SunCodec {
+public final class UlawCodec extends FormatConversionProvider {
 
     /* Tables used for U-law decoding */
 
     private static final byte[] ULAW_TABH = new byte[256];
     private static final byte[] ULAW_TABL = new byte[256];
 
-    private static final AudioFormat.Encoding[] ulawEncodings = {AudioFormat.Encoding.ULAW,
-                                                                 AudioFormat.Encoding.PCM_SIGNED};
-
-    private static final short seg_end [] = {0xFF, 0x1FF, 0x3FF,
-                                             0x7FF, 0xFFF, 0x1FFF, 0x3FFF, 0x7FFF};
+    private static final short seg_end[] = {
+            0xFF, 0x1FF, 0x3FF, 0x7FF, 0xFFF, 0x1FFF, 0x3FFF, 0x7FFF
+    };
 
     /**
      * Initializes the decode tables.
@@ -69,11 +69,14 @@ public final class UlawCodec extends SunCodec {
         }
     }
 
-    /**
-     * Constructs a new ULAW codec object.
-     */
-    public UlawCodec() {
-        super(ulawEncodings, ulawEncodings);
+    @Override
+    public AudioFormat.Encoding[] getSourceEncodings() {
+        return new Encoding[]{Encoding.ULAW, Encoding.PCM_SIGNED};
+    }
+
+    @Override
+    public AudioFormat.Encoding[] getTargetEncodings() {
+        return getSourceEncodings();
     }
 
     @Override
