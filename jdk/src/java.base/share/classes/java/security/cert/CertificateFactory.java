@@ -29,10 +29,9 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.security.Provider;
 import java.security.Security;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 
@@ -177,16 +176,19 @@ public class CertificateFactory {
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard certificate types.
      *
-     * @return a certificate factory object for the specified type.
+     * @return a certificate factory object for the specified type
      *
-     * @exception CertificateException if no Provider supports a
-     *          CertificateFactorySpi implementation for the
-     *          specified type.
+     * @throws CertificateException if no {@code Provider} supports a
+     *         {@code CertificateFactorySpi} implementation for the
+     *         specified type
+     *
+     * @throws NullPointerException if {@code type} is {@code null}
      *
      * @see java.security.Provider
      */
     public static final CertificateFactory getInstance(String type)
             throws CertificateException {
+        Objects.requireNonNull(type, "null type name");
         try {
             Instance instance = GetInstance.getInstance("CertificateFactory",
                 CertificateFactorySpi.class, type);
@@ -217,23 +219,26 @@ public class CertificateFactory {
      *
      * @param provider the name of the provider.
      *
-     * @return a certificate factory object for the specified type.
+     * @return a certificate factory object for the specified type
      *
-     * @exception CertificateException if a CertificateFactorySpi
-     *          implementation for the specified algorithm is not
-     *          available from the specified provider.
+     * @throws CertificateException if a {@code CertificateFactorySpi}
+     *         implementation for the specified algorithm is not
+     *         available from the specified provider
      *
-     * @exception NoSuchProviderException if the specified provider is not
-     *          registered in the security provider list.
+     * @throws IllegalArgumentException if the provider name is {@code null}
+     *         or empty
      *
-     * @exception IllegalArgumentException if the provider name is null
-     *          or empty.
+     * @throws NoSuchProviderException if the specified provider is not
+     *         registered in the security provider list
+     *
+     * @throws NullPointerException if {@code type} is {@code null}
      *
      * @see java.security.Provider
      */
     public static final CertificateFactory getInstance(String type,
             String provider) throws CertificateException,
             NoSuchProviderException {
+        Objects.requireNonNull(type, "null type name");
         try {
             Instance instance = GetInstance.getInstance("CertificateFactory",
                 CertificateFactorySpi.class, type, provider);
@@ -260,14 +265,16 @@ public class CertificateFactory {
      * for information about standard certificate types.
      * @param provider the provider.
      *
-     * @return a certificate factory object for the specified type.
+     * @return a certificate factory object for the specified type
      *
-     * @exception CertificateException if a CertificateFactorySpi
-     *          implementation for the specified algorithm is not available
-     *          from the specified Provider object.
+     * @throws CertificateException if a {@code CertificateFactorySpi}
+     *         implementation for the specified algorithm is not available
+     *         from the specified {@code Provider} object
      *
-     * @exception IllegalArgumentException if the {@code provider} is
-     *          null.
+     * @throws IllegalArgumentException if the {@code provider} is
+     *         {@code null}
+     *
+     * @throws NullPointerException if {@code type} is {@code null}
      *
      * @see java.security.Provider
      *
@@ -275,6 +282,7 @@ public class CertificateFactory {
      */
     public static final CertificateFactory getInstance(String type,
             Provider provider) throws CertificateException {
+        Objects.requireNonNull(type, "null type name");
         try {
             Instance instance = GetInstance.getInstance("CertificateFactory",
                 CertificateFactorySpi.class, type, provider);

@@ -397,6 +397,11 @@ public class JdepsConfiguration implements AutoCloseable {
                             }
 
                             @Override
+                            public Stream<String> list() {
+                                return Stream.empty();
+                            }
+
+                            @Override
                             public void close() throws IOException {
                             }
                         };

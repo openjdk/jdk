@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,7 @@ public final class DisplayMode {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean equals(Object dm) {
         if (dm instanceof DisplayMode) {
             return equals((DisplayMode)dm);
@@ -153,9 +154,20 @@ public final class DisplayMode {
     /**
      * {@inheritDoc}
      */
+    @Override
     public int hashCode() {
         return getWidth() + getHeight() + getBitDepth() * 7
             + getRefreshRate() * 13;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return getWidth() + "x" + getHeight() + "x" +
+               (getBitDepth() > 0 ? getBitDepth() + "bpp": "[Multi depth]")
+               + "@" + (getRefreshRate() > 0 ? getRefreshRate() + "Hz" :
+               "[Unknown refresh rate]");
+    }
 }

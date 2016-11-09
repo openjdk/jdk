@@ -71,21 +71,22 @@ public class EdgeCases extends ModuleTestBase {
     @Test
     public void testAddExportUndefinedModule(Path base) throws Exception {
         Path src = base.resolve("src");
-        tb.writeJavaFiles(src, "package test; import undef.Any; public class Test {}");
+        tb.writeJavaFiles(src, "package test; import undefPackage.Any; public class Test {}");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
         List<String> log = new JavacTask(tb)
-                .options("--add-exports", "undef/undef=ALL-UNNAMED", "-XDrawDiagnostics")
+                .options("--add-exports", "undefModule/undefPackage=ALL-UNNAMED",
+                         "-XDrawDiagnostics")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expected = Arrays.asList("- compiler.err.cant.find.module: undef",
-                                              "Test.java:1:27: compiler.err.doesnt.exist: undef",
-                                              "2 errors");
+        List<String> expected = Arrays.asList("- compiler.warn.module.for.option.not.found: --add-exports, undefModule",
+                                              "Test.java:1:34: compiler.err.doesnt.exist: undefPackage",
+                                              "1 error", "1 warning");
 
         if (!expected.equals(log))
             throw new Exception("expected output not found: " + log);

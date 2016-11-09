@@ -31,7 +31,8 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary RMID ActivateMe
+ *          java.base/sun.nio.ch
+ * @build TestLibrary RMID RMIDSelectorProvider ActivateMe
  * @run main/othervm/policy=security.policy/timeout=240 CreatePrivateActivatable
  */
 
@@ -103,7 +104,7 @@ public class CreatePrivateActivatable
 
             // start an rmid.
             RMID.removeLog();
-            rmid = RMID.createRMID();
+            rmid = RMID.createRMIDOnEphemeralPort();
             rmid.start();
 
             /* Cause activation groups to have a security policy that will

@@ -55,7 +55,6 @@ class SPARCHotSpotVMConfig extends HotSpotVMConfigAccess {
     final int sparcSun4v = getConstant("VM_Version::sun4v_m", Integer.class);
     final int sparcBlkInitInstructions = getConstant("VM_Version::blk_init_instructions_m", Integer.class);
     final int sparcFmafInstructions = getConstant("VM_Version::fmaf_instructions_m", Integer.class);
-    final int sparcFmauInstructions = getConstant("VM_Version::fmau_instructions_m", Integer.class);
     final int sparcSparc64Family = getConstant("VM_Version::sparc64_family_m", Integer.class);
     final int sparcMFamily = getConstant("VM_Version::M_family_m", Integer.class);
     final int sparcTFamily = getConstant("VM_Version::T_family_m", Integer.class);

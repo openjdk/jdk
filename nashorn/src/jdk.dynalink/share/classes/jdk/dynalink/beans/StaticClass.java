@@ -92,7 +92,7 @@ import jdk.dynalink.StandardOperation;
  * methods, properties, and fields), as well as construction of instances using
  * {@link StandardOperation#NEW} operation. In Dynalink, {@link Class} objects
  * are not treated specially and act as ordinary Java objects; you can use e.g.
- * {@code NamedOperation(GET_PROPERTY, "superclass")} as a property getter to
+ * {@code GET:PROPERTY:superclass} as a property getter to
  * invoke {@code clazz.getSuperclass()}. On the other hand, you can not use
  * {@code Class} objects to access static members of a class, nor to create new
  * instances of the class using {@code NEW}. This is consistent with how

@@ -184,9 +184,7 @@ java/nio/file/WatchService/Basic.java                           7158947 solaris-
 java/nio/file/WatchService/MayFlies.java                        7158947 solaris-all Solaris 11
 java/nio/file/WatchService/LotsOfEvents.java                    7158947 solaris-all Solaris 11
 
-java/nio/charset/coders/BashStreams.java                        8149712 generic-all
-
-java/nio/file/WatchService/DeleteInterference.java              8156511 linux-all
+sun/nio/cs/OLD/TestIBMDB.java                                   8167525 generic-all
 
 ############################################################################
 
@@ -221,6 +219,15 @@ sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java         8161232 macosx-a
 ############################################################################
 
 # jdk_sound
+javax/sound/sampled/DirectAudio/bug6372428.java        8055097 generic-all
+javax/sound/sampled/Clip/bug5070081.java               8055097 generic-all
+javax/sound/sampled/DataLine/LongFramePosition.java    8055097 generic-all
+
+javax/sound/sampled/Clip/Drain/ClipDrain.java          7062792 generic-all
+
+javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
+
+javax/sound/sampled/Clip/OpenNonIntegralNumberOfSampleframes.java 8168881 generic-all
 
 ############################################################################
 

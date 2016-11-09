@@ -436,7 +436,7 @@ class Method : public Metadata {
   address verified_code_entry();
   bool check_code() const;      // Not inline to avoid circular ref
   CompiledMethod* volatile code() const                 { assert( check_code(), "" ); return (CompiledMethod *)OrderAccess::load_ptr_acquire(&_code); }
-  void clear_code();            // Clear out any compiled code
+  void clear_code(bool acquire_lock = true);    // Clear out any compiled code
   static void set_code(methodHandle mh, CompiledMethod* code);
   void set_adapter_entry(AdapterHandlerEntry* adapter) {
     constMethod()->set_adapter_entry(adapter);
@@ -584,6 +584,7 @@ class Method : public Metadata {
   // checks method and its method holder
   bool is_final_method() const;
   bool is_final_method(AccessFlags class_access_flags) const;
+  // interface method declared with 'default' - excludes private interface methods
   bool is_default_method() const;
 
   // true if method needs no dynamic dispatch (final and/or no vtable entry)

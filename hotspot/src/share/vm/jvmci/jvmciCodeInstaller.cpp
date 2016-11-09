@@ -172,7 +172,7 @@ OopMap* CodeInstaller::create_oop_map(Handle debug_info, TRAPS) {
   return map;
 }
 
-void* CodeInstaller::record_metadata_reference(Handle constant, TRAPS) {
+void* CodeInstaller::record_metadata_reference(CodeSection* section, address dest, Handle constant, TRAPS) {
   /*
    * This method needs to return a raw (untyped) pointer, since the value of a pointer to the base
    * class is in general not equal to the pointer of the subclass. When patching metaspace pointers,
@@ -184,12 +184,14 @@ void* CodeInstaller::record_metadata_reference(Handle constant, TRAPS) {
     Klass* klass = java_lang_Class::as_Klass(HotSpotResolvedObjectTypeImpl::javaClass(obj));
     assert(!HotSpotMetaspaceConstantImpl::compressed(constant), "unexpected compressed klass pointer %s @ " INTPTR_FORMAT, klass->name()->as_C_string(), p2i(klass));
     int index = _oop_recorder->find_index(klass);
+    section->relocate(dest, metadata_Relocation::spec(index));
     TRACE_jvmci_3("metadata[%d of %d] = %s", index, _oop_recorder->metadata_count(), klass->name()->as_C_string());
     return klass;
   } else if (obj->is_a(HotSpotResolvedJavaMethodImpl::klass())) {
     Method* method = (Method*) (address) HotSpotResolvedJavaMethodImpl::metaspaceMethod(obj);
     assert(!HotSpotMetaspaceConstantImpl::compressed(constant), "unexpected compressed method pointer %s @ " INTPTR_FORMAT, method->name()->as_C_string(), p2i(method));
     int index = _oop_recorder->find_index(method);
+    section->relocate(dest, metadata_Relocation::spec(index));
     TRACE_jvmci_3("metadata[%d of %d] = %s", index, _oop_recorder->metadata_count(), method->name()->as_C_string());
     return method;
   } else {
@@ -198,7 +200,7 @@ void* CodeInstaller::record_metadata_reference(Handle constant, TRAPS) {
 }
 
 #ifdef _LP64
-narrowKlass CodeInstaller::record_narrow_metadata_reference(Handle constant, TRAPS) {
+narrowKlass CodeInstaller::record_narrow_metadata_reference(CodeSection* section, address dest, Handle constant, TRAPS) {
   oop obj = HotSpotMetaspaceConstantImpl::metaspaceObject(constant);
   assert(HotSpotMetaspaceConstantImpl::compressed(constant), "unexpected uncompressed pointer");
 
@@ -208,6 +210,7 @@ narrowKlass CodeInstaller::record_narrow_metadata_reference(Handle constant, TRA
 
   Klass* klass = java_lang_Class::as_Klass(HotSpotResolvedObjectTypeImpl::javaClass(obj));
   int index = _oop_recorder->find_index(klass);
+  section->relocate(dest, metadata_Relocation::spec(index));
   TRACE_jvmci_3("narrowKlass[%d of %d] = %s", index, _oop_recorder->metadata_count(), klass->name()->as_C_string());
   return Klass::encode_klass(klass);
 }
@@ -701,12 +704,12 @@ JVMCIEnv::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer,
     if (constant->is_a(HotSpotMetaspaceConstantImpl::klass())) {
       if (HotSpotMetaspaceConstantImpl::compressed(constant)) {
 #ifdef _LP64
-        *((narrowKlass*) dest) = record_narrow_metadata_reference(constant, CHECK_OK);
+        *((narrowKlass*) dest) = record_narrow_metadata_reference(_constants, dest, constant, CHECK_OK);
 #else
         JVMCI_ERROR_OK("unexpected compressed Klass* in 32-bit mode");
 #endif
       } else {
-        *((void**) dest) = record_metadata_reference(constant, CHECK_OK);
+        *((void**) dest) = record_metadata_reference(_constants, dest, constant, CHECK_OK);
       }
     } else if (constant->is_a(HotSpotObjectConstantImpl::klass())) {
       Handle obj = HotSpotObjectConstantImpl::object(constant);

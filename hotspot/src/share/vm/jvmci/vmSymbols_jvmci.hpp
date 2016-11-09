@@ -29,6 +29,7 @@
 #define JVMCI_VM_SYMBOLS_DO(template, do_alias)
 #else
 #define JVMCI_VM_SYMBOLS_DO(template, do_alias)                                                                            \
+  template(jdk_vm_ci_runtime_JVMCI,                               "jdk/vm/ci/runtime/JVMCI")                               \
   template(jdk_vm_ci_hotspot_HotSpotCompiledCode,                 "jdk/vm/ci/hotspot/HotSpotCompiledCode")                 \
   template(jdk_vm_ci_hotspot_HotSpotCompiledCode_Comment,         "jdk/vm/ci/hotspot/HotSpotCompiledCode$Comment")         \
   template(jdk_vm_ci_hotspot_HotSpotCompiledNmethod,              "jdk/vm/ci/hotspot/HotSpotCompiledNmethod")              \

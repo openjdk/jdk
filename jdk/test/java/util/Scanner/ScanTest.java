@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4313885 4926319 4927634 5032610 5032622 5049968 5059533 6223711 6277261 6269946 6288823
- *      8072722 8139414
+ *      8072722 8139414 8166261
  * @summary Basic tests of java.util.Scanner methods
  * @key randomness
  * @modules jdk.localedata
@@ -36,6 +36,7 @@ import java.math.*;
 import java.nio.*;
 import java.text.*;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.*;
 import java.util.stream.*;
@@ -79,6 +80,7 @@ public class ScanTest {
             resetTest();
             streamCloseTest();
             streamComodTest();
+            outOfRangeRadixTest();
 
             for (int j = 0; j < NUM_SOURCE_TYPES; j++) {
                 hasNextTest(j);
@@ -1507,6 +1509,48 @@ public class ScanTest {
         }
         sc.close();
         report("Reset test");
+    }
+
+    static List<BiConsumer <Scanner, Integer>> methodWRList = Arrays.asList(
+        (s, r) -> s.hasNextByte(r),
+        (s, r) -> s.nextByte(r),
+        (s, r) -> s.hasNextShort(r),
+        (s, r) -> s.nextShort(r),
+        (s, r) -> s.hasNextInt(r),
+        (s, r) -> s.nextInt(r),
+        (s, r) -> s.hasNextLong(r),
+        (s, r) -> s.nextLong(r),
+        (s, r) -> s.hasNextBigInteger(r),
+        (s, r) -> s.nextBigInteger(r)
+    );
+
+    /*
+     * Test that setting the radix to an out of range value triggers
+     * an IllegalArgumentException
+     */
+    public static void outOfRangeRadixTest() throws Exception {
+        int[] bad = new int[] { -1, 0,  1, 37, 38 };
+        int[] good = IntStream.rangeClosed(Character.MIN_RADIX, Character.MAX_RADIX)
+                              .toArray();
+
+        methodWRList.stream().forEach( m -> {
+            for (int r : bad) {
+                try (Scanner sc = new Scanner("10 10 10 10")) {
+                    m.accept(sc, r);
+                    failCount++;
+                } catch (IllegalArgumentException ise) {}
+            }
+        });
+        methodWRList.stream().forEach( m -> {
+            for (int r : good) {
+                try (Scanner sc = new Scanner("10 10 10 10")) {
+                    m.accept(sc, r);
+                } catch (Exception x) {
+                    failCount++;
+                }
+            }
+        });
+        report("Radix out of range test");
     }
 
     /*

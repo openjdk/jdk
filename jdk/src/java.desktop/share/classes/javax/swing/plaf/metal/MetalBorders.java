@@ -739,7 +739,7 @@ public class MetalBorders {
         /**
          * The instance of {@code MetalBumps}.
          */
-        protected MetalBumps bumps = new MetalBumps( 10, 10,
+        private MetalBumps bumps = new MetalBumps( 10, 10,
                                       MetalLookAndFeel.getControlHighlight(),
                                       MetalLookAndFeel.getControlDarkShadow(),
                                      UIManager.getColor("ToolBar.background"));

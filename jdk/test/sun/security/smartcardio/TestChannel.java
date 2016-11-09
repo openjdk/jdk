@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 6239117
+ * @bug 6239117 8168851
  * @summary test logical channels work
  * @author Andreas Sterbenz
  * @modules java.smartcardio/javax.smartcardio
  * @run main/manual TestChannel
+ * @run main/othervm/manual/java.security.policy==test.policy TestChannel
  */
 
 // This test requires special hardware.

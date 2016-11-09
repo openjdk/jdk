@@ -176,6 +176,16 @@ public class JmodFile implements AutoCloseable {
     }
 
     /**
+     * Returns the {@code Entry} for a resource in a JMOD file section
+     * or {@code null} if not found.
+     */
+    public Entry getEntry(Section section, String name) {
+        String entry = section.jmodDir() + "/" + name;
+        ZipEntry ze = zipfile.getEntry(entry);
+        return (ze != null) ? new Entry(ze) : null;
+    }
+
+    /**
      * Opens an {@code InputStream} for reading the named entry of the given
      * section in this jmod file.
      *
@@ -185,13 +195,21 @@ public class JmodFile implements AutoCloseable {
     public InputStream getInputStream(Section section, String name)
         throws IOException
     {
-
         String entry = section.jmodDir() + "/" + name;
         ZipEntry e = zipfile.getEntry(entry);
         if (e == null) {
             throw new IOException(name + " not found: " + file);
         }
         return zipfile.getInputStream(e);
+    }
+
+    /**
+     * Opens an {@code InputStream} for reading an entry in the JMOD file.
+     *
+     * @throws IOException if an I/O error occurs
+     */
+    public InputStream getInputStream(Entry entry) throws IOException {
+        return zipfile.getInputStream(entry.zipEntry());
     }
 
     /**

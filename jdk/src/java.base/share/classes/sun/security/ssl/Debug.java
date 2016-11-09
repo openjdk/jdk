@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,6 +145,13 @@ public class Debug {
     }
 
     /**
+     * Print a message to stdout.
+     */
+    static void log(String message) {
+        System.out.println(Thread.currentThread().getName() + ": " + message);
+    }
+
+    /**
      * print a blank line to stderr that is prefixed with the prefix.
      */
 
@@ -156,7 +163,6 @@ public class Debug {
     /**
      * print a message to stderr that is prefixed with the prefix.
      */
-
     public static void println(String prefix, String message)
     {
         System.err.println(prefix + ": "+message);

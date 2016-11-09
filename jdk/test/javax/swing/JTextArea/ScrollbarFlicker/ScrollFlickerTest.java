@@ -29,8 +29,6 @@
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 
 public class ScrollFlickerTest {
 
@@ -56,18 +54,19 @@ public class ScrollFlickerTest {
         robot.delay(200);
 
         SwingUtilities.invokeAndWait(() -> {
-            scroll.getViewport().addChangeListener((e) -> cnt++);
             Insets insets = scroll.getInsets();
             scroll.setSize(insets.left + insets.right +
                     scroll.getVerticalScrollBar().getPreferredSize().width, 50);
             scroll.revalidate();
         });
-
+        robot.delay(200);
+        SwingUtilities.invokeAndWait(() ->
+                          scroll.getViewport().addChangeListener((e) -> cnt++));
         robot.delay(1000);
 
         SwingUtilities.invokeLater(frame::dispose);
 
-        if (cnt > 2) {
+        if (cnt > 0) {
             throw new RuntimeException("Scroll bar flickers");
         }
     }

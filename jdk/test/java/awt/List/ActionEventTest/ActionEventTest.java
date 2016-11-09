@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @key headful
- * @bug 6191390
+ * @bug 6191390 8158380
  * @summary Verify that ActionEvent is received with correct modifiers set.
  * @run main ActionEventTest
  */
@@ -45,6 +45,8 @@ public class ActionEventTest extends Frame {
     public ActionEventTest() {
         try {
             robot = new Robot();
+            robot.setAutoDelay(100);
+            robot.setAutoWaitForIdle(true);
         } catch(AWTException e) {
             throw new RuntimeException(e.getMessage());
         }
@@ -56,7 +58,6 @@ public class ActionEventTest extends Frame {
         setLayout(new FlowLayout());
         pack();
         setVisible(true);
-        robot.waitForIdle();
     }
 
     void performTest() {
@@ -86,11 +87,9 @@ public class ActionEventTest extends Frame {
         // Press Enter on list item, to generate action event.
         robot.keyPress(KeyEvent.VK_ENTER);
         robot.keyRelease(KeyEvent.VK_ENTER);
-        robot.waitForIdle();
         robot.keyRelease(KeyEvent.VK_ALT);
         robot.keyRelease(KeyEvent.VK_SHIFT);
         robot.keyRelease(KeyEvent.VK_CONTROL);
-        robot.waitForIdle();
     }
 
     public static void main(String args[]) {

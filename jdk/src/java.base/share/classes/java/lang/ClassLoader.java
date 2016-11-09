@@ -104,9 +104,9 @@ import sun.security.util.SecurityConstants;
  * class or resource itself.
  *
  * <p> Class loaders that support concurrent loading of classes are known as
- * <em>parallel capable</em> class loaders and are required to register
- * themselves at their class initialization time by invoking the
- * {@link
+ * <em>{@linkplain #isParallelCapable() parallel capable}</em> class loaders and
+ * are required to register themselves at their class initialization time by
+ * invoking the {@link
  * #registerAsParallelCapable <tt>ClassLoader.registerAsParallelCapable</tt>}
  * method. Note that the <tt>ClassLoader</tt> class is registered as parallel
  * capable by default. However, its subclasses still need to register themselves
@@ -222,6 +222,9 @@ public abstract class ClassLoader {
     // must be added *after* it.
     private final ClassLoader parent;
 
+    // class loader name
+    private final String name;
+
     // the unnamed module for this ClassLoader
     private final Module unnamedModule;
 
@@ -331,6 +334,14 @@ public abstract class ClassLoader {
     }
 
     private static Void checkCreateClassLoader() {
+        return checkCreateClassLoader(null);
+    }
+
+    private static Void checkCreateClassLoader(String name) {
+        if (name != null && name.isEmpty()) {
+            throw new IllegalArgumentException("name must be non-empty or null");
+        }
+
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkCreateClassLoader();
@@ -338,7 +349,8 @@ public abstract class ClassLoader {
         return null;
     }
 
-    private ClassLoader(Void unused, ClassLoader parent) {
+    private ClassLoader(Void unused, String name, ClassLoader parent) {
+        this.name = name;
         this.parent = parent;
         this.unnamedModule
             = SharedSecrets.getJavaLangReflectModuleAccess()
@@ -354,6 +366,27 @@ public abstract class ClassLoader {
             assertionLock = this;
         }
     }
+
+    /**
+     * Creates a new class loader of the specified name and using the
+     * specified parent class loader for delegation.
+     *
+     * @param  name   class loader name; or {@code null} if not named
+     * @param  parent the parent class loader
+     *
+     * @throws IllegalArgumentException if the given name is empty.
+     *
+     * @throws SecurityException
+     *         If a security manager exists and its
+     *         {@link SecurityManager#checkCreateClassLoader()}
+     *         method doesn't allow creation of a new class loader.
+     *
+     * @since  9
+     */
+    protected ClassLoader(String name, ClassLoader parent) {
+        this(checkCreateClassLoader(name), name, parent);
+    }
+
 
     /**
      * Creates a new class loader using the specified parent class loader for
@@ -375,8 +408,9 @@ public abstract class ClassLoader {
      * @since  1.2
      */
     protected ClassLoader(ClassLoader parent) {
-        this(checkCreateClassLoader(), parent);
+        this(checkCreateClassLoader(), null, parent);
     }
+
 
     /**
      * Creates a new class loader using the <tt>ClassLoader</tt> returned by
@@ -394,7 +428,31 @@ public abstract class ClassLoader {
      *          of a new class loader.
      */
     protected ClassLoader() {
-        this(checkCreateClassLoader(), getSystemClassLoader());
+        this(checkCreateClassLoader(), null, getSystemClassLoader());
+    }
+
+
+    /**
+     * Returns the name of this class loader or {@code null} if
+     * this class loader is not named.
+     *
+     * @apiNote This method is non-final for compatibility.  If this
+     * method is overridden, this method must return the same name
+     * as specified when this class loader was instantiated.
+     *
+     * @return name of this class loader; or {@code null} if
+     * this class loader is not named.
+     *
+     * @since 9
+     */
+    public String getName() {
+        return name;
+    }
+
+    // package-private used by StackTraceElement to avoid
+    // calling the overrideable getName method
+    final String name() {
+        return name;
     }
 
     // -- Class --
@@ -1437,7 +1495,7 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Registers the caller as parallel capable.
+     * Registers the caller as {@linkplain #isParallelCapable() parallel capable}.
      * The registration succeeds if and only if all of the following
      * conditions are met:
      * <ol>
@@ -1448,8 +1506,10 @@ public abstract class ClassLoader {
      * <p>Note that once a class loader is registered as parallel capable, there
      * is no way to change it back.</p>
      *
-     * @return  true if the caller is successfully registered as
-     *          parallel capable and false if otherwise.
+     * @return  {@code true} if the caller is successfully registered as
+     *          parallel capable and {@code false} if otherwise.
+     *
+     * @see #isParallelCapable()
      *
      * @since   1.7
      */
@@ -1458,6 +1518,22 @@ public abstract class ClassLoader {
         Class<? extends ClassLoader> callerClass =
             Reflection.getCallerClass().asSubclass(ClassLoader.class);
         return ParallelLoaders.register(callerClass);
+    }
+
+    /**
+     * Returns {@code true} if this class loader is
+     * {@linkplain #registerAsParallelCapable parallel capable}, otherwise
+     * {@code false}.
+     *
+     * @return  {@code true} if this class loader is parallel capable,
+     *          otherwise {@code false}.
+     *
+     * @see #registerAsParallelCapable()
+     *
+     * @since   9
+     */
+    public final boolean isParallelCapable() {
+        return ParallelLoaders.isRegistered(this.getClass());
     }
 
     /**
@@ -1610,6 +1686,9 @@ public abstract class ClassLoader {
      * <a href="#builtinLoaders">platform classes</a> are visible to
      * the platform class loader.
      *
+     * @implNote The name of the builtin platform class loader is
+     * {@code "platform"}.
+     *
      * @return  The platform {@code ClassLoader}.
      *
      * @throws  SecurityException
@@ -1662,6 +1741,16 @@ public abstract class ClassLoader {
      * examined until the VM is almost fully initialized. Code that executes
      * this method during startup should take care not to cache the return
      * value until the system is fully initialized.
+     *
+     * <p> The name of the built-in system class loader is {@code "app"}.
+     * The class path used by the built-in system class loader is determined
+     * by the system property "{@code java.class.path}" during early
+     * initialization of the VM. If the system property is not defined,
+     * or its value is an empty string, then there is no class path
+     * when the initial module is a module on the application module path,
+     * i.e. <em>a named module</em>. If the initial module is not on
+     * the application module path then the class path defaults to
+     * the current working directory.
      *
      * @return  The system <tt>ClassLoader</tt> for delegation
      *

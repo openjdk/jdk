@@ -26,6 +26,7 @@
  * @bug 6318171 6931562
  * @requires os.family == "windows"
  * @modules jdk.crypto.mscapi/sun.security.mscapi
+ * @compile --add-modules jdk.crypto.mscapi IsSunMSCAPIAvailable.java
  * @run main/othervm IsSunMSCAPIAvailable
  */
 

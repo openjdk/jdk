@@ -41,7 +41,7 @@ import static jdk.jshell.execution.Util.forwardExecutionControlAndIO;
  * process). This agent loads code over a socket from the main JShell process,
  * executes the code, and other misc, Specialization of
  * {@link DirectExecutionControl} which adds stop support controlled by
- * an external process. Designed to work with {@link JDIDefaultExecutionControl}.
+ * an external process. Designed to work with {@link JdiDefaultExecutionControl}.
  *
  * @author Jan Lahoda
  * @author Robert Field

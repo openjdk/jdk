@@ -29,11 +29,9 @@ import sun.lwawt.LWWindowPeer;
 
 import java.awt.*;
 import java.beans.*;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.Callable;
-import sun.awt.AWTAccessor;
 
 import javax.accessibility.*;
 import javax.swing.*;
@@ -73,8 +71,20 @@ class CAccessibility implements PropertyChangeListener {
     }
 
     public void propertyChange(final PropertyChangeEvent evt) {
-        if (evt.getNewValue() == null) return;
-        focusChanged();
+        Object newValue = evt.getNewValue();
+        if (newValue == null) return;
+        // Don't post focus on things that don't matter, i.e. alert, colorchooser,
+        // desktoppane, dialog, directorypane, filechooser, filler, fontchoose,
+        // frame, glasspane, layeredpane, optionpane, panel, rootpane, separator,
+        // tooltip, viewport, window.
+        // List taken from initializeRoles() in JavaComponentUtilities.m.
+        if (newValue instanceof Accessible) {
+            AccessibleContext nvAC = ((Accessible) newValue).getAccessibleContext();
+            AccessibleRole nvRole = nvAC.getAccessibleRole();
+            if (!ignoredRoles.contains(roleKey(nvRole))) {
+                focusChanged();
+            }
+        }
     }
 
     private native void focusChanged();
@@ -683,9 +693,15 @@ class CAccessibility implements PropertyChangeListener {
             if (context == null) continue;
 
             if (whichChildren == JAVA_AX_VISIBLE_CHILDREN) {
-                if (!context.getAccessibleComponent().isVisible()) continue;
+                AccessibleComponent acomp = context.getAccessibleComponent();
+                if (acomp == null || !acomp.isVisible()) {
+                    continue;
+                }
             } else if (whichChildren == JAVA_AX_SELECTED_CHILDREN) {
-                if (!ac.getAccessibleSelection().isAccessibleChildSelected(i)) continue;
+                AccessibleSelection sel = ac.getAccessibleSelection();
+                if (sel == null || !sel.isAccessibleChildSelected(i)) {
+                    continue;
+                }
             }
 
             if (!allowIgnored) {

@@ -40,7 +40,7 @@ import java.util.Hashtable;
 import java.util.Set;
 import java.util.concurrent.atomic.LongAdder;
 
-import javax.lang.model.SourceVersion;
+import javax.net.ssl.SSLEngineResult;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -82,8 +82,8 @@ public class SerialFilterTest implements Serializable {
         Object[][] patterns = new Object[][]{
                 {"java.util.Hashtable"},
                 {"java.util.Hash*"},
-                {"javax.lang.model.*"},
-                {"javax.lang.**"},
+                {"javax.net.ssl.*"},
+                {"javax.net.**"},
                 {"*"},
                 {"maxarray=47"},
                 {"maxdepth=5"},
@@ -543,20 +543,20 @@ public class SerialFilterTest implements Serializable {
     static Object genTestObjectWildcard(String pattern, boolean allowed) {
         if (pattern.endsWith(".**")) {
             // package hierarchy wildcard
-            if (pattern.startsWith("javax.lang.")) {
-                return SourceVersion.RELEASE_5;
+            if (pattern.startsWith("javax.net.")) {
+                return SSLEngineResult.Status.BUFFER_OVERFLOW;
             }
             if (pattern.startsWith("java.")) {
                 return 4;
             }
             if (pattern.startsWith("javax.")) {
-                return SourceVersion.RELEASE_6;
+                return SSLEngineResult.Status.BUFFER_UNDERFLOW;
             }
             return otherObject;
         } else if (pattern.endsWith(".*")) {
             // package wildcard
-            if (pattern.startsWith("javax.lang.model")) {
-                return SourceVersion.RELEASE_6;
+            if (pattern.startsWith("javax.net.ssl")) {
+                return SSLEngineResult.Status.BUFFER_UNDERFLOW;
             }
         } else {
             // class wildcard

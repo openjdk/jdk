@@ -33,6 +33,7 @@ import java.lang.invoke.MethodType;
 import java.util.Map;
 import javax.script.Bindings;
 import jdk.dynalink.CallSiteDescriptor;
+import jdk.dynalink.Operation;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.LinkRequest;
@@ -92,29 +93,31 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
     }
 
     private GuardedInvocation lookup(final CallSiteDescriptor desc, final LinkRequest request, final LinkerServices linkerServices) throws Exception {
-        final StandardOperation op = NashornCallSiteDescriptor.getFirstStandardOperation(desc);
-        if (op == null) {
-            return null;
-        }
-        final String name = NashornCallSiteDescriptor.getOperand(desc);
-        switch (op) {
-        case GET_PROPERTY:
-        case GET_ELEMENT:
-        case GET_METHOD:
-            if (name != null) {
-                return findGetMethod(name);
+        final Operation op = NashornCallSiteDescriptor.getBaseOperation(desc);
+        if (op instanceof StandardOperation) {
+            final String name = NashornCallSiteDescriptor.getOperand(desc);
+            switch ((StandardOperation)op) {
+            case GET:
+                if (NashornCallSiteDescriptor.hasStandardNamespace(desc)) {
+                    if (name != null) {
+                        return findGetMethod(name);
+                    }
+                    // For indexed get, we want get GuardedInvocation beans linker and pass it.
+                    // JSObjectLinker.get uses this fallback getter for explicit signature method access.
+                    return findGetIndexMethod(nashornBeansLinker.getGuardedInvocation(request, linkerServices));
+                }
+                break;
+            case SET:
+                if (NashornCallSiteDescriptor.hasStandardNamespace(desc)) {
+                    return name != null ? findSetMethod(name) : findSetIndexMethod();
+                }
+                break;
+            case CALL:
+                return findCallMethod(desc);
+            case NEW:
+                return findNewMethod(desc);
+            default:
             }
-            // For indexed get, we want get GuardedInvocation beans linker and pass it.
-            // JSObjectLinker.get uses this fallback getter for explicit signature method access.
-            return findGetIndexMethod(nashornBeansLinker.getGuardedInvocation(request, linkerServices));
-        case SET_PROPERTY:
-        case SET_ELEMENT:
-            return name != null ? findSetMethod(name) : findSetIndexMethod();
-        case CALL:
-            return findCallMethod(desc);
-        case NEW:
-            return findNewMethod(desc);
-        default:
         }
         return null;
     }

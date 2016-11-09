@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
   @test
-  @bug 8037776
+  @key headful
+  @bug 8037776 8167288
   @summary tests that the WarningWindow is properly disposed
-  @author Petr Pchelko
   @library ../../regtesthelpers/process
   @build ProcessResults ProcessCommunicator
   @run main WarningWindowDisposeTest
@@ -45,13 +45,17 @@ public class WarningWindowDisposeTest {
     public static void main(String[] args) {
         final AtomicBoolean passed = new AtomicBoolean(false);
         new Thread(() -> {
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Test FAILED!", e);
-            }
-            if (!passed.get()) {
-                throw new RuntimeException("Test FAILED! The child process never exits");
+            for (int trial = 0; trial < 5; ++trial) {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Test FAILED!", e);
+                }
+                if (passed.get()) {
+                    break;
+                } else if (trial == 4) {
+                    throw new RuntimeException("Child process never exits");
+                }
             }
         }, "TimeoutThread").start();
 

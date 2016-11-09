@@ -25,11 +25,13 @@
 
 package com.sun.tools.javac.code;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Options;
@@ -81,12 +83,13 @@ public class Lint
     }
 
     /**
-     * Returns a new Lint that has the given LintCategory suppressed.
+     * Returns a new Lint that has the given LintCategorys suppressed.
+     * @param lc one or more categories to be suppressed
      */
-    public Lint suppress(LintCategory lc) {
+    public Lint suppress(LintCategory... lc) {
         Lint l = new Lint(this);
-        l.values.remove(lc);
-        l.suppressedValues.add(lc);
+        l.values.removeAll(Arrays.asList(lc));
+        l.suppressedValues.addAll(Arrays.asList(lc));
         return l;
     }
 
@@ -100,10 +103,31 @@ public class Lint
     protected Lint(Context context) {
         // initialize values according to the lint options
         Options options = Options.instance(context);
-        values = EnumSet.noneOf(LintCategory.class);
-        for (Map.Entry<String, LintCategory> e: map.entrySet()) {
-            if (options.lint(e.getKey()))
-                values.add(e.getValue());
+
+        if (options.isSet(Option.XLINT) || options.isSet(Option.XLINT_CUSTOM, "all")) {
+            // If -Xlint or -Xlint:all is given, enable all categories by default
+            values = EnumSet.allOf(LintCategory.class);
+        } else if (options.isSet(Option.XLINT_CUSTOM, "none")) {
+            // if -Xlint:none is given, disable all categories by default
+            values = EnumSet.noneOf(LintCategory.class);
+        } else {
+            // otherwise, enable on-by-default categories
+            values = EnumSet.noneOf(LintCategory.class);
+
+            Source source = Source.instance(context);
+            if (source.compareTo(Source.JDK1_9) >= 0) {
+                values.add(LintCategory.DEP_ANN);
+            }
+            values.add(LintCategory.REMOVAL);
+        }
+
+        // Look for specific overrides
+        for (LintCategory lc : LintCategory.values()) {
+            if (options.isSet(Option.XLINT_CUSTOM, lc.option)) {
+                values.add(lc);
+            } else if (options.isSet(Option.XLINT_CUSTOM, "-" + lc.option)) {
+                values.remove(lc);
+            }
         }
 
         suppressedValues = EnumSet.noneOf(LintCategory.class);
@@ -211,6 +235,11 @@ public class Lint
          * Warn about unchecked operations on raw types.
          */
         RAW("rawtypes"),
+
+        /**
+         * Warn about use of deprecated-for-removal items.
+         */
+        REMOVAL("removal"),
 
         /**
          * Warn about Serializable classes that do not provide a serial version ID.

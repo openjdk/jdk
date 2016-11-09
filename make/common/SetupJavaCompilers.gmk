@@ -28,11 +28,11 @@ _SETUP_GMK := 1
 
 include JavaCompilation.gmk
 
-DISABLE_WARNINGS := -Xlint:all,-deprecation,-unchecked,-rawtypes,-cast,-serial,-dep-ann,-static,-fallthrough,-try,-varargs,-empty,-finally
+DISABLE_WARNINGS := -Xlint:all,-deprecation,-removal,-unchecked,-rawtypes,-cast,-serial,-dep-ann,-static,-fallthrough,-try,-varargs,-empty,-finally
 
 # If warnings needs to be non-fatal for testing purposes use a command like:
 # make JAVAC_WARNINGS="-Xlint:all -Xmaxwarns 10000"
-JAVAC_WARNINGS := -Xlint:all -Werror
+JAVAC_WARNINGS := -Xlint:all,-removal -Werror
 
 # The BOOT_JAVAC setup uses the boot jdk compiler to compile the tools
 # and the interim javac, to be run by the boot jdk.

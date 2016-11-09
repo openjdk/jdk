@@ -798,11 +798,11 @@ static bool put_after_lookup(const Symbol* name, const Symbol* sig, NameSigHash*
 void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
                                        const int itfs_len,
                                        ConstantPool* const cp,
-                                       bool* const has_default_methods,
+                                       bool* const has_nonstatic_concrete_methods,
                                        TRAPS) {
   assert(stream != NULL, "invariant");
   assert(cp != NULL, "invariant");
-  assert(has_default_methods != NULL, "invariant");
+  assert(has_nonstatic_concrete_methods != NULL, "invariant");
 
   if (itfs_len == 0) {
     _local_interfaces = Universe::the_empty_klass_array();
@@ -844,8 +844,8 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
                    "Implementing class");
       }
 
-      if (InstanceKlass::cast(interf())->has_default_methods()) {
-        *has_default_methods = true;
+      if (InstanceKlass::cast(interf())->has_nonstatic_concrete_methods()) {
+        *has_nonstatic_concrete_methods = true;
       }
       _local_interfaces->at_put(index, interf());
     }
@@ -2830,12 +2830,12 @@ void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
                                     bool is_interface,
                                     AccessFlags* promoted_flags,
                                     bool* has_final_method,
-                                    bool* declares_default_methods,
+                                    bool* declares_nonstatic_concrete_methods,
                                     TRAPS) {
   assert(cfs != NULL, "invariant");
   assert(promoted_flags != NULL, "invariant");
   assert(has_final_method != NULL, "invariant");
-  assert(declares_default_methods != NULL, "invariant");
+  assert(declares_nonstatic_concrete_methods != NULL, "invariant");
 
   assert(NULL == _methods, "invariant");
 
@@ -2860,11 +2860,11 @@ void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
       if (method->is_final()) {
         *has_final_method = true;
       }
-      // declares_default_methods: declares concrete instance methods, any access flags
+      // declares_nonstatic_concrete_methods: declares concrete instance methods, any access flags
       // used for interface initialization, and default method inheritance analysis
-      if (is_interface && !(*declares_default_methods)
+      if (is_interface && !(*declares_nonstatic_concrete_methods)
         && !method->is_abstract() && !method->is_static()) {
-        *declares_default_methods = true;
+        *declares_nonstatic_concrete_methods = true;
       }
       _methods->at_put(index, method);
     }
@@ -5250,8 +5250,8 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
 
   ik->set_minor_version(_minor_version);
   ik->set_major_version(_major_version);
-  ik->set_has_default_methods(_has_default_methods);
-  ik->set_declares_default_methods(_declares_default_methods);
+  ik->set_has_nonstatic_concrete_methods(_has_nonstatic_concrete_methods);
+  ik->set_declares_nonstatic_concrete_methods(_declares_nonstatic_concrete_methods);
 
   if (_host_klass != NULL) {
     assert (ik->is_anonymous(), "should be the same");
@@ -5311,12 +5311,9 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   // check if this class overrides any final method
   check_final_method_override(ik, CHECK);
 
-  // check that if this class is an interface then it doesn't have static methods
-  if (ik->is_interface()) {
-    /* An interface in a JAVA 8 classfile can be static */
-    if (_major_version < JAVA_8_VERSION) {
-      check_illegal_static_method(ik, CHECK);
-    }
+  // reject static interface methods prior to Java 8
+  if (ik->is_interface() && _major_version < JAVA_8_VERSION) {
+    check_illegal_static_method(ik, CHECK);
   }
 
   // Obtain this_klass' module entry
@@ -5336,9 +5333,9 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
 
   assert(_all_mirandas != NULL, "invariant");
 
-  // Generate any default methods - default methods are interface methods
-  // that have a default implementation.  This is new with Lambda project.
-  if (_has_default_methods ) {
+  // Generate any default methods - default methods are public interface methods
+  // that have a default implementation.  This is new with Java 8.
+  if (_has_nonstatic_concrete_methods) {
     DefaultMethods::generate_default_methods(ik,
                                              _all_mirandas,
                                              CHECK);
@@ -5523,8 +5520,8 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _java_fields_count(0),
   _need_verify(false),
   _relax_verify(false),
-  _has_default_methods(false),
-  _declares_default_methods(false),
+  _has_nonstatic_concrete_methods(false),
+  _declares_nonstatic_concrete_methods(false),
   _has_final_method(false),
   _has_finalizer(false),
   _has_empty_finalizer(false),
@@ -5778,9 +5775,22 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
       // Anonymous classes such as generated LambdaForm classes are also not included.
       if (SystemDictionaryShared::is_sharing_possible(_loader_data) &&
           _host_klass == NULL) {
+        oop class_loader = _loader_data->class_loader();
         ResourceMark rm(THREAD);
-        classlist_file->print_cr("%s", _class_name->as_C_string());
-        classlist_file->flush();
+        // For the boot and platform class loaders, check if the class is not found in the
+        // java runtime image. Additional check for the boot class loader is if the class
+        // is not found in the boot loader's appended entries. This indicates that the class
+        // is not useable during run time, such as the ones found in the --patch-module entries,
+        // so it should not be included in the classlist file.
+        if (((class_loader == NULL && !ClassLoader::contains_append_entry(stream->source())) ||
+             SystemDictionary::is_platform_class_loader(class_loader)) &&
+            !ClassLoader::is_jrt(stream->source())) {
+          tty->print_cr("skip writing class %s from source %s to classlist file",
+            _class_name->as_C_string(), stream->source());
+        } else {
+          classlist_file->print_cr("%s", _class_name->as_C_string());
+          classlist_file->flush();
+        }
       }
     }
 #endif
@@ -5798,7 +5808,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   parse_interfaces(stream,
                    _itfs_len,
                    cp,
-                   &_has_default_methods,
+                   &_has_nonstatic_concrete_methods,
                    CHECK);
 
   assert(_local_interfaces != NULL, "invariant");
@@ -5821,7 +5831,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
                 _access_flags.is_interface(),
                 &promoted_flags,
                 &_has_final_method,
-                &_declares_default_methods,
+                &_declares_nonstatic_concrete_methods,
                 CHECK);
 
   assert(_methods != NULL, "invariant");
@@ -5829,8 +5839,8 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   // promote flags from parse_methods() to the klass' flags
   _access_flags.add_promoted_flags(promoted_flags.as_int());
 
-  if (_declares_default_methods) {
-    _has_default_methods = true;
+  if (_declares_nonstatic_concrete_methods) {
+    _has_nonstatic_concrete_methods = true;
   }
 
   // Additional attributes/annotations
@@ -5859,6 +5869,11 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   assert(cp != NULL, "invariant");
   assert(_loader_data != NULL, "invariant");
 
+  if (_class_name == vmSymbols::java_lang_Object()) {
+    check_property(_local_interfaces == Universe::the_empty_klass_array(),
+                   "java.lang.Object cannot implement an interface in class file %s",
+                   CHECK);
+  }
   // We check super class after class file is parsed and format is checked
   if (_super_class_index > 0 && NULL ==_super_klass) {
     Symbol* const super_class_name = cp->klass_name_at(_super_class_index);
@@ -5879,8 +5894,8 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   }
 
   if (_super_klass != NULL) {
-    if (_super_klass->has_default_methods()) {
-      _has_default_methods = true;
+    if (_super_klass->has_nonstatic_concrete_methods()) {
+      _has_nonstatic_concrete_methods = true;
     }
 
     if (_super_klass->is_interface()) {

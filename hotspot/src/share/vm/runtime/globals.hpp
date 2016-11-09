@@ -2887,9 +2887,6 @@ public:
           "exceptions (0 means all)")                                       \
           range(0, max_jint/2)                                              \
                                                                             \
-  develop(bool, TraceStackWalk, false,                                      \
-          "Trace stack walking")                                            \
-                                                                            \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \
   diagnostic(intx, GuaranteedSafepointInterval, 1000,                       \

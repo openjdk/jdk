@@ -257,7 +257,13 @@ final class RSAClientKeyExchange extends HandshakeMessage {
 
     @Override
     void print(PrintStream s) throws IOException {
-        s.println("*** ClientKeyExchange, RSA PreMasterSecret, " +
-                                                        protocolVersion);
+        String version = "version not available/extractable";
+
+        byte[] ba = preMaster.getEncoded();
+        if (ba != null && ba.length >= 2) {
+            version = ProtocolVersion.valueOf(ba[0], ba[1]).name;
+        }
+
+        s.println("*** ClientKeyExchange, RSA PreMasterSecret, " + version);
     }
 }

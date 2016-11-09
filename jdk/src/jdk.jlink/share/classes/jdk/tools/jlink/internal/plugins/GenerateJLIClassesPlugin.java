@@ -159,13 +159,6 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     public void configure(Map<String, String> config) {
         String mainArgument = config.get(NAME);
 
-        if ("none".equals(mainArgument)) {
-            speciesTypes = Set.of();
-            invokerTypes = Set.of();
-            dmhMethods = Map.of();
-            return;
-        }
-
         // Start with the default configuration
         Set<String> defaultBMHSpecies = defaultSpecies();
         // Expand BMH species signatures

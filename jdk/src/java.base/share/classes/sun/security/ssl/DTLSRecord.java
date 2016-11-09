@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,4 +84,18 @@ interface DTLSRecord extends Record {
                                     + maxPadding            // padding
                                     + maxMacSize;           // MAC
 
+    /*
+     * Minimum record size of Certificate handshake message.
+     * Client sends a certificate message containing no certificates if no
+     * suitable certificate is available.  That is, the certificate_list
+     * structure has a length of zero.
+     *
+     *   struct {
+     *       ASN.1Cert certificate_list<0..2^24-1>;
+     *   } Certificate;
+     */
+    static final int    minCertPlaintextSize =
+                                      headerSize            // record header
+                                    + handshakeHeaderSize   // handshake header
+                                    + 3;                    // cert list length
 }
