@@ -243,16 +243,23 @@ public class Proc {
     // Starts the proc
     public Proc start() throws IOException {
         List<String> cmd = new ArrayList<>();
+        boolean hasModules;
         if (launcher != null) {
             cmd.add(launcher);
+            File base = new File(launcher).getParentFile().getParentFile();
+            hasModules = new File(base, "modules").exists() ||
+                    new File(base, "jmods").exists();
         } else {
             cmd.add(new File(new File(System.getProperty("java.home"), "bin"),
                         "java").getPath());
+            hasModules = true;
         }
 
-        Stream.of(jdk.internal.misc.VM.getRuntimeArguments())
-            .filter(arg -> arg.startsWith("--add-exports="))
-            .forEach(cmd::add);
+        if (hasModules) {
+            Stream.of(jdk.internal.misc.VM.getRuntimeArguments())
+                    .filter(arg -> arg.startsWith("--add-exports="))
+                    .forEach(cmd::add);
+        }
 
         Collections.addAll(cmd, splitProperty("test.vm.opts"));
         Collections.addAll(cmd, splitProperty("test.java.opts"));

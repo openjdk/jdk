@@ -35,6 +35,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.locks.Lock;
@@ -43,14 +44,17 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
+import jdk.internal.jmod.JmodFile;
 import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleHashes.HashSupplier;
 import jdk.internal.module.ModulePatcher;
+import jdk.internal.util.jar.VersionedStream;
 import sun.net.www.ParseUtil;
 
 
@@ -140,6 +144,13 @@ class ModuleReferences {
         abstract Optional<InputStream> implOpen(String name) throws IOException;
 
         /**
+         * Returns a stream of the names of resources in the module. This
+         * method is invoked by the list method to do the actual work of
+         * creating the stream.
+         */
+        abstract Stream<String> implList() throws IOException;
+
+        /**
          * Closes the module reader. This method is invoked by close to do the
          * actual work of closing the module reader.
          */
@@ -175,7 +186,21 @@ class ModuleReferences {
         }
 
         @Override
-        public void close() throws IOException {
+        public final Stream<String> list() throws IOException {
+            readLock.lock();
+            try {
+                if (!closed) {
+                    return implList();
+                } else {
+                    throw new IOException("ModuleReader is closed");
+                }
+            } finally {
+                readLock.unlock();
+            }
+        }
+
+        @Override
+        public final void close() throws IOException {
             writeLock.lock();
             try {
                 if (!closed) {
@@ -241,6 +266,16 @@ class ModuleReferences {
         }
 
         @Override
+        Stream<String> implList() throws IOException {
+            // take snapshot to avoid async close
+            List<String> names = VersionedStream.stream(jf)
+                    .filter(e -> !e.isDirectory())
+                    .map(JarEntry::getName)
+                    .collect(Collectors.toList());
+            return names.stream();
+        }
+
+        @Override
         void implClose() throws IOException {
             jf.close();
         }
@@ -251,30 +286,31 @@ class ModuleReferences {
      * A ModuleReader for a JMOD file.
      */
     static class JModModuleReader extends SafeCloseModuleReader {
-        private final ZipFile zf;
+        private final JmodFile jf;
         private final URI uri;
 
-        static ZipFile newZipFile(Path path) {
+        static JmodFile newJmodFile(Path path) {
             try {
-                return new ZipFile(path.toFile());
+                return new JmodFile(path);
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe);
             }
         }
 
         JModModuleReader(Path path, URI uri) {
-            this.zf = newZipFile(path);
+            this.jf = newJmodFile(path);
             this.uri = uri;
         }
 
-        private ZipEntry getEntry(String name) {
-            return zf.getEntry("classes/" + Objects.requireNonNull(name));
+        private JmodFile.Entry getEntry(String name) {
+            Objects.requireNonNull(name);
+            return jf.getEntry(JmodFile.Section.CLASSES, name);
         }
 
         @Override
         Optional<URI> implFind(String name) {
-            ZipEntry ze = getEntry(name);
-            if (ze != null) {
+            JmodFile.Entry je = getEntry(name);
+            if (je != null) {
                 String encodedPath = ParseUtil.encodePath(name, false);
                 String uris = "jmod:" + uri + "!/" + encodedPath;
                 return Optional.of(URI.create(uris));
@@ -285,17 +321,27 @@ class ModuleReferences {
 
         @Override
         Optional<InputStream> implOpen(String name) throws IOException {
-            ZipEntry ze = getEntry(name);
-            if (ze != null) {
-                return Optional.of(zf.getInputStream(ze));
+            JmodFile.Entry je = getEntry(name);
+            if (je != null) {
+                return Optional.of(jf.getInputStream(je));
             } else {
                 return Optional.empty();
             }
         }
 
         @Override
+        Stream<String> implList() throws IOException {
+            // take snapshot to avoid async close
+            List<String> names = jf.stream()
+                    .filter(e -> e.section() == JmodFile.Section.CLASSES)
+                    .map(JmodFile.Entry::name)
+                    .collect(Collectors.toList());
+            return names.stream();
+        }
+
+        @Override
         void implClose() throws IOException {
-            zf.close();
+            jf.close();
         }
     }
 
@@ -375,6 +421,17 @@ class ModuleReferences {
             } else {
                 return Optional.empty();
             }
+        }
+
+        @Override
+        public Stream<String> list() throws IOException {
+            ensureOpen();
+            // sym links not followed
+            return Files.find(dir, Integer.MAX_VALUE,
+                              (path, attrs) -> attrs.isRegularFile())
+                    .map(f -> dir.relativize(f)
+                                 .toString()
+                                 .replace(File.separatorChar, '/'));
         }
 
         @Override

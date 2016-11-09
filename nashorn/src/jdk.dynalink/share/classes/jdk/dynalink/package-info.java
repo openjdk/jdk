@@ -129,7 +129,7 @@
  * bytecode would look something like this:
  * <pre>
  * aload 2 // load "obj" on stack
- * invokedynamic "GET_PROPERTY:color"(Object)Object // invoke property getter on object of unknown type
+ * invokedynamic "GET:PROPERTY:color"(Object)Object // invoke property getter on object of unknown type
  * astore 3 // store the return value into local variable "color"
  * </pre>
  * In order to link the {@code invokedynamic} instruction, we need a bootstrap
@@ -175,9 +175,9 @@
  * dynamic operations. It does not prescribe how would you encode the operations
  * in your call site, though. That is why in the above example the
  * {@code parseOperation} function is left empty, and you would be expected to
- * provide the code to parse the string {@code "GET_PROPERTY:color"}
+ * provide the code to parse the string {@code "GET:PROPERTY:color"}
  * in the call site's name into a named property getter operation object as
- * {@code new NamedOperation(StandardOperation.GET_PROPERTY), "color")}.
+ * {@code StandardOperation.GET.withNamespace(StandardNamespace.PROPERTY).named("color")}.
  * </ul>
  * <p>What can you already do with the above setup? {@code DynamicLinkerFactory}
  * by default creates a {@code DynamicLinker} that can link Java objects with the
@@ -231,18 +231,20 @@
  * Dynalink defines several standard operations in its
  * {@link jdk.dynalink.StandardOperation} class. The linker for Java
  * objects can link all of these operations, and you are encouraged to at
- * minimum support and use these operations in your language too. To associate
- * a fixed name with an operation, you can use
- * {@link jdk.dynalink.NamedOperation} as in the above example where
- * {@code StandardOperation.GET_PROPERTY} was combined with the name
- * {@code "color"} in a {@code NamedOperation} to form a property getter for the
- * property named "color".
- * <h2>Composite operations</h2>
+ * minimum support and use these operations in your language too. The
+ * standard operations {@code GET} and {@code SET} need to be combined with
+ * at least one {@link jdk.dynalink.Namespace} to be useful, e.g. to express a
+ * property getter, you'd use {@code StandardOperation.GET.withNamespace(StandardNamespace.PROPERTY)}.
+ * Dynalink defines three standard namespaces in the {@link jdk.dynalink.StandardNamespace} class.
+ * To associate a fixed name with an operation, you can use
+ * {@link jdk.dynalink.NamedOperation} as in the previous example:
+ * {@code StandardOperation.GET.withNamespace(StandardNamespace.PROPERTY).named("color")}
+ * expresses a getter for the property named "color".
+ * <h2>Operations on multiple namespaces</h2>
  * Some languages might not have separate namespaces on objects for
  * properties, elements, and methods, and a source language construct might
- * address two or three of them. Dynalink supports specifying composite
- * operations for this purpose using the
- * {@link jdk.dynalink.CompositeOperation} class.
+ * address several of them at once. Dynalink supports specifying multiple
+ * {@link jdk.dynalink.Namespace} objects with {@link jdk.dynalink.NamespaceOperation}.
  * <h2>Language-specific linkers</h2>
  * Languages that define their own object model different than the JVM
  * class-based model and/or use their own type conversions will need to create

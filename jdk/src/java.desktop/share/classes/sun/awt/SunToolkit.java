@@ -1512,9 +1512,9 @@ public abstract class SunToolkit extends Toolkit
      */
     protected abstract boolean syncNativeQueue(final long timeout);
 
-    private boolean eventDispatched = false;
-    private boolean queueEmpty = false;
-    private final Object waitLock = "Wait Lock";
+    private boolean eventDispatched;
+    private boolean queueEmpty;
+    private final Object waitLock = new Object();
 
     private boolean isEQEmpty() {
         EventQueue queue = getSystemEventQueueImpl();
@@ -1531,10 +1531,11 @@ public abstract class SunToolkit extends Toolkit
     @SuppressWarnings("serial")
     protected final boolean waitForIdle(final long timeout) {
         flushPendingEvents();
-        boolean queueWasEmpty = isEQEmpty();
-        queueEmpty = false;
-        eventDispatched = false;
-        synchronized(waitLock) {
+        final boolean queueWasEmpty;
+        synchronized (waitLock) {
+            queueWasEmpty = isEQEmpty();
+            queueEmpty = false;
+            eventDispatched = false;
             postEvent(AppContext.getAppContext(),
                       new PeerEvent(getSystemEventQueueImpl(), null, PeerEvent.LOW_PRIORITY_EVENT) {
                           @Override

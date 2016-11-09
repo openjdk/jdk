@@ -25,7 +25,12 @@
 
 #include "splashscreen_impl.h"
 #include "splashscreen_gfx_impl.h"
-
+#define BUFF_SIZE 1024
+#ifdef _MSC_VER
+# ifndef snprintf
+#       define snprintf _snprintf
+# endif
+#endif
 int splashIsVisible = 0;
 
 Splash *
@@ -392,5 +397,101 @@ int SplashStreamInitMemory(SplashStream * pStream, void* pData, int size) {
 
 SPLASHEXPORT int
 SplashGetScaledImgNameMaxPstfixLen(const char *fileName){
-    return strlen(fileName) + strlen(".java-scale-200") + 1;
+    return strlen(fileName) + strlen("@100pct") + 1;
+}
+
+jboolean GetScaledImageName(const char *fileName, char *scaleImageName,
+        float *scaleFactor, const size_t scaledImageLength) {
+    if (*scaleFactor > 1.0) {
+        FILE *fp = NULL;
+        char scaledImgPct[BUFF_SIZE];
+        char scaledImgX[BUFF_SIZE];
+        char *scaledImageXName = NULL;
+        char *scaledImagePctName = malloc(scaledImageLength);
+        char *dupFileName = strdup(fileName);
+        char *fileExtension = strrchr(dupFileName, '.');
+        size_t lengthPct = 0;
+        size_t lengthX = 0;
+        int retValPct = 0;
+        int retValX = 0;
+        jboolean isPctScaledImage = (*scaleFactor * 100) != ((int) (*scaleFactor)) *100;
+        snprintf(scaledImgPct, BUFF_SIZE, "%s%d%s", "@",
+                (int) (*scaleFactor * 100), "pct");
+        if (!isPctScaledImage) {
+            scaledImageXName = malloc(scaledImageLength);
+            snprintf(scaledImgX, BUFF_SIZE, "%s%d%s", "@", (int) (*scaleFactor), "x");
+        }
+        /*File is missing extension */
+        if (fileExtension == NULL) {
+            lengthPct = strlen(dupFileName) +
+                    strlen(scaledImgPct) + 1;
+            if (!isPctScaledImage) {
+                lengthX = strlen(dupFileName) +
+                        strlen(scaledImgX) + 1;
+            }
+            if (lengthPct > scaledImageLength || lengthX > scaledImageLength) {
+                cleanUp(dupFileName, scaledImageXName, scaledImagePctName, scaleFactor);
+                return JNI_FALSE;
+            }
+            retValPct = snprintf(scaledImagePctName, lengthPct, "%s%s", dupFileName,
+                    scaledImgPct);
+            if (!isPctScaledImage) {
+                retValX = snprintf(scaledImageXName, lengthX, "%s%s", dupFileName,
+                        scaledImgX);
+            }
+            if ((retValPct < 0 || (retValPct > lengthPct - 1)) ||
+                    (retValX < 0 || (retValX > lengthX - 1))) {
+                cleanUp(dupFileName, scaledImageXName, scaledImagePctName, scaleFactor);
+                return JNI_FALSE;
+            }
+        } else {
+            int length_Without_Ext = fileExtension - dupFileName;
+            lengthPct = length_Without_Ext + strlen(scaledImgPct) +
+                    strlen(fileExtension) + 1;
+            if (!isPctScaledImage) {
+                lengthX = length_Without_Ext + strlen(scaledImgX) +
+                        strlen(fileExtension) + 1;
+            }
+            if (lengthPct > scaledImageLength || lengthX > scaledImageLength) {
+                cleanUp(dupFileName, scaledImageXName, scaledImagePctName, scaleFactor);
+                return JNI_FALSE;
+            }
+            retValPct = snprintf(scaledImagePctName, lengthPct, "%.*s%s%s",
+                    length_Without_Ext, dupFileName, scaledImgPct, fileExtension);
+            if (!isPctScaledImage) {
+                retValX = snprintf(scaledImageXName, lengthX, "%.*s%s%s",
+                        length_Without_Ext, dupFileName, scaledImgX, fileExtension);
+            }
+            if ((retValPct < 0 || (retValPct > lengthPct - 1)) ||
+                    (retValX < 0 || (retValX > lengthX - 1))) {
+                cleanUp(dupFileName, scaledImageXName, scaledImagePctName, scaleFactor);
+                return JNI_FALSE;
+            }
+        }
+        free(dupFileName);
+        if (!(fp = fopen(scaledImagePctName, "r"))) {
+            if (!isPctScaledImage && (fp = fopen(scaledImageXName, "r"))) {
+                fclose(fp);
+                strcpy(scaleImageName, scaledImageXName);
+                free(scaledImageXName);
+                free(scaledImagePctName);
+                return JNI_TRUE;
+            }
+            cleanUp(NULL, scaledImageXName, scaledImagePctName, scaleFactor);
+            return JNI_FALSE;
+        }
+        fclose(fp);
+        strcpy(scaleImageName, scaledImagePctName);
+        free(scaledImageXName);
+        free(scaledImagePctName);
+        return JNI_TRUE;
+    }
+    return JNI_FALSE;
+}
+
+void cleanUp(char *fName, char *xName, char *pctName, float *scaleFactor) {
+    *scaleFactor = 1;
+    free(fName);
+    free(xName);
+    free(pctName);
 }

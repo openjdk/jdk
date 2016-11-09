@@ -263,7 +263,7 @@ void FileMapInfo::allocate_classpath_entry_table() {
         } else {
           struct stat st;
           if (os::stat(name, &st) == 0) {
-            if ((st.st_mode & S_IFDIR) == S_IFDIR) {
+            if ((st.st_mode & S_IFMT) == S_IFDIR) {
               if (!os::dir_is_empty(name)) {
                 ClassLoader::exit_with_path_failure(
                   "Cannot have non-empty directory in archived classpaths", name);

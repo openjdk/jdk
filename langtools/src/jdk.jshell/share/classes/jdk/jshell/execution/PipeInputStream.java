@@ -42,7 +42,7 @@ class PipeInputStream extends InputStream {
 
     @Override
     public synchronized int read() throws IOException {
-        if (start == end) {
+        if (start == end && !closed) {
             inputNeeded();
         }
         while (start == end) {
@@ -60,6 +60,32 @@ class PipeInputStream extends InputStream {
         } finally {
             start = (start + 1) % buffer.length;
         }
+    }
+
+    @Override
+    public synchronized int read(byte[] b, int off, int len) throws IOException {
+        if (b == null) {
+            throw new NullPointerException();
+        } else if (off < 0 || len < 0 || len > b.length - off) {
+            throw new IndexOutOfBoundsException();
+        } else if (len == 0) {
+            return 0;
+        }
+
+        int c = read();
+        if (c == -1) {
+            return -1;
+        }
+        b[off] = (byte)c;
+
+        int totalRead = 1;
+        while (totalRead < len && start != end) {
+            int r = read();
+            if (r == (-1))
+                break;
+            b[off + totalRead++] = (byte) r;
+        }
+        return totalRead;
     }
 
     protected void inputNeeded() throws IOException {}

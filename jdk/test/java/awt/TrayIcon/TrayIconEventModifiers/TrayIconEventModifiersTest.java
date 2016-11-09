@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,11 @@
  * questions.
  */
 
-import java.awt.*;
+import java.awt.EventQueue;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.SystemTray;
+import java.awt.TrayIcon;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -31,9 +35,10 @@ import java.awt.image.BufferedImage;
 
 /*
  * @test
+ * @bug 8161473
+ * @key headful
  * @summary Check if MouseEvent has the proper modifiers when
  *          TrayIcon is clicked pressing the modifier keys
- * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @library /java/awt/patchlib
  * @library ../../../../lib/testlibrary ../
  * @build java.desktop/java.awt.Helper
@@ -213,6 +218,7 @@ public class TrayIconEventModifiersTest {
                 mousePressed = false;
 
                 robot.keyPress(keyTypes[j]);
+                robot.waitForIdle();
                 robot.mousePress(buttonTypes[i]);
 
                 if (! mousePressed) {

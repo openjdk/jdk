@@ -118,6 +118,19 @@ typedef struct {
     RRMode          *modes;
 } XRROutputInfo;
 
+typedef struct {
+    Time            timestamp;
+    int             x, y;
+    unsigned int    width, height;
+    RRMode          mode;
+    Rotation        rotation;
+    int             noutput;
+    RROutput        *outputs;
+    Rotation        rotations;
+    int             npossible;
+    RROutput        *possible;
+} XRRCrtcInfo;
+
 XRRScreenResources *XRRGetScreenResources (Display *dpy, Window window);
 
 void XRRFreeScreenResources (XRRScreenResources *resources);
@@ -125,6 +138,11 @@ void XRRFreeScreenResources (XRRScreenResources *resources);
 XRROutputInfo * XRRGetOutputInfo (Display *dpy, XRRScreenResources *resources,
                                                                RROutput output);
 void XRRFreeOutputInfo (XRROutputInfo *outputInfo);
+
+XRRCrtcInfo *XRRGetCrtcInfo (Display *dpy, XRRScreenResources *resources,
+                                                                   RRCrtc crtc);
+void XRRFreeCrtcInfo (XRRCrtcInfo *crtcInfo);
+
 
 /* internal representation is private to the library */
 typedef struct _XRRScreenConfiguration XRRScreenConfiguration;

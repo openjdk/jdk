@@ -165,19 +165,19 @@ public class KeyAgreement {
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
-     * @return the new {@code KeyAgreement} object.
+     * @return the new {@code KeyAgreement} object
      *
-     * @exception NullPointerException if the specified algorithm
-     *          is null.
+     * @throws NoSuchAlgorithmException if no {@code Provider} supports a
+     *         {@code KeyAgreementSpi} implementation for the
+     *         specified algorithm
      *
-     * @exception NoSuchAlgorithmException if no Provider supports a
-     *          KeyAgreementSpi implementation for the
-     *          specified algorithm.
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static final KeyAgreement getInstance(String algorithm)
             throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         List<Service> services =
                 GetInstance.getServices("KeyAgreement", algorithm);
         // make sure there is at least one service from a signed provider
@@ -214,26 +214,26 @@ public class KeyAgreement {
      *
      * @param provider the name of the provider.
      *
-     * @return the new {@code KeyAgreement} object.
+     * @return the new {@code KeyAgreement} object
      *
-     * @exception NullPointerException if the specified algorithm
-     *          is null.
+     * @throws IllegalArgumentException if the {@code provider}
+     *         is {@code null} or empty
      *
-     * @exception NoSuchAlgorithmException if a KeyAgreementSpi
-     *          implementation for the specified algorithm is not
-     *          available from the specified provider.
+     * @throws NoSuchAlgorithmException if a {@code KeyAgreementSpi}
+     *         implementation for the specified algorithm is not
+     *         available from the specified provider
      *
-     * @exception NoSuchProviderException if the specified provider is not
-     *          registered in the security provider list.
+     * @throws NoSuchProviderException if the specified provider is not
+     *         registered in the security provider list
      *
-     * @exception IllegalArgumentException if the {@code provider}
-     *          is null or empty.
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static final KeyAgreement getInstance(String algorithm,
             String provider) throws NoSuchAlgorithmException,
             NoSuchProviderException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = JceSecurity.getInstance
                 ("KeyAgreement", KeyAgreementSpi.class, algorithm, provider);
         return new KeyAgreement((KeyAgreementSpi)instance.impl,
@@ -258,22 +258,22 @@ public class KeyAgreement {
      *
      * @param provider the provider.
      *
-     * @return the new {@code KeyAgreement} object.
+     * @return the new {@code KeyAgreement} object
      *
-     * @exception NullPointerException if the specified algorithm
-     *          is null.
+     * @throws IllegalArgumentException if the {@code provider}
+     *         is {@code null}
      *
-     * @exception NoSuchAlgorithmException if a KeyAgreementSpi
-     *          implementation for the specified algorithm is not available
-     *          from the specified Provider object.
+     * @throws NoSuchAlgorithmException if a {@code KeyAgreementSpi}
+     *         implementation for the specified algorithm is not available
+     *         from the specified Provider object
      *
-     * @exception IllegalArgumentException if the {@code provider}
-     *          is null.
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static final KeyAgreement getInstance(String algorithm,
             Provider provider) throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = JceSecurity.getInstance
                 ("KeyAgreement", KeyAgreementSpi.class, algorithm, provider);
         return new KeyAgreement((KeyAgreementSpi)instance.impl,

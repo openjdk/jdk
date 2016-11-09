@@ -41,7 +41,7 @@ import java.util.stream.Stream;
  * 2. -filter:package to filter out same-package dependencies
  *    This filter is applied when jdeps parses the class files
  *    and filtered dependencies are not stored in the Analyzer.
- * 3. -requires specifies to match target dependence from the given module
+ * 3. --require specifies to match target dependence from the given module
  *    This gets expanded into package lists to be filtered.
  * 4. -filter:archive to filter out same-archive dependencies
  *    This filter is applied later in the Analyzer as the
@@ -166,12 +166,24 @@ public class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
             // accepts target that is JDK class but not exported
             Module module = targetArchive.getModule();
             return originArchive != targetArchive &&
-                    module.isJDK() && !module.isExported(target.getPackageName());
+                    isJDKInternalPackage(module, target.getPackageName());
         } else if (filterSameArchive) {
             // accepts origin and target that from different archive
             return originArchive != targetArchive;
         }
         return true;
+    }
+
+    /**
+     * Tests if the package is an internal package of the given module.
+     */
+    public boolean isJDKInternalPackage(Module module, String pn) {
+        if (module.isJDKUnsupported()) {
+            // its exported APIs are unsupported
+            return true;
+        }
+
+        return module.isJDK() && !module.isExported(pn);
     }
 
     @Override

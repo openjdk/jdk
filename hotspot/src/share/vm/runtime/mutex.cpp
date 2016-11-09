@@ -452,7 +452,7 @@ void Monitor::ILock(Thread * Self) {
   ParkEvent * const ESelf = Self->_MutexEvent;
   assert(_OnDeck != ESelf, "invariant");
 
-  // As an optimization, spinners could conditionally try to set ONDECK to _LBIT
+  // As an optimization, spinners could conditionally try to set _OnDeck to _LBIT
   // Synchronizer.cpp uses a similar optimization.
   if (TrySpin(Self)) goto Exeunt;
 
@@ -463,7 +463,7 @@ void Monitor::ILock(Thread * Self) {
   OrderAccess::fence();
 
   // Optional optimization ... try barging on the inner lock
-  if ((NativeMonitorFlags & 32) && CASPTR (&_OnDeck, NULL, UNS(Self)) == 0) {
+  if ((NativeMonitorFlags & 32) && CASPTR (&_OnDeck, NULL, UNS(ESelf)) == 0) {
     goto OnDeck_LOOP;
   }
 
@@ -471,14 +471,14 @@ void Monitor::ILock(Thread * Self) {
 
   // At any given time there is at most one ondeck thread.
   // ondeck implies not resident on cxq and not resident on EntryList
-  // Only the OnDeck thread can try to acquire -- contended for -- the lock.
+  // Only the OnDeck thread can try to acquire -- contend for -- the lock.
   // CONSIDER: use Self->OnDeck instead of m->OnDeck.
   // Deschedule Self so that others may run.
-  while (_OnDeck != ESelf) {
+  while (OrderAccess::load_ptr_acquire(&_OnDeck) != ESelf) {
     ParkCommon(ESelf, 0);
   }
 
-  // Self is now in the ONDECK position and will remain so until it
+  // Self is now in the OnDeck position and will remain so until it
   // manages to acquire the lock.
  OnDeck_LOOP:
   for (;;) {
@@ -501,8 +501,8 @@ void Monitor::ILock(Thread * Self) {
   // A. Shift or defer dropping the inner lock until the subsequent IUnlock() operation.
   //    This might avoid potential reacquisition of the inner lock in IUlock().
   // B. While still holding the inner lock, attempt to opportunistically select
-  //    and unlink the next ONDECK thread from the EntryList.
-  //    If successful, set ONDECK to refer to that thread, otherwise clear ONDECK.
+  //    and unlink the next OnDeck thread from the EntryList.
+  //    If successful, set OnDeck to refer to that thread, otherwise clear OnDeck.
   //    It's critical that the select-and-unlink operation run in constant-time as
   //    it executes when holding the outer lock and may artificially increase the
   //    effective length of the critical section.
@@ -529,7 +529,7 @@ void Monitor::IUnlock(bool RelaxAssert) {
   OrderAccess::release_store(&_LockWord.Bytes[_LSBINDEX], 0); // drop outer lock
 
   OrderAccess::storeload();
-  ParkEvent * const w = _OnDeck;
+  ParkEvent * const w = _OnDeck; // raw load as we will just return if non-NULL
   assert(RelaxAssert || w != Thread::current()->_MutexEvent, "invariant");
   if (w != NULL) {
     // Either we have a valid ondeck thread or ondeck is transiently "locked"
@@ -537,7 +537,7 @@ void Monitor::IUnlock(bool RelaxAssert) {
     // OnDeck allows us to discriminate two cases.  If the latter, the
     // responsibility for progress and succession lies with that other thread.
     // For good performance, we also depend on the fact that redundant unpark()
-    // operations are cheap.  That is, repeated Unpark()ing of the ONDECK thread
+    // operations are cheap.  That is, repeated Unpark()ing of the OnDeck thread
     // is inexpensive.  This approach provides implicit futile wakeup throttling.
     // Note that the referent "w" might be stale with respect to the lock.
     // In that case the following unpark() is harmless and the worst that'll happen
@@ -586,8 +586,13 @@ void Monitor::IUnlock(bool RelaxAssert) {
     _EntryList = w->ListNext;
     // as a diagnostic measure consider setting w->_ListNext = BAD
     assert(UNS(_OnDeck) == _LBIT, "invariant");
-    _OnDeck = w;  // pass OnDeck to w.
-                  // w will clear OnDeck once it acquires the outer lock
+
+    // Pass OnDeck role to w, ensuring that _EntryList has been set first.
+    // w will clear _OnDeck once it acquires the outer lock.
+    // Note that once we set _OnDeck that thread can acquire the mutex, proceed
+    // with its critical section and then enter this code to unlock the mutex. So
+    // you can have multiple threads active in IUnlock at the same time.
+    OrderAccess::release_store_ptr(&_OnDeck, w);
 
     // Another optional optimization ...
     // For heavily contended locks it's not uncommon that some other
@@ -835,7 +840,7 @@ int Monitor::IWait(Thread * Self, jlong timo) {
     // ESelf is now on the cxq, EntryList or at the OnDeck position.
     // The following fragment is extracted from Monitor::ILock()
     for (;;) {
-      if (_OnDeck == ESelf && TrySpin(Self)) break;
+      if (OrderAccess::load_ptr_acquire(&_OnDeck) == ESelf && TrySpin(Self)) break;
       ParkCommon(ESelf, 0);
     }
     assert(_OnDeck == ESelf, "invariant");
@@ -1050,10 +1055,10 @@ void Monitor::jvm_raw_lock() {
 
   // At any given time there is at most one ondeck thread.
   // ondeck implies not resident on cxq and not resident on EntryList
-  // Only the OnDeck thread can try to acquire -- contended for -- the lock.
+  // Only the OnDeck thread can try to acquire -- contend for -- the lock.
   // CONSIDER: use Self->OnDeck instead of m->OnDeck.
   for (;;) {
-    if (_OnDeck == ESelf && TrySpin(NULL)) break;
+    if (OrderAccess::load_ptr_acquire(&_OnDeck) == ESelf && TrySpin(NULL)) break;
     ParkCommon(ESelf, 0);
   }
 

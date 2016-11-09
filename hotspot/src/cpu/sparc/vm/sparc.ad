@@ -2003,6 +2003,20 @@ bool Matcher::narrow_klass_use_complex_address() {
   return false;
 }
 
+bool Matcher::const_oop_prefer_decode() {
+  // TODO: Check if loading ConP from TOC in heap-based mode is better:
+  // Prefer ConN+DecodeN over ConP in simple compressed oops mode.
+  // return Universe::narrow_oop_base() == NULL;
+  return true;
+}
+
+bool Matcher::const_klass_prefer_decode() {
+  // TODO: Check if loading ConP from TOC in heap-based mode is better:
+  // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
+  // return Universe::narrow_klass_base() == NULL;
+  return true;
+}
+
 // Is it better to copy float constants, or load them directly from memory?
 // Intel can load a float constant from a direct address, requiring no
 // extra registers.  Most RISCs will have to materialize an address into a

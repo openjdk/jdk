@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,25 @@
 
 /*
  * @test
- * @key headful
- * @bug 7123767
- * @summary Wrong tooltip location in Multi-Monitor configurations
- * @author Vladislav Karnaukhov
- * @modules java.desktop/sun.awt
- * @run main bug7123767
+ * @bug      7123767
+ *
+ * @summary  Check if a tooltip location in Multi-Monitor
+ *           configurations is correct.
+ *           If the configurations number per device exceeds 5,
+ *           then some 5 random configurations will be checked.
+ *           Please Use -Dseed=X to set the random generator seed
+ *           (if necessary).
+ *
+ * @author   Vladislav Karnaukhov
+ *
+ * @key      headful
+ * @key      randomness
+ *
+ * @modules  java.desktop/sun.awt
+ * @library  /lib/testlibrary/
+ * @build    jdk.testlibrary.*
+ *
+ * @run      main/timeout=300 bug7123767
  */
 
 import javax.swing.*;
@@ -37,7 +50,49 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.lang.reflect.InvocationTargetException;
 
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Random;
+
+import jdk.testlibrary.RandomFactory;
+
+
 public class bug7123767 extends JFrame {
+
+    // maximum number of GraphicsConfigurations checked per GraphicsDevice
+    private static final int MAX_N_CONFIGS = 5;
+    private static final List<GraphicsConfiguration> CONFIGS = getConfigs();
+
+    private static List<GraphicsConfiguration> getConfigs() {
+
+        Random rnd = RandomFactory.getRandom();
+
+        List<GraphicsConfiguration> configs = new ArrayList<>();
+
+        GraphicsEnvironment ge =
+                GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice[] devices = ge.getScreenDevices();
+
+        for (GraphicsDevice device : devices) {
+            GraphicsConfiguration[] allConfigs = device.getConfigurations();
+            int nConfigs = allConfigs.length;
+            if (nConfigs <= MAX_N_CONFIGS) {
+                Collections.addAll(configs, allConfigs);
+            } else { // see JDK-8159454
+                System.out.println("check only " + MAX_N_CONFIGS +
+                    " configurations for device " + device);
+                configs.add(device.getDefaultConfiguration()); // check default
+                for (int j = 0; j < MAX_N_CONFIGS - 1; j++) {
+                    int k = rnd.nextInt(nConfigs);
+                    configs.add(allConfigs[k]);
+                }
+            }
+        }
+
+        return configs;
+    }
+
 
     private static class TestFactory extends PopupFactory {
 
@@ -62,15 +117,21 @@ public class bug7123767 extends JFrame {
         }
 
         // Actual test happens here
+        @Override
         public Popup getPopup(Component owner, Component contents, int x, int y) {
-            GraphicsConfiguration mouseGC = testGC(MouseInfo.getPointerInfo().getLocation());
+
+            GraphicsConfiguration mouseGC =
+                testGC(MouseInfo.getPointerInfo().getLocation());
+
             if (mouseGC == null) {
-                throw new RuntimeException("Can't find GraphicsConfiguration that mouse pointer belongs to");
+                throw new RuntimeException("Can't find GraphicsConfiguration "
+                        + "that mouse pointer belongs to");
             }
 
             GraphicsConfiguration tipGC = testGC(new Point(x, y));
             if (tipGC == null) {
-                throw new RuntimeException("Can't find GraphicsConfiguration that tip belongs to");
+                throw new RuntimeException(
+                        "Can't find GraphicsConfiguration that tip belongs to");
             }
 
             if (!mouseGC.equals(tipGC)) {
@@ -81,17 +142,14 @@ public class bug7123767 extends JFrame {
         }
 
         private static GraphicsConfiguration testGC(Point pt) {
-            GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
-            GraphicsDevice[] devices = environment.getScreenDevices();
-            for (GraphicsDevice device : devices) {
-                GraphicsConfiguration[] configs = device.getConfigurations();
-                for (GraphicsConfiguration config : configs) {
-                    Rectangle rect = config.getBounds();
-                    Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(config);
-                    adjustInsets(rect, insets);
-                    if (rect.contains(pt))
-                        return config;
-                }
+
+            for (GraphicsConfiguration config: CONFIGS) {
+
+                Rectangle rect = config.getBounds();
+                Insets insets =
+                    Toolkit.getDefaultToolkit().getScreenInsets(config);
+                adjustInsets(rect, insets);
+                if (rect.contains(pt)) { return config; }
             }
 
             return null;
@@ -103,15 +161,18 @@ public class bug7123767 extends JFrame {
     private static Robot robot;
 
     public static void main(String[] args) throws Exception {
+
         UIManager.setLookAndFeel(new MetalLookAndFeel());
         setUp();
         testToolTip();
         TestFactory.uninstall();
+        if (frame != null) { frame.dispose(); }
     }
 
     // Creates a window that is stretched across all available monitors
     // and adds itself as ContainerListener to track tooltips drawing
     private bug7123767() {
+
         super();
 
         ToolTipManager.sharedInstance().setInitialDelay(0);
@@ -135,17 +196,16 @@ public class bug7123767 extends JFrame {
         pack();
 
         Rectangle rect = new Rectangle();
-        GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice[] devices = environment.getScreenDevices();
-        for (GraphicsDevice device : devices) {
-            GraphicsConfiguration[] configs = device.getConfigurations();
-            for (GraphicsConfiguration config : configs) {
-                Insets localInsets = Toolkit.getDefaultToolkit().getScreenInsets(config);
-                Rectangle localRect = config.getBounds();
-                adjustInsets(localRect, localInsets);
-                rect.add(localRect);
-            }
+
+        for (GraphicsConfiguration config: CONFIGS) {
+
+            Insets localInsets =
+                Toolkit.getDefaultToolkit().getScreenInsets(config);
+            Rectangle localRect = config.getBounds();
+            adjustInsets(localRect, localInsets);
+            rect.add(localRect);
         }
+
         setBounds(rect);
     }
 
@@ -166,35 +226,32 @@ public class bug7123767 extends JFrame {
         robot.setAutoDelay(20);
         robot.waitForIdle();
 
-        GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice[] devices = environment.getScreenDevices();
-        for (GraphicsDevice device : devices) {
-            GraphicsConfiguration[] configs = device.getConfigurations();
-            for (GraphicsConfiguration config : configs) {
-                Rectangle rect = config.getBounds();
-                Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(config);
-                adjustInsets(rect, insets);
+        for (GraphicsConfiguration config: CONFIGS) {
 
-                // Upper left
-                glide(rect.x + rect.width / 2, rect.y + rect.height / 2,
-                        rect.x + MARGIN, rect.y + MARGIN);
-                robot.waitForIdle();
+            Rectangle rect = config.getBounds();
+            Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(config);
+            adjustInsets(rect, insets);
 
-                // Lower left
-                glide(rect.x + rect.width / 2, rect.y + rect.height / 2,
-                        rect.x + MARGIN, rect.y + rect.height - MARGIN);
-                robot.waitForIdle();
+            // Upper left
+            glide(rect.x + rect.width / 2, rect.y + rect.height / 2,
+                    rect.x + MARGIN, rect.y + MARGIN);
+            robot.waitForIdle();
 
-                // Upper right
-                glide(rect.x + rect.width / 2, rect.y + rect.height / 2,
-                        rect.x + rect.width - MARGIN, rect.y + MARGIN);
-                robot.waitForIdle();
+            // Lower left
+            glide(rect.x + rect.width / 2, rect.y + rect.height / 2,
+                    rect.x + MARGIN, rect.y + rect.height - MARGIN);
+            robot.waitForIdle();
 
-                // Lower right
-                glide(rect.x + rect.width / 2, rect.y + rect.height / 2,
-                        rect.x + rect.width - MARGIN, rect.y + rect.height - MARGIN);
-                robot.waitForIdle();
-            }
+            // Upper right
+            glide(rect.x + rect.width / 2, rect.y + rect.height / 2,
+                    rect.x + rect.width - MARGIN, rect.y + MARGIN);
+            robot.waitForIdle();
+
+            // Lower right
+            glide(rect.x + rect.width / 2, rect.y + rect.height / 2,
+                    rect.x + rect.width - MARGIN, rect.y + rect.height - MARGIN);
+
+            robot.waitForIdle();
         }
     }
 

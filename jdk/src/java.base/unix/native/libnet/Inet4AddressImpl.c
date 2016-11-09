@@ -22,27 +22,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
+#include <ctype.h>
 #include <errno.h>
-#include <sys/time.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in_systm.h>
 #include <netinet/in.h>
+#include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
-#include <netdb.h>
-#include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
+#include <string.h>
+#include <sys/time.h>
 
-#ifdef _ALLBSD_SOURCE
-#include <unistd.h>
-#include <sys/param.h>
-#endif
-
-#include "jvm.h"
-#include "jni_util.h"
 #include "net_util.h"
 
 #include "java_net_Inet4AddressImpl.h"
@@ -293,13 +283,12 @@ Java_java_net_Inet4AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
     addr |= ((caddr[2] <<8) & 0xff00);
     addr |= (caddr[3] & 0xff);
     memset((char *) &him4, 0, sizeof(him4));
-    him4.sin_addr.s_addr = (uint32_t) htonl(addr);
+    him4.sin_addr.s_addr = htonl(addr);
     him4.sin_family = AF_INET;
     sa = (struct sockaddr *) &him4;
     len = sizeof(him4);
 
-    error = getnameinfo(sa, len, host, NI_MAXHOST, NULL, 0,
-                               NI_NAMEREQD);
+    error = getnameinfo(sa, len, host, NI_MAXHOST, NULL, 0, NI_NAMEREQD);
 
     if (!error) {
         ret = (*env)->NewStringUTF(env, host);
@@ -443,7 +432,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
 
             if (!skip) {
                 struct addrinfo *next
-                    = (struct addrinfo*) malloc(sizeof(struct addrinfo));
+                    = (struct addrinfo *)malloc(sizeof(struct addrinfo));
                 if (!next) {
                     JNU_ThrowOutOfMemoryError(env, "Native heap allocation failed");
                     ret = NULL;
@@ -528,13 +517,12 @@ Java_java_net_Inet4AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
     addr |= ((caddr[2] <<8) & 0xff00);
     addr |= (caddr[3] & 0xff);
     memset((void *) &him4, 0, sizeof(him4));
-    him4.sin_addr.s_addr = (uint32_t) htonl(addr);
+    him4.sin_addr.s_addr = htonl(addr);
     him4.sin_family = AF_INET;
     sa = (struct sockaddr *) &him4;
     len = sizeof(him4);
 
-    error = getnameinfo(sa, len, host, NI_MAXHOST, NULL, 0,
-                        NI_NAMEREQD);
+    error = getnameinfo(sa, len, host, NI_MAXHOST, NULL, 0, NI_NAMEREQD);
 
     if (!error) {
         ret = (*env)->NewStringUTF(env, host);

@@ -71,9 +71,7 @@ public final class ExifTIFFTagSet extends TIFFTagSet {
      *
      * @see #TAG_EXIF_VERSION
      */
-    public static final String EXIF_VERSION_2_1 =
-        new String(new byte[] { '0', '2', '1', '0' },
-        StandardCharsets.US_ASCII);
+    public static final String EXIF_VERSION_2_1 = "0210";
 
     /**
      * A value to be used with the "ExifVersion" tag to indicate Exif version
@@ -82,9 +80,7 @@ public final class ExifTIFFTagSet extends TIFFTagSet {
      *
      * @see #TAG_EXIF_VERSION
      */
-    public static final String EXIF_VERSION_2_2 =
-        new String(new byte[] { '0', '2', '2', '0' },
-        StandardCharsets.US_ASCII);
+    public static final String EXIF_VERSION_2_2 = "0220";
 
     /**
      * A tag indicating the FlashPix version number (type UNDEFINED,

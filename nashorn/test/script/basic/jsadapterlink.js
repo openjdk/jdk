@@ -31,18 +31,21 @@
 
 var js1 = new JSAdapter() {
     __get__: function(name) {
+        Assert.assertTrue(this === js1);
         return "js1->" + name;
     }
 };
 
 var js2 = new JSAdapter() {
     __get__: function(name) {
+        Assert.assertTrue(this === js2);
         return "js2->" + name;
     }
 };
 
 var js3 = new JSAdapter() {
     __get__: function(name) {
+        Assert.assertTrue(this === js3);
         return "js3->" + name;
     }
 };

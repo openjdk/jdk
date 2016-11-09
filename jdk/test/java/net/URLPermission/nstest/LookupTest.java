@@ -22,124 +22,195 @@
  */
 
 /**
- * This is a simple smoke test of the HttpURLPermission mechanism, which
- * checks for either IOException (due to unknown host) or SecurityException
- * due to lack of permission to connect
+ * @test
+ * @summary A simple smoke test of the HttpURLPermission mechanism, which checks
+ *          for either IOException (due to unknown host) or SecurityException
+ *          due to lack of permission to connect
+ * @run main/othervm LookupTest
  */
 
-import java.net.*;
-import java.io.*;
-import jdk.testlibrary.Utils;
+import java.io.BufferedWriter;
+import java.io.FilePermission;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.NetPermission;
+import java.net.ProxySelector;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketPermission;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLPermission;
+import java.security.CodeSource;
+import java.security.Permission;
+import java.security.PermissionCollection;
+import java.security.Permissions;
+import java.security.Policy;
+import java.security.ProtectionDomain;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class LookupTest {
 
-    static void test(
-        String url, boolean throwsSecException, boolean throwsIOException)
-    {
+    static int port;
+    static volatile ServerSocket serverSocket;
+
+    static void test(String url,
+                     boolean throwsSecException,
+                     boolean throwsIOException) {
+        ProxySelector.setDefault(null);
+        URL u;
+        InputStream is = null;
         try {
-            ProxySelector.setDefault(null);
-            URL u = new URL(url);
-            System.err.println ("Connecting to " + u);
+            u = new URL(url);
+            System.err.println("Connecting to " + u);
             URLConnection urlc = u.openConnection();
-            InputStream is = urlc.getInputStream();
+            is = urlc.getInputStream();
         } catch (SecurityException e) {
             if (!throwsSecException) {
-                throw new RuntimeException ("(1) was not expecting ", e);
+                throw new RuntimeException("Unexpected SecurityException:", e);
             }
             return;
-        } catch (IOException ioe) {
+        } catch (IOException e) {
             if (!throwsIOException) {
-                throw new RuntimeException ("(2) was not expecting ", ioe);
+                System.err.println("Unexpected IOException:" + e.getMessage());
+                throw new RuntimeException(e);
             }
             return;
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    System.err.println("Unexpected IOException:" + e.getMessage());
+                    throw new RuntimeException(e);
+                }
+            }
         }
+
         if (throwsSecException || throwsIOException) {
-            System.err.printf ("was expecting a %s\n", throwsSecException ?
-                "security exception" : "IOException");
+            System.err.printf("was expecting a %s\n", throwsSecException
+                    ? "security exception" : "IOException");
             throw new RuntimeException("was expecting an exception");
         }
     }
 
-    static int port;
-    static ServerSocket serverSocket;
+    static final String CWD = System.getProperty("user.dir", ".");
 
     public static void main(String args[]) throws Exception {
-
-
-        String cmd = args[0];
-        if (cmd.equals("-getport")) {
-            port = Utils.getFreePort();
-            System.out.print(port);
-        } else if (cmd.equals("-runtest")) {
-            port = Integer.parseInt(args[1]);
-            String hostsFileName = System.getProperty("user.dir", ".") + "/LookupTestHosts";
-            System.setProperty("jdk.net.hosts.file", hostsFileName);
-            addMappingToHostsFile("allowedAndFound.com", "127.0.0.1", hostsFileName, false);
-            addMappingToHostsFile("notAllowedButFound.com", "99.99.99.99", hostsFileName, true);
-            // name "notAllowedAndNotFound.com" is not in map
-            // name "allowedButNotfound.com" is not in map
-            try {
-                startServer();
-
-                System.setSecurityManager(new SecurityManager());
-
-                test("http://allowedAndFound.com:" + port + "/foo", false, false);
-
-                test("http://notAllowedButFound.com:" + port + "/foo", true, false);
-
-                test("http://allowedButNotfound.com:" + port + "/foo", false, true);
-
-                test("http://notAllowedAndNotFound.com:" + port + "/foo", true, false);
-            } finally {
-                serverSocket.close();
-            }
-        } else {
-            throw new RuntimeException("Bad invocation: " + cmd);
+        String hostsFileName = CWD + "/LookupTestHosts";
+        System.setProperty("jdk.net.hosts.file", hostsFileName);
+        addMappingToHostsFile("allowedAndFound.com",
+                              "127.0.0.1",
+                              hostsFileName,
+                              false);
+        addMappingToHostsFile("notAllowedButFound.com",
+                              "99.99.99.99",
+                              hostsFileName,
+                              true);
+        // name "notAllowedAndNotFound.com" is not in map
+        // name "allowedButNotfound.com" is not in map
+        Server server = new Server();
+        try {
+            Policy.setPolicy(new LookupTestPolicy());
+            System.setSecurityManager(new SecurityManager());
+            server.start();
+            test("http://allowedAndFound.com:"       + port + "/foo", false, false);
+            test("http://notAllowedButFound.com:"    + port + "/foo", true, false);
+            test("http://allowedButNotfound.com:"    + port + "/foo", false, true);
+            test("http://notAllowedAndNotFound.com:" + port + "/foo", true, false);
+        } finally {
+            server.terminate();
         }
     }
-
-    static Thread server;
 
     static class Server extends Thread {
+        private volatile boolean done;
+
+        public Server() throws IOException {
+            serverSocket = new ServerSocket(0);
+            port = serverSocket.getLocalPort();
+        }
+
         public void run() {
-            byte[] buf = new byte[1000];
             try {
-                while (true) {
-                    Socket s = serverSocket.accept();
-                    InputStream i = s.getInputStream();
-                    i.read(buf);
-                    OutputStream o = s.getOutputStream();
-                    String rsp = "HTTP/1.1 200 Ok\r\n" +
-                        "Connection: close\r\nContent-length: 0\r\n\r\n";
-                    o.write(rsp.getBytes());
-                    o.close();
+                while (!done) {
+                    try (Socket s = serverSocket.accept()) {
+                        readOneRequest(s.getInputStream());
+                        OutputStream o = s.getOutputStream();
+                        String rsp = "HTTP/1.1 200 Ok\r\n" +
+                                     "Connection: close\r\n" +
+                                     "Content-length: 0\r\n\r\n";
+                        o.write(rsp.getBytes(US_ASCII));
+                    }
                 }
             } catch (IOException e) {
-                return;
+                if (!done)
+                    e.printStackTrace();
             }
-            }
-    }
+        }
 
-    static void startServer() {
-        try {
-            serverSocket = new ServerSocket(port);
-            server = new Server();
-            server.start();
-        } catch (Exception e) {
-            throw new RuntimeException ("Test failed to initialize", e);
+        void terminate() {
+            done = true;
+            try { serverSocket.close(); }
+            catch (IOException unexpected) { unexpected.printStackTrace(); }
+        }
+
+        static final byte[] requestEnd = new byte[] {'\r', '\n', '\r', '\n' };
+
+        // Read until the end of a HTTP request
+        void readOneRequest(InputStream is) throws IOException {
+            int requestEndCount = 0, r;
+            while ((r = is.read()) != -1) {
+                if (r == requestEnd[requestEndCount]) {
+                    requestEndCount++;
+                    if (requestEndCount == 4) {
+                        break;
+                    }
+                } else {
+                    requestEndCount = 0;
+                }
+            }
         }
     }
 
-    private static void addMappingToHostsFile (String host,
-                                               String addr,
-                                               String hostsFileName,
-                                               boolean append)
-                                             throws Exception {
+    private static void addMappingToHostsFile(String host,
+                                              String addr,
+                                              String hostsFileName,
+                                              boolean append)
+        throws IOException
+    {
         String mapping = addr + " " + host;
-        try (PrintWriter hfPWriter = new PrintWriter(new BufferedWriter(
-                new FileWriter(hostsFileName, append)))) {
+        try (FileWriter fr = new FileWriter(hostsFileName, append);
+             PrintWriter hfPWriter = new PrintWriter(new BufferedWriter(fr))) {
             hfPWriter.println(mapping);
-}
+        }
     }
 
+    static class LookupTestPolicy extends Policy {
+        final PermissionCollection perms = new Permissions();
+
+        LookupTestPolicy() throws Exception {
+            perms.add(new NetPermission("setProxySelector"));
+            perms.add(new SocketPermission("localhost:1024-", "resolve,accept"));
+            perms.add(new URLPermission("http://allowedAndFound.com:" + port + "/-", "*:*"));
+            perms.add(new URLPermission("http://allowedButNotfound.com:" + port + "/-", "*:*"));
+            perms.add(new FilePermission("<<ALL FILES>>", "read,write,delete"));
+            //perms.add(new PropertyPermission("java.io.tmpdir", "read"));
+        }
+
+        public PermissionCollection getPermissions(ProtectionDomain domain) {
+            return perms;
+        }
+
+        public PermissionCollection getPermissions(CodeSource codesource) {
+            return perms;
+        }
+
+        public boolean implies(ProtectionDomain domain, Permission perm) {
+            return perms.implies(perm);
+        }
+    }
 }

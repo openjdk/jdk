@@ -65,6 +65,16 @@ import sun.awt.image.SunWritableRaster;
  * <PRE>
  * java -splash:filename.gif Test
  * </PRE>
+ * HiDPI scaled image is also supported.
+ * Unscaled image name i.e. filename.gif should be passed in
+ * {@code manifest.mf}/{@code -splash:} option for all image types irrespective of
+ * HiDPI and Non-HiDPI.
+ * Following is the naming convention for scaled images.
+ * Screen scale 1.25: filename@125pct.gif
+ * Screen scale 1.50: filename@150pct.gif
+ * Screen scale 2:    filename@200pct.gif and filename@2x.gif both are supported
+ * Screen scale 2.50: filename@250pct.gif
+ * Screen scale 3:    filename@300pct.gif and filename@3x.gif both are supported
  * The command line interface has higher precedence over the manifest
  * setting.
  * <p>

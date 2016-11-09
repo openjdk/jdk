@@ -98,26 +98,27 @@ class GlyphPainter1 extends GlyphView.GlyphPainter {
         Rectangle alloc = (a instanceof Rectangle) ? (Rectangle)a : a.getBounds();
 
         // determine the x coordinate to render the glyphs
-        int x = alloc.x;
+        float x = alloc.x;
         int p = v.getStartOffset();
         int[] justificationData = getJustificationData(v);
         if (p != p0) {
             text = v.getText(p, p0);
-            int width = Utilities.getTabbedTextWidth(v, text, metrics, x, expander, p,
-                                                     justificationData);
+            float width = Utilities.getTabbedTextWidth(v, text, metrics, x,
+                                                       expander, p,
+                                                       justificationData);
             x += width;
             SegmentCache.releaseSharedSegment(text);
         }
 
         // determine the y coordinate to render the glyphs
-        int y = alloc.y + metrics.getHeight() - metrics.getDescent();
+        float y = alloc.y + metrics.getHeight() - metrics.getDescent();
 
         // render the glyphs
         text = v.getText(p0, p1);
         g.setFont(metrics.getFont());
 
         Utilities.drawTabbedText(v, text, x, y, g, expander,p0,
-                                 justificationData);
+                                 justificationData, true);
         SegmentCache.releaseSharedSegment(text);
     }
 
@@ -210,9 +211,9 @@ class GlyphPainter1 extends GlyphView.GlyphPainter {
         TabExpander expander = v.getTabExpander();
         Segment s = v.getText(p0, v.getEndOffset());
         int[] justificationData = getJustificationData(v);
-        int index = Utilities.getTabbedTextOffset(v, s, metrics, (int)x, (int)(x+len),
+        int index = Utilities.getTabbedTextOffset(v, s, metrics, x, (x+len),
                                                   expander, p0, false,
-                                                  justificationData);
+                                                  justificationData, true);
         SegmentCache.releaseSharedSegment(s);
         int p1 = p0 + index;
         return p1;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public class BreakIteratorProviderTest extends ProviderTest {
             String[] jresResult = new String[4];
             if (jreSupportsLocale) {
                 for (int i = 0; i < 4; i++) {
-                    jresResult[i] = "sun.util.locale.provider."+classNames[i];
+                    jresResult[i] = "sun.text." + classNames[i];
                 }
             }
 

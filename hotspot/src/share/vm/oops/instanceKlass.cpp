@@ -674,20 +674,20 @@ void InstanceKlass::link_methods(TRAPS) {
 
 // Eagerly initialize superinterfaces that declare default methods (concrete instance: any access)
 void InstanceKlass::initialize_super_interfaces(instanceKlassHandle this_k, TRAPS) {
-  assert (this_k->has_default_methods(), "caller should have checked this");
+  assert (this_k->has_nonstatic_concrete_methods(), "caller should have checked this");
   for (int i = 0; i < this_k->local_interfaces()->length(); ++i) {
     Klass* iface = this_k->local_interfaces()->at(i);
     InstanceKlass* ik = InstanceKlass::cast(iface);
 
     // Initialization is depth first search ie. we start with top of the inheritance tree
-    // has_default_methods drives searching superinterfaces since it
-    // means has_default_methods in its superinterface hierarchy
-    if (ik->has_default_methods()) {
+    // has_nonstatic_concrete_methods drives searching superinterfaces since it
+    // means has_nonstatic_concrete_methods in its superinterface hierarchy
+    if (ik->has_nonstatic_concrete_methods()) {
       ik->initialize_super_interfaces(ik, CHECK);
     }
 
     // Only initialize() interfaces that "declare" concrete methods.
-    if (ik->should_be_initialized() && ik->declares_default_methods()) {
+    if (ik->should_be_initialized() && ik->declares_nonstatic_concrete_methods()) {
       ik->initialize(CHECK);
     }
   }
@@ -761,11 +761,11 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
     if (super_klass != NULL && super_klass->should_be_initialized()) {
       super_klass->initialize(THREAD);
     }
-    // If C implements any interfaces that declares a non-abstract, non-static method,
+    // If C implements any interface that declares a non-static, concrete method,
     // the initialization of C triggers initialization of its super interfaces.
-    // Only need to recurse if has_default_methods which includes declaring and
-    // inheriting default methods
-    if (!HAS_PENDING_EXCEPTION && this_k->has_default_methods()) {
+    // Only need to recurse if has_nonstatic_concrete_methods which includes declaring and
+    // having a superinterface that declares, non-static, concrete methods
+    if (!HAS_PENDING_EXCEPTION && this_k->has_nonstatic_concrete_methods()) {
       this_k->initialize_super_interfaces(this_k, THREAD);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class Timestamp extends java.util.Date {
      * @deprecated instead use the constructor {@code Timestamp(long millis)}
      * @exception IllegalArgumentException if the nano argument is out of bounds
      */
-    @Deprecated
+    @Deprecated(since="1.2")
     public Timestamp(int year, int month, int date,
                      int hour, int minute, int second, int nano) {
         super(year, month, date, hour, minute, second);

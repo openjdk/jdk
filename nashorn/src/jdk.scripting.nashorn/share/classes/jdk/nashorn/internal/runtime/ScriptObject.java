@@ -67,7 +67,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.LongAdder;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.NamedOperation;
-import jdk.dynalink.StandardOperation;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
@@ -1858,23 +1857,16 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @return GuardedInvocation for the callsite
      */
     public GuardedInvocation lookup(final CallSiteDescriptor desc, final LinkRequest request) {
-        // NOTE: we support GET_ELEMENT and SET_ELEMENT as JavaScript doesn't distinguish items from properties. Nashorn itself
-        // emits "GET_PROPERTY|GET_ELEMENT|GET_METHOD:identifier" for "<expr>.<identifier>" and "GET_ELEMENT|GET_PROPERTY|GET_METHOD" for "<expr>[<expr>]", but we are
+        // NOTE: we support GET:ELEMENT and SET:ELEMENT as JavaScript doesn't distinguish items from properties. Nashorn itself
+        // emits "GET:PROPERTY|ELEMENT|METHOD:identifier" for "<expr>.<identifier>" and "GET:ELEMENT|PROPERTY|METHOD" for "<expr>[<expr>]", but we are
         // more flexible here and dispatch not on operation name (getProp vs. getElem), but rather on whether the
         // operation has an associated name or not.
-        final StandardOperation op = NashornCallSiteDescriptor.getFirstStandardOperation(desc);
-        if (op == null) {
-            return null;
-        }
-        switch (op) {
-        case GET_PROPERTY:
-        case GET_ELEMENT:
-        case GET_METHOD:
+        switch (NashornCallSiteDescriptor.getStandardOperation(desc)) {
+        case GET:
             return desc.getOperation() instanceof NamedOperation
-                    ? findGetMethod(desc, request, op)
+                    ? findGetMethod(desc, request)
                     : findGetIndexMethod(desc, request);
-        case SET_PROPERTY:
-        case SET_ELEMENT:
+        case SET:
             return desc.getOperation() instanceof NamedOperation
                     ? findSetMethod(desc, request)
                     : findSetIndexMethod(desc, request);
@@ -1883,8 +1875,8 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         case NEW:
             return findNewMethod(desc, request);
         default:
+            return null;
         }
-        return null;
     }
 
     /**
@@ -1952,11 +1944,10 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      *
      * @param desc     the call site descriptor
      * @param request  the link request
-     * @param operation operation for get: getProp, getMethod, getElem etc
      *
      * @return GuardedInvocation to be invoked at call site.
      */
-    protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final StandardOperation operation) {
+    protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         final boolean explicitInstanceOfCheck = explicitInstanceOfCheck(desc, request);
 
         String name = NashornCallSiteDescriptor.getOperand(desc);
@@ -1967,21 +1958,17 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         }
 
         if (request.isCallSiteUnstable() || hasWithScope()) {
-            return findMegaMorphicGetMethod(desc, name, operation == StandardOperation.GET_METHOD);
+            return findMegaMorphicGetMethod(desc, name, NashornCallSiteDescriptor.isMethodFirstOperation(desc));
         }
 
         final FindProperty find = findProperty(name, true, NashornCallSiteDescriptor.isScope(desc), this);
         MethodHandle mh;
 
         if (find == null) {
-            switch (operation) {
-            case GET_ELEMENT: // getElem only gets here if element name is constant, so treat it like a property access
-            case GET_PROPERTY:
+            if (!NashornCallSiteDescriptor.isMethodFirstOperation(desc)) {
                 return noSuchProperty(desc, request);
-            case GET_METHOD:
+            } else {
                 return noSuchMethod(desc, request);
-            default:
-                throw new AssertionError(operation); // never invoked with any other operation
             }
         }
 

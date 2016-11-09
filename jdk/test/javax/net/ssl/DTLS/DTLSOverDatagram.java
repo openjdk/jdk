@@ -48,10 +48,6 @@ import sun.security.util.HexDumpEncoder;
  */
 public class DTLSOverDatagram {
 
-    static {
-        System.setProperty("javax.net.debug", "ssl");
-    }
-
     private static int MAX_HANDSHAKE_LOOPS = 200;
     private static int MAX_APP_READ_LOOPS = 60;
     private static int SOCKET_TIMEOUT = 10 * 1000; // in millis
@@ -160,6 +156,7 @@ public class DTLSOverDatagram {
             }
 
             SSLEngineResult.HandshakeStatus hs = engine.getHandshakeStatus();
+            log(side, "=======handshake(" + loops + ", " + hs + ")=======");
             if (hs == SSLEngineResult.HandshakeStatus.NEED_UNWRAP ||
                 hs == SSLEngineResult.HandshakeStatus.NEED_UNWRAP_AGAIN) {
 
@@ -179,7 +176,10 @@ public class DTLSOverDatagram {
                         boolean finished = onReceiveTimeout(
                                 engine, peerAddr, side, packets);
 
+                        log(side, "Reproduced " + packets.size() + " packets");
                         for (DatagramPacket p : packets) {
+                            printHex("Reproduced packet",
+                                p.getData(), p.getOffset(), p.getLength());
                             socket.send(p);
                         }
 
@@ -239,6 +239,7 @@ public class DTLSOverDatagram {
                 boolean finished = produceHandshakePackets(
                     engine, peerAddr, side, packets);
 
+                log(side, "Produced " + packets.size() + " packets");
                 for (DatagramPacket p : packets) {
                     socket.send(p);
                 }
@@ -252,14 +253,16 @@ public class DTLSOverDatagram {
             } else if (hs == SSLEngineResult.HandshakeStatus.NEED_TASK) {
                 runDelegatedTasks(engine);
             } else if (hs == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
-                log(side, "Handshake status is NOT_HANDSHAKING, finish the loop");
+                log(side,
+                    "Handshake status is NOT_HANDSHAKING, finish the loop");
                 endLoops = true;
             } else if (hs == SSLEngineResult.HandshakeStatus.FINISHED) {
                 throw new Exception(
                         "Unexpected status, SSLEngine.getHandshakeStatus() "
                                 + "shouldn't return FINISHED");
             } else {
-                throw new Exception("Can't reach here, handshake status is " + hs);
+                throw new Exception(
+                        "Can't reach here, handshake status is " + hs);
             }
         }
 
@@ -279,7 +282,9 @@ public class DTLSOverDatagram {
         log(side, "Negotiated cipher suite is " + session.getCipherSuite());
 
         // handshake status should be NOT_HANDSHAKING
-        // according to the spec, SSLEngine.getHandshakeStatus() can't return FINISHED
+        //
+        // According to the spec, SSLEngine.getHandshakeStatus() can't
+        // return FINISHED.
         if (hs != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
             throw new Exception("Unexpected handshake status " + hs);
         }
@@ -332,7 +337,7 @@ public class DTLSOverDatagram {
             String side, List<DatagramPacket> packets) throws Exception {
 
         boolean endLoops = false;
-        int loops = MAX_HANDSHAKE_LOOPS;
+        int loops = MAX_HANDSHAKE_LOOPS / 2;
         while (!endLoops &&
                 (serverException == null) && (clientException == null)) {
 
@@ -348,13 +353,17 @@ public class DTLSOverDatagram {
 
             SSLEngineResult.Status rs = r.getStatus();
             SSLEngineResult.HandshakeStatus hs = r.getHandshakeStatus();
+            log(side, "----produce handshake packet(" +
+                    loops + ", " + rs + ", " + hs + ")----");
             if (rs == SSLEngineResult.Status.BUFFER_OVERFLOW) {
                 // the client maximum fragment size config does not work?
                 throw new Exception("Buffer overflow: " +
                             "incorrect server maximum fragment size");
             } else if (rs == SSLEngineResult.Status.BUFFER_UNDERFLOW) {
-                log(side, "Produce handshake packets: BUFFER_UNDERFLOW occured");
-                log(side, "Produce handshake packets: Handshake status: " + hs);
+                log(side,
+                        "Produce handshake packets: BUFFER_UNDERFLOW occured");
+                log(side,
+                        "Produce handshake packets: Handshake status: " + hs);
                 // bad packet, or the client maximum fragment size
                 // config does not work?
                 if (hs != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
@@ -451,6 +460,53 @@ public class DTLSOverDatagram {
         }
 
         return packets;
+    }
+
+    // Get a datagram packet for the specified handshake type.
+    static DatagramPacket getPacket(
+            List<DatagramPacket> packets, byte handshakeType) {
+        boolean matched = false;
+        for (DatagramPacket packet : packets) {
+            byte[] data = packet.getData();
+            int offset = packet.getOffset();
+            int length = packet.getLength();
+
+            // Normally, this pakcet should be a handshake message
+            // record.  However, even if the underlying platform
+            // splits the record more, we don't really worry about
+            // the improper packet loss because DTLS implementation
+            // should be able to handle packet loss properly.
+            //
+            // See RFC 6347 for the detailed format of DTLS records.
+            if (handshakeType == -1) {      // ChangeCipherSpec
+                // Is it a ChangeCipherSpec message?
+                matched = (length == 14) && (data[offset] == 0x14);
+            } else if ((length >= 25) &&    // 25: handshake mini size
+                (data[offset] == 0x16)) {   // a handshake message
+
+                // check epoch number for initial handshake only
+                if (data[offset + 3] == 0x00) {     // 3,4: epoch
+                    if (data[offset + 4] == 0x00) { // plaintext
+                        matched =
+                            (data[offset + 13] == handshakeType);
+                    } else {                        // cipherext
+                        // The 1st ciphertext is a Finished message.
+                        //
+                        // If it is not proposed to loss the Finished
+                        // message, it is not necessary to check the
+                        // following packets any mroe as a Finished
+                        // message is the last handshake message.
+                        matched = (handshakeType == 20);
+                    }
+                }
+            }
+
+            if (matched) {
+                return packet;
+            }
+        }
+
+        return null;
     }
 
     // run delegated tasks

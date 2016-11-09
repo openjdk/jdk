@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -35,6 +35,7 @@
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -193,8 +194,8 @@ public class ToolSimpleTest extends ReplToolTesting {
                         "|  '/save' requires a filename argument."),
                 (a) -> assertCommand(a, "/open",
                         "|  '/open' requires a filename argument."),
-                (a) -> assertCommand(a, "/set start",
-                        "|  Specify either one option or a startup file name -- /set start")
+                (a) -> assertCommandOutputStartsWith(a, "/drop",
+                        "|  In the /drop argument, please specify an import, variable, method, or class to drop.")
         );
     }
 
@@ -465,14 +466,14 @@ public class ToolSimpleTest extends ReplToolTesting {
     }
 
     public void testOptionQ() {
-        test(new String[]{"-q", "--no-startup"},
+        test(Locale.ROOT, false, new String[]{"-q", "--no-startup"}, "",
                 (a) -> assertCommand(a, "1+1", "$1 ==> 2"),
                 (a) -> assertCommand(a, "int x = 5", "")
         );
     }
 
     public void testOptionS() {
-        test(new String[]{"-s", "--no-startup"},
+        test(Locale.ROOT, false, new String[]{"-s", "--no-startup"}, "",
                 (a) -> assertCommand(a, "1+1", "")
         );
     }
@@ -486,7 +487,7 @@ public class ToolSimpleTest extends ReplToolTesting {
     }
 
     public void testOptionFeedback() {
-        test(new String[]{"--feedback", "concise", "--no-startup"},
+        test(Locale.ROOT, false, new String[]{"--feedback", "concise", "--no-startup"}, "",
                 (a) -> assertCommand(a, "1+1", "$1 ==> 2"),
                 (a) -> assertCommand(a, "int x = 5", "")
         );
@@ -498,17 +499,17 @@ public class ToolSimpleTest extends ReplToolTesting {
                             .filter(l -> !l.isEmpty())
                             .count(), "Expected no lines: " + s);
                 };
-        test(new String[]{"-nq"},
+        test(Locale.ROOT, false, new String[]{"-nq"}, "",
                 (a) -> assertCommandCheckOutput(a, "/list -all", confirmNoStartup),
                 (a) -> assertCommand(a, "1+1", "$1 ==> 2"),
                 (a) -> assertCommand(a, "int x = 5", "")
         );
-        test(new String[]{"-qn"},
+        test(Locale.ROOT, false, new String[]{"-qn"}, "",
                 (a) -> assertCommandCheckOutput(a, "/list -all", confirmNoStartup),
                 (a) -> assertCommand(a, "1+1", "$1 ==> 2"),
                 (a) -> assertCommand(a, "int x = 5", "")
         );
-        test(new String[]{"-ns"},
+        test(Locale.ROOT, false, new String[]{"-ns"}, "",
                 (a) -> assertCommandCheckOutput(a, "/list -all", confirmNoStartup),
                 (a) -> assertCommand(a, "1+1", "")
         );

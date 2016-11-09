@@ -1667,6 +1667,11 @@ typedef XRROutputInfo * (*XRRGetOutputInfoType)(Display *dpy,
 
 typedef void (*XRRFreeOutputInfoType)(XRROutputInfo *outputInfo);
 
+typedef XRRCrtcInfo* (*XRRGetCrtcInfoType)(Display *dpy,
+                                    XRRScreenResources *resources, RRCrtc crtc);
+
+typedef void (*XRRFreeCrtcInfoType)(XRRCrtcInfo *crtcInfo);
+
 static XRRQueryVersionType               awt_XRRQueryVersion;
 static XRRGetScreenInfoType              awt_XRRGetScreenInfo;
 static XRRFreeScreenConfigInfoType       awt_XRRFreeScreenConfigInfo;
@@ -1680,6 +1685,8 @@ static XRRGetScreenResourcesType         awt_XRRGetScreenResources;
 static XRRFreeScreenResourcesType        awt_XRRFreeScreenResources;
 static XRRGetOutputInfoType              awt_XRRGetOutputInfo;
 static XRRFreeOutputInfoType             awt_XRRFreeOutputInfo;
+static XRRGetCrtcInfoType                awt_XRRGetCrtcInfo;
+static XRRFreeCrtcInfoType               awt_XRRFreeCrtcInfo;
 
 #define LOAD_XRANDR_FUNC(f) \
     do { \
@@ -1755,6 +1762,8 @@ X11GD_InitXrandrFuncs(JNIEnv *env)
     LOAD_XRANDR_FUNC(XRRFreeScreenResources);
     LOAD_XRANDR_FUNC(XRRGetOutputInfo);
     LOAD_XRANDR_FUNC(XRRFreeOutputInfo);
+    LOAD_XRANDR_FUNC(XRRGetCrtcInfo);
+    LOAD_XRANDR_FUNC(XRRFreeCrtcInfo);
 
     return JNI_TRUE;
 }
@@ -1895,7 +1904,49 @@ Java_sun_awt_X11GraphicsDevice_getCurrentDisplayMode
 
     AWT_LOCK();
 
-    if (screen < ScreenCount(awt_display)) {
+    if (usingXinerama && XScreenCount(awt_display) > 0) {
+        XRRScreenResources *res = awt_XRRGetScreenResources(awt_display,
+                                                    RootWindow(awt_display, 0));
+        if (res) {
+            if (res->noutput > screen) {
+                XRROutputInfo *output_info = awt_XRRGetOutputInfo(awt_display,
+                                                     res, res->outputs[screen]);
+                if (output_info) {
+                    if (output_info->crtc) {
+                        XRRCrtcInfo *crtc_info =
+                                    awt_XRRGetCrtcInfo (awt_display, res,
+                                                        output_info->crtc);
+                        if (crtc_info) {
+                            if (crtc_info->mode) {
+                                int i;
+                                for (i = 0; i < res->nmode; i++) {
+                                    XRRModeInfo *mode = &res->modes[i];
+                                    if (mode->id == crtc_info->mode) {
+                                        float rate = 0;
+                                        if (mode->hTotal && mode->vTotal) {
+                                             rate = ((float)mode->dotClock /
+                                                    ((float)mode->hTotal *
+                                                    (float)mode->vTotal));
+                                        }
+                                        displayMode = X11GD_CreateDisplayMode(
+                                                           env,
+                                                           mode->width,
+                                                           mode->height,
+                                                           BIT_DEPTH_MULTI,
+                                                           (int)(rate +.2));
+                                        break;
+                                    }
+                                }
+                            }
+                            awt_XRRFreeCrtcInfo(crtc_info);
+                        }
+                    }
+                    awt_XRRFreeOutputInfo(output_info);
+                }
+            }
+            awt_XRRFreeScreenResources(res);
+        }
+    } else {
 
         config = awt_XRRGetScreenInfo(awt_display,
                                       RootWindow(awt_display, screen));
@@ -1954,7 +2005,7 @@ Java_sun_awt_X11GraphicsDevice_enumDisplayModes
                                                      res, res->outputs[screen]);
                 if (output_info) {
                     int i;
-                    for (i = 0; i < res->nmode; i++) {
+                    for (i = 0; i < output_info->nmode; i++) {
                         RRMode m = output_info->modes[i];
                         int j;
                         XRRModeInfo *mode;

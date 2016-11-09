@@ -640,8 +640,6 @@ JVM_ENTRY(jobject, JVM_GetJVMCIRuntime(JNIEnv *env, jclass c))
 JVM_END
 
 Handle JVMCIRuntime::callStatic(const char* className, const char* methodName, const char* signature, JavaCallArguments* args, TRAPS) {
-  guarantee(!_HotSpotJVMCIRuntime_initialized, "cannot reinitialize HotSpotJVMCIRuntime");
-
   TempNewSymbol name = SymbolTable::new_symbol(className, CHECK_(Handle()));
   KlassHandle klass = SystemDictionary::resolve_or_fail(name, true, CHECK_(Handle()));
   TempNewSymbol runtime = SymbolTable::new_symbol(methodName, CHECK_(Handle()));
@@ -656,42 +654,37 @@ Handle JVMCIRuntime::callStatic(const char* className, const char* methodName, c
 }
 
 void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(TRAPS) {
-  if (JNIHandles::resolve(_HotSpotJVMCIRuntime_instance) == NULL) {
-    ResourceMark rm;
-#ifdef ASSERT
-    // This should only be called in the context of the JVMCI class being initialized
-    TempNewSymbol name = SymbolTable::new_symbol("jdk/vm/ci/runtime/JVMCI", CHECK);
-    Klass* k = SystemDictionary::resolve_or_null(name, CHECK);
-    instanceKlassHandle klass = InstanceKlass::cast(k);
-    assert(klass->is_being_initialized() && klass->is_reentrant_initialization(THREAD),
-           "HotSpotJVMCIRuntime initialization should only be triggered through JVMCI initialization");
-#endif
+  guarantee(!_HotSpotJVMCIRuntime_initialized, "cannot reinitialize HotSpotJVMCIRuntime");
+  JVMCIRuntime::initialize_well_known_classes(CHECK);
+  // This should only be called in the context of the JVMCI class being initialized
+  instanceKlassHandle klass = InstanceKlass::cast(SystemDictionary::JVMCI_klass());
+  guarantee(klass->is_being_initialized() && klass->is_reentrant_initialization(THREAD),
+         "HotSpotJVMCIRuntime initialization should only be triggered through JVMCI initialization");
 
-    Handle result = callStatic("jdk/vm/ci/hotspot/HotSpotJVMCIRuntime",
-                               "runtime",
-                               "()Ljdk/vm/ci/hotspot/HotSpotJVMCIRuntime;", NULL, CHECK);
-    objArrayOop trivial_prefixes = HotSpotJVMCIRuntime::trivialPrefixes(result);
-    if (trivial_prefixes != NULL) {
-      char** prefixes = NEW_C_HEAP_ARRAY(char*, trivial_prefixes->length(), mtCompiler);
-      for (int i = 0; i < trivial_prefixes->length(); i++) {
-        oop str = trivial_prefixes->obj_at(i);
-        if (str == NULL) {
-          THROW(vmSymbols::java_lang_NullPointerException());
-        } else {
-          prefixes[i] = strdup(java_lang_String::as_utf8_string(str));
-        }
+  Handle result = callStatic("jdk/vm/ci/hotspot/HotSpotJVMCIRuntime",
+                             "runtime",
+                             "()Ljdk/vm/ci/hotspot/HotSpotJVMCIRuntime;", NULL, CHECK);
+  objArrayOop trivial_prefixes = HotSpotJVMCIRuntime::trivialPrefixes(result);
+  if (trivial_prefixes != NULL) {
+    char** prefixes = NEW_C_HEAP_ARRAY(char*, trivial_prefixes->length(), mtCompiler);
+    for (int i = 0; i < trivial_prefixes->length(); i++) {
+      oop str = trivial_prefixes->obj_at(i);
+      if (str == NULL) {
+        THROW(vmSymbols::java_lang_NullPointerException());
+      } else {
+        prefixes[i] = strdup(java_lang_String::as_utf8_string(str));
       }
-      _trivial_prefixes = prefixes;
-      _trivial_prefixes_count = trivial_prefixes->length();
     }
-    int adjustment = HotSpotJVMCIRuntime::compilationLevelAdjustment(result);
-    assert(adjustment >= JVMCIRuntime::none &&
-           adjustment <= JVMCIRuntime::by_full_signature,
-           "compilation level adjustment out of bounds");
-    _comp_level_adjustment = (CompLevelAdjustment) adjustment;
-    _HotSpotJVMCIRuntime_initialized = true;
-    _HotSpotJVMCIRuntime_instance = JNIHandles::make_global(result());
+    _trivial_prefixes = prefixes;
+    _trivial_prefixes_count = trivial_prefixes->length();
   }
+  int adjustment = HotSpotJVMCIRuntime::compilationLevelAdjustment(result);
+  assert(adjustment >= JVMCIRuntime::none &&
+         adjustment <= JVMCIRuntime::by_full_signature,
+         "compilation level adjustment out of bounds");
+  _comp_level_adjustment = (CompLevelAdjustment) adjustment;
+  _HotSpotJVMCIRuntime_initialized = true;
+  _HotSpotJVMCIRuntime_instance = JNIHandles::make_global(result());
 }
 
 void JVMCIRuntime::initialize_JVMCI(TRAPS) {

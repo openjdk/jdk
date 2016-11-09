@@ -52,8 +52,6 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 
-import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.main.OptionHelper;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
@@ -85,7 +83,10 @@ public abstract class BaseFileManager implements JavaFileManager {
         log = Log.instance(context);
         options = Options.instance(context);
         classLoaderClass = options.get("procloader");
-        locations.update(log, Lint.instance(context), FSInfo.instance(context));
+
+        // Avoid initializing Lint
+        boolean warn = options.isLintSet("path");
+        locations.update(log, warn, FSInfo.instance(context));
 
         // Setting this option is an indication that close() should defer actually closing
         // the file manager until after a specified period of inactivity.
@@ -170,14 +171,6 @@ public abstract class BaseFileManager implements JavaFileManager {
 
     private long lastUsedTime = System.currentTimeMillis();
     protected long deferredCloseTimeout = 0;
-
-    protected Source getSource() {
-        String sourceName = options.get(Option.SOURCE);
-        Source source = null;
-        if (sourceName != null)
-            source = Source.lookup(sourceName);
-        return (source != null ? source : Source.DEFAULT);
-    }
 
     protected ClassLoader getClassLoader(URL[] urls) {
         ClassLoader thisClassLoader = getClass().getClassLoader();

@@ -21,10 +21,11 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8087112
  * @modules java.httpclient
+ *          java.logging
  *          jdk.httpserver
  * @library /lib/testlibrary/ /
  * @build jdk.testlibrary.SimpleSSLContext EchoHandler
@@ -36,7 +37,9 @@
 
 //package javaapplication16;
 
-import com.sun.net.httpserver.*;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsParameters;
+import com.sun.net.httpserver.HttpsServer;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.http.HttpClient;
@@ -48,9 +51,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Random;
-import java.util.logging.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.concurrent.CompletableFuture;
-import javax.net.ssl.*;
+import javax.net.ssl.SSLContext;
 import jdk.testlibrary.SimpleSSLContext;
 
 public class ManyRequests {

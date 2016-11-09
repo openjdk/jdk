@@ -368,9 +368,6 @@ void ModuleEntryTable::finalize_javabase(Handle module_handle, Symbol* version, 
 
   // Store pointer to the ModuleEntry for java.base in the java.lang.reflect.Module object.
   java_lang_reflect_Module::set_module_entry(module_handle(), jb_module);
-
-  // Patch any previously loaded classes' module field with java.base's java.lang.reflect.Module.
-  patch_javabase_entries(module_handle);
 }
 
 // Within java.lang.Class instances there is a java.lang.reflect.Module field
@@ -378,7 +375,6 @@ void ModuleEntryTable::finalize_javabase(Handle module_handle, Symbol* version, 
 // definition, classes needing their module field set are added to the fixup_module_list.
 // Their module field is set once java.base's java.lang.reflect.Module is known to the VM.
 void ModuleEntryTable::patch_javabase_entries(Handle module_handle) {
-  assert(Module_lock->owned_by_self(), "should have the Module_lock");
   if (module_handle.is_null()) {
     fatal("Unable to patch the module field of classes loaded prior to java.base's definition, invalid java.lang.reflect.Module");
   }

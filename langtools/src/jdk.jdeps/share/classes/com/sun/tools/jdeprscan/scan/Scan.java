@@ -28,6 +28,7 @@ package com.sun.tools.jdeprscan.scan;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
@@ -62,7 +63,7 @@ public class Scan {
     final boolean verbose;
 
     final ClassFinder finder;
-    boolean error = false;
+    boolean errorOccurred = false;
 
     public Scan(PrintStream out,
                 PrintStream err,
@@ -124,71 +125,72 @@ public class Scan {
         }
     }
 
-    void printType(String key, ClassFile cf, String cname, boolean forRemoval)
+    String dep(boolean forRemoval) {
+        return Messages.get(forRemoval ? "scan.dep.removal" : "scan.dep.normal");
+    }
+
+    void printType(String key, ClassFile cf, String cname, boolean r)
             throws ConstantPoolException {
-        String dep = Messages.get(forRemoval ? "scan.dep.removal" : "scan.dep.normal");
-        out.println(Messages.get(key, typeKind(cf), cf.getName(), cname, dep));
+        out.println(Messages.get(key, typeKind(cf), cf.getName(), cname, dep(r)));
     }
 
     void printMethod(String key, ClassFile cf, String cname, String mname, String rtype,
-                     boolean forRemoval) throws ConstantPoolException {
-        String dep = Messages.get(forRemoval ? "scan.dep.removal" : "scan.dep.normal");
-        out.println(Messages.get(key, typeKind(cf), cf.getName(), cname, mname, rtype, dep));
+                     boolean r) throws ConstantPoolException {
+        out.println(Messages.get(key, typeKind(cf), cf.getName(), cname, mname, rtype, dep(r)));
     }
 
     void printField(String key, ClassFile cf, String cname, String fname,
-                     boolean forRemoval) throws ConstantPoolException {
-        String dep = Messages.get(forRemoval ? "scan.dep.removal" : "scan.dep.normal");
-        out.println(Messages.get(key, typeKind(cf), cf.getName(), cname, fname, dep));
+                     boolean r) throws ConstantPoolException {
+        out.println(Messages.get(key, typeKind(cf), cf.getName(), cname, fname, dep(r)));
     }
 
     void printFieldType(String key, ClassFile cf, String cname, String fname, String type,
-                     boolean forRemoval) throws ConstantPoolException {
-        String dep = Messages.get(forRemoval ? "scan.dep.removal" : "scan.dep.normal");
-        out.println(Messages.get(key, typeKind(cf), cf.getName(), cname, fname, type, dep));
+                     boolean r) throws ConstantPoolException {
+        out.println(Messages.get(key, typeKind(cf), cf.getName(), cname, fname, type, dep(r)));
     }
 
-    void printHasField(ClassFile cf, String fname, String type, boolean forRemoval)
+    void printHasField(ClassFile cf, String fname, String type, boolean r)
             throws ConstantPoolException {
-        String dep = Messages.get(forRemoval ? "scan.dep.removal" : "scan.dep.normal");
-        out.println(Messages.get("scan.out.hasfield", typeKind(cf), cf.getName(), fname, type, dep));
+        out.println(Messages.get("scan.out.hasfield", typeKind(cf), cf.getName(), fname, type, dep(r)));
     }
 
-    void printHasMethodParmType(ClassFile cf, String mname, String parmType, boolean forRemoval)
+    void printHasMethodParmType(ClassFile cf, String mname, String parmType, boolean r)
             throws ConstantPoolException {
-        String dep = Messages.get(forRemoval ? "scan.dep.removal" : "scan.dep.normal");
-        out.println(Messages.get("scan.out.methodparmtype", typeKind(cf), cf.getName(), mname, parmType, dep));
+        out.println(Messages.get("scan.out.methodparmtype", typeKind(cf), cf.getName(), mname, parmType, dep(r)));
     }
 
-    void printHasMethodRetType(ClassFile cf, String mname, String retType, boolean forRemoval)
+    void printHasMethodRetType(ClassFile cf, String mname, String retType, boolean r)
             throws ConstantPoolException {
-        String dep = Messages.get(forRemoval ? "scan.dep.removal" : "scan.dep.normal");
-        out.println(Messages.get("scan.out.methodrettype", typeKind(cf), cf.getName(), mname, retType, dep));
+        out.println(Messages.get("scan.out.methodrettype", typeKind(cf), cf.getName(), mname, retType, dep(r)));
     }
 
-    void printHasOverriddenMethod(ClassFile cf, String overridden, String mname, String desc, boolean forRemoval)
+    void printHasOverriddenMethod(ClassFile cf, String overridden, String mname, String desc, boolean r)
             throws ConstantPoolException {
-        String dep = Messages.get(forRemoval ? "scan.dep.removal" : "scan.dep.normal");
         out.println(Messages.get("scan.out.methodoverride", typeKind(cf), cf.getName(), overridden,
-                                 mname, desc, dep));
+                                 mname, desc, dep(r)));
     }
 
-    // format should not have a newline
-    void err(String format, Object... args) {
-        error = true;
-        err.print("error: ");
-        err.printf(format, args);
-        err.println();
-    }
-
-    void printException(Exception ex) {
-        err.print(Messages.get("error.prefix"));
-        err.print(" ");
+    void errorException(Exception ex) {
+        errorOccurred = true;
+        err.println(Messages.get("scan.err.exception", ex.toString()));
         if (verbose) {
             ex.printStackTrace(err);
-        } else {
-            err.print(ex);
         }
+    }
+
+    void errorNoClass(String className) {
+        errorOccurred = true;
+        err.println(Messages.get("scan.err.noclass", className));
+    }
+
+    void errorNoFile(String fileName) {
+        errorOccurred = true;
+        err.println(Messages.get("scan.err.nofile", fileName));
+    }
+
+    void errorNoMethod(String className, String methodName, String desc) {
+        errorOccurred = true;
+        err.println(Messages.get("scan.err.nomethod", className, methodName, desc));
     }
 
     /**
@@ -271,7 +273,7 @@ public class Scan {
         } else {
             startClass = finder.find(startClassName);
             if (startClass == null) {
-                err("can't find class %s", startClassName);
+                errorNoClass(startClassName);
                 return startClassName;
             }
         }
@@ -295,7 +297,7 @@ public class Scan {
             String superName = curClass.getSuperclassName();
             curClass = finder.find(superName);
             if (curClass == null) {
-                err("can't find class %s", superName);
+                errorNoClass(superName);
                 break;
             }
             addInterfaces(intfs, curClass);
@@ -310,7 +312,7 @@ public class Scan {
                 String intf = intfs.removeFirst();
                 curClass = finder.find(intf);
                 if (curClass == null) {
-                    err("can't find interface %s", intf);
+                    errorNoClass(intf);
                     break;
                 }
 
@@ -324,8 +326,7 @@ public class Scan {
 
         if (curClass == null) {
             if (checkStartClass) {
-                err("can't resolve methodref %s %s %s",
-                    startClassName, findName, findDesc);
+                errorNoMethod(startClassName, findName, findDesc);
                 return startClassName;
             } else {
                 // TODO: refactor this
@@ -372,18 +373,18 @@ public class Scan {
     }
 
     /**
-     * Checks types referred to from the constant pool.
+     * Checks Class_info entries in the constant pool.
      *
      * @param cf the ClassFile of this class
      * @param entries constant pool entries collected from this class
      * @throws ConstantPoolException if a constant pool entry cannot be found
      */
-    void checkTypes(ClassFile cf, CPEntries entries) throws ConstantPoolException {
+    void checkClasses(ClassFile cf, CPEntries entries) throws ConstantPoolException {
         for (ConstantPool.CONSTANT_Class_info ci : entries.classes) {
-            String typeName = ci.getName();
-            DeprData dd = db.getTypeDeprecated(flatten(typeName));
+            String className = ci.getName();
+            DeprData dd = db.getTypeDeprecated(flatten(className));
             if (dd != null) {
-                printType("scan.out.usestype", cf, typeName, dd.isForRemoval());
+                printType("scan.out.usesclass", cf, className, dd.isForRemoval());
             }
         }
     }
@@ -394,26 +395,19 @@ public class Scan {
      * @param cf the ClassFile of this class
      * @param nti the NameAndType_info from a MethodRef or InterfaceMethodRef entry
      * @param clname the class name
-     * @param typeKey key for the type message
-     * @param methKey key for the method message
+     * @param msgKey message key for localization
      * @throws ConstantPoolException if a constant pool entry cannot be found
      */
     void checkMethodRef(ClassFile cf,
-                        CONSTANT_NameAndType_info nti,
                         String clname,
-                        String typeKey,
-                        String methKey) throws ConstantPoolException {
-        DeprData dd = db.getTypeDeprecated(flatten(clname));
-        if (dd != null) {
-            printType(typeKey, cf, clname, dd.isForRemoval());
-        }
-
+                        CONSTANT_NameAndType_info nti,
+                        String msgKey) throws ConstantPoolException {
         String name = nti.getName();
         String type = nti.getType();
         clname = resolveMember(cf, flatten(clname), name, type, true, true);
-        dd = db.getMethodDeprecated(clname, name, type);
+        DeprData dd = db.getMethodDeprecated(clname, name, type);
         if (dd != null) {
-            printMethod(methKey, cf, clname, name, type, dd.isForRemoval());
+            printMethod(msgKey, cf, clname, name, type, dd.isForRemoval());
         }
     }
 
@@ -425,25 +419,15 @@ public class Scan {
      */
     void checkFieldRef(ClassFile cf,
                        ConstantPool.CONSTANT_Fieldref_info fri) throws ConstantPoolException {
-        CONSTANT_NameAndType_info nti = fri.getNameAndTypeInfo();
         String clname = fri.getClassName();
+        CONSTANT_NameAndType_info nti = fri.getNameAndTypeInfo();
         String name = nti.getName();
         String type = nti.getType();
-        DeprData dd = db.getTypeDeprecated(clname);
-
-        if (dd != null) {
-            printType("scan.out.usesfieldintype", cf, clname, dd.isForRemoval());
-        }
 
         clname = resolveMember(cf, flatten(clname), name, type, false, true);
-        dd = db.getFieldDeprecated(clname, name);
+        DeprData dd = db.getFieldDeprecated(clname, name);
         if (dd != null) {
             printField("scan.out.usesfield", cf, clname, name, dd.isForRemoval());
-        }
-
-        dd = db.getTypeDeprecated(flatten(type));
-        if (dd != null) {
-            printFieldType("scan.out.usesfieldoftype", cf, clname, name, type, dd.isForRemoval());
         }
     }
 
@@ -515,18 +499,18 @@ public class Scan {
 
         checkSuper(cf);
         checkInterfaces(cf);
-        checkTypes(cf, entries);
+        checkClasses(cf, entries);
 
         for (ConstantPool.CONSTANT_Methodref_info mri : entries.methodRefs) {
-            CONSTANT_NameAndType_info nti = mri.getNameAndTypeInfo();
             String clname = mri.getClassName();
-            checkMethodRef(cf, nti, clname, "scan.out.usesmethodintype", "scan.out.usesmethod");
+            CONSTANT_NameAndType_info nti = mri.getNameAndTypeInfo();
+            checkMethodRef(cf, clname, nti, "scan.out.usesmethod");
         }
 
         for (ConstantPool.CONSTANT_InterfaceMethodref_info imri : entries.intfMethodRefs) {
-            CONSTANT_NameAndType_info nti = imri.getNameAndTypeInfo();
             String clname = imri.getClassName();
-            checkMethodRef(cf, nti, clname, "scan.out.usesintfmethodintype", "scan.out.usesintfmethod");
+            CONSTANT_NameAndType_info nti = imri.getNameAndTypeInfo();
+            checkMethodRef(cf, clname, nti, "scan.out.usesintfmethod");
         }
 
         for (ConstantPool.CONSTANT_Fieldref_info fri : entries.fieldRefs) {
@@ -545,6 +529,7 @@ public class Scan {
      */
     public boolean scanJar(String jarname) {
         try (JarFile jf = new JarFile(jarname)) {
+            out.println(Messages.get("scan.head.jar", jarname));
             finder.addJar(jarname);
             Enumeration<JarEntry> entries = jf.entries();
             while (entries.hasMoreElements()) {
@@ -557,10 +542,12 @@ public class Scan {
                 }
             }
             return true;
+        } catch (NoSuchFileException nsfe) {
+            errorNoFile(jarname);
         } catch (IOException | ConstantPoolException ex) {
-            printException(ex);
-            return false;
+            errorException(ex);
         }
+        return false;
     }
 
     /**
@@ -580,12 +567,15 @@ public class Scan {
                      .filter(path -> !path.toString().endsWith("package-info.class"))
                      .filter(path -> !path.toString().endsWith("module-info.class"))
                      .collect(Collectors.toList());
+
+            out.println(Messages.get("scan.head.dir", dirname));
+
             for (Path p : classes) {
                 processClass(ClassFile.read(p));
             }
             return true;
         } catch (IOException | ConstantPoolException ex) {
-            printException(ex);
+            errorException(ex);
             return false;
         }
     }
@@ -600,15 +590,35 @@ public class Scan {
         try {
             ClassFile cf = finder.find(className);
             if (cf == null) {
-                err("can't find class %s", className);
+                errorNoClass(className);
                 return false;
             } else {
                 processClass(cf);
                 return true;
             }
         } catch (ConstantPoolException ex) {
-            printException(ex);
+            errorException(ex);
             return false;
         }
+    }
+
+    /**
+     * Scans the named class file for uses of deprecated APIs.
+     *
+     * @param fileName the class file to scan
+     * @return true on success, false on failure
+     */
+    public boolean processClassFile(String fileName) {
+        Path path = Paths.get(fileName);
+        try {
+            ClassFile cf = ClassFile.read(path);
+            processClass(cf);
+            return true;
+        } catch (NoSuchFileException nsfe) {
+            errorNoFile(fileName);
+        } catch (IOException | ConstantPoolException ex) {
+            errorException(ex);
+        }
+        return false;
     }
 }

@@ -110,19 +110,19 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         if (security != null) {
             security.checkCreateClassLoader();
         }
-        ucp = new URLClassPath(urls);
+        this.ucp = new URLClassPath(urls);
         this.acc = AccessController.getContext();
     }
 
-    URLClassLoader(URL[] urls, ClassLoader parent,
+    URLClassLoader(String name, URL[] urls, ClassLoader parent,
                    AccessControlContext acc) {
-        super(parent);
+        super(name, parent);
         // this is to make the stack depth consistent with 1.1
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkCreateClassLoader();
         }
-        ucp = new URLClassPath(urls);
+        this.ucp = new URLClassPath(urls);
         this.acc = acc;
     }
 
@@ -154,7 +154,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         if (security != null) {
             security.checkCreateClassLoader();
         }
-        ucp = new URLClassPath(urls);
+        this.ucp = new URLClassPath(urls);
         this.acc = AccessController.getContext();
     }
 
@@ -165,7 +165,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         if (security != null) {
             security.checkCreateClassLoader();
         }
-        ucp = new URLClassPath(urls);
+        this.ucp = new URLClassPath(urls);
         this.acc = acc;
     }
 
@@ -198,8 +198,76 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         if (security != null) {
             security.checkCreateClassLoader();
         }
-        ucp = new URLClassPath(urls, factory);
-        acc = AccessController.getContext();
+        this.ucp = new URLClassPath(urls, factory);
+        this.acc = AccessController.getContext();
+    }
+
+
+    /**
+     * Constructs a new named {@code URLClassLoader} for the specified URLs.
+     * The URLs will be searched in the order specified for classes
+     * and resources after first searching in the specified parent class loader.
+     * Any URL that ends with a '/' is assumed to refer to a directory.
+     * Otherwise, the URL is assumed to refer to a JAR file which will be
+     * downloaded and opened as needed.
+     *
+     * @param  name class loader name; or {@code null} if not named
+     * @param  urls the URLs from which to load classes and resources
+     * @param  parent the parent class loader for delegation
+     *
+     * @throws IllegalArgumentException if the given name is empty.
+     * @throws NullPointerException if {@code urls} is {@code null}.
+     *
+     * @throws SecurityException if a security manager exists and its
+     *         {@link SecurityManager#checkCreateClassLoader()} method doesn't
+     *         allow creation of a class loader.
+     *
+     * @since 9
+     */
+    public URLClassLoader(String name,
+                          URL[] urls,
+                          ClassLoader parent) {
+        super(name, parent);
+        // this is to make the stack depth consistent with 1.1
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            security.checkCreateClassLoader();
+        }
+        this.ucp = new URLClassPath(urls);
+        this.acc = AccessController.getContext();
+    }
+
+    /**
+     * Constructs a new named {@code URLClassLoader} for the specified URLs,
+     * parent class loader, and URLStreamHandlerFactory.
+     * The parent argument will be used as the parent class loader for delegation.
+     * The factory argument will be used as the stream handler factory to
+     * obtain protocol handlers when creating new jar URLs.
+     *
+     * @param  name class loader name; or {@code null} if not named
+     * @param  urls the URLs from which to load classes and resources
+     * @param  parent the parent class loader for delegation
+     * @param  factory the URLStreamHandlerFactory to use when creating URLs
+     *
+     * @throws IllegalArgumentException if the given name is empty.
+     * @throws NullPointerException if {@code urls} is {@code null}.
+     *
+     * @throws SecurityException if a security manager exists and its
+     *         {@code checkCreateClassLoader} method doesn't allow
+     *         creation of a class loader.
+     *
+     * @since 9
+     */
+    public URLClassLoader(String name, URL[] urls, ClassLoader parent,
+                          URLStreamHandlerFactory factory) {
+        super(name, parent);
+        // this is to make the stack depth consistent with 1.1
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            security.checkCreateClassLoader();
+        }
+        this.ucp = new URLClassPath(urls, factory);
+        this.acc = AccessController.getContext();
     }
 
     /* A map (used as a set) to keep track of closeable local resources
@@ -735,7 +803,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         URLClassLoader ucl = AccessController.doPrivileged(
             new PrivilegedAction<>() {
                 public URLClassLoader run() {
-                    return new FactoryURLClassLoader(urls, parent, acc);
+                    return new FactoryURLClassLoader(null, urls, parent, acc);
                 }
             });
         return ucl;
@@ -785,9 +853,9 @@ final class FactoryURLClassLoader extends URLClassLoader {
         ClassLoader.registerAsParallelCapable();
     }
 
-    FactoryURLClassLoader(URL[] urls, ClassLoader parent,
+    FactoryURLClassLoader(String name, URL[] urls, ClassLoader parent,
                           AccessControlContext acc) {
-        super(urls, parent, acc);
+        super(name, urls, parent, acc);
     }
 
     FactoryURLClassLoader(URL[] urls, AccessControlContext acc) {
