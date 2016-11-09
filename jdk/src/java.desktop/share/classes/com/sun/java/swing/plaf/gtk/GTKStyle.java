@@ -1131,16 +1131,12 @@ class GTKStyle extends SynthStyle implements GTKConstants {
                                            getContextClassLoader());
 
                 if (methodName == null) {
-                    return c.newInstance();
+                    return c.getDeclaredConstructor().newInstance();
                 }
                 Method m = c.getMethod(methodName, (Class<?>[])null);
 
                 return m.invoke(c, (Object[])null);
-            } catch (ClassNotFoundException cnfe) {
-            } catch (IllegalAccessException iae) {
-            } catch (InvocationTargetException ite) {
-            } catch (NoSuchMethodException nsme) {
-            } catch (InstantiationException ie) {
+            } catch (ReflectiveOperationException e) {
             }
             return null;
         }

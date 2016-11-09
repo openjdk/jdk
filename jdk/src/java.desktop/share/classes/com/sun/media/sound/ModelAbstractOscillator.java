@@ -137,10 +137,8 @@ public abstract class ModelAbstractOscillator
     public ModelOscillatorStream open(float samplerate) {
         ModelAbstractOscillator oscs;
         try {
-            oscs = this.getClass().newInstance();
-        } catch (InstantiationException e) {
-            throw new IllegalArgumentException(e);
-        } catch (IllegalAccessException e) {
+            oscs = this.getClass().getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
             throw new IllegalArgumentException(e);
         }
         oscs.setSampleRate(samplerate);

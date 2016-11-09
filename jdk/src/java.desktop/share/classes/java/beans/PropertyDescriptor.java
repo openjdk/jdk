@@ -470,14 +470,14 @@ public class PropertyDescriptor extends FeatureDescriptor {
             Constructor<?> ctor = null;
             if (bean != null) {
                 try {
-                    ctor = cls.getConstructor(new Class<?>[] { Object.class });
+                    ctor = cls.getDeclaredConstructor(new Class<?>[] { Object.class });
                 } catch (Exception ex) {
                     // Fall through
                 }
             }
             try {
                 if (ctor == null) {
-                    editor = cls.newInstance();
+                    editor = cls.getDeclaredConstructor().newInstance();
                 } else {
                     editor = ctor.newInstance(new Object[] { bean });
                 }

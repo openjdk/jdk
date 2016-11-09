@@ -526,14 +526,16 @@ public class UIManager implements Serializable
                 if (info.getName().equals(name)) {
                     Class<?> cls = Class.forName(UIManager.class.getModule(),
                                                  info.getClassName());
-                    LookAndFeel laf = (LookAndFeel) cls.newInstance();
+                    LookAndFeel laf =
+                        (LookAndFeel) cls.getDeclaredConstructor().newInstance();
                     if (!laf.isSupportedLookAndFeel()) {
                         break;
                     }
                     return laf;
                 }
             }
-        } catch (InstantiationException | IllegalAccessException ignore) {
+        } catch (ReflectiveOperationException |
+                 IllegalArgumentException ignore) {
         }
 
         throw new UnsupportedLookAndFeelException(name);
@@ -625,7 +627,16 @@ public class UIManager implements Serializable
         }
         else {
             Class<?> lnfClass = SwingUtilities.loadSystemClass(className);
-            setLookAndFeel((LookAndFeel)(lnfClass.newInstance()));
+            try {
+                LookAndFeel laf =
+                    (LookAndFeel)lnfClass.getDeclaredConstructor().newInstance();
+                setLookAndFeel(laf);
+            } catch (ReflectiveOperationException | IllegalArgumentException e) {
+                InstantiationException ex =
+                    new InstantiationException("Wrapped Exception");
+                ex.initCause(e);
+                throw ex;
+            }
         }
     }
 
@@ -1093,7 +1104,8 @@ public class UIManager implements Serializable
             String className = getLAFState().swingProps.getProperty(multiplexingLAFKey, defaultName);
             try {
                 Class<?> lnfClass = SwingUtilities.loadSystemClass(className);
-                multiLookAndFeel = (LookAndFeel)lnfClass.newInstance();
+                multiLookAndFeel =
+                        (LookAndFeel)lnfClass.getDeclaredConstructor().newInstance();
             } catch (Exception exc) {
                 System.err.println("UIManager: failed loading " + className);
             }
@@ -1427,7 +1439,8 @@ public class UIManager implements Serializable
             String className = p.nextToken();
             try {
                 Class<?> lnfClass = SwingUtilities.loadSystemClass(className);
-                LookAndFeel newLAF = (LookAndFeel)lnfClass.newInstance();
+                LookAndFeel newLAF =
+                        (LookAndFeel)lnfClass.getDeclaredConstructor().newInstance();
                 newLAF.initialize();
                 auxLookAndFeels.addElement(newLAF);
             }

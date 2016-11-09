@@ -36,6 +36,7 @@ import java.awt.Component;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
@@ -1280,11 +1281,12 @@ public class Introspector {
      */
     static Object instantiate(Class<?> sibling, String className)
                  throws InstantiationException, IllegalAccessException,
+                        NoSuchMethodException, InvocationTargetException,
                                                 ClassNotFoundException {
         // First check with sibling's classloader (if any).
         ClassLoader cl = sibling.getClassLoader();
         Class<?> cls = ClassFinder.findClass(className, cl);
-        return cls.newInstance();
+        return cls.getDeclaredConstructor().newInstance();
     }
 
 } // end class Introspector
