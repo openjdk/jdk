@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,20 +84,21 @@
  * </ul>
  * Invocation is as if by
  * {@link java.lang.invoke.MethodHandle#invoke MethodHandle.invoke}.
- * The returned result must be a {@link java.lang.invoke.CallSite CallSite} (or a subclass).
+ * The returned result must be a {@link java.lang.invoke.CallSite CallSite}
+ * (or a subclass), otherwise a
+ * {@link java.lang.BootstrapMethodError BootstrapMethodError} is thrown.
  * The type of the call site's target must be exactly equal to the type
  * derived from the dynamic call site's type descriptor and passed to
- * the bootstrap method.
- * The call site then becomes permanently linked to the dynamic call site.
+ * the bootstrap method, otherwise a {@code BootstrapMethodError} is thrown.
+ * On success the call site then becomes permanently linked to the dynamic call
+ * site.
  * <p>
- * As documented in the JVM specification, all failures arising from
- * the linkage of a dynamic call site are reported
- * by a {@link java.lang.BootstrapMethodError BootstrapMethodError},
- * which is thrown as the abnormal termination of the dynamic call
- * site execution.
- * If this happens, the same error will the thrown for all subsequent
- * attempts to execute the dynamic call site.
- *
+ * If an exception, {@code E} say, occurs when linking the call site then the
+ * linkage fails and terminates abnormally. {@code E} is rethrown if the type of
+ * {@code E} is {@code Error} or a subclass, otherwise a
+ * {@code BootstrapMethodError} that wraps {@code E} is thrown.
+ * If this happens, the same {@code Error} or subclass will the thrown for all
+ * subsequent attempts to execute the dynamic call site.
  * <h2>timing of linkage</h2>
  * A dynamic call site is linked just before its first execution.
  * The bootstrap method call implementing the linkage occurs within
