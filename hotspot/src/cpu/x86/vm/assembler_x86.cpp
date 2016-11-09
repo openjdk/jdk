@@ -4285,8 +4285,7 @@ void Assembler::pblendw(XMMRegister dst, XMMRegister src, int imm8) {
 
 void Assembler::sha1rnds4(XMMRegister dst, XMMRegister src, int imm8) {
   assert(VM_Version::supports_sha(), "");
-  InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
-  int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_NONE, VEX_OPCODE_0F_3A, &attributes);
+  int encode = rex_prefix_and_encode(dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3A, /* rex_w */ false);
   emit_int8((unsigned char)0xCC);
   emit_int8((unsigned char)(0xC0 | encode));
   emit_int8((unsigned char)imm8);
@@ -4294,24 +4293,21 @@ void Assembler::sha1rnds4(XMMRegister dst, XMMRegister src, int imm8) {
 
 void Assembler::sha1nexte(XMMRegister dst, XMMRegister src) {
   assert(VM_Version::supports_sha(), "");
-  InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
-  int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes);
+  int encode = rex_prefix_and_encode(dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, /* rex_w */ false);
   emit_int8((unsigned char)0xC8);
   emit_int8((unsigned char)(0xC0 | encode));
 }
 
 void Assembler::sha1msg1(XMMRegister dst, XMMRegister src) {
   assert(VM_Version::supports_sha(), "");
-  InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
-  int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes);
+  int encode = rex_prefix_and_encode(dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, /* rex_w */ false);
   emit_int8((unsigned char)0xC9);
   emit_int8((unsigned char)(0xC0 | encode));
 }
 
 void Assembler::sha1msg2(XMMRegister dst, XMMRegister src) {
   assert(VM_Version::supports_sha(), "");
-  InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
-  int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes);
+  int encode = rex_prefix_and_encode(dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, /* rex_w */ false);
   emit_int8((unsigned char)0xCA);
   emit_int8((unsigned char)(0xC0 | encode));
 }
@@ -4319,24 +4315,21 @@ void Assembler::sha1msg2(XMMRegister dst, XMMRegister src) {
 // xmm0 is implicit additional source to this instruction.
 void Assembler::sha256rnds2(XMMRegister dst, XMMRegister src) {
   assert(VM_Version::supports_sha(), "");
-  InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
-  int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes);
+  int encode = rex_prefix_and_encode(dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, /* rex_w */ false);
   emit_int8((unsigned char)0xCB);
   emit_int8((unsigned char)(0xC0 | encode));
 }
 
 void Assembler::sha256msg1(XMMRegister dst, XMMRegister src) {
   assert(VM_Version::supports_sha(), "");
-  InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
-  int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes);
+  int encode = rex_prefix_and_encode(dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, /* rex_w */ false);
   emit_int8((unsigned char)0xCC);
   emit_int8((unsigned char)(0xC0 | encode));
 }
 
 void Assembler::sha256msg2(XMMRegister dst, XMMRegister src) {
   assert(VM_Version::supports_sha(), "");
-  InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
-  int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes);
+  int encode = rex_prefix_and_encode(dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, /* rex_w */ false);
   emit_int8((unsigned char)0xCD);
   emit_int8((unsigned char)(0xC0 | encode));
 }
