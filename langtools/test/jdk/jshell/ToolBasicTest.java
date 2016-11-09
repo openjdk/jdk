@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714
+ * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643
  * @summary Tests for Basic tests for REPL tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -289,6 +289,21 @@ public class ToolBasicTest extends ReplToolTesting {
         );
     }
 
+    public void testModulePath() {
+        Compiler compiler = new Compiler();
+        Path modsDir = Paths.get("mods");
+        Path outDir = Paths.get("mods", "org.astro");
+        compiler.compile(outDir, "package org.astro; public class World { public static String name() { return \"world\"; } }");
+        compiler.compile(outDir, "module org.astro { exports org.astro; }");
+        Path modsPath = compiler.getPath(modsDir);
+        test(new String[] { "--module-path", modsPath.toString(), "--add-modules", "org.astro" },
+                (a) -> assertCommand(a, "import org.astro.World;", ""),
+                (a) -> evaluateExpression(a, "String",
+                        "String.format(\"Greetings %s!\", World.name());",
+                        "\"Greetings world!\"")
+        );
+    }
+
     public void testStartupFileOption() {
         try {
             Compiler compiler = new Compiler();
@@ -431,12 +446,12 @@ public class ToolBasicTest extends ReplToolTesting {
                     (a) -> assertMethod(a, "void f() {}", "()V", "f"),
                     (a) -> assertImport(a, "import java.util.stream.*;", "", "java.util.stream.*"),
                     (a) -> assertCommand(a, "/save " + startUpFile.toString(), null),
-                    (a) -> assertCommand(a, "/retain start " + startUpFile.toString(), null)
+                    (a) -> assertCommand(a, "/set start -retain " + startUpFile.toString(), null)
             );
             Path unknown = compiler.getPath("UNKNOWN");
             test(
-                    (a) -> assertCommandOutputStartsWith(a, "/retain start " + unknown.toString(),
-                            "|  File '" + unknown + "' for '/retain start' is not found.")
+                    (a) -> assertCommandOutputStartsWith(a, "/set start -retain " + unknown.toString(),
+                            "|  File '" + unknown + "' for '/set start' is not found.")
             );
             test(false, new String[0],
                     (a) -> {
@@ -505,7 +520,7 @@ public class ToolBasicTest extends ReplToolTesting {
                     a -> assertCommand(a, "int a", ""),
                     a -> assertCommand(a, "void f() {}", ""),
                     a -> assertCommandCheckOutput(a, "aaaa", assertStartsWith("|  Error:")),
-                    a -> assertCommandCheckOutput(a, "public void f() {}", assertStartsWith("|  Warning:"))
+                    a -> assertCommandCheckOutput(a, "static void f() {}", assertStartsWith("|  Warning:"))
             );
         }
     }

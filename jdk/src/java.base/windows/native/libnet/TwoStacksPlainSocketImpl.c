@@ -22,23 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-#include <windows.h>
-#include <winsock2.h>
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <malloc.h>
-#include <sys/types.h>
-
-#include "java_net_SocketOptions.h"
-#include "java_net_TwoStacksPlainSocketImpl.h"
-#include "java_net_InetAddress.h"
-#include "java_io_FileDescriptor.h"
-#include "java_lang_Integer.h"
 
 #include "net_util.h"
-#include "jni_util.h"
+
+#include "java_net_TwoStacksPlainSocketImpl.h"
+#include "java_net_SocketOptions.h"
+#include "java_net_InetAddress.h"
 
 /************************************************************************
  * TwoStacksPlainSocketImpl
@@ -108,7 +98,7 @@ Java_java_net_TwoStacksPlainSocketImpl_initProto(JNIEnv *env, jclass cls) {
     psi_portID = (*env)->GetFieldID(env, cls, "port", "I");
     CHECK_NULL(psi_portID);
     psi_lastfdID = (*env)->GetFieldID(env, cls, "lastfd", "I");
-    CHECK_NULL(psi_portID);
+    CHECK_NULL(psi_lastfdID);
     psi_localportID = (*env)->GetFieldID(env, cls, "localport", "I");
     CHECK_NULL(psi_localportID);
     psi_timeoutID = (*env)->GetFieldID(env, cls, "timeout", "I");
@@ -153,17 +143,17 @@ Java_java_net_TwoStacksPlainSocketImpl_socketCreate(JNIEnv *env, jobject this,
         fd1Obj = (*env)->GetObjectField(env, this, psi_fd1ID);
 
         if (IS_NULL(fd1Obj)) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
-                            "null fd1 object");
             (*env)->SetIntField(env, fdObj, IO_fd_fdID, -1);
             NET_SocketClose(fd);
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+                            "null fd1 object");
             return;
         }
         fd1 = socket(AF_INET6, (stream ? SOCK_STREAM: SOCK_DGRAM), 0);
         if (fd1 == -1) {
-            NET_ThrowCurrent(env, "create");
             (*env)->SetIntField(env, fdObj, IO_fd_fdID, -1);
             NET_SocketClose(fd);
+            NET_ThrowCurrent(env, "create");
             return;
         } else {
             /* Set socket attribute so it is not passed to any child process */
@@ -413,7 +403,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketBind(JNIEnv *env, jobject this,
 
     family = getInetAddress_family(env, iaObj);
 
-    if (family == IPv6 && !ipv6_supported) {
+    if (family == java_net_InetAddress_IPv6 && !ipv6_supported) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                         "Protocol family not supported");
         return;
@@ -655,18 +645,18 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
             return;
         }
         if (fd2 == fd) { /* v4 */
-            len = sizeof (struct sockaddr_in);
+            len = sizeof(struct sockaddr_in);
         } else {
-            len = sizeof (struct SOCKADDR_IN6);
+            len = sizeof(struct sockaddr_in6);
         }
         fd = fd2;
     } else {
         int ret;
         if (fd1 != -1) {
             fd = fd1;
-            len = sizeof (struct SOCKADDR_IN6);
+            len = sizeof(struct sockaddr_in6);
         } else {
-            len = sizeof (struct sockaddr_in);
+            len = sizeof(struct sockaddr_in);
         }
         if (timeout) {
             ret = NET_Timeout(fd, timeout);
@@ -728,7 +718,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
         }
 
         setInetAddress_addr(env, socketAddressObj, ntohl(him.sa4.sin_addr.s_addr));
-        setInetAddress_family(env, socketAddressObj, IPv4);
+        setInetAddress_family(env, socketAddressObj, java_net_InetAddress_IPv4);
         (*env)->SetObjectField(env, socket, psi_addressID, socketAddressObj);
     } else {
         /* AF_INET6 -> Inet6Address */
@@ -754,7 +744,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
             return;
         }
         setInet6Address_ipaddress(env, socketAddressObj, (char *)&him.sa6.sin6_addr);
-        setInetAddress_family(env, socketAddressObj, IPv6);
+        setInetAddress_family(env, socketAddressObj, java_net_InetAddress_IPv6);
         setInet6Address_scopeid(env, socketAddressObj, him.sa6.sin6_scope_id);
 
     }
@@ -907,6 +897,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketNativeSetOption
                     isRcvTimeoutSupported = JNI_FALSE;
                 } else {
                     NET_ThrowCurrent(env, "setsockopt SO_RCVTIMEO");
+                    return;
                 }
             }
             if (fd1 != -1) {

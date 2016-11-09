@@ -1,11 +1,3 @@
-import org.testng.annotations.Test;
-import org.testng.Assert;
-
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Platform;
-import jdk.test.lib.dcmd.CommandExecutor;
-import jdk.test.lib.dcmd.JMXExecutor;
-
 /*
  * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -28,6 +20,14 @@ import jdk.test.lib.dcmd.JMXExecutor;
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+import org.testng.annotations.Test;
+import org.testng.Assert;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Platform;
+import jdk.test.lib.dcmd.CommandExecutor;
+import jdk.test.lib.dcmd.JMXExecutor;
 
 /*
  * @test

@@ -50,7 +50,7 @@ public abstract class JdepsWriter {
     final boolean showProfile;
     final boolean showModule;
 
-    private JdepsWriter(Analyzer.Type type, boolean showProfile, boolean showModule) {
+    JdepsWriter(Analyzer.Type type, boolean showProfile, boolean showModule) {
         this.type = type;
         this.showProfile = showProfile;
         this.showModule = showModule;
@@ -318,8 +318,7 @@ public abstract class JdepsWriter {
         }
 
         // exported API
-        boolean jdkunsupported = Module.JDK_UNSUPPORTED.equals(module.name());
-        if (module.isExported(pn) && !jdkunsupported) {
+        if (module.isExported(pn) && !module.isJDKUnsupported()) {
             return showProfileOrModule(module);
         }
 

@@ -63,10 +63,10 @@ void IndicRearrangementProcessor::beginStateTable()
     lastGlyph = 0;
 }
 
-ByteOffset IndicRearrangementProcessor::processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex index)
+ByteOffset IndicRearrangementProcessor::processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex index, LEErrorCode &success)
 {
-  LEErrorCode success = LE_NO_ERROR; // todo- make a param?
-  const IndicRearrangementStateEntry *entry = entryTable.getAlias(index,success);
+    const IndicRearrangementStateEntry *entry = entryTable.getAlias(index, success);
+    if (LE_FAILURE(success)) return 0;
     ByteOffset newState = SWAPW(entry->newStateOffset);
     IndicRearrangementFlags flags = (IndicRearrangementFlags) SWAPW(entry->flags);
 

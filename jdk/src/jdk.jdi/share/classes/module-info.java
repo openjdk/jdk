@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ module jdk.jdi {
     exports com.sun.jdi.connect.spi;
     exports com.sun.jdi.event;
     exports com.sun.jdi.request;
-    exports com.sun.tools.jdi to jdk.hotspot.agent;
 
     uses com.sun.jdi.connect.Connector;
     uses com.sun.jdi.connect.spi.TransportService;

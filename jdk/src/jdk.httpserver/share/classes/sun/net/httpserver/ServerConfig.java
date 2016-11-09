@@ -25,7 +25,8 @@
 
 package sun.net.httpserver;
 
-import java.util.logging.Logger;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.security.PrivilegedAction;
 
 /**
@@ -115,7 +116,8 @@ class ServerConfig {
                     if (System.getProperty("sun.net.httpserver.readTimeout")
                                                 !=null)
                     {
-                        logger.warning ("sun.net.httpserver.readTimeout "+
+                        logger.log (Level.WARNING,
+                            "sun.net.httpserver.readTimeout "+
                             "property is no longer used. "+
                             "Use sun.net.httpserver.maxReqTime instead."
                         );
@@ -123,7 +125,8 @@ class ServerConfig {
                     if (System.getProperty("sun.net.httpserver.writeTimeout")
                                                 !=null)
                     {
-                        logger.warning ("sun.net.httpserver.writeTimeout "+
+                        logger.log (Level.WARNING,
+                            "sun.net.httpserver.writeTimeout "+
                             "property is no longer used. Use "+
                             "sun.net.httpserver.maxRspTime instead."
                         );
@@ -131,7 +134,8 @@ class ServerConfig {
                     if (System.getProperty("sun.net.httpserver.selCacheTimeout")
                                                 !=null)
                     {
-                        logger.warning ("sun.net.httpserver.selCacheTimeout "+
+                        logger.log (Level.WARNING,
+                            "sun.net.httpserver.selCacheTimeout "+
                             "property is no longer used."
                         );
                     }

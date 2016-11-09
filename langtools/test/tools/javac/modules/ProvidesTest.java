@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary simple tests of module provides
+ * @bug 8168854
  * @library /tools/lib
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
@@ -39,6 +40,7 @@ import java.util.List;
 
 import toolbox.JavacTask;
 import toolbox.Task;
+import toolbox.Task.Expect;
 import toolbox.ToolBox;
 
 public class ProvidesTest extends ModuleTestBase {
@@ -415,24 +417,13 @@ public class ProvidesTest extends ModuleTestBase {
         tb.writeJavaFiles(src,
                 "module m { provides p1.C1.InnerDefinition with p2.C2; }",
                 "package p1; public class C1 { public class InnerDefinition { } }",
-                "package p2; public class C2 extends p1.C1.InnerDefinition { }");
+                "package p2; public class C2 extends p1.C1.InnerDefinition { public C2() { new p1.C1().super(); } }");
 
-        List<String> output = new JavacTask(tb)
+        new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(src))
-                .run(Task.Expect.FAIL)
-                .writeAll()
-                .getOutputLines(Task.OutputKind.DIRECT);
-
-        List<String> expected = Arrays.asList(
-                "module-info.java:1:26: compiler.err.service.definition.is.inner: p1.C1.InnerDefinition",
-                "module-info.java:1:12: compiler.warn.service.provided.but.not.exported.or.used: p1.C1.InnerDefinition",
-                "C2.java:1:20: compiler.err.encl.class.required: p1.C1.InnerDefinition",
-                "2 errors",
-                "1 warning");
-        if (!output.containsAll(expected)) {
-            throw new Exception("Expected output not found");
-        }
+                .run(Expect.SUCCESS)
+                .writeAll();
     }
 }

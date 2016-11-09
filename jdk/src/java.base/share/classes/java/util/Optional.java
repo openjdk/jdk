@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,7 +236,7 @@ public final class Optional<T> {
      *         present, otherwise an empty {@code Optional}
      * @throws NullPointerException if the mapping function is {@code null}
      */
-    public<U> Optional<U> map(Function<? super T, ? extends U> mapper) {
+    public <U> Optional<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper);
         if (!isPresent()) {
             return empty();
@@ -264,12 +264,14 @@ public final class Optional<T> {
      * @throws NullPointerException if the mapping function is {@code null} or
      *         returns a {@code null} result
      */
-    public<U> Optional<U> flatMap(Function<? super T, Optional<U>> mapper) {
+    public <U> Optional<U> flatMap(Function<? super T, ? extends Optional<? extends U>> mapper) {
         Objects.requireNonNull(mapper);
         if (!isPresent()) {
             return empty();
         } else {
-            return Objects.requireNonNull(mapper.apply(value));
+            @SuppressWarnings("unchecked")
+            Optional<U> r = (Optional<U>) mapper.apply(value);
+            return Objects.requireNonNull(r);
         }
     }
 
@@ -286,12 +288,14 @@ public final class Optional<T> {
      *         produces a {@code null} result
      * @since 9
      */
-    public Optional<T> or(Supplier<Optional<T>> supplier) {
+    public Optional<T> or(Supplier<? extends Optional<? extends T>> supplier) {
         Objects.requireNonNull(supplier);
         if (isPresent()) {
             return this;
         } else {
-            return Objects.requireNonNull(supplier.get());
+            @SuppressWarnings("unchecked")
+            Optional<T> r = (Optional<T>) supplier.get();
+            return Objects.requireNonNull(r);
         }
     }
 

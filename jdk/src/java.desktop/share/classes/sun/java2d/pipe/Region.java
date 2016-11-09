@@ -28,9 +28,12 @@ package sun.java2d.pipe;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.awt.geom.RectangularShape;
 
 import sun.java2d.loops.TransformHelper;
+
+import static java.lang.Double.isNaN;
 
 /**
  * This class encapsulates a definition of a two dimensional region which
@@ -115,6 +118,34 @@ public final class Region {
             newv = (dv < 0) ? Integer.MIN_VALUE : Integer.MAX_VALUE;
         }
         return newv;
+    }
+
+    /**
+     * Returns the closest {@code int} to the argument, with ties rounding to
+     * negative infinity.
+     * <p>
+     * Special cases:
+     * <ul><li>If the argument is NaN, the result is 0.
+     * <li>If the argument is negative infinity or any value less than or
+     * equal to the value of {@code Integer.MIN_VALUE}, the result is
+     * equal to the value of {@code Integer.MIN_VALUE}.
+     * <li>If the argument is positive infinity or any value greater than or
+     * equal to the value of {@code Integer.MAX_VALUE}, the result is
+     * equal to the value of {@code Integer.MAX_VALUE}.</ul>
+     *
+     * @param   coordinate a floating-point value to be rounded to an integer
+     * @return  the value of the argument rounded to the nearest
+     *          {@code int} value.
+     */
+    public static int clipRound(final double coordinate) {
+        final double newv = coordinate - 0.5;
+        if (newv < Integer.MIN_VALUE) {
+            return Integer.MIN_VALUE;
+        }
+        if (newv > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) Math.ceil(newv);
     }
 
     /**
@@ -555,6 +586,33 @@ public final class Region {
      */
     public Region getIntersectionXYWH(int x, int y, int w, int h) {
         return getIntersectionXYXY(x, y, dimAdd(x, w), dimAdd(y, h));
+    }
+
+    /**
+     * Returns a Region object that represents the intersection of
+     * this object with the specified Rectangle2D. The return value
+     * may be this same object if no clipping occurs.
+     */
+    public Region getIntersection(final Rectangle2D r) {
+        if (r instanceof Rectangle) {
+            return getIntersection((Rectangle) r);
+        }
+        return getIntersectionXYXY(r.getMinX(), r.getMinY(), r.getMaxX(),
+                                   r.getMaxY());
+    }
+
+    /**
+     * Returns a Region object that represents the intersection of
+     * this object with the specified rectangular area. The return
+     * value may be this same object if no clipping occurs.
+     */
+    public Region getIntersectionXYXY(double lox, double loy, double hix,
+                                      double hiy) {
+        if (isNaN(lox) || isNaN(loy) || isNaN(hix) || isNaN(hiy)) {
+            return EMPTY_REGION;
+        }
+        return getIntersectionXYXY(clipRound(lox), clipRound(loy),
+                                   clipRound(hix), clipRound(hiy));
     }
 
     /**

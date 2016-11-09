@@ -29,7 +29,8 @@ import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
 import java.util.*;
-import java.util.logging.Logger;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.text.*;
 import com.sun.net.httpserver.*;
 
@@ -221,7 +222,7 @@ class ExchangeImpl {
                 Logger logger = server.getLogger();
                 String msg = "sendResponseHeaders: rCode = "+ rCode
                     + ": forcing contentLen = -1";
-                logger.warning (msg);
+                logger.log (Level.WARNING, msg);
             }
             contentLen = -1;
         }
@@ -234,7 +235,7 @@ class ExchangeImpl {
                 final Logger logger = server.getLogger();
                 String msg =
                     "sendResponseHeaders: being invoked with a content length for a HEAD request";
-                logger.warning (msg);
+                logger.log (Level.WARNING, msg);
             }
             noContentToSend = true;
             contentLen = 0;

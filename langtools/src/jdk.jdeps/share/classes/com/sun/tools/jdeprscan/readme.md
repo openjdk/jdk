@@ -92,6 +92,9 @@ Given a jar file, **jdeprscan** will scan the classes found within
 that jar file and report information about how those classes use
 deprecated APIs.
 
+Given a class file, **jdeprscan** will scan that class and report
+its use of deprecated APIs.
+
 Given a class name, **jdeprscan** will search for that class on the
 classpath, scan that class, and report information about how that
 class uses deprecated APIs. The class name must use the fully

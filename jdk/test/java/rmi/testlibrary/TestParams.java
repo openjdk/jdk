@@ -34,6 +34,7 @@ public class TestParams {
     /** variables that hold value property values */
     public static final String testSrc;
     public static final String testClasses;
+    public static final String testClassPath;
 
     /** name of default security policy for test JVM */
     public static final String defaultPolicy;
@@ -57,6 +58,7 @@ public class TestParams {
     static {
         testSrc = TestLibrary.getProperty("test.src", ".");
         testClasses = TestLibrary.getProperty("test.classes", ".");
+        testClassPath = TestLibrary.getProperty("test.class.path", ".");
 
         String dp = TestLibrary.getProperty("java.security.policy", null);
         if (dp == null) {

@@ -84,9 +84,22 @@ public class Reflection {
     public static native int getClassAccessFlags(Class<?> c);
 
 
+    /**
+     * Ensures that access to a member is granted and throws
+     * IllegalAccessException if not.
+     *
+     * @param currentClass the class performing the access
+     * @param memberClass the declaring class of the member being accessed
+     * @param targetClass the class of target object if accessing instance
+     *                    field or method;
+     *                    or the declaring class if accessing constructor;
+     *                    or null if accessing static field or method
+     * @param modifiers the member's access modifiers
+     * @throws IllegalAccessException if access to member is denied
+     */
     public static void ensureMemberAccess(Class<?> currentClass,
                                           Class<?> memberClass,
-                                          Object target,
+                                          Class<?> targetClass,
                                           int modifiers)
         throws IllegalAccessException
     {
@@ -94,18 +107,15 @@ public class Reflection {
             throw new InternalError();
         }
 
-        if (!verifyMemberAccess(currentClass, memberClass, target, modifiers)) {
-            throwIllegalAccessException(currentClass, memberClass, target, modifiers);
+        if (!verifyMemberAccess(currentClass, memberClass, targetClass, modifiers)) {
+            throwIllegalAccessException(currentClass, memberClass, targetClass, modifiers);
         }
     }
 
-    public static boolean verifyMemberAccess(Class<?> currentClass,
-                                             // Declaring class of field
-                                             // or method
-                                             Class<?> memberClass,
-                                             // May be NULL in case of statics
-                                             Object   target,
-                                             int      modifiers)
+    private static boolean verifyMemberAccess(Class<?> currentClass,
+                                              Class<?> memberClass,
+                                              Class<?> targetClass,
+                                              int modifiers)
     {
         // Verify that currentClass can access a field, method, or
         // constructor of memberClass, where that member's access bits are
@@ -162,18 +172,18 @@ public class Reflection {
             return false;
         }
 
-        if (Modifier.isProtected(modifiers)) {
-            // Additional test for protected members: JLS 6.6.2
-            Class<?> targetClass = (target == null ? memberClass : target.getClass());
-            if (targetClass != currentClass) {
-                if (!gotIsSameClassPackage) {
-                    isSameClassPackage = isSameClassPackage(currentClass, memberClass);
-                    gotIsSameClassPackage = true;
-                }
-                if (!isSameClassPackage) {
-                    if (!isSubclassOf(targetClass, currentClass)) {
-                        return false;
-                    }
+        // Additional test for protected instance members
+        // and protected constructors: JLS 6.6.2
+        if (targetClass != null && Modifier.isProtected(modifiers) &&
+            targetClass != currentClass)
+        {
+            if (!gotIsSameClassPackage) {
+                isSameClassPackage = isSameClassPackage(currentClass, memberClass);
+                gotIsSameClassPackage = true;
+            }
+            if (!isSameClassPackage) {
+                if (!isSubclassOf(targetClass, currentClass)) {
+                    return false;
                 }
             }
         }

@@ -32,18 +32,27 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
+import java.util.ArrayDeque;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ImageReader;
 import jdk.internal.jimage.ImageReaderFactory;
+import jdk.internal.misc.JavaNetUriAccess;
+import jdk.internal.misc.SharedSecrets;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleHashes.HashSupplier;
 import jdk.internal.module.SystemModules;
@@ -59,6 +68,8 @@ import jdk.internal.perf.PerfCounter;
  */
 
 class SystemModuleFinder implements ModuleFinder {
+
+    private static final JavaNetUriAccess JNUA = SharedSecrets.getJavaNetUriAccess();
 
     private static final PerfCounter initTime
         = PerfCounter.newPerfCounter("jdk.module.finder.jimage.initTime");
@@ -166,7 +177,7 @@ class SystemModuleFinder implements ModuleFinder {
                                                      HashSupplier hash)
     {
         String mn = md.name();
-        URI uri = URI.create("jrt:/" + mn);
+        URI uri = JNUA.create("jrt", "/".concat(mn));
 
         Supplier<ModuleReader> readerSupplier = new Supplier<>() {
             @Override
@@ -327,10 +338,101 @@ class SystemModuleFinder implements ModuleFinder {
         }
 
         @Override
+        public Stream<String> list() throws IOException {
+            if (closed)
+                throw new IOException("ModuleReader is closed");
+
+            Spliterator<String> s = new ModuleContentSpliterator(module);
+            return StreamSupport.stream(s, false);
+        }
+
+        @Override
         public void close() {
             // nothing else to do
             closed = true;
         }
     }
 
+    /**
+     * A Spliterator for traversing the resources of a module linked into the
+     * run-time image.
+     */
+    static class ModuleContentSpliterator implements Spliterator<String> {
+        final String moduleRoot;
+        final Deque<ImageReader.Node> stack;
+        Iterator<ImageReader.Node> iterator;
+
+        ModuleContentSpliterator(String module) throws IOException {
+            moduleRoot = "/modules/" + module;
+            stack = new ArrayDeque<>();
+
+            // push the root node to the stack to get started
+            ImageReader.Node dir = imageReader.findNode(moduleRoot);
+            if (dir == null || !dir.isDirectory())
+                throw new IOException(moduleRoot + " not a directory");
+            stack.push(dir);
+            iterator = Collections.emptyIterator();
+        }
+
+        /**
+         * Returns the name of the next non-directory node or {@code null} if
+         * there are no remaining nodes to visit.
+         */
+        private String next() throws IOException {
+            for (;;) {
+                while (iterator.hasNext()) {
+                    ImageReader.Node node = iterator.next();
+                    String name = node.getName();
+                    if (node.isDirectory()) {
+                        // build node
+                        ImageReader.Node dir = imageReader.findNode(name);
+                        assert dir.isDirectory();
+                        stack.push(dir);
+                    } else {
+                        // strip /modules/$MODULE/ prefix
+                        return name.substring(moduleRoot.length() + 1);
+                    }
+                }
+
+                if (stack.isEmpty()) {
+                    return null;
+                } else {
+                    ImageReader.Node dir = stack.poll();
+                    assert dir.isDirectory();
+                    iterator = dir.getChildren().iterator();
+                }
+            }
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super String> action) {
+            String next;
+            try {
+                next = next();
+            } catch (IOException ioe) {
+                throw new UncheckedIOException(ioe);
+            }
+            if (next != null) {
+                action.accept(next);
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public Spliterator<String> trySplit() {
+            return null;
+        }
+
+        @Override
+        public int characteristics() {
+            return Spliterator.DISTINCT + Spliterator.NONNULL + Spliterator.IMMUTABLE;
+        }
+
+        @Override
+        public long estimateSize() {
+            return Long.MAX_VALUE;
+        }
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -994,7 +994,22 @@ public final class SSLEngineImpl extends SSLEngine {
 
         // plainText should never be null for TLS protocols
         HandshakeStatus hsStatus = null;
-        if (!isDTLS || plainText != null) {
+        if (plainText == Plaintext.PLAINTEXT_NULL) {
+            // Only happens for DTLS protocols.
+            //
+            // Received a retransmitted flight, and need to retransmit the
+            // previous delivered handshake flight messages.
+            if (enableRetransmissions) {
+                if (debug != null && Debug.isOn("verbose")) {
+                    Debug.log(
+                        "Retransmit the previous handshake flight messages.");
+                }
+
+                synchronized (this) {
+                    outputRecord.launchRetransmission();
+                }
+            }   // Otherwise, discard the retransmitted flight.
+        } else if (!isDTLS || plainText != null) {
             hsStatus = processInputRecord(plainText, appData, offset, length);
         }
 
@@ -1003,7 +1018,7 @@ public final class SSLEngineImpl extends SSLEngine {
         }
 
         if (plainText == null) {
-            plainText = new Plaintext();
+            plainText = Plaintext.PLAINTEXT_NULL;
         }
         plainText.handshakeStatus = hsStatus;
 
@@ -1378,7 +1393,8 @@ public final class SSLEngineImpl extends SSLEngine {
             // Acquire the buffered to-be-delivered records or retransmissions.
             //
             // May have buffered records, or need retransmission if handshaking.
-            if (!outputRecord.isEmpty() || (handshaker != null)) {
+            if (!outputRecord.isEmpty() ||
+                    (enableRetransmissions && handshaker != null)) {
                 ciphertext = outputRecord.acquireCiphertext(netData);
             }
 
@@ -1403,13 +1419,36 @@ public final class SSLEngineImpl extends SSLEngine {
 
         HandshakeStatus hsStatus = null;
         Ciphertext.RecordType recordType = ciphertext.recordType;
-        if ((handshaker != null) &&
-                (recordType.contentType == Record.ct_handshake) &&
-                (recordType.handshakeType == HandshakeMessage.ht_finished) &&
-                handshaker.isDone() && outputRecord.isEmpty()) {
+        if ((recordType.contentType == Record.ct_handshake) &&
+            (recordType.handshakeType == HandshakeMessage.ht_finished) &&
+            outputRecord.isEmpty()) {
 
-            hsStatus = finishHandshake();
-            connectionState = cs_DATA;
+            if (handshaker == null) {
+                hsStatus = HandshakeStatus.FINISHED;
+            } else if (handshaker.isDone()) {
+                hsStatus = finishHandshake();
+                connectionState = cs_DATA;
+
+                // Retransmit the last flight twice.
+                //
+                // The application data transactions may begin immediately
+                // after the last flight.  If the last flight get lost, the
+                // application data may be discarded accordingly.  As could
+                // be an issue for some applications.  This impact can be
+                // mitigated by sending the last fligth twice.
+                if (isDTLS && enableRetransmissions) {
+                    if (debug != null && Debug.isOn("verbose")) {
+                        Debug.log(
+                            "Retransmit the last flight messages.");
+                    }
+
+                    synchronized (this) {
+                        outputRecord.launchRetransmission();
+                    }
+
+                    hsStatus = HandshakeStatus.NEED_WRAP;
+                }
+            }
         }   // Otherwise, the followed call to getHSStatus() will help.
 
         /*
@@ -1676,12 +1715,17 @@ public final class SSLEngineImpl extends SSLEngine {
 
     synchronized void fatal(byte description, String diagnostic)
             throws SSLException {
-        fatal(description, diagnostic, null);
+        fatal(description, diagnostic, null, false);
     }
 
     synchronized void fatal(byte description, Throwable cause)
             throws SSLException {
-        fatal(description, null, cause);
+        fatal(description, null, cause, false);
+    }
+
+    synchronized void fatal(byte description, String diagnostic,
+            Throwable cause) throws SSLException {
+        fatal(description, diagnostic, cause, false);
     }
 
     /*
@@ -1693,12 +1737,12 @@ public final class SSLEngineImpl extends SSLEngine {
      * levels which then call here.  This code needs to determine
      * if one of the lower levels has already started the process.
      *
-     * We won't worry about Error's, if we have one of those,
+     * We won't worry about Errors, if we have one of those,
      * we're in worse trouble.  Note:  the networking code doesn't
      * deal with Errors either.
      */
     synchronized void fatal(byte description, String diagnostic,
-            Throwable cause) throws SSLException {
+            Throwable cause, boolean recvFatalAlert) throws SSLException {
 
         /*
          * If we have no further information, make a general-purpose
@@ -1759,10 +1803,11 @@ public final class SSLEngineImpl extends SSLEngine {
         }
 
         /*
-         * If we haven't even started handshaking yet, no need
-         * to generate the fatal close alert.
+         * If we haven't even started handshaking yet, or we are the
+         * recipient of a fatal alert, no need to generate a fatal close
+         * alert.
          */
-        if (oldState != cs_START) {
+        if (oldState != cs_START && !recvFatalAlert) {
             sendAlert(Alerts.alert_fatal, description);
         }
 
@@ -1802,10 +1847,6 @@ public final class SSLEngineImpl extends SSLEngine {
         byte level = fragment.get();
         byte description = fragment.get();
 
-        if (description == -1) { // check for short message
-            fatal(Alerts.alert_illegal_parameter, "Short alert message");
-        }
-
         if (debug != null && (Debug.isOn("record") ||
                 Debug.isOn("handshake"))) {
             synchronized (System.out) {
@@ -1823,7 +1864,9 @@ public final class SSLEngineImpl extends SSLEngine {
         }
 
         if (level == Alerts.alert_warning) {
-            if (description == Alerts.alert_close_notify) {
+            if (description == -1) {    // check for short message
+                fatal(Alerts.alert_illegal_parameter, "Short alert message");
+            } else if (description == Alerts.alert_close_notify) {
                 if (connectionState == cs_HANDSHAKE) {
                     fatal(Alerts.alert_unexpected_message,
                                 "Received close_notify during handshake");
@@ -1846,10 +1889,14 @@ public final class SSLEngineImpl extends SSLEngine {
         } else { // fatal or unknown level
             String reason = "Received fatal alert: "
                 + Alerts.alertDescription(description);
-            if (closeReason == null) {
-                closeReason = Alerts.getSSLException(description, reason);
-            }
-            fatal(Alerts.alert_unexpected_message, reason);
+
+            // The inbound and outbound queues will be closed as part of
+            // the call to fatal.  The handhaker to needs to be set to null
+            // so subsequent calls to getHandshakeStatus will return
+            // NOT_HANDSHAKING.
+            handshaker = null;
+            Throwable cause = Alerts.getSSLException(description, reason);
+            fatal(description, null, cause, true);
         }
     }
 

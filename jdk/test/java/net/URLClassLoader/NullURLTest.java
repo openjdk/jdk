@@ -109,7 +109,7 @@ public class NullURLTest {
             failures++;
         }
         try {
-            loader = new URLClassLoader(null, null, null);
+            loader = new URLClassLoader((URL[])null, null, null);
             System.err.println("URLClassLoader(null, null, null) did not throw NPE");
             failures++;
         } catch (NullPointerException e) {

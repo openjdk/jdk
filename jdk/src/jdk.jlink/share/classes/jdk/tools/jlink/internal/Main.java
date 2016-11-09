@@ -30,9 +30,9 @@ import java.util.spi.ToolProvider;
 
 public class Main {
     public static void main(String... args) throws Exception {
-        JlinkTask t = new JlinkTask();
-        int rc = t.run(args);
-        System.exit(rc);
+        System.exit(run(new PrintWriter(System.out, true),
+                        new PrintWriter(System.err, true),
+                        args));
     }
 
     /**
@@ -44,6 +44,11 @@ public class Main {
      * @return an exit code. 0 means success, non-zero means an error occurred.
      */
     public static int run(PrintWriter out, PrintWriter err, String... args) {
+        if (System.getSecurityManager() != null) {
+            System.getSecurityManager().
+                    checkPermission(new JlinkPermission("jlink"));
+        }
+
         JlinkTask t = new JlinkTask();
         t.setLog(out, err);
         return t.run(args);

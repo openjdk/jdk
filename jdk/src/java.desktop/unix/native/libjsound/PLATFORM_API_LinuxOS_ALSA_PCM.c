@@ -434,7 +434,10 @@ void* DAUDIO_Open(INT32 mixerIndex, INT32 deviceID, int isSource,
         snd_output_stdio_attach(&ALSA_OUTPUT, stdout, 0);
     }
 #endif
-
+    if (channels <= 0) {
+        ERROR1("ERROR: Invalid number of channels=%d!\n", channels);
+        return NULL;
+    }
     info = (AlsaPcmInfo*) malloc(sizeof(AlsaPcmInfo));
     if (!info) {
         ERROR0("Out of memory\n");

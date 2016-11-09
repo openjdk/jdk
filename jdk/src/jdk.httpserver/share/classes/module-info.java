@@ -24,7 +24,6 @@
  */
 
 module jdk.httpserver {
-    requires java.logging;
 
     exports com.sun.net.httpserver;
     exports com.sun.net.httpserver.spi;

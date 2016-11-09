@@ -152,9 +152,13 @@ final class Validator implements Consumer<JarEntry> {
                     return;
                 }
                 if (fp.isPublicClass()) {
-                    main.error(Main.formatMsg("error.validator.new.public.class", entryName));
-                    isValid = false;
-                    return;
+                    if (!isConcealed(internalName)) {
+                        main.error(Main.formatMsg("error.validator.new.public.class", entryName));
+                        isValid = false;
+                        return;
+                    }
+                    main.warn(Main.formatMsg("warn.validator.concealed.public.class", entryName));
+                    debug("%s is a public class entry in a concealed package", entryName);
                 }
                 debug("%s is a non-public class entry", entryName);
                 fps.put(internalName, fp);
@@ -169,7 +173,7 @@ final class Validator implements Consumer<JarEntry> {
 
         // are the two classes/resources identical?
         if (fp.isIdentical(matchFp)) {
-            main.error(Main.formatMsg("error.validator.identical.entry", entryName));
+            main.warn(Main.formatMsg("warn.validator.identical.entry", entryName));
             return;  // it's okay, just takes up room
         }
         debug("sha1 not equal -- different bytes");
@@ -204,7 +208,7 @@ final class Validator implements Consumer<JarEntry> {
         }
         debug("%s is a resource", entryName);
 
-        main.error(Main.formatMsg("error.validator.resources.with.same.name", entryName));
+        main.warn(Main.formatMsg("warn.validator.resources.with.same.name", entryName));
         fps.put(internalName, fp);
         return;
     }
@@ -233,6 +237,15 @@ final class Validator implements Consumer<JarEntry> {
 
     private String className(String entryName) {
         return entryName.endsWith(".class") ? entryName.substring(0, entryName.length() - 6) : null;
+    }
+
+    private boolean isConcealed(String internalName) {
+        if (main.concealedPackages.isEmpty()) {
+            return false;
+        }
+        int idx = internalName.lastIndexOf('/');
+        String pkgName = idx != -1 ? internalName.substring(0, idx).replace('/', '.') : "";
+        return main.concealedPackages.contains(pkgName);
     }
 
     private void debug(String fmt, Object... args) {

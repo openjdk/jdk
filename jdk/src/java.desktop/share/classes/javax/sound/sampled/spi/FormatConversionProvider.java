@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package javax.sound.sampled.spi;
 
-import java.util.Objects;
+import java.util.stream.Stream;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -81,16 +81,8 @@ public abstract class FormatConversionProvider {
      *         {@code false}
      * @throws NullPointerException if {@code sourceEncoding} is {@code null}
      */
-    public boolean isSourceEncodingSupported(Encoding sourceEncoding) {
-        Objects.requireNonNull(sourceEncoding);
-        Encoding sourceEncodings[] = getSourceEncodings();
-
-        for(int i=0; i<sourceEncodings.length; i++) {
-            if( sourceEncoding.equals( sourceEncodings[i]) ) {
-                return true;
-            }
-        }
-        return false;
+    public boolean isSourceEncodingSupported(final Encoding sourceEncoding) {
+        return Stream.of(getSourceEncodings()).anyMatch(sourceEncoding::equals);
     }
 
     /**
@@ -103,16 +95,8 @@ public abstract class FormatConversionProvider {
      *         {@code false}
      * @throws NullPointerException if {@code targetEncoding} is {@code null}
      */
-    public boolean isTargetEncodingSupported(Encoding targetEncoding) {
-        Objects.requireNonNull(targetEncoding);
-        Encoding targetEncodings[] = getTargetEncodings();
-
-        for(int i=0; i<targetEncodings.length; i++) {
-            if( targetEncoding.equals( targetEncodings[i]) ) {
-                return true;
-            }
-        }
-        return false;
+    public boolean isTargetEncodingSupported(final Encoding targetEncoding) {
+        return Stream.of(getTargetEncodings()).anyMatch(targetEncoding::equals);
     }
 
     /**
@@ -137,17 +121,10 @@ public abstract class FormatConversionProvider {
      * @throws NullPointerException if {@code targetEncoding} or
      *         {@code sourceFormat} are {@code null}
      */
-    public boolean isConversionSupported(Encoding targetEncoding,
-                                         AudioFormat sourceFormat) {
-        Objects.requireNonNull(targetEncoding);
-        Encoding targetEncodings[] = getTargetEncodings(sourceFormat);
-
-        for(int i=0; i<targetEncodings.length; i++) {
-            if( targetEncoding.equals( targetEncodings[i]) ) {
-                return true;
-            }
-        }
-        return false;
+    public boolean isConversionSupported(final Encoding targetEncoding,
+                                         final AudioFormat sourceFormat) {
+        return Stream.of(getTargetEncodings(sourceFormat))
+                     .anyMatch(targetEncoding::equals);
     }
 
     /**
@@ -175,17 +152,11 @@ public abstract class FormatConversionProvider {
      * @throws NullPointerException if {@code targetFormat} or
      *         {@code sourceFormat} are {@code null}
      */
-    public boolean isConversionSupported(AudioFormat targetFormat,
-                                         AudioFormat sourceFormat) {
-
-        AudioFormat targetFormats[] = getTargetFormats( targetFormat.getEncoding(), sourceFormat );
-
-        for(int i=0; i<targetFormats.length; i++) {
-            if( targetFormat.matches( targetFormats[i] ) ) {
-                return true;
-            }
-        }
-        return false;
+    public boolean isConversionSupported(final AudioFormat targetFormat,
+                                         final AudioFormat sourceFormat) {
+        final Encoding targetEncoding = targetFormat.getEncoding();
+        return Stream.of(getTargetFormats(targetEncoding, sourceFormat))
+                     .anyMatch(targetFormat::matches);
     }
 
     /**

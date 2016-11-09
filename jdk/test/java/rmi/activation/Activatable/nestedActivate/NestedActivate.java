@@ -31,7 +31,8 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary RMID ActivationLibrary ActivateMe NestedActivate_Stub
+ *          java.base/sun.nio.ch
+ * @build TestLibrary RMID RMIDSelectorProvider ActivationLibrary ActivateMe NestedActivate_Stub
  * @run main/othervm/policy=security.policy/timeout=240 NestedActivate
  */
 
@@ -101,7 +102,7 @@ public class NestedActivate
 
         try {
             RMID.removeLog();
-            rmid = RMID.createRMID();
+            rmid = RMID.createRMIDOnEphemeralPort();
             rmid.start();
 
             /* Cause activation groups to have a security policy that will

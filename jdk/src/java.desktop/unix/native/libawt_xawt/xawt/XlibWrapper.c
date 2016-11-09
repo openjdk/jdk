@@ -49,6 +49,9 @@
 
 #include <X11/XKBlib.h>
 
+// From XWindow.c
+extern KeySym keycodeToKeysym(Display *display, KeyCode keycode, int index);
+
 #if defined(DEBUG)
 static jmethodID lockIsHeldMID = NULL;
 
@@ -1286,7 +1289,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_IsXsunKPBehavior
         // report arbitrarily false.
         return JNI_FALSE;
     } else {
-        long ks2 = XKeycodeToKeysym((Display*)jlong_to_ptr(display), kc7, 2);
+        long ks2 = keycodeToKeysym((Display*)jlong_to_ptr(display), kc7, 2);
         if( ks2 == XK_KP_7 ) {
             //XXX If some Xorg server would put XK_KP_7 in keysymarray[2] as well,
             //XXX for yet unknown to me reason, the sniffer would lie.
@@ -1915,12 +1918,13 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XQueryKeymap
     XQueryKeymap( (Display *) jlong_to_ptr(display), (char *) jlong_to_ptr(vector));
 }
 
+// XKeycodeToKeysym is deprecated but for compatibility we keep the API.
 JNIEXPORT jlong JNICALL
 Java_sun_awt_X11_XlibWrapper_XKeycodeToKeysym(JNIEnv *env, jclass clazz,
                                               jlong display, jint keycode,
                                               jint index) {
     AWT_CHECK_HAVE_LOCK_RETURN(0);
-    return XKeycodeToKeysym((Display*) jlong_to_ptr(display), (unsigned int)keycode, (int)index);
+    return keycodeToKeysym((Display*)jlong_to_ptr(display), (unsigned int)keycode, (int)index);
 }
 
 JNIEXPORT jint JNICALL

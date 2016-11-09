@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 4868820
- * @key intermittent
  * @summary IPv6 support for Windows XP and 2003 server
  */
 
@@ -159,7 +158,7 @@ public class UdpTest extends Tests {
         });
         t1 = System.currentTimeMillis();
         s1.receive (new DatagramPacket (new byte [128], 128));
-        checkTime (System.currentTimeMillis() - t1, 4000);
+        checkTime (System.currentTimeMillis() - t1, 2000, 10000);
         s1.close ();
         s2.close ();
         System.out.println ("Test2: OK");

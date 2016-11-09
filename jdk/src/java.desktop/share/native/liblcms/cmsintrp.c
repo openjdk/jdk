@@ -244,7 +244,7 @@ void LinLerp1D(register const cmsUInt16Number Value[],
 // To prevent out of bounds indexing
 cmsINLINE cmsFloat32Number fclamp(cmsFloat32Number v)
 {
-    return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v);
+    return v < 0.0f || v != v ? 0.0f : (v > 1.0f ? 1.0f : v);
 }
 
 // Floating-point version of 1D interpolation

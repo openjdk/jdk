@@ -441,7 +441,7 @@ jboolean XShared_initSurface(JNIEnv *env, X11SDOps *xsdo, jint depth, jint width
          * width , height must be nonzero otherwise XCreatePixmap
          * generates BadValue in error_handler
          */
-        if (width <= 0 || height <= 0) {
+        if (width <= 0 || height <= 0 || width > 32767 || height > 32767) {
             JNU_ThrowOutOfMemoryError(env,
                                   "Can't create offscreen surface");
             return JNI_FALSE;

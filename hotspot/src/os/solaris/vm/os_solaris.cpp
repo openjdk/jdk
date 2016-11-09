@@ -2563,7 +2563,7 @@ bool os::get_page_info(char *start, page_info* info) {
   uint64_t outdata[2];
   uint_t validity = 0;
 
-  if (os::Solaris::meminfo(&addr, 1, info_types, 2, outdata, &validity) < 0) {
+  if (meminfo(&addr, 1, info_types, 2, outdata, &validity) < 0) {
     return false;
   }
 
@@ -2601,7 +2601,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected,
       addrs_count++;
     }
 
-    if (os::Solaris::meminfo(addrs, addrs_count, info_types, types, outdata, validity) < 0) {
+    if (meminfo(addrs, addrs_count, info_types, types, outdata, validity) < 0) {
       return NULL;
     }
 
@@ -4160,9 +4160,6 @@ void os::Solaris::install_signal_handlers() {
 void report_error(const char* file_name, int line_no, const char* title,
                   const char* format, ...);
 
-// (Static) wrapper for getisax(2) call.
-os::Solaris::getisax_func_t os::Solaris::_getisax = 0;
-
 // (Static) wrappers for the liblgrp API
 os::Solaris::lgrp_home_func_t os::Solaris::_lgrp_home;
 os::Solaris::lgrp_init_func_t os::Solaris::_lgrp_init;
@@ -4173,9 +4170,6 @@ os::Solaris::lgrp_resources_func_t os::Solaris::_lgrp_resources;
 os::Solaris::lgrp_nlgrps_func_t os::Solaris::_lgrp_nlgrps;
 os::Solaris::lgrp_cookie_stale_func_t os::Solaris::_lgrp_cookie_stale;
 os::Solaris::lgrp_cookie_t os::Solaris::_lgrp_cookie = 0;
-
-// (Static) wrapper for meminfo() call.
-os::Solaris::meminfo_func_t os::Solaris::_meminfo = 0;
 
 static address resolve_symbol_lazy(const char* name) {
   address addr = (address) dlsym(RTLD_DEFAULT, name);
@@ -4300,27 +4294,6 @@ bool os::Solaris::liblgrp_init() {
   return false;
 }
 
-void os::Solaris::misc_sym_init() {
-  address func;
-
-  // getisax
-  func = resolve_symbol_lazy("getisax");
-  if (func != NULL) {
-    os::Solaris::_getisax = CAST_TO_FN_PTR(getisax_func_t, func);
-  }
-
-  // meminfo
-  func = resolve_symbol_lazy("meminfo");
-  if (func != NULL) {
-    os::Solaris::set_meminfo(CAST_TO_FN_PTR(meminfo_func_t, func));
-  }
-}
-
-uint_t os::Solaris::getisax(uint32_t* array, uint_t n) {
-  assert(_getisax != NULL, "_getisax not set");
-  return _getisax(array, n);
-}
-
 // int pset_getloadavg(psetid_t pset, double loadavg[], int nelem);
 typedef long (*pset_getloadavg_type)(psetid_t pset, double loadavg[], int nelem);
 static pset_getloadavg_type pset_getloadavg_ptr = NULL;
@@ -4350,10 +4323,6 @@ void os::init(void) {
   init_page_sizes((size_t) page_size);
 
   Solaris::initialize_system_info();
-
-  // Initialize misc. symbols as soon as possible, so we can use them
-  // if we need them.
-  Solaris::misc_sym_init();
 
   int fd = ::open("/dev/zero", O_RDWR);
   if (fd < 0) {

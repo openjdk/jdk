@@ -40,13 +40,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import jdk.tools.jlink.internal.ImagePluginConfiguration;
+import jdk.tools.jlink.internal.Jlink;
 import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.internal.ImagePluginStack;
 import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.internal.ResourcePoolManager.ResourcePoolImpl;
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
-import jdk.tools.jlink.Jlink;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;

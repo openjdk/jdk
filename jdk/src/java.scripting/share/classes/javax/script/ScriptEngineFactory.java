@@ -216,8 +216,9 @@ public interface ScriptEngineFactory {
      *  @param statements The statements to be executed.  May be return values of
      *  calls to the <code>getMethodCallSyntax</code> and <code>getOutputStatement</code> methods.
      *  @return The Program
+     *
+     *  @throws NullPointerException if the <code>statements</code> array or any of its elements is null
      */
-
     public String getProgram(String... statements);
 
     /**

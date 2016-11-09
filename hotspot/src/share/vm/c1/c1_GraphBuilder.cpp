@@ -1493,6 +1493,21 @@ void GraphBuilder::method_return(Value x, bool ignore_return) {
   // Check to see whether we are inlining. If so, Return
   // instructions become Gotos to the continuation point.
   if (continuation() != NULL) {
+
+    int invoke_bci = state()->caller_state()->bci();
+
+    if (x != NULL  && !ignore_return) {
+      ciMethod* caller = state()->scope()->caller()->method();
+      Bytecodes::Code invoke_raw_bc = caller->raw_code_at_bci(invoke_bci);
+      if (invoke_raw_bc == Bytecodes::_invokehandle || invoke_raw_bc == Bytecodes::_invokedynamic) {
+        ciType* declared_ret_type = caller->get_declared_signature_at_bci(invoke_bci)->return_type();
+        if (declared_ret_type->is_klass() && x->exact_type() == NULL &&
+            x->declared_type() != declared_ret_type && declared_ret_type != compilation()->env()->Object_klass()) {
+          x = append(new TypeCast(declared_ret_type->as_klass(), x, copy_state_before()));
+        }
+      }
+    }
+
     assert(!method()->is_synchronized() || InlineSynchronizedMethods, "can not inline synchronized methods yet");
 
     if (compilation()->env()->dtrace_method_probes()) {
@@ -1516,7 +1531,6 @@ void GraphBuilder::method_return(Value x, bool ignore_return) {
     // State at end of inlined method is the state of the caller
     // without the method parameters on stack, including the
     // return value, if any, of the inlined method on operand stack.
-    int invoke_bci = state()->caller_state()->bci();
     set_state(state()->caller_state()->copy_for_parsing());
     if (x != NULL) {
       if (!ignore_return) {
@@ -1929,7 +1943,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
         // number of implementors for decl_interface is 0 or 1. If
         // it's 0 then no class implements decl_interface and there's
         // no point in inlining.
-        if (!holder->is_loaded() || decl_interface->nof_implementors() != 1 || decl_interface->has_default_methods()) {
+        if (!holder->is_loaded() || decl_interface->nof_implementors() != 1 || decl_interface->has_nonstatic_concrete_methods()) {
           singleton = NULL;
         }
       }
@@ -4308,7 +4322,7 @@ void GraphBuilder::print_stats() {
 void GraphBuilder::profile_call(ciMethod* callee, Value recv, ciKlass* known_holder, Values* obj_args, bool inlined) {
   assert(known_holder == NULL || (known_holder->is_instance_klass() &&
                                   (!known_holder->is_interface() ||
-                                   ((ciInstanceKlass*)known_holder)->has_default_methods())), "should be default method");
+                                   ((ciInstanceKlass*)known_holder)->has_nonstatic_concrete_methods())), "should be non-static concrete method");
   if (known_holder != NULL) {
     if (known_holder->exact_klass() == NULL) {
       known_holder = compilation()->cha_exact_type(known_holder);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @summary Read signed data in one or more PKCS7 objects from individual files,
  * verify SignerInfos and certificate chain.
  * @modules java.base/sun.security.pkcs
- * @run main PKCS7VerifyTest PKCS7TEST.DSA.base64
- * @run main PKCS7VerifyTest PKCS7TEST.DSA.base64 PKCS7TEST.SF
+ * @run main/othervm PKCS7VerifyTest PKCS7TEST.DSA.base64
+ * @run main/othervm PKCS7VerifyTest PKCS7TEST.DSA.base64 PKCS7TEST.SF
  */
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -36,6 +36,7 @@ import java.io.FileInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.HashMap;
@@ -54,6 +55,8 @@ public class PKCS7VerifyTest {
         if (args.length == 0) {
             throw new RuntimeException("usage: java JarVerify <file1> <file2>");
         }
+
+        Security.setProperty("jdk.jar.disabledAlgorithms", "");
 
         // The command " java PKCS7VerifyTest file1 [file2] "
         // treats file1 as containing the DER encoding of a PKCS7 signed data

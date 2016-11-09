@@ -35,6 +35,7 @@
 #include "awt.h"
 
 static void *gtk3_libhandle = NULL;
+static void *gthread_libhandle = NULL;
 
 static jmp_buf j;
 
@@ -81,6 +82,15 @@ static void gtk3_remove_state(GtkWidget *widget, GtkStateType state) {
 static void* dl_symbol(const char* name)
 {
     void* result = dlsym(gtk3_libhandle, name);
+    if (!result)
+        longjmp(j, NO_SYMBOL_EXCEPTION);
+
+    return result;
+}
+
+static void* dl_symbol_gthread(const char* name)
+{
+    void* result = dlsym(gthread_libhandle, name);
     if (!result)
         longjmp(j, NO_SYMBOL_EXCEPTION);
 
@@ -259,6 +269,13 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
     gtk3_libhandle = dlopen(lib_name, RTLD_LAZY | RTLD_LOCAL);
     if (gtk3_libhandle == NULL) {
         return FALSE;
+    }
+
+    gthread_libhandle = dlopen(GTHREAD_LIB_VERSIONED, RTLD_LAZY | RTLD_LOCAL);
+    if (gthread_libhandle == NULL) {
+        gthread_libhandle = dlopen(GTHREAD_LIB, RTLD_LAZY | RTLD_LOCAL);
+        if (gthread_libhandle == NULL)
+            return FALSE;
     }
 
     if (setjmp(j) == 0)
@@ -530,8 +547,8 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
 
         fp_g_path_get_dirname = dl_symbol("g_path_get_dirname");
 
-        fp_gdk_threads_enter = &empty;
-        fp_gdk_threads_leave = &empty;
+        fp_gdk_threads_enter = dl_symbol("gdk_threads_enter");
+        fp_gdk_threads_leave = dl_symbol("gdk_threads_leave");
 
         /**
          * Functions for sun_awt_X11_GtkFileDialogPeer.c
@@ -555,6 +572,9 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
     {
         dlclose(gtk3_libhandle);
         gtk3_libhandle = NULL;
+
+        dlclose(gthread_libhandle);
+        gthread_libhandle = NULL;
 
         return NULL;
     }
@@ -651,6 +671,7 @@ static int gtk3_unload()
 
     dlerror();
     dlclose(gtk3_libhandle);
+    dlclose(gthread_libhandle);
     if ((gtk3_error = dlerror()) != NULL)
     {
         return FALSE;

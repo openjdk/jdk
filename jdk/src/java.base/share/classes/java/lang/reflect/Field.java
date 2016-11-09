@@ -403,7 +403,7 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         return getFieldAccessor(obj).get(obj);
     }
@@ -437,7 +437,7 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         return getFieldAccessor(obj).getBoolean(obj);
     }
@@ -471,7 +471,7 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         return getFieldAccessor(obj).getByte(obj);
     }
@@ -507,7 +507,7 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         return getFieldAccessor(obj).getChar(obj);
     }
@@ -543,7 +543,7 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         return getFieldAccessor(obj).getShort(obj);
     }
@@ -579,7 +579,7 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         return getFieldAccessor(obj).getInt(obj);
     }
@@ -615,7 +615,7 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         return getFieldAccessor(obj).getLong(obj);
     }
@@ -651,7 +651,7 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         return getFieldAccessor(obj).getFloat(obj);
     }
@@ -687,7 +687,7 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         return getFieldAccessor(obj).getDouble(obj);
     }
@@ -765,7 +765,7 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         getFieldAccessor(obj).set(obj, value);
     }
@@ -801,7 +801,7 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         getFieldAccessor(obj).setBoolean(obj, z);
     }
@@ -837,7 +837,7 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         getFieldAccessor(obj).setByte(obj, b);
     }
@@ -873,7 +873,7 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         getFieldAccessor(obj).setChar(obj, c);
     }
@@ -909,7 +909,7 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         getFieldAccessor(obj).setShort(obj, s);
     }
@@ -945,7 +945,7 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         getFieldAccessor(obj).setInt(obj, i);
     }
@@ -981,7 +981,7 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         getFieldAccessor(obj).setLong(obj, l);
     }
@@ -1017,7 +1017,7 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         getFieldAccessor(obj).setFloat(obj, f);
     }
@@ -1053,9 +1053,18 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
+            checkAccess(caller, obj);
         }
         getFieldAccessor(obj).setDouble(obj, d);
+    }
+
+    // check access to field
+    private void checkAccess(Class<?> caller, Object obj)
+        throws IllegalAccessException
+    {
+        checkAccess(caller, clazz,
+                    Modifier.isStatic(modifiers) ? null : obj.getClass(),
+                    modifiers);
     }
 
     // security check is done before calling this method

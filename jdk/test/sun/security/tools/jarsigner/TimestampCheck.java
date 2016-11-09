@@ -22,25 +22,29 @@
  */
 
 import com.sun.net.httpserver.*;
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.Locale;
 
+import jdk.testlibrary.*;
+import jdk.testlibrary.JarUtils;
 import sun.security.pkcs.ContentInfo;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.PKCS9Attribute;
@@ -52,11 +56,22 @@ import sun.security.util.ObjectIdentifier;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X500Name;
 
+/*
+ * @test
+ * @bug 6543842 6543440 6939248 8009636 8024302 8163304
+ * @summary checking response of timestamp
+ * @modules java.base/sun.security.pkcs
+ *          java.base/sun.security.timestamp
+ *          java.base/sun.security.x509
+ *          java.base/sun.security.util
+ *          java.base/sun.security.tools.keytool
+ * @library /lib/testlibrary
+ * @run main/timeout=600 TimestampCheck
+ */
 public class TimestampCheck {
-    static final String TSKS = "tsks";
-    static final String JAR = "old.jar";
 
-    static final String defaultPolicyId = "2.3.4.5";
+    static final String defaultPolicyId = "2.3.4";
+    static String host = null;
 
     static class Handler implements HttpHandler, AutoCloseable {
 
@@ -75,11 +90,7 @@ public class TimestampCheck {
             t.getRequestBody().read(input);
 
             try {
-                int path = 0;
-                if (t.getRequestURI().getPath().length() > 1) {
-                    path = Integer.parseInt(
-                            t.getRequestURI().getPath().substring(1));
-                }
+                String path = t.getRequestURI().getPath().substring(1);
                 byte[] output = sign(input, path);
                 Headers out = t.getResponseHeaders();
                 out.set("Content-Type", "application/timestamp-reply");
@@ -97,24 +108,10 @@ public class TimestampCheck {
         /**
          * @param input The data to sign
          * @param path different cases to simulate, impl on URL path
-         * 0: normal
-         * 1: Missing nonce
-         * 2: Different nonce
-         * 3: Bad digets octets in messageImprint
-         * 4: Different algorithmId in messageImprint
-         * 5: whole chain in cert set
-         * 6: extension is missing
-         * 7: extension is non-critical
-         * 8: extension does not have timestamping
-         * 9: no cert in response
-         * 10: normal
-         * 11: always return default policy id
-         * 12: normal
-         * otherwise: normal
          * @returns the signed
          */
-        byte[] sign(byte[] input, int path) throws Exception {
-            // Read TSRequest
+        byte[] sign(byte[] input, String path) throws Exception {
+
             DerValue value = new DerValue(input);
             System.err.println("\nIncoming Request\n===================");
             System.err.println("Version: " + value.data.getInteger());
@@ -138,36 +135,33 @@ public class TimestampCheck {
                 }
             }
 
-            // Write TSResponse
             System.err.println("\nResponse\n===================");
-            KeyStore ks = KeyStore.getInstance("JKS");
-            try (FileInputStream fis = new FileInputStream(keystore)) {
-                ks.load(fis, "changeit".toCharArray());
-            }
+            KeyStore ks = KeyStore.getInstance(
+                    new File(keystore), "changeit".toCharArray());
 
             String alias = "ts";
-            if (path == 6) alias = "tsbad1";
-            if (path == 7) alias = "tsbad2";
-            if (path == 8) alias = "tsbad3";
+            if (path.startsWith("bad") || path.equals("weak")) {
+                alias = "ts" + path;
+            }
 
-            if (path == 11) {
+            if (path.equals("diffpolicy")) {
                 policyId = new ObjectIdentifier(defaultPolicyId);
             }
 
             DerOutputStream statusInfo = new DerOutputStream();
             statusInfo.putInteger(0);
 
-            DerOutputStream token = new DerOutputStream();
             AlgorithmId[] algorithms = {aid};
             Certificate[] chain = ks.getCertificateChain(alias);
-            X509Certificate[] signerCertificateChain = null;
+            X509Certificate[] signerCertificateChain;
             X509Certificate signer = (X509Certificate)chain[0];
-            if (path == 5) {   // Only case 5 uses full chain
+
+            if (path.equals("fullchain")) {   // Only case 5 uses full chain
                 signerCertificateChain = new X509Certificate[chain.length];
                 for (int i=0; i<chain.length; i++) {
                     signerCertificateChain[i] = (X509Certificate)chain[i];
                 }
-            } else if (path == 9) {
+            } else if (path.equals("nocert")) {
                 signerCertificateChain = new X509Certificate[0];
             } else {
                 signerCertificateChain = new X509Certificate[1];
@@ -179,11 +173,11 @@ public class TimestampCheck {
             tst.putInteger(1);
             tst.putOID(policyId);
 
-            if (path != 3 && path != 4) {
+            if (!path.equals("baddigest") && !path.equals("diffalg")) {
                 tst.putDerValue(messageImprint);
             } else {
                 byte[] data = messageImprint.toByteArray();
-                if (path == 4) {
+                if (path.equals("diffalg")) {
                     data[6] = (byte)0x01;
                 } else {
                     data[data.length-1] = (byte)0x01;
@@ -198,10 +192,10 @@ public class TimestampCheck {
             Calendar cal = Calendar.getInstance();
             tst.putGeneralizedTime(cal.getTime());
 
-            if (path == 2) {
+            if (path.equals("diffnonce")) {
                 tst.putInteger(1234);
-            } else if (path == 1) {
-                // do nothing
+            } else if (path.equals("nononce")) {
+                // no noce
             } else {
                 tst.putInteger(nonce);
             }
@@ -212,6 +206,8 @@ public class TimestampCheck {
             DerOutputStream tstInfo2 = new DerOutputStream();
             tstInfo2.putOctetString(tstInfo.toByteArray());
 
+            // Always use the same algorithm at timestamp signing
+            // so it is different from the hash algorithm.
             Signature sig = Signature.getInstance("SHA1withRSA");
             sig.initSign((PrivateKey)(ks.getKey(
                     alias, "changeit".toCharArray())));
@@ -229,12 +225,11 @@ public class TimestampCheck {
             SignerInfo signerInfo = new SignerInfo(
                     new X500Name(signer.getIssuerX500Principal().getName()),
                     signer.getSerialNumber(),
-                    aid, AlgorithmId.get("RSA"), sig.sign());
+                    AlgorithmId.get("SHA-1"), AlgorithmId.get("RSA"), sig.sign());
 
             SignerInfo[] signerInfos = {signerInfo};
-            PKCS7 p7 =
-                    new PKCS7(algorithms, contentInfo, signerCertificateChain,
-                    signerInfos);
+            PKCS7 p7 = new PKCS7(algorithms, contentInfo,
+                    signerCertificateChain, signerInfos);
             ByteArrayOutputStream p7out = new ByteArrayOutputStream();
             p7.encodeSignedData(p7out);
 
@@ -294,49 +289,162 @@ public class TimestampCheck {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        try (Handler tsa = Handler.init(0, TSKS);) {
+    public static void main(String[] args) throws Throwable {
+
+        prepare();
+
+        try (Handler tsa = Handler.init(0, "tsks");) {
             tsa.start();
             int port = tsa.getPort();
-
-            String cmd;
-            // Use -J-Djava.security.egd=file:/dev/./urandom to speed up
-            // nonce generation in timestamping request. Not avaibale on
-            // Windows and defaults to thread seed generator, not too bad.
-            if (System.getProperty("java.home").endsWith("jre")) {
-                cmd = System.getProperty("java.home") + "/../bin/jarsigner";
-            } else {
-                cmd = System.getProperty("java.home") + "/bin/jarsigner";
-            }
-
-            cmd += " " + System.getProperty("test.tool.vm.opts")
-                    + " -J-Djava.security.egd=file:/dev/./urandom"
-                    + " -J-Duser.language=en -J-Duser.country=US"
-                    + " -debug -keystore " + TSKS + " -storepass changeit"
-                    + " -tsa http://localhost:" + port + "/%d"
-                    + " -signedjar new_%d.jar " + JAR + " old";
+            host = "http://localhost:" + port + "/";
 
             if (args.length == 0) {         // Run this test
-                jarsigner(cmd, 0, true);    // Success, normal call
-                jarsigner(cmd, 1, false);   // These 4 should fail
-                jarsigner(cmd, 2, false);
-                jarsigner(cmd, 3, false);
-                jarsigner(cmd, 4, false);
-                jarsigner(cmd, 5, true);    // Success, 6543440 solved.
-                jarsigner(cmd, 6, false);   // tsbad1
-                jarsigner(cmd, 7, false);   // tsbad2
-                jarsigner(cmd, 8, false);   // tsbad3
-                jarsigner(cmd, 9, false);   // no cert in timestamp
-                jarsigner(cmd + " -tsapolicyid 1.2.3.4", 10, true);
-                checkTimestamp("new_10.jar", "1.2.3.4", "SHA-256");
-                jarsigner(cmd + " -tsapolicyid 1.2.3.5", 11, false);
-                jarsigner(cmd + " -tsadigestalg SHA", 12, true);
-                checkTimestamp("new_12.jar", defaultPolicyId, "SHA-1");
+                sign("none")
+                        .shouldContain("is not timestamped")
+                        .shouldHaveExitValue(0);
+
+                sign("badku")
+                        .shouldHaveExitValue(0);
+                checkBadKU("badku.jar");
+
+                sign("normal")
+                        .shouldNotContain("is not timestamped")
+                        .shouldHaveExitValue(0);
+
+                sign("nononce")
+                        .shouldHaveExitValue(1);
+                sign("diffnonce")
+                        .shouldHaveExitValue(1);
+                sign("baddigest")
+                        .shouldHaveExitValue(1);
+                sign("diffalg")
+                        .shouldHaveExitValue(1);
+                sign("fullchain")
+                        .shouldHaveExitValue(0);   // Success, 6543440 solved.
+                sign("bad1")
+                        .shouldHaveExitValue(1);
+                sign("bad2")
+                        .shouldHaveExitValue(1);
+                sign("bad3")
+                        .shouldHaveExitValue(1);
+                sign("nocert")
+                        .shouldHaveExitValue(1);
+
+                sign("policy", "-tsapolicyid",  "1.2.3")
+                        .shouldHaveExitValue(0);
+                checkTimestamp("policy.jar", "1.2.3", "SHA-256");
+
+                sign("diffpolicy", "-tsapolicyid", "1.2.3")
+                        .shouldHaveExitValue(1);
+
+                sign("tsaalg", "-tsadigestalg", "SHA")
+                        .shouldHaveExitValue(0);
+                checkTimestamp("tsaalg.jar", defaultPolicyId, "SHA-1");
+
+                sign("weak", "-digestalg", "MD5",
+                                "-sigalg", "MD5withRSA", "-tsadigestalg", "MD5")
+                        .shouldHaveExitValue(0)
+                        .shouldMatch("MD5.*-digestalg.*risk")
+                        .shouldMatch("MD5.*-tsadigestalg.*risk")
+                        .shouldMatch("MD5withRSA.*-sigalg.*risk");
+                checkWeak("weak.jar");
+
+                // When .SF or .RSA is missing or invalid
+                checkMissingOrInvalidFiles("normal.jar");
             } else {                        // Run as a standalone server
                 System.err.println("Press Enter to quit server");
                 System.in.read();
             }
         }
+    }
+
+    private static void checkMissingOrInvalidFiles(String s)
+            throws Throwable {
+        JarUtils.updateJar(s, "1.jar", "-", "META-INF/OLD.SF");
+        verify("1.jar", "-verbose")
+                .shouldHaveExitValue(0)
+                .shouldContain("treated as unsigned")
+                .shouldContain("Missing signature-related file META-INF/OLD.SF");
+        JarUtils.updateJar(s, "2.jar", "-", "META-INF/OLD.RSA");
+        verify("2.jar", "-verbose")
+                .shouldHaveExitValue(0)
+                .shouldContain("treated as unsigned")
+                .shouldContain("Missing block file for signature-related file META-INF/OLD.SF");
+        JarUtils.updateJar(s, "3.jar", "META-INF/OLD.SF");
+        verify("3.jar", "-verbose")
+                .shouldHaveExitValue(0)
+                .shouldContain("treated as unsigned")
+                .shouldContain("Unparsable signature-related file META-INF/OLD.SF");
+        JarUtils.updateJar(s, "4.jar", "META-INF/OLD.RSA");
+        verify("4.jar", "-verbose")
+                .shouldHaveExitValue(0)
+                .shouldContain("treated as unsigned")
+                .shouldContain("Unparsable signature-related file META-INF/OLD.RSA");
+    }
+
+    static OutputAnalyzer jarsigner(List<String> extra)
+            throws Throwable {
+        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jarsigner")
+                .addVMArg("-Duser.language=en")
+                .addVMArg("-Duser.country=US")
+                .addToolArg("-keystore")
+                .addToolArg("tsks")
+                .addToolArg("-storepass")
+                .addToolArg("changeit");
+        for (String s : extra) {
+            if (s.startsWith("-J")) {
+                launcher.addVMArg(s.substring(2));
+            } else {
+                launcher.addToolArg(s);
+            }
+        }
+        return ProcessTools.executeCommand(launcher.getCommand());
+    }
+
+    static OutputAnalyzer verify(String file, String... extra)
+            throws Throwable {
+        List<String> args = new ArrayList<>();
+        args.add("-verify");
+        args.add(file);
+        args.addAll(Arrays.asList(extra));
+        return jarsigner(args);
+    }
+
+    static void checkBadKU(String file) throws Throwable {
+        verify(file)
+                .shouldHaveExitValue(0)
+                .shouldContain("treated as unsigned")
+                .shouldContain("re-run jarsigner with debug enabled");
+        verify(file, "-verbose")
+                .shouldHaveExitValue(0)
+                .shouldContain("Signed by")
+                .shouldContain("treated as unsigned")
+                .shouldContain("re-run jarsigner with debug enabled");
+        verify(file, "-J-Djava.security.debug=jar")
+                .shouldHaveExitValue(0)
+                .shouldContain("SignatureException: Key usage restricted")
+                .shouldContain("treated as unsigned")
+                .shouldContain("re-run jarsigner with debug enabled");
+    }
+
+    static void checkWeak(String file) throws Throwable {
+        verify(file)
+                .shouldHaveExitValue(0)
+                .shouldContain("treated as unsigned")
+                .shouldMatch("weak algorithm that is now disabled.")
+                .shouldMatch("Re-run jarsigner with the -verbose option for more details");
+        verify(file, "-verbose")
+                .shouldHaveExitValue(0)
+                .shouldContain("treated as unsigned")
+                .shouldMatch("weak algorithm that is now disabled by")
+                .shouldMatch("Digest algorithm: .*weak")
+                .shouldMatch("Signature algorithm: .*weak")
+                .shouldMatch("Timestamp digest algorithm: .*weak")
+                .shouldNotMatch("Timestamp signature algorithm: .*weak.*weak")
+                .shouldMatch("Timestamp signature algorithm: .*key.*weak");
+        verify(file, "-J-Djava.security.debug=jar")
+                .shouldHaveExitValue(0)
+                .shouldMatch("SignatureException:.*Disabled");
     }
 
     static void checkTimestamp(String file, String policyId, String digestAlg)
@@ -365,41 +473,62 @@ public class TimestampCheck {
         }
     }
 
-    /**
-     * @param cmd the command line (with a hole to plug in)
-     * @param path the path in the URL, i.e, http://localhost/path
-     * @param expected if this command should succeed
-     */
-    static void jarsigner(String cmd, int path, boolean expected)
-            throws Exception {
-        System.err.println("Test " + path);
-        Process p = Runtime.getRuntime().exec(String.format(Locale.ROOT,cmd, path, path));
-        BufferedReader reader = new BufferedReader(
-                new InputStreamReader(p.getErrorStream()));
-        while (true) {
-            String s = reader.readLine();
-            if (s == null) break;
-            System.err.println(s);
-        }
+    static int which = 0;
 
-        // Will not see noTimestamp warning
-        boolean seeWarning = false;
-        reader = new BufferedReader(
-                new InputStreamReader(p.getInputStream()));
-        while (true) {
-            String s = reader.readLine();
-            if (s == null) break;
-            System.err.println(s);
-            if (s.indexOf("Warning:") >= 0) {
-                seeWarning = true;
-            }
+    /**
+     * @param extra more args given to jarsigner
+     */
+    static OutputAnalyzer sign(String path, String... extra)
+            throws Throwable {
+        which++;
+        System.err.println("\n>> Test #" + which + ": " + Arrays.toString(extra));
+        List<String> args = List.of("-J-Djava.security.egd=file:/dev/./urandom",
+                "-debug", "-signedjar", path + ".jar", "old.jar",
+                path.equals("badku") ? "badku" : "old");
+        args = new ArrayList<>(args);
+        if (!path.equals("none") && !path.equals("badku")) {
+            args.add("-tsa");
+            args.add(host + path);
         }
-        int result = p.waitFor();
-        if (expected && result != 0 || !expected && result == 0) {
-            throw new Exception("Failed");
+        args.addAll(Arrays.asList(extra));
+        return jarsigner(args);
+    }
+
+    static void prepare() throws Exception {
+        jdk.testlibrary.JarUtils.createJar("old.jar", "A");
+        Files.deleteIfExists(Paths.get("tsks"));
+        keytool("-alias ca -genkeypair -ext bc -dname CN=CA");
+        keytool("-alias old -genkeypair -dname CN=old");
+        keytool("-alias badku -genkeypair -dname CN=badku");
+        keytool("-alias ts -genkeypair -dname CN=ts");
+        keytool("-alias tsweak -genkeypair -keysize 512 -dname CN=tsbad1");
+        keytool("-alias tsbad1 -genkeypair -dname CN=tsbad1");
+        keytool("-alias tsbad2 -genkeypair -dname CN=tsbad2");
+        keytool("-alias tsbad3 -genkeypair -dname CN=tsbad3");
+
+        gencert("old");
+        gencert("badku", "-ext ku:critical=keyAgreement");
+        gencert("ts", "-ext eku:critical=ts");
+        gencert("tsweak", "-ext eku:critical=ts");
+        gencert("tsbad1");
+        gencert("tsbad2", "-ext eku=ts");
+        gencert("tsbad3", "-ext eku:critical=cs");
+    }
+
+    static void gencert(String alias, String... extra) throws Exception {
+        keytool("-alias " + alias + " -certreq -file " + alias + ".req");
+        String genCmd = "-gencert -alias ca -infile " +
+                alias + ".req -outfile " + alias + ".cert";
+        for (String s : extra) {
+            genCmd += " " + s;
         }
-        if (seeWarning) {
-            throw new Exception("See warning");
-        }
+        keytool(genCmd);
+        keytool("-alias " + alias + " -importcert -file " + alias + ".cert");
+    }
+
+    static void keytool(String cmd) throws Exception {
+        cmd = "-keystore tsks -storepass changeit -keypass changeit " +
+                "-keyalg rsa -validity 200 " + cmd;
+        sun.security.tools.keytool.Main.main(cmd.split(" "));
     }
 }

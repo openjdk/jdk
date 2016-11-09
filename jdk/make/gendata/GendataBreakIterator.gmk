@@ -55,7 +55,6 @@ $(eval $(call SetupJavaCompilation,BUILD_BREAKITERATOR_BASE, \
 $(eval $(call SetupJavaCompilation,BUILD_BREAKITERATOR_LD, \
     SETUP := GENERATE_OLDBYTECODE, \
     SRC := $(JDK_TOPDIR)/src/jdk.localedata/share/classes, \
-    INCLUDES := $(TEXT_PKG_LD), \
     INCLUDE_FILES := \
         $(TEXT_PKG_LD)/BreakIteratorRules_th.java \
         $(TEXT_PKG_LD)/BreakIteratorInfo_th.java, \

@@ -312,22 +312,22 @@ public class AccessibleObject implements AnnotatedElement {
     // (See also Class.newInstance(), which uses a similar method.)
     //
     // A more complicated security check cache is needed for Method and Field
-    // The cache can be either null (empty cache), a 2-array of {caller,target},
-    // or a caller (with target implicitly equal to this.clazz).
-    // In the 2-array case, the target is always different from the clazz.
+    // The cache can be either null (empty cache), a 2-array of {caller,targetClass},
+    // or a caller (with targetClass implicitly equal to memberClass).
+    // In the 2-array case, the targetClass is always different from the memberClass.
     volatile Object securityCheckCache;
 
-    void checkAccess(Class<?> caller, Class<?> clazz, Object obj, int modifiers)
+    final void checkAccess(Class<?> caller, Class<?> memberClass,
+                           Class<?> targetClass, int modifiers)
         throws IllegalAccessException
     {
-        if (caller == clazz) {  // quick check
+        if (caller == memberClass) {  // quick check
             return;             // ACCESS IS OK
         }
         Object cache = securityCheckCache;  // read volatile
-        Class<?> targetClass = clazz;
-        if (obj != null
+        if (targetClass != null // instance member or constructor
             && Modifier.isProtected(modifiers)
-            && ((targetClass = obj.getClass()) != clazz)) {
+            && targetClass != memberClass) {
             // Must match a 2-list of { caller, targetClass }.
             if (cache instanceof Class[]) {
                 Class<?>[] cache2 = (Class<?>[]) cache;
@@ -339,25 +339,27 @@ public class AccessibleObject implements AnnotatedElement {
                 // subsumes range check for [0].)
             }
         } else if (cache == caller) {
-            // Non-protected case (or obj.class == this.clazz).
+            // Non-protected case (or targetClass == memberClass or static member).
             return;             // ACCESS IS OK
         }
 
         // If no return, fall through to the slow path.
-        slowCheckMemberAccess(caller, clazz, obj, modifiers, targetClass);
+        slowCheckMemberAccess(caller, memberClass, targetClass, modifiers);
     }
 
     // Keep all this slow stuff out of line:
-    void slowCheckMemberAccess(Class<?> caller, Class<?> clazz, Object obj, int modifiers,
-                               Class<?> targetClass)
+    void slowCheckMemberAccess(Class<?> caller, Class<?> memberClass,
+                               Class<?> targetClass, int modifiers)
         throws IllegalAccessException
     {
-        Reflection.ensureMemberAccess(caller, clazz, obj, modifiers);
+        Reflection.ensureMemberAccess(caller, memberClass, targetClass, modifiers);
 
         // Success: Update the cache.
-        Object cache = ((targetClass == clazz)
-                        ? caller
-                        : new Class<?>[] { caller, targetClass });
+        Object cache = (targetClass != null
+                        && Modifier.isProtected(modifiers)
+                        && targetClass != memberClass)
+                        ? new Class<?>[] { caller, targetClass }
+                        : caller;
 
         // Note:  The two cache elements are not volatile,
         // but they are effectively final.  The Java memory model

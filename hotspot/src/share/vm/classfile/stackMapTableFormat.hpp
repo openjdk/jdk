@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,6 +203,7 @@ class stack_map_frame {
   inline bool verify(address start, address end) const;
 
   inline void print_on(outputStream* st, int current_offset) const;
+  inline void print_truncated(outputStream* st, int current_offset) const;
 
   // Create as_xxx and is_xxx methods for the subtypes
 #define FRAME_TYPE_DECL(stackmap_frame_type, arg1, arg2) \
@@ -263,6 +264,10 @@ class same_frame : public stack_map_frame {
   void print_on(outputStream* st, int current_offset = -1) const {
     st->print("same_frame(@%d)", offset_delta() + current_offset);
   }
+
+  void print_truncated(outputStream* st, int current_offset = -1) const {
+    print_on(st, current_offset);
+  }
 };
 
 class same_frame_extended : public stack_map_frame {
@@ -308,6 +313,10 @@ class same_frame_extended : public stack_map_frame {
 
   void print_on(outputStream* st, int current_offset = -1) const {
     st->print("same_frame_extended(@%d)", offset_delta() + current_offset);
+  }
+
+  void print_truncated(outputStream* st, int current_offset = -1) const {
+    print_on(st, current_offset);
   }
 };
 
@@ -381,6 +390,11 @@ class same_locals_1_stack_item_frame : public stack_map_frame {
     types()->print_on(st);
     st->print(")");
   }
+
+  void print_truncated(outputStream* st, int current_offset = -1) const {
+    st->print("same_locals_1_stack_item_frame(@%d), output truncated, Stackmap exceeds table size.",
+              offset_delta() + current_offset);
+  }
 };
 
 class same_locals_1_stack_item_extended : public stack_map_frame {
@@ -446,6 +460,11 @@ class same_locals_1_stack_item_extended : public stack_map_frame {
     types()->print_on(st);
     st->print(")");
   }
+
+  void print_truncated(outputStream* st, int current_offset = -1) const {
+    st->print("same_locals_1_stack_item_extended(@%d), output truncated, Stackmap exceeds table size.",
+              offset_delta() + current_offset);
+  }
 };
 
 class chop_frame : public stack_map_frame {
@@ -510,6 +529,10 @@ class chop_frame : public stack_map_frame {
 
   void print_on(outputStream* st, int current_offset = -1) const {
     st->print("chop_frame(@%d,%d)", offset_delta() + current_offset, chops());
+  }
+
+  void print_truncated(outputStream* st, int current_offset = -1) const {
+    print_on(st, current_offset);
   }
 };
 
@@ -618,6 +641,11 @@ class append_frame : public stack_map_frame {
       vti = vti->next();
     }
     st->print(")");
+  }
+
+  void print_truncated(outputStream* st, int current_offset = -1) const {
+    st->print("append_frame(@%d), output truncated, Stackmap exceeds table size.",
+              offset_delta() + current_offset);
   }
 };
 
@@ -784,6 +812,11 @@ class full_frame : public stack_map_frame {
     }
     st->print("})");
   }
+
+  void print_truncated(outputStream* st, int current_offset = -1) const {
+    st->print("full_frame(@%d), output truncated, Stackmap exceeds table size.",
+              offset_delta() + current_offset);
+  }
 };
 
 #define VIRTUAL_DISPATCH(stack_frame_type, func_name, args) \
@@ -839,6 +872,10 @@ bool stack_map_frame::verify(address start, address end) const {
 
 void stack_map_frame::print_on(outputStream* st, int offs = -1) const {
   FOR_EACH_STACKMAP_FRAME_TYPE(VOID_VIRTUAL_DISPATCH, print_on, (st, offs));
+}
+
+void stack_map_frame::print_truncated(outputStream* st, int offs = -1) const {
+  FOR_EACH_STACKMAP_FRAME_TYPE(VOID_VIRTUAL_DISPATCH, print_truncated, (st, offs));
 }
 
 #undef VIRTUAL_DISPATCH

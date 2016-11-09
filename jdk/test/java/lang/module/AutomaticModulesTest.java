@@ -158,39 +158,84 @@ public class AutomaticModulesTest {
      */
     public void testPackages() throws IOException {
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
-        createDummyJarFile(dir.resolve("m1.jar"),
+        createDummyJarFile(dir.resolve("m.jar"),
                            "p/C1.class", "p/C2.class", "q/C1.class");
 
         ModuleFinder finder = ModuleFinder.of(dir);
+        Optional<ModuleReference> mref = finder.find("m");
+        assertTrue(mref.isPresent(), "m not found");
 
-        Configuration parent = Layer.boot().configuration();
-        Configuration cf = resolve(parent, finder, "m1");
+        ModuleDescriptor descriptor = mref.get().descriptor();
 
-        ModuleDescriptor m1 = findDescriptor(cf, "m1");
+        assertTrue(descriptor.packages().size() == 2);
+        assertTrue(descriptor.packages().contains("p"));
+        assertTrue(descriptor.packages().contains("q"));
 
-        Set<String> exports
-            = m1.exports().stream().map(Exports::source).collect(Collectors.toSet());
-
+        Set<String> exports = descriptor.exports().stream()
+                .map(Exports::source)
+                .collect(Collectors.toSet());
         assertTrue(exports.size() == 2);
         assertTrue(exports.contains("p"));
         assertTrue(exports.contains("q"));
-        assertTrue(m1.conceals().isEmpty());
     }
-
 
     /**
-     * Test class file in JAR file where the entry does not correspond to a
+     * Test class files in JAR file where the entry does not correspond to a
      * legal package name.
      */
-    @Test(expectedExceptions = FindException.class)
     public void testBadPackage() throws IOException {
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
-        createDummyJarFile(dir.resolve("m1.jar"), "p-/T.class");
+        createDummyJarFile(dir.resolve("m.jar"), "p/C1.class", "p-/C2.class");
 
-        // should throw FindException
-        ModuleFinder.of(dir).findAll();
+        ModuleFinder finder = ModuleFinder.of(dir);
+        Optional<ModuleReference> mref = finder.find("m");
+        assertTrue(mref.isPresent(), "m not found");
+
+        ModuleDescriptor descriptor = mref.get().descriptor();
+
+        assertTrue(descriptor.packages().size() == 1);
+        assertTrue(descriptor.packages().contains("p"));
+
+        Set<String> exports = descriptor.exports().stream()
+                .map(Exports::source)
+                .collect(Collectors.toSet());
+        assertTrue(exports.size() == 1);
+        assertTrue(exports.contains("p"));
     }
 
+    /**
+     * Test non-class resources in a JAR file.
+     */
+    public void testNonClassResources() throws IOException {
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        createDummyJarFile(dir.resolve("m.jar"),
+                "LICENSE",
+                "README",
+                "WEB-INF/tags",
+                "p/Type.class",
+                "p/resources/m.properties");
+
+        ModuleFinder finder = ModuleFinder.of(dir);
+        Optional<ModuleReference> mref = finder.find("m");
+        assertTrue(mref.isPresent(), "m not found");
+
+        ModuleDescriptor descriptor = mref.get().descriptor();
+
+        assertTrue(descriptor.packages().size() == 2);
+        assertTrue(descriptor.packages().contains("p"));
+        assertTrue(descriptor.packages().contains("p.resources"));
+    }
+
+    /**
+     * Test .class file in unnamed package (top-level directory)
+     */
+    @Test(expectedExceptions = FindException.class)
+    public void testClassInUnnamedPackage() throws IOException {
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        createDummyJarFile(dir.resolve("m.jar"), "Mojo.class");
+        ModuleFinder finder = ModuleFinder.of(dir);
+        finder.findAll();
+    }
 
     /**
      * Test JAR file with META-INF/services configuration file
@@ -204,12 +249,12 @@ public class AutomaticModulesTest {
         Files.createDirectories(services);
         Files.write(services.resolve(service), Set.of(provider));
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
-        JarUtils.createJarFile(dir.resolve("m1.jar"), tmpdir);
+        JarUtils.createJarFile(dir.resolve("m.jar"), tmpdir);
 
         ModuleFinder finder = ModuleFinder.of(dir);
 
-        Optional<ModuleReference> mref = finder.find("m1");
-        assertTrue(mref.isPresent(), "m1 not found");
+        Optional<ModuleReference> mref = finder.find("m");
+        assertTrue(mref.isPresent(), "m not found");
 
         ModuleDescriptor descriptor = mref.get().descriptor();
         assertTrue(descriptor.provides().size() == 1);
@@ -220,17 +265,12 @@ public class AutomaticModulesTest {
     }
 
 
-    // META-INF/services configuration file/entries that are not legal
-    @DataProvider(name = "badproviders")
-    public Object[][] createProviders() {
+    // META-INF/services files that don't map to legal service names
+    @DataProvider(name = "badservices")
+    public Object[][] createBadServices() {
         return new Object[][] {
 
                 // service type         provider type
-
-                { "p.S",                "-" },
-                { "p.S",                ".S1" },
-                { "p.S",                "S1." },
-
                 { "-",                  "p.S1" },
                 { ".S",                 "p.S1" },
         };
@@ -240,8 +280,8 @@ public class AutomaticModulesTest {
      * Test JAR file with META-INF/services configuration file with bad
      * values or names.
      */
-    @Test(dataProvider = "badproviders", expectedExceptions = FindException.class)
-    public void testBadServicesConfiguration(String service, String provider)
+    @Test(dataProvider = "badservices")
+    public void testBadServicesNames(String service, String provider)
         throws IOException
     {
         Path tmpdir = Files.createTempDirectory(USER_DIR, "tmp");
@@ -249,7 +289,41 @@ public class AutomaticModulesTest {
         Files.createDirectories(services);
         Files.write(services.resolve(service), Set.of(provider));
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
-        JarUtils.createJarFile(dir.resolve("m1.jar"), tmpdir);
+        JarUtils.createJarFile(dir.resolve("m.jar"), tmpdir);
+
+        Optional<ModuleReference> omref = ModuleFinder.of(dir).find("m");
+        assertTrue(omref.isPresent());
+        ModuleDescriptor descriptor = omref.get().descriptor();
+        assertTrue(descriptor.provides().isEmpty());
+    }
+
+
+    // META-INF/services configuration file entries that are not legal
+    @DataProvider(name = "badproviders")
+    public Object[][] createBadProviders() {
+        return new Object[][] {
+
+                // service type         provider type
+                { "p.S",                "-" },
+                { "p.S",                ".S1" },
+                { "p.S",                "S1." },
+        };
+    }
+
+    /**
+     * Test JAR file with META-INF/services configuration file with bad
+     * values or names.
+     */
+    @Test(dataProvider = "badproviders", expectedExceptions = FindException.class)
+    public void testBadProvideNames(String service, String provider)
+        throws IOException
+    {
+        Path tmpdir = Files.createTempDirectory(USER_DIR, "tmp");
+        Path services = tmpdir.resolve("META-INF").resolve("services");
+        Files.createDirectories(services);
+        Files.write(services.resolve(service), Set.of(provider));
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        JarUtils.createJarFile(dir.resolve("m.jar"), tmpdir);
 
         // should throw FindException
         ModuleFinder.of(dir).findAll();

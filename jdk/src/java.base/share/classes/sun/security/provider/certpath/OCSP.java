@@ -35,6 +35,7 @@ import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.CRLReason;
 import java.security.cert.Extension;
+import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
@@ -164,6 +165,15 @@ public final class OCSP {
                                          Date date, List<Extension> extensions)
         throws IOException, CertPathValidatorException
     {
+        return check(cert, responderURI, null, issuerCert, responderCert, date, extensions);
+    }
+
+    public static RevocationStatus check(X509Certificate cert,
+            URI responderURI, TrustAnchor anchor, X509Certificate issuerCert,
+            X509Certificate responderCert, Date date,
+            List<Extension> extensions)
+            throws IOException, CertPathValidatorException
+    {
         CertId certId = null;
         try {
             X509CertImpl certImpl = X509CertImpl.toImpl(cert);
@@ -173,8 +183,8 @@ public final class OCSP {
                 ("Exception while encoding OCSPRequest", e);
         }
         OCSPResponse ocspResponse = check(Collections.singletonList(certId),
-            responderURI, new OCSPResponse.IssuerInfo(issuerCert),
-            responderCert, date, extensions);
+                responderURI, new OCSPResponse.IssuerInfo(anchor, issuerCert),
+                responderCert, date, extensions);
         return (RevocationStatus) ocspResponse.getSingleResponse(certId);
     }
 

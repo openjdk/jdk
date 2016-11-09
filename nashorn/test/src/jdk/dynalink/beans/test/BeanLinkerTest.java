@@ -24,14 +24,13 @@
  */
 package jdk.dynalink.beans.test;
 
+import static jdk.dynalink.StandardNamespace.ELEMENT;
+import static jdk.dynalink.StandardNamespace.METHOD;
+import static jdk.dynalink.StandardNamespace.PROPERTY;
 import static jdk.dynalink.StandardOperation.CALL;
-import static jdk.dynalink.StandardOperation.CALL_METHOD;
-import static jdk.dynalink.StandardOperation.GET_ELEMENT;
-import static jdk.dynalink.StandardOperation.GET_LENGTH;
-import static jdk.dynalink.StandardOperation.GET_METHOD;
-import static jdk.dynalink.StandardOperation.GET_PROPERTY;
+import static jdk.dynalink.StandardOperation.GET;
 import static jdk.dynalink.StandardOperation.NEW;
-import static jdk.dynalink.StandardOperation.SET_ELEMENT;
+import static jdk.dynalink.StandardOperation.SET;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
@@ -39,7 +38,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.security.AccessControlException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import jdk.dynalink.CallSiteDescriptor;
@@ -78,11 +76,20 @@ public class BeanLinkerTest {
     }
 
     private CallSite createCallSite(final boolean publicLookup, final Operation op, final Object name, final MethodType mt) {
-        return createCallSite(publicLookup, new NamedOperation(op, name), mt);
+        return createCallSite(publicLookup, op.named(name), mt);
+    }
+
+    private CallSite createGetMethodCallSite(final boolean publicLookup, final String name) {
+        return createCallSite(publicLookup, GET_METHOD, name, MethodType.methodType(Object.class, Object.class));
     }
 
     private static final MethodHandle throwArrayIndexOutOfBounds = findThrower("throwArrayIndexOutOfBounds");
     private static final MethodHandle throwIndexOutOfBounds = findThrower("throwIndexOutOfBounds");
+
+    private static final Operation GET_PROPERTY = GET.withNamespace(PROPERTY);
+    private static final Operation GET_ELEMENT = GET.withNamespace(ELEMENT);
+    private static final Operation GET_METHOD = GET.withNamespace(METHOD);
+    private static final Operation SET_ELEMENT = SET.withNamespace(ELEMENT);
 
     private static final MethodHandle findThrower(final String name) {
         try {
@@ -206,26 +213,6 @@ public class BeanLinkerTest {
 
         Assert.assertEquals((int) cs.getTarget().invoke(new int[10], "length"), 10);
         Assert.assertEquals((int) cs.getTarget().invoke(new String[33], "length"), 33);
-    }
-
-    @Test(dataProvider = "flags")
-    public void getlengthTest(final boolean publicLookup) throws Throwable {
-        final MethodType mt = MethodType.methodType(int.class, Object.class);
-        final CallSite cs = createCallSite(publicLookup, GET_LENGTH, mt);
-
-        final int[] arr = {23, 42};
-        Assert.assertEquals((int) cs.getTarget().invoke((Object) arr), 2);
-        Assert.assertEquals((int) cs.getTarget().invoke(Collections.EMPTY_LIST), 0);
-
-        final List<String> list = new ArrayList<>();
-        list.add("hello");
-        list.add("world");
-        list.add("dynalink");
-        Assert.assertEquals((int) cs.getTarget().invoke(list), 3);
-        list.add("nashorn");
-        Assert.assertEquals((int) cs.getTarget().invoke(list), 4);
-        list.clear();
-        Assert.assertEquals((int) cs.getTarget().invoke(list), 0);
     }
 
     @Test(dataProvider = "flags")
@@ -364,8 +351,7 @@ public class BeanLinkerTest {
 
     @Test(dataProvider = "flags")
     public void instanceMethodCallTest(final boolean publicLookup) {
-        final MethodType mt = MethodType.methodType(Object.class, Object.class);
-        final CallSite cs = createCallSite(publicLookup, GET_METHOD, "getClass", mt);
+        final CallSite cs = createGetMethodCallSite(publicLookup, "getClass");
         final MethodType mt2 = MethodType.methodType(Class.class, Object.class, Object.class);
         final CallSite cs2 = createCallSite(publicLookup, CALL, mt2);
 
@@ -389,23 +375,8 @@ public class BeanLinkerTest {
     }
 
     @Test(dataProvider = "flags")
-    public void instanceMethodCallTest2(final boolean publicLookup) {
-        final MethodType mt = MethodType.methodType(Class.class, Object.class);
-        final CallSite cs = createCallSite(publicLookup, CALL_METHOD, "getClass", mt);
-        Class clz = null;
-        try {
-            clz = (Class) cs.getTarget().invoke(new Date());
-        } catch (final Throwable th) {
-            throw new RuntimeException(th);
-        }
-
-        Assert.assertEquals(clz, Date.class);
-    }
-
-    @Test(dataProvider = "flags")
     public void staticMethodCallTest(final boolean publicLookup) {
-        final MethodType mt = MethodType.methodType(Object.class, StaticClass.class);
-        final CallSite cs = createCallSite(publicLookup, GET_METHOD, "getProperty", mt);
+        final CallSite cs = createGetMethodCallSite(publicLookup, "getProperty");
         final MethodType mt2 = MethodType.methodType(String.class, Object.class, Object.class, String.class);
         final CallSite cs2 = createCallSite(publicLookup, CALL, mt2);
 
@@ -428,28 +399,15 @@ public class BeanLinkerTest {
         Assert.assertEquals(str, System.getProperty("os.name"));
     }
 
-    @Test(dataProvider = "flags")
-    public void staticMethodCallTest2(final boolean publicLookup) {
-        final MethodType mt = MethodType.methodType(String.class, Object.class, String.class);
-        final CallSite cs = createCallSite(publicLookup, CALL_METHOD, "getProperty", mt);
-
-        String str = null;
-        try {
-            str = (String) cs.getTarget().invoke(StaticClass.forClass(System.class), "os.name");
-        } catch (final Throwable th) {
-            throw new RuntimeException(th);
-        }
-        Assert.assertEquals(str, System.getProperty("os.name"));
-    }
-
     // try calling System.getenv and expect security exception
     @Test(dataProvider = "flags")
     public void systemGetenvTest(final boolean publicLookup) {
-        final MethodType mt = MethodType.methodType(Object.class, Object.class);
-        final CallSite cs = createCallSite(publicLookup, CALL_METHOD, "getenv", mt);
+        final CallSite cs1 = createGetMethodCallSite(publicLookup, "getenv");
+        final CallSite cs2 = createCallSite(publicLookup, CALL, MethodType.methodType(Object.class, Object.class, Object.class));
 
         try {
-            cs.getTarget().invoke(StaticClass.forClass(System.class));
+            final Object method = cs1.getTarget().invoke(StaticClass.forClass(System.class));
+            cs2.getTarget().invoke(method, StaticClass.forClass(System.class));
             throw new RuntimeException("should not reach here in any case!");
         } catch (final Throwable th) {
             Assert.assertTrue(th instanceof SecurityException);
@@ -459,11 +417,12 @@ public class BeanLinkerTest {
     // try getting a specific sensitive System property and expect security exception
     @Test(dataProvider = "flags")
     public void systemGetPropertyTest(final boolean publicLookup) {
-        final MethodType mt = MethodType.methodType(String.class, Object.class, String.class);
-        final CallSite cs = createCallSite(publicLookup, CALL_METHOD, "getProperty", mt);
+        final CallSite cs1 = createGetMethodCallSite(publicLookup, "getProperty");
+        final CallSite cs2 = createCallSite(publicLookup, CALL, MethodType.methodType(String.class, Object.class, Object.class, String.class));
 
         try {
-            cs.getTarget().invoke(StaticClass.forClass(System.class), "java.home");
+            final Object method = cs1.getTarget().invoke(StaticClass.forClass(System.class));
+            cs2.getTarget().invoke(method, StaticClass.forClass(System.class), "java.home");
             throw new RuntimeException("should not reach here in any case!");
         } catch (final Throwable th) {
             Assert.assertTrue(th instanceof SecurityException);
@@ -473,11 +432,12 @@ public class BeanLinkerTest {
     // check a @CallerSensitive API and expect appropriate access check exception
     @Test(dataProvider = "flags")
     public void systemLoadLibraryTest(final boolean publicLookup) {
-        final MethodType mt = MethodType.methodType(void.class, Object.class, String.class);
-        final CallSite cs = createCallSite(publicLookup, CALL_METHOD, "loadLibrary", mt);
+        final CallSite cs1 = createGetMethodCallSite(publicLookup, "loadLibrary");
+        final CallSite cs2 = createCallSite(publicLookup, CALL, MethodType.methodType(void.class, Object.class, Object.class, String.class));
 
         try {
-            cs.getTarget().invoke(StaticClass.forClass(System.class), "foo");
+            final Object method = cs1.getTarget().invoke(StaticClass.forClass(System.class));
+            cs2.getTarget().invoke(method, StaticClass.forClass(System.class), "foo");
             throw new RuntimeException("should not reach here in any case!");
         } catch (final Throwable th) {
             if (publicLookup) {

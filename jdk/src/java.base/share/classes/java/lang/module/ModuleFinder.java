@@ -228,7 +228,7 @@ public interface ModuleFinder {
      *
      *         <li><p> If the name matches the regular expression {@code
      *         "-(\\d+(\\.|$))"} then the module name will be derived from the
-     *         subsequence proceeding the hyphen of the first occurrence. The
+     *         subsequence preceding the hyphen of the first occurrence. The
      *         subsequence after the hyphen is parsed as a {@link
      *         ModuleDescriptor.Version} and ignored if it cannot be parsed as
      *         a {@code Version}. </p></li>
@@ -248,18 +248,23 @@ public interface ModuleFinder {
      *     <li><p> It {@link ModuleDescriptor#requires() requires} {@code
      *     java.base}. </p></li>
      *
-     *     <li><p> All entries in the JAR file with names ending with {@code
-     *     .class} are assumed to be class files where the name corresponds
-     *     to the fully qualified name of the class. The packages of all
-     *     classes are {@link ModuleDescriptor#exports() exported}. </p></li>
+     *     <li><p> The set of packages in the module is derived from the names
+     *     of non-directory entries in the JAR file. A candidate package name
+     *     is derived from an entry using the characters up to, but not
+     *     including, the last forward slash. All remaining forward slashes are
+     *     replaced with dot ({@code "."}). If the resulting string is a valid
+     *     Java identifier then it is assumed to be a package name. For example,
+     *     if the JAR file contains an entry "{@code p/q/Foo.class}" then the
+     *     package name derived is "{@code p.q}". All packages are {@link
+     *     ModuleDescriptor#exports() exported}. </p></li>
      *
-     *     <li><p> The contents of all entries starting with {@code
+     *     <li><p> The contents of entries starting with {@code
      *     META-INF/services/} are assumed to be service configuration files
-     *     (see {@link java.util.ServiceLoader}). The name of the file
-     *     (that follows {@code META-INF/services/}) is assumed to be the
-     *     fully-qualified binary name of a service type. The entries in the
-     *     file are assumed to be the fully-qualified binary names of
-     *     provider classes. </p></li>
+     *     (see {@link java.util.ServiceLoader}). If the name of a file
+     *     (that follows {@code META-INF/services/}) is a legal Java identifier
+     *     then it is assumed to be the fully-qualified binary name of a
+     *     service type. The entries in the file are assumed to be the
+     *     fully-qualified binary names of provider classes. </p></li>
      *
      *     <li><p> If the JAR file has a {@code Main-Class} attribute in its
      *     main manifest then its value is the {@link
@@ -271,8 +276,8 @@ public interface ModuleFinder {
      * {@link ModuleDescriptor.Builder ModuleDescriptor.Builder} API) for an
      * automatic module then {@code FindException} is thrown. This can arise,
      * for example, when a legal Java identifier name cannot be derived from
-     * the file name of the JAR file or where a package name derived from an
-     * entry ending with {@code .class} is not a legal Java identifier. </p>
+     * the file name of the JAR file or where the JAR file contains a {@code
+     * .class} in the top-level directory of the JAR file. </p>
      *
      * <p> In addition to JAR files, an implementation may also support modules
      * that are packaged in other implementation specific module formats. When
@@ -283,8 +288,10 @@ public interface ModuleFinder {
      *
      * <p> As with automatic modules, the contents of a packaged or exploded
      * module may need to be <em>scanned</em> in order to determine the packages
-     * in the module. If a {@code .class} file that corresponds to a class in an
-     * unnamed package is encountered then {@code FindException} is thrown. </p>
+     * in the module. If a {@code .class} file (other than {@code
+     * module-info.class}) is found in the top-level directory then it is
+     * assumed to be a class in the unnamed package and so {@code FindException}
+     * is thrown. </p>
      *
      * <p> Finders created by this method are lazy and do not eagerly check
      * that the given file paths are directories or packaged modules.
@@ -341,7 +348,7 @@ public interface ModuleFinder {
      * @return A {@code ModuleFinder} that composes a sequence of module finders
      */
     static ModuleFinder compose(ModuleFinder... finders) {
-        // copy the list, also checking for nulls
+        // copy the list and check for nulls
         final List<ModuleFinder> finderList = List.of(finders);
 
         return new ModuleFinder() {

@@ -107,7 +107,7 @@ public final class AWTAccessor {
         /*
          * Requests focus to the component.
          */
-        boolean requestFocus(Component comp, Cause cause);
+        void requestFocus(Component comp, Cause cause);
         /*
          * Determines if the component can gain focus.
          */

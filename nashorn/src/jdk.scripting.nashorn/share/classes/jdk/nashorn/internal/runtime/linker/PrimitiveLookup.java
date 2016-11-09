@@ -99,10 +99,8 @@ public final class PrimitiveLookup {
         final String name = NashornCallSiteDescriptor.getOperand(desc);
         final FindProperty find = name != null ? wrappedReceiver.findProperty(name, true) : null;
 
-        switch (NashornCallSiteDescriptor.getFirstStandardOperation(desc)) {
-        case GET_PROPERTY:
-        case GET_ELEMENT:
-        case GET_METHOD:
+        switch (NashornCallSiteDescriptor.getStandardOperation(desc)) {
+        case GET:
             //checks whether the property name is hard-coded in the call-site (i.e. a getProp vs a getElem, or setProp vs setElem)
             //if it is we can make assumptions on the property: that if it is not defined on primitive wrapper itself it never will be.
             //so in that case we can skip creation of primitive wrapper and start our search with the prototype.
@@ -133,8 +131,7 @@ public final class PrimitiveLookup {
                 }
             }
             break;
-        case SET_PROPERTY:
-        case SET_ELEMENT:
+        case SET:
             return getPrimitiveSetter(name, guard, wrapFilter, NashornCallSiteDescriptor.isStrict(desc));
         default:
             break;

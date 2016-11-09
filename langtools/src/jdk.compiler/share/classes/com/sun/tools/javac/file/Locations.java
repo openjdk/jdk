@@ -39,10 +39,10 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.ProviderNotFoundException;
-import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -63,11 +63,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.zip.ZipFile;
 
 import javax.lang.model.SourceVersion;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
+import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardJavaFileManager.PathFactory;
 import javax.tools.StandardLocation;
@@ -139,7 +139,11 @@ public class Locations {
     }
 
     Path getPath(String first, String... more) {
-        return pathFactory.getPath(first, more);
+        try {
+            return pathFactory.getPath(first, more);
+        } catch (InvalidPathException ipe) {
+            throw new IllegalArgumentException(ipe);
+        }
     }
 
     public void close() throws IOException {
@@ -159,10 +163,9 @@ public class Locations {
         }
     }
 
-    // could replace Lint by "boolean warn"
-    void update(Log log, Lint lint, FSInfo fsInfo) {
+    void update(Log log, boolean warn, FSInfo fsInfo) {
         this.log = log;
-        warn = lint.isEnabled(Lint.LintCategory.PATH);
+        this.warn = warn;
         this.fsInfo = fsInfo;
     }
 

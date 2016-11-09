@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,20 @@ public final class Toolkit {
     static long frames2micros(AudioFormat format, long frames) {
         return (long) (((double) frames) / format.getFrameRate() * 1000000.0d);
     }
+
+    /**
+     * Throws an exception if the buffer size does not represent an integral
+     * number of sample frames.
+     */
+    static void validateBuffer(final int frameSize, final int bufferSize) {
+        if (bufferSize % frameSize == 0) {
+            return;
+        }
+        throw new IllegalArgumentException(String.format(
+                "Buffer size (%d) does not represent an integral number of "
+                        + "sample frames (%d)", bufferSize, frameSize));
+    }
+
 
     static void isFullySpecifiedAudioFormat(AudioFormat format) {
         if (!format.getEncoding().equals(AudioFormat.Encoding.PCM_SIGNED)

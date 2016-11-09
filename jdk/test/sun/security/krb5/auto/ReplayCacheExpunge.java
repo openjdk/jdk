@@ -47,15 +47,15 @@ public class ReplayCacheExpunge {
         int count = Integer.parseInt(args[0]);
         ReplayCache cache = ReplayCache.getInstance("dfl:./");
         AuthTimeWithHash a1 =
-                new AuthTimeWithHash(client, server, time(-400), 0, hash("1"));
+                new AuthTimeWithHash(client, server, time(-400), 0, "HASH", hash("1"));
         AuthTimeWithHash a2 =
-                new AuthTimeWithHash(client, server, time(0), 0, hash("4"));
+                new AuthTimeWithHash(client, server, time(0), 0, "HASH", hash("4"));
         KerberosTime now = new KerberosTime(time(0)*1000L);
         KerberosTime then = new KerberosTime(time(-300)*1000L);
 
         // Once upon a time, we added a lot of events
         for (int i=0; i<count; i++) {
-            a1 = new AuthTimeWithHash(client, server, time(-400), 0, hash(""));
+            a1 = new AuthTimeWithHash(client, server, time(-400), 0, "HASH", hash(""));
             cache.checkAndStore(then, a1);
         }
 

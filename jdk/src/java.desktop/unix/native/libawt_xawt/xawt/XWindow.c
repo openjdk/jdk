@@ -818,6 +818,32 @@ isXKBenabled(Display *display) {
     }
     return awt_UseXKB;
 }
+
+/*
+ * Map a keycode to the corresponding keysym.
+ * This replaces the deprecated X11 function XKeycodeToKeysym
+ */
+KeySym
+keycodeToKeysym(Display *display, KeyCode keycode, int index) {
+    static int min_kc = -1;
+    static int max_kc;
+    if (min_kc == -1) {
+        (void) XDisplayKeycodes(display, &min_kc, &max_kc);
+    }
+    if (keycode < min_kc || keycode > max_kc || index < 0) {
+        return NoSymbol;
+    }
+    int num_syms;
+    KeySym *key_syms = XGetKeyboardMapping(display, keycode, 1, &num_syms);
+    if (index >= num_syms) {
+        XFree(key_syms);
+        return NoSymbol;
+    }
+    KeySym ks = key_syms[index];
+    XFree(key_syms);
+    return ks;
+}
+
 static Boolean
 isKPevent(XEvent *event)
 {
@@ -833,14 +859,14 @@ isKPevent(XEvent *event)
      */
     Boolean bsun = isXsunServer( event );
     Boolean bxkb = isXKBenabled( event->xkey.display );
-    return IsKeypadKey( XKeycodeToKeysym(event->xkey.display, event->xkey.keycode,(bsun && !bxkb ? 2 : 1) ) );
+    return IsKeypadKey( keycodeToKeysym(event->xkey.display, event->xkey.keycode,(bsun && !bxkb ? 2 : 1) ) );
 }
 static void
 dumpKeysymArray(XEvent *event) {
-    printf("    0x%X\n",XKeycodeToKeysym(event->xkey.display, event->xkey.keycode, 0));
-    printf("    0x%X\n",XKeycodeToKeysym(event->xkey.display, event->xkey.keycode, 1));
-    printf("    0x%X\n",XKeycodeToKeysym(event->xkey.display, event->xkey.keycode, 2));
-    printf("    0x%X\n",XKeycodeToKeysym(event->xkey.display, event->xkey.keycode, 3));
+    printf("    0x%X\n",keycodeToKeysym(event->xkey.display, event->xkey.keycode, 0));
+    printf("    0x%X\n",keycodeToKeysym(event->xkey.display, event->xkey.keycode, 1));
+    printf("    0x%X\n",keycodeToKeysym(event->xkey.display, event->xkey.keycode, 2));
+    printf("    0x%X\n",keycodeToKeysym(event->xkey.display, event->xkey.keycode, 3));
 }
 /*
  * In a next redesign, get rid of this code altogether.
@@ -855,20 +881,20 @@ handleKeyEventWithNumLockMask_New(XEvent *event, KeySym *keysym)
     }
     if( isXsunServer( event ) && !awt_UseXKB) {
         if( (event->xkey.state & ShiftMask) ) { // shift modifier is on
-            *keysym = XKeycodeToKeysym(event->xkey.display,
+            *keysym = keycodeToKeysym(event->xkey.display,
                                    event->xkey.keycode, 3);
          }else {
-            *keysym = XKeycodeToKeysym(event->xkey.display,
+            *keysym = keycodeToKeysym(event->xkey.display,
                                    event->xkey.keycode, 2);
          }
     } else {
         if( (event->xkey.state & ShiftMask) || // shift modifier is on
             ((event->xkey.state & LockMask) && // lock modifier is on
              (awt_ModLockIsShiftLock)) ) {     // it is interpreted as ShiftLock
-            *keysym = XKeycodeToKeysym(event->xkey.display,
+            *keysym = keycodeToKeysym(event->xkey.display,
                                    event->xkey.keycode, 0);
         }else{
-            *keysym = XKeycodeToKeysym(event->xkey.display,
+            *keysym = keycodeToKeysym(event->xkey.display,
                                    event->xkey.keycode, 1);
         }
     }
@@ -903,7 +929,7 @@ handleKeyEventWithNumLockMask(XEvent *event, KeySym *keysym)
        Perhaps using the index (modn in awt_MToolkit.c:setup_modifier_map)
        would be more correct.
      */
-    *keysym = XKeycodeToKeysym(event->xkey.display,
+    *keysym = keycodeToKeysym(event->xkey.display,
                                event->xkey.keycode, 2);
     if (originalKeysym != *keysym) {
         DTRACE_PRINTLN3("%s originalKeysym=0x%x, keysym=0x%x",
@@ -998,7 +1024,6 @@ handleKeyEventWithNumLockMask(XEvent *event, KeySym *keysym)
           "In handleKeyEventWithNumLockMask:", originalKeysym, *keysym);
     }
 }
-
 
 /* This function is called as the keyChar parameter of a call to
  * awt_post_java_key_event.  It depends on being called after adjustKeySym.

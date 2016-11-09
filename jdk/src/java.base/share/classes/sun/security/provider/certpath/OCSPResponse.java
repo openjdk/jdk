@@ -507,9 +507,8 @@ public final class OCSPResponse {
 
                 // Check algorithm constraints specified in security property
                 // "jdk.certpath.disabledAlgorithms".
-                AlgorithmChecker algChecker = new AlgorithmChecker(
-                        new TrustAnchor(issuerInfo.getName(),
-                                issuerInfo.getPublicKey(), null));
+                AlgorithmChecker algChecker =
+                        new AlgorithmChecker(issuerInfo.getAnchor(), date);
                 algChecker.init(false);
                 algChecker.check(signerCert, Collections.<String>emptySet());
 
@@ -982,36 +981,38 @@ public final class OCSPResponse {
     /**
      * Helper class that allows consumers to pass in issuer information.  This
      * will always consist of the issuer's name and public key, but may also
-     * contain a certificate if the originating data is in that form.
+     * contain a certificate if the originating data is in that form.  The
+     * trust anchor for the certificate chain will be included for certpath
+     * disabled algorithm checking.
      */
     static final class IssuerInfo {
+        private final TrustAnchor anchor;
         private final X509Certificate certificate;
         private final X500Principal name;
         private final PublicKey pubKey;
 
-        IssuerInfo(X509Certificate issuerCert) {
-            certificate = Objects.requireNonNull(issuerCert,
-                    "Constructor requires non-null certificate");
-            name = certificate.getSubjectX500Principal();
-            pubKey = certificate.getPublicKey();
-        }
-
-        IssuerInfo(X500Principal subjectName, PublicKey key) {
-            certificate = null;
-            name = Objects.requireNonNull(subjectName,
-                    "Constructor requires non-null subject");
-            pubKey = Objects.requireNonNull(key,
-                    "Constructor requires non-null public key");
-        }
-
         IssuerInfo(TrustAnchor anchor) {
-            certificate = anchor.getTrustedCert();
-            if (certificate != null) {
-                name = certificate.getSubjectX500Principal();
-                pubKey = certificate.getPublicKey();
+            this(anchor, (anchor != null) ? anchor.getTrustedCert() : null);
+        }
+
+        IssuerInfo(X509Certificate issuerCert) {
+            this(null, issuerCert);
+        }
+
+        IssuerInfo(TrustAnchor anchor, X509Certificate issuerCert) {
+            if (anchor == null && issuerCert == null) {
+                throw new NullPointerException("TrustAnchor and issuerCert " +
+                        "cannot be null");
+            }
+            this.anchor = anchor;
+            if (issuerCert != null) {
+                name = issuerCert.getSubjectX500Principal();
+                pubKey = issuerCert.getPublicKey();
+                certificate = issuerCert;
             } else {
                 name = anchor.getCA();
                 pubKey = anchor.getCAPublicKey();
+                certificate = anchor.getTrustedCert();
             }
         }
 
@@ -1044,6 +1045,15 @@ public final class OCSPResponse {
          */
         PublicKey getPublicKey() {
             return pubKey;
+        }
+
+        /**
+         * Get the TrustAnchor for the certificate chain.
+         *
+         * @return a {@code TrustAnchor}.
+         */
+        TrustAnchor getAnchor() {
+            return anchor;
         }
 
         /**
