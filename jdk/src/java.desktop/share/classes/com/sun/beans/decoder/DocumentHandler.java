@@ -280,7 +280,8 @@ public final class DocumentHandler extends DefaultHandler {
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         ElementHandler parent = this.handler;
         try {
-            this.handler = getElementHandler(qName).newInstance();
+            this.handler =
+                getElementHandler(qName).getDeclaredConstructor().newInstance();
             this.handler.setOwner(this);
             this.handler.setParent(parent);
         }

@@ -1196,7 +1196,7 @@ public class JEditorPane extends JTextComponent {
                     // registerEditorKitForContentType(type, class, null).
                     c = SwingUtilities.loadSystemClass(classname);
                 }
-                k = (EditorKit) c.newInstance();
+                k = (EditorKit) c.getDeclaredConstructor().newInstance();
                 kitRegistry.put(type, k);
             } catch (Throwable e) {
                 k = null;

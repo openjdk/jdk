@@ -94,7 +94,7 @@ class InstanceFinder<T> {
                 }
                 if (this.type.isAssignableFrom(type)) {
                     @SuppressWarnings("unchecked")
-                    T tmp = (T) type.newInstance();
+                    T tmp = (T) type.getDeclaredConstructor().newInstance();
                     return tmp;
                 }
             }

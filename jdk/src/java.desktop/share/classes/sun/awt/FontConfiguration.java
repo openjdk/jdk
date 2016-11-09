@@ -971,7 +971,7 @@ public abstract class FontConfiguration {
 
             if (fcc != null) {
                 try {
-                    fc = (Charset) fcc.newInstance();
+                    fc = (Charset) fcc.getDeclaredConstructor().newInstance();
                 } catch (Exception e) {
                 }
             }

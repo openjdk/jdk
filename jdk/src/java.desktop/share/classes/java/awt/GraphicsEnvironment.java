@@ -108,7 +108,7 @@ public abstract class GraphicsEnvironment {
                 ClassLoader cl = ClassLoader.getSystemClassLoader();
                 geCls = Class.forName(nm, true, cl);
             }
-            ge = (GraphicsEnvironment)geCls.newInstance();
+            ge = (GraphicsEnvironment)geCls.getConstructor().newInstance();
 //          long t1 = System.currentTimeMillis();
 //          System.out.println("GE creation took " + (t1-t0)+ "ms.");
             if (isHeadless()) {
@@ -116,12 +116,9 @@ public abstract class GraphicsEnvironment {
             }
         } catch (ClassNotFoundException e) {
             throw new Error("Could not find class: "+nm);
-        } catch (InstantiationException e) {
+        } catch (ReflectiveOperationException | IllegalArgumentException e) {
             throw new Error("Could not instantiate Graphics Environment: "
                             + nm);
-        } catch (IllegalAccessException e) {
-            throw new Error ("Could not access Graphics Environment: "
-                             + nm);
         }
         return ge;
     }

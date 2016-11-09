@@ -1261,9 +1261,9 @@ static final class sun_swing_PrintColorUIResource_PersistenceDelegate extends Pe
             internalPersistenceDelegates.put(typeName, defaultPersistenceDelegate);
             try {
                 String name =  type.getName();
-                Class c = Class.forName("java.beans.MetaData$" + name.replace('.', '_')
+                Class<?> c = Class.forName("java.beans.MetaData$" + name.replace('.', '_')
                                         + "_PersistenceDelegate");
-                pd = (PersistenceDelegate)c.newInstance();
+                pd = (PersistenceDelegate)c.getDeclaredConstructor().newInstance();
                 internalPersistenceDelegates.put(typeName, pd);
             }
             catch (ClassNotFoundException e) {

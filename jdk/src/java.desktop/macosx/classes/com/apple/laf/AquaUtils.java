@@ -179,8 +179,8 @@ final class AquaUtils {
         T getInstance() {
             try {
                 ReflectUtil.checkPackageAccess(clazz);
-                return clazz.newInstance();
-            } catch (InstantiationException | IllegalAccessException ignored) {
+                return clazz.getDeclaredConstructor().newInstance();
+            } catch (ReflectiveOperationException ignored) {
             }
             return null;
         }
