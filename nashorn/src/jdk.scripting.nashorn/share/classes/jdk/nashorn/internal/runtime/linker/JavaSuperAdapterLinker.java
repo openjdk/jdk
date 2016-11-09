@@ -25,15 +25,15 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
+import static jdk.dynalink.StandardNamespace.METHOD;
+import static jdk.dynalink.StandardOperation.GET;
 import static jdk.nashorn.internal.runtime.linker.JavaAdapterBytecodeGenerator.SUPER_PREFIX;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import jdk.dynalink.CallSiteDescriptor;
-import jdk.dynalink.NamedOperation;
 import jdk.dynalink.Operation;
-import jdk.dynalink.StandardOperation;
 import jdk.dynalink.beans.BeansLinker;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.LinkRequest;
@@ -61,6 +61,8 @@ final class JavaSuperAdapterLinker implements TypeBasedGuardingDynamicLinker {
         IS_ADAPTER_OF_CLASS = lookup.findOwnStatic("isAdapterOfClass", boolean.class, Class.class, Object.class);
     }
 
+    private static final Operation GET_METHOD = GET.withNamespace(METHOD);
+
     private final BeansLinker beansLinker;
 
     JavaSuperAdapterLinker(final BeansLinker beansLinker) {
@@ -82,8 +84,8 @@ final class JavaSuperAdapterLinker implements TypeBasedGuardingDynamicLinker {
 
         final CallSiteDescriptor descriptor = linkRequest.getCallSiteDescriptor();
 
-        if(!NashornCallSiteDescriptor.contains(descriptor, StandardOperation.GET_METHOD)) {
-            // We only handle GET_METHOD
+        if(!NashornCallSiteDescriptor.contains(descriptor, GET, METHOD)) {
+            // We only handle GET:METHOD
             return null;
         }
 
@@ -97,8 +99,7 @@ final class JavaSuperAdapterLinker implements TypeBasedGuardingDynamicLinker {
         final MethodType type = descriptor.getMethodType();
         final Class<?> adapterClass = adapter.getClass();
         final String name = NashornCallSiteDescriptor.getOperand(descriptor);
-        final Operation newOp = name == null ? StandardOperation.GET_METHOD :
-            new NamedOperation(StandardOperation.GET_METHOD, SUPER_PREFIX + name);
+        final Operation newOp = name == null ? GET_METHOD : GET_METHOD.named(SUPER_PREFIX + name);
 
         final CallSiteDescriptor newDescriptor = new CallSiteDescriptor(
                 NashornCallSiteDescriptor.getLookupInternal(descriptor), newOp,

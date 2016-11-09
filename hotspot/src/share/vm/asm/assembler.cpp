@@ -153,6 +153,8 @@ void AbstractAssembler::generate_stack_overflow_check(int frame_size_in_bytes) {
 
 void Label::add_patch_at(CodeBuffer* cb, int branch_loc) {
   assert(_loc == -1, "Label is unbound");
+  // Don't add patch locations during scratch emit.
+  if (cb->insts()->scratch_emit()) { return; }
   if (_patch_index < PatchCacheSize) {
     _patches[_patch_index] = branch_loc;
   } else {

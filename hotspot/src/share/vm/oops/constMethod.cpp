@@ -368,23 +368,36 @@ AnnotationArray** ConstMethod::default_annotations_addr() const {
   return (AnnotationArray**)constMethod_end() - offset;
 }
 
+Array<u1>* copy_annotations(ClassLoaderData* loader_data, AnnotationArray* from, TRAPS) {
+  int length = from->length();
+  Array<u1>* a = MetadataFactory::new_array<u1>(loader_data, length, 0, CHECK_NULL);
+  memcpy((void*)a->adr_at(0), (void*)from->adr_at(0), length);
+  return a;
+}
+
 // copy annotations from 'cm' to 'this'
-void ConstMethod::copy_annotations_from(ConstMethod* cm) {
+// Must make copy because these are deallocated with their constMethod, if redefined.
+void ConstMethod::copy_annotations_from(ClassLoaderData* loader_data, ConstMethod* cm, TRAPS) {
+  Array<u1>* a;
   if (cm->has_method_annotations()) {
     assert(has_method_annotations(), "should be allocated already");
-    set_method_annotations(cm->method_annotations());
+    a = copy_annotations(loader_data, cm->method_annotations(), CHECK);
+    set_method_annotations(a);
   }
   if (cm->has_parameter_annotations()) {
     assert(has_parameter_annotations(), "should be allocated already");
-    set_parameter_annotations(cm->parameter_annotations());
+    a = copy_annotations(loader_data, cm->parameter_annotations(), CHECK);
+    set_parameter_annotations(a);
   }
   if (cm->has_type_annotations()) {
     assert(has_type_annotations(), "should be allocated already");
-    set_type_annotations(cm->type_annotations());
+    a = copy_annotations(loader_data, cm->type_annotations(), CHECK);
+    set_type_annotations(a);
   }
   if (cm->has_default_annotations()) {
     assert(has_default_annotations(), "should be allocated already");
-    set_default_annotations(cm->default_annotations());
+    a = copy_annotations(loader_data, cm->default_annotations(), CHECK);
+    set_default_annotations(a);
   }
 }
 

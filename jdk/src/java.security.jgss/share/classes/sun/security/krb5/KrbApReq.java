@@ -301,12 +301,13 @@ public class KrbApReq {
         if (!authenticator.ctime.inClockSkew())
             throw new KrbApErrException(Krb5.KRB_AP_ERR_SKEW);
 
+        String alg = AuthTimeWithHash.DEFAULT_HASH_ALG;
         byte[] hash;
         try {
-            hash = MessageDigest.getInstance("MD5")
+            hash = MessageDigest.getInstance(AuthTimeWithHash.realAlg(alg))
                     .digest(apReqMessg.authenticator.cipher);
         } catch (NoSuchAlgorithmException ex) {
-            throw new AssertionError("Impossible");
+            throw new AssertionError("Impossible " + alg);
         }
 
         char[] h = new char[hash.length * 2];
@@ -319,6 +320,7 @@ public class KrbApReq {
                 apReqMessg.ticket.sname.toString(),
                 authenticator.ctime.getSeconds(),
                 authenticator.cusec,
+                alg,
                 new String(h));
         rcache.checkAndStore(KerberosTime.now(), time);
 

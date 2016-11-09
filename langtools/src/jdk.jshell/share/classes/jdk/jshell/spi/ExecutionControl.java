@@ -44,12 +44,13 @@ import java.io.Serializable;
  * To install an {@code ExecutionControl}, its {@code Generator} is passed to
  * {@link jdk.jshell.JShell.Builder#executionEngine(ExecutionControl.Generator)  }.
  */
-public interface ExecutionControl {
+public interface ExecutionControl extends AutoCloseable {
 
     /**
      * Defines a functional interface for creating {@link ExecutionControl}
      * instances.
      */
+    @FunctionalInterface
     public interface Generator {
 
         /**

@@ -58,9 +58,7 @@ public class T6403466 extends AbstractProcessor {
                 fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrcDir, self + ".java")));
 
             Iterable<String> options = Arrays.asList(
-                "--add-exports",
-                    "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED,"
-                    + "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+                "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
                 "--processor-path", testClassDir,
                 "-processor", self,
                 "-s", ".",

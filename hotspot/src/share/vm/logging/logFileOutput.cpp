@@ -97,11 +97,7 @@ static bool is_regular_file(const char* filename) {
   if (ret != 0) {
     return false;
   }
-#ifdef _WINDOWS
-  return (st.st_mode & S_IFMT) == _S_IFREG;
-#else
-  return S_ISREG(st.st_mode);
-#endif
+  return (st.st_mode & S_IFMT) == S_IFREG;
 }
 
 // Try to find the next number that should be used for file rotation.

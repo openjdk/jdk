@@ -230,8 +230,7 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
-        if (!log.equals(Arrays.asList("- compiler.err.processorpath.no.processormodulepath",
-                                      "1 error"))) {
+        if (!log.equals(Arrays.asList("- compiler.err.processorpath.no.processormodulepath"))) {
             throw new AssertionError("Unexpected output: " + log);
         }
     }

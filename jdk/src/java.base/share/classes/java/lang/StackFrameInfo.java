@@ -112,11 +112,6 @@ class StackFrameInfo implements StackFrame {
         return toStackTraceElement().toString();
     }
 
-    /**
-     * Fill in the fields of the given StackTraceElement
-     */
-    private native void toStackTraceElement0(StackTraceElement ste);
-
     @Override
     public StackTraceElement toStackTraceElement() {
         StackTraceElement s = ste;
@@ -124,9 +119,7 @@ class StackFrameInfo implements StackFrame {
             synchronized (this) {
                 s = ste;
                 if (s == null) {
-                    s = new StackTraceElement();
-                    toStackTraceElement0(s);
-                    ste = s;
+                    ste = s = StackTraceElement.of(this);
                 }
             }
         }

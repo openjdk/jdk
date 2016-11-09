@@ -87,7 +87,7 @@ import java.lang.invoke.MethodHandle;
 import jdk.dynalink.linker.GuardedInvocation;
 
 /**
- * Represents one component for a GuardedInvocation of a potentially composite operation of an
+ * Represents one component for a GuardedInvocation of a potentially multi-namespace operation of an
  * {@link AbstractJavaLinker}. In addition to holding a guarded invocation, it holds semantic information about its
  * guard. All guards produced in the AbstractJavaLinker are either "Class.isInstance()" or "getClass() == clazz"
  * expressions. This allows choosing the most restrictive guard as the guard for the composition of two components.

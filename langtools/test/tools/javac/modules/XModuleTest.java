@@ -223,8 +223,7 @@ public class XModuleTest extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expected = Arrays.asList("- compiler.err.xmodule.no.module.sourcepath",
-                                              "1 error");
+        List<String> expected = Arrays.asList("- compiler.err.xmodule.no.module.sourcepath");
 
         if (!expected.equals(log))
             throw new Exception("expected output not found: " + log);

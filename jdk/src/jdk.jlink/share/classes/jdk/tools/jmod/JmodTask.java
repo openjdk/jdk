@@ -47,6 +47,7 @@ import java.lang.module.ResolutionException;
 import java.lang.module.ResolvedModule;
 import java.net.URI;
 import java.nio.file.FileSystems;
+import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -633,7 +634,8 @@ public class JmodTask {
         void processSection(JmodOutputStream out, Section section, Path top)
             throws IOException
         {
-            Files.walkFileTree(top, new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(top, Set.of(FileVisitOption.FOLLOW_LINKS),
+                    Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                     throws IOException

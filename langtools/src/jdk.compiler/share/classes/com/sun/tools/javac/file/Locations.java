@@ -39,6 +39,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.ProviderNotFoundException;
@@ -66,6 +67,7 @@ import java.util.stream.Stream;
 import javax.lang.model.SourceVersion;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
+import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardJavaFileManager.PathFactory;
 import javax.tools.StandardLocation;
@@ -137,7 +139,11 @@ public class Locations {
     }
 
     Path getPath(String first, String... more) {
-        return pathFactory.getPath(first, more);
+        try {
+            return pathFactory.getPath(first, more);
+        } catch (InvalidPathException ipe) {
+            throw new IllegalArgumentException(ipe);
+        }
     }
 
     public void close() throws IOException {

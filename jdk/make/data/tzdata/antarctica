@@ -87,13 +87,18 @@
 # Background:
 # http://www.timeanddate.com/news/time/antartica-time-changes-2010.html
 
+# From Steffen Thorsen (2016-10-28):
+# Australian Antarctica Division informed us that Casey changed time
+# zone to UTC+11 in "the morning of 22nd October 2016".
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Antarctica/Casey	0	-	-00	1969
 			8:00	-	+08	2009 Oct 18  2:00
 			11:00	-	+11	2010 Mar  5  2:00
 			8:00	-	+08	2011 Oct 28  2:00
 			11:00	-	+11	2012 Feb 21 17:00u
-			8:00	-	+08
+			8:00	-	+08	2016 Oct 22
+			11:00	-	+11
 Zone Antarctica/Davis	0	-	-00	1957 Jan 13
 			7:00	-	+07	1964 Nov
 			0	-	-00	1969 Feb

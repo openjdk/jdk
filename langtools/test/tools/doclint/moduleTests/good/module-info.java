@@ -29,7 +29,7 @@
  * @modules jdk.compiler/com.sun.tools.doclint
  * @build DocLintTester
  * @run main DocLintTester module-info.java
- * @compile -Xdoclint:all -Werror module-info.java
+ * @compile -Xdoclint:all -Werror -Xlint:-options module-info.java
  */
 
 /** good module */

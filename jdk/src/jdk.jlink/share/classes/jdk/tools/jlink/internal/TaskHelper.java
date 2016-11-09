@@ -161,6 +161,7 @@ public final class TaskHelper {
         private static final String POST_PROCESS = "--post-process-path";
 
         private Layer pluginsLayer = Layer.boot();
+        private final List<Plugin> plugins;
         private String lastSorter;
         private boolean listPlugins;
         private Path existingImage;
@@ -184,9 +185,10 @@ public final class TaskHelper {
                 pluginsLayer = createPluginsLayer(paths);
             }
 
+            plugins = PluginRepository.getPlugins(pluginsLayer);
+
             Set<String> optionsSeen = new HashSet<>();
-            for (Plugin plugin : PluginRepository.
-                    getPlugins(pluginsLayer)) {
+            for (Plugin plugin : plugins) {
                 if (!Utils.isDisabled(plugin)) {
                     addOrderedPluginOptions(plugin, optionsSeen);
                 }
@@ -198,9 +200,19 @@ public final class TaskHelper {
                     },
                     "--plugin-module-path"));
             mainOptions.add(new PlugOption(true, (task, opt, arg) -> {
+                    for (Plugin plugin : plugins) {
+                        if (plugin.getName().equals(arg)) {
+                            pluginToMaps.remove(plugin);
+                            return;
+                        }
+                    }
+                    throw newBadArgs("err.no.such.plugin", arg);
+                },
+                "--disable-plugin"));
+            mainOptions.add(new PlugOption(true, (task, opt, arg) -> {
                 Path path = Paths.get(arg);
                 if (!Files.exists(path) || !Files.isDirectory(path)) {
-                    throw newBadArgs("err.existing.image.must.exist");
+                    throw newBadArgs("err.image.must.exist", path);
                 }
                 existingImage = path.toAbsolutePath();
             }, true, POST_PROCESS));

@@ -32,7 +32,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.NamedOperation;
-import jdk.dynalink.StandardOperation;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.support.Guards;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
@@ -93,29 +92,22 @@ public final class Undefined extends DefaultPropertyAccess {
      * @return GuardedInvocation to be invoked at call site.
      */
     public static GuardedInvocation lookup(final CallSiteDescriptor desc) {
-        final StandardOperation op = NashornCallSiteDescriptor.getFirstStandardOperation(desc);
-        if (op == null) {
-            return null;
-        }
-        switch (op) {
+        switch (NashornCallSiteDescriptor.getStandardOperation(desc)) {
         case CALL:
         case NEW:
             final String name = NashornCallSiteDescriptor.getOperand(desc);
             final String msg = name != null? "not.a.function" : "cant.call.undefined";
             throw typeError(msg, name);
-        case GET_PROPERTY:
-        case GET_ELEMENT:
-        case GET_METHOD:
-            // NOTE: we support GET_ELEMENT and SET_ELEMENT as JavaScript doesn't distinguish items from properties. Nashorn itself
-            // emits "GET_PROPERTY|GET_ELEMENT|GET_METHOD:identifier" for "<expr>.<identifier>" and "GET_ELEMENT|GET_PROPERTY|GET_METHOD" for "<expr>[<expr>]", but we are
+        case GET:
+            // NOTE: we support GET:ELEMENT and SET:ELEMENT as JavaScript doesn't distinguish items from properties. Nashorn itself
+            // emits "GET:PROPERTY|ELEMENT|METHOD:identifier" for "<expr>.<identifier>" and "GET:ELEMENT|PROPERTY|METHOD" for "<expr>[<expr>]", but we are
             // more flexible here and dispatch not on operation name (getProp vs. getElem), but rather on whether the
             // operation has an associated name or not.
             if (!(desc.getOperation() instanceof NamedOperation)) {
                 return findGetIndexMethod(desc);
             }
             return findGetMethod(desc);
-        case SET_PROPERTY:
-        case SET_ELEMENT:
+        case SET:
             if (!(desc.getOperation() instanceof NamedOperation)) {
                 return findSetIndexMethod(desc);
             }

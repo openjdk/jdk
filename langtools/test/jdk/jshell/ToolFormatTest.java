@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8148316 8148317 8151755 8152246 8153551 8154812 8157261 8163840
+ * @bug 8148316 8148317 8151755 8152246 8153551 8154812 8157261 8163840 8166637 8161969
  * @summary Tests for output customization
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -220,8 +220,8 @@ public class ToolFormatTest extends ReplToolTesting {
             test(
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback normal", ""),
                     (a) -> assertCommand(a, "String s = java.util.stream.IntStream.range(65, 74)"+
-                            ".mapToObj(i -> \"\"+(char)i).reduce((a,b) -> a + b + a).get()",
-                            "s ==> \"ABACABADABACABAEABACABADABACABAFABACABADABACABAEABACABADABACABAGABACABADABA ..."),
+                            ".mapToObj(i -> \"\"+(char)i).reduce((a,b) -> a + b + a).get() + \"XYZ\"",
+                            "s ==> \"ABACABADABACABAEABACABADABACABAFABACABADABACABAE ... BACABAEABACABADABACABAXYZ\""),
                     (a) -> assertCommandOutputStartsWith(a, "/set mode test -quiet", ""),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback test", ""),
                     (a) -> assertCommand(a, "/set format test display '{type}:{value}' primary", ""),
@@ -234,8 +234,9 @@ public class ToolFormatTest extends ReplToolTesting {
                             "/set truncation test 10 varvalue"),
                     (a) -> assertCommandOutputContains(a, "/set truncation test",
                             "/set truncation test 10 varvalue"),
-                    (a) -> assertCommand(a, "String r = s", "String:\"ABACABADABACABA ..."),
-                    (a) -> assertCommand(a, "r", "String:\"ABACA ..."),
+                    (a) -> assertCommand(a, "/var", "|    String s = \"ABACABADA"),
+                    (a) -> assertCommand(a, "String r = s", "String:\"ABACABAD ... BAXYZ\""),
+                    (a) -> assertCommand(a, "r", "String:\"ABACABADA"),
                     (a) -> assertCommand(a, "r=s", "String:\"AB")
             );
         } finally {
