@@ -25,6 +25,9 @@
 
 package jdk.dynalink.support.test;
 
+import static jdk.dynalink.StandardNamespace.PROPERTY;
+import static jdk.dynalink.StandardOperation.GET;
+
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -33,14 +36,15 @@ import java.util.ArrayList;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.DynamicLinker;
 import jdk.dynalink.DynamicLinkerFactory;
-import jdk.dynalink.NamedOperation;
-import jdk.dynalink.StandardOperation;
+import jdk.dynalink.Operation;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.support.SimpleRelinkableCallSite;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class CallSiteTest {
+    private static final Operation GET_PROPERTY = GET.withNamespace(PROPERTY);
+
     @Test
     public void testInitialize() {
         final DynamicLinkerFactory factory = new DynamicLinkerFactory();
@@ -48,7 +52,7 @@ public class CallSiteTest {
         final MethodType mt = MethodType.methodType(Object.class, Object.class);
         final boolean[] initializeCalled = { Boolean.FALSE };
         linker.link(new SimpleRelinkableCallSite(new CallSiteDescriptor(
-            MethodHandles.publicLookup(), new NamedOperation(StandardOperation.GET_PROPERTY, "DO_NOT_CARE"), mt)) {
+            MethodHandles.publicLookup(), GET_PROPERTY.named("DO_NOT_CARE"), mt)) {
                 @Override
                 public void initialize(final MethodHandle relinkAndInvoke) {
                     initializeCalled[0] = Boolean.TRUE;
@@ -66,7 +70,7 @@ public class CallSiteTest {
         final MethodType mt = MethodType.methodType(Object.class, Object.class);
         final boolean[] relinkCalled = { Boolean.FALSE };
         final CallSite cs = linker.link(new SimpleRelinkableCallSite(new CallSiteDescriptor(
-            MethodHandles.publicLookup(), new NamedOperation(StandardOperation.GET_PROPERTY, "class"), mt)) {
+            MethodHandles.publicLookup(), GET_PROPERTY.named("class"), mt)) {
                 @Override
                 public void relink(final GuardedInvocation guardedInvocation, final MethodHandle relinkAndInvoke) {
                     relinkCalled[0] = Boolean.TRUE;
@@ -90,7 +94,7 @@ public class CallSiteTest {
         final MethodType mt = MethodType.methodType(Object.class, Object.class);
         final boolean[] resetAndRelinkCalled = { Boolean.FALSE };
         final CallSite cs = linker.link(new SimpleRelinkableCallSite(new CallSiteDescriptor(
-            MethodHandles.publicLookup(), new NamedOperation(StandardOperation.GET_PROPERTY, "length"), mt)) {
+            MethodHandles.publicLookup(), GET_PROPERTY.named("length"), mt)) {
                 @Override
                 public void resetAndRelink(final GuardedInvocation guardedInvocation, final MethodHandle relinkAndInvoke) {
                     resetAndRelinkCalled[0] = Boolean.TRUE;

@@ -554,7 +554,8 @@ public class Resolve {
         } else if (mt.hasTag(FORALL) && typeargtypes.nonEmpty()) {
             ForAll pmt = (ForAll) mt;
             if (typeargtypes.length() != pmt.tvars.length())
-                throw inapplicableMethodException.setMessage("arg.length.mismatch"); // not enough args
+                 // not enough args
+                throw inapplicableMethodException.setMessage("wrong.number.type.args", Integer.toString(pmt.tvars.length()));
             // Check type arguments are within bounds
             List<Type> formals = pmt.tvars;
             List<Type> actuals = typeargtypes;

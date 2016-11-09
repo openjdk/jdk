@@ -49,7 +49,7 @@ import java.util.stream.StreamTestDataProvider;
 import java.util.stream.TestData;
 
 import static java.util.stream.LambdaTestHelpers.*;
-import static java.util.stream.ThowableHelper.checkNPE;
+import static java.util.stream.ThrowableHelper.checkNPE;
 
 @Test
 public class FlatMapOpTest extends OpTestCase {

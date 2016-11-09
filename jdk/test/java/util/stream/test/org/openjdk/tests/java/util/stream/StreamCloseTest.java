@@ -36,8 +36,8 @@ import java.util.stream.Stream;
 import org.testng.annotations.Test;
 
 import static java.util.stream.LambdaTestHelpers.countTo;
-import static java.util.stream.ThowableHelper.checkNPE;
-import static java.util.stream.ThowableHelper.checkISE;
+import static java.util.stream.ThrowableHelper.checkNPE;
+import static java.util.stream.ThrowableHelper.checkISE;
 
 @Test(groups = { "serialization-hostile" })
 public class StreamCloseTest extends OpTestCase {

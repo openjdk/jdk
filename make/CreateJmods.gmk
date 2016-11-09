@@ -36,6 +36,7 @@ endif
 ################################################################################
 
 JMODS_DIR := $(IMAGES_OUTPUTDIR)/jmods
+JMODS_TEMPDIR := $(SUPPORT_OUTPUTDIR)/jmods
 
 LIBS_DIR := $(firstword $(wildcard $(addsuffix /$(MODULE), \
     $(SUPPORT_OUTPUTDIR)/modules_libs $(IMPORT_MODULES_LIBS))))
@@ -81,16 +82,19 @@ endif
 # Add dependencies on other jmod files. Only java.base needs access to other
 # jmods.
 ifeq ($(MODULE), java.base)
-  ALL_UPGRADEABLE_MODULES = $(call FindAllUpgradeableModules)
   # When creating a BUILDJDK, we don't need to add hashes to java.base
   ifneq ($(CREATING_BUILDJDK), true)
-    DEPS += $(patsubst %, $(JMODS_DIR)/%.jmod, \
-        $(filter-out java.base $(ALL_UPGRADEABLE_MODULES), $(call FindAllModules)))
+    # When creating interim versions of jmods, skip hashes
+    ifneq ($(INTERIM_JMOD), true)
+      ALL_UPGRADEABLE_MODULES := $(call FindAllUpgradeableModules)
+      DEPS += $(patsubst %, $(JMODS_DIR)/%.jmod, \
+          $(filter-out java.base $(ALL_UPGRADEABLE_MODULES), $(call FindAllModules)))
 
-    EXCLUDE_PATTERN := $(strip $(subst $(SPACE),|,$(strip $(ALL_UPGRADEABLE_MODULES))))
+      EXCLUDE_PATTERN := $(strip $(subst $(SPACE),|,$(strip $(ALL_UPGRADEABLE_MODULES))))
 
-    JMOD_FLAGS += --module-path $(JMODS_DIR) \
-        --hash-modules '^(?!$(EXCLUDE_PATTERN))'
+      JMOD_FLAGS += --module-path $(JMODS_DIR) \
+          --hash-modules '^(?!$(EXCLUDE_PATTERN))'
+    endif
   endif
 endif
 
@@ -102,13 +106,19 @@ ifeq ($(EXTERNAL_BUILDJDK), false)
   DEPS += $(call CacheFind, $(JDK_OUTPUTDIR)/modules/jdk.jlink/jdk/tools/jmod)
 endif
 
+# If creating interim versions of jmods, certain files need to be filtered out
+# to avoid false incremental rebuilds.
+ifeq ($(INTERIM_JMOD), true)
+  DEPS := $(filter-out $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/classlist, $(DEPS))
+endif
+
 # TODO: What about headers?
 # Create jmods in a temp dir and then move them into place to keep the
 # module path in $(IMAGES_OUTPUTDIR)/jmods valid at all times.
 $(JMODS_DIR)/$(MODULE).jmod: $(DEPS)
 	$(call LogWarn, Creating $(patsubst $(OUTPUT_ROOT)/%, %, $@))
-	$(call MakeDir, $(@D) $(SUPPORT_OUTPUTDIR)/jmods)
-	$(RM) $@ $(SUPPORT_OUTPUTDIR)/jmods/$(notdir $@)
+	$(call MakeDir, $(JMODS_DIR) $(JMODS_TEMPDIR))
+	$(RM) $@ $(JMODS_TEMPDIR)/$(notdir $@)
 	$(JMOD) create \
             --module-version $(VERSION_SHORT) \
             --os-name $(REQUIRED_OS_NAME) \
@@ -116,10 +126,10 @@ $(JMODS_DIR)/$(MODULE).jmod: $(DEPS)
             --os-version $(REQUIRED_OS_VERSION) \
             --module-path $(JMODS_DIR) \
 	    --exclude '**{_the.*,*.diz,*.debuginfo,*.dSYM/**,*.dSYM,*.pdb,*.map}' \
-	    $(JMOD_FLAGS) $(SUPPORT_OUTPUTDIR)/jmods/$(notdir $@)
-	$(MV) $(SUPPORT_OUTPUTDIR)/jmods/$(notdir $@) $@
+	    $(JMOD_FLAGS) $(JMODS_TEMPDIR)/$(notdir $@)
+	$(MV) $(JMODS_TEMPDIR)/$(notdir $@) $@
 
-TARGETS += $(IMAGES_OUTPUTDIR)/jmods/$(MODULE).jmod
+TARGETS += $(JMODS_DIR)/$(MODULE).jmod
 
 ################################################################################
 

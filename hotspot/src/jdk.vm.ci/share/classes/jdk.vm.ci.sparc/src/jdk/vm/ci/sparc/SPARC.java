@@ -349,7 +349,6 @@ public class SPARC extends Architecture {
         SUN4V,
         BLK_INIT_INSTRUCTIONS,
         FMAF,
-        FMAU,
         SPARC64_FAMILY,
         M_FAMILY,
         T_FAMILY,

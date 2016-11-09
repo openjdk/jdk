@@ -66,6 +66,7 @@ ifeq ($(UNAME_S), SunOS)
   ifeq ($(ARCH), i386)
     ARCH=i586
   endif
+  NUM_CORES := $(shell LC_MESSAGES=C /usr/sbin/psrinfo -v | grep -c on-line)
 endif
 ifeq ($(UNAME_S), Linux)
   PLATFORM = linux
@@ -74,6 +75,7 @@ ifeq ($(UNAME_S), Linux)
   ifeq ($(ARCH), i386)
     ARCH = i586
   endif
+  NUM_CORES := $(shell cat /proc/cpuinfo  | grep -c processor)
 endif
 ifeq ($(UNAME_S), Darwin)
   PLATFORM = bsd
@@ -82,6 +84,7 @@ ifeq ($(UNAME_S), Darwin)
   ifeq ($(ARCH), i386)
     ARCH = i586
   endif
+  NUM_CORES := $(shell /usr/sbin/sysctl -n hw.ncpu)
 endif
 ifeq ($(findstring BSD,$(UNAME_S)), BSD)
   PLATFORM = bsd
@@ -115,6 +118,13 @@ ifeq ($(PLATFORM),)
     endif
   endif
   EXESUFFIX = .exe
+  ifneq ($(NUMBER_OF_PROCESSORS), )
+    NUM_CORES := $(NUMBER_OF_PROCESSORS)
+  else
+    ifneq ($(HOTSPOT_BUILD_JOBS), )
+      NUM_CORES := $(HOTSPOT_BUILD_JOBS)
+    endif
+  endif
 endif
 
 ifdef ALT_SLASH_JAVA
@@ -308,9 +318,22 @@ ifdef TESTDIRS
   TEST_SELECTION = $(TESTDIRS)
 endif
 
-ifdef CONCURRENCY
-  JTREG_BASIC_OPTIONS += -concurrency:$(CONCURRENCY)
+# Concurrency based on min(cores / 2, 12)
+ifdef NUM_CORES
+  CONCURRENCY := $(shell expr $(NUM_CORES) / 2)
+  ifeq ($(CONCURRENCY), 0)
+    CONCURRENCY := 1
+  else ifeq ($(shell expr $(CONCURRENCY) \> 12), 1)
+    CONCURRENCY := 12
+  endif
+else 
+  CONCURRENCY := 1
 endif
+JTREG_BASIC_OPTIONS += -concurrency:$(CONCURRENCY)
+
+# Make sure MaxRAMFraction is high enough to not cause OOM or swapping since we may end up with a lot of JVM's
+JTREG_BASIC_OPTIONS += -vmoption:-XX:MaxRAMFraction=$(shell expr $(CONCURRENCY) \* 4)
+
 ifdef EXTRA_JTREG_OPTIONS
   JTREG_BASIC_OPTIONS += $(EXTRA_JTREG_OPTIONS)
 endif

@@ -253,7 +253,7 @@ JCK_RUNTIME_OUTPUT_DIR = $(ABS_TEST_OUTPUT_DIR)/jck-runtime-Xcompile
 
 # Is the test JVM 32-bit?
 DATA_MODEL := \
-	$(shell $(JT_JAVA)/bin/java -XshowSettings:properties -version 2>&1 | \
+	$(shell $(TESTJAVA)/bin/java -XshowSettings:properties -version 2>&1 | \
 		grep 'sun\.arch\.data\.model' | \
 		awk '{print $$3}')
 ifeq ($(DATA_MODEL), 32)

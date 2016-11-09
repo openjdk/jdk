@@ -1004,7 +1004,7 @@ public class Types {
        List<Type> argtypes = msym.type.getParameterTypes();
        return (msym.flags_field & NATIVE) != 0 &&
               (msym.owner == syms.methodHandleType.tsym || msym.owner == syms.varHandleType.tsym) &&
-               argtypes.tail.tail == null &&
+               argtypes.length() == 1 &&
                argtypes.head.hasTag(TypeTag.ARRAY) &&
                ((ArrayType)argtypes.head).elemtype.tsym == syms.objectType.tsym;
    }
@@ -2850,20 +2850,64 @@ public class Types {
             return undef;
         }
 
+    public class CandidatesCache {
+        public Map<Entry, List<MethodSymbol>> cache = new WeakHashMap<>();
+
+        class Entry {
+            Type site;
+            MethodSymbol msym;
+
+            Entry(Type site, MethodSymbol msym) {
+                this.site = site;
+                this.msym = msym;
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (obj instanceof Entry) {
+                    Entry e = (Entry)obj;
+                    return e.msym == msym && isSameType(site, e.site);
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public int hashCode() {
+                return Types.this.hashCode(site) & ~msym.hashCode();
+            }
+        }
+
+        public List<MethodSymbol> get(Entry e) {
+            return cache.get(e);
+        }
+
+        public void put(Entry e, List<MethodSymbol> msymbols) {
+            cache.put(e, msymbols);
+        }
+    }
+
+    public CandidatesCache candidatesCache = new CandidatesCache();
 
     //where
     public List<MethodSymbol> interfaceCandidates(Type site, MethodSymbol ms) {
-        Filter<Symbol> filter = new MethodFilter(ms, site);
-        List<MethodSymbol> candidates = List.nil();
+        CandidatesCache.Entry e = candidatesCache.new Entry(site, ms);
+        List<MethodSymbol> candidates = candidatesCache.get(e);
+        if (candidates == null) {
+            Filter<Symbol> filter = new MethodFilter(ms, site);
+            List<MethodSymbol> candidates2 = List.nil();
             for (Symbol s : membersClosure(site, false).getSymbols(filter)) {
                 if (!site.tsym.isInterface() && !s.owner.isInterface()) {
                     return List.of((MethodSymbol)s);
-                } else if (!candidates.contains(s)) {
-                    candidates = candidates.prepend((MethodSymbol)s);
+                } else if (!candidates2.contains(s)) {
+                    candidates2 = candidates2.prepend((MethodSymbol)s);
                 }
             }
-            return prune(candidates);
+            candidates = prune(candidates2);
+            candidatesCache.put(e, candidates);
         }
+        return candidates;
+    }
 
     public List<MethodSymbol> prune(List<MethodSymbol> methods) {
         ListBuffer<MethodSymbol> methodsMin = new ListBuffer<>();

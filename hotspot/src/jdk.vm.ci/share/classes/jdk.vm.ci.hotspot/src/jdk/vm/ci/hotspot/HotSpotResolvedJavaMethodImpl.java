@@ -434,7 +434,6 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
                 methodData = new HotSpotMethodData(metaspaceMethodData, this);
                 String methodDataFilter = Option.TraceMethodDataFilter.getString();
                 if (methodDataFilter != null && this.format("%H.%n").contains(methodDataFilter)) {
-                    System.out.println("Raw method data for " + this.format("%H.%n(%p)") + ":");
                     System.out.println(methodData.toString());
                 }
             }

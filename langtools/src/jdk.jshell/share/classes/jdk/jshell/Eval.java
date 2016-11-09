@@ -855,6 +855,8 @@ class Eval {
                 case PUBLIC:
                 case PROTECTED:
                 case PRIVATE:
+                    // quietly ignore, user cannot see effects one way or the other
+                    break;
                 case STATIC:
                 case FINAL:
                     list.add(mod);

@@ -84,18 +84,11 @@ void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
 #define MAX_HEAP_BUFFER_LEN 65536
 #endif
 
-#ifdef AF_INET6
 typedef union {
     struct sockaddr     sa;
     struct sockaddr_in  sa4;
     struct sockaddr_in6 sa6;
 } SOCKETADDRESS;
-#else
-typedef union {
-    struct sockaddr     sa;
-    struct sockaddr_in  sa4;
-} SOCKETADDRESS;
-#endif
 
 /************************************************************************
  *  Utilities
@@ -103,9 +96,7 @@ typedef union {
 
 #ifdef __linux__
 int kernelIsV24();
-#ifdef AF_INET6
 int getDefaultIPv6Interface(struct in6_addr *target_addr);
-#endif
 #endif
 
 #ifdef __solaris__

@@ -33,7 +33,7 @@ include RmicCommon.gmk
 #
 
 $(eval $(call SetupRMICompilation,RMI_12, \
-    CLASSES := sun.rmi.server.Activation$$$$ActivationSystemImpl \
+    CLASSES := sun.rmi.server.Activation$$ActivationSystemImpl \
         java.rmi.activation.ActivationGroup, \
     CLASSES_DIR := $(CLASSES_DIR)/java.rmi, \
     STUB_CLASSES_DIR := $(STUB_CLASSES_DIR)/java.rmi, \

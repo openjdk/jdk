@@ -21,10 +21,11 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8087112
  * @modules java.httpclient
+ *          java.logging
  *          jdk.httpserver
  * @library /lib/testlibrary/
  * @build jdk.testlibrary.SimpleSSLContext ProxyServer
@@ -35,13 +36,23 @@
  */
 //package javaapplication16;
 
-import com.sun.net.httpserver.*;
+import com.sun.net.httpserver.HttpContext;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsServer;
 import java.io.IOException;
-import java.net.*;
-import java.net.http.*;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 /**

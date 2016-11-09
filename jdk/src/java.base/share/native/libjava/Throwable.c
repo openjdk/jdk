@@ -49,10 +49,3 @@ Java_java_lang_Throwable_fillInStackTrace(JNIEnv *env, jobject throwable, jint d
     JVM_FillInStackTrace(env, throwable);
     return throwable;
 }
-
-JNIEXPORT void JNICALL
-Java_java_lang_Throwable_getStackTraceElements(JNIEnv *env,
-                                               jobject throwable, jobjectArray elements)
-{
-    JVM_GetStackTraceElements(env, throwable, elements);
-}

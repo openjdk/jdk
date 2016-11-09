@@ -126,10 +126,7 @@ static int     getFlags0(JNIEnv *env, jstring  ifname);
 
 static netif  *enumInterfaces(JNIEnv *env);
 static netif  *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs);
-
-#if defined(AF_INET6)
 static netif  *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs);
-#endif
 
 static netif  *addif(JNIEnv *env, int sock, const char *if_name, netif *ifs,
                      struct sockaddr *ifr_addrP,
@@ -312,11 +309,8 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
   (JNIEnv *env, jclass cls, jobject iaObj)
 {
     netif *ifs, *curr;
-#if defined(AF_INET6)
-    int family = (getInetAddress_family(env, iaObj) == java_net_InetAddress_IPv4) ? AF_INET : AF_INET6;
-#else
-    int family =  AF_INET;
-#endif
+    int family = (getInetAddress_family(env, iaObj) == java_net_InetAddress_IPv4) ?
+        AF_INET : AF_INET6;
     jobject obj = NULL;
     jboolean match = JNI_FALSE;
 
@@ -342,9 +336,7 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
                         match = JNI_TRUE;
                         break;
                     }
-                }
-#if defined(AF_INET6)
-                if (family == AF_INET6) {
+                } else if (family == AF_INET6) {
                     jbyte *bytes = (jbyte *)&(
                         ((struct sockaddr_in6*)addrP->addr)->sin6_addr);
                     jbyte caddr[16];
@@ -362,7 +354,6 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
                         break;
                     }
                 }
-#endif
             }
 
             if (match) {
@@ -706,7 +697,6 @@ static jobject createNetworkInterface(JNIEnv *env, netif *ifs) {
                 return NULL;
             }
         }
-#if defined(AF_INET6)
         if (addrP->family == AF_INET6) {
             int scope=0;
             iaObj = (*env)->NewObject(env, ia6_class, ia6_ctrID);
@@ -735,7 +725,6 @@ static jobject createNetworkInterface(JNIEnv *env, netif *ifs) {
                 return NULL;
             }
         }
-#endif
 
         (*env)->SetObjectArrayElement(env, addrArr, addr_index++, iaObj);
         addrP = addrP->next;
@@ -796,25 +785,23 @@ static netif *enumInterfaces(JNIEnv *env) {
     }
 
     // If IPv6 is available then enumerate IPv6 addresses.
-#if defined(AF_INET6)
-        // User can disable ipv6 explicitly by -Djava.net.preferIPv4Stack=true,
-        // so we have to call ipv6_available()
-        if (ipv6_available()) {
-            sock = openSocket(env, AF_INET6);
-            if (sock < 0 && (*env)->ExceptionOccurred(env)) {
-                freeif(ifs);
-                return NULL;
-            }
-
-            ifs = enumIPv6Interfaces(env, sock, ifs);
-            close(sock);
-
-            if ((*env)->ExceptionOccurred(env)) {
-                freeif(ifs);
-                return NULL;
-            }
+    // User can disable ipv6 explicitly by -Djava.net.preferIPv4Stack=true,
+    // so we have to call ipv6_available()
+    if (ipv6_available()) {
+        sock = openSocket(env, AF_INET6);
+        if (sock < 0 && (*env)->ExceptionOccurred(env)) {
+            freeif(ifs);
+            return NULL;
         }
-#endif
+
+        ifs = enumIPv6Interfaces(env, sock, ifs);
+        close(sock);
+
+        if ((*env)->ExceptionOccurred(env)) {
+            freeif(ifs);
+            return NULL;
+        }
+    }
 
     return ifs;
 }
@@ -870,12 +857,8 @@ static netif *addif(JNIEnv *env, int sock, const char *if_name, netif *ifs,
 
     // Allocate for addr and brdcast at once
 
-#if defined(AF_INET6)
     addr_size = (family == AF_INET) ? sizeof(struct sockaddr_in)
                                     : sizeof(struct sockaddr_in6);
-#else
-    addr_size = sizeof(struct sockaddr_in);
-#endif
 
     CHECKED_MALLOC3(addrP, netaddr *, sizeof(netaddr) + 2 * addr_size);
     addrP->addr = (struct sockaddr *)((char *)addrP + sizeof(netaddr));
@@ -1064,7 +1047,6 @@ static int openSocket(JNIEnv *env, int proto) {
 /** Linux **/
 #if defined(__linux__)
 
-#if defined(AF_INET6)
 /*
  * Opens a socket for further ioctl calls. Tries AF_INET socket first and
  * if it fails return AF_INET6 socket.
@@ -1090,11 +1072,6 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
     // IPv6 socket regardless of type of address of an interface.
     return sock;
 }
-#else
-static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
-    return openSocket(env, AF_INET);
-}
-#endif
 
 /*
  * Enumerates and returns all IPv4 interfaces on Linux.
@@ -1178,8 +1155,6 @@ static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
     return ifs;
 }
 
-#if defined(AF_INET6)
-
 /*
  * Enumerates and returns all IPv6 interfaces on Linux.
  */
@@ -1220,8 +1195,6 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
     }
     return ifs;
 }
-
-#endif /* AF_INET6 */
 
 /*
  * Try to get the interface index.
@@ -1311,7 +1284,6 @@ static int getFlags(int sock, const char *ifname, int *flags) {
 /** AIX **/
 #if defined(_AIX)
 
-#if defined(AF_INET6)
 /*
  * Opens a socket for further ioctl calls. Tries AF_INET socket first and
  * if it fails return AF_INET6 socket.
@@ -1335,11 +1307,6 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
 
     return sock;
 }
-#else
-static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
-    return openSocket(env, AF_INET);
-}
-#endif
 
 /*
  * Enumerates and returns all IPv4 interfaces on AIX.
@@ -1423,8 +1390,6 @@ static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
     return ifs;
 }
 
-#if defined(AF_INET6)
-
 /*
  * Enumerates and returns all IPv6 interfaces on AIX.
  */
@@ -1498,8 +1463,6 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
     free(buf);
     return ifs;
 }
-
-#endif /* AF_INET6 */
 
 /*
  * Try to get the interface index.
@@ -1595,7 +1558,6 @@ static int getFlags(int sock, const char *ifname, int *flags) {
 /** Solaris **/
 #if defined(__solaris__)
 
-#if defined(AF_INET6)
 /*
  * Opens a socket for further ioctl calls. Tries AF_INET socket first and
  * if it fails return AF_INET6 socket.
@@ -1640,11 +1602,6 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
 
     return sock;
 }
-#else
-static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
-    return openSocket(env, AF_INET);
-}
-#endif
 
 /*
  * Enumerates and returns all IPv4 interfaces on Solaris.
@@ -1720,8 +1677,6 @@ static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
     return ifs;
 }
 
-#if defined(AF_INET6)
-
 /*
  * Enumerates and returns all IPv6 interfaces on Solaris.
  */
@@ -1783,8 +1738,6 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
     free(buf);
     return ifs;
 }
-
-#endif /* AF_INET6 */
 
 /*
  * Try to get the interface index.
@@ -1957,7 +1910,6 @@ static int getFlags(int sock, const char *ifname, int *flags) {
 /** BSD **/
 #if defined(_ALLBSD_SOURCE)
 
-#if defined(AF_INET6)
 /*
  * Opens a socket for further ioctl calls. Tries AF_INET socket first and
  * if it fails return AF_INET6 socket.
@@ -1981,11 +1933,6 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
 
     return sock;
 }
-#else
-static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
-    return openSocket(env, AF_INET);
-}
-#endif
 
 /*
  * Enumerates and returns all IPv4 interfaces on BSD.
@@ -2031,8 +1978,6 @@ static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
     return ifs;
 }
 
-#if defined(AF_INET6)
-
 /*
  * Enumerates and returns all IPv6 interfaces on BSD.
  */
@@ -2072,8 +2017,6 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
     freeifaddrs(origifa);
     return ifs;
 }
-
-#endif /* AF_INET6 */
 
 /*
  * Try to get the interface index.

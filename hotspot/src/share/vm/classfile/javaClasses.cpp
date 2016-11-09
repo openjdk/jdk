@@ -780,19 +780,26 @@ void java_lang_Class::set_mirror_module_field(KlassHandle k, Handle mirror, Hand
     // Put the class on the fixup_module_list to patch later when the java.lang.reflect.Module
     // for java.base is known.
     assert(!Universe::is_module_initialized(), "Incorrect java.lang.reflect.Module pre module system initialization");
-    MutexLocker m1(Module_lock, THREAD);
-    // Keep list of classes needing java.base module fixup
-    if (!ModuleEntryTable::javabase_defined()) {
-      if (fixup_module_field_list() == NULL) {
-        GrowableArray<Klass*>* list =
-          new (ResourceObj::C_HEAP, mtModule) GrowableArray<Klass*>(500, true);
-        set_fixup_module_field_list(list);
+
+    bool javabase_was_defined = false;
+    {
+      MutexLocker m1(Module_lock, THREAD);
+      // Keep list of classes needing java.base module fixup
+      if (!ModuleEntryTable::javabase_defined()) {
+        if (fixup_module_field_list() == NULL) {
+          GrowableArray<Klass*>* list =
+            new (ResourceObj::C_HEAP, mtModule) GrowableArray<Klass*>(500, true);
+          set_fixup_module_field_list(list);
+        }
+        k->class_loader_data()->inc_keep_alive();
+        fixup_module_field_list()->push(k());
+      } else {
+        javabase_was_defined = true;
       }
-      k->class_loader_data()->inc_keep_alive();
-      fixup_module_field_list()->push(k());
-    } else {
-      // java.base was defined at some point between calling create_mirror()
-      // and obtaining the Module_lock, patch this particular class with java.base.
+    }
+
+    // If java.base was already defined then patch this particular class with java.base.
+    if (javabase_was_defined) {
       ModuleEntry *javabase_entry = ModuleEntryTable::javabase_moduleEntry();
       assert(javabase_entry != NULL && javabase_entry->module() != NULL,
              "Setting class module field, java.base should be defined");
@@ -2168,6 +2175,14 @@ void java_lang_StackTraceElement::fill_in(Handle element,
   const char* str = holder->external_name();
   oop classname = StringTable::intern((char*) str, CHECK);
   java_lang_StackTraceElement::set_declaringClass(element(), classname);
+  java_lang_StackTraceElement::set_declaringClassObject(element(), holder->java_mirror());
+
+  oop loader = holder->class_loader();
+  if (loader != NULL) {
+    oop loader_name = java_lang_ClassLoader::name(loader);
+    if (loader_name != NULL)
+      java_lang_StackTraceElement::set_classLoaderName(element(), loader_name);
+  }
 
   // The method can be NULL if the requested class version is gone
   Symbol* sym = !method.is_null() ? method->name() : holder->constants()->symbol_at(cpref);
@@ -3426,6 +3441,7 @@ oop java_security_AccessControlContext::create(objArrayHandle context, bool isPr
 bool java_lang_ClassLoader::offsets_computed = false;
 int  java_lang_ClassLoader::_loader_data_offset = -1;
 int  java_lang_ClassLoader::parallelCapable_offset = -1;
+int  java_lang_ClassLoader::name_offset = -1;
 int  java_lang_ClassLoader::unnamedModule_offset = -1;
 
 ClassLoaderData** java_lang_ClassLoader::loader_data_addr(oop loader) {
@@ -3446,6 +3462,9 @@ void java_lang_ClassLoader::compute_offsets() {
   compute_optional_offset(parallelCapable_offset,
     k1, vmSymbols::parallelCapable_name(), vmSymbols::concurrenthashmap_signature());
 
+  compute_offset(name_offset,
+    k1, vmSymbols::name_name(), vmSymbols::string_signature());
+
   compute_offset(unnamedModule_offset,
     k1, vmSymbols::unnamedModule_name(), vmSymbols::module_signature());
 
@@ -3455,6 +3474,11 @@ void java_lang_ClassLoader::compute_offsets() {
 oop java_lang_ClassLoader::parent(oop loader) {
   assert(is_instance(loader), "loader must be oop");
   return loader->obj_field(parent_offset);
+}
+
+oop java_lang_ClassLoader::name(oop loader) {
+  assert(is_instance(loader), "loader must be oop");
+  return loader->obj_field(name_offset);
 }
 
 bool java_lang_ClassLoader::isAncestor(oop loader, oop cl) {
@@ -3612,12 +3636,14 @@ int java_lang_System::static_in_offset;
 int java_lang_System::static_out_offset;
 int java_lang_System::static_err_offset;
 int java_lang_System::static_security_offset;
-int java_lang_StackTraceElement::declaringClass_offset;
 int java_lang_StackTraceElement::methodName_offset;
 int java_lang_StackTraceElement::fileName_offset;
 int java_lang_StackTraceElement::lineNumber_offset;
 int java_lang_StackTraceElement::moduleName_offset;
 int java_lang_StackTraceElement::moduleVersion_offset;
+int java_lang_StackTraceElement::classLoaderName_offset;
+int java_lang_StackTraceElement::declaringClass_offset;
+int java_lang_StackTraceElement::classOrLoaderModuleClassName_offset;
 int java_lang_StackFrameInfo::_declaringClass_offset;
 int java_lang_StackFrameInfo::_memberName_offset;
 int java_lang_StackFrameInfo::_bci_offset;
@@ -3660,6 +3686,14 @@ void java_lang_StackTraceElement::set_moduleName(oop element, oop value) {
 
 void java_lang_StackTraceElement::set_moduleVersion(oop element, oop value) {
   element->obj_field_put(moduleVersion_offset, value);
+}
+
+void java_lang_StackTraceElement::set_classLoaderName(oop element, oop value) {
+  element->obj_field_put(classLoaderName_offset, value);
+}
+
+void java_lang_StackTraceElement::set_declaringClassObject(oop element, oop value) {
+  element->obj_field_put(classOrLoaderModuleClassName_offset, value);
 }
 
 // Support for java_lang_StackFrameInfo
@@ -3777,6 +3811,8 @@ void JavaClasses::compute_hard_coded_offsets() {
   java_lang_System::static_security_offset = java_lang_System::hc_static_security_offset * x;
 
   // java_lang_StackTraceElement
+  java_lang_StackTraceElement::classOrLoaderModuleClassName_offset= java_lang_StackTraceElement::hc_classOrLoaderModuleClassName_offset* x + header;
+  java_lang_StackTraceElement::classLoaderName_offset = java_lang_StackTraceElement::hc_classLoaderName_offset * x + header;
   java_lang_StackTraceElement::moduleName_offset = java_lang_StackTraceElement::hc_moduleName_offset * x + header;
   java_lang_StackTraceElement::moduleVersion_offset = java_lang_StackTraceElement::hc_moduleVersion_offset * x + header;
   java_lang_StackTraceElement::declaringClass_offset = java_lang_StackTraceElement::hc_declaringClass_offset  * x + header;
@@ -3978,10 +4014,14 @@ void JavaClasses::check_offsets() {
 
   // java.lang.StackTraceElement
 
-  CHECK_OFFSET("java/lang/StackTraceElement", java_lang_StackTraceElement, declaringClass, "Ljava/lang/String;");
-  CHECK_OFFSET("java/lang/StackTraceElement", java_lang_StackTraceElement, methodName, "Ljava/lang/String;");
-  CHECK_OFFSET("java/lang/StackTraceElement", java_lang_StackTraceElement,   fileName, "Ljava/lang/String;");
-  CHECK_OFFSET("java/lang/StackTraceElement", java_lang_StackTraceElement, lineNumber, "I");
+  CHECK_OFFSET("java/lang/StackTraceElement", java_lang_StackTraceElement, classOrLoaderModuleClassName, "Ljava/lang/Object;");
+  CHECK_OFFSET("java/lang/StackTraceElement", java_lang_StackTraceElement, classLoaderName, "Ljava/lang/String;");
+  CHECK_OFFSET("java/lang/StackTraceElement", java_lang_StackTraceElement, moduleName,      "Ljava/lang/String;");
+  CHECK_OFFSET("java/lang/StackTraceElement", java_lang_StackTraceElement, moduleVersion,   "Ljava/lang/String;");
+  CHECK_OFFSET("java/lang/StackTraceElement", java_lang_StackTraceElement, declaringClass,  "Ljava/lang/String;");
+  CHECK_OFFSET("java/lang/StackTraceElement", java_lang_StackTraceElement, methodName,      "Ljava/lang/String;");
+  CHECK_OFFSET("java/lang/StackTraceElement", java_lang_StackTraceElement, fileName,        "Ljava/lang/String;");
+  CHECK_OFFSET("java/lang/StackTraceElement", java_lang_StackTraceElement, lineNumber,      "I");
 
   // java.lang.ref.Reference
 

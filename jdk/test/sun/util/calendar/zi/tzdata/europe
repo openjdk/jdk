@@ -1523,73 +1523,84 @@ Zone Atlantic/Reykjavik	-1:28	-	LMT	1908
 # But these events all occurred before the 1970 cutoff,
 # so record only the time in Rome.
 #
-# From Paul Eggert (2006-03-22):
-# For Italian DST we have three sources: Shanks & Pottenger, Whitman, and
-# F. Pollastri
-# Day-light Saving Time in Italy (2006-02-03)
-# http://toi.iriti.cnr.it/uk/ienitlt.html
-# ('FP' below), taken from an Italian National Electrotechnical Institute
-# publication. When the three sources disagree, guess who's right, as follows:
+# From Michael Deckers (2016-10-24):
+# http://www.ac-ilsestante.it/MERIDIANE/ora_legale quotes a law of 1893-08-10
+# ... [translated as] "The preceding dispositions will enter into
+# force at the instant at which, according to the time specified in
+# the 1st article, the 1st of November 1893 will begin...."
 #
-# year	FP	Shanks&P. (S)	Whitman (W)	Go with:
-# 1916	06-03	06-03 24:00	06-03 00:00	FP & W
-#	09-30	09-30 24:00	09-30 01:00	FP; guess 24:00s
-# 1917	04-01	03-31 24:00	03-31 00:00	FP & S
-#	09-30	09-29 24:00	09-30 01:00	FP & W
-# 1918	03-09	03-09 24:00	03-09 00:00	FP & S
-#	10-06	10-05 24:00	10-06 01:00	FP & W
-# 1919	03-01	03-01 24:00	03-01 00:00	FP & S
-#	10-04	10-04 24:00	10-04 01:00	FP; guess 24:00s
-# 1920	03-20	03-20 24:00	03-20 00:00	FP & S
-#	09-18	09-18 24:00	10-01 01:00	FP; guess 24:00s
-# 1944	04-02	04-03 02:00			S (see C-Eur)
-#	09-16	10-02 03:00			FP; guess 24:00s
-# 1945	09-14	09-16 24:00			FP; guess 24:00s
-# 1970	05-21	05-31 00:00			S
-#	09-20	09-27 00:00			S
+# From Pierpaolo Bernardi (2016-10-20):
+# The authoritative source for time in Italy is the national metrological
+# institute, which has a summary page of historical DST data at
+# http://www.inrim.it/res/tf/ora_legale_i.shtml
+# (2016-10-24):
+# http://www.renzobaldini.it/le-ore-legali-in-italia/
+# has still different data for 1944.  It divides Italy in two, as
+# there were effectively two governments at the time, north of Gothic
+# Line German controlled territory, official government RSI, and south
+# of the Gothic Line, controlled by allied armies.
+#
+# From Brian Inglis (2016-10-23):
+# Viceregal LEGISLATIVE DECREE. 14 September 1944, no. 219.
+# Restoration of Standard Time. (044U0219) (OJ 62 of 30.9.1944) ...
+# Given the R. law decreed on 1944-03-29, no. 92, by which standard time is
+# advanced to sixty minutes later starting at hour two on 1944-04-02; ...
+# Starting at hour three on the date 1944-09-17 standard time will be resumed.
+#
+# From Paul Eggert (2016-10-27):
+# Go with INRiM for DST rules, except as corrected by Inglis for 1944
+# for the Kingdom of Italy.  This is consistent with Renzo Baldini.
+# Model Rome's occupation by using using C-Eur rules from 1943-09-10
+# to 1944-06-04; although Rome was an open city during this period, it
+# was effectively controlled by Germany.
 #
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Italy	1916	only	-	Jun	 3	0:00s	1:00	S
-Rule	Italy	1916	only	-	Oct	 1	0:00s	0	-
-Rule	Italy	1917	only	-	Apr	 1	0:00s	1:00	S
-Rule	Italy	1917	only	-	Sep	30	0:00s	0	-
-Rule	Italy	1918	only	-	Mar	10	0:00s	1:00	S
-Rule	Italy	1918	1919	-	Oct	Sun>=1	0:00s	0	-
-Rule	Italy	1919	only	-	Mar	 2	0:00s	1:00	S
-Rule	Italy	1920	only	-	Mar	21	0:00s	1:00	S
-Rule	Italy	1920	only	-	Sep	19	0:00s	0	-
-Rule	Italy	1940	only	-	Jun	15	0:00s	1:00	S
-Rule	Italy	1944	only	-	Sep	17	0:00s	0	-
-Rule	Italy	1945	only	-	Apr	 2	2:00	1:00	S
-Rule	Italy	1945	only	-	Sep	15	0:00s	0	-
-Rule	Italy	1946	only	-	Mar	17	2:00s	1:00	S
-Rule	Italy	1946	only	-	Oct	 6	2:00s	0	-
-Rule	Italy	1947	only	-	Mar	16	0:00s	1:00	S
-Rule	Italy	1947	only	-	Oct	 5	0:00s	0	-
-Rule	Italy	1948	only	-	Feb	29	2:00s	1:00	S
-Rule	Italy	1948	only	-	Oct	 3	2:00s	0	-
-Rule	Italy	1966	1968	-	May	Sun>=22	0:00	1:00	S
-Rule	Italy	1966	1969	-	Sep	Sun>=22	0:00	0	-
-Rule	Italy	1969	only	-	Jun	 1	0:00	1:00	S
-Rule	Italy	1970	only	-	May	31	0:00	1:00	S
-Rule	Italy	1970	only	-	Sep	lastSun	0:00	0	-
-Rule	Italy	1971	1972	-	May	Sun>=22	0:00	1:00	S
-Rule	Italy	1971	only	-	Sep	lastSun	1:00	0	-
-Rule	Italy	1972	only	-	Oct	 1	0:00	0	-
-Rule	Italy	1973	only	-	Jun	 3	0:00	1:00	S
-Rule	Italy	1973	1974	-	Sep	lastSun	0:00	0	-
-Rule	Italy	1974	only	-	May	26	0:00	1:00	S
-Rule	Italy	1975	only	-	Jun	 1	0:00s	1:00	S
-Rule	Italy	1975	1977	-	Sep	lastSun	0:00s	0	-
-Rule	Italy	1976	only	-	May	30	0:00s	1:00	S
-Rule	Italy	1977	1979	-	May	Sun>=22	0:00s	1:00	S
-Rule	Italy	1978	only	-	Oct	 1	0:00s	0	-
-Rule	Italy	1979	only	-	Sep	30	0:00s	0	-
+Rule	Italy	1916	only	-	Jun	 3	24:00	1:00	S
+Rule	Italy	1916	1917	-	Sep	30	24:00	0	-
+Rule	Italy	1917	only	-	Mar	31	24:00	1:00	S
+Rule	Italy	1918	only	-	Mar	 9	24:00	1:00	S
+Rule	Italy	1918	only	-	Oct	 6	24:00	0	-
+Rule	Italy	1919	only	-	Mar	 1	24:00	1:00	S
+Rule	Italy	1919	only	-	Oct	 4	24:00	0	-
+Rule	Italy	1920	only	-	Mar	20	24:00	1:00	S
+Rule	Italy	1920	only	-	Sep	18	24:00	0	-
+Rule	Italy	1940	only	-	Jun	14	24:00	1:00	S
+Rule	Italy	1942	only	-	Nov	 2	 2:00s	0	-
+Rule	Italy	1943	only	-	Mar	29	 2:00s	1:00	S
+Rule	Italy	1943	only	-	Oct	 4	 2:00s	0	-
+Rule	Italy	1944	only	-	Apr	 2	 2:00s	1:00	S
+Rule	Italy	1944	only	-	Sep	17	 2:00s	0	-
+Rule	Italy	1945	only	-	Apr	 2	 2:00	1:00	S
+Rule	Italy	1945	only	-	Sep	15	 1:00	0	-
+Rule	Italy	1946	only	-	Mar	17	 2:00s	1:00	S
+Rule	Italy	1946	only	-	Oct	 6	 2:00s	0	-
+Rule	Italy	1947	only	-	Mar	16	 0:00s	1:00	S
+Rule	Italy	1947	only	-	Oct	 5	 0:00s	0	-
+Rule	Italy	1948	only	-	Feb	29	 2:00s	1:00	S
+Rule	Italy	1948	only	-	Oct	 3	 2:00s	0	-
+Rule	Italy	1966	1968	-	May	Sun>=22	 0:00s	1:00	S
+Rule	Italy	1966	only	-	Sep	24	24:00	0	-
+Rule	Italy	1967	1969	-	Sep	Sun>=22	 0:00s	0	-
+Rule	Italy	1969	only	-	Jun	 1	 0:00s	1:00	S
+Rule	Italy	1970	only	-	May	31	 0:00s	1:00	S
+Rule	Italy	1970	only	-	Sep	lastSun	 0:00s	0	-
+Rule	Italy	1971	1972	-	May	Sun>=22	 0:00s	1:00	S
+Rule	Italy	1971	only	-	Sep	lastSun	 0:00s	0	-
+Rule	Italy	1972	only	-	Oct	 1	 0:00s	0	-
+Rule	Italy	1973	only	-	Jun	 3	 0:00s	1:00	S
+Rule	Italy	1973	1974	-	Sep	lastSun	 0:00s	0	-
+Rule	Italy	1974	only	-	May	26	 0:00s	1:00	S
+Rule	Italy	1975	only	-	Jun	 1	 0:00s	1:00	S
+Rule	Italy	1975	1977	-	Sep	lastSun	 0:00s	0	-
+Rule	Italy	1976	only	-	May	30	 0:00s	1:00	S
+Rule	Italy	1977	1979	-	May	Sun>=22	 0:00s	1:00	S
+Rule	Italy	1978	only	-	Oct	 1	 0:00s	0	-
+Rule	Italy	1979	only	-	Sep	30	 0:00s	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Rome	0:49:56 -	LMT	1866 Sep 22
-			0:49:56	-	RMT	1893 Nov  1  0:00s # Rome Mean
-			1:00	Italy	CE%sT	1942 Nov  2  2:00s
-			1:00	C-Eur	CE%sT	1944 Jul
+			0:49:56	-	RMT	1893 Oct 31 23:49:56 # Rome Mean
+			1:00	Italy	CE%sT	1943 Sep 10
+			1:00	C-Eur	CE%sT	1944 Jun  4
 			1:00	Italy	CE%sT	1980
 			1:00	EU	CE%sT
 
@@ -1788,6 +1799,10 @@ Zone Europe/Luxembourg	0:24:36 -	LMT	1904 Jun
 # See Europe/Belgrade.
 
 # Malta
+#
+# From Paul Eggert (2016-10-21):
+# Assume 1900-1972 was like Rome, overriding Shanks.
+#
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Malta	1973	only	-	Mar	31	0:00s	1:00	S
 Rule	Malta	1973	only	-	Sep	29	0:00s	0	-
@@ -1798,8 +1813,6 @@ Rule	Malta	1975	1980	-	Sep	Sun>=15	2:00	0	-
 Rule	Malta	1980	only	-	Mar	31	2:00	1:00	S
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Malta	0:58:04 -	LMT	1893 Nov  2  0:00s # Valletta
-			1:00	Italy	CE%sT	1942 Nov  2  2:00s
-			1:00	C-Eur	CE%sT	1945 Apr  2  2:00s
 			1:00	Italy	CE%sT	1973 Mar 31
 			1:00	Malta	CE%sT	1981
 			1:00	EU	CE%sT
@@ -1931,7 +1944,7 @@ Zone	Europe/Monaco	0:29:32 -	LMT	1891 Mar 15
 # Amsterdam mean time.
 
 # The data entries before 1945 are taken from
-# http://www.staff.science.uu.nl/~gent0113/idl/idl.htm
+# http://www.staff.science.uu.nl/~gent0113/wettijd/wettijd.htm
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Neth	1916	only	-	May	 1	0:00	1:00	NST	# Netherlands Summer Time

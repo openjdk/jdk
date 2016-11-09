@@ -33,6 +33,7 @@
  * @bug 8153637
  * @bug 8154751
  * @bug 8154754
+ * @bug 8167974
  * @run testng/othervm -ea -esa test.java.lang.invoke.LoopCombinatorTest
  */
 
@@ -800,7 +801,8 @@ public class LoopCombinatorTest {
                 {l_it, l_i, isl_i, ""},
                 {l_it, null, sl_v, ""},
                 {li_it, li_i, isli_i, ""},
-                {il_it, null, sil_v, "inferred first loop argument must inherit from Iterable: int"},
+                {null, null, sil_v, "inferred first loop argument must inherit from Iterable: int"},
+                {il_it, null, sil_v, ""},
                 {li_it, null, sli_v, ""},
                 {sl_v, null, sl_v, "iteratedLoop first argument must have Iterator return type"},
                 {li_it, l_it, sl_v,

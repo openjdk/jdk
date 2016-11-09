@@ -23,10 +23,11 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8087112
  * @modules java.httpclient
+ *          java.logging
  *          jdk.httpserver
  * @library /lib/testlibrary/
  * @build jdk.testlibrary.SimpleSSLContext
@@ -50,14 +51,27 @@
 
 // Tests 1, 10, 11 and 12 executed from Driver
 
-import com.sun.net.httpserver.*;
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpContext;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsServer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.File;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
-import java.net.*;
-import java.net.http.*;
+import java.net.BindException;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.URLClassLoader;
+import java.net.URL;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -66,13 +80,15 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.*;
-import java.util.function.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.function.LongConsumer;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.lang.reflect.InvocationTargetException;
-import java.net.BindException;
 
 /**
  * Security checks test

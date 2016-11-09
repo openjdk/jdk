@@ -48,9 +48,9 @@ public class ReplayCachePrecise {
     public static void main(String[] args) throws Exception {
 
         AuthTimeWithHash a1 = new AuthTimeWithHash(client, server, time(0), 0,
-                "1111111111111111");
+                "HASH", "1111111111111111");
         AuthTimeWithHash a2 = new AuthTimeWithHash(client, server, time(0), 0,
-                "2222222222222222");
+                "HASH", "2222222222222222");
         KerberosTime now = new KerberosTime(time(0)*1000L);
 
         // When all new styles, must exact match

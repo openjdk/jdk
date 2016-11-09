@@ -45,7 +45,7 @@ import org.testng.TestNG;
 
 /*
  * @test
- * @bug 8137058 8164908
+ * @bug 8137058 8164908 8168980
  * @run testng ReflectionFactoryTest
  * @run testng/othervm/policy=security.policy ReflectionFactoryTest
  * @summary Basic test for the unsupported ReflectionFactory
@@ -95,6 +95,47 @@ public class ReflectionFactoryTest {
         }
     }
 
+    @DataProvider(name = "NonSerialConstructors")
+    static Object[][] constructors() throws NoSuchMethodException {
+        return new Object[][] {
+                {Foo.class, Object.class.getDeclaredConstructor()},
+                {Foo.class, Foo.class.getDeclaredConstructor()},
+                {Baz.class, Object.class.getDeclaredConstructor()},
+                {Baz.class, Foo.class.getDeclaredConstructor()},
+                {Baz.class, Baz.class.getDeclaredConstructor()}
+        };
+    }
+
+    /**
+     * Tests that the given Constructor, in the hierarchy, is run.
+     */
+    @Test(dataProvider="NonSerialConstructors")
+    static void testNonSerializableConstructor(Class<?> cl,
+                                               Constructor<?> constructorToCall)
+        throws ReflectiveOperationException
+    {
+        @SuppressWarnings("unchecked")
+        Constructor<?> c = factory.newConstructorForSerialization(cl,
+                                                                  constructorToCall);
+
+        Object o = c.newInstance();
+        Assert.assertEquals(o.getClass(), cl, "Instance is wrong type");
+
+        int expectedFoo = 0;
+        int expectedBaz = 0;
+        if (constructorToCall.getName().equals("ReflectionFactoryTest$Foo")) {
+            expectedFoo = 1;
+        } else if (constructorToCall.getName().equals("ReflectionFactoryTest$Baz")) {
+            expectedFoo = 1;
+            expectedBaz = 4;
+        }
+
+        Assert.assertEquals(((Foo)o).foo(), expectedFoo);
+        if (o instanceof Baz) {
+            Assert.assertEquals(((Baz)o).baz(), expectedBaz);
+        }
+    }
+
     static class Foo {
         private int foo;
         public Foo() {
@@ -109,6 +150,8 @@ public class ReflectionFactoryTest {
             int expectedFoo = 1;
             Assert.assertEquals(foo, expectedFoo, "foo() constructor not run");
         }
+
+        public int foo() { return foo; }
     }
 
     static class Bar extends Foo implements Serializable {
@@ -126,6 +169,12 @@ public class ReflectionFactoryTest {
             int expectedBar = 0;
             Assert.assertEquals(bar, expectedBar, "bar() constructor not run");
         }
+    }
+
+    static class Baz extends Foo {
+        private final int baz;
+        public Baz() { this.baz = 4; }
+        public int baz() { return baz; }
     }
 
     /**

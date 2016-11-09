@@ -305,8 +305,6 @@ Java_java_net_Inet6AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
     return ret;
 }
 
-#ifdef AF_INET6
-
 /**
  * ping implementation using tcp port 7 (echo)
  */
@@ -468,7 +466,6 @@ ping6(JNIEnv *env,
         return JNI_FALSE;
     }
 }
-#endif /* AF_INET6 */
 
 /*
  * Class:     java_net_Inet6AddressImpl
@@ -482,7 +479,6 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
                                            jint timeout,
                                            jbyteArray ifArray,
                                            jint ttl, jint if_scope) {
-#ifdef AF_INET6
     jbyte caddr[16];
     jint sz;
     struct sockaddr_in6 him6;
@@ -548,6 +544,5 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
         return ping6(env, netif, &him6, timeout, hIcmpFile);
     }
 
-#endif /* AF_INET6 */
     return JNI_FALSE;
 }

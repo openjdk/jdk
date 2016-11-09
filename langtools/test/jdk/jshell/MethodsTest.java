@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8080357
+ * @bug 8080357 8167643
  * @summary Tests for EvaluationState.methods
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng MethodsTest
@@ -230,31 +230,30 @@ public class MethodsTest extends KullaTesting {
         assertActiveKeys();
     }
 
+
+    public void methodsAccessModifierIgnored() {
+        Snippet f = methodKey(assertEval("public String f() {return null;}",
+                added(VALID)));
+        assertNumberOfActiveMethods(1);
+        assertActiveKeys();
+
+        f = methodKey(assertEval("protected String f() {return null;}",
+                ste(MAIN_SNIPPET, VALID, VALID, false, null),
+                ste(f, VALID, OVERWRITTEN, false, MAIN_SNIPPET)));
+        assertNumberOfActiveMethods(1);
+        assertActiveKeys();
+
+        assertEval("private String f() {return null;}",
+                ste(MAIN_SNIPPET, VALID, VALID, false, null),
+                ste(f, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
+        assertNumberOfActiveMethods(1);
+        assertActiveKeys();
+    }
+
     public void methodsWarn() {
-        Snippet f = assertDeclareWarn1("public String f() {return null;}",
+        Snippet f = assertDeclareWarn1("static String f() {return null;}",
                 new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 6, 0, -1, -1, Diagnostic.Kind.WARNING),
                 added(VALID));
-        assertNumberOfActiveMethods(1);
-        assertActiveKeys();
-
-        f = assertDeclareWarn1("protected String f() {return null;}",
-                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 9, 0, -1, -1, Diagnostic.Kind.WARNING),
-                ste(MAIN_SNIPPET, VALID, VALID, false, null),
-                ste(f, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
-        assertNumberOfActiveMethods(1);
-        assertActiveKeys();
-
-        f = assertDeclareWarn1("private String f() {return null;}",
-                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 7, 0, -1, -1, Diagnostic.Kind.WARNING),
-                ste(MAIN_SNIPPET, VALID, VALID, false, null),
-                ste(f, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
-        assertNumberOfActiveMethods(1);
-        assertActiveKeys();
-
-        f = assertDeclareWarn1("static String f() {return null;}",
-                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 6, 0, -1, -1, Diagnostic.Kind.WARNING),
-                ste(MAIN_SNIPPET, VALID, VALID, false, null),
-                ste(f, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
         assertNumberOfActiveMethods(1);
         assertActiveKeys();
 

@@ -46,5 +46,6 @@ $EXEC.throwOnError=true
 // but make sure classpath points to the pluggable linker jar!
 
 `jjs -cp underscore_linker.jar underscore.js`
+print($ERR)
 print($OUT)
 

@@ -244,6 +244,12 @@ static void define_javabase_module(jobject module, jstring version,
               "Module java.base is already defined");
   }
 
+  // Only the thread that actually defined the base module will get here,
+  // so no locking is needed.
+
+  // Patch any previously loaded class's module field with java.base's java.lang.reflect.Module.
+  ModuleEntryTable::patch_javabase_entries(module_handle);
+
   log_debug(modules)("define_javabase_module(): Definition of module: java.base,"
                      " version: %s, location: %s, package #: %d",
                      module_version != NULL ? module_version : "NULL",
