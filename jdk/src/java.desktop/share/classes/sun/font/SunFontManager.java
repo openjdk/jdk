@@ -362,6 +362,14 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         });
     }
 
+    /**
+     * If the module image layout changes the location of JDK fonts,
+     * this will be updated to reflect that.
+     */
+    public static final String getJDKFontDir() {
+        return jreFontDirName;
+    }
+
     public TrueTypeFont getEUDCFont() {
         // Overridden in Windows.
         return null;
