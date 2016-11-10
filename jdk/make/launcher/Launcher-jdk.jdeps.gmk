@@ -27,18 +27,15 @@ include LauncherCommon.gmk
 
 $(eval $(call SetupBuildLauncher, javap, \
     MAIN_CLASS := com.sun.tools.javap.Main, \
-    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS \
-        -DNEVER_ACT_AS_SERVER_CLASS_MACHINE, \
+    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \
 ))
 
 $(eval $(call SetupBuildLauncher, jdeps, \
     MAIN_CLASS := com.sun.tools.jdeps.Main, \
-    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS \
-        -DNEVER_ACT_AS_SERVER_CLASS_MACHINE, \
+    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \
 ))
 
 $(eval $(call SetupBuildLauncher, jdeprscan, \
     MAIN_CLASS := com.sun.tools.jdeprscan.Main, \
-    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS \
-        -DNEVER_ACT_AS_SERVER_CLASS_MACHINE, \
+    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \
 ))

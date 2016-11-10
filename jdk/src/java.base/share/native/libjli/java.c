@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,6 @@ static jboolean _is_java_args = JNI_FALSE;
 static jboolean _have_classpath = JNI_FALSE;
 static const char *_fVersion;
 static jboolean _wc_enabled = JNI_FALSE;
-static jint _ergo_policy = DEFAULT_POLICY;
 
 /*
  * Entries for splash screen environment variables.
@@ -218,7 +217,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
         jboolean javaargs,                      /* JAVA_ARGS */
         jboolean cpwildcard,                    /* classpath wildcard*/
         jboolean javaw,                         /* windows-only javaw */
-        jint ergo                               /* ergonomics class policy */
+        jint ergo                               /* unused */
 )
 {
     int mode = LM_UNKNOWN;
@@ -236,7 +235,6 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
     _program_name = pname;
     _is_java_args = javaargs;
     _wc_enabled = cpwildcard;
-    _ergo_policy = ergo;
 
     InitLauncher(javaw);
     DumpState();
@@ -431,7 +429,7 @@ JavaMain(void * _args)
         LEAVE();
     }
 
-    FreeKnownVMs();  /* after last possible PrintUsage() */
+    FreeKnownVMs(); /* after last possible PrintUsage */
 
     if (JLI_IsTraceLauncher()) {
         end = CounterGet();
@@ -669,11 +667,6 @@ CheckJvmType(int *pargc, char ***argv, jboolean speculative) {
     /* use the default VM type if not specified (no alias processing) */
     if (jvmtype == NULL) {
       char* result = knownVMs[0].name+1;
-      /* Use a different VM type if we are on a server class machine? */
-      if ((knownVMs[0].flag == VM_IF_SERVER_CLASS) &&
-          (ServerClassMachine() == JNI_TRUE)) {
-        result = knownVMs[0].server_class+1;
-      }
       JLI_TraceLauncher("Default VM: %s\n", result);
       return result;
     }
@@ -1777,15 +1770,14 @@ ShowSettings(JNIEnv *env, char *optString)
     jclass cls = GetLauncherHelperClass(env);
     NULL_CHECK(cls);
     NULL_CHECK(showSettingsID = (*env)->GetStaticMethodID(env, cls,
-            "showSettings", "(ZLjava/lang/String;JJJZ)V"));
+            "showSettings", "(ZLjava/lang/String;JJJ)V"));
     NULL_CHECK(joptString = (*env)->NewStringUTF(env, optString));
     (*env)->CallStaticVoidMethod(env, cls, showSettingsID,
                                  USE_STDERR,
                                  joptString,
                                  (jlong)initialHeapSize,
                                  (jlong)maxHeapSize,
-                                 (jlong)threadStackSize,
-                                 ServerClassMachine());
+                                 (jlong)threadStackSize);
 }
 
 /**
@@ -1812,7 +1804,7 @@ ListModules(JNIEnv *env, char *optString)
 static void
 PrintUsage(JNIEnv* env, jboolean doXUsage)
 {
-  jmethodID initHelp, vmSelect, vmSynonym, vmErgo, printHelp, printXUsageMessage;
+  jmethodID initHelp, vmSelect, vmSynonym, printHelp, printXUsageMessage;
   jstring jprogname, vm1, vm2;
   int i;
   jclass cls = GetLauncherHelperClass(env);
@@ -1831,8 +1823,6 @@ PrintUsage(JNIEnv* env, jboolean doXUsage)
     NULL_CHECK(vmSynonym = (*env)->GetStaticMethodID(env, cls,
                                         "appendVmSynonymMessage",
                                         "(Ljava/lang/String;Ljava/lang/String;)V"));
-    NULL_CHECK(vmErgo = (*env)->GetStaticMethodID(env, cls,
-                                        "appendVmErgoMessage", "(ZLjava/lang/String;)V"));
 
     NULL_CHECK(printHelp = (*env)->GetStaticMethodID(env, cls,
                                         "printHelpMessage", "(Z)V"));
@@ -1845,13 +1835,6 @@ PrintUsage(JNIEnv* env, jboolean doXUsage)
 
 
     /* Assemble the other variant part of the usage */
-    if ((knownVMs[0].flag == VM_KNOWN) ||
-        (knownVMs[0].flag == VM_IF_SERVER_CLASS)) {
-      NULL_CHECK(vm1 = (*env)->NewStringUTF(env, knownVMs[0].name));
-      NULL_CHECK(vm2 =  (*env)->NewStringUTF(env, knownVMs[0].name+1));
-      (*env)->CallStaticVoidMethod(env, cls, vmSelect, vm1, vm2);
-      CHECK_EXCEPTION_RETURN();
-    }
     for (i=1; i<knownVMsCount; i++) {
       if (knownVMs[i].flag == VM_KNOWN) {
         NULL_CHECK(vm1 =  (*env)->NewStringUTF(env, knownVMs[i].name));
@@ -1867,20 +1850,6 @@ PrintUsage(JNIEnv* env, jboolean doXUsage)
         (*env)->CallStaticVoidMethod(env, cls, vmSynonym, vm1, vm2);
         CHECK_EXCEPTION_RETURN();
       }
-    }
-
-    /* The first known VM is the default */
-    {
-      jboolean isServerClassMachine = ServerClassMachine();
-
-      const char* defaultVM  =  knownVMs[0].name+1;
-      if ((knownVMs[0].flag == VM_IF_SERVER_CLASS) && isServerClassMachine) {
-        defaultVM = knownVMs[0].server_class+1;
-      }
-
-      NULL_CHECK(vm1 =  (*env)->NewStringUTF(env, defaultVM));
-      (*env)->CallStaticVoidMethod(env, cls, vmErgo, isServerClassMachine,  vm1);
-      CHECK_EXCEPTION_RETURN();
     }
 
     /* Complete the usage message and print to stderr*/
@@ -2011,19 +1980,7 @@ ReadKnownVMs(const char *jvmCfgName, jboolean speculative)
                 } else if (!JLI_StrCCmp(tmpPtr, "ERROR")) {
                     vmType = VM_ERROR;
                 } else if (!JLI_StrCCmp(tmpPtr, "IF_SERVER_CLASS")) {
-                    tmpPtr += JLI_StrCSpn(tmpPtr, whiteSpace);
-                    if (*tmpPtr != 0) {
-                        tmpPtr += JLI_StrSpn(tmpPtr, whiteSpace);
-                    }
-                    if (*tmpPtr == 0) {
-                        JLI_ReportErrorMessage(CFG_WARN4, lineno, jvmCfgName);
-                    } else {
-                        /* Null terminate server class VM name */
-                        serverClassVMName = tmpPtr;
-                        tmpPtr += JLI_StrCSpn(tmpPtr, whiteSpace);
-                        *tmpPtr = 0;
-                        vmType = VM_IF_SERVER_CLASS;
-                    }
+                    /* ignored */
                 } else {
                     JLI_ReportErrorMessage(CFG_WARN5, lineno, &jvmCfgName[0]);
                     vmType = VM_KNOWN;
@@ -2042,11 +1999,6 @@ ReadKnownVMs(const char *jvmCfgName, jboolean speculative)
                 knownVMs[cnt].alias = JLI_StringDup(altVMName);
                 JLI_TraceLauncher("    name: %s  vmType: %s  alias: %s\n",
                    knownVMs[cnt].name, "VM_ALIASED_TO", knownVMs[cnt].alias);
-                break;
-            case VM_IF_SERVER_CLASS:
-                knownVMs[cnt].server_class = JLI_StringDup(serverClassVMName);
-                JLI_TraceLauncher("    name: %s  vmType: %s  server_class: %s\n",
-                    knownVMs[cnt].name, "VM_IF_SERVER_CLASS", knownVMs[cnt].server_class);
                 break;
             }
             cnt++;
@@ -2197,12 +2149,6 @@ GetLauncherName()
     return _launcher_name;
 }
 
-jint
-GetErgoPolicy()
-{
-    return _ergo_policy;
-}
-
 jboolean
 IsJavaArgs()
 {
@@ -2267,17 +2213,6 @@ DumpState()
     printf("\tlauncher name:%s\n", GetLauncherName());
     printf("\tjavaw:%s\n", (IsJavaw() == JNI_TRUE) ? "on" : "off");
     printf("\tfullversion:%s\n", GetFullVersion());
-    printf("\tergo_policy:");
-    switch(GetErgoPolicy()) {
-        case NEVER_SERVER_CLASS:
-            printf("NEVER_ACT_AS_A_SERVER_CLASS_MACHINE\n");
-            break;
-        case ALWAYS_SERVER_CLASS:
-            printf("ALWAYS_ACT_AS_A_SERVER_CLASS_MACHINE\n");
-            break;
-        default:
-            printf("DEFAULT_ERGONOMICS_POLICY\n");
-    }
 }
 
 /*
