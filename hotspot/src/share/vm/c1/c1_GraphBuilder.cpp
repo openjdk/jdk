@@ -2056,17 +2056,26 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   }
 #endif
 
-  // invokespecial always needs a NULL check. invokevirtual where the target is
-  // final or where it's not known whether the target is final requires a NULL check.
-  // Otherwise normal invokevirtual will perform the null check during the lookup
-  // logic or the unverified entry point.  Profiling of calls requires that
-  // the null check is performed in all cases.
+  // A null check is required here (when there is a receiver) for any of the following cases
+  // - invokespecial, always need a null check.
+  // - invokevirtual, when the target is final and loaded. Calls to final targets will become optimized
+  //   and require null checking. If the target is loaded a null check is emitted here.
+  //   If the target isn't loaded the null check must happen after the call resolution. We achieve that
+  //   by using the target methods unverified entry point (see CompiledIC::compute_monomorphic_entry).
+  //   (The JVM specification requires that LinkageError must be thrown before a NPE. An unloaded target may
+  //   potentially fail, and can't have the null check before the resolution.)
+  // - A call that will be profiled. (But we can't add a null check when the target is unloaded, by the same
+  //   reason as above, so calls with a receiver to unloaded targets can't be profiled.)
+  //
+  // Normal invokevirtual will perform the null check during lookup
 
-  bool do_null_check = (recv != NULL) &&
-        (code == Bytecodes::_invokespecial || (target->is_loaded() && (target->is_final() || (is_profiling() && profile_calls()))));
+  bool need_null_check = (code == Bytecodes::_invokespecial) ||
+      (target->is_loaded() && (target->is_final_method() || (is_profiling() && profile_calls())));
 
-  if (do_null_check) {
-    null_check(recv);
+  if (need_null_check) {
+    if (recv != NULL) {
+      null_check(recv);
+    }
 
     if (is_profiling()) {
       // Note that we'd collect profile data in this method if we wanted it.
