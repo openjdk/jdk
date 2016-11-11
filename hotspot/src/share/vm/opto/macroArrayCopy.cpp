@@ -1154,7 +1154,10 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     // Call StubRoutines::generic_arraycopy stub.
     Node* mem = generate_arraycopy(ac, NULL, &ctrl, merge_mem, &io,
                                    TypeRawPtr::BOTTOM, T_CONFLICT,
-                                   src, src_offset, dest, dest_offset, length);
+                                   src, src_offset, dest, dest_offset, length,
+                                   // If a  negative length guard was generated for the ArrayCopyNode,
+                                   // the length of the array can never be negative.
+                                   false, ac->has_negative_length_guard());
 
     // Do not let reads from the destination float above the arraycopy.
     // Since we cannot type the arrays, we don't know which slices
@@ -1258,5 +1261,7 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   generate_arraycopy(ac, alloc, &ctrl, merge_mem, &io,
                      adr_type, dest_elem,
                      src, src_offset, dest, dest_offset, length,
-                     false, false, slow_region);
+                     // If a  negative length guard was generated for the ArrayCopyNode,
+                     // the length of the array can never be negative.
+                     false, ac->has_negative_length_guard(), slow_region);
 }

@@ -915,7 +915,9 @@ void TemplateInterpreterGenerator::lock_method(Register Rflags, Register Rscratc
     __ b(Ldone);
 
     __ bind(Lstatic); // Static case: Lock the java mirror
-    __ load_mirror(Robj_to_lock, R19_method);
+    // Load mirror from interpreter frame.
+    __ ld(Robj_to_lock, _abi(callers_sp), R1_SP);
+    __ ld(Robj_to_lock, _ijava_state_neg(mirror), Robj_to_lock);
 
     __ bind(Ldone);
     __ verify_oop(Robj_to_lock);
@@ -1077,11 +1079,11 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   __ resize_frame(parent_frame_resize, R11_scratch1);
   __ std(R12_scratch2, _abi(lr), R1_SP);
 
+  // Get mirror and store it in the frame as GC root for this Method*.
+  __ load_mirror_from_const_method(R12_scratch2, Rconst_method);
+
   __ addi(R26_monitor, R1_SP, - frame::ijava_state_size);
   __ addi(R15_esp, R26_monitor, - Interpreter::stackElementSize);
-
-  // Get mirror and store it in the frame as GC root for this Method*.
-  __ load_mirror(R12_scratch2, R19_method);
 
   // Store values.
   // R15_esp, R14_bcp, R26_monitor, R28_mdx are saved at java calls
@@ -1380,13 +1382,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ testbitdi(CCR0, R0, access_flags, JVM_ACC_STATIC_BIT);
     __ bfalse(CCR0, method_is_not_static);
 
-    __ load_mirror(R12_scratch2, R19_method);
-    // state->_native_mirror = mirror;
-
-    __ ld(R11_scratch1, 0, R1_SP);
-    __ std(R12_scratch2/*mirror*/, _ijava_state_neg(oop_tmp), R11_scratch1);
+    __ ld(R11_scratch1, _abi(callers_sp), R1_SP);
+    // Load mirror from interpreter frame.
+    __ ld(R12_scratch2, _ijava_state_neg(mirror), R11_scratch1);
     // R4_ARG2 = &state->_oop_temp;
     __ addi(R4_ARG2, R11_scratch1, _ijava_state_neg(oop_tmp));
+    __ std(R12_scratch2/*mirror*/, _ijava_state_neg(oop_tmp), R11_scratch1);
     BIND(method_is_not_static);
   }
 
@@ -2157,12 +2158,12 @@ address TemplateInterpreterGenerator::generate_earlyret_entry_for(TosState state
   // Restoration of lr done by remove_activation.
   switch (state) {
     // Narrow result if state is itos but result type is smaller.
-    case itos: __ narrow(R17_tos); /* fall through */
-    case ltos:
     case btos:
     case ztos:
     case ctos:
     case stos:
+    case itos: __ narrow(R17_tos); /* fall through */
+    case ltos:
     case atos: __ mr(R3_RET, R17_tos); break;
     case ftos:
     case dtos: __ fmr(F1_RET, F15_ftos); break;
