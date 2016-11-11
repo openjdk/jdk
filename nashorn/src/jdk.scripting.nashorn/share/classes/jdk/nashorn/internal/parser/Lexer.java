@@ -102,19 +102,9 @@ public class Lexer extends Scanner {
 
     private int templateExpressionOpenBraces;
 
-    private static final String SPACETAB = " \t";  // ASCII space and tab
-    private static final String LFCR     = "\n\r"; // line feed and carriage return (ctrl-m)
-
-    private static final String JAVASCRIPT_WHITESPACE_EOL =
-        LFCR +
+    private static final String JAVASCRIPT_OTHER_WHITESPACE =
         "\u2028" + // line separator
-        "\u2029"   // paragraph separator
-        ;
-    private static final String JAVASCRIPT_WHITESPACE =
-        SPACETAB +
-        JAVASCRIPT_WHITESPACE_EOL +
-        "\u000b" + // tabulation line
-        "\u000c" + // ff (ctrl-l)
+        "\u2029" + // paragraph separator
         "\u00a0" + // Latin-1 space
         "\u1680" + // Ogham space mark
         "\u180e" + // separator, Mongolian vowel
@@ -384,7 +374,13 @@ public class Lexer extends Scanner {
      * @return true if valid JavaScript whitespace
      */
     public static boolean isJSWhitespace(final char ch) {
-        return JAVASCRIPT_WHITESPACE.indexOf(ch) != -1;
+        return ch == ' '                  // space
+            || ch >= '\t' && ch <= '\r'   // 0x09..0x0d: tab, line feed, tabulation line, ff, carriage return
+            || ch >= 160 && isOtherJSWhitespace(ch);
+    }
+
+    private static boolean isOtherJSWhitespace(final char ch) {
+        return JAVASCRIPT_OTHER_WHITESPACE.indexOf(ch) != -1;
     }
 
     /**
@@ -393,7 +389,10 @@ public class Lexer extends Scanner {
      * @return true if valid JavaScript end of line
      */
     public static boolean isJSEOL(final char ch) {
-        return JAVASCRIPT_WHITESPACE_EOL.indexOf(ch) != -1;
+        return ch == '\n'      // line feed
+            || ch == '\r'      // carriage return (ctrl-m)
+            || ch == '\u2028'  // line separator
+            || ch == '\u2029'; // paragraph separator
     }
 
     /**
