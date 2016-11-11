@@ -62,6 +62,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
+import com.sun.tools.javac.code.Scope.LookupKind;
 import static com.sun.tools.javac.code.TypeTag.ARRAY;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
@@ -2186,7 +2187,11 @@ public class ClassReader {
             // Sometimes anonymous classes don't have an outer
             // instance, however, there is no reliable way to tell so
             // we never strip this$n
-            if (!currentOwner.name.isEmpty())
+            // ditto for local classes. Local classes that have an enclosing method set
+            // won't pass the "hasOuterInstance" check above, but those that don't have an
+            // enclosing method (i.e. from initializers) will pass that check.
+            boolean local = !currentOwner.owner.members().includes(currentOwner, LookupKind.NON_RECURSIVE);
+            if (!currentOwner.name.isEmpty() && !local)
                 type = new MethodType(adjustMethodParams(flags, type.getParameterTypes()),
                                       type.getReturnType(),
                                       type.getThrownTypes(),

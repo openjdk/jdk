@@ -57,63 +57,56 @@ public enum ToolOption {
     BOOTCLASSPATH("-bootclasspath", STANDARD, true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.BOOT_CLASS_PATH, arg);
+            Option.BOOT_CLASS_PATH.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     CLASS_PATH("--class-path -classpath -cp", STANDARD, true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.CLASS_PATH, arg);
+            Option.CLASS_PATH.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     EXTDIRS("-extdirs", STANDARD, true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.EXTDIRS, arg);
+            Option.EXTDIRS.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     SOURCE_PATH("--source-path -sourcepath", STANDARD, true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.SOURCE_PATH, arg);
-        }
-    },
-
-    SYSCLASSPATH("-sysclasspath", HIDDEN, true) {
-        @Override
-        public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.BOOT_CLASS_PATH, arg);
+            Option.SOURCE_PATH.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     MODULE_SOURCE_PATH("--module-source-path", STANDARD, true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.MODULE_SOURCE_PATH, arg);
+            Option.MODULE_SOURCE_PATH.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     UPGRADE_MODULE_PATH("--upgrade-module-path", STANDARD, true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.UPGRADE_MODULE_PATH, arg);
+            Option.UPGRADE_MODULE_PATH.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     SYSTEM("--system", STANDARD, true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.SYSTEM, arg);
+            Option.SYSTEM.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     MODULE_PATH("--module-path -p", STANDARD, true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.MODULE_PATH, arg);
+            Option.MODULE_PATH.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
@@ -141,7 +134,7 @@ public enum ToolOption {
     ENCODING("-encoding", STANDARD, true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setFileManagerOpt(Option.ENCODING, arg);
+            Option.ENCODING.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
@@ -289,14 +282,6 @@ public enum ToolOption {
     },
 
     // ----- output control options -----
-
-    PROMPT("-prompt", HIDDEN) {
-        @Override
-        public void process(Helper helper) {
-            helper.compOpts.put("-prompt", "-prompt");
-            helper.promptOnError = true;
-        }
-    },
 
     QUIET("-quiet", STANDARD) {
         @Override
