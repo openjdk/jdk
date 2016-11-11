@@ -46,8 +46,12 @@ public abstract class AbstractAlgorithmConstraints
     // Get algorithm constraints from the specified security property.
     static String[] getAlgorithms(String propertyName) {
         String property = AccessController.doPrivileged(
-                (PrivilegedAction<String>) () -> Security.getProperty(
-                        propertyName));
+                new PrivilegedAction<String>() {
+                    @Override
+                    public String run() {
+                        return Security.getProperty(propertyName);
+                    }
+                });
 
         String[] algorithmsInProperty = null;
         if (property != null && !property.isEmpty()) {

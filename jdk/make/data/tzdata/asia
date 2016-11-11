@@ -794,9 +794,19 @@ Zone	Asia/Macau	7:34:20 -	LMT	1912 Jan  1
 ###############################################################################
 
 # Cyprus
-#
+
 # Milne says the Eastern Telegraph Company used 2:14:00.  Stick with LMT.
+# IATA SSIM (1998-09) has Cyprus using EU rules for the first time.
+
+# From Paul Eggert (2016-09-09):
+# Yesterday's Cyprus Mail reports that Northern Cyprus followed Turkey's
+# lead and switched from +02/+03 to +03 year-round.
+# http://cyprus-mail.com/2016/09/08/two-time-zones-cyprus-turkey-will-not-turn-clocks-back-next-month/
 #
+# From Even Scharning (2016-10-31):
+# Looks like the time zone split in Cyprus went through last night.
+# http://cyprus-mail.com/2016/10/30/cyprus-new-division-two-time-zones-now-reality/
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Cyprus	1975	only	-	Apr	13	0:00	1:00	S
 Rule	Cyprus	1975	only	-	Oct	12	0:00	0	-
@@ -811,7 +821,10 @@ Rule	Cyprus	1981	1998	-	Mar	lastSun	0:00	1:00	S
 Zone	Asia/Nicosia	2:13:28 -	LMT	1921 Nov 14
 			2:00	Cyprus	EE%sT	1998 Sep
 			2:00	EUAsia	EE%sT
-# IATA SSIM (1998-09) has Cyprus using EU rules for the first time.
+Zone	Asia/Famagusta	2:15:48	-	LMT	1921 Nov 14
+			2:00	Cyprus	EE%sT	1998 Sep
+			2:00	EUAsia	EE%sT	2016 Sep  8
+			3:00	-	+03
 
 # Classically, Cyprus belongs to Asia; e.g. see Herodotus, Histories, I.72.
 # However, for various reasons many users expect to find it under Europe.

@@ -181,6 +181,6 @@ grant codeBase "jrt:/jdk.security.jgss" {
 grant codeBase "jrt:/jdk.zipfs" {
     permission java.io.FilePermission "<<ALL FILES>>", "read,write,delete";
     permission java.lang.RuntimePermission "fileSystemProvider";
-    permission java.util.PropertyPermission "*", "read";
+    permission java.util.PropertyPermission "os.name", "read";
 };
 

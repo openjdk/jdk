@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,5 +156,5 @@ main(int argc, char **argv)
                    (const_progname != NULL) ? const_progname : *margv,
                    (const_launcher != NULL) ? const_launcher : *margv,
                    HAS_JAVA_ARGS,
-                   const_cpwildcard, const_javaw, const_ergo_class);
+                   const_cpwildcard, const_javaw, 0);
 }

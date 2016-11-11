@@ -192,9 +192,10 @@ class JarFile extends ZipFile {
     public static final String MANIFEST_NAME = META_INF + "MANIFEST.MF";
 
     /**
-     * The version that represents the unversioned configuration of a multi-release jar file.
+     * Returns the version that represents the unversioned configuration of a
+     * multi-release jar file.
      *
-     * @return Runtime.Version that represents the unversioned configuration
+     * @return the version that represents the unversioned configuration
      *
      * @since 9
      */
@@ -203,13 +204,16 @@ class JarFile extends ZipFile {
     }
 
     /**
-     * The version that represents the effective runtime versioned configuration of a
-     * multi-release jar file.  In most cases, {@code runtimeVersion()} is equal to
-     * {@code Runtime.version()}.  However, if the {@code jdk.util.jar.version} property is set,
-     * {@code runtimeVersion()} is derived from that property and may not be equal to
-     * {@code Runtime.version()}.
+     * Returns the version that represents the effective runtime versioned
+     * configuration of a multi-release jar file.
+     * <p>
+     * By default the major version number of the returned {@code Version} will
+     * be equal to the major version number of {@code Runtime.version()}.
+     * However, if the {@code jdk.util.jar.version} property is set, the
+     * returned {@code Version} is derived from that property and major version
+     * numbers may not be equal.
      *
-     * @return Runtime.Version that represents the runtime versioned configuration
+     * @return the version that represents the runtime versioned configuration
      *
      * @since 9
      */
@@ -335,6 +339,10 @@ class JarFile extends ZipFile {
 
     /**
      * Returns the maximum version used when searching for versioned entries.
+     * <p>
+     * If this {@code JarFile} is not a multi-release jar file or is not
+     * configured to be processed as such, then the version returned will be the
+     * same as that returned from {@link #baseVersion()}.
      *
      * @return the maximum version
      * @since 9

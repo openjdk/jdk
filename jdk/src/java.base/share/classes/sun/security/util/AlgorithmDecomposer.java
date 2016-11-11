@@ -34,20 +34,18 @@ import java.util.regex.Pattern;
  */
 public class AlgorithmDecomposer {
 
-    private static final Pattern transPattern = Pattern.compile("/");
-
     // '(?<!padd)in': match 'in' but not preceded with 'padd'.
-    private static final Pattern pattern =
+    private static final Pattern PATTERN =
             Pattern.compile("with|and|(?<!padd)in", Pattern.CASE_INSENSITIVE);
 
     private static Set<String> decomposeImpl(String algorithm) {
+        Set<String> elements = new HashSet<>();
 
         // algorithm/mode/padding
-        String[] transTockens = transPattern.split(algorithm);
+        String[] transTokens = algorithm.split("/");
 
-        Set<String> elements = new HashSet<>();
-        for (String transTocken : transTockens) {
-            if (transTocken == null || transTocken.length() == 0) {
+        for (String transToken : transTokens) {
+            if (transToken == null || transToken.isEmpty()) {
                 continue;
             }
 
@@ -57,10 +55,10 @@ public class AlgorithmDecomposer {
             // <digest>with<encryption>
             // <digest>with<encryption>and<mgf>
             // <digest>with<encryption>in<format>
-            String[] tokens = pattern.split(transTocken);
+            String[] tokens = PATTERN.split(transToken);
 
             for (String token : tokens) {
-                if (token == null || token.length() == 0) {
+                if (token == null || token.isEmpty()) {
                     continue;
                 }
 
