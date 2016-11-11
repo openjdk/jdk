@@ -28,6 +28,7 @@
 #include "c1/c1_Instruction.hpp"
 #include "c1/c1_LIR.hpp"
 #include "ci/ciMethodData.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/sizes.hpp"
 
 // The classes responsible for code emission and register allocation
@@ -360,7 +361,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void add_large_constant(LIR_Opr src, int c, LIR_Opr dest);
 
   // machine preferences and characteristics
-  bool can_inline_as_constant(Value i) const;
+  bool can_inline_as_constant(Value i S390_ONLY(COMMA int bits = 20)) const;
   bool can_inline_as_constant(LIR_Const* c) const;
   bool can_store_as_constant(Value i, BasicType type) const;
 
@@ -441,6 +442,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
 #ifdef TRACE_HAVE_INTRINSICS
   void do_ClassIDIntrinsic(Intrinsic* x);
+  void do_getBufferWriter(Intrinsic* x);
 #endif
 
   void do_RuntimeCall(address routine, Intrinsic* x);
@@ -496,6 +498,12 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   static LIR_Opr divInOpr();
   static LIR_Opr divOutOpr();
   static LIR_Opr remOutOpr();
+#ifdef S390
+  // On S390 we can do ldiv, lrem without RT call.
+  static LIR_Opr ldivInOpr();
+  static LIR_Opr ldivOutOpr();
+  static LIR_Opr lremOutOpr();
+#endif
   static LIR_Opr shiftCountOpr();
   LIR_Opr syncLockOpr();
   LIR_Opr syncTempOpr();
@@ -621,7 +629,7 @@ class LIRItem: public CompilationResourceObj {
 
   void load_item();
   void load_byte_item();
-  void load_nonconstant();
+  void load_nonconstant(S390_ONLY(int bits = 20));
   // load any values which can't be expressed as part of a single store instruction
   void load_for_store(BasicType store_type);
   void load_item_force(LIR_Opr reg);

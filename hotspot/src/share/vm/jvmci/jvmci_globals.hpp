@@ -50,7 +50,7 @@
           "Use JVMCI as the default compiler")                              \
                                                                             \
   experimental(bool, JVMCIPrintProperties, false,                           \
-          "Prints properties used by the JVMCI compiler")                   \
+          "Prints properties used by the JVMCI compiler and exits")         \
                                                                             \
   experimental(bool, BootstrapJVMCI, false,                                 \
           "Bootstrap JVMCI before running Java main method")                \

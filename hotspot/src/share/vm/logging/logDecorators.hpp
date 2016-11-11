@@ -41,6 +41,7 @@
 // tags         - The tag-set associated with the log message
 #define DECORATOR_LIST          \
   DECORATOR(time,         t)    \
+  DECORATOR(utctime,      utc)  \
   DECORATOR(uptime,       u)    \
   DECORATOR(timemillis,   tm)   \
   DECORATOR(uptimemillis, um)   \

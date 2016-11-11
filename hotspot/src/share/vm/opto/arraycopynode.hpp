@@ -58,6 +58,7 @@ private:
   // the arraycopy is not parsed yet so doesn't exist when
   // LibraryCallKit::tightly_coupled_allocation() is called.
   bool _alloc_tightly_coupled;
+  bool _has_negative_length_guard;
 
   bool _arguments_validated;
 
@@ -82,7 +83,7 @@ private:
     return TypeFunc::make(domain, range);
   }
 
-  ArrayCopyNode(Compile* C, bool alloc_tightly_coupled);
+  ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard);
 
   intptr_t get_length_if_constant(PhaseGVN *phase) const;
   int get_count(PhaseGVN *phase) const;
@@ -133,6 +134,7 @@ public:
                              Node* dest,  Node* dest_offset,
                              Node* length,
                              bool alloc_tightly_coupled,
+                             bool has_negative_length_guard,
                              Node* src_klass = NULL, Node* dest_klass = NULL,
                              Node* src_length = NULL, Node* dest_length = NULL);
 
@@ -161,6 +163,8 @@ public:
   virtual bool may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase);
 
   bool is_alloc_tightly_coupled() const { return _alloc_tightly_coupled; }
+
+  bool has_negative_length_guard() const { return _has_negative_length_guard; }
 
   static bool may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTransform *phase, ArrayCopyNode*& ac);
   bool modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransform* phase, bool must_modify);
