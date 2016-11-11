@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,8 +84,10 @@ import sun.security.util.Pem;
 import sun.security.x509.*;
 
 import static java.security.KeyStore.*;
+import java.security.Security;
 import static sun.security.tools.keytool.Main.Command.*;
 import static sun.security.tools.keytool.Main.Option.*;
+import sun.security.util.DisabledAlgorithmConstraints;
 
 /**
  * This tool manages keystores.
@@ -2428,6 +2430,10 @@ public final class Main {
 
     private void doPrintCert(final PrintStream out) throws Exception {
         if (jarfile != null) {
+            // reset "jdk.certpath.disabledAlgorithms" security property
+            // to be able to read jars which were signed with weak algorithms
+            Security.setProperty(DisabledAlgorithmConstraints.PROPERTY_JAR_DISABLED_ALGS, "");
+
             JarFile jf = new JarFile(jarfile, true);
             Enumeration<JarEntry> entries = jf.entries();
             Set<CodeSigner> ss = new HashSet<>();

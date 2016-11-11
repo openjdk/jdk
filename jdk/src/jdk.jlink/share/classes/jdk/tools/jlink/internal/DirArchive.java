@@ -92,7 +92,7 @@ public class DirArchive implements Archive {
     public DirArchive(Path dirPath, Consumer<String> log) {
         Objects.requireNonNull(dirPath);
         if (!Files.isDirectory(dirPath)) {
-            throw new IllegalArgumentException("Not a directory");
+            throw new IllegalArgumentException(dirPath + " is not a directory");
         }
         chop = dirPath.toString().length() + 1;
         this.moduleName = Objects.requireNonNull(dirPath.getFileName()).toString();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,19 @@
  * @summary Sanity check that NTLM will not be selected by the http protocol
  *    handler when running on a profile that does not support NTLM
  * @modules java.base/sun.net.www
+ *          java.base/sun.net.www.protocol.http
  * @run main/othervm NoNTLM
  */
 
-import java.net.*;
-import java.io.*;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.net.Authenticator;
+import java.net.HttpURLConnection;
+import java.net.PasswordAuthentication;
+import java.net.Proxy;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URL;
 import sun.net.www.MessageHeader;
 
 public class NoNTLM {
@@ -208,11 +216,14 @@ public class NoNTLM {
     }
 
     public static void main(String[] args) throws Exception {
-        // assume NTLM is not supported when Kerberos is not available
         try {
-            Class.forName("javax.security.auth.kerberos.KerberosPrincipal");
-            System.out.println("Kerberos is present, assuming NTLM is supported too");
-            return;
+            Class<?> ntlmProxyClass = Class.forName("sun.net.www.protocol.http.NTLMAuthenticationProxy", true, NoNTLM.class.getClassLoader());
+            Field ntlmSupportedField = ntlmProxyClass.getDeclaredField("supported");
+            ntlmSupportedField.setAccessible(true);
+            if (ntlmSupportedField.getBoolean(null)) {
+                System.out.println("NTLM is supported. Nothing to do. Exiting.");
+                return;
+            }
         } catch (ClassNotFoundException okay) { }
 
         // setup Authenticator
