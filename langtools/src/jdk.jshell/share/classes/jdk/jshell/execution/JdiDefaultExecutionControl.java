@@ -24,7 +24,6 @@
  */
 package jdk.jshell.execution;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInput;
@@ -33,14 +32,11 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-
 import com.sun.jdi.BooleanValue;
 import com.sun.jdi.ClassNotLoadedException;
 import com.sun.jdi.Field;
@@ -127,14 +123,6 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
             VirtualMachine vm = jdii.vm();
             Process process = jdii.process();
 
-            OutputStream processOut = process.getOutputStream();
-            SecureRandom rng = new SecureRandom();
-            byte[] randomBytes = new byte[VERIFY_HASH_LEN];
-
-            rng.nextBytes(randomBytes);
-            processOut.write(randomBytes);
-            processOut.flush();
-
             List<Consumer<String>> deathListeners = new ArrayList<>();
             deathListeners.add(s -> env.closeDown());
             Util.detectJdiExitEvent(vm, s -> {
@@ -142,8 +130,6 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
                     h.accept(s);
                 }
             });
-
-            ByteArrayOutputStream receivedRandomBytes = new ByteArrayOutputStream();
 
             // Set-up the commands/reslts on the socket.  Piggy-back snippet
             // output.
@@ -153,35 +139,11 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
             Map<String, OutputStream> outputs = new HashMap<>();
             outputs.put("out", env.userOut());
             outputs.put("err", env.userErr());
-            outputs.put("echo", new OutputStream() {
-                @Override public void write(int b) throws IOException {
-                    synchronized (receivedRandomBytes) {
-                        receivedRandomBytes.write(b);
-                        receivedRandomBytes.notify();
-                    }
-                }
-            });
             Map<String, InputStream> input = new HashMap<>();
             input.put("in", env.userIn());
-            return remoteInputOutput(socket.getInputStream(), out, outputs, input, (objIn, objOut) -> {
-                synchronized (receivedRandomBytes) {
-                    while (receivedRandomBytes.size() < randomBytes.length) {
-                        try {
-                            receivedRandomBytes.wait();
-                        } catch (InterruptedException ex) {
-                            //ignore
-                        }
-                    }
-                    if (!Arrays.equals(receivedRandomBytes.toByteArray(), randomBytes)) {
-                        throw new IllegalStateException("Invalid connection!");
-                    }
-                }
-                return new JdiDefaultExecutionControl(objOut, objIn, vm, process, deathListeners);
-            });
+            return remoteInputOutput(socket.getInputStream(), out, outputs, input, (objIn, objOut) -> new JdiDefaultExecutionControl(objOut, objIn, vm, process, deathListeners));
         }
     }
-    //where:
-        private static final int VERIFY_HASH_LEN = 20;
 
     /**
      * Create an instance.

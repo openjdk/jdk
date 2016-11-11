@@ -24,7 +24,6 @@
  */
 package jdk.jshell.execution;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -58,7 +57,6 @@ public class RemoteExecutionControl extends DirectExecutionControl implements Ex
      * @throws Exception any unexpected exception
      */
     public static void main(String[] args) throws Exception {
-        InputStream fd0 = System.in;
         String loopBack = null;
         Socket socket = new Socket(loopBack, Integer.parseInt(args[0]));
         InputStream inStream = socket.getInputStream();
@@ -66,25 +64,6 @@ public class RemoteExecutionControl extends DirectExecutionControl implements Ex
         Map<String, Consumer<OutputStream>> outputs = new HashMap<>();
         outputs.put("out", st -> System.setOut(new PrintStream(st, true)));
         outputs.put("err", st -> System.setErr(new PrintStream(st, true)));
-        outputs.put("echo", st -> {
-            new Thread(() -> {
-                try {
-                    int read;
-
-                    while ((read = fd0.read()) != (-1)) {
-                        st.write(read);
-                    }
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                } finally {
-                    try {
-                        st.close();
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                    }
-                }
-            }).start();
-        });
         Map<String, Consumer<InputStream>> input = new HashMap<>();
         input.put("in", st -> System.setIn(st));
         forwardExecutionControlAndIO(new RemoteExecutionControl(), inStream, outStream, outputs, input);
