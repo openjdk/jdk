@@ -26,13 +26,9 @@
 #ifndef NET_UTILS_MD_H
 #define NET_UTILS_MD_H
 
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <netdb.h>
-#include <netinet/in.h>
-#include <unistd.h>
-
 #include <sys/poll.h>
+#include <sys/socket.h>
 
 int NET_Timeout(int s, long timeout);
 int NET_Timeout0(int s, long timeout, long currentTime);
@@ -88,18 +84,11 @@ void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
 #define MAX_HEAP_BUFFER_LEN 65536
 #endif
 
-#ifdef AF_INET6
 typedef union {
     struct sockaddr     sa;
     struct sockaddr_in  sa4;
     struct sockaddr_in6 sa6;
 } SOCKETADDRESS;
-#else
-typedef union {
-    struct sockaddr     sa;
-    struct sockaddr_in  sa4;
-} SOCKETADDRESS;
-#endif
 
 /************************************************************************
  *  Utilities
@@ -107,9 +96,7 @@ typedef union {
 
 #ifdef __linux__
 int kernelIsV24();
-#ifdef AF_INET6
 int getDefaultIPv6Interface(struct in6_addr *target_addr);
-#endif
 #endif
 
 #ifdef __solaris__

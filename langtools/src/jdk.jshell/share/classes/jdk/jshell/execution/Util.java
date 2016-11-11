@@ -239,9 +239,9 @@ public class Util {
      * @param unbiddenExitHandler the handler, which will accept the exit
      * information
      */
-    public static void detectJDIExitEvent(VirtualMachine vm, Consumer<String> unbiddenExitHandler) {
+    public static void detectJdiExitEvent(VirtualMachine vm, Consumer<String> unbiddenExitHandler) {
         if (vm.canBeModified()) {
-            new JDIEventHandler(vm, unbiddenExitHandler).start();
+            new JdiEventHandler(vm, unbiddenExitHandler).start();
         }
     }
 

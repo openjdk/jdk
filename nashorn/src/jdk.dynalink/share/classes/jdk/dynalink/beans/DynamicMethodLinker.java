@@ -88,6 +88,7 @@ import java.lang.invoke.MethodHandles;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.NamedOperation;
 import jdk.dynalink.Operation;
+import jdk.dynalink.StandardNamespace;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.LinkRequest;
@@ -98,7 +99,8 @@ import jdk.dynalink.linker.support.Guards;
 /**
  * Simple linker that implements the {@link StandardOperation#CALL} operation
  * for {@link DynamicMethod} objects - the objects returned by
- * {@link StandardOperation#GET_METHOD} through {@link AbstractJavaLinker}.
+ * {@link StandardOperation#GET} on {@link StandardNamespace#METHOD} namespace through
+ * {@link AbstractJavaLinker}.
  */
 class DynamicMethodLinker implements TypeBasedGuardingDynamicLinker {
     @Override

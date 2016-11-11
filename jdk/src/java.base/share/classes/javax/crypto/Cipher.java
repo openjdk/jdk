@@ -493,21 +493,24 @@ public class Cipher {
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard transformation names.
      *
-     * @return a cipher that implements the requested transformation.
+     * @return a cipher that implements the requested transformation
      *
-     * @exception NoSuchAlgorithmException if {@code transformation}
-     *          is null, empty, in an invalid format,
-     *          or if no Provider supports a CipherSpi implementation for the
-     *          specified algorithm.
+     * @throws NoSuchAlgorithmException if {@code transformation}
+     *         is {@code null}, empty, in an invalid format,
+     *         or if no {@code Provider} supports a {@code CipherSpi}
+     *         implementation for the specified algorithm
      *
-     * @exception NoSuchPaddingException if {@code transformation}
-     *          contains a padding scheme that is not available.
+     * @throws NoSuchPaddingException if {@code transformation}
+     *         contains a padding scheme that is not available
      *
      * @see java.security.Provider
      */
     public static final Cipher getInstance(String transformation)
             throws NoSuchAlgorithmException, NoSuchPaddingException
     {
+        if ((transformation == null) || transformation.equals("")) {
+            throw new NoSuchAlgorithmException("Null or empty transformation");
+        }
         List<Transform> transforms = getTransforms(transformation);
         List<ServiceId> cipherServices = new ArrayList<>(transforms.size());
         for (Transform transform : transforms) {
@@ -570,21 +573,22 @@ public class Cipher {
      *
      * @param provider the name of the provider.
      *
-     * @return a cipher that implements the requested transformation.
+     * @return a cipher that implements the requested transformation
      *
-     * @exception NoSuchAlgorithmException if {@code transformation}
-     *          is null, empty, in an invalid format,
-     *          or if a CipherSpi implementation for the specified algorithm
-     *          is not available from the specified provider.
+     * @throws IllegalArgumentException if the {@code provider}
+     *         is {@code null} or empty
      *
-     * @exception NoSuchProviderException if the specified provider is not
-     *          registered in the security provider list.
+     * @throws NoSuchAlgorithmException if {@code transformation}
+     *         is {@code null}, empty, in an invalid format,
+     *         or if a {@code CipherSpi} implementation for the
+     *         specified algorithm is not available from the specified
+     *         provider
      *
-     * @exception NoSuchPaddingException if {@code transformation}
-     *          contains a padding scheme that is not available.
+     * @throws NoSuchPaddingException if {@code transformation}
+     *         contains a padding scheme that is not available
      *
-     * @exception IllegalArgumentException if the {@code provider}
-     *          is null or empty.
+     * @throws NoSuchProviderException if the specified provider is not
+     *         registered in the security provider list
      *
      * @see java.security.Provider
      */
@@ -593,6 +597,9 @@ public class Cipher {
             throws NoSuchAlgorithmException, NoSuchProviderException,
             NoSuchPaddingException
     {
+        if ((transformation == null) || transformation.equals("")) {
+            throw new NoSuchAlgorithmException("Null or empty transformation");
+        }
         if ((provider == null) || (provider.length() == 0)) {
             throw new IllegalArgumentException("Missing provider");
         }
@@ -622,18 +629,19 @@ public class Cipher {
      *
      * @param provider the provider.
      *
-     * @return a cipher that implements the requested transformation.
+     * @return a cipher that implements the requested transformation
      *
-     * @exception NoSuchAlgorithmException if {@code transformation}
-     *          is null, empty, in an invalid format,
-     *          or if a CipherSpi implementation for the specified algorithm
-     *          is not available from the specified Provider object.
+     * @throws IllegalArgumentException if the {@code provider}
+     *         is {@code null}
      *
-     * @exception NoSuchPaddingException if {@code transformation}
-     *          contains a padding scheme that is not available.
+     * @throws NoSuchAlgorithmException if {@code transformation}
+     *         is {@code null}, empty, in an invalid format,
+     *         or if a {@code CipherSpi} implementation for the
+     *         specified algorithm is not available from the specified
+     *         {@code Provider} object
      *
-     * @exception IllegalArgumentException if the {@code provider}
-     *          is null.
+     * @throws NoSuchPaddingException if {@code transformation}
+     *         contains a padding scheme that is not available
      *
      * @see java.security.Provider
      */
@@ -641,6 +649,9 @@ public class Cipher {
                                            Provider provider)
             throws NoSuchAlgorithmException, NoSuchPaddingException
     {
+        if ((transformation == null) || transformation.equals("")) {
+            throw new NoSuchAlgorithmException("Null or empty transformation");
+        }
         if (provider == null) {
             throw new IllegalArgumentException("Missing provider");
         }

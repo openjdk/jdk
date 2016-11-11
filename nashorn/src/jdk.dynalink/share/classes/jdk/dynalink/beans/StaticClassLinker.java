@@ -91,7 +91,7 @@ import java.util.Arrays;
 import java.util.Set;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.NamedOperation;
-import jdk.dynalink.Operation;
+import jdk.dynalink.StandardNamespace;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.beans.GuardedInvocationComponent.ValidationType;
 import jdk.dynalink.linker.GuardedInvocation;
@@ -168,17 +168,12 @@ class StaticClassLinker implements TypeBasedGuardingDynamicLinker {
             if (superGic != null) {
                 return superGic;
             }
-            if (!req.operations.isEmpty()) {
-                final Operation op = req.operations.get(0);
-                if (op instanceof StandardOperation) {
-                    switch ((StandardOperation)op) {
-                    case GET_ELEMENT:
-                    case SET_ELEMENT:
-                        // StaticClass doesn't behave as a collection
-                        return getNextComponent(req.popOperations());
-                    default:
-                    }
-                }
+            if (!req.namespaces.isEmpty()
+                && req.namespaces.get(0) == StandardNamespace.ELEMENT
+                && (req.baseOperation == StandardOperation.GET || req.baseOperation == StandardOperation.SET))
+            {
+                // StaticClass doesn't behave as a collection
+                return getNextComponent(req.popNamespace());
             }
             return null;
         }

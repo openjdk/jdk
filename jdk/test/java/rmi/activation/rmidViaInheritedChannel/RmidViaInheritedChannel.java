@@ -51,6 +51,8 @@ import java.rmi.activation.ActivationSystem;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import static java.net.StandardSocketOptions.SO_REUSEADDR;
+import static java.net.StandardSocketOptions.SO_REUSEPORT;
 
 public class RmidViaInheritedChannel implements Callback {
     private static final Object lock = new Object();
@@ -185,6 +187,15 @@ public class RmidViaInheritedChannel implements Callback {
                  */
                 channel = ServerSocketChannel.open();
                 ServerSocket serverSocket = channel.socket();
+
+                // Enable SO_REUSEADDR before binding
+                serverSocket.setOption(SO_REUSEADDR, true);
+
+                // Enable SO_REUSEPORT, if supported, before binding
+                if (serverSocket.supportedOptions().contains(SO_REUSEPORT)) {
+                    serverSocket.setOption(SO_REUSEPORT, true);
+                }
+
                 serverSocket.bind(
                      new InetSocketAddress(InetAddress.getLocalHost(),
                      TestLibrary.RMIDVIAINHERITEDCHANNEL_ACTIVATION_PORT));

@@ -216,18 +216,19 @@ public class KeyGenerator {
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
-     * @return the new {@code KeyGenerator} object.
+     * @return the new {@code KeyGenerator} object
      *
-     * @exception NullPointerException if the specified algorithm is null.
+     * @throws NoSuchAlgorithmException if no {@code Provider} supports a
+     *         {@code KeyGeneratorSpi} implementation for the
+     *         specified algorithm
      *
-     * @exception NoSuchAlgorithmException if no Provider supports a
-     *          KeyGeneratorSpi implementation for the
-     *          specified algorithm.
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static final KeyGenerator getInstance(String algorithm)
             throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         return new KeyGenerator(algorithm);
     }
 
@@ -251,25 +252,26 @@ public class KeyGenerator {
      *
      * @param provider the name of the provider.
      *
-     * @return the new {@code KeyGenerator} object.
+     * @return the new {@code KeyGenerator} object
      *
-     * @exception NullPointerException if the specified algorithm is null.
+     * @throws IllegalArgumentException if the {@code provider}
+     *         is {@code null} or empty
      *
-     * @exception NoSuchAlgorithmException if a KeyGeneratorSpi
-     *          implementation for the specified algorithm is not
-     *          available from the specified provider.
+     * @throws NoSuchAlgorithmException if a {@code KeyGeneratorSpi}
+     *         implementation for the specified algorithm is not
+     *         available from the specified provider
      *
-     * @exception NoSuchProviderException if the specified provider is not
-     *          registered in the security provider list.
+     * @throws NoSuchProviderException if the specified provider is not
+     *         registered in the security provider list
      *
-     * @exception IllegalArgumentException if the {@code provider}
-     *          is null or empty.
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static final KeyGenerator getInstance(String algorithm,
             String provider) throws NoSuchAlgorithmException,
             NoSuchProviderException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = JceSecurity.getInstance("KeyGenerator",
                 KeyGeneratorSpi.class, algorithm, provider);
         return new KeyGenerator((KeyGeneratorSpi)instance.impl,
@@ -293,21 +295,22 @@ public class KeyGenerator {
      *
      * @param provider the provider.
      *
-     * @return the new {@code KeyGenerator} object.
+     * @return the new {@code KeyGenerator} object
      *
-     * @exception NullPointerException if the specified algorithm is null.
+     * @throws IllegalArgumentException if the {@code provider}
+     *         is {@code null}
      *
-     * @exception NoSuchAlgorithmException if a KeyGeneratorSpi
-     *          implementation for the specified algorithm is not available
-     *          from the specified Provider object.
+     * @throws NoSuchAlgorithmException if a {@code KeyGeneratorSpi}
+     *         implementation for the specified algorithm is not available
+     *         from the specified {@code Provider} object
      *
-     * @exception IllegalArgumentException if the {@code provider}
-     *          is null.
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static final KeyGenerator getInstance(String algorithm,
             Provider provider) throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = JceSecurity.getInstance("KeyGenerator",
                 KeyGeneratorSpi.class, algorithm, provider);
         return new KeyGenerator((KeyGeneratorSpi)instance.impl,

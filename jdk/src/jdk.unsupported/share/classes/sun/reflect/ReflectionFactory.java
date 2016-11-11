@@ -85,6 +85,21 @@ public class ReflectionFactory {
     }
 
     /**
+     * Returns an accessible constructor capable of creating instances
+     * of the given class, initialized by the given constructor.
+     *
+     * @param cl the class to instantiate
+     * @param constructorToCall the constructor to call
+     * @return an accessible constructor
+     */
+    public Constructor<?> newConstructorForSerialization(Class<?> cl,
+                                                         Constructor<?> constructorToCall)
+    {
+        return delegate.newConstructorForSerialization(cl,
+                                                       constructorToCall);
+    }
+
+    /**
      * Returns an accessible no-arg constructor for a class.
      * The no-arg constructor is found searching the class and its supertypes.
      *

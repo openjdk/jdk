@@ -33,6 +33,7 @@ import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Collection;
+import java.util.Objects;
 
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
@@ -218,20 +219,23 @@ public class CertStore {
      * @param params the initialization parameters (may be {@code null}).
      *
      * @return a {@code CertStore} object that implements the specified
-     *          {@code CertStore} type.
-     *
-     * @throws NoSuchAlgorithmException if no Provider supports a
-     *          CertStoreSpi implementation for the specified type.
+     *          {@code CertStore} type
      *
      * @throws InvalidAlgorithmParameterException if the specified
-     *          initialization parameters are inappropriate for this
-     *          {@code CertStore}.
+     *         initialization parameters are inappropriate for this
+     *         {@code CertStore}
+     *
+     * @throws NoSuchAlgorithmException if no {@code Provider} supports a
+     *         {@code CertStoreSpi} implementation for the specified type
+     *
+     * @throws NullPointerException if {@code type} is {@code null}
      *
      * @see java.security.Provider
      */
     public static CertStore getInstance(String type, CertStoreParameters params)
             throws InvalidAlgorithmParameterException,
             NoSuchAlgorithmException {
+        Objects.requireNonNull(type, "null type name");
         try {
             Instance instance = GetInstance.getInstance("CertStore",
                 CertStoreSpi.class, type, params);
@@ -243,7 +247,8 @@ public class CertStore {
     }
 
     private static CertStore handleException(NoSuchAlgorithmException e)
-            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
+            throws NoSuchAlgorithmException,
+            InvalidAlgorithmParameterException {
         Throwable cause = e.getCause();
         if (cause instanceof InvalidAlgorithmParameterException) {
             throw (InvalidAlgorithmParameterException)cause;
@@ -280,21 +285,23 @@ public class CertStore {
      * @param provider the name of the provider.
      *
      * @return a {@code CertStore} object that implements the
-     *          specified type.
+     *          specified type
      *
-     * @throws NoSuchAlgorithmException if a CertStoreSpi
-     *          implementation for the specified type is not
-     *          available from the specified provider.
+     * @throws IllegalArgumentException if the {@code provider} is
+     *         {@code null} or empty
      *
      * @throws InvalidAlgorithmParameterException if the specified
-     *          initialization parameters are inappropriate for this
-     *          {@code CertStore}.
+     *         initialization parameters are inappropriate for this
+     *         {@code CertStore}
+     *
+     * @throws NoSuchAlgorithmException if a {@code CertStoreSpi}
+     *         implementation for the specified type is not
+     *         available from the specified provider
      *
      * @throws NoSuchProviderException if the specified provider is not
-     *          registered in the security provider list.
+     *         registered in the security provider list
      *
-     * @exception IllegalArgumentException if the {@code provider} is
-     *          null or empty.
+     * @throws NullPointerException if {@code type} is {@code null}
      *
      * @see java.security.Provider
      */
@@ -302,6 +309,7 @@ public class CertStore {
             CertStoreParameters params, String provider)
             throws InvalidAlgorithmParameterException,
             NoSuchAlgorithmException, NoSuchProviderException {
+        Objects.requireNonNull(type, "null type name");
         try {
             Instance instance = GetInstance.getInstance("CertStore",
                 CertStoreSpi.class, type, params, provider);
@@ -338,24 +346,27 @@ public class CertStore {
      * @param provider the provider.
      *
      * @return a {@code CertStore} object that implements the
-     *          specified type.
+     *          specified type
      *
-     * @exception NoSuchAlgorithmException if a CertStoreSpi
-     *          implementation for the specified type is not available
-     *          from the specified Provider object.
+     * @throws IllegalArgumentException if the {@code provider} is
+     *         null
      *
      * @throws InvalidAlgorithmParameterException if the specified
-     *          initialization parameters are inappropriate for this
-     *          {@code CertStore}
+     *         initialization parameters are inappropriate for this
+     *         {@code CertStore}
      *
-     * @exception IllegalArgumentException if the {@code provider} is
-     *          null.
+     * @throws NoSuchAlgorithmException if a {@code CertStoreSpi}
+     *         implementation for the specified type is not available
+     *         from the specified Provider object
+     *
+     * @throws NullPointerException if {@code type} is {@code null}
      *
      * @see java.security.Provider
      */
     public static CertStore getInstance(String type, CertStoreParameters params,
             Provider provider) throws NoSuchAlgorithmException,
             InvalidAlgorithmParameterException {
+        Objects.requireNonNull(type, "null type name");
         try {
             Instance instance = GetInstance.getInstance("CertStore",
                 CertStoreSpi.class, type, params, provider);

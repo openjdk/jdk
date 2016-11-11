@@ -35,9 +35,10 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 import jdk.dynalink.CallSiteDescriptor;
-import jdk.dynalink.CompositeOperation;
 import jdk.dynalink.NamedOperation;
+import jdk.dynalink.NamespaceOperation;
 import jdk.dynalink.Operation;
+import jdk.dynalink.StandardNamespace;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.GuardingDynamicLinker;
@@ -132,9 +133,9 @@ public final class DOMLinkerExporter extends GuardingDynamicLinkerExporter {
                 final CallSiteDescriptor desc = request.getCallSiteDescriptor();
                 final Operation op = desc.getOperation();
                 final Object name = NamedOperation.getName(op);
-                final boolean getProp = CompositeOperation.contains(
+                final boolean getProp = NamespaceOperation.contains(
                         NamedOperation.getBaseOperation(op),
-                        StandardOperation.GET_PROPERTY);
+                        StandardOperation.GET, StandardNamespace.PROPERTY);
                 if (getProp && name instanceof String) {
                     final String nameStr = (String)name;
 

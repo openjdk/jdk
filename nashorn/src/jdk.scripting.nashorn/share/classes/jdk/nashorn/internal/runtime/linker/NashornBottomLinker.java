@@ -38,7 +38,6 @@ import java.util.function.Supplier;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.NamedOperation;
 import jdk.dynalink.Operation;
-import jdk.dynalink.StandardOperation;
 import jdk.dynalink.beans.BeansLinker;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.GuardingDynamicLinker;
@@ -98,7 +97,7 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
     private static GuardedInvocation linkBean(final LinkRequest linkRequest) throws Exception {
         final CallSiteDescriptor desc = linkRequest.getCallSiteDescriptor();
         final Object self = linkRequest.getReceiver();
-        switch (NashornCallSiteDescriptor.getFirstStandardOperation(desc)) {
+        switch (NashornCallSiteDescriptor.getStandardOperation(desc)) {
         case NEW:
             if(BeansLinker.isDynamicConstructor(self)) {
                 throw typeError("no.constructor.matches.args", ScriptRuntime.safeToString(self));
@@ -124,35 +123,26 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
 
     static MethodHandle linkMissingBeanMember(final LinkRequest linkRequest, final LinkerServices linkerServices) throws Exception {
         final CallSiteDescriptor desc = linkRequest.getCallSiteDescriptor();
-        final StandardOperation op = NashornCallSiteDescriptor.getFirstStandardOperation(desc);
-        if (op != null) {
-            final String operand = NashornCallSiteDescriptor.getOperand(desc);
-            switch (op) {
-            case GET_METHOD:
-            case GET_PROPERTY:
-            case GET_ELEMENT: {
-                if (NashornCallSiteDescriptor.isOptimistic(desc)) {
-                    return adaptThrower(MethodHandles.insertArguments(THROW_OPTIMISTIC_UNDEFINED, 0, NashornCallSiteDescriptor.getProgramPoint(desc)), desc);
-                }
-                if (NashornCallSiteDescriptor.getOperand(desc) != null) {
-                    return getInvocation(EMPTY_PROP_GETTER, linkerServices, desc);
-                }
-                return getInvocation(EMPTY_ELEM_GETTER, linkerServices, desc);
+        final String operand = NashornCallSiteDescriptor.getOperand(desc);
+        switch (NashornCallSiteDescriptor.getStandardOperation(desc)) {
+        case GET:
+            if (NashornCallSiteDescriptor.isOptimistic(desc)) {
+                return adaptThrower(MethodHandles.insertArguments(THROW_OPTIMISTIC_UNDEFINED, 0, NashornCallSiteDescriptor.getProgramPoint(desc)), desc);
+            } else if (operand != null) {
+                return getInvocation(EMPTY_PROP_GETTER, linkerServices, desc);
             }
-            case SET_PROPERTY:
-            case SET_ELEMENT:
-                final boolean strict = NashornCallSiteDescriptor.isStrict(desc);
-                if (strict) {
-                    return adaptThrower(bindOperand(THROW_STRICT_PROPERTY_SETTER, operand), desc);
-                }
-                if (NashornCallSiteDescriptor.getOperand(desc) != null) {
-                    return getInvocation(EMPTY_PROP_SETTER, linkerServices, desc);
-                }
-                return getInvocation(EMPTY_ELEM_SETTER, linkerServices, desc);
-            default:
+            return getInvocation(EMPTY_ELEM_GETTER, linkerServices, desc);
+        case SET:
+            final boolean strict = NashornCallSiteDescriptor.isStrict(desc);
+            if (strict) {
+                return adaptThrower(bindOperand(THROW_STRICT_PROPERTY_SETTER, operand), desc);
+            } else if (operand != null) {
+                return getInvocation(EMPTY_PROP_SETTER, linkerServices, desc);
             }
+            return getInvocation(EMPTY_ELEM_SETTER, linkerServices, desc);
+        default:
+            throw new AssertionError("unknown call type " + desc);
         }
-        throw new AssertionError("unknown call type " + desc);
     }
 
     private static MethodHandle bindOperand(final MethodHandle handle, final String operand) {
@@ -217,17 +207,13 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
 
     private static GuardedInvocation linkNull(final LinkRequest linkRequest) {
         final CallSiteDescriptor desc = linkRequest.getCallSiteDescriptor();
-        switch (NashornCallSiteDescriptor.getFirstStandardOperation(desc)) {
+        switch (NashornCallSiteDescriptor.getStandardOperation(desc)) {
         case NEW:
         case CALL:
             throw typeError("not.a.function", "null");
-        case GET_METHOD:
-            throw typeError("no.such.function", getArgument(linkRequest), "null");
-        case GET_PROPERTY:
-        case GET_ELEMENT:
-            throw typeError("cant.get.property", getArgument(linkRequest), "null");
-        case SET_PROPERTY:
-        case SET_ELEMENT:
+        case GET:
+            throw typeError(NashornCallSiteDescriptor.isMethodFirstOperation(desc) ? "no.such.function" : "cant.get.property", getArgument(linkRequest), "null");
+        case SET:
             throw typeError("cant.set.property", getArgument(linkRequest), "null");
         default:
             throw new AssertionError("unknown call type " + desc);

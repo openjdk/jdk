@@ -202,9 +202,9 @@ $(eval $(call SetupJarArchive, BUILD_JAR3, \
     DEPENDENCIES := $(OUTPUT_DIR)/_jar3_created, \
     SRCS := $(JAR3_SRC_ROOT1) $(JAR3_SRC_ROOT2), \
     EXTRA_FILES := extra-file \
-        dir2/file$$$$foo.dollar \
+        dir2/file$$foo.dollar \
         $(JAR3_SRC_ROOT2)/extra-file-abs, \
-    EXCLUDE_FILES := dir1/file1$$$$foo.class, \
+    EXCLUDE_FILES := dir1/file1$$foo.class, \
     JAR := $(JAR3_FILE), \
 ))
 

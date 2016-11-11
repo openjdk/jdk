@@ -638,6 +638,8 @@ public class Main implements DiagnosticListener<JavaFileObject> {
 
         // now the scanning phase
 
+        boolean scanStatus = true;
+
         switch (scanMode) {
             case LIST:
                 for (DeprData dd : deprList) {
@@ -661,24 +663,22 @@ public class Main implements DiagnosticListener<JavaFileObject> {
                 Scan scan = new Scan(out, err, cp, db, verbose);
 
                 for (String a : args) {
-                    boolean success;
-
+                    boolean s;
                     if (a.endsWith(".jar")) {
-                        success = scan.scanJar(a);
+                        s = scan.scanJar(a);
+                    } else if (a.endsWith(".class")) {
+                        s = scan.processClassFile(a);
                     } else if (Files.isDirectory(Paths.get(a))) {
-                        success = scan.scanDir(a);
+                        s = scan.scanDir(a);
                     } else {
-                        success = scan.processClassName(a.replace('.', '/'));
+                        s = scan.processClassName(a.replace('.', '/'));
                     }
-
-                    if (!success) {
-                        return false;
-                    }
+                    scanStatus = scanStatus && s;
                 }
                 break;
         }
 
-        return true;
+        return scanStatus;
     }
 
     /**

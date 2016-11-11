@@ -2404,16 +2404,6 @@ public class Basic {
                 fail("Test failed: waitFor didn't take long enough (" + (end - start) + "ns)");
 
             p.destroy();
-
-            start = System.nanoTime();
-            p.waitFor(8, TimeUnit.SECONDS);
-            end = System.nanoTime();
-
-            int exitValue = p.exitValue();
-
-            if ((end - start) > TimeUnit.SECONDS.toNanos(7))
-                fail("Test failed: waitFor took too long on a dead process. (" + (end - start) + "ns)"
-                + ", exitValue: " + exitValue);
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------

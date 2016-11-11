@@ -27,6 +27,7 @@ package javax.net.ssl;
 
 import java.security.Security;
 import java.security.*;
+import java.util.Objects;
 
 import sun.security.jca.GetInstance;
 
@@ -144,17 +145,19 @@ public class TrustManagerFactory {
      *          Java Secure Socket Extension Reference Guide </a>
      *          for information about standard algorithm names.
      *
-     * @return the new <code>TrustManagerFactory</code> object.
+     * @return the new {@code TrustManagerFactory} object
      *
-     * @exception NoSuchAlgorithmException if no Provider supports a
-     *          TrustManagerFactorySpi implementation for the
-     *          specified algorithm.
-     * @exception NullPointerException if algorithm is null.
+     * @throws NoSuchAlgorithmException if no {@code Provider} supports a
+     *         {@code TrustManagerFactorySpi} implementation for the
+     *         specified algorithm
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static final TrustManagerFactory getInstance(String algorithm)
             throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         GetInstance.Instance instance = GetInstance.getInstance
                 ("TrustManagerFactory", TrustManagerFactorySpi.class,
                 algorithm);
@@ -182,23 +185,26 @@ public class TrustManagerFactory {
      *
      * @param provider the name of the provider.
      *
-     * @return the new <code>TrustManagerFactory</code> object
+     * @return the new {@code TrustManagerFactory} object
      *
-     * @throws NoSuchAlgorithmException if a TrustManagerFactorySpi
-     *          implementation for the specified algorithm is not
-     *          available from the specified provider.
+     * @throws IllegalArgumentException if the provider name is
+     *         {@code null} or empty
+     *
+     * @throws NoSuchAlgorithmException if a {@code TrustManagerFactorySpi}
+     *         implementation for the specified algorithm is not
+     *         available from the specified provider
      *
      * @throws NoSuchProviderException if the specified provider is not
-     *          registered in the security provider list.
+     *         registered in the security provider list
      *
-     * @throws IllegalArgumentException if the provider name is null or empty.
-     * @throws NullPointerException if algorithm is null.
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static final TrustManagerFactory getInstance(String algorithm,
             String provider) throws NoSuchAlgorithmException,
             NoSuchProviderException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         GetInstance.Instance instance = GetInstance.getInstance
                 ("TrustManagerFactory", TrustManagerFactorySpi.class,
                 algorithm, provider);
@@ -223,19 +229,21 @@ public class TrustManagerFactory {
      *
      * @param provider an instance of the provider.
      *
-     * @return the new <code>TrustManagerFactory</code> object.
+     * @return the new {@code TrustManagerFactory} object
      *
-     * @throws NoSuchAlgorithmException if a TrustManagerFactorySpi
-     *          implementation for the specified algorithm is not available
-     *          from the specified Provider object.
+     * @throws IllegalArgumentException if the provider is {@code null}
      *
-     * @throws IllegalArgumentException if the provider is null.
-     * @throws NullPointerException if algorithm is null.
+     * @throws NoSuchAlgorithmException if a {@code TrustManagerFactorySpi}
+     *         implementation for the specified algorithm is not available
+     *         from the specified {@code Provider} object
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static final TrustManagerFactory getInstance(String algorithm,
             Provider provider) throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         GetInstance.Instance instance = GetInstance.getInstance
                 ("TrustManagerFactory", TrustManagerFactorySpi.class,
                 algorithm, provider);

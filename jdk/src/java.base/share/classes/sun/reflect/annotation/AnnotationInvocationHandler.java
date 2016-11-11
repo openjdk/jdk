@@ -253,20 +253,20 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
     }
 
     private static String toSourceString(char c) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("'");
+        StringBuilder sb = new StringBuilder(4);
+        sb.append('\'');
         if (c == '\'')
             sb.append("\\'");
         else
             sb.append(c);
-        sb.append("'");
-        return sb.toString();
+        return sb.append('\'')
+                .toString();
     }
 
     private static String toSourceString(long ell) {
-        return (Math.abs(ell) <= Integer.MAX_VALUE) ?
-            String.valueOf(ell) :
-            (String.valueOf(ell) + "L");
+        String str = String.valueOf(ell);
+        return (ell < Integer.MIN_VALUE || ell > Integer.MAX_VALUE)
+                ? (str + 'L') : str;
     }
 
     /**
@@ -278,10 +278,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         sb.append('"');
         // Escape embedded quote characters, if present, but don't do
         // anything more heroic.
-        if (s.indexOf('"') != -1) {
-            s = s.replace("\"", "\\\"");
-        }
-        sb.append(s);
+        sb.append(s.replace("\"", "\\\""));
         sb.append('"');
         return sb.toString();
     }

@@ -1664,19 +1664,21 @@ AddApplicationOptions(int cpathc, const char **cpathv)
     AddOption(apphome, NULL);
 
     /* How big is the application's classpath? */
-    size = 40;                                 /* 40: "-Djava.class.path=" */
-    for (i = 0; i < cpathc; i++) {
-        size += (int)JLI_StrLen(home) + (int)JLI_StrLen(cpathv[i]) + 1; /* 1: separator */
+    if (cpathc > 0) {
+        size = 40;                                 /* 40: "-Djava.class.path=" */
+        for (i = 0; i < cpathc; i++) {
+            size += (int)JLI_StrLen(home) + (int)JLI_StrLen(cpathv[i]) + 1; /* 1: separator */
+        }
+        appcp = (char *)JLI_MemAlloc(size + 1);
+        JLI_StrCpy(appcp, "-Djava.class.path=");
+        for (i = 0; i < cpathc; i++) {
+            JLI_StrCat(appcp, home);                        /* c:\program files\myapp */
+            JLI_StrCat(appcp, cpathv[i]);           /* \lib\myapp.jar         */
+            JLI_StrCat(appcp, separator);           /* ;                      */
+        }
+        appcp[JLI_StrLen(appcp)-1] = '\0';  /* remove trailing path separator */
+        AddOption(appcp, NULL);
     }
-    appcp = (char *)JLI_MemAlloc(size + 1);
-    JLI_StrCpy(appcp, "-Djava.class.path=");
-    for (i = 0; i < cpathc; i++) {
-        JLI_StrCat(appcp, home);                        /* c:\program files\myapp */
-        JLI_StrCat(appcp, cpathv[i]);           /* \lib\myapp.jar         */
-        JLI_StrCat(appcp, separator);           /* ;                      */
-    }
-    appcp[JLI_StrLen(appcp)-1] = '\0';  /* remove trailing path separator */
-    AddOption(appcp, NULL);
     return JNI_TRUE;
 }
 

@@ -26,7 +26,11 @@ package javax.swing.text;
 
 import sun.swing.SwingUtilities2;
 import java.awt.*;
+import java.awt.font.FontRenderContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import javax.swing.JPasswordField;
+import static javax.swing.text.PlainView.isFPMethodOverriden;
 
 /**
  * Implements a View suitable for use in JPasswordField
@@ -61,15 +65,40 @@ public class PasswordView extends FieldView {
      * @param p1 the ending offset in the model &gt;= p0
      * @return the X location of the end of the range &gt;= 0
      * @exception BadLocationException if p0 or p1 are out of range
+     *
+     * @deprecated replaced by
+     *     {@link #drawUnselectedText(Graphics2D, float, float, int, int)}
      */
+    @Deprecated(since = "9")
+    @Override
     protected int drawUnselectedText(Graphics g, int x, int y,
                                      int p0, int p1) throws BadLocationException {
+        return (int) drawUnselectedTextImpl(g, x, y, p0, p1, false);
+    }
 
+    @Override
+    protected float drawUnselectedText(Graphics2D g, float x, float y,
+                                       int p0, int p1)
+            throws BadLocationException
+    {
+        return drawUnselectedTextImpl(g, x, y, p0, p1, true);
+    }
+
+    private float drawUnselectedTextImpl(Graphics g, float x, float y,
+                                         int p0, int p1,
+                                         boolean useFPAPI)
+            throws BadLocationException
+    {
         Container c = getContainer();
         if (c instanceof JPasswordField) {
             JPasswordField f = (JPasswordField) c;
-            if (! f.echoCharIsSet()) {
-                return super.drawUnselectedText(g, x, y, p0, p1);
+            if (!f.echoCharIsSet()) {
+                boolean useDrawUnselectedFPAPI = useFPAPI
+                        && drawUnselectedTextOverridden
+                        && g instanceof Graphics2D;
+                return (useDrawUnselectedFPAPI )
+                        ? super.drawUnselectedText((Graphics2D) g, x, y, p0, p1)
+                        : super.drawUnselectedText(g, (int) x, (int) y, p0, p1);
             }
             if (f.isEnabled()) {
                 g.setColor(f.getForeground());
@@ -79,8 +108,13 @@ public class PasswordView extends FieldView {
             }
             char echoChar = f.getEchoChar();
             int n = p1 - p0;
+            boolean useEchoCharFPAPI = useFPAPI
+                    && drawEchoCharacterOverridden
+                    && g instanceof Graphics2D;
             for (int i = 0; i < n; i++) {
-                x = drawEchoCharacter(g, x, y, echoChar);
+                x = (useEchoCharFPAPI)
+                        ? drawEchoCharacter((Graphics2D) g, x, y, echoChar)
+                        : drawEchoCharacter(g, (int) x, (int) y, echoChar);
             }
         }
         return x;
@@ -100,20 +134,50 @@ public class PasswordView extends FieldView {
      * @param p1 the ending offset in the model &gt;= p0
      * @return the X location of the end of the range &gt;= 0
      * @exception BadLocationException if p0 or p1 are out of range
+     *
+     * @deprecated replaced by
+     *     {@link #drawSelectedText(Graphics2D, float, float, int, int)}
      */
+    @Deprecated(since = "9")
+    @Override
     protected int drawSelectedText(Graphics g, int x,
                                    int y, int p0, int p1) throws BadLocationException {
+        return (int) drawSelectedTextImpl(g, x, y, p0, p1, false);
+    }
+
+    @Override
+    protected float drawSelectedText(Graphics2D g, float x, float y,
+                                     int p0, int p1) throws BadLocationException
+    {
+        return drawSelectedTextImpl(g, x, y, p0, p1, true);
+    }
+
+    private float drawSelectedTextImpl(Graphics g, float x, float y,
+                                       int p0, int p1,
+                                       boolean useFPAPI)
+            throws BadLocationException {
         g.setColor(selected);
         Container c = getContainer();
         if (c instanceof JPasswordField) {
             JPasswordField f = (JPasswordField) c;
-            if (! f.echoCharIsSet()) {
-                return super.drawSelectedText(g, x, y, p0, p1);
+            if (!f.echoCharIsSet()) {
+                boolean useDrawUnselectedFPAPI = useFPAPI
+                        && drawSelectedTextOverridden
+                        && g instanceof Graphics2D;
+                return (useFPAPI)
+                        ? super.drawSelectedText((Graphics2D) g, x, y, p0, p1)
+                        : super.drawSelectedText(g, (int) x, (int) y, p0, p1);
             }
             char echoChar = f.getEchoChar();
             int n = p1 - p0;
+            boolean useEchoCharFPAPI = useFPAPI
+                    && drawEchoCharacterOverridden
+                    && g instanceof Graphics2D;
             for (int i = 0; i < n; i++) {
-                x = drawEchoCharacter(g, x, y, echoChar);
+                x = (useEchoCharFPAPI)
+                        ? drawEchoCharacter((Graphics2D) g, x, y, echoChar)
+                        : drawEchoCharacter(g, (int) x, (int) y, echoChar);
+
             }
         }
         return x;
@@ -130,12 +194,13 @@ public class PasswordView extends FieldView {
      * @param y the starting Y coordinate &gt;= 0
      * @param c the echo character
      * @return the updated X position &gt;= 0
+     *
+     * @deprecated replaced by
+     *     {@link #drawEchoCharacter(Graphics2D, float, float, char)}
      */
+    @Deprecated(since = "9")
     protected int drawEchoCharacter(Graphics g, int x, int y, char c) {
-        ONE[0] = c;
-        SwingUtilities2.drawChars(Utilities.getJComponent(this),
-                                  g, ONE, 0, 1, x, y);
-        return x + g.getFontMetrics().charWidth(c);
+        return (int) drawEchoCharacterImpl(g, x, y, c, false);
     }
 
     /**
@@ -144,18 +209,29 @@ public class PasswordView extends FieldView {
      * object is set to the appropriate foreground color for selected
      * or unselected text.
      *
-     * @implSpec This implementation calls
-     * {@link #drawEchoCharacter(Graphics, int, int, char)
-     *      drawEchoCharacter((Graphics) g, (int) x, (int) y, c)}.
-     *
      * @param g the graphics context
      * @param x the starting X coordinate {@code >= 0}
      * @param y the starting Y coordinate {@code >= 0}
      * @param c the echo character
      * @return the updated X position {@code >= 0}
+     *
+     * @since 9
      */
     protected float drawEchoCharacter(Graphics2D g, float x, float y, char c) {
-        return drawEchoCharacter((Graphics) g, (int) x, (int) y, c);
+        return drawEchoCharacterImpl(g, x, y, c, true);
+    }
+
+    private float drawEchoCharacterImpl(Graphics g, float x, float y,
+                                        char c, boolean useFPAPI) {
+        ONE[0] = c;
+        SwingUtilities2.drawChars(Utilities.getJComponent(this),
+                                  g, ONE, 0, 1, x, y);
+        if (useFPAPI) {
+            return x + g.getFontMetrics().charWidth(c);
+        } else {
+            FontRenderContext frc = g.getFontMetrics().getFontRenderContext();
+            return x + (float) g.getFont().getStringBounds(ONE, 0, 1, frc).getWidth();
+        }
     }
 
     /**
@@ -253,4 +329,23 @@ public class PasswordView extends FieldView {
     }
 
     static char[] ONE = new char[1];
+
+    private final boolean drawEchoCharacterOverridden;
+
+    {
+        final Class<?> CLS = getClass();
+        final Class<?> INT = Integer.TYPE;
+        final Class<?> FP = Float.TYPE;
+        final Class<?> CHAR = Character.TYPE;
+
+        drawEchoCharacterOverridden = AccessController
+                .doPrivileged(new PrivilegedAction<Boolean>() {
+            @Override
+            public Boolean run() {
+                Class<?>[] intTypes = {Graphics.class, INT, INT, CHAR};
+                Class<?>[] fpTypes = {Graphics2D.class, FP, FP, CHAR};
+                return isFPMethodOverriden("drawEchoCharacter", CLS, intTypes, fpTypes);
+            }
+        });
+    }
 }
