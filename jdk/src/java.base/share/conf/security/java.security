@@ -645,6 +645,9 @@ krb5.kdc.bad.policy = tryLast
 # before larger keysize constraints of the same algorithm.  For example:
 # "RSA keySize < 1024 & jdkCA, RSA keySize < 2048".
 #
+# Note: The algorithm restrictions do not apply to trust anchors or
+# self-signed certificates.
+#
 # Note: This property is currently used by Oracle's PKIX implementation. It
 # is not guaranteed to be examined and used by other implementations.
 #
@@ -713,6 +716,9 @@ jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
 #
 # See the specification of "jdk.certpath.disabledAlgorithms" for the
 # syntax of the disabled algorithm string.
+#
+# Note: The algorithm restrictions do not apply to trust anchors or
+# self-signed certificates.
 #
 # Note: This property is currently used by Oracle's JSSE implementation.
 # It is not guaranteed to be examined and used by other implementations.

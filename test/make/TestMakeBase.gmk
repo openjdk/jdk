@@ -209,9 +209,9 @@ test-vardep:
 	test ! -e $(VARDEP_FLAG_FILE)
         #
         # Test including some problematic characters
-	$(MAKE) -f $(THIS_FILE) VARDEP_TEST_VAR='value4 \$$$$ORIGIN' $(VARDEP_TARGET_FILE)
+	$(MAKE) -f $(THIS_FILE) VARDEP_TEST_VAR='value4 \$$ORIGIN' $(VARDEP_TARGET_FILE)
 	$(RM) $(VARDEP_FLAG_FILE)
-	$(MAKE) -f $(THIS_FILE) VARDEP_TEST_VAR='value4 \$$$$ORIGIN' $(VARDEP_TARGET_FILE)
+	$(MAKE) -f $(THIS_FILE) VARDEP_TEST_VAR='value4 \$$ORIGIN' $(VARDEP_TARGET_FILE)
 	test ! -e $(VARDEP_FLAG_FILE)
 
 # Test specifying a specific value file to store variable in

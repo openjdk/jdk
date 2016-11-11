@@ -1267,6 +1267,9 @@ public final class Scanner implements Iterator<String>, Closeable {
     // The next operation should occur in the specified radix but
     // the default is left untouched.
     private void setRadix(int radix) {
+        if ((radix < Character.MIN_RADIX) || (radix > Character.MAX_RADIX))
+            throw new IllegalArgumentException("radix:"+radix);
+
         if (this.radix != radix) {
             // Force rebuilding and recompilation of radix dependent patterns
             integerPattern = null;
@@ -1811,10 +1814,15 @@ public final class Scanner implements Iterator<String>, Closeable {
      * interpreted as a byte value in the specified radix using the
      * {@link #nextByte} method. The scanner does not advance past any input.
      *
+     * <p>If the radix is less than {@link Character#MIN_RADIX Character.MIN_RADIX}
+     * or greater than {@link Character#MAX_RADIX Character.MAX_RADIX}, then an
+     * {@code IllegalArgumentException} is thrown.
+     *
      * @param radix the radix used to interpret the token as a byte value
      * @return true if and only if this scanner's next token is a valid
      *         byte value
      * @throws IllegalStateException if this scanner is closed
+     * @throws IllegalArgumentException if the radix is out of range
      */
     public boolean hasNextByte(int radix) {
         setRadix(radix);
@@ -1869,6 +1877,10 @@ public final class Scanner implements Iterator<String>, Closeable {
      * {@link Byte#parseByte(String, int) Byte.parseByte} with the
      * specified radix.
      *
+     * <p>If the radix is less than {@link Character#MIN_RADIX Character.MIN_RADIX}
+     * or greater than {@link Character#MAX_RADIX Character.MAX_RADIX}, then an
+     * {@code IllegalArgumentException} is thrown.
+     *
      * @param radix the radix used to interpret the token as a byte value
      * @return the {@code byte} scanned from the input
      * @throws InputMismatchException
@@ -1876,6 +1888,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      *         regular expression, or is out of range
      * @throws NoSuchElementException if input is exhausted
      * @throws IllegalStateException if this scanner is closed
+     * @throws IllegalArgumentException if the radix is out of range
      */
     public byte nextByte(int radix) {
         // Check cached result
@@ -1917,10 +1930,15 @@ public final class Scanner implements Iterator<String>, Closeable {
      * interpreted as a short value in the specified radix using the
      * {@link #nextShort} method. The scanner does not advance past any input.
      *
+     * <p>If the radix is less than {@link Character#MIN_RADIX Character.MIN_RADIX}
+     * or greater than {@link Character#MAX_RADIX Character.MAX_RADIX}, then an
+     * {@code IllegalArgumentException} is thrown.
+     *
      * @param radix the radix used to interpret the token as a short value
      * @return true if and only if this scanner's next token is a valid
      *         short value in the specified radix
      * @throws IllegalStateException if this scanner is closed
+     * @throws IllegalArgumentException if the radix is out of range
      */
     public boolean hasNextShort(int radix) {
         setRadix(radix);
@@ -1975,6 +1993,10 @@ public final class Scanner implements Iterator<String>, Closeable {
      * {@link Short#parseShort(String, int) Short.parseShort} with the
      * specified radix.
      *
+     * <p>If the radix is less than {@link Character#MIN_RADIX Character.MIN_RADIX}
+     * or greater than {@link Character#MAX_RADIX Character.MAX_RADIX}, then an
+     * {@code IllegalArgumentException} is thrown.
+     *
      * @param radix the radix used to interpret the token as a short value
      * @return the {@code short} scanned from the input
      * @throws InputMismatchException
@@ -1982,6 +2004,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      *         regular expression, or is out of range
      * @throws NoSuchElementException if input is exhausted
      * @throws IllegalStateException if this scanner is closed
+     * @throws IllegalArgumentException if the radix is out of range
      */
     public short nextShort(int radix) {
         // Check cached result
@@ -2023,10 +2046,15 @@ public final class Scanner implements Iterator<String>, Closeable {
      * interpreted as an int value in the specified radix using the
      * {@link #nextInt} method. The scanner does not advance past any input.
      *
+     * <p>If the radix is less than {@link Character#MIN_RADIX Character.MIN_RADIX}
+     * or greater than {@link Character#MAX_RADIX Character.MAX_RADIX}, then an
+     * {@code IllegalArgumentException} is thrown.
+     *
      * @param radix the radix used to interpret the token as an int value
      * @return true if and only if this scanner's next token is a valid
      *         int value
      * @throws IllegalStateException if this scanner is closed
+     * @throws IllegalArgumentException if the radix is out of range
      */
     public boolean hasNextInt(int radix) {
         setRadix(radix);
@@ -2105,6 +2133,10 @@ public final class Scanner implements Iterator<String>, Closeable {
      * {@link Integer#parseInt(String, int) Integer.parseInt} with the
      * specified radix.
      *
+     * <p>If the radix is less than {@link Character#MIN_RADIX Character.MIN_RADIX}
+     * or greater than {@link Character#MAX_RADIX Character.MAX_RADIX}, then an
+     * {@code IllegalArgumentException} is thrown.
+     *
      * @param radix the radix used to interpret the token as an int value
      * @return the {@code int} scanned from the input
      * @throws InputMismatchException
@@ -2112,6 +2144,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      *         regular expression, or is out of range
      * @throws NoSuchElementException if input is exhausted
      * @throws IllegalStateException if this scanner is closed
+     * @throws IllegalArgumentException if the radix is out of range
      */
     public int nextInt(int radix) {
         // Check cached result
@@ -2153,10 +2186,15 @@ public final class Scanner implements Iterator<String>, Closeable {
      * interpreted as a long value in the specified radix using the
      * {@link #nextLong} method. The scanner does not advance past any input.
      *
+     * <p>If the radix is less than {@link Character#MIN_RADIX Character.MIN_RADIX}
+     * or greater than {@link Character#MAX_RADIX Character.MAX_RADIX}, then an
+     * {@code IllegalArgumentException} is thrown.
+     *
      * @param radix the radix used to interpret the token as a long value
      * @return true if and only if this scanner's next token is a valid
      *         long value
      * @throws IllegalStateException if this scanner is closed
+     * @throws IllegalArgumentException if the radix is out of range
      */
     public boolean hasNextLong(int radix) {
         setRadix(radix);
@@ -2211,6 +2249,10 @@ public final class Scanner implements Iterator<String>, Closeable {
      * {@link Long#parseLong(String, int) Long.parseLong} with the
      * specified radix.
      *
+     * <p>If the radix is less than {@link Character#MIN_RADIX Character.MIN_RADIX}
+     * or greater than {@link Character#MAX_RADIX Character.MAX_RADIX}, then an
+     * {@code IllegalArgumentException} is thrown.
+     *
      * @param radix the radix used to interpret the token as an int value
      * @return the {@code long} scanned from the input
      * @throws InputMismatchException
@@ -2218,6 +2260,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      *         regular expression, or is out of range
      * @throws NoSuchElementException if input is exhausted
      * @throws IllegalStateException if this scanner is closed
+     * @throws IllegalArgumentException if the radix is out of range
      */
     public long nextLong(int radix) {
         // Check cached result
@@ -2450,10 +2493,15 @@ public final class Scanner implements Iterator<String>, Closeable {
      * the {@link #nextBigInteger} method. The scanner does not advance past
      * any input.
      *
+     * <p>If the radix is less than {@link Character#MIN_RADIX Character.MIN_RADIX}
+     * or greater than {@link Character#MAX_RADIX Character.MAX_RADIX}, then an
+     * {@code IllegalArgumentException} is thrown.
+     *
      * @param radix the radix used to interpret the token as an integer
      * @return true if and only if this scanner's next token is a valid
      *         {@code BigInteger}
      * @throws IllegalStateException if this scanner is closed
+     * @throws IllegalArgumentException if the radix is out of range
      */
     public boolean hasNextBigInteger(int radix) {
         setRadix(radix);
@@ -2504,6 +2552,10 @@ public final class Scanner implements Iterator<String>, Closeable {
      * java.math.BigInteger#BigInteger(java.lang.String)
      * BigInteger(String, int)} constructor with the specified radix.
      *
+     * <p>If the radix is less than {@link Character#MIN_RADIX Character.MIN_RADIX}
+     * or greater than {@link Character#MAX_RADIX Character.MAX_RADIX}, then an
+     * {@code IllegalArgumentException} is thrown.
+     *
      * @param radix the radix used to interpret the token
      * @return the {@code BigInteger} scanned from the input
      * @throws InputMismatchException
@@ -2511,6 +2563,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      *         regular expression, or is out of range
      * @throws NoSuchElementException if the input is exhausted
      * @throws IllegalStateException if this scanner is closed
+     * @throws IllegalArgumentException if the radix is out of range
      */
     public BigInteger nextBigInteger(int radix) {
         // Check cached result

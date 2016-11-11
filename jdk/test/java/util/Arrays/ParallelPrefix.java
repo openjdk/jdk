@@ -26,7 +26,6 @@
  * @summary unit test for Arrays.ParallelPrefix().
  * @author Tristan Yan
  * @run testng ParallelPrefix
- * @key intermittent
  */
 
 import java.util.Arrays;

@@ -786,7 +786,7 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of() {
-        return new ImmutableCollections.List0<>();
+        return ImmutableCollections.List0.instance();
     }
 
     /**
@@ -1030,7 +1030,7 @@ public interface List<E> extends Collection<E> {
         Objects.requireNonNull(elements);
         switch (elements.length) {
             case 0:
-                return new ImmutableCollections.List0<>();
+                return ImmutableCollections.List0.instance();
             case 1:
                 return new ImmutableCollections.List1<>(elements[0]);
             case 2:

@@ -1328,7 +1328,7 @@ public class ClassReader {
         } else {
             ((ClassType)sym.type).setEnclosingType(Type.noType);
         }
-        enterTypevars(self);
+        enterTypevars(self, self.type);
         if (!missingTypeVariables.isEmpty()) {
             ListBuffer<Type> typeVars =  new ListBuffer<>();
             for (Type typevar : missingTypeVariables) {
@@ -2353,19 +2353,17 @@ public class ClassReader {
     /** Enter type variables of this classtype and all enclosing ones in
      *  `typevars'.
      */
-    protected void enterTypevars(Type t) {
-        if (t.getEnclosingType() != null && t.getEnclosingType().hasTag(CLASS))
-            enterTypevars(t.getEnclosingType());
-        for (List<Type> xs = t.getTypeArguments(); xs.nonEmpty(); xs = xs.tail)
-            typevars.enter(xs.head.tsym);
-    }
-
-    protected void enterTypevars(Symbol sym) {
-        if (sym.owner.kind == MTH) {
-            enterTypevars(sym.owner);
-            enterTypevars(sym.owner.owner);
+    protected void enterTypevars(Symbol sym, Type t) {
+        if (t.getEnclosingType() != null) {
+            if (!t.getEnclosingType().hasTag(TypeTag.NONE)) {
+                enterTypevars(sym.owner, t.getEnclosingType());
+            }
+        } else if (sym.kind == MTH && !sym.isStatic()) {
+            enterTypevars(sym.owner, sym.owner.type);
         }
-        enterTypevars(sym.type);
+        for (List<Type> xs = t.getTypeArguments(); xs.nonEmpty(); xs = xs.tail) {
+            typevars.enter(xs.head.tsym);
+        }
     }
 
     protected ClassSymbol enterClass(Name name) {
@@ -2388,7 +2386,7 @@ public class ClassReader {
         // prepare type variable table
         typevars = typevars.dup(currentOwner);
         if (ct.getEnclosingType().hasTag(CLASS))
-            enterTypevars(ct.getEnclosingType());
+            enterTypevars(c.owner, ct.getEnclosingType());
 
         // read flags, or skip if this is an inner class
         long f = nextChar();
@@ -2545,6 +2543,11 @@ public class ClassReader {
                     types.subst(ct.supertype_field, missing, found);
                 ct.interfaces_field =
                     types.subst(ct.interfaces_field, missing, found);
+                ct.typarams_field =
+                    types.substBounds(ct.typarams_field, missing, found);
+                for (List<Type> types = ct.typarams_field; types.nonEmpty(); types = types.tail) {
+                    types.head.tsym.type = types.head;
+                }
             } else if (missingTypeVariables.isEmpty() !=
                        foundTypeVariables.isEmpty()) {
                 Name name = missingTypeVariables.head.tsym.name;

@@ -57,7 +57,15 @@ public final class ModuleInfoWriter {
         cw.visit(Opcodes.V1_9, ACC_MODULE, name, null, null, null);
 
         cw.visitAttribute(new ModuleAttribute(md));
-        cw.visitAttribute(new ConcealedPackagesAttribute(md.conceals()));
+
+        // for tests: write the ConcealedPackages attribute when there are non-exported packages
+        long nExportedPackages = md.exports().stream()
+                .map(ModuleDescriptor.Exports::source)
+                .distinct()
+                .count();
+        if (md.packages().size() > nExportedPackages)
+            cw.visitAttribute(new ConcealedPackagesAttribute(md.packages()));
+
         md.version().ifPresent(v -> cw.visitAttribute(new VersionAttribute(v)));
         md.mainClass().ifPresent(mc -> cw.visitAttribute(new MainClassAttribute(mc)));
 

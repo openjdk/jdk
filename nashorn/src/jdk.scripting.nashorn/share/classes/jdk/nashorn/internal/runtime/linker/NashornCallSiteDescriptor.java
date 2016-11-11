@@ -25,6 +25,12 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
+import static jdk.dynalink.StandardNamespace.ELEMENT;
+import static jdk.dynalink.StandardNamespace.METHOD;
+import static jdk.dynalink.StandardNamespace.PROPERTY;
+import static jdk.dynalink.StandardOperation.GET;
+import static jdk.dynalink.StandardOperation.SET;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
@@ -40,10 +46,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 import jdk.dynalink.CallSiteDescriptor;
-import jdk.dynalink.CompositeOperation;
 import jdk.dynalink.NamedOperation;
+import jdk.dynalink.NamespaceOperation;
 import jdk.dynalink.Operation;
 import jdk.dynalink.SecureLookupSupplier;
+import jdk.dynalink.StandardNamespace;
 import jdk.dynalink.StandardOperation;
 import jdk.nashorn.internal.ir.debug.NashornTextifier;
 import jdk.nashorn.internal.runtime.AccessControlContextFactory;
@@ -78,12 +85,12 @@ public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
 
     // Correspond to the operation indices above.
     private static final Operation[] OPERATIONS = new Operation[] {
-        new CompositeOperation(StandardOperation.GET_PROPERTY, StandardOperation.GET_ELEMENT, StandardOperation.GET_METHOD),
-        new CompositeOperation(StandardOperation.GET_ELEMENT, StandardOperation.GET_PROPERTY, StandardOperation.GET_METHOD),
-        new CompositeOperation(StandardOperation.GET_METHOD, StandardOperation.GET_PROPERTY, StandardOperation.GET_ELEMENT),
-        new CompositeOperation(StandardOperation.GET_METHOD, StandardOperation.GET_ELEMENT, StandardOperation.GET_PROPERTY),
-        new CompositeOperation(StandardOperation.SET_PROPERTY, StandardOperation.SET_ELEMENT),
-        new CompositeOperation(StandardOperation.SET_ELEMENT, StandardOperation.SET_PROPERTY),
+        GET.withNamespaces(PROPERTY, ELEMENT, METHOD),
+        GET.withNamespaces(ELEMENT, PROPERTY, METHOD),
+        GET.withNamespaces(METHOD, PROPERTY, ELEMENT),
+        GET.withNamespaces(METHOD, ELEMENT, PROPERTY),
+        SET.withNamespaces(PROPERTY, ELEMENT),
+        SET.withNamespaces(ELEMENT, PROPERTY),
         StandardOperation.CALL,
         StandardOperation.NEW
     };
@@ -248,7 +255,7 @@ public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
                 return existing;
             }
         }
-        final NamedOperation newOp = new NamedOperation(baseOp, name);
+        final NamedOperation newOp = baseOp.named(name);
         namedOps.put(name, new WeakReference<>(newOp));
         return newOp;
     }
@@ -288,16 +295,6 @@ public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
     }
 
     /**
-     * Returns the named operand in this descriptor's operation. Equivalent to
-     * {@code ((NamedOperation)getOperation()).getName().toString()} for call
-     * sites with a named operand. For call sites without named operands returns null.
-     * @return the named operand in this descriptor's operation.
-     */
-    public String getOperand() {
-        return getOperand(this);
-    }
-
-    /**
      * Returns the named operand in the passed descriptor's operation.
      * Equivalent to
      * {@code ((NamedOperation)desc.getOperation()).getName().toString()} for
@@ -311,70 +308,63 @@ public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
         return operation instanceof NamedOperation ? ((NamedOperation)operation).getName().toString() : null;
     }
 
-    /**
-     * Returns the first operation in this call site descriptor's potentially
-     * composite operation. E.g. if this call site descriptor has a composite
-     * operation {@code GET_PROPERTY|GET_METHOD|GET_ELEM}, it will return
-     * {@code GET_PROPERTY}. Nashorn - being a ECMAScript engine - does not
-     * distinguish between property, element, and method namespace; ECMAScript
-     * objects just have one single property namespace for all these, therefore
-     * it is largely irrelevant what the composite operation is structured like;
-     * if the first operation can't be satisfied, neither can the others. The
-     * first operation is however sometimes used to slightly alter the
-     * semantics; for example, a distinction between {@code GET_PROPERTY} and
-     * {@code GET_METHOD} being the first operation can translate into whether
-     * {@code "__noSuchProperty__"} or {@code "__noSuchMethod__"} will be
-     * executed in case the property is not found. Note that if a call site
-     * descriptor comes from outside of Nashorn, its class will be different,
-     * and there is no guarantee about the way it composes its operations. For
-     * that reason, for potentially foreign call site descriptors you should use
-     * {@link #getFirstStandardOperation(CallSiteDescriptor)} instead.
-     * @return the first operation in this call site descriptor. Note this will
-     * always be a {@code StandardOperation} as Nashorn internally only uses
-     * standard operations.
-     */
-    public StandardOperation getFirstOperation() {
-        final Operation base = NamedOperation.getBaseOperation(getOperation());
-        if (base instanceof CompositeOperation) {
-            return (StandardOperation)((CompositeOperation)base).getOperation(0);
-        }
-        return (StandardOperation)base;
+    private static StandardNamespace findFirstStandardNamespace(final CallSiteDescriptor desc) {
+        return StandardNamespace.findFirst(desc.getOperation());
     }
 
     /**
-     * Returns the first standard operation in the (potentially composite)
-     * operation of the passed call site descriptor.
+     * Returns true if the operation of the call descriptor is operating on the method namespace first.
+     * @param desc the call descriptor in question.
+     * @return true if the operation of the call descriptor is operating on the method namespace first.
+     */
+    public static boolean isMethodFirstOperation(final CallSiteDescriptor desc) {
+        return findFirstStandardNamespace(desc) == StandardNamespace.METHOD;
+    }
+
+    /**
+     * Returns true if there's a namespace operation in the call descriptor and it is operating on at least
+     * one {@link StandardNamespace}. This method is only needed for exported linkers, since internal linkers
+     * always operate on Nashorn-generated call sites, and they always operate on standard namespaces only.
+     * @param desc the call descriptor in question.
+     * @return true if the operation of the call descriptor is operating on at least one standard namespace.
+     */
+    public static boolean hasStandardNamespace(final CallSiteDescriptor desc) {
+        return findFirstStandardNamespace(desc) != null;
+    }
+
+    /**
+     * Returns the base operation in this call site descriptor after unwrapping it from both a named operation
+     * and a namespace operation.
      * @param desc the call site descriptor.
-     * @return Returns the first standard operation in the (potentially
-     * composite) operation of the passed call site descriptor. Can return null
-     * if the call site contains no standard operations.
+     * @return the base operation in this call site descriptor.
      */
-    public static StandardOperation getFirstStandardOperation(final CallSiteDescriptor desc) {
-        final Operation base = NamedOperation.getBaseOperation(desc.getOperation());
-        if (base instanceof StandardOperation) {
-            return (StandardOperation)base;
-        } else if (base instanceof CompositeOperation) {
-            final CompositeOperation cop = (CompositeOperation)base;
-            for(int i = 0; i < cop.getOperationCount(); ++i) {
-                final Operation op = cop.getOperation(i);
-                if (op instanceof StandardOperation) {
-                    return (StandardOperation)op;
-                }
-            }
-        }
-        return null;
+    public static Operation getBaseOperation(final CallSiteDescriptor desc) {
+        return NamespaceOperation.getBaseOperation(NamedOperation.getBaseOperation(desc.getOperation()));
     }
 
     /**
-     * Returns true if the passed call site descriptor's operation contains (or
-     * is) the specified standard operation.
+     * Returns the standard operation that is the base operation in this call site descriptor.
+     * @param desc the call site descriptor.
+     * @return the standard operation that is the base operation in this call site descriptor.
+     * @throws ClassCastException if the base operation is not a standard operation. This method is only
+     * safe to use when the base operation is known to be a standard operation (e.g. all Nashorn call sites
+     * are such, so it's safe to use from internal linkers).
+     */
+    public static StandardOperation getStandardOperation(final CallSiteDescriptor desc) {
+        return (StandardOperation)getBaseOperation(desc);
+    }
+
+    /**
+     * Returns true if the passed call site descriptor contains the specified standard operation on the
+     * specified standard namespace.
      * @param desc the call site descriptor.
      * @param operation the operation whose presence is tested.
-     * @return Returns true if the call site descriptor's operation contains (or
-     * is) the specified standard operation.
+     * @param namespace the namespace on which the operation operates.
+     * @return Returns true if the call site descriptor contains the specified standard operation on the
+     * specified standard namespace.
      */
-    public static boolean contains(final CallSiteDescriptor desc, final StandardOperation operation) {
-        return CompositeOperation.contains(NamedOperation.getBaseOperation(desc.getOperation()), operation);
+    public static boolean contains(final CallSiteDescriptor desc, final StandardOperation operation, final StandardNamespace namespace) {
+        return NamespaceOperation.contains(NamedOperation.getBaseOperation(desc.getOperation()), operation, namespace);
     }
 
     /**
@@ -383,8 +373,8 @@ public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
      * @param obj object on which CALL or NEW is used
      * @return error message
      */
-    public String getFunctionErrorMessage(final Object obj) {
-        final String funcDesc = getOperand();
+    private String getFunctionErrorMessage(final Object obj) {
+        final String funcDesc = getOperand(this);
         return funcDesc != null? funcDesc : ScriptRuntime.safeToString(obj);
     }
 
@@ -551,5 +541,10 @@ public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
     @Override
     public CallSiteDescriptor changeMethodTypeInternal(final MethodType newMethodType) {
         return get(getLookupPrivileged(), getOperation(), newMethodType, flags);
+    }
+
+    @Override
+    protected CallSiteDescriptor changeOperationInternal(final Operation newOperation) {
+        return get(getLookupPrivileged(), newOperation, getMethodType(), flags);
     }
 }

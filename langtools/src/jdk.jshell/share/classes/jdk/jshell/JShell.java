@@ -47,7 +47,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import jdk.internal.jshell.debug.InternalDebugControl;
 import jdk.jshell.Snippet.Status;
-import jdk.jshell.execution.JDIDefaultExecutionControl;
+import jdk.jshell.execution.JdiDefaultExecutionControl;
 import jdk.jshell.spi.ExecutionControl.EngineTerminationException;
 import jdk.jshell.spi.ExecutionControl.ExecutionControlException;
 import jdk.jshell.spi.ExecutionEnv;
@@ -117,10 +117,9 @@ public class JShell implements AutoCloseable {
         this.extraRemoteVMOptions = b.extraRemoteVMOptions;
         this.extraCompilerOptions = b.extraCompilerOptions;
         this.executionControlGenerator = b.executionControlGenerator==null
-                ? failOverExecutionControlGenerator(
-                        JDIDefaultExecutionControl.launch(),
-                        JDIDefaultExecutionControl.listen("localhost"),
-                        JDIDefaultExecutionControl.listen(null))
+                ? failOverExecutionControlGenerator(JdiDefaultExecutionControl.launch(),
+                        JdiDefaultExecutionControl.listen("localhost"),
+                        JdiDefaultExecutionControl.listen(null))
                 : b.executionControlGenerator;
 
         this.maps = new SnippetMaps(this);
@@ -506,6 +505,9 @@ public class JShell implements AutoCloseable {
         if (!closed) {
             closeDown();
             executionControl().close();
+            if (sourceCodeAnalysis != null) {
+                sourceCodeAnalysis.close();
+            }
         }
     }
 

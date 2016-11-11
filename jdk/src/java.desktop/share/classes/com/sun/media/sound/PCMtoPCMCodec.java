@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,32 +30,26 @@ import java.util.Objects;
 import java.util.Vector;
 
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioFormat.Encoding;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.spi.FormatConversionProvider;
 
 /**
  * Converts among signed/unsigned and little/big endianness of sampled.
  *
  * @author Jan Borgersen
  */
-public final class PCMtoPCMCodec extends SunCodec {
+public final class PCMtoPCMCodec extends FormatConversionProvider {
 
-    private static final AudioFormat.Encoding[] inputEncodings = {
-        AudioFormat.Encoding.PCM_SIGNED,
-        AudioFormat.Encoding.PCM_UNSIGNED,
-    };
+    @Override
+    public AudioFormat.Encoding[] getSourceEncodings() {
+        return new Encoding[]{Encoding.PCM_SIGNED, Encoding.PCM_UNSIGNED};
+    }
 
-    private static final AudioFormat.Encoding[] outputEncodings = {
-        AudioFormat.Encoding.PCM_SIGNED,
-        AudioFormat.Encoding.PCM_UNSIGNED,
-    };
-
-    /**
-     * Constructs a new PCMtoPCM codec object.
-     */
-    public PCMtoPCMCodec() {
-
-        super( inputEncodings, outputEncodings);
+    @Override
+    public AudioFormat.Encoding[] getTargetEncodings() {
+        return getSourceEncodings();
     }
 
     @Override

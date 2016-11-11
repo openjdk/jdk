@@ -22,11 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include <windows.h>
-#include <winsock2.h>
-#include "jni.h"
 #include "net_util.h"
+
 #include "java_net_DualStackPlainSocketImpl.h"
+#include "java_net_SocketOptions.h"
 
 #define SET_BLOCKING 0
 #define SET_NONBLOCKING 1

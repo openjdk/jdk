@@ -87,6 +87,7 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.util.Collections;
 import java.util.Set;
 import jdk.dynalink.DynamicLinkerFactory;
+import jdk.dynalink.StandardNamespace;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.GuardingDynamicLinker;
@@ -102,21 +103,18 @@ import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
  * <ul>
  * <li>expose all public methods of form {@code setXxx()}, {@code getXxx()},
  * and {@code isXxx()} as property setters and getters for
- * {@link StandardOperation#SET_PROPERTY} and {@link StandardOperation#GET_PROPERTY}
- * operations;</li>
- * <li>expose all public methods for invocation through
- * {@link StandardOperation#CALL_METHOD} operation;</li>
+ * {@link StandardOperation#SET} and {@link StandardOperation#GET} operations in the
+ * {@link StandardNamespace#PROPERTY} namespace;</li>
  * <li>expose all public methods for retrieval for
- * {@link StandardOperation#GET_METHOD} operation; the methods thus retrieved
- * can then be invoked using {@link StandardOperation#CALL}.</li>
+ * {@link StandardOperation#GET} operation in the {@link StandardNamespace#METHOD} namespace;
+ * the methods thus retrieved can then be invoked using {@link StandardOperation#CALL}.</li>
  * <li>expose all public fields as properties, unless there are getters or
  * setters for the properties of the same name;</li>
- * <li>expose {@link StandardOperation#GET_LENGTH},
- * {@link StandardOperation#GET_ELEMENT} and {@link StandardOperation#SET_ELEMENT}
- * on native Java arrays, as well as {@link java.util.List} and
- * {@link java.util.Map} objects; ({@link StandardOperation#GET_LENGTH} works on
- * any {@link java.util.Collection});</li>
- * <li>expose a virtual property named {@code length} on Java arrays;</li>
+ * <li> expose elements of native Java arrays, {@link java.util.List} and {@link java.util.Map} objects as
+ * {@link StandardOperation#GET} and {@link StandardOperation#SET} operations in the
+ * {@link StandardNamespace#ELEMENT} namespace;</li>
+ * <li>expose a virtual property named {@code length} on Java arrays, {@link java.util.Collection} and
+ * {@link java.util.Map} objects;</li>
  * <li>expose {@link StandardOperation#NEW} on instances of {@link StaticClass}
  * as calls to constructors, including those static class objects that represent
  * Java arrays (their constructors take a single {@code int} parameter
@@ -130,10 +128,10 @@ import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
  * <p><strong>Overloaded method resolution</strong> is performed automatically
  * for property setters, methods, and constructors. Additionally, manual
  * overloaded method selection is supported by having a call site specify a name
- * for a method that contains an explicit signature, i.e.
- * {@code NamedMethod(GET_METHOD, "parseInt(String,int)")}. You can use
- * non-qualified class names in such signatures regardless of those classes'
- * packages, they will match any class with the same non-qualified name. You
+ * for a method that contains an explicit signature, e.g.
+ * {@code StandardOperation.GET.withNamespace(METHOD).named("parseInt(String,int)")}
+ * You can use non-qualified class names in such signatures regardless of those
+ * classes' packages, they will match any class with the same non-qualified name. You
  * only have to use a fully qualified class name in case non-qualified class
  * names would cause selection ambiguity (that is extremely rare). Overloaded
  * resolution for constructors is not automatic as there is no logical place to
@@ -235,7 +233,7 @@ public class BeansLinker implements GuardingDynamicLinker {
 
     /**
      * Returns true if the object is a Java dynamic method (e.g., one
-     * obtained through a {@code GET_METHOD} operation on a Java object or
+     * obtained through a {@code GET:METHOD} operation on a Java object or
      * {@link StaticClass} or through
      * {@link #getConstructorMethod(Class, String)}.
      *

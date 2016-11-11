@@ -853,9 +853,9 @@ public class Flow {
             List<Type> caughtPrev = caught;
             ListBuffer<FlowPendingExit> pendingExitsPrev = pendingExits;
             Lint lintPrev = lint;
-
+            boolean anonymousClass = tree.name == names.empty;
             pendingExits = new ListBuffer<>();
-            if (tree.name != names.empty) {
+            if (!anonymousClass) {
                 caught = List.nil();
             }
             classDef = tree;
@@ -874,7 +874,7 @@ public class Flow {
 
                 // add intersection of all thrown clauses of initial constructors
                 // to set of caught exceptions, unless class is anonymous.
-                if (tree.name != names.empty) {
+                if (!anonymousClass) {
                     boolean firstConstructor = true;
                     for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
                         if (TreeInfo.isInitialConstructor(l.head)) {
@@ -905,10 +905,11 @@ public class Flow {
                 // Changing the throws clause on the fly is okay here because
                 // the anonymous constructor can't be invoked anywhere else,
                 // and its type hasn't been cached.
-                if (tree.name == names.empty) {
+                if (anonymousClass) {
                     for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
-                        if (TreeInfo.isInitialConstructor(l.head)) {
+                        if (TreeInfo.isConstructor(l.head)) {
                             JCMethodDecl mdef = (JCMethodDecl)l.head;
+                            scan(mdef);
                             mdef.thrown = make.Types(thrown);
                             mdef.sym.type = types.createMethodTypeWithThrown(mdef.sym.type, thrown);
                         }
@@ -918,6 +919,8 @@ public class Flow {
 
                 // process all the methods
                 for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
+                    if (anonymousClass && TreeInfo.isConstructor(l.head))
+                        continue; // there can never be an uncaught exception.
                     if (l.head.hasTag(METHODDEF)) {
                         scan(l.head);
                         errorUncaught();

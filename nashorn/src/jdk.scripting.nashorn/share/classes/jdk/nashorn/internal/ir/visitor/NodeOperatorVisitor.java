@@ -45,7 +45,7 @@ public abstract class NodeOperatorVisitor<T extends LexicalContext> extends Node
     }
 
     @Override
-    public final boolean enterUnaryNode(final UnaryNode unaryNode) {
+    public boolean enterUnaryNode(final UnaryNode unaryNode) {
         switch (unaryNode.tokenType()) {
         case ADD:
             return enterADD(unaryNode);

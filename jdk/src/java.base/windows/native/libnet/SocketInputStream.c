@@ -22,24 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-#include <windows.h>
-#include <winsock2.h>
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <malloc.h>
-#include <sys/types.h>
-
-#include "java_net_SocketInputStream.h"
 
 #include "net_util.h"
-#include "jni_util.h"
+
+#include "java_net_SocketInputStream.h"
 
 /*************************************************************************
  * SocketInputStream
  */
-
 static jfieldID IO_fd_fdID;
 
 /*

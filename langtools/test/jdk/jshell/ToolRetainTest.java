@@ -23,13 +23,14 @@
 
 /*
  * @test
- * @bug 8157200 8163840
+ * @bug 8157200 8163840 8154513
  * @summary Tests of what information is retained across jshell tool runs
  * @modules jdk.jshell/jdk.internal.jshell.tool
  * @build ToolRetainTest ReplToolTesting
  * @run testng ToolRetainTest
  */
 
+import java.util.Locale;
 import org.testng.annotations.Test;
 
 @Test
@@ -62,14 +63,14 @@ public class ToolRetainTest extends ReplToolTesting {
                 (a) -> assertCommand(a, "/set mode -retain trm1", ""),
                 (a) -> assertCommand(a, "/exit", "")
         );
-        test(
+        test(Locale.ROOT, true, new String[0], "",
                 (a) -> assertCommand(a, "/set mode trm2 -quiet", ""),
                 (a) -> assertCommand(a, "/set format trm2 display '{name}={value}'", ""),
                 (a) -> assertCommand(a, "int x = 45", "x:45"),
                 (a) -> assertCommand(a, "/set mode -retain trm2", ""),
                 (a) -> assertCommand(a, "/exit", "")
         );
-        test(
+        test(Locale.ROOT, true, new String[0], "",
                 (a) -> assertCommandOutputContains(a, "/set mode trm1",
                         "/set format trm1 display \"{name}:{value}\""),
                 (a) -> assertCommand(a, "/set format trm2 display",

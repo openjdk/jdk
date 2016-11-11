@@ -1286,7 +1286,7 @@ public interface Map<K, V> {
      * @since 9
      */
     static <K, V> Map<K, V> of() {
-        return new ImmutableCollections.Map0<>();
+        return ImmutableCollections.Map0.instance();
     }
 
     /**
@@ -1604,7 +1604,7 @@ public interface Map<K, V> {
     static <K, V> Map<K, V> ofEntries(Entry<? extends K, ? extends V>... entries) {
         Objects.requireNonNull(entries);
         if (entries.length == 0) {
-            return new ImmutableCollections.Map0<>();
+            return ImmutableCollections.Map0.instance();
         } else if (entries.length == 1) {
             return new ImmutableCollections.Map1<>(entries[0].getKey(),
                                                    entries[0].getValue());

@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8145464 8164837 8165646
  * @summary Basic test of jdeprscan's scanning phase.
  * @modules jdk.jdeps/com.sun.tools.jdeprscan
  * @library ../../../cases
@@ -89,6 +90,7 @@ public class TestScan {
                 new InputStreamReader(
                     new ByteArrayInputStream(bytes), StandardCharsets.UTF_8))
                         .lines()
+                        .filter(line -> !line.endsWith(":"))
                         .map(line -> line.split(" +"))
                         .map(array -> array[1])
                         .collect(Collectors.toSet());

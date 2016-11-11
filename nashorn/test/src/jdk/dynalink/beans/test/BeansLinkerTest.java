@@ -24,12 +24,12 @@
  */
 package jdk.dynalink.beans.test;
 
+import static jdk.dynalink.StandardNamespace.ELEMENT;
+import static jdk.dynalink.StandardNamespace.METHOD;
+import static jdk.dynalink.StandardNamespace.PROPERTY;
 import static jdk.dynalink.StandardOperation.CALL;
-import static jdk.dynalink.StandardOperation.GET_ELEMENT;
-import static jdk.dynalink.StandardOperation.GET_METHOD;
-import static jdk.dynalink.StandardOperation.GET_PROPERTY;
-import static jdk.dynalink.StandardOperation.SET_ELEMENT;
-import static jdk.dynalink.StandardOperation.SET_PROPERTY;
+import static jdk.dynalink.StandardOperation.GET;
+import static jdk.dynalink.StandardOperation.SET;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -42,12 +42,11 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jdk.dynalink.CallSiteDescriptor;
-import jdk.dynalink.CompositeOperation;
 import jdk.dynalink.DynamicLinkerFactory;
-import jdk.dynalink.NamedOperation;
+import jdk.dynalink.Namespace;
+import jdk.dynalink.NamespaceOperation;
 import jdk.dynalink.NoSuchDynamicMethodException;
 import jdk.dynalink.Operation;
-import jdk.dynalink.StandardOperation;
 import jdk.dynalink.support.SimpleRelinkableCallSite;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -67,32 +66,32 @@ public class BeansLinkerTest {
 
     @Test
     public static void testPublicFieldPropertyUnnamedGetter() {
-        testGetterPermutations(GET_PROPERTY, (op) -> Assert.assertEquals(42, call(op, new Bean1(), "answer")));
+        testGetterPermutations(PROPERTY, (op) -> Assert.assertEquals(42, call(op, new Bean1(), "answer")));
     }
 
     @Test
     public static void testPublicFieldPropertyNamedGetter() {
-        testGetterPermutations(GET_PROPERTY, (op) -> Assert.assertEquals(42, call(named("answer", op), new Bean1())));
+        testGetterPermutations(PROPERTY, (op) -> Assert.assertEquals(42, call(op.named("answer"), new Bean1())));
     }
 
     @Test
     public static void testGetterPropertyUnnamedGetter() {
-        testGetterPermutations(GET_PROPERTY, (op) -> Assert.assertEquals("bean1", call(op, new Bean1(), "name")));
+        testGetterPermutations(PROPERTY, (op) -> Assert.assertEquals("bean1", call(op, new Bean1(), "name")));
     }
 
     @Test
     public static void testGetterPropertyNamedGetter() {
-        testGetterPermutations(GET_PROPERTY, (op) -> Assert.assertEquals("bean1", call(named("name", op), new Bean1())));
+        testGetterPermutations(PROPERTY, (op) -> Assert.assertEquals("bean1", call(op.named("name"), new Bean1())));
     }
 
     @Test
     public static void testMethodUnnamedGetter() {
-        testGetterPermutations(GET_METHOD, (op) -> Assert.assertEquals("bar-foo", call(call(op, new Bean1(), "someMethod"), new Bean1(), "bar")));
+        testGetterPermutations(METHOD, (op) -> Assert.assertEquals("bar-foo", call(call(op, new Bean1(), "someMethod"), new Bean1(), "bar")));
     }
 
     @Test
     public static void testMethodNamedGetter() {
-        testGetterPermutations(GET_METHOD, (op) -> Assert.assertEquals("bar-foo", call(call(named("someMethod", op), new Bean1()), new Bean1(), "bar")));
+        testGetterPermutations(METHOD, (op) -> Assert.assertEquals("bar-foo", call(call(op.named("someMethod"), new Bean1()), new Bean1(), "bar")));
     }
 
     private static final Map<String, String> MAP1 = new HashMap<>();
@@ -102,12 +101,12 @@ public class BeansLinkerTest {
 
     @Test
     public static void testElementUnnamedGetter() {
-        testGetterPermutations(GET_ELEMENT, (op) -> Assert.assertEquals("bar", call(op, MAP1, "foo")));
+        testGetterPermutations(ELEMENT, (op) -> Assert.assertEquals("bar", call(op, MAP1, "foo")));
     }
 
     @Test
     public static void testElementNamedGetter() {
-        testGetterPermutations(GET_ELEMENT, (op) -> Assert.assertEquals("bar", call(named("foo", op), MAP1)));
+        testGetterPermutations(ELEMENT, (op) -> Assert.assertEquals("bar", call(op.named("foo"), MAP1)));
     }
 
     public static class Bean2 {
@@ -121,7 +120,7 @@ public class BeansLinkerTest {
 
     @Test
     public static void testUnnamedFieldSetter() {
-        testSetterPermutations(SET_PROPERTY, (op) -> {
+        testSetterPermutations(PROPERTY, (op) -> {
             final Bean2 bean2 = new Bean2();
             call(op, bean2, "answer", 12);
             Assert.assertEquals(bean2.answer, 12);
@@ -130,16 +129,16 @@ public class BeansLinkerTest {
 
     @Test
     public static void testNamedFieldSetter() {
-        testSetterPermutations(SET_PROPERTY, (op) -> {
+        testSetterPermutations(PROPERTY, (op) -> {
             final Bean2 bean2 = new Bean2();
-            call(named("answer", op), bean2, 14);
+            call(op.named("answer"), bean2, 14);
             Assert.assertEquals(bean2.answer, 14);
         });
     }
 
     @Test
     public static void testUnnamedPropertySetter() {
-        testSetterPermutations(SET_PROPERTY, (op) -> {
+        testSetterPermutations(PROPERTY, (op) -> {
             final Bean2 bean2 = new Bean2();
             call(op, bean2, "name", "boo");
             Assert.assertEquals(bean2.name, "boo");
@@ -148,14 +147,14 @@ public class BeansLinkerTest {
 
     @Test
     public static void testNamedPropertySetter() {
-        testSetterPermutations(SET_PROPERTY, (op) -> {
+        testSetterPermutations(PROPERTY, (op) -> {
             final Bean2 bean2 = new Bean2();
-            call(named("name", op), bean2, "blah");
+            call(op.named("name"), bean2, "blah");
             Assert.assertEquals(bean2.name, "blah");
         });
     }
 
-    private static final Pattern GET_ELEMENT_THEN_PROPERTY_PATTERN = Pattern.compile(".*GET_ELEMENT.*GET_PROPERTY.*");
+    private static final Pattern GET_ELEMENT_THEN_PROPERTY_PATTERN = Pattern.compile(".*ELEMENT.*PROPERTY.*");
 
     @Test
     public static void testUnnamedElementAndPropertyGetter() {
@@ -168,10 +167,10 @@ public class BeansLinkerTest {
     public static void testNamedElementAndPropertyGetter() {
         final Map<String, Object> map = new HashMap<>();
         map.put("empty", true);
-        testGetterPermutations(GET_ELEMENT_THEN_PROPERTY_PATTERN, 4, (op) -> Assert.assertEquals(true, call(named("empty", op), map)));
+        testGetterPermutations(GET_ELEMENT_THEN_PROPERTY_PATTERN, 4, (op) -> Assert.assertEquals(true, call(op.named("empty"), map)));
     }
 
-    private static final Pattern GET_PROPERTY_THEN_ELEMENT_PATTERN = Pattern.compile(".*GET_PROPERTY.*GET_ELEMENT.*");
+    private static final Pattern GET_PROPERTY_THEN_ELEMENT_PATTERN = Pattern.compile(".*PROPERTY.*ELEMENT.*");
 
     @Test
     public static void testUnnamedPropertyAndElementGetter() {
@@ -184,7 +183,7 @@ public class BeansLinkerTest {
     public static void testNamedPropertyAndElementGetter() {
         final Map<String, Object> map = new HashMap<>();
         map.put("empty", true);
-        testGetterPermutations(GET_PROPERTY_THEN_ELEMENT_PATTERN, 4, (op) -> Assert.assertEquals(false, call(named("empty", op), map)));
+        testGetterPermutations(GET_PROPERTY_THEN_ELEMENT_PATTERN, 4, (op) -> Assert.assertEquals(false, call(op.named("empty"), map)));
     }
 
     public static class MapWithProperty extends HashMap<String, Object> {
@@ -200,24 +199,24 @@ public class BeansLinkerTest {
         final MapWithProperty map = new MapWithProperty();
         map.put("name", "element");
 
-        call(ops(SET_PROPERTY, SET_ELEMENT), map, "name", "property");
+        call(SET.withNamespaces(PROPERTY, ELEMENT), map, "name", "property");
         Assert.assertEquals("property", map.name);
         Assert.assertEquals("element", map.get("name"));
 
-        call(ops(SET_ELEMENT, SET_PROPERTY), map, "name", "element2");
+        call(SET.withNamespaces(ELEMENT, PROPERTY), map, "name", "element2");
         Assert.assertEquals("property", map.name);
         Assert.assertEquals("element2", map.get("name"));
     }
 
     @Test
     public static void testMissingMembersAtLinkTime() {
-        testPermutations(GETTER_PERMUTATIONS, (op) -> expectNoSuchDynamicMethodException(()-> call(named("foo", op), new Object())));
-        testPermutations(SETTER_PERMUTATIONS, (op) -> expectNoSuchDynamicMethodException(()-> call(named("foo", op), new Object(), "newValue")));
+        testPermutations(GETTER_PERMUTATIONS, (op) -> expectNoSuchDynamicMethodException(()-> call(op.named("foo"), new Object())));
+        testPermutations(SETTER_PERMUTATIONS, (op) -> expectNoSuchDynamicMethodException(()-> call(op.named("foo"), new Object(), "newValue")));
     }
 
     @Test
     public static void testMissingMembersAtRunTime() {
-        call(GET_ELEMENT, new ArrayList<>(), "foo");
+        call(GET.withNamespace(ELEMENT), new ArrayList<>(), "foo");
         Stream.of(new HashMap(), new ArrayList(), new Object[0]).forEach((receiver) -> {
             testPermutations(GETTER_PERMUTATIONS, (op) -> { System.err.println(op + " " + receiver.getClass().getName()); Assert.assertNull(call(op, receiver, "foo"));});
             // No assertion for the setter; we just expect it to silently succeed
@@ -233,59 +232,59 @@ public class BeansLinkerTest {
         }
     }
 
-    private static Operation[] GETTER_PERMUTATIONS = new Operation[] {
-        GET_PROPERTY,
-        GET_METHOD,
-        GET_ELEMENT,
-        ops(GET_PROPERTY, GET_ELEMENT),
-        ops(GET_PROPERTY, GET_METHOD),
-        ops(GET_ELEMENT,  GET_PROPERTY),
-        ops(GET_ELEMENT,  GET_METHOD),
-        ops(GET_METHOD,   GET_PROPERTY),
-        ops(GET_METHOD,   GET_ELEMENT),
-        ops(GET_PROPERTY, GET_ELEMENT,  GET_METHOD),
-        ops(GET_PROPERTY, GET_METHOD,   GET_ELEMENT),
-        ops(GET_ELEMENT,  GET_PROPERTY, GET_METHOD),
-        ops(GET_ELEMENT,  GET_METHOD,   GET_PROPERTY),
-        ops(GET_METHOD,   GET_PROPERTY, GET_ELEMENT),
-        ops(GET_METHOD,   GET_ELEMENT,  GET_PROPERTY),
+    private static NamespaceOperation[] GETTER_PERMUTATIONS = new NamespaceOperation[] {
+        GET.withNamespaces(PROPERTY),
+        GET.withNamespaces(METHOD),
+        GET.withNamespaces(ELEMENT),
+        GET.withNamespaces(PROPERTY, ELEMENT),
+        GET.withNamespaces(PROPERTY, METHOD),
+        GET.withNamespaces(ELEMENT,  PROPERTY),
+        GET.withNamespaces(ELEMENT,  METHOD),
+        GET.withNamespaces(METHOD,   PROPERTY),
+        GET.withNamespaces(METHOD,   ELEMENT),
+        GET.withNamespaces(PROPERTY, ELEMENT,  METHOD),
+        GET.withNamespaces(PROPERTY, METHOD,   ELEMENT),
+        GET.withNamespaces(ELEMENT,  PROPERTY, METHOD),
+        GET.withNamespaces(ELEMENT,  METHOD,   PROPERTY),
+        GET.withNamespaces(METHOD,   PROPERTY, ELEMENT),
+        GET.withNamespaces(METHOD,   ELEMENT,  PROPERTY)
     };
 
-    private static Operation[] SETTER_PERMUTATIONS = new Operation[] {
-        SET_PROPERTY,
-        SET_ELEMENT,
-        ops(SET_PROPERTY, SET_ELEMENT),
-        ops(SET_ELEMENT,  SET_PROPERTY)
+    private static NamespaceOperation[] SETTER_PERMUTATIONS = new NamespaceOperation[] {
+        SET.withNamespaces(PROPERTY),
+        SET.withNamespaces(ELEMENT),
+        SET.withNamespaces(PROPERTY, ELEMENT),
+        SET.withNamespaces(ELEMENT, PROPERTY)
     };
 
-    private static void testPermutations(final Operation[] ops, final StandardOperation requiredOp, final int expectedCount, final Consumer<Operation> test) {
-        testPermutationsWithFilter(ops, (op)->CompositeOperation.contains(op, requiredOp), expectedCount, test);
+    private static void testPermutations(final NamespaceOperation[] ops, final Operation requiredOp, final Namespace requiredNamespace, final int expectedCount, final Consumer<NamespaceOperation> test) {
+        testPermutationsWithFilter(ops, (op)->NamespaceOperation.contains(op, requiredOp, requiredNamespace), expectedCount, test);
     }
 
-    private static void testPermutations(final Operation[] ops, final Pattern regex, final int expectedCount, final Consumer<Operation> test) {
+    private static void testPermutations(final NamespaceOperation[] ops, final Pattern regex, final int expectedCount, final Consumer<NamespaceOperation> test) {
         testPermutationsWithFilter(ops, (op)->regex.matcher(op.toString()).matches(), expectedCount, test);
     }
 
-    private static void testPermutations(final Operation[] ops, final Consumer<Operation> test) {
+    private static void testPermutations(final NamespaceOperation[] ops, final Consumer<NamespaceOperation> test) {
         testPermutationsWithFilter(ops, (op)->true, ops.length, test);
     }
 
-    private static void testPermutationsWithFilter(final Operation[] ops, final Predicate<Operation> filter, final int expectedCount, final Consumer<Operation> test) {
+    private static void testPermutationsWithFilter(final NamespaceOperation[] ops, final Predicate<NamespaceOperation> filter, final int expectedCount, final Consumer<NamespaceOperation> test) {
         final int[] counter = new int[1];
         Stream.of(ops).filter(filter).forEach((op)-> { counter[0]++; test.accept(op); });
         Assert.assertEquals(counter[0], expectedCount);
     }
 
-    private static void testGetterPermutations(final StandardOperation requiredOp, final Consumer<Operation> test) {
-        testPermutations(GETTER_PERMUTATIONS, requiredOp, 11, test);
+    private static void testGetterPermutations(final Namespace requiredNamespace, final Consumer<NamespaceOperation> test) {
+        testPermutations(GETTER_PERMUTATIONS, GET, requiredNamespace, 11, test);
     }
 
-    private static void testGetterPermutations(final Pattern regex, final int expectedCount, final Consumer<Operation> test) {
+    private static void testGetterPermutations(final Pattern regex, final int expectedCount, final Consumer<NamespaceOperation> test) {
         testPermutations(GETTER_PERMUTATIONS, regex, expectedCount, test);
     }
 
-    private static void testSetterPermutations(final StandardOperation requiredOp, final Consumer<Operation> test) {
-        testPermutations(SETTER_PERMUTATIONS, requiredOp, 3, test);
+    private static void testSetterPermutations(final Namespace requiredNamespace, final Consumer<NamespaceOperation> test) {
+        testPermutations(SETTER_PERMUTATIONS, SET, requiredNamespace, 3, test);
     }
 
     private static Object call(final Operation op, final Object... args) {
@@ -303,14 +302,6 @@ public class BeansLinkerTest {
 
     private static Object call(final Object... args) {
         return call(CALL, args);
-    }
-
-    private static Operation named(final Object name, final Operation... ops) {
-        return new NamedOperation(ops(ops), name);
-    }
-
-    private static Operation ops(final Operation... ops) {
-        return ops.length == 1 ? ops[0] : new CompositeOperation(ops);
     }
 
     private static MethodType t(final int argCount) {

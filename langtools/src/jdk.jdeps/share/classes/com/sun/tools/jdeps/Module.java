@@ -126,10 +126,11 @@ class Module extends Archive {
      * Tests if the package of the given name is exported.
      */
     public boolean isExported(String pn) {
-        if (JDK_UNSUPPORTED.equals(this.name())) {
-            return false;
-        }
         return exports.containsKey(pn) ? exports.get(pn).isEmpty() : false;
+    }
+
+    public boolean isJDKUnsupported() {
+        return JDK_UNSUPPORTED.equals(this.name());
     }
 
     /**

@@ -28,7 +28,7 @@
  * @author Andreas Sterbenz
  * @library ..
  * @modules jdk.crypto.pkcs11/sun.security.pkcs11.wrapper
- * @compile -XDignore.symbol.file TestCurves.java
+ * @compile --add-modules jdk.crypto.pkcs11 TestCurves.java
  * @run main/othervm TestCurves
  * @run main/othervm TestCurves sm
  * @key randomness

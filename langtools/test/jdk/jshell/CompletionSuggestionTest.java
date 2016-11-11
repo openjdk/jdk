@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @bug 8131025 8141092 8153761 8145263
+ * @bug 8131025 8141092 8153761 8145263 8131019
  * @summary Test Completion and Documentation
+ * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- * @library /tools/lib
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build KullaTesting TestingInputStream Compiler
  * @run testng CompletionSuggestionTest
@@ -305,26 +305,26 @@ public class CompletionSuggestionTest extends KullaTesting {
 
     public void testDocumentation() throws Exception {
         dontReadParameterNamesFromClassFile();
-        assertDocumentation("System.getProperty(|",
+        assertSignature("System.getProperty(|",
                 "String System.getProperty(String key)",
                 "String System.getProperty(String key, String def)");
         assertEval("char[] chars = null;");
-        assertDocumentation("new String(chars, |",
+        assertSignature("new String(chars, |",
                 "String(char[], int, int)");
-        assertDocumentation("String.format(|",
+        assertSignature("String.format(|",
                 "String String.format(String, Object...)",
                 "String String.format(java.util.Locale, String, Object...)");
-        assertDocumentation("\"\".getBytes(\"\"|", "void String.getBytes(int, int, byte[], int)",
+        assertSignature("\"\".getBytes(\"\"|", "void String.getBytes(int, int, byte[], int)",
                                                     "byte[] String.getBytes(String) throws java.io.UnsupportedEncodingException",
                                                     "byte[] String.getBytes(java.nio.charset.Charset)");
-        assertDocumentation("\"\".getBytes(\"\" |", "void String.getBytes(int, int, byte[], int)",
+        assertSignature("\"\".getBytes(\"\" |", "void String.getBytes(int, int, byte[], int)",
                                                      "byte[] String.getBytes(String) throws java.io.UnsupportedEncodingException",
                                                      "byte[] String.getBytes(java.nio.charset.Charset)");
     }
 
     public void testMethodsWithNoArguments() throws Exception {
         dontReadParameterNamesFromClassFile();
-        assertDocumentation("System.out.println(|",
+        assertSignature("System.out.println(|",
                 "void java.io.PrintStream.println()",
                 "void java.io.PrintStream.println(boolean)",
                 "void java.io.PrintStream.println(char)",
@@ -339,6 +339,7 @@ public class CompletionSuggestionTest extends KullaTesting {
 
     public void testErroneous() {
         assertCompletion("Undefined.|");
+        assertSignature("does.not.exist|");
     }
 
     public void testClinit() {
@@ -474,59 +475,63 @@ public class CompletionSuggestionTest extends KullaTesting {
 
     public void testDocumentationOfUserDefinedMethods() {
         assertEval("void f() {}");
-        assertDocumentation("f(|", "void f()");
+        assertSignature("f(|", "void f()");
         assertEval("void f(int i) {}");
-        assertDocumentation("f(|", "void f()", "void f(int i)");
+        assertSignature("f(|", "void f()", "void f(int i)");
         assertEval("<T> void f(T... ts) {}", DiagCheck.DIAG_WARNING, DiagCheck.DIAG_OK);
-        assertDocumentation("f(|", "void f()", "void f(int i)", "void <T>f(T... ts)");
+        assertSignature("f(|", "void f()", "void f(int i)", "void <T>f(T... ts)");
         assertEval("class A {}");
         assertEval("void f(A a) {}");
-        assertDocumentation("f(|", "void f()", "void f(int i)", "void <T>f(T... ts)", "void f(A a)");
+        assertSignature("f(|", "void f()", "void f(int i)", "void <T>f(T... ts)", "void f(A a)");
+    }
+
+    public void testClass() {
+        assertSignature("String|", "java.lang.String");
     }
 
     public void testDocumentationOfUserDefinedConstructors() {
         Snippet a = classKey(assertEval("class A {}"));
-        assertDocumentation("new A(|", "A()");
+        assertSignature("new A(|", "A()");
         Snippet a2 = classKey(assertEval("class A { A() {} A(int i) {}}",
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
                 ste(a, VALID, OVERWRITTEN, false, MAIN_SNIPPET)));
-        assertDocumentation("new A(|", "A()", "A(int i)");
+        assertSignature("new A(|", "A()", "A(int i)");
         assertEval("class A<T> { A(T a) {} A(int i) {} <U> A(T t, U u) {}}",
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
                 ste(a2, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
-        assertDocumentation("new A(|", "A<T>(T a)", "A<T>(int i)", "<U> A<T>(T t, U u)");
+        assertSignature("new A(|", "A<T>(T a)", "A<T>(int i)", "<U> A<T>(T t, U u)");
     }
 
     public void testDocumentationOfOverriddenMethods() throws Exception {
         dontReadParameterNamesFromClassFile();
-        assertDocumentation("\"\".wait(|",
+        assertSignature("\"\".wait(|",
             "void Object.wait(long) throws InterruptedException",
             "void Object.wait(long, int) throws InterruptedException",
             "void Object.wait() throws InterruptedException");
         assertEval("class Base {void method() {}}");
         Snippet e = classKey(assertEval("class Extend extends Base {}"));
-        assertDocumentation("new Extend().method(|", "void Base.method()");
+        assertSignature("new Extend().method(|", "void Base.method()");
         assertEval("class Extend extends Base {void method() {}}",
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
                 ste(e, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
-        assertDocumentation("new Extend().method(|", "void Extend.method()");
+        assertSignature("new Extend().method(|", "void Extend.method()");
     }
 
     public void testDocumentationOfInvisibleMethods() {
-        assertDocumentation("Object.wait(|", "");
-        assertDocumentation("\"\".indexOfSupplementary(|", "");
+        assertSignature("Object.wait(|");
+        assertSignature("\"\".indexOfSupplementary(|");
         Snippet a = classKey(assertEval("class A {void method() {}}"));
-        assertDocumentation("A.method(|", "");
+        assertSignature("A.method(|");
         assertEval("class A {private void method() {}}",
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
                 ste(a, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
-        assertDocumentation("new A().method(|", "");
+        assertSignature("new A().method(|");
     }
 
     public void testDocumentationOfInvisibleConstructors() {
-        assertDocumentation("new Compiler(|", "");
+        assertSignature("new Compiler(|");
         assertEval("class A { private A() {} }");
-        assertDocumentation("new A(|", "");
+        assertSignature("new A(|");
     }
 
     public void testDocumentationWithBoxing() {
@@ -535,13 +540,13 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertEval("Object object = null;");
         assertEval("void method(int n, Object o) { }");
         assertEval("void method(Object n, int o) { }");
-        assertDocumentation("method(primitive,|",
+        assertSignature("method(primitive,|",
                 "void method(int n, Object o)",
                 "void method(Object n, int o)");
-        assertDocumentation("method(boxed,|",
+        assertSignature("method(boxed,|",
                 "void method(int n, Object o)",
                 "void method(Object n, int o)");
-        assertDocumentation("method(object,|",
+        assertSignature("method(object,|",
                 "void method(Object n, int o)");
     }
 
@@ -567,7 +572,7 @@ public class CompletionSuggestionTest extends KullaTesting {
 
             void assertDoc(String generics, String expectedGenerics) {
                 assertEval(evalFormatter.apply(generics, count));
-                assertDocumentation(codeFacotry.apply(count), docFormatter.apply(expectedGenerics, count));
+                assertSignature(codeFacotry.apply(count), docFormatter.apply(expectedGenerics, count));
                 count++;
             }
         }

@@ -746,42 +746,18 @@ public class XMLDocumentScannerImpl
             // scan XMLDecl
             try {
                 if (fEntityScanner.skipString(xmlDecl)) {
-                    fMarkupDepth++;
-                    // NOTE: special case where document starts with a PI
-                    //       whose name starts with "xml" (e.g. "xmlfoo")
-                    if (XMLChar.isName(fEntityScanner.peekChar())) {
-                        fStringBuffer.clear();
-                        fStringBuffer.append("xml");
-                        while (XMLChar.isName(fEntityScanner.peekChar())) {
-                            fStringBuffer.append((char)fEntityScanner.scanChar(null));
-                        }
-                        String target = fSymbolTable.addSymbol(fStringBuffer.ch, fStringBuffer.offset, fStringBuffer.length);
-                        //this function should fill the data.. and set the fEvent object to this event.
-                        fContentBuffer.clear() ;
-                        scanPIData(target, fContentBuffer);
-                        //REVISIT:where else we can set this value to 'true'
-                        fEntityManager.fCurrentEntity.mayReadChunks = true;
-                        //return PI event since PI was encountered
-                        return XMLEvent.PROCESSING_INSTRUCTION ;
-                    }
-                    // standard XML declaration
-                    else {
+                    if (fEntityScanner.peekChar() == ' ') {
+                        fMarkupDepth++;
                         scanXMLDeclOrTextDecl(false);
-                        //REVISIT:where else we can set this value to 'true'
-                        fEntityManager.fCurrentEntity.mayReadChunks = true;
-                        return XMLEvent.START_DOCUMENT;
+                    } else {
+                        // PI, reset position
+                        fEntityManager.fCurrentEntity.position = 0;
                     }
-                } else{
-                    //REVISIT:where else we can set this value to 'true'
-                    fEntityManager.fCurrentEntity.mayReadChunks = true;
-                    //In both case return the START_DOCUMENT. ony difference is that first block will
-                    //cosume the XML declaration if any.
-                    return XMLEvent.START_DOCUMENT;
                 }
 
-
                 //START_OF_THE_DOCUMENT
-
+                fEntityManager.fCurrentEntity.mayReadChunks = true;
+                return XMLEvent.START_DOCUMENT;
 
             }
 

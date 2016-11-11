@@ -99,9 +99,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import jdk.dynalink.CallSiteDescriptor;
-import jdk.dynalink.CompositeOperation;
 import jdk.dynalink.NamedOperation;
+import jdk.dynalink.Namespace;
+import jdk.dynalink.NamespaceOperation;
 import jdk.dynalink.Operation;
+import jdk.dynalink.StandardNamespace;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.beans.GuardedInvocationComponent.ValidationType;
 import jdk.dynalink.internal.InternalTypeUtilities;
@@ -360,22 +362,6 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
             directLinkerServices = linkerServices;
         }
 
-        // Handle NamedOperation(CALL_METHOD, name) separately
-        final Operation operation = callSiteDescriptor.getOperation();
-        if (operation instanceof NamedOperation) {
-            final NamedOperation namedOperation = (NamedOperation)operation;
-            if (namedOperation.getBaseOperation() == StandardOperation.CALL_METHOD) {
-                final GuardedInvocation inv =
-                        createGuardedDynamicMethodInvocation(callSiteDescriptor,
-                        directLinkerServices, namedOperation.getName().toString(), methods);
-                if (inv == null) {
-                    return createNoSuchMemberHandler(missingMemberHandlerFactory,
-                            request, directLinkerServices).getGuardedInvocation();
-                }
-                return inv;
-            }
-        }
-
         final GuardedInvocationComponent gic = getGuardedInvocationComponent(
                 new ComponentLinkRequest(request, directLinkerServices,
                         missingMemberHandlerFactory));
@@ -386,7 +372,8 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         final LinkRequest linkRequest;
         final LinkerServices linkerServices;
         final MissingMemberHandlerFactory missingMemberHandlerFactory;
-        final List<Operation> operations;
+        final Operation baseOperation;
+        final List<Namespace> namespaces;
         final Object name;
 
         ComponentLinkRequest(final LinkRequest linkRequest,
@@ -395,21 +382,22 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
             this.linkRequest = linkRequest;
             this.linkerServices = linkerServices;
             this.missingMemberHandlerFactory = missingMemberHandlerFactory;
-            final Operation operation = linkRequest.getCallSiteDescriptor().getOperation();
-            this.operations = Arrays.asList(
-                    CompositeOperation.getOperations(
-                            NamedOperation.getBaseOperation(operation)));
-            this.name = NamedOperation.getName(operation);
+            final Operation namedOp = linkRequest.getCallSiteDescriptor().getOperation();
+            this.name = NamedOperation.getName(namedOp);
+            final Operation namespaceOp = NamedOperation.getBaseOperation(namedOp);
+            this.baseOperation = NamespaceOperation.getBaseOperation(namespaceOp);
+            this.namespaces = Arrays.asList(NamespaceOperation.getNamespaces(namespaceOp));
         }
 
         private ComponentLinkRequest(final LinkRequest linkRequest,
                 final LinkerServices linkerServices,
                 final MissingMemberHandlerFactory missingMemberHandlerFactory,
-                final List<Operation> operations, final Object name) {
+                final Operation baseOperation, final List<Namespace> namespaces, final Object name) {
             this.linkRequest = linkRequest;
             this.linkerServices = linkerServices;
             this.missingMemberHandlerFactory = missingMemberHandlerFactory;
-            this.operations = operations;
+            this.baseOperation = baseOperation;
+            this.namespaces = namespaces;
             this.name = name;
         }
 
@@ -417,29 +405,33 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
             return linkRequest.getCallSiteDescriptor();
         }
 
-        ComponentLinkRequest popOperations() {
+        ComponentLinkRequest popNamespace() {
             return new ComponentLinkRequest(linkRequest, linkerServices,
-                    missingMemberHandlerFactory,
-                    operations.subList(1, operations.size()), name);
+                    missingMemberHandlerFactory, baseOperation,
+                namespaces.subList(1, namespaces.size()), name);
         }
     }
 
     protected GuardedInvocationComponent getGuardedInvocationComponent(final ComponentLinkRequest req)
     throws Exception {
-        final Operation op = req.operations.get(0);
-        if (op instanceof StandardOperation) {
-            switch((StandardOperation)op) {
-            case GET_PROPERTY: return getPropertyGetter(req.popOperations());
-            case SET_PROPERTY: return getPropertySetter(req.popOperations());
-            case GET_METHOD: return getMethodGetter(req.popOperations());
-            default:
+        if (!req.namespaces.isEmpty()) {
+            final Namespace ns = req.namespaces.get(0);
+            final Operation op = req.baseOperation;
+            if (op == StandardOperation.GET) {
+                if (ns == StandardNamespace.PROPERTY) {
+                    return getPropertyGetter(req.popNamespace());
+                } else if (ns == StandardNamespace.METHOD) {
+                    return getMethodGetter(req.popNamespace());
+                }
+            } else if (op == StandardOperation.SET && ns == StandardNamespace.PROPERTY) {
+                return getPropertySetter(req.popNamespace());
             }
         }
         return null;
     }
 
     GuardedInvocationComponent getNextComponent(final ComponentLinkRequest req) throws Exception {
-        if (req.operations.isEmpty()) {
+        if (req.namespaces.isEmpty()) {
             return createNoSuchMemberHandler(req.missingMemberHandlerFactory,
                     req.linkRequest, req.linkerServices);
         }
@@ -447,7 +439,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         if (gic != null) {
             return gic;
         }
-        return getNextComponent(req.popOperations());
+        return getNextComponent(req.popNamespace());
     }
 
     private GuardedInvocationComponent createNoSuchMemberHandler(
@@ -626,8 +618,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         if(gi != null) {
             return new GuardedInvocationComponent(gi, clazz, ValidationType.EXACT_CLASS);
         }
-        // If we don't have a property setter with this name, always fall back to the next operation in the
-        // composite (if any)
+        // If we don't have a property setter with this name, always fall back to the next namespace (if any).
         return getNextComponent(req);
     }
 
@@ -808,8 +799,8 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
             // We have no such method, always delegate to the next component
             return getNextComponent(req);
         }
-        // No delegation to the next component of the composite operation; if we have a method with that name,
-        // we'll always return it at this point.
+        // No delegation to the next namespace; if we have a method with that name, we'll always return it at
+        // this point.
         final MethodType type = getMethodGetterType(req);
         return getClassGuardedInvocationComponent(req.linkerServices.asType(MethodHandles.dropArguments(
                 MethodHandles.constant(Object.class, method), 0, type.parameterType(0)), type), type);
@@ -880,7 +871,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
     @SuppressWarnings("unused")
     // This method is marked to return Object instead of DynamicMethod as it's used as a linking component and we don't
     // want to make the DynamicMethod type observable externally (e.g. as the return type of a MethodHandle returned for
-    // GET_METHOD linking).
+    // GET:METHOD linking).
     private Object getDynamicMethod(final Object name) {
         return getDynamicMethod(String.valueOf(name), methods);
     }

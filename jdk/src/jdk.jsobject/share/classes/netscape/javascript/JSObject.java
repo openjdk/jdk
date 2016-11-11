@@ -156,6 +156,7 @@ public abstract class JSObject {
      */
 
     @Deprecated(since = "9")
+    @SuppressWarnings("exports")
     public static JSObject getWindow(Applet applet) throws JSException {
         return ProviderLoader.callGetWindow(applet);
     }

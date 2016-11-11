@@ -47,6 +47,7 @@ import java.lang.module.ResolutionException;
 import java.lang.module.ResolvedModule;
 import java.net.URI;
 import java.nio.file.FileSystems;
+import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -98,8 +99,6 @@ import jdk.internal.joptsimple.OptionSpec;
 import jdk.internal.joptsimple.ValueConverter;
 import jdk.internal.misc.JavaLangModuleAccess;
 import jdk.internal.misc.SharedSecrets;
-import jdk.internal.module.ConfigurableModuleFinder;
-import jdk.internal.module.ConfigurableModuleFinder.Phase;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.tools.jlink.internal.Utils;
@@ -635,7 +634,8 @@ public class JmodTask {
         void processSection(JmodOutputStream out, Section section, Path top)
             throws IOException
         {
-            Files.walkFileTree(top, new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(top, Set.of(FileVisitOption.FOLLOW_LINKS),
+                    Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                     throws IOException
@@ -1298,9 +1298,7 @@ public class JmodTask {
                 options.manPages = opts.valuesOf(manPages);
             if (opts.has(modulePath)) {
                 Path[] dirs = opts.valuesOf(modulePath).toArray(new Path[0]);
-                options.moduleFinder = ModuleFinder.of(dirs);
-                if (options.moduleFinder instanceof ConfigurableModuleFinder)
-                    ((ConfigurableModuleFinder)options.moduleFinder).configurePhase(Phase.LINK_TIME);
+                options.moduleFinder = JLMA.newModulePath(Runtime.version(), true, dirs);
             }
             if (opts.has(moduleVersion))
                 options.moduleVersion = opts.valueOf(moduleVersion);
