@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -335,15 +335,19 @@ public final class NetworkInterface {
      * {@link #getInetAddresses()} to obtain all IP addresses for this node
      *
      * @return an Enumeration of NetworkInterfaces found on this machine
-     * @exception  SocketException  if an I/O error occurs.
+     * @exception  SocketException  if an I/O error occurs,
+     *             or if the platform does not have at least one configured
+     *             network interface.
      * @see #networkInterfaces()
      */
     public static Enumeration<NetworkInterface> getNetworkInterfaces()
         throws SocketException {
         NetworkInterface[] netifs = getAll();
-        assert netifs != null && netifs.length > 0;
-
-        return enumerationFromArray(netifs);
+        if (netifs != null && netifs.length > 0) {
+            return enumerationFromArray(netifs);
+        } else {
+            throw new SocketException("No network interfaces configured");
+        }
     }
 
     /**
@@ -361,15 +365,19 @@ public final class NetworkInterface {
      * }</pre>
      *
      * @return a Stream of NetworkInterfaces found on this machine
-     * @exception  SocketException  if an I/O error occurs.
+     * @exception  SocketException  if an I/O error occurs,
+     *             or if the platform does not have at least one configured
+     *             network interface.
      * @since 9
      */
     public static Stream<NetworkInterface> networkInterfaces()
         throws SocketException {
         NetworkInterface[] netifs = getAll();
-        assert netifs != null && netifs.length > 0;
-
-        return streamFromArray(netifs);
+        if (netifs != null && netifs.length > 0) {
+            return streamFromArray(netifs);
+        }  else {
+            throw new SocketException("No network interfaces configured");
+        }
     }
 
     private static <T> Enumeration<T> enumerationFromArray(T[] a) {
