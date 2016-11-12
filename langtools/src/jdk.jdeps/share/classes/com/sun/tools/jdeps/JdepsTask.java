@@ -966,7 +966,8 @@ class JdepsTask {
                                              log).run();
         }
 
-        public boolean allModules() {
+        @Override
+        boolean allModules() {
             return true;
         }
     }
