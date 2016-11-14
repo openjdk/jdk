@@ -825,6 +825,7 @@ public class JEditorPane extends JTextComponent {
      *
      * @param reference the named location to scroll to
      */
+    @SuppressWarnings("deprecation")
     public void scrollToReference(String reference) {
         Document d = getDocument();
         if (d instanceof HTMLDocument) {
