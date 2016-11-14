@@ -249,6 +249,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void notifyDisplayChanged(final int scaleFactor) {
         notifyDisplayChanged(scaleFactor, scaleFactor);
     }

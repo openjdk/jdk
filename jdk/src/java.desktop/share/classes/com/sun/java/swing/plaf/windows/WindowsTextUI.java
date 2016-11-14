@@ -93,6 +93,7 @@ public abstract class WindowsTextUI extends BasicTextUI {
          * @param bounds the bounding box for the highlight
          * @param c the editor
          */
+        @SuppressWarnings("deprecation")
         public void paint(Graphics g, int offs0, int offs1, Shape bounds, JTextComponent c) {
             Rectangle alloc = bounds.getBounds();
             try {
