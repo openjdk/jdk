@@ -48,6 +48,12 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
         LIBJSIG_CPU_FLAGS := -m64
       else ifeq ($(OPENJDK_TARGET_CPU), x86)
         LIBJSIG_CPU_FLAGS := -m32 -march=i586
+      else ifeq ($(OPENJDK_TARGET_CPU), ppc64)
+        LIBJSIG_CPU_FLAGS := -mcpu=powerpc64 -mtune=power5
+      else ifeq ($(OPENJDK_TARGET_CPU), ppc64le)
+        LIBJSIG_CPU_FLAGS := -DABI_ELFv2 -mcpu=power8 -mtune=power8
+      else ifeq ($(OPENJDK_TARGET_CPU), s390x)
+        LIBJSIG_CPU_FLAGS := -mbackchain -march=z10
       endif
 
     else ifeq ($(OPENJDK_TARGET_OS), solaris)
