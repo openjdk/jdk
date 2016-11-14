@@ -34,13 +34,11 @@ $(eval $(call SetupBuildLauncher, jlink,\
     MAIN_CLASS := jdk.tools.jlink.internal.Main, \
     JAVA_ARGS :=  --add-modules ALL-DEFAULT, \
     CFLAGS := -DENABLE_ARG_FILES \
-        -DEXPAND_CLASSPATH_WILDCARDS \
-        -DNEVER_ACT_AS_SERVER_CLASS_MACHINE, \
+        -DEXPAND_CLASSPATH_WILDCARDS, \
 ))
 
 $(eval $(call SetupBuildLauncher, jmod,\
     MAIN_CLASS := jdk.tools.jmod.Main, \
     CFLAGS := -DENABLE_ARG_FILES \
-        -DEXPAND_CLASSPATH_WILDCARDS \
-        -DNEVER_ACT_AS_SERVER_CLASS_MACHINE, \
+        -DEXPAND_CLASSPATH_WILDCARDS, \
 ))
