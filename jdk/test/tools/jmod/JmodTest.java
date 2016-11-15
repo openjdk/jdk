@@ -28,6 +28,7 @@
  *          jdk.jlink
  * @build jdk.testlibrary.FileUtils CompilerUtils
  * @run testng JmodTest
+ * @bug 8142968
  * @summary Basic test for jmod
  */
 
@@ -83,6 +84,31 @@ public class JmodTest {
         if (Files.exists(MODS_DIR))
             FileUtils.deleteFileTreeWithRetry(MODS_DIR);
         Files.createDirectories(MODS_DIR);
+    }
+
+    // JDK-8166286 - jmod fails on symlink to directory
+    @Test
+    public void testSymlinks() throws IOException {
+        Path apaDir = EXPLODED_DIR.resolve("apa");
+        Path classesDir = EXPLODED_DIR.resolve("apa").resolve("classes");
+        assertTrue(compileModule("apa", classesDir));
+        Path libDir = apaDir.resolve("lib");
+        createFiles(libDir, List.of("foo/bar/libfoo.so"));
+        try {
+            Path link = Files.createSymbolicLink(
+                libDir.resolve("baz"), libDir.resolve("foo").toAbsolutePath());
+            assertTrue(Files.exists(link));
+        } catch (UnsupportedOperationException uoe) {
+            // OS does not support symlinks. Nothing to test!
+            return;
+        }
+
+        Path jmod = MODS_DIR.resolve("apa.jmod");
+        jmod("create",
+             "--libs=", libDir.toString(),
+             "--class-path", classesDir.toString(),
+             jmod.toString())
+            .assertSuccess();
     }
 
     @Test

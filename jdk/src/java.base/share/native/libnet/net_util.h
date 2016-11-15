@@ -36,12 +36,6 @@
 
 #define MAX_PACKET_LEN 65536
 
-#define IPv4 1
-#define IPv6 2
-
-#define NET_ERROR(env, ex, msg) \
-{ if (!(*env)->ExceptionOccurred(env)) JNU_ThrowByName(env, ex, msg); }
-
 #define NET_WAIT_READ    0x01
 #define NET_WAIT_WRITE   0x02
 #define NET_WAIT_CONNECT 0x04
@@ -127,45 +121,43 @@ JNIEXPORT void JNICALL Java_java_net_Inet6Address_init(JNIEnv *env, jclass cls);
 JNIEXPORT void JNICALL Java_java_net_NetworkInterface_init(JNIEnv *env, jclass cls);
 
 JNIEXPORT void JNICALL NET_ThrowNew(JNIEnv *env, int errorNum, char *msg);
+
 int NET_GetError();
 
 void NET_ThrowCurrent(JNIEnv *env, char *msg);
 
 jfieldID NET_GetFileDescriptorID(JNIEnv *env);
 
-JNIEXPORT jint JNICALL ipv6_available() ;
+JNIEXPORT jint JNICALL ipv6_available();
 
-JNIEXPORT jint JNICALL reuseport_available() ;
+JNIEXPORT jint JNICALL reuseport_available();
 
 JNIEXPORT int JNICALL
-NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr *him, int *len, jboolean v4MappedAddress);
+NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
+                          struct sockaddr *him, int *len,
+                          jboolean v4MappedAddress);
 
 JNIEXPORT jobject JNICALL
 NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port);
 
 void platformInit();
+
 void parseExclusiveBindProperty(JNIEnv *env);
 
-void
-NET_SetTrafficClass(struct sockaddr *him, int trafficClass);
+void NET_SetTrafficClass(struct sockaddr *him, int trafficClass);
 
-JNIEXPORT jint JNICALL
-NET_GetPortFromSockaddr(struct sockaddr *him);
+JNIEXPORT jint JNICALL NET_GetPortFromSockaddr(struct sockaddr *him);
 
 JNIEXPORT jint JNICALL
 NET_SockaddrEqualsInetAddress(JNIEnv *env,struct sockaddr *him, jobject iaObj);
 
-int
-NET_IsIPv4Mapped(jbyte* caddr);
+int NET_IsIPv4Mapped(jbyte* caddr);
 
-int
-NET_IPv4MappedToIPv4(jbyte* caddr);
+int NET_IPv4MappedToIPv4(jbyte* caddr);
 
-int
-NET_IsEqual(jbyte* caddr1, jbyte* caddr2);
+int NET_IsEqual(jbyte* caddr1, jbyte* caddr2);
 
-int
-NET_IsZeroAddr(jbyte* caddr);
+int NET_IsZeroAddr(jbyte* caddr);
 
 /* Socket operations
  *
@@ -191,9 +183,9 @@ NET_MapSocketOptionV6(jint cmd, int *level, int *optname);
 JNIEXPORT jint JNICALL
 NET_EnableFastTcpLoopback(int fd);
 
-int getScopeID (struct sockaddr *);
+int getScopeID(struct sockaddr *);
 
-int cmpScopeID (unsigned int, struct sockaddr *);
+int cmpScopeID(unsigned int, struct sockaddr *);
 
 unsigned short in_cksum(unsigned short *addr, int len);
 

@@ -63,11 +63,8 @@ public class ErrorTranslationTest extends ReplToolTesting {
         List<ReplTest> list = new ArrayList<>();
         ExpectedDiagnostic[] diagnostics = new ExpectedDiagnostic[]{
                 newExpectedDiagnostic(0, 6, 0, -1, -1, Diagnostic.Kind.WARNING),
-                newExpectedDiagnostic(0, 9, 0, -1, -1, Diagnostic.Kind.WARNING),
-                newExpectedDiagnostic(0, 7, 0, -1, -1, Diagnostic.Kind.WARNING),
-                newExpectedDiagnostic(0, 6, 0, -1, -1, Diagnostic.Kind.WARNING),
                 newExpectedDiagnostic(0, 5, 0, -1, -1, Diagnostic.Kind.WARNING)};
-        String[] mods = {"public", "protected", "private", "static", "final"};
+        String[] mods = {"static", "final"};
         for (int i = 0; i < mods.length; ++i) {
             for (String code : new String[] {"class A {}", "void f() {}", "int a;"}) {
                 final int finalI = i;

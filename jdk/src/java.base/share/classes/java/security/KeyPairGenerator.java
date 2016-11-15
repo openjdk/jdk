@@ -209,16 +209,19 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
-     * @return the new KeyPairGenerator object.
+     * @return the new {@code KeyPairGenerator} object
      *
-     * @exception NoSuchAlgorithmException if no Provider supports a
-     *          KeyPairGeneratorSpi implementation for the
-     *          specified algorithm.
+     * @throws NoSuchAlgorithmException if no {@code Provider} supports a
+     *         {@code KeyPairGeneratorSpi} implementation for the
+     *         specified algorithm
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      */
     public static KeyPairGenerator getInstance(String algorithm)
             throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         List<Service> list =
                 GetInstance.getServices("KeyPairGenerator", algorithm);
         Iterator<Service> t = list.iterator();
@@ -267,23 +270,26 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      *
      * @param provider the string name of the provider.
      *
-     * @return the new KeyPairGenerator object.
+     * @return the new {@code KeyPairGenerator} object
      *
-     * @exception NoSuchAlgorithmException if a KeyPairGeneratorSpi
-     *          implementation for the specified algorithm is not
-     *          available from the specified provider.
+     * @throws IllegalArgumentException if the provider name is {@code null}
+     *         or empty
      *
-     * @exception NoSuchProviderException if the specified provider is not
-     *          registered in the security provider list.
+     * @throws NoSuchAlgorithmException if a {@code KeyPairGeneratorSpi}
+     *         implementation for the specified algorithm is not
+     *         available from the specified provider
      *
-     * @exception IllegalArgumentException if the provider name is null
-     *          or empty.
+     * @throws NoSuchProviderException if the specified provider is not
+     *         registered in the security provider list
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      */
     public static KeyPairGenerator getInstance(String algorithm,
             String provider)
             throws NoSuchAlgorithmException, NoSuchProviderException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = GetInstance.getInstance("KeyPairGenerator",
                 KeyPairGeneratorSpi.class, algorithm, provider);
         return getInstance(instance, algorithm);
@@ -306,13 +312,16 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      *
      * @param provider the provider.
      *
-     * @return the new KeyPairGenerator object.
+     * @return the new {@code KeyPairGenerator} object
      *
-     * @exception NoSuchAlgorithmException if a KeyPairGeneratorSpi
-     *          implementation for the specified algorithm is not available
-     *          from the specified Provider object.
+     * @throws IllegalArgumentException if the specified provider is
+     *         {@code null}
      *
-     * @exception IllegalArgumentException if the specified provider is null.
+     * @throws NoSuchAlgorithmException if a {@code KeyPairGeneratorSpi}
+     *         implementation for the specified algorithm is not available
+     *         from the specified {@code Provider} object
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      *
@@ -320,6 +329,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      */
     public static KeyPairGenerator getInstance(String algorithm,
             Provider provider) throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = GetInstance.getInstance("KeyPairGenerator",
                 KeyPairGeneratorSpi.class, algorithm, provider);
         return getInstance(instance, algorithm);

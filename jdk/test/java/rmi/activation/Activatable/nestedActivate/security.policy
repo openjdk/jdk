@@ -31,4 +31,7 @@ grant {
 
   // allow exporting of non-public remote interface
   permission java.rmi.RMIPermission "exportRemoteInterface.ActivateMe";
+
+  permission java.lang.RuntimePermission "selectorProvider";
+  permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
 };

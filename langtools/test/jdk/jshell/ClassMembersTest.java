@@ -38,6 +38,9 @@ import javax.tools.Diagnostic;
 import jdk.jshell.SourceCodeAnalysis;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import jdk.jshell.TypeDeclSnippet;
+import static jdk.jshell.Snippet.Status.OVERWRITTEN;
+import static jdk.jshell.Snippet.Status.VALID;
 
 public class ClassMembersTest extends KullaTesting {
 
@@ -141,29 +144,36 @@ public class ClassMembersTest extends KullaTesting {
                 new ExpectedDiagnostic("compiler.err.non-static.cant.be.ref", 0, 8, 1, -1, -1, Diagnostic.Kind.ERROR));
     }
 
-    @Test(enabled = false) // TODO 8080354
-    public void annotationTest() {
+    @Test(dataProvider = "retentionPolicyTestCase")
+    public void annotationTest(RetentionPolicy policy) {
         assertEval("import java.lang.annotation.*;");
+        String annotationSource =
+                "@Retention(RetentionPolicy." + policy.toString() + ")\n" +
+                "@interface A {}";
+        assertEval(annotationSource);
+        String classSource =
+                "@A class C {\n" +
+                "   @A C() {}\n" +
+                "   @A void f() {}\n" +
+                "   @A int f;\n" +
+                "   @A class Inner {}\n" +
+                "}";
+        assertEval(classSource);
+        String isRuntimeVisible = policy == RetentionPolicy.RUNTIME ? "true" : "false";
+        assertEval("C.class.getAnnotationsByType(A.class).length > 0;", isRuntimeVisible);
+        assertEval("C.class.getDeclaredConstructor().getAnnotationsByType(A.class).length > 0;", isRuntimeVisible);
+        assertEval("C.class.getDeclaredMethod(\"f\").getAnnotationsByType(A.class).length > 0;", isRuntimeVisible);
+        assertEval("C.class.getDeclaredField(\"f\").getAnnotationsByType(A.class).length > 0;", isRuntimeVisible);
+        assertEval("C.Inner.class.getAnnotationsByType(A.class).length > 0;", isRuntimeVisible);
+    }
+
+    @DataProvider(name = "retentionPolicyTestCase")
+    public Object[][] retentionPolicyTestCaseGenerator() {
+        List<Object[]> list = new ArrayList<>();
         for (RetentionPolicy policy : RetentionPolicy.values()) {
-            String annotationSource =
-                    "@Retention(RetentionPolicy." + policy.toString() + ")\n" +
-                    "@interface A {}";
-            assertEval(annotationSource);
-            String classSource =
-                    "@A class C {\n" +
-                    "   @A C() {}\n" +
-                    "   @A void f() {}\n" +
-                    "   @A int f;\n" +
-                    "   @A class Inner {}\n" +
-                    "}";
-            assertEval(classSource);
-            String isRuntimeVisible = policy == RetentionPolicy.RUNTIME ? "true" : "false";
-            assertEval("C.class.getAnnotationsByType(A.class).length > 0;", isRuntimeVisible);
-            assertEval("C.class.getDeclaredConstructor().getAnnotationsByType(A.class).length > 0;", isRuntimeVisible);
-            assertEval("C.class.getDeclaredMethod(\"f\").getAnnotationsByType(A.class).length > 0;", isRuntimeVisible);
-            assertEval("C.class.getDeclaredField(\"f\").getAnnotationsByType(A.class).length > 0;", isRuntimeVisible);
-            assertEval("C.Inner.class.getAnnotationsByType(A.class).length > 0;", isRuntimeVisible);
+            list.add(new Object[]{policy});
         }
+        return list.toArray(new Object[list.size()][]);
     }
 
     @DataProvider(name = "memberTestCase")

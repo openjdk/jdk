@@ -46,7 +46,11 @@ public abstract class TextUI extends ComponentUI
      * @return the coordinates as a {@code Rectangle}
      * @exception BadLocationException  if the given position does not
      *   represent a valid location in the associated document
+     *
+     * @deprecated replaced by
+     *     {@link #modelToView2D(JTextComponent, int, Position.Bias)}
      */
+    @Deprecated(since = "9")
     public abstract Rectangle modelToView(JTextComponent t, int pos) throws BadLocationException;
 
     /**
@@ -59,7 +63,11 @@ public abstract class TextUI extends ComponentUI
      * @return the coordinates as a {@code Rectangle}
      * @exception BadLocationException  if the given position does not
      *   represent a valid location in the associated document
+     *
+     * @deprecated replaced by
+     *     {@link #modelToView2D(JTextComponent, int, Position.Bias)}
      */
+    @Deprecated(since = "9")
     public abstract Rectangle modelToView(JTextComponent t, int pos, Position.Bias bias) throws BadLocationException;
 
     /**
@@ -92,7 +100,11 @@ public abstract class TextUI extends ComponentUI
      *   should be in the same coordinate system as the mouse
      *   events.
      * @return the offset from the start of the document &gt;= 0
+     *
+     * @deprecated replaced by
+     *     {@link #viewToModel2D(JTextComponent, Point2D, Position.Bias[])}
      */
+    @Deprecated(since = "9")
     public abstract int viewToModel(JTextComponent t, Point pt);
 
     /**
@@ -110,7 +122,11 @@ public abstract class TextUI extends ComponentUI
      *
      * @return the location within the model that best represents the
      *         given point in the view &gt;= 0
+     *
+     * @deprecated replaced by
+     *     {@link #viewToModel2D(JTextComponent, Point2D, Position.Bias[])}
      */
+    @Deprecated(since = "9")
     public abstract int viewToModel(JTextComponent t, Point pt,
                                     Position.Bias[] biasReturn);
 
@@ -222,7 +238,11 @@ public abstract class TextUI extends ComponentUI
      * @return a {@code String} containing the tooltip
      * @see javax.swing.text.JTextComponent#getToolTipText
      * @since 1.4
+     *
+     * @deprecated replaced by
+     *     {@link #getToolTipText2D(JTextComponent, Point2D)}
      */
+    @Deprecated(since = "9")
     public String getToolTipText(JTextComponent t, Point pt) {
         return null;
     }

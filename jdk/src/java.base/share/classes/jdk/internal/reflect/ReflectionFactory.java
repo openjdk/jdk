@@ -364,6 +364,16 @@ public class ReflectionFactory {
         }
     }
 
+    public final Constructor<?> newConstructorForSerialization(Class<?> cl,
+                                                               Constructor<?> constructorToCall)
+    {
+        if (constructorToCall.getDeclaringClass() == cl) {
+            constructorToCall.setAccessible(true);
+            return constructorToCall;
+        }
+        return generateConstructor(cl, constructorToCall);
+    }
+
     public final Constructor<?> newConstructorForSerialization(Class<?> cl) {
         Class<?> initCl = cl;
         while (Serializable.class.isAssignableFrom(initCl)) {
@@ -383,6 +393,12 @@ public class ReflectionFactory {
         } catch (NoSuchMethodException ex) {
             return null;
         }
+        return generateConstructor(cl, constructorToCall);
+    }
+
+    private final Constructor<?> generateConstructor(Class<?> cl,
+                                                     Constructor<?> constructorToCall) {
+
 
         ConstructorAccessor acc = new MethodAccessorGenerator().
             generateSerializationConstructor(cl,

@@ -36,15 +36,15 @@ JIMAGE_TARGET_FILE := bin/java$(EXE_SUFFIX)
 
 INTERIM_MODULES_LIST := $(call CommaList, $(INTERIM_IMAGE_MODULES))
 
-JMODS := $(patsubst %, $(IMAGES_OUTPUTDIR)/jmods/%.jmod, $(INTERIM_IMAGE_MODULES))
+JMODS := $(patsubst %, $(INTERIM_JMODS_DIR)/%.jmod, $(INTERIM_IMAGE_MODULES))
 
 JLINK_TOOL := $(JLINK) \
-    --module-path $(IMAGES_OUTPUTDIR)/jmods \
+    --module-path $(INTERIM_JMODS_DIR) \
     --endian $(OPENJDK_BUILD_CPU_ENDIAN)
 
 $(INTERIM_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, INTERIM_MODULES_LIST)
-	$(ECHO) Creating interim jimage
+	$(call LogWarn, Creating interim jimage)
 	$(RM) -r $(INTERIM_IMAGE_DIR)
 	$(JLINK_TOOL) \
 	    --output $(INTERIM_IMAGE_DIR) \

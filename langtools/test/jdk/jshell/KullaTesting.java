@@ -72,11 +72,14 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 
 import jdk.jshell.Diag;
+
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+
 import static jdk.jshell.Snippet.Status.*;
 import static org.testng.Assert.*;
 import static jdk.jshell.Snippet.SubKind.METHOD_SUBKIND;
+import jdk.jshell.SourceCodeAnalysis.Documentation;
 
 public class KullaTesting {
 
@@ -946,54 +949,56 @@ public class KullaTesting {
         }
     }
 
-    public void assertDocumentation(String code, String... expected) {
+    public void assertSignature(String code, String... expected) {
         int cursor =  code.indexOf('|');
         code = code.replace("|", "");
         assertTrue(cursor > -1, "'|' expected, but not found in: " + code);
-        String documentation = getAnalysis().documentation(code, cursor);
-        Set<String> docSet = Stream.of(documentation.split("\r?\n")).collect(Collectors.toSet());
+        List<Documentation> documentation = getAnalysis().documentation(code, cursor, false);
+        Set<String> docSet = documentation.stream().map(doc -> doc.signature()).collect(Collectors.toSet());
+        Set<String> expectedSet = Stream.of(expected).collect(Collectors.toSet());
+        assertEquals(docSet, expectedSet, "Input: " + code);
+    }
+
+    public void assertJavadoc(String code, String... expected) {
+        int cursor =  code.indexOf('|');
+        code = code.replace("|", "");
+        assertTrue(cursor > -1, "'|' expected, but not found in: " + code);
+        List<Documentation> documentation = getAnalysis().documentation(code, cursor, true);
+        Set<String> docSet = documentation.stream()
+                                          .map(doc -> doc.signature() + "\n" + doc.javadoc())
+                                          .collect(Collectors.toSet());
         Set<String> expectedSet = Stream.of(expected).collect(Collectors.toSet());
         assertEquals(docSet, expectedSet, "Input: " + code);
     }
 
     public enum ClassType {
-        CLASS("CLASS_SUBKIND") {
-            @Override
-            public String toString() {
-                return "class";
-            }
-        },
-        ENUM("ENUM_SUBKIND") {
-            @Override
-            public String toString() {
-                return "enum";
-            }
-        },
-        INTERFACE("INTERFACE_SUBKIND") {
-            @Override
-            public String toString() {
-                return "interface";
-            }
-        },
-        ANNOTATION("ANNOTATION_TYPE_SUBKIND") {
-            @Override
-            public String toString() {
-                return "@interface";
-            }
-        };
+        CLASS("CLASS_SUBKIND", "class", "class"),
+        ENUM("ENUM_SUBKIND", "enum", "enum"),
+        INTERFACE("INTERFACE_SUBKIND", "interface", "interface"),
+        ANNOTATION("ANNOTATION_TYPE_SUBKIND", "@interface", "annotation interface");
 
         private final String classType;
+        private final String name;
+        private final String displayed;
 
-        ClassType(String classType) {
+        ClassType(String classType, String name, String displayed) {
             this.classType = classType;
+            this.name = name;
+            this.displayed = displayed;
         }
 
         public String getClassType() {
             return classType;
         }
 
+        public String getDisplayed() {
+            return displayed;
+        }
+
         @Override
-        public abstract String toString();
+        public String toString() {
+            return name;
+        }
     }
 
     public static MemberInfo variable(String type, String name) {

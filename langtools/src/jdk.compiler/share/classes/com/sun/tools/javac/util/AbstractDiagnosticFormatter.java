@@ -48,6 +48,7 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.CapturedType;
 import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.jvm.Profile;
+import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.Pretty;
 
@@ -203,6 +204,9 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         }
         else if (arg instanceof Profile) {
             return ((Profile)arg).name;
+        }
+        else if (arg instanceof Option) {
+            return ((Option)arg).primaryName;
         }
         else if (arg instanceof Formattable) {
             return ((Formattable)arg).toString(l, messages);

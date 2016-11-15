@@ -171,11 +171,11 @@ void CompactHashtableWriter::dump(SimpleCompactHashtable *cht, const char* table
 
 void CompactSymbolTableWriter::add(unsigned int hash, Symbol *symbol) {
   address base_address = address(MetaspaceShared::shared_rs()->base());
-  uintx max_delta = uintx(MetaspaceShared::shared_rs()->size());
-  assert(max_delta <= MAX_SHARED_DELTA, "range check");
 
   uintx deltax = address(symbol) - base_address;
-  assert(deltax < max_delta, "range check");
+  // The symbols are in RO space, which is smaler than MAX_SHARED_DELTA.
+  // The assert below is just to be extra cautious.
+  assert(deltax <= MAX_SHARED_DELTA, "the delta is too large to encode");
   u4 delta = u4(deltax);
 
   CompactHashtableWriter::add(hash, delta);
