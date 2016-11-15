@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
-import java.io.File;
-import java.io.Reader;
-import java.net.MalformedURLException;
+import java.io.*;
 import java.net.URL;
 
 /**
@@ -178,16 +176,8 @@ public abstract class AbstractUnmarshallerImpl implements Unmarshaller
         }
 
         try {
-            // copied from JAXP
-            String path = f.getAbsolutePath();
-            if (File.separatorChar != '/')
-                path = path.replace(File.separatorChar, '/');
-            if (!path.startsWith("/"))
-                path = "/" + path;
-            if (!path.endsWith("/") && f.isDirectory())
-                path = path + "/";
-            return unmarshal(new URL("file", "", path));
-        } catch( MalformedURLException e ) {
+            return unmarshal(new BufferedInputStream(new FileInputStream(f)));
+        } catch( FileNotFoundException e ) {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
