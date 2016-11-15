@@ -50,7 +50,8 @@ import javax.imageio.ImageReadParam;
  */
 public final class TIFFImageReadParam extends ImageReadParam {
 
-    private List<TIFFTagSet> allowedTagSets = new ArrayList<TIFFTagSet>(4);
+    private final List<TIFFTagSet> allowedTagSets =
+        new ArrayList<TIFFTagSet>(4);
 
     /**
      * Constructs a {@code TIFFImageReadParam}.  Tags defined by
@@ -72,7 +73,8 @@ public final class TIFFImageReadParam extends ImageReadParam {
 
     /**
      * Adds a {@code TIFFTagSet} object to the list of allowed
-     * tag sets.
+     * tag sets.  Attempting to add a duplicate object to the list
+     * has no effect.
      *
      * @param tagSet a {@code TIFFTagSet}.
      *
@@ -83,7 +85,9 @@ public final class TIFFImageReadParam extends ImageReadParam {
         if (tagSet == null) {
             throw new IllegalArgumentException("tagSet == null!");
         }
-        allowedTagSets.add(tagSet);
+        if (!allowedTagSets.contains(tagSet)) {
+            allowedTagSets.add(tagSet);
+        }
     }
 
     /**
