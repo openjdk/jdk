@@ -39,6 +39,7 @@ import java.util.Collection;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -103,6 +104,11 @@ public interface JavaLangModuleAccess {
                                          ModuleHashes hashes);
 
     /**
+     * Returns the object with the hashes of other modules
+     */
+    Optional<ModuleHashes> hashes(ModuleDescriptor descriptor);
+
+    /**
      * Resolves a collection of root modules, with service binding
      * and the empty configuration as the parent. The post resolution
      * checks are optionally run.
@@ -120,8 +126,10 @@ public interface JavaLangModuleAccess {
                                      Supplier<ModuleReader> readerSupplier);
 
     /**
-     * Returns the object with the hashes of other modules
+     * Creates a ModuleFinder for a module path.
      */
-    Optional<ModuleHashes> hashes(ModuleDescriptor descriptor);
+    ModuleFinder newModulePath(Runtime.Version version,
+                               boolean isLinkPhase,
+                               Path... entries);
 
 }

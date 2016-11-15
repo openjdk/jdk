@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8145239
+ * @bug 8145239 8129559 8080354
  * @summary Tests for EvaluationState.classes
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng ClassesTest
@@ -247,14 +247,30 @@ public class ClassesTest extends KullaTesting {
     }
 
     public void classesIgnoredModifiers() {
-        assertDeclareWarn1("public interface A { }",
-                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 6, 0, -1, -1, Diagnostic.Kind.WARNING));
+        assertEval("public interface A { }");
         assertDeclareWarn1("static class B implements A { }",
                 new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 6, 0, -1, -1, Diagnostic.Kind.WARNING));
         assertDeclareWarn1("final interface C extends A { }",
                 new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 5, 0, -1, -1, Diagnostic.Kind.WARNING));
-        assertDeclareWarn1("protected enum D implements C { }",
+        assertActiveKeys();
+    }
+
+    public void classesIgnoredModifiersAnnotation() {
+        assertEval("public @interface X { }");
+        assertEval("@X public interface A { }");
+        assertDeclareWarn1("@X static class B implements A { }",
                 new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 9, 0, -1, -1, Diagnostic.Kind.WARNING));
+        assertDeclareWarn1("@X final interface C extends A { }",
+                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 8, 0, -1, -1, Diagnostic.Kind.WARNING));
+        assertActiveKeys();
+    }
+
+    public void classesIgnoredModifiersOtherModifiers() {
+        assertEval("strictfp public interface A { }");
+        assertDeclareWarn1("strictfp static class B implements A { }",
+                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 15, 0, -1, -1, Diagnostic.Kind.WARNING));
+        assertDeclareWarn1("strictfp final interface C extends A { }",
+                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 14, 0, -1, -1, Diagnostic.Kind.WARNING));
         assertActiveKeys();
     }
 

@@ -95,7 +95,7 @@ java.datatransfer_COPY := flavormap.properties
 ################################################################################
 
 java.desktop_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference \
-    '-Xdoclint/package:java.*,javax.*' -Xlint:-deprecation,-exports
+    '-Xdoclint/package:java.*,javax.*' -Xlint:-deprecation,exports
 java.desktop_COPY := .gif .png .wav .txt .xml .css .pf
 java.desktop_CLEAN := iio-plugin.properties cursors.properties
 
@@ -348,7 +348,7 @@ jdk.accessibility_ADD_JAVAC_FLAGS := -Xlint:-exports
 
 ################################################################################
 
-jdk.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:-com.sun.tools.*' \
+jdk.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:-com.sun.tools.*,-jdk.internal.*' \
     -XDstringConcat=inline
 jdk.compiler_CLEAN_FILES := $(wildcard \
     $(patsubst %, $(JDK_TOPDIR)/src/jdk.compiler/share/classes/%/*.properties, \
@@ -362,6 +362,10 @@ jdk.jshell_ADD_JAVAC_FLAGS := -Xlint:-exports
 
 jdk.hotspot.agent_ADD_JAVAC_FLAGS := $(DISABLE_WARNINGS),-overrides
 jdk.hotspot.agent_COPY := .gif .png sa.js .properties
+
+################################################################################
+
+jdk.editpad_COPY := .properties
 
 ################################################################################
 
@@ -436,10 +440,6 @@ jdk.jdi_EXCLUDE_FILES += jdi-overview.html
 
 ################################################################################
 
-jdk.jsobject_ADD_JAVAC_FLAGS := -Xlint:-exports
-
-################################################################################
-
 jdk.dev_CLEAN_FILES := $(wildcard \
     $(patsubst %, $(JDK_TOPDIR)/src/jdk.dev/share/classes/%/*.properties, \
         com/sun/tools/script/shell))
@@ -475,6 +475,13 @@ jdk.localedata_COPY := _dict _th
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product
 jdk.localedata_EXCLUDE_FILES += sun/text/resources/ext/BreakIteratorRules_th.java
+
+################################################################################
+# If this is an imported module that has prebuilt classes, only compile
+# module-info.java.
+ifneq ($(wildcard $(IMPORT_MODULES_CLASSES)/$(MODULE)), )
+  $(MODULE)_INCLUDE_FILES := module-info.java
+endif
 
 ################################################################################
 # Setup the compilation for the module

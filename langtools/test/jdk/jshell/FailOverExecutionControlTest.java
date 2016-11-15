@@ -33,7 +33,7 @@
 
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeMethod;
-import jdk.jshell.execution.JDIDefaultExecutionControl;
+import jdk.jshell.execution.JdiDefaultExecutionControl;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionEnv;
 import static jdk.jshell.execution.Util.failOverExecutionControlGenerator;
@@ -47,7 +47,7 @@ public class FailOverExecutionControlTest extends ExecutionControlTestBase {
         setUp(builder -> builder.executionEngine(failOverExecutionControlGenerator(
                 new AlwaysFailingGenerator(),
                 new AlwaysFailingGenerator(),
-                JDIDefaultExecutionControl.launch())));
+                JdiDefaultExecutionControl.launch())));
     }
 
     class AlwaysFailingGenerator implements ExecutionControl.Generator {

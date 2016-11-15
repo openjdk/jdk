@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -515,7 +515,7 @@ public class DriverManager {
      * @see SecurityManager#checkPermission
      * @see #getLogStream
      */
-    @Deprecated
+    @Deprecated(since="1.2")
     public static void setLogStream(java.io.PrintStream out) {
 
         SecurityManager sec = System.getSecurityManager();
@@ -538,7 +538,7 @@ public class DriverManager {
      * @deprecated  Use {@code getLogWriter}
      * @see #setLogStream
      */
-    @Deprecated
+    @Deprecated(since="1.2")
     public static java.io.PrintStream getLogStream() {
         return logStream;
     }

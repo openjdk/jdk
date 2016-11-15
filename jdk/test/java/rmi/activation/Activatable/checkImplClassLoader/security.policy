@@ -39,4 +39,7 @@ grant {
 
   // test needs to export rmid and communicate with objects on arbitrary ports
   permission java.net.SocketPermission "*:1024-", "connect,accept,listen";
+
+  permission java.lang.RuntimePermission "selectorProvider";
+  permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
 };

@@ -53,6 +53,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+import java.util.stream.Stream;
 
 import jdk.internal.module.ModulePatcher.PatchedModuleReader;
 import jdk.internal.misc.VM;
@@ -144,9 +145,9 @@ public class BuiltinClassLoader
     /**
      * Create a new instance.
      */
-    BuiltinClassLoader(BuiltinClassLoader parent, URLClassPath ucp) {
+    BuiltinClassLoader(String name, BuiltinClassLoader parent, URLClassPath ucp) {
         // ensure getParent() returns null when the parent is the boot loader
-        super(parent == null || parent == ClassLoaders.bootLoader() ? null : parent);
+        super(name, parent == null || parent == ClassLoaders.bootLoader() ? null : parent);
 
         this.parent = parent;
         this.ucp = ucp;
@@ -747,6 +748,10 @@ public class BuiltinClassLoader
         @Override
         public Optional<URI> find(String name) {
             return Optional.empty();
+        }
+        @Override
+        public Stream<String> list() {
+            return Stream.empty();
         }
         @Override
         public void close() {

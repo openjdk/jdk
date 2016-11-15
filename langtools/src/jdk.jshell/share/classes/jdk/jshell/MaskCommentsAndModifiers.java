@@ -36,8 +36,12 @@ import java.util.stream.Stream;
  */
 class MaskCommentsAndModifiers {
 
-    private final static Set<String> IGNORED_MODIFERS =
+    private final static Set<String> IGNORED_MODIFIERS =
             Stream.of( "public", "protected", "private", "static", "final" )
+                    .collect( Collectors.toSet() );
+
+    private final static Set<String> OTHER_MODIFIERS =
+            Stream.of( "abstract", "strictfp", "transient", "volatile", "synchronized", "native", "default" )
                     .collect( Collectors.toSet() );
 
     // Builder to accumulate non-masked characters
@@ -52,24 +56,28 @@ class MaskCommentsAndModifiers {
     // Entire input string length
     private final int length;
 
-    // Should leading modifiers be masked away
-    private final boolean maskModifiers;
-
-    // The next character
+    // The next character position
     private int next = 0;
 
-    // We have past any point where a top-level modifier could be
-    private boolean inside = false;
+    // The current character
+    private int c;
+
+    // Do we mask-off ignored modifiers?  Set by parameter and turned off after
+    // initial modifier section
+    private boolean maskModifiers;
 
     // Does the string end with an unclosed '/*' style comment?
     private boolean openComment = false;
 
-    @SuppressWarnings("empty-statement")
     MaskCommentsAndModifiers(String s, boolean maskModifiers) {
         this.str = s;
         this.length = s.length();
         this.maskModifiers = maskModifiers;
-        do { } while (next());
+        read();
+        while (c >= 0) {
+            next();
+            read();
+        }
     }
 
     String cleared() {
@@ -90,24 +98,33 @@ class MaskCommentsAndModifiers {
      * Read the next character
      */
     private int read() {
-        if (next >= length) {
-            return -1;
-        }
-        return str.charAt(next++);
+        return c = (next >= length)
+                ? -1
+                : str.charAt(next++);
     }
 
-    private void write(StringBuilder sb, int ch) {
+    private void unread() {
+        if (c >= 0) {
+            --next;
+        }
+    }
+
+    private void writeTo(StringBuilder sb, int ch) {
         sb.append((char)ch);
     }
 
     private void write(int ch) {
-        write(sbCleared, ch);
-        write(sbMask, Character.isWhitespace(ch) ? ch : ' ');
+        if (ch != -1) {
+            writeTo(sbCleared, ch);
+            writeTo(sbMask, Character.isWhitespace(ch) ? ch : ' ');
+        }
     }
 
     private void writeMask(int ch) {
-        write(sbMask, ch);
-        write(sbCleared, Character.isWhitespace(ch) ? ch : ' ');
+        if (ch != -1) {
+            writeTo(sbMask, ch);
+            writeTo(sbCleared, Character.isWhitespace(ch) ? ch : ' ');
+        }
     }
 
     private void write(CharSequence s) {
@@ -122,99 +139,105 @@ class MaskCommentsAndModifiers {
         }
     }
 
-    private boolean next() {
-        return next(read());
-    }
-
-    private boolean next(int c) {
-        if (c < 0) {
-            return false;
-        }
-
-        if (c == '\'' || c == '"') {
-            inside = true;
-            write(c);
-            int match = c;
-            c = read();
-            while (c != match) {
-                if (c < 0) {
-                    return false;
-                }
-                if (c == '\n' || c == '\r') {
-                    write(c);
-                    return true;
-                }
-                if (c == '\\') {
-                    write(c);
-                    c = read();
-                }
+    private void next() {
+        switch (c) {
+            case '\'':
+            case '"':
+                maskModifiers = false;
                 write(c);
-                c = read();
-            }
-            write(c);
-            return true;
-        }
-
-        if (c == '/') {
-            c = read();
-            if (c == '*') {
-                writeMask('/');
-                writeMask(c);
-                int prevc = 0;
-                while ((c = read()) != '/' || prevc != '*') {
-                    if (c < 0) {
-                        openComment = true;
-                        return false;
+                int match = c;
+                while (read() >= 0 && c != match && c != '\n' && c != '\r') {
+                    write(c);
+                    if (c == '\\') {
+                        write(read());
                     }
-                    writeMask(c);
-                    prevc = c;
                 }
-                writeMask(c);
-                return true;
-            } else if (c == '/') {
-                writeMask('/');
-                writeMask(c);
-                while ((c = read()) != '\n' && c != '\r') {
-                    if (c < 0) {
-                        return false;
-                    }
-                    writeMask(c);
+                write(c); // write match // line-end
+                break;
+            case '/':
+                read();
+                switch (c) {
+                    case '*':
+                        writeMask('/');
+                        writeMask(c);
+                        int prevc = 0;
+                        while (read() >= 0 && (c != '/' || prevc != '*')) {
+                            writeMask(c);
+                            prevc = c;
+                        }
+                        writeMask(c);
+                        openComment = c < 0;
+                        break;
+                    case '/':
+                        writeMask('/');
+                        writeMask(c);
+                        while (read() >= 0 && c != '\n' && c != '\r') {
+                            writeMask(c);
+                        }
+                        writeMask(c);
+                        break;
+                    default:
+                        maskModifiers = false;
+                        write('/');
+                        unread();
+                        break;
                 }
-                writeMask(c);
-                return true;
-            } else {
-                inside = true;
-                write('/');
-                // read character falls through
-            }
-        }
-
-        if (Character.isJavaIdentifierStart(c)) {
-            if (maskModifiers && !inside) {
-                StringBuilder sb = new StringBuilder();
+                break;
+            case '@':
                 do {
-                    write(sb, c);
-                    c = read();
+                    write(c);
+                    read();
                 } while (Character.isJavaIdentifierPart(c));
-                String id = sb.toString();
-                if (IGNORED_MODIFERS.contains(id)) {
-                    writeMask(sb);
-                } else {
-                    write(sb);
-                    if (id.equals("import")) {
-                        inside = true;
-                    }
+                while (Character.isWhitespace(c)) {
+                    write(c);
+                    read();
                 }
-                return next(c); // recurse to handle left-over character
-            }
-        } else if (!Character.isWhitespace(c)) {
-            inside = true;
+                // if this is an annotation with arguments, process those recursively
+                if (c == '(') {
+                    write(c);
+                    boolean prevMaskModifiers = maskModifiers;
+                    int parenCnt = 1;
+                    while (read() >= 0) {
+                        if (c == ')') {
+                            if (--parenCnt == 0) {
+                                break;
+                            }
+                        } else if (c == '(') {
+                            ++parenCnt;
+                        }
+                        next(); // recurse to handle quotes and comments
+                    }
+                    write(c);
+                    // stuff in annotation arguments doesn't effect inside determination
+                    maskModifiers = prevMaskModifiers;
+                } else {
+                    unread();
+                }
+                break;
+            default:
+                if (Character.isJavaIdentifierStart(c)) {
+                    StringBuilder sb = new StringBuilder();
+                    do {
+                        writeTo(sb, c);
+                        read();
+                    } while (Character.isJavaIdentifierPart(c));
+                    unread();
+                    String id = sb.toString();
+                    if (maskModifiers && IGNORED_MODIFIERS.contains(id)) {
+                        writeMask(sb);
+                    } else {
+                        write(sb);
+                        if (maskModifiers && !OTHER_MODIFIERS.contains(id)) {
+                            maskModifiers = false;
+                        }
+                    }
+                } else {
+                    if (!Character.isWhitespace(c)) {
+                        maskModifiers = false;
+                    }
+                    write(c);
+                }
+                break;
         }
-
-        if (c < 0) {
-            return false;
-        }
-        write(c);
-        return true;
     }
 }

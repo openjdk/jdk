@@ -22,32 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 #include <errno.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#if defined(__linux__)
-#include <sys/poll.h>
-#endif
-#include <netinet/tcp.h>        /* Defines TCP_NODELAY, needed for 2.6 */
-#include <netinet/in.h>
-#ifdef __linux__
-#include <netinet/ip.h>
-#endif
-#include <netdb.h>
-#include <stdlib.h>
 
-#ifdef __solaris__
-#include <fcntl.h>
-#endif
-#ifdef __linux__
-#include <unistd.h>
-#include <sys/sysctl.h>
-#endif
-
-#include "jvm.h"
-#include "jni_util.h"
 #include "net_util.h"
 
 #include "java_net_SocketOptions.h"
@@ -186,11 +162,7 @@ Java_java_net_PlainSocketImpl_socketCreate(JNIEnv *env, jobject this,
     jobject fdObj, ssObj;
     int fd;
     int type = (stream ? SOCK_STREAM : SOCK_DGRAM);
-#ifdef AF_INET6
     int domain = ipv6_available() ? AF_INET6 : AF_INET;
-#else
-    int domain = AF_INET;
-#endif
 
     if (socketExceptionCls == NULL) {
         jclass c = (*env)->FindClass(env, "java/net/SocketException");
@@ -214,7 +186,6 @@ Java_java_net_PlainSocketImpl_socketCreate(JNIEnv *env, jobject this,
         return;
     }
 
-#ifdef AF_INET6
     /* Disable IPV6_V6ONLY to ensure dual-socket support */
     if (domain == AF_INET6) {
         int arg = 0;
@@ -225,7 +196,6 @@ Java_java_net_PlainSocketImpl_socketCreate(JNIEnv *env, jobject this,
             return;
         }
     }
-#endif /* AF_INET6 */
 
     /*
      * If this is a server socket then enable SO_REUSEADDR
@@ -295,11 +265,10 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
     }
     setDefaultScopeID(env, &him.sa);
 
-#ifdef AF_INET6
     if (trafficClass != 0 && ipv6_available()) {
         NET_SetTrafficClass(&him.sa, trafficClass);
     }
-#endif /* AF_INET6 */
+
     if (timeout <= 0) {
         connect_rv = NET_Connect(fd, &him.sa, len);
 #ifdef __solaris__

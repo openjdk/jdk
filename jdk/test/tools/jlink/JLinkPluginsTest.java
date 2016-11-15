@@ -83,5 +83,21 @@ public class JLinkPluginsTest {
             Path imageDir = helper.generateDefaultImage(userOptions, moduleName).assertSuccess();
             helper.checkImage(imageDir, moduleName, null, null);
         }
+        {
+            // disable generate jli classes - JDK-8160063
+            String[] userOptions = {"--disable-plugin", "generate-jli-classes"};
+            String moduleName = "jlidisabled";
+            helper.generateDefaultJModule(moduleName, "composite2");
+            Path imageDir = helper.generateDefaultImage(userOptions, moduleName).assertSuccess();
+            helper.checkImage(imageDir, moduleName, null, null);
+        }
+        {
+            // disable invalid plugin - JDK-8160063
+            String[] userOptions = {"--disable-plugin", "non-existent-plugin"};
+            String moduleName = "invaliddisabled";
+            helper.generateDefaultJModule(moduleName, "composite2");
+            helper.generateDefaultImage(userOptions, moduleName).
+                assertFailure("Error: No such plugin: non-existent-plugin");
+        }
     }
 }

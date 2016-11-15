@@ -22,140 +22,16 @@
 # questions.
 #
 
+default: all
+
 include $(SPEC)
 include MakeBase.gmk
 
-#################################################################
-#
-# CORE_PKGS environment variable has been moved to the following file
-#
-include CORE_PKGS.gmk
-#
-# Load environment variables for API package names that are not part of
-# the Java SE platform
-#
-include NON_CORE_PKGS.gmk
-
-
-.SUFFIXES: # Delete the default suffixes
-.SUFFIXES: .java
-
-#
-# Definitions for directories
-#
-
-DOCSDIR := $(DOCS_IMAGE_DIR)
-DOCSTMPDIR = $(SUPPORT_OUTPUTDIR)/docs
-
-HOTSPOT_DOCS_IMPORT_PATH=$(HOTSPOT_OUTPUTDIR)/docs
-
-JAVADOC_CMD = $(JAVA) \
-    -Djava.awt.headless=true \
-    $(NEW_JAVADOC)
-
-JAVADOC_CMD_SMALL = $(JAVA_SMALL) \
-    -Djava.awt.headless=true \
-    $(NEW_JAVADOC)
-
-# Copyright year for beginning of Java and some of the apis
-# (Needed when creating the javadocs)
-FIRST_COPYRIGHT_YEAR = 1993
-DOMAPI_FIRST_COPYRIGHT_YEAR = 2005
-MIRROR_FIRST_COPYRIGHT_YEAR = 2004
-DOCLETAPI_FIRST_COPYRIGHT_YEAR = 1993
-TAGLETAPI_FIRST_COPYRIGHT_YEAR = 1993
-JDI_FIRST_COPYRIGHT_YEAR = 1999
-JAAS_FIRST_COPYRIGHT_YEAR = 1998
-JGSS_FIRST_COPYRIGHT_YEAR = 2000
-SMARTCARDIO_FIRST_COPYRIGHT_YEAR = 2005
-HTTPSERVER_FIRST_COPYRIGHT_YEAR = 2005
-MGMT_FIRST_COPYRIGHT_YEAR = 2003
-ATTACH_FIRST_COPYRIGHT_YEAR = 2005
-JCONSOLE_FIRST_COPYRIGHT_YEAR = 2006
-SCTPAPI_FIRST_COPYRIGHT_YEAR = 2009
-TRACING_FIRST_COPYRIGHT_YEAR = 2008
-JSHELLAPI_FIRST_COPYRIGHT_YEAR = 2015
-TREEAPI_FIRST_COPYRIGHT_YEAR = 2005
-NASHORNAPI_FIRST_COPYRIGHT_YEAR = 2014
-DYNALINKAPI_FIRST_COPYRIGHT_YEAR = 2015
-JNLP_FIRST_COPYRIGHT_YEAR = 1998
-PLUGIN2_FIRST_COPYRIGHT_YEAR = 2007
-JDKNET_FIRST_COPYRIGHT_YEAR = 2014
-JACCESSAPI_FIRST_COPYRIGHT_YEAR = 2002
-JSOBJECT_FIRST_COPYRIGHT_YEAR = 1993
-
-# Oracle name
-FULL_COMPANY_NAME = Oracle and/or its affiliates
-
-# Copyright address
-COMPANY_ADDRESS = 500 Oracle Parkway<br>Redwood Shores, CA 94065 USA.
-
-# The trademark symbol
-TRADEMARK = &trade;
-
-# Common copyright lines used
-# The word "Copyright" might optionally be a link to the file cpyr.html.
-# The first year of copyright may vary or not be available.
-# The address to the company might be optional.
-COMMA:= ,
-EMPTY:=
-SPACE:=$(EMPTY) $(EMPTY)
-COPYRIGHT_SYMBOL = &\#x00a9;
-# Macro to construct the copyright line
-# (The GNU make 3.78.1 "if" conditional is broken, fixed in GNU make 3.81)
-define CopyrightLine # optionalurl optionalfirstyear optionaladdress
-$(if $(strip $1),<a href="$(strip $1)">Copyright</a>,Copyright) \
-$(COPYRIGHT_SYMBOL) $(if $2,$2${COMMA},) $(COPYRIGHT_YEAR),\
-$(FULL_COMPANY_NAME). $3 All rights reserved.
-endef
-
-# Url to root of documents
-DOCSDIR_URL = {@docroot}/$(GET2DOCSDIR)
-
-# Url to copyright html file
-COPYRIGHT_URL = $(DOCSDIR_URL)/legal/cpyr.html
-
-# Url to bug filing site
-BUG_SUBMIT_URL = http://bugreport.java.com/bugreport/
-
-# Common line for how to submit a bug or rfe
-BUG_SUBMIT_LINE = <a href="$(BUG_SUBMIT_URL)">Submit a bug or feature</a>
-
-# Url to devdocs page
-DOCS_BASE_URL = http://docs.oracle.com/javase/$(VERSION_SPECIFICATION)/docs
-DEV_DOCS_URL = $(DOCS_BASE_URL)/index.html
-
-# Common Java trademark line
-JAVA_TRADEMARK_LINE = Java is a trademark or registered trademark of \
-$(FULL_COMPANY_NAME) in the US and other countries.
-
-#################################################################
-# Macros:
-
+################################################################################
 
 # List of all possible directories for javadoc to look for sources
-# NOTE: Quotes are required around sourcepath argument only on Windows.
-# Otherwise, you get "No packages or classes specified." due
-# to $(PATH_SEP) being interpreted as an end of
-# command (newline or shell ; character)
-ALL_SOURCE_DIRS := $(wildcard \
-      $(SUPPORT_OUTPUTDIR)/gensrc/j* \
-      $(if $(IMPORT_MODULES_SRC), $(IMPORT_MODULES_SRC)/*) \
-      $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS)/classes \
-      $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS_TYPE)/classes \
-      $(JDK_TOPDIR)/src/*/share/classes \
-      $(HOTSPOT_TOPDIR)/src/*/share/classes \
-      $(LANGTOOLS_TOPDIR)/src/*/share/classes \
-      $(NASHORN_TOPDIR)/src/*/share/classes \
-      $(CORBA_TOPDIR)/src/*/share/classes \
-      $(JAXP_TOPDIR)/src/*/share/classes \
-      $(JAXWS_TOPDIR)/src/*/share/classes \
-      $(SUPPORT_OUTPUTDIR)/rmic/j* \
-      $(JDK_TOPDIR)/src/*/share/doc/stub \
-      ) \
-      #
-
-ALL_MODULE_SOURCE_DIRS := \
+# Allow custom to overwrite.
+JAVADOC_SOURCE_DIRS = \
       $(SUPPORT_OUTPUTDIR)/gensrc/* \
       $(if $(IMPORT_MODULES_SRC), $(IMPORT_MODULES_SRC)/*) \
       $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS)/classes \
@@ -171,181 +47,56 @@ ALL_MODULE_SOURCE_DIRS := \
       $(JDK_TOPDIR)/src/*/share/doc/stub \
       #
 
-
-# List with classpath separator between them
-EMPTY:=
-SPACE:= $(EMPTY) $(EMPTY)
-RELEASEDOCS_SOURCEPATH = \
-    $(subst $(SPACE),$(PATH_SEP),$(strip $(ALL_SOURCE_DIRS)))
-
-RELEASEDOCS_MODULESOURCEPATH = \
-    $(subst $(SPACE),$(PATH_SEP),$(strip $(ALL_MODULE_SOURCE_DIRS)))
-
-define prep-target
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-endef
-
-# Prep for javadoc creation, assumes $@ is an index.html file
-define prep-javadoc
-	@if [ -f "$@" -a "$?" != "" ] ; then \
-	  $(ECHO) "# Dependencies have changed: $?"; \
-	fi
-	$(RM) -r $(@D)
-	$(MKDIR) -p $(@D)
-endef
-
-$(eval $(call FillCacheFind, $(ALL_SOURCE_DIRS)))
-define PackageDependencies
-  $(call CacheFind, $(wildcard $(foreach p, $(subst .,/,$1), $(addsuffix /$p, $(ALL_SOURCE_DIRS)))))
-endef
-
-# Given a list of packages, add packages that exist to $@, print summary
-define PackageFilter # packages
-	@if [ "$1" != "" ] ; then \
-	  for p in $1 ; do \
-	    pd=`$(ECHO) $${p} | $(SED) -e 's@[.]@/@g'`; \
-	    found="false"; \
-	    for cp in $(ALL_SOURCE_DIRS) ; do \
-	      if [ -d $${cp}/$${pd} ] ; then \
-	        $(ECHO) "$${p}" >> $@; \
-	        found="true"; \
-	        break; \
-	      fi; \
-	    done; \
-	    if [ "$${found}" = "false" ] ; then \
-	      $(ECHO) "WARNING: Package not found: $${p}"; \
-	    fi; \
-	  done; \
-	fi
-endef
-
-# Print out a summary of the javadoc command about to be run
-define JavadocSummary # optionsfile packagesfile
-	@$(ECHO) "# Running javadoc for $(patsubst $(OUTPUT_ROOT)/%,%,$@)" $(LOG_WARN)
-	@($(ECHO) "# Options (`$(BASENAME) $1`):"; $(SED) -e 's@^@#   @' $1) $(LOG_DEBUG)
-	@($(ECHO) "# Packages (`$(BASENAME) $2`):";$(SED) -e 's@^@#   @' $2) $(LOG_DEBUG)
-endef
-
-#
-# Different api directories created from root directory
-#
-COREAPI_DOCSDIR = $(DOCSDIR)/api
-JDK_API_DOCSDIR = $(DOCSDIR)/jdk/api
-JRE_API_DOCSDIR = $(DOCSDIR)/jre/api
-PLATFORM_DOCSDIR = $(DOCSDIR)/platform
-
-JAVADOC_ARCHIVE_NAME := jdk-$(VERSION_STRING)-docs.zip
-JAVADOC_ARCHIVE_ASSEMBLY_DIR :=  $(DOCSTMPDIR)/zip-docs
-JAVADOC_ARCHIVE_DIR := $(OUTPUT_ROOT)/bundles
-JAVADOC_ARCHIVE := $(JAVADOC_ARCHIVE_DIR)/$(JAVADOC_ARCHIVE_NAME)
+# Should we use -Xdocrootparent? Allow custom to overwrite.
+DOCROOTPARENT_FLAG = TRUE
 
 # The core api index file is the target for the core api javadocs rule
 # and needs to be defined early so that all other javadoc rules may
 # depend on it.
-COREAPI_INDEX_FILE = $(COREAPI_DOCSDIR)/index.html
+CORE_INDEX_FILE := $(JAVADOC_OUTPUTDIR)/api/index.html
 
-# The non-core api javadocs need to be able to access the root of the core
-# api directory, so for jdk/api or jre/api to get to the core api/
-# directory we would use this:
-JDKJRE2COREAPI = ../../api
+# Symbols
+TRADEMARK := &trade;
+COPYRIGHT_SYMBOL := &$(HASH)x00a9;
+COPYRIGHT_TEXT := Copyright
+ALL_RIGHTS_RESERVED := All rights reserved.
 
-# Common bottom argument
-define CommonBottom # year
-<font size="-1"><br> $(call CopyrightLine,,$1,)</font>
-endef
+# URLs
+JAVADOC_BASE_URL := http://docs.oracle.com/javase/$(VERSION_SPECIFICATION)/docs
+BUG_SUBMIT_URL := http://bugreport.java.com/bugreport/
 
-# Common trademark bottom argument (Not sure why this is used sometimes)
-define CommonTrademarkBottom # year
-<font size="-1">\
-$(BUG_SUBMIT_LINE)<br>$(JAVA_TRADEMARK_LINE)<br>\
-$(call CopyrightLine,,$1,$(COMPANY_ADDRESS))\
-</font>
-endef
+################################################################################
+# Text snippets
 
-# Common echo of option
-define OptionOnly # opt
-	if [ "$(strip $1)" != "" ] ; then \
-		$(PRINTF) "%s\n" "$(strip $1)"; \
-	fi
-endef
+FULL_COMPANY_NAME := Oracle and/or its affiliates
+COMPANY_ADDRESS := 500 Oracle Parkway<br>Redwood Shores, CA 94065 USA.
+BUG_SUBMIT_LINE := <a href="$(BUG_SUBMIT_URL)">Submit a bug or feature</a>
+JAVA_TRADEMARK_LINE := Java is a trademark or registered trademark of \
+    $(FULL_COMPANY_NAME) in the US and other countries.
 
-define OptionPair # opt arg
-	$(PRINTF) "%s '%s'\n" "$(strip $1)" '$(strip $2)'
-endef
+COMMON_BOTTOM_ADDRESS := $(COMPANY_ADDRESS)
+COMMON_BOTTOM_TEXT := $(BUG_SUBMIT_LINE)<br>$(JAVA_TRADEMARK_LINE)
 
-define OptionTrip # opt arg arg
-	$(PRINTF) "%s '%s' '%s'\n" "$(strip $1)" '$(strip $2)' '$(strip $3)'
-endef
-
-# Core api bottom argument (with special sauce)
-COREAPI_BOTTOM = <font size="-1"> $(BUG_SUBMIT_LINE)\
+CORE_BOTTOM_COPYRIGHT_URL := {@docroot}/../legal/cpyr.html
+CORE_BOTTOM_TEXT := $(BUG_SUBMIT_LINE)\
 <br>For further API reference and developer documentation, \
-see <a href="$(DEV_DOCS_URL)" target="_blank">Java SE Documentation</a>. \
-That documentation contains more detailed, developer-targeted descriptions, \
-with conceptual overviews, definitions of terms, workarounds, \
-and working code examples.<br>\
-$(call CopyrightLine,$(COPYRIGHT_URL),$(FIRST_COPYRIGHT_YEAR),)\
-</font>
+see <a href="$(JAVADOC_BASE_URL)/index.html" target="_blank">Java SE \
+Documentation</a>. That documentation contains more detailed, \
+developer-targeted descriptions, with conceptual overviews, definitions of \
+terms, workarounds, and working code examples.
 
-# Common javadoc options used by all bundles
-
-# This flag may be overridden from a custom makefile
-DOCROOTPARENT_FLAG = -Xdocrootparent $(DOCS_BASE_URL)
-
-define COMMON_JAVADOCFLAGS
-    $(call OptionOnly,-XDignore.symbol.file=true) ; \
-    $(call OptionOnly,-quiet) ; \
-    $(call OptionOnly,-use) ; \
-    $(call OptionOnly,-keywords) ; \
-    $(call OptionOnly,$(DOCROOTPARENT_FLAG))
-endef
-
-# Common javadoc tags used by all bundles
-
-# Java language specification cite
-TAG_JLS = jls:a:See <cite> \
-The Java&trade; Language Specification</cite>:
-
-# Java virtual machine specification cite
-TAG_JVMS = jvms:a:See <cite> \
-The Java&trade; Virtual Machine Specification</cite>:
-
-# In order to get a specific ordering it's necessary to specify the total
-# ordering of tags as the tags are otherwise ordered in order of definition.
-define COMMON_JAVADOCTAGS
-  $(call OptionPair,-tag,beaninfo:X) ; \
-  $(call OptionPair,-tag,revised:X) ; \
-  $(call OptionPair,-tag,since.unbundled:X) ; \
-  $(call OptionPair,-tag,spec:X) ; \
-  $(call OptionPair,-tag,specdefault:X) ; \
-  $(call OptionPair,-tag,Note:X) ; \
-  $(call OptionPair,-tag,ToDo:X) ; \
-  $(call OptionPair,-tag,apiNote:a:API Note:) ; \
-  $(call OptionPair,-tag,implSpec:a:Implementation Requirements:) ; \
-  $(call OptionPair,-tag,implNote:a:Implementation Note:) ; \
-  $(call OptionPair,-tag,param) ; \
-  $(call OptionPair,-tag,return) ; \
-  $(call OptionPair,-tag,throws) ; \
-  $(call OptionPair,-tag,since) ; \
-  $(call OptionPair,-tag,version) ; \
-  $(call OptionPair,-tag,serialData) ; \
-  $(call OptionPair,-tag,factory) ; \
-  $(call OptionPair,-tag,see) ; \
-  $(call OptionPair,-tag,$(TAG_JVMS)) ; \
-  $(call OptionPair,-tag,$(TAG_JLS))
-endef
-
-
-
-# Assume we need a draft format when the version string is not a GA version.
-ifeq ($(VERSION_IS_GA), false)
+ifeq ($(VERSION_IS_GA), true)
+  DRAFT_HEADER :=
+  DRAFT_BOTTOM :=
+  DRAFT_WINTITLE :=
+  CORE_TOP_EARLYACCESS :=
+else
+  # We need a draft format when not building the GA version.
   DRAFT_HEADER := <br><strong>DRAFT&nbsp;$(VERSION_STRING)</strong>
   DRAFT_BOTTOM := <br><strong>DRAFT&nbsp;$(VERSION_STRING)</strong>
   DRAFT_WINTITLE := $(VERSION_BUILD)
-  # Early access top text (not used in FCS releases)
-  COREAPI_TOP_EARLYACCESS := \
-<div style="background-color: \#EEEEEE"> \
+  CORE_TOP_EARLYACCESS := \
+<div style="background-color: $$(HASH)EEEEEE"> \
 <div style="padding: 6px; margin-top: 2px; margin-bottom: 6px; \
 margin-left: 6px; margin-right: 6px; text-align: justify; \
 font-size: 80%; font-family: Helvetica, Arial, sans-serif; \
@@ -355,1384 +106,932 @@ contained herein are not final and are subject to change. \
 The information is being made available to you solely for purpose of \
 evaluation. \
 </div> </div>
-else
-  DRAFT_HEADER :=
-  DRAFT_BOTTOM :=
-  DRAFT_WINTITLE :=
-  COREAPI_TOP_EARLYACCESS :=
 endif
 
-#################################################################
+################################################################################
+# Support functions for SetupJavadocGeneration
 
+# Print an option line to the target file
+# Arguments:
+# arg 1: the option name
+# arg 2-3: optional arguments to the option
+define AddOption
+	$(PRINTF) "%s$(if $(strip $2), '%s',)$(if $(strip $3), '%s',)\n" \
+	    "$(strip $1)"$(if $(strip $2), '$(strip $2)',)$(if $(strip $3), \
+	    '$(strip $3)',) >> $@
+endef
+
+# This function goes to great pains to exactly mimic the old behavior
+# in all details, including whitespace.
+# Note that COPYRIGHT_YEAR is the current year (from spec.gmk)
+# Arguments:
+# arg 1: first copyright year
+# arg 2: copyright url (optional)
+# arg 3: company address (optional)
+# arg 4: free-form text snippet (optional)
+define GenerateBottom
+  <font size="-1">$(if $(strip $4), $(strip $4))<br> $(if \
+      $(strip $2),<a href="$(strip $2)">$(COPYRIGHT_TEXT)</a>,$(COPYRIGHT_TEXT)) \
+      $(COPYRIGHT_SYMBOL) $(strip $1), $(COPYRIGHT_YEAR), \
+      $(FULL_COMPANY_NAME). $(strip $3) \
+      $(ALL_RIGHTS_RESERVED)$(if $(strip $4), )</font>
+endef
+
+# Speed up finding by filling cache
+$(eval $(call FillCacheFind, $(wildcard $(JAVADOC_SOURCE_DIRS))))
+
+# Prevent # from expanding
+EscapeHash = $(subst $(HASH),{hash},$(strip $1))
+
+################################################################################
+# Setup make rules for running javadoc.
 #
-# Load custom Javadoc rules
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name. Note that
+# the index.html file will work as a "touch file" for all the magnitude of
+# files that are generated by javadoc.
 #
-
-$(eval $(call IncludeCustomExtension, , Javadoc.gmk))
-
-#################################################################
-
+# Remaining parameters are named arguments. These include:
+#   MODULES - Modules to include
+#   PACKAGES - Packages to include
+#   PACKAGE_FILTER - Filter for packages
+#   IS_CORE - Set to TRUE for the Core API package which needs special treatment
+#   API_ROOT - Where to base the documentation (jre or jdk)
+#   DEST_DIR - A directory relative to the API root
+#   OVERVIEW - Path to a html overview file
+#   TITLE - Default title to use for the more specific versions below
+#   WINDOW_TITLE - Title to use in -windowtitle. Computed from TITLE if empty.
+#   HEADER_TITLE - Title to use in -header. Computed from TITLE if empty.
+#   DOC_TITLE - Title to use in -doctitle. Computed from TITLE if empty.
+#   FIRST_COPYRIGHT_YEAR - First year this bundle was introduced
+#   DOCLINT - Doclint level. Defaults to "all".
+#   DOCLINT_PACKAGES - Optional -Xdoclint/package value
+#   ENCODING - Change character encoding (defaults to 'ascii')
+#   SPLIT_INDEX - Enable -splitIndex
+#   BREAKITERATOR - Enable -breakiterator
+#   NODEPRECATEDLIST - Enable nodeprecatedlist
+#   NOINDEX - Enable -noindex and -nonavbar
+#   BOTTOM_COPYRIGHT_URL - Copyright URL to use in -bottom
+#   BOTTOM_ADDRESS - Company address to use in -bottom
+#   BOTTOM_TEXT - Extra text to use in -bottom
+#   EXTRA_TOP - Additional -top data
 #
-# Default target is same as docs target, create core api and all others it can
-#
+SetupJavadocGeneration = $(NamedParamsMacroTemplate)
+define SetupJavadocGenerationBody
+  ifeq ($$($1_IS_CORE), TRUE)
+    $1_JAVA := $$(JAVA)
+    $1_OUTPUT_DIRNAME := api
+  else
+    $1_JAVA := $$(JAVA_SMALL)
+    $1_OUTPUT_DIRNAME := $$($1_API_ROOT)/api/$$($1_DEST_DIR)
 
-all: docs
-docs: coredocs otherdocs
+    ifeq ($$($1_RELATIVE_CORE_DIR),)
+      # Compute a relative path to core root.
+      # The non-core api javadocs need to be able to access the root of the core
+      # api directory, so for jdk/api or jre/api to get to the core api/
+      # directory we would use this
+      # NOTE: Need to be able to override for broken old code in JShell
+      $1_RELATIVE_CORE_DIR := $$(strip $$(subst $$(call DirToDotDot, \
+          $$(JAVADOC_OUTPUTDIR))/,, $$(call DirToDotDot, \
+          $$(JAVADOC_OUTPUTDIR)/$$($1_OUTPUT_DIRNAME))))
+    endif
 
-#
-# Optional target which bundles all generated javadocs into a zip archive.
-# The dependency on docs is handled in Main.gmk.
-#
+    $1_DEPS += $(CORE_INDEX_FILE)
+  endif
 
-zip-docs: $(JAVADOC_ARCHIVE)
+  ifneq ($$($1_OVERVIEW), )
+    $1_DEPS +=  $$($1_OVERVIEW)
+  endif
 
-#############################################################
-#
-# coredocs
-#
-COREAPI_DOCTITLE = Java$(TRADEMARK) Platform, Standard Edition \
-$(VERSION_SPECIFICATION)<br>API Specification
-COREAPI_WINDOWTITLE = Java Platform SE $(VERSION_SPECIFICATION)
-COREAPI_HEADER = \
-<strong>Java$(TRADEMARK)&nbsp;Platform<br>Standard&nbsp;Ed.&nbsp;$(VERSION_SPECIFICATION)</strong>
+  ifeq ($$($1_ENCODING), )
+    $1_ENCODING := ascii
+  endif
 
-# Overview file for core apis
-COREAPI_OVERVIEW = $(JDK_TOPDIR)/src/java.base/share/classes/overview-core.html
+  ifeq ($$($1_DOCLINT), )
+    $1_DOCLINT := all
+  endif
 
-# The options and packages files
-COREAPI_OPTIONS_FILE = $(DOCSTMPDIR)/coredocs.options
-COREAPI_PACKAGES_FILE = $(DOCSTMPDIR)/coredocs.packages
+  ifeq ($$($1_DOC_TITLE), )
+    $1_DOC_TITLE := $$($1_TITLE)
+  endif
 
-# The modules required to be documented
-COREAPI_MODULES = java.se.ee
+  ifeq ($$($1_WINDOW_TITLE), )
+    $1_WINDOW_TITLE := $$(strip $$(subst $$(TRADEMARK),, $$($1_TITLE)))
+  endif
 
-coredocs: $(COREAPI_INDEX_FILE)
+  ifeq ($$($1_HEADER_TITLE), )
+    $1_HEADER_TITLE := $$(strip $$(subst $$(TRADEMARK),, $$($1_TITLE)))
+  endif
+  $1_HEADER := <strong>$$($1_HEADER_TITLE)</strong>
 
-# Set relative location to core api document root
-$(COREAPI_INDEX_FILE): GET2DOCSDIR=..
+  $1_BOTTOM := $$(call GenerateBottom, $$($1_FIRST_COPYRIGHT_YEAR), \
+      $$($1_BOTTOM_COPYRIGHT_URL), $$($1_BOTTOM_ADDRESS), $$($1_BOTTOM_TEXT))
 
-# Run javadoc if the index file is out of date or missing
-$(COREAPI_INDEX_FILE): $(COREAPI_OPTIONS_FILE) $(COREAPI_PACKAGES_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(COREAPI_OPTIONS_FILE),$(COREAPI_PACKAGES_FILE))
-	$(JAVADOC_CMD) -d $(@D) \
-	    @$(COREAPI_OPTIONS_FILE) @$(COREAPI_PACKAGES_FILE)
+  # The index.html, options, and packages files
+  $1_INDEX_FILE := $$(JAVADOC_OUTPUTDIR)/$$($1_OUTPUT_DIRNAME)/index.html
+  $1_OPTIONS_FILE := $$(SUPPORT_OUTPUTDIR)/docs/$1.options
+  $1_PACKAGES_FILE := $$(SUPPORT_OUTPUTDIR)/docs/$1.packages
 
-# Create file with javadoc options in it
-$(COREAPI_OPTIONS_FILE): $(COREAPI_OVERVIEW)
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-          $(call OptionOnly,-Xdoclint:reference) ; \
-          $(call OptionOnly,-Xdoclint/package:-org.omg.*$(COMMA)jdk.internal.logging.*) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(COREAPI_MODULES)) ; \
-	  $(call OptionPair,-encoding,ISO-8859-1) ; \
-	  $(call OptionOnly,-splitIndex) ; \
-	  $(call OptionPair,-overview,$(COREAPI_OVERVIEW)) ; \
-	  $(call OptionPair,-doctitle,$(COREAPI_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(COREAPI_WINDOWTITLE) $(DRAFT_WINTITLE)) ; \
-	  $(call OptionPair,-header,$(COREAPI_HEADER)$(DRAFT_HEADER)) ; \
-	  $(call OptionPair,-bottom,$(COREAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	) >> $@
-        ifdef COREAPI_TOP_EARLYACCESS
-	  @$(call OptionPair,-top,$(COREAPI_TOP_EARLYACCESS)) >> $@
+  $1_PACKAGES_VARDEPS := $$($1_PACKAGES) $$($1_PACKAGES_SINGLE_CLASS)
+  $1_PACKAGES_VARDEPS_FILE := $$(call DependOnVariable, $1_PACKAGES_VARDEPS, \
+       $$($1_PACKAGES_FILE).vardeps)
+
+  # Rule for creating a file with the package names in it
+  $$($1_PACKAGES_FILE): $$($1_PACKAGES_VARDEPS_FILE)
+	$$(call LogInfo, Creating Javadoc package file for $1)
+	$$(call MakeDir, $$(@D))
+        ifeq ($$($1_PACKAGES_SINGLE_CLASS), )
+	  $$(ECHO) $$($1_PACKAGES) | $$(TR) ' ' '\n' > $$@
+        else
+          # NOTE: This is for backwards compatibility for taglet
+	  $$(ECHO) $$($1_PACKAGES_SINGLE_CLASS) > $$@
         endif
 
-# Create a file with the package names in it
-$(COREAPI_PACKAGES_FILE): $(call PackageDependencies,$(CORE_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(CORE_PKGS))
+  # NOTE: Not including $$($1_EXTRA_TOP) due to $$(HASH)
+  $1_OPTIONS_VARDEPS := $$(call EscapeHash, \
+      $$($DOCROOTPARENT_FLAG) $$(JAVADOC_BASE_URL) $$($1_NO_COMMON_TAGS) \
+      $$($1_DOCLINT) $$($1_DOCLINT_PACKAGES) $$(JAVADOC_SOURCE_DIRS) \
+      $$($1_MODULES) $$($1_ENCODING) $$($1_NODEPRECATEDLIST) \
+      $$($1_BREAKITERATOR) $$($1_SPLIT_INDEX) $$($1_OVERVIEW) \
+      $$($1_DOC_TITLE) $$($1_WINDOW_TITLE) $$(DRAFT_WINTITLE) \
+      $$($1_HEADER) $$(DRAFT_HEADER) $$($1_NOINDEX) $$($1_EXTRA_TOP_2) \
+      $$($1_BOTTOM) $$(DRAFT_BOTTOM)) $$($1_PACKAGE_FILTER) $$($1_RELATIVE_CORE_DIR) \
+      $$(JAVADOC_OUTPUTDIR) \
+  )
+  $1_OPTIONS_VARDEPS_FILE := $$(call DependOnVariable, $1_OPTIONS_VARDEPS, \
+       $$($1_OPTIONS_FILE).vardeps)
 
-#############################################################
-#
-# docletapidocs
-#
+  # Rule for creating a file with javadoc options in it
+  $$($1_OPTIONS_FILE): $$($1_OPTIONS_VARDEPS_FILE)
+	$$(call LogInfo, Creating Javadoc options file for $1)
+	$$(call MakeDir, $$(@D))
+	$$(RM) $$@
+	$$(call AddOption, -XDignore.symbol.file=true)
+        ifneq ($$(LOG_LEVEL), trace)
+	  $$(call AddOption, -quiet)
+        endif
+	$$(call AddOption, -use)
+	$$(call AddOption, -keywords)
+        ifneq ($$($DOCROOTPARENT_FLAG), )
+          # NOTE: Argument to -Xdocrootparent is not quoted to keep backwards compatibility.
+	  $$(call AddOption, -Xdocrootparent $(JAVADOC_BASE_URL))
+        endif
+        ifneq ($$($1_NO_COMMON_TAGS), TRUE)
+          # In order to get a specific ordering it's necessary to specify the total
+          # ordering of tags as the tags are otherwise ordered in order of definition.
+	  $$(call AddOption, -tag, beaninfo:X)
+	  $$(call AddOption, -tag, revised:X)
+	  $$(call AddOption, -tag, since.unbundled:X)
+	  $$(call AddOption, -tag, spec:X)
+	  $$(call AddOption, -tag, specdefault:X)
+	  $$(call AddOption, -tag, Note:X)
+	  $$(call AddOption, -tag, ToDo:X)
+	  $$(call AddOption, -tag, apiNote:a:API Note:)
+	  $$(call AddOption, -tag, implSpec:a:Implementation Requirements:)
+	  $$(call AddOption, -tag, implNote:a:Implementation Note:)
+	  $$(call AddOption, -tag, param)
+	  $$(call AddOption, -tag, return)
+	  $$(call AddOption, -tag, throws)
+	  $$(call AddOption, -tag, since)
+	  $$(call AddOption, -tag, version)
+	  $$(call AddOption, -tag, serialData)
+	  $$(call AddOption, -tag, factory)
+	  $$(call AddOption, -tag, see)
+	  $$(call AddOption, -tag, \
+              jvms:a:See <cite> The Java&trade; Virtual Machine Specification</cite>:)
+	  $$(call AddOption, -tag, \
+              jls:a:See <cite> The Java&trade; Language Specification</cite>:)
+        endif
+	$$(call AddOption, -Xdoclint:$$($1_DOCLINT))
+        ifneq ($$($1_DOCLINT_PACKAGES), )
+	  $$(call AddOption, -Xdoclint/package:$$(call CommaList, $$($1_DOCLINT_PACKAGES)))
+        endif
+	$$(call AddOption, --system, none)
+	$$(call AddOption, --module-source-path, $$(subst ",, $$(call PathList, $$(JAVADOC_SOURCE_DIRS))))
+	$$(call AddOption, --add-modules, $$(call CommaList, $$($1_MODULES)))
+	$$(call AddOption, -encoding, $$($1_ENCODING))
+        ifneq ($$($1_NODEPRECATEDLIST), )
+	  $$(call AddOption, -nodeprecatedlist)
+        endif
+        ifneq ($$($1_BREAKITERATOR), )
+	  $$(call AddOption, -breakiterator)
+        endif
+        ifneq ($$($1_SPLIT_INDEX), )
+	  $$(call AddOption, -splitIndex)
+        endif
+        ifneq ($$($1_OVERVIEW), )
+	  $$(call AddOption, -overview, $$($1_OVERVIEW))
+        endif
+	$$(call AddOption, -doctitle, $$($1_DOC_TITLE))
+	$$(call AddOption, -windowtitle, $$($1_WINDOW_TITLE) $$(DRAFT_WINTITLE))
+	$$(call AddOption, -header, $$($1_HEADER)$$(DRAFT_HEADER))
+        ifneq ($$($1_NOINDEX), )
+	  $$(call AddOption, -nonavbar)
+	  $$(call AddOption, -noindex)
+        endif
+        ifneq ($$($1_EXTRA_TOP_2), )
+	  $$(call AddOption, -top,$$($1_EXTRA_TOP_2))
+        endif
+	$$(call AddOption, -bottom, $$($1_BOTTOM)$$(DRAFT_BOTTOM))
+        ifneq ($$($1_PACKAGE_FILTER), )
+	  $$(call AddOption, -group, Packages, $$($1_PACKAGE_FILTER))
+        endif
+        ifneq ($$($1_RELATIVE_CORE_DIR), )
+	  $$(call AddOption, -linkoffline, $$($1_RELATIVE_CORE_DIR)/api, $$(JAVADOC_OUTPUTDIR)/api/)
+        endif
+        ifneq ($$($1_EXTRA_TOP), )
+	  $$(call AddOption, -top, $$($1_EXTRA_TOP))
+        endif
 
-ALL_OTHER_TARGETS += docletapidocs
+  $1_PACKAGE_DEPS := $$(call CacheFind, $$(wildcard $$(foreach p, \
+      $$(subst .,/,$$(strip $$($1_PACKAGES))), \
+      $$(addsuffix /$$p, $$(wildcard $$(JAVADOC_SOURCE_DIRS))))))
 
-DOCLETAPI_DOCDIR := $(JDK_API_DOCSDIR)/javadoc/doclet
-DOCLETAPI2COREAPI := ../../$(JDKJRE2COREAPI)
-DOCLETAPI_DOCTITLE := Doclet API
-DOCLETAPI_WINDOWTITLE := Doclet API
-DOCLETAPI_HEADER := <strong>Doclet API</strong>
-DOCLETAPI_BOTTOM := $(call CommonTrademarkBottom,$(DOCLETAPI_FIRST_COPYRIGHT_YEAR))
-DOCLETAPI_GROUPNAME := Packages
-DOCLETAPI_REGEXP := jdk.javadoc.doclet*
-# DOCLETAPI_PKGS is located in NON_CORE_PKGS.gmk
+  # Rule for actually running javadoc
+  $$($1_INDEX_FILE): $$($1_OPTIONS_FILE) $$($1_PACKAGES_FILE) \
+    $$($1_PACKAGE_DEPS) $$($1_DEPS)
+	$$(call LogWarn, Generating Javadoc for $$($1_OUTPUT_DIRNAME))
+	$$(call MakeDir, $$(@D))
+        ifneq ($$(findstring $$(LOG_LEVEL), debug trace),)
+	  $$(ECHO) "Contents of $$($1_OPTIONS_FILE):" `$$(CAT) $$($1_OPTIONS_FILE)`
+	  $$(ECHO) "Contents of $$($1_PACKAGES_FILE):" `$$(CAT) $$($1_PACKAGES_FILE)`
+        endif
+	$$(call ExecuteWithLog, $$(SUPPORT_OUTPUTDIR)/docs/$1.javadoc, \
+	    $$($1_JAVA) -Djava.awt.headless=true $(NEW_JAVADOC) -d $$(@D) \
+	    @$$($1_OPTIONS_FILE) @$$($1_PACKAGES_FILE))
+	$$(TOUCH) $$($1_INDEX_FILE)
 
-# The index.html, options, and packages files
-DOCLETAPI_INDEX_FILE = $(DOCLETAPI_DOCDIR)/index.html
-DOCLETAPI_OPTIONS_FILE = $(DOCSTMPDIR)/docletapi.options
-DOCLETAPI_PACKAGES_FILE = $(DOCSTMPDIR)/docletapi.packages
+  # The output returned will be the index.html file
+  $1 := $$($1_INDEX_FILE)
+endef
 
-# The modules required to be documented
-DOCLETAPI_MODULES = jdk.javadoc
+################################################################################
 
-docletapidocs: $(DOCLETAPI_INDEX_FILE)
+CORE_PACKAGES := \
+    java.applet \
+    java.awt \
+    java.awt.color \
+    java.awt.datatransfer \
+    java.awt.desktop \
+    java.awt.dnd \
+    java.awt.event \
+    java.awt.font \
+    java.awt.geom \
+    java.awt.im \
+    java.awt.im.spi \
+    java.awt.image \
+    java.awt.image.renderable \
+    java.awt.print \
+    java.beans \
+    java.beans.beancontext \
+    java.io \
+    java.lang \
+    java.lang.annotation \
+    java.lang.instrument \
+    java.lang.invoke \
+    java.lang.management \
+    java.lang.module \
+    java.lang.ref \
+    java.lang.reflect \
+    java.math \
+    java.net \
+    java.net.http \
+    java.net.spi \
+    java.nio \
+    java.nio.channels \
+    java.nio.channels.spi \
+    java.nio.charset \
+    java.nio.charset.spi \
+    java.nio.file \
+    java.nio.file.attribute \
+    java.nio.file.spi \
+    java.rmi \
+    java.rmi.activation \
+    java.rmi.dgc \
+    java.rmi.registry \
+    java.rmi.server \
+    java.security \
+    java.security.acl \
+    java.security.cert \
+    java.security.interfaces \
+    java.security.spec \
+    java.sql \
+    java.text \
+    java.text.spi \
+    java.time \
+    java.time.chrono \
+    java.time.format \
+    java.time.temporal \
+    java.time.zone \
+    java.util \
+    java.util.concurrent \
+    java.util.concurrent.atomic \
+    java.util.concurrent.locks \
+    java.util.function \
+    java.util.jar \
+    java.util.logging \
+    java.util.prefs \
+    java.util.regex \
+    java.util.spi \
+    java.util.stream \
+    java.util.zip \
+    javax.accessibility \
+    javax.activation \
+    javax.activity \
+    javax.annotation \
+    javax.annotation.processing \
+    javax.crypto \
+    javax.crypto.interfaces \
+    javax.crypto.spec \
+    javax.imageio \
+    javax.imageio.event \
+    javax.imageio.metadata \
+    javax.imageio.plugins.jpeg \
+    javax.imageio.plugins.bmp \
+    javax.imageio.plugins.tiff \
+    javax.imageio.spi \
+    javax.imageio.stream \
+    javax.jws \
+    javax.jws.soap \
+    javax.lang.model \
+    javax.lang.model.element \
+    javax.lang.model.type \
+    javax.lang.model.util \
+    javax.management \
+    javax.management.loading \
+    javax.management.monitor \
+    javax.management.relation \
+    javax.management.openmbean \
+    javax.management.timer \
+    javax.management.modelmbean \
+    javax.management.remote \
+    javax.management.remote.rmi \
+    javax.naming \
+    javax.naming.directory \
+    javax.naming.event \
+    javax.naming.ldap \
+    javax.naming.spi \
+    javax.net \
+    javax.net.ssl \
+    javax.print \
+    javax.print.attribute \
+    javax.print.attribute.standard \
+    javax.print.event \
+    javax.rmi \
+    javax.rmi.CORBA \
+    javax.rmi.ssl \
+    javax.script \
+    javax.security.auth \
+    javax.security.auth.callback \
+    javax.security.auth.kerberos \
+    javax.security.auth.login \
+    javax.security.auth.spi \
+    javax.security.auth.x500 \
+    javax.security.cert \
+    javax.security.sasl \
+    javax.sound.sampled \
+    javax.sound.sampled.spi \
+    javax.sound.midi \
+    javax.sound.midi.spi \
+    javax.sql \
+    javax.sql.rowset \
+    javax.sql.rowset.serial \
+    javax.sql.rowset.spi \
+    javax.swing \
+    javax.swing.border \
+    javax.swing.colorchooser \
+    javax.swing.filechooser \
+    javax.swing.event \
+    javax.swing.table \
+    javax.swing.text \
+    javax.swing.text.html \
+    javax.swing.text.html.parser \
+    javax.swing.text.rtf \
+    javax.swing.tree \
+    javax.swing.undo \
+    javax.swing.plaf \
+    javax.swing.plaf.basic \
+    javax.swing.plaf.metal \
+    javax.swing.plaf.multi \
+    javax.swing.plaf.nimbus \
+    javax.swing.plaf.synth \
+    javax.tools \
+    javax.transaction \
+    javax.transaction.xa \
+    javax.xml.catalog \
+    javax.xml.parsers \
+    javax.xml.bind \
+    javax.xml.bind.annotation \
+    javax.xml.bind.annotation.adapters \
+    javax.xml.bind.attachment \
+    javax.xml.bind.helpers \
+    javax.xml.bind.util \
+    javax.xml.soap \
+    javax.xml.ws \
+    javax.xml.ws.handler \
+    javax.xml.ws.handler.soap \
+    javax.xml.ws.http \
+    javax.xml.ws.soap \
+    javax.xml.ws.spi \
+    javax.xml.ws.spi.http \
+    javax.xml.ws.wsaddressing \
+    javax.xml.transform \
+    javax.xml.transform.sax \
+    javax.xml.transform.dom \
+    javax.xml.transform.stax \
+    javax.xml.transform.stream \
+    javax.xml \
+    javax.xml.crypto \
+    javax.xml.crypto.dom \
+    javax.xml.crypto.dsig \
+    javax.xml.crypto.dsig.dom \
+    javax.xml.crypto.dsig.keyinfo \
+    javax.xml.crypto.dsig.spec \
+    javax.xml.datatype \
+    javax.xml.validation \
+    javax.xml.namespace \
+    javax.xml.xpath \
+    javax.xml.stream \
+    javax.xml.stream.events \
+    javax.xml.stream.util \
+    org.ietf.jgss \
+    org.omg.CORBA \
+    org.omg.CORBA.DynAnyPackage \
+    org.omg.CORBA.ORBPackage \
+    org.omg.CORBA.TypeCodePackage \
+    org.omg.stub.java.rmi \
+    org.omg.CORBA.portable \
+    org.omg.CORBA_2_3 \
+    org.omg.CORBA_2_3.portable \
+    org.omg.CosNaming \
+    org.omg.CosNaming.NamingContextExtPackage \
+    org.omg.CosNaming.NamingContextPackage \
+    org.omg.SendingContext \
+    org.omg.PortableServer \
+    org.omg.PortableServer.CurrentPackage \
+    org.omg.PortableServer.POAPackage \
+    org.omg.PortableServer.POAManagerPackage \
+    org.omg.PortableServer.ServantLocatorPackage \
+    org.omg.PortableServer.portable \
+    org.omg.PortableInterceptor \
+    org.omg.PortableInterceptor.ORBInitInfoPackage \
+    org.omg.Messaging \
+    org.omg.IOP \
+    org.omg.IOP.CodecFactoryPackage \
+    org.omg.IOP.CodecPackage \
+    org.omg.Dynamic \
+    org.omg.DynamicAny \
+    org.omg.DynamicAny.DynAnyPackage \
+    org.omg.DynamicAny.DynAnyFactoryPackage \
+    org.w3c.dom \
+    org.w3c.dom.events \
+    org.w3c.dom.bootstrap \
+    org.w3c.dom.ls \
+    org.w3c.dom.ranges \
+    org.w3c.dom.traversal \
+    org.w3c.dom.views \
+    org.xml.sax \
+    org.xml.sax.ext \
+    org.xml.sax.helpers
 
-# Set relative location to core api document root
-$(DOCLETAPI_INDEX_FILE): GET2DOCSDIR=$(DOCLETAPI2COREAPI)/..
+$(eval $(call SetupJavadocGeneration, coredocs, \
+    MODULES := java.se.ee, \
+    PACKAGES := $(CORE_PACKAGES), \
+    IS_CORE := TRUE, \
+    OVERVIEW := $(JDK_TOPDIR)/src/java.base/share/classes/overview-core.html, \
+    WINDOW_TITLE := Java Platform SE $(VERSION_SPECIFICATION), \
+    HEADER_TITLE := Java$(TRADEMARK)&nbsp;Platform<br>Standard&nbsp;Ed.&nbsp;$(VERSION_SPECIFICATION), \
+    DOC_TITLE := Java$(TRADEMARK) Platform$(COMMA) Standard Edition \
+      $(VERSION_SPECIFICATION)<br>API Specification, \
+    FIRST_COPYRIGHT_YEAR := 1993, \
+    DOCLINT := reference, \
+    DOCLINT_PACKAGES := -org.omg.* jdk.internal.logging.*, \
+    ENCODING := ISO-8859-1, \
+    SPLIT_INDEX := TRUE, \
+    BOTTOM_COPYRIGHT_URL := $(CORE_BOTTOM_COPYRIGHT_URL), \
+    BOTTOM_TEXT := $(CORE_BOTTOM_TEXT), \
+    EXTRA_TOP := $(CORE_TOP_EARLYACCESS), \
+))
 
-# Run javadoc if the index file is out of date or missing
-$(DOCLETAPI_INDEX_FILE): $(DOCLETAPI_OPTIONS_FILE) $(DOCLETAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(DOCLETAPI_OPTIONS_FILE),$(DOCLETAPI_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(DOCLETAPI_OPTIONS_FILE) @$(DOCLETAPI_PACKAGES_FILE)
+TARGETS += $(coredocs)
 
-# Create file with javadoc options in it
-$(DOCLETAPI_OPTIONS_FILE):
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:all) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(DOCLETAPI_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionOnly,-breakiterator) ; \
-	  $(call OptionPair,-doctitle,$(DOCLETAPI_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(DOCLETAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(DOCLETAPI_HEADER)$(DRAFT_HEADER)) ; \
-	  $(call OptionPair,-bottom,$(DOCLETAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-group,$(DOCLETAPI_GROUPNAME),$(DOCLETAPI_REGEXP)); \
-	  $(call OptionTrip,-linkoffline,$(DOCLETAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
+################################################################################
 
-# Create a file with the package names in it
-$(DOCLETAPI_PACKAGES_FILE): $(call PackageDependencies,$(DOCLETAPI_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(DOCLETAPI_PKGS))
+$(eval $(call SetupJavadocGeneration, docletapi, \
+    MODULES := jdk.javadoc, \
+    PACKAGES := \
+        jdk.javadoc.doclet \
+        jdk.javadoc.doclet.taglet \
+        jdk.javadoc.doclets, \
+    PACKAGE_FILTER := jdk.javadoc.doclet*, \
+    API_ROOT := jdk, \
+    DEST_DIR := javadoc/doclet, \
+    TITLE := Doclet API, \
+    FIRST_COPYRIGHT_YEAR := 1993, \
+    BREAKITERATOR := TRUE, \
+    BOTTOM_ADDRESS := $(COMMON_BOTTOM_ADDRESS), \
+    BOTTOM_TEXT := $(COMMON_BOTTOM_TEXT), \
+))
 
-#############################################################
-#
-# old docletapidocs
-#
+TARGETS += $(docletapi)
 
-ALL_OTHER_TARGETS += olddocletapidocs
+################################################################################
 
-OLD_DOCLET_DIR := $(JDK_API_DOCSDIR)/javadoc/old
-OLD_DOCLETAPI_DOCDIR := $(OLD_DOCLET_DIR)/doclet
-OLD_DOCLETAPI2COREAPI := ../../../$(JDKJRE2COREAPI)
-OLD_DOCLETAPI_DOCTITLE := Doclet API
-OLD_DOCLETAPI_WINDOWTITLE := Doclet API
-OLD_DOCLETAPI_HEADER := <strong>Doclet API</strong>
-OLD_DOCLETAPI_BOTTOM := $(call CommonTrademarkBottom,$(DOCLETAPI_FIRST_COPYRIGHT_YEAR))
-OLD_DOCLETAPI_GROUPNAME := Packages
-OLD_DOCLETAPI_REGEXP := com.sun.javadoc
-# OLD_DOCLETAPI_PKGS is located in NON_CORE_PKGS.gmk
+$(eval $(call SetupJavadocGeneration, old-docletapi, \
+    MODULES := jdk.javadoc, \
+    PACKAGES := com.sun.javadoc, \
+    PACKAGE_FILTER := com.sun.javadoc, \
+    API_ROOT := jdk, \
+    DEST_DIR := javadoc/old/doclet, \
+    TITLE := Doclet API, \
+    FIRST_COPYRIGHT_YEAR := 1993, \
+    BREAKITERATOR := TRUE, \
+    BOTTOM_ADDRESS := $(COMMON_BOTTOM_ADDRESS), \
+    BOTTOM_TEXT := $(COMMON_BOTTOM_TEXT), \
+))
 
-# The index.html, options, and packages files
-OLD_DOCLETAPI_INDEX_FILE = $(OLD_DOCLETAPI_DOCDIR)/index.html
-OLD_DOCLETAPI_OPTIONS_FILE = $(DOCSTMPDIR)/old-docletapi.options
-OLD_DOCLETAPI_PACKAGES_FILE = $(DOCSTMPDIR)/old-docletapi.packages
+TARGETS += $(old-docletapi)
 
-# The modules required to be documented
-OLD_DOCLETAPI_MODULES = jdk.javadoc
+################################################################################
 
-olddocletapidocs: $(OLD_DOCLETAPI_INDEX_FILE)
+# Specify a single class instead of a package
+TAGLET_PACKAGE_SINGLE_CLASS := com/sun/tools/doclets/Taglet.java
+TAGLET_PACKAGE_DIR := $(LANGTOOLS_TOPDIR)/src/jdk.javadoc/share/classes
 
-# Set relative location to core api document root
-$(OLD_DOCLETAPI_INDEX_FILE): GET2DOCSDIR=$(OLD_DOCLETAPI2COREAPI)/..
+$(eval $(call SetupJavadocGeneration, tagletapi, \
+    MODULES := jdk.javadoc, \
+    PACKAGES := com.sun.tools.doclets, \
+    PACKAGES_SINGLE_CLASS := $(TAGLET_PACKAGE_DIR)/$(TAGLET_PACKAGE_SINGLE_CLASS), \
+    API_ROOT := jdk, \
+    DEST_DIR := javadoc/old/taglet, \
+    TITLE := Taglet API, \
+    FIRST_COPYRIGHT_YEAR := 1993, \
+    BREAKITERATOR := TRUE, \
+    NOINDEX := TRUE, \
+    BOTTOM_ADDRESS := $(COMMON_BOTTOM_ADDRESS), \
+    BOTTOM_TEXT := $(COMMON_BOTTOM_TEXT), \
+))
 
-# Run javadoc if the index file is out of date or missing
-$(OLD_DOCLETAPI_INDEX_FILE): $(OLD_DOCLETAPI_OPTIONS_FILE) $(OLD_DOCLETAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(OLD_DOCLETAPI_OPTIONS_FILE),$(OLD_DOCLETAPI_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(OLD_DOCLETAPI_OPTIONS_FILE) @$(OLD_DOCLETAPI_PACKAGES_FILE)
+TARGETS += $(tagletapi)
 
-# Create file with javadoc options in it
-$(OLD_DOCLETAPI_OPTIONS_FILE):
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:all) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(OLD_DOCLETAPI_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionOnly,-breakiterator) ; \
-	  $(call OptionPair,-doctitle,$(OLD_DOCLETAPI_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(OLD_DOCLETAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(OLD_DOCLETAPI_HEADER)$(DRAFT_HEADER)) ; \
-	  $(call OptionPair,-bottom,$(OLD_DOCLETAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-group,$(OLD_DOCLETAPI_GROUPNAME),$(OLD_DOCLETAPI_REGEXP)); \
-	  $(call OptionTrip,-linkoffline,$(OLD_DOCLETAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
+################################################################################
 
-# Create a file with the package names in it
-$(OLD_DOCLETAPI_PACKAGES_FILE): $(call PackageDependencies,$(OLD_DOCLETAPI_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(OLD_DOCLETAPI_PKGS))
+$(eval $(call SetupJavadocGeneration, domapi, \
+    MODULES := \
+        java.xml \
+        jdk.xml.dom, \
+    PACKAGES := \
+        org.w3c.dom \
+        org.w3c.dom.bootstrap \
+        org.w3c.dom.ls \
+        org.w3c.dom.ranges \
+        org.w3c.dom.traversal \
+        org.w3c.dom.html \
+        org.w3c.dom.stylesheets \
+        org.w3c.dom.css \
+        org.w3c.dom.events \
+        org.w3c.dom.views, \
+    PACKAGE_FILTER := org.w3c.dom*, \
+    API_ROOT := jre, \
+    DEST_DIR := plugin/dom, \
+    TITLE := Common DOM API, \
+    FIRST_COPYRIGHT_YEAR := 2005, \
+    DOCLINT := none, \
+    SPLIT_INDEX := TRUE, \
+    BOTTOM_ADDRESS := $(COMMON_BOTTOM_ADDRESS), \
+    BOTTOM_TEXT := $(COMMON_BOTTOM_TEXT), \
+))
 
-#############################################################
-#
-# tagletapidocs
-#
+TARGETS += $(domapi)
 
-ALL_OTHER_TARGETS += tagletapidocs
-TAGLETAPI_DOCDIR := $(OLD_DOCLET_DIR)/taglet
-TAGLETAPI2COREAPI := ../../../$(JDKJRE2COREAPI)
-TAGLETAPI_DOCTITLE := Taglet API
-TAGLETAPI_WINDOWTITLE := Taglet API
-TAGLETAPI_HEADER := <strong>Taglet API</strong>
-TAGLETAPI_BOTTOM := $(call CommonTrademarkBottom,$(TAGLETAPI_FIRST_COPYRIGHT_YEAR))
-# TAGLETAPI_FILE is located in NON_CORE_PKGS.gmk
+################################################################################
 
-# The index.html, options, and packages files
-TAGLETAPI_INDEX_FILE = $(TAGLETAPI_DOCDIR)/index.html
-TAGLETAPI_OPTIONS_FILE = $(DOCSTMPDIR)/tagletapi.options
-TAGLETAPI_PACKAGES_FILE = $(DOCSTMPDIR)/tagletapi.packages
+$(eval $(call SetupJavadocGeneration, jdi, \
+    MODULES := jdk.jdi, \
+    PACKAGES := \
+        com.sun.jdi \
+        com.sun.jdi.event \
+        com.sun.jdi.request \
+        com.sun.jdi.connect \
+        com.sun.jdi.connect.spi, \
+    API_ROOT := jdk, \
+    DEST_DIR := jpda/jdi, \
+    OVERVIEW := $(JDK_TOPDIR)/src/jdk.jdi/share/classes/jdi-overview.html, \
+    TITLE := Java$(TRADEMARK) Debug Interface, \
+    FIRST_COPYRIGHT_YEAR := 1999, \
+    DOCLINT := none, \
+))
 
-# The modules required to be documented
-TAGLETAPI_MODULES = jdk.javadoc
+TARGETS += $(jdi)
 
-tagletapidocs: $(TAGLETAPI_INDEX_FILE)
+################################################################################
 
-# Run javadoc if the index file is out of date or missing
-$(TAGLETAPI_INDEX_FILE): $(TAGLETAPI_OPTIONS_FILE) $(TAGLETAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(TAGLETAPI_OPTIONS_FILE),$(TAGLETAPI_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(TAGLETAPI_OPTIONS_FILE) @$(TAGLETAPI_PACKAGES_FILE)
+$(eval $(call SetupJavadocGeneration, jaas, \
+    MODULES := jdk.security.auth, \
+    PACKAGES := \
+        com.sun.security.auth \
+        com.sun.security.auth.callback \
+        com.sun.security.auth.login \
+        com.sun.security.auth.module, \
+    API_ROOT := jre, \
+    DEST_DIR := security/jaas/spec, \
+    OVERVIEW := $(JDK_TOPDIR)/src/jdk.security.auth/share/classes/jaas-overview.html, \
+    TITLE := Java$(TRADEMARK) Authentication and Authorization Service, \
+    FIRST_COPYRIGHT_YEAR := 1998, \
+    DOCLINT := none, \
+))
 
-# Create file with javadoc options in it
-$(TAGLETAPI_OPTIONS_FILE):
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:all) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(TAGLETAPI_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionOnly,-breakiterator) ; \
-	  $(call OptionPair,-doctitle,$(TAGLETAPI_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(TAGLETAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(TAGLETAPI_HEADER)$(DRAFT_HEADER)) ; \
-	  $(call OptionOnly,-nonavbar) ; \
-	  $(call OptionOnly,-noindex) ; \
-	  $(call OptionPair,-bottom,$(TAGLETAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-linkoffline,$(TAGLETAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
+TARGETS += $(jaas)
 
-# Create a file with the package names in it
-$(TAGLETAPI_PACKAGES_FILE): $(call PackageDependencies,$(TAGLETAPI_PKGS))
-	$(prep-target)
-	@($(ECHO) "$(LANGTOOLS_TOPDIR)/src/jdk.javadoc/share/classes/$(TAGLETAPI_FILE)" ) > $@
+################################################################################
 
-#############################################################
-#
-# domapidocs
-#
+$(eval $(call SetupJavadocGeneration, jgss, \
+    MODULES := jdk.security.jgss, \
+    PACKAGES := com.sun.security.jgss, \
+    API_ROOT := jre, \
+    DEST_DIR := security/jgss/spec, \
+    OVERVIEW := $(JDK_TOPDIR)/src/java.security.jgss/share/classes/jgss-overview.html, \
+    TITLE := Java$(TRADEMARK) GSS-API Utilities, \
+    FIRST_COPYRIGHT_YEAR := 2000, \
+    DOCLINT := none, \
+    NODEPRECATEDLIST := TRUE, \
+))
 
-ALL_OTHER_TARGETS += domapidocs
+TARGETS += $(jgss)
 
-DOMAPI_DOCDIR := $(JRE_API_DOCSDIR)/plugin/dom
-DOMAPI2COREAPI := ../../$(JDKJRE2COREAPI)
-DOMAPI_DOCTITLE := Common DOM API
-DOMAPI_WINDOWTITLE := Common DOM API
-DOMAPI_HEADER := <strong>Common DOM API</strong>
-DOMAPI_BOTTOM := $(call CommonTrademarkBottom,$(DOMAPI_FIRST_COPYRIGHT_YEAR))
-DOMAPI_GROUPNAME := Packages
-DOMAPI_REGEXP := org.w3c.dom*
-# DOMAPI_PKGS is located in NON_CORE_PKGS.gmk
+################################################################################
 
-# The index.html, options, and packages files
-DOMAPI_INDEX_FILE = $(DOMAPI_DOCDIR)/index.html
-DOMAPI_OPTIONS_FILE = $(DOCSTMPDIR)/domapi.options
-DOMAPI_PACKAGES_FILE = $(DOCSTMPDIR)/domapi.packages
+$(eval $(call SetupJavadocGeneration, smartcardio, \
+    MODULES := java.smartcardio, \
+    PACKAGES := javax.smartcardio, \
+    API_ROOT := jre, \
+    DEST_DIR := security/smartcardio/spec, \
+    TITLE := Java$(TRADEMARK) Smart Card I/O, \
+    FIRST_COPYRIGHT_YEAR := 2005, \
+    DOCLINT := none, \
+    NODEPRECATEDLIST := TRUE, \
+))
 
-# The modules required to be documented
-DOMAPI_MODULES = java.xml,jdk.xml.dom
+TARGETS += $(smartcardio)
 
-domapidocs: $(DOMAPI_INDEX_FILE)
+################################################################################
 
-# Set relative location to core api document root
-$(DOMAPI_INDEX_FILE): GET2DOCSDIR=$(DOMAPI2COREAPI)/..
+$(eval $(call SetupJavadocGeneration, httpserver, \
+    MODULES := jdk.httpserver, \
+    PACKAGES := \
+        com.sun.net.httpserver \
+        com.sun.net.httpserver.spi, \
+    API_ROOT := jre, \
+    DEST_DIR := net/httpserver/spec, \
+    TITLE := Java$(TRADEMARK) HTTP Server, \
+    FIRST_COPYRIGHT_YEAR := 2005, \
+    DOCLINT := none, \
+    NODEPRECATEDLIST := TRUE, \
+))
 
-# Run javadoc if the index file is out of date or missing
-$(DOMAPI_INDEX_FILE): $(DOMAPI_OPTIONS_FILE) $(DOMAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(DOMAPI_OPTIONS_FILE),$(DOMAPI_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(DOMAPI_OPTIONS_FILE) @$(DOMAPI_PACKAGES_FILE)
+TARGETS += $(httpserver)
 
-# Create file with javadoc options in it
-$(DOMAPI_OPTIONS_FILE):
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:none) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(DOMAPI_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionOnly,-splitIndex) ; \
-	  $(call OptionPair,-doctitle,$(DOMAPI_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(DOMAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(DOMAPI_HEADER)$(DRAFT_HEADER)) ; \
-	  $(call OptionPair,-bottom,$(DOMAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-group,$(DOMAPI_GROUPNAME),$(DOMAPI_REGEXP)); \
-	  $(call OptionTrip,-linkoffline,$(DOMAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
+################################################################################
 
-# Create a file with the package names in it
-$(DOMAPI_PACKAGES_FILE): $(call PackageDependencies,$(DOMAPI_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(DOMAPI_PKGS))
+$(eval $(call SetupJavadocGeneration, jsobject, \
+    MODULES := jdk.jsobject, \
+    PACKAGES := netscape.javascript, \
+    API_ROOT := jre, \
+    DEST_DIR := plugin/jsobject, \
+    FIRST_COPYRIGHT_YEAR := 1993, \
+    TITLE := Java$(TRADEMARK) JSObject Doc, \
+    DOCLINT := none, \
+    NODEPRECATEDLIST := TRUE, \
+))
 
-#############################################################
-#
-# jpdadocs
-#
+TARGETS += $(jsobject)
 
-ALL_OTHER_TARGETS += jpdadocs
+################################################################################
 
-jpdadocs: jdidocs jdwpdocs jvmtidocs
+$(eval $(call SetupJavadocGeneration, mgmt, \
+    MODULES := jdk.management, \
+    PACKAGES := com.sun.management, \
+    API_ROOT := jre, \
+    DEST_DIR := management/extension, \
+    OVERVIEW := $(JDK_TOPDIR)/src/java.management/share/classes/mgmt-overview.html, \
+    TITLE := Monitoring and Management Interface for the Java$(TRADEMARK) Platform, \
+    FIRST_COPYRIGHT_YEAR := 2003, \
+    DOCLINT := none, \
+    NODEPRECATEDLIST := TRUE, \
+))
 
-#############################################################
-#
-# jdidocs
-#
+TARGETS += $(mgmt)
 
-ALL_OTHER_TARGETS += jdidocs
+################################################################################
 
-JDI_DOCDIR := $(JDK_API_DOCSDIR)/jpda/jdi
-JDI2COREAPI := ../../$(JDKJRE2COREAPI)
-JDI_DOCTITLE := Java$(TRADEMARK) Debug Interface
-JDI_WINDOWTITLE := Java Debug Interface
-JDI_HEADER := <strong>Java Debug Interface</strong>
-JDI_BOTTOM := $(call CommonBottom,$(JDI_FIRST_COPYRIGHT_YEAR))
-JDI_OVERVIEW := $(JDK_TOPDIR)/src/jdk.jdi/share/classes/jdi-overview.html
-# JDI_PKGS is located in NON_CORE_PKGS.gmk
+$(eval $(call SetupJavadocGeneration, attach, \
+    MODULES := jdk.attach, \
+    PACKAGES := \
+        com.sun.tools.attach \
+        com.sun.tools.attach.spi, \
+    API_ROOT := jdk, \
+    DEST_DIR := attach/spec, \
+    TITLE := Attach API, \
+    FIRST_COPYRIGHT_YEAR := 2005, \
+    DOCLINT := none, \
+    NODEPRECATEDLIST := TRUE, \
+))
 
-# The index.html, options, and packages files
-JDI_INDEX_FILE = $(JDI_DOCDIR)/index.html
-JDI_OPTIONS_FILE = $(DOCSTMPDIR)/jdi.options
-JDI_PACKAGES_FILE = $(DOCSTMPDIR)/jdi.packages
+TARGETS += $(attach)
 
-# The modules required to be documented
-JDI_MODULES = jdk.jdi
+################################################################################
 
-jdidocs: $(JDI_INDEX_FILE)
+$(eval $(call SetupJavadocGeneration, jconsole, \
+    MODULES := jdk.jconsole, \
+    PACKAGES := com.sun.tools.jconsole, \
+    API_ROOT := jdk, \
+    DEST_DIR := jconsole/spec, \
+    TITLE := JConsole API, \
+    FIRST_COPYRIGHT_YEAR := 2006, \
+    DOCLINT := none, \
+    NODEPRECATEDLIST := TRUE, \
+))
 
-# Set relative location to core api document root
-$(JDI_INDEX_FILE): GET2DOCSDIR=$(JDI2COREAPI)/..
+TARGETS += $(jconsole)
 
-# Run javadoc if the index file is out of date or missing
-$(JDI_INDEX_FILE): $(JDI_OPTIONS_FILE) $(JDI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(JDI_OPTIONS_FILE),$(JDI_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(JDI_OPTIONS_FILE) @$(JDI_PACKAGES_FILE)
+################################################################################
 
-# Create file with javadoc options in it
-$(JDI_OPTIONS_FILE): $(JDI_OVERVIEW)
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:none) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(JDI_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionPair,-overview,$(JDI_OVERVIEW)) ; \
-	  $(call OptionPair,-doctitle,$(JDI_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(JDI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(JDI_HEADER)$(DRAFT_HEADER)) ; \
-	  $(call OptionPair,-bottom,$(JDI_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-linkoffline,$(JDI2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
+# NOTE: Need to override RELATIVE_CORE_DIR to be bug compatible with old code.
+$(eval $(call SetupJavadocGeneration, jshellapi, \
+    MODULES := jdk.jshell, \
+    PACKAGES := \
+        jdk.jshell \
+        jdk.jshell.spi \
+        jdk.jshell.execution, \
+    API_ROOT := jdk, \
+    DEST_DIR := jshell, \
+    RELATIVE_CORE_DIR := ../../../.., \
+    OVERVIEW := $(LANGTOOLS_TOPDIR)/src/jdk.jshell/share/classes/jdk/jshell/overview.html, \
+    TITLE := JShell API, \
+    HEADER_TITLE := JSHELL API, \
+    FIRST_COPYRIGHT_YEAR := 2015, \
+))
 
-# Create a file with the package names in it
-$(JDI_PACKAGES_FILE): $(call PackageDependencies,$(JDI_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(JDI_PKGS))
+TARGETS += $(jshellapi)
 
-#############################################################
-#
-# jdwpdocs
-#
+################################################################################
 
-ALL_OTHER_TARGETS += jdwpdocs
+$(eval $(call SetupJavadocGeneration, treeapi, \
+    MODULES := jdk.compiler, \
+    PACKAGES := \
+        com.sun.source.doctree \
+        com.sun.source.tree \
+        com.sun.source.util, \
+    PACKAGE_FILTER := com.sun.source.*, \
+    API_ROOT := jdk, \
+    DEST_DIR := javac/tree, \
+    TITLE := Compiler Tree API, \
+    FIRST_COPYRIGHT_YEAR := 2005, \
+))
 
-JDWP_DOCDIR = $(PLATFORM_DOCSDIR)/jpda/jdwp
+TARGETS += $(treeapi)
 
-jdwpdocs: $(JDWP_DOCDIR)/jdwp-protocol.html
-$(JDWP_DOCDIR)/jdwp-protocol.html : $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+################################################################################
 
-#############################################################
-#
-# jvmtidocs
-#
+$(eval $(call SetupJavadocGeneration, nashornapi, \
+    MODULES := jdk.scripting.nashorn, \
+    PACKAGES := \
+        jdk.nashorn.api.scripting \
+        jdk.nashorn.api.tree, \
+    PACKAGE_FILTER := jdk.nashorn.api.*, \
+    API_ROOT := jdk, \
+    DEST_DIR := nashorn, \
+    TITLE := Nashorn API, \
+    FIRST_COPYRIGHT_YEAR := 2014, \
+))
 
-JVMTI_DOCDIR := $(PLATFORM_DOCSDIR)/jvmti
+TARGETS += $(nashornapi)
+
+################################################################################
+
+$(eval $(call SetupJavadocGeneration, dynalinkapi, \
+    MODULES := jdk.dynalink, \
+    PACKAGES := \
+        jdk.dynalink \
+        jdk.dynalink.beans \
+        jdk.dynalink.linker \
+        jdk.dynalink.linker.support \
+        jdk.dynalink.support, \
+    API_ROOT := jdk, \
+    DEST_DIR := dynalink, \
+    TITLE := Dynalink API, \
+    FIRST_COPYRIGHT_YEAR := 2015, \
+))
+
+TARGETS += $(dynalinkapi)
+
+################################################################################
+
+$(eval $(call SetupJavadocGeneration, sctp, \
+    MODULES := jdk.sctp, \
+    PACKAGES := com.sun.nio.sctp, \
+    API_ROOT := jre, \
+    DEST_DIR := nio/sctp/spec, \
+    TITLE := SCTP API, \
+    FIRST_COPYRIGHT_YEAR := 2009, \
+    DOCLINT := none, \
+    NODEPRECATEDLIST := TRUE, \
+))
+
+TARGETS += $(sctp)
+
+################################################################################
+
+$(eval $(call SetupJavadocGeneration, jaccess, \
+    MODULES := jdk.accessibility, \
+    PACKAGES := com.sun.java.accessibility.util, \
+    API_ROOT := jre, \
+    DEST_DIR := accessibility/jaccess/spec, \
+    TITLE := JACCESS API, \
+    FIRST_COPYRIGHT_YEAR := 2002, \
+    NODEPRECATEDLIST := TRUE, \
+))
+
+TARGETS += $(jaccess)
+
+################################################################################
+
+$(eval $(call SetupJavadocGeneration, jdknet, \
+    MODULES := jdk.net, \
+    PACKAGES := jdk.net, \
+    API_ROOT := jre, \
+    DEST_DIR := net/socketoptions/spec, \
+    TITLE := jdk.net API, \
+    FIRST_COPYRIGHT_YEAR := 2014, \
+    DOCLINT := none, \
+    NODEPRECATEDLIST := TRUE, \
+))
+
+TARGETS += $(jdknet)
+
+################################################################################
+
+# TODO: Need to decide when the plugin API is ready to publish as experimental API.
+# This target is temporarily added for internal use for now.
+$(eval $(call SetupJavadocGeneration, jlinkplugins, \
+    MODULES := jdk.jlink, \
+    PACKAGES := jdk.tools.jlink.plugin, \
+    API_ROOT := jdk, \
+    DEST_DIR := jlink, \
+    TITLE := JLink Plugin API - EXPERIMENTAL, \
+    FIRST_COPYRIGHT_YEAR := 2015, \
+    DOCLINT := none, \
+    NODEPRECATEDLIST := TRUE, \
+))
+
+TARGETS += $(jlinkplugins)
+
+################################################################################
+# Copy JDWP html file
+
+JDWP_HTML := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html
+
+$(eval $(call SetupCopyFiles, COPY_JDWP_HTML, \
+    FILES := $(JDWP_HTML), \
+    DEST := $(JAVADOC_OUTPUTDIR)/platform/jpda/jdwp, \
+))
+
+COPY_TARGETS += $(COPY_JDWP_HTML)
+
+################################################################################
+# Copy JVMTI html file
+
 # Pick jvmti.html from any jvm variant, they are all the same.
 JVMTI_HTML := $(firstword \
     $(wildcard $(HOTSPOT_OUTPUTDIR)/variant-*/gensrc/jvmtifiles/jvmti.html))
 
 $(eval $(call SetupCopyFiles, COPY_JVMTI_HTML, \
     FILES := $(JVMTI_HTML), \
-    DEST := $(PLATFORM_DOCSDIR)/jvmti, \
+    DEST := $(JAVADOC_OUTPUTDIR)/platform/jvmti, \
 ))
 
-jvmtidocs: $(COPY_JVMTI_HTML)
+COPY_TARGETS += $(COPY_JVMTI_HTML)
 
-#############################################################
-#
-# jaasdocs
-#
+################################################################################
+# Optional target which bundles all generated javadocs into a zip archive.
+# The dependency on docs is handled in Main.gmk.
 
-ALL_OTHER_TARGETS += jaasdocs
-
-JAAS_DOCDIR := $(JRE_API_DOCSDIR)/security/jaas/spec
-JAAS2COREAPI := ../../../$(JDKJRE2COREAPI)
-JAAS_DOCTITLE := Java$(TRADEMARK) Authentication and Authorization Service
-JAAS_WINDOWTITLE := Java Authentication and Authorization Service
-JAAS_HEADER := <strong>Java Authentication and Authorization Service</strong>
-JAAS_BOTTOM := $(call CommonBottom,$(JAAS_FIRST_COPYRIGHT_YEAR))
-# JAAS_PKGS is located in NON_CORE_PKGS.gmk
-JAAS_OVERVIEW := $(JDK_TOPDIR)/src/jdk.security.auth/share/classes/jaas-overview.html
-
-# The index.html, options, and packages files
-JAAS_INDEX_FILE = $(JAAS_DOCDIR)/index.html
-JAAS_OPTIONS_FILE = $(DOCSTMPDIR)/jaas.options
-JAAS_PACKAGES_FILE = $(DOCSTMPDIR)/jaas.packages
-
-# The modules required to be documented
-JAAS_MODULES = jdk.security.auth
-
-jaasdocs: $(JAAS_INDEX_FILE)
-
-# Set relative location to core api document root
-$(JAAS_INDEX_FILE): GET2DOCSDIR=$(JAAS2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(JAAS_INDEX_FILE): $(JAAS_OPTIONS_FILE) $(JAAS_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(JAAS_OPTIONS_FILE),$(JAAS_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(JAAS_OPTIONS_FILE) @$(JAAS_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(JAAS_OPTIONS_FILE): $(JAAS_OVERVIEW)
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:none) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(JAAS_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionPair,-overview,$(JAAS_OVERVIEW)) ; \
-	  $(call OptionPair,-doctitle,$(JAAS_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(JAAS_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(JAAS_HEADER)$(DRAFT_HEADER)) ; \
-	  $(call OptionPair,-bottom,$(JAAS_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-linkoffline,$(JAAS2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
-
-# Create a file with the package names in it
-$(JAAS_PACKAGES_FILE): $(call PackageDependencies,$(JAAS_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(JAAS_PKGS))
-
-#############################################################
-#
-# jgssdocs
-#
-
-ALL_OTHER_TARGETS += jgssdocs
-
-JGSS_DOCDIR := $(JRE_API_DOCSDIR)/security/jgss/spec
-JGSS2COREAPI := ../../../$(JDKJRE2COREAPI)
-JGSS_DOCTITLE := Java$(TRADEMARK) GSS-API Utilities
-JGSS_WINDOWTITLE := Java GSS-API Utilities
-JGSS_HEADER := <strong>Java GSS-API Utilities</strong>
-JGSS_BOTTOM := $(call CommonBottom,$(JGSS_FIRST_COPYRIGHT_YEAR))
-JGSS_OVERVIEW := $(JDK_TOPDIR)/src/java.security.jgss/share/classes/jgss-overview.html
-# JGSS_PKGS is located in NON_CORE_PKGS.gmk
-
-# The index.html, options, and packages files
-JGSS_INDEX_FILE = $(JGSS_DOCDIR)/index.html
-JGSS_OPTIONS_FILE = $(DOCSTMPDIR)/jgss.options
-JGSS_PACKAGES_FILE = $(DOCSTMPDIR)/jgss.packages
-
-# The modules required to be documented
-JGSS_MODULES = jdk.security.jgss
-
-jgssdocs: $(JGSS_INDEX_FILE)
-
-# Set relative location to core api document root
-$(JGSS_INDEX_FILE): GET2DOCSDIR=$(JGSS2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(JGSS_INDEX_FILE): $(JGSS_OPTIONS_FILE) $(JGSS_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(JGSS_OPTIONS_FILE),$(JGSS_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(JGSS_OPTIONS_FILE) @$(JGSS_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(JGSS_OPTIONS_FILE): $(JGSS_OVERVIEW)
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:none) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(JGSS_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionOnly,-nodeprecatedlist) ; \
-	  $(call OptionPair,-overview,$(JGSS_OVERVIEW)) ; \
-	  $(call OptionPair,-doctitle,$(JGSS_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(JGSS_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(JGSS_HEADER)$(DRAFT_HEADER)) ; \
-	  $(call OptionPair,-bottom,$(JGSS_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-linkoffline,$(JGSS2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
-
-# Create a file with the package names in it
-$(JGSS_PACKAGES_FILE): $(call PackageDependencies,$(JGSS_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(JGSS_PKGS))
-
-#############################################################
-#
-# smartcardiodocs
-#
-
-ALL_OTHER_TARGETS += smartcardiodocs
-
-SMARTCARDIO_DOCDIR := $(JRE_API_DOCSDIR)/security/smartcardio/spec
-SMARTCARDIO2COREAPI := ../../../$(JDKJRE2COREAPI)
-SMARTCARDIO_DOCTITLE := Java$(TRADEMARK) Smart Card I/O
-SMARTCARDIO_WINDOWTITLE := Java Smart Card I/O
-SMARTCARDIO_HEADER := <strong>Java Smart Card I/O</strong>
-SMARTCARDIO_BOTTOM := $(call CommonBottom,$(SMARTCARDIO_FIRST_COPYRIGHT_YEAR))
-# SMARTCARDIO_PKGS is located in NON_CORE_PKGS.gmk
-
-# The index.html, options, and packages files
-SMARTCARDIO_INDEX_FILE = $(SMARTCARDIO_DOCDIR)/index.html
-SMARTCARDIO_OPTIONS_FILE = $(DOCSTMPDIR)/smartcardio.options
-SMARTCARDIO_PACKAGES_FILE = $(DOCSTMPDIR)/smartcardio.packages
-
-# The modules required to be documented
-SMARTCARDIO_MODULES = java.smartcardio
-
-smartcardiodocs: $(SMARTCARDIO_INDEX_FILE)
-
-# Set relative location to core api document root
-$(SMARTCARDIO_INDEX_FILE): GET2DOCSDIR=$(SMARTCARDIO2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(SMARTCARDIO_INDEX_FILE): $(SMARTCARDIO_OPTIONS_FILE) $(SMARTCARDIO_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(SMARTCARDIO_OPTIONS_FILE),$(SMARTCARDIO_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(SMARTCARDIO_OPTIONS_FILE) @$(SMARTCARDIO_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(SMARTCARDIO_OPTIONS_FILE):
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:none) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(SMARTCARDIO_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionOnly,-nodeprecatedlist) ; \
-	  $(call OptionPair,-doctitle,$(SMARTCARDIO_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(SMARTCARDIO_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(SMARTCARDIO_HEADER)$(DRAFT_HEADER)); \
-	  $(call OptionPair,-bottom,$(SMARTCARDIO_BOTTOM)$(DRAFT_BOTTOM)); \
-	  $(call OptionTrip,-linkoffline,$(SMARTCARDIO2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
-
-# Create a file with the package names in it
-$(SMARTCARDIO_PACKAGES_FILE): $(call PackageDependencies,$(SMARTCARDIO_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(SMARTCARDIO_PKGS))
-
-#############################################################
-#
-# httpserverdocs
-#
-
-ALL_OTHER_TARGETS += httpserverdocs
-
-HTTPSERVER_DOCDIR := $(JRE_API_DOCSDIR)/net/httpserver/spec
-HTTPSERVER2COREAPI := ../../../$(JDKJRE2COREAPI)
-HTTPSERVER_DOCTITLE := Java$(TRADEMARK) HTTP Server
-HTTPSERVER_WINDOWTITLE := Java HTTP Server
-HTTPSERVER_HEADER := <strong>Java HTTP Server</strong>
-HTTPSERVER_BOTTOM := $(call CommonBottom,$(HTTPSERVER_FIRST_COPYRIGHT_YEAR))
-# HTTPSERVER_PKGS is located in NON_CORE_PKGS.gmk
-
-HTTPSERVER_INDEX_HTML = $(HTTPSERVER_DOCDIR)/index.html
-HTTPSERVER_OPTIONS_FILE = $(DOCSTMPDIR)/httpserver.options
-HTTPSERVER_PACKAGES_FILE = $(DOCSTMPDIR)/httpserver.packages
-
-# The modules required to be documented
-HTTPSERVER_MODULES = jdk.httpserver
-
-httpserverdocs: $(HTTPSERVER_INDEX_HTML)
-
-# Set relative location to core api document root
-$(HTTPSERVER_INDEX_HTML): GET2DOCSDIR=$(HTTPSERVER2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(HTTPSERVER_INDEX_HTML): $(HTTPSERVER_OPTIONS_FILE) $(HTTPSERVER_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(HTTPSERVER_OPTIONS_FILE),$(HTTPSERVER_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(HTTPSERVER_OPTIONS_FILE) @$(HTTPSERVER_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(HTTPSERVER_OPTIONS_FILE):
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:none) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(HTTPSERVER_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionOnly,-nodeprecatedlist) ; \
-	  $(call OptionPair,-doctitle,$(HTTPSERVER_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(HTTPSERVER_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(HTTPSERVER_HEADER)$(DRAFT_HEADER)); \
-	  $(call OptionPair,-bottom,$(HTTPSERVER_BOTTOM)$(DRAFT_BOTTOM)); \
-	  $(call OptionTrip,-linkoffline,$(HTTPSERVER2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
-
-# Create a file with the package names in it
-$(HTTPSERVER_PACKAGES_FILE): $(call PackageDependencies,$(HTTPSERVER_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(HTTPSERVER_PKGS))
-
-#############################################################
-#
-# jsobjectdocs
-#
-
-ALL_OTHER_TARGETS += jsobjectdocs
-
-JSOBJECT_DOCDIR := $(JRE_API_DOCSDIR)/plugin/jsobject
-JSOBJECT2COREAPI := ../../$(JDKJRE2COREAPI)
-JSOBJECT_DOCTITLE := Java$(TRADEMARK) JSObject Doc
-JSOBJECT_WINDOWTITLE := Java JSObject Doc
-JSOBJECT_HEADER := <strong>Java JSObject Doc</strong>
-JSOBJECT_BOTTOM := $(call CommonBottom,$(JSOBJECT_FIRST_COPYRIGHT_YEAR))
-# JSOBJECT_PKGS is located in NON_CORE_PKGS.gmk
-
-JSOBJECT_INDEX_HTML = $(JSOBJECT_DOCDIR)/index.html
-JSOBJECT_OPTIONS_FILE = $(DOCSTMPDIR)/jsobject.options
-JSOBJECT_PACKAGES_FILE = $(DOCSTMPDIR)/jsobject.packages
-
-# The modules required to be documented
-JSOBJECT_MODULES = jdk.jsobject
-
-jsobjectdocs: $(JSOBJECT_INDEX_HTML)
-
-# Set relative location to core api document root
-$(JSOBJECT_INDEX_HTML): GET2DOCSDIR=$(JSOBJECT2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(JSOBJECT_INDEX_HTML): $(JSOBJECT_OPTIONS_FILE) $(JSOBJECT_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(JSOBJECT_OPTIONS_FILE),$(JSOBJECT_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(JSOBJECT_OPTIONS_FILE) @$(JSOBJECT_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(JSOBJECT_OPTIONS_FILE):
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:none) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(JSOBJECT_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionOnly,-nodeprecatedlist) ; \
-	  $(call OptionPair,-doctitle,$(JSOBJECT_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(JSOBJECT_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(JSOBJECT_HEADER)$(DRAFT_HEADER)); \
-	  $(call OptionPair,-bottom,$(JSOBJECT_BOTTOM)$(DRAFT_BOTTOM)); \
-	  $(call OptionTrip,-linkoffline,$(JSOBJECT2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
-
-# Create a file with the package names in it
-$(JSOBJECT_PACKAGES_FILE): $(call PackageDependencies,$(JSOBJECT_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(JSOBJECT_PKGS))
-
-
-#############################################################
-#
-# mgmtdocs
-#
-
-ALL_OTHER_TARGETS += mgmtdocs
-
-MGMT_DOCDIR := $(JRE_API_DOCSDIR)/management/extension
-MGMT2COREAPI := ../../$(JDKJRE2COREAPI)
-MGMT_DOCTITLE := Monitoring and Management Interface for the Java$(TRADEMARK) Platform
-MGMT_WINDOWTITLE := Monitoring and Management Interface for the Java Platform
-MGMT_HEADER := <strong>Monitoring and Management Interface for the Java Platform</strong>
-MGMT_BOTTOM := $(call CommonBottom,$(MGMT_FIRST_COPYRIGHT_YEAR))
-MGMT_OVERVIEW := $(JDK_TOPDIR)/src/java.management/share/classes/mgmt-overview.html
-# MGMT_PKGS is located in NON_CORE_PKGS.gmk
-
-# The index.html, options, and packages files
-MGMT_INDEX_FILE = $(MGMT_DOCDIR)/index.html
-MGMT_OPTIONS_FILE = $(DOCSTMPDIR)/mgmt.options
-MGMT_PACKAGES_FILE = $(DOCSTMPDIR)/mgmt.packages
-
-# The modules required to be documented
-MGMT_MODULES = jdk.management
-
-mgmtdocs: $(MGMT_INDEX_FILE)
-
-# Set relative location to core api document root
-$(MGMT_INDEX_FILE): GET2DOCSDIR=$(MGMT2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(MGMT_INDEX_FILE): $(MGMT_OPTIONS_FILE) $(MGMT_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(MGMT_OPTIONS_FILE),$(MGMT_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(MGMT_OPTIONS_FILE) @$(MGMT_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(MGMT_OPTIONS_FILE): $(MGMT_OVERVIEW)
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:none) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(MGMT_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionOnly,-nodeprecatedlist) ; \
-	  $(call OptionPair,-overview,$(MGMT_OVERVIEW)) ; \
-	  $(call OptionPair,-doctitle,$(MGMT_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(MGMT_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(MGMT_HEADER)$(DRAFT_HEADER)) ; \
-	  $(call OptionPair,-bottom,$(MGMT_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-linkoffline,$(MGMT2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
-
-# Create a file with the package names in it
-$(MGMT_PACKAGES_FILE): $(call PackageDependencies,$(MGMT_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(MGMT_PKGS))
-
-#############################################################
-#
-# attachdocs
-#
-
-ALL_OTHER_TARGETS += attachdocs
-
-ATTACH_DOCDIR := $(JDK_API_DOCSDIR)/attach/spec
-ATTACH2COREAPI := ../../$(JDKJRE2COREAPI)
-ATTACH_DOCTITLE := Attach API
-ATTACH_WINDOWTITLE := Attach API
-ATTACH_HEADER := <strong>Attach API</strong>
-ATTACH_BOTTOM := $(call CommonBottom,$(ATTACH_FIRST_COPYRIGHT_YEAR))
-# ATTACH_PKGS is located in NON_CORE_PKGS.gmk
-
-ATTACH_INDEX_HTML = $(ATTACH_DOCDIR)/index.html
-ATTACH_OPTIONS_FILE = $(DOCSTMPDIR)/attach.options
-ATTACH_PACKAGES_FILE = $(DOCSTMPDIR)/attach.packages
-
-# The modules required to be documented
-ATTACH_MODULES = jdk.attach
-
-attachdocs: $(ATTACH_INDEX_HTML)
-
-# Set relative location to core api document root
-$(ATTACH_INDEX_HTML): GET2DOCSDIR=$(ATTACH2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(ATTACH_INDEX_HTML): $(ATTACH_OPTIONS_FILE) $(ATTACH_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(ATTACH_OPTIONS_FILE),$(ATTACH_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(ATTACH_OPTIONS_FILE) @$(ATTACH_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(ATTACH_OPTIONS_FILE):
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:none) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(ATTACH_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionOnly,-nodeprecatedlist) ; \
-	  $(call OptionPair,-doctitle,$(ATTACH_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(ATTACH_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(ATTACH_HEADER)$(DRAFT_HEADER)) ; \
-	  $(call OptionPair,-bottom,$(ATTACH_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-linkoffline,$(ATTACH2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
-
-# Create a file with the package names in it
-$(ATTACH_PACKAGES_FILE): $(call PackageDependencies,$(ATTACH_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(ATTACH_PKGS))
-
-#############################################################
-#
-# jconsoledocs
-#
-
-ALL_OTHER_TARGETS += jconsoledocs
-
-JCONSOLE_DOCDIR := $(JDK_API_DOCSDIR)/jconsole/spec
-JCONSOLE2COREAPI := ../../$(JDKJRE2COREAPI)
-JCONSOLE_DOCTITLE := JConsole API
-JCONSOLE_WINDOWTITLE := JConsole API
-JCONSOLE_HEADER := <strong>JConsole API</strong>
-JCONSOLE_BOTTOM := $(call CommonBottom,$(JCONSOLE_FIRST_COPYRIGHT_YEAR))
-# JCONSOLE_PKGS is located in NON_CORE_PKGS.gmk
-
-JCONSOLE_INDEX_HTML = $(JCONSOLE_DOCDIR)/index.html
-JCONSOLE_OPTIONS_FILE = $(DOCSTMPDIR)/jconsole.options
-JCONSOLE_PACKAGES_FILE = $(DOCSTMPDIR)/jconsole.packages
-
-# The modules required to be documented
-JCONSOLE_MODULES = jdk.jconsole
-
-jconsoledocs: $(JCONSOLE_INDEX_HTML)
-
-# Set relative location to core api document root
-$(JCONSOLE_INDEX_HTML): GET2DOCSDIR=$(JCONSOLE2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(JCONSOLE_INDEX_HTML): $(JCONSOLE_OPTIONS_FILE) $(JCONSOLE_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(JCONSOLE_OPTIONS_FILE),$(JCONSOLE_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(JCONSOLE_OPTIONS_FILE) @$(JCONSOLE_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(JCONSOLE_OPTIONS_FILE):
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:none) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(JCONSOLE_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionOnly,-nodeprecatedlist) ; \
-	  $(call OptionPair,-doctitle,$(JCONSOLE_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(JCONSOLE_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(JCONSOLE_HEADER)$(DRAFT_HEADER)) ; \
-	  $(call OptionPair,-bottom,$(JCONSOLE_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-linkoffline,$(JCONSOLE2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
-
-# Create a file with the package names in it
-$(JCONSOLE_PACKAGES_FILE): $(call PackageDependencies,$(JCONSOLE_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(JCONSOLE_PKGS))
-
-#############################################################
-#
-# jshellapidocs
-#
-
-ALL_OTHER_TARGETS += jshellapidocs
-
-JSHELLAPI_DOCDIR := $(JDK_API_DOCSDIR)/jshell
-JSHELLAPI2COREAPI := ../../$(JDKJRE2COREAPI)
-JSHELLAPI_DOCTITLE := JShell API
-JSHELLAPI_WINDOWTITLE := JShell API
-JSHELLAPI_HEADER := <strong>JSHELL API</strong>
-JSHELLAPI_BOTTOM := $(call CommonBottom,$(JSHELLAPI_FIRST_COPYRIGHT_YEAR))
-JSHELLAPI_OVERVIEW := $(LANGTOOLS_TOPDIR)/src/jdk.jshell/share/classes/jdk/jshell/overview.html
-# JSHELLAPI_PKGS is located in NON_CORE_PKGS.gmk
-
-JSHELLAPI_INDEX_HTML = $(JSHELLAPI_DOCDIR)/index.html
-JSHELLAPI_OPTIONS_FILE = $(DOCSTMPDIR)/jshellapi.options
-JSHELLAPI_PACKAGES_FILE = $(DOCSTMPDIR)/jshellapi.packages
-
-# The modules required to be documented
-JSHELLAPI_MODULES = jdk.jshell
-
-jshellapidocs: $(JSHELLAPI_INDEX_HTML)
-
-# Set relative location to core api document root
-$(JSHELLAPI_INDEX_HTML): GET2DOCSDIR=$(JSHELLAPI2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(JSHELLAPI_INDEX_HTML): $(JSHELLAPI_OPTIONS_FILE) $(JSHELLAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(JSHELLAPI_OPTIONS_FILE),$(JSHELLAPI_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(JSHELLAPI_OPTIONS_FILE) @$(JSHELLAPI_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(JSHELLAPI_OPTIONS_FILE):
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:all) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(JSHELLAPI_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionPair,-overview,$(JSHELLAPI_OVERVIEW)) ; \
-	  $(call OptionPair,-doctitle,$(JSHELLAPI_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(JSHELLAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(JSHELLAPI_HEADER)$(DRAFT_HEADER)) ; \
-	  $(call OptionPair,-bottom,$(JSHELLAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-linkoffline,$(JSHELLAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
-
-# Create a file with the package names in it
-$(JSHELLAPI_PACKAGES_FILE): $(call PackageDependencies,$(JSHELLAPI_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(JSHELLAPI_PKGS))
-
-#############################################################
-#
-# treeapidocs
-#
-
-ALL_OTHER_TARGETS += treeapidocs
-
-TREEAPI_DOCDIR := $(JDK_API_DOCSDIR)/javac/tree
-TREEAPI2COREAPI := ../../$(JDKJRE2COREAPI)
-TREEAPI_DOCTITLE := Compiler Tree API
-TREEAPI_WINDOWTITLE := Compiler Tree API
-TREEAPI_HEADER := <strong>Compiler Tree API</strong>
-TREEAPI_BOTTOM := $(call CommonBottom,$(TREEAPI_FIRST_COPYRIGHT_YEAR))
-TREEAPI_GROUPNAME := Packages
-TREEAPI_REGEXP := com.sun.source.*
-# TREEAPI_PKGS is located in NON_CORE_PKGS.gmk
-
-TREEAPI_INDEX_HTML = $(TREEAPI_DOCDIR)/index.html
-TREEAPI_OPTIONS_FILE = $(DOCSTMPDIR)/treeapi.options
-TREEAPI_PACKAGES_FILE = $(DOCSTMPDIR)/treeapi.packages
-
-# The modules required to be documented
-TREEAPI_MODULES = jdk.compiler
-
-treeapidocs: $(TREEAPI_INDEX_HTML)
-
-# Set relative location to core api document root
-$(TREEAPI_INDEX_HTML): GET2DOCSDIR=$(TREEAPI2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(TREEAPI_INDEX_HTML): $(TREEAPI_OPTIONS_FILE) $(TREEAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(TREEAPI_OPTIONS_FILE),$(TREEAPI_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(TREEAPI_OPTIONS_FILE) @$(TREEAPI_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(TREEAPI_OPTIONS_FILE):
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:all) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(TREEAPI_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionPair,-doctitle,$(TREEAPI_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(TREEAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(TREEAPI_HEADER)$(DRAFT_HEADER)) ; \
-	  $(call OptionPair,-bottom,$(TREEAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-group,$(TREEAPI_GROUPNAME),$(TREEAPI_REGEXP)); \
-	  $(call OptionTrip,-linkoffline,$(TREEAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
-
-# Create a file with the package names in it
-$(TREEAPI_PACKAGES_FILE): $(call PackageDependencies,$(TREEAPI_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(TREEAPI_PKGS))
-
-#############################################################
-#
-# nashornapidocs
-#
-
-ALL_OTHER_TARGETS += nashornapidocs
-
-NASHORNAPI_DOCDIR := $(JDK_API_DOCSDIR)/nashorn
-NASHORNAPI2COREAPI := ../$(JDKJRE2COREAPI)
-NASHORNAPI_DOCTITLE := Nashorn API
-NASHORNAPI_WINDOWTITLE := Nashorn API
-NASHORNAPI_HEADER := <strong>Nashorn API</strong>
-NASHORNAPI_BOTTOM := $(call CommonBottom,$(NASHORNAPI_FIRST_COPYRIGHT_YEAR))
-NASHORNAPI_GROUPNAME := Packages
-NASHORNAPI_REGEXP := jdk.nashorn.api.*
-# NASHORNAPI_PKGS is located in NON_CORE_PKGS.gmk
-
-NASHORNAPI_INDEX_HTML = $(NASHORNAPI_DOCDIR)/index.html
-NASHORNAPI_OPTIONS_FILE = $(DOCSTMPDIR)/nashornapi.options
-NASHORNAPI_PACKAGES_FILE = $(DOCSTMPDIR)/nashornapi.packages
-
-# The modules required to be documented
-NASHORNAPI_MODULES = jdk.scripting.nashorn
-
-nashornapidocs: $(NASHORNAPI_INDEX_HTML)
-
-# Set relative location to core api document root
-$(NASHORNAPI_INDEX_HTML): GET2DOCSDIR=$(NASHORNAPI2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(NASHORNAPI_INDEX_HTML): $(NASHORNAPI_OPTIONS_FILE) $(NASHORNAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(NASHORNAPI_OPTIONS_FILE),$(NASHORNAPI_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(NASHORNAPI_OPTIONS_FILE) @$(NASHORNAPI_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(NASHORNAPI_OPTIONS_FILE):
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:all) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(NASHORNAPI_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionPair,-doctitle,$(NASHORNAPI_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(NASHORNAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(NASHORNAPI_HEADER)$(DRAFT_HEADER)) ; \
-	  $(call OptionPair,-bottom,$(NASHORNAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-group,$(NASHORNAPI_GROUPNAME),$(NASHORNAPI_REGEXP)); \
-	  $(call OptionTrip,-linkoffline,$(NASHORNAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
-
-# Create a file with the package names in it
-$(NASHORNAPI_PACKAGES_FILE): $(call PackageDependencies,$(NASHORNAPI_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(NASHORNAPI_PKGS))
-
-#############################################################
-#
-# dynalinkapidocs
-#
-
-ALL_OTHER_TARGETS += dynalinkapidocs
-
-DYNALINKAPI_DOCDIR := $(JDK_API_DOCSDIR)/dynalink
-DYNALINKAPI2COREAPI := ../$(JDKJRE2COREAPI)
-DYNALINKAPI_DOCTITLE := Dynalink API
-DYNALINKAPI_WINDOWTITLE := Dynalink API
-DYNALINKAPI_HEADER := <strong>Dynalink API</strong>
-DYNALINKAPI_BOTTOM := $(call CommonBottom,$(DYNALINKAPI_FIRST_COPYRIGHT_YEAR))
-DYNALINKAPI_GROUPNAME := Packages
-DYNALINKAPI_REGEXP := jdk.dynalink.*
-# DYNALINKAPI_PKGS is located in NON_CORE_PKGS.gmk
-
-DYNALINKAPI_INDEX_HTML = $(DYNALINKAPI_DOCDIR)/index.html
-DYNALINKAPI_OPTIONS_FILE = $(DOCSTMPDIR)/dynalinkapi.options
-DYNALINKAPI_PACKAGES_FILE = $(DOCSTMPDIR)/dynalinkapi.packages
-
-# The modules required to be documented
-DYNALINKAPI_MODULES = jdk.dynalink
-
-dynalinkapidocs: $(DYNALINKAPI_INDEX_HTML)
-
-# Set relative location to core api document root
-$(DYNALINKAPI_INDEX_HTML): GET2DOCSDIR=$(DYNALINKAPI2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(DYNALINKAPI_INDEX_HTML): $(DYNALINKAPI_OPTIONS_FILE) $(DYNALINKAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(DYNALINKAPI_OPTIONS_FILE),$(DYNALINKAPI_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(DYNALINKAPI_OPTIONS_FILE) @$(DYNALINKAPI_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(DYNALINKAPI_OPTIONS_FILE):
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:all) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(DYNALINKAPI_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionPair,-doctitle,$(DYNALINKAPI_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(DYNALINKAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(DYNALINKAPI_HEADER)$(DRAFT_HEADER)) ; \
-	  $(call OptionPair,-bottom,$(DYNALINKAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-linkoffline,$(DYNALINKAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
-
-# Create a file with the package names in it
-$(DYNALINKAPI_PACKAGES_FILE): $(call PackageDependencies,$(DYNALINKAPI_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(DYNALINKAPI_PKGS))
-
-#############################################################
-#
-# sctpdocs
-#
-
-ALL_OTHER_TARGETS += sctpdocs
-
-SCTPAPI_DOCDIR := $(JRE_API_DOCSDIR)/nio/sctp/spec
-SCTPAPI2COREAPI := ../../../$(JDKJRE2COREAPI)
-SCTPAPI_DOCTITLE := SCTP API
-SCTPAPI_WINDOWTITLE := SCTP API
-SCTPAPI_HEADER := <strong>SCTP API</strong>
-SCTPAPI_BOTTOM := $(call CommonBottom,$(SCTPAPI_FIRST_COPYRIGHT_YEAR))
-# SCTPAPI_PKGS is located in NON_CORE_PKGS.gmk
-
-SCTPAPI_INDEX_HTML = $(SCTPAPI_DOCDIR)/index.html
-SCTPAPI_OPTIONS_FILE = $(DOCSTMPDIR)/sctp.options
-SCTPAPI_PACKAGES_FILE = $(DOCSTMPDIR)/sctp.packages
-
-# The modules required to be documented
-SCTPAPI_MODULES = jdk.sctp
-
-sctpdocs: $(SCTPAPI_INDEX_HTML)
-
-# Set relative location to core api document root
-$(SCTPAPI_INDEX_HTML): GET2DOCSDIR=$(SCTPAPI2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(SCTPAPI_INDEX_HTML): $(SCTPAPI_OPTIONS_FILE) $(SCTPAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(SCTPAPI_OPTIONS_FILE),$(SCTPAPI_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(SCTPAPI_OPTIONS_FILE) @$(SCTPAPI_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(SCTPAPI_OPTIONS_FILE):
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:none) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(SCTPAPI_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionOnly,-nodeprecatedlist) ; \
-	  $(call OptionPair,-doctitle,$(SCTPAPI_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(SCTPAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(SCTPAPI_HEADER)$(DRAFT_HEADER)) ; \
-	  $(call OptionPair,-bottom,$(SCTPAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-linkoffline,$(SCTPAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
-
-# Create a file with the package names in it
-$(SCTPAPI_PACKAGES_FILE): $(call PackageDependencies,$(SCTPAPI_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(SCTPAPI_PKGS))
-
-#############################################################
-#
-# jaccessdocs - Java Accessibility Utilities
-#
-
-ALL_OTHER_TARGETS += jaccessdocs
-
-JACCESSAPI_DOCDIR := $(JRE_API_DOCSDIR)/accessibility/jaccess/spec
-JACCESSAPI2COREAPI := ../../../$(JDKJRE2COREAPI)
-JACCESSAPI_DOCTITLE := JACCESS API
-JACCESSAPI_WINDOWTITLE := JACCESS API
-JACCESSAPI_HEADER := <strong>JACCESS API</strong>
-JACCESSAPI_BOTTOM := $(call CommonBottom,$(JACCESSAPI_FIRST_COPYRIGHT_YEAR))
-# JACCESSAPI_PKGS is located in NON_CORE_PKGS.gmk
-
-JACCESSAPI_INDEX_HTML = $(JACCESSAPI_DOCDIR)/index.html
-JACCESSAPI_OPTIONS_FILE = $(DOCSTMPDIR)/jaccess.options
-JACCESSAPI_PACKAGES_FILE = $(DOCSTMPDIR)/jaccess.packages
-
-# The modules required to be documented
-JACCESSAPI_MODULES = jdk.accessibility
-
-jaccessdocs: $(JACCESSAPI_INDEX_HTML)
-
-# Set relative location to core api document root
-$(JACCESSAPI_INDEX_HTML): GET2DOCSDIR=$(JACCESSAPI2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(JACCESSAPI_INDEX_HTML): $(JACCESSAPI_OPTIONS_FILE) $(JACCESSAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(JACCESSAPI_OPTIONS_FILE),$(JACCESSAPI_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(JACCESSAPI_OPTIONS_FILE) @$(JACCESSAPI_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(JACCESSAPI_OPTIONS_FILE):
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-	  $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:all) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(JACCESSAPI_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionOnly,-nodeprecatedlist) ; \
-	  $(call OptionPair,-doctitle,$(JACCESSAPI_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(JACCESSAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(JACCESSAPI_HEADER)$(DRAFT_HEADER)) ; \
-	  $(call OptionPair,-bottom,$(JACCESSAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-linkoffline,$(JACCESSAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
-
-# Create a file with the package names in it
-$(JACCESSAPI_PACKAGES_FILE): $(call PackageDependencies,$(JACCESSAPI_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(JACCESSAPI_PKGS))
-
-#############################################################
-#
-# jdk.net docs
-#
-
-ALL_OTHER_TARGETS += jdknetdocs
-
-JDKNET_DOCDIR := $(JRE_API_DOCSDIR)/net/socketoptions/spec
-JDKNET2COREAPI := ../../../$(JDKJRE2COREAPI)
-JDKNET_DOCTITLE := jdk.net API
-JDKNET_WINDOWTITLE := jdk.net API
-JDKNET_HEADER := <strong>jdk.net API</strong>
-JDKNET_BOTTOM := $(call CommonBottom,$(JDKNET_FIRST_COPYRIGHT_YEAR))
-JDKNET_PKGS := jdk.net
-
-JDKNET_INDEX_HTML = $(JDKNET_DOCDIR)/index.html
-JDKNET_OPTIONS_FILE = $(DOCSTMPDIR)/jdknet.options
-JDKNET_PACKAGES_FILE = $(DOCSTMPDIR)/jdknet.packages
-
-# The modules required to be documented
-JDKNET_MODULES = jdk.net
-
-jdknetdocs: $(JDKNET_INDEX_HTML)
-
-# Set relative location to core api document root
-$(JDKNET_INDEX_HTML): GET2DOCSDIR=$(JDKNET2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(JDKNET_INDEX_HTML): $(JDKNET_OPTIONS_FILE) $(JDKNET_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(JDKNET_OPTIONS_FILE),$(JDKNET_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(JDKNET_OPTIONS_FILE) @$(JDKNET_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(JDKNET_OPTIONS_FILE):
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:none) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(JDKNET_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionOnly,-nodeprecatedlist) ; \
-	  $(call OptionPair,-doctitle,$(JDKNET_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(JDKNET_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(JDKNET_HEADER)$(DRAFT_HEADER)); \
-	  $(call OptionPair,-bottom,$(JDKNET_BOTTOM)$(DRAFT_BOTTOM)); \
-	  $(call OptionTrip,-linkoffline,$(JDKNET2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
-
-# Create a file with the package names in it
-$(JDKNET_PACKAGES_FILE): $(call PackageDependencies,$(JDKNET_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(JDKNET_PKGS))
-
-#############################################################
-#
-# jlink plugin API docs
-#
-# TODO: Need to decide when the plugin API is ready to publish as experimental API.
-# This target is temporarily added for internal use for now.
-#
-
-ALL_OTHER_TARGETS += jlinkdocs
-
-JLINK_PLUGIN_FIRST_COPYRIGHT_YEAR = 2015
-JLINK_PLUGIN_DOCDIR := $(JDK_API_DOCSDIR)/jlink
-JLINK_PLUGIN2COREAPI := ../$(JDKJRE2COREAPI)
-JLINK_PLUGIN_DOCTITLE := JLink Plugin API - EXPERIMENTAL
-JLINK_PLUGIN_WINDOWTITLE := JLink Plugin API - EXPERIMENTAL
-JLINK_PLUGIN_HEADER := <strong>JLink Plugin API - EXPERIMENTAL</strong>
-JLINK_PLUGIN_BOTTOM := $(call CommonBottom,$(JLINK_PLUGIN_FIRST_COPYRIGHT_YEAR))
-JLINK_PLUGIN_PKGS = jdk.tools.jlink.plugin
-
-JLINK_PLUGIN_INDEX_HTML = $(JLINK_PLUGIN_DOCDIR)/index.html
-JLINK_PLUGIN_OPTIONS_FILE = $(DOCSTMPDIR)/jlinkplugins.options
-JLINK_PLUGIN_PACKAGES_FILE = $(DOCSTMPDIR)/jlinkplugins.packages
-
-# The modules required to be documented
-JLINK_PLUGIN_MODULES = jdk.jlink
-
-jlinkdocs: $(JLINK_PLUGIN_INDEX_HTML)
-
-# Set relative location to core api document root
-$(JLINK_PLUGIN_INDEX_HTML): GET2DOCSDIR=$(JLINK_PLUGIN2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(JLINK_PLUGIN_INDEX_HTML): $(JLINK_PLUGIN_OPTIONS_FILE) $(JLINK_PLUGIN_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(JLINK_PLUGIN_OPTIONS_FILE),$(JLINK_PLUGIN_PACKAGES_FILE))
-	$(JAVADOC_CMD_SMALL) -d $(@D) \
-	    @$(JLINK_PLUGIN_OPTIONS_FILE) @$(JLINK_PLUGIN_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(JLINK_PLUGIN_OPTIONS_FILE):
-	$(prep-target)
-	@($(call COMMON_JAVADOCFLAGS) ; \
-          $(call COMMON_JAVADOCTAGS) ; \
-	  $(call OptionOnly,-Xdoclint:none) ; \
-          $(call OptionPair,--system,none) ; \
-	  $(call OptionPair,--module-source-path,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
-	  $(call OptionPair,--add-modules,$(JLINK_PLUGIN_MODULES)) ; \
-	  $(call OptionPair,-encoding,ascii) ; \
-	  $(call OptionOnly,-nodeprecatedlist) ; \
-	  $(call OptionPair,-doctitle,$(JLINK_PLUGIN_DOCTITLE)) ; \
-	  $(call OptionPair,-windowtitle,$(JLINK_PLUGIN_WINDOWTITLE) $(DRAFT_WINTITLE)); \
-	  $(call OptionPair,-header,$(JLINK_PLUGIN_HEADER)$(DRAFT_HEADER)); \
-	  $(call OptionPair,-bottom,$(JLINK_PLUGIN_BOTTOM)$(DRAFT_BOTTOM)); \
-	  $(call OptionTrip,-linkoffline,$(JLINK_PLUGIN2COREAPI),$(COREAPI_DOCSDIR)/); \
-	) >> $@
-
-# Create a file with the package names in it
-$(JLINK_PLUGIN_PACKAGES_FILE): $(call PackageDependencies,$(JLINK_PLUGIN_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(JLINK_PLUGIN_PKGS))
-
-
-otherdocs: $(ALL_OTHER_TARGETS)
-
-#
 # Add the core docs as prerequisite to the archive to trigger a rebuild
 # if the core docs were rebuilt. Ideally any doc rebuild should trigger
 # this, but the way prerequisites are currently setup in this file, that
 # is hard to achieve.
-#
 
-$(JAVADOC_ARCHIVE): $(COREAPI_INDEX_FILE)
+JAVADOC_ARCHIVE_NAME := jdk-$(VERSION_STRING)-docs.zip
+JAVADOC_ARCHIVE_ASSEMBLY_DIR := $(SUPPORT_OUTPUTDIR)/docs/zip-docs
+JAVADOC_ARCHIVE_DIR := $(OUTPUT_ROOT)/bundles
+JAVADOC_ARCHIVE := $(JAVADOC_ARCHIVE_DIR)/$(JAVADOC_ARCHIVE_NAME)
+
+$(JAVADOC_ARCHIVE): $(CORE_INDEX_FILE)
 	$(call LogInfo, Compressing javadoc to single $(JAVADOC_ARCHIVE_NAME))
 	$(MKDIR) -p $(JAVADOC_ARCHIVE_DIR)
 	$(RM) -r $(JAVADOC_ARCHIVE_ASSEMBLY_DIR)
 	$(MKDIR) -p $(JAVADOC_ARCHIVE_ASSEMBLY_DIR)
-	all_roots=`$(FIND) $(DOCSDIR) | $(GREP) index.html | grep -v old/doclet`; \
+	all_roots=`$(FIND) $(JAVADOC_OUTPUTDIR) | $(GREP) index.html | grep -v old/doclet`; \
 	pushd $(JAVADOC_ARCHIVE_ASSEMBLY_DIR); \
 	for index_file in $${all_roots} ; do \
 	  target_dir=`dirname $${index_file}`; \
@@ -1742,10 +1041,21 @@ $(JAVADOC_ARCHIVE): $(COREAPI_INDEX_FILE)
 	$(ZIP) -q -r $(JAVADOC_ARCHIVE) * ; \
 	popd ;
 
-#############################################################
-.PHONY: all docs coredocs otherdocs \
-     $(ALL_OTHER_TARGETS) zip-docs
+ZIP_TARGETS += $(JAVADOC_ARCHIVE)
 
 ################################################################################
 
-$(eval $(call IncludeCustomExtension, , Javadoc-post.gmk))
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, , Javadoc.gmk))
+
+################################################################################
+
+docs-javadoc: $(TARGETS)
+
+docs-copy: $(COPY_TARGETS)
+
+docs-zip: $(ZIP_TARGETS)
+
+all: docs-javadoc docs-copy docs-zip
+
+.PHONY: default all docs-javadoc docs-copy docs-zip

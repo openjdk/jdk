@@ -30,6 +30,7 @@
 
 var obj = new JSAdapter() {
     __getIds__: function() {
+        Assert.assertTrue(this === obj);
         print("__getIds__ called");
         return [ "foo", "bar" ];
     }

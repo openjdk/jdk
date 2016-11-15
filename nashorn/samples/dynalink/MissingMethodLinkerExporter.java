@@ -35,9 +35,10 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 import jdk.dynalink.CallSiteDescriptor;
-import jdk.dynalink.CompositeOperation;
 import jdk.dynalink.NamedOperation;
+import jdk.dynalink.NamespaceOperation;
 import jdk.dynalink.Operation;
+import jdk.dynalink.StandardNamespace;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.beans.BeansLinker;
 import jdk.dynalink.linker.GuardedInvocation;
@@ -99,23 +100,6 @@ public final class MissingMethodLinkerExporter extends GuardingDynamicLinkerExpo
             "getName", MethodType.methodType(String.class));
     }
 
-    // locate the first standard operation from the call descriptor
-    private static StandardOperation getFirstStandardOperation(final CallSiteDescriptor desc) {
-        final Operation base = NamedOperation.getBaseOperation(desc.getOperation());
-        if (base instanceof StandardOperation) {
-            return (StandardOperation)base;
-        } else if (base instanceof CompositeOperation) {
-            final CompositeOperation cop = (CompositeOperation)base;
-            for(int i = 0; i < cop.getOperationCount(); ++i) {
-                final Operation op = cop.getOperation(i);
-                if (op instanceof StandardOperation) {
-                    return (StandardOperation)op;
-                }
-            }
-        }
-        return null;
-    }
-
     @Override
     public List<GuardingDynamicLinker> get() {
         final ArrayList<GuardingDynamicLinker> linkers = new ArrayList<>();
@@ -140,8 +124,12 @@ public final class MissingMethodLinkerExporter extends GuardingDynamicLinkerExpo
                 // we return that method object. If not, we return a MissingMethod object.
                 if (self instanceof MissingMethodHandler) {
                     // Check if this is a named GET_METHOD first.
-                    final boolean isGetMethod = getFirstStandardOperation(desc) == StandardOperation.GET_METHOD;
-                    final Object name = NamedOperation.getName(desc.getOperation());
+                    final Operation namedOp = desc.getOperation();
+                    final Operation namespaceOp = NamedOperation.getBaseOperation(namedOp);
+                    final Operation op = NamespaceOperation.getBaseOperation(namespaceOp);
+
+                    final boolean isGetMethod = op == StandardOperation.GET && StandardNamespace.findFirst(namespaceOp) == StandardNamespace.METHOD;
+                    final Object name = NamedOperation.getName(namedOp);
                     if (isGetMethod && name instanceof String) {
                         final GuardingDynamicLinker javaLinker = beansLinker.getLinkerForClass(self.getClass());
                         GuardedInvocation inv;
@@ -166,7 +154,7 @@ public final class MissingMethodLinkerExporter extends GuardingDynamicLinkerExpo
                 } else if (self instanceof MissingMethod) {
                     // This is step (2). We call MissingMethodHandler.doesNotUnderstand here
                     // Check if this is this a CALL first.
-                    final boolean isCall = getFirstStandardOperation(desc) == StandardOperation.CALL;
+                    final boolean isCall = NamedOperation.getBaseOperation(desc.getOperation()) == StandardOperation.CALL;
                     if (isCall) {
                         MethodHandle mh = DOES_NOT_UNDERSTAND;
 

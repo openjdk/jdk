@@ -38,9 +38,10 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import jdk.dynalink.CallSiteDescriptor;
-import jdk.dynalink.CompositeOperation;
 import jdk.dynalink.NamedOperation;
+import jdk.dynalink.NamespaceOperation;
 import jdk.dynalink.Operation;
+import jdk.dynalink.StandardNamespace;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.GuardingDynamicLinker;
@@ -104,9 +105,9 @@ public final class ArrayStreamLinkerExporter extends GuardingDynamicLinkerExport
                 final CallSiteDescriptor desc = request.getCallSiteDescriptor();
                 final Operation op = desc.getOperation();
                 final Object name = NamedOperation.getName(op);
-                final boolean getProp = CompositeOperation.contains(
+                final boolean getProp = NamespaceOperation.contains(
                         NamedOperation.getBaseOperation(op),
-                        StandardOperation.GET_PROPERTY);
+                        StandardOperation.GET, StandardNamespace.PROPERTY);
                 if (getProp && "stream".equals(name)) {
                     return new GuardedInvocation(ARRAY_TO_STREAM,
                         Guards.isOfClass(self.getClass(), GUARD_TYPE));

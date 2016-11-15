@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ package sun.util.locale.provider;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
-import java.lang.reflect.Module;
 import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.LinkedHashSet;
@@ -113,13 +112,14 @@ public class LocaleResources {
         if (data == null || ((biInfo = data.get()) == null)) {
            biInfo = localeData.getBreakIteratorInfo(locale).getObject(key);
            cache.put(cacheKey, new ResourceReference(cacheKey, biInfo, referenceQueue));
-       }
+        }
 
        return biInfo;
     }
 
-    Module getBreakIteratorDataModule() {
-       return localeData.getBreakIteratorInfo(locale).getClass().getModule();
+    @SuppressWarnings("unchecked")
+    byte[] getBreakIteratorResources(String key) {
+        return (byte[]) localeData.getBreakIteratorResources(locale).getObject(key);
     }
 
     int getCalendarData(String key) {

@@ -51,16 +51,6 @@ static const char* const_progname = PROGNAME;
 static char* const_progname = NULL;
 #endif
 static const char* const_jargs[] = JAVA_ARGS;
-/*
- * ApplicationHome is prepended to each of these entries; the resulting
- * strings are concatenated (separated by PATH_SEPARATOR) and used as the
- * value of -cp option to the launcher.
- */
-#ifndef APP_CLASSPATH
-static const char* const_appclasspath[] = { NULL };
-#else
-static const char* const_appclasspath[] = APP_CLASSPATH;
-#endif /* APP_CLASSPATH */
 #else  /* !JAVA_ARGS */
 #define HAS_JAVA_ARGS JNI_FALSE
 static const char* const_progname = "java";
