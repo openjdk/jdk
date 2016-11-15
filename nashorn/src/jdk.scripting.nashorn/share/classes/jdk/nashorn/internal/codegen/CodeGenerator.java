@@ -3255,7 +3255,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             enterBlock(catchBlock);
 
             final CatchNode  catchNode          = (CatchNode)catchBlocks.get(i).getStatements().get(0);
-            final IdentNode  exception          = catchNode.getException();
+            final IdentNode  exception          = catchNode.getExceptionIdentifier();
             final Expression exceptionCondition = catchNode.getExceptionCondition();
             final Block      catchBody          = catchNode.getBody();
 
