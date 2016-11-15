@@ -25,6 +25,15 @@
 
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
+import javax.lang.model.element.Element;
+
+import jdk.javadoc.internal.doclets.formats.html.ConfigurationImpl;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 
@@ -42,6 +51,7 @@ import jdk.javadoc.internal.doclets.toolkit.DocletException;
  */
 public abstract class AbstractMemberBuilder extends AbstractBuilder {
 
+    public final Comparator<Element> comparator;
     /**
      * Construct a SubBuilder.
      * @param context a context object, providing information used in this run
@@ -49,6 +59,7 @@ public abstract class AbstractMemberBuilder extends AbstractBuilder {
      */
     public AbstractMemberBuilder(Context context) {
         super(context);
+        comparator = utils.makeGeneralPurposeComparator();
     }
 
     /**
@@ -83,4 +94,10 @@ public abstract class AbstractMemberBuilder extends AbstractBuilder {
      * @return true if this subbuilder has anything to document
      */
     public abstract boolean hasMembersToDocument();
+
+    public SortedSet<Element> asSortedSet(Collection<Element> members) {
+        SortedSet<Element> out = new TreeSet<>(comparator);
+        out.addAll(members);
+        return out;
+    }
 }
