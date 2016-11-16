@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,12 +165,12 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
         fileManager.close();
     }
 
-    public Location getModuleLocation(Location location, String moduleName) throws IOException {
-        return fileManager.getModuleLocation(location, moduleName);
+    public Location getLocationForModule(Location location, String moduleName) throws IOException {
+        return fileManager.getLocationForModule(location, moduleName);
     }
 
-    public Location getModuleLocation(Location location, JavaFileObject fo, String pkgName) throws IOException {
-        return fileManager.getModuleLocation(location, fo, pkgName);
+    public Location getLocationForModule(Location location, JavaFileObject fo, String pkgName) throws IOException {
+        return fileManager.getLocationForModule(location, fo, pkgName);
     }
 
     public <S> ServiceLoader<S> getServiceLoader(Location location, Class<S> service) throws  IOException {
@@ -181,7 +181,7 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
         return fileManager.inferModuleName(location);
     }
 
-    public Iterable<Set<Location>> listModuleLocations(Location location) throws IOException {
-        return fileManager.listModuleLocations(location);
+    public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
+        return fileManager.listLocationsForModules(location);
     }
 }
