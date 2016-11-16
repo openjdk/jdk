@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class Bytes {
     if (!swap)
       return x;
 
-    return (swapShort((short) x) << 16) | (swapShort((short) (x >> 16)) & 0xFFFF);
+    return ((int)swapShort((short) x) << 16) | (swapShort((short) (x >> 16)) & 0xFFFF);
   }
 
   /** Should only swap if the hardware's underlying byte order is
@@ -60,6 +60,6 @@ public class Bytes {
     if (!swap)
       return x;
 
-    return (swapInt((int) x) << 32) | (swapInt((int) (x >> 32)) & 0xFFFFFFFF);
+    return ((long)swapInt((int) x) << 32) | (swapInt((int) (x >> 32)) & 0xFFFFFFFF);
   }
 }
