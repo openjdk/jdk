@@ -246,7 +246,7 @@ public class JavadocFormatter {
 
         @Override @DefinedBy(Api.COMPILER_TREE)
         public Object visitStartElement(StartElementTree node, Object p) {
-            switch (HtmlTag.get(node.getName())) {
+            switch (getHtmlTag(node.getName())) {
                 case P:
                     if (lastNode!= null && lastNode.getKind() == DocTree.Kind.START_ELEMENT &&
                         HtmlTag.get(((StartElementTree) lastNode).getName()) == HtmlTag.LI) {
@@ -397,7 +397,7 @@ public class JavadocFormatter {
         }
 
         private void handleEndElement(Name name) {
-            switch (HtmlTag.get(name)) {
+            switch (getHtmlTag(name)) {
                 case BLOCKQUOTE:
                     indent -= INDENT;
                     break;
@@ -629,6 +629,12 @@ public class JavadocFormatter {
         }
     }
 
+    private static HtmlTag getHtmlTag(Name name) {
+        HtmlTag tag = HtmlTag.get(name);
+
+        return tag != null ? tag : HtmlTag.HTML; //using HtmlTag.HTML as default no-op value
+    }
+
     private static Map<StartElementTree, Integer> countTableColumns(DocCommentTree dct) {
         Map<StartElementTree, Integer> result = new IdentityHashMap<>();
 
@@ -639,7 +645,7 @@ public class JavadocFormatter {
 
             @Override @DefinedBy(Api.COMPILER_TREE)
             public Void visitStartElement(StartElementTree node, Void p) {
-                switch (HtmlTag.get(node.getName())) {
+                switch (getHtmlTag(node.getName())) {
                     case TABLE: currentTable = node; break;
                     case TR:
                         currentMaxColumns = Math.max(currentMaxColumns, currentRowColumns);

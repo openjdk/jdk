@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131019
+ * @bug 8131019 8169561
  * @summary Test JavadocFormatter
  * @library /tools/lib
  * @modules jdk.compiler/jdk.internal.shellsupport.doc
@@ -384,6 +384,17 @@ public class JavadocFormatterTest {
 
         expected = CODE_HIGHLIGHT + "test" + CODE_RESET + "\n" +
                    "1234 text 1234\n";
+
+        if (!Objects.equals(actual, expected)) {
+            throw new AssertionError("Incorrect output: " + actual);
+        }
+
+        //unknown HTML tag:
+        actual = new JavadocFormatter(66, false).formatJavadoc("test",
+                "1234 <unknown any any>1234</unknown> 1234");
+
+        expected = "test\n" +
+                   "1234 1234 1234\n";
 
         if (!Objects.equals(actual, expected)) {
             throw new AssertionError("Incorrect output: " + actual);
