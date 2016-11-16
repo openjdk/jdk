@@ -51,6 +51,7 @@ import javax.tools.StandardLocation;
 import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.main.Arguments;
 import com.sun.tools.javac.main.CommandLine;
 import com.sun.tools.javac.main.OptionHelper;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
@@ -59,6 +60,7 @@ import com.sun.tools.javac.platform.PlatformUtils;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Log.WriterKind;
 import com.sun.tools.javac.util.Options;
 
 import jdk.javadoc.doclet.Doclet;
@@ -325,9 +327,14 @@ public class Start extends ToolOption.Helper {
         if (argv.length > 0 && "-Xold".equals(argv[0])) {
             warn("main.legacy_api");
             String[] nargv = Arrays.copyOfRange(argv, 1, argv.length);
-            return com.sun.tools.javadoc.Main.execute(nargv) == 0
-                    ? OK
-                    : ERROR;
+            int rc = com.sun.tools.javadoc.Main.execute(
+                    messager.programName,
+                    messager.getWriter(WriterKind.ERROR),
+                    messager.getWriter(WriterKind.WARNING),
+                    messager.getWriter(WriterKind.NOTICE),
+                    "com.sun.tools.doclets.standard.Standard",
+                    nargv);
+            return (rc == 0) ? OK : ERROR;
         }
         return begin(Arrays.asList(argv), Collections.<JavaFileObject> emptySet());
     }
@@ -400,9 +407,14 @@ public class Start extends ToolOption.Helper {
             }
             warn("main.legacy_api");
             String[] array = options.toArray(new String[options.size()]);
-            return com.sun.tools.javadoc.Main.execute(array) == 0
-                    ? OK
-                    : ERROR;
+            int rc = com.sun.tools.javadoc.Main.execute(
+                    messager.programName,
+                    messager.getWriter(WriterKind.ERROR),
+                    messager.getWriter(WriterKind.WARNING),
+                    messager.getWriter(WriterKind.NOTICE),
+                    "com.sun.tools.doclets.standard.Standard",
+                    array);
+            return (rc == 0) ? OK : ERROR;
         }
 
         Result result = OK;
@@ -410,6 +422,11 @@ public class Start extends ToolOption.Helper {
             result = parseAndExecute(options, fileObjects)
                     ? OK
                     : ERROR;
+        } catch (com.sun.tools.javac.main.Option.InvalidValueException e) {
+            messager.printError(e.getMessage());
+            Throwable t = e.getCause();
+            dumpStack(t == null ? e : t);
+            return ERROR;
         } catch (OptionException toe) {
             if (toe.message != null)
                 messager.printError(toe.message);
@@ -482,8 +499,8 @@ public class Start extends ToolOption.Helper {
      * Main program - internal
      */
     @SuppressWarnings("unchecked")
-    private boolean parseAndExecute(List<String> argList,
-            Iterable<? extends JavaFileObject> fileObjects) throws ToolException, OptionException {
+    private boolean parseAndExecute(List<String> argList, Iterable<? extends JavaFileObject> fileObjects)
+            throws ToolException, OptionException, com.sun.tools.javac.main.Option.InvalidValueException {
         long tm = System.currentTimeMillis();
 
         List<String> javaNames = new ArrayList<>();
@@ -491,10 +508,18 @@ public class Start extends ToolOption.Helper {
         compOpts = Options.instance(context);
 
         // Make sure no obsolete source/target messages are reported
-        com.sun.tools.javac.main.Option.XLINT.process(getOptionHelper(), "-Xlint:-options");
+        try {
+            com.sun.tools.javac.main.Option.XLINT_CUSTOM.process(getOptionHelper(), "-Xlint:-options");
+        } catch (com.sun.tools.javac.main.Option.InvalidValueException ignore) {
+        }
 
         doclet.init(locale, messager);
         parseArgs(argList, javaNames);
+
+        Arguments arguments = Arguments.instance(context);
+        arguments.init(ProgramName);
+        arguments.allowEmpty();
+        arguments.validate();
 
         if (fileManager instanceof BaseFileManager) {
             ((BaseFileManager) fileManager).handleOptions(fileManagerOpts);
@@ -805,7 +830,7 @@ public class Start extends ToolOption.Helper {
     }
 
     private void parseArgs(List<String> args, List<String> javaNames) throws ToolException,
-            OptionException {
+            OptionException, com.sun.tools.javac.main.Option.InvalidValueException {
         for (int i = 0 ; i < args.size() ; i++) {
             String arg = args.get(i);
             ToolOption o = ToolOption.get(arg);
@@ -929,7 +954,7 @@ public class Start extends ToolOption.Helper {
 
     @Override
     OptionHelper getOptionHelper() {
-        return new GrumpyHelper(null) {
+        return new GrumpyHelper(messager) {
             @Override
             public String get(com.sun.tools.javac.main.Option option) {
                 return compOpts.get(option);
