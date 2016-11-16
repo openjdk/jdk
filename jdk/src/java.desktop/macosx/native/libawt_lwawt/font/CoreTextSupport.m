@@ -103,24 +103,34 @@ void CTS_GetGlyphsAsIntsForCharacters
 
     size_t i;
     for (i = 0; i < count; i++) {
+        UniChar unicode = unicodes[i];
+        UniChar nextUnicode = (i+1) < count ? unicodes[i+1] : 0;
+        bool surrogatePair = unicode >= HI_SURROGATE_START && unicode <= HI_SURROGATE_END
+                             && nextUnicode >= LO_SURROGATE_START && nextUnicode <= LO_SURROGATE_END;
+
         CGGlyph glyph = glyphs[i];
         if (glyph > 0) {
             glyphsAsInts[i] = glyph;
+            if (surrogatePair) i++;
             continue;
         }
 
-        UniChar unicode = unicodes[i];
-        const CTFontRef fallback = JRSFontCreateFallbackFontForCharacters((CTFontRef)font->fFont, &unicode, 1);
+        const CTFontRef fallback = JRSFontCreateFallbackFontForCharacters((CTFontRef)font->fFont, &unicodes[i],
+                                                                          surrogatePair ? 2 : 1);
         if (fallback) {
-            CTFontGetGlyphsForCharacters(fallback, &unicode, &glyph, 1);
+            CTFontGetGlyphsForCharacters(fallback, &unicodes[i], &glyphs[i], surrogatePair ? 2 : 1);
+            glyph = glyphs[i];
             CFRelease(fallback);
         }
 
         if (glyph > 0) {
-            glyphsAsInts[i] = -unicode; // set the glyph code to the negative unicode value
+            int codePoint = surrogatePair ? (((int)(unicode - HI_SURROGATE_START)) << 10)
+                                            + nextUnicode - LO_SURROGATE_START + 0x10000 : unicode;
+            glyphsAsInts[i] = -codePoint; // set the glyph code to the negative unicode value
         } else {
             glyphsAsInts[i] = 0; // CoreText couldn't find a glyph for this character either
         }
+        if (surrogatePair) i++;
     }
 }
 
@@ -158,8 +168,18 @@ CTFontRef CTS_CopyCTFallbackFontAndGlyphForJavaGlyphCode
         return (CTFontRef)font->fFont;
     }
 
-    UTF16Char character = -glyphCode;
-    return CTS_CopyCTFallbackFontAndGlyphForUnicode(font, &character, glyphRef, 1);
+    int codePoint = -glyphCode;
+    if (codePoint >= 0x10000) {
+        UTF16Char chars[2];
+        CGGlyph glyphs[2];
+        CTS_BreakupUnicodeIntoSurrogatePairs(codePoint, chars);
+        CTFontRef result = CTS_CopyCTFallbackFontAndGlyphForUnicode(font, chars, glyphs, 2);
+        *glyphRef = glyphs[0];
+        return result;
+    } else {
+        UTF16Char character = codePoint;
+        return CTS_CopyCTFallbackFontAndGlyphForUnicode(font, &character, glyphRef, 1);
+    }
 }
 
 // Breakup a 32 bit unicode value into the component surrogate pairs
