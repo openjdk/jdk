@@ -156,9 +156,7 @@ void ConcurrentMarkThread::run_service() {
       jlong mark_start = os::elapsed_counter();
       log_info(gc, marking)("Concurrent Mark (%.3fs)", TimeHelper::counter_to_seconds(mark_start));
 
-      int iter = 0;
-      do {
-        iter++;
+      for (uint iter = 1; true; ++iter) {
         if (!cm()->has_aborted()) {
           G1ConcPhaseTimer t(_cm, "Concurrent Mark From Roots");
           _cm->mark_from_roots();
@@ -178,11 +176,14 @@ void ConcurrentMarkThread::run_service() {
           VM_CGC_Operation op(&final_cl, "Pause Remark");
           VMThread::execute(&op);
         }
-        if (cm()->restart_for_overflow()) {
-          log_debug(gc, marking)("Restarting Concurrent Marking because of Mark Stack Overflow in Remark (Iteration #%d).", iter);
-          log_info(gc, marking)("Concurrent Mark Restart due to overflow");
+
+        if (!cm()->restart_for_overflow() || cm()->has_aborted()) {
+          break;
         }
-      } while (cm()->restart_for_overflow());
+
+        log_info(gc, marking)("Concurrent Mark Restart due to overflow"
+                              " (iteration #%u", iter);
+      }
 
       if (!cm()->has_aborted()) {
         G1ConcPhaseTimer t(_cm, "Concurrent Create Live Data");
