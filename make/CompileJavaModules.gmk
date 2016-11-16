@@ -344,8 +344,6 @@ jdk.charsets_COPY := .dat
 
 ################################################################################
 
-jdk.accessibility_ADD_JAVAC_FLAGS := -Xlint:-exports
-
 ################################################################################
 
 jdk.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:-com.sun.tools.*,-jdk.internal.*' \
