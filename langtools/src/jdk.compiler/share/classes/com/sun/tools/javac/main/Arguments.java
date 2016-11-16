@@ -415,11 +415,11 @@ public class Arguments {
                 java.util.List<String> modules = Arrays.asList(options.get(Option.MODULE).split(","));
                 try {
                     for (String module : modules) {
-                        Location sourceLoc = fm.getModuleLocation(StandardLocation.MODULE_SOURCE_PATH, module);
+                        Location sourceLoc = fm.getLocationForModule(StandardLocation.MODULE_SOURCE_PATH, module);
                         if (sourceLoc == null) {
                             log.error(Errors.ModuleNotFoundInModuleSourcePath(module));
                         } else {
-                            Location classLoc = fm.getModuleLocation(StandardLocation.CLASS_OUTPUT, module);
+                            Location classLoc = fm.getLocationForModule(StandardLocation.CLASS_OUTPUT, module);
 
                             for (JavaFileObject file : fm.list(sourceLoc, "", EnumSet.of(JavaFileObject.Kind.SOURCE), true)) {
                                 String className = fm.inferBinaryName(sourceLoc, file);

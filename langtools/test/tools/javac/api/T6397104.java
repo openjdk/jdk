@@ -73,8 +73,8 @@ public class T6397104 {
             if (hasLocation) {
                 for (Location location : StandardLocation.values()) {
                     System.err.format("  location:%s, moduleLocn:%b%n",
-                        location, location.isModuleLocation());
-                    if (location.isModuleLocation()) {
+                        location, location.isModuleOrientedLocation());
+                    if (!location.isOutputLocation()) {
                         continue;
                     }
                     fm.setLocation(location, Arrays.asList(new File(".")));

@@ -102,11 +102,13 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -128,6 +130,8 @@ import javax.tools.StandardLocation;
 import static jdk.jshell.Util.REPL_DOESNOTMATTER_CLASS_NAME;
 import static jdk.jshell.SourceCodeAnalysis.Completeness.DEFINITELY_INCOMPLETE;
 import static jdk.jshell.TreeDissector.printType;
+
+import static java.util.stream.Collectors.joining;
 
 /**
  * The concrete implementation of SourceCodeAnalysis.

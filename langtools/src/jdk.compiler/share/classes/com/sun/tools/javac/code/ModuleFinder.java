@@ -131,7 +131,7 @@ public class ModuleFinder {
                     if (outerIter.hasNext()) {
                         outer = outerIter.next();
                         try {
-                            innerIter = fileManager.listModuleLocations(outer).iterator();
+                            innerIter = fileManager.listLocationsForModules(outer).iterator();
                         } catch (IOException e) {
                             System.err.println("error listing module locations for " + outer + ": " + e);  // FIXME
                         }
@@ -282,7 +282,7 @@ public class ModuleFinder {
                         if (moduleLocationIterator.outer == StandardLocation.MODULE_SOURCE_PATH) {
                             msym.sourceLocation = l;
                             if (fileManager.hasLocation(StandardLocation.CLASS_OUTPUT)) {
-                                msym.classLocation = fileManager.getModuleLocation(StandardLocation.CLASS_OUTPUT, msym.name.toString());
+                                msym.classLocation = fileManager.getLocationForModule(StandardLocation.CLASS_OUTPUT, msym.name.toString());
                             }
                         } else {
                             msym.classLocation = l;
