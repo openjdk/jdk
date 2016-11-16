@@ -43,29 +43,55 @@ import com.sun.tools.javac.util.Log.PrefixKind;
 
 public abstract class OptionHelper {
 
-    /** Get the current value of an option. */
+    /**
+     * Get the current value of an option.
+     * @param option the option
+     * @return the value of the option
+     */
     public abstract String get(Option option);
 
-    /** Set the value of an option. */
+    /**
+     * Set the value of an option.
+     * @param name the primary name of the option
+     * @param value the value for the option
+     */
     public abstract void put(String name, String value);
 
-    /** Remove any prior value for an option. */
+    /**
+     * Remove any prior value for an option.
+     * @param name the primary name of the option
+     */
     public abstract void remove(String name);
 
-    /** Handle a file manager option. */
+    /**
+     * Handle a file manager option.
+     * @param option the option
+     * @param value the value for the option
+     * @return true if the option was handled successfully, and false otherwise
+     */
     public abstract boolean handleFileManagerOption(Option option, String value);
 
-    /** Get access to the Log for the compilation. */
+    /**
+     * Get access to the Log for the compilation.
+     * @return the log
+     */
     public abstract Log getLog();
 
-    /** Get the name of the tool, such as "javac", to be used in info like -help. */
+    /**
+     * Get the name of the tool, such as "javac", to be used in info like -help.
+     * @return the name of the tool
+     */
     public abstract String getOwnName();
 
-    /** Report an error. */
-    abstract void error(String key, Object... args);
-
-    /** Report an error. */
-    abstract void error(JCDiagnostic.Error error);
+    /**
+     * Returns a new InvalidValueException, with a localized detail message.
+     * @param key the resource key for the message
+     * @param args the arguments, if any, for the resource string
+     * @return the InvalidValueException
+     */
+    Option.InvalidValueException newInvalidValueException(String key, Object... args) {
+        return new Option.InvalidValueException(getLog().localize(PrefixKind.JAVAC, key, args));
+    }
 
     /** Record a file to be compiled. */
     abstract void addFile(Path p);
@@ -109,16 +135,6 @@ public abstract class OptionHelper {
         @Override
         public boolean handleFileManagerOption(Option option, String value) {
             throw new IllegalArgumentException();
-        }
-
-        @Override
-        void error(String key, Object... args) {
-            throw new IllegalArgumentException(log.localize(PrefixKind.JAVAC, key, args));
-        }
-
-        @Override
-        void error(JCDiagnostic.Error error) {
-            throw new IllegalArgumentException(log.localize(error));
         }
 
         @Override
