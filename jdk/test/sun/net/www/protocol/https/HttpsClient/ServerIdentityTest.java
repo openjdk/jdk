@@ -45,20 +45,20 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 
-public class ServerIdentityTest {
+public class ServerIdentityTest extends SSLSocketTemplate {
 
     private static final String PASSWORD = "changeit";
 
     public static void main(String[] args) throws Exception {
         final String keystore = args[0];
-        String keystoreFilename = SSLTest.TEST_SRC + "/" + keystore;
+        String keystoreFilename = TEST_SRC + "/" + keystore;
 
-        SSLTest.setup(keystoreFilename, keystoreFilename, PASSWORD);
+        setup(keystoreFilename, keystoreFilename, PASSWORD);
 
         SSLContext context = SSLContext.getInstance("SSL");
 
         KeyManager[] kms = new KeyManager[1];
-        KeyStore ks = SSLTest.loadJksKeyStore(keystoreFilename, PASSWORD);
+        KeyStore ks = loadJksKeyStore(keystoreFilename, PASSWORD);
         KeyManager km = new MyKeyManager(ks, PASSWORD.toCharArray());
         kms[0] = km;
         context.init(kms, null, null);
@@ -70,7 +70,7 @@ public class ServerIdentityTest {
          */
         System.out.println("Testing " + keystore);
 
-        new SSLTest()
+        new SSLSocketTemplate()
             .setSSLContext(context)
             .setServerApplication((socket, test) -> {
                 BufferedWriter bw = new BufferedWriter(
@@ -79,12 +79,12 @@ public class ServerIdentityTest {
                 bw.flush();
                 Thread.sleep(2000);
                 socket.getSession().invalidate();
-                SSLTest.print("Server application is done");
+                print("Server application is done");
             })
             .setClientPeer((test) -> {
                 boolean serverIsReady = test.waitForServerSignal();
                 if (!serverIsReady) {
-                    SSLTest.print(
+                    print(
                             "The server is not ready, ignore on client side.");
                     return;
                 }
@@ -100,7 +100,7 @@ public class ServerIdentityTest {
                 ((HttpURLConnection) url.openConnection())
                         .getInputStream().close();
 
-                SSLTest.print("Client is done");
+                print("Client is done");
             }).runTest();
     }
 }
