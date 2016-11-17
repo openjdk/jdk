@@ -109,7 +109,9 @@ public enum StandardLocation implements Location {
      * property must hold: {@code locationFor(x) ==
      * locationFor(y)} if and only if {@code x.equals(y)}.
      * The returned location will be an output location if and only if
-     * name ends with {@code "_OUTPUT"}.
+     * name ends with {@code "_OUTPUT"}. It will be considered to
+     * be a module-oriented location if the name contains the word
+     * {@code "MODULE"}.
      *
      * @param name a name
      * @return a location
@@ -149,7 +151,7 @@ public enum StandardLocation implements Location {
     }
 
     @Override
-    public boolean isModuleLocation() {
+    public boolean isModuleOrientedLocation() {
         switch (this) {
             case MODULE_SOURCE_PATH:
             case ANNOTATION_PROCESSOR_MODULE_PATH:

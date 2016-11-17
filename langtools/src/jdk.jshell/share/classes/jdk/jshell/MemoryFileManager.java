@@ -73,7 +73,7 @@ class MemoryFileManager implements JavaFileManager {
 
     // Upcoming Jigsaw
     private Method inferModuleNameMethod = null;
-    private Method listModuleLocationsMethod = null;
+    private Method listLocationsForModulesMethod = null;
 
     Iterable<? extends Path> getLocationAsPaths(Location loc) {
         return this.stdFileManager.getLocationAsPaths(loc);
@@ -203,13 +203,13 @@ class MemoryFileManager implements JavaFileManager {
     }
 
     // Make compatible with Jigsaw
-    public Iterable<Set<Location>> listModuleLocations(Location location) throws IOException {
+    public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
         try {
-            if (listModuleLocationsMethod == null) {
-                listModuleLocationsMethod = JavaFileManager.class.getDeclaredMethod("listModuleLocations", Location.class);
+            if (listLocationsForModulesMethod == null) {
+                listLocationsForModulesMethod = JavaFileManager.class.getDeclaredMethod("listLocationsForModules", Location.class);
             }
             @SuppressWarnings("unchecked")
-            Iterable<Set<Location>> result = (Iterable<Set<Location>>) listModuleLocationsMethod.invoke(stdFileManager, location);
+            Iterable<Set<Location>> result = (Iterable<Set<Location>>) listLocationsForModulesMethod.invoke(stdFileManager, location);
             return result;
         } catch (NoSuchMethodException | SecurityException ex) {
             throw new InternalError("Cannot lookup JavaFileManager method", ex);
