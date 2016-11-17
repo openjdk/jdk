@@ -270,7 +270,7 @@ final class CardImpl extends Card {
     }
 
     public String toString() {
-        return "PC/SC card in " + terminal.getName()
+        return "PC/SC card in " + terminal.name
             + ", protocol " + getProtocol() + ", state " + state;
     }
 
@@ -278,6 +278,7 @@ final class CardImpl extends Card {
     protected void finalize() throws Throwable {
         try {
             if (state == State.OK) {
+                state = State.DISCONNECTED;
                 SCardDisconnect(cardId, SCARD_LEAVE_CARD);
             }
         } finally {
