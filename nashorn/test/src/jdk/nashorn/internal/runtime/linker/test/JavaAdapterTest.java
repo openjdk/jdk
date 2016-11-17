@@ -29,11 +29,14 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.script.Bindings;
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import jdk.nashorn.api.scripting.JSObject;
+import jdk.nashorn.api.scripting.NashornScriptEngine;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.runtime.Context;
@@ -276,5 +279,38 @@ public class JavaAdapterTest {
         Assert.assertEquals(tla.getCollection().iterator().next(), "Collection");
         Assert.assertEquals(tla.getQueue().peek(), "Queue");
         Assert.assertEquals(tla.getDequeue().peek(), "Dequeue");
+    }
+
+    @Test
+    public static void testMirrorAdapter() throws ScriptException {
+        final NashornScriptEngine e = (NashornScriptEngine) createEngine();
+        e.setBindings(e.createBindings(), ScriptContext.GLOBAL_SCOPE); // Null by default
+
+        // Referencing functions from across scopes causes them to be wrapped in ScriptObjectMirrors
+        e.eval("function convertObjectFromEngineScope(){ return new java.util.concurrent.Callable(o).call(); }", e.getBindings(ScriptContext.ENGINE_SCOPE));
+        e.eval("function convertObjectFromGlobalScope(){ return new java.util.concurrent.Callable(o).call(); }", e.getBindings(ScriptContext.GLOBAL_SCOPE));
+        e.eval("function convertFuncFromEngineScope(){ return new java.util.concurrent.Callable(g).call(); }", e.getBindings(ScriptContext.ENGINE_SCOPE));
+        e.eval("function convertFuncFromGlobalScope(){ return new java.util.concurrent.Callable(g).call(); }", e.getBindings(ScriptContext.GLOBAL_SCOPE));
+        e.eval("function convertParamFromEngineScope(){ return Java.type('jdk.nashorn.internal.runtime.linker.test.JavaAdapterTest').m(f);}", e.getBindings(ScriptContext.ENGINE_SCOPE));
+        e.eval("function convertParamFromGlobalScope(){ return Java.type('jdk.nashorn.internal.runtime.linker.test.JavaAdapterTest').m(f);}", e.getBindings(ScriptContext.GLOBAL_SCOPE));
+
+        e.eval("var o = { call: function () { return 'ok from o'; } }", e.getBindings(ScriptContext.ENGINE_SCOPE));
+        e.eval("function g() { return 'ok from g'; }", e.getBindings(ScriptContext.ENGINE_SCOPE));
+        e.eval("function f(a) { return a.toUpperCase(); }", e.getBindings(ScriptContext.ENGINE_SCOPE));
+
+        try {
+            Assert.assertEquals(e.invokeFunction("convertObjectFromEngineScope"), "ok from o");
+            Assert.assertEquals(e.invokeFunction("convertObjectFromGlobalScope"), "ok from o");
+            Assert.assertEquals(e.invokeFunction("convertFuncFromEngineScope"), "ok from g");
+            Assert.assertEquals(e.invokeFunction("convertFuncFromGlobalScope"), "ok from g");
+            Assert.assertEquals(e.invokeFunction("convertParamFromEngineScope"), "OK");
+            Assert.assertEquals(e.invokeFunction("convertParamFromGlobalScope"), "OK");
+        } catch (final NoSuchMethodException x) {
+            throw new RuntimeException(x);
+        }
+    }
+
+    public static String m(final Function<String, String> f){
+        return f.apply("ok");
     }
 }
