@@ -227,8 +227,6 @@ javax/sound/sampled/Clip/Drain/ClipDrain.java          7062792 generic-all
 
 javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
 
-javax/sound/sampled/Clip/OpenNonIntegralNumberOfSampleframes.java 8168881 generic-all
-
 ############################################################################
 
 # jdk_imageio
@@ -291,16 +289,6 @@ java/util/BitSet/BitSetStreamTest.java                          8079538 generic-
 # svc_tools
 
 sun/tools/jcmd/TestJcmdSanity.java                              8031482 windows-all
-
-sun/tools/jhsdb/BasicLauncherTest.java                          8160376 macosx-all
-
-sun/tools/jhsdb/HeapDumpTest.java                               8160376 macosx-all
-
-sun/tools/jhsdb/heapconfig/JMapHeapConfigTest.java              8160376 macosx-all
-
-sun/tools/jps/TestJpsJar.java                                   8165500 generic-all
-
-sun/tools/jps/TestJpsJarRelative.java                           6456333 generic-all
 
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    8057732 generic-all
 

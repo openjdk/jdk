@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,25 +60,6 @@ public class BitSetStreamTest {
         public int getAsInt() { int s = n1; n1 = n2; n2 = s + n1; return s; }
     }
 
-    private static final Object[][] testcases = new Object[][] {
-        { "none", IntStream.empty() },
-        { "index 0", IntStream.of(0) },
-        { "index 255", IntStream.of(255) },
-        { "every bit", IntStream.range(0, 255) },
-        { "step 2", IntStream.range(0, 255).map(f -> f * 2) },
-        { "step 3", IntStream.range(0, 255).map(f -> f * 3) },
-        { "step 5", IntStream.range(0, 255).map(f -> f * 5) },
-        { "step 7", IntStream.range(0, 255).map(f -> f * 7) },
-        { "1, 10, 100, 1000", IntStream.of(1, 10, 100, 1000) },
-        { "max int", IntStream.of(Integer.MAX_VALUE) },
-        { "25 fibs", IntStream.generate(new Fibs()).limit(25) }
-    };
-
-    @DataProvider(name = "cases")
-    public static Object[][] produceCases() {
-        return testcases;
-    }
-
     @Test
     public void testFibs() {
         Fibs f = new Fibs();
@@ -93,22 +74,46 @@ public class BitSetStreamTest {
         assertEquals(987, Fibs.fibs(16));
     }
 
+
+    @DataProvider(name = "cases")
+    public static Object[][] produceCases() {
+        return new Object[][] {
+                { "none", IntStream.empty() },
+                { "index 0", IntStream.of(0) },
+                { "index 255", IntStream.of(255) },
+                { "index 0 and 255", IntStream.of(0, 255) },
+                { "index Integer.MAX_VALUE", IntStream.of(Integer.MAX_VALUE) },
+                { "index Integer.MAX_VALUE - 1", IntStream.of(Integer.MAX_VALUE - 1) },
+                { "index 0 and Integer.MAX_VALUE", IntStream.of(0, Integer.MAX_VALUE) },
+                { "every bit", IntStream.range(0, 255) },
+                { "step 2", IntStream.range(0, 255).map(f -> f * 2) },
+                { "step 3", IntStream.range(0, 255).map(f -> f * 3) },
+                { "step 5", IntStream.range(0, 255).map(f -> f * 5) },
+                { "step 7", IntStream.range(0, 255).map(f -> f * 7) },
+                { "1, 10, 100, 1000", IntStream.of(1, 10, 100, 1000) },
+                { "25 fibs", IntStream.generate(new Fibs()).limit(25) }
+        };
+    }
+
     @Test(dataProvider = "cases")
     public void testBitsetStream(String name, IntStream data) {
-        BitSet bs = new BitSet();
-        long setBits = data.distinct()
-                           .peek(i -> bs.set(i))
-                           .count();
+        BitSet bs = data.collect(BitSet::new, BitSet::set, BitSet::or);
 
-        assertEquals(bs.cardinality(), setBits);
-        assertEquals(bs.cardinality(), bs.stream().reduce(0, (s, i) -> s+1));
+        assertEquals(bs.cardinality(), bs.stream().count());
+
+        int[] indexHolder = new int[] { -1 };
+        bs.stream().forEach(i -> {
+            int ei = indexHolder[0];
+            indexHolder[0] = bs.nextSetBit(ei + 1);
+            assertEquals(i, indexHolder[0]);
+        });
 
         PrimitiveIterator.OfInt it = bs.stream().iterator();
-        for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i+1)) {
+        for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i + 1)) {
             assertTrue(it.hasNext());
             assertEquals(it.nextInt(), i);
             if (i == Integer.MAX_VALUE)
-                break; // or (i+1) would overflow
+                break; // or (i + 1) would overflow
         }
         assertFalse(it.hasNext());
     }
@@ -123,16 +128,20 @@ public class BitSetStreamTest {
         for (int seed : seeds) {
             final Random random = new Random(seed);
             random.nextBytes(bytes);
-            final BitSet bitSet = BitSet.valueOf(bytes);
-            final int cardinality = bitSet.cardinality();
-            final IntStream stream = bitSet.stream();
-            final int[] array = stream.toArray();
-            assertEquals(array.length, cardinality);
-            int nextSetBit = -1;
-            for (int i=0; i < cardinality; i++) {
-                nextSetBit = bitSet.nextSetBit(nextSetBit + 1);
-                assertEquals(array[i], nextSetBit);
-            }
+
+            BitSet bitSet = BitSet.valueOf(bytes);
+            testBitSetContents(bitSet, bitSet.stream().toArray());
+            testBitSetContents(bitSet, bitSet.stream().parallel().toArray());
+        }
+    }
+
+    void testBitSetContents(BitSet bitSet, int[] array) {
+        int cardinality = bitSet.cardinality();
+        assertEquals(array.length, cardinality);
+        int nextSetBit = -1;
+        for (int i = 0; i < cardinality; i++) {
+            nextSetBit = bitSet.nextSetBit(nextSetBit + 1);
+            assertEquals(array[i], nextSetBit);
         }
     }
 }

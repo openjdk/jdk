@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,13 @@ class VMManagementImpl implements VMManagement {
     }
 
     public boolean isGcNotificationSupported() {
-        return gcNotificationSupport;
+        boolean isSupported = true;
+        try {
+            Class.forName("com.sun.management.GarbageCollectorMXBean");
+        } catch (ClassNotFoundException x) {
+            isSupported = false;
+        }
+        return isSupported;
     }
 
     public boolean isRemoteDiagnosticCommandsSupported() {
