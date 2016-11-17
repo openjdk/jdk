@@ -322,19 +322,20 @@ abstract class DSA extends SignatureSpi {
         } else {
             // first decode the signature.
             try {
-                DerInputStream in = new DerInputStream(signature, offset,
-                                                       length);
+                // Enforce strict DER checking for signatures
+                DerInputStream in =
+                    new DerInputStream(signature, offset, length, false);
                 DerValue[] values = in.getSequence(2);
 
+                // check number of components in the read sequence
+                // and trailing data
+                if ((values.length != 2) || (in.available() != 0)) {
+                    throw new IOException("Invalid encoding for signature");
+                }
                 r = values[0].getBigInteger();
                 s = values[1].getBigInteger();
-
-                // Check for trailing signature data
-                if (in.available() != 0) {
-                    throw new IOException("Incorrect signature length");
-                }
             } catch (IOException e) {
-                throw new SignatureException("invalid encoding for signature");
+                throw new SignatureException("Invalid encoding for signature", e);
             }
         }
 
