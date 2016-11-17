@@ -172,10 +172,12 @@ final class CounterMode extends FeedbackCipher {
      * are encrypted on demand.
      */
     private int crypt(byte[] in, int inOff, int len, byte[] out, int outOff) {
-
-      Objects.checkFromIndexSize(inOff, len, in.length);
-      Objects.checkFromIndexSize(outOff, len, out.length);
-      return implCrypt(in, inOff, len, out, outOff);
+        if (len == 0) {
+            return 0;
+        }
+        Objects.checkFromIndexSize(inOff, len, in.length);
+        Objects.checkFromIndexSize(outOff, len, out.length);
+        return implCrypt(in, inOff, len, out, outOff);
     }
 
     // Implementation of crpyt() method. Possibly replaced with a compiler intrinsic.
