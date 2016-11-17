@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,8 +229,12 @@ abstract class ObjectFactoryGeneratorImpl extends ObjectFactoryGenerator {
 
         m.javadoc()
             .append("Create an instance of ")
-            .append(exposedElementType)
-            .append("}");
+            .append(exposedElementType);
+        m.javadoc().addParam($value)
+            .append("Java instance representing xml element's value.");
+        m.javadoc().addReturn()
+            .append("the new instance of ")
+            .append(exposedElementType);
 
         XmlElementDeclWriter xemw = m.annotate2(XmlElementDeclWriter.class);
         xemw.namespace(namespaceURI).name(localPart);
