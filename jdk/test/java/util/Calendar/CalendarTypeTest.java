@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,13 @@
  * @summary Unit test for calendar types
  */
 
-import java.util.*;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.Set;
 
 public class CalendarTypeTest {
+
     // Calendar types supported in JRE
     static Locale[] locales = new Locale[] {
         Locale.US,
@@ -37,23 +41,20 @@ public class CalendarTypeTest {
         new Locale("th", "TH"),
         Locale.forLanguageTag("en-US-u-ca-buddhist"),
         new Locale("ja", "JP", "JP"),
-        Locale.forLanguageTag("en-US-u-ca-japanese"),
-    };
+        Locale.forLanguageTag("en-US-u-ca-japanese")};
     static final String[] TYPES = new String[] {
         "gregory",
         "buddhist",
-        "japanese",
-    };
+        "japanese"};
     static final String[] ALIASES = new String[] {
         "gregorian",
-        "iso8601",
-    };
+        "iso8601"};
 
     public static void main(String[] args) {
         for (int i = 0; i < locales.length; i++) {
             Calendar cal = Calendar.getInstance(locales[i]);
             String type = cal.getCalendarType();
-            checkValue("bad calendar type", type, TYPES[i/2]);
+            checkValue("bad calendar type", type, TYPES[i / 2]);
         }
 
         GregorianCalendar gcal = new GregorianCalendar();
@@ -88,10 +89,13 @@ public class CalendarTypeTest {
         }
     }
 
+    @SuppressWarnings("serial")
     private static class Gregorian extends GregorianCalendar {
     }
 
+    @SuppressWarnings("serial")
     private static class Koyomi extends Calendar {
+
         @Override
         protected void computeTime() {
             throw new UnsupportedOperationException("Not supported yet.");
