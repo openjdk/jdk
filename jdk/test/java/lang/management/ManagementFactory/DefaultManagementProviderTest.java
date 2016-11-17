@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,16 @@
 
 /*
  * @test
- * @bug 4766302
- * @summary Make sure that computeTime call doesn't reset the isTimeSet value.
+ * @bug 8151099
+ * @summary Verify platform MXBeans initialized properly with java.management
+ *          module only. No other management provider
+ * @run main/othervm --limit-modules=java.management DefaultManagementProviderTest
  */
+import java.lang.management.ManagementFactory;
 
-import java.util.GregorianCalendar;
-
-@SuppressWarnings("serial")
-public class Bug4766302 {
-
-    static class MyCalendar extends GregorianCalendar {
-
-        boolean isTimeStillSet() {
-            return isTimeSet;
-        }
-
-        protected void computeTime() {
-            super.computeTime();
-        }
-    }
-
-    public static void main(String[] args) {
-        MyCalendar cal = new MyCalendar();
-        cal.computeTime();
-        if (!cal.isTimeStillSet()) {
-            throw new RuntimeException("computeTime() call reset isTimeSet.");
-        }
+public class DefaultManagementProviderTest {
+    public static void main(String[] argv) {
+        ManagementFactory.getPlatformMBeanServer();
+        System.out.println("Test case passed");
     }
 }

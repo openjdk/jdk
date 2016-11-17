@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary test ISO639-2 language codes
+ * @library /java/text/testlib
  * @compile -encoding ascii Bug4175998Test.java
  * @run main Bug4175998Test
  * @bug 4175998
@@ -43,14 +44,13 @@
  */
 
 import java.util.*;
-import java.io.*;
 
 /**
  *  Bug4175998Test verifies that the following bug has been fixed:
  *  Bug 4175998 - The java.util.Locale.getISO3Language() returns wrong result for a locale with
  *           language code 'ta'(Tamil).
  */
-public class Bug4175998Test extends LocaleTestFmwk {
+public class Bug4175998Test extends IntlTest {
     public static void main(String[] args) throws Exception {
         new Bug4175998Test().run(args);
         //generateTables();    //uncomment this to regenerate data tables

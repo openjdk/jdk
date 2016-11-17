@@ -28,12 +28,20 @@
  * taken into account for time calculations.
  */
 
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.TimeZone;
+
 import static java.util.GregorianCalendar.*;
 
 public class ZoneOffsets {
+
     // This TimeZone always returns the dstOffset value.
+    @SuppressWarnings("serial")
     private static class TestTimeZone extends TimeZone {
+
         private int gmtOffset;
         private int dstOffset;
 
@@ -44,7 +52,7 @@ public class ZoneOffsets {
         }
 
         public int getOffset(int era, int year, int month, int day,
-                             int dayOfWeek, int milliseconds) {
+                int dayOfWeek, int milliseconds) {
             return gmtOffset + dstOffset;
         }
 
@@ -80,22 +88,20 @@ public class ZoneOffsets {
     private static Locale[] locales = {
         Locale.getDefault(),
         new Locale("th", "TH"),
-        new Locale("ja", "JP", "JP"),
-    };
+        new Locale("ja", "JP", "JP")};
 
     private static final int HOUR = 60 * 60 * 1000;
 
     private static int[][] offsets = {
-        { 0, 0 },
-        { 0, HOUR },
-        { 0, 2 * HOUR },
-        { -8 * HOUR, 0 },
-        { -8 * HOUR, HOUR },
-        { -8 * HOUR, 2 * HOUR },
-        { 9 * HOUR, 0 },
-        { 9 * HOUR, HOUR },
-        { 9 * HOUR, 2 * HOUR },
-    };
+        {0, 0},
+        {0, HOUR},
+        {0, 2 * HOUR},
+        {-8 * HOUR, 0},
+        {-8 * HOUR, HOUR},
+        {-8 * HOUR, 2 * HOUR},
+        {9 * HOUR, 0},
+        {9 * HOUR, HOUR},
+        {9 * HOUR, 2 * HOUR}};
 
     public static void main(String[] args) {
         for (int l = 0; l < locales.length; l++) {
@@ -121,17 +127,17 @@ public class ZoneOffsets {
 
     private static void test(Locale loc, int gmtOffset, int dstOffset) {
         TimeZone tz1 = new TestTimeZone(gmtOffset,
-                                        "GMT" + (gmtOffset/HOUR) + "." + (dstOffset/HOUR),
-                                        dstOffset);
+                "GMT" + (gmtOffset / HOUR) + "." + (dstOffset / HOUR),
+                dstOffset);
         int someDifferentOffset = gmtOffset + 2 * HOUR;
         TimeZone tz2 = new TestTimeZone(someDifferentOffset,
-                                        "GMT"+ (someDifferentOffset/HOUR) + "." + (dstOffset/HOUR),
-                                        dstOffset);
+                "GMT" + (someDifferentOffset / HOUR) + "." + (dstOffset / HOUR),
+                dstOffset);
 
         int someDifferentDSTOffset = dstOffset == 2 * HOUR ? HOUR : dstOffset + HOUR;
         TimeZone tz3 = new TestTimeZone(gmtOffset,
-                                        "GMT"+ (gmtOffset/HOUR) + "." + (someDifferentDSTOffset/HOUR),
-                                        someDifferentDSTOffset);
+                "GMT" + (gmtOffset / HOUR) + "." + (someDifferentDSTOffset / HOUR),
+                someDifferentDSTOffset);
 
         // cal1 is the base line.
         Calendar cal1 = Calendar.getInstance(tz1, loc);
@@ -225,7 +231,7 @@ public class ZoneOffsets {
     private static void error(String msg, Locale loc, Calendar cal2, int gmtOffset, int dstOffset, long t1) {
         System.err.println(cal2);
         throw new RuntimeException(msg + ": Locale=" + loc
-                                   + ", gmtOffset=" + gmtOffset + ", dstOffset=" + dstOffset
-                                   + ", cal1 time=" + t1 + ", cal2 time=" + cal2.getTime().getTime());
+                + ", gmtOffset=" + gmtOffset + ", dstOffset=" + dstOffset
+                + ", cal1 time=" + t1 + ", cal2 time=" + cal2.getTime().getTime());
     }
 }
