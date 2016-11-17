@@ -440,7 +440,7 @@ void ModuleEntryTable::verify() {
   }
   guarantee(number_of_entries() == element_count,
             "Verify of Module Entry Table failed");
-  debug_only(verify_lookup_length((double)number_of_entries() / table_size()));
+  DEBUG_ONLY(verify_lookup_length((double)number_of_entries() / table_size(), "Module Entry Table"));
 }
 
 void ModuleEntry::verify() {

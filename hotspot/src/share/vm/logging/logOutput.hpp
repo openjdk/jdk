@@ -57,9 +57,6 @@ class LogOutput : public CHeapObj<mtLogging> {
   void set_config_string(const char* string);
 
  public:
-  static LogOutput* const Stdout;
-  static LogOutput* const Stderr;
-
   void set_decorators(const LogDecorators &decorators) {
     _decorators = decorators;
   }

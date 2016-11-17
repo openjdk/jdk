@@ -197,10 +197,11 @@ class os: AllStatic {
   // information may require a lock on some platforms.
   static char*      local_time_string(char *buf, size_t buflen);
   static struct tm* localtime_pd     (const time_t* clock, struct tm*  res);
+  static struct tm* gmtime_pd        (const time_t* clock, struct tm*  res);
   // Fill in buffer with current local time as an ISO-8601 string.
   // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
   // Returns buffer, or NULL if it failed.
-  static char* iso8601_time(char* buffer, size_t buffer_length);
+  static char* iso8601_time(char* buffer, size_t buffer_length, bool utc = false);
 
   // Interface for detecting multiprocessor system
   static inline bool is_MP() {

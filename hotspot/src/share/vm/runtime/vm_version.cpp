@@ -170,15 +170,16 @@ const char* Abstract_VM_Version::jre_release_version() {
 #define CPU      "ppc64le"
 #else
 #define CPU      "ppc64"
-#endif
+#endif // PPC64
 #else
-#define CPU      IA32_ONLY("x86")                \
-                 IA64_ONLY("ia64")               \
+#define CPU      AARCH64_ONLY("aarch64")         \
                  AMD64_ONLY("amd64")             \
-                 AARCH64_ONLY("aarch64")         \
+                 IA32_ONLY("x86")                \
+                 IA64_ONLY("ia64")               \
+                 S390_ONLY("s390")               \
                  SPARC_ONLY("sparc")
-#endif //
-#endif
+#endif // !ZERO
+#endif // !CPU
 
 const char *Abstract_VM_Version::vm_platform_string() {
   return OS "-" CPU;
