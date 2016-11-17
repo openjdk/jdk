@@ -62,7 +62,7 @@ public class TestClientCodeWrapper extends JavacTestingAbstractProcessor {
             defaultFileManager = fm;
 
             for (Method m: getMethodsExcept(JavaFileManager.class,
-                        "close", "getJavaFileForInput", "getModuleLocation", "getServiceLoader")) {
+                        "close", "getJavaFileForInput", "getLocationForModule", "getServiceLoader")) {
                 test(m);
             }
 
@@ -401,15 +401,15 @@ public class TestClientCodeWrapper extends JavacTestingAbstractProcessor {
         }
 
         @Override
-        public Location getModuleLocation(Location location, String moduleName) throws IOException {
-            throwUserExceptionIfNeeded(fileManagerMethod, "getModuleLocation");
-            return super.getModuleLocation(location, moduleName);
+        public Location getLocationForModule(Location location, String moduleName) throws IOException {
+            throwUserExceptionIfNeeded(fileManagerMethod, "getLocationForModule");
+            return super.getLocationForModule(location, moduleName);
         }
 
         @Override
-        public Location getModuleLocation(Location location, JavaFileObject fo, String pkgName) throws IOException {
-            throwUserExceptionIfNeeded(fileManagerMethod, "getModuleLocation");
-            return super.getModuleLocation(location, fo, pkgName);
+        public Location getLocationForModule(Location location, JavaFileObject fo, String pkgName) throws IOException {
+            throwUserExceptionIfNeeded(fileManagerMethod, "getLocationForModule");
+            return super.getLocationForModule(location, fo, pkgName);
         }
 
         @Override
@@ -419,9 +419,9 @@ public class TestClientCodeWrapper extends JavacTestingAbstractProcessor {
         }
 
         @Override
-        public Iterable<Set<Location>> listModuleLocations(Location location) throws IOException {
-            throwUserExceptionIfNeeded(fileManagerMethod, "listModuleLocations");
-            return super.listModuleLocations(location);
+        public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
+            throwUserExceptionIfNeeded(fileManagerMethod, "listLocationsForModules");
+            return super.listLocationsForModules(location);
         }
 
         public FileObject wrap(FileObject fo) {

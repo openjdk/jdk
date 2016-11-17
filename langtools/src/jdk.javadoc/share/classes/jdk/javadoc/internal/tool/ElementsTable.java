@@ -816,7 +816,7 @@ public class ElementsTable {
     private Location getModuleLocation(Location location, String msymName)
             throws ToolException {
         try {
-            return fm.getModuleLocation(location, msymName);
+            return fm.getLocationForModule(location, msymName);
         } catch (IOException ioe) {
             String text = messager.getText("main.doclet_could_not_get_location", msymName);
             throw new ToolException(ERROR, text, ioe);
