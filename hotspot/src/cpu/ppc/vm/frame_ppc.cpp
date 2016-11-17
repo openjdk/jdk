@@ -221,6 +221,7 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
   values.describe(frame_no, (intptr_t*)&(get_ijava_state()->name), #name);
 
       DESCRIBE_ADDRESS(method);
+      DESCRIBE_ADDRESS(mirror);
       DESCRIBE_ADDRESS(locals);
       DESCRIBE_ADDRESS(monitors);
       DESCRIBE_ADDRESS(cpoolCache);

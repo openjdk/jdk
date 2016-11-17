@@ -723,7 +723,7 @@ class MacroAssembler: public Assembler {
   void store_klass(Register dst_oop, Register klass, Register tmp = R0);
   void store_klass_gap(Register dst_oop, Register val = noreg); // Will store 0 if val not specified.
 
-  void load_mirror(Register mirror, Register method);
+  void load_mirror_from_const_method(Register mirror, Register const_method);
 
   static int instr_size_for_decode_klass_not_null();
   void decode_klass_not_null(Register dst, Register src = noreg);

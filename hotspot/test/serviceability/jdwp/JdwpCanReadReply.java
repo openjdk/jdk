@@ -31,7 +31,7 @@ public class JdwpCanReadReply extends JdwpReply {
     private boolean canRead;
 
     protected void parseData(DataInputStream ds) throws IOException {
-        canRead = ds.read() == 1;
+        canRead = (ds.read() != 0);
     }
 
     public boolean canRead() {

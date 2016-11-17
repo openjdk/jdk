@@ -342,12 +342,12 @@ template <MEMFLAGS F> void BasicHashtable<F>::verify() {
 
 #ifdef ASSERT
 
-template <MEMFLAGS F> bool BasicHashtable<F>::verify_lookup_length(double load) {
+template <MEMFLAGS F> bool BasicHashtable<F>::verify_lookup_length(double load, const char *table_name) {
   if ((!_lookup_warning) && (_lookup_count != 0)
       && ((double)_lookup_length / (double)_lookup_count > load * 2.0)) {
-    warning("Performance bug: SystemDictionary lookup_count=%d "
+    warning("Performance bug: %s lookup_count=%d "
             "lookup_length=%d average=%lf load=%f",
-            _lookup_count, _lookup_length,
+            table_name, _lookup_count, _lookup_length,
             (double)_lookup_length / _lookup_count, load);
     _lookup_warning = true;
 
