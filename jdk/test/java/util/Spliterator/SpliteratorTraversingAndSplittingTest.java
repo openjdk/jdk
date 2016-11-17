@@ -25,7 +25,7 @@
  * @test
  * @summary Spliterator traversing and splitting tests
  * @run testng SpliteratorTraversingAndSplittingTest
- * @bug 8020016 8071477
+ * @bug 8020016 8071477 8072784 8169838
  */
 
 import org.testng.annotations.DataProvider;
@@ -892,9 +892,6 @@ public class SpliteratorTraversingAndSplittingTest {
                 { "index 0", IntStream.of(0).toArray() },
                 { "index 255", IntStream.of(255).toArray() },
                 { "index 0 and 255", IntStream.of(0, 255).toArray() },
-                { "index Integer.MAX_VALUE", IntStream.of(Integer.MAX_VALUE).toArray() },
-                { "index Integer.MAX_VALUE - 1", IntStream.of(Integer.MAX_VALUE - 1).toArray() },
-                { "index 0 and Integer.MAX_VALUE", IntStream.of(0, Integer.MAX_VALUE).toArray() },
                 { "every bit", IntStream.range(0, 255).toArray() },
                 { "step 2", IntStream.range(0, 255).map(f -> f * 2).toArray() },
                 { "step 3", IntStream.range(0, 255).map(f -> f * 3).toArray() },
