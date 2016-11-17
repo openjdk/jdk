@@ -2897,11 +2897,11 @@ void SystemDictionary::verify() {
 // caller needs ResourceMark
 const char* SystemDictionary::loader_name(const oop loader) {
   return ((loader) == NULL ? "<bootloader>" :
-    InstanceKlass::cast((loader)->klass())->name()->as_C_string());
+          InstanceKlass::cast((loader)->klass())->name()->as_C_string());
 }
 
 // caller needs ResourceMark
 const char* SystemDictionary::loader_name(const ClassLoaderData* loader_data) {
   return (loader_data->class_loader() == NULL ? "<bootloader>" :
-    InstanceKlass::cast((loader_data->class_loader())->klass())->name()->as_C_string());
+          SystemDictionary::loader_name(loader_data->class_loader()));
 }

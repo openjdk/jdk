@@ -36,6 +36,7 @@
 #include "utilities/ostream.hpp"
 
 #define UNNAMED_MODULE "Unnamed Module"
+#define JAVA_BASE_NAME "java.base"
 
 class ModuleClosure;
 
@@ -100,6 +101,7 @@ public:
 
   Symbol*          location() const                    { return _location; }
   void             set_location(Symbol* location);
+  bool             is_non_jdk_module();
 
   bool             can_read(ModuleEntry* m) const;
   bool             has_reads() const;
