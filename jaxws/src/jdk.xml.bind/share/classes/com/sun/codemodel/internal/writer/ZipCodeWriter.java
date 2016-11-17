@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ public class ZipCodeWriter extends CodeWriter {
         zip = new ZipOutputStream(target);
         // nullify the close method.
         filter = new FilterOutputStream(zip){
+            @Override
             public void close() {}
         };
     }
@@ -57,10 +58,9 @@ public class ZipCodeWriter extends CodeWriter {
 
     private final OutputStream filter;
 
+    @Override
     public OutputStream openBinary(JPackage pkg, String fileName) throws IOException {
-        String name = fileName;
-        if(!pkg.isUnnamed())    name = toDirName(pkg)+name;
-
+        final String name = pkg == null || pkg.isUnnamed() ? fileName : toDirName(pkg)+fileName;
         zip.putNextEntry(new ZipEntry(name));
         return filter;
     }
@@ -70,6 +70,7 @@ public class ZipCodeWriter extends CodeWriter {
         return pkg.name().replace('.','/')+'/';
     }
 
+    @Override
     public void close() throws IOException {
         zip.close();
     }

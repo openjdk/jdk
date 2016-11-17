@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,15 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import java.util.Collection;
+import javax.lang.model.element.Element;
 
 /**
  * @author WS Development Team
  */
 final class TypeModeler {
+
+    private static final String REMOTE = "java.rmi.Remote";
+    private static final String REMOTE_EXCEPTION = "java.rmi.RemoteException";
 
     private TypeModeler() {
     }
@@ -160,4 +164,29 @@ final class TypeModeler {
         return false;
     }
 
+    public static boolean isRemoteException(ProcessingEnvironment env, TypeMirror typeMirror) {
+        Element element = env.getTypeUtils().asElement(typeMirror);
+        if (element.getKind() == ElementKind.CLASS) {
+            TypeElement te = (TypeElement) element;
+            TypeKind tk = typeMirror.getKind();
+            while (tk != TypeKind.NONE && !te.getQualifiedName().contentEquals(REMOTE_EXCEPTION)) {
+                TypeMirror superType = te.getSuperclass();
+                te = (TypeElement) env.getTypeUtils().asElement(superType);
+                tk = superType.getKind();
+            }
+            return tk != TypeKind.NONE;
+        }
+        return false;
+    }
+
+    public static boolean isRemote(/*@NotNull*/ TypeElement typeElement) {
+        for (TypeMirror superType : typeElement.getInterfaces()) {
+            TypeElement name = (TypeElement) ((DeclaredType) superType).asElement();
+            if (name.getQualifiedName().contentEquals(REMOTE)) {
+                return true;
+            }
+            isRemote(name);
+        }
+        return false;
+    }
 }
