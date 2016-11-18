@@ -72,6 +72,7 @@ static jmethodID JPEGImageReader_acceptPixelsID;
 static jmethodID JPEGImageReader_pushBackID;
 static jmethodID JPEGImageReader_passStartedID;
 static jmethodID JPEGImageReader_passCompleteID;
+static jmethodID JPEGImageReader_skipPastImageID;
 static jmethodID JPEGImageWriter_writeOutputDataID;
 static jmethodID JPEGImageWriter_warningOccurredID;
 static jmethodID JPEGImageWriter_warningWithMessageID;
@@ -1472,6 +1473,10 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_initReaderIDs
                                                      cls,
                                                      "pushBack",
                                                      "(I)V"));
+    CHECK_NULL(JPEGImageReader_skipPastImageID = (*env)->GetMethodID(env,
+                                                     cls,
+                                                     "skipPastImage",
+                                                     "(I)V"));
     CHECK_NULL(JPEGQTable_tableID = (*env)->GetFieldID(env,
                                             qTableClass,
                                             "qTable",
@@ -1853,6 +1858,7 @@ JNIEXPORT jboolean JNICALL
 Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
     (JNIEnv *env,
      jobject this,
+     jint imageIndex,
      jlong ptr,
      jbyteArray buffer,
      jint numBands,
@@ -2181,12 +2187,23 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
      * We are done, but we might not have read all the lines, or all
      * the passes, so use jpeg_abort instead of jpeg_finish_decompress.
      */
-    if (cinfo->output_scanline == cinfo->output_height) {
-        //    if ((cinfo->output_scanline == cinfo->output_height) &&
-        //(jpeg_input_complete(cinfo))) {  // We read the whole file
-        jpeg_finish_decompress(cinfo);
-    } else {
+    if ((cinfo->output_scanline != cinfo->output_height) ||
+        data->abortFlag == JNI_TRUE)
+     {
         jpeg_abort_decompress(cinfo);
+     } else if ((!jpeg_input_complete(cinfo)) &&
+                (progressive &&
+                 (cinfo->input_scan_number > maxProgressivePass))) {
+        /* We haven't reached EOI, but we need to skip to there */
+        (*cinfo->src->term_source) (cinfo);
+        /* We can use jpeg_abort to release memory and reset global_state */
+        jpeg_abort((j_common_ptr) cinfo);
+        (*env)->CallVoidMethod(env,
+                               this,
+                               JPEGImageReader_skipPastImageID,
+                               imageIndex);
+    } else {
+        jpeg_finish_decompress(cinfo);
     }
 
     free(scanLinePtr);
