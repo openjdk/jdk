@@ -250,7 +250,8 @@ XSLoader, DOMConfiguration {
         JdkXmlUtils.CATALOG_DEFER,
         JdkXmlUtils.CATALOG_FILES,
         JdkXmlUtils.CATALOG_PREFER,
-        JdkXmlUtils.CATALOG_RESOLVE
+        JdkXmlUtils.CATALOG_RESOLVE,
+        JdkXmlUtils.CDATA_CHUNK_SIZE
     };
 
     // Data
@@ -282,7 +283,7 @@ XSLoader, DOMConfiguration {
     private XSDDescription fXSDDescription = new XSDDescription();
     private String faccessExternalSchema = Constants.EXTERNAL_ACCESS_DEFAULT;
 
-    private WeakHashMap fJAXPCache;
+    private WeakHashMap<Object, SchemaGrammar> fJAXPCache;
     private Locale fLocale = Locale.getDefault();
 
     // XSLoader attributes
@@ -366,7 +367,7 @@ XSLoader, DOMConfiguration {
         }
         fCMBuilder = builder;
         fSchemaHandler = new XSDHandler(fGrammarBucket);
-        fJAXPCache = new WeakHashMap();
+        fJAXPCache = new WeakHashMap<>();
 
         fSettingsChanged = true;
     }
@@ -377,7 +378,7 @@ XSLoader, DOMConfiguration {
      * are recognized.
      */
     public String[] getRecognizedFeatures() {
-        return (String[])(RECOGNIZED_FEATURES.clone());
+        return RECOGNIZED_FEATURES.clone();
     } // getRecognizedFeatures():  String[]
 
     /**
@@ -419,7 +420,7 @@ XSLoader, DOMConfiguration {
      * are recognized.
      */
     public String[] getRecognizedProperties() {
-        return (String[])(RECOGNIZED_PROPERTIES.clone());
+        return RECOGNIZED_PROPERTIES.clone();
     } // getRecognizedProperties():  String[]
 
     /**
@@ -568,7 +569,7 @@ XSLoader, DOMConfiguration {
         desc.setBaseSystemId(source.getBaseSystemId());
         desc.setLiteralSystemId( source.getSystemId());
         // none of the other fields make sense for preparsing
-        Map locationPairs = new HashMap();
+        Map<String, LocationArray> locationPairs = new HashMap<>();
         // Process external schema location properties.
         // We don't call tokenizeSchemaLocationStr here, because we also want
         // to check whether the values are valid URI.
@@ -665,7 +666,7 @@ XSLoader, DOMConfiguration {
 
     // add external schema locations to the location pairs
     public static void processExternalHints(String sl, String nsl,
-            Map<String, XMLSchemaLoader.LocationArray> locations,
+            Map<String, LocationArray> locations,
             XMLErrorReporter er) {
         if (sl != null) {
             try {
@@ -694,9 +695,10 @@ XSLoader, DOMConfiguration {
         if (nsl != null) {
             try {
                 // similarly for no ns schema location property
-                XSAttributeDecl attrDecl = SchemaGrammar.SG_XSI.getGlobalAttributeDecl(SchemaSymbols.XSI_NONAMESPACESCHEMALOCATION);
+                XSAttributeDecl attrDecl = SchemaGrammar.SG_XSI.getGlobalAttributeDecl(
+                        SchemaSymbols.XSI_NONAMESPACESCHEMALOCATION);
                 attrDecl.fType.validate(nsl, null, null);
-                LocationArray la = ((LocationArray)locations.get(XMLSymbols.EMPTY_STRING));
+                LocationArray la = locations.get(XMLSymbols.EMPTY_STRING);
                 if(la == null) {
                     la = new LocationArray();
                     locations.put(XMLSymbols.EMPTY_STRING, la);
@@ -763,14 +765,14 @@ XSLoader, DOMConfiguration {
             return;
         }
 
-        Class componentType = fJAXPSource.getClass().getComponentType();
+        Class<?> componentType = fJAXPSource.getClass().getComponentType();
         XMLInputSource xis = null;
         String sid = null;
         if (componentType == null) {
             // Not an array
             if (fJAXPSource instanceof InputStream ||
                     fJAXPSource instanceof InputSource) {
-                SchemaGrammar g = (SchemaGrammar)fJAXPCache.get(fJAXPSource);
+                SchemaGrammar g = fJAXPCache.get(fJAXPSource);
                 if (g != null) {
                     fGrammarBucket.putGrammar(g);
                     return;
@@ -823,7 +825,7 @@ XSLoader, DOMConfiguration {
         for (int i = 0; i < objArr.length; i++) {
             if (objArr[i] instanceof InputStream ||
                     objArr[i] instanceof InputSource) {
-                SchemaGrammar g = (SchemaGrammar)fJAXPCache.get(objArr[i]);
+                SchemaGrammar g = fJAXPCache.get(objArr[i]);
                 if (g != null) {
                     fGrammarBucket.putGrammar(g);
                     continue;
