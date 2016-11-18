@@ -968,9 +968,11 @@ public class XMLDocumentScannerImpl
                     case SCANNER_STATE_CONTENT: {
                         reportFatalError("ContentIllegalInProlog", null);
                         fEntityScanner.scanChar(null);
+                        return -1;
                     }
                     case SCANNER_STATE_REFERENCE: {
                         reportFatalError("ReferenceIllegalInProlog", null);
+                        return -1;
                     }
 
                     /**
