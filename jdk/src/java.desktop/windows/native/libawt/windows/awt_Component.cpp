@@ -4220,7 +4220,7 @@ MsgRouting AwtComponent::WmDrawItem(UINT ctrlId, DRAWITEMSTRUCT &drawInfo)
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     if (drawInfo.CtlType == ODT_MENU) {
-        if (drawInfo.itemData != 0) {
+        if (IsMenu((HMENU)drawInfo.hwndItem) && drawInfo.itemData != 0) {
             AwtMenu* menu = (AwtMenu*)(drawInfo.itemData);
             menu->DrawItem(drawInfo);
         }

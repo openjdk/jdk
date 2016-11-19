@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ LPCTSTR AwtPopupMenu::GetClassName() {
 }
 
 /* Create a new AwtPopupMenu object and menu.   */
-AwtPopupMenu* AwtPopupMenu::Create(jobject self, AwtComponent* parent)
+AwtPopupMenu* AwtPopupMenu::Create(jobject self, jobject parent)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
@@ -76,6 +76,9 @@ AwtPopupMenu* AwtPopupMenu::Create(jobject self, AwtComponent* parent)
         if (env->EnsureLocalCapacity(1) < 0) {
             return NULL;
         }
+
+        JNI_CHECK_NULL_GOTO(parent, "peer", done);
+        AwtComponent* awtParent = (AwtComponent*) JNI_GET_PDATA(parent);
 
         target = env->GetObjectField(self, AwtObject::targetID);
         JNI_CHECK_NULL_GOTO(target, "null target", done);
@@ -94,7 +97,7 @@ AwtPopupMenu* AwtPopupMenu::Create(jobject self, AwtComponent* parent)
         popupMenu->SetHMenu(hMenu);
 
         popupMenu->LinkObjects(env, self);
-        popupMenu->SetParent(parent);
+        popupMenu->SetParent(awtParent);
     } catch (...) {
         env->DeleteLocalRef(target);
         throw;
@@ -274,12 +277,8 @@ Java_sun_awt_windows_WPopupMenuPeer_createMenu(JNIEnv *env, jobject self,
 {
     TRY;
 
-    PDATA pData;
-    JNI_CHECK_PEER_RETURN(parent);
-    AwtComponent* awtParent = (AwtComponent *)pData;
     AwtToolkit::CreateComponent(
-        self, awtParent, (AwtToolkit::ComponentFactory)AwtPopupMenu::Create, FALSE);
-    JNI_CHECK_PEER_CREATION_RETURN(self);
+        self, parent, (AwtToolkit::ComponentFactory)AwtPopupMenu::Create);
 
     CATCH_BAD_ALLOC;
 }
