@@ -30,6 +30,12 @@
  */
 
 /***********************************************************************/
+// struct for _DelItem() method
+struct DelItemStruct {
+    jobject menuitem;
+    jint index;
+};
+/***********************************************************************/
 // struct for _AddMenu() method
 struct AddMenuStruct {
     jobject menubar;
@@ -130,18 +136,6 @@ HWND AwtMenuBar::GetOwnerHWnd()
         return myFrame->GetHWnd();
 }
 
-void AwtMenuBar::SendDrawItem(AwtMenuItem* awtMenuItem,
-                              DRAWITEMSTRUCT& drawInfo)
-{
-    awtMenuItem->DrawItem(drawInfo);
-}
-
-void AwtMenuBar::SendMeasureItem(AwtMenuItem* awtMenuItem,
-                                 HDC hDC, MEASUREITEMSTRUCT& measureInfo)
-{
-    awtMenuItem->MeasureItem(hDC, measureInfo);
-}
-
 int AwtMenuBar::CountItem(jobject menuBar)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -164,9 +158,9 @@ AwtMenuItem* AwtMenuBar::GetItem(jobject target, long index)
 
     jobject menuItemPeer = GetPeerForTarget(env, menu);
     PDATA pData;
+    AwtMenuItem* awtMenuItem = NULL;
     JNI_CHECK_PEER_GOTO(menuItemPeer, done);
-
-    AwtMenuItem* awtMenuItem = (AwtMenuItem*)pData;
+    awtMenuItem = (AwtMenuItem*)pData;
 
 done:
     env->DeleteLocalRef(menu);
@@ -215,20 +209,6 @@ void AwtMenuBar::RedrawMenuBar() {
     VERIFY(::DrawMenuBar(GetOwnerHWnd()));
 }
 
-LRESULT AwtMenuBar::WinThreadExecProc(ExecuteArgs * args)
-{
-    switch( args->cmdId ) {
-        case MENUBAR_DELITEM:
-            this->DeleteItem(static_cast<UINT>(args->param1));
-            break;
-
-        default:
-            AwtMenu::WinThreadExecProc(args);
-            break;
-    }
-    return 0L;
-}
-
 void AwtMenuBar::_AddMenu(void *param)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -255,6 +235,28 @@ ret:
     }
 
     delete ams;
+}
+
+void AwtMenuBar::_DelItem(void *param)
+{
+    if (AwtToolkit::IsMainThread()) {
+        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+        DelItemStruct *dis = (DelItemStruct*) param;
+        jobject self = dis->menuitem;
+        jint index = dis->index;
+
+        AwtMenuBar *m = NULL;
+        PDATA pData;
+        JNI_CHECK_PEER_GOTO(self, ret);
+        m = (AwtMenuBar *)pData;
+        m->DeleteItem(static_cast<UINT>(index));
+ret:
+        env->DeleteGlobalRef(self);
+        delete dis;
+    } else {
+        AwtToolkit::GetInstance().InvokeFunction(AwtMenuBar::_DelItem, param);
+    }
 }
 
 /************************************************************************
@@ -325,9 +327,12 @@ Java_sun_awt_windows_WMenuBarPeer_delMenu(JNIEnv *env, jobject self,
 {
     TRY;
 
-    PDATA pData;
-    JNI_CHECK_PEER_RETURN(self);
-    AwtObject::WinThreadExec(self, AwtMenuBar::MENUBAR_DELITEM, (LPARAM)index);
+    DelItemStruct *dis = new DelItemStruct;
+    dis->menuitem = env->NewGlobalRef(self);
+    dis->index = index;
+
+    AwtToolkit::GetInstance().SyncCall(AwtMenuBar::_DelItem, dis);
+    // global refs and dis are deleted in _DelItem
 
     CATCH_BAD_ALLOC;
 }
@@ -346,9 +351,6 @@ Java_sun_awt_windows_WMenuBarPeer_create(JNIEnv *env, jobject self,
     AwtToolkit::CreateComponent(self, frame,
                                 (AwtToolkit::ComponentFactory)
                                 AwtMenuBar::Create);
-    PDATA pData;
-    JNI_CHECK_PEER_CREATION_RETURN(self);
-
     CATCH_BAD_ALLOC;
 }
 
