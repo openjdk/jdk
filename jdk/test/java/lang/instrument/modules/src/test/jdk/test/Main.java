@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,24 +23,21 @@
 
 package jdk.test;
 
-import java.net.URL;
-
+/**
+ * Launched by AppendToClassPathModuleTest.
+ */
 public class Main {
-    static final String JAVA_CLASS_PATH = "java.class.path";
-
-    public static void main(String[] args) throws Exception {
-        boolean expected = args[0].equals("true");
-        String cpath = args.length > 1 ? args[1] : "";
-        String value = System.getProperty(JAVA_CLASS_PATH);
-        if (!value.equals(cpath)) {
-            throw new RuntimeException(JAVA_CLASS_PATH + "=" + value +
-                " expected=" + cpath);
+    public static void main(String... args) throws Exception {
+        // "java.class.path" system property is expected to be empty.
+        String value = System.getProperty("java.class.path");
+        if (!value.isEmpty()) {
+            throw new RuntimeException("Non-empty java.class.path=" + value);
         }
 
-        ClassLoader loader = ClassLoader.getSystemClassLoader();
-        URL url = loader.getResource("jdk/test/res.properties");
-        if ((expected && url == null) || (!expected && url != null)) {
-            throw new RuntimeException("URL: " + url + " expected non-null: " + expected);
+        // load the "hidden" class that should be loaded by the system loader
+        Class<?> c = Class.forName("ExampleForClassPath");
+        if (c.getClassLoader() != ClassLoader.getSystemClassLoader()) {
+            throw new RuntimeException(c + " loaderd by " + c.getClassLoader());
         }
     }
 }

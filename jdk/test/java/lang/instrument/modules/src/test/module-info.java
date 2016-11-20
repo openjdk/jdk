@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -21,26 +21,5 @@
  * questions.
  */
 
-package jdk.test;
-
-import java.net.URL;
-
-public class Main {
-    static final String JAVA_CLASS_PATH = "java.class.path";
-
-    public static void main(String[] args) throws Exception {
-        boolean expected = args[0].equals("true");
-        String cpath = args.length > 1 ? args[1] : "";
-        String value = System.getProperty(JAVA_CLASS_PATH);
-        if (!value.equals(cpath)) {
-            throw new RuntimeException(JAVA_CLASS_PATH + "=" + value +
-                " expected=" + cpath);
-        }
-
-        ClassLoader loader = ClassLoader.getSystemClassLoader();
-        URL url = loader.getResource("jdk/test/res.properties");
-        if ((expected && url == null) || (!expected && url != null)) {
-            throw new RuntimeException("URL: " + url + " expected non-null: " + expected);
-        }
-    }
+module test {
 }
