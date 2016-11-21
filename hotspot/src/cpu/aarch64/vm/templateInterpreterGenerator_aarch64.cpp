@@ -203,6 +203,9 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     __ mov(sp, r13);
     generate_transcendental_entry(kind, 2);
     break;
+  case Interpreter::java_lang_math_fmaD :
+  case Interpreter::java_lang_math_fmaF :
+    return NULL;
   default:
     ;
   }

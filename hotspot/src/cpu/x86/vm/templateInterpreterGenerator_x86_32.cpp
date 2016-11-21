@@ -342,6 +342,9 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   //        [ hi(arg) ]
   //
   if (kind == Interpreter::java_lang_math_fmaD) {
+    if (!UseFMA) {
+      return NULL; // Generate a vanilla entry
+    }
     __ movdbl(xmm2, Address(rsp, 5 * wordSize));
     __ movdbl(xmm1, Address(rsp, 3 * wordSize));
     __ movdbl(xmm0, Address(rsp, 1 * wordSize));
@@ -352,6 +355,9 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
     return entry_point;
   } else if (kind == Interpreter::java_lang_math_fmaF) {
+    if (!UseFMA) {
+      return NULL; // Generate a vanilla entry
+    }
     __ movflt(xmm2, Address(rsp, 3 * wordSize));
     __ movflt(xmm1, Address(rsp, 2 * wordSize));
     __ movflt(xmm0, Address(rsp, 1 * wordSize));

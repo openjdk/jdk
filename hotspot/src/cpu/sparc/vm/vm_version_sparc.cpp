@@ -351,7 +351,7 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
     }
   } else if (UseCRC32Intrinsics) {
-    warning("SPARC CRC32 intrinsics require VIS3 insructions support. Intriniscs will be disabled");
+    warning("SPARC CRC32 intrinsics require VIS3 instructions support. Intrinsics will be disabled");
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
