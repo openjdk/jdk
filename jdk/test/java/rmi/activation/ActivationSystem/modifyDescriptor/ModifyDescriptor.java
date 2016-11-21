@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,9 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
+ *          java.base/sun.nio.ch
  * @build TestLibrary RMID ActivationLibrary
- *     ActivateMe ModifyDescriptor_Stub
+ *     ActivateMe ModifyDescriptor_Stub RMIDSelectorProvider
  * @run main/othervm/policy=security.policy/timeout=240 ModifyDescriptor
  */
 
