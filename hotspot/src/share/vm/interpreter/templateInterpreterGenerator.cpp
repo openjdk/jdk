@@ -239,10 +239,8 @@ void TemplateInterpreterGenerator::generate_all() {
       method_entry(java_lang_math_log10)
       method_entry(java_lang_math_exp  )
       method_entry(java_lang_math_pow  )
-      if (UseFMA) {
-        method_entry(java_lang_math_fmaF)
-        method_entry(java_lang_math_fmaD)
-      }
+      method_entry(java_lang_math_fmaF )
+      method_entry(java_lang_math_fmaD )
       method_entry(java_lang_ref_reference_get)
 
       AbstractInterpreter::initialize_method_handle_entries();
@@ -253,16 +251,11 @@ void TemplateInterpreterGenerator::generate_all() {
       method_entry(native_synchronized)
       Interpreter::_native_entry_end = Interpreter::code()->code_end();
 
-      if (UseCRC32Intrinsics) {
-        method_entry(java_util_zip_CRC32_update)
-        method_entry(java_util_zip_CRC32_updateBytes)
-        method_entry(java_util_zip_CRC32_updateByteBuffer)
-      }
-
-      if (UseCRC32CIntrinsics) {
-        method_entry(java_util_zip_CRC32C_updateBytes)
-        method_entry(java_util_zip_CRC32C_updateDirectByteBuffer)
-      }
+      method_entry(java_util_zip_CRC32_update)
+      method_entry(java_util_zip_CRC32_updateBytes)
+      method_entry(java_util_zip_CRC32_updateByteBuffer)
+      method_entry(java_util_zip_CRC32C_updateBytes)
+      method_entry(java_util_zip_CRC32C_updateDirectByteBuffer)
 
       method_entry(java_lang_Float_intBitsToFloat);
       method_entry(java_lang_Float_floatToRawIntBits);
@@ -451,7 +444,7 @@ address TemplateInterpreterGenerator::generate_method_entry(
   case Interpreter::java_lang_math_pow     : // fall thru
   case Interpreter::java_lang_math_exp     : // fall thru
   case Interpreter::java_lang_math_fmaD    : // fall thru
-  case Interpreter::java_lang_math_fmaF     : entry_point = generate_math_entry(kind);      break;
+  case Interpreter::java_lang_math_fmaF    : entry_point = generate_math_entry(kind);      break;
   case Interpreter::java_lang_ref_reference_get
                                            : entry_point = generate_Reference_get_entry(); break;
   case Interpreter::java_util_zip_CRC32_update
