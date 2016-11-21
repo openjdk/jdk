@@ -30,10 +30,7 @@ import java.util.List;
 /**
  * A class representing the tags found in a GeoTIFF IFD.  GeoTIFF is a
  * standard for annotating georeferenced or geocoded raster imagery.
- * The GeoTIFF specification may be found at <a
- * href="http://www.remotesensing.org/geotiff/spec/geotiffhome.html">
- * {@code http://www.remotesensing.org/geotiff/spec/geotiffhome.html}
- * </a>. This class does <i>not</i> handle the <i>GeoKey</i>s referenced
+ * This class does <i>not</i> handle the <i>GeoKey</i>s referenced
  * from a <i>GeoKeyDirectoryTag</i> as those are not TIFF tags per se.
  *
  * <p>The definitions of the data types referenced by the field
