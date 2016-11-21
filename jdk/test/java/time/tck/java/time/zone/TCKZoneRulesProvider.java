@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,10 +91,11 @@ public class TCKZoneRulesProvider {
     public void test_getAvailableGroupIds() {
         Set<String> zoneIds = ZoneRulesProvider.getAvailableZoneIds();
         assertEquals(zoneIds.contains("Europe/London"), true);
-        zoneIds.clear();
-        assertEquals(zoneIds.size(), 0);
-        Set<String> zoneIds2 = ZoneRulesProvider.getAvailableZoneIds();
-        assertEquals(zoneIds2.contains("Europe/London"), true);
+    }
+
+    @Test(expectedExceptions=UnsupportedOperationException.class)
+    public void test_getAvailableGroupIds_modifyZoneId() {
+        ZoneRulesProvider.getAvailableZoneIds().clear();
     }
 
     //-----------------------------------------------------------------------
