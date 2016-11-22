@@ -50,11 +50,6 @@ JAVADOC_SOURCE_DIRS = \
 # Should we use -Xdocrootparent? Allow custom to overwrite.
 DOCROOTPARENT_FLAG = TRUE
 
-# The core api index file is the target for the core api javadocs rule
-# and needs to be defined early so that all other javadoc rules may
-# depend on it.
-CORE_INDEX_FILE := $(JAVADOC_OUTPUTDIR)/api/index.html
-
 # URLs
 JAVADOC_BASE_URL := http://docs.oracle.com/javase/$(VERSION_SPECIFICATION)/docs
 BUG_SUBMIT_URL := http://bugreport.java.com/bugreport/
@@ -70,52 +65,82 @@ COMMON_BOTTOM_TEXT := $(BUG_SUBMIT_LINE)<br> Java is a trademark or registered \
     trademark of $(FULL_COMPANY_NAME) in the US and other countries.
 
 CORE_BOTTOM_COPYRIGHT_URL := {@docroot}/../legal/cpyr.html
-CORE_BOTTOM_TEXT := $(BUG_SUBMIT_LINE) \
-<br>For further API reference and developer documentation, see \
-<a href="$(JAVADOC_BASE_URL)/index.html" target="_blank">Java SE \
-Documentation</a>. That documentation contains more detailed, \
-developer-targeted descriptions, with conceptual overviews, definitions of \
-terms, workarounds, and working code examples.
+CORE_BOTTOM_TEXT := \
+    $(BUG_SUBMIT_LINE) \
+    <br>For further API reference and developer documentation, see \
+    <a href="$(JAVADOC_BASE_URL)/index.html" target="_blank">Java SE \
+    Documentation</a>. That documentation contains more detailed, \
+    developer-targeted descriptions, with conceptual overviews, definitions of \
+    terms, workarounds, and working code examples.
 
 ifeq ($(VERSION_IS_GA), true)
-  DRAFT_HEADER :=
-  DRAFT_BOTTOM :=
-  DRAFT_WINTITLE :=
-  CORE_TOP_EARLYACCESS :=
+  DRAFT_MARKER :=
+  DRAFT_WINDOW_TITLE_MARKER :=
+  EARLYACCESS_TOP :=
 else
   # We need a draft format when not building the GA version.
-  DRAFT_HEADER := <br><strong>DRAFT&nbsp;$(VERSION_STRING)</strong>
-  DRAFT_BOTTOM := <br><strong>DRAFT&nbsp;$(VERSION_STRING)</strong>
+  DRAFT_MARKER := <br><strong>DRAFT&nbsp;$(VERSION_STRING)</strong>
   ifeq ($(VERSION_BUILD), 0)
-    DRAFT_WINTITLE := [ad-hoc build]
+    DRAFT_WINDOW_TITLE_MARKER := $(SPACE)[ad-hoc build]
   else
-    DRAFT_WINTITLE := [build $(VERSION_BUILD)]
+    DRAFT_WINDOW_TITLE_MARKER := $(SPACE)[build $(VERSION_BUILD)]
   endif
-  CORE_TOP_EARLYACCESS := \
-<div style="background-color: $$(HASH)EEEEEE"> \
-<div style="padding: 6px; margin-top: 2px; margin-bottom: 6px; \
-margin-left: 6px; margin-right: 6px; text-align: justify; font-size: 80%; \
-font-family: Helvetica, Arial, sans-serif; font-weight: normal;"> \
-Please note that the specifications and other information contained herein are \
-not final and are subject to change. The information is being made available \
-to you solely for purpose of evaluation.</div></div>
+  EARLYACCESS_TOP := \
+      <div style="background-color: $$(HASH)EEEEEE"><div style="padding: 6px; \
+      margin-top: 2px; margin-bottom: 6px; margin-left: 6px; margin-right: \
+      6px; text-align: justify; font-size: 80%; font-family: Helvetica, Arial, \
+      sans-serif; font-weight: normal;">Please note that the specifications \
+      and other information contained herein are not final and are subject to \
+      change. The information is being made available to you solely for \
+      purpose of evaluation.</div></div>
 endif
+
+################################################################################
+# Special treatment for the core package list. All separate "small" javadoc
+# invocation needs to be able to see the core package list.
+
+ALL_PKG_DIRS := $(dir $(filter %.java, $(call CacheFind, \
+    $(wildcard $(JAVADOC_SOURCE_DIRS)))))
+ALL_SRC_PREFIXES := $(addsuffix /%, $(wildcard $(JAVADOC_SOURCE_DIRS)))
+ALL_PKG_DIRNAMES := $(foreach prefix, $(ALL_SRC_PREFIXES), \
+    $(patsubst $(prefix),%, $(filter $(prefix), $(ALL_PKG_DIRS))))
+ALL_PACKAGES := $(sort $(subst /,., $(patsubst %/, %, $(ALL_PKG_DIRNAMES))))
+
+# Core packages are all packages beginning with java, javax or org, except a few
+# excludes.
+JAVA_PACKAGES := $(filter java.%, $(ALL_PACKAGES))
+JAVAX_PACKAGES := $(filter javax.%, $(ALL_PACKAGES))
+ORG_PACKAGES := $(filter org.%, $(ALL_PACKAGES))
+
+# Allow custom makefile to add more excluded packages
+CORE_EXCLUDED_PACKAGES += \
+    java.awt.dnd.peer \
+    java.awt.peer \
+    javax.smartcardio \
+    org.jcp.xml.dsig.internal% \
+    org.w3c.dom.css \
+    org.w3c.dom.html \
+    org.w3c.dom.stylesheets \
+    org.w3c.dom.xpath \
+    #
+
+CORE_PACKAGES := $(filter-out $(CORE_EXCLUDED_PACKAGES), \
+    $(JAVA_PACKAGES) $(JAVAX_PACKAGES) $(ORG_PACKAGES))
+
+CORE_PACKAGES_LIST_DIR := $(SUPPORT_OUTPUTDIR)/docs/core-packages
+CORE_PACKAGES_LIST_FILE := $(CORE_PACKAGES_LIST_DIR)/package-list
+
+CORE_PACKAGES_VARDEPS_FILE := $(call DependOnVariable, CORE_PACKAGES, \
+    $(CORE_PACKAGES_LIST_FILE).vardeps)
+
+$(CORE_PACKAGES_LIST_FILE): $(CORE_PACKAGES_VARDEPS_FILE)
+	$(call MakeDir, $(@D))
+	$(eval $(call ListPathsSafely, CORE_PACKAGES, $@))
 
 ################################################################################
 # Support functions for SetupJavadocGeneration
 
-# Print an option line to the target file
-# Arguments:
-# arg 1: the option name
-# arg 2-3: optional arguments to the option
-define AddOption
-	$(PRINTF) "%s$(if $(strip $2), '%s',)$(if $(strip $3), '%s',)\n" \
-	    "$(strip $1)"$(if $(strip $2), '$(strip $2)',)$(if $(strip $3), \
-	    '$(strip $3)',) >> $@
-endef
-
-# This function goes to great pains to exactly mimic the old behavior
-# in all details, including whitespace.
+# Generate the text used in the -bottom argument.
 # Note that COPYRIGHT_YEAR is the current year (from spec.gmk)
 # Arguments:
 # arg 1: first copyright year
@@ -130,6 +155,34 @@ endef
 
 # Speed up finding by filling cache
 $(eval $(call FillCacheFind, $(wildcard $(JAVADOC_SOURCE_DIRS))))
+
+# In order to get a specific ordering it's necessary to specify the total
+# ordering of tags as the tags are otherwise ordered in order of definition.
+DEFAULT_JAVADOC_TAGS := \
+    -tag beaninfo:X \
+    -tag revised:X \
+    -tag since.unbundled:X \
+    -tag spec:X \
+    -tag specdefault:X \
+    -tag Note:X \
+    -tag ToDo:X \
+    -tag 'apiNote:a:API Note:' \
+    -tag 'implSpec:a:Implementation Requirements:' \
+    -tag 'implNote:a:Implementation Note:' \
+    -tag param \
+    -tag return \
+    -tag throws \
+    -tag since \
+    -tag version \
+    -tag serialData \
+    -tag factory \
+    -tag see \
+    -tag 'jvms:a:See <cite>The Java&trade; Virtual Machine Specification</cite>:' \
+    -tag 'jls:a:See <cite>The Java&trade; Language Specification</cite>:' \
+    #
+
+DEFAULT_JAVADOC_OPTIONS := -XDignore.symbol.file=true -use -keywords -notimestamp \
+    -serialwarn -encoding ISO-8859-1 -breakiterator --system none
 
 ################################################################################
 # Setup make rules for running javadoc.
@@ -171,186 +224,106 @@ define SetupJavadocGenerationBody
     # The non-core api javadocs need to be able to access the root of the core
     # api directory, so for jdk/api or jre/api to get to the core api/
     # directory we would use this
-    $1_RELATIVE_CORE_DIR := $$(strip $$(subst $$(call DirToDotDot, \
-        $$(JAVADOC_OUTPUTDIR))/,, $$(call DirToDotDot, \
-        $$(JAVADOC_OUTPUTDIR)/$$($1_OUTPUT_DIRNAME))))
+    $1_RELATIVE_CORE_DIR := $$(call DirToDotDot, $$($1_OUTPUT_DIRNAME))/api
 
-    $1_DEPS += $(CORE_INDEX_FILE)
+    # We need to tell javadoc the directory in which to find the core package-list
+    $1_OPTIONS += -linkoffline $$($1_RELATIVE_CORE_DIR) $$(CORE_PACKAGES_LIST_DIR)
+
+    $1_DEPS += $(CORE_PACKAGES_LIST_FILE)
   endif
 
-  ifneq ($$($1_OVERVIEW), )
-    $1_DEPS +=  $$($1_OVERVIEW)
+  $1_OPTIONS += --add-modules $$(call CommaList, $$($1_MODULES))
+
+  ifneq ($$(LOG_LEVEL), trace)
+    $1_OPTIONS += -quiet
   endif
 
-  ifeq ($$($1_DISABLED_DOCLINT), )
-    $1_DOCLINT := all
-  else
-    # Create a string like "all,-syntax,-html"
-    $1_DOCLINT := all,$$(call CommaList, $$(addprefix -, $$($1_DISABLED_DOCLINT)))
+  ifneq ($$($1_DISABLED_DOCLINT), )
+    # Create a string like ",-syntax,-html"
+    $1_DOCLINT_EXCEPTIONS := ,$$(call CommaList, $$(addprefix -, $$($1_DISABLED_DOCLINT)))
+  endif
+  $1_OPTIONS += -Xdoclint:all$$($1_DOCLINT_EXCEPTIONS)
+
+  ifneq ($$($1_DOCLINT_PACKAGES), )
+    $1_OPTIONS += -Xdoclint/package:$$(call CommaList, $$($1_DOCLINT_PACKAGES))
   endif
 
   ifeq ($$($1_DOC_TITLE), )
     $1_DOC_TITLE := $$($1_TITLE)
   endif
+  $1_OPTIONS += -doctitle '$$($1_DOC_TITLE)'
 
   ifeq ($$($1_WINDOW_TITLE), )
     $1_WINDOW_TITLE := $$(strip $$(subst &trade;,, $$($1_TITLE)))
   endif
+  $1_OPTIONS += -windowtitle '$$($1_WINDOW_TITLE)$$(DRAFT_WINDOW_TITLE_MARKER)'
 
   ifeq ($$($1_HEADER_TITLE), )
     $1_HEADER_TITLE := $$(strip $$(subst &trade;,, $$($1_TITLE)))
   endif
-  $1_HEADER := <strong>$$($1_HEADER_TITLE)</strong>
+  $1_OPTIONS += -header '<strong>$$($1_HEADER_TITLE)</strong>$$(DRAFT_MARKER)'
+
+  ifneq ($$($1_EXTRA_TOP), )
+    $1_OPTIONS += -top '$$($1_EXTRA_TOP)'
+  endif
 
   ifeq ($$($1_BOTTOM_TEXT), )
     $1_BOTTOM_TEXT := $(COMMON_BOTTOM_TEXT)
   endif
-
   $1_BOTTOM := $$(call GenerateBottom, $$($1_FIRST_COPYRIGHT_YEAR), \
       $$($1_BOTTOM_COPYRIGHT_URL), $$($1_BOTTOM_TEXT))
+  $1_OPTIONS += -bottom '$$($1_BOTTOM)$$(DRAFT_MARKER)'
 
-  # The index.html, options, and packages files
-  $1_INDEX_FILE := $$(JAVADOC_OUTPUTDIR)/$$($1_OUTPUT_DIRNAME)/index.html
-  $1_OPTIONS_FILE := $$(SUPPORT_OUTPUTDIR)/docs/$1.options
-  $1_PACKAGES_FILE := $$(SUPPORT_OUTPUTDIR)/docs/$1.packages
+  ifneq ($$($1_OVERVIEW), )
+    $1_OPTIONS += -overview $$($1_OVERVIEW)
+    $1_DEPS +=  $$($1_OVERVIEW)
+  endif
 
-  $1_PACKAGES_VARDEPS := $$($1_PACKAGES)
-  $1_PACKAGES_VARDEPS_FILE := $$(call DependOnVariable, $1_PACKAGES_VARDEPS, \
-       $$($1_PACKAGES_FILE).vardeps)
+  ifneq ($$($1_SPLIT_INDEX), )
+    $1_OPTIONS += -splitIndex
+  endif
 
-  # Rule for creating a file with the package names in it
-  $$($1_PACKAGES_FILE): $$($1_PACKAGES_VARDEPS_FILE)
-	$$(call LogInfo, Creating Javadoc package file for $1)
-	$$(call MakeDir, $$(@D))
-	$$(ECHO) $$($1_PACKAGES) | $$(TR) ' ' '\n' > $$@
+  ifneq ($$($DOCROOTPARENT_FLAG), )
+    $1_OPTIONS += -Xdocrootparent $(JAVADOC_BASE_URL)
+  endif
 
-  $1_OPTIONS_VARDEPS := $$($1_EXTRA_TOP) \
-      $$($DOCROOTPARENT_FLAG) $$(JAVADOC_BASE_URL) $$($1_DISABLED_DOCLINT) \
-      $$($1_DOCLINT_PACKAGES) $$(JAVADOC_SOURCE_DIRS) $$($1_MODULES) \
-      $$($1_SPLIT_INDEX) $$($1_OVERVIEW) $$($1_DOC_TITLE) $$($1_WINDOW_TITLE) \
-      $$(DRAFT_WINTITLE) $$($1_HEADER) $$(DRAFT_HEADER) $$($1_BOTTOM) \
-      $$(DRAFT_BOTTOM)) $$($1_RELATIVE_CORE_DIR) $$(JAVADOC_OUTPUTDIR)
-  $1_OPTIONS_VARDEPS_FILE := $$(call DependOnVariable, $1_OPTIONS_VARDEPS, \
-       $$($1_OPTIONS_FILE).vardeps)
-
-  # Rule for creating a file with javadoc options in it
-  $$($1_OPTIONS_FILE): $$($1_OPTIONS_VARDEPS_FILE)
-	$$(call LogInfo, Creating Javadoc options file for $1)
-	$$(call MakeDir, $$(@D))
-	$$(RM) $$@
-	$$(call AddOption, -XDignore.symbol.file=true)
-        ifneq ($$(LOG_LEVEL), trace)
-	  $$(call AddOption, -quiet)
-        endif
-	$$(call AddOption, -use)
-	$$(call AddOption, -keywords)
-        ifneq ($$($DOCROOTPARENT_FLAG), )
-	  $$(call AddOption, -Xdocrootparent, $(JAVADOC_BASE_URL))
-        endif
-        # In order to get a specific ordering it's necessary to specify the total
-        # ordering of tags as the tags are otherwise ordered in order of definition.
-	$$(call AddOption, -tag, beaninfo:X)
-	$$(call AddOption, -tag, revised:X)
-	$$(call AddOption, -tag, since.unbundled:X)
-	$$(call AddOption, -tag, spec:X)
-	$$(call AddOption, -tag, specdefault:X)
-	$$(call AddOption, -tag, Note:X)
-	$$(call AddOption, -tag, ToDo:X)
-	$$(call AddOption, -tag, apiNote:a:API Note:)
-	$$(call AddOption, -tag, implSpec:a:Implementation Requirements:)
-	$$(call AddOption, -tag, implNote:a:Implementation Note:)
-	$$(call AddOption, -tag, param)
-	$$(call AddOption, -tag, return)
-	$$(call AddOption, -tag, throws)
-	$$(call AddOption, -tag, since)
-	$$(call AddOption, -tag, version)
-	$$(call AddOption, -tag, serialData)
-	$$(call AddOption, -tag, factory)
-	$$(call AddOption, -tag, see)
-	$$(call AddOption, -tag, \
-            jvms:a:See <cite> The Java&trade; Virtual Machine Specification</cite>:)
-	$$(call AddOption, -tag, \
-            jls:a:See <cite> The Java&trade; Language Specification</cite>:)
-	$$(call AddOption, -Xdoclint:$$($1_DOCLINT))
-        ifneq ($$($1_DOCLINT_PACKAGES), )
-	  $$(call AddOption, -Xdoclint/package:$$(call CommaList, $$($1_DOCLINT_PACKAGES)))
-        endif
-	$$(call AddOption, --system, none)
-	$$(call AddOption, --module-source-path, $$(subst ",, $$(call PathList, $$(JAVADOC_SOURCE_DIRS))))
-	$$(call AddOption, --add-modules, $$(call CommaList, $$($1_MODULES)))
-	$$(call AddOption, -encoding, ISO-8859-1)
-	$$(call AddOption, -breakiterator)
-	$$(call AddOption, -serialwarn)
-	$$(call AddOption, -notimestamp)
-        ifneq ($$($1_SPLIT_INDEX), )
-	  $$(call AddOption, -splitIndex)
-        endif
-        ifneq ($$($1_OVERVIEW), )
-	  $$(call AddOption, -overview, $$($1_OVERVIEW))
-        endif
-	$$(call AddOption, -doctitle, $$($1_DOC_TITLE))
-	$$(call AddOption, -windowtitle, $$($1_WINDOW_TITLE) $$(DRAFT_WINTITLE))
-	$$(call AddOption, -header, $$($1_HEADER)$$(DRAFT_HEADER))
-	$$(call AddOption, -bottom, $$($1_BOTTOM)$$(DRAFT_BOTTOM))
-        ifneq ($$($1_RELATIVE_CORE_DIR), )
-	  $$(call AddOption, -linkoffline, $$($1_RELATIVE_CORE_DIR)/api, $$(JAVADOC_OUTPUTDIR)/api/)
-        endif
-        ifneq ($$($1_EXTRA_TOP), )
-	  $$(call AddOption, -top, $$($1_EXTRA_TOP))
-        endif
+  $1_VARDEPS := $$($1_OPTIONS) $$($1_PACKAGES)
+  $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
+       $$(SUPPORT_OUTPUTDIR)/docs/$1.vardeps)
 
   $1_PACKAGE_DEPS := $$(call CacheFind, $$(wildcard $$(foreach p, \
       $$(subst .,/,$$(strip $$($1_PACKAGES))), \
       $$(addsuffix /$$p, $$(wildcard $$(JAVADOC_SOURCE_DIRS))))))
 
+  # If there are many packages, use an @-file...
+  ifneq ($$(word 17, $$($1_PACKAGES)), )
+    $1_PACKAGES_FILE := $$(SUPPORT_OUTPUTDIR)/docs/$1.packages
+    $1_PACKAGES_ARG := @$$($1_PACKAGES_FILE)
+  else
+    $1_PACKAGES_ARG := $$($1_PACKAGES)
+  endif
+
+  # The index.html which is a marker for all the output from javadoc.
+  $1_INDEX_FILE := $$(JAVADOC_OUTPUTDIR)/$$($1_OUTPUT_DIRNAME)/index.html
+
   # Rule for actually running javadoc
-  $$($1_INDEX_FILE): $$($1_OPTIONS_FILE) $$($1_PACKAGES_FILE) \
-    $$($1_PACKAGE_DEPS) $$($1_DEPS)
-	$$(call LogWarn, Generating Javadoc for $$($1_OUTPUT_DIRNAME))
+  $$($1_INDEX_FILE): $$($1_VARDEPS_FILE) $$($1_PACKAGE_DEPS) $$($1_DEPS)
+	$$(call LogWarn, Generating Javadoc from $$(words $$($1_PACKAGES)) package(s) for $$($1_OUTPUT_DIRNAME))
 	$$(call MakeDir, $$(@D))
-        ifneq ($$(findstring $$(LOG_LEVEL), debug trace),)
-	  $$(ECHO) "Contents of $$($1_OPTIONS_FILE):" `$$(CAT) $$($1_OPTIONS_FILE)`
-	  $$(ECHO) "Contents of $$($1_PACKAGES_FILE):" `$$(CAT) $$($1_PACKAGES_FILE)`
+        ifneq ($$($1_PACKAGES_FILE), )
+	  $$(eval $$(call ListPathsSafely, $1_PACKAGES, $$($1_PACKAGES_FILE)))
         endif
 	$$(call ExecuteWithLog, $$(SUPPORT_OUTPUTDIR)/docs/$1.javadoc, \
 	    $$($1_JAVA) -Djava.awt.headless=true $(NEW_JAVADOC) -d $$(@D) \
-	    @$$($1_OPTIONS_FILE) @$$($1_PACKAGES_FILE))
-	$$(TOUCH) $$($1_INDEX_FILE)
+	        $$(DEFAULT_JAVADOC_TAGS) $$(DEFAULT_JAVADOC_OPTIONS) \
+	        --module-source-path $$(call PathList, $$(JAVADOC_SOURCE_DIRS)) \
+	        $$($1_OPTIONS) $$($1_PACKAGES_ARG))
 
   # The output returned will be the index.html file
   $1 := $$($1_INDEX_FILE)
 endef
 
 ################################################################################
-
-# Core packages are all packages beginning with java, javax or org, except a few
-# excludes.
-
-ALL_PKG_DIRS := $(dir $(filter %.java, $(call CacheFind, \
-    $(wildcard $(JAVADOC_SOURCE_DIRS)))))
-ALL_SRC_PREFIXES := $(addsuffix /%, $(wildcard $(JAVADOC_SOURCE_DIRS)))
-ALL_PKG_DIRNAMES := $(foreach prefix, $(ALL_SRC_PREFIXES), \
-    $(patsubst $(prefix),%, $(filter $(prefix), $(ALL_PKG_DIRS))))
-ALL_PACKAGES := $(sort $(subst /,., $(patsubst %/, %, $(ALL_PKG_DIRNAMES))))
-
-JAVA_PACKAGES := $(filter java.%, $(ALL_PACKAGES))
-JAVAX_PACKAGES := $(filter javax.%, $(ALL_PACKAGES))
-ORG_PACKAGES := $(filter org.%, $(ALL_PACKAGES))
-
-# Allow custom makefile to add more excluded packages
-CORE_EXCLUDED_PACKAGES += \
-    java.awt.dnd.peer \
-    java.awt.peer \
-    javax.smartcardio \
-    org.jcp.xml.dsig.internal% \
-    org.w3c.dom.css \
-    org.w3c.dom.html \
-    org.w3c.dom.stylesheets \
-    org.w3c.dom.xpath \
-    #
-
-CORE_PACKAGES := $(filter-out $(CORE_EXCLUDED_PACKAGES), \
-    $(JAVA_PACKAGES) $(JAVAX_PACKAGES) $(ORG_PACKAGES))
 
 $(eval $(call SetupJavadocGeneration, coredocs, \
     MODULES := java.se.ee, \
@@ -367,7 +340,7 @@ $(eval $(call SetupJavadocGeneration, coredocs, \
     SPLIT_INDEX := TRUE, \
     BOTTOM_COPYRIGHT_URL := $(CORE_BOTTOM_COPYRIGHT_URL), \
     BOTTOM_TEXT := $(CORE_BOTTOM_TEXT), \
-    EXTRA_TOP := $(CORE_TOP_EARLYACCESS), \
+    EXTRA_TOP := $(EARLYACCESS_TOP), \
 ))
 
 TARGETS += $(coredocs)
@@ -733,19 +706,13 @@ COPY_TARGETS += $(COPY_JVMTI_HTML)
 
 ################################################################################
 # Optional target which bundles all generated javadocs into a zip archive.
-# The dependency on docs is handled in Main.gmk.
-
-# Add the core docs as prerequisite to the archive to trigger a rebuild
-# if the core docs were rebuilt. Ideally any doc rebuild should trigger
-# this, but the way prerequisites are currently setup in this file, that
-# is hard to achieve.
 
 JAVADOC_ARCHIVE_NAME := jdk-$(VERSION_STRING)-docs.zip
 JAVADOC_ARCHIVE_ASSEMBLY_DIR := $(SUPPORT_OUTPUTDIR)/docs/zip-docs
 JAVADOC_ARCHIVE_DIR := $(OUTPUT_ROOT)/bundles
 JAVADOC_ARCHIVE := $(JAVADOC_ARCHIVE_DIR)/$(JAVADOC_ARCHIVE_NAME)
 
-$(JAVADOC_ARCHIVE): $(CORE_INDEX_FILE)
+$(JAVADOC_ARCHIVE): $(TARGETS) $(COPY_TARGETS)
 	$(call LogInfo, Compressing javadoc to single $(JAVADOC_ARCHIVE_NAME))
 	$(MKDIR) -p $(JAVADOC_ARCHIVE_DIR)
 	$(RM) -r $(JAVADOC_ARCHIVE_ASSEMBLY_DIR)
