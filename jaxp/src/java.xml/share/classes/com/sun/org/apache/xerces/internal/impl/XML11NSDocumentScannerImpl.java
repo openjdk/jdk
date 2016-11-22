@@ -136,7 +136,7 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
         if (DEBUG_START_END_ELEMENT)
             System.out.println(">>> scanStartElementNS()");
                 // Note: namespace processing is on by default
-        fEntityScanner.scanQName(fElementQName, NameType.ATTRIBUTE);
+        fEntityScanner.scanQName(fElementQName, NameType.ELEMENTSTART);
         // REVISIT - [Q] Why do we need this local variable? -- mrglavas
         String rawname = fElementQName.rawname;
         if (fBindNamespaces) {
@@ -346,7 +346,7 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
     protected void scanStartElementName ()
         throws IOException, XNIException {
         // Note: namespace processing is on by default
-        fEntityScanner.scanQName(fElementQName, NameType.ATTRIBUTE);
+        fEntityScanner.scanQName(fElementQName, NameType.ELEMENTSTART);
         // Must skip spaces here because the DTD scanner
         // would consume them at the end of the external subset.
         fSawSpace = fEntityScanner.skipSpaces();
@@ -572,7 +572,7 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
             System.out.println(">>> scanAttribute()");
 
         // name
-        fEntityScanner.scanQName(fAttributeQName, NameType.ATTRIBUTE);
+        fEntityScanner.scanQName(fAttributeQName, NameType.ATTRIBUTENAME);
 
         // equals
         fEntityScanner.skipSpaces();

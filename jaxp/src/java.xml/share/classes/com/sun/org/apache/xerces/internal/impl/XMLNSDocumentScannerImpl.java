@@ -405,7 +405,7 @@ public class XMLNSDocumentScannerImpl
         if (DEBUG_START_END_ELEMENT) System.out.println(this.getClass().toString() +">>> scanAttribute()");
 
         // name
-        fEntityScanner.scanQName(fAttributeQName, NameType.ATTRIBUTE);
+        fEntityScanner.scanQName(fAttributeQName, NameType.ATTRIBUTENAME);
 
         // equals
         fEntityScanner.skipSpaces();
