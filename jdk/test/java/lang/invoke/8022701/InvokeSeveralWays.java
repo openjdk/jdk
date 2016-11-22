@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,18 +37,11 @@ public class InvokeSeveralWays {
             failures++;
         } catch (InvocationTargetException e) {
             Throwable c = e.getCause();
-            if (BootstrapMethodError.class.isInstance(c)) {
-                c = c.getCause();
-                if (expected.isInstance(c))
-                    System.out.println("EXPECTED: " + expected.getName() + ", "+ c);
-                else {
-                    failures++;
-                    System.out.println("FAIL: Unexpected wrapped exception " + c);
-                    e.printStackTrace(System.out);
-                }
-            } else {
+            if (expected.isInstance(c))
+                System.out.println("EXPECTED: " + expected.getName() + ", "+ c);
+            else {
                 failures++;
-                System.out.println("FAIL: Exception from MethodHandle invocation not wrapped in BootstrapMethodError " + c);
+                System.out.println("FAIL: Unexpected wrapped exception " + c);
                 e.printStackTrace(System.out);
             }
         } catch (Throwable e) {
@@ -80,19 +73,14 @@ public class InvokeSeveralWays {
             Invoker.invoke();
             System.out.println("FAIL: No exception throw, probably failed to load modified bytecodes for MethodSupplier");
             failures++;
-        } catch (BootstrapMethodError e) {
-            Throwable c = e.getCause();
-            if (expected.isInstance(c))
-                System.out.println("EXPECTED: " + expected.getName() + ", "+ c);
+        } catch (Throwable e) {
+            if (expected.isInstance(e))
+                System.out.println("EXPECTED: " + expected.getName() + ", "+ e);
             else {
                 failures++;
-                System.out.println("FAIL: Unexpected exception has been caught " + c);
+                System.out.println("FAIL: Unexpected exception has been caught " + e);
                 e.printStackTrace(System.out);
             }
-        } catch (Throwable e) {
-            failures++;
-            System.out.println("FAIL: Exception from MethodHandle invocation not wrapped in BootstrapMethodError " + e);
-            e.printStackTrace(System.out);
         }
         System.out.println();
         try {

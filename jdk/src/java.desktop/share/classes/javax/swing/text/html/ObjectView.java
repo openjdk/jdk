@@ -46,7 +46,7 @@ import sun.reflect.misc.ReflectUtil;
  * <p>
  * If the class can successfully be loaded, an attempt will
  * be made to create an instance of it by calling
- * <code>Class.getDeclaredConstructor().newInstance</code>.  An attempt will be made
+ * <code>Class.newInstance</code>.  An attempt will be made
  * to narrow the instance to type <code>java.awt.Component</code>
  * to display the object.
  * <p>
@@ -85,6 +85,7 @@ public class ObjectView extends ComponentView  {
      * as a specification of the classname, which
      * we try to load.
      */
+    @SuppressWarnings("deprecation")
     protected Component createComponent() {
         AttributeSet attr = getElement().getAttributes();
         String classname = (String) attr.getAttribute(HTML.Attribute.CLASSID);
@@ -92,7 +93,7 @@ public class ObjectView extends ComponentView  {
             ReflectUtil.checkPackageAccess(classname);
             Class<?> c = Class.forName(classname, true,Thread.currentThread().
                                        getContextClassLoader());
-            Object o = c.getDeclaredConstructor().newInstance();
+            Object o = c.newInstance();
             if (o instanceof Component) {
                 Component comp = (Component) o;
                 setParameters(comp, attr);

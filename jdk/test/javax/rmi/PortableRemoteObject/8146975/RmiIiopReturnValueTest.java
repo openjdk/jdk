@@ -24,8 +24,11 @@
 /*
  * @test
  * @bug 8146975
+ * @key intermittent
  * @summary test RMI-IIOP with value object return
  * @modules java.corba
+ *          java.naming
+ *          java.rmi
  * @library /lib/testlibrary
  * @build jdk.testlibrary.*
  * @compile Test.java Test3.java Test4.java

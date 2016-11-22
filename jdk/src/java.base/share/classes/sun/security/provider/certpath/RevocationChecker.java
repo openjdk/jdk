@@ -740,7 +740,7 @@ class RevocationChecker extends PKIXRevocationChecker {
                 }
 
                 response = OCSP.check(Collections.singletonList(certId),
-                        responderURI, issuerInfo, responderCert, params.date(),
+                        responderURI, issuerInfo, responderCert, null,
                         ocspExtensions);
             }
         } catch (IOException e) {

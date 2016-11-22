@@ -383,7 +383,19 @@ public class Symtab {
         addRootPackageFor(unnamedModule);
         unnamedModule.enclosedPackages = unnamedModule.enclosedPackages.prepend(unnamedModule.unnamedPackage);
 
-        errModule = new ModuleSymbol(names.empty, null) { };
+        errModule = new ModuleSymbol(names.empty, null) {
+                {
+                    directives = List.nil();
+                    exports = List.nil();
+                    provides = List.nil();
+                    uses = List.nil();
+                    ModuleSymbol java_base = enterModule(names.java_base);
+                    com.sun.tools.javac.code.Directive.RequiresDirective d =
+                            new com.sun.tools.javac.code.Directive.RequiresDirective(java_base,
+                                    EnumSet.of(com.sun.tools.javac.code.Directive.RequiresFlag.MANDATED));
+                    requires = List.of(d);
+                }
+            };
         addRootPackageFor(errModule);
 
         noModule = new ModuleSymbol(names.empty, null) {

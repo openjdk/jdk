@@ -513,6 +513,7 @@ public class UIManager implements Serializable
      *
      * @since 9
      */
+    @SuppressWarnings("deprecation")
     public static LookAndFeel createLookAndFeel(String name)
             throws UnsupportedLookAndFeelException {
         Objects.requireNonNull(name);
@@ -527,7 +528,7 @@ public class UIManager implements Serializable
                     Class<?> cls = Class.forName(UIManager.class.getModule(),
                                                  info.getClassName());
                     LookAndFeel laf =
-                        (LookAndFeel) cls.getDeclaredConstructor().newInstance();
+                        (LookAndFeel) cls.newInstance();
                     if (!laf.isSupportedLookAndFeel()) {
                         break;
                     }
@@ -615,6 +616,7 @@ public class UIManager implements Serializable
      * @throws ClassCastException if {@code className} does not identify
      *         a class that extends {@code LookAndFeel}
      */
+    @SuppressWarnings("deprecation")
     public static void setLookAndFeel(String className)
         throws ClassNotFoundException,
                InstantiationException,
@@ -629,7 +631,7 @@ public class UIManager implements Serializable
             Class<?> lnfClass = SwingUtilities.loadSystemClass(className);
             try {
                 LookAndFeel laf =
-                    (LookAndFeel)lnfClass.getDeclaredConstructor().newInstance();
+                    (LookAndFeel)lnfClass.newInstance();
                 setLookAndFeel(laf);
             } catch (ReflectiveOperationException | IllegalArgumentException e) {
                 InstantiationException ex =
@@ -1097,6 +1099,7 @@ public class UIManager implements Serializable
     /**
      * Finds the Multiplexing <code>LookAndFeel</code>.
      */
+    @SuppressWarnings("deprecation")
     private static LookAndFeel getMultiLookAndFeel() {
         LookAndFeel multiLookAndFeel = getLAFState().multiLookAndFeel;
         if (multiLookAndFeel == null) {
@@ -1105,7 +1108,7 @@ public class UIManager implements Serializable
             try {
                 Class<?> lnfClass = SwingUtilities.loadSystemClass(className);
                 multiLookAndFeel =
-                        (LookAndFeel)lnfClass.getDeclaredConstructor().newInstance();
+                        (LookAndFeel)lnfClass.newInstance();
             } catch (Exception exc) {
                 System.err.println("UIManager: failed loading " + className);
             }
@@ -1420,6 +1423,7 @@ public class UIManager implements Serializable
     }
 
 
+    @SuppressWarnings("deprecation")
     private static void initializeAuxiliaryLAFs(Properties swingProps)
     {
         String auxLookAndFeelNames = swingProps.getProperty(auxiliaryLAFsKey);
@@ -1440,7 +1444,7 @@ public class UIManager implements Serializable
             try {
                 Class<?> lnfClass = SwingUtilities.loadSystemClass(className);
                 LookAndFeel newLAF =
-                        (LookAndFeel)lnfClass.getDeclaredConstructor().newInstance();
+                        (LookAndFeel)lnfClass.newInstance();
                 newLAF.initialize();
                 auxLookAndFeels.addElement(newLAF);
             }

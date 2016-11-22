@@ -69,7 +69,7 @@ public class PropertyBuilder extends AbstractMemberBuilder {
     /**
      * The list of properties being documented.
      */
-    private final SortedSet<Element> properties;
+    private final List<Element> properties;
 
     /**
      * The index of the current property that is being documented at this point
@@ -95,7 +95,7 @@ public class PropertyBuilder extends AbstractMemberBuilder {
                 typeElement,
                 VisibleMemberMap.Kind.PROPERTIES,
                 configuration);
-        properties = visibleMemberMap.getMembersFor(typeElement);
+        properties = visibleMemberMap.getMembers(typeElement);
     }
 
     /**
@@ -121,27 +121,6 @@ public class PropertyBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * Returns a list of properties that will be documented for the given class.
-     * This information can be used for doclet specific documentation
-     * generation.
-     *
-     * @param typeElement the {@link TypeElement} we want to check.
-     * @return a list of properties that will be documented.
-     */
-    public SortedSet<Element> members(TypeElement typeElement) {
-        return visibleMemberMap.getMembersFor(typeElement);
-    }
-
-    /**
-     * Returns the visible member map for the properties of this class.
-     *
-     * @return the visible member map for the properties of this class.
-     */
-    public VisibleMemberMap getVisibleMemberMap() {
-        return visibleMemberMap;
-    }
-
-    /**
      * Returns whether or not there are members to document.
      *
      * @return whether or not there are members to document
@@ -162,17 +141,17 @@ public class PropertyBuilder extends AbstractMemberBuilder {
         if (writer == null) {
             return;
         }
-        int size = properties.size();
-        if (size > 0) {
+        if (hasMembersToDocument()) {
             Content propertyDetailsTree = writer.getPropertyDetailsTreeHeader(typeElement,
                     memberDetailsTree);
-            for (Element e : properties) {
-                currentProperty = (ExecutableElement) e;
+            Element lastElement = properties.get(properties.size() - 1);
+            for (Element property : properties) {
+                currentProperty = (ExecutableElement)property;
                 Content propertyDocTree = writer.getPropertyDocTreeHeader(currentProperty,
                         propertyDetailsTree);
                 buildChildren(node, propertyDocTree);
                 propertyDetailsTree.addContent(writer.getPropertyDoc(
-                        propertyDocTree, currentProperty == properties.last()));
+                        propertyDocTree, currentProperty == lastElement));
             }
             memberDetailsTree.addContent(
                     writer.getPropertyDetails(propertyDetailsTree));

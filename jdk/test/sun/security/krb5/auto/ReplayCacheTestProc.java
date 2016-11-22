@@ -74,6 +74,13 @@ public class ReplayCacheTestProc {
     private static List<Req> reqs = new ArrayList<>();
     private static String HOST = "localhost";
 
+    private static final String SERVICE;
+
+    static {
+        String tmp = System.getProperty("test.service");
+        SERVICE = (tmp == null) ? "service" : tmp;
+    }
+
     // Where should the rcache be saved. It seems KRB5RCACHEDIR is not
     // recognized on Solaris. Maybe version too low? I see 1.6.
     private static String cwd =
@@ -322,12 +329,12 @@ public class ReplayCacheTestProc {
 
     // returns the service name
     private static String service(int p) {
-        return "service" + p + "/" + HOST;
+        return SERVICE + p + "/" + HOST;
     }
 
     // returns the dfl name for a service
     private static String dfl(int p) {
-        return "service" + p + (uid == -1 ? "" : ("_"+uid));
+        return SERVICE + p + (uid == -1 ? "" : ("_"+uid));
     }
 
     // generates an ap-req and save into reqs, returns the index
@@ -454,8 +461,8 @@ public class ReplayCacheTestProc {
             actual = Boolean.valueOf(reply);
             csize = csize(r.service);
 
-            String label = String.format("%03d-CLIENT%d-SERVICE%d-%s-%s",
-                    i, r.client, r.service, acceptor.debug(), actual);
+            String label = String.format("%03d-client%d-%s%d-%s-%s",
+                    i, r.client, SERVICE, r.service, acceptor.debug(), actual);
 
             record(label, r);
             if (new File(cwd, dfl(r.service)).exists()) {

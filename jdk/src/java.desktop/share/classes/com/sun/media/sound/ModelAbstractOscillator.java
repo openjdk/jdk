@@ -134,10 +134,11 @@ public abstract class ModelAbstractOscillator
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public ModelOscillatorStream open(float samplerate) {
         ModelAbstractOscillator oscs;
         try {
-            oscs = this.getClass().getDeclaredConstructor().newInstance();
+            oscs = this.getClass().newInstance();
         } catch (ReflectiveOperationException e) {
             throw new IllegalArgumentException(e);
         }
