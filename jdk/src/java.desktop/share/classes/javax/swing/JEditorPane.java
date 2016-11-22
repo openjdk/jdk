@@ -1180,6 +1180,7 @@ public class JEditorPane extends JTextComponent {
      * @return the editor kit, or <code>null</code> if there is nothing
      *   registered for the given type
      */
+    @SuppressWarnings("deprecation")
     public static EditorKit createEditorKitForContentType(String type) {
         Hashtable<String, EditorKit> kitRegistry = getKitRegisty();
         EditorKit k = kitRegistry.get(type);
@@ -1197,7 +1198,7 @@ public class JEditorPane extends JTextComponent {
                     // registerEditorKitForContentType(type, class, null).
                     c = SwingUtilities.loadSystemClass(classname);
                 }
-                k = (EditorKit) c.getDeclaredConstructor().newInstance();
+                k = (EditorKit) c.newInstance();
                 kitRegistry.put(type, k);
             } catch (Throwable e) {
                 k = null;
