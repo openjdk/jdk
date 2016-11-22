@@ -1125,13 +1125,14 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             this.methodName = methodName;
         }
 
+        @SuppressWarnings("deprecation")
         public Object createValue(UIDefaults table) {
             try {
                 Class<?> c = Class.forName(className, true,Thread.currentThread().
                                            getContextClassLoader());
 
                 if (methodName == null) {
-                    return c.getDeclaredConstructor().newInstance();
+                    return c.newInstance();
                 }
                 Method m = c.getMethod(methodName, (Class<?>[])null);
 

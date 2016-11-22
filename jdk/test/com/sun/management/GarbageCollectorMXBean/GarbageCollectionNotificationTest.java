@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,22 +71,9 @@ public class GarbageCollectionNotificationTest {
 
     public static void main(String[] args) throws Exception {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        final Boolean isNotificationSupported = AccessController.doPrivileged (new PrivilegedAction<Boolean>() {
-                public Boolean run() {
-                    try {
-                        Class cl = Class.forName("sun.management.VMManagementImpl");
-                        Field f = cl.getDeclaredField("gcNotificationSupport");
-                        f.setAccessible(true);
-                        return f.getBoolean(null);
-                    } catch(ClassNotFoundException e) {
-                        return false;
-                    } catch(NoSuchFieldException e) {
-                        return false;
-                    } catch(IllegalAccessException e) {
-                        return false;
-                    }
-                }
-            });
+        final boolean isNotificationSupported =
+                 sun.management.ManagementFactoryHelper.getVMManagement().isGcNotificationSupported();
+
         if(!isNotificationSupported) {
             System.out.println("GC Notification not supported by the JVM, test skipped");
             return;

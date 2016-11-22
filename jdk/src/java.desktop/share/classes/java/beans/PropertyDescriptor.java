@@ -461,6 +461,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
      *         not been defined or cannot be created
      * @since 1.5
      */
+    @SuppressWarnings("deprecation")
     public PropertyEditor createPropertyEditor(Object bean) {
         Object editor = null;
 
@@ -470,14 +471,14 @@ public class PropertyDescriptor extends FeatureDescriptor {
             Constructor<?> ctor = null;
             if (bean != null) {
                 try {
-                    ctor = cls.getDeclaredConstructor(new Class<?>[] { Object.class });
+                    ctor = cls.getConstructor(new Class<?>[] { Object.class });
                 } catch (Exception ex) {
                     // Fall through
                 }
             }
             try {
                 if (ctor == null) {
-                    editor = cls.getDeclaredConstructor().newInstance();
+                    editor = cls.newInstance();
                 } else {
                     editor = ctor.newInstance(new Object[] { bean });
                 }

@@ -24,7 +24,8 @@
 # @test
 # @bug 8168518
 # @library ../../../../java/security/testlibrary/ /test/lib
-# @run main/othervm/timeout=300 -Djdk.krb5.rcache.useMD5=true ReplayCacheTestProc
+# @run main/othervm/timeout=300 -Djdk.krb5.rcache.useMD5=true
+#           -Dtest.service=host ReplayCacheTestProc
 # @summary  testing jdk.krb5.rcache.useMD5. This action is put in a separate
 #           test so that ReplayCacheTestProc.java can be launched with special
 #           test.* system properties easily.

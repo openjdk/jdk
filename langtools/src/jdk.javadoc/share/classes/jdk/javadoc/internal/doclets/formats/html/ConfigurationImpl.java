@@ -135,8 +135,6 @@ public class ConfigurationImpl extends Configuration {
      */
     public String docrootparent = "";
 
-    public boolean sortedMethodDetails = false;
-
     /**
      * True if command line option "-nohelp" is used. Default value is false.
      */

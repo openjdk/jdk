@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -43,6 +44,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -200,31 +202,37 @@ public enum Option {
         // The standard file manager code knows to split apart the NULL-separated components.
         @Override
         public boolean process(OptionHelper helper, String option, String arg) {
-            if (!arg.contains("=")) { // could be more strict regeex, e.g. "(?i)[a-z0-9_.]+=.*"
-                helper.error(Errors.LocnInvalidArgForXpatch(arg));
+            if (arg.isEmpty()) {
+                helper.error("err.no.value.for.option", option);
+                return true;
+            } else if (getPattern().matcher(arg).matches()) {
+                String prev = helper.get(PATCH_MODULE);
+                if (prev == null) {
+                    super.process(helper, option, arg);
+                    return false;
+                } else {
+                    String argModulePackage = arg.substring(0, arg.indexOf('='));
+                    boolean isRepeated = Arrays.stream(prev.split("\0"))
+                            .map(s -> s.substring(0, s.indexOf('=')))
+                            .collect(Collectors.toSet())
+                            .contains(argModulePackage);
+                    if (isRepeated) {
+                        helper.error("err.repeated.value.for.patch.module", argModulePackage);
+                        return true;
+                    } else {
+                        super.process(helper, option, prev + '\0' + arg);
+                        return false;
+                    }
+                }
+            } else {
+                helper.error("err.bad.value.for.option", option, arg);
+                return true;
             }
+        }
 
-            String previous = helper.get(this);
-            if (previous == null) {
-                return super.process(helper, option, arg);
-            }
-
-            Map<String,String> map = new LinkedHashMap<>();
-            for (String s : previous.split("\0")) {
-                int sep = s.indexOf('=');
-                map.put(s.substring(0, sep), s.substring(sep + 1));
-            }
-
-            int sep = arg.indexOf('=');
-            map.put(arg.substring(0, sep), arg.substring(sep + 1));
-
-            StringBuilder sb = new StringBuilder();
-            map.forEach((m, p) -> {
-                if (sb.length() > 0)
-                    sb.append('\0');
-                sb.append(m).append('=').append(p);
-            });
-            return super.process(helper, option, sb.toString());
+        @Override
+        public Pattern getPattern() {
+            return Pattern.compile("([^/]+)=(,*[^,].*)");
         }
     },
 
