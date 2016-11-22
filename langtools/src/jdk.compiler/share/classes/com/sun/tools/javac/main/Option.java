@@ -682,11 +682,32 @@ public enum Option {
                 Class.forName(JDK9Wrappers.VMHelper.VM_CLASSNAME);
                 String[] runtimeArgs = JDK9Wrappers.VMHelper.getRuntimeArguments();
                 for (String arg : runtimeArgs) {
+                    System.err.println("runtime arg: " + arg);
                     // Handle any supported runtime options; ignore all others.
                     // The runtime arguments always use the single token form, e.g. "--name=value".
                     for (Option o : getSupportedRuntimeOptions()) {
                         if (o.matches(arg)) {
-                            o.handleOption(helper, arg, Collections.emptyIterator());
+                            switch (o) {
+                                case ADD_MODULES:
+                                    int eq = arg.indexOf('=');
+                                    Assert.check(eq > 0, () -> ("invalid runtime option:" + arg));
+                                    // --add-modules=ALL-DEFAULT is not supported at compile-time
+                                    // so remove it from list, and only process the rest
+                                    // if the set is non-empty.
+                                    // Note that --add-modules=ALL-DEFAULT is automatically added
+                                    // by the standard javac launcher.
+                                    String mods = Arrays.stream(arg.substring(eq + 1).split(","))
+                                            .filter(s -> !s.isEmpty() && !s.equals("ALL-DEFAULT"))
+                                            .collect(Collectors.joining(","));
+                                    if (!mods.isEmpty()) {
+                                        String updatedArg = arg.substring(0, eq + 1) + mods;
+                                        o.handleOption(helper, updatedArg, Collections.emptyIterator());
+                                    }
+                                    break;
+                                default:
+                                    o.handleOption(helper, arg, Collections.emptyIterator());
+                                    break;
+                            }
                             break;
                         }
                     }
