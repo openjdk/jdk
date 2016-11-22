@@ -489,6 +489,10 @@ VirtualSpaceNode::VirtualSpaceNode(size_t bytes) : _top(NULL), _next(NULL), _rs(
       // Get a mmap region anywhere if the SharedBaseAddress fails.
       _rs = ReservedSpace(bytes, Metaspace::reserve_alignment(), large_pages);
     }
+    if (!_rs.is_reserved()) {
+      vm_exit_during_initialization("Unable to allocate memory for shared space",
+        err_msg(SIZE_FORMAT " bytes.", bytes));
+    }
     MetaspaceShared::initialize_shared_rs(&_rs);
   } else
 #endif
