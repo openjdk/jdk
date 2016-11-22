@@ -23,10 +23,10 @@
 
 /*
  * @test LargeSharedSpace
- * @bug 8168790
+ * @bug 8168790 8169870
  * @summary Test CDS dumping with specific space size.
- * The space size used in the test might not be suitable on windows and 32-bit platforms.
- * @requires (sun.arch.data.model != "32") & (os.family != "windows")
+ * The space size used in the test might not be suitable on windows.
+ * @requires (os.family != "windows")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -38,11 +38,24 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class LargeSharedSpace {
     public static void main(String[] args) throws Exception {
-       ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:SharedMiscCodeSize=1066924031", "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./LargeSharedSpace.jsa", "-Xshare:dump");
-       OutputAnalyzer output = new OutputAnalyzer(pb.start());
-       output.shouldContain("Loading classes to share");
-       output.shouldHaveExitValue(0);
+       String sizes[] = {"1066924031", "1600386047"};
+       String expectedOutputs[] =
+           {/* can dump using the given size */
+            "Loading classes to share",
+            /* the size is too large, exceeding the limit for compressed klass support */
+            "larger than compressed klass limit"};
+       for (int i = 0; i < sizes.length; i++) {
+           ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:SharedMiscCodeSize="+sizes[i], "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:SharedArchiveFile=./LargeSharedSpace.jsa", "-Xshare:dump");
+           OutputAnalyzer output = new OutputAnalyzer(pb.start());
+           try {
+               output.shouldContain(expectedOutputs[i]);
+           } catch (RuntimeException e) {
+               /* failed to reserve the memory for the required size, might happen
+                  on 32-bit platforms */
+               output.shouldContain("Unable to allocate memory for shared space");
+           }
+       }
     }
 }
