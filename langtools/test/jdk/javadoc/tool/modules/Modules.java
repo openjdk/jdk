@@ -296,7 +296,7 @@ public class Modules extends ModuleTestBase {
         checkMembersSelected("pkg2.B.f");
     }
 
-//    @Test @ignore JDK-8166379
+    @Test
     public void testPatchModuleOption(Path base) throws Exception {
         Path src = base.resolve("src");
         Path modulePath = base.resolve("modules");

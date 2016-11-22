@@ -1048,7 +1048,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
   # These tools might not be installed by default,
   # need hint on how to install them.
   BASIC_REQUIRE_PROGS(UNZIP, unzip)
-  BASIC_REQUIRE_PROGS(ZIP, zip)
+  # Since zip uses "ZIP" as a environment variable for passing options, we need
+  # to name our variable differently, hence ZIPEXE.
+  BASIC_REQUIRE_PROGS(ZIPEXE, zip)
 
   # Non-required basic tools
 

@@ -75,7 +75,7 @@ public class JdepsRunner {
     }
 
     public boolean outputContains(String s) {
-        return stdout.toString().contains(s);
+        return stdout.toString().contains(s) || stderr.toString().contains(s);
     }
 
     public void printStdout(PrintStream stream) {
