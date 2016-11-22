@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import java.rmi.server.UnicastRemoteObject;
 
 public class ReuseDefaultPort implements Remote {
 
-    private static final int PORT = TestLibrary.getUnusedRandomPort();
+    private static int rmiPort = 0;
 
     private ReuseDefaultPort() { }
 
@@ -64,7 +64,7 @@ public class ReuseDefaultPort implements Remote {
         Remote stub = UnicastRemoteObject.exportObject(impl, 0);
         System.err.println("- exported object: " + stub);
         try {
-            Registry registry = LocateRegistry.createRegistry(PORT);
+            Registry registry = LocateRegistry.createRegistry(rmiPort);
             System.err.println("- exported registry: " + registry);
             System.err.println("TEST PASSED");
         } finally {
@@ -77,13 +77,15 @@ public class ReuseDefaultPort implements Remote {
             RMISocketFactory.getDefaultSocketFactory();
         SF() { }
         public Socket createSocket(String host, int port) throws IOException {
+            System.err.format("in SF::createSocket: %s, %d%n", host, port);
             return defaultFactory.createSocket(host, port);
         }
         public ServerSocket createServerSocket(int port) throws IOException {
-            if (port == 0) {
-                port = PORT;
-            }
-            return defaultFactory.createServerSocket(port);
+            System.err.format("in SF::createServerSocket: %d%n", port);
+            ServerSocket server = defaultFactory.createServerSocket(port);
+            rmiPort = server.getLocalPort();
+            System.err.println("rmiPort: " + rmiPort);
+            return server;
         }
     }
 }
