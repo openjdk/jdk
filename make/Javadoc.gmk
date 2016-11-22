@@ -724,7 +724,7 @@ $(JAVADOC_ARCHIVE): $(TARGETS) $(COPY_TARGETS)
 	  name=`$(ECHO) $${target_dir} | $(SED) "s;/spec;;" | $(SED) "s;.*/;;"`; \
 	  $(LN) -s $${target_dir}  $${name}; \
 	done; \
-	$(ZIP) -q -r $(JAVADOC_ARCHIVE) * ; \
+	$(ZIPEXE) -q -r $(JAVADOC_ARCHIVE) * ; \
 	popd ;
 
 ZIP_TARGETS += $(JAVADOC_ARCHIVE)
