@@ -42,7 +42,7 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 
-public class AnonCipherWithWantClientAuth {
+public class AnonCipherWithWantClientAuth extends SSLSocketTemplate {
 
     /*
      * Where do we find the keystores?
@@ -62,16 +62,16 @@ public class AnonCipherWithWantClientAuth {
         String trustFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + trustStoreFile;
-        SSLTest.setup(keyFilename, trustFilename, passwd);
+        setup(keyFilename, trustFilename, passwd);
 
-        new SSLTest()
+        new SSLSocketTemplate()
             .setServerPeer(test -> {
                 SSLServerSocketFactory sslssf =
                         (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
                 SSLServerSocket sslServerSocket =
-                        (SSLServerSocket) sslssf.createServerSocket(SSLTest.FREE_PORT);
+                        (SSLServerSocket) sslssf.createServerSocket(FREE_PORT);
                 test.setServerPort(sslServerSocket.getLocalPort());
-                SSLTest.print("Server is listening on port "
+                print("Server is listening on port "
                         + test.getServerPort());
 
                 String ciphers[] = {
@@ -85,14 +85,14 @@ public class AnonCipherWithWantClientAuth {
                 test.signalServerReady();
 
                 // Try to accept a connection in 30 seconds.
-                SSLSocket sslSocket = SSLTest.accept(sslServerSocket);
+                SSLSocket sslSocket = accept(sslServerSocket);
                 if (sslSocket == null) {
                     // Ignore the test case if no connection within 30 seconds.
-                    SSLTest.print("No incoming client connection in 30 seconds."
+                    print("No incoming client connection in 30 seconds."
                             + " Ignore in server side.");
                     return;
                 }
-                SSLTest.print("Server accepted connection");
+                print("Server accepted connection");
 
                 // handle the connection
                 try {
@@ -108,7 +108,7 @@ public class AnonCipherWithWantClientAuth {
 
                     if (clientIsReady) {
                         // Run the application in server side.
-                        SSLTest.print("Run server application");
+                        print("Run server application");
 
                         InputStream sslIS = sslSocket.getInputStream();
                         OutputStream sslOS = sslSocket.getOutputStream();

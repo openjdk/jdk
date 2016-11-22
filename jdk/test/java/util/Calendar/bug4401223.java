@@ -28,7 +28,10 @@
  * @library /java/text/testlib
  */
 
-import java.util.*;
+import java.util.Date;
+import java.util.GregorianCalendar;
+
+import static java.util.GregorianCalendar.*;
 
 public class bug4401223 extends IntlTest {
 
@@ -37,11 +40,12 @@ public class bug4401223 extends IntlTest {
         String s = null;
 
         try {
-            Date date = new Date(2000-1900, Calendar.FEBRUARY, 29);
+            @SuppressWarnings("deprecation")
+            Date date = new Date(2000 - 1900, FEBRUARY, 29);
             GregorianCalendar gc = new GregorianCalendar();
             gc.setTime(date);
             gc.setLenient(false);
-            gc.set(Calendar.YEAR, 2001);
+            gc.set(YEAR, 2001);
             s = "02/29/00 & set(YEAR,2001) = " + gc.getTime().toString();
         } catch (Exception ex) {
             status++;
@@ -59,16 +63,17 @@ public class bug4401223 extends IntlTest {
         String s = null;
 
         try {
-            Date date = new Date(2000-1900, Calendar.DECEMBER, 31);
+            @SuppressWarnings("deprecation")
+            Date date = new Date(2000 - 1900, DECEMBER, 31);
             GregorianCalendar gc = new GregorianCalendar();
             gc.setTime(date);
             gc.setLenient(false);
-            gc.set(Calendar.YEAR, 2001);
+            gc.set(YEAR, 2001);
 
-            if (gc.get(Calendar.YEAR) != 2001 ||
-                gc.get(Calendar.MONTH) != Calendar.DECEMBER ||
-                gc.get(Calendar.DATE) != 31 ||
-                gc.get(Calendar.DAY_OF_YEAR) != 365) {
+            if (gc.get(YEAR) != 2001
+                    || gc.get(MONTH) != DECEMBER
+                    || gc.get(DATE) != 31
+                    || gc.get(DAY_OF_YEAR) != 365) {
                 status++;
                 s = "Wrong Date : 12/31/00 & set(YEAR,2001) ---> " + gc.getTime().toString();
             } else {

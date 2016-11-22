@@ -987,7 +987,8 @@ public final class SunPKCS11 extends AuthProvider {
 
         P11Service(Token token, String type, String algorithm,
                 String className, String[] al, long mechanism) {
-            super(token.provider, type, algorithm, className, toList(al), null);
+            super(token.provider, type, algorithm, className, toList(al),
+                    type.equals(SR) ? Map.of("ThreadSafe", "true") : null);
             this.token = token;
             this.mechanism = mechanism & 0xFFFFFFFFL;
         }

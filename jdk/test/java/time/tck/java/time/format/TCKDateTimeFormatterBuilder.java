@@ -594,7 +594,7 @@ public class TCKDateTimeFormatterBuilder {
     @Test(dataProvider = "formatGenericTimeZonePatterns")
     public void test_appendZoneText_formatGenericTimeZonePatterns(String pattern, String input, String expected) {
         ZonedDateTime zdt = ZonedDateTime.of(LocalDateTime.now(), ZoneId.of(input));
-        DateTimeFormatter df = DateTimeFormatter.ofPattern(pattern);
+        DateTimeFormatter df = DateTimeFormatter.ofPattern(pattern, Locale.US);
         assertEquals(zdt.format(df), expected);
     }
 
@@ -641,7 +641,7 @@ public class TCKDateTimeFormatterBuilder {
     @Test(dataProvider = "formatNonGenericTimeZonePatterns_1")
     public void test_appendZoneText_parseNonGenricTimeZonePatterns_1(String pattern, LocalDateTime ldt, String expected) {
         ZoneId  zId = ZoneId.of("America/Los_Angeles");
-        DateTimeFormatter df = new DateTimeFormatterBuilder().appendPattern(pattern).toFormatter();
+        DateTimeFormatter df = new DateTimeFormatterBuilder().appendPattern(pattern).toFormatter(Locale.US);
         ZonedDateTime zdt = ZonedDateTime.of(ldt, zId);
         String actual = df.format(zdt);
         assertEquals(actual, expected);
@@ -668,7 +668,7 @@ public class TCKDateTimeFormatterBuilder {
     @Test(dataProvider = "formatNonGenericTimeZonePatterns_2")
     public void test_appendZoneText_parseNonGenricTimeZonePatterns_2(String pattern, LocalDateTime ldt, String expected) {
         ZoneId  zId = ZoneId.of("America/Los_Angeles");
-        DateTimeFormatter df = DateTimeFormatter.ofPattern(pattern).withZone(zId);
+        DateTimeFormatter df = DateTimeFormatter.ofPattern(pattern, Locale.US).withZone(zId);
         String actual = df.format(ldt);
         assertEquals(actual, expected);
     }

@@ -70,14 +70,6 @@ public class ModuleAnalyzer {
     public ModuleAnalyzer(JdepsConfiguration config,
                           PrintWriter log,
                           Set<String> names) {
-
-        if (!config.initialArchives().isEmpty()) {
-            String list = config.initialArchives().stream()
-                .map(Archive::getPathName).collect(joining(" "));
-            throw new JdepsTask.UncheckedBadArgs(new BadArgs("err.invalid.module.option",
-                list, "--check"));
-        }
-
         this.configuration = config;
         this.log = log;
 

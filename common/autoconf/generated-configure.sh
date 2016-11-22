@@ -5093,7 +5093,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1478524503
+DATE_WHEN_GENERATED=1479120453
 
 ###############################################################################
 #
@@ -50124,7 +50124,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
       # Little endian machine uses ELFv2 ABI.
       JVM_CFLAGS="$JVM_CFLAGS -DABI_ELFv2"
       # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
-      JVM_CFLAGS="$JVM_CFLAGS -mcpu=power7 -mtune=power8"
+      JVM_CFLAGS="$JVM_CFLAGS -mcpu=power8 -mtune=power8"
     fi
   elif test "x$OPENJDK_TARGET_CPU" = xs390x; then
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
@@ -50948,7 +50948,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
       # Little endian machine uses ELFv2 ABI.
       OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DABI_ELFv2"
       # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
-      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -mcpu=power7 -mtune=power8"
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -mcpu=power8 -mtune=power8"
     fi
   elif test "x$OPENJDK_BUILD_CPU" = xs390x; then
     if test "x$OPENJDK_BUILD_OS" = xlinux; then
