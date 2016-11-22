@@ -185,6 +185,19 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   return instructions * NativeInstruction::instruction_size;
 }
 
+int MacroAssembler::patch_narrow_klass(address insn_addr, narrowKlass n) {
+  // Metatdata pointers are either narrow (32 bits) or wide (48 bits).
+  // We encode narrow ones by setting the upper 16 bits in the first
+  // instruction.
+  NativeInstruction *insn = nativeInstruction_at(insn_addr);
+  assert(Instruction_aarch64::extract(insn->encoding(), 31, 21) == 0b11010010101 &&
+         nativeInstruction_at(insn_addr+4)->is_movk(), "wrong insns in patch");
+
+  Instruction_aarch64::patch(insn_addr, 20, 5, n >> 16);
+  Instruction_aarch64::patch(insn_addr+4, 20, 5, n & 0xffff);
+  return 2 * NativeInstruction::instruction_size;
+}
+
 address MacroAssembler::target_addr_for_insn(address insn_addr, unsigned insn) {
   long offset = 0;
   if ((Instruction_aarch64::extract(insn, 29, 24) & 0b011011) == 0b00011000) {
