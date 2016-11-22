@@ -939,6 +939,17 @@ public class Start extends ToolOption.Helper {
             public void put(String name, String value) {
                 compOpts.put(name, value);
             }
+
+            @Override
+            public void remove(String name) {
+                compOpts.remove(name);
+            }
+
+            @Override
+            public boolean handleFileManagerOption(com.sun.tools.javac.main.Option option, String value) {
+                fileManagerOpts.put(option, value);
+                return true;
+            }
         };
     }
 

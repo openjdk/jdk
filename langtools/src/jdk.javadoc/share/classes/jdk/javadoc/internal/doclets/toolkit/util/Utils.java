@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
-import java.io.IOException;
 import java.lang.annotation.Documented;
 import java.lang.ref.SoftReference;
 import java.text.CollationKey;
@@ -77,9 +76,7 @@ import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentDuo;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
-import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
-import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.WorkArounds;
 
 import static javax.lang.model.element.ElementKind.*;
@@ -256,14 +253,6 @@ public class Utils {
      */
     public boolean isCoreClass(TypeElement e) {
         return getEnclosingTypeElement(e) == null || isStatic(e);
-    }
-
-    public boolean matches(Element e1, Element e2) {
-        if (isExecutableElement(e1) && isExecutableElement(e1)) {
-            return executableMembersEqual((ExecutableElement)e1, (ExecutableElement)e2);
-        } else {
-            return e1.getSimpleName().equals(e2.getSimpleName());
-        }
     }
 
     /**
@@ -2159,6 +2148,13 @@ public class Utils {
 
     List<ExecutableElement> getMethodsUnfiltered(Element e) {
         return convertToExecutableElement(getItems(e, false, METHOD));
+    }
+
+    public int getOrdinalValue(VariableElement member) {
+        if (member == null || member.getKind() != ENUM_CONSTANT) {
+            throw new IllegalArgumentException("must be an enum constant: " + member);
+        }
+        return member.getEnclosingElement().getEnclosedElements().indexOf(member);
     }
 
     public long getLineNumber(Element e) {

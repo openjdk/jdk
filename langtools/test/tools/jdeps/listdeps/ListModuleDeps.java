@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8167057
- * @summary Tests split packages
+ * @summary Tests --list-deps and --list-reduced-deps options
  * @modules java.logging
  *          java.xml
  *          jdk.compiler
@@ -53,6 +53,8 @@ public class ListModuleDeps {
     private static final Path CLASSES_DIR = Paths.get("classes");
     private static final Path LIB_DIR = Paths.get("lib");
 
+    private static final Path HI_CLASS =
+        CLASSES_DIR.resolve("hi").resolve("Hi.class");
     private static final Path FOO_CLASS =
         CLASSES_DIR.resolve("z").resolve("Foo.class");
     private static final Path BAR_CLASS =
@@ -67,6 +69,9 @@ public class ListModuleDeps {
     public void compileAll() throws Exception {
         // compile library
         assertTrue(CompilerUtils.compile(Paths.get(TEST_SRC, "src", "lib"), LIB_DIR));
+
+        // simple program depends only on java.base
+        assertTrue(CompilerUtils.compile(Paths.get(TEST_SRC, "src", "hi"), CLASSES_DIR));
 
         // compile classes in unnamed module
         assertTrue(CompilerUtils.compile(Paths.get(TEST_SRC, "src", "z"),
@@ -117,6 +122,11 @@ public class ListModuleDeps {
                             }
             },
 
+            { HI_CLASS,     new String[] {
+                                "java.base"
+                            }
+            },
+
             { FOO_CLASS,    new String[] {
                                 "java.base",
                                 "java.logging",
@@ -155,9 +165,12 @@ public class ListModuleDeps {
                             }
             },
 
+            { HI_CLASS,     new String[] {
+                                "java.base"
+                            }
+            },
 
             { FOO_CLASS,    new String[] {
-                                "java.base",
                                 "java.sql",
                                 "unnamed module: lib"
                             }

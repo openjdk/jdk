@@ -70,9 +70,9 @@ public class GatherProcessInfoTimeoutHandler extends TimeoutHandler {
         String name = getClass().getName();
         PrintWriter actionsLog;
         try {
-            // try to open a separate file for aciton log
+            // try to open a separate file for action log
             actionsLog = new PrintWriter(new FileWriter(
-                    workDir.resolve(LOG_FILENAME).toFile(), true));
+                    workDir.resolve(LOG_FILENAME).toFile(), true), true);
         } catch (IOException e) {
             // use jtreg log as a fallback
             actionsLog = log;
@@ -84,7 +84,7 @@ public class GatherProcessInfoTimeoutHandler extends TimeoutHandler {
 
             File output = workDir.resolve(OUTPUT_FILENAME).toFile();
             try {
-                PrintWriter pw = new PrintWriter(new FileWriter(output, true));
+                PrintWriter pw = new PrintWriter(new FileWriter(output, true), true);
                 runGatherer(name, workDir, actionsLog, pw, pid);
             } catch (IOException e) {
                 actionsLog.printf("IOException: cannot open output file[%s] : %s",

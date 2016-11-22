@@ -182,7 +182,9 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
      * @see VisibleMemberMap
      */
     public SortedSet<Element> members(VisibleMemberMap.Kind type) {
-        return visibleMemberMaps.get(type).getLeafClassMembers();
+        TreeSet<Element> out = new TreeSet<>(comparator);
+        out.addAll(visibleMemberMaps.get(type).getLeafMembers());
+        return out;
     }
 
     /**
@@ -336,7 +338,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
      */
     private void buildSummary(MemberSummaryWriter writer,
             VisibleMemberMap visibleMemberMap, LinkedList<Content> summaryTreeList) {
-        SortedSet<Element> members = visibleMemberMap.getLeafClassMembers();
+        SortedSet<Element> members = asSortedSet(visibleMemberMap.getLeafMembers());
         if (!members.isEmpty()) {
             List<Content> tableContents = new LinkedList<>();
             int counter = 0;
@@ -492,7 +494,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
             if (inhclass == typeElement) {
                 continue;
             }
-            SortedSet<Element> inhmembers = visibleMemberMap.getMembersFor(inhclass);
+            SortedSet<Element> inhmembers = asSortedSet(visibleMemberMap.getMembers(inhclass));
             if (!inhmembers.isEmpty()) {
                 Content inheritedTree = writer.getInheritedSummaryHeader(inhclass);
                 Content linksTree = writer.getInheritedSummaryLinksTree();
