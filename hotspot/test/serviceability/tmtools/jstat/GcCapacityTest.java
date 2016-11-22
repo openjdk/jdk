@@ -45,7 +45,7 @@ public class GcCapacityTest {
         measurement1.assertConsistency();
 
         // Provoke a gc and verify the changed values
-        GcProvoker gcProvoker = GcProvoker.createGcProvoker();
+        GcProvoker gcProvoker = new GcProvoker();
         gcProvoker.provokeGc();
         JstatGcCapacityResults measurement2 = jstatGcTool.measure();
         measurement2.assertConsistency();

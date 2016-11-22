@@ -28,11 +28,11 @@ import utils.*;
  *          Test scenario:
  *          tests forces debuggee application eat ~70% of heap and runs jstat.
  *          jstat should show that ~70% of heap is utilized (OC/OU ~= 70%).
+ * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @library ../share
- * @ignore 8168396
- * @run main/othervm -XX:+UsePerfData -Xmx128M -XX:MaxMetaspaceSize=128M GcTest02
+ * @run main/othervm -XX:+UsePerfData -XX:InitialHeapSize=128M -XX:MaxHeapSize=128M -XX:MaxMetaspaceSize=128M GcTest02
  */
 
 public class GcTest02 {
@@ -48,10 +48,12 @@ public class GcTest02 {
         JstatGcResults measurement1 = jstatGcTool.measure();
         measurement1.assertConsistency();
 
-        GcProvoker gcProvoker = GcProvoker.createGcProvoker();
+        GcProvoker gcProvoker = new GcProvoker();
 
         // Eat metaspace and heap then run the tool again and get the results  asserting that they are reasonable
-        gcProvoker.eatMetaspaceAndHeap(targetMemoryUsagePercent);
+        gcProvoker.allocateAvailableMetaspaceAndHeap(targetMemoryUsagePercent);
+        // Collect garbage. Also updates VM statistics
+        System.gc();
         JstatGcResults measurement2 = jstatGcTool.measure();
         measurement2.assertConsistency();
 
