@@ -72,7 +72,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         VisibleMemberMap visibleMemberMap = new VisibleMemberMap(
                 typeElement,
                 VisibleMemberMap.Kind.CONSTRUCTORS, configuration);
-        SortedSet<Element> constructors = visibleMemberMap.getMembersFor(typeElement);
+        List<Element> constructors = visibleMemberMap.getMembers(typeElement);
         for (Element constructor : constructors) {
             if (utils.isProtected(constructor) || utils.isPrivate(constructor)) {
                 setFoundNonPubConstructor(true);

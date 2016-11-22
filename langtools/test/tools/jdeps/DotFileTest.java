@@ -136,8 +136,6 @@ public class DotFileTest {
 
         // with -P option
         List<String> argsWithDashP = new ArrayList<>();
-        argsWithDashP.add("-dotoutput");
-        argsWithDashP.add(dotoutput.toString());
         argsWithDashP.add("-P");
         argsWithDashP.addAll(args);
 
@@ -162,8 +160,6 @@ public class DotFileTest {
 
         // with -P option
         List<String> argsWithDashP = new ArrayList<>();
-        argsWithDashP.add("-dotoutput");
-        argsWithDashP.add(dotoutput.toString());
         argsWithDashP.add("-P");
         argsWithDashP.addAll(args);
 

@@ -46,11 +46,12 @@ import java.util.Set;
  * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504 7004603
  *    7044019 8008577
  * @summary test API changes to Locale
+ * @library /java/text/testlib
  * @modules jdk.localedata
  * @compile LocaleEnhanceTest.java
  * @run main/othervm -Djava.locale.providers=JRE,SPI -esa LocaleEnhanceTest
  */
-public class LocaleEnhanceTest extends LocaleTestFmwk {
+public class LocaleEnhanceTest extends IntlTest {
 
     public static void main(String[] args) throws Exception {
         List<String> argList = new ArrayList<String>();

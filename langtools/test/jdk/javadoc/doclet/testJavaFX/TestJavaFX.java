@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7112427 8012295 8025633 8026567 8061305 8081854 8150130 8162363
+ * @bug 7112427 8012295 8025633 8026567 8061305 8081854 8150130 8162363 8167967
  * @summary Test of the JavaFX doclet features.
  * @author jvalenta
  * @library ../lib
@@ -163,10 +163,7 @@ public class TestJavaFX extends JavadocTester {
                 "pkg2");
         checkExit(Exit.OK);
         checkOutput("pkg2/Test.html", true,
-                "<li class=\"blockList\"><a name=\"property.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h3>Property Detail</h3>\n"
+                "<h3>Property Detail</h3>\n"
                 + "<a name=\"betaProperty\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
@@ -176,27 +173,27 @@ public class TestJavaFX extends JavadocTester {
                 + "<pre>public&nbsp;java.lang.Object betaProperty</pre>\n"
                 + "</li>\n"
                 + "</ul>\n"
-                + "<a name=\"deltaProperty\">\n"
+                + "<a name=\"gammaProperty\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<ul class=\"blockList\">\n"
+                + "<li class=\"blockList\">\n"
+                + "<h4>gamma</h4>\n"
+                + "<pre>public final&nbsp;java.util.List&lt;java.lang.String&gt; gammaProperty</pre>\n"
+                + "</li>\n"
+                + "</ul>\n"
+                + "<a name=\"deltaProperty\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
+                + "<ul class=\"blockListLast\">\n"
                 + "<li class=\"blockList\">\n"
                 + "<h4>delta</h4>\n"
                 + "<pre>public final&nbsp;java.util.List&lt;"
                 + "java.util.Set&lt;? super java.lang.Object&gt;&gt; deltaProperty</pre>\n"
                 + "</li>\n"
                 + "</ul>\n"
-                + "<a name=\"gammaProperty\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<ul class=\"blockListLast\">\n"
-                + "<li class=\"blockList\">\n"
-                + "<h4>gamma</h4>\n"
-                + "<pre>public final&nbsp;java.util.List&lt;"
-                + "java.lang.String&gt; gammaProperty</pre>\n"
                 + "</li>\n"
-                + "</ul>\n"
-                + "</li>");
+                + "</ul>");
     }
 
     /*

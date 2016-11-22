@@ -535,7 +535,7 @@ public abstract class AbstractMemberWriter {
 
         TypeElement superClass = utils.getSuperClass(typeElement);
         while (superClass != null) {
-            if (visibleMemberMap.hasMembersFor(superClass)) {
+            if (visibleMemberMap.hasMembers(superClass)) {
                 liNav.addContent(getNavSummaryLink(superClass, true));
                 return;
             }

@@ -59,7 +59,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
     /**
      * The current constructor that is being documented at this point in time.
      */
-    private ExecutableElement constructor;
+    private ExecutableElement currentConstructor;
 
     /**
      * The class whose constructors are being documented.
@@ -79,7 +79,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
     /**
      * The constructors being documented.
      */
-    private final SortedSet<Element> constructors;
+    private final List<Element> constructors;
 
     /**
      * Construct a new ConstructorBuilder.
@@ -99,7 +99,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
                 typeElement,
                 VisibleMemberMap.Kind.CONSTRUCTORS,
                 configuration);
-        constructors = visibleMemberMap.getMembersFor(typeElement);
+        constructors = visibleMemberMap.getMembers(typeElement);
         for (Element ctor : constructors) {
             if (utils.isProtected(ctor) || utils.isPrivate(ctor)) {
                 writer.setFoundNonPubConstructor(true);
@@ -137,18 +137,6 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * Returns a list of constructors that will be documented for the given class.
-     * This information can be used for doclet specific documentation
-     * generation.
-     *
-     * @param typeElement the class
-     * @return a list of constructors that will be documented.
-     */
-    public SortedSet<Element> members(TypeElement typeElement) {
-        return visibleMemberMap.getMembersFor(typeElement);
-    }
-
-    /**
      * Return the constructor writer for this builder.
      *
      * @return the constructor writer for this builder.
@@ -168,17 +156,17 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
         if (writer == null) {
             return;
         }
-        int size = constructors.size();
-        if (size > 0) {
+        if (hasMembersToDocument()) {
             Content constructorDetailsTree = writer.getConstructorDetailsTreeHeader(typeElement,
                     memberDetailsTree);
-            for (Element ctor : constructors) {
-                constructor = (ExecutableElement)ctor;
-                Content constructorDocTree = writer.getConstructorDocTreeHeader(
-                        constructor, constructorDetailsTree);
+
+            Element lastElement = constructors.get(constructors.size() - 1);
+            for (Element contructor : constructors) {
+                currentConstructor = (ExecutableElement)contructor;
+                Content constructorDocTree = writer.getConstructorDocTreeHeader(currentConstructor, constructorDetailsTree);
                 buildChildren(node, constructorDocTree);
                 constructorDetailsTree.addContent(writer.getConstructorDoc(constructorDocTree,
-                        constructors.last().equals(constructor)));
+                        currentConstructor == lastElement));
             }
             memberDetailsTree.addContent(
                     writer.getConstructorDetails(constructorDetailsTree));
@@ -192,7 +180,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
      * @param constructorDocTree the content tree to which the documentation will be added
      */
     public void buildSignature(XMLNode node, Content constructorDocTree) {
-        constructorDocTree.addContent(writer.getSignature(constructor));
+        constructorDocTree.addContent(writer.getSignature(currentConstructor));
     }
 
     /**
@@ -202,7 +190,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
      * @param constructorDocTree the content tree to which the documentation will be added
      */
     public void buildDeprecationInfo(XMLNode node, Content constructorDocTree) {
-        writer.addDeprecated(constructor, constructorDocTree);
+        writer.addDeprecated(currentConstructor, constructorDocTree);
     }
 
     /**
@@ -214,7 +202,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
      */
     public void buildConstructorComments(XMLNode node, Content constructorDocTree) {
         if (!configuration.nocomment) {
-            writer.addComments(constructor, constructorDocTree);
+            writer.addComments(currentConstructor, constructorDocTree);
         }
     }
 
@@ -225,6 +213,6 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
      * @param constructorDocTree the content tree to which the documentation will be added
      */
     public void buildTagInfo(XMLNode node, Content constructorDocTree) {
-        writer.addTags(constructor, constructorDocTree);
+        writer.addTags(currentConstructor, constructorDocTree);
     }
 }

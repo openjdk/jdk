@@ -68,7 +68,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     /**
      * The list of members being documented.
      */
-    protected SortedSet<Element> members;
+    protected List<Element> members;
 
     /**
      * The index of the current member that is being documented at this point
@@ -82,6 +82,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
      * @param context  the build context.
      * @param typeElement the class whose members are being documented.
      * @param writer the doclet specific writer.
+     * @param memberType the kind of member this builder processes.
      */
     protected AnnotationTypeRequiredMemberBuilder(Context context,
             TypeElement typeElement,
@@ -91,7 +92,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
         this.typeElement = typeElement;
         this.writer = writer;
         this.visibleMemberMap = new VisibleMemberMap(typeElement, memberType, configuration);
-        this.members = this.visibleMemberMap.getMembersFor(typeElement);
+        this.members = this.visibleMemberMap.getMembers(typeElement);
     }
 
 
@@ -101,6 +102,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
      * @param context  the build context.
      * @param typeElement the class whose members are being documented.
      * @param writer the doclet specific writer.
+     * @return an instance of this object
      */
     public static AnnotationTypeRequiredMemberBuilder getInstance(
             Context context, TypeElement typeElement,
@@ -119,33 +121,12 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * Returns a list of members that will be documented for the given class.
-     * This information can be used for doclet specific documentation
-     * generation.
-     *
-     * @param typeElement the {@link TypeElement} we want to check.
-     * @return a list of members that will be documented.
-     */
-    public SortedSet<Element> members(TypeElement typeElement) {
-        return visibleMemberMap.getMembersFor(typeElement);
-    }
-
-    /**
-     * Returns the visible member map for the members of this class.
-     *
-     * @return the visible member map for the members of this class.
-     */
-    public VisibleMemberMap getVisibleMemberMap() {
-        return visibleMemberMap;
-    }
-
-    /**
      * Returns whether or not there are members to document.
      * @return whether or not there are members to document
      */
     @Override
     public boolean hasMembersToDocument() {
-        return members.size() > 0;
+        return !members.isEmpty();
     }
 
     /**
@@ -165,24 +146,25 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
      *
      * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
+     * @throws DocletException if an error occurs
      */
     public void buildAnnotationTypeMember(XMLNode node, Content memberDetailsTree)
             throws DocletException {
         if (writer == null) {
             return;
         }
-        int size = members.size();
-        if (size > 0) {
+        if (hasMembersToDocument()) {
             writer.addAnnotationDetailsMarker(memberDetailsTree);
-            for (Element element : members) {
-                currentMember = element;
+            Element lastMember = members.get((members.size() - 1));
+            for (Element member : members) {
+                currentMember = member;
                 Content detailsTree = writer.getMemberTreeHeader();
                 writer.addAnnotationDetailsTreeHeader(typeElement, detailsTree);
                 Content annotationDocTree = writer.getAnnotationDocTreeHeader(
-                        element, detailsTree);
+                        currentMember, detailsTree);
                 buildChildren(node, annotationDocTree);
                 detailsTree.addContent(writer.getAnnotationDoc(
-                        annotationDocTree, currentMember == members.last()));
+                        annotationDocTree, currentMember == lastMember));
                 memberDetailsTree.addContent(writer.getAnnotationDetails(detailsTree));
             }
         }

@@ -96,25 +96,32 @@ final class SunEntries {
         if (nativeAvailable && useNativePRNG) {
             map.put("SecureRandom.NativePRNG",
                 "sun.security.provider.NativePRNG");
+            map.put("SecureRandom.NativePRNG ThreadSafe", "true");
         }
 
         map.put("SecureRandom.DRBG", "sun.security.provider.DRBG");
+        map.put("SecureRandom.DRBG ThreadSafe", "true");
 
         map.put("SecureRandom.SHA1PRNG",
              "sun.security.provider.SecureRandom");
+
+        map.put("SecureRandom.SHA1PRNG ThreadSafe", "true");
         if (nativeAvailable && !useNativePRNG) {
             map.put("SecureRandom.NativePRNG",
                 "sun.security.provider.NativePRNG");
+            map.put("SecureRandom.NativePRNG ThreadSafe", "true");
         }
 
         if (NativePRNG.Blocking.isAvailable()) {
             map.put("SecureRandom.NativePRNGBlocking",
                 "sun.security.provider.NativePRNG$Blocking");
+            map.put("SecureRandom.NativePRNGBlocking ThreadSafe", "true");
         }
 
         if (NativePRNG.NonBlocking.isAvailable()) {
             map.put("SecureRandom.NativePRNGNonBlocking",
                 "sun.security.provider.NativePRNG$NonBlocking");
+            map.put("SecureRandom.NativePRNGNonBlocking ThreadSafe", "true");
         }
 
         /*
@@ -329,6 +336,7 @@ final class SunEntries {
         map.put("AlgorithmParameters.DSA ImplementedIn", "Software");
         map.put("KeyFactory.DSA ImplementedIn", "Software");
         map.put("SecureRandom.SHA1PRNG ImplementedIn", "Software");
+        map.put("SecureRandom.DRBG ImplementedIn", "Software");
         map.put("CertificateFactory.X.509 ImplementedIn", "Software");
         map.put("KeyStore.JKS ImplementedIn", "Software");
         map.put("CertPathValidator.PKIX ImplementedIn", "Software");

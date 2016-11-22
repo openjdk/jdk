@@ -942,7 +942,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
       # Little endian machine uses ELFv2 ABI.
       $2JVM_CFLAGS="[$]$2JVM_CFLAGS -DABI_ELFv2"
       # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
-      $2JVM_CFLAGS="[$]$2JVM_CFLAGS -mcpu=power7 -mtune=power8"
+      $2JVM_CFLAGS="[$]$2JVM_CFLAGS -mcpu=power8 -mtune=power8"
     fi
   elif test "x$OPENJDK_$1_CPU" = xs390x; then
     if test "x$OPENJDK_$1_OS" = xlinux; then

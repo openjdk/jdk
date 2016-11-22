@@ -58,7 +58,7 @@ public class AnchorCertificates {
                 try {
                     cacerts = KeyStore.getInstance("JKS");
                     try (FileInputStream fis = new FileInputStream(f)) {
-                        cacerts.load(fis, "changeit".toCharArray());
+                        cacerts.load(fis, null);
                         certs = new HashSet<>();
                         Enumeration<String> list = cacerts.aliases();
                         String alias;
