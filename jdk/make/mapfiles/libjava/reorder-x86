@@ -76,7 +76,7 @@ text: .text%Java_java_security_AccessController_doPrivileged__Ljava_security_Pri
 text: .text%JNU_GetEnv;
 text: .text%Java_java_io_UnixFileSystem_checkAccess;
 text: .text%Java_sun_reflect_NativeMethodAccessorImpl_invoke0;
-text: .text%Java_java_io_FileInputStream_available;
+text: .text%Java_java_io_FileInputStream_available0;
 text: .text%Java_java_lang_reflect_Array_newArray;
 text: .text%Java_java_lang_StackTraceElement_initStackTraceElements;
 text: .text%Java_java_lang_System_identityHashCode;

@@ -81,7 +81,7 @@ class Module extends Archive {
      * Returns module name
      */
     public String name() {
-        return descriptor.name();
+        return descriptor != null ? descriptor.name() : getName();
     }
 
     public boolean isNamed() {

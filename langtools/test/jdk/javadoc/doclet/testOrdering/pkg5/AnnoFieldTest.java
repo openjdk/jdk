@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,11 @@
  * questions.
  */
 
-package order;
+package pkg5;
 
-/**
- * This class ensures the method detail section contains the methods
- * in the order as it appears in the source.
- * @author kumasrin
- */
-public class MethodOrder {
-    /**
-     * Method d.
-     * Second line.
-     */
-    public void d(){}
-    /**
-     * Method b.
-     * Second line.
-     */
-    public void b() {}
-    /**
-     * Method c.
-     * Second line.
-     */
-    public void c() {}
-    /**
-     * Method a.
-     * Second line.
-     */
-    public void a() {}
+public @interface AnnoFieldTest {
+    public int one = 1;
+    public int two = 2;
+    public int three = 3;
+    public int four = 4;
 }

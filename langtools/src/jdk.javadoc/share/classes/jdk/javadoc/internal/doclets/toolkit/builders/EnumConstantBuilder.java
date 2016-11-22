@@ -67,9 +67,9 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
     private final EnumConstantWriter writer;
 
     /**
-     * The list of enum constants being documented.
+     * The set of enum constants being documented.
      */
-    private final SortedSet<Element> enumConstants;
+    private final List<Element> enumConstants;
 
     /**
      * The current enum constant that is being documented at this point
@@ -94,7 +94,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
                 typeElement,
                 VisibleMemberMap.Kind.ENUM_CONSTANTS,
                 configuration);
-        enumConstants = visibleMemberMap.getMembersFor(typeElement);
+        enumConstants = visibleMemberMap.getMembers(typeElement);
     }
 
     /**
@@ -119,34 +119,13 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * Returns a list of enum constants that will be documented for the given class.
-     * This information can be used for doclet specific documentation
-     * generation.
-     *
-     * @param typeElement the {@link TypeElement} we want to check.
-     * @return a list of enum constants that will be documented.
-     */
-    public SortedSet<Element> members(TypeElement typeElement) {
-        return visibleMemberMap.getMembersFor(typeElement);
-    }
-
-    /**
-     * Returns the visible member map for the enum constants of this class.
-     *
-     * @return the visible member map for the enum constants of this class.
-     */
-    public VisibleMemberMap getVisibleMemberMap() {
-        return visibleMemberMap;
-    }
-
-    /**
      * Returns whether or not there are members to document.
      *
      * @return whether or not there are members to document
      */
     @Override
     public boolean hasMembersToDocument() {
-        return enumConstants.size() > 0;
+        return !enumConstants.isEmpty();
     }
 
     /**
@@ -160,16 +139,17 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
         if (writer == null) {
             return;
         }
-        if (!enumConstants.isEmpty()) {
+        if (hasMembersToDocument()) {
             Content enumConstantsDetailsTree = writer.getEnumConstantsDetailsTreeHeader(typeElement,
                     memberDetailsTree);
-            for (Element element : enumConstants) {
-                currentElement = (VariableElement)element;
+            Element lastElement = enumConstants.get(enumConstants.size() - 1);
+            for (Element enumConstant : enumConstants) {
+                currentElement = (VariableElement)enumConstant;
                 Content enumConstantsTree = writer.getEnumConstantsTreeHeader(currentElement,
                         enumConstantsDetailsTree);
                 buildChildren(node, enumConstantsTree);
                 enumConstantsDetailsTree.addContent(writer.getEnumConstants(
-                        enumConstantsTree, currentElement.equals(enumConstants.last())));
+                        enumConstantsTree, currentElement == lastElement));
             }
             memberDetailsTree.addContent(
                     writer.getEnumConstantsDetails(enumConstantsDetailsTree));
