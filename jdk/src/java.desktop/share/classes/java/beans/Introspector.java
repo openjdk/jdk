@@ -1279,6 +1279,7 @@ public class Introspector {
      * First try the classloader of "sibling", then try the system
      * classloader then the class loader of the current Thread.
      */
+    @SuppressWarnings("deprecation")
     static Object instantiate(Class<?> sibling, String className)
                  throws InstantiationException, IllegalAccessException,
                         NoSuchMethodException, InvocationTargetException,
@@ -1286,7 +1287,7 @@ public class Introspector {
         // First check with sibling's classloader (if any).
         ClassLoader cl = sibling.getClassLoader();
         Class<?> cls = ClassFinder.findClass(className, cl);
-        return cls.getDeclaredConstructor().newInstance();
+        return cls.newInstance();
     }
 
 } // end class Introspector
