@@ -49,7 +49,7 @@ public class HtmlSection {
 
     private HtmlSection(PrintWriter pw, String id, String name, HtmlSection rootSection) {
         this.pw = pw;
-        textWriter = new PrintWriter(new HtmlFilterWriter(pw));
+        textWriter = new PrintWriter(new HtmlFilterWriter(pw), true);
         this.id = id;
         this.name = name;
         child = null;

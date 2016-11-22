@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -111,7 +112,7 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
      */
     private static ExecutionControl create(ExecutionEnv env,
             boolean isLaunch, String host) throws IOException {
-        try (final ServerSocket listener = new ServerSocket(0)) {
+        try (final ServerSocket listener = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             // timeout after 60 seconds
             listener.setSoTimeout(60000);
             int port = listener.getLocalPort();

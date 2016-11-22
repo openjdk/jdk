@@ -220,46 +220,34 @@ public class VisibleMemberMap {
     }
 
     /**
-     * Return the visible members of the class being mapped.  Also append at the
-     * end of the list members that are inherited by inaccessible parents. We
-     * document these members in the child because the parent is not documented.
+     * Returns a list of visible enclosed members of the type being mapped.
+     * This list may also contain appended members, inherited by inaccessible
+     * super types. These members are documented in the subtype when the
+     * super type is not documented.
      *
-     * @param configuration the current configuration of the doclet.
+     * @return a list of visible enclosed members
      */
-    public SortedSet<Element> getLeafClassMembers() {
-        SortedSet<Element> result = getMembersFor(typeElement);
-        result.addAll(getInheritedPackagePrivateMethods());
-        return result;
-    }
 
-    public Set<Element> getLeafClassMembersSourceOrder() {
-        Set<Element> result = new LinkedHashSet<>(classMap.get(typeElement).members);
+    public List<Element> getLeafMembers() {
+        List<Element> result = new ArrayList<>();
+        result.addAll(classMap.get(typeElement).members);
         result.addAll(getInheritedPackagePrivateMethods());
         return result;
     }
 
     /**
-     * Retrn the list of members for the given class.
+     * Returns a list of enclosed members for the given type.
      *
-     * @param typeElement the class to retrieve the list of visible members for.
+     * @param typeElement the given type
      *
-     * @return the list of members for the given class.
+     * @return a list of enclosed members
      */
-    public SortedSet<Element> getMembersFor(TypeElement typeElement) {
-        return asSortedSet(classMap.get(typeElement).members);
+    public List<Element> getMembers(TypeElement typeElement) {
+        return classMap.get(typeElement).members;
     }
 
-    public boolean hasMembersFor(TypeElement typeElement) {
+    public boolean hasMembers(TypeElement typeElement) {
         return !classMap.get(typeElement).members.isEmpty();
-    }
-
-    private SortedSet<Element> asSortedSet(Collection<Element> in) {
-        if (in == null) {
-            return Collections.emptySortedSet();
-        }
-        TreeSet<Element> out = new TreeSet<>(comparator);
-        out.addAll(in);
-        return out;
     }
 
     private void fillMemberLevelMap(List<? extends Element> list, String level) {
@@ -318,9 +306,9 @@ public class VisibleMemberMap {
         private final TypeElement typeElement;
 
         /**
-         * List of inherited members from the mapping class.
+         * List of members from the mapping class.
          */
-        private Set<Element> members = new LinkedHashSet<>();
+        private List<Element> members = null;
 
         /**
          * Level/Depth of inheritance.
@@ -379,23 +367,23 @@ public class VisibleMemberMap {
          * Adjust member-level-map, class-map.
          */
         private void addMembers(TypeElement fromClass) {
-            List<? extends Element> classMembers = getClassMembers(fromClass, true);
-            List<Element> incllist = new ArrayList<>();
-            for (Element element : classMembers) {
-                if (!found(members, element)) {
-                    if (memberIsVisible(element)) {
-                        if (!isOverridden(element, level)) {
-                            if (!utils.isHidden(element)) {
-                                incllist.add(element);
-                            }
+            List<Element> result = new ArrayList<>();
+            for (Element element : getClassMembers(fromClass, true)) {
+                if (memberIsVisible(element)) {
+                    if (!isOverridden(element, level)) {
+                        if (!utils.isHidden(element)) {
+                            result.add(element);
                         }
                     }
                 }
             }
-            if (!incllist.isEmpty()) {
+            if (members != null) {
+                throw new AssertionError("members should not be null");
+            }
+            members = Collections.unmodifiableList(result);
+            if (!members.isEmpty()) {
                 noVisibleMembers = false;
             }
-            members.addAll(incllist);
             fillMemberLevelMap(getClassMembers(fromClass, false), level);
         }
 
@@ -512,16 +500,6 @@ public class VisibleMemberMap {
             }
             return targetMembers;
         }
-
-        private boolean found(Iterable<Element> list, Element elem) {
-            for (Element pgmelem : list) {
-                if (utils.matches(pgmelem, elem)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
 
         /**
          * Is member overridden? The member is overridden if it is found in the

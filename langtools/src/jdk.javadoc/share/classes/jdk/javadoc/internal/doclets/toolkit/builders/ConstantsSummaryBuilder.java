@@ -275,7 +275,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     private boolean hasConstantField (TypeElement typeElement) {
         VisibleMemberMap visibleMemberMapFields = new VisibleMemberMap(typeElement,
             VisibleMemberMap.Kind.FIELDS, configuration);
-        SortedSet<Element> fields = visibleMemberMapFields.getLeafClassMembers();
+        List<Element> fields = visibleMemberMapFields.getLeafMembers();
         for (Element f : fields) {
             VariableElement field = (VariableElement)f;
             if (field.getConstantValue() != null) {
@@ -350,21 +350,21 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
         }
 
         /**
-         * Return the list of visible constant fields for the given TypeElement.
-         * @return the list of visible constant fields for the given TypeElement.
+         * Returns a set of visible constant fields for the given type.
+         * @return the set of visible constant fields for the given type.
          */
         protected SortedSet<VariableElement> members() {
-            SortedSet<Element> list = visibleMemberMapFields.getLeafClassMembers();
-            list.addAll(visibleMemberMapEnumConst.getLeafClassMembers());
-            SortedSet<VariableElement> inclList =
+            List<Element> members = visibleMemberMapFields.getLeafMembers();
+            members.addAll(visibleMemberMapEnumConst.getLeafMembers());
+            SortedSet<VariableElement> includes =
                     new TreeSet<>(utils.makeGeneralPurposeComparator());
-            for (Element element : list) {
+            for (Element element : members) {
                 VariableElement member = (VariableElement)element;
                 if (member.getConstantValue() != null) {
-                    inclList.add(member);
+                    includes.add(member);
                 }
             }
-            return inclList;
+            return includes;
         }
     }
 }
