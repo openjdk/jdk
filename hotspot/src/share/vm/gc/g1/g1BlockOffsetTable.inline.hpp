@@ -136,7 +136,7 @@ inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr_const(
   while (n <= addr) {
     q = n;
     oop obj = oop(q);
-    if (obj->klass_or_null() == NULL) {
+    if (obj->klass_or_null_acquire() == NULL) {
       return q;
     }
     n += block_size(q);
@@ -148,7 +148,7 @@ inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr_const(
 
 inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr(HeapWord* q,
                                                                           const void* addr) {
-  if (oop(q)->klass_or_null() == NULL) {
+  if (oop(q)->klass_or_null_acquire() == NULL) {
     return q;
   }
   HeapWord* n = q + block_size(q);

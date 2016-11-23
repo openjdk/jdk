@@ -658,7 +658,7 @@ class HeapRegion: public G1ContiguousSpace {
   // mr: the memory region covered by the card.
   // card_ptr: if we decide that the card is not young and we iterate
   // over it, we'll clean the card before we start the iteration.
-  // Returns true if card was successfully processed, false if an
+  // Returns true if the card was successfully processed, false if an
   // unparsable part of the heap was encountered, which should only
   // happen when invoked concurrently with the mutator.
   bool oops_on_card_seq_iterate_careful(MemRegion mr,
