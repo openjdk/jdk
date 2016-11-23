@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,9 @@ class NMTUtil : AllStatic {
  public:
   // Map memory type to index
   static inline int flag_to_index(MEMFLAGS flag) {
-    return (flag & 0xff);
+    const int index = flag & 0xff;
+    assert(index >= 0 && index < (int)mt_number_of_types, "Index out of bounds");
+    return index;
   }
 
   // Map memory type to human readable name
@@ -65,6 +67,7 @@ class NMTUtil : AllStatic {
 
   // Map an index to memory type
   static MEMFLAGS index_to_flag(int index) {
+    assert(index >= 0 && index < (int) mt_number_of_types, "Index out of bounds");
     return (MEMFLAGS)index;
   }
 
