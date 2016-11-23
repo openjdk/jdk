@@ -166,6 +166,7 @@ public class IndexBuilder {
         adjustIndexMap(utils.getFields(te));
         adjustIndexMap(utils.getMethods(te));
         adjustIndexMap(utils.getConstructors(te));
+        adjustIndexMap(utils.getEnumConstants(te));
     }
 
 

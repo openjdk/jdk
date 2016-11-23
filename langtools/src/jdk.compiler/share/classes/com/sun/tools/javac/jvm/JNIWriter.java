@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,7 @@ public class JNIWriter {
         Location outLocn;
         if (multiModuleMode) {
             ModuleSymbol msym = c.owner.kind == MDL ? (ModuleSymbol) c.owner : c.packge().modle;
-            outLocn = fileManager.getModuleLocation(StandardLocation.NATIVE_HEADER_OUTPUT, msym.name.toString());
+            outLocn = fileManager.getLocationForModule(StandardLocation.NATIVE_HEADER_OUTPUT, msym.name.toString());
         } else {
             outLocn = StandardLocation.NATIVE_HEADER_OUTPUT;
         }

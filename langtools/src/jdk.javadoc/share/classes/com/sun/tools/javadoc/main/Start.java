@@ -45,6 +45,7 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.CommandLine;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.file.BaseFileManager;
+import com.sun.tools.javac.main.Arguments;
 import com.sun.tools.javac.main.OptionHelper;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
 import com.sun.tools.javac.platform.PlatformDescription;
@@ -309,12 +310,16 @@ public class Start extends ToolOption.Helper {
                 if (o == ToolOption.LOCALE && i > 0)
                     usageError("main.locale_first");
 
-                if (o.hasArg) {
-                    oneArg(argv, i++);
-                    o.process(this, argv[i]);
-                } else {
-                    setOption(arg);
-                    o.process(this);
+                try {
+                    if (o.hasArg) {
+                        oneArg(argv, i++);
+                        o.process(this, argv[i]);
+                    } else {
+                        setOption(arg);
+                        o.process(this);
+                    }
+                } catch (Option.InvalidValueException e) {
+                    usageError("main.option.invalid.value", e.getMessage());
                 }
             } else if (arg.equals("-XDaccessInternalAPI")) {
                 // pass this hidden option down to the doclet, if it wants it
@@ -366,6 +371,11 @@ public class Start extends ToolOption.Helper {
         if (fileManager instanceof BaseFileManager) {
             ((BaseFileManager) fileManager).handleOptions(fileManagerOpts);
         }
+
+        Arguments arguments = Arguments.instance(context);
+        arguments.init(messager.programName);
+        arguments.allowEmpty();
+        arguments.validate();
 
         String platformString = compOpts.get("--release");
 
@@ -560,7 +570,7 @@ public class Start extends ToolOption.Helper {
 
     @Override
     OptionHelper getOptionHelper() {
-        return new GrumpyHelper(null) {
+        return new GrumpyHelper(messager) {
             @Override
             public String get(com.sun.tools.javac.main.Option option) {
                 return compOpts.get(option);

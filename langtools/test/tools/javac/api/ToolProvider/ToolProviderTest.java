@@ -55,6 +55,8 @@ public class ToolProviderTest {
 
         Objects.requireNonNull(ToolProvider.getSystemDocumentationTool());
         Objects.requireNonNull(ToolProvider.getSystemJavaCompiler());
-        Objects.requireNonNull(ToolProvider.getSystemToolClassLoader());
+        if (ToolProvider.getSystemToolClassLoader() != null) {
+            throw new AssertionError("unexpected value for getSystemToolClassLoader");
+        }
     }
 }
