@@ -707,7 +707,6 @@ public class Arguments {
             for (String moduleName : addModules.split(",")) {
                 switch (moduleName) {
                     case "":
-                    case "ALL-DEFAULT":
                     case "ALL-SYSTEM":
                     case "ALL-MODULE-PATH":
                         break;
@@ -715,7 +714,7 @@ public class Arguments {
                     default:
                         if (!SourceVersion.isName(moduleName, sv)) {
                             // syntactically invalid module name:  e.g. --add-modules m1,m!
-                            log.warning(Warnings.BadNameForOption(Option.ADD_MODULES, moduleName));
+                            log.error(Errors.BadNameForOption(Option.ADD_MODULES, moduleName));
                         }
                         break;
                 }
@@ -739,7 +738,7 @@ public class Arguments {
                     default:
                         if (!SourceVersion.isName(moduleName, sv)) {
                             // syntactically invalid module name:  e.g. --limit-modules m1,m!
-                            log.warning(Warnings.BadNameForOption(Option.LIMIT_MODULES, moduleName));
+                            log.error(Errors.BadNameForOption(Option.LIMIT_MODULES, moduleName));
                         }
                         break;
                 }
