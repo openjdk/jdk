@@ -51,7 +51,6 @@ import jdk.test.lib.Asserts;
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
  *          jdk.hotspot.agent/sun.jvm.hotspot.debugger
  *          jdk.hotspot.agent/sun.jvm.hotspot.ui.classbrowser
- * @ignore 8169232
  * @run main/othervm TestCpoolForInvokeDynamic
  */
 
