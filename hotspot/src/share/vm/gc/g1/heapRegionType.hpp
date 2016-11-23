@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,8 @@ public:
 
   // is_old regions may or may not also be pinned
   bool is_old() const { return (get() & OldMask) != 0; }
+
+  bool is_old_or_humongous() const { return (get() & (OldMask | HumongousMask)) != 0; }
 
   // is_pinned regions may be archive or humongous
   bool is_pinned() const { return (get() & PinnedMask) != 0; }

@@ -300,6 +300,8 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
   // thread to calculate the object size incorrectly.
   Copy::fill_to_words(new_obj, oopDesc::header_size(), 0);
 
+  // Next, pad out the unused tail of the last region with filler
+  // objects, for improved usage accounting.
   // How many words we use for filler objects.
   size_t word_fill_size = word_size_sum - word_size;
 

@@ -373,6 +373,7 @@ static bool do_oops_on_card_in_humongous(MemRegion mr,
     return false;
   }
 
+  // We have a well-formed humongous object at the start of sr.
   // Only filler objects follow a humongous object in the containing
   // regions, and we can ignore those.  So only process the one
   // humongous object.
@@ -396,49 +397,20 @@ static bool do_oops_on_card_in_humongous(MemRegion mr,
 }
 
 bool HeapRegion::oops_on_card_seq_iterate_careful(MemRegion mr,
-                                                  FilterOutOfRegionClosure* cl,
-                                                  jbyte* card_ptr) {
-  assert(card_ptr != NULL, "pre-condition");
+                                                  FilterOutOfRegionClosure* cl) {
+  assert(MemRegion(bottom(), end()).contains(mr), "Card region not in heap region");
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
-  // If we're within a stop-world GC, then we might look at a card in a
-  // GC alloc region that extends onto a GC LAB, which may not be
-  // parseable.  Stop such at the "scan_top" of the region.
-  if (g1h->is_gc_active()) {
-    mr = mr.intersection(MemRegion(bottom(), scan_top()));
-  } else {
-    mr = mr.intersection(used_region());
-  }
-  if (mr.is_empty()) {
-    return true;
-  }
-
-  // The intersection of the incoming mr (for the card) and the
-  // allocated part of the region is non-empty. This implies that
-  // we have actually allocated into this region. The code in
-  // G1CollectedHeap.cpp that allocates a new region sets the
-  // is_young tag on the region before allocating. Thus we
-  // safely know if this region is young.
-  if (is_young()) {
-    return true;
-  }
-
-  // We can only clean the card here, after we make the decision that
-  // the card is not young.
-  *card_ptr = CardTableModRefBS::clean_card_val();
-  // We must complete this write before we do any of the reads below.
-  OrderAccess::storeload();
 
   // Special handling for humongous regions.
   if (is_humongous()) {
     return do_oops_on_card_in_humongous(mr, cl, this, g1h);
   }
+  assert(is_old(), "precondition");
 
-  // During GC we limit mr by scan_top. So we never get here with an
-  // mr covering objects allocated during GC.  Non-humongous objects
-  // are only allocated in the old-gen during GC.  So the parts of the
-  // heap that may be examined here are always parsable; there's no
-  // need to use klass_or_null here to detect in-progress allocations.
+  // Because mr has been trimmed to what's been allocated in this
+  // region, the parts of the heap that are examined here are always
+  // parsable; there's no need to use klass_or_null to detect
+  // in-progress allocation.
 
   // Cache the boundaries of the memory region in some const locals
   HeapWord* const start = mr.start();
