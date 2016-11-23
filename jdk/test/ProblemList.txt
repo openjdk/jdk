@@ -124,7 +124,6 @@ java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 gen
 # jdk_lang
 
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
-java/lang/ClassLoader/platformClassLoader/DefinePlatformClass.java 8169639 windows-all
 
 ############################################################################
 
