@@ -89,6 +89,9 @@ public abstract class IntlTest {
             case "-nothrow":
                 nothrow = true;
                 break;
+            case "-exitcode":
+                exitCode = true;
+                break;
             default:
                 Method m = testMethods.get(arg);
                 if (m == null) {
@@ -138,7 +141,12 @@ public abstract class IntlTest {
             }
         }
         if (nothrow) {
-            System.exit(errorCount);
+            if (exitCode) {
+                System.exit(errorCount);
+            }
+            if (errorCount > 0) {
+                throw new IllegalArgumentException("encountered " + errorCount + " errors");
+            }
         }
     }
 
@@ -243,7 +251,7 @@ public abstract class IntlTest {
      */
     void usage() {
         System.out.println(getClass().getName() +
-                            ": [-verbose] [-nothrow] [-prompt] [test names]");
+                            ": [-verbose] [-nothrow] [-exitcode] [-prompt] [test names]");
 
         System.out.println("  Available test names:");
         for (String methodName : testMethods.keySet()) {
@@ -254,7 +262,7 @@ public abstract class IntlTest {
     private boolean     prompt;
     private boolean     nothrow;
     protected boolean   verbose;
-
+    private boolean     exitCode;
     private PrintWriter log;
     private int         indentLevel;
     private boolean     needLineFeed;

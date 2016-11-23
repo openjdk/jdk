@@ -80,10 +80,9 @@ public final class FontManagerFactory {
                                                DEFAULT_CLASS);
                     ClassLoader cl = ClassLoader.getSystemClassLoader();
                     Class<?> fmClass = Class.forName(fmClassName, true, cl);
-                    instance = (FontManager) fmClass.newInstance();
-                } catch (ClassNotFoundException |
-                         InstantiationException |
-                         IllegalAccessException ex) {
+                    instance =
+                       (FontManager) fmClass.getDeclaredConstructor().newInstance();
+                } catch (ReflectiveOperationException ex) {
                     throw new InternalError(ex);
 
                 }

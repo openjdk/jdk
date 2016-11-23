@@ -132,6 +132,7 @@ public class WindowsTextFieldUI extends BasicTextFieldUI
                 this.r = r;
             }
 
+            @SuppressWarnings("deprecation")
             public void run() {
                 JTextField field = (JTextField) getComponent();
                 if (field != null) {

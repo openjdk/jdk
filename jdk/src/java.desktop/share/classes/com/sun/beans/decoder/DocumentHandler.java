@@ -277,10 +277,12 @@ public final class DocumentHandler extends DefaultHandler {
      * @param attributes  the attributes attached to the element
      */
     @Override
+    @SuppressWarnings("deprecation")
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         ElementHandler parent = this.handler;
         try {
-            this.handler = getElementHandler(qName).newInstance();
+            this.handler =
+                getElementHandler(qName).newInstance();
             this.handler.setOwner(this);
             this.handler.setParent(parent);
         }

@@ -471,6 +471,7 @@ public class PlainView extends View implements TabExpander {
      *   represent a valid location in the associated document
      * @see View#modelToView
      */
+    @SuppressWarnings("deprecation")
     public Shape modelToView(int pos, Shape a, Position.Bias b) throws BadLocationException {
         // line coordinates
         Document doc = getDocument();
@@ -798,6 +799,7 @@ public class PlainView extends View implements TabExpander {
      * the given element.  It is assumed that the font
      * and font metrics are up-to-date.
      */
+    @SuppressWarnings("deprecation")
     private int getLineWidth(Element line) {
         if (line == null) {
             return 0;

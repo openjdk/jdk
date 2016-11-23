@@ -403,6 +403,13 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                             EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
                             suite.name, null)) {
                         suites.add(suite);
+                    } else {
+                        if (debug != null && Debug.isOn("sslctx") &&
+                                Debug.isOn("verbose")) {
+                            System.out.println(
+                                    "Ignoring disabled cipher suite: " +
+                                            suite.name);
+                        }
                     }
                 } else if (debug != null &&
                         Debug.isOn("sslctx") && Debug.isOn("verbose")) {

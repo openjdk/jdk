@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ public abstract class AudioFileWriter {
      *         system
      * @throws NullPointerException if {@code stream} or {@code fileType} or
      *         {@code out} are {@code null}
-     * @see #isFileTypeSupported(AudioFileFormat.Type, AudioInputStream)
+     * @see #isFileTypeSupported(Type, AudioInputStream)
      * @see #getAudioFileTypes
      */
     public abstract int write(AudioInputStream stream, Type fileType,
@@ -149,7 +149,7 @@ public abstract class AudioFileWriter {
      *         the system
      * @throws NullPointerException if {@code stream} or {@code fileType} or
      *         {@code out} are {@code null}
-     * @see #isFileTypeSupported
+     * @see #isFileTypeSupported(Type, AudioInputStream)
      * @see #getAudioFileTypes
      */
     public abstract int write(AudioInputStream stream, Type fileType, File out)

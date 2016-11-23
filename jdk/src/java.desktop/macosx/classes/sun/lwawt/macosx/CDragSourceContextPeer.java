@@ -214,6 +214,7 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
             this.setDefaultDragImage();
     }
 
+    @SuppressWarnings("deprecation")
     private void setDefaultDragImage(JTextComponent component) {
         DragGestureEvent trigger = getTrigger();
         int selectionStart = component.getSelectionStart();

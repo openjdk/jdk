@@ -200,7 +200,8 @@ public final class Constructor<T> extends Executable {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns the {@code Class} object representing the class that
+     * declares the constructor represented by this object.
      */
     @Override
     public Class<T> getDeclaringClass() {
@@ -321,6 +322,11 @@ public final class Constructor<T> extends Executable {
      *    public java.util.Hashtable(int,float)
      * }</pre>
      *
+     * <p>If the constructor is declared to throw exceptions, the
+     * parameter list is followed by a space, followed by the word
+     * "{@code throws}" followed by a comma-separated list of the
+     * thrown exception types.
+     *
      * <p>The only possible modifiers for constructors are the access
      * modifiers {@code public}, {@code protected} or
      * {@code private}.  Only one of these may appear, or none if the
@@ -357,13 +363,13 @@ public final class Constructor<T> extends Executable {
      * "<code><i>Type</i>...</code>".
      *
      * A space is used to separate access modifiers from one another
-     * and from the type parameters or return type.  If there are no
+     * and from the type parameters or class name.  If there are no
      * type parameters, the type parameter list is elided; if the type
      * parameter list is present, a space separates the list from the
      * class name.  If the constructor is declared to throw
      * exceptions, the parameter list is followed by a space, followed
      * by the word "{@code throws}" followed by a
-     * comma-separated list of the thrown exception types.
+     * comma-separated list of the generic thrown exception types.
      *
      * <p>The only possible modifiers for constructors are the access
      * modifiers {@code public}, {@code protected} or
