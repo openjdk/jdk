@@ -945,7 +945,7 @@ HG
 READELF
 OTOOL
 LDD
-ZIP
+ZIPEXE
 UNZIP
 TAR_SUPPORTS_TRANSFORM
 TAR_INCLUDE_PARAM
@@ -1292,7 +1292,7 @@ CPIO
 NICE
 MAKE
 UNZIP
-ZIP
+ZIPEXE
 LDD
 OTOOL
 READELF
@@ -2236,7 +2236,7 @@ Some influential environment variables:
   NICE        Override default value for NICE
   MAKE        Override default value for MAKE
   UNZIP       Override default value for UNZIP
-  ZIP         Override default value for ZIP
+  ZIPEXE      Override default value for ZIPEXE
   LDD         Override default value for LDD
   OTOOL       Override default value for OTOOL
   READELF     Override default value for READELF
@@ -5093,7 +5093,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1479120453
+DATE_WHEN_GENERATED=1479822431
 
 ###############################################################################
 #
@@ -21373,13 +21373,15 @@ $as_echo "$tool_specified" >&6; }
   fi
 
 
+  # Since zip uses "ZIP" as a environment variable for passing options, we need
+  # to name our variable differently, hence ZIPEXE.
 
 
 
   # Publish this variable in the help.
 
 
-  if [ -z "${ZIP+x}" ]; then
+  if [ -z "${ZIPEXE+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in zip
 do
@@ -21387,12 +21389,12 @@ do
 set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_ZIP+:} false; then :
+if ${ac_cv_path_ZIPEXE+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  case $ZIP in
+  case $ZIPEXE in
   [\\/]* | ?:[\\/]*)
-  ac_cv_path_ZIP="$ZIP" # Let the user override the test with a path.
+  ac_cv_path_ZIPEXE="$ZIPEXE" # Let the user override the test with a path.
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
@@ -21402,7 +21404,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_ZIP="$as_dir/$ac_word$ac_exec_ext"
+    ac_cv_path_ZIPEXE="$as_dir/$ac_word$ac_exec_ext"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -21413,30 +21415,30 @@ IFS=$as_save_IFS
   ;;
 esac
 fi
-ZIP=$ac_cv_path_ZIP
-if test -n "$ZIP"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP" >&5
-$as_echo "$ZIP" >&6; }
+ZIPEXE=$ac_cv_path_ZIPEXE
+if test -n "$ZIPEXE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIPEXE" >&5
+$as_echo "$ZIPEXE" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
-  test -n "$ZIP" && break
+  test -n "$ZIPEXE" && break
 done
 
   else
     # The variable is set, but is it from the command line or the environment?
 
-    # Try to remove the string !ZIP! from our list.
-    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!ZIP!/}
+    # Try to remove the string !ZIPEXE! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!ZIPEXE!/}
     if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
       # If it failed, the variable was not from the command line. Ignore it,
       # but warn the user (except for BASH, which is always set by the calling BASH).
-      if test "xZIP" != xBASH; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of ZIP from the environment. Use command line variables instead." >&5
-$as_echo "$as_me: WARNING: Ignoring value of ZIP from the environment. Use command line variables instead." >&2;}
+      if test "xZIPEXE" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of ZIPEXE from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of ZIPEXE from the environment. Use command line variables instead." >&2;}
       fi
       # Try to locate tool using the code snippet
       for ac_prog in zip
@@ -21445,12 +21447,12 @@ do
 set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_ZIP+:} false; then :
+if ${ac_cv_path_ZIPEXE+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  case $ZIP in
+  case $ZIPEXE in
   [\\/]* | ?:[\\/]*)
-  ac_cv_path_ZIP="$ZIP" # Let the user override the test with a path.
+  ac_cv_path_ZIPEXE="$ZIPEXE" # Let the user override the test with a path.
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
@@ -21460,7 +21462,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_ZIP="$as_dir/$ac_word$ac_exec_ext"
+    ac_cv_path_ZIPEXE="$as_dir/$ac_word$ac_exec_ext"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -21471,17 +21473,17 @@ IFS=$as_save_IFS
   ;;
 esac
 fi
-ZIP=$ac_cv_path_ZIP
-if test -n "$ZIP"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP" >&5
-$as_echo "$ZIP" >&6; }
+ZIPEXE=$ac_cv_path_ZIPEXE
+if test -n "$ZIPEXE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIPEXE" >&5
+$as_echo "$ZIPEXE" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
-  test -n "$ZIP" && break
+  test -n "$ZIPEXE" && break
 done
 
     else
@@ -21493,31 +21495,31 @@ done
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
       # Check if we try to supply an empty value
-      if test "x$ZIP" = x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool ZIP= (no value)" >&5
-$as_echo "$as_me: Setting user supplied tool ZIP= (no value)" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZIP" >&5
-$as_echo_n "checking for ZIP... " >&6; }
+      if test "x$ZIPEXE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool ZIPEXE= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool ZIPEXE= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZIPEXE" >&5
+$as_echo_n "checking for ZIPEXE... " >&6; }
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
 $as_echo "disabled" >&6; }
       else
         # Check if the provided tool contains a complete path.
-        tool_specified="$ZIP"
+        tool_specified="$ZIPEXE"
         tool_basename="${tool_specified##*/}"
         if test "x$tool_basename" = "x$tool_specified"; then
           # A command without a complete path is provided, search $PATH.
-          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool ZIP=$tool_basename" >&5
-$as_echo "$as_me: Will search for user supplied tool ZIP=$tool_basename" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool ZIPEXE=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool ZIPEXE=$tool_basename" >&6;}
           # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_ZIP+:} false; then :
+if ${ac_cv_path_ZIPEXE+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  case $ZIP in
+  case $ZIPEXE in
   [\\/]* | ?:[\\/]*)
-  ac_cv_path_ZIP="$ZIP" # Let the user override the test with a path.
+  ac_cv_path_ZIPEXE="$ZIPEXE" # Let the user override the test with a path.
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
@@ -21527,7 +21529,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_ZIP="$as_dir/$ac_word$ac_exec_ext"
+    ac_cv_path_ZIPEXE="$as_dir/$ac_word$ac_exec_ext"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -21538,29 +21540,29 @@ IFS=$as_save_IFS
   ;;
 esac
 fi
-ZIP=$ac_cv_path_ZIP
-if test -n "$ZIP"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP" >&5
-$as_echo "$ZIP" >&6; }
+ZIPEXE=$ac_cv_path_ZIPEXE
+if test -n "$ZIPEXE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIPEXE" >&5
+$as_echo "$ZIPEXE" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
-          if test "x$ZIP" = x; then
+          if test "x$ZIPEXE" = x; then
             as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
           fi
         else
           # Otherwise we believe it is a complete path. Use it as it is.
-          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool ZIP=$tool_specified" >&5
-$as_echo "$as_me: Will use user supplied tool ZIP=$tool_specified" >&6;}
-          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZIP" >&5
-$as_echo_n "checking for ZIP... " >&6; }
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool ZIPEXE=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool ZIPEXE=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZIPEXE" >&5
+$as_echo_n "checking for ZIPEXE... " >&6; }
           if test ! -x "$tool_specified"; then
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-            as_fn_error $? "User supplied tool ZIP=$tool_specified does not exist or is not executable" "$LINENO" 5
+            as_fn_error $? "User supplied tool ZIPEXE=$tool_specified does not exist or is not executable" "$LINENO" 5
           fi
           { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
@@ -21572,8 +21574,8 @@ $as_echo "$tool_specified" >&6; }
 
 
 
-  if test "x$ZIP" = x; then
-    as_fn_error $? "Could not find required tool for ZIP" "$LINENO" 5
+  if test "x$ZIPEXE" = x; then
+    as_fn_error $? "Could not find required tool for ZIPEXE" "$LINENO" 5
   fi
 
 
