@@ -88,6 +88,7 @@ import java.lang.invoke.MethodType;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import jdk.dynalink.internal.AccessControlContextFactory;
@@ -147,6 +148,11 @@ final class ClassString {
             hashCode = h;
         }
         return hashCode;
+    }
+
+    @Override
+    public String toString() {
+        return "ClassString[" + Arrays.toString(classes) + "]";
     }
 
     boolean isVisibleFrom(final ClassLoader classLoader) {
