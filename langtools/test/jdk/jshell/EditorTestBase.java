@@ -125,7 +125,6 @@ public abstract class EditorTestBase extends ReplToolTesting {
         );
     }
 
-    @Test(enabled = false) // TODO 8163816
     public void testEditClass1() {
         testEditor(
                 a -> assertClass(a, "class A {}", "class", "A"),
@@ -163,7 +162,6 @@ public abstract class EditorTestBase extends ReplToolTesting {
         );
     }
 
-    @Test(enabled = false) // TODO 8163816
     public void testEditMethod1() {
         testEditor(
                 a -> assertMethod(a, "void f() {}", "()void", "f"),
@@ -242,6 +240,18 @@ public abstract class EditorTestBase extends ReplToolTesting {
                 a -> assertEditOutput(a, "/ed a", "b ==> 10", () -> {
                     writeSource("int b = 10");
                     accept();
+                    exit();
+                })
+        );
+    }
+
+    @Test
+    public void testStatementMush() {
+        testEditor(
+                a -> assertCommand(a, "System.out.println(\"Hello\")",
+                        "", "", null, "Hello\n", ""),
+                a -> assertEditOutput(a, "/ed", "b ==> 10", () -> {
+                    writeSource(getSource() + "\nint b = 10");
                     exit();
                 })
         );

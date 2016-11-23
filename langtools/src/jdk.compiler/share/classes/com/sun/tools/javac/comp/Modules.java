@@ -364,7 +364,7 @@ public class Modules extends JCTree.Visitor {
                         if (msym.sourceLocation == null) {
                             msym.sourceLocation = locn;
                             if (fileManager.hasLocation(StandardLocation.CLASS_OUTPUT)) {
-                                msym.classLocation = fileManager.getModuleLocation(
+                                msym.classLocation = fileManager.getLocationForModule(
                                         StandardLocation.CLASS_OUTPUT, msym.name.toString());
                             }
                         }
@@ -466,7 +466,7 @@ public class Modules extends JCTree.Visitor {
     private Location getModuleLocation(JavaFileObject fo, Name pkgName) throws IOException {
         // For now, just check module source path.
         // We may want to check source path as well.
-        return fileManager.getModuleLocation(StandardLocation.MODULE_SOURCE_PATH,
+        return fileManager.getLocationForModule(StandardLocation.MODULE_SOURCE_PATH,
                 fo, (pkgName == null) ? null : pkgName.toString());
     }
 
