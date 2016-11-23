@@ -1335,10 +1335,12 @@ public abstract class ClassLoader {
      * @return  A <tt>URL</tt> object for reading the resource, or
      *          <tt>null</tt> if the resource could not be found or the invoker
      *          doesn't have adequate  privileges to get the resource.
+     * @throws  NullPointerException If {@code name} is {@code null}
      *
      * @since  1.1
      */
     public URL getResource(String name) {
+        Objects.requireNonNull(name);
         URL url;
         if (parent != null) {
             url = parent.getResource(name);
@@ -1382,12 +1384,14 @@ public abstract class ClassLoader {
      *
      * @throws  IOException
      *          If I/O errors occur
+     * @throws  NullPointerException If {@code name} is {@code null}
      *
      * @see  #findResources(String)
      *
      * @since  1.2
      */
     public Enumeration<URL> getResources(String name) throws IOException {
+        Objects.requireNonNull(name);
         @SuppressWarnings("unchecked")
         Enumeration<URL>[] tmp = (Enumeration<URL>[]) new Enumeration<?>[2];
         if (parent != null) {
@@ -1434,11 +1438,14 @@ public abstract class ClassLoader {
      *          that the class loader doesn't have access to will not be in the
      *          stream.
      *
+     * @throws  NullPointerException If {@code name} is {@code null}
+     *
      * @see  #findResources(String)
      *
      * @since  9
      */
     public Stream<URL> resources(String name) {
+        Objects.requireNonNull(name);
         int characteristics = Spliterator.NONNULL | Spliterator.IMMUTABLE;
         Supplier<Spliterator<URL>> si = () -> {
             try {
@@ -1600,10 +1607,12 @@ public abstract class ClassLoader {
      *
      * @return  An input stream for reading the resource, or <tt>null</tt>
      *          if the resource could not be found
+     * @throws  NullPointerException If {@code name} is {@code null}
      *
      * @since  1.1
      */
     public InputStream getResourceAsStream(String name) {
+        Objects.requireNonNull(name);
         URL url = getResource(name);
         try {
             return url != null ? url.openStream() : null;
