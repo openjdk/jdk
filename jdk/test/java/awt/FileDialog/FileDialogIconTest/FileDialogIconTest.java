@@ -22,21 +22,28 @@
  */
 
 /* @test
- * @bug 8157163
+ * @bug 8157163 8159132
  * @summary AWT FileDialog does not inherit icon image from parent Frame
  * @requires os.family=="windows"
  * @run main FileDialogIconTest
  */
-import javax.swing.*;
-import java.awt.*;
+
+import java.awt.Color;
+import java.awt.Dialog;
+import java.awt.FileDialog;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.lang.reflect.InvocationTargetException;
+import javax.swing.SwingUtilities;
 
 public class FileDialogIconTest {
     private static Frame frame;
     private static Dialog dialog;
 
-    public static void main(final String[] args) throws InterruptedException, InvocationTargetException, AWTException {
+    public static void main(final String[] args) throws Exception {
         Robot robot;
         Point p;
         try {
@@ -51,9 +58,9 @@ public class FileDialogIconTest {
             dialog.setModal(false);
             dialog.setVisible(true);
             robot.waitForIdle();
-            robot.delay(200);
+            robot.delay(1000);
 
-            p = new Point(10, 10);
+            p = new Point(20, 20);
             SwingUtilities.convertPointToScreen(p, dialog);
             Color color = robot.getPixelColor(p.x, p.y);
             if (!Color.RED.equals(color)) {

@@ -155,7 +155,6 @@ grant codeBase "jrt:/jdk.jsobject" {
 grant codeBase "jrt:/jdk.localedata" {
     permission java.lang.RuntimePermission "accessClassInPackage.sun.text.*";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.util.*";
-    permission java.util.PropertyPermission "*", "read";
 };
 
 grant codeBase "jrt:/jdk.naming.dns" {

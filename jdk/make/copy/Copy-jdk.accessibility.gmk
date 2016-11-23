@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2104, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2104, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@ include CopyCommon.gmk
 ifeq ($(OPENJDK_TARGET_OS), windows)
   TARGETS += $(INCLUDE_DST_OS_DIR)/bridge/AccessBridgeCallbacks.h \
       $(INCLUDE_DST_OS_DIR)/bridge/AccessBridgeCalls.h \
-      $(INCLUDE_DST_OS_DIR)/bridge/AccessBridgePackages.h \
-      $(INCLUDE_DST_OS_DIR)/bridge/AccessBridgeCalls.c
+      $(INCLUDE_DST_OS_DIR)/bridge/AccessBridgePackages.h
 
   $(INCLUDE_DST_OS_DIR)/bridge/%: \
       $(JDK_TOPDIR)/src/jdk.accessibility/windows/native/include/bridge/%

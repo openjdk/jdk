@@ -25,10 +25,12 @@
 
 package sun.lwawt.macosx;
 
+import com.apple.eawt.FullScreenAdapter;
+import com.apple.eawt.FullScreenUtilities;
+import com.apple.eawt.event.FullScreenEvent;
 import java.awt.*;
 import java.awt.Dialog.ModalityType;
 import java.awt.event.*;
-import java.awt.peer.WindowPeer;
 import java.beans.*;
 import java.lang.reflect.InvocationTargetException;
 
@@ -44,6 +46,7 @@ import sun.util.logging.PlatformLogger;
 import com.apple.laf.*;
 import com.apple.laf.ClientPropertyApplicator.Property;
 import com.sun.awt.AWTUtilities;
+import sun.lwawt.LWWindowPeer.PeerType;
 
 public class CPlatformWindow extends CFRetainedResource implements PlatformWindow {
     private native long nativeCreateNSWindow(long nsViewPtr,long ownerPtr, long styleBits, double x, double y, double w, double h);
@@ -175,10 +178,24 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             c.setStyleBits(CLOSEABLE, Boolean.parseBoolean(value.toString()));
         }},
         new Property<CPlatformWindow>(WINDOW_ZOOMABLE) { public void applyProperty(final CPlatformWindow c, final Object value) {
-            c.setStyleBits(ZOOMABLE, Boolean.parseBoolean(value.toString()));
+            boolean zoomable = Boolean.parseBoolean(value.toString());
+            if (c.target instanceof RootPaneContainer
+                    && c.getPeer().getPeerType() == PeerType.FRAME) {
+                if (c.isInFullScreen && !zoomable) {
+                    c.toggleFullScreen();
+                }
+            }
+            c.setStyleBits(ZOOMABLE, zoomable);
         }},
         new Property<CPlatformWindow>(WINDOW_FULLSCREENABLE) { public void applyProperty(final CPlatformWindow c, final Object value) {
-            c.setStyleBits(FULLSCREENABLE, Boolean.parseBoolean(value.toString()));
+            boolean fullscrenable = Boolean.parseBoolean(value.toString());
+            if (c.target instanceof RootPaneContainer
+                    && c.getPeer().getPeerType() == PeerType.FRAME) {
+                if (c.isInFullScreen && !fullscrenable) {
+                    c.toggleFullScreen();
+                }
+            }
+            c.setStyleBits(FULLSCREENABLE, fullscrenable);
         }},
         new Property<CPlatformWindow>(WINDOW_SHADOW_REVALIDATE_NOW) { public void applyProperty(final CPlatformWindow c, final Object value) {
             nativeRevalidateNSWindowShadow(c.getNSWindowPtr());
@@ -209,6 +226,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private Rectangle nativeBounds = new Rectangle(0, 0, 0, 0);
     private volatile boolean isFullScreenMode;
     private boolean isFullScreenAnimationOn;
+
+    private volatile boolean isInFullScreen;
 
     private Window target;
     private LWWindowPeer peer;
@@ -308,6 +327,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             styleBits = SET(styleBits, RESIZABLE, resizable);
             if (!resizable) {
                 styleBits = SET(styleBits, ZOOMABLE, false);
+            } else {
+                setCanFullscreen(true);
             }
         }
 
@@ -680,9 +701,25 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         updateFocusabilityForAutoRequestFocus(true);
     }
 
+    private void setCanFullscreen(final boolean canFullScreen) {
+        if (target instanceof RootPaneContainer
+                && getPeer().getPeerType() == PeerType.FRAME) {
+
+            if (isInFullScreen && !canFullScreen) {
+                toggleFullScreen();
+            }
+
+            final RootPaneContainer rpc = (RootPaneContainer) target;
+            rpc.getRootPane().putClientProperty(
+                    CPlatformWindow.WINDOW_FULLSCREENABLE, canFullScreen);
+        }
+    }
+
     @Override
     public void setResizable(final boolean resizable) {
+        setCanFullscreen(resizable);
         setStyleBits(RESIZABLE, resizable);
+        setStyleBits(ZOOMABLE, resizable);
     }
 
     @Override
@@ -1074,6 +1111,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     private void windowDidEnterFullScreen() {
+        isInFullScreen = true;
         isFullScreenAnimationOn = false;
     }
 
@@ -1082,6 +1120,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     private void windowDidExitFullScreen() {
+        isInFullScreen = false;
         isFullScreenAnimationOn = false;
     }
 }

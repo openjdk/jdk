@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8165793
- * @summary Test ClassLoader.isParallelCapable() method
+ * @bug 8165793 8169435
+ * @summary Test ClassLoader.isRegisteredAsParallelCapable() method
  * @run main IsParallelCapable
  */
 
@@ -85,7 +85,7 @@ public class IsParallelCapable {
     }
 
     public static void main(String[] args) throws Exception {
-        if (!ClassLoader.getSystemClassLoader().isParallelCapable()) {
+        if (!ClassLoader.getSystemClassLoader().isRegisteredAsParallelCapable()) {
             throw new RuntimeException("System classloader not parallel capable!?");
         }
 
@@ -100,10 +100,10 @@ public class IsParallelCapable {
     private static void testClassLoaderClass(Class<? extends TestCL> klazz) {
         try {
             TestCL cl = (TestCL)klazz.newInstance();
-            if (cl.expectCapable() != cl.isParallelCapable()) {
+            if (cl.expectCapable() != cl.isRegisteredAsParallelCapable()) {
                 throw new RuntimeException(klazz + " expectCapable: " +
-                        cl.expectCapable() + ", isParallelCapable: " +
-                        cl.isParallelCapable());
+                        cl.expectCapable() + ", isRegisteredAsParallelCapable: " +
+                        cl.isRegisteredAsParallelCapable());
             } else {
                 System.out.println(klazz + " passed");
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,32 +23,25 @@
 
 /*
   @test
-  @bug 6741526
+  @bug 6741526 8004693
   @summary KeyboardFocusManager.setDefaultFocusTraversalPolicy(FocusTraversalPolicy) affects created components
-  @library ../../regtesthelpers
-  @build Sysout
   @author Andrei Dmitriev : area=awt-focus
   @run main DefaultPolicyChange_Swing
 */
 
 import java.awt.*;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import test.java.awt.regtesthelpers.Sysout;
 
 public class DefaultPolicyChange_Swing {
-    public static void main(String []s) {
-        EventQueue.invokeLater(new Runnable(){
-            public void run (){
-                DefaultPolicyChange_Swing.runTestSwing();
-            }
-        });
+
+    public static void main(final String[] s) throws Exception {
+        EventQueue.invokeAndWait(DefaultPolicyChange_Swing::runTestSwing);
     }
+
     private static void runTestSwing(){
         KeyboardFocusManager currentKFM = KeyboardFocusManager.getCurrentKeyboardFocusManager();
-        FocusTraversalPolicy defaultFTP = currentKFM.getDefaultFocusTraversalPolicy();
-        ContainerOrderFocusTraversalPolicy newFTP = new ContainerOrderFocusTraversalPolicy();
-
 
         JFrame jf = new JFrame("Test1");
         JWindow jw = new JWindow(jf);
@@ -71,22 +64,35 @@ public class DefaultPolicyChange_Swing {
             throw new RuntimeException("Failure! Swing toplevel must have LayoutFocusTraversalPolicy installed");
         }
 
+        FocusTraversalPolicy[] defaultFTP = {
+                jf.getFocusTraversalPolicy(), jw.getFocusTraversalPolicy(),
+                jd.getFocusTraversalPolicy()
+        };
+
         jf.setVisible(true);
 
         System.out.println("Now will set another policy.");
+        ContainerOrderFocusTraversalPolicy newFTP = new ContainerOrderFocusTraversalPolicy();
         currentKFM.setDefaultFocusTraversalPolicy(newFTP);
 
-        FocusTraversalPolicy resultFTP = jw.getFocusTraversalPolicy();
+        FocusTraversalPolicy[] resultFTP = {
+                jf.getFocusTraversalPolicy(), jw.getFocusTraversalPolicy(),
+                jd.getFocusTraversalPolicy()
+        };
 
         System.out.println("FTP current on jf= " + jf.getFocusTraversalPolicy());
         System.out.println("FTP current on jw= " + jw.getFocusTraversalPolicy());
         System.out.println("FTP current on jd= " + jd.getFocusTraversalPolicy());
 
-        if (!resultFTP.equals(defaultFTP)) {
-            Sysout.println("Failure! FocusTraversalPolicy should not change");
-            Sysout.println("Was: " + defaultFTP);
-            Sysout.println("Become: " + resultFTP);
-            throw new RuntimeException("Failure! FocusTraversalPolicy should not change");
+        jf.dispose();
+
+        for (int i=0; i < 3; i++) {
+            if (!resultFTP[i].equals(defaultFTP[i])) {
+                System.out.println("Failure! FocusTraversalPolicy should not change");
+                System.out.println("Was: " + defaultFTP[i]);
+                System.out.println("Become: " + resultFTP[i]);
+                throw new RuntimeException("Failure! FocusTraversalPolicy should not change");
+            }
         }
     }
 }

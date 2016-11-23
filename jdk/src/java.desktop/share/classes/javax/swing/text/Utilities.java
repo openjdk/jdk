@@ -107,7 +107,7 @@ public class Utilities {
                                              TabExpander e,
                                              int startOffset)
     {
-        return drawTabbedText(s, (int) x, (int) y, (Graphics) g, e, startOffset);
+        return drawTabbedText(null, s, x, y, g, e, startOffset, null, true);
     }
 
     /**
@@ -672,6 +672,7 @@ public class Utilities {
      *  a value of -1 will be returned.
      * @exception BadLocationException if the offset is out of range
      */
+    @SuppressWarnings("deprecation")
     public static final int getRowStart(JTextComponent c, int offs) throws BadLocationException {
         Rectangle r = c.modelToView(offs);
         if (r == null) {
@@ -702,6 +703,7 @@ public class Utilities {
      *  a value of -1 will be returned.
      * @exception BadLocationException if the offset is out of range
      */
+    @SuppressWarnings("deprecation")
     public static final int getRowEnd(JTextComponent c, int offs) throws BadLocationException {
         Rectangle2D r = c.modelToView2D(offs);
         if (r == null) {
@@ -744,6 +746,7 @@ public class Utilities {
         return getPositionAbove(c, offs, x, false);
     }
 
+    @SuppressWarnings("deprecation")
     static final int getPositionAbove(JTextComponent c, int offs, float x,
                                       boolean useFPAPI) throws BadLocationException
     {
@@ -818,6 +821,7 @@ public class Utilities {
         return getPositionBelow(c, offs, x, false);
     }
 
+    @SuppressWarnings("deprecation")
     static final int getPositionBelow(JTextComponent c, int offs, float x,
                                       boolean useFPAPI) throws BadLocationException
     {

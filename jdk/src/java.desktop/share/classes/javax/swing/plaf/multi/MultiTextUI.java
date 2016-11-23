@@ -85,6 +85,7 @@ public class MultiTextUI extends TextUI {
      * the UI obtained from the default <code>LookAndFeel</code>
      * @since 1.4
      */
+    @SuppressWarnings("deprecation")
     public String getToolTipText(JTextComponent a, Point b) {
         String returnValue =
             ((TextUI) (uis.elementAt(0))).getToolTipText(a,b);

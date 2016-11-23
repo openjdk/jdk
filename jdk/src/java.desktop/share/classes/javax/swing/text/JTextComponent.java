@@ -785,6 +785,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @param p the point to calculate a drop location for
      * @return the drop location, or <code>null</code>
      */
+    @SuppressWarnings("deprecation")
     DropLocation dropLocationForPoint(Point p) {
         Position.Bias[] bias = new Position.Bias[1];
         int index = getUI().viewToModel(this, p, bias);
@@ -1959,6 +1960,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @see javax.swing.plaf.TextUI#getToolTipText
      * @see javax.swing.ToolTipManager#registerComponent
      */
+    @SuppressWarnings("deprecation")
     public String getToolTipText(MouseEvent event) {
         String retValue = super.getToolTipText(event);
 

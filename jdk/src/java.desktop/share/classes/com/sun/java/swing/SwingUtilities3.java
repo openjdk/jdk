@@ -88,6 +88,7 @@ public class SwingUtilities3 {
      *  or {@code Applet}
      * @param isRequested the value to set vsyncRequested state to
      */
+    @SuppressWarnings("deprecation")
     public static void setVsyncRequested(Container rootContainer,
                                          boolean isRequested) {
         assert (rootContainer instanceof Applet) || (rootContainer instanceof Window);
@@ -104,6 +105,7 @@ public class SwingUtilities3 {
      * @param rootContainer topmost container. Should be either Window or Applet
      * @return {@code true} if vsync painting is requested for {@code rootContainer}
      */
+    @SuppressWarnings("deprecation")
     public static boolean isVsyncRequested(Container rootContainer) {
         assert (rootContainer instanceof Applet) || (rootContainer instanceof Window);
         return Boolean.TRUE == vsyncedMap.get(rootContainer);

@@ -2704,9 +2704,6 @@ public final class Class<T> implements java.io.Serializable,
      * Reflection support.
      */
 
-    // Caches for certain reflective results
-    private static boolean useCaches = true;
-
     // reflection data that might get invalidated when JVM TI RedefineClasses() is called
     private static class ReflectionData<T> {
         volatile Field[] declaredFields;
@@ -2739,8 +2736,7 @@ public final class Class<T> implements java.io.Serializable,
         SoftReference<ReflectionData<T>> reflectionData = this.reflectionData;
         int classRedefinedCount = this.classRedefinedCount;
         ReflectionData<T> rd;
-        if (useCaches &&
-            reflectionData != null &&
+        if (reflectionData != null &&
             (rd = reflectionData.get()) != null &&
             rd.redefinedCount == classRedefinedCount) {
             return rd;
@@ -2752,8 +2748,6 @@ public final class Class<T> implements java.io.Serializable,
 
     private ReflectionData<T> newReflectionData(SoftReference<ReflectionData<T>> oldReflectionData,
                                                 int classRedefinedCount) {
-        if (!useCaches) return null;
-
         while (true) {
             ReflectionData<T> rd = new ReflectionData<>(classRedefinedCount);
             // try to CAS it...
@@ -2819,7 +2813,6 @@ public final class Class<T> implements java.io.Serializable,
     // be propagated to the outside world, but must instead be copied
     // via ReflectionFactory.copyField.
     private Field[] privateGetDeclaredFields(boolean publicOnly) {
-        checkInitted();
         Field[] res;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
@@ -2842,7 +2835,6 @@ public final class Class<T> implements java.io.Serializable,
     // be propagated to the outside world, but must instead be copied
     // via ReflectionFactory.copyField.
     private Field[] privateGetPublicFields(Set<Class<?>> traversedInterfaces) {
-        checkInitted();
         Field[] res;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
@@ -2902,7 +2894,6 @@ public final class Class<T> implements java.io.Serializable,
     // objects must NOT be propagated to the outside world, but must
     // instead be copied via ReflectionFactory.copyConstructor.
     private Constructor<T>[] privateGetDeclaredConstructors(boolean publicOnly) {
-        checkInitted();
         Constructor<T>[] res;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
@@ -2937,7 +2928,6 @@ public final class Class<T> implements java.io.Serializable,
     // be propagated to the outside world, but must instead be copied
     // via ReflectionFactory.copyMethod.
     private Method[] privateGetDeclaredMethods(boolean publicOnly) {
-        checkInitted();
         Method[] res;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
@@ -3134,7 +3124,6 @@ public final class Class<T> implements java.io.Serializable,
     // be propagated to the outside world, but must instead be copied
     // via ReflectionFactory.copyMethod.
     private Method[] privateGetPublicMethods() {
-        checkInitted();
         Method[] res;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
@@ -3445,7 +3434,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since  1.4
      */
     public boolean desiredAssertionStatus() {
-        ClassLoader loader = getClassLoader();
+        ClassLoader loader = getClassLoader0();
         // If the loader is null this is a system class, so ask the VM
         if (loader == null)
             return desiredAssertionStatus0(this);
@@ -3489,39 +3478,6 @@ public final class Class<T> implements java.io.Serializable,
         return reflectionFactory;
     }
     private static ReflectionFactory reflectionFactory;
-
-    // To be able to query system properties as soon as they're available
-    private static boolean initted = false;
-    private static void checkInitted() {
-        if (initted) return;
-        AccessController.doPrivileged(new PrivilegedAction<>() {
-                public Void run() {
-                    // Tests to ensure the system properties table is fully
-                    // initialized. This is needed because reflection code is
-                    // called very early in the initialization process (before
-                    // command-line arguments have been parsed and therefore
-                    // these user-settable properties installed.) We assume that
-                    // if System.out is non-null then the System class has been
-                    // fully initialized and that the bulk of the startup code
-                    // has been run.
-
-                    if (System.out == null) {
-                        // java.lang.System not yet fully initialized
-                        return null;
-                    }
-
-                    // Doesn't use Boolean.getBoolean to avoid class init.
-                    String val =
-                        System.getProperty("sun.reflect.noCaches");
-                    if (val != null && val.equals("true")) {
-                        useCaches = false;
-                    }
-
-                    initted = true;
-                    return null;
-                }
-            });
-    }
 
     /**
      * Returns the elements of this enum class or null if this

@@ -22,6 +22,7 @@
  */
 
 import java.io.*;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.ProtocolFamily;
 import java.nio.channels.Channel;
@@ -31,6 +32,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
+import java.time.LocalTime;
 import static java.net.StandardSocketOptions.SO_REUSEADDR;
 import static java.net.StandardSocketOptions.SO_REUSEPORT;
 
@@ -98,7 +100,37 @@ public class RMIDSelectorProvider extends SelectorProvider {
                 channel.setOption(SO_REUSEPORT, true);
             }
 
-            channel.bind(new InetSocketAddress(0));
+            // when it comes here, these properties should have been set with
+            // a valid value, but assign a default value anyway.
+            long timeout = Long.getLong(
+                    "test.java.rmi.testlibrary.RMIDSelectorProvider.timeout",
+                    200_000);
+            long deadline = System.currentTimeMillis() + timeout;
+            int port = Integer.getInteger(
+                    "test.java.rmi.testlibrary.RMIDSelectorProvider.port", 0);
+            while (true) {
+                try {
+                    channel.bind(new InetSocketAddress(port));
+                    break;
+                } catch (BindException ex) {
+                    System.out.format("RMIDSelectorProvider: "
+                            + "failed to bind to port %d due to \"%s\", at %s%n",
+                            port, ex.getMessage(), LocalTime.now());
+                }
+                if (System.currentTimeMillis() > deadline) {
+                    System.out.format("RMIDSelectorProvider: "
+                            + "fail to bind to port %d after trying for "
+                            + "%d seconds, exiting rmid process, at %s%n",
+                            port, timeout/1000, LocalTime.now());
+                    channel.close();
+                    // can not start rmid on specific port,
+                    // there is no need to continue run rmid.
+                    System.exit(1);
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch(InterruptedException ignore) { }
+            }
 
             System.out.println(RMID.EPHEMERAL_MSG + channel.socket().getLocalPort());
         }
