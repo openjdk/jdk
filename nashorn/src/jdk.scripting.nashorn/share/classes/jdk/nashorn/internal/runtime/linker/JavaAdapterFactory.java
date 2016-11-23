@@ -234,7 +234,7 @@ public final class JavaAdapterFactory {
    /**
      * For a given class, create its adapter class and associated info.
      *
-     * @param type the class for which the adapter is created
+     * @param types the class and interfaces for which the adapter is created
      *
      * @return the adapter info for the class.
      */
