@@ -50,7 +50,7 @@ TEE       = tee
 UNAME     = uname
 UNIQ      = uniq
 WC        = wc
-ZIP       = zip
+ZIPEXE    = zip
 
 define NEWLINE
 
@@ -213,7 +213,7 @@ endif
 ZIP_UP_RESULTS = ( $(MKDIR) -p `$(DIRNAME) $(ARCHIVE_BUNDLE)`     \
 	           && $(CD) $(ABS_TEST_OUTPUT_DIR)             \
 	           && $(CHMOD) -R a+r . \
-	           && $(ZIP) -q -r $(ARCHIVE_BUNDLE) . )
+	           && $(ZIPEXE) -q -r $(ARCHIVE_BUNDLE) . )
 
 # important results files
 SUMMARY_TXT = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTreport/text/summary.txt")
@@ -327,7 +327,7 @@ ifdef NUM_CORES
   else ifeq ($(shell expr $(CONCURRENCY) \> 12), 1)
     CONCURRENCY := 12
   endif
-else 
+else
   CONCURRENCY := 1
 endif
 JTREG_BASIC_OPTIONS += -concurrency:$(CONCURRENCY)
