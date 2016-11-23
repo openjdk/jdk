@@ -719,11 +719,11 @@ class Eval {
 
     /**
      * If there are classes to load, loads by calling the execution engine.
-     * @param classbytecoes names of the classes to load.
+     * @param classbytecodes names of the classes to load.
      */
-    private void load(Collection<ClassBytecodes> classbytecoes) {
-        if (!classbytecoes.isEmpty()) {
-            ClassBytecodes[] cbcs = classbytecoes.toArray(new ClassBytecodes[classbytecoes.size()]);
+    private void load(Collection<ClassBytecodes> classbytecodes) {
+        if (!classbytecodes.isEmpty()) {
+            ClassBytecodes[] cbcs = classbytecodes.toArray(new ClassBytecodes[classbytecodes.size()]);
             try {
                 state.executionControl().load(cbcs);
                 state.classTracker.markLoaded(cbcs);
@@ -731,6 +731,7 @@ class Eval {
                 state.classTracker.markLoaded(cbcs, ex.installed());
             } catch (NotImplementedException ex) {
                 state.debug(ex, "Seriously?!? load not implemented");
+                state.closeDown();
             } catch (EngineTerminationException ex) {
                 state.closeDown();
             }
