@@ -25,6 +25,7 @@ package requires;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -62,7 +63,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.debug", vmDebug());
         vmGC(map); // vm.gc.X = true/false
 
-        dump(map);
+        VMProps.dump(map);
         return map;
     }
 
@@ -180,7 +181,7 @@ public class VMProps implements Callable<Map<String, String>> {
      *
      * @param map
      */
-    protected void dump(Map<String, String> map) {
+    protected static void dump(Map<String, String> map) {
         String dumpFileName = System.getProperty("vmprops.dump");
         if (dumpFileName == null) {
             return;
@@ -188,7 +189,7 @@ public class VMProps implements Callable<Map<String, String>> {
         List<String> lines = new ArrayList<>();
         map.forEach((k, v) -> lines.add(k + ":" + v));
         try {
-            Files.write(Paths.get(dumpFileName), lines);
+            Files.write(Paths.get(dumpFileName), lines, StandardOpenOption.APPEND);
         } catch (IOException e) {
             throw new RuntimeException("Failed to dump properties into '"
                     + dumpFileName + "'", e);
