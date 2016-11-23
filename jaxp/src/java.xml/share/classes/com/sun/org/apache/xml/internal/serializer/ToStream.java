@@ -1,15 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements. See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership. The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the  "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -19,12 +17,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: ToStream.java,v 1.4 2005/11/10 06:43:26 suresh_emailid Exp $
- */
+
 package com.sun.org.apache.xml.internal.serializer;
 
 import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
+import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
+import com.sun.org.apache.xml.internal.serializer.utils.Utils;
+import com.sun.org.apache.xml.internal.serializer.utils.WrappedRuntimeException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -36,21 +35,14 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.ArrayList;
-
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-
-import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
-import com.sun.org.apache.xml.internal.serializer.utils.Utils;
-import com.sun.org.apache.xml.internal.serializer.utils.WrappedRuntimeException;
 import org.w3c.dom.Node;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-//import com.sun.media.sound.IESecurity;
 
 /**
  * This abstract class is a base class for other stream
@@ -58,15 +50,13 @@ import org.xml.sax.SAXException;
  *
  * @xsl.usage internal
  */
-abstract public class ToStream extends SerializerBase
-{
+abstract public class ToStream extends SerializerBase {
 
     private static final String COMMENT_BEGIN = "<!--";
     private static final String COMMENT_END = "-->";
 
     /** Stack to keep track of disabling output escaping. */
     protected BoolStack m_disableOutputEscapingStates = new BoolStack();
-
 
     /**
      * The encoding information associated with this serializer.
@@ -87,20 +77,16 @@ abstract public class ToStream extends SerializerBase
      */
     java.lang.reflect.Method m_canConvertMeth;
 
-
-
     /**
      * Boolean that tells if we already tried to get the converter.
      */
     boolean m_triedToGetConverter = false;
-
 
     /**
      * Opaque reference to the sun.io.CharToByteConverter for this
      * encoding.
      */
     Object m_charToByteConverter = null;
-
 
     /**
      * Stack to keep track of whether or not we need to
@@ -138,7 +124,6 @@ abstract public class ToStream extends SerializerBase
      * to escaping.
      */
     protected int m_maxCharacter = Encodings.getLastPrintable();
-
 
     /**
      * The system line separator for writing out line breaks.
@@ -188,8 +173,8 @@ abstract public class ToStream extends SerializerBase
     protected boolean m_inDoctype = false;
 
     /**
-       * Flag to quickly tell if the encoding is UTF8.
-       */
+     * Flag to quickly tell if the encoding is UTF8.
+     */
     boolean m_isUTF8 = false;
 
     /**
@@ -203,29 +188,23 @@ abstract public class ToStream extends SerializerBase
      */
     private boolean m_expandDTDEntities = true;
 
-
     /**
      * Default constructor
      */
-    public ToStream()
-    {
-    }
+    public ToStream() { }
 
     /**
      * This helper method to writes out "]]>" when closing a CDATA section.
      *
      * @throws org.xml.sax.SAXException
      */
-    protected void closeCDATA() throws org.xml.sax.SAXException
-    {
-        try
-        {
+    protected void closeCDATA() throws org.xml.sax.SAXException {
+        try {
             m_writer.write(CDATA_DELIMITER_CLOSE);
             // write out a CDATA section closing "]]>"
             m_cdataTagOpen = false; // Remember that we have done so.
         }
-        catch (IOException e)
-        {
+        catch (IOException e) {
             throw new SAXException(e);
         }
     }
@@ -237,18 +216,11 @@ abstract public class ToStream extends SerializerBase
      * @param node Node to serialize.
      * @throws IOException An I/O exception occured while serializing
      */
-    public void serialize(Node node) throws IOException
-    {
-
-        try
-        {
-            TreeWalker walker =
-                new TreeWalker(this);
-
+    public void serialize(Node node) throws IOException {
+        try {
+            TreeWalker walker = new TreeWalker(this);
             walker.traverse(node);
-        }
-        catch (org.xml.sax.SAXException se)
-        {
+        } catch (org.xml.sax.SAXException se) {
             throw new WrappedRuntimeException(se);
         }
     }
@@ -260,8 +232,7 @@ abstract public class ToStream extends SerializerBase
      *
      * NEEDSDOC ($objectName$) @return
      */
-    static final boolean isUTF16Surrogate(char c)
-    {
+    static final boolean isUTF16Surrogate(char c) {
         return (c & 0xFC00) == 0xD800;
     }
 
@@ -275,49 +246,40 @@ abstract public class ToStream extends SerializerBase
      *
      * @throws org.xml.sax.SAXException
      */
-    protected final void flushWriter() throws org.xml.sax.SAXException
-    {
-        final java.io.Writer writer = m_writer;
-        if (null != writer)
-        {
-            try
-            {
-                if (writer instanceof WriterToUTF8Buffered)
-                {
+    protected final void flushWriter() throws org.xml.sax.SAXException {
+        final Writer writer = m_writer;
+        if (null != writer) {
+            try {
+                if (writer instanceof WriterToUTF8Buffered) {
                     if (m_shouldFlush)
-                         ((WriterToUTF8Buffered) writer).flush();
+                        ((WriterToUTF8Buffered)writer).flush();
                     else
-                         ((WriterToUTF8Buffered) writer).flushBuffer();
+                        ((WriterToUTF8Buffered)writer).flushBuffer();
                 }
-                if (writer instanceof WriterToASCI)
-                {
+                if (writer instanceof WriterToASCI) {
                     if (m_shouldFlush)
                         writer.flush();
-                }
-                else
-                {
+                } else {
                     // Flush always.
                     // Not a great thing if the writer was created
                     // by this class, but don't have a choice.
                     writer.flush();
                 }
-            }
-            catch (IOException ioe)
-            {
+            } catch (IOException ioe) {
                 throw new org.xml.sax.SAXException(ioe);
             }
         }
     }
 
     OutputStream m_outputStream;
+
     /**
      * Get the output stream where the events will be serialized to.
      *
      * @return reference to the result stream, or null of only a writer was
      * set.
      */
-    public OutputStream getOutputStream()
-    {
+    public OutputStream getOutputStream() {
         return m_outputStream;
     }
 
@@ -341,9 +303,8 @@ abstract public class ToStream extends SerializerBase
         // Do not inline external DTD
         if (m_inExternalDTD)
             return;
-        try
-        {
-            final java.io.Writer writer = m_writer;
+        try {
+            final Writer writer = m_writer;
             DTDprolog();
 
             writer.write("<!ELEMENT ");
@@ -379,13 +340,10 @@ abstract public class ToStream extends SerializerBase
         // Do not inline external DTD
         if (m_inExternalDTD)
             return;
-        try
-        {
+        try {
             DTDprolog();
             outputEntityDecl(name, value);
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             throw new SAXException(e);
         }
 
@@ -401,7 +359,7 @@ abstract public class ToStream extends SerializerBase
      */
     void outputEntityDecl(String name, String value) throws IOException
     {
-        final java.io.Writer writer = m_writer;
+        final Writer writer = m_writer;
         writer.write("<!ENTITY ");
         writer.write(name);
         writer.write(" \"");
@@ -415,8 +373,7 @@ abstract public class ToStream extends SerializerBase
      *
      * @throws org.xml.sax.SAXException
      */
-    protected final void outputLineSep() throws IOException
-    {
+    protected final void outputLineSep() throws IOException {
         m_writer.write(m_lineSep, 0, m_lineSepLen);
     }
 
@@ -594,20 +551,17 @@ abstract public class ToStream extends SerializerBase
      *
      * @param format The output format to use
      */
-    public void setOutputFormat(Properties format)
-    {
+    public void setOutputFormat(Properties format) {
         boolean shouldFlush = m_shouldFlush;
 
-        if (format != null)
-        {
+        if (format != null) {
             // Set the default values first,
             // and the non-default values after that,
             // just in case there is some unexpected
             // residual values left over from over-ridden default values
             Enumeration propNames;
             propNames = format.propertyNames();
-            while (propNames.hasMoreElements())
-            {
+            while (propNames.hasMoreElements()) {
                 String key = (String) propNames.nextElement();
                 // Get the value, possibly a default value
                 String value = format.getProperty(key);
@@ -629,17 +583,10 @@ abstract public class ToStream extends SerializerBase
         String entitiesFileName =
             (String) format.get(OutputPropertiesFactory.S_KEY_ENTITIES);
 
-        if (null != entitiesFileName)
-        {
-
-            String method =
-                (String) format.get(OutputKeys.METHOD);
-
+        if (null != entitiesFileName) {
+            String method = (String) format.get(OutputKeys.METHOD);
             m_charInfo = CharInfo.getCharInfo(entitiesFileName, method);
         }
-
-
-
 
         m_shouldFlush = shouldFlush;
     }
@@ -678,8 +625,7 @@ abstract public class ToStream extends SerializerBase
      *
      * @param writer The output writer stream
      */
-    public void setWriter(Writer writer)
-    {
+    public void setWriter(Writer writer) {
         setWriterInternal(writer, true);
     }
 
@@ -716,8 +662,7 @@ abstract public class ToStream extends SerializerBase
      * operating systems end-of-line separator.
      * @return The previously set value of the serializer.
      */
-    public boolean setLineSepUse(boolean use_sytem_line_break)
-    {
+    public boolean setLineSepUse(boolean use_sytem_line_break) {
         boolean oldValue = m_lineSepUse;
         m_lineSepUse = use_sytem_line_break;
         return oldValue;
@@ -734,8 +679,7 @@ abstract public class ToStream extends SerializerBase
      *
      * @param output The output stream
      */
-    public void setOutputStream(OutputStream output)
-    {
+    public void setOutputStream(OutputStream output) {
         setOutputStreamInternal(output, true);
     }
 
@@ -848,7 +792,7 @@ abstract public class ToStream extends SerializerBase
      */
     private void printSpace(int n) throws IOException
     {
-        final java.io.Writer writer = m_writer;
+        final Writer writer = m_writer;
         for (int i = 0; i < n; i++)
         {
             writer.write(' ');
@@ -888,7 +832,7 @@ abstract public class ToStream extends SerializerBase
             return;
         try
         {
-            final java.io.Writer writer = m_writer;
+            final Writer writer = m_writer;
             DTDprolog();
 
             writer.write("<!ATTLIST ");
@@ -1038,7 +982,7 @@ abstract public class ToStream extends SerializerBase
                             + Integer.toHexString(low)}));
         }
 
-        final java.io.Writer writer = m_writer;
+        final Writer writer = m_writer;
 
         // If we make it to here we have a valid high, low surrogate pair
         if (m_encodingInfo.isInEncoding(c,low)) {
@@ -1089,7 +1033,7 @@ abstract public class ToStream extends SerializerBase
      * @throws java.io.IOException
      */
     protected int accumDefaultEntity(
-        java.io.Writer writer,
+        Writer writer,
         char ch,
         int i,
         char[] chars,
@@ -1146,7 +1090,7 @@ abstract public class ToStream extends SerializerBase
         boolean useSystemLineSeparator)
         throws IOException, org.xml.sax.SAXException
     {
-        final java.io.Writer writer = m_writer;
+        final Writer writer = m_writer;
         int end = start + length;
 
         for (int i = start; i < end; i++)
@@ -1855,7 +1799,7 @@ abstract public class ToStream extends SerializerBase
 
             m_startNewLine = true;
 
-            final java.io.Writer writer = m_writer;
+            final Writer writer = m_writer;
             writer.write('<');
             writer.write(name);
         }
@@ -1926,7 +1870,7 @@ abstract public class ToStream extends SerializerBase
             closeCDATA();
         try
         {
-            final java.io.Writer writer = m_writer;
+            final Writer writer = m_writer;
             writer.write("<!DOCTYPE ");
             writer.write(name);
 
@@ -1987,7 +1931,7 @@ abstract public class ToStream extends SerializerBase
      * @throws java.io.IOException
      * @throws org.xml.sax.SAXException
      */
-    public void processAttributes(java.io.Writer writer, int nAttrs) throws IOException, SAXException
+    public void processAttributes(Writer writer, int nAttrs) throws IOException, SAXException
     {
             /* real SAX attributes are not passed in, so process the
              * attributes that were collected after the startElement call.
@@ -2084,7 +2028,7 @@ abstract public class ToStream extends SerializerBase
 
         try
         {
-            final java.io.Writer writer = m_writer;
+            final Writer writer = m_writer;
             if (m_elemContext.m_startTagOpen)
             {
                 if (m_tracer != null)
@@ -2290,7 +2234,7 @@ abstract public class ToStream extends SerializerBase
             if (shouldIndent() && !m_isStandalone)
                 indent();
 
-            final java.io.Writer writer = m_writer;
+            final Writer writer = m_writer;
             writer.write(COMMENT_BEGIN);
             // Detect occurrences of two consecutive dashes, handle as necessary.
             for (int i = start; i < limit; i++)
@@ -2370,7 +2314,7 @@ abstract public class ToStream extends SerializerBase
                 outputDocTypeDecl(m_elemContext.m_elementName, false);
                 m_needToOutputDocTypeDecl = false;
             }
-            final java.io.Writer writer = m_writer;
+            final Writer writer = m_writer;
             if (!m_inDoctype)
                 writer.write("]>");
             else
@@ -2598,15 +2542,12 @@ abstract public class ToStream extends SerializerBase
      * OutputProperties. Eventually this method should go away and a call
      * to setCdataSectionElements(ArrayList<String> v) should be made directly.
      */
-    private void setCdataSectionElements(String key, Properties props)
-    {
-
+    private void setCdataSectionElements(String key, Properties props) {
         String s = props.getProperty(key);
 
-        if (null != s)
-        {
+        if (null != s) {
             // ArrayList<String> of URI/LocalName pairs
-            ArrayList<String> v = new ArrayList<>();
+            ArrayList<String> al = new ArrayList<>();
             int l = s.length();
             boolean inCurly = false;
             StringBuilder buf = new StringBuilder();
@@ -2624,7 +2565,7 @@ abstract public class ToStream extends SerializerBase
                     {
                         if (buf.length() > 0)
                         {
-                            addCdataSectionElement(buf.toString(), v);
+                            addCdataSectionElement(buf.toString(), al);
                             buf.setLength(0);
                         }
                         continue;
@@ -2640,11 +2581,11 @@ abstract public class ToStream extends SerializerBase
 
             if (buf.length() > 0)
             {
-                addCdataSectionElement(buf.toString(), v);
+                addCdataSectionElement(buf.toString(), al);
                 buf.setLength(0);
             }
             // call the official, public method to set the collected names
-            setCdataSectionElements(v);
+            setCdataSectionElements(al);
         }
 
     }
@@ -2656,25 +2597,19 @@ abstract public class ToStream extends SerializerBase
      *
      * @return a QName object
      */
-    private void addCdataSectionElement(String URI_and_localName, ArrayList<String> v)
-    {
-
-        StringTokenizer tokenizer =
-            new StringTokenizer(URI_and_localName, "{}", false);
+    private void addCdataSectionElement(String URI_and_localName, ArrayList<String> al) {
+        StringTokenizer tokenizer = new StringTokenizer(URI_and_localName, "{}", false);
         String s1 = tokenizer.nextToken();
         String s2 = tokenizer.hasMoreTokens() ? tokenizer.nextToken() : null;
 
-        if (null == s2)
-        {
+        if (null == s2) {
             // add null URI and the local name
-            v.add(null);
-            v.add(s1);
-        }
-        else
-        {
+            al.add(null);
+            al.add(s1);
+        } else {
             // add URI, then local name
-            v.add(s1);
-            v.add(s2);
+            al.add(s1);
+            al.add(s2);
         }
     }
 
@@ -2685,25 +2620,20 @@ abstract public class ToStream extends SerializerBase
      *
      * @param URI_and_localNames an ArrayList of pairs of Strings (URI/local)
      */
-    public void setCdataSectionElements(ArrayList<String> URI_and_localNames)
-    {
+    public void setCdataSectionElements(ArrayList<String> URI_and_localNames) {
         // convert to the new way.
-        if (URI_and_localNames != null)
-        {
+        if (URI_and_localNames != null) {
             final int len = URI_and_localNames.size() - 1;
-            if (len > 0)
-            {
+            if (len > 0) {
                 final StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < len; i += 2)
-                {
+                for (int i = 0; i < len; i += 2) {
                     // whitspace separated "{uri1}local1 {uri2}local2 ..."
                     if (i != 0)
                         sb.append(' ');
                     final String uri = (String) URI_and_localNames.get(i);
                     final String localName =
                         (String) URI_and_localNames.get(i + 1);
-                    if (uri != null)
-                    {
+                    if (uri != null) {
                         // If there is no URI don't put this in, just the localName then.
                         sb.append('{');
                         sb.append(uri);
@@ -3007,25 +2937,19 @@ abstract public class ToStream extends SerializerBase
      * exist. This method should be called everytime an attribute is added,
      * or when an attribute value is changed, or an element is created.
      */
-
-    protected void firePseudoAttributes()
-    {
-        if (m_tracer != null)
-        {
-            try
-            {
+    protected void firePseudoAttributes() {
+        if (m_tracer != null) {
+            try {
                 // flush out the "<elemName" if not already flushed
                 m_writer.flush();
 
                 // make a StringBuffer to write the name="value" pairs to.
                 StringBuffer sb = new StringBuffer();
                 int nAttrs = m_attributes.getLength();
-                if (nAttrs > 0)
-                {
+                if (nAttrs > 0) {
                     // make a writer that internally appends to the same
                     // StringBuffer
-                    java.io.Writer writer =
-                        new ToStream.WritertoStringBuffer(sb);
+                    Writer writer = new ToStream.WritertoStringBuffer(sb);
 
                     processAttributes(writer, nAttrs);
                     // Don't clear the attributes!
@@ -3042,13 +2966,9 @@ abstract public class ToStream extends SerializerBase
                     ch,
                     0,
                     ch.length);
-            }
-            catch (IOException ioe)
-            {
+            } catch (IOException ioe) {
                 // ignore ?
-            }
-            catch (SAXException se)
-            {
+            } catch (SAXException se) {
                 // ignore ?
             }
         }
@@ -3060,41 +2980,35 @@ abstract public class ToStream extends SerializerBase
      * In this manner trace events, and the real writing of attributes will use
      * the same code.
      */
-    private class WritertoStringBuffer extends java.io.Writer
-    {
+    private class WritertoStringBuffer extends Writer {
         final private StringBuffer m_stringbuf;
+
         /**
          * @see java.io.Writer#write(char[], int, int)
          */
-        WritertoStringBuffer(StringBuffer sb)
-        {
+        WritertoStringBuffer(StringBuffer sb) {
             m_stringbuf = sb;
         }
 
-        public void write(char[] arg0, int arg1, int arg2) throws IOException
-        {
+        public void write(char[] arg0, int arg1, int arg2) throws IOException {
             m_stringbuf.append(arg0, arg1, arg2);
         }
+
         /**
          * @see java.io.Writer#flush()
          */
-        public void flush() throws IOException
-        {
-        }
+        public void flush() throws IOException {}
+
         /**
          * @see java.io.Writer#close()
          */
-        public void close() throws IOException
-        {
-        }
+        public void close() throws IOException {}
 
-        public void write(int i)
-        {
+        public void write(int i) {
             m_stringbuf.append((char) i);
         }
 
-        public void write(String s)
-        {
+        public void write(String s) {
             m_stringbuf.append(s);
         }
     }
@@ -3104,12 +3018,11 @@ abstract public class ToStream extends SerializerBase
      */
     public void setTransformer(Transformer transformer) {
         super.setTransformer(transformer);
-        if (m_tracer != null
-         && !(m_writer instanceof SerializerTraceWriter)  )
+        if (m_tracer != null && !(m_writer instanceof SerializerTraceWriter)) {
             m_writer = new SerializerTraceWriter(m_writer, m_tracer);
-
-
+        }
     }
+
     /**
      * Try's to reset the super class and reset this class for
      * re-use, so that you don't need to create a new serializer
@@ -3117,11 +3030,9 @@ abstract public class ToStream extends SerializerBase
      *
      * @return true if the class was successfuly reset.
      */
-    public boolean reset()
-    {
+    public boolean reset() {
         boolean wasReset = false;
-        if (super.reset())
-        {
+        if (super.reset()) {
             resetToStream();
             wasReset = true;
         }
@@ -3132,14 +3043,12 @@ abstract public class ToStream extends SerializerBase
      * Reset all of the fields owned by ToStream class
      *
      */
-    private void resetToStream()
-    {
+    private void resetToStream() {
          this.m_cdataStartCalled = false;
          /* The stream is being reset. It is one of
           * ToXMLStream, ToHTMLStream ... and this type can't be changed
           * so neither should m_charInfo which is associated with the
           * type of Stream. Just leave m_charInfo as-is for the next re-use.
-          *
           */
          // this.m_charInfo = null; // don't set to null
 
@@ -3183,173 +3092,150 @@ abstract public class ToStream extends SerializerBase
      *
      * @xsl.usage internal
      */
-    static final class BoolStack
-    {
+    static final class BoolStack {
+        /** Array of boolean values */
+        private boolean m_values[];
 
-      /** Array of boolean values          */
-      private boolean m_values[];
+        /** Array size allocated */
+        private int m_allocatedSize;
 
-      /** Array size allocated           */
-      private int m_allocatedSize;
+        /** Index into the array of booleans */
+        private int m_index;
 
-      /** Index into the array of booleans          */
-      private int m_index;
+        /**
+         * Default constructor.  Note that the default
+         * block size is very small, for small lists.
+         */
+        public BoolStack() {
+            this(32);
+        }
 
-      /**
-       * Default constructor.  Note that the default
-       * block size is very small, for small lists.
-       */
-      public BoolStack()
-      {
-        this(32);
-      }
+        /**
+         * Construct a IntVector, using the given block size.
+         *
+         * @param size array size to allocate
+         */
+        public BoolStack(int size) {
+            m_allocatedSize = size;
+            m_values = new boolean[size];
+            m_index = -1;
+        }
 
-      /**
-       * Construct a IntVector, using the given block size.
-       *
-       * @param size array size to allocate
-       */
-      public BoolStack(int size)
-      {
+        /**
+         * Get the length of the list.
+         *
+         * @return Current length of the list
+         */
+        public final int size() {
+            return m_index + 1;
+        }
 
-        m_allocatedSize = size;
-        m_values = new boolean[size];
-        m_index = -1;
-      }
+        /**
+         * Clears the stack.
+         *
+         */
+        public final void clear() {
+            m_index = -1;
+        }
 
-      /**
-       * Get the length of the list.
-       *
-       * @return Current length of the list
-       */
-      public final int size()
-      {
-        return m_index + 1;
-      }
+        /**
+         * Pushes an item onto the top of this stack.
+         *
+         *
+         * @param val the boolean to be pushed onto this stack.
+         * @return  the <code>item</code> argument.
+         */
+        public final boolean push(boolean val) {
+            if (m_index == m_allocatedSize - 1)
+                grow();
 
-      /**
-       * Clears the stack.
-       *
-       */
-      public final void clear()
-      {
-        m_index = -1;
-      }
+            return (m_values[++m_index] = val);
+        }
 
-      /**
-       * Pushes an item onto the top of this stack.
-       *
-       *
-       * @param val the boolean to be pushed onto this stack.
-       * @return  the <code>item</code> argument.
-       */
-      public final boolean push(boolean val)
-      {
+        /**
+         * Removes the object at the top of this stack and returns that
+         * object as the value of this function.
+         *
+         * @return     The object at the top of this stack.
+         * @throws  EmptyStackException  if this stack is empty.
+         */
+        public final boolean pop() {
+            return m_values[m_index--];
+        }
 
-        if (m_index == m_allocatedSize - 1)
-          grow();
+        /**
+         * Removes the object at the top of this stack and returns the
+         * next object at the top as the value of this function.
+         *
+         *
+         * @return Next object to the top or false if none there
+         */
+        public final boolean popAndTop() {
+            m_index--;
+            return (m_index >= 0) ? m_values[m_index] : false;
+        }
 
-        return (m_values[++m_index] = val);
-      }
+        /**
+         * Set the item at the top of this stack
+         *
+         *
+         * @param b Object to set at the top of this stack
+         */
+        public final void setTop(boolean b) {
+            m_values[m_index] = b;
+        }
 
-      /**
-       * Removes the object at the top of this stack and returns that
-       * object as the value of this function.
-       *
-       * @return     The object at the top of this stack.
-       * @throws  EmptyStackException  if this stack is empty.
-       */
-      public final boolean pop()
-      {
-        return m_values[m_index--];
-      }
+        /**
+         * Looks at the object at the top of this stack without removing it
+         * from the stack.
+         *
+         * @return     the object at the top of this stack.
+         * @throws  EmptyStackException  if this stack is empty.
+         */
+        public final boolean peek() {
+            return m_values[m_index];
+        }
 
-      /**
-       * Removes the object at the top of this stack and returns the
-       * next object at the top as the value of this function.
-       *
-       *
-       * @return Next object to the top or false if none there
-       */
-      public final boolean popAndTop()
-      {
+        /**
+         * Looks at the object at the top of this stack without removing it
+         * from the stack.  If the stack is empty, it returns false.
+         *
+         * @return     the object at the top of this stack.
+         */
+        public final boolean peekOrFalse() {
+            return (m_index > -1) ? m_values[m_index] : false;
+        }
 
-        m_index--;
+        /**
+         * Looks at the object at the top of this stack without removing it
+         * from the stack.  If the stack is empty, it returns true.
+         *
+         * @return     the object at the top of this stack.
+         */
+        public final boolean peekOrTrue() {
+            return (m_index > -1) ? m_values[m_index] : true;
+        }
 
-        return (m_index >= 0) ? m_values[m_index] : false;
-      }
+        /**
+         * Tests if this stack is empty.
+         *
+         * @return  <code>true</code> if this stack is empty;
+         *          <code>false</code> otherwise.
+         */
+        public boolean isEmpty() {
+            return (m_index == -1);
+        }
 
-      /**
-       * Set the item at the top of this stack
-       *
-       *
-       * @param b Object to set at the top of this stack
-       */
-      public final void setTop(boolean b)
-      {
-        m_values[m_index] = b;
-      }
-
-      /**
-       * Looks at the object at the top of this stack without removing it
-       * from the stack.
-       *
-       * @return     the object at the top of this stack.
-       * @throws  EmptyStackException  if this stack is empty.
-       */
-      public final boolean peek()
-      {
-        return m_values[m_index];
-      }
-
-      /**
-       * Looks at the object at the top of this stack without removing it
-       * from the stack.  If the stack is empty, it returns false.
-       *
-       * @return     the object at the top of this stack.
-       */
-      public final boolean peekOrFalse()
-      {
-        return (m_index > -1) ? m_values[m_index] : false;
-      }
-
-      /**
-       * Looks at the object at the top of this stack without removing it
-       * from the stack.  If the stack is empty, it returns true.
-       *
-       * @return     the object at the top of this stack.
-       */
-      public final boolean peekOrTrue()
-      {
-        return (m_index > -1) ? m_values[m_index] : true;
-      }
-
-      /**
-       * Tests if this stack is empty.
-       *
-       * @return  <code>true</code> if this stack is empty;
-       *          <code>false</code> otherwise.
-       */
-      public boolean isEmpty()
-      {
-        return (m_index == -1);
-      }
-
-      /**
-       * Grows the size of the stack
-       *
-       */
-      private void grow()
-      {
-
-        m_allocatedSize *= 2;
-
-        boolean newVector[] = new boolean[m_allocatedSize];
-
-        System.arraycopy(m_values, 0, newVector, 0, m_index + 1);
-
-        m_values = newVector;
-      }
+        /**
+         * Grows the size of the stack
+         *
+         */
+        private void grow() {
+            m_allocatedSize *= 2;
+            boolean newVector[] = new boolean[m_allocatedSize];
+            System.arraycopy(m_values, 0, newVector, 0, m_index + 1);
+            m_values = newVector;
+        }
     }
 
     // Implement DTDHandler
@@ -3421,14 +3307,12 @@ abstract public class ToStream extends SerializerBase
      * @throws IOException
      */
     private void DTDprolog() throws SAXException, IOException {
-        final java.io.Writer writer = m_writer;
-        if (m_needToOutputDocTypeDecl)
-        {
+        final Writer writer = m_writer;
+        if (m_needToOutputDocTypeDecl) {
             outputDocTypeDecl(m_elemContext.m_elementName, false);
             m_needToOutputDocTypeDecl = false;
         }
-        if (m_inDoctype)
-        {
+        if (m_inDoctype) {
             writer.write(" [");
             writer.write(m_lineSep, 0, m_lineSepLen);
             m_inDoctype = false;
