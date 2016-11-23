@@ -388,7 +388,7 @@ implements XMLDTDScanner, XMLComponent, XMLEntityHandler {
             return false;
 
         fStringBuffer.clear();
-        while (fEntityScanner.scanData("]", fStringBuffer)) {
+        while (fEntityScanner.scanData("]", fStringBuffer, 0)) {
             int c = fEntityScanner.peekChar();
             if (c != -1) {
                 if (XMLChar.isHighSurrogate(c)) {

@@ -48,6 +48,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLComponent;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import javax.xml.catalog.CatalogFeatures;
+import jdk.xml.internal.JdkXmlUtils;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.ErrorHandler;
 
@@ -311,6 +312,9 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
         for( CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
             setProperty(f.getPropertyName(), grammarContainer.getProperty(f.getPropertyName()));
         }
+
+        setProperty(JdkXmlUtils.CDATA_CHUNK_SIZE,
+                grammarContainer.getProperty(JdkXmlUtils.CDATA_CHUNK_SIZE));
     }
 
     /**
