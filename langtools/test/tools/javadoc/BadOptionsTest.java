@@ -104,10 +104,10 @@ public class BadOptionsTest extends TestRunner {
                 .options("-Xold", "-quiet",
                         "--add-modules", "123")
                 .files(src.resolve("C.java"))
-                .run()
+                .run(Task.Expect.FAIL)
                 .writeAll();
         checkFound(result.getOutput(Task.OutputKind.DIRECT),
-                "warning: bad name in value for --add-modules option: '123'");
+                "error: bad name in value for --add-modules option: '123'");
         checkNotFound(result, "Exception", "at jdk.javadoc/");
     }
 
