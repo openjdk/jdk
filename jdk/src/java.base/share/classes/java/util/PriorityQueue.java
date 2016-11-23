@@ -54,7 +54,8 @@ import java.util.function.Consumer;
  * <p>This class and its iterator implement all of the
  * <em>optional</em> methods of the {@link Collection} and {@link
  * Iterator} interfaces.  The Iterator provided in method {@link
- * #iterator()} is <em>not</em> guaranteed to traverse the elements of
+ * #iterator()} and the Spliterator provided in method {@link #spliterator()}
+ * are <em>not</em> guaranteed to traverse the elements of
  * the priority queue in any particular order. If you need ordered
  * traversal, consider using {@code Arrays.sort(pq.toArray())}.
  *
@@ -799,7 +800,8 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     /**
      * Creates a <em><a href="Spliterator.html#binding">late-binding</a></em>
      * and <em>fail-fast</em> {@link Spliterator} over the elements in this
-     * queue.
+     * queue. The spliterator does not traverse elements in any particular order
+     * (the {@link Spliterator#ORDERED ORDERED} characteristic is not reported).
      *
      * <p>The {@code Spliterator} reports {@link Spliterator#SIZED},
      * {@link Spliterator#SUBSIZED}, and {@link Spliterator#NONNULL}.
