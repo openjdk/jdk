@@ -104,9 +104,9 @@ import sun.security.util.SecurityConstants;
  * class or resource itself.
  *
  * <p> Class loaders that support concurrent loading of classes are known as
- * <em>{@linkplain #isParallelCapable() parallel capable}</em> class loaders and
- * are required to register themselves at their class initialization time by
- * invoking the {@link
+ * <em>{@linkplain #isRegisteredAsParallelCapable() parallel capable}</em> class
+ * loaders and are required to register themselves at their class initialization
+ * time by invoking the {@link
  * #registerAsParallelCapable <tt>ClassLoader.registerAsParallelCapable</tt>}
  * method. Note that the <tt>ClassLoader</tt> class is registered as parallel
  * capable by default. However, its subclasses still need to register themselves
@@ -1495,7 +1495,8 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Registers the caller as {@linkplain #isParallelCapable() parallel capable}.
+     * Registers the caller as
+     * {@linkplain #isRegisteredAsParallelCapable() parallel capable}.
      * The registration succeeds if and only if all of the following
      * conditions are met:
      * <ol>
@@ -1509,7 +1510,7 @@ public abstract class ClassLoader {
      * @return  {@code true} if the caller is successfully registered as
      *          parallel capable and {@code false} if otherwise.
      *
-     * @see #isParallelCapable()
+     * @see #isRegisteredAsParallelCapable()
      *
      * @since   1.7
      */
@@ -1521,7 +1522,7 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Returns {@code true} if this class loader is
+     * Returns {@code true} if this class loader is registered as
      * {@linkplain #registerAsParallelCapable parallel capable}, otherwise
      * {@code false}.
      *
@@ -1532,7 +1533,7 @@ public abstract class ClassLoader {
      *
      * @since   9
      */
-    public final boolean isParallelCapable() {
+    public final boolean isRegisteredAsParallelCapable() {
         return ParallelLoaders.isRegistered(this.getClass());
     }
 
