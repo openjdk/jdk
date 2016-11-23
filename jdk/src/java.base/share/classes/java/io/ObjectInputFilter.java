@@ -194,11 +194,17 @@ public interface ObjectInputFilter {
      * When setting the filter, it should be stateless and idempotent,
      * reporting the same result when passed the same arguments.
      * <p>
-     * The filter is configured using the {@link java.security.Security}
-     * property {@code jdk.serialFilter} and can be overridden by
-     * the System property {@code jdk.serialFilter}.
-     *
-     * The syntax is the same as for the {@link #createFilter(String) createFilter} method.
+     * The filter is configured during the initialization of the {@code ObjectInputFilter.Config}
+     * class. For example, by calling {@link #getSerialFilter() Config.getSerialFilter}.
+     * If the system property {@code jdk.serialFilter} is defined, it is used
+     * to configure the filter.
+     * If the system property is not defined, and the {@link java.security.Security}
+     * property {@code jdk.serialFilter} is defined then it is used to configure the filter.
+     * Otherwise, the filter is not configured during initialization.
+     * The syntax for each property is the same as for the
+     * {@link #createFilter(String) createFilter} method.
+     * If a filter is not configured, it can be set with
+     * {@link #setSerialFilter(ObjectInputFilter) Config.setSerialFilter}.
      *
      * @since 9
      */
