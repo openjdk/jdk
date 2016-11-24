@@ -5093,7 +5093,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1479822431
+DATE_WHEN_GENERATED=1479984616
 
 ###############################################################################
 #
@@ -50022,7 +50022,6 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     fastdebug | slowdebug )
       CFLAGS_JDK="$CFLAGS_JDK $CFLAGS_DEBUG_SYMBOLS $CFLAGS_DEBUG_OPTIONS"
       CXXFLAGS_JDK="$CXXFLAGS_JDK $CXXFLAGS_DEBUG_SYMBOLS $CXXFLAGS_DEBUG_OPTIONS"
-      JAVAC_FLAGS="$JAVAC_FLAGS -g"
       ;;
     release )
       ;;
@@ -50846,7 +50845,6 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     fastdebug | slowdebug )
       OPENJDK_BUILD_CFLAGS_JDK="$OPENJDK_BUILD_CFLAGS_JDK $CFLAGS_DEBUG_SYMBOLS $CFLAGS_DEBUG_OPTIONS"
       OPENJDK_BUILD_CXXFLAGS_JDK="$OPENJDK_BUILD_CXXFLAGS_JDK $CXXFLAGS_DEBUG_SYMBOLS $CXXFLAGS_DEBUG_OPTIONS"
-      JAVAC_FLAGS="$JAVAC_FLAGS -g"
       ;;
     release )
       ;;
