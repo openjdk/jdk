@@ -86,10 +86,8 @@ public:
     assert(false, "can't call");
   }
 
-  // Causes all refs in "mr" to be assumed to be modified.  If "whole_heap"
-  // is true, the caller asserts that the entire heap is being invalidated,
-  // which may admit an optimized implementation for some barriers.
-  virtual void invalidate(MemRegion mr, bool whole_heap = false) = 0;
+  // Causes all refs in "mr" to be assumed to be modified.
+  virtual void invalidate(MemRegion mr) = 0;
 
   // The caller guarantees that "mr" contains no references.  (Perhaps it's
   // objects have been moved elsewhere.)
