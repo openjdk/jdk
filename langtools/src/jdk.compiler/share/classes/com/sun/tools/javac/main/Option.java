@@ -682,7 +682,6 @@ public enum Option {
                 Class.forName(JDK9Wrappers.VMHelper.VM_CLASSNAME);
                 String[] runtimeArgs = JDK9Wrappers.VMHelper.getRuntimeArguments();
                 for (String arg : runtimeArgs) {
-                    System.err.println("runtime arg: " + arg);
                     // Handle any supported runtime options; ignore all others.
                     // The runtime arguments always use the single token form, e.g. "--name=value".
                     for (Option o : getSupportedRuntimeOptions()) {
