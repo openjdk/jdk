@@ -428,8 +428,7 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size, AllocationCo
       log_debug(gc, ergo, heap)("Attempt heap expansion (humongous allocation request failed). Allocation request: " SIZE_FORMAT "B",
                                     word_size * HeapWordSize);
 
-
-      _hrm.expand_at(first, obj_regions);
+      _hrm.expand_at(first, obj_regions, workers());
       g1_policy()->record_new_heap_size(num_regions());
 
 #ifdef ASSERT
@@ -741,7 +740,7 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges, size_t count) {
 
     // Perform the actual region allocation, exiting if it fails.
     // Then note how much new space we have allocated.
-    if (!_hrm.allocate_containing_regions(curr_range, &commits)) {
+    if (!_hrm.allocate_containing_regions(curr_range, &commits, workers())) {
       return false;
     }
     increase_used(word_size * HeapWordSize);
