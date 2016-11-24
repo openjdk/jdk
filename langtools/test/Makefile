@@ -318,7 +318,7 @@ jtreg-tests: check-jtreg FRC
 	@rm -f -r $(JTREG_OUTPUT_DIR)/JTwork $(JTREG_OUTPUT_DIR)/JTreport \
 	    $(JTREG_OUTPUT_DIR)/diff.html $(JTREG_OUTPUT_DIR)/status.txt
 	@mkdir -p $(JTREG_OUTPUT_DIR)
-	JT_JAVA=$(JT_JAVA) $(JTREG) \
+	( JT_JAVA=$(JT_JAVA) $(JTREG) \
 	  -a -ignore:quiet $(if $(JTREG_VERBOSE),-v:$(JTREG_VERBOSE)) \
 	  -r:$(JTREG_OUTPUT_DIR)/JTreport \
 	  -w:$(JTREG_OUTPUT_DIR)/JTwork \
@@ -327,10 +327,10 @@ jtreg-tests: check-jtreg FRC
 	  $(JTREG_EXCLUSIONS) \
 	  $(JTREG_OPTIONS) \
 	  $(JTREG_TESTDIRS) \
-	    2>&1 | tee $(JTREG_OUTPUT_DIR)/output.txt \
-	|| ( $(call EXIT_IF_FATAL,$(FATAL_JTREG_EXIT)) ; \
+	  || ( $(call EXIT_IF_FATAL,$(FATAL_JTREG_EXIT)) ; \
 	    echo $$status > $(JTREG_OUTPUT_DIR)/status.txt \
-	)
+	  ) \
+	) 2>&1 | tee $(JTREG_OUTPUT_DIR)/output.txt
 ifdef JTREG_REFERENCE
 	JT_JAVA=$(JT_JAVA) $(JTDIFF) -o $(JTREG_OUTPUT_DIR)/diff.html \
 	    $(JTREG_REFERENCE) $(JTREG_OUTPUT_DIR)/JTreport \
