@@ -311,7 +311,11 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
       SET_SHARED_LIBRARY_MAPFILE='-Wl,-version-script=[$]1'
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    PICFLAG="-KPIC"
+    if test "x$OPENJDK_TARGET_CPU" = xsparcv9; then
+      PICFLAG="-xcode=pic32"
+    else
+      PICFLAG="-KPIC"
+    fi
     C_FLAG_REORDER='-xF'
     CXX_FLAG_REORDER='-xF'
     SHARED_LIBRARY_FLAGS="-G"
@@ -893,12 +897,12 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
   # Set some additional per-OS defines.
   if test "x$OPENJDK_$1_OS" = xlinux; then
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -DLINUX"
-    $2JVM_CFLAGS="[$]$2JVM_CFLAGS -pipe -fPIC -fno-rtti -fno-exceptions \
+    $2JVM_CFLAGS="[$]$2JVM_CFLAGS -pipe $PICFLAG -fno-rtti -fno-exceptions \
         -fvisibility=hidden -fno-strict-aliasing -fno-omit-frame-pointer"
   elif test "x$OPENJDK_$1_OS" = xsolaris; then
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -DSOLARIS"
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -template=no%extdef -features=no%split_init \
-        -D_Crun_inline_placement -library=%none -KPIC -mt -features=no%except"
+        -D_Crun_inline_placement -library=%none $PICFLAG -mt -features=no%except"
   elif test "x$OPENJDK_$1_OS" = xmacosx; then
     $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -D_ALLBSD_SOURCE"
@@ -1309,7 +1313,7 @@ BASIC_DEFUN_NAMED([FLAGS_COMPILER_CHECK_ARGUMENTS],
   AC_MSG_CHECKING([if both compilers support "ARG_ARGUMENT"])
   supports=no
   if test "x$C_COMP_SUPPORTS" = "xyes" -a "x$CXX_COMP_SUPPORTS" = "xyes"; then supports=yes; fi
-  
+
   AC_MSG_RESULT([$supports])
   if test "x$supports" = "xyes" ; then
     :
