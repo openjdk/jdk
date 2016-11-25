@@ -126,8 +126,8 @@ public class IndexBuilder {
      * @param docEnv the doclet environment
      */
     protected void buildIndexMap(DocletEnvironment docEnv)  {
-        Set<PackageElement> packages = configuration.getSpecifiedPackages();
-        Set<TypeElement> classes = docEnv.getIncludedTypeElements();
+        Set<PackageElement> packages = configuration.getSpecifiedPackageElements();
+        Set<TypeElement> classes = configuration.getIncludedTypeElements();
         if (!classesOnly) {
             if (packages.isEmpty()) {
                 Set<PackageElement> set = new HashSet<>();

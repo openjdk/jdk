@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
@@ -336,9 +337,7 @@ public class ModuleTestBase extends TestRunner {
         public boolean run(DocletEnvironment docenv) {
             ps.println("ModuleMode" + FS + docenv.getModuleMode());
             printDataSet("Specified", docenv.getSpecifiedElements());
-            printDataSet("Included", docenv.getIncludedModuleElements());
-            printDataSet("Included", docenv.getIncludedPackageElements());
-            printDataSet("Included", docenv.getIncludedTypeElements());
+            printDataSet("Included", docenv.getIncludedElements());
             printDataSet("Selected", getAllSelectedElements(docenv));
             System.out.println(sw);
             return true;
@@ -353,21 +352,24 @@ public class ModuleTestBase extends TestRunner {
                 if (rc != 0) return rc;
                 return Integer.compare(e1.hashCode(), e2.hashCode());
             });
-            for (ModuleElement me : docenv.getIncludedModuleElements()) {
+            Set<? extends Element> elements = docenv.getIncludedElements();
+            for (ModuleElement me : ElementFilter.modulesIn(elements)) {
                 addEnclosedElements(docenv, result, me);
             }
-            for (PackageElement pe : docenv.getIncludedPackageElements()) {
+            for (PackageElement pe : ElementFilter.packagesIn(elements)) {
                 addEnclosedElements(docenv, result, docenv.getElementUtils().getModuleOf(pe));
                 addEnclosedElements(docenv, result, pe);
             }
-            for (TypeElement te : docenv.getIncludedTypeElements()) {
+            for (TypeElement te : ElementFilter.typesIn(elements)) {
                 addEnclosedElements(docenv, result, te);
             }
             return result;
         }
 
         void addEnclosedElements(DocletEnvironment docenv, Set<Element> result, Element e) {
-            List<? extends Element> elems = docenv.getSelectedElements(e.getEnclosedElements());
+            List<Element> elems = e.getEnclosedElements().stream()
+                    .filter(el -> docenv.isIncluded(el))
+                    .collect(Collectors.toList());
             result.addAll(elems);
             for (TypeElement t : ElementFilter.typesIn(elems)) {
                 addEnclosedElements(docenv, result, t);

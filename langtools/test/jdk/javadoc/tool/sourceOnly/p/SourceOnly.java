@@ -29,6 +29,8 @@ import java.util.Locale;
 import java.util.Set;
 
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.ElementFilter;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
@@ -42,9 +44,10 @@ public class SourceOnly implements Doclet {
 
     @Override
     public boolean run(DocletEnvironment root) {
-        if (root.getIncludedTypeElements().size() != 1)
+        Set<TypeElement> classes = ElementFilter.typesIn(root.getIncludedElements());
+        if (classes.size() != 1)
             throw new Error("wrong set of classes documented: " +
-                    Arrays.asList(root.getIncludedTypeElements()));
+                    Arrays.asList(classes));
         return true;
     }
 

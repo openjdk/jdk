@@ -99,6 +99,7 @@ public class JavadocEnter extends Enter {
         if (tree.sym.kind == TYP || tree.sym.kind == ERR) {
             ClassSymbol c = tree.sym;
             toolEnv.setElementToTreePath(c, toolEnv.getTreePath(env.toplevel, tree));
+            c.classfile = env.toplevel.sourcefile;
         }
     }
 

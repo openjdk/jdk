@@ -34,6 +34,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+import javax.tools.JavaFileObject.Kind;
 
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
@@ -193,17 +194,20 @@ public class ToolEnvironment {
     }
 
     /**
-     * Returns true if the symbol has a tree path associated with it.
-     * Primarily used to disambiguate a symbol associated with a source
+     * Returns true if the type element originates from source.
+     * Primarily used to disambiguate a type element associated with a source
      * file versus a class file.
-     * @param sym the symbol to be checked
-     * @return true if the symbol has a tree path
+     * @param te the type element
+     * @return true if the symbol is from source
      */
-    boolean hasPath(ClassSymbol sym) {
-        TreePath path = elementToTreePath.get(sym);
-        return path != null;
+    public boolean isFromSource(TypeElement te) {
+        return getFileKind(te) == Kind.SOURCE;
     }
 
+    public Kind getFileKind(TypeElement te) {
+        JavaFileObject jfo = ((ClassSymbol)te).outermostClass().classfile;
+        return jfo == null ? Kind.SOURCE : jfo.getKind();
+    }
     /**
      * Print a notice, iff <em>quiet</em> is not specified.
      *

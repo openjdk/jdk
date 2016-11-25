@@ -62,6 +62,7 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.WriterKind;
 import com.sun.tools.javac.util.Options;
+import com.sun.tools.javac.util.StringUtils;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.Doclet.Option;
@@ -233,7 +234,7 @@ public class Start extends ToolOption.Helper {
 
             @Override
             public int compare(Doclet.Option o1, Doclet.Option o2) {
-                return collator.compare(o1.getName(), o2.getName());
+                return collator.compare(o1.getNames().get(0), o2.getNames().get(0));
             }
         };
 
@@ -244,10 +245,11 @@ public class Start extends ToolOption.Helper {
     }
 
     void showDocletOption(Doclet.Option option) {
-        List<String> names = Arrays.asList(option.getName());
+        List<String> names = option.getNames();
         String parameters;
-        if (option.getArgumentCount() > 0 || option.getName().endsWith(":")) {
-            String sep = option.getName().endsWith(":") ? "" : " ";
+        String optname = names.get(0);
+        if (option.getArgumentCount() > 0 || optname.endsWith(":")) {
+            String sep = optname.endsWith(":") ? "" : " ";
             parameters = sep + option.getParameters();
         } else {
             parameters = "";
@@ -610,7 +612,23 @@ public class Start extends ToolOption.Helper {
         return ok;
     }
 
-    Set<Doclet.Option> docletOptions = null;
+    boolean matches(List<String> names, String arg) {
+        for (String name : names) {
+            if (StringUtils.toLowerCase(name).equals(StringUtils.toLowerCase(arg)))
+                return true;
+        }
+        return false;
+    }
+
+    boolean matches(Doclet.Option option, String arg) {
+        if (matches(option.getNames(), arg))
+             return true;
+        int sep = arg.indexOf(':');
+        String targ = arg.substring(0, sep + 1);
+        return matches(option.getNames(), targ);
+    }
+
+    Set<? extends Doclet.Option> docletOptions = null;
     int handleDocletOptions(int idx, List<String> args, boolean isToolOption)
             throws OptionException {
         if (docletOptions == null) {
@@ -628,14 +646,14 @@ public class Start extends ToolOption.Helper {
         }
         String text = null;
         for (Doclet.Option opt : docletOptions) {
-            if (opt.matches(argBase)) {
+            if (matches(opt, argBase)) {
                 if (argVal != null) {
                     switch (opt.getArgumentCount()) {
                         case 0:
                             text = messager.getText("main.unnecessary_arg_provided", argBase);
                             throw new OptionException(ERROR, this::usage, text);
                         case 1:
-                            opt.process(arg, Arrays.asList(argVal).listIterator());
+                            opt.process(arg, Arrays.asList(argVal));
                             break;
                         default:
                             text = messager.getText("main.only_one_argument_with_equals", argBase);
@@ -646,7 +664,7 @@ public class Start extends ToolOption.Helper {
                         text = messager.getText("main.requires_argument", arg);
                         throw new OptionException(ERROR, this::usage, text);
                     }
-                    opt.process(arg, args.listIterator(idx + 1));
+                    opt.process(arg, args.subList(idx + 1, args.size()));
                     idx += opt.getArgumentCount();
                 }
                 return idx;

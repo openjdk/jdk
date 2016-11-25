@@ -41,6 +41,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.ElementFilter;
 
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.LineMap;
@@ -59,7 +60,7 @@ public class T4994049 implements Doclet {
         DocTrees trees = root.getDocTrees();
 
         SourcePositions sourcePositions = trees.getSourcePositions();
-        for (TypeElement klass : root.getIncludedTypeElements()) {
+        for (TypeElement klass : ElementFilter.typesIn(root.getIncludedElements())) {
             for (ExecutableElement method : getMethods(klass)) {
                 if (method.getSimpleName().toString().equals("tabbedMethod")) {
                     TreePath path = trees.getPath(method);

@@ -91,10 +91,11 @@ public class HtmlDoclet extends AbstractDoclet {
      * Create the configuration instance.
      * Override this method to use a different
      * configuration.
-     * @return the configuration for this doclet
+     *
+     * @return the configuration
      */
     @Override // defined by AbstractDoclet
-    public ConfigurationImpl configuration() {
+    public ConfigurationImpl getConfiguration() {
         return configuration;
     }
 
@@ -166,8 +167,7 @@ public class HtmlDoclet extends AbstractDoclet {
             IndexRedirectWriter.generate(configuration);
         }
 
-        if (configuration.helpfile.length() == 0 &&
-            !configuration.nohelp) {
+        if (configuration.helpfile.isEmpty() && !configuration.nohelp) {
             HelpWriter.generate(configuration);
         }
         // If a stylesheet file is not specified, copy the default stylesheet
