@@ -153,7 +153,7 @@ class ChunkManager : public CHeapObj<mtInternal> {
 
   // Map a size to a list index assuming that there are lists
   // for special, small, medium, and humongous chunks.
-  ChunkIndex list_index(size_t size);
+  static ChunkIndex list_index(size_t size);
 
   // Remove the chunk from its freelist.  It is
   // expected to be on one of the _free_chunks[] lists.
@@ -1787,11 +1787,7 @@ void ChunkManager::locked_print_sum_free_chunks(outputStream* st) {
   st->print_cr("Sum free chunk total " SIZE_FORMAT "  count " SIZE_FORMAT,
                 sum_free_chunks(), sum_free_chunks_count());
 }
-
 ChunkList* ChunkManager::free_chunks(ChunkIndex index) {
-  assert(index == SpecializedIndex || index == SmallIndex || index == MediumIndex,
-         "Bad index: %d", (int)index);
-
   return &_free_chunks[index];
 }
 
@@ -1895,7 +1891,7 @@ Metachunk* ChunkManager::chunk_freelist_allocate(size_t word_size) {
   }
 
   assert((word_size <= chunk->word_size()) ||
-         (list_index(chunk->word_size()) == HumongousIndex),
+         list_index(chunk->word_size() == HumongousIndex),
          "Non-humongous variable sized chunk");
   Log(gc, metaspace, freelist) log;
   if (log.is_debug()) {
@@ -2346,18 +2342,22 @@ const char* SpaceManager::chunk_size_name(ChunkIndex index) const {
 }
 
 ChunkIndex ChunkManager::list_index(size_t size) {
-  if (free_chunks(SpecializedIndex)->size() == size) {
-    return SpecializedIndex;
+  switch (size) {
+    case SpecializedChunk:
+      assert(SpecializedChunk == ClassSpecializedChunk,
+             "Need branch for ClassSpecializedChunk");
+      return SpecializedIndex;
+    case SmallChunk:
+    case ClassSmallChunk:
+      return SmallIndex;
+    case MediumChunk:
+    case ClassMediumChunk:
+      return MediumIndex;
+    default:
+      assert(size > MediumChunk || size > ClassMediumChunk,
+             "Not a humongous chunk");
+      return HumongousIndex;
   }
-  if (free_chunks(SmallIndex)->size() == size) {
-    return SmallIndex;
-  }
-  if (free_chunks(MediumIndex)->size() == size) {
-    return MediumIndex;
-  }
-
-  assert(size > free_chunks(MediumIndex)->size(), "Not a humongous chunk");
-  return HumongousIndex;
 }
 
 void SpaceManager::deallocate(MetaWord* p, size_t word_size) {
@@ -2381,7 +2381,7 @@ void SpaceManager::add_chunk(Metachunk* new_chunk, bool make_current) {
 
   // Find the correct list and and set the current
   // chunk for that list.
-  ChunkIndex index = chunk_manager()->list_index(new_chunk->word_size());
+  ChunkIndex index = ChunkManager::list_index(new_chunk->word_size());
 
   if (index != HumongousIndex) {
     retire_current_chunk();
@@ -4017,41 +4017,4 @@ void TestVirtualSpaceNode_test() {
   TestVirtualSpaceNodeTest::test();
   TestVirtualSpaceNodeTest::test_is_available();
 }
-
-// The following test is placed here instead of a gtest / unittest file
-// because the ChunkManager class is only available in this file.
-void ChunkManager_test_list_index() {
-  ChunkManager manager(ClassSpecializedChunk, ClassSmallChunk, ClassMediumChunk);
-
-  // Test previous bug where a query for a humongous class metachunk,
-  // incorrectly matched the non-class medium metachunk size.
-  {
-    assert(MediumChunk > ClassMediumChunk, "Precondition for test");
-
-    ChunkIndex index = manager.list_index(MediumChunk);
-
-    assert(index == HumongousIndex,
-           "Requested size is larger than ClassMediumChunk,"
-           " so should return HumongousIndex. Got index: %d", (int)index);
-  }
-
-  // Check the specified sizes as well.
-  {
-    ChunkIndex index = manager.list_index(ClassSpecializedChunk);
-    assert(index == SpecializedIndex, "Wrong index returned. Got index: %d", (int)index);
-  }
-  {
-    ChunkIndex index = manager.list_index(ClassSmallChunk);
-    assert(index == SmallIndex, "Wrong index returned. Got index: %d", (int)index);
-  }
-  {
-    ChunkIndex index = manager.list_index(ClassMediumChunk);
-    assert(index == MediumIndex, "Wrong index returned. Got index: %d", (int)index);
-  }
-  {
-    ChunkIndex index = manager.list_index(ClassMediumChunk + 1);
-    assert(index == HumongousIndex, "Wrong index returned. Got index: %d", (int)index);
-  }
-}
-
 #endif
