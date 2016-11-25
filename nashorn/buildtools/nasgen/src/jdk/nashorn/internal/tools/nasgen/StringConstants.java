@@ -45,7 +45,6 @@ public interface StringConstants {
 
     // standard jdk types, methods
     static final Type TYPE_METHODHANDLE         = Type.getType(MethodHandle.class);
-    static final Type TYPE_METHODHANDLE_ARRAY   = Type.getType(MethodHandle[].class);
     static final Type TYPE_SPECIALIZATION       = Type.getType("L" + RUNTIME_PKG + "Specialization;");
     static final Type TYPE_SPECIALIZATION_ARRAY = Type.getType("[L" + RUNTIME_PKG + "Specialization;");
     static final Type TYPE_OBJECT               = Type.getType(Object.class);
@@ -60,13 +59,11 @@ public interface StringConstants {
     static final String INIT = "<init>";
     static final String DEFAULT_INIT_DESC = Type.getMethodDescriptor(Type.VOID_TYPE);
 
-    static final String METHODHANDLE_TYPE = TYPE_METHODHANDLE.getInternalName();
     static final String SPECIALIZATION_TYPE = TYPE_SPECIALIZATION.getInternalName();
-    static final String SPECIALIZATION_INIT2 = Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_METHODHANDLE, Type.getType(boolean.class));
-    static final String SPECIALIZATION_INIT3 = Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_METHODHANDLE, TYPE_CLASS, Type.getType(boolean.class));
+    static final String SPECIALIZATION_INIT2 = Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_METHODHANDLE, Type.BOOLEAN_TYPE, Type.BOOLEAN_TYPE);
+    static final String SPECIALIZATION_INIT3 = Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_METHODHANDLE, TYPE_CLASS, Type.BOOLEAN_TYPE, Type.BOOLEAN_TYPE);
     static final String OBJECT_TYPE = TYPE_OBJECT.getInternalName();
     static final String OBJECT_DESC = TYPE_OBJECT.getDescriptor();
-    static final String STRING_TYPE = TYPE_STRING.getInternalName();
     static final String STRING_DESC = TYPE_STRING.getDescriptor();
     static final String OBJECT_ARRAY_DESC = Type.getDescriptor(Object[].class);
     static final String ARRAYLIST_TYPE = TYPE_ARRAYLIST.getInternalName();
