@@ -129,7 +129,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
     @Override
     public void build() throws DocletException {
         SortedSet<TypeElement> rootclasses = new TreeSet<>(utils.makeGeneralPurposeComparator());
-        rootclasses.addAll(configuration.docEnv.getIncludedTypeElements());
+        rootclasses.addAll(configuration.getIncludedTypeElements());
         if (!serialClassFoundToDocument(rootclasses)) {
             //Nothing to document.
             return;

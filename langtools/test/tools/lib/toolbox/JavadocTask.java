@@ -180,6 +180,16 @@ public class JavadocTask extends AbstractTask<JavadocTask> {
     }
 
     /**
+     * Sets the options.
+     * @param options the options
+     * @return this task object
+     */
+    public JavadocTask options(List<String> options) {
+        this.options = options;
+        return this;
+    }
+
+    /**
      * Sets the files to be documented.
      * @param files the files
      * @return this task object

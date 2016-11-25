@@ -99,8 +99,8 @@ public abstract class AbstractDoclet implements Doclet {
      */
     @Override
     public boolean run(DocletEnvironment docEnv) {
-        configuration = configuration();
-        configuration.docEnv = docEnv;
+        configuration = getConfiguration();
+        configuration.initConfiguration(docEnv);
         configuration.cmtUtils = new CommentUtils(configuration);
         configuration.utils = new Utils(configuration);
         utils = configuration.utils;
@@ -171,13 +171,12 @@ public abstract class AbstractDoclet implements Doclet {
         return SourceVersion.RELEASE_9;
     }
 
-
     /**
      * Create the configuration instance and returns it.
      *
      * @return the configuration of the doclet.
      */
-    public abstract Configuration configuration();
+    public abstract Configuration getConfiguration();
 
     /**
      * Start the generation of files. Call generate methods in the individual
@@ -189,7 +188,7 @@ public abstract class AbstractDoclet implements Doclet {
      * @throws DocletException if there is a problem while generating the documentation
      */
     private void startGeneration(DocletEnvironment docEnv) throws DocletException {
-        if (docEnv.getIncludedTypeElements().isEmpty()) {
+        if (configuration.getIncludedTypeElements().isEmpty()) {
             messages.error("doclet.No_Public_Classes_To_Document");
             return;
         }
@@ -263,7 +262,7 @@ public abstract class AbstractDoclet implements Doclet {
             throws DocletException {
         generateClassFiles(classtree);
         SortedSet<PackageElement> packages = new TreeSet<>(utils.makePackageComparator());
-        packages.addAll(configuration.getSpecifiedPackages());
+        packages.addAll(configuration.getSpecifiedPackageElements());
         configuration.modulePackages.values().stream().forEach(pset -> {
             packages.addAll(pset);
         });
