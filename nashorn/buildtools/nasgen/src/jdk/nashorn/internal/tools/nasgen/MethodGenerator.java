@@ -412,6 +412,7 @@ public class MethodGenerator extends MethodVisitor {
                 visitLdcInsn(linkLogicClass);
             }
             visitInsn(mi.isOptimistic() ? ICONST_1 : ICONST_0);
+            visitInsn(mi.convertsNumericArgs() ? ICONST_1 : ICONST_0);
             visitMethodInsn(INVOKESPECIAL, SPECIALIZATION_TYPE, INIT, ctor, false);
             arrayStore(TYPE_SPECIALIZATION);
         }
