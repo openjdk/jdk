@@ -68,7 +68,7 @@ public class Main {
     }
 
     private static FileSystem createFsWithURLClassloader(String javaHome) throws IOException{
-        URL url = Paths.get(javaHome, "jrt-fs.jar").toUri().toURL();
+        URL url = Paths.get(javaHome, "lib", "jrt-fs.jar").toUri().toURL();
         URLClassLoader loader = new URLClassLoader(new URL[] { url });
         return FileSystems.newFileSystem(URI.create("jrt:/"),
                                                     Collections.emptyMap(),
