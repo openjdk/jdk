@@ -100,7 +100,8 @@ SOURCE_REVISION = $(shell \
       $(CAT) $(SOURCE_REVISION_TRACKER) ; \
     fi)
 
-$(BASE_RELEASE_FILE): $(INFO_FILE_VARDEPS) $(SOURCE_REVISION_TRACKER)
+# The SOURCE_REVISION_TRACKER file may not exist. Only depend on it if it does.
+$(BASE_RELEASE_FILE): $(INFO_FILE_VARDEPS) $(wildcard $(SOURCE_REVISION_TRACKER))
 	$(info-file)
 
 ################################################################################
