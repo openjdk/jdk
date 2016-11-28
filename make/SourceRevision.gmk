@@ -119,8 +119,7 @@ else
 	exit 2
 
     create-source-revision-tracker:
-	$(call LogWarn, Error: No mercurial configuration present and no .src-rev)
-	exit 2
+	$(call LogWarn, Warning: No mercurial configuration present and no .src-rev)
   endif
 
 endif
