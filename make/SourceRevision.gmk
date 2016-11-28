@@ -65,8 +65,8 @@ ifneq ($(and $(HG), $(wildcard $(TOPDIR)/.hg)), )
     $1_FILENAME := $$(call MakeFilenameFromRepo, $1)
 
     $$(SUPPORT_OUTPUTDIR)/src-rev/$$($1_FILENAME): FRC
-	$(call MakeDir $$(@D))
-	$(ECHO) $$(strip $1):`$(HG) id -i --repository $$($1_REPO_PATH)` > $$@
+	$$(call MakeDir, $$(@D))
+	$$(ECHO) $$(strip $1):`$$(HG) id -i --repository $$($1_REPO_PATH)` > $$@
 
     REPO_REVISIONS += $$(SUPPORT_OUTPUTDIR)/src-rev/$$($1_FILENAME)
   endef
@@ -81,7 +81,7 @@ ifneq ($(and $(HG), $(wildcard $(TOPDIR)/.hg)), )
   # Param 1: The output file
   define CreateSourceRevisionFile
     $1: $$(REPO_REVISIONS)
-	$(call MakeDir $$(@D))
+	$$(call MakeDir, $$(@D))
 	$$(ECHO) `$$(CAT) $$(REPO_REVISIONS)` > $$@.tmp
 	if [ ! -f $$@ ] || [ "`$$(CAT) $$@`" != "`$$(CAT) $$@.tmp`" ]; then \
 	  $$(MV) $$@.tmp $$@ ; \
