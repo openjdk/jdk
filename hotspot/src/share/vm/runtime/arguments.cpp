@@ -375,6 +375,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "AutoGCSelectPauseMillis",      JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "UseAutoGCSelectPolicy",        JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "UseParNewGC",                  JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
+  { "ExplicitGCInvokesConcurrentAndUnloadsClasses", JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "ConvertSleepToYield",          JDK_Version::jdk(9), JDK_Version::jdk(10),     JDK_Version::jdk(11) },
   { "ConvertYieldToSleep",          JDK_Version::jdk(9), JDK_Version::jdk(10),     JDK_Version::jdk(11) },
 
