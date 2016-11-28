@@ -822,13 +822,12 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
     private static void concatToList(final ArrayList<Object> list, final Object obj) {
         final boolean isScriptArray  = isArray(obj);
         final boolean isScriptObject = isScriptArray || obj instanceof ScriptObject;
-        if (isScriptArray || obj instanceof Iterable || (obj != null && obj.getClass().isArray())) {
+        if (isScriptArray || obj instanceof Iterable || obj instanceof JSObject || (obj != null && obj.getClass().isArray())) {
             final Iterator<Object> iter = arrayLikeIterator(obj, true);
             if (iter.hasNext()) {
                 for (int i = 0; iter.hasNext(); ++i) {
                     final Object value = iter.next();
-                    final boolean lacksIndex = obj != null && !((ScriptObject)obj).has(i);
-                    if (value == ScriptRuntime.UNDEFINED && isScriptObject && lacksIndex) {
+                    if (value == ScriptRuntime.UNDEFINED && isScriptObject && !((ScriptObject)obj).has(i)) {
                         // TODO: eventually rewrite arrayLikeIterator to use a three-state enum for handling
                         // UNDEFINED instead of an "includeUndefined" boolean with states SKIP, INCLUDE,
                         // RETURN_EMPTY. Until then, this is how we'll make sure that empty elements don't make it
@@ -1828,15 +1827,14 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
             }
 
             final Object arg = args[2];
-            //args[2] continuousarray or non arraydata, let past non array datas
+            // The generic version uses its own logic and ArrayLikeIterator to decide if an object should
+            // be iterated over or added as single element. To avoid duplication of code and err on the safe side
+            // we only use the specialized version if arg is either a continuous array or a JS primitive.
             if (arg instanceof NativeArray) {
-                final ContinuousArrayData argData = getContinuousArrayData(arg);
-                if (argData == null) {
-                    return false;
-                }
+                return (getContinuousArrayData(arg) != null);
             }
 
-            return true;
+            return JSType.isPrimitive(arg);
         }
     }
 
