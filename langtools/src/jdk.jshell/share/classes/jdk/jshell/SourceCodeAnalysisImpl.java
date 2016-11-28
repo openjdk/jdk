@@ -1273,7 +1273,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
         List<Path> result = new ArrayList<>();
         Path home = Paths.get(System.getProperty("java.home"));
-        Path srcZip = home.resolve("src.zip");
+        Path srcZip = home.resolve("lib").resolve("src.zip");
         if (!Files.isReadable(srcZip))
             srcZip = home.getParent().resolve("src.zip");
         if (Files.isReadable(srcZip)) {
