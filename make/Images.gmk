@@ -354,11 +354,11 @@ JDK_TARGETS += $(JDK_DOC_TARGETS)
 ################################################################################
 # src.zip
 
-$(JDK_IMAGE_DIR)/src.zip: $(SUPPORT_OUTPUTDIR)/src.zip
+$(JDK_IMAGE_DIR)/lib/src.zip: $(SUPPORT_OUTPUTDIR)/src.zip
 	$(call LogInfo, Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(install-file)
 
-JDK_TARGETS += $(JDK_IMAGE_DIR)/src.zip
+JDK_TARGETS += $(JDK_IMAGE_DIR)/lib/src.zip
 
 ################################################################################
 # /demo dir
@@ -399,16 +399,6 @@ $(eval $(call SetupCopyFiles, COPY_SAMPLES, \
         $(call CacheFind,$(SUPPORT_OUTPUTDIR)/sample/image))))
 
 JDK_TARGETS += $(COPY_SAMPLES)
-
-################################################################################
-# jrt-fs.jar
-
-$(eval $(call SetupCopyFiles,COPY_JRTFS_JAR, \
-    SRC := $(SUPPORT_OUTPUTDIR), \
-    DEST := $(JDK_IMAGE_DIR), \
-    FILES := $(SUPPORT_OUTPUTDIR)/jrt-fs.jar))
-
-JDK_TARGETS += $(COPY_JRTFS_JAR)
 
 ################################################################################
 # Code coverage data files
