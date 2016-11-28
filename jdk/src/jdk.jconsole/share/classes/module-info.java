@@ -26,7 +26,6 @@
 module jdk.jconsole {
     requires public java.desktop;
     requires public java.management;
-    requires java.logging;
     requires java.rmi;
     requires jdk.attach;
     requires jdk.jvmstat;
