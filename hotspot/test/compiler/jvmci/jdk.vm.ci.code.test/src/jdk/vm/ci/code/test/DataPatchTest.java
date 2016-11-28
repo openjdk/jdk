@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9") & os.arch != "aarch64"
+ * @requires vm.jvmci & (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9")
  * @library /
  * @modules jdk.vm.ci/jdk.vm.ci.hotspot
  *          jdk.vm.ci/jdk.vm.ci.meta
