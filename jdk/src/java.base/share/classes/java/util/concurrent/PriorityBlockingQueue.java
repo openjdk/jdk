@@ -933,8 +933,9 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
         }
     }
 
-    // Similar to Collections.ArraySnapshotSpliterator but avoids
-    // commitment to toArray until needed
+    /**
+     * Immutable snapshot spliterator that binds to elements "late".
+     */
     static final class PBQSpliterator<E> implements Spliterator<E> {
         final PriorityBlockingQueue<E> queue;
         Object[] array;
