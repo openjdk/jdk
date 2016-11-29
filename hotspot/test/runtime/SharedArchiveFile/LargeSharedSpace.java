@@ -24,7 +24,7 @@
 /*
  * @test LargeSharedSpace
  * @bug 8168790 8169870
- * @summary Test CDS dumping with specific space size.
+ * @summary Test CDS dumping using specific space size without crashing.
  * The space size used in the test might not be suitable on windows.
  * @requires (os.family != "windows")
  * @library /test/lib
@@ -35,27 +35,59 @@
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Platform;
 
 public class LargeSharedSpace {
     public static void main(String[] args) throws Exception {
-       String sizes[] = {"1066924031", "1600386047"};
-       String expectedOutputs[] =
-           {/* can dump using the given size */
-            "Loading classes to share",
-            /* the size is too large, exceeding the limit for compressed klass support */
-            "larger than compressed klass limit"};
-       for (int i = 0; i < sizes.length; i++) {
-           ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:SharedMiscCodeSize="+sizes[i], "-XX:+UnlockDiagnosticVMOptions",
+       ProcessBuilder pb;
+       OutputAnalyzer output;
+
+       // Test case 1: -XX:SharedMiscCodeSize=1066924031
+       //
+       // The archive should be dumped successfully. It might fail to reserve memory
+       // for shared space under low memory condition. The dumping process should not crash.
+       pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:SharedMiscCodeSize=1066924031", "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:SharedArchiveFile=./LargeSharedSpace.jsa", "-Xshare:dump");
-           OutputAnalyzer output = new OutputAnalyzer(pb.start());
+       output = new OutputAnalyzer(pb.start());
+       try {
+           output.shouldContain("Loading classes to share");
+       } catch (RuntimeException e1) {
+           output.shouldContain("Unable to allocate memory for shared space");
+       }
+
+       // Test case 2: -XX:SharedMiscCodeSize=1600386047
+       //
+       // On 64-bit platform, compressed class pointer is used. When the combined
+       // shared space size and the compressed space size is larger than the 4G
+       // compressed klass limit (0x100000000), error is reported.
+       //
+       // The dumping process should not crash.
+       if (Platform.is64bit()) {
+           pb = ProcessTools.createJavaProcessBuilder(
+                    "-XX:+UseCompressedClassPointers", "-XX:CompressedClassSpaceSize=3G",
+                    "-XX:SharedMiscCodeSize=1600386047", "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:SharedArchiveFile=./LargeSharedSpace.jsa", "-Xshare:dump");
+           output = new OutputAnalyzer(pb.start());
+           output.shouldContain("larger than compressed klass limit");
+        }
+
+        // Test case 3: -XX:SharedMiscCodeSize=1600386047
+        //
+        // On 32-bit platform, compressed class pointer is not used. It may fail
+        // to reserve memory under low memory condition.
+        //
+        // The dumping process should not crash.
+        if (Platform.is32bit()) {
+           pb = ProcessTools.createJavaProcessBuilder(
+                    "-XX:SharedMiscCodeSize=1600386047", "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:SharedArchiveFile=./LargeSharedSpace.jsa", "-Xshare:dump");
+           output = new OutputAnalyzer(pb.start());
            try {
-               output.shouldContain(expectedOutputs[i]);
-           } catch (RuntimeException e) {
-               /* failed to reserve the memory for the required size, might happen
-                  on 32-bit platforms */
+               output.shouldContain("Loading classes to share");
+           } catch (RuntimeException e3) {
                output.shouldContain("Unable to allocate memory for shared space");
            }
-       }
+        }
     }
 }
