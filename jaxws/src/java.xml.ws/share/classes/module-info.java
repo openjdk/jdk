@@ -35,7 +35,6 @@ module java.xml.ws {
     requires java.desktop;
     requires java.logging;
     requires java.management;
-    requires java.rmi;
     requires jdk.httpserver;
 
     uses javax.xml.ws.spi.Provider;

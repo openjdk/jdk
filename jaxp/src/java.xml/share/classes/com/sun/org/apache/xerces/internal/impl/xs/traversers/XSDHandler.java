@@ -350,7 +350,7 @@ public class XSDHandler {
 
     // This map's job is to act as a link between the Schema Element and its
     // XSDocumentInfo object.
-    private Map fDoc2XSDocumentMap = new HashMap();
+    private Map<Element, XSDocumentInfo> fDoc2XSDocumentMap = new HashMap<>();
 
     // map between <redefine> elements and the XSDocumentInfo
     // objects that correspond to the documents being redefined.
@@ -1104,10 +1104,12 @@ public class XSDHandler {
                 fSchemaGrammarDescription.setTargetNamespace(callerTNS);
 
                 boolean alreadyTraversed = false;
-                XMLInputSource schemaSource = resolveSchemaSource(fSchemaGrammarDescription, mustResolve, child, true);
+                XMLInputSource schemaSource =
+                        resolveSchemaSource(fSchemaGrammarDescription, mustResolve, child, true);
                 if (fNamespaceGrowth && refType == XSDDescription.CONTEXT_INCLUDE) {
                     try {
-                        final String schemaId = XMLEntityManager.expandSystemId(schemaSource.getSystemId(), schemaSource.getBaseSystemId(), false);
+                        final String schemaId = XMLEntityManager.expandSystemId(
+                                schemaSource.getSystemId(), schemaSource.getBaseSystemId(), false);
                         alreadyTraversed = sg.getDocumentLocations().contains(schemaId);
                     }
                     catch(MalformedURIException e) {
@@ -1133,10 +1135,11 @@ public class XSDHandler {
             // To handle mutual <include>s
             XSDocumentInfo newSchemaInfo = null;
             if (fLastSchemaWasDuplicate) {
-                newSchemaInfo = newSchemaRoot == null ? null : (XSDocumentInfo)fDoc2XSDocumentMap.get(newSchemaRoot);
+                newSchemaInfo = newSchemaRoot == null ? null : fDoc2XSDocumentMap.get(newSchemaRoot);
             }
             else {
-                newSchemaInfo = constructTrees(newSchemaRoot, schemaHint, fSchemaGrammarDescription, importCollision);
+                newSchemaInfo = constructTrees(newSchemaRoot, schemaHint,
+                        fSchemaGrammarDescription, importCollision);
             }
 
             if (localName.equals(SchemaSymbols.ELT_REDEFINE) &&
@@ -3552,9 +3555,11 @@ public class XSDHandler {
             // than checking its value.  Don't set the ERROR_HANDLER
             // or LOCALE properties unless they've actually changed.
             if (fErrorHandler != fSchemaParser.getProperty(ERROR_HANDLER)) {
-                fSchemaParser.setProperty(ERROR_HANDLER, (fErrorHandler != null) ? fErrorHandler : new DefaultErrorHandler());
+                fSchemaParser.setProperty(ERROR_HANDLER,
+                        (fErrorHandler != null) ? fErrorHandler : new DefaultErrorHandler());
                 if (fAnnotationValidator != null) {
-                    fAnnotationValidator.setProperty(ERROR_HANDLER, (fErrorHandler != null) ? fErrorHandler : new DefaultErrorHandler());
+                    fAnnotationValidator.setProperty(ERROR_HANDLER,
+                            (fErrorHandler != null) ? fErrorHandler : new DefaultErrorHandler());
                 }
             }
             if (fLocale != fSchemaParser.getProperty(LOCALE)) {
@@ -3567,7 +3572,8 @@ public class XSDHandler {
         catch (XMLConfigurationException e) {}
 
         try {
-            fSchemaParser.setFeature(CONTINUE_AFTER_FATAL_ERROR, fErrorReporter.getFeature(CONTINUE_AFTER_FATAL_ERROR));
+            fSchemaParser.setFeature(CONTINUE_AFTER_FATAL_ERROR,
+                    fErrorReporter.getFeature(CONTINUE_AFTER_FATAL_ERROR));
         } catch (XMLConfigurationException e) {}
 
         try {
@@ -3601,13 +3607,16 @@ public class XSDHandler {
             }
         } catch (XMLConfigurationException e) {}
 
-        fSecurityPropertyMgr = (XMLSecurityPropertyManager) componentManager.getProperty(XML_SECURITY_PROPERTY_MANAGER);
+        fSecurityPropertyMgr = (XMLSecurityPropertyManager)
+                componentManager.getProperty(XML_SECURITY_PROPERTY_MANAGER);
 
         //Passing on the setting to the parser
         fSchemaParser.setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
 
-        fAccessExternalDTD = fSecurityPropertyMgr.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
-        fAccessExternalSchema = fSecurityPropertyMgr.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA);
+        fAccessExternalDTD = fSecurityPropertyMgr.getValue(
+                XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
+        fAccessExternalSchema = fSecurityPropertyMgr.getValue(
+                XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA);
 
         // Passing the Catalog settings to the parser
         fUseCatalog = componentManager.getFeature(XMLConstants.USE_CATALOG);
@@ -3620,9 +3629,16 @@ public class XSDHandler {
         fResolve = (String)componentManager.getProperty(JdkXmlUtils.CATALOG_RESOLVE);
 
         for( CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
-            fSchemaParser.setProperty(f.getPropertyName(), componentManager.getProperty(f.getPropertyName()));
-            fEntityManager.setProperty(f.getPropertyName(), componentManager.getProperty(f.getPropertyName()));
+            fSchemaParser.setProperty(f.getPropertyName(),
+                    componentManager.getProperty(f.getPropertyName()));
+            fEntityManager.setProperty(f.getPropertyName(),
+                    componentManager.getProperty(f.getPropertyName()));
         }
+
+        fSchemaParser.setProperty(JdkXmlUtils.CDATA_CHUNK_SIZE,
+                componentManager.getProperty(JdkXmlUtils.CDATA_CHUNK_SIZE));
+        fEntityManager.setProperty(JdkXmlUtils.CDATA_CHUNK_SIZE,
+                componentManager.getProperty(JdkXmlUtils.CDATA_CHUNK_SIZE));
     } // reset(XMLComponentManager)
 
 
@@ -3635,11 +3651,10 @@ public class XSDHandler {
 
         for (int i = 0; i < fLocalElemStackPos; i++) {
             Element currElem = fLocalElementDecl[i];
-            //XSDocumentInfo currSchema = (XSDocumentInfo)fDoc2XSDocumentMap.get(DOMUtil.getDocument(currElem));
-            //XSDocumentInfo currSchema = (XSDocumentInfo)fDoc2XSDocumentMap.get(DOMUtil.getRoot(DOMUtil.getDocument(currElem)));
             XSDocumentInfo currSchema = fLocalElementDecl_schema[i];
             SchemaGrammar currGrammar = fGrammarBucket.getGrammar(currSchema.fTargetNamespace);
-            fElementTraverser.traverseLocal (fParticle[i], currElem, currSchema, currGrammar, fAllContext[i], fParent[i], fLocalElemNamespaceContext[i]);
+            fElementTraverser.traverseLocal (fParticle[i], currElem, currSchema,
+                    currGrammar, fAllContext[i], fParent[i], fLocalElemNamespaceContext[i]);
             // If it's an empty particle, remove it from the containing component.
             if (fParticle[i].fType == XSParticleDecl.PARTICLE_EMPTY) {
                 XSModelGroupImpl group = null;
@@ -4065,7 +4080,8 @@ public class XSDHandler {
             Element decl, XSDocumentInfo decl_Doc) {
 
         if (DEBUG_NODE_POOL) {
-            System.out.println("DOCUMENT NS:"+ currSchema.fTargetNamespace+" hashcode:"+ ((Object)currSchema.fSchemaElement).hashCode());
+            System.out.println("DOCUMENT NS:" + currSchema.fTargetNamespace + " hashcode:" +
+                    ((Object)currSchema.fSchemaElement).hashCode());
         }
         Object temp = decl_Doc;
         if (temp == null) {
@@ -4091,7 +4107,8 @@ public class XSDHandler {
 
     // returns whether more than <annotation>s occur in children of elem
     private boolean nonAnnotationContent(Element elem) {
-        for(Element child = DOMUtil.getFirstChildElement(elem); child != null; child = DOMUtil.getNextSiblingElement(child)) {
+        for(Element child = DOMUtil.getFirstChildElement(elem); child != null;
+                child = DOMUtil.getNextSiblingElement(child)) {
             if(!(DOMUtil.getLocalName(child).equals(SchemaSymbols.ELT_ANNOTATION))) return true;
         }
         return false;

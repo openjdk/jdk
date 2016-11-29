@@ -59,6 +59,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.bits", vmBits());
         map.put("vm.flightRecorder", vmFlightRecorder());
         map.put("vm.simpleArch", vmArch());
+        map.put("vm.debug", vmDebug());
         vmGC(map); // vm.gc.X = true/false
 
         dump(map);
@@ -145,6 +146,13 @@ public class VMProps implements Callable<Map<String, String>> {
             }
         }
         return "false";
+    }
+
+    /**
+     * @return debug level value extracted from the "jdk.debug" property.
+     */
+    protected String vmDebug() {
+        return "" + System.getProperty("jdk.debug").contains("debug");
     }
 
     /**

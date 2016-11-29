@@ -115,7 +115,7 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
     private FileSystem newFileSystem(String targetHome, URI uri, Map<String, ?> env)
             throws IOException {
         Objects.requireNonNull(targetHome);
-        Path jrtfs = FileSystems.getDefault().getPath(targetHome, JRT_FS_JAR);
+        Path jrtfs = FileSystems.getDefault().getPath(targetHome, "lib", JRT_FS_JAR);
         if (Files.notExists(jrtfs)) {
             throw new IOException(jrtfs.toString() + " not exist");
         }

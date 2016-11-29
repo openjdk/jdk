@@ -170,7 +170,7 @@ public class DetectMutableStaticFields {
             ConstantPoolException,
             InvalidDescriptor {
         JavaFileManager.Location location =
-                fm.getModuleLocation(StandardLocation.SYSTEM_MODULES, moduleName);
+                fm.getLocationForModule(StandardLocation.SYSTEM_MODULES, moduleName);
         if (location == null)
             throw new AssertionError("can't find module " + moduleName);
 

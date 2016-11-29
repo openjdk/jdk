@@ -87,14 +87,12 @@ package java.util.concurrent;
  *     this.executor = executor;
  *   }
  *
- *   public synchronized void execute(final Runnable r) {
- *     tasks.add(new Runnable() {
- *       public void run() {
- *         try {
- *           r.run();
- *         } finally {
- *           scheduleNext();
- *         }
+ *   public synchronized void execute(Runnable r) {
+ *     tasks.add(() -> {
+ *       try {
+ *         r.run();
+ *       } finally {
+ *         scheduleNext();
  *       }
  *     });
  *     if (active == null) {

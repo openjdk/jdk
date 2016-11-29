@@ -33,8 +33,10 @@ import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -460,6 +462,22 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     @Override
+    public Parameter[] getParameters() {
+        Executable javaMethod = toJava();
+        if (javaMethod == null) {
+            return null;
+        }
+
+        java.lang.reflect.Parameter[] javaParameters = javaMethod.getParameters();
+        Parameter[] res = new Parameter[javaParameters.length];
+        for (int i = 0; i < res.length; i++) {
+            java.lang.reflect.Parameter src = javaParameters[i];
+            res[i] = new Parameter(src.getName(), src.getModifiers(), this, i);
+        }
+        return res;
+    }
+
+    @Override
     public Annotation[][] getParameterAnnotations() {
         Executable javaMethod = toJava();
         return javaMethod == null ? null : javaMethod.getParameterAnnotations();
@@ -529,13 +547,31 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         return result;
     }
 
+    private static Method searchMethods(Method[] methods, String name, Class<?> returnType, Class<?>[] parameterTypes) {
+        for (Method m : methods) {
+            if (m.getName().equals(name) && returnType.equals(m.getReturnType()) && Arrays.equals(m.getParameterTypes(), parameterTypes)) {
+                return m;
+            }
+        }
+        return null;
+    }
+
     private Executable toJava() {
         if (toJavaCache != null) {
             return toJavaCache;
         }
         try {
             Class<?>[] parameterTypes = signatureToTypes();
-            Executable result = isConstructor() ? holder.mirror().getDeclaredConstructor(parameterTypes) : holder.mirror().getDeclaredMethod(name, parameterTypes);
+            Class<?> returnType = ((HotSpotResolvedJavaType) getSignature().getReturnType(holder).resolve(holder)).mirror();
+
+            Executable result;
+            if (isConstructor()) {
+                result = holder.mirror().getDeclaredConstructor(parameterTypes);
+            } else {
+                // Do not use Method.getDeclaredMethod() as it can return a bridge method
+                // when this.isBridge() is false and vice versa.
+                result = searchMethods(holder.mirror().getDeclaredMethods(), name, returnType, parameterTypes);
+            }
             toJavaCache = result;
             return result;
         } catch (NoSuchMethodException | NoClassDefFoundError e) {

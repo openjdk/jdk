@@ -233,7 +233,7 @@ class CompletenessAnalyzer {
 
         // Declarations and type parameters (thus expressions)
         EXTENDS(TokenKind.EXTENDS, XEXPR|XDECL),  //  extends
-        COMMA(TokenKind.COMMA, XEXPR|XDECL|XTERM),  //  ,
+        COMMA(TokenKind.COMMA, XEXPR|XDECL),  //  ,
         AMP(TokenKind.AMP, XEXPR|XDECL),  //  &
         GT(TokenKind.GT, XEXPR|XDECL),  //  >
         LT(TokenKind.LT, XEXPR|XDECL1),  //  <
@@ -541,7 +541,10 @@ class CompletenessAnalyzer {
                         ct = new CT(TK.tokenKindToTK(prevTK, current.kind), advance());
                         break;
                 }
-                if (ct.kind.isStart() && !prevTK.isOkToTerminate()) {
+                // Detect an error if we are at starting position and the last
+                // token wasn't a terminating one.  Special case: within braces,
+                // comma can proceed semicolon, e.g. the values list in enum
+                if (ct.kind.isStart() && !prevTK.isOkToTerminate() && prevTK != COMMA) {
                     return new CT(ERROR, current, "No '" + prevTK + "' before '" + ct.kind + "'");
                 }
                 if (stack.isEmpty() || ct.kind.isError()) {
@@ -653,12 +656,7 @@ class CompletenessAnalyzer {
             }
             switch (token.kind) {
                 case EQ:
-                    // Check for array initializer
                     nextToken();
-                    if (token.kind == BRACES) {
-                        nextToken();
-                        return lastly(SEMI);
-                    }
                     return parseExpressionStatement();
                 case BRACES:
                 case SEMI:

@@ -95,8 +95,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * *** Overview of Dual Queues with Slack ***
      *
      * Dual Queues, introduced by Scherer and Scott
-     * (http://www.cs.rice.edu/~wns1/papers/2004-DISC-DDS.pdf) are
-     * (linked) queues in which nodes may represent either data or
+     * (http://www.cs.rochester.edu/~scott/papers/2004_DISC_dual_DS.pdf)
+     * are (linked) queues in which nodes may represent either data or
      * requests.  When a thread tries to enqueue a data node, but
      * encounters a request node, it instead "matches" and removes it;
      * and vice versa for enqueuing requests. Blocking Dual Queues

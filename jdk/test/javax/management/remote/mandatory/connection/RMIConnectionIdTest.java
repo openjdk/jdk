@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4901808 7183800
- * @summary Check that RMI connection ids include client host name
+ * @summary Check that RMI connection ids include IP address of a client network interface
  * @author Eamonn McManus
  * @modules java.management
  * @run clean RMIConnectionIdTest
@@ -39,7 +39,7 @@ import javax.management.remote.*;
 public class RMIConnectionIdTest {
     public static void main(String[] args) throws Exception {
         System.out.println("Testing that RMI connection id includes " +
-                           "client host name");
+                           "IP address of a client network interface");
         MBeanServer mbs = MBeanServerFactory.createMBeanServer();
         JMXServiceURL url = new JMXServiceURL("rmi", null, 0);
         JMXConnectorServer cs =
@@ -61,11 +61,9 @@ public class RMIConnectionIdTest {
         }
         String clientAddr = rest.substring(0, spaceIndex);
         InetAddress clientInetAddr = InetAddress.getByName(clientAddr);
-        InetAddress localAddr = clientInetAddr.isLoopbackAddress() ? InetAddress.getLoopbackAddress() : InetAddress.getLocalHost();
-        System.out.println("InetAddresses: local=" + localAddr + "; " +
-                           "connectionId=" + clientInetAddr);
-        if (!localAddr.equals(clientInetAddr)) {
-            System.out.println("TEST FAILS: addresses differ");
+        NetworkInterface ni = NetworkInterface.getByInetAddress(clientInetAddr);
+        if (ni == null) {
+            System.out.println("TEST FAILS: address not found");
             System.exit(1);
         }
         cc.close();

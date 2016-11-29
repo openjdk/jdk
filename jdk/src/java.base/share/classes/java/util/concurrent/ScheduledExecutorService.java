@@ -77,14 +77,11 @@ package java.util.concurrent;
  *     Executors.newScheduledThreadPool(1);
  *
  *   public void beepForAnHour() {
- *     final Runnable beeper = new Runnable() {
- *       public void run() { System.out.println("beep"); }
- *     };
- *     final ScheduledFuture<?> beeperHandle =
+ *     Runnable beeper = () -> System.out.println("beep");
+ *     ScheduledFuture<?> beeperHandle =
  *       scheduler.scheduleAtFixedRate(beeper, 10, 10, SECONDS);
- *     scheduler.schedule(new Runnable() {
- *       public void run() { beeperHandle.cancel(true); }
- *     }, 60 * 60, SECONDS);
+ *     Runnable canceller = () -> beeperHandle.cancel(true);
+ *     scheduler.schedule(canceller, 1, HOURS);
  *   }
  * }}</pre>
  *

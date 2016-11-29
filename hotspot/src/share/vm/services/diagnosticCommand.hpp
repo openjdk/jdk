@@ -386,7 +386,7 @@ public:
     return "GC.class_stats";
   }
   static const char* description() {
-    return "Provide statistics about Java class meta data. Requires -XX:+UnlockDiagnosticVMOptions.";
+    return "Provide statistics about Java class meta data.";
   }
   static const char* impact() {
     return "High: Depends on Java heap size and content.";

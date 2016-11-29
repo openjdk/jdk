@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144095 8164825
+ * @bug 8144095 8164825 8169818 8153402
  * @summary Test Command Completion
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -61,12 +61,13 @@ public class CommandCompletionTest extends ReplToolTesting {
     public void testList() {
         test(false, new String[] {"--no-startup"},
                 a -> assertCompletion(a, "/l|", false, "/list "),
-                a -> assertCompletion(a, "/list |", false, "-all ", "-history ", "-start "),
-                a -> assertCompletion(a, "/list -h|", false, "-history "),
+                a -> assertCompletion(a, "/list |", false, "-all", "-history", "-start "),
+                a -> assertCompletion(a, "/list -h|", false, "-history"),
                 a -> assertCompletion(a, "/list q|", false),
                 a -> assertVariable(a, "int", "xray"),
-                a -> assertCompletion(a, "/list |", false, "-all ", "-history ", "-start ", "1", "xray"),
-                a -> assertCompletion(a, "/list x|", false, "xray")
+                a -> assertCompletion(a, "/list |", false, "-all", "-history", "-start ", "1 ", "xray "),
+                a -> assertCompletion(a, "/list x|", false, "xray "),
+                a -> assertCompletion(a, "/list xray |", false)
         );
     }
 
@@ -76,8 +77,8 @@ public class CommandCompletionTest extends ReplToolTesting {
                 a -> assertClass(a, "class cTest {}", "class", "cTest"),
                 a -> assertMethod(a, "int mTest() { return 0; }", "()I", "mTest"),
                 a -> assertVariable(a, "int", "fTest"),
-                a -> assertCompletion(a, "/drop |", false, "1", "2", "3", "cTest", "fTest", "mTest"),
-                a -> assertCompletion(a, "/drop f|", false, "fTest")
+                a -> assertCompletion(a, "/drop |", false, "1 ", "2 ", "3 ", "cTest ", "fTest ", "mTest "),
+                a -> assertCompletion(a, "/drop f|", false, "fTest ")
         );
     }
 
@@ -88,8 +89,54 @@ public class CommandCompletionTest extends ReplToolTesting {
                 a -> assertClass(a, "class cTest {}", "class", "cTest"),
                 a -> assertMethod(a, "int mTest() { return 0; }", "()I", "mTest"),
                 a -> assertVariable(a, "int", "fTest"),
-                a -> assertCompletion(a, "/edit |", false, "1", "2", "3", "cTest", "fTest", "mTest"),
-                a -> assertCompletion(a, "/edit f|", false, "fTest")
+                a -> assertCompletion(a, "/edit |", false,
+                        "-all" , "-start " , "1 ", "2 ", "3 ", "cTest ", "fTest ", "mTest "),
+                a -> assertCompletion(a, "/edit cTest |", false,
+                        "2 ", "3 ", "fTest ", "mTest "),
+                a -> assertCompletion(a, "/edit 1 fTest |", false,
+                        "2 ", "mTest "),
+                a -> assertCompletion(a, "/edit f|", false, "fTest "),
+                a -> assertCompletion(a, "/edit mTest f|", false, "fTest ")
+        );
+    }
+
+    public void testHelp() {
+        assertCompletion("/help |", false,
+                "/! ", "/-<n> ", "/<id> ", "/? ", "/classpath ", "/drop ",
+                "/edit ", "/exit ", "/help ", "/history ", "/imports ",
+                "/list ", "/methods ", "/open ", "/reload ", "/reset ",
+                "/save ", "/set ", "/types ", "/vars ", "intro ", "shortcuts ");
+        assertCompletion("/? |", false,
+                "/! ", "/-<n> ", "/<id> ", "/? ", "/classpath ", "/drop ",
+                "/edit ", "/exit ", "/help ", "/history ", "/imports ",
+                "/list ", "/methods ", "/open ", "/reload ", "/reset ",
+                "/save ", "/set ", "/types ", "/vars ", "intro ", "shortcuts ");
+        assertCompletion("/help /s|", false,
+                "/save ", "/set ");
+        assertCompletion("/help /set |", false,
+                "editor", "feedback", "format", "mode", "prompt", "start", "truncation");
+        assertCompletion("/help /edit |", false);
+    }
+
+    public void testReload() {
+        assertCompletion("/reload |", false, "-quiet ", "-restore ");
+        assertCompletion("/reload -restore |", false, "-quiet");
+        assertCompletion("/reload -quiet |", false, "-restore");
+        assertCompletion("/reload -restore -quiet |", false);
+    }
+
+    public void testVarsMethodsTypes() {
+        test(false, new String[]{"--no-startup"},
+                a -> assertCompletion(a, "/v|", false, "/vars "),
+                a -> assertCompletion(a, "/m|", false, "/methods "),
+                a -> assertCompletion(a, "/t|", false, "/types "),
+                a -> assertClass(a, "class cTest {}", "class", "cTest"),
+                a -> assertMethod(a, "int mTest() { return 0; }", "()I", "mTest"),
+                a -> assertVariable(a, "int", "fTest"),
+                a -> assertCompletion(a, "/vars |", false, "-all", "-start ", "3 ", "fTest "),
+                a -> assertCompletion(a, "/meth |", false, "-all", "-start ", "2 ", "mTest "),
+                a -> assertCompletion(a, "/typ |", false, "-all", "-start ", "1 ", "cTest "),
+                a -> assertCompletion(a, "/var f|", false, "fTest ")
         );
     }
 

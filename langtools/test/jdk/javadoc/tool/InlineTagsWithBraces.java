@@ -80,7 +80,7 @@ public class InlineTagsWithBraces implements Doclet {
 
     public boolean run(DocletEnvironment root) {
         DocTrees trees = root.getDocTrees();
-        TypeElement cd = root.getIncludedTypeElements().iterator().next();
+        TypeElement cd = ElementFilter.typesIn(root.getIncludedElements()).iterator().next();
         DocCommentTree docCommentTree = trees.getDocCommentTree(cd);
         List<? extends DocTree> tags = docCommentTree.getBody();
 

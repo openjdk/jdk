@@ -26,9 +26,11 @@
 #define SHARE_VM_CODE_CODEBLOB_HPP
 
 #include "asm/codeBuffer.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "compiler/oopMap.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
+#include "utilities/macros.hpp"
 
 // CodeBlob Types
 // Used in the CodeCache to assign CodeBlobs to different CodeHeaps
@@ -71,7 +73,8 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   friend class CodeCacheDumper;
 
 protected:
-  const char* _name;
+
+  const CompilerType _type;                      // CompilerType
   int        _size;                              // total size of CodeBlob in bytes
   int        _header_size;                       // size of header (depends on subclass)
   int        _frame_complete_offset;             // instruction offsets in [0.._frame_complete_offset) have
@@ -92,9 +95,11 @@ protected:
   ImmutableOopMapSet* _oop_maps;                 // OopMap for this CodeBlob
   bool                _caller_must_gc_arguments;
   CodeStrings         _strings;
+  const char*         _name;
+  S390_ONLY(int       _ctable_offset;)
 
-  CodeBlob(const char* name, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments);
-  CodeBlob(const char* name, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
+  CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments);
+  CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
 public:
   // Returns the space needed for CodeBlob
   static unsigned int allocation_size(CodeBuffer* cb, int header_size);
@@ -115,9 +120,11 @@ public:
   virtual bool is_method_handles_adapter_blob() const { return false; }
   virtual bool is_compiled() const                    { return false; }
 
-  virtual bool is_compiled_by_c2() const         { return false; }
-  virtual bool is_compiled_by_c1() const         { return false; }
-  virtual bool is_compiled_by_jvmci() const      { return false; }
+  inline bool is_compiled_by_c1() const    { return _type == compiler_c1; };
+  inline bool is_compiled_by_c2() const    { return _type == compiler_c2; };
+  inline bool is_compiled_by_jvmci() const { return _type == compiler_jvmci; };
+  inline bool is_compiled_by_shark() const { return _type == compiler_shark; };
+  const char* compiler_name() const;
 
   // Casting
   nmethod* as_nmethod_or_null()                { return is_nmethod() ? (nmethod*) this : NULL; }
@@ -134,6 +141,12 @@ public:
   address code_begin() const          { return _code_begin;    }
   address code_end() const            { return _code_end; }
   address data_end() const            { return _data_end;      }
+
+  // This field holds the beginning of the const section in the old code buffer.
+  // It is needed to fix relocations of pc-relative loads when resizing the
+  // the constant pool or moving it.
+  S390_ONLY(address ctable_begin() const { return header_begin() + _ctable_offset; })
+  void set_ctable_begin(address ctable) { S390_ONLY(_ctable_offset = ctable - header_begin();) }
 
   // Sizes
   int size() const                               { return _size; }

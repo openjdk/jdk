@@ -222,7 +222,8 @@ public class TransformerFactoryImpl
     private boolean _useServicesMechanism;
 
     /**
-     * protocols allowed for external references set by the stylesheet processing instruction, Import and Include element.
+     * protocols allowed for external references set by the stylesheet
+     * processing instruction, Import and Include element.
      */
     private String _accessExternalStylesheet = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
      /**
@@ -240,7 +241,7 @@ public class TransformerFactoryImpl
     // Unmodifiable view of external extension function from xslt compiler
     // It will be populated by user-specified extension functions during the
     // type checking
-    private Map<String, Class> _xsltcExtensionFunctions;
+    private Map<String, Class<?>> _xsltcExtensionFunctions;
 
     CatalogResolver _catalogUriResolver;
     CatalogFeatures _catalogFeatures;
@@ -250,6 +251,8 @@ public class TransformerFactoryImpl
     String _catalogDefer = null;
     String _catalogPrefer = null;
     String _catalogResolve = null;
+
+    int _cdataChunkSize = JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT;
 
     /**
      * javax.xml.transform.sax.TransformerFactory implementation.
@@ -283,7 +286,7 @@ public class TransformerFactoryImpl
         _xsltcExtensionFunctions = null;
     }
 
-    public Map<String,Class> getExternalExtensionsMap() {
+    public Map<String, Class<?>> getExternalExtensionsMap() {
         return _xsltcExtensionFunctions;
     }
 
@@ -367,6 +370,8 @@ public class TransformerFactoryImpl
             return _catalogResolve;
         } else if (JdkXmlFeatures.CATALOG_FEATURES.equals(name)) {
             return buildCatalogFeatures();
+        } else if (JdkXmlUtils.CDATA_CHUNK_SIZE.equals(name)) {
+            return _cdataChunkSize;
         }
 
         /** Check to see if the property is managed by the security manager **/
@@ -506,6 +511,9 @@ public class TransformerFactoryImpl
         } else if (JdkXmlUtils.CATALOG_RESOLVE.equals(name)) {
             _catalogResolve = (String) value;
             cfBuilder = CatalogFeatures.builder().with(Feature.RESOLVE, _catalogResolve);
+            return;
+        } else if (JdkXmlUtils.CDATA_CHUNK_SIZE.equals(name)) {
+            _cdataChunkSize = JdkXmlUtils.getValue(value, _cdataChunkSize);
             return;
         }
 
@@ -896,10 +904,10 @@ public class TransformerFactoryImpl
                 transletName = _packageName + "." + transletName;
 
             try {
-                final Class clazz = ObjectFactory.findProviderClass(transletName, true);
+                final Class<?> clazz = ObjectFactory.findProviderClass(transletName, true);
                 resetTransientAttributes();
 
-                templates = new TemplatesImpl(new Class[]{clazz}, transletName, null, _indentNumber, this);
+                templates = new TemplatesImpl(new Class<?>[]{clazz}, transletName, null, _indentNumber, this);
                 if (_uriResolver != null) {
                     templates.setURIResolver(_uriResolver);
                 }

@@ -476,7 +476,7 @@ public class ReplToolTesting {
         code = code.replace("|", "");
         assertTrue(cursor > -1, "'|' not found: " + code);
         List<Suggestion> completions =
-                js.commandCompletionSuggestions(code, cursor, new int[1]); //XXX: ignoring anchor for now
+                js.commandCompletionSuggestions(code, cursor, new int[] {-1}); //XXX: ignoring anchor for now
         return completions.stream()
                           .filter(s -> isSmart == s.matchesType())
                           .map(s -> s.continuation())

@@ -140,8 +140,8 @@ public class Throw {
             catch (Throwable t) {
                 if (k.isAssignableFrom(t.getClass())) pass();
                 else unexpected(t);}}
-    @SuppressWarnings("unchecked") static <T extends Throwable>
-        void uncheckedThrow(Throwable t) throws T {
+    @SuppressWarnings("unchecked")
+    static <T extends Throwable> void uncheckedThrow(Throwable t) throws T {
         throw (T)t; // rely on vacuous cast
     }
 }

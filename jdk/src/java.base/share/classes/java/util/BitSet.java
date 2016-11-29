@@ -1210,9 +1210,10 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * is the number of bits in the set state, equal to the value
      * returned by the {@link #cardinality()} method.
      *
-     * <p>The bit set must remain constant during the execution of the
-     * terminal stream operation.  Otherwise, the result of the terminal
-     * stream operation is undefined.
+     * <p>The stream binds to this bit set when the terminal stream operation
+     * commences (specifically, the spliterator for the stream is
+     * <a href="../Spliterator.html#binding"><em>late-binding</em></a>).  If the
+     * bit set is modified during that operation then the result is undefined.
      *
      * @return a stream of integers representing set indices
      * @since 1.8

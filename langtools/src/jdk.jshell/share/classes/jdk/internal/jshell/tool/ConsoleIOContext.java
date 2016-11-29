@@ -283,9 +283,9 @@ class ConsoleIOContext extends IOContext {
             if (firstInvocation) {
                 convertor = d -> d.signature();
             } else {
-                convertor = d -> formatter.formatJavadoc(d.signature(),
-                                                         d.javadoc() != null ? d.javadoc()
-                                                                             : repl.messageFormat("jshell.console.no.javadoc"));
+                convertor = d -> formatter.formatJavadoc(d.signature(), d.javadoc()) +
+                                 (d.javadoc() == null ? repl.messageFormat("jshell.console.no.javadoc")
+                                                      : "");
             }
             doc = repl.analysis.documentation(prefix + buffer, cursor + prefix.length(), !firstInvocation)
                                .stream()
