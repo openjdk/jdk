@@ -4309,6 +4309,15 @@ void MacroAssembler::vpaddw(XMMRegister dst, XMMRegister nds, Address src, int v
   }
 }
 
+void MacroAssembler::vpand(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len) {
+  if (reachable(src)) {
+    Assembler::vpand(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(rscratch1, src);
+    Assembler::vpand(dst, nds, Address(rscratch1, 0), vector_len);
+  }
+}
+
 void MacroAssembler::vpbroadcastw(XMMRegister dst, XMMRegister src) {
   int dst_enc = dst->encoding();
   int src_enc = src->encoding();

@@ -393,7 +393,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
                 for (ModuleSymbol msym : modules.allModules()) {
                     PackageSymbol p = syms.getPackage(msym, pack);
                     if (p != null && !p.members().isEmpty()) {
-                        return fm.getModuleLocation(location, msym.name.toString());
+                        return fm.getLocationForModule(location, msym.name.toString());
                     }
                 }
 

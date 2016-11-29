@@ -249,8 +249,11 @@ public abstract class BaseFileManager implements JavaFileManager {
             return false;
         }
 
-        if (!o.handleOption(helper, current, remaining))
-            throw new IllegalArgumentException(current);
+        try {
+            o.handleOption(helper, current, remaining);
+        } catch (Option.InvalidValueException e) {
+            throw new IllegalArgumentException(e.getMessage(), e);
+        }
 
         return true;
     }

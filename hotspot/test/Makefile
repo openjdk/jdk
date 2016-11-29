@@ -50,7 +50,7 @@ TEE       = tee
 UNAME     = uname
 UNIQ      = uniq
 WC        = wc
-ZIP       = zip
+ZIPEXE    = zip
 
 define NEWLINE
 
@@ -195,7 +195,8 @@ ifneq ($(FAILURE_HANDLER_DIR), )
       -timeoutHandlerDir:$(FAILURE_HANDLER_DIR_MIXED)/jtregFailureHandler.jar \
       -observerDir:$(FAILURE_HANDLER_DIR_MIXED)/jtregFailureHandler.jar \
       -timeoutHandler:jdk.test.failurehandler.jtreg.GatherProcessInfoTimeoutHandler \
-      -observer:jdk.test.failurehandler.jtreg.GatherDiagnosticInfoObserver
+      -observer:jdk.test.failurehandler.jtreg.GatherDiagnosticInfoObserver \
+      -timeoutHandlerTimeout:0
   ifeq ($(PLATFORM), windows)
     JTREG_FAILURE_HANDLER_OPTIONS += -J-Djava.library.path="$(FAILURE_HANDLER_DIR_MIXED)"
   endif
@@ -212,7 +213,7 @@ endif
 ZIP_UP_RESULTS = ( $(MKDIR) -p `$(DIRNAME) $(ARCHIVE_BUNDLE)`     \
 	           && $(CD) $(ABS_TEST_OUTPUT_DIR)             \
 	           && $(CHMOD) -R a+r . \
-	           && $(ZIP) -q -r $(ARCHIVE_BUNDLE) . )
+	           && $(ZIPEXE) -q -r $(ARCHIVE_BUNDLE) . )
 
 # important results files
 SUMMARY_TXT = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTreport/text/summary.txt")
@@ -326,7 +327,7 @@ ifdef NUM_CORES
   else ifeq ($(shell expr $(CONCURRENCY) \> 12), 1)
     CONCURRENCY := 12
   endif
-else 
+else
   CONCURRENCY := 1
 endif
 JTREG_BASIC_OPTIONS += -concurrency:$(CONCURRENCY)

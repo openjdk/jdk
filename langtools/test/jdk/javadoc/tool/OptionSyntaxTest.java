@@ -40,9 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Set;
 
 import javax.lang.model.SourceVersion;
@@ -97,11 +95,11 @@ public class OptionSyntaxTest extends TestRunner {
     }
 
     static class DOption implements Doclet.Option {
-        private final String name;
+        private final List<String> names = new ArrayList<>();
         private final int argCount;
 
         DOption(String name, int argCount) {
-            this.name = name;
+            this.names.add(name);
             this.argCount = argCount;
         }
 
@@ -112,7 +110,7 @@ public class OptionSyntaxTest extends TestRunner {
 
         @Override
         public String getDescription() {
-            return "description[" + name + "]";
+            return "description[" + names.get(0) + "]";
         }
 
         @Override
@@ -121,25 +119,20 @@ public class OptionSyntaxTest extends TestRunner {
         }
 
         @Override
-        public String getName() {
-            return name;
+        public List<String> getNames() {
+            return names;
         }
 
         @Override
         public String getParameters() {
-            return argCount > 0 ? "parameters[" + name + "," + argCount + "]" : null;
+            return argCount > 0 ? "parameters[" + names.get(0) + "," + argCount + "]" : null;
         }
 
         @Override
-        public boolean matches(String option) {
-            return option.equals(name);
-        }
-
-        @Override
-        public boolean process(String option, ListIterator<String> arguments) {
+        public boolean process(String option, List<String> arguments) {
             List<String> args = new ArrayList<>();
-            for (int i = 0; i < argCount && arguments.hasNext(); i++) {
-                args.add(arguments.next());
+            for (int i = 0; i < argCount && i < arguments.size(); i++) {
+                args.add(arguments.get(i));
             }
             System.out.println("process " + option + " " + args);
             return args.stream().filter(s -> s.startsWith("arg")).count() == argCount;

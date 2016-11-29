@@ -77,7 +77,7 @@ endef
 define create-info-file
   $(if $(JDK_ARCH_ABI_PROP_NAME), \
     $(call info-file-item, "SUN_ARCH_ABI", "$(JDK_ARCH_ABI_PROP_NAME)"))
-  $(call info-file-item, "SOURCE", "$(strip $(ALL_SOURCE_TIPS))")
+  $(call info-file-item, "SOURCE", "$(strip $(SOURCE_REVISION))")
 endef
 
 # Param 1 - The file containing the MODULES list
@@ -95,12 +95,13 @@ endef
 # Create a variable dependency file common for all release info files.
 INFO_FILE_VARDEPS := $(call DependOnVariable, create-info-file)
 
-ALL_SOURCE_TIPS = $(shell \
-    if [ -f $(SUPPORT_OUTPUTDIR)/source_tips ] ; then \
-      $(CAT) $(SUPPORT_OUTPUTDIR)/source_tips ; \
+SOURCE_REVISION = $(shell \
+    if [ -f $(SOURCE_REVISION_TRACKER) ] ; then \
+      $(CAT) $(SOURCE_REVISION_TRACKER) ; \
     fi)
 
-$(BASE_RELEASE_FILE): $(INFO_FILE_VARDEPS) $(SUPPORT_OUTPUTDIR)/source_tips
+# The SOURCE_REVISION_TRACKER file may not exist. Only depend on it if it does.
+$(BASE_RELEASE_FILE): $(INFO_FILE_VARDEPS) $(wildcard $(SOURCE_REVISION_TRACKER))
 	$(info-file)
 
 ################################################################################
@@ -131,7 +132,7 @@ JLINK_TOOL := $(JLINK) --module-path $(IMAGES_OUTPUTDIR)/jmods \
     $(JLINK_JLI_CLASSES) \
     #
 
-JLINK_JRE_EXTRA_OPTS := --no-man-pages --no-header-files
+JLINK_JRE_EXTRA_OPTS := --no-man-pages --no-header-files --strip-debug
 
 ifeq ($(JLINK_KEEP_PACKAGED_MODULES), true)
   JLINK_JDK_EXTRA_OPTS := --keep-packaged-modules $(JDK_IMAGE_DIR)/jmods
@@ -398,16 +399,6 @@ $(eval $(call SetupCopyFiles, COPY_SAMPLES, \
         $(call CacheFind,$(SUPPORT_OUTPUTDIR)/sample/image))))
 
 JDK_TARGETS += $(COPY_SAMPLES)
-
-################################################################################
-# jrt-fs.jar
-
-$(eval $(call SetupCopyFiles,COPY_JRTFS_JAR, \
-    SRC := $(SUPPORT_OUTPUTDIR), \
-    DEST := $(JDK_IMAGE_DIR), \
-    FILES := $(SUPPORT_OUTPUTDIR)/jrt-fs.jar))
-
-JDK_TARGETS += $(COPY_JRTFS_JAR)
 
 ################################################################################
 # Code coverage data files

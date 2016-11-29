@@ -40,6 +40,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.util.ElementFilter;
 
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
@@ -75,7 +76,7 @@ public class BreakIteratorWarning implements Doclet {
     }
 
     public boolean run(DocletEnvironment root) {
-        TypeElement cd = root.getIncludedTypeElements().iterator().next();
+        TypeElement cd = ElementFilter.typesIn(root.getIncludedElements()).iterator().next();
         VariableElement fd = getFields(cd).get(0);
         DocTrees docTrees = root.getDocTrees();
         DocCommentTree docCommentTree = docTrees.getDocCommentTree(fd);

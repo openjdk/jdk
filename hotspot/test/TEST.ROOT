@@ -44,7 +44,8 @@ requires.properties= \
     vm.gc.G1 \
     vm.gc.Serial \
     vm.gc.Parallel \
-    vm.gc.ConcMarkSweep
+    vm.gc.ConcMarkSweep \
+    vm.debug
 
 # Tests using jtreg 4.2 b03 features
 requiredVersion=4.2 b03

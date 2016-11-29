@@ -25,26 +25,27 @@
  * @test
  * @bug 6227454
  * @summary package.html and overview.html may not be read fully
- *  * @modules jdk.javadoc/jdk.javadoc.internal.tool
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  */
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import java.util.HashSet;
-import java.util.ListIterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.util.ElementFilter;
 
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.util.DocTrees;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.doclet.DocletEnvironment;
-
 
 public class Test implements Doclet {
     public static void main(String... args) throws Exception {
@@ -140,9 +141,9 @@ public class Test implements Doclet {
 
     public boolean run(DocletEnvironment root) {
         DocTrees docTrees = root.getDocTrees();
-        System.out.println("classes:" + root.getIncludedTypeElements());
+        System.out.println("classes:" + ElementFilter.typesIn(root.getIncludedElements()));
 
-        Element klass = root.getIncludedTypeElements().iterator().next();
+        Element klass = ElementFilter.typesIn(root.getIncludedElements()).iterator().next();
         String text = "";
         try {
             DocCommentTree dcTree = docTrees.getDocCommentTree(klass, overviewpath);
@@ -190,8 +191,10 @@ public class Test implements Doclet {
                 }
 
                 @Override
-                public String getName() {
-                    return "overview";
+                public List<String> getNames() {
+                    List<String> out = new ArrayList<>();
+                    out.add("overview");
+                    return out;
                 }
 
                 @Override
@@ -200,21 +203,13 @@ public class Test implements Doclet {
                 }
 
                 @Override
-                public boolean matches(String option) {
-                    String opt = option.startsWith("-") ? option.substring(1) : option;
-                    return getName().equals(opt);
-                }
-
-                @Override
-                public boolean process(String option, ListIterator<String> arguments) {
-                    if (matches(option)) {
-                        overviewpath = arguments.next();
-                    }
+                public boolean process(String option, List<String> arguments) {
+                    overviewpath = arguments.get(0);
                     return true;
                 }
             }
         };
-        return new HashSet<Option>(Arrays.asList(options));
+        return new HashSet<>(Arrays.asList(options));
     }
 
     @Override

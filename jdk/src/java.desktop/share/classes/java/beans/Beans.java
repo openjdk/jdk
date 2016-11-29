@@ -154,7 +154,7 @@ public class Beans {
      * @exception IOException if an I/O error occurs.
      * @since 1.2
      */
-
+    @SuppressWarnings("deprecation")
     public static Object instantiate(ClassLoader cls, String beanName, BeanContext beanContext, AppletInitializer initializer)
                         throws IOException, ClassNotFoundException {
 
@@ -501,7 +501,7 @@ class ObjectInputStreamWithLoader extends ObjectInputStream
  * Package private support class.  This provides a default AppletContext
  * for beans which are applets.
  */
-
+@SuppressWarnings("deprecation")
 class BeansAppletContext implements AppletContext {
     Applet target;
     Hashtable<URL,Object> imageCache = new Hashtable<>();
@@ -586,6 +586,7 @@ class BeansAppletContext implements AppletContext {
  * Package private support class.  This provides an AppletStub
  * for beans which are applets.
  */
+@SuppressWarnings("deprecation")
 class BeansAppletStub implements AppletStub {
     transient boolean active;
     transient Applet target;

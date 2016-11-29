@@ -30,6 +30,10 @@ import javax.imageio.plugins.tiff.BaselineTIFFTagSet;
 
 class TIFFLZWDecompressor extends TIFFDecompressor {
 
+    private static final int CLEAR_CODE = 256;
+    private static final int EOI_CODE   = 257;
+    private static final int FIRST_CODE = 258;
+
     private static final int andTable[] = {
         511,
         1023,
@@ -38,6 +42,10 @@ class TIFFLZWDecompressor extends TIFFDecompressor {
     };
 
     private int predictor;
+
+    // whether to reverse the bits in each byte of the input data, i.e.,
+    // convert right-to-left fill order (lsb) to left-to-right (msb).
+    private boolean flipBits;
 
     private byte[] srcData;
     private byte[] dstData;
@@ -51,7 +59,8 @@ class TIFFLZWDecompressor extends TIFFDecompressor {
     private int nextData = 0;
     private int nextBits = 0;
 
-    public TIFFLZWDecompressor(int predictor) throws IIOException {
+    public TIFFLZWDecompressor(int predictor, int fillOrder)
+        throws IIOException {
         super();
 
         if (predictor != BaselineTIFFTagSet.PREDICTOR_NONE &&
@@ -62,6 +71,8 @@ class TIFFLZWDecompressor extends TIFFDecompressor {
         }
 
         this.predictor = predictor;
+
+        flipBits = fillOrder == BaselineTIFFTagSet.FILL_ORDER_RIGHT_TO_LEFT;
     }
 
     public void decodeRaw(byte[] b,
@@ -87,6 +98,12 @@ class TIFFLZWDecompressor extends TIFFDecompressor {
 
         byte[] sdata = new byte[byteCount];
         stream.readFully(sdata);
+
+        if (flipBits) {
+            for (int i = 0; i < byteCount; i++) {
+                sdata[i] = TIFFFaxDecompressor.flipTable[sdata[i] & 0xff];
+            }
+        }
 
         int bytesPerRow = (srcWidth*bitsPerPixel + 7)/8;
         byte[] buf;
@@ -133,11 +150,11 @@ class TIFFLZWDecompressor extends TIFFDecompressor {
         int code, oldCode = 0;
         byte[] string;
 
-        while ((code = getNextCode()) != 257) {
-            if (code == 256) {
+        while ((code = getNextCode()) != EOI_CODE) {
+            if (code == CLEAR_CODE) {
                 initializeStringTable();
                 code = getNextCode();
-                if (code == 257) {
+                if (code == EOI_CODE) {
                     break;
                 }
 
@@ -186,12 +203,12 @@ class TIFFLZWDecompressor extends TIFFDecompressor {
     public void initializeStringTable() {
         stringTable = new byte[4096][];
 
-        for (int i = 0; i < 256; i++) {
+        for (int i = 0; i < CLEAR_CODE; i++) {
             stringTable[i] = new byte[1];
             stringTable[i][0] = (byte)i;
         }
 
-        tableIndex = 258;
+        tableIndex = FIRST_CODE;
         bitsToGet = 9;
     }
 
@@ -281,7 +298,7 @@ class TIFFLZWDecompressor extends TIFFDecompressor {
             return code;
         } catch (ArrayIndexOutOfBoundsException e) {
             // Strip not terminated as expected: return EndOfInformation code.
-            return 257;
+            return EOI_CODE;
         }
     }
 }

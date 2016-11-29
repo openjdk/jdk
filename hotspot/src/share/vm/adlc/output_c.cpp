@@ -1644,6 +1644,15 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
         }
       } // done iterating over a new instruction's operands
 
+      // Fix number of operands, as we do not generate redundant ones.
+      // The matcher generates some redundant operands, which are removed
+      // in the expand function (of the node we generate here). We don't
+      // generate the redundant operands here, so set the correct _num_opnds.
+      if (expand_instruction->num_opnds() != expand_instruction->num_unique_opnds()) {
+        fprintf(fp, "  n%d->_num_opnds = %d; // Only unique opnds generated.\n",
+                cnt, expand_instruction->num_unique_opnds());
+      }
+
       // Invoke Expand() for the newly created instruction.
       fprintf(fp,"  result = n%d->Expand( state, proj_list, mem );\n", cnt);
       assert( !new_inst->expands(), "Do not have complete support for recursive expansion");
@@ -1722,27 +1731,30 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
 
   if( !node->expands() && node->_matrule != NULL ) {
     // Remove duplicated operands and inputs which use the same name.
-    // Seach through match operands for the same name usage.
+    // Search through match operands for the same name usage.
+    // The matcher generates these non-unique operands. If the node
+    // was constructed by an expand rule, there are no unique operands.
     uint cur_num_opnds = node->num_opnds();
-    if( cur_num_opnds > 1 && cur_num_opnds != node->num_unique_opnds() ) {
+    if (cur_num_opnds > 1 && cur_num_opnds != node->num_unique_opnds()) {
       Component *comp = NULL;
+      fprintf(fp, "  // Remove duplicated operands and inputs which use the same name.\n");
+      fprintf(fp, "  if (num_opnds() == %d) {\n", cur_num_opnds);
       // Build mapping from num_edges to local variables
-      fprintf(fp,"  unsigned num0 = 0;\n");
-      for( i = 1; i < cur_num_opnds; i++ ) {
-        fprintf(fp,"  unsigned num%d = opnd_array(%d)->num_edges();",i,i);
+      fprintf(fp,"    unsigned num0 = 0;\n");
+      for (i = 1; i < cur_num_opnds; i++) {
+        fprintf(fp,"    unsigned num%d = opnd_array(%d)->num_edges();", i, i);
         fprintf(fp, " \t// %s\n", node->opnd_ident(i));
       }
       // Build a mapping from operand index to input edges
-      fprintf(fp,"  unsigned idx0 = oper_input_base();\n");
-      for( i = 0; i < cur_num_opnds; i++ ) {
-        fprintf(fp,"  unsigned idx%d = idx%d + num%d;\n",
-                i+1,i,i);
+      fprintf(fp,"    unsigned idx0 = oper_input_base();\n");
+      for (i = 0; i < cur_num_opnds; i++) {
+        fprintf(fp,"    unsigned idx%d = idx%d + num%d;\n", i+1, i, i);
       }
 
       uint new_num_opnds = 1;
       node->_components.reset();
       // Skip first unique operands.
-      for( i = 1; i < cur_num_opnds; i++ ) {
+      for (i = 1; i < cur_num_opnds; i++) {
         comp = node->_components.iter();
         if (i != node->unique_opnds_idx(i)) {
           break;
@@ -1750,28 +1762,32 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
         new_num_opnds++;
       }
       // Replace not unique operands with next unique operands.
-      for( ; i < cur_num_opnds; i++ ) {
+      for ( ; i < cur_num_opnds; i++) {
         comp = node->_components.iter();
         uint j = node->unique_opnds_idx(i);
         // unique_opnds_idx(i) is unique if unique_opnds_idx(j) is not unique.
-        if( j != node->unique_opnds_idx(j) ) {
-          fprintf(fp,"  set_opnd_array(%d, opnd_array(%d)->clone()); // %s\n",
+        if (j != node->unique_opnds_idx(j)) {
+          fprintf(fp,"    set_opnd_array(%d, opnd_array(%d)->clone()); // %s\n",
                   new_num_opnds, i, comp->_name);
-          // delete not unique edges here
-          fprintf(fp,"  for(unsigned i = 0; i < num%d; i++) {\n", i);
-          fprintf(fp,"    set_req(i + idx%d, _in[i + idx%d]);\n", new_num_opnds, i);
-          fprintf(fp,"  }\n");
-          fprintf(fp,"  num%d = num%d;\n", new_num_opnds, i);
-          fprintf(fp,"  idx%d = idx%d + num%d;\n", new_num_opnds+1, new_num_opnds, new_num_opnds);
+          // Delete not unique edges here.
+          fprintf(fp,"    for (unsigned i = 0; i < num%d; i++) {\n", i);
+          fprintf(fp,"      set_req(i + idx%d, _in[i + idx%d]);\n", new_num_opnds, i);
+          fprintf(fp,"    }\n");
+          fprintf(fp,"    num%d = num%d;\n", new_num_opnds, i);
+          fprintf(fp,"    idx%d = idx%d + num%d;\n", new_num_opnds+1, new_num_opnds, new_num_opnds);
           new_num_opnds++;
         }
       }
-      // delete the rest of edges
-      fprintf(fp,"  for(int i = idx%d - 1; i >= (int)idx%d; i--) {\n", cur_num_opnds, new_num_opnds);
-      fprintf(fp,"    del_req(i);\n");
-      fprintf(fp,"  }\n");
-      fprintf(fp,"  _num_opnds = %d;\n", new_num_opnds);
+      // Delete the rest of edges.
+      fprintf(fp,"    for (int i = idx%d - 1; i >= (int)idx%d; i--) {\n", cur_num_opnds, new_num_opnds);
+      fprintf(fp,"      del_req(i);\n");
+      fprintf(fp,"    }\n");
+      fprintf(fp,"    _num_opnds = %d;\n", new_num_opnds);
       assert(new_num_opnds == node->num_unique_opnds(), "what?");
+      fprintf(fp, "  } else {\n");
+      fprintf(fp, "    assert(_num_opnds == %d, \"There should be either %d or %d operands.\");\n",
+                  new_num_opnds, new_num_opnds, cur_num_opnds);
+      fprintf(fp, "  }\n");
     }
   }
 

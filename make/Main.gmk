@@ -284,16 +284,11 @@ ALL_TARGETS += $(JMOD_TARGETS)
 ################################################################################
 # Images targets
 
-# Stores the tips for each repository. This file is be used when constructing
-# the jdk image and can be used to track the exact sources used to build that
-# image.
-source-tips: $(SUPPORT_OUTPUTDIR)/source_tips
-$(SUPPORT_OUTPUTDIR)/source_tips: FRC
-	$(call MakeDir, $(@D))
-	$(call GetSourceTips)
+store-source-revision:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f SourceRevision.gmk store-source-revision)
 
-create-hgtip-files:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f CreateHgtipFiles.gmk)
+create-source-revision-tracker:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f SourceRevision.gmk create-source-revision-tracker)
 
 BOOTCYCLE_TARGET := product-images
 bootcycle-images:
@@ -332,7 +327,7 @@ mac-bundles-jdk:
 exploded-image-optimize:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f ExplodedImageOptimize.gmk)
 
-ALL_TARGETS += source-tips create-hgtip-files bootcycle-images zip-security \
+ALL_TARGETS += store-source-revision create-source-revision-tracker bootcycle-images zip-security \
     zip-source jrtfs-jar jdk-image jre-image \
     symbols-image profiles mac-bundles-jdk \
     exploded-image-optimize
@@ -608,12 +603,12 @@ else
 
   jdk.jdeps-gendata: java rmic
 
-  # Declare dependencies between jmod targets. Only java.base jmod needs access
-  # to the other jmods to be built.
+  # Declare dependencies between jmod targets.
+  # java.base jmod needs jrt-fs.jar and access to the other jmods to be built.
   # When creating a BUILDJDK, we don't need to add hashes to java.base, thus
   # we don't need to depend on all other jmods
   ifneq ($(CREATING_BUILDJDK), true)
-    java.base-jmod: $(filter-out java.base-jmod \
+    java.base-jmod: jrtfs-jar $(filter-out java.base-jmod \
         $(addsuffix -jmod, $(call FindAllUpgradeableModules)), $(JMOD_TARGETS))
   endif
 
@@ -684,10 +679,10 @@ else
     java.base-jmod jdk-image jre-image: generate-link-opt-data
   endif
 
-  jdk-image: jmods zip-source source-tips demos samples jrtfs-jar
-  jre-image: jmods source-tips jrtfs-jar
+  jdk-image: jmods zip-source create-source-revision-tracker demos samples
+  jre-image: jmods create-source-revision-tracker
 
-  profiles: jmods zip-source source-tips jrtfs-jar
+  profiles: jmods zip-source create-source-revision-tracker
 
   mac-bundles-jdk: jdk-image jre-image
 

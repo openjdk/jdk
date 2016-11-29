@@ -34,6 +34,7 @@ import java.util.*;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.ElementFilter;
 
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.util.DocTrees;
@@ -62,7 +63,7 @@ public class NoStar implements Doclet
     }
 
     public boolean run(DocletEnvironment root) {
-        Set<TypeElement> classes = root.getIncludedTypeElements();
+        Set<TypeElement> classes = ElementFilter.typesIn(root.getIncludedElements());
         if (classes.size() != 1)
             throw new Error("1 " + Arrays.asList(classes));
         TypeElement self = classes.iterator().next();

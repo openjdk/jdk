@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.tools.internal.ws.wscompile;
 
 import com.oracle.webservices.internal.api.databinding.WSDLResolver;
-import com.sun.istack.internal.tools.ParallelWorldClassLoader;
 import com.sun.tools.internal.ws.ToolVersion;
 import com.sun.tools.internal.ws.processor.modeler.annotation.WebServiceAp;
 import com.sun.tools.internal.ws.processor.modeler.wsdl.ConsoleErrorReporter;
@@ -54,11 +53,9 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
-import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.namespace.QName;
 import javax.xml.transform.Result;
 import javax.xml.transform.stream.StreamResult;
-import javax.xml.ws.EndpointReference;
 import javax.xml.ws.Holder;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -137,18 +134,6 @@ public class WsgenTool {
 
     private final Container container;
 
-    /*
-     * To take care of JDK6-JDK6u3, where 2.1 API classes are not there
-     */
-    private static boolean useBootClasspath(Class clazz) {
-        try {
-            ParallelWorldClassLoader.toJarUrl(clazz.getResource('/' + clazz.getName().replace('.', '/') + ".class"));
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
     /**
      *
      * @param endpoint
@@ -159,11 +144,12 @@ public class WsgenTool {
     public boolean buildModel(String endpoint, Listener listener) throws BadCommandLineException {
         final ErrorReceiverFilter errReceiver = new ErrorReceiverFilter(listener);
 
-        boolean bootCP = useBootClasspath(EndpointReference.class) || useBootClasspath(XmlSeeAlso.class);
-        List<String> args = new ArrayList<String>(6 + (bootCP ? 1 : 0) + (options.nocompile ? 1 : 0)
+        List<String> args = new ArrayList<String>(6 + (options.nocompile ? 1 : 0)
                 + (options.encoding != null ? 2 : 0));
+
         args.add("--add-modules");
         args.add("java.xml.ws");
+
         args.add("-d");
         args.add(options.destDir.getAbsolutePath());
         args.add("-classpath");
@@ -176,13 +162,6 @@ public class WsgenTool {
         if (options.encoding != null) {
             args.add("-encoding");
             args.add(options.encoding);
-        }
-        if (bootCP) {
-            args.add(new StringBuilder()
-                    .append("-Xbootclasspath/p:")
-                    .append(JavaCompilerHelper.getJarFile(EndpointReference.class))
-                    .append(File.pathSeparator)
-                    .append(JavaCompilerHelper.getJarFile(XmlSeeAlso.class)).toString());
         }
         if (options.javacOptions != null) {
             args.addAll(options.getJavacOptions(args, listener));

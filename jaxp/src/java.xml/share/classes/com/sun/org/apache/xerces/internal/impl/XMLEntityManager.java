@@ -217,7 +217,8 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 JdkXmlUtils.CATALOG_DEFER,
                 JdkXmlUtils.CATALOG_FILES,
                 JdkXmlUtils.CATALOG_PREFER,
-                JdkXmlUtils.CATALOG_RESOLVE
+                JdkXmlUtils.CATALOG_RESOLVE,
+                JdkXmlUtils.CDATA_CHUNK_SIZE
     };
 
     /** Property defaults. */
@@ -232,7 +233,8 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 null,
                 null,
                 null,
-                null
+                null,
+                JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT
     };
 
     private static final String XMLEntity = "[xml]".intern();

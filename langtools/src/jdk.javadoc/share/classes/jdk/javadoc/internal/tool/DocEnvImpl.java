@@ -25,19 +25,15 @@
 
 package jdk.javadoc.internal.tool;
 
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ModuleElement;
-import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.JavaFileManager;
+import javax.tools.JavaFileObject.Kind;
 
 import com.sun.source.util.DocTrees;
 import com.sun.tools.javac.code.Source;
@@ -74,24 +70,14 @@ public class DocEnvImpl implements DocletEnvironment {
         this.toolEnv = toolEnv;
         this.etable = etable;
     }
-
-    @Override
-    public Set<ModuleElement> getIncludedModuleElements() {
-        return etable.getIncludedModuleElements();
+   @Override
+    public Set<? extends Element> getSpecifiedElements() {
+        return etable.getSpecifiedElements();
     }
 
     @Override
-    public Set<PackageElement> getIncludedPackageElements() {
-        return etable.getIncludedPackageElements();
-    }
-
-    /**
-     * Return all TypeElements (including those inside
-     * packages) to be documented.
-     */
-    @Override
-    public Set<TypeElement> getIncludedTypeElements() {
-        return etable.getIncludedTypeElements();
+    public Set<? extends Element> getIncludedElements() {
+        return etable.getIncludedElements();
     }
 
     @Override
@@ -107,22 +93,6 @@ public class DocEnvImpl implements DocletEnvironment {
     @Override
     public Elements getElementUtils() {
         return toolEnv.elements;
-    }
-
-    @Override
-    public List<Element> getSelectedElements(List<? extends Element> elements) {
-        return elements.stream()
-                .filter(e -> isIncluded(e))
-                .collect(Collectors.<Element>toList());
-    }
-
-    @Override
-    public Set<Element> getSpecifiedElements() {
-        Set<Element> out = new LinkedHashSet<>();
-        out.addAll(etable.getSpecifiedModuleElements());
-        out.addAll(etable.getSpecifiedPackageElements());
-        out.addAll(etable.getSpecifiedTypeElements());
-        return out;
     }
 
     @Override
@@ -143,5 +113,15 @@ public class DocEnvImpl implements DocletEnvironment {
     @Override
     public ModuleMode getModuleMode() {
         return etable.getModuleMode();
+    }
+
+    @Override
+    public Kind getFileKind(TypeElement type) {
+        return toolEnv.getFileKind(type);
+    }
+
+    @Override
+    public boolean isSelected(Element e) {
+        return etable.isSelected(e);
     }
 }

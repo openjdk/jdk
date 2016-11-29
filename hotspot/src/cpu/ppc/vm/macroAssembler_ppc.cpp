@@ -1922,7 +1922,7 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
   // Check the supertype display:
   if (must_load_sco) {
     // The super check offset is always positive...
-  lwz(check_cache_offset, sco_offset, super_klass);
+    lwz(check_cache_offset, sco_offset, super_klass);
     super_check_offset = RegisterOrConstant(check_cache_offset);
     // super_check_offset is register.
     assert_different_registers(sub_klass, super_klass, cached_super, super_check_offset.as_register());
@@ -3325,12 +3325,10 @@ void MacroAssembler::load_klass(Register dst, Register src) {
   }
 }
 
-void MacroAssembler::load_mirror(Register mirror, Register method) {
-  const int mirror_offset = in_bytes(Klass::java_mirror_offset());
-  ld(mirror, in_bytes(Method::const_offset()), method);
-  ld(mirror, in_bytes(ConstMethod::constants_offset()), mirror);
+void MacroAssembler::load_mirror_from_const_method(Register mirror, Register const_method) {
+  ld(mirror, in_bytes(ConstMethod::constants_offset()), const_method);
   ld(mirror, ConstantPool::pool_holder_offset_in_bytes(), mirror);
-  ld(mirror, mirror_offset, mirror);
+  ld(mirror, in_bytes(Klass::java_mirror_offset()), mirror);
 }
 
 // Clear Array
@@ -4345,8 +4343,8 @@ void MacroAssembler::kernel_crc32_1byte(Register crc, Register buf, Register len
  * @param t3              volatile register
  */
 void MacroAssembler::kernel_crc32_1word_vpmsumd(Register crc, Register buf, Register len, Register table,
-                        Register constants,  Register barretConstants,
-                        Register t0,  Register t1, Register t2, Register t3, Register t4) {
+                                                Register constants,  Register barretConstants,
+                                                Register t0,  Register t1, Register t2, Register t3, Register t4) {
   assert_different_registers(crc, buf, len, table);
 
   Label L_alignedHead, L_tail, L_alignTail, L_start, L_end;
