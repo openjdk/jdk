@@ -211,7 +211,7 @@ ifdef JCK_TIMEOUT_FACTOR
 endif
 
 # Default verbosity setting for jtreg
-JTREG_VERBOSE ?= fail,error,nopass
+JTREG_VERBOSE ?= fail,error,time
 
 # Default verbosity setting for jck
 JCK_VERBOSE ?= non-pass
