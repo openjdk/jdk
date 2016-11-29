@@ -354,11 +354,11 @@ JDK_TARGETS += $(JDK_DOC_TARGETS)
 ################################################################################
 # src.zip
 
-$(JDK_IMAGE_DIR)/src.zip: $(SUPPORT_OUTPUTDIR)/src.zip
+$(JDK_IMAGE_DIR)/lib/src.zip: $(SUPPORT_OUTPUTDIR)/src.zip
 	$(call LogInfo, Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(install-file)
 
-JDK_TARGETS += $(JDK_IMAGE_DIR)/src.zip
+JDK_TARGETS += $(JDK_IMAGE_DIR)/lib/src.zip
 
 ################################################################################
 # /demo dir
