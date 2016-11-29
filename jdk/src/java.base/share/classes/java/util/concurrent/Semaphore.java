@@ -631,9 +631,12 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
-     * Acquires and returns all permits that are immediately available.
+     * Acquires and returns all permits that are immediately
+     * available, or if negative permits are available, releases them.
+     * Upon return, zero permits are available.
      *
-     * @return the number of permits acquired
+     * @return the number of permits acquired or, if negative, the
+     * number released
      */
     public int drainPermits() {
         return sync.drainPermits();
