@@ -25,6 +25,7 @@
 
 package javax.xml.validation;
 
+import com.sun.org.apache.xerces.internal.jaxp.validation.XMLSchemaFactory;
 import java.io.File;
 import java.net.URL;
 import javax.xml.transform.Source;
@@ -124,6 +125,24 @@ public abstract class SchemaFactory {
     }
 
     /**
+     * Creates a new instance of the {@code SchemaFactory} builtin
+     * system-default implementation.
+     *
+     * @implSpec The {@code SchemaFactory} builtin
+     * system-default implementation is only required to support the
+     * <a href="http://www.w3.org/TR/xmlschema-1">W3C XML Schema 1.0</a>,
+     * but may support additional <a href="#schemaLanguage">schema languages</a>.
+     *
+     * @return A new instance of the {@code SchemaFactory} builtin
+     *         system-default implementation.
+     *
+     * @since 9
+     */
+    public static SchemaFactory newDefaultInstance() {
+        return XMLSchemaFactory.newXMLSchemaFactoryNoServiceLoader();
+    }
+
+    /**
      * Lookup an implementation of the {@code SchemaFactory} that supports the specified
      * schema language and return it.
      *
@@ -179,7 +198,8 @@ public abstract class SchemaFactory {
      *   <li>
      *     <p>
      *     Platform default {@code SchemaFactory} is located
-     *     in a implementation specific way. There must be a platform default
+     *     in an implementation specific way. There must be a
+     *     {@linkplain #newDefaultInstance() platform default}
      *     {@code SchemaFactory} for W3C XML Schema.
      *   </li>
      * </ol>

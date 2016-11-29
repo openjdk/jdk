@@ -28,6 +28,7 @@
 
 package javax.xml.stream;
 
+import com.sun.xml.internal.stream.XMLOutputFactoryImpl;
 import javax.xml.transform.Result;
 
 /**
@@ -121,6 +122,19 @@ public abstract class XMLOutputFactory {
   protected XMLOutputFactory(){}
 
   /**
+   * Creates a new instance of the {@code XMLOutputFactory} builtin
+   * system-default implementation.
+   *
+   * @return A new instance of the {@code XMLOutputFactory} builtin
+   *         system-default implementation.
+   *
+   * @since 9
+   */
+  public static XMLOutputFactory newDefaultFactory() {
+      return new XMLOutputFactoryImpl();
+  }
+
+  /**
    * Creates a new instance of the factory in exactly the same manner as the
    * {@link #newFactory()} method.
    * @throws FactoryConfigurationError if an instance of this factory cannot be loaded
@@ -175,7 +189,8 @@ public abstract class XMLOutputFactory {
    * </li>
    * <li>
    *   <p>
-   *   Otherwise, the system-default implementation is returned.
+   *   Otherwise, the {@linkplain #newDefaultFactory() system-default}
+   *   implementation is returned.
    * </li>
    * </ul>
    * <p>
