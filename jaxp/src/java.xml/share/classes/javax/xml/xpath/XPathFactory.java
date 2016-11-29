@@ -25,6 +25,8 @@
 
 package javax.xml.xpath;
 
+import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
+
 /**
  * <p>An {@code XPathFactory} instance can be used to create
  * {@link javax.xml.xpath.XPath} objects.</p>
@@ -71,6 +73,25 @@ public abstract class XPathFactory {
      * should be used to create a new instance of an {@code XPathFactory}.</p>
      */
     protected XPathFactory() {
+    }
+
+    /**
+     * Creates a new instance of the {@code XPathFactory} builtin
+     * system-default implementation.
+     *
+     * @implSpec The {@code XPathFactory} builtin
+     * system-default implementation is only required to support the
+     * {@link #DEFAULT_OBJECT_MODEL_URI default object model}, the
+     * {@linkplain org.w3c.dom W3C DOM}, but may support additional
+     * object models.
+     *
+     * @return A new instance of the {@code XPathFactory} builtin
+     *         system-default implementation.
+     *
+     * @since 9
+     */
+    public static XPathFactory newDefaultInstance() {
+        return XPathFactoryImpl.newXPathFactoryNoServiceLoader();
     }
 
     /**
@@ -153,8 +174,11 @@ public abstract class XPathFactory {
     *   </li>
     *   <li>
     *     <p>
-    *     Platform default {@code XPathFactory} is located in a platform specific way.
-    *     There must be a platform default XPathFactory for the W3C DOM, i.e. {@link #DEFAULT_OBJECT_MODEL_URI}.
+    *     Platform default {@code XPathFactory} is located in a platform
+    *     specific way.
+    *     There must be a {@linkplain #newDefaultInstance() platform default}
+    *     {@code XPathFactory} for the W3C DOM, i.e.
+    *     {@link #DEFAULT_OBJECT_MODEL_URI}.
     *   </li>
     * </ol>
     * <p>If everything fails, an {@code XPathFactoryConfigurationException} will be thrown.

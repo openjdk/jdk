@@ -25,6 +25,7 @@
 
 package javax.xml.parsers;
 
+import com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl;
 import javax.xml.validation.Schema;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
@@ -56,6 +57,19 @@ public abstract class SAXParserFactory {
      */
     protected SAXParserFactory () {
 
+    }
+
+    /**
+     * Creates a new instance of the {@code SAXParserFactory} builtin
+     * system-default implementation.
+     *
+     * @return A new instance of the {@code SAXParserFactory} builtin
+     *         system-default implementation.
+     *
+     * @since 9
+     */
+    public static SAXParserFactory newDefaultInstance() {
+        return new SAXParserFactoryImpl();
     }
 
     /**
@@ -97,7 +111,8 @@ public abstract class SAXParserFactory {
      * </li>
      * <li>
      * <p>
-     * Otherwise the system-default implementation is returned.
+     * Otherwise, the {@linkplain #newDefaultInstance() system-default}
+     * implementation is returned.
      * </li>
      * </ul>
      *

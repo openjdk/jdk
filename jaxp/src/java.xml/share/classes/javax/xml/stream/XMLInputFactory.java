@@ -28,6 +28,7 @@
 
 package javax.xml.stream;
 
+import com.sun.xml.internal.stream.XMLInputFactoryImpl;
 import javax.xml.stream.util.XMLEventAllocator;
 import javax.xml.transform.Source;
 
@@ -144,6 +145,19 @@ public abstract class XMLInputFactory {
   protected XMLInputFactory(){}
 
   /**
+   * Creates a new instance of the {@code XMLInputFactory} builtin
+   * system-default implementation.
+   *
+   * @return A new instance of the {@code XMLInputFactory} builtin
+   *         system-default implementation.
+   *
+   * @since 9
+   */
+  public static XMLInputFactory newDefaultFactory() {
+      return new XMLInputFactoryImpl();
+  }
+
+  /**
    * Creates a new instance of the factory in exactly the same manner as the
    * {@link #newFactory()} method.
    * @throws FactoryConfigurationError if an instance of this factory cannot be loaded
@@ -195,7 +209,8 @@ public abstract class XMLInputFactory {
    *   ClassLoader#getSystemClassLoader() system class loader} will be used.
    * </li>
    * <li>
-   * <p>Otherwise, the system-default implementation is returned.
+   * <p>Otherwise, the {@linkplain #newDefaultFactory() system-default}
+   *    implementation is returned.
    * </li>
    * </ul>
    * <p>

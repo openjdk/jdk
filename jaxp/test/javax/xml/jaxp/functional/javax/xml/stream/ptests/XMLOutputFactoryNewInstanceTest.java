@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertEquals;
 
-import javax.xml.stream.XMLEventFactory;
+import javax.xml.stream.XMLOutputFactory;
 
 import jaxp.library.JAXPDataProvider;
 
@@ -43,23 +43,23 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8169778
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true javax.xml.stream.ptests.XMLEventFactoryNewInstanceTest
- * @run testng/othervm javax.xml.stream.ptests.XMLEventFactoryNewInstanceTest
- * @summary Tests for XMLEventFactory.newFactory(factoryId , classLoader)
+ * @run testng/othervm -DrunSecMngr=true javax.xml.stream.ptests.XMLOutputFactoryNewInstanceTest
+ * @run testng/othervm javax.xml.stream.ptests.XMLOutputFactoryNewInstanceTest
+ * @summary Tests for XMLOutputFactory.newFactory(factoryId , classLoader)
  */
 @Listeners({jaxp.library.BasePolicy.class})
-public class XMLEventFactoryNewInstanceTest {
+public class XMLOutputFactoryNewInstanceTest {
 
     private static final String DEFAULT_IMPL_CLASS =
-        "com.sun.xml.internal.stream.events.XMLEventFactoryImpl";
-    private static final String XMLEVENT_FACTORY_CLASSNAME = DEFAULT_IMPL_CLASS;
-    private static final String XMLEVENT_FACTORY_ID = "javax.xml.stream.XMLEventFactory";
+        "com.sun.xml.internal.stream.XMLOutputFactoryImpl";
+    private static final String XMLOUTPUT_FACTORY_CLASSNAME = DEFAULT_IMPL_CLASS;
+    private static final String XMLOUTPUT_FACTORY_ID = "javax.xml.stream.XMLOutputFactory";
 
     @DataProvider(name = "parameters")
     public Object[][] getValidateParameters() {
         return new Object[][] {
-            { XMLEVENT_FACTORY_ID, null },
-            { XMLEVENT_FACTORY_ID, this.getClass().getClassLoader() } };
+            { XMLOUTPUT_FACTORY_ID, null },
+            { XMLOUTPUT_FACTORY_ID, this.getClass().getClassLoader() } };
     }
 
     /**
@@ -69,39 +69,39 @@ public class XMLEventFactoryNewInstanceTest {
      */
     @Test
     public void testDefaultInstance() throws Exception {
-        XMLEventFactory ef1 = XMLEventFactory.newDefaultFactory();
-        XMLEventFactory ef2 = XMLEventFactory.newFactory();
-        assertNotSame(ef1, ef2, "same instance returned:");
-        assertSame(ef1.getClass(), ef2.getClass(),
+        XMLOutputFactory of1 = XMLOutputFactory.newDefaultFactory();
+        XMLOutputFactory of2 = XMLOutputFactory.newFactory();
+        assertNotSame(of1, of2, "same instance returned:");
+        assertSame(of1.getClass(), of2.getClass(),
                   "unexpected class mismatch for newDefaultFactory():");
-        assertEquals(ef1.getClass().getName(), DEFAULT_IMPL_CLASS);
+        assertEquals(of1.getClass().getName(), DEFAULT_IMPL_CLASS);
     }
 
     /*
-     * test for XMLEventFactory.newFactory(java.lang.String factoryClassName,
+     * test for XMLOutputFactory.newFactory(java.lang.String factoryId,
      * java.lang.ClassLoader classLoader) factoryClassName points to correct
-     * implementation of javax.xml.stream.XMLEventFactory , should return
-     * newInstance of XMLEventFactory
+     * implementation of javax.xml.stream.XMLOutputFactory , should return
+     * newInstance of XMLOutputFactory
      */
     @Test(dataProvider = "parameters")
     public void testNewFactory(String factoryId, ClassLoader classLoader) {
-        setSystemProperty(XMLEVENT_FACTORY_ID, XMLEVENT_FACTORY_CLASSNAME);
+        setSystemProperty(XMLOUTPUT_FACTORY_ID, XMLOUTPUT_FACTORY_CLASSNAME);
         try {
-            XMLEventFactory xef = XMLEventFactory.newFactory(factoryId, classLoader);
-            assertNotNull(xef);
+            XMLOutputFactory xif = XMLOutputFactory.newFactory(factoryId, classLoader);
+            assertNotNull(xif);
         } finally {
-            clearSystemProperty(XMLEVENT_FACTORY_ID);
+            clearSystemProperty(XMLOUTPUT_FACTORY_ID);
         }
     }
 
     /*
-     * test for XMLEventFactory.newFactory(java.lang.String factoryClassName,
+     * test for XMLOutputFactory.newFactory(java.lang.String factoryClassName,
      * java.lang.ClassLoader classLoader) factoryClassName is null , should
      * throw NullPointerException
      */
     @Test(expectedExceptions = NullPointerException.class, dataProvider = "new-instance-neg", dataProviderClass = JAXPDataProvider.class)
     public void testNewFactoryNeg(String factoryId, ClassLoader classLoader) {
-        XMLEventFactory.newFactory(null, null);
+        XMLOutputFactory.newFactory(factoryId, classLoader);
     }
 
 }
