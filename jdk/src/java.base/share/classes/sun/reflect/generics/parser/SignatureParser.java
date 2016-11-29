@@ -70,6 +70,11 @@ public class SignatureParser {
     private static final char EOI = ':';
     private static final boolean DEBUG = false;
 
+    // StringBuilder does a lot of array copies if we don't pre-size
+    // it when parsing a full class name. This value was determined
+    // empirically by measurements of real-world code.
+    private static final int CLASS_NAME_SB_SIZE = 48;
+
     // private constructor - enforces use of static factory
     private SignatureParser(){}
 
@@ -251,9 +256,19 @@ public class SignatureParser {
         return FormalTypeParameter.make(id, bs);
     }
 
-    private String parseIdentifier(){
+    private String parseIdentifier() {
         StringBuilder result = new StringBuilder();
-        while (!Character.isWhitespace(current())) {
+        parseIdentifierInto(result);
+        return result.toString();
+    }
+
+    // This is separate from parseIdentifier for performance reasons.
+    // For a caller who already has a StringBuilder, it's much faster to
+    // re-use the existing builder, because it results in far fewer internal
+    // array copies inside of StringBuilder.
+    private void parseIdentifierInto(StringBuilder result) {
+        int startIndex = index;
+        parseLoop: while (!Character.isWhitespace(current())) {
             char c = current();
             switch(c) {
             case ';':
@@ -263,16 +278,14 @@ public class SignatureParser {
             case ':':
             case '>':
             case '<':
-                return result.toString();
-            default:{
-                result.append(c);
+                break parseLoop;
+            default:
                 advance();
             }
-
-            }
         }
-        return result.toString();
+        result.append(input, startIndex, index - startIndex);
     }
+
     /**
      * FieldTypeSignature:
      *     ClassTypeSignature
@@ -325,18 +338,16 @@ public class SignatureParser {
         // Parse both any optional leading PackageSpecifier as well as
         // the following SimpleClassTypeSignature.
 
-        String id = parseIdentifier();
+        StringBuilder idBuild = new StringBuilder(CLASS_NAME_SB_SIZE);
+        parseIdentifierInto(idBuild);
 
-        if (current() == '/') { // package name
-            StringBuilder idBuild = new StringBuilder(id);
-
-            while(current() == '/') {
-                advance();
-                idBuild.append(".");
-                idBuild.append(parseIdentifier());
-            }
-            id = idBuild.toString();
+        while (current() == '/') { // package name
+            advance();
+            idBuild.append('.');
+            parseIdentifierInto(idBuild);
         }
+
+        String id = idBuild.toString();
 
         switch (current()) {
         case ';':
