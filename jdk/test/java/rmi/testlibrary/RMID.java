@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.io.*;
 import java.rmi.*;
 import java.rmi.activation.*;
 import java.rmi.registry.*;
+import java.time.LocalTime;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -43,6 +44,15 @@ public class RMID extends JavaVM {
     private static final long TIMEOUT_DESTROY_MS  = 10_000L;
     private static final long STARTTIME_MS        = 15_000L;
     private static final long POLLTIME_MS         = 100L;
+
+    // when restart rmid, it may take more time than usual because of
+    // "port in use" by a possible interloper (check JDK-8168975),
+    // so need to set a longer timeout for restart.
+    private static long restartTimeout;
+    // Same reason to inheritedChannel in RMIDSelectorProvider.
+    // Put it here rather than in RMIDSelectorProvider to adjust
+    // both timeout values together.
+    private static long inheritedChannelTimeout;
 
     private static final String SYSTEM_NAME = ActivationSystem.class.getName();
         // "java.rmi.activation.ActivationSystem"
@@ -73,7 +83,8 @@ public class RMID extends JavaVM {
     }
 
     /** make test options and arguments */
-    private static String makeOptions(int port, boolean debugExec) {
+    private static String makeOptions(int port, boolean debugExec,
+                                      boolean enableSelectorProvider) {
 
         String options = " -Dsun.rmi.server.activation.debugExec=" +
             debugExec;
@@ -98,18 +109,34 @@ public class RMID extends JavaVM {
         // to avoid spurious timeouts on slow machines.
         options += " -Dsun.rmi.activation.execTimeout=60000";
 
-        if (port == 0) {
+        // It's important to set handshakeTimeout to small value, for example
+        // 5 sec (default is 60 sec) to avoid wasting too much time when
+        // calling lookupSystem(port) in restart(), because
+        //   1. If use default value of this option, it will take about 2 minutes
+        //     to finish lookupSystem(port) in 2 loops in restart();
+        //   2. If set this option as 5 sec then lookupSystem(port) will return
+        //     very quickly.
+        options += " -Dsun.rmi.transport.tcp.handshakeTimeout=5000";
+
+        if (port == 0 || enableSelectorProvider) {
             // Ephemeral port, so have the rmid child process create the
             // server socket channel and report its port number, over stdin.
             options += " -classpath " + TestParams.testClassPath;
             options += " --add-exports=java.base/sun.nio.ch=ALL-UNNAMED";
             options += " -Djava.nio.channels.spi.SelectorProvider=RMIDSelectorProvider";
+            options += " -Dtest.java.rmi.testlibrary.RMIDSelectorProvider.port=" + port;
+            options += " -Dtest.java.rmi.testlibrary.RMIDSelectorProvider.timeout="
+                        + inheritedChannelTimeout;
 
             // Disable redirection of System.err to /tmp
             options += " -Dsun.rmi.server.activation.disableErrRedirect=true";
         }
 
         return options;
+    }
+
+    private static String makeArgs() {
+        return makeArgs(false, 0);
     }
 
     private static String makeArgs(boolean includePortArg, int port) {
@@ -183,7 +210,7 @@ public class RMID extends JavaVM {
                                   boolean debugExec, boolean includePortArg,
                                   int port)
     {
-        String options = makeOptions(port, debugExec);
+        String options = makeOptions(port, debugExec, false);
         String args = makeArgs(includePortArg, port);
         RMID rmid = new RMID("sun.rmi.server.Activation", options, args,
                              out, err, port);
@@ -193,14 +220,14 @@ public class RMID extends JavaVM {
     }
 
     public static RMID createRMIDOnEphemeralPort() {
-        return createRMID(System.out, System.err, true, true, 0);
+        return createRMID(System.out, System.err, true, false, 0);
     }
 
     public static RMID createRMIDOnEphemeralPort(OutputStream out,
                                                  OutputStream err,
                                                  boolean debugExec)
     {
-        return createRMID(out, err, debugExec, true, 0);
+        return createRMID(out, err, debugExec, false, 0);
     }
 
 
@@ -213,6 +240,9 @@ public class RMID extends JavaVM {
     {
         super(classname, options, args, out, err);
         this.port = port;
+        long waitTime = (long)(240_000 * TestLibrary.getTimeoutFactor());
+        restartTimeout = (long)(waitTime * 0.9);
+        inheritedChannelTimeout = (long)(waitTime * 0.8);
     }
 
     /**
@@ -280,11 +310,11 @@ public class RMID extends JavaVM {
         // if rmid is already running, then the test will fail with
         // a well recognized exception (port already in use...).
 
-        mesg("Starting rmid on port " + port + ".");
+        mesg("Starting rmid on port " + port + ", at " + LocalTime.now());
         int p = super.startAndGetPort();
         if (p != -1)
             port = p;
-        mesg("Started rmid on port " + port + ".");
+        mesg("Started rmid on port " + port + ", at " + LocalTime.now());
 
         // int slopFactor = 1;
         // try {
@@ -318,6 +348,7 @@ public class RMID extends JavaVM {
             // The rmid process is alive; check to see whether
             // it responds to a remote call.
 
+            mesg("looking up activation system, at " + LocalTime.now());
             if (lookupSystem(port) != null) {
                 /*
                  * We need to set the java.rmi.activation.port value as the
@@ -328,10 +359,11 @@ public class RMID extends JavaVM {
                  */
                 System.setProperty("java.rmi.activation.port", Integer.toString(port));
                 mesg("Started successfully after " +
-                    (System.currentTimeMillis() - startTime) + "ms.");
+                    (System.currentTimeMillis() - startTime) + "ms, at " + LocalTime.now());
                 return;
             }
 
+            mesg("after fail to looking up activation system, at " + LocalTime.now());
             if (System.currentTimeMillis() > deadline) {
                 TestLibrary.bomb("Failed to start rmid, giving up after " +
                     (System.currentTimeMillis() - startTime) + "ms.", null);
@@ -347,9 +379,10 @@ public class RMID extends JavaVM {
      */
     public void restart() throws IOException {
         destroy();
-        options = makeOptions(port, true);
-        args = makeArgs(true, port);
-        start();
+        options = makeOptions(port, true, true);
+        args = makeArgs();
+
+        start(restartTimeout);
     }
 
     /**

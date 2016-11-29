@@ -3718,6 +3718,25 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  //Mask for byte-swapping a couple of qwords in an XMM register using (v)pshufb.
+  address generate_pshuffle_byte_flip_mask_sha512() {
+    __ align(32);
+    StubCodeMark mark(this, "StubRoutines", "pshuffle_byte_flip_mask_sha512");
+    address start = __ pc();
+    if (VM_Version::supports_avx2()) {
+      __ emit_data64(0x0001020304050607, relocInfo::none); // PSHUFFLE_BYTE_FLIP_MASK
+      __ emit_data64(0x08090a0b0c0d0e0f, relocInfo::none);
+      __ emit_data64(0x1011121314151617, relocInfo::none);
+      __ emit_data64(0x18191a1b1c1d1e1f, relocInfo::none);
+      __ emit_data64(0x0000000000000000, relocInfo::none); //MASK_YMM_LO
+      __ emit_data64(0x0000000000000000, relocInfo::none);
+      __ emit_data64(0xFFFFFFFFFFFFFFFF, relocInfo::none);
+      __ emit_data64(0xFFFFFFFFFFFFFFFF, relocInfo::none);
+    }
+
+    return start;
+  }
+
 // ofs and limit are use for multi-block byte array.
 // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
   address generate_sha256_implCompress(bool multi_block, const char *name) {
@@ -3755,6 +3774,39 @@ class StubGenerator: public StubCodeGenerator {
         buf, state, ofs, limit, rsp, multi_block, shuf_mask);
     }
     __ addptr(rsp, 4 * wordSize);
+
+    __ leave();
+    __ ret(0);
+    return start;
+  }
+
+  address generate_sha512_implCompress(bool multi_block, const char *name) {
+    assert(VM_Version::supports_avx2(), "");
+    assert(VM_Version::supports_bmi2(), "");
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    Register buf = c_rarg0;
+    Register state = c_rarg1;
+    Register ofs = c_rarg2;
+    Register limit = c_rarg3;
+
+    const XMMRegister msg = xmm0;
+    const XMMRegister state0 = xmm1;
+    const XMMRegister state1 = xmm2;
+    const XMMRegister msgtmp0 = xmm3;
+    const XMMRegister msgtmp1 = xmm4;
+    const XMMRegister msgtmp2 = xmm5;
+    const XMMRegister msgtmp3 = xmm6;
+    const XMMRegister msgtmp4 = xmm7;
+
+    const XMMRegister shuf_mask = xmm8;
+
+    __ enter();
+
+    __ sha512_AVX2(msg, state0, state1, msgtmp0, msgtmp1, msgtmp2, msgtmp3, msgtmp4,
+    buf, state, ofs, limit, rsp, multi_block, shuf_mask);
 
     __ leave();
     __ ret(0);
@@ -5080,6 +5132,12 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::x86::_pshuffle_byte_flip_mask_addr = generate_pshuffle_byte_flip_mask();
       StubRoutines::_sha256_implCompress = generate_sha256_implCompress(false, "sha256_implCompress");
       StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(true, "sha256_implCompressMB");
+    }
+    if (UseSHA512Intrinsics) {
+      StubRoutines::x86::_k512_W_addr = (address)StubRoutines::x86::_k512_W;
+      StubRoutines::x86::_pshuffle_byte_flip_mask_addr_sha512 = generate_pshuffle_byte_flip_mask_sha512();
+      StubRoutines::_sha512_implCompress = generate_sha512_implCompress(false, "sha512_implCompress");
+      StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(true, "sha512_implCompressMB");
     }
 
     // Generate GHASH intrinsics code

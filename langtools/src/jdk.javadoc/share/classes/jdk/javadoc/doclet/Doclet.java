@@ -25,7 +25,7 @@
 
 package jdk.javadoc.doclet;
 
-import java.util.ListIterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -67,7 +67,7 @@ public interface Doclet {
      * @param locale the locale to be used
      * @param reporter the reporter to be used
      */
-    public void init(Locale locale, Reporter reporter);
+    void init(Locale locale, Reporter reporter);
 
     /**
      * Returns a name identifying the doclet. A name is a simple identifier
@@ -76,14 +76,14 @@ public interface Doclet {
      *
      * @return name of the Doclet
      */
-    public abstract String getName();
+    String getName();
 
     /**
      * Returns all the supported options.
      *
      * @return a set containing all the supported options, an empty set if none
      */
-    public Set<Option> getSupportedOptions();
+    Set<? extends Option> getSupportedOptions();
 
     /**
      * Returns the version of the Java Programming Language supported
@@ -92,7 +92,7 @@ public interface Doclet {
      * @return  the language version supported by this doclet, usually
      * the latest version
      */
-    public SourceVersion getSupportedSourceVersion();
+    SourceVersion getSupportedSourceVersion();
 
     /**
      * The entry point of the doclet. Further processing will commence as
@@ -101,7 +101,7 @@ public interface Doclet {
      * @param environment from which essential information can be extracted
      * @return true on success
      */
-    public boolean run(DocletEnvironment environment);
+    boolean run(DocletEnvironment environment);
 
     /**
      * An encapsulation of option name, aliases, parameters and descriptions
@@ -128,10 +128,12 @@ public interface Doclet {
         Option.Kind getKind();
 
         /**
-         * Returns the option name. For instance for option "-group", will return "group"
-         * @return name of the option, if set, otherwise an empty String
+         * Returns the list of names that may be used to identify the option. For instance, the
+         * list could be {@code ["-classpath", "--class-path"]} for the
+         * option "-classpath", with an alias "--class-path".
+         * @return the names of the option
          */
-        String getName();
+        List<String> getNames();
 
         /**
          * Returns the parameters of the option. For instance "name &lt;p1&gt;:&lt;p2&gt;.."
@@ -140,20 +142,13 @@ public interface Doclet {
         String getParameters();
 
         /**
-         * Checks if the given option name is handled by this option.
-         * @param option the option name with or without the leading "-"
-         * @return true if same
-         */
-        boolean matches(String option);
-
-        /**
          * Processes the option and arguments as needed. This method will
          * be invoked if the given option name matches the option.
          * @param option the option
-         * @param arguments a ListIterator encapsulating the arguments
+         * @param arguments a list encapsulating the arguments
          * @return true if operation succeeded, false otherwise
          */
-        boolean process(String option, ListIterator<String> arguments);
+        boolean process(String option, List<String> arguments);
 
         /**
          * The kind of an option.

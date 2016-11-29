@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8038436 8158504
+ * @bug 8038436 8158504 8065555
  * @summary Test for changes in 8038436
  * @modules java.base/sun.util.locale.provider
  *          java.base/sun.util.spi
@@ -136,7 +136,7 @@ public class Bug8038436 {
     static final String[] nfpLocs = ("ar, ar-AE, ar-BH, ar-DZ, ar-EG, ar-IQ, " +
         "ar-JO, ar-KW, ar-LB, ar-LY, ar-MA, ar-OM, ar-QA, ar-SA, ar-SD, ar-SY, " +
         "ar-TN, ar-YE, be, be-BY, bg, bg-BG, ca, ca-ES, cs, cs-CZ, da, da-DK, " +
-        "de, de-AT, de-CH, de-DE, de-GR, de-LU, el, el-CY, el-GR, en, en-AU, " +
+        "de, de-AT, de-CH, de-DE, de-LU, el, el-CY, el-GR, en, en-AU, " +
         "en-CA, en-GB, en-IE, en-IN, en-MT, en-NZ, en-PH, en-SG, en-US, en-ZA, " +
         "es, es-AR, es-BO, es-CL, es-CO, es-CR, es-CU, es-DO, es-EC, es-ES, " +
         "es-GT, es-HN, es-MX, es-NI, es-PA, es-PE, es-PR, es-PY, es-SV, es-US, " +
@@ -154,7 +154,7 @@ public class Bug8038436 {
     static final String[] currencynpLocs = ("ar-AE, ar-BH, ar-DZ, ar-EG, ar-IQ, " +
         "ar-JO, ar-KW, ar-LB, ar-LY, ar-MA, ar-OM, ar-QA, ar-SA, ar-SD, ar-SY, " +
         "ar-TN, ar-YE, be-BY, bg-BG, ca-ES, cs-CZ, da-DK, de, de-AT, de-CH, " +
-        "de-DE, de-GR, de-LU, el-CY, el-GR, en-AU, en-CA, en-GB, en-IE, en-IN, " +
+        "de-DE, de-LU, el-CY, el-GR, en-AU, en-CA, en-GB, en-IE, en-IN, " +
         "en-MT, en-NZ, en-PH, en-SG, en-US, en-ZA, es, es-AR, es-BO, es-CL, " +
         "es-CO, es-CR, es-CU, es-DO, es-EC, es-ES, es-GT, es-HN, es-MX, es-NI, " +
         "es-PA, es-PE, es-PR, es-PY, es-SV, es-US, es-UY, es-VE, et-EE, fi-FI, " +

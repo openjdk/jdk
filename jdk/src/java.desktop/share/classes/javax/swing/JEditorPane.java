@@ -825,6 +825,7 @@ public class JEditorPane extends JTextComponent {
      *
      * @param reference the named location to scroll to
      */
+    @SuppressWarnings("deprecation")
     public void scrollToReference(String reference) {
         Document d = getDocument();
         if (d instanceof HTMLDocument) {
@@ -1179,6 +1180,7 @@ public class JEditorPane extends JTextComponent {
      * @return the editor kit, or <code>null</code> if there is nothing
      *   registered for the given type
      */
+    @SuppressWarnings("deprecation")
     public static EditorKit createEditorKitForContentType(String type) {
         Hashtable<String, EditorKit> kitRegistry = getKitRegisty();
         EditorKit k = kitRegistry.get(type);

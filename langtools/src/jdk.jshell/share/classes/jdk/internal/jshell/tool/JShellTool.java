@@ -45,6 +45,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -1051,8 +1052,12 @@ public class JShellTool implements MessageHandler {
     }
 
     static final CompletionProvider EMPTY_COMPLETION_PROVIDER = new FixedCompletionProvider();
-    private static final CompletionProvider KEYWORD_COMPLETION_PROVIDER = new FixedCompletionProvider("-all ", "-start ", "-history ");
-    private static final CompletionProvider RELOAD_OPTIONS_COMPLETION_PROVIDER = new FixedCompletionProvider("-restore", "-quiet");
+    private static final CompletionProvider SNIPPET_HISTORY_OPTION_COMPLETION_PROVIDER = new FixedCompletionProvider("-all", "-start ", "-history");
+    private static final CompletionProvider SAVE_OPTION_COMPLETION_PROVIDER = new FixedCompletionProvider("-all ", "-start ", "-history ");
+    private static final CompletionProvider SNIPPET_OPTION_COMPLETION_PROVIDER = new FixedCompletionProvider("-all", "-start " );
+    private static final CompletionProvider RELOAD_OPTIONS_COMPLETION_PROVIDER = new FixedCompletionProvider("-restore ", "-quiet ");
+    private static final CompletionProvider RESTORE_COMPLETION_PROVIDER = new FixedCompletionProvider("-restore");
+    private static final CompletionProvider QUIET_COMPLETION_PROVIDER = new FixedCompletionProvider("-quiet");
     private static final CompletionProvider SET_MODE_OPTIONS_COMPLETION_PROVIDER = new FixedCompletionProvider("-command", "-quiet", "-delete");
     private static final CompletionProvider FILE_COMPLETION_PROVIDER = fileCompletions(p -> true);
     private final Map<String, Command> commands = new LinkedHashMap<>();
@@ -1106,24 +1111,62 @@ public class JShellTool implements MessageHandler {
                                     p.getFileName().toString().endsWith(".jar"));
     }
 
+    // Completion based on snippet supplier
     private CompletionProvider snippetCompletion(Supplier<Stream<? extends Snippet>> snippetsSupplier) {
         return (prefix, cursor, anchor) -> {
             anchor[0] = 0;
+            int space = prefix.lastIndexOf(' ');
+            Set<String> prior = new HashSet<>(Arrays.asList(prefix.split(" ")));
+            if (prior.contains("-all") || prior.contains("-history")) {
+                return Collections.emptyList();
+            }
+            String argPrefix = prefix.substring(space + 1);
             return snippetsSupplier.get()
+                        .filter(k -> !prior.contains(String.valueOf(k.id()))
+                                && (!(k instanceof DeclarationSnippet)
+                                     || !prior.contains(((DeclarationSnippet) k).name())))
                         .flatMap(k -> (k instanceof DeclarationSnippet)
-                                ? Stream.of(String.valueOf(k.id()), ((DeclarationSnippet) k).name())
-                                : Stream.of(String.valueOf(k.id())))
-                        .filter(k -> k.startsWith(prefix))
+                                ? Stream.of(String.valueOf(k.id()) + " ", ((DeclarationSnippet) k).name() + " ")
+                                : Stream.of(String.valueOf(k.id()) + " "))
+                        .filter(k -> k.startsWith(argPrefix))
                         .map(k -> new ArgSuggestion(k))
                         .collect(Collectors.toList());
         };
     }
 
-    private CompletionProvider snippetKeywordCompletion(Supplier<Stream<? extends Snippet>> snippetsSupplier) {
+    // Completion based on snippet supplier with -all -start (and sometimes -history) options
+    private CompletionProvider snippetWithOptionCompletion(CompletionProvider optionProvider,
+            Supplier<Stream<? extends Snippet>> snippetsSupplier) {
         return (code, cursor, anchor) -> {
             List<Suggestion> result = new ArrayList<>();
-            result.addAll(KEYWORD_COMPLETION_PROVIDER.completionSuggestions(code, cursor, anchor));
+            int pastSpace = code.lastIndexOf(' ') + 1; // zero if no space
+            if (pastSpace == 0) {
+                result.addAll(optionProvider.completionSuggestions(code, cursor, anchor));
+            }
             result.addAll(snippetCompletion(snippetsSupplier).completionSuggestions(code, cursor, anchor));
+            anchor[0] += pastSpace;
+            return result;
+        };
+    }
+
+    // Completion of help, commands and subjects
+    private CompletionProvider helpCompletion() {
+        return (code, cursor, anchor) -> {
+            List<Suggestion> result;
+            int pastSpace = code.indexOf(' ') + 1; // zero if no space
+            if (pastSpace == 0) {
+                result = new FixedCompletionProvider(commands.values().stream()
+                        .filter(cmd -> cmd.kind.showInHelp || cmd.kind == CommandKind.HELP_SUBJECT)
+                        .map(c -> c.command + " ")
+                        .toArray(size -> new String[size]))
+                        .completionSuggestions(code, cursor, anchor);
+            } else if (code.startsWith("/se")) {
+                result = new FixedCompletionProvider(SET_SUBCOMMANDS)
+                        .completionSuggestions(code.substring(pastSpace), cursor - pastSpace, anchor);
+            } else {
+                result = Collections.emptyList();
+            }
+            anchor[0] += pastSpace;
             return result;
         };
     }
@@ -1133,7 +1176,7 @@ public class JShellTool implements MessageHandler {
             List<Suggestion> result = new ArrayList<>();
             int space = code.indexOf(' ');
             if (space == (-1)) {
-                result.addAll(KEYWORD_COMPLETION_PROVIDER.completionSuggestions(code, cursor, anchor));
+                result.addAll(SAVE_OPTION_COMPLETION_PROVIDER.completionSuggestions(code, cursor, anchor));
             }
             result.addAll(FILE_COMPLETION_PROVIDER.completionSuggestions(code.substring(space + 1), cursor - space - 1, anchor));
             anchor[0] += space + 1;
@@ -1143,9 +1186,25 @@ public class JShellTool implements MessageHandler {
 
     private static CompletionProvider reloadCompletion() {
         return (code, cursor, anchor) -> {
-            List<Suggestion> result = new ArrayList<>();
+            CompletionProvider provider;
             int pastSpace = code.indexOf(' ') + 1; // zero if no space
-            result.addAll(RELOAD_OPTIONS_COMPLETION_PROVIDER.completionSuggestions(code.substring(pastSpace), cursor - pastSpace, anchor));
+            if (pastSpace == 0) {
+                provider = RELOAD_OPTIONS_COMPLETION_PROVIDER;
+            } else {
+                switch (code.substring(0, pastSpace - 1)) {
+                    case "-quiet":
+                        provider = RESTORE_COMPLETION_PROVIDER;
+                        break;
+                    case "-restore":
+                        provider = QUIET_COMPLETION_PROVIDER;
+                        break;
+                    default:
+                        provider = EMPTY_COMPLETION_PROVIDER;
+                        break;
+                }
+            }
+            List<Suggestion> result = provider.completionSuggestions(
+                    code.substring(pastSpace), cursor - pastSpace, anchor);
             anchor[0] += pastSpace;
             return result;
         };
@@ -1210,10 +1269,12 @@ public class JShellTool implements MessageHandler {
     {
         registerCommand(new Command("/list",
                 arg -> cmdList(arg),
-                snippetKeywordCompletion(this::allSnippets)));
+                snippetWithOptionCompletion(SNIPPET_HISTORY_OPTION_COMPLETION_PROVIDER,
+                        this::allSnippets)));
         registerCommand(new Command("/edit",
                 arg -> cmdEdit(arg),
-                snippetCompletion(this::allSnippets)));
+                snippetWithOptionCompletion(SNIPPET_OPTION_COMPLETION_PROVIDER,
+                        this::allSnippets)));
         registerCommand(new Command("/drop",
                 arg -> cmdDrop(arg),
                 snippetCompletion(this::dropableSnippets),
@@ -1226,13 +1287,16 @@ public class JShellTool implements MessageHandler {
                 FILE_COMPLETION_PROVIDER));
         registerCommand(new Command("/vars",
                 arg -> cmdVars(arg),
-                snippetKeywordCompletion(this::allVarSnippets)));
+                snippetWithOptionCompletion(SNIPPET_OPTION_COMPLETION_PROVIDER,
+                        this::allVarSnippets)));
         registerCommand(new Command("/methods",
                 arg -> cmdMethods(arg),
-                snippetKeywordCompletion(this::allMethodSnippets)));
+                snippetWithOptionCompletion(SNIPPET_OPTION_COMPLETION_PROVIDER,
+                        this::allMethodSnippets)));
         registerCommand(new Command("/types",
                 arg -> cmdTypes(arg),
-                snippetKeywordCompletion(this::allTypeSnippets)));
+                snippetWithOptionCompletion(SNIPPET_OPTION_COMPLETION_PROVIDER,
+                        this::allTypeSnippets)));
         registerCommand(new Command("/imports",
                 arg -> cmdImports(),
                 EMPTY_COMPLETION_PROVIDER));
@@ -1258,7 +1322,7 @@ public class JShellTool implements MessageHandler {
                 CommandKind.HIDDEN));
         registerCommand(new Command("/help",
                 arg -> cmdHelp(arg),
-                EMPTY_COMPLETION_PROVIDER));
+                helpCompletion()));
         registerCommand(new Command("/set",
                 arg -> cmdSet(arg),
                 new ContinuousCompletionProvider(Map.of(
@@ -1276,7 +1340,7 @@ public class JShellTool implements MessageHandler {
         registerCommand(new Command("/?",
                 "help.quest",
                 arg -> cmdHelp(arg),
-                EMPTY_COMPLETION_PROVIDER,
+                helpCompletion(),
                 CommandKind.NORMAL));
         registerCommand(new Command("/!",
                 "help.bang",
@@ -1962,6 +2026,8 @@ public class JShellTool implements MessageHandler {
                 case ASSIGNMENT_SUBKIND:
                 case OTHER_EXPRESSION_SUBKIND:
                 case TEMP_VAR_EXPRESSION_SUBKIND:
+                case STATEMENT_SUBKIND:
+                case UNKNOWN_SUBKIND:
                     if (!src.endsWith(";")) {
                         src = src + ";";
                     }

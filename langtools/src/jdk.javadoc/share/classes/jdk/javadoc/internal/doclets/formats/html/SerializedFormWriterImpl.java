@@ -66,7 +66,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     public SerializedFormWriterImpl(ConfigurationImpl configuration) {
         super(configuration, DocPaths.SERIALIZED_FORM);
-        visibleClasses = configuration.docEnv.getIncludedTypeElements();
+        visibleClasses = configuration.getIncludedTypeElements();
     }
 
     /**

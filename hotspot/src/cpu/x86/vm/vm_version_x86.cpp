@@ -362,6 +362,19 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     VM_Version::set_evex_cpuFeatures(); // Enable temporary to pass asserts
     UseAVX = 3;
     UseSSE = 2;
+#ifdef _WINDOWS
+    // xmm5-xmm15 are not preserved by caller on windows
+    // https://msdn.microsoft.com/en-us/library/9z1stfyw.aspx
+    __ subptr(rsp, 64);
+    __ evmovdqul(Address(rsp, 0), xmm7, Assembler::AVX_512bit);
+#ifdef _LP64
+    __ subptr(rsp, 64);
+    __ evmovdqul(Address(rsp, 0), xmm8, Assembler::AVX_512bit);
+    __ subptr(rsp, 64);
+    __ evmovdqul(Address(rsp, 0), xmm31, Assembler::AVX_512bit);
+#endif // _LP64
+#endif // _WINDOWS
+
     // load value into all 64 bytes of zmm7 register
     __ movl(rcx, VM_Version::ymm_test_value());
     __ movdl(xmm0, rcx);
@@ -381,6 +394,17 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     VM_Version::set_avx_cpuFeatures(); // Enable temporary to pass asserts
     UseAVX = 1;
     UseSSE = 2;
+#ifdef _WINDOWS
+    __ subptr(rsp, 32);
+    __ vmovdqu(Address(rsp, 0), xmm7);
+#ifdef _LP64
+    __ subptr(rsp, 32);
+    __ vmovdqu(Address(rsp, 0), xmm8);
+    __ subptr(rsp, 32);
+    __ vmovdqu(Address(rsp, 0), xmm15);
+#endif // _LP64
+#endif // _WINDOWS
+
     // load value into all 32 bytes of ymm7 register
     __ movl(rcx, VM_Version::ymm_test_value());
 
@@ -428,6 +452,17 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ evmovdqul(Address(rsi, 128), xmm8, Assembler::AVX_512bit);
     __ evmovdqul(Address(rsi, 192), xmm31, Assembler::AVX_512bit);
 #endif
+
+#ifdef _WINDOWS
+#ifdef _LP64
+    __ evmovdqul(xmm31, Address(rsp, 0), Assembler::AVX_512bit);
+    __ addptr(rsp, 64);
+    __ evmovdqul(xmm8, Address(rsp, 0), Assembler::AVX_512bit);
+    __ addptr(rsp, 64);
+#endif // _LP64
+    __ evmovdqul(xmm7, Address(rsp, 0), Assembler::AVX_512bit);
+    __ addptr(rsp, 64);
+#endif // _WINDOWS
     VM_Version::clean_cpuFeatures();
     UseAVX = saved_useavx;
     UseSSE = saved_usesse;
@@ -445,6 +480,17 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ vmovdqu(Address(rsi, 64), xmm8);
     __ vmovdqu(Address(rsi, 96), xmm15);
 #endif
+
+#ifdef _WINDOWS
+#ifdef _LP64
+    __ vmovdqu(xmm15, Address(rsp, 0));
+    __ addptr(rsp, 32);
+    __ vmovdqu(xmm8, Address(rsp, 0));
+    __ addptr(rsp, 32);
+#endif // _LP64
+    __ vmovdqu(xmm7, Address(rsp, 0));
+    __ addptr(rsp, 32);
+#endif // _WINDOWS
     VM_Version::clean_cpuFeatures();
     UseAVX = saved_useavx;
     UseSSE = saved_usesse;
@@ -769,7 +815,11 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
   }
 
-  if (UseSHA512Intrinsics) {
+  if (UseSHA) {
+    if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
+    }
+  } else if (UseSHA512Intrinsics) {
     warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }

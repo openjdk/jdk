@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package javax.sound.sampled;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * {@code AudioFormat} is the class that specifies a particular arrangement of
@@ -599,7 +600,7 @@ public class AudioFormat {
          *
          * @param  name the name of the new type of encoding
          */
-        public Encoding(String name) {
+        public Encoding(final String name) {
             this.name = name;
         }
 
@@ -607,14 +608,14 @@ public class AudioFormat {
          * Finalizes the equals method.
          */
         @Override
-        public final boolean equals(Object obj) {
-            if (toString() == null) {
-                return (obj != null) && (obj.toString() == null);
+        public final boolean equals(final Object obj) {
+            if (this == obj) {
+                return true;
             }
-            if (obj instanceof Encoding) {
-                return toString().equals(obj.toString());
+            if (!(obj instanceof Encoding)) {
+                return false;
             }
-            return false;
+            return Objects.equals(name, ((Encoding) obj).name);
         }
 
         /**
@@ -622,10 +623,7 @@ public class AudioFormat {
          */
         @Override
         public final int hashCode() {
-            if (toString() == null) {
-                return 0;
-            }
-            return toString().hashCode();
+            return name != null ? name.hashCode() : 0;
         }
 
         /**

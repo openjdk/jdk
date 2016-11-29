@@ -57,7 +57,7 @@ public class ToolProvider {
      * {@code null} if no compiler is provided
      * @implNote This implementation returns the compiler provided
      * by the {@code jdk.compiler} module if that module is available,
-     * and null otherwise.
+     * and {@code null} otherwise.
      */
     public static JavaCompiler getSystemJavaCompiler() {
         return getSystemTool(JavaCompiler.class,
@@ -78,7 +78,7 @@ public class ToolProvider {
      * {@code null} if no documentation tool is provided
      * @implNote This implementation returns the tool provided
      * by the {@code jdk.javadoc} module if that module is available,
-     * and null otherwise.
+     * and {@code null} otherwise.
      */
     public static DocumentationTool getSystemDocumentationTool() {
         return getSystemTool(DocumentationTool.class,
@@ -86,16 +86,19 @@ public class ToolProvider {
     }
 
     /**
-     * Returns the class loader for tools provided with this platform.
-     * This does not include user-installed tools.  Use the
-     * {@linkplain java.util.ServiceLoader service provider mechanism}
-     * for locating user installed tools.
-     *
-     * @return the class loader for tools provided with this platform
-     * or {@code null} if no tools are provided
+     * Returns a class loader that may be used to load system tools,
+     * or {@code null} if no such special loader is provided.
+     * @implSpec This implementation always returns {@code null}.
+     * @deprecated This method is subject to removal in a future version of
+     * Java SE.
+     * Use the {@link java.util.spi.ToolProvider system tool provider} or
+     * {@link java.util.ServiceLoader service loader} mechanisms to
+     * locate system tools as well as user-installed tools.
+     * @return a class loader, or {@code null}
      */
+    @Deprecated
     public static ClassLoader getSystemToolClassLoader() {
-        return ClassLoader.getSystemClassLoader();
+        return null;
     }
 
     private static final boolean useLegacy;

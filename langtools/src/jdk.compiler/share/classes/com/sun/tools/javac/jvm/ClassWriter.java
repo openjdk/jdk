@@ -1626,7 +1626,7 @@ public class ClassWriter extends ClassFile {
         Location outLocn;
         if (multiModuleMode) {
             ModuleSymbol msym = c.owner.kind == MDL ? (ModuleSymbol) c.owner : c.packge().modle;
-            outLocn = fileManager.getModuleLocation(CLASS_OUTPUT, msym.name.toString());
+            outLocn = fileManager.getLocationForModule(CLASS_OUTPUT, msym.name.toString());
         } else {
             outLocn = CLASS_OUTPUT;
         }

@@ -30,6 +30,7 @@ import java.util.*;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
+import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -40,7 +41,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-
 
 /**
  * Class to generate file for each package contents in the left-hand bottom
@@ -82,9 +82,9 @@ public class PackageFrameWriter extends HtmlDocletWriter {
     public PackageFrameWriter(ConfigurationImpl configuration, PackageElement packageElement) {
         super(configuration, DocPath.forPackage(packageElement).resolve(DocPaths.PACKAGE_FRAME));
         this.packageElement = packageElement;
-        if (configuration.getSpecifiedPackages().isEmpty()) {
+        if (configuration.getSpecifiedPackageElements().isEmpty()) {
             documentedClasses = new TreeSet<>(utils.makeGeneralPurposeComparator());
-            documentedClasses.addAll(configuration.docEnv.getIncludedTypeElements());
+            documentedClasses.addAll(configuration.getIncludedTypeElements());
         }
     }
 

@@ -960,17 +960,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             + "]";
     }
 
-    /**
-     * When SSL sessions are finalized, all values bound to
-     * them are removed.
-     */
-    @Override
-    protected void finalize() throws Throwable {
-        String[] names = getValueNames();
-        for (int i = 0; i < names.length; i++) {
-            removeValue(names[i]);
-        }
-    }
 }
 
 

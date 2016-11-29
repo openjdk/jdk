@@ -23,12 +23,12 @@
 
 /**
  * @test
- * @bug 6543815 6601097
+ * @bug 6543815 6601097 8160888
  * @summary Image should be sent to printer, no exceptions thrown.
  *    The 3 printouts should have a rectangle which is the minimum
  *    possible margins ie, the margins should be hardware margins
  *    and not java default 1 inch margins.
- * @run main/manual Margins
+ * @run main Margins
  */
 
 import java.awt.print.PrinterJob;
@@ -39,16 +39,36 @@ import java.awt.print.PrinterException;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Color;
+import java.awt.Robot;
+import java.awt.event.KeyEvent;
 
 public class Margins implements Printable {
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws Exception {
+        Robot robot = new Robot();
+        Thread t = new Thread (() -> {
+            robot.waitForIdle();
+            robot.delay(5000);
+            robot.keyPress(KeyEvent.VK_ENTER);
+            robot.keyRelease(KeyEvent.VK_ENTER);
+            robot.waitForIdle();
+            robot.delay(5000);
+            robot.keyPress(KeyEvent.VK_ENTER);
+            robot.keyRelease(KeyEvent.VK_ENTER);
+            robot.waitForIdle();
+            robot.delay(5000);
+            robot.keyPress(KeyEvent.VK_ENTER);
+            robot.keyRelease(KeyEvent.VK_ENTER);
+        });
+
         PrinterJob job = PrinterJob.getPrinterJob();
         PageFormat pageFormat = job.defaultPage();
         Paper paper = pageFormat.getPaper();
         double wid = paper.getWidth();
         double hgt = paper.getHeight();
         paper.setImageableArea(0, -10, wid, hgt);
+        t.start();
+
         pageFormat = job.pageDialog(pageFormat);
         pageFormat.setPaper(paper);
         job.setPrintable(new Margins(), pageFormat);
@@ -57,7 +77,7 @@ public class Margins implements Printable {
         } catch (PrinterException e) {
         }
 
-        paper.setImageableArea(0, 0, wid, hgt+72);
+        paper.setImageableArea(0, 0, wid, hgt + 72);
         pageFormat = job.pageDialog(pageFormat);
         pageFormat.setPaper(paper);
 
@@ -100,12 +120,13 @@ public class Margins implements Printable {
 
 
        Paper paper = pf.getPaper();
-       double wid = paper.getWidth();
-       double hgt = paper.getHeight();
-
-       /* If imageable width/height is -ve, then print was done with 1" margin
-        * ie ix=72 iy=72 iw=451 ih=697 and wid=595
-        * but with fix, we get print with hardware margin ie
+       int wid = (int)paper.getWidth();
+       int hgt = (int)paper.getHeight();
+       System.out.println("wid="+wid+" hgt="+hgt);
+       /*
+        * If imageable width/height is -ve, then print was done with 1" margin
+        * e.g. ix=72 iy=72 iw=451 ih=697 and paper wid=595
+        * but with fix, we get print with hardware margin e.g.
         * ix=12, iy=12, iw=571, ih=817
         */
        if ((wid - iw > 72) || (hgt - ih > 72)) {
@@ -114,6 +135,12 @@ public class Margins implements Printable {
        if ((ix+iw > wid) || (iy+ih > hgt)) {
            throw new RuntimeException("Printable width or height "
                    + "exceeds paper width or height.");
+       }
+       // runtime checking to see if the margins/printable area
+       // correspond to the entire size of the paper, for now, make it pass
+       // as for linux, the hwmargin is not taken into account - bug6574279
+       if (ix == 0 && iy == 0 && (ix+iw == wid) && (iy+ih == hgt)) {
+           return PAGE_EXISTS;
        }
 
        Graphics2D g2d = (Graphics2D)g;

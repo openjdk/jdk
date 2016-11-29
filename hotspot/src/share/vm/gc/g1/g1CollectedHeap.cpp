@@ -4420,6 +4420,19 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G
   NOT_PRODUCT(set_evacuation_failure_alot_for_current_gc();)
 
   assert(dirty_card_queue_set().completed_buffers_num() == 0, "Should be empty");
+
+  G1GCPhaseTimes* phase_times = g1_policy()->phase_times();
+
+  // InitialMark needs claim bits to keep track of the marked-through CLDs.
+  if (collector_state()->during_initial_mark_pause()) {
+    double start_clear_claimed_marks = os::elapsedTime();
+
+    ClassLoaderDataGraph::clear_claimed_marks();
+
+    double recorded_clear_claimed_marks_time_ms = (os::elapsedTime() - start_clear_claimed_marks) * 1000.0;
+    phase_times->record_clear_claimed_marks_time_ms(recorded_clear_claimed_marks_time_ms);
+  }
+
   double start_par_time_sec = os::elapsedTime();
   double end_par_time_sec;
 
@@ -4427,10 +4440,6 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G
     const uint n_workers = workers()->active_workers();
     G1RootProcessor root_processor(this, n_workers);
     G1ParTask g1_par_task(this, per_thread_states, _task_queues, &root_processor, n_workers);
-    // InitialMark needs claim bits to keep track of the marked-through CLDs.
-    if (collector_state()->during_initial_mark_pause()) {
-      ClassLoaderDataGraph::clear_claimed_marks();
-    }
 
     print_termination_stats_hdr();
 
@@ -4443,8 +4452,6 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G
     // taken for the destructor is NOT included in the
     // reported parallel time.
   }
-
-  G1GCPhaseTimes* phase_times = g1_policy()->phase_times();
 
   double par_time_ms = (end_par_time_sec - start_par_time_sec) * 1000.0;
   phase_times->record_par_time(par_time_ms);

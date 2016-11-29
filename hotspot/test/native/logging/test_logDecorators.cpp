@@ -172,20 +172,20 @@ TEST(LogDecorators, combine_with) {
 
   // Select first and third decorator for dec1
   char input[64];
-  sprintf(input, "%s,%s", decorator_name_array[0], decorator_name_array[2]);
+  sprintf(input, "%s,%s", decorator_name_array[0], decorator_name_array[3]);
   dec1.parse(input);
   EXPECT_TRUE(dec1.is_decorator(decorator_array[0]));
-  EXPECT_TRUE(dec1.is_decorator(decorator_array[2]));
+  EXPECT_TRUE(dec1.is_decorator(decorator_array[3]));
 
   // Select the default decorators for dec2
   EXPECT_FALSE(dec2.is_decorator(decorator_array[0]));
-  EXPECT_FALSE(dec2.is_decorator(decorator_array[2]));
+  EXPECT_FALSE(dec2.is_decorator(decorator_array[3]));
   assert_default_decorators(&dec2);
 
   // Combine and verify that the combination includes first, third and default decorators
   dec2.combine_with(dec1);
   EXPECT_TRUE(dec2.is_decorator(decorator_array[0]));
-  EXPECT_TRUE(dec2.is_decorator(decorator_array[2]));
+  EXPECT_TRUE(dec2.is_decorator(decorator_array[3]));
   assert_default_decorators(&dec2, false);
 }
 

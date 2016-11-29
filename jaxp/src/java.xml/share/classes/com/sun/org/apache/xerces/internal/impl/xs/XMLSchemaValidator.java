@@ -344,13 +344,14 @@ public class XMLSchemaValidator
             JdkXmlUtils.CATALOG_DEFER,
             JdkXmlUtils.CATALOG_FILES,
             JdkXmlUtils.CATALOG_PREFER,
-            JdkXmlUtils.CATALOG_RESOLVE
+            JdkXmlUtils.CATALOG_RESOLVE,
+            JdkXmlUtils.CDATA_CHUNK_SIZE
         };
 
     /** Property defaults. */
     private static final Object[] PROPERTY_DEFAULTS =
         { null, null, null, null, null, null, null, null, null, null, null, null,
-        null, null, null, null};
+            null, null, null, null, JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT };
 
     // this is the number of valuestores of each kind
     // we expect an element to have.  It's almost
@@ -358,10 +359,14 @@ public class XMLSchemaValidator
     protected static final int ID_CONSTRAINT_NUM = 1;
 
     // xsi:* attribute declarations
-    static final XSAttributeDecl XSI_TYPE = SchemaGrammar.SG_XSI.getGlobalAttributeDecl(SchemaSymbols.XSI_TYPE);
-    static final XSAttributeDecl XSI_NIL = SchemaGrammar.SG_XSI.getGlobalAttributeDecl(SchemaSymbols.XSI_NIL);
-    static final XSAttributeDecl XSI_SCHEMALOCATION = SchemaGrammar.SG_XSI.getGlobalAttributeDecl(SchemaSymbols.XSI_SCHEMALOCATION);
-    static final XSAttributeDecl XSI_NONAMESPACESCHEMALOCATION = SchemaGrammar.SG_XSI.getGlobalAttributeDecl(SchemaSymbols.XSI_NONAMESPACESCHEMALOCATION);
+    static final XSAttributeDecl XSI_TYPE =
+            SchemaGrammar.SG_XSI.getGlobalAttributeDecl(SchemaSymbols.XSI_TYPE);
+    static final XSAttributeDecl XSI_NIL =
+            SchemaGrammar.SG_XSI.getGlobalAttributeDecl(SchemaSymbols.XSI_NIL);
+    static final XSAttributeDecl XSI_SCHEMALOCATION =
+            SchemaGrammar.SG_XSI.getGlobalAttributeDecl(SchemaSymbols.XSI_SCHEMALOCATION);
+    static final XSAttributeDecl XSI_NONAMESPACESCHEMALOCATION =
+            SchemaGrammar.SG_XSI.getGlobalAttributeDecl(SchemaSymbols.XSI_NONAMESPACESCHEMALOCATION);
 
     //
     // Data

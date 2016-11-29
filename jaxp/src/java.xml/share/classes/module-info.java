@@ -61,12 +61,6 @@ module java.xml {
         java.xml.ws;
     exports com.sun.org.apache.xml.internal.dtm to
         java.xml.crypto;
-    exports com.sun.org.apache.xml.internal.resolver to
-        java.xml.ws,
-        jdk.xml.bind;
-    exports com.sun.org.apache.xml.internal.resolver.tools to
-        java.xml.ws,
-        jdk.xml.bind;
     exports com.sun.org.apache.xml.internal.utils to
         java.xml.crypto;
     exports com.sun.org.apache.xpath.internal to

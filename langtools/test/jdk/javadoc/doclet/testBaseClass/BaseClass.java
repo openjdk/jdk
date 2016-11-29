@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,18 @@
  */
 
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import javax.lang.model.SourceVersion;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 
 import jdk.javadoc.doclet.*;
@@ -60,17 +64,17 @@ public class BaseClass implements Doclet {
             throw new AssertionError("Base class is not included: baz.Foo");
         }
 
-        for (Element e : root.getSpecifiedElements()) {
-            if (e.getKind() == ElementKind.CLASS &&
-                    e.getSimpleName().contentEquals("Bar")) {
-                klass = (TypeElement)e;
+        for (TypeElement te : ElementFilter.typesIn(root.getSpecifiedElements())) {
+            if (te.getKind() == ElementKind.CLASS &&
+                    te.getSimpleName().contentEquals("Bar")) {
+                klass = te;
             }
         }
         if (klass == null) {
             throw new AssertionError("class Bar not found");
         }
         List<? extends Element> members = klass.getEnclosedElements();
-        List<Element> selected = root.getSelectedElements(members);
+
 
         boolean foundPublic = false;
         boolean foundProtected = false;
@@ -78,8 +82,11 @@ public class BaseClass implements Doclet {
         boolean foundPackagePrivate = false;
         boolean foundPrivate = false;
 
+        List<Element> included = members.stream()
+                .filter(cls -> root.isIncluded(cls))
+                .collect(Collectors.toList());
 
-        for (Element e :selected) {
+        for (Element e : included) {
             System.out.println("element: " + e);
             if (e.getSimpleName().toString().equals("aPublicMethod")) {
                 foundPublic = true;

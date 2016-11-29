@@ -128,7 +128,7 @@ void SetupThreadGraphicsInfo(JNIEnv *env, GDIWinSDOps *wsdo) {
                 return;
             }
             hDC = comp->GetDCFromComponent();
-            if (hDC != NULL) {
+            if (hDC != NULL && wsdo->device != NULL) {
                 ::SelectObject(hDC, nullbrush);
                 ::SelectObject(hDC, nullpen);
                 ::SelectClipRgn(hDC, (HRGN) NULL);

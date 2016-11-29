@@ -45,6 +45,10 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
+const char* CodeBlob::compiler_name() const {
+  return compilertype2name(_type);
+}
+
 unsigned int CodeBlob::align_code_offset(int offset) {
   // align the size to CodeEntryAlignment
   return
@@ -65,7 +69,7 @@ unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
   return size;
 }
 
-CodeBlob::CodeBlob(const char* name, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments) :
+CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments) :
   _name(name),
   _size(layout.size()),
   _header_size(layout.header_size()),
@@ -80,7 +84,8 @@ CodeBlob::CodeBlob(const char* name, const CodeBlobLayout& layout, int frame_com
   _data_end(layout.data_end()),
   _relocation_begin(layout.relocation_begin()),
   _relocation_end(layout.relocation_end()),
-  _content_begin(layout.content_begin())
+  _content_begin(layout.content_begin()),
+  _type(type)
 {
   assert(layout.size()        == round_to(layout.size(),        oopSize), "unaligned size");
   assert(layout.header_size() == round_to(layout.header_size(), oopSize), "unaligned size");
@@ -92,7 +97,7 @@ CodeBlob::CodeBlob(const char* name, const CodeBlobLayout& layout, int frame_com
 #endif // COMPILER1
 }
 
-CodeBlob::CodeBlob(const char* name, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) :
+CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) :
   _name(name),
   _size(layout.size()),
   _header_size(layout.header_size()),
@@ -106,7 +111,8 @@ CodeBlob::CodeBlob(const char* name, const CodeBlobLayout& layout, CodeBuffer* c
   _data_end(layout.data_end()),
   _relocation_begin(layout.relocation_begin()),
   _relocation_end(layout.relocation_end()),
-  _content_begin(layout.content_begin())
+  _content_begin(layout.content_begin()),
+  _type(type)
 {
   assert(_size        == round_to(_size,        oopSize), "unaligned size");
   assert(_header_size == round_to(_header_size, oopSize), "unaligned size");
@@ -123,7 +129,7 @@ CodeBlob::CodeBlob(const char* name, const CodeBlobLayout& layout, CodeBuffer* c
 
 // Creates a simple CodeBlob. Sets up the size of the different regions.
 RuntimeBlob::RuntimeBlob(const char* name, int header_size, int size, int frame_complete, int locs_size)
-  : CodeBlob(name, CodeBlobLayout((address) this, size, header_size, locs_size, size), frame_complete, 0, NULL, false /* caller_must_gc_arguments */)
+  : CodeBlob(name, compiler_none, CodeBlobLayout((address) this, size, header_size, locs_size, size), frame_complete, 0, NULL, false /* caller_must_gc_arguments */)
 {
   assert(locs_size   == round_to(locs_size,   oopSize), "unaligned size");
   assert(!UseRelocIndex, "no space allocated for reloc index yet");
@@ -148,7 +154,7 @@ RuntimeBlob::RuntimeBlob(
   int         frame_size,
   OopMapSet*  oop_maps,
   bool        caller_must_gc_arguments
-) : CodeBlob(name, CodeBlobLayout((address) this, size, header_size, cb), cb, frame_complete, frame_size, oop_maps, caller_must_gc_arguments) {
+) : CodeBlob(name, compiler_none, CodeBlobLayout((address) this, size, header_size, cb), cb, frame_complete, frame_size, oop_maps, caller_must_gc_arguments) {
   cb->copy_code_and_locs_to(this);
 }
 

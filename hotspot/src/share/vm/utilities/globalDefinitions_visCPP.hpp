@@ -63,8 +63,8 @@
 #undef NULL
 // 64-bit Windows uses a P64 data model (not LP64, although we define _LP64)
 // Since longs are 32-bit we cannot use 0L here.  Use the Visual C++ specific
-// 64-bit integer-suffix (i64) instead.
-#define NULL 0i64
+// 64-bit integer-suffix (LL) instead.
+#define NULL 0LL
 #else
 #ifndef NULL
 #define NULL 0
@@ -146,16 +146,6 @@ inline int g_isnan(jdouble f)                    { return _isnan(f); }
 
 inline int g_isfinite(jfloat  f)                 { return _finite(f); }
 inline int g_isfinite(jdouble f)                 { return _finite(f); }
-
-//----------------------------------------------------------------------------------------------------
-// Constant for jlong (specifying a long long constant is C++ compiler specific)
-
-// Build a 64bit integer constant with Visual C++
-#define  CONST64(x) (x ##  i64)
-#define UCONST64(x) (x ## ui64)
-
-const jlong min_jlong = (jlong)UCONST64(0x8000000000000000);
-const jlong max_jlong =         CONST64(0x7fffffffffffffff);
 
 //----------------------------------------------------------------------------------------------------
 // Miscellaneous

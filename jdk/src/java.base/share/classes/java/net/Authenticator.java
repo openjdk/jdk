@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,6 +128,35 @@ class Authenticator {
         }
 
         theAuthenticator = a;
+    }
+
+    /**
+     * Gets the default authenticator.
+     * First, if there is a security manager, its {@code checkPermission}
+     * method is called with a
+     * {@code NetPermission("requestPasswordAuthentication")} permission.
+     * This may result in a java.lang.SecurityException.
+     * Then the default authenticator, if set, is returned.
+     * Otherwise, {@code null} is returned.
+     *
+     * @return The default authenticator, if set, {@code null} otherwise.
+     *
+     * @throws SecurityException
+     *        if a security manager exists and its
+     *        {@code checkPermission} method doesn't allow
+     *        requesting password authentication.
+     * @since 9
+     * @see SecurityManager#checkPermission
+     * @see java.net.NetPermission
+     */
+    public static Authenticator getDefault() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            NetPermission requestPermission
+                = new NetPermission("requestPasswordAuthentication");
+            sm.checkPermission(requestPermission);
+        }
+        return theAuthenticator;
     }
 
     /**

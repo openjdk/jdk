@@ -23,4 +23,4 @@
 #
 ###########################################################################
 
-javax/xml/jaxp/isolatedjdk/catalog/PropertiesTest.sh            8147431 generic-all
+javax/xml/jaxp/isolatedjdk/catalog/PropertiesTest.sh            8169827 generic-all

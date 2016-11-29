@@ -174,9 +174,20 @@ byteArrayToPacket(JNIEnv *env, jbyteArray b, jdwpPacket *str)
      * Get the packet header
      */
     (*env)->GetByteArrayRegion(env, b, 0, sizeof(pktHeader), pktHeader);
+    if ((*env)->ExceptionOccurred(env)) {
+        /* b shorter than sizeof(pktHeader) */
+        return;
+    }
 
     total_length = (int)pktHeader[3] | ((int)pktHeader[2] << 8) |
                    ((int)pktHeader[1] << 16) | ((int)pktHeader[0] << 24);
+
+    if (total_length < sizeof(pktHeader)) {
+        throwException(env, "java/lang/IllegalArgumentException",
+                            "JDWP header is incorrect");
+        return;
+    }
+
     /*
      * The id field is in big endian (also errorCode field in the case
      * of reply packets).
@@ -195,9 +206,9 @@ byteArrayToPacket(JNIEnv *env, jbyteArray b, jdwpPacket *str)
     }
 
     /*
-     * The length of the JDWP packet is 11 + data
+     * The length of the JDWP packet is sizeof(pktHeader) + data
      */
-    data_length = total_length - 11;
+    data_length = total_length - sizeof(pktHeader);
 
     if (data_length == 0) {
         data = NULL;
@@ -209,7 +220,7 @@ byteArrayToPacket(JNIEnv *env, jbyteArray b, jdwpPacket *str)
             return;
         }
 
-        (*env)->GetByteArrayRegion(env, b, 11, /*sizeof(CmdPacket)+4*/ data_length, data);
+        (*env)->GetByteArrayRegion(env, b, sizeof(pktHeader), /*sizeof(CmdPacket)+4*/ data_length, data);
         if ((*env)->ExceptionOccurred(env)) {
             free(data);
             return;

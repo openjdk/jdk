@@ -178,6 +178,7 @@ public class ParagraphView extends FlowView implements TabExpander {
      * @return the location in the model that represents the
      *  next location visual position
      */
+    @SuppressWarnings("deprecation")
     protected int getNextNorthSouthVisualPositionFrom(int pos, Position.Bias b,
                                                       Shape a, int direction,
                                                       Position.Bias[] biasRet)
@@ -252,6 +253,7 @@ public class ParagraphView extends FlowView implements TabExpander {
     // NOTE: This will not properly work if ParagraphView contains
     // other ParagraphViews. It won't raise, but this does not message
     // the children views with getNextVisualPositionFrom.
+    @SuppressWarnings("deprecation")
     protected int getClosestPositionTo(int pos, Position.Bias b, Shape a,
                                        int direction, Position.Bias[] biasRet,
                                        int rowIndex, int x)

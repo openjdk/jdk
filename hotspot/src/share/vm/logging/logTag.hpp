@@ -61,6 +61,7 @@
   LOG_TAG(exit) \
   LOG_TAG(freelist) \
   LOG_TAG(gc) \
+  LOG_TAG(hashtables) \
   LOG_TAG(heap) \
   LOG_TAG(humongous) \
   LOG_TAG(ihop) \

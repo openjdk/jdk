@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
  */
 package sun.awt.image;
 
-import java.util.Vector;
 import java.util.Hashtable;
 import java.io.InputStream;
 import java.io.IOException;
@@ -620,7 +619,6 @@ public class GifImageDecoder extends ImageDecoder {
 
 class GifFrame {
     private static final boolean verbose = false;
-    private static IndexColorModel trans_model;
 
     static final int DISPOSAL_NONE      = 0x00;
     static final int DISPOSAL_SAVE      = 0x01;
@@ -718,12 +716,6 @@ class GifFrame {
             case DISPOSAL_BGCOLOR:
                 byte tpix;
                 if (model.getTransparentPixel() < 0) {
-                    model = trans_model;
-                    if (model == null) {
-                        model = new IndexColorModel(8, 1,
-                                                    new byte[4], 0, true);
-                        trans_model = model;
-                    }
                     tpix = 0;
                 } else {
                     tpix = (byte) model.getTransparentPixel();

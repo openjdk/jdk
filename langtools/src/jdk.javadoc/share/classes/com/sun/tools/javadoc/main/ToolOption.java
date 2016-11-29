@@ -31,6 +31,7 @@ import java.util.StringTokenizer;
 
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.main.Option.InvalidValueException;
 import com.sun.tools.javac.main.OptionHelper;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Options;
@@ -141,14 +142,14 @@ public enum ToolOption {
 
     ADD_MODULES("--add-modules", true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.ADD_MODULES.process(helper.getOptionHelper(), opt, arg);
         }
     },
 
     LIMIT_MODULES("--limit-modules", true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.LIMIT_MODULES.process(helper.getOptionHelper(), opt, arg);
         }
     },
@@ -191,28 +192,28 @@ public enum ToolOption {
 
     ADD_READS("--add-reads", true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.ADD_READS.process(helper.getOptionHelper(), opt, arg);
         }
     },
 
     ADD_EXPORTS("--add-exports", true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.ADD_EXPORTS.process(helper.getOptionHelper(), opt, arg);
         }
     },
 
     XMODULE("-Xmodule:", false) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.XMODULE.process(helper.getOptionHelper(), arg);
         }
     },
 
     PATCH_MODULE("--patch-module", true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.PATCH_MODULE.process(helper.getOptionHelper(), opt, arg);
         }
     },
@@ -356,7 +357,7 @@ public enum ToolOption {
         this.hasArg = hasArg;
     }
 
-    void process(Helper helper, String arg) { }
+    void process(Helper helper, String arg) throws Option.InvalidValueException { }
 
     void process(Helper helper) { }
 

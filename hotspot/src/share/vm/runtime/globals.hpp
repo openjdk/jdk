@@ -3325,9 +3325,7 @@ public:
           "Stack space (bytes) required for JVM_InvokeMethod to complete")  \
                                                                             \
   /* code cache parameters                                    */            \
-  /* ppc64/tiered compilation has large code-entry alignment. */            \
-  develop(uintx, CodeCacheSegmentSize,                                      \
-          64 PPC64_ONLY(+64) NOT_PPC64(TIERED_ONLY(+64)),                   \
+  develop_pd(uintx, CodeCacheSegmentSize,                                   \
           "Code cache segment size (in bytes) - smallest unit of "          \
           "allocation")                                                     \
           range(1, 1024)                                                    \

@@ -259,6 +259,7 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._DFA_file, "opto/cfgnode.hpp");  // Use PROB_MAX in predicate.
   AD.addInclude(AD._DFA_file, "opto/intrinsicnode.hpp");
   AD.addInclude(AD._DFA_file, "opto/matcher.hpp");
+  AD.addInclude(AD._DFA_file, "opto/narrowptrnode.hpp");
   AD.addInclude(AD._DFA_file, "opto/opcodes.hpp");
   AD.addInclude(AD._DFA_file, "opto/convertnode.hpp");
   // Make sure each .cpp file starts with include lines:
