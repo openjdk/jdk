@@ -214,7 +214,6 @@ BasicType name2type(const char* name) {
   return T_ILLEGAL;
 }
 
-
 // Map BasicType to size in words
 int type2size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, 1, 1, 1, -1};
 

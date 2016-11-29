@@ -25,6 +25,7 @@
 package jdk.jshell.execution;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,12 +36,25 @@ import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.connect.Connector;
 import com.sun.jdi.connect.LaunchingConnector;
 import com.sun.jdi.connect.ListeningConnector;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import com.sun.jdi.connect.IllegalConnectorArgumentsException;
 
 /**
  * Sets up a JDI connection, providing the resulting JDI {@link VirtualMachine}
  * and the {@link Process} the remote agent is running in.
  */
 public class JdiInitiator {
+
+    // factor for the timeout on all of connect
+    private static final double CONNECT_TIMEOUT_FACTOR = 1.5;
+
+    // Over-all connect time-out
+    private final int connectTimeout;
 
     private VirtualMachine vm;
     private Process process = null;
@@ -58,10 +72,12 @@ public class JdiInitiator {
      * otherwise we start explicitly and use ListeningConnector
      * @param host explicit hostname to use, if null use discovered
      * hostname, applies to listening only (!isLaunch)
+     * @param timeout the start-up time-out in milliseconds
      */
     public JdiInitiator(int port, List<String> remoteVMOptions, String remoteAgent,
-            boolean isLaunch, String host) {
+            boolean isLaunch, String host, int timeout) {
         this.remoteAgent = remoteAgent;
+        this.connectTimeout = (int) (timeout * CONNECT_TIMEOUT_FACTOR);
         String connectorName
                 = isLaunch
                         ? "com.sun.jdi.CommandLineLaunch"
@@ -74,8 +90,11 @@ public class JdiInitiator {
                 = isLaunch
                         ? launchArgs(port, String.join(" ", remoteVMOptions))
                         : new HashMap<>();
-        if (host != null && !isLaunch) {
-            argumentName2Value.put("localAddress", host);
+        if (!isLaunch) {
+            argumentName2Value.put("timeout", ""+timeout);
+            if (host != null && !isLaunch) {
+                argumentName2Value.put("localAddress", host);
+            }
         }
         this.connectorArgs = mergeConnectorArgs(connector, argumentName2Value);
         this.vm = isLaunch
@@ -106,13 +125,12 @@ public class JdiInitiator {
     private VirtualMachine launchTarget() {
         LaunchingConnector launcher = (LaunchingConnector) connector;
         try {
-            VirtualMachine new_vm = launcher.launch(connectorArgs);
+            VirtualMachine new_vm = timedVirtualMachineCreation(() -> launcher.launch(connectorArgs), null);
             process = new_vm.process();
             return new_vm;
-        } catch (Exception ex) {
-            reportLaunchFail(ex, "launch");
+        } catch (Throwable ex) {
+            throw reportLaunchFail(ex, "launch");
         }
-        return null;
     }
 
     /**
@@ -140,15 +158,52 @@ public class JdiInitiator {
             ProcessBuilder pb = new ProcessBuilder(args);
             process = pb.start();
 
-            // Forward out, err, and in
             // Accept the connection from the remote agent
-            vm = listener.accept(connectorArgs);
-            listener.stopListening(connectorArgs);
+            vm = timedVirtualMachineCreation(() -> listener.accept(connectorArgs),
+                    () -> process.waitFor());
             return vm;
-        } catch (Exception ex) {
-            reportLaunchFail(ex, "listen");
+        } catch (Throwable ex) {
+            if (process != null) {
+                process.destroyForcibly();
+            }
+            throw reportLaunchFail(ex, "listen");
+        } finally {
+            try {
+                listener.stopListening(connectorArgs);
+            } catch (IOException | IllegalConnectorArgumentsException ex) {
+                // ignore
+            }
         }
-        return null;
+    }
+
+    VirtualMachine timedVirtualMachineCreation(Callable<VirtualMachine> creator,
+            Callable<Integer> processComplete) throws Exception {
+        VirtualMachine result;
+        ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
+            Thread thread = Executors.defaultThreadFactory().newThread(runnable);
+            thread.setDaemon(true);
+            return thread;
+        });
+        try {
+            Future<VirtualMachine> future = executor.submit(creator);
+            if (processComplete != null) {
+                executor.submit(() -> {
+                    Integer i = processComplete.call();
+                    future.cancel(true);
+                    return i;
+                });
+            }
+
+            try {
+                result = future.get(connectTimeout, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException ex) {
+                future.cancel(true);
+                throw ex;
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+        return result;
     }
 
     private Connector findConnector(String name) {
@@ -194,8 +249,10 @@ public class JdiInitiator {
         return argumentName2Value;
     }
 
-    private void reportLaunchFail(Exception ex, String context) {
-        throw new InternalError("Failed remote " + context + ": " + connector +
+    private InternalError reportLaunchFail(Throwable ex, String context) {
+        return new InternalError("Failed remote " + context + ": "
+                + ex.toString()
+                + " @ " + connector +
                 " -- " + connectorArgs, ex);
     }
 

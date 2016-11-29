@@ -53,7 +53,22 @@ public class CopyOnWriteArrayListTest extends JSR166TestCase {
     }
 
     public static Test suite() {
-        return new TestSuite(CopyOnWriteArrayListTest.class);
+        class Implementation implements CollectionImplementation {
+            public Class<?> klazz() { return ArrayList.class; }
+            public List emptyCollection() { return new CopyOnWriteArrayList(); }
+            public Object makeElement(int i) { return i; }
+            public boolean isConcurrent() { return true; }
+            public boolean permitsNulls() { return true; }
+        }
+        class SubListImplementation extends Implementation {
+            public List emptyCollection() {
+                return super.emptyCollection().subList(0, 0);
+            }
+        }
+        return newTestSuite(
+                CopyOnWriteArrayListTest.class,
+                CollectionTest.testSuite(new Implementation()),
+                CollectionTest.testSuite(new SubListImplementation()));
     }
 
     static CopyOnWriteArrayList<Integer> populatedArray(int n) {

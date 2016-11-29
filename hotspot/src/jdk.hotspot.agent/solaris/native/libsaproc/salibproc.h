@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,17 @@
 extern "C" {
 #endif
 
+/* extended symbol table information */
+typedef struct {
+        const char      *prs_object;            /* object name */
+        const char      *prs_name;              /* symbol name */
+        Lmid_t          prs_lmid;               /* link map id */
+        uint_t          prs_id;                 /* symbol id */
+        uint_t          prs_table;              /* symbol table id */
+} prsyminfo_t;
+
+typedef struct ps_prochandle ps_prochandle_t;
+
 /*
  * 'object_name' is the name of a load object obtained from an
  * iteration over the process's address space mappings (Pmapping_iter),
@@ -53,8 +64,10 @@ extern "C" {
  * or else it is one of the special PR_OBJ_* values above.
  */
 
-extern int Plookup_by_addr(struct ps_prochandle *,
-    uintptr_t, char *, size_t, GElf_Sym *);
+extern int Plookup_by_addr(ps_prochandle_t *, uintptr_t, char *,
+                           size_t, GElf_Sym *, prsyminfo_t *);
+extern ps_prochandle_t *proc_arg_grab(const char *, int, int,
+                                      int *, const char **);
 
 typedef int proc_map_f(void *, const prmap_t *, const char *);
 extern int Pobject_iter(struct ps_prochandle *, proc_map_f *, void *);
@@ -88,7 +101,6 @@ extern int Pobject_iter(struct ps_prochandle *, proc_map_f *, void *);
 #define G_ELF           13      /* Libelf error, elf_errno() is meaningful */
 #define G_NOTE          14      /* Required PT_NOTE Phdr not present in core */
 
-extern struct ps_prochandle *proc_arg_grab(const char *, int, int, int *);
 extern  const pstatus_t *Pstatus(struct ps_prochandle *);
 
 /* Flags accepted by Prelease (partial) */
@@ -101,8 +113,6 @@ extern  int     Pstop(struct ps_prochandle *, uint_t);
 /*
  * Stack frame iteration interface.
  */
-#ifdef SOLARIS_11_B159_OR_LATER
-/* building on Nevada-B159 or later so define the new callback */
 typedef int proc_stack_f(
     void *,             /* the cookie given to Pstack_iter() */
     const prgregset_t,  /* the frame's registers */
@@ -113,10 +123,6 @@ typedef int proc_stack_f(
 
 #define PR_SIGNAL_FRAME    1    /* called by a signal handler */
 #define PR_FOUND_SIGNAL    2    /* we found the corresponding signal number */
-#else
-/* building on Nevada-B158 or earlier so define the old callback */
-typedef int proc_stack_f(void *, const prgregset_t, uint_t, const long *);
-#endif
 
 extern int Pstack_iter(struct ps_prochandle *,
     const prgregset_t, proc_stack_f *, void *);

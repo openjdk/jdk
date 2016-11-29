@@ -148,8 +148,8 @@ public class FlakyMutex implements Lock {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
-    @SuppressWarnings("unchecked") static <T extends Throwable>
-        void uncheckedThrow(Throwable t) throws T {
+    @SuppressWarnings("unchecked")
+    static <T extends Throwable> void uncheckedThrow(Throwable t) throws T {
         throw (T)t; // rely on vacuous cast
     }
 }

@@ -107,7 +107,7 @@ define SetupZipArchiveBody
   $$($1_ZIP) : $$($1_ALL_SRCS) $$($1_EXTRA_DEPS)
 	$(MKDIR) -p $$(@D)
 	$(ECHO) Updating $$($1_NAME)
-	$$(foreach i,$$($1_SRC),(cd $$i && $(ZIP) -qru $$($1_ZIP_OPTIONS) $$@ . $$($1_ZIP_INCLUDES) \
+	$$(foreach i,$$($1_SRC),(cd $$i && $(ZIPEXE) -qru $$($1_ZIP_OPTIONS) $$@ . $$($1_ZIP_INCLUDES) \
 	    $$($1_ZIP_EXCLUDES) -x \*_the.\* \
 	    $$(addprefix -x$(SPACE), $$(patsubst $$i/%,%, $$($1_EXCLUDE_FILES))) \
 	    || test "$$$$?" = "12" )$$(NEWLINE)) true

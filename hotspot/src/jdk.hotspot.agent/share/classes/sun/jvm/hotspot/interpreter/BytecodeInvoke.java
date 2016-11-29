@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,21 +112,28 @@ public class BytecodeInvoke extends BytecodeWithCPIndex {
     buf.append('#');
     buf.append(Integer.toString(indexForFieldOrMethod()));
     if (isInvokedynamic()) {
-       buf.append('(');
-      buf.append(Integer.toString(index()));
-       buf.append(')');
+      ConstantPool cp = method.getConstants();
+      buf.append('(');
+      int poolIndex = cp.invokeDynamicNameAndTypeRefIndexAt(indexForFieldOrMethod());
+      buf.append(Integer.toString(poolIndex));
+      buf.append(')');
+      buf.append(" [Name and Type ");
+      buf.append(name().asString());
+      buf.append(":");
+      buf.append(signature().asString().replace('/', '.'));
+    } else {
+      buf.append(" [Method ");
+      StringBuffer sigBuf = new StringBuffer();
+      new SignatureConverter(signature(), sigBuf).iterateReturntype();
+      buf.append(sigBuf.toString().replace('/', '.'));
+      buf.append(spaces);
+      buf.append(name().asString());
+      buf.append('(');
+      sigBuf = new StringBuffer();
+      new SignatureConverter(signature(), sigBuf).iterateParameters();
+      buf.append(sigBuf.toString().replace('/', '.'));
+      buf.append(')');
     }
-    buf.append(" [Method ");
-    StringBuffer sigBuf = new StringBuffer();
-    new SignatureConverter(signature(), sigBuf).iterateReturntype();
-    buf.append(sigBuf.toString().replace('/', '.'));
-    buf.append(spaces);
-    buf.append(name().asString());
-    buf.append('(');
-    sigBuf = new StringBuffer();
-    new SignatureConverter(signature(), sigBuf).iterateParameters();
-    buf.append(sigBuf.toString().replace('/', '.'));
-    buf.append(')');
     buf.append(']');
     if (code() != javaCode()) {
        buf.append(spaces);

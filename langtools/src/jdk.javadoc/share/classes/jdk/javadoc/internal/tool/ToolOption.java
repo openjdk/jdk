@@ -35,6 +35,7 @@ import java.util.Map;
 import javax.lang.model.element.ElementKind;
 
 import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.main.Option.InvalidValueException;
 import com.sun.tools.javac.main.Option.OptionKind;
 import com.sun.tools.javac.main.OptionHelper;
 import com.sun.tools.javac.util.Options;
@@ -56,70 +57,70 @@ public enum ToolOption {
 
     BOOTCLASSPATH("-bootclasspath", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.BOOT_CLASS_PATH.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     CLASS_PATH("--class-path -classpath -cp", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.CLASS_PATH.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     EXTDIRS("-extdirs", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.EXTDIRS.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     SOURCE_PATH("--source-path -sourcepath", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.SOURCE_PATH.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     MODULE_SOURCE_PATH("--module-source-path", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.MODULE_SOURCE_PATH.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     UPGRADE_MODULE_PATH("--upgrade-module-path", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.UPGRADE_MODULE_PATH.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     SYSTEM("--system", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.SYSTEM.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     MODULE_PATH("--module-path -p", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.MODULE_PATH.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     ADD_MODULES("--add-modules", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.ADD_MODULES.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     LIMIT_MODULES("--limit-modules", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.LIMIT_MODULES.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
@@ -133,63 +134,63 @@ public enum ToolOption {
 
     ENCODING("-encoding", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.ENCODING.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     RELEASE("--release", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.RELEASE.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     SOURCE("-source", STANDARD, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.SOURCE.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     XMAXERRS("-Xmaxerrs", EXTENDED, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.XMAXERRS.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     XMAXWARNS("-Xmaxwarns", EXTENDED, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.XMAXWARNS.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     ADD_READS("--add-reads", EXTENDED, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.ADD_READS.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     ADD_EXPORTS("--add-exports", EXTENDED, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.ADD_EXPORTS.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
 
     XMODULE("-Xmodule:", EXTENDED, false) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.XMODULE.process(helper.getOptionHelper(), arg);
         }
     },
 
     PATCH_MODULE("--patch-module", EXTENDED, true) {
         @Override
-        public void process(Helper helper, String arg) {
+        public void process(Helper helper, String arg) throws InvalidValueException {
             Option.PATCH_MODULE.process(helper.getOptionHelper(), primaryName, arg);
         }
     },
@@ -388,7 +389,7 @@ public enum ToolOption {
         this.hasSuffix = lastChar == ':' || lastChar == '=';
     }
 
-    void process(Helper helper, String arg) throws OptionException { }
+    void process(Helper helper, String arg) throws OptionException, Option.InvalidValueException { }
 
     void process(Helper helper) throws OptionException { }
 

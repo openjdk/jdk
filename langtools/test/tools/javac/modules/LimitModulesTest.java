@@ -144,11 +144,11 @@ public class LimitModulesTest extends ModuleTestBase {
                          "--limit-modules", "BadModule!")
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run()
+                .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("- compiler.warn.bad.name.for.option: --limit-modules, BadModule!"))
+        if (!log.contains("- compiler.err.bad.name.for.option: --limit-modules, BadModule!"))
             throw new Exception("expected output not found");
     }
 

@@ -38,6 +38,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Queue;
@@ -46,45 +47,78 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
 
 import junit.framework.Test;
 
 public class ArrayBlockingQueueTest extends JSR166TestCase {
-
-    public static class Fair extends BlockingQueueTest {
-        protected BlockingQueue emptyCollection() {
-            return new ArrayBlockingQueue(SIZE, true);
-        }
-    }
-
-    public static class NonFair extends BlockingQueueTest {
-        protected BlockingQueue emptyCollection() {
-            return new ArrayBlockingQueue(SIZE, false);
-        }
-    }
 
     public static void main(String[] args) {
         main(suite(), args);
     }
 
     public static Test suite() {
-        return newTestSuite(ArrayBlockingQueueTest.class,
-                            new Fair().testSuite(),
-                            new NonFair().testSuite());
+        class Implementation implements CollectionImplementation {
+            public Class<?> klazz() { return ArrayBlockingQueue.class; }
+            public Collection emptyCollection() {
+                boolean fair = ThreadLocalRandom.current().nextBoolean();
+                return populatedQueue(0, SIZE, 2 * SIZE, fair);
+            }
+            public Object makeElement(int i) { return i; }
+            public boolean isConcurrent() { return true; }
+            public boolean permitsNulls() { return false; }
+        }
+
+        return newTestSuite(
+            ArrayBlockingQueueTest.class,
+            new Fair().testSuite(),
+            new NonFair().testSuite(),
+            CollectionTest.testSuite(new Implementation()));
+    }
+
+    public static class Fair extends BlockingQueueTest {
+        protected BlockingQueue emptyCollection() {
+            return populatedQueue(0, SIZE, 2 * SIZE, true);
+        }
+    }
+
+    public static class NonFair extends BlockingQueueTest {
+        protected BlockingQueue emptyCollection() {
+            return populatedQueue(0, SIZE, 2 * SIZE, false);
+        }
     }
 
     /**
      * Returns a new queue of given size containing consecutive
-     * Integers 0 ... n.
+     * Integers 0 ... n - 1.
      */
-    private ArrayBlockingQueue<Integer> populatedQueue(int n) {
-        ArrayBlockingQueue<Integer> q = new ArrayBlockingQueue<Integer>(n);
+    static ArrayBlockingQueue<Integer> populatedQueue(int n) {
+        return populatedQueue(n, n, n, false);
+    }
+
+    /**
+     * Returns a new queue of given size containing consecutive
+     * Integers 0 ... n - 1, with given capacity range and fairness.
+     */
+    static ArrayBlockingQueue<Integer> populatedQueue(
+        int size, int minCapacity, int maxCapacity, boolean fair) {
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        int capacity = rnd.nextInt(minCapacity, maxCapacity + 1);
+        ArrayBlockingQueue<Integer> q = new ArrayBlockingQueue<>(capacity);
         assertTrue(q.isEmpty());
-        for (int i = 0; i < n; i++)
-            assertTrue(q.offer(new Integer(i)));
-        assertFalse(q.isEmpty());
-        assertEquals(0, q.remainingCapacity());
-        assertEquals(n, q.size());
+        // shuffle circular array elements so they wrap
+        {
+            int n = rnd.nextInt(capacity);
+            for (int i = 0; i < n; i++) q.add(42);
+            for (int i = 0; i < n; i++) q.remove();
+        }
+        for (int i = 0; i < size; i++)
+            assertTrue(q.offer((Integer) i));
+        assertEquals(size == 0, q.isEmpty());
+        assertEquals(capacity - size, q.remainingCapacity());
+        assertEquals(size, q.size());
+        if (size > 0)
+            assertEquals((Integer) 0, q.peek());
         return q;
     }
 
@@ -98,17 +132,25 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
     /**
      * Constructor throws IAE if capacity argument nonpositive
      */
-    public void testConstructor2() {
-        try {
-            new ArrayBlockingQueue(0);
-            shouldThrow();
-        } catch (IllegalArgumentException success) {}
+    public void testConstructor_nonPositiveCapacity() {
+        for (int i : new int[] { 0, -1, Integer.MIN_VALUE }) {
+            try {
+                new ArrayBlockingQueue(i);
+                shouldThrow();
+            } catch (IllegalArgumentException success) {}
+            for (boolean fair : new boolean[] { true, false }) {
+                try {
+                    new ArrayBlockingQueue(i, fair);
+                    shouldThrow();
+                } catch (IllegalArgumentException success) {}
+            }
+        }
     }
 
     /**
      * Initializing from null Collection throws NPE
      */
-    public void testConstructor3() {
+    public void testConstructor_nullCollection() {
         try {
             new ArrayBlockingQueue(1, true, null);
             shouldThrow();
@@ -143,13 +185,13 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
     /**
      * Initializing from too large collection throws IAE
      */
-    public void testConstructor6() {
-        Integer[] ints = new Integer[SIZE];
-        for (int i = 0; i < SIZE; ++i)
-            ints[i] = i;
-        Collection<Integer> elements = Arrays.asList(ints);
+    public void testConstructor_collectionTooLarge() {
+        // just barely fits - succeeds
+        new ArrayBlockingQueue(SIZE, false,
+                               Collections.nCopies(SIZE, ""));
         try {
-            new ArrayBlockingQueue(SIZE - 1, false, elements);
+            new ArrayBlockingQueue(SIZE - 1, false,
+                                   Collections.nCopies(SIZE, ""));
             shouldThrow();
         } catch (IllegalArgumentException success) {}
     }
@@ -171,12 +213,12 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * Queue transitions from empty to full when elements added
      */
     public void testEmptyFull() {
-        ArrayBlockingQueue q = new ArrayBlockingQueue(2);
+        BlockingQueue q = populatedQueue(0, 2, 2, false);
         assertTrue(q.isEmpty());
         assertEquals(2, q.remainingCapacity());
         q.add(one);
         assertFalse(q.isEmpty());
-        q.add(two);
+        assertTrue(q.offer(two));
         assertFalse(q.isEmpty());
         assertEquals(0, q.remainingCapacity());
         assertFalse(q.offer(three));
@@ -186,15 +228,18 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * remainingCapacity decreases on add, increases on remove
      */
     public void testRemainingCapacity() {
-        BlockingQueue q = populatedQueue(SIZE);
-        for (int i = 0; i < SIZE; ++i) {
-            assertEquals(i, q.remainingCapacity());
-            assertEquals(SIZE, q.size() + q.remainingCapacity());
+        int size = ThreadLocalRandom.current().nextInt(1, SIZE);
+        BlockingQueue q = populatedQueue(size, size, 2 * size, false);
+        int spare = q.remainingCapacity();
+        int capacity = spare + size;
+        for (int i = 0; i < size; i++) {
+            assertEquals(spare + i, q.remainingCapacity());
+            assertEquals(capacity, q.size() + q.remainingCapacity());
             assertEquals(i, q.remove());
         }
-        for (int i = 0; i < SIZE; ++i) {
-            assertEquals(SIZE - i, q.remainingCapacity());
-            assertEquals(SIZE, q.size() + q.remainingCapacity());
+        for (int i = 0; i < size; i++) {
+            assertEquals(capacity - i, q.remainingCapacity());
+            assertEquals(capacity, q.size() + q.remainingCapacity());
             assertTrue(q.add(i));
         }
     }
@@ -213,12 +258,10 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      */
     public void testAdd() {
         ArrayBlockingQueue q = new ArrayBlockingQueue(SIZE);
-        for (int i = 0; i < SIZE; ++i) {
-            assertTrue(q.add(new Integer(i)));
-        }
+        for (int i = 0; i < SIZE; i++) assertTrue(q.add((Integer) i));
         assertEquals(0, q.remainingCapacity());
         try {
-            q.add(new Integer(SIZE));
+            q.add((Integer) SIZE);
             shouldThrow();
         } catch (IllegalStateException success) {}
     }
@@ -252,13 +295,17 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
     /**
      * addAll throws ISE if not enough room
      */
-    public void testAddAll4() {
-        ArrayBlockingQueue q = new ArrayBlockingQueue(1);
-        Integer[] ints = new Integer[SIZE];
-        for (int i = 0; i < SIZE; ++i)
-            ints[i] = new Integer(i);
+    public void testAddAll_insufficientSpace() {
+        int size = ThreadLocalRandom.current().nextInt(1, SIZE);
+        ArrayBlockingQueue q = populatedQueue(0, size, size, false);
+        // Just fits:
+        q.addAll(populatedQueue(size, size, 2 * size, false));
+        assertEquals(0, q.remainingCapacity());
+        assertEquals(size, q.size());
+        assertEquals(0, q.peek());
         try {
-            q.addAll(Arrays.asList(ints));
+            q = populatedQueue(0, size, size, false);
+            q.addAll(Collections.nCopies(size + 1, 42));
             shouldThrow();
         } catch (IllegalStateException success) {}
     }
@@ -545,8 +592,10 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * contains(x) reports true when elements added but not yet removed
      */
     public void testContains() {
-        ArrayBlockingQueue q = populatedQueue(SIZE);
-        for (int i = 0; i < SIZE; ++i) {
+        int size = ThreadLocalRandom.current().nextInt(1, SIZE);
+        ArrayBlockingQueue q = populatedQueue(size, size, 2 * size, false);
+        assertFalse(q.contains(null));
+        for (int i = 0; i < size; ++i) {
             assertTrue(q.contains(new Integer(i)));
             assertEquals(i, q.poll());
             assertFalse(q.contains(new Integer(i)));
@@ -557,11 +606,13 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      * clear removes all elements
      */
     public void testClear() {
-        ArrayBlockingQueue q = populatedQueue(SIZE);
+        int size = ThreadLocalRandom.current().nextInt(1, 5);
+        ArrayBlockingQueue q = populatedQueue(size, size, 2 * size, false);
+        int capacity = size + q.remainingCapacity();
         q.clear();
         assertTrue(q.isEmpty());
         assertEquals(0, q.size());
-        assertEquals(SIZE, q.remainingCapacity());
+        assertEquals(capacity, q.remainingCapacity());
         q.add(one);
         assertFalse(q.isEmpty());
         assertTrue(q.contains(one));
@@ -618,101 +669,73 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
         }
     }
 
-    void checkToArray(ArrayBlockingQueue q) {
+    void checkToArray(ArrayBlockingQueue<Integer> q) {
         int size = q.size();
-        Object[] o = q.toArray();
-        assertEquals(size, o.length);
+        Object[] a1 = q.toArray();
+        assertEquals(size, a1.length);
+        Integer[] a2 = q.toArray(new Integer[0]);
+        assertEquals(size, a2.length);
+        Integer[] a3 = q.toArray(new Integer[Math.max(0, size - 1)]);
+        assertEquals(size, a3.length);
+        Integer[] a4 = new Integer[size];
+        assertSame(a4, q.toArray(a4));
+        Integer[] a5 = new Integer[size + 1];
+        Arrays.fill(a5, 42);
+        assertSame(a5, q.toArray(a5));
+        Integer[] a6 = new Integer[size + 2];
+        Arrays.fill(a6, 42);
+        assertSame(a6, q.toArray(a6));
+        Object[][] as = { a1, a2, a3, a4, a5, a6 };
+        for (Object[] a : as) {
+            if (a.length > size) assertNull(a[size]);
+            if (a.length > size + 1) assertEquals(42, a[size + 1]);
+        }
         Iterator it = q.iterator();
+        Integer s = q.peek();
         for (int i = 0; i < size; i++) {
             Integer x = (Integer) it.next();
-            assertEquals((Integer)o[0] + i, (int) x);
-            assertSame(o[i], x);
+            assertEquals(s + i, (int) x);
+            for (Object[] a : as)
+                assertSame(a1[i], x);
         }
     }
 
     /**
-     * toArray() contains all elements in FIFO order
+     * toArray() and toArray(a) contain all elements in FIFO order
      */
     public void testToArray() {
-        ArrayBlockingQueue q = new ArrayBlockingQueue(SIZE);
-        for (int i = 0; i < SIZE; i++) {
-            checkToArray(q);
-            q.add(i);
-        }
-        // Provoke wraparound
-        for (int i = 0; i < SIZE; i++) {
-            checkToArray(q);
-            assertEquals(i, q.poll());
-            checkToArray(q);
-            q.add(SIZE + i);
-        }
-        for (int i = 0; i < SIZE; i++) {
-            checkToArray(q);
-            assertEquals(SIZE + i, q.poll());
-        }
-    }
-
-    void checkToArray2(ArrayBlockingQueue q) {
-        int size = q.size();
-        Integer[] a1 = (size == 0) ? null : new Integer[size - 1];
-        Integer[] a2 = new Integer[size];
-        Integer[] a3 = new Integer[size + 2];
-        if (size > 0) Arrays.fill(a1, 42);
-        Arrays.fill(a2, 42);
-        Arrays.fill(a3, 42);
-        Integer[] b1 = (size == 0) ? null : (Integer[]) q.toArray(a1);
-        Integer[] b2 = (Integer[]) q.toArray(a2);
-        Integer[] b3 = (Integer[]) q.toArray(a3);
-        assertSame(a2, b2);
-        assertSame(a3, b3);
-        Iterator it = q.iterator();
+        final ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        final int size = rnd.nextInt(6);
+        final int capacity = Math.max(1, size + rnd.nextInt(size + 1));
+        ArrayBlockingQueue<Integer> q = new ArrayBlockingQueue<>(capacity);
         for (int i = 0; i < size; i++) {
-            Integer x = (Integer) it.next();
-            assertSame(b1[i], x);
-            assertEquals(b1[0] + i, (int) x);
-            assertSame(b2[i], x);
-            assertSame(b3[i], x);
-        }
-        assertNull(a3[size]);
-        assertEquals(42, (int) a3[size + 1]);
-        if (size > 0) {
-            assertNotSame(a1, b1);
-            assertEquals(size, b1.length);
-            for (int i = 0; i < a1.length; i++) {
-                assertEquals(42, (int) a1[i]);
-            }
-        }
-    }
-
-    /**
-     * toArray(a) contains all elements in FIFO order
-     */
-    public void testToArray2() {
-        ArrayBlockingQueue q = new ArrayBlockingQueue(SIZE);
-        for (int i = 0; i < SIZE; i++) {
-            checkToArray2(q);
+            checkToArray(q);
             q.add(i);
         }
         // Provoke wraparound
-        for (int i = 0; i < SIZE; i++) {
-            checkToArray2(q);
-            assertEquals(i, q.poll());
-            checkToArray2(q);
-            q.add(SIZE + i);
+        int added = size * 2;
+        for (int i = 0; i < added; i++) {
+            checkToArray(q);
+            assertEquals((Integer) i, q.poll());
+            q.add(size + i);
         }
-        for (int i = 0; i < SIZE; i++) {
-            checkToArray2(q);
-            assertEquals(SIZE + i, q.poll());
+        for (int i = 0; i < size; i++) {
+            checkToArray(q);
+            assertEquals((Integer) (added + i), q.poll());
         }
     }
 
     /**
      * toArray(incompatible array type) throws ArrayStoreException
      */
-    public void testToArray1_BadArg() {
+    public void testToArray_incompatibleArrayType() {
         ArrayBlockingQueue q = populatedQueue(SIZE);
         try {
             q.toArray(new String[10]);
+            shouldThrow();
+        } catch (ArrayStoreException success) {}
+        try {
+            q.toArray(new String[0]);
             shouldThrow();
         } catch (ArrayStoreException success) {}
     }
@@ -943,8 +966,8 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      */
     public void testNeverContainsNull() {
         Collection<?>[] qs = {
-            new ArrayBlockingQueue<Object>(10),
-            populatedQueue(2),
+            populatedQueue(0, 1, 10, false),
+            populatedQueue(2, 2, 10, true),
         };
 
         for (Collection<?> q : qs) {

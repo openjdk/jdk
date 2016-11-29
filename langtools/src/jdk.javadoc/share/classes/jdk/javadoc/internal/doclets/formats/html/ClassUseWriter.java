@@ -52,6 +52,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
+
 /**
  * Generate class usage information.
  *
@@ -178,7 +179,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     public static void generate(ConfigurationImpl configuration, ClassTree classtree) throws DocFileIOException  {
         ClassUseMapper mapper = new ClassUseMapper(configuration, classtree);
-        for (TypeElement aClass : configuration.docEnv.getIncludedTypeElements()) {
+        for (TypeElement aClass : configuration.getIncludedTypeElements()) {
             // If -nodeprecated option is set and the containing package is marked
             // as deprecated, do not generate the class-use page. We will still generate
             // the class-use page if the class is marked as deprecated but the containing

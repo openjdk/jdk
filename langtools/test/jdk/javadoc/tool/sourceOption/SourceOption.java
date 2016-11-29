@@ -61,6 +61,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import javax.lang.model.SourceVersion;
+import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic.Kind;
 
 import jdk.javadoc.doclet.Doclet;
@@ -92,7 +93,7 @@ public class SourceOption implements Doclet {
     }
 
     public boolean run(DocletEnvironment root) {
-        root.getIncludedTypeElements();
+        ElementFilter.typesIn(root.getIncludedElements());
         return true;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -436,19 +436,18 @@ public class NGCCRuntimeEx extends NGCCRuntime implements PatcherManager {
         currentContext = currentContext.previous;
     }
 
-
-
-
-
 //
 //
 // Utility functions
 //
 //
 
-
-    /** Parses UName under the given context. */
-    public UName parseUName( String qname ) throws SAXException {
+    /**
+     * Parses UName under the given context.
+     * @param qname Attribute name.
+     * @return New {@link UName} instance based on attribute name.
+     */
+    public UName parseUName(final String qname ) throws SAXException {
         int idx = qname.indexOf(':');
         if(idx<0) {
             String uri = resolveNamespacePrefix("");
@@ -470,6 +469,91 @@ public class NGCCRuntimeEx extends NGCCRuntime implements PatcherManager {
             }
             return new UName( uri, qname.substring(idx+1), qname );
         }
+    }
+
+    /**
+     * Utility function for collapsing the namespaces inside qname declarations
+     * and 'name' attribute values that should contain the qname values
+     *
+     * @param text String where whitespaces should be collapsed
+     * @return String with whitespaces collapsed
+     */
+    public String collapse(String text) {
+        return collapse((CharSequence) text).toString();
+    }
+
+    /**
+     * returns true if the specified char is a white space character.
+     */
+    private final boolean isWhiteSpace(char ch) {
+        // most of the characters are non-control characters.
+        // so check that first to quickly return false for most of the cases.
+        if (ch > 0x20) {
+            return false;
+        }
+
+        // other than we have to do four comparisons.
+        return ch == 0x9 || ch == 0xA || ch == 0xD || ch == 0x20;
+    }
+
+    /**
+     * This is usually the biggest processing bottleneck.
+     *
+     */
+    private CharSequence collapse(CharSequence text) {
+        int len = text.length();
+
+        // most of the texts are already in the collapsed form.
+        // so look for the first whitespace in the hope that we will
+        // never see it.
+        int s = 0;
+        while (s < len) {
+            if (isWhiteSpace(text.charAt(s))) {
+                break;
+            }
+            s++;
+        }
+        if (s == len) // the input happens to be already collapsed.
+        {
+            return text;
+        }
+
+        // we now know that the input contains spaces.
+        // let's sit down and do the collapsing normally.
+        StringBuilder result = new StringBuilder(len /*allocate enough size to avoid re-allocation*/);
+
+        if (s != 0) {
+            for (int i = 0; i < s; i++) {
+                result.append(text.charAt(i));
+            }
+            result.append(' ');
+        }
+
+        boolean inStripMode = true;
+        for (int i = s + 1; i < len; i++) {
+            char ch = text.charAt(i);
+            boolean b = isWhiteSpace(ch);
+            if (inStripMode && b) {
+                continue; // skip this character
+            }
+            inStripMode = b;
+            if (inStripMode) {
+                result.append(' ');
+            } else {
+                result.append(ch);
+            }
+        }
+
+        // remove trailing whitespaces
+        len = result.length();
+        if (len > 0 && result.charAt(len - 1) == ' ') {
+            result.setLength(len - 1);
+        }
+        // whitespaces are already collapsed,
+        // so all we have to do is to remove the last one character
+        // if it's a whitespace.
+
+        return result;
     }
 
     public boolean parseBoolean(String v) {

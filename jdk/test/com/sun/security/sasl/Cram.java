@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,17 @@
 /*
  * @test
  * @bug 4634892
+ * @modules jdk.security.auth
  * @summary Ensure that authentication via CRAM-MD5 works.
  */
 
 /*
  * Can set logging to FINEST to view exchange.
  */
-import javax.security.sasl.*;
-import javax.security.auth.callback.*;
-import java.security.Security;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslServer;
 
 public class Cram {
     private static final String MECH = "CRAM-MD5";

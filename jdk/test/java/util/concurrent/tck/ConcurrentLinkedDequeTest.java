@@ -52,12 +52,20 @@ public class ConcurrentLinkedDequeTest extends JSR166TestCase {
     }
 
     public static Test suite() {
-        return new TestSuite(ConcurrentLinkedDequeTest.class);
+        class Implementation implements CollectionImplementation {
+            public Class<?> klazz() { return ConcurrentLinkedDeque.class; }
+            public Collection emptyCollection() { return new ConcurrentLinkedDeque(); }
+            public Object makeElement(int i) { return i; }
+            public boolean isConcurrent() { return true; }
+            public boolean permitsNulls() { return false; }
+        }
+        return newTestSuite(ConcurrentLinkedDequeTest.class,
+                            CollectionTest.testSuite(new Implementation()));
     }
 
     /**
      * Returns a new deque of given size containing consecutive
-     * Integers 0 ... n.
+     * Integers 0 ... n - 1.
      */
     private ConcurrentLinkedDeque<Integer> populatedDeque(int n) {
         ConcurrentLinkedDeque<Integer> q = new ConcurrentLinkedDeque<Integer>();
@@ -66,6 +74,8 @@ public class ConcurrentLinkedDequeTest extends JSR166TestCase {
             assertTrue(q.offer(new Integer(i)));
         assertFalse(q.isEmpty());
         assertEquals(n, q.size());
+        assertEquals((Integer) 0, q.peekFirst());
+        assertEquals((Integer) (n - 1), q.peekLast());
         return q;
     }
 

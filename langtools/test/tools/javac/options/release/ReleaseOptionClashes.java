@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,6 @@ public class ReleaseOptionClashes {
         compiler.run(null, null, System.out, options.toArray(new String[0]));
     }
 
-    ClassLoader cl = ToolProvider.getSystemToolClassLoader();
     Tool compiler = ToolProvider.getSystemJavaCompiler();
+    ClassLoader cl = compiler.getClass().getClassLoader();
 }
