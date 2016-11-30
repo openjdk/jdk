@@ -8293,3 +8293,9 @@ CurrencyNames//pen=Peruvian Sol
 # bug #8145952
 CurrencyNames//byn=Belarusian Ruble
 CurrencyNames/be_BY/BYN=\u0420\u0443\u0431
+
+# bug #8037111
+FormatData/sv/NumberPatterns/2=#,##0 %
+# bug #8081643
+FormatData/sr-Latin/NumberElements/0=,
+FormatData/sr-Latin/NumberElements/1=.
