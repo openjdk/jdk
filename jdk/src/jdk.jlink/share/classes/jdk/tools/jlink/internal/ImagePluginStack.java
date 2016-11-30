@@ -268,7 +268,15 @@ public final class ImagePluginStack {
                             resources.getStringTable());
                 }
             }
-            resPool = p.transform(resPool, resMgr.resourcePoolBuilder());
+            try {
+                resPool = p.transform(resPool, resMgr.resourcePoolBuilder());
+            } catch (PluginException pe) {
+                if (JlinkTask.DEBUG) {
+                    System.err.println("Plugin " + p.getName() + " threw exception during transform");
+                    pe.printStackTrace();
+                }
+                throw pe;
+            }
             if (resPool.isEmpty()) {
                 throw new Exception("Invalid resource pool for plugin " + p);
             }
@@ -444,6 +452,7 @@ public final class ImagePluginStack {
                         res = res.copyWithContent(bytes);
                     } catch (IOException ex) {
                         if (JlinkTask.DEBUG) {
+                            System.err.println("IOException while reading resource: " + res.path());
                             ex.printStackTrace();
                         }
                         throw new PluginException(ex);
