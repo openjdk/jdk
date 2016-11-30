@@ -298,7 +298,15 @@ public final class Jlink {
         List<Plugin> bootPlugins = PluginRepository.getPlugins(Layer.boot());
         for (Plugin bp : bootPlugins) {
             if (Utils.isAutoEnabled(bp)) {
-                bp.configure(Collections.emptyMap());
+                try {
+                    bp.configure(Collections.emptyMap());
+                } catch (IllegalArgumentException e) {
+                    if (JlinkTask.DEBUG) {
+                        System.err.println("Plugin " + bp.getName() + " threw exception with config: {}");
+                        e.printStackTrace();
+                    }
+                    throw e;
+                }
                 plugins.add(bp);
             }
         }
