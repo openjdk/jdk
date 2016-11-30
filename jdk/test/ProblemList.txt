@@ -305,5 +305,6 @@ demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java       8151899 generic-
 # jdk_other
 
 com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8169942 linux-i586,macosx-all,windows-x64
+javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8170248 linux-all
 
 ############################################################################
