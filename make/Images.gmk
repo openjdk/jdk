@@ -125,7 +125,8 @@ JLINK_ORDER_RESOURCES += \
     /jdk.localedata/** \
     #
 
-JLINK_TOOL := $(JLINK) --module-path $(IMAGES_OUTPUTDIR)/jmods \
+JLINK_TOOL := $(JLINK) -J-Djlink.debug=true \
+    --module-path $(IMAGES_OUTPUTDIR)/jmods \
     --endian $(OPENJDK_BUILD_CPU_ENDIAN) \
     --release-info $(BASE_RELEASE_FILE) \
     --order-resources=$(call CommaList, $(JLINK_ORDER_RESOURCES)) \
