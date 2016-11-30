@@ -2014,9 +2014,7 @@ static gint gtk3_get_ythickness(JNIEnv *env, WidgetType widget_type)
 static guint8 recode_color(gdouble channel)
 {
     guint16 result = (guint16)(channel * 65535);
-    if (result < 0) {
-        result = 0;
-    } else if (result > 65535) {
+    if (result > 65535) {
         result = 65535;
     }
     return (guint8)( result >> 8);
@@ -2218,6 +2216,7 @@ static void gtk3_style_shade (const GdkRGBA *a, GdkRGBA *b, gdouble k) {
 static GdkRGBA gtk3_get_color_for_flags(GtkStyleContext* context,
                                   GtkStateFlags flags, ColorType color_type) {
     GdkRGBA c, color;
+    color.alpha = 1;
 
     switch (color_type)
     {
@@ -2266,7 +2265,6 @@ static gint gtk3_get_color_for_state(JNIEnv *env, WidgetType widget_type,
 {
 
     gint result = 0;
-    GdkRGBA color;
 
     GtkStateFlags flags = gtk3_get_state_flags(state_type);
 
@@ -2285,7 +2283,7 @@ static gint gtk3_get_color_for_state(JNIEnv *env, WidgetType widget_type,
                   | GTK_STATE_FLAG_INSENSITIVE | GTK_STATE_FLAG_FOCUSED;
     }
 
-    color = gtk3_get_color_for_flags(context, flags, color_type);
+    GdkRGBA color = gtk3_get_color_for_flags(context, flags, color_type);
 
     if (recode_color(color.alpha) == 0) {
         color = gtk3_get_color_for_flags(

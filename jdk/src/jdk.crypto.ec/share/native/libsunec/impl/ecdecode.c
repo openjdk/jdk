@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -34,7 +34,7 @@
  *   Dr Vipul Gupta <vipul.gupta@sun.com> and
  *   Douglas Stebila <douglas@stebila.ca>, Sun Microsystems Laboratories
  *
- * Last Modified Date from the Original Code: March 2012
+ * Last Modified Date from the Original Code: Nov 2016
  *********************************************************************** */
 
 #include <sys/types.h>
@@ -119,6 +119,9 @@ gf_populate_params(ECCurveName name, ECFieldType field_type, ECParams *params,
     params->name = name;
     curveParams = ecCurve_map[params->name];
     CHECK_OK(curveParams);
+    if ((strlen(curveParams->genx) + strlen(curveParams->geny)) > 2 * 2 * MAX_ECKEY_LEN) {
+        goto cleanup;
+    }
     params->fieldID.size = curveParams->size;
     params->fieldID.type = field_type;
     if (field_type == ec_field_GFp) {
