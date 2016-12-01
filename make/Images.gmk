@@ -48,7 +48,8 @@ JRE_MODULES += $(filter $(ALL_MODULES), $(BOOT_MODULES) \
 JDK_MODULES += $(ALL_MODULES)
 
 # Compact builds have additional modules
-COMPACT1_EXTRA_MODULES := jdk.localedata jdk.crypto.pkcs11 jdk.crypto.ec
+COMPACT1_EXTRA_MODULES := jdk.localedata jdk.crypto.pkcs11 jdk.crypto.ec \
+    jdk.unsupported
 COMPACT2_EXTRA_MODULES := jdk.xml.dom jdk.httpserver
 COMPACT3_EXTRA_MODULES := java.smartcardio jdk.management \
     jdk.naming.dns jdk.naming.rmi jdk.sctp jdk.security.auth
@@ -64,47 +65,8 @@ JRE_COMPACT2_MODULES_LIST := $(call CommaList, $(JRE_COMPACT2_MODULES))
 JRE_COMPACT3_MODULES_LIST := $(call CommaList, $(JRE_COMPACT3_MODULES))
 
 ################################################################################
-# Release file
 
 BASE_RELEASE_FILE := $(JDK_OUTPUTDIR)/release
-
-# Common way to emit a line into the release or info file
-define info-file-item # name value
-  $(PRINTF) '%s="%s"\n' $1 $2 >> $@
-endef
-
-# Param 1 - The file containing the MODULES list
-define create-info-file
-  $(if $(JDK_ARCH_ABI_PROP_NAME), \
-    $(call info-file-item, "SUN_ARCH_ABI", "$(JDK_ARCH_ABI_PROP_NAME)"))
-  $(call info-file-item, "SOURCE", "$(strip $(SOURCE_REVISION))")
-endef
-
-# Param 1 - The file containing the MODULES list
-define prepare-info-file
-  $(ECHO) $(LOG_INFO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-  $(MKDIR) -p $(@D)
-  $(RM) $@
-endef
-
-define info-file
-  $(call prepare-info-file)
-  $(call create-info-file)
-endef
-
-# Create a variable dependency file common for all release info files.
-INFO_FILE_VARDEPS := $(call DependOnVariable, create-info-file)
-
-SOURCE_REVISION = $(shell \
-    if [ -f $(SOURCE_REVISION_TRACKER) ] ; then \
-      $(CAT) $(SOURCE_REVISION_TRACKER) ; \
-    fi)
-
-# The SOURCE_REVISION_TRACKER file may not exist. Only depend on it if it does.
-$(BASE_RELEASE_FILE): $(INFO_FILE_VARDEPS) $(wildcard $(SOURCE_REVISION_TRACKER))
-	$(info-file)
-
-################################################################################
 
 JMODS := $(wildcard $(IMAGES_OUTPUTDIR)/jmods/*.jmod)
 
@@ -125,7 +87,8 @@ JLINK_ORDER_RESOURCES += \
     /jdk.localedata/** \
     #
 
-JLINK_TOOL := $(JLINK) --module-path $(IMAGES_OUTPUTDIR)/jmods \
+JLINK_TOOL := $(JLINK) -J-Djlink.debug=true \
+    --module-path $(IMAGES_OUTPUTDIR)/jmods \
     --endian $(OPENJDK_BUILD_CPU_ENDIAN) \
     --release-info $(BASE_RELEASE_FILE) \
     --order-resources=$(call CommaList, $(JLINK_ORDER_RESOURCES)) \
