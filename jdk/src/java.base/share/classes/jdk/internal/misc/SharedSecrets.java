@@ -26,6 +26,7 @@
 package jdk.internal.misc;
 
 import java.lang.module.ModuleDescriptor;
+import java.util.ResourceBundle;
 import java.util.jar.JarFile;
 import java.io.Console;
 import java.io.FileDescriptor;
@@ -294,6 +295,8 @@ public class SharedSecrets {
     }
 
     public static JavaUtilResourceBundleAccess getJavaUtilResourceBundleAccess() {
+        if (javaUtilResourceBundleAccess == null)
+            unsafe.ensureClassInitialized(ResourceBundle.class);
         return javaUtilResourceBundleAccess;
     }
 

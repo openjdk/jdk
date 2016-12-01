@@ -398,10 +398,16 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
         if (packageInfo == null) {
             // find package-info.class defined by loader
             String cn = packageName() + ".package-info";
-            PrivilegedAction<ClassLoader> pa = module()::getClassLoader;
+            Module module = module();
+            PrivilegedAction<ClassLoader> pa = module::getClassLoader;
             ClassLoader loader = AccessController.doPrivileged(pa);
-            Class<?> c = loader != null ? loader.loadLocalClass(cn)
-                                        : BootLoader.loadClassOrNull(cn);
+            Class<?> c;
+            if (loader != null) {
+                c = loader.loadClass(module, cn);
+            } else {
+                c = BootLoader.loadClass(module, cn);
+            }
+
             if (c != null) {
                 packageInfo = c;
             } else {

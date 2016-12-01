@@ -25,7 +25,7 @@
  * @test
  * @bug 8158802
  * @summary com.sun.jndi.ldap.SimpleClientId produces wrong hash code
- * @modules java.naming/com.sun.jndi.ldap
+ * @modules java.naming/com.sun.jndi.ldap:open
  */
 
 import java.io.OutputStream;

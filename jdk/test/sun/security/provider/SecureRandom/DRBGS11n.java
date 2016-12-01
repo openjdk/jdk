@@ -32,7 +32,7 @@ import java.lang.reflect.Field;
 /**
  * @test
  * @bug 8157308
- * @modules java.base/sun.security.provider
+ * @modules java.base/sun.security.provider:+open
  * @summary Make AbstractDrbg non-Serializable
  * @run main DRBGS11n mech
  * @run main DRBGS11n capability

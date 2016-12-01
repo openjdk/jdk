@@ -112,15 +112,8 @@ import sun.security.util.Password;
  */
 public class KeyStoreLoginModule implements LoginModule {
 
-    private static final ResourceBundle rb = AccessController.doPrivileged(
-            new PrivilegedAction<ResourceBundle>() {
-                public ResourceBundle run() {
-                    return ResourceBundle.getBundle(
-                            "sun.security.util.AuthResources",
-                            sun.security.util.ResourcesMgr.class.getModule());
-                }
-            }
-    );
+    private static final ResourceBundle rb =
+        ResourceBundle.getBundle("sun.security.util.AuthResources");
 
     /* -- Fields -- */
 

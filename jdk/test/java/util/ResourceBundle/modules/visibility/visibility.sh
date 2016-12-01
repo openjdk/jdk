@@ -111,9 +111,9 @@ runJava -cp mods/named.bundles -p mods -m test/jdk.test.TestWithNoModuleArg \
 runJava -cp mods/named.bundles -p mods -m test/jdk.test.TestWithNoModuleArg \
     jdk.test.resources.props.MyResources true
 runJava -cp mods/named.bundles -p mods -m embargo/jdk.embargo.TestWithNoModuleArg \
-    jdk.test.resources.classes.MyResources false
+    jdk.test.resources.classes.MyResources true
 runJava -cp mods/named.bundles -p mods -m embargo/jdk.embargo.TestWithNoModuleArg \
-    jdk.test.resources.props.MyResources false
+    jdk.test.resources.props.MyResources true
 
 # Tests using jdk.test.TestWithUnnamedModuleArg and jdk.embargo.TestWithUnnamedModuleArg
 # both of which specify an unnamed module with ResourceBundle.getBundle.
@@ -171,13 +171,13 @@ runJava -p mods -m embargo/jdk.embargo.TestWithNoModuleArg \
 
 # Add mods/exported.named.bundles to the class path.
 runJava -cp mods/exported.named.bundles -p mods -m test/jdk.test.TestWithNoModuleArg \
-    jdk.test.resources.exported.classes.MyResources false
+    jdk.test.resources.exported.classes.MyResources true
 runJava -cp mods/exported.named.bundles -p mods -m test/jdk.test.TestWithNoModuleArg \
-    jdk.test.resources.exported.props.MyResources false
+    jdk.test.resources.exported.props.MyResources true
 runJava -cp mods/exported.named.bundles -p mods -m embargo/jdk.embargo.TestWithNoModuleArg \
-    jdk.test.resources.exported.classes.MyResources false
+    jdk.test.resources.exported.classes.MyResources true
 runJava -cp mods/exported.named.bundles -p mods -m embargo/jdk.embargo.TestWithNoModuleArg \
-    jdk.test.resources.exported.props.MyResources false
+    jdk.test.resources.exported.props.MyResources true
 
 # Tests using jdk.test.TestWithUnnamedModuleArg and jdk.embargo.TestWithUnnamedModuleArg
 # which specify an unnamed module with ResourceBundle.getBundle.

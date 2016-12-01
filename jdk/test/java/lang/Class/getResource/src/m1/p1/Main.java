@@ -36,4 +36,12 @@ public class Main {
     public static InputStream getResourceAsStream(String name) {
         return Main.class.getResourceAsStream(name);
     }
+
+    public static URL getResource(Class<?> c, String name) {
+        return c.getResource(name);
+    }
+
+    public static InputStream getResourceAsStream(Class<?> c, String name) {
+        return c.getResourceAsStream(name);
+    }
 }

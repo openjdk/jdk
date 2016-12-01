@@ -27,6 +27,7 @@
   @bug 6315717
   @summary verifies that InputEvents button masks arrays are the same
   @author Andrei Dmitriev : area=awt.event
+  @modules java.desktop/java.awt.event:open
   @run main ButtonArraysEquality
  */
 
