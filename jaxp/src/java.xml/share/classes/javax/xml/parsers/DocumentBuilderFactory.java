@@ -25,6 +25,7 @@
 
 package javax.xml.parsers;
 
+import com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl;
 import javax.xml.validation.Schema;
 
 /**
@@ -51,6 +52,19 @@ public abstract class DocumentBuilderFactory {
      * Use {@link #newInstance()}.
      */
     protected DocumentBuilderFactory () {
+    }
+
+    /**
+     * Creates a new instance of the {@code DocumentBuilderFactory} builtin
+     * system-default implementation.
+     *
+     * @return A new instance of the {@code DocumentBuilderFactory} builtin
+     *         system-default implementation.
+     *
+     * @since 9
+     */
+    public static DocumentBuilderFactory newDefaultInstance() {
+        return new DocumentBuilderFactoryImpl();
     }
 
     /**
@@ -93,7 +107,8 @@ public abstract class DocumentBuilderFactory {
      * </li>
      * <li>
      * <p>
-     * Otherwise, the system-default implementation is returned.
+     * Otherwise, the {@linkplain #newDefaultInstance() system-default}
+     * implementation is returned.
      * </li>
      * </ul>
      *
