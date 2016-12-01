@@ -28,9 +28,9 @@
  * the Web Services Metadata API.
  */
 module java.xml.ws {
-    requires public java.activation;
-    requires public java.xml;
-    requires public java.xml.bind;
+    requires transitive java.activation;
+    requires transitive java.xml;
+    requires transitive java.xml.bind;
     requires java.annotations.common;
     requires java.desktop;
     requires java.logging;
@@ -54,6 +54,8 @@ module java.xml.ws {
     exports javax.xml.ws.spi;
     exports javax.xml.ws.spi.http;
     exports javax.xml.ws.wsaddressing;
+
+    opens javax.xml.ws.wsaddressing to java.xml.bind;
 
     exports com.oracle.webservices.internal.api.databinding to
         jdk.xml.ws;
@@ -102,10 +104,13 @@ module java.xml.ws {
         jdk.xml.ws;
 
     // XML document content needs to be exported
-    exports com.sun.xml.internal.ws.runtime.config to java.xml.bind;
+    opens com.sun.xml.internal.ws.runtime.config to java.xml.bind;
 
     // com.sun.xml.internal.ws.fault.SOAPFaultBuilder uses JAXBContext.newInstance
-    exports com.sun.xml.internal.ws.fault to java.xml.bind;
+    opens com.sun.xml.internal.ws.fault to java.xml.bind;
+
+    // classes passed to JAXBContext.newInstance for deep reflection
+    opens com.sun.xml.internal.ws.addressing to java.xml.bind;
 
     // JAF data handlers
     exports com.sun.xml.internal.messaging.saaj.soap to
