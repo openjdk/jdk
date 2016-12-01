@@ -48,7 +48,8 @@ JRE_MODULES += $(filter $(ALL_MODULES), $(BOOT_MODULES) \
 JDK_MODULES += $(ALL_MODULES)
 
 # Compact builds have additional modules
-COMPACT1_EXTRA_MODULES := jdk.localedata jdk.crypto.pkcs11 jdk.crypto.ec
+COMPACT1_EXTRA_MODULES := jdk.localedata jdk.crypto.pkcs11 jdk.crypto.ec \
+    jdk.unsupported
 COMPACT2_EXTRA_MODULES := jdk.xml.dom jdk.httpserver
 COMPACT3_EXTRA_MODULES := java.smartcardio jdk.management \
     jdk.naming.dns jdk.naming.rmi jdk.sctp jdk.security.auth
