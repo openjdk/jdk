@@ -1077,7 +1077,10 @@ final class FilePermissionCollection extends PermissionCollection
         // Add permission to map if it is absent, or replace with new
         // permission if applicable.
         perms.merge(fp.getName(), fp,
-                (existingVal, newVal) -> {
+            new java.util.function.BiFunction<>() {
+                @Override
+                public Permission apply(Permission existingVal,
+                                        Permission newVal) {
                     int oldMask = ((FilePermission)existingVal).getMask();
                     int newMask = ((FilePermission)newVal).getMask();
                     if (oldMask != newMask) {
@@ -1092,6 +1095,7 @@ final class FilePermissionCollection extends PermissionCollection
                     }
                     return existingVal;
                 }
+            }
         );
     }
 
