@@ -227,10 +227,18 @@ public class Check {
     void warnDeprecated(DiagnosticPosition pos, Symbol sym) {
         if (sym.isDeprecatedForRemoval()) {
             if (!lint.isSuppressed(LintCategory.REMOVAL)) {
-                removalHandler.report(pos, "has.been.deprecated.for.removal", sym, sym.location());
+                if (sym.kind == MDL) {
+                    removalHandler.report(pos, "has.been.deprecated.for.removal.module", sym);
+                } else {
+                    removalHandler.report(pos, "has.been.deprecated.for.removal", sym, sym.location());
+                }
             }
         } else if (!lint.isSuppressed(LintCategory.DEPRECATION)) {
-            deprecationHandler.report(pos, "has.been.deprecated", sym, sym.location());
+            if (sym.kind == MDL) {
+                deprecationHandler.report(pos, "has.been.deprecated.module", sym);
+            } else {
+                deprecationHandler.report(pos, "has.been.deprecated", sym, sym.location());
+            }
         }
     }
 
@@ -3245,7 +3253,7 @@ public class Check {
     void checkDeprecated(final DiagnosticPosition pos, final Symbol other, final Symbol s) {
         if ( (s.isDeprecatedForRemoval()
                 || s.isDeprecated() && !other.isDeprecated())
-              && s.outermostClass() != other.outermostClass()) {
+                && (s.outermostClass() != other.outermostClass() || s.outermostClass() == null)) {
             deferredLintHandler.report(new DeferredLintHandler.LintLogger() {
                 @Override
                 public void report() {
@@ -3851,7 +3859,7 @@ public class Check {
             }
 
             if (whatPackage.modle != inPackage.modle && whatPackage.modle != syms.java_base) {
-                //check that relativeTo.modle requires public what.modle, somehow:
+                //check that relativeTo.modle requires transitive what.modle, somehow:
                 List<ModuleSymbol> todo = List.of(inPackage.modle);
 
                 while (todo.nonEmpty()) {
@@ -3860,13 +3868,13 @@ public class Check {
                     if (current == whatPackage.modle)
                         return ; //OK
                     for (RequiresDirective req : current.requires) {
-                        if (req.isPublic()) {
+                        if (req.isTransitive()) {
                             todo = todo.prepend(req.module);
                         }
                     }
                 }
 
-                log.warning(LintCategory.EXPORTS, pos, Warnings.LeaksNotAccessibleNotRequiredPublic(kindName(what), what, what.packge().modle));
+                log.warning(LintCategory.EXPORTS, pos, Warnings.LeaksNotAccessibleNotRequiredTransitive(kindName(what), what, what.packge().modle));
             }
         }
 }

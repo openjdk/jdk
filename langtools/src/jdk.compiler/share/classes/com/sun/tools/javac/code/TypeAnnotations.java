@@ -237,6 +237,9 @@ public class TypeAnnotations {
             // TYPE_PARAMETER doesn't aid in distinguishing between
             // Type annotations and declaration annotations on an
             // Element
+        } else if (e.value.name == names.MODULE) {
+            if (s.kind == MDL)
+                return AnnotationType.DECLARATION;
         } else {
             Assert.error("annotationTargetType(): unrecognized Attribute name " + e.value.name +
                     " (" + e.value.name.getClass() + ")");

@@ -79,7 +79,7 @@
  * module declaration, to create a module set to considered for documentation
  * as follows:
  * <ul>
- * <li> public -- follows and expands  all "requires public" edges in the module graph
+ * <li> transitive -- follows and expands  all "requires transitive" edges in the module graph
  * <li> all    -- follows and expands  all "requires" edges in the module graph.
  * By default, only the specified modules will be considered, without expansion
  * of the module dependencies.

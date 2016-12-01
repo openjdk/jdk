@@ -22,15 +22,15 @@
  */
 
 module m5 {
-    // m4 requires public java.compiler
-    requires public m4;
-    requires public java.compiler;
+    // m4 requires transitive java.compiler
+    requires transitive m4;
+    requires transitive java.compiler;
 
-    // java.sql should be requires public
+    // java.sql should be requires transitive
     requires java.sql;
 
     // java.logging is used for implementation only
-    requires public java.logging;
+    requires transitive java.logging;
 
     exports p5;
 
