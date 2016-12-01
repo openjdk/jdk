@@ -774,6 +774,12 @@ class Main {
         /* parse file arguments */
         int n = args.length - count;
         if (n > 0) {
+            if (printModuleDescriptor) {
+                // "--print-module-descriptor/-d" does not require file argument(s)
+                error(formatMsg("error.bad.dflag", args[count]));
+                usageError();
+                return false;
+            }
             int version = BASE_VERSION;
             int k = 0;
             String[] nameBuf = new String[n];
