@@ -174,8 +174,24 @@ public class BasicModuleTest {
         // isExported
         assertTrue(base.isExported("java.lang"));
         assertTrue(base.isExported("java.lang", thisModule));
+        assertTrue(base.isExported("java.lang", base));
+        assertFalse(base.isExported("jdk.internal.misc"));
+        assertFalse(base.isExported("jdk.internal.misc", thisModule));
+        assertTrue(base.isExported("jdk.internal.misc", base));
         assertFalse(base.isExported("java.wombat"));
         assertFalse(base.isExported("java.wombat", thisModule));
+        assertFalse(base.isExported("java.wombat", base));
+
+        // isOpen
+        assertFalse(base.isOpen("java.lang"));
+        assertFalse(base.isOpen("java.lang", thisModule));
+        assertTrue(base.isOpen("java.lang", base));
+        assertFalse(base.isOpen("jdk.internal.misc"));
+        assertFalse(base.isOpen("jdk.internal.misc", thisModule));
+        assertTrue(base.isOpen("jdk.internal.misc", base));
+        assertFalse(base.isOpen("java.wombat"));
+        assertFalse(base.isOpen("java.wombat", thisModule));
+        assertFalse(base.isOpen("java.wombat", base));
     }
 
 

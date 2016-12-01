@@ -123,27 +123,25 @@ class VersionProps {
 
     /**
      * In case you were wondering this method is called by java -version.
-     * Sad that it prints to stderr; would be nicer if default printed on
-     * stdout.
      */
-    public static void print() {
-        print(System.err);
+    public static void print(boolean err) {
+        print(err, false);
     }
 
     /**
      * This is the same as print except that it adds an extra line-feed
      * at the end, typically used by the -showversion in the launcher
      */
-    public static void println() {
-        print(System.err);
-        System.err.println();
+    public static void println(boolean err) {
+        print(err, true);
     }
 
     /**
-     * Give a stream, it will print version info on it.
+     * Print version info.
      */
-    public static void print(PrintStream ps) {
+    private static void print(boolean err, boolean newln) {
         boolean isHeadless = false;
+        PrintStream ps = err ? System.err : System.out;
 
         /* Report that we're running headless if the property is true */
         String headless = System.getProperty("java.awt.headless");
@@ -152,10 +150,14 @@ class VersionProps {
         }
 
         /* First line: platform version. */
-        ps.println(launcher_name + " version \"" + java_version + "\"");
+        if (err) {
+            ps.println(launcher_name + " version \"" + java_version + "\"");
+        } else {
+            /* Use a format more in line with GNU conventions */
+            ps.println(launcher_name + " " + java_version);
+        }
 
         /* Second line: runtime version (ie, libraries). */
-
         String jdk_debug_level = System.getProperty("jdk.debug", "release");
         /* Debug level is not printed for "release" builds */
         if ("release".equals(jdk_debug_level)) {

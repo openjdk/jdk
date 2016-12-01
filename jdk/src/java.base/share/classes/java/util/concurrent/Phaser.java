@@ -154,49 +154,46 @@ import java.util.concurrent.locks.LockSupport;
  * <p>A {@code Phaser} may be used instead of a {@code CountDownLatch}
  * to control a one-shot action serving a variable number of parties.
  * The typical idiom is for the method setting this up to first
- * register, then start the actions, then deregister, as in:
+ * register, then start all the actions, then deregister, as in:
  *
  * <pre> {@code
  * void runTasks(List<Runnable> tasks) {
- *   final Phaser phaser = new Phaser(1); // "1" to register self
+ *   Phaser startingGate = new Phaser(1); // "1" to register self
  *   // create and start threads
- *   for (final Runnable task : tasks) {
- *     phaser.register();
- *     new Thread() {
- *       public void run() {
- *         phaser.arriveAndAwaitAdvance(); // await all creation
- *         task.run();
- *       }
- *     }.start();
+ *   for (Runnable task : tasks) {
+ *     startingGate.register();
+ *     new Thread(() -> {
+ *       startingGate.arriveAndAwaitAdvance();
+ *       task.run();
+ *     }).start();
  *   }
  *
- *   // allow threads to start and deregister self
- *   phaser.arriveAndDeregister();
+ *   // deregister self to allow threads to proceed
+ *   startingGate.arriveAndDeregister();
  * }}</pre>
  *
  * <p>One way to cause a set of threads to repeatedly perform actions
  * for a given number of iterations is to override {@code onAdvance}:
  *
  * <pre> {@code
- * void startTasks(List<Runnable> tasks, final int iterations) {
- *   final Phaser phaser = new Phaser() {
+ * void startTasks(List<Runnable> tasks, int iterations) {
+ *   Phaser phaser = new Phaser() {
  *     protected boolean onAdvance(int phase, int registeredParties) {
  *       return phase >= iterations || registeredParties == 0;
  *     }
  *   };
  *   phaser.register();
- *   for (final Runnable task : tasks) {
+ *   for (Runnable task : tasks) {
  *     phaser.register();
- *     new Thread() {
- *       public void run() {
- *         do {
- *           task.run();
- *           phaser.arriveAndAwaitAdvance();
- *         } while (!phaser.isTerminated());
- *       }
- *     }.start();
+ *     new Thread(() -> {
+ *       do {
+ *         task.run();
+ *         phaser.arriveAndAwaitAdvance();
+ *       } while (!phaser.isTerminated());
+ *     }).start();
  *   }
- *   phaser.arriveAndDeregister(); // deregister self, don't wait
+ *   // allow threads to proceed; don't wait for them
+ *   phaser.arriveAndDeregister();
  * }}</pre>
  *
  * If the main task must later await termination, it

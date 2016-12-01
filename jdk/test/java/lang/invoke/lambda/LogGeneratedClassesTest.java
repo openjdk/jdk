@@ -127,8 +127,13 @@ public class LogGeneratedClassesTest extends LUtils {
                                "-Djdk.internal.lambda.dumpProxyClasses=dump",
                                "-Djava.security.manager",
                                "com.example.TestLambda");
-        // dump/com/example + 2 class files
-        assertEquals(Files.walk(Paths.get("dump")).count(), 5, "Two lambda captured");
+        // 2 our own class files. We don't care about the others
+        assertEquals(Files.find(
+                        Paths.get("dump"),
+                        99,
+                        (p, a) -> p.startsWith(Paths.get("dump/com/example"))
+                                && a.isRegularFile()).count(),
+                2, "Two lambda captured");
         tr.assertZero("Should still return 0");
     }
 

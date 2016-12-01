@@ -37,6 +37,7 @@ import static org.testng.Assert.*;
  *          if Compact String enable/disable VM Options is indeed working in String class,
  *          it's verified by testing if the VM option affect coder and
  *          COMPACT_STRINGS field in String class.
+ * @modules java.base/java.lang:open
  * @run testng/othervm -XX:+CompactStrings -DCompactStringEnabled=true VMOptionsTest
  * @run testng/othervm -XX:-CompactStrings -DCompactStringEnabled=false VMOptionsTest
  */

@@ -23,6 +23,7 @@
 
 /* @test
  * @summary unit tests for java.lang.invoke.LambdaForm
+ * @modules java.base/java.lang.invoke:open
  * @run junit/othervm test.java.lang.invoke.LambdaFormTest
  */
 package test.java.lang.invoke;

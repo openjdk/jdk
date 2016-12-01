@@ -26,7 +26,7 @@
  * @bug 6334663
  * @summary Test that TabularDataSupport preserves the order elements were added
  * @author Eamonn McManus
- * @modules java.management
+ * @modules java.management/javax.management.openmbean:open
  */
 
 import java.io.ByteArrayInputStream;

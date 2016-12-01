@@ -25,6 +25,7 @@
  * @test
  * @bug 8007458
  * @summary Tests CardLayout encoding
+ * @modules java.desktop/java.awt:open
  * @author Sergey Malenkov
  */
 

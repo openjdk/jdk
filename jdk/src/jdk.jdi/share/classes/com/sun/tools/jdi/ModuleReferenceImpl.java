@@ -75,15 +75,4 @@ class ModuleReferenceImpl extends ObjectReferenceImpl implements ModuleReference
         }
         return classLoader;
     }
-
-    public synchronized boolean canRead(ModuleReference module) {
-        boolean ret;
-        try {
-            ret = JDWP.ModuleReference.CanRead.
-                process(this.vm, this, (ModuleReferenceImpl)module).canRead;
-        } catch (JDWPException ex) {
-            throw ex.toJDIException();
-        }
-        return ret;
-    }
 }

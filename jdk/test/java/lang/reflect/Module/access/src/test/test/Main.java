@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,166 +23,351 @@
 
 package test;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.Layer;
 import java.lang.reflect.Method;
 import java.lang.reflect.Module;
-import java.util.Optional;
 
 /**
- * Test access to public members in exported and non-exported packages.
+ * Test access to public/non-public members of public/non-public classes in
+ * exported and non-exported packages.
  */
 
 public class Main {
 
     public static void main(String[] args) throws Exception {
+        testPublicClassInExportedPackage();
+        testNonPublicClassInExportedPackage();
+        testPublicClassInNonExportedPackage();
+        testNonPublicClassInNonExportedPackage();
+    }
 
+    static void testPublicClassInExportedPackage() throws Exception {
         Module thisModule = Main.class.getModule();
-        assertTrue(thisModule.isNamed());
+        Module targetModule = getTargetModule();
 
-        Optional<Module> om = Layer.boot().findModule("target");
-        assertTrue(om.isPresent());
+        assertTrue(targetModule.isExported("p1"));
+        assertTrue(targetModule.isExported("p1", thisModule));
+        assertTrue(targetModule.isExported("p1", targetModule));
 
-        Module target = om.get();
+        assertFalse(targetModule.isOpen("p1"));
+        assertFalse(targetModule.isOpen("p1", thisModule));
+        assertTrue(targetModule.isOpen("p1", targetModule));
 
-        assertTrue(target.isExported("p"));
-        assertTrue(target.isExported("p", thisModule));
+        Class<?> clazz = Class.forName("p1.Public");
+        Constructor<?> ctor1 = clazz.getConstructor();   // public
+        Constructor<?> ctor2 = clazz.getDeclaredConstructor(Void.class); // non-public
 
-        assertFalse(target.isExported("q"));
-        assertFalse(target.isExported("q", thisModule));
+        Field f1 = clazz.getField("f1");    // public
+        Field f2 = clazz.getDeclaredField("f2");    // non-public
 
+        Method m1 = clazz.getMethod("foo");  // public
+        Method m2 = clazz.getDeclaredMethod("bar");  // non-public
 
-        // thisModule does not read the target module
+        tryAccessConstructor(ctor1, true);
+        tryAccessConstructor(ctor2, false);
+        tryAccessMethod(m1, true);
+        tryAccessMethod(m2, false);
+        tryAccessObjectField(f1, true);
+        tryAccessObjectField(f2, false);
 
-        assertFalse(thisModule.canRead(target));
+        trySetAccessible(ctor1, true);
+        trySetAccessible(ctor2, false);
+        trySetAccessible(m1, true);
+        trySetAccessible(m2, false);
+        trySetAccessible(f1, true);
+        trySetAccessible(f2, false);
 
-        tryAccessPublicMembers("p.Exported", true);
-        tryAccessPublicMembers("q.Internal", false);
+        targetAddOpens("p1", thisModule);
 
+        tryAccessConstructor(ctor1, true);
+        tryAccessConstructor(ctor2, false);
+        tryAccessMethod(m1, true);
+        tryAccessMethod(m2, false);
+        tryAccessObjectField(f1, true);
+        tryAccessObjectField(f2, false);
 
+        trySetAccessible(ctor1, true);
+        trySetAccessible(ctor2, true);
+        trySetAccessible(m1, true);
+        trySetAccessible(m2, true);
+        trySetAccessible(f1, true);
+        trySetAccessible(f2, true);
+    }
 
-        // thisModule reads the target module
+    static void testNonPublicClassInExportedPackage() throws Exception {
+        Module thisModule = Main.class.getModule();
+        Module targetModule = getTargetModule();
 
-        thisModule.addReads(target);
-        assertTrue(thisModule.canRead(target));
+        assertTrue(targetModule.isExported("p2"));
+        assertTrue(targetModule.isExported("p2", thisModule));
+        assertTrue(targetModule.isExported("p2", targetModule));
 
-        tryAccessPublicMembers("p.Exported", true);
-        tryAccessPublicMembers("q.Internal", false);
+        assertFalse(targetModule.isOpen("p2"));
+        assertFalse(targetModule.isOpen("p2", thisModule));
+        assertTrue(targetModule.isOpen("p1", targetModule));
 
+        Class<?> clazz = Class.forName("p2.NonPublic");
+        Constructor<?> ctor1 = clazz.getConstructor();
+        Constructor<?> ctor2 = clazz.getDeclaredConstructor(Void.class);
 
+        Field f1 = clazz.getField("f1");    // public
+        Field f2 = clazz.getDeclaredField("f2");    // non-public
 
-        // change target module to export its internal package to thisModule
+        Method m1 = clazz.getMethod("foo");  // public
+        Method m2 = clazz.getDeclaredMethod("bar");  // non-public
 
-        targetAddExports("q", thisModule);
-        assertFalse(target.isExported("q"));
-        assertTrue(target.isExported("q", thisModule));
+        tryAccessConstructor(ctor1, false);
+        tryAccessConstructor(ctor2, false);
+        tryAccessMethod(m1, false);
+        tryAccessMethod(m2, false);
+        tryAccessObjectField(f1, false);
+        tryAccessObjectField(f2, false);
 
-        tryAccessPublicMembers("p.Exported", true);
-        tryAccessPublicMembers("q.Internal", true);
+        trySetAccessible(ctor1, false);
+        trySetAccessible(ctor2, false);
+        trySetAccessible(m1, false);
+        trySetAccessible(m2, false);
+        trySetAccessible(f1, false);
+        trySetAccessible(f2, false);
+
+        targetAddExports("p2", thisModule);
+
+        tryAccessConstructor(ctor1, false);
+        tryAccessConstructor(ctor2, false);
+        tryAccessMethod(m1, false);
+        tryAccessMethod(m2, false);
+        tryAccessObjectField(f1, false);
+        tryAccessObjectField(f2, false);
+
+        trySetAccessible(ctor1, false);
+        trySetAccessible(ctor2, false);
+        trySetAccessible(m1, false);
+        trySetAccessible(m2, false);
+        trySetAccessible(f1, false);
+        trySetAccessible(f2, false);
+
+        targetAddOpens("p2", thisModule);
+
+        tryAccessConstructor(ctor1, false);
+        tryAccessConstructor(ctor2, false);
+        tryAccessMethod(m1, false);
+        tryAccessMethod(m2, false);
+        tryAccessObjectField(f1, false);
+        tryAccessObjectField(f2, false);
+
+        trySetAccessible(ctor1, true);
+        trySetAccessible(ctor2, true);
+        trySetAccessible(m1, true);
+        trySetAccessible(m2, true);
+        trySetAccessible(f1, true);
+        trySetAccessible(f2, true);
+    }
+
+    static void testPublicClassInNonExportedPackage() throws Exception {
+        Module thisModule = Main.class.getModule();
+        Module targetModule = getTargetModule();
+
+        assertFalse(targetModule.isExported("q1"));
+        assertFalse(targetModule.isExported("q1", thisModule));
+        assertTrue(targetModule.isExported("q1", targetModule));
+
+        assertFalse(targetModule.isOpen("q1"));
+        assertFalse(targetModule.isOpen("q1", thisModule));
+        assertTrue(targetModule.isOpen("q1", targetModule));
+
+        Class<?> clazz = Class.forName("q1.Public");
+        Constructor<?> ctor1 = clazz.getConstructor();  // public
+        Constructor<?> ctor2 = clazz.getDeclaredConstructor(Void.class);  // non-public
+
+        Field f1 = clazz.getField("f1");    // public
+        Field f2 = clazz.getDeclaredField("f2");    // non-public
+
+        Method m1 = clazz.getMethod("foo");  // public
+        Method m2 = clazz.getDeclaredMethod("bar");  // non-public
+
+        tryAccessConstructor(ctor1, false);
+        tryAccessConstructor(ctor2, false);
+        tryAccessMethod(m1, false);
+        tryAccessMethod(m2, false);
+        tryAccessObjectField(f1, false);
+        tryAccessObjectField(f2, false);
+
+        trySetAccessible(ctor1, false);
+        trySetAccessible(ctor2, false);
+        trySetAccessible(m1, false);
+        trySetAccessible(m2, false);
+        trySetAccessible(f1, false);
+        trySetAccessible(f2, false);
+
+        targetAddExports("q1", thisModule);
+
+        tryAccessConstructor(ctor1, true);
+        tryAccessConstructor(ctor2, false);
+        tryAccessMethod(m1, true);
+        tryAccessMethod(m2, false);
+        tryAccessObjectField(f1, true);
+        tryAccessObjectField(f2, false);
+
+        trySetAccessible(ctor1, true);
+        trySetAccessible(ctor2, false);
+        trySetAccessible(m1, true);
+        trySetAccessible(m2, false);
+        trySetAccessible(f1, true);
+        trySetAccessible(f2, false);
+
+        targetAddOpens("q1", thisModule);
+
+        tryAccessConstructor(ctor1, true);
+        tryAccessConstructor(ctor1, false);
+        tryAccessMethod(m1, true);
+        tryAccessMethod(m2, false);
+        tryAccessObjectField(f1, true);
+        tryAccessObjectField(f2, false);
+
+        trySetAccessible(ctor1, true);
+        trySetAccessible(ctor2, true);
+        trySetAccessible(m1, true);
+        trySetAccessible(m2, true);
+        trySetAccessible(f1, true);
+        trySetAccessible(f2, true);
+    }
+
+    static void testNonPublicClassInNonExportedPackage() throws Exception {
+        Module thisModule = Main.class.getModule();
+        Module targetModule = getTargetModule();
+
+        assertFalse(targetModule.isExported("q2"));
+        assertFalse(targetModule.isExported("q2", thisModule));
+        assertTrue(targetModule.isExported("q2", targetModule));
+
+        assertFalse(targetModule.isOpen("q2"));
+        assertFalse(targetModule.isOpen("q2", thisModule));
+        assertTrue(targetModule.isOpen("q2", targetModule));
+
+        Class<?> clazz = Class.forName("q2.NonPublic");
+        Constructor<?> ctor1 = clazz.getConstructor();  // public
+        Constructor<?> ctor2 = clazz.getDeclaredConstructor(Void.class);  // non-public
+
+        Field f1 = clazz.getField("f1");    // public
+        Field f2 = clazz.getDeclaredField("f2");    // non-public
+
+        Method m1 = clazz.getMethod("foo");  // public
+        Method m2 = clazz.getDeclaredMethod("bar");  // non-public
+
+        tryAccessConstructor(ctor1, false);
+        tryAccessConstructor(ctor2, false);
+        tryAccessMethod(m1, false);
+        tryAccessMethod(m2, false);
+        tryAccessObjectField(f1, false);
+        tryAccessObjectField(f2, false);
+
+        trySetAccessible(ctor1, false);
+        trySetAccessible(ctor2, false);
+        trySetAccessible(m1, false);
+        trySetAccessible(m2, false);
+        trySetAccessible(f1, false);
+        trySetAccessible(f2, false);
+
+        targetAddExports("q2", thisModule);
+
+        tryAccessConstructor(ctor1, false);
+        tryAccessConstructor(ctor2, false);
+        tryAccessMethod(m1, false);
+        tryAccessMethod(m2, false);
+        tryAccessObjectField(f1, false);
+        tryAccessObjectField(f2, false);
+
+        trySetAccessible(ctor1, false);
+        trySetAccessible(ctor2, false);
+        trySetAccessible(m1, false);
+        trySetAccessible(m2, false);
+        trySetAccessible(f1, false);
+        trySetAccessible(f2, false);
+
+        targetAddOpens("q2", thisModule);
+
+        tryAccessConstructor(ctor1, false);
+        tryAccessConstructor(ctor2, false);
+        tryAccessMethod(m1, false);
+        tryAccessMethod(m2, false);
+        tryAccessObjectField(f1, false);
+        tryAccessObjectField(f2, false);
+
+        trySetAccessible(ctor1, true);
+        trySetAccessible(m1, true);
+        trySetAccessible(m2, true);
+        trySetAccessible(f1, true);
+        trySetAccessible(f2, true);
     }
 
 
-    /**
-     * Attempt to access public members in a target class.
-     */
-    static void tryAccessPublicMembers(String cn, boolean shouldSucceed)
-        throws Exception
-    {
+    static Module getTargetModule() {
+        return Layer.boot().findModule("target").get();
+    }
 
-        Class<?> clazz = Class.forName(cn);
-
-        Module thisModule = Main.class.getModule();
-        Module targetModule = clazz.getModule();
-
-        // check if the target class is in an exported package
-        String pn = cn.substring(0, cn.lastIndexOf('.'));
-        boolean exported = targetModule.isExported(pn, thisModule);
-        assertTrue(exported == shouldSucceed);
-        boolean shouldFail = !shouldSucceed;
-
-
-        // Class.newInstance
-
-        try {
-            clazz.newInstance();
-            assertTrue(shouldSucceed);
-        } catch (IllegalAccessException e) {
-            assertTrue(shouldFail);
-        }
-
-
-        // Constructor.newInstance and Constructor.setAccessible
-
-        Constructor<?> ctor = clazz.getConstructor();
+    static void tryAccessConstructor(Constructor<?> ctor, boolean shouldSucceed) {
         try {
             ctor.newInstance();
             assertTrue(shouldSucceed);
-        } catch (IllegalAccessException e) {
-            assertTrue(shouldFail);
+        } catch (Exception e) {
+            assertFalse(shouldSucceed);
         }
+    }
+
+    static void tryAccessMethod(Method method, boolean shouldSucceed) {
         try {
-            ctor.setAccessible(true);
+            method.invoke(null);
             assertTrue(shouldSucceed);
-            ctor.newInstance();
-        } catch (InaccessibleObjectException e) {
-            assertTrue(shouldFail);
+        } catch (Exception e) {
+            e.printStackTrace();
+            assertFalse(shouldSucceed);
         }
+    }
 
-
-        // Method.invoke and Method.setAccessible
-
-        Method m = clazz.getDeclaredMethod("run");
-        try {
-            m.invoke(null);
-            assertTrue(shouldSucceed);
-        } catch (IllegalAccessException e) {
-            assertTrue(shouldFail);
-        }
-        try {
-            m.setAccessible(true);
-            assertTrue(shouldSucceed);
-            m.invoke(null);
-        } catch (InaccessibleObjectException e) {
-            assertTrue(shouldFail);
-        }
-
-        // Field.get, Field.set and Field.setAccessible
-
-        Field f = clazz.getDeclaredField("field");
+    static void tryAccessObjectField(Field f, boolean shouldSucceed) {
         try {
             f.get(null);
             assertTrue(shouldSucceed);
-        } catch (IllegalAccessException e) {
-            assertTrue(shouldFail);
+        } catch (Exception e) {
+            assertFalse(shouldSucceed);
         }
         try {
-            f.set(null, 100);
+            f.set(null, new Object());
             assertTrue(shouldSucceed);
-        } catch (IllegalAccessException e) {
-            assertTrue(shouldFail);
+        } catch (Exception e) {
+            assertFalse(shouldSucceed);
         }
-        try {
-            f.setAccessible(true);
-            f.get(null);
-            f.set(null, 100);
-            assertTrue(shouldSucceed);
-        } catch (InaccessibleObjectException e) {
-            assertTrue(shouldFail);
-        }
+    }
 
+    static void trySetAccessible(AccessibleObject ao, boolean shouldSucceed) {
+        try {
+            ao.setAccessible(true);
+            assertTrue(shouldSucceed);
+        } catch (Exception e) {
+            assertFalse(shouldSucceed);
+        }
     }
 
     /**
      * Update target module to export a package to the given module.
      */
     static void targetAddExports(String pn, Module who) throws Exception {
-        Class<?> helper = Class.forName("p.Helper");
-        Method m = helper.getMethod("exportPackage", String.class, Module.class);
+        Class<?> helper = Class.forName("p1.Helper");
+        Method m = helper.getMethod("addExports", String.class, Module.class);
         m.invoke(null, pn, who);
     }
 
+    /**
+     * Update target module to open a package to the given module.
+     */
+    static void targetAddOpens(String pn, Module who) throws Exception {
+        Class<?> helper = Class.forName("p1.Helper");
+        Method m = helper.getMethod("addOpens", String.class, Module.class);
+        m.invoke(null, pn, who);
+    }
 
     static void assertTrue(boolean expr) {
         if (!expr) throw new RuntimeException();

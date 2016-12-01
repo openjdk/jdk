@@ -864,30 +864,4 @@ public class ConcurrentHashMapTest extends JSR166TestCase {
         assertEquals(mapSize, map.size());
     }
 
-    /**
-     * Tests performance of computeIfAbsent when the element is present.
-     * See JDK-8161372
-     * ant -Djsr166.tckTestClass=ConcurrentHashMapTest -Djsr166.methodFilter=testcomputeIfAbsent_performance -Djsr166.expensiveTests=true tck
-     */
-    public void testcomputeIfAbsent_performance() {
-        final int mapSize = 20;
-        final int iterations = expensiveTests ? (1 << 23) : mapSize * 2;
-        final int threads = expensiveTests ? 10 : 2;
-        final ConcurrentHashMap<Integer, Integer> map = new ConcurrentHashMap<>();
-        for (int i = 0; i < mapSize; i++)
-            map.put(i, i);
-        final ExecutorService pool = Executors.newFixedThreadPool(2);
-        try (PoolCleaner cleaner = cleaner(pool)) {
-            Runnable r = new CheckedRunnable() {
-                public void realRun() {
-                    int result = 0;
-                    for (int i = 0; i < iterations; i++)
-                        result += map.computeIfAbsent(i % mapSize, (k) -> k + k);
-                    if (result == -42) throw new Error();
-                }};
-            for (int i = 0; i < threads; i++)
-                pool.execute(r);
-        }
-    }
-
 }

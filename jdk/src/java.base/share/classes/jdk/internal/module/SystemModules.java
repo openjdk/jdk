@@ -51,7 +51,7 @@ public final class SystemModules {
     /**
      * Hash of system modules.
      */
-    public static String[] MODULES_TO_HASH = new String[0];
+    public static byte[][] MODULES_TO_HASH = new byte[0][];
 
     /**
      * Number of packages in the boot layer from the installed modules.
