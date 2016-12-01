@@ -4066,7 +4066,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     void loadStack() {
                         assert assignNode.getWidestOperandType() == Type.INT;
                         if (isRhsZero(binaryNode)) {
-                            loadExpressionAsType(binaryNode.lhs(), Type.INT);
+                            loadExpression(binaryNode.lhs(), TypeBounds.INT, true);
                         } else {
                             loadBinaryOperands(binaryNode.lhs(), binaryNode.rhs(), TypeBounds.INT, true, false);
                             method.shr();
