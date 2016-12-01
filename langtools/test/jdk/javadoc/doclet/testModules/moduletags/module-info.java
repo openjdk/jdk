@@ -37,6 +37,7 @@
   * @moduletag Just a simple module tag.
   * @version 1.0
   */
+@Deprecated
 module moduletags {
     requires module2;
 

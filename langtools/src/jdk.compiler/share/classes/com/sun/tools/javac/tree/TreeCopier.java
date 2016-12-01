@@ -26,6 +26,7 @@
 package com.sun.tools.javac.tree;
 
 import com.sun.source.tree.*;
+import com.sun.source.tree.Tree.Kind;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -508,9 +509,10 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitModule(ModuleTree node, P p) {
         JCModuleDecl t = (JCModuleDecl) node;
+        JCModifiers mods = copy(t.mods, p);
         JCExpression qualId = copy(t.qualId);
         List<JCDirective> directives = copy(t.directives);
-        return M.at(t.pos).ModuleDef(qualId, directives);
+        return M.at(t.pos).ModuleDef(mods, t.getModuleType(), qualId, directives);
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -522,18 +524,26 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public JCOpens visitOpens(OpensTree node, P p) {
+        JCOpens t = (JCOpens) node;
+        JCExpression qualId = copy(t.qualid, p);
+        List<JCExpression> moduleNames = copy(t.moduleNames, p);
+        return M.at(t.pos).Opens(qualId, moduleNames);
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public JCProvides visitProvides(ProvidesTree node, P p) {
         JCProvides t = (JCProvides) node;
         JCExpression serviceName = copy(t.serviceName, p);
-        JCExpression implName = copy(t.implName, p);
-        return M.at(t.pos).Provides(serviceName, implName);
+        List<JCExpression> implNames = copy(t.implNames, p);
+        return M.at(t.pos).Provides(serviceName, implNames);
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public JCRequires visitRequires(RequiresTree node, P p) {
         JCRequires t = (JCRequires) node;
         JCExpression moduleName = copy(t.moduleName, p);
-        return M.at(t.pos).Requires(t.isPublic, moduleName);
+        return M.at(t.pos).Requires(t.isTransitive, t.isStaticPhase, moduleName);
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)

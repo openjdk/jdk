@@ -605,14 +605,19 @@ public class Arguments {
             log.error(Errors.ProcessorpathNoProcessormodulepath);
         }
 
-        if (obsoleteOptionFound)
+        if (obsoleteOptionFound && lintOptions) {
             log.warning(LintCategory.OPTIONS, "option.obsolete.suppression");
+        }
 
         SourceVersion sv = Source.toSourceVersion(source);
         validateAddExports(sv);
         validateAddModules(sv);
         validateAddReads(sv);
         validateLimitModules(sv);
+
+        if (lintOptions && options.isSet(Option.ADD_OPENS)) {
+            log.warning(LintCategory.OPTIONS, Warnings.AddopensIgnored);
+        }
 
         return !errors && (log.nerrors == 0);
     }

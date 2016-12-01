@@ -31,8 +31,6 @@ import java.nio.file.Path;
 
 import javax.tools.JavaFileObject;
 
-import com.sun.tools.javac.jvm.ClassFile;
-
 import static com.sun.tools.javac.jvm.ClassFile.*;
 
 
@@ -93,11 +91,44 @@ public class ModuleNameReader {
 
         int minorVersion = nextChar();
         int majorVersion = nextChar();
+        if (majorVersion < 53)
+            throw new BadClassFile("bad major version number for module: " + majorVersion);
 
         indexPool();
 
-        int accessflags = nextChar();
-        return readModuleInfoName(nextChar());
+        int access_flags = nextChar();
+        if (access_flags != 0x8000)
+            throw new BadClassFile("invalid access flags for module: 0x" + Integer.toHexString(access_flags));
+
+        // FIXME: temporary compatibility code
+        int this_class = nextChar();
+        if (this_class == 0) {
+            // new form
+            checkZero(nextChar(), "super_class");
+            checkZero(nextChar(), "interface_count");
+            checkZero(nextChar(), "fields_count");
+            checkZero(nextChar(), "methods_count");
+            int attributes_count = nextChar();
+            for (int i = 0; i < attributes_count; i++) {
+                int attr_name = nextChar();
+                int attr_length = nextInt();
+                if (getUtf8Value(attr_name, false).equals("Module") && attr_length > 2) {
+                    return getUtf8Value(nextChar(), true);
+                } else {
+                    // skip over unknown attributes
+                    bp += attr_length;
+                }
+            }
+            throw new BadClassFile("no Module attribute");
+        } else {
+            // old form
+            return readModuleInfoName(this_class);
+        }
+    }
+
+    void checkZero(int count, String name) throws BadClassFile {
+        if (count != 0)
+            throw new BadClassFile("invalid " + name + " for module: " + count);
     }
 
     /** Extract a character at position bp from buf.
@@ -164,6 +195,20 @@ public class ModuleNameReader {
                 throw new BadClassFile("malformed constant pool");
             }
         }
+    }
+
+    String getUtf8Value(int index, boolean internalize) throws BadClassFile {
+        int utf8Index = poolIdx[index];
+        if (buf[utf8Index] == CONSTANT_Utf8) {
+            int len = getChar(utf8Index + 1);
+            int start = utf8Index + 3;
+            if (internalize) {
+                return new String(ClassFile.internalize(buf, start, len));
+            } else {
+                return new String(buf, start, len);
+            }
+        }
+        throw new BadClassFile("bad name at index " + index);
     }
 
     /** Read the class name of a module-info.class file.

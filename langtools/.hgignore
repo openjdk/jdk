@@ -3,5 +3,4 @@
 ^webrev
 ^.idea
 /nbproject/private/
-^.hgtip
 .DS_Store

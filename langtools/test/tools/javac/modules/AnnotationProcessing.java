@@ -245,7 +245,7 @@ public class AnnotationProcessing extends ModuleTestBase {
             List<? extends ProvidesDirective> provides = ElementFilter.providesIn(modle.getDirectives());
             assertEquals(1, provides.size());
             assertEquals("api.Api", provides.iterator().next().getService().getQualifiedName().toString());
-            assertEquals("impl.Impl", provides.iterator().next().getImplementation().getQualifiedName().toString());
+            assertEquals("impl.Impl", provides.iterator().next().getImplementations().get(0).getQualifiedName().toString());
 
             return false;
         }

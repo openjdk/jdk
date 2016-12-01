@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -86,7 +87,8 @@ public class ModuleTestBase {
         List<Pair<String, Integer>> actualRequires = new ArrayList<>();
         for (Module_attribute.RequiresEntry require : module.requires) {
             actualRequires.add(Pair.of(
-                    require.getRequires(constantPool), require.requires_flags));
+                    require.getRequires(constantPool).replace('/', '.'),
+                    require.requires_flags));
         }
         tr.checkContains(actualRequires, moduleDescriptor.requires, "Lists of requires don't match");
     }
@@ -96,11 +98,13 @@ public class ModuleTestBase {
         for (Module_attribute.ExportsEntry export : module.exports) {
             String pkg = constantPool.getUTF8Value(export.exports_index);
             if (tr.checkTrue(moduleDescriptor.exports.containsKey(pkg), "Unexpected export " + pkg)) {
-                List<String> expectedTo = moduleDescriptor.exports.get(pkg);
+                Export expectedExport = moduleDescriptor.exports.get(pkg);
+                tr.checkEquals(expectedExport.mask, export.exports_flags, "Wrong export flags");
+                List<String> expectedTo = expectedExport.to;
                 tr.checkEquals(export.exports_to_count, expectedTo.size(), "Wrong amount of exports to");
                 List<String> actualTo = new ArrayList<>();
                 for (int toIdx : export.exports_to_index) {
-                    actualTo.add(constantPool.getUTF8Value(toIdx));
+                    actualTo.add(constantPool.getUTF8Value(toIdx).replace('/', '.'));
                 }
                 tr.checkContains(actualTo, expectedTo, "Lists of \"exports to\" don't match.");
             }
@@ -118,14 +122,24 @@ public class ModuleTestBase {
     }
 
     private void testProvides(ModuleDescriptor moduleDescriptor, Module_attribute module, ConstantPool constantPool) throws ConstantPoolException {
-        tr.checkEquals(module.provides_count, moduleDescriptor.provides.size(), "Wrong amount of provides.");
-        List<Pair<String, String>> actualProvides = new ArrayList<>();
+        int moduleProvidesCount = Arrays.asList(module.provides).stream()
+                .mapToInt(e -> e.with_index.length)
+                .sum();
+        int moduleDescriptorProvidesCount = moduleDescriptor.provides.values().stream()
+                .mapToInt(impls -> impls.size())
+                .sum();
+        tr.checkEquals(moduleProvidesCount, moduleDescriptorProvidesCount, "Wrong amount of provides.");
+        Map<String, List<String>> actualProvides = new HashMap<>();
         for (Module_attribute.ProvidesEntry provide : module.provides) {
             String provides = constantPool.getClassInfo(provide.provides_index).getBaseName().replace('/', '.');
-            String with = constantPool.getClassInfo(provide.with_index).getBaseName().replace('/', '.');
-            actualProvides.add(Pair.of(provides, with));
+            List<String> impls = new ArrayList<>();
+            for (int i = 0; i < provide.with_count; i++) {
+                String with = constantPool.getClassInfo(provide.with_index[i]).getBaseName().replace('/', '.');
+                impls.add(with);
+            }
+            actualProvides.put(provides, impls);
         }
-        tr.checkContains(actualProvides, moduleDescriptor.provides, "Lists of provides don't match");
+        tr.checkContains(actualProvides.entrySet(), moduleDescriptor.provides.entrySet(), "Lists of provides don't match");
     }
 
     protected void compile(Path base, String... options) throws IOException {
@@ -145,7 +159,57 @@ public class ModuleTestBase {
     @interface Test {
     }
 
-    class ModuleDescriptor {
+    interface Mask {
+        int getMask();
+    }
+
+    public enum RequiresFlag implements Mask {
+        TRANSITIVE("transitive", Module_attribute.ACC_TRANSITIVE),
+        STATIC("static", Module_attribute.ACC_STATIC_PHASE);
+
+        private final String token;
+        private final int mask;
+
+        RequiresFlag(String token, int mask) {
+            this.token = token;
+            this.mask = mask;
+        }
+
+        @Override
+        public int getMask() {
+            return mask;
+        }
+    }
+
+    public enum ExportFlag implements Mask {
+        SYNTHETIC("", Module_attribute.ACC_SYNTHETIC);
+
+        private final String token;
+        private final int mask;
+
+        ExportFlag(String token, int mask) {
+            this.token = token;
+            this.mask = mask;
+        }
+
+        @Override
+        public int getMask() {
+            return mask;
+        }
+    }
+
+    private class Export {
+        String pkg;
+        int mask;
+        List<String> to = new ArrayList<>();
+
+        public Export(String pkg, int mask) {
+            this.pkg = pkg;
+            this.mask = mask;
+        }
+    }
+
+    protected class ModuleDescriptor {
 
         private final String name;
         //pair is name of module and flag(public,mandated,synthetic)
@@ -155,10 +219,10 @@ public class ModuleTestBase {
             requires.add(new Pair<>("java.base", Module_attribute.ACC_MANDATED));
         }
 
-        private final Map<String, List<String>> exports = new HashMap<>();
+        private final Map<String, Export> exports = new HashMap<>();
 
         //List of service and implementation
-        private final List<Pair<String, String>> provides = new ArrayList<>();
+        private final Map<String, List<String>> provides = new LinkedHashMap<>();
         private final List<String> uses = new ArrayList<>();
 
         private static final String LINE_END = ";\n";
@@ -170,43 +234,58 @@ public class ModuleTestBase {
             content.append(name).append('{').append('\n');
         }
 
-        public ModuleDescriptor requires(String... requires) {
-            for (String require : requires) {
-                this.requires.add(Pair.of(require, 0));
-                content.append("    requires ").append(require).append(LINE_END);
-            }
+        public ModuleDescriptor requires(String module) {
+            this.requires.add(Pair.of(module, 0));
+            content.append("    requires ").append(module).append(LINE_END);
+
             return this;
         }
 
-        public ModuleDescriptor requiresPublic(String... requiresPublic) {
-            for (String require : requiresPublic) {
-                this.requires.add(new Pair<>(require, Module_attribute.ACC_PUBLIC));
-                content.append("    requires public ").append(require).append(LINE_END);
+        public ModuleDescriptor requires(String module, RequiresFlag... flags) {
+            this.requires.add(new Pair<>(module, computeMask(flags)));
+
+            content.append("    requires ");
+            for (RequiresFlag flag : flags) {
+                content.append(flag.token).append(" ");
             }
+            content.append(module).append(LINE_END);
+
             return this;
         }
 
-        public ModuleDescriptor exports(String... exports) {
-            for (String export : exports) {
-                this.exports.putIfAbsent(export, new ArrayList<>());
-                content.append("    exports ").append(export).append(LINE_END);
+        public ModuleDescriptor exports(String pkg, ExportFlag... flags) {
+            this.exports.putIfAbsent(pkg, new Export(pkg, computeMask(flags)));
+            content.append("    exports ");
+            for (ExportFlag flag : flags) {
+                content.append(flag.token).append(" ");
             }
+            content.append(pkg).append(LINE_END);
             return this;
         }
 
-        public ModuleDescriptor exportsTo(String exports, String to) {
+        public ModuleDescriptor exportsTo(String pkg, String to, ExportFlag... flags) {
             List<String> tos = Pattern.compile(",")
                     .splitAsStream(to)
                     .map(String::trim)
                     .collect(Collectors.toList());
-            this.exports.computeIfAbsent(exports, k -> new ArrayList<>()).addAll(tos);
-            content.append("    exports ").append(exports).append(" to ").append(to).append(LINE_END);
+            this.exports.computeIfAbsent(pkg, k -> new Export(pkg, computeMask(flags)))
+                    .to.addAll(tos);
+
+            content.append("    exports ");
+            for (ExportFlag flag : flags) {
+                content.append(flag.token).append(" ");
+            }
+            content.append(pkg).append(" to ").append(to).append(LINE_END);
             return this;
         }
 
-        public ModuleDescriptor provides(String provides, String with) {
-            this.provides.add(Pair.of(provides, with));
-            content.append("    provides ").append(provides).append(" with ").append(with).append(LINE_END);
+        public ModuleDescriptor provides(String provides, String... with) {
+            this.provides.put(provides, Arrays.asList(with));
+            content.append("    provides ")
+                    .append(provides)
+                    .append(" with ")
+                    .append(String.join(",", with))
+                    .append(LINE_END);
             return this;
         }
 
@@ -224,6 +303,13 @@ public class ModuleTestBase {
             tb.createDirectories(path);
             tb.writeJavaFiles(path, src);
             return this;
+        }
+
+        private int computeMask(Mask[] masks) {
+            return Arrays.stream(masks)
+                    .map(Mask::getMask)
+                    .reduce((a, b) -> a | b)
+                    .orElseGet(() -> 0);
         }
     }
 }

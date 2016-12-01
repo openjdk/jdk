@@ -25,6 +25,8 @@
 
 package com.sun.source.tree;
 
+import java.util.List;
+
 /**
  * A tree node for a 'provides' directive in a module declaration.
  *
@@ -43,8 +45,8 @@ public interface ProvidesTree extends DirectiveTree {
     ExpressionTree getServiceName();
 
     /**
-     * Returns the name of the implementation type being provided.
-     * @return the name of the implementation type being provided
+     * Returns the names of the implementation types being provided.
+     * @return the names of the implementation types being provided
      */
-    ExpressionTree getImplementationName();
+    List<? extends ExpressionTree> getImplementationNames();
 }

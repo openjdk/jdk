@@ -39,11 +39,12 @@ import java.util.List;
  * @since 9
  */
 public interface ExportsTree extends DirectiveTree {
+
     /**
      * Returns the name of the package to be exported.
      * @return  the name of the package to be exported
      */
-    ExpressionTree getExportName();
+    ExpressionTree getPackageName();
 
     /**
      * Returns the names of the modules to which the package is exported,
