@@ -20,22 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.io.DataInputStream;
-import java.io.IOException;
 
-/**
- * The reply to the JDWP CANREAD command
- */
-public class JdwpCanReadReply extends JdwpReply {
+package java.lang;
 
-    private boolean canRead;
+import java.util.ServiceLoader;
 
-    protected void parseData(DataInputStream ds) throws IOException {
-        canRead = (ds.read() != 0);
+public interface TestProvider {
+    public static Iterable<TestProvider> providers() {
+        return ServiceLoader.load(TestProvider.class);
     }
-
-    public boolean canRead() {
-        return canRead;
-    }
-
 }

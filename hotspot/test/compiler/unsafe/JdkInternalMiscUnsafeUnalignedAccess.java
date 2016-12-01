@@ -25,7 +25,7 @@
  * @test
  * @bug 8158260
  * @summary Test unaligned Unsafe accesses
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc:+open
  *
  * @run main/othervm -Diters=20000 -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
  *      compiler.unsafe.JdkInternalMiscUnsafeUnalignedAccess
