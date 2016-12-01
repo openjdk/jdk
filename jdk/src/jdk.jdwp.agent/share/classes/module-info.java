@@ -23,6 +23,9 @@
  * questions.
  */
 
+/**
+ * Java Debug Wire Protocol.
+ */
 module jdk.jdwp.agent {
 }
 

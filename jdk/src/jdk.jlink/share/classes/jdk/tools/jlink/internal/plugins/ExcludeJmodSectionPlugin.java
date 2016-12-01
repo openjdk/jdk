@@ -55,7 +55,7 @@ public final class ExcludeJmodSectionPlugin implements Plugin {
     public void configure(Map<String, String> config) {
         String arg = config.get(NAME);
         if (arg.isEmpty()) {
-            throw new PluginException("Section name must be specified");
+            throw new IllegalArgumentException("Section name must be specified");
         }
 
         switch (arg) {
@@ -66,7 +66,7 @@ public final class ExcludeJmodSectionPlugin implements Plugin {
                 filters.add(Type.HEADER_FILE);
                 break;
             default:
-                throw new PluginException("Invalid section name: " + arg);
+                throw new IllegalArgumentException("Invalid section name: " + arg);
         }
     }
 

@@ -26,6 +26,7 @@ package jdk.tools.jlink.internal.plugins;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.PathMatcher;
@@ -177,7 +178,7 @@ public final class OrderResourcesPlugin implements Plugin {
                     try {
                         lines = Files.readAllLines(file.toPath());
                     } catch (IOException ex) {
-                        throw new PluginException(ex);
+                        throw new UncheckedIOException(ex);
                     }
 
                     for (String line : lines) {

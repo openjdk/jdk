@@ -238,9 +238,4 @@ public class VMOption {
         }
 
     }
-
-    // for sun.management.MappedMXBeanType
-    static CompositeData toCompositeData(VMOption option) {
-        return VMOptionCompositeData.toCompositeData(option);
-    }
 }

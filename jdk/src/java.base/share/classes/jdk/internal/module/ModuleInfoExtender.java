@@ -53,8 +53,8 @@ public final class ModuleInfoExtender {
     // the input stream to read the original module-info.class
     private final InputStream in;
 
-    // the packages in the ConcealedPackages attribute
-    private Set<String> conceals;
+    // the packages in the Packages attribute
+    private Set<String> packages;
 
     // the value of the Version attribute
     private Version version;
@@ -75,10 +75,10 @@ public final class ModuleInfoExtender {
     }
 
     /**
-     * Sets the set of packages for the ConcealedPackages attribute
+     * Sets the set of packages for the Packages attribute
      */
-    public ModuleInfoExtender conceals(Set<String> packages) {
-        this.conceals = Collections.unmodifiableSet(packages);
+    public ModuleInfoExtender packages(Set<String> packages) {
+        this.packages = Collections.unmodifiableSet(packages);
         return this;
     }
 
@@ -181,26 +181,26 @@ public final class ModuleInfoExtender {
 
         ClassReader cr = new ClassReader(in);
 
-        if (conceals != null)
-            cv.addAttribute(new ConcealedPackagesAttribute(conceals));
+        if (packages != null)
+            cv.addAttribute(new ModulePackagesAttribute(packages));
         if (version != null)
-            cv.addAttribute(new VersionAttribute(version));
+            cv.addAttribute(new ModuleVersionAttribute(version));
         if (mainClass != null)
-            cv.addAttribute(new MainClassAttribute(mainClass));
+            cv.addAttribute(new ModuleMainClassAttribute(mainClass));
         if (osName != null || osArch != null || osVersion != null)
-            cv.addAttribute(new TargetPlatformAttribute(osName, osArch, osVersion));
+            cv.addAttribute(new ModuleTargetAttribute(osName, osArch, osVersion));
         if (hashes != null)
-            cv.addAttribute(new HashesAttribute(hashes));
+            cv.addAttribute(new ModuleHashesAttribute(hashes));
 
         List<Attribute> attrs = new ArrayList<>();
 
         // prototypes of attributes that should be parsed
         attrs.add(new ModuleAttribute());
-        attrs.add(new ConcealedPackagesAttribute());
-        attrs.add(new VersionAttribute());
-        attrs.add(new MainClassAttribute());
-        attrs.add(new TargetPlatformAttribute());
-        attrs.add(new HashesAttribute());
+        attrs.add(new ModulePackagesAttribute());
+        attrs.add(new ModuleVersionAttribute());
+        attrs.add(new ModuleMainClassAttribute());
+        attrs.add(new ModuleTargetAttribute());
+        attrs.add(new ModuleHashesAttribute());
 
         cr.accept(cv, attrs.toArray(new Attribute[0]), 0);
 

@@ -69,9 +69,17 @@ public class PriorityBlockingQueueTest extends JSR166TestCase {
     }
 
     public static Test suite() {
+        class Implementation implements CollectionImplementation {
+            public Class<?> klazz() { return PriorityBlockingQueue.class; }
+            public Collection emptyCollection() { return new PriorityBlockingQueue(); }
+            public Object makeElement(int i) { return i; }
+            public boolean isConcurrent() { return true; }
+            public boolean permitsNulls() { return false; }
+        }
         return newTestSuite(PriorityBlockingQueueTest.class,
                             new Generic().testSuite(),
-                            new InitialCapacity().testSuite());
+                            new InitialCapacity().testSuite(),
+                            CollectionTest.testSuite(new Implementation()));
     }
 
     /** Sample Comparator */
@@ -83,7 +91,7 @@ public class PriorityBlockingQueueTest extends JSR166TestCase {
 
     /**
      * Returns a new queue of given size containing consecutive
-     * Integers 0 ... n.
+     * Integers 0 ... n - 1.
      */
     private PriorityBlockingQueue<Integer> populatedQueue(int n) {
         PriorityBlockingQueue<Integer> q =
@@ -96,6 +104,7 @@ public class PriorityBlockingQueueTest extends JSR166TestCase {
         assertFalse(q.isEmpty());
         assertEquals(Integer.MAX_VALUE, q.remainingCapacity());
         assertEquals(n, q.size());
+        assertEquals((Integer) 0, q.peek());
         return q;
     }
 

@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -53,6 +54,7 @@ import jdk.internal.jimage.ImageReader;
 import jdk.internal.jimage.ImageReaderFactory;
 import jdk.internal.misc.JavaNetUriAccess;
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleHashes.HashSupplier;
 import jdk.internal.module.SystemModules;
@@ -64,7 +66,7 @@ import jdk.internal.perf.PerfCounter;
  * run-time image.
  *
  * The modules linked into the run-time image are assumed to have the
- * ConcealedPackages attribute.
+ * Packages attribute.
  */
 
 class SystemModuleFinder implements ModuleFinder {
@@ -102,8 +104,11 @@ class SystemModuleFinder implements ModuleFinder {
         int n = names.length;
         moduleCount.add(n);
 
-        Set<ModuleReference> mods = new HashSet<>(n);
-        Map<String, ModuleReference> map = new HashMap<>(n);
+        ModuleReference[] mods = new ModuleReference[n];
+
+        @SuppressWarnings(value = {"rawtypes", "unchecked"})
+        Entry<String, ModuleReference>[] map
+            = (Entry<String, ModuleReference>[])new Entry[n];
 
         for (int i = 0; i < n; i++) {
             ModuleDescriptor md = descriptors[i];
@@ -111,16 +116,16 @@ class SystemModuleFinder implements ModuleFinder {
             // create the ModuleReference
             ModuleReference mref = toModuleReference(md, hashSupplier(i, names[i]));
 
-            mods.add(mref);
-            map.put(names[i], mref);
+            mods[i] = mref;
+            map[i] = Map.entry(names[i], mref);
 
             // counters
             packageCount.add(md.packages().size());
             exportsCount.add(md.exports().size());
         }
 
-        modules = Collections.unmodifiableSet(mods);
-        nameToModule = map;
+        modules = Set.of(mods);
+        nameToModule = Map.ofEntries(map);
 
         initTime.addElapsedTimeFrom(t0);
     }
@@ -190,7 +195,7 @@ class SystemModuleFinder implements ModuleFinder {
             new ModuleReference(md, uri, readerSupplier, hash);
 
         // may need a reference to a patched module if --patch-module specified
-        mref = ModulePatcher.interposeIfNeeded(mref);
+        mref = ModuleBootstrap.patcher().patchIfNeeded(mref);
 
         return mref;
     }
@@ -199,7 +204,7 @@ class SystemModuleFinder implements ModuleFinder {
         if (isFastPathSupported()) {
             return new HashSupplier() {
                 @Override
-                public String generate(String algorithm) {
+                public byte[] generate(String algorithm) {
                     return SystemModules.MODULES_TO_HASH[index];
                 }
             };
@@ -213,7 +218,7 @@ class SystemModuleFinder implements ModuleFinder {
      * It will get the recorded hashes from module-info.class.
      */
     private static class Hashes {
-        static Map<String, String> hashes = new HashMap<>();
+        static Map<String, byte[]> hashes = new HashMap<>();
 
         static void add(ModuleDescriptor descriptor) {
             Optional<ModuleHashes> ohashes = descriptor.hashes();
@@ -228,7 +233,7 @@ class SystemModuleFinder implements ModuleFinder {
 
             return new HashSupplier() {
                 @Override
-                public String generate(String algorithm) {
+                public byte[] generate(String algorithm) {
                     return hashes.get(name);
                 }
             };

@@ -50,6 +50,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.loader.Resource;
@@ -59,7 +60,7 @@ import sun.net.www.ParseUtil;
 
 
 /**
- * Provides support for patching modules in the boot layer with --patch-module.
+ * Provides support for patching modules, mostly the boot layer.
  */
 
 public final class ModulePatcher {
@@ -67,88 +68,45 @@ public final class ModulePatcher {
     private static final JavaLangModuleAccess JLMA
         = SharedSecrets.getJavaLangModuleAccess();
 
-    // the prefix of the system properties that encode the value of --patch-module
-    private static final String PATCH_PROPERTY_PREFIX = "jdk.module.patch.";
-
     // module name -> sequence of patches (directories or JAR files)
-    private static final Map<String, List<Path>> PATCH_MAP = decodeProperties();
-
-    private ModulePatcher() { }
+    private final Map<String, List<Path>> map;
 
     /**
-     * Decodes the values of --patch-module options, returning a Map of module
-     * name to list of file paths.
-     *
-     * @throws IllegalArgumentException if the the module name is missing or
-     *         --patch-module is used more than once to patch the same module
+     * Initialize the module patcher with the given map. The map key is
+     * the module name, the value is a list of path strings.
      */
-    private static Map<String, List<Path>> decodeProperties() {
-
-        int index = 0;
-        String value = getAndRemoveProperty(PATCH_PROPERTY_PREFIX + index);
-        if (value == null)
-            return Collections.emptyMap();  // --patch-module not specified
-
-        Map<String, List<Path>> map = new HashMap<>();
-        while (value != null) {
-
-            // <module>=<file>(:<file>)*
-
-            int pos = value.indexOf('=');
-            if (pos == -1)
-                throwIAE("Unable to parse: " + value);
-            if (pos == 0)
-                throwIAE("Missing module name: " + value);
-
-            String mn = value.substring(0, pos);
-            List<Path> list = map.get(mn);
-            if (list != null)
-                throwIAE("Module " + mn + " specified more than once");
-            list = new ArrayList<>();
-            map.put(mn, list);
-
-            String paths = value.substring(pos+1);
-            for (String path : paths.split(File.pathSeparator)) {
-                if (!path.isEmpty()) {
-                    list.add(Paths.get(path));
-                }
+    public ModulePatcher(Map<String, List<String>> input) {
+        if (input.isEmpty()) {
+            this.map = Collections.emptyMap();
+        } else {
+            Map<String, List<Path>> map = new HashMap<>();
+            for (Map.Entry<String, List<String>> e : input.entrySet()) {
+                String mn = e.getKey();
+                List<Path> paths = e.getValue().stream()
+                        .map(Paths::get)
+                        .collect(Collectors.toList());
+                map.put(mn, paths);
             }
-
-            index++;
-            value = getAndRemoveProperty(PATCH_PROPERTY_PREFIX + index);
+            this.map = map;
         }
-
-        return map;
-    }
-
-
-    /**
-     * Returns {@code true} is --patch-module is specified to patch modules
-     * in the boot layer.
-     */
-    static boolean isBootLayerPatched() {
-        return !PATCH_MAP.isEmpty();
     }
 
     /**
      * Returns a module reference that interposes on the given module if
      * needed. If there are no patches for the given module then the module
      * reference is simply returned. Otherwise the patches for the module
-     * are scanned (to find any new concealed packages) and a new module
-     * reference is returned.
+     * are scanned (to find any new packages) and a new module reference is
+     * returned.
      *
      * @throws UncheckedIOException if an I/O error is detected
      */
-    public static ModuleReference interposeIfNeeded(ModuleReference mref) {
-
+    public ModuleReference patchIfNeeded(ModuleReference mref) {
+        // if there are no patches for the module then nothing to do
         ModuleDescriptor descriptor = mref.descriptor();
         String mn = descriptor.name();
-
-        // if there are no patches for the module then nothing to do
-        List<Path> paths = PATCH_MAP.get(mn);
+        List<Path> paths = map.get(mn);
         if (paths == null)
             return mref;
-
 
         // scan the JAR file or directory tree to get the set of packages
         Set<String> packages = new HashSet<>();
@@ -195,6 +153,13 @@ public final class ModulePatcher {
                                      location,
                                      () -> new PatchedModuleReader(paths, mref));
 
+    }
+
+    /**
+     * Returns true is this module patcher has no patches.
+     */
+    public boolean isEmpty() {
+        return map.isEmpty();
     }
 
 
@@ -569,13 +534,6 @@ public final class ModulePatcher {
     }
 
     /**
-     * Gets and remove the named system property
-     */
-    private static String getAndRemoveProperty(String key) {
-        return (String)System.getProperties().remove(key);
-    }
-
-    /**
      * Derives a package name from the name of an entry in a JAR file.
      */
     private static String toPackageName(Path file, JarEntry entry) {
@@ -593,9 +551,4 @@ public final class ModulePatcher {
             System.err.println("WARNING: " + e + " ignored in patch: " + file);
         return "";
     }
-
-    private static void throwIAE(String msg) {
-        throw new IllegalArgumentException(msg);
-    }
-
 }

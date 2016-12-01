@@ -115,15 +115,15 @@ module java.base {
     // additional qualified exports may be inserted at build time
     // see make/gensrc/GenModuleInfo.gmk
 
-    // CORBA serialization needs reflective access
-    exports sun.util.calendar to
-        java.corba;
-
     exports com.sun.security.ntlm to
         java.security.sasl;
     exports jdk.internal.jimage to
         jdk.jlink;
     exports jdk.internal.jimage.decompressor to
+        jdk.jlink;
+    exports jdk.internal.loader to
+        java.instrument,
+        java.logging,
         jdk.jlink;
     exports jdk.internal.jmod to
         jdk.compiler,
@@ -146,9 +146,6 @@ module java.base {
         jdk.scripting.nashorn;
     exports jdk.internal.org.objectweb.asm.signature to
         jdk.scripting.nashorn;
-    exports jdk.internal.loader to
-        java.instrument,
-        java.logging;
     exports jdk.internal.math to
         java.desktop;
     exports jdk.internal.module to
@@ -307,6 +304,7 @@ module java.base {
     // JDK-internal service types
     uses jdk.internal.logger.DefaultLoggerFinder;
     uses sun.security.ssl.ClientKeyExchangeService;
+    uses sun.security.util.AuthResourcesProvider;
     uses sun.util.spi.CalendarProvider;
     uses sun.util.locale.provider.LocaleDataMetaInfo;
     uses sun.util.resources.LocaleData.CommonResourceBundleProvider;
@@ -317,4 +315,6 @@ module java.base {
 
     provides java.nio.file.spi.FileSystemProvider with
         jdk.internal.jrtfs.JrtFileSystemProvider;
+    provides sun.security.util.AuthResourcesProvider with
+        sun.security.util.AuthResourcesProviderImpl;
 }

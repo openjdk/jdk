@@ -113,12 +113,16 @@ abstract class SystemImage {
         if (cs == null)
             return System.getProperty("java.home");
 
-        // assume loaded from $TARGETJDK/jrt-fs.jar
+        // assume loaded from $TARGETJDK/lib/jrt-fs.jar
         URL url = cs.getLocation();
         if (!url.getProtocol().equalsIgnoreCase("file"))
-            throw new RuntimeException(url + " loaded in unexpected way");
+            throw new InternalError(url + " loaded in unexpected way");
         try {
-            return Paths.get(url.toURI()).getParent().toString();
+            Path lib = Paths.get(url.toURI()).getParent();
+            if (!lib.getFileName().toString().equals("lib"))
+                throw new InternalError(url + " unexpected path");
+
+            return lib.getParent().toString();
         } catch (URISyntaxException e) {
             throw new InternalError(e);
         }

@@ -24,8 +24,8 @@
  */
 
 module jdk.jconsole {
-    requires public java.desktop;
-    requires public java.management;
+    requires transitive java.desktop;
+    requires transitive java.management;
     requires java.logging;
     requires java.rmi;
     requires jdk.attach;

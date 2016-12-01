@@ -36,6 +36,7 @@
  * @bug 8022642 8065320 8129861
  * @summary Ensure relative sanity when zero core threads
  * @library /lib/testlibrary/
+ * @modules java.base/java.util.concurrent:open
  */
 
 import static java.util.concurrent.TimeUnit.HOURS;

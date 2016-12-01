@@ -421,7 +421,15 @@ public final class TaskHelper {
                 // we call configure once for each occurrence. It is upto the plugin
                 // to 'merge' and/or 'override' arguments.
                 for (Map<String, String> map : argsMaps) {
-                    plugin.configure(Collections.unmodifiableMap(map));
+                    try {
+                        plugin.configure(Collections.unmodifiableMap(map));
+                    } catch (IllegalArgumentException e) {
+                        if (JlinkTask.DEBUG) {
+                            System.err.println("Plugin " + plugin.getName() + " threw exception with config: " + map);
+                            e.printStackTrace();
+                        }
+                        throw e;
+                    }
                 }
 
                 if (!Utils.isDisabled(plugin)) {

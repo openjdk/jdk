@@ -77,6 +77,10 @@ import jdk.internal.reflect.Reflection;
  * guarantee atomicity only with respect to other invocations of
  * {@code compareAndSet} and {@code set} on the same updater.
  *
+ * <p>Object arguments for parameters of type {@code T} that are not
+ * instances of the class passed to {@link #newUpdater} will result in
+ * a {@link ClassCastException} being thrown.
+ *
  * @since 1.5
  * @author Doug Lea
  * @param <T> The type of the object holding the updatable field

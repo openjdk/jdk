@@ -51,6 +51,7 @@ import java.util.zip.ZipFile;
 import jdk.internal.jmod.JmodFile;
 import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleHashes.HashSupplier;
 import jdk.internal.module.ModulePatcher;
@@ -80,9 +81,8 @@ class ModuleReferences {
                                              HashSupplier hasher) {
 
         ModuleReference mref = new ModuleReference(md, uri, supplier, hasher);
-
         if (JLA.getBootLayer() == null)
-            mref = ModulePatcher.interposeIfNeeded(mref);
+            mref = ModuleBootstrap.patcher().patchIfNeeded(mref);
 
         return mref;
     }
@@ -93,7 +93,7 @@ class ModuleReferences {
     static ModuleReference newJarModule(ModuleDescriptor md, Path file) {
         URI uri = file.toUri();
         Supplier<ModuleReader> supplier = () -> new JarModuleReader(file, uri);
-        HashSupplier hasher = (a) -> ModuleHashes.computeHashAsString(file, a);
+        HashSupplier hasher = (a) -> ModuleHashes.computeHash(file, a);
         return newModule(md, uri, supplier, hasher);
     }
 
@@ -103,7 +103,7 @@ class ModuleReferences {
     static ModuleReference newJModModule(ModuleDescriptor md, Path file) {
         URI uri = file.toUri();
         Supplier<ModuleReader> supplier = () -> new JModModuleReader(file, uri);
-        HashSupplier hasher = (a) -> ModuleHashes.computeHashAsString(file, a);
+        HashSupplier hasher = (a) -> ModuleHashes.computeHash(file, a);
         return newModule(md, file.toUri(), supplier, hasher);
     }
 
