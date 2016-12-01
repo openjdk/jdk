@@ -61,7 +61,7 @@ public class Serialization {
                 Option.SRC.arg, "root",
                 Option.SOURCEPATH.arg, "sourcepath",
                 Option.CLASSPATH.arg, "classpath",
-                Option.MODULEPATH.arg, "modulepath",
+                Option.MODULE_PATH.arg, "modulepath",
                 Option.PERMIT_SOURCES_WITHOUT_PACKAGE.arg,
                 Option.PERMIT_UNIDENTIFIED_ARTIFACTS.arg,
                 Option.TR.arg, ".prop=" + CompileJavaPackages.class.getName(),

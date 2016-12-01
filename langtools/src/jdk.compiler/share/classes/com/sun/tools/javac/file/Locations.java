@@ -1091,7 +1091,8 @@ public class Locations {
                     }
 
                     // finally clean up the module name
-                    mn =  mn.replaceAll("[^A-Za-z0-9]", ".")  // replace non-alphanumeric
+                    mn =  mn.replaceAll("(\\.|\\d)*$", "")    // remove trailing version
+                            .replaceAll("[^A-Za-z0-9]", ".")  // replace non-alphanumeric
                             .replaceAll("(\\.)(\\1)+", ".")   // collapse repeating dots
                             .replaceAll("^\\.", "")           // drop leading dots
                             .replaceAll("\\.$", "");          // drop trailing dots
@@ -1396,7 +1397,8 @@ public class Locations {
         }
 
         private void update(Path p) {
-            if (!isCurrentPlatform(p) && !Files.exists(p.resolve("jrt-fs.jar")) && !Files.exists(systemJavaHome.resolve("modules")))
+            if (!isCurrentPlatform(p) && !Files.exists(p.resolve("lib").resolve("jrt-fs.jar")) &&
+                    !Files.exists(systemJavaHome.resolve("modules")))
                 throw new IllegalArgumentException(p.toString());
             systemJavaHome = p;
             modules = null;

@@ -294,9 +294,19 @@ public class Flags {
     public static final long SYSTEM_MODULE = 1L<<53;
 
     /**
+     * Flag to indicate the given symbol has a @Deprecated annotation.
+     */
+    public static final long DEPRECATED_ANNOTATION = 1L<<54;
+
+    /**
      * Flag to indicate the given symbol has been deprecated and marked for removal.
      */
-    public static final long DEPRECATED_REMOVAL = 1L<<54;
+    public static final long DEPRECATED_REMOVAL = 1L<<55;
+
+    /**
+     * Flag to indicate the given PackageSymbol contains any non-.java and non-.class resources.
+     */
+    public static final long HAS_RESOURCE = 1L<<56;
 
     /** Modifier masks.
      */
@@ -408,7 +418,11 @@ public class Flags {
         LAMBDA_METHOD(Flags.LAMBDA_METHOD),
         TYPE_TRANSLATED(Flags.TYPE_TRANSLATED),
         MODULE(Flags.MODULE),
-        DEPRECATED_REMOVAL(Flags.DEPRECATED_REMOVAL);
+        AUTOMATIC_MODULE(Flags.AUTOMATIC_MODULE),
+        SYSTEM_MODULE(Flags.SYSTEM_MODULE),
+        DEPRECATED_ANNOTATION(Flags.DEPRECATED_ANNOTATION),
+        DEPRECATED_REMOVAL(Flags.DEPRECATED_REMOVAL),
+        HAS_RESOURCE(Flags.HAS_RESOURCE);
 
         Flag(long flag) {
             this.value = flag;

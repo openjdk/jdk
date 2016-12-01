@@ -54,7 +54,7 @@ public class CheckModuleTest {
 
     // m4 and m5 are analyzed.  Others are compiled to make sure they are present
     // on the module path for analysis
-    private static final Set<String> modules = Set.of("unsafe", "m4", "m5", "m6", "m7", "m8");
+    private static final Set<String> modules = Set.of("unsafe", "m4", "m5", "mVI", "mVII", "m8");
 
     private static final String JAVA_BASE = "java.base";
 
@@ -100,10 +100,10 @@ public class CheckModuleTest {
             { "m4", new ModuleMetaData[] {
                         // original
                         new ModuleMetaData("m4")
-                            .requiresPublic("java.compiler")
+                            .requiresTransitive("java.compiler")
                             .requires("java.logging")
                             // unnused exports
-                            .exports("p4.internal", Set.of("m6", "m7")),
+                            .exports("p4.internal", Set.of("mVI", "mVII")),
                         // suggested version
                         new ModuleMetaData("m4")
                             .requires("java.compiler"),
@@ -115,21 +115,21 @@ public class CheckModuleTest {
             { "m5", new ModuleMetaData[] {
                         // original
                         new ModuleMetaData("m5")
-                            .requiresPublic("java.compiler")
-                            .requiresPublic("java.logging")
+                            .requiresTransitive("java.compiler")
+                            .requiresTransitive("java.logging")
                             .requires("java.sql")
-                            .requiresPublic("m4"),
+                            .requiresTransitive("m4"),
                         // suggested version
                         new ModuleMetaData("m5")
-                            .requiresPublic("java.compiler")
+                            .requiresTransitive("java.compiler")
                             .requires("java.logging")
-                            .requiresPublic("java.sql")
-                            .requiresPublic("m4"),
+                            .requiresTransitive("java.sql")
+                            .requiresTransitive("m4"),
                         // reduced version
                         new ModuleMetaData("m5")
-                            .requiresPublic("java.compiler")
-                            .requiresPublic("java.sql")
-                            .requiresPublic("m4"),
+                            .requiresTransitive("java.compiler")
+                            .requiresTransitive("java.sql")
+                            .requiresTransitive("m4"),
                     }
             },
         };

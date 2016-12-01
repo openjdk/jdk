@@ -37,6 +37,7 @@ import com.sun.tools.classfile.Dependency.Location;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -175,6 +176,9 @@ class DependencyFinder {
             public Set<Location> call() throws Exception {
                 Set<Location> targets = new HashSet<>();
                 for (ClassFile cf : archive.reader().getClassFiles()) {
+                    if (cf.access_flags.is(AccessFlags.ACC_MODULE))
+                        continue;
+
                     String classFileName;
                     try {
                         classFileName = cf.getName();
@@ -216,8 +220,12 @@ class DependencyFinder {
     {
         ClassFile cf = archive.reader().getClassFile(name);
         if (cf == null) {
-            throw new IllegalArgumentException(archive.getName() + " does not contain " + name);
+            throw new IllegalArgumentException(archive.getName() +
+                " does not contain " + name);
         }
+
+        if (cf.access_flags.is(AccessFlags.ACC_MODULE))
+            return Collections.emptySet();
 
         Set<Location> targets = new HashSet<>();
         String cn;

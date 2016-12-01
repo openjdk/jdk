@@ -25,7 +25,7 @@
  * @test
  * @bug 8072480
  * @summary Verify option clash between --release and -source is reported correctly.
- * @modules jdk.compiler/com.sun.tools.javac.util
+ * @modules jdk.compiler/com.sun.tools.javac.util:open
  */
 
 import java.io.ByteArrayOutputStream;

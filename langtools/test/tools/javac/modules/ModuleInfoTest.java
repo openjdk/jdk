@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8158123
+ * @bug 8158123 8161906 8162713
  * @summary tests for module declarations
  * @library /tools/lib
  * @modules
@@ -34,6 +34,7 @@
  * @run main ModuleInfoTest
  */
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -203,12 +204,12 @@ public class ModuleInfoTest extends ModuleTestBase {
      * Verify that a multi-module loop is detected.
      */
     @Test
-    public void testRequiresPublicLoop(Path base) throws Exception {
+    public void testRequiresTransitiveLoop(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         tb.writeFile(src_m1.resolve("module-info.java"), "module m1 { requires m2; }");
         Path src_m2 = src.resolve("m2");
-        tb.writeFile(src_m2.resolve("module-info.java"), "module m2 { requires public m3; }");
+        tb.writeFile(src_m2.resolve("module-info.java"), "module m2 { requires transitive m3; }");
         Path src_m3 = src.resolve("m3");
         tb.writeFile(src_m3.resolve("module-info.java"), "module m3 { requires m1; }");
 
@@ -223,7 +224,7 @@ public class ModuleInfoTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("module-info.java:1:29: compiler.err.cyclic.requires: m3"))
+        if (!log.contains("module-info.java:1:33: compiler.err.cyclic.requires: m3"))
             throw new Exception("expected output not found");
     }
 
@@ -254,36 +255,15 @@ public class ModuleInfoTest extends ModuleTestBase {
     }
 
     /**
-     * Verify that duplicate exported packages are detected.
+     * Verify that duplicate requires are detected.
      */
     @Test
-    public void testDuplicateExports_packages(Path base) throws Exception {
+    public void testDuplicateRequiresTransitiveStatic(Path base) throws Exception {
         Path src = base.resolve("src");
-        tb.writeJavaFiles(src, "module m1 { exports p; exports p; }");
-
-        Path classes = base.resolve("classes");
-        Files.createDirectories(classes);
-
-        String log = new JavacTask(tb)
-                .options("-XDrawDiagnostics")
-                .outdir(classes)
-                .files(findJavaFiles(src))
-                .run(Task.Expect.FAIL)
-                .writeAll()
-                .getOutput(Task.OutputKind.DIRECT);
-
-        if (!log.contains("module-info.java:1:32: compiler.err.duplicate.exports: p"))
-            throw new Exception("expected output not found");
-    }
-
-    /**
-     * Verify that duplicate exported packages are detected.
-     */
-    @Test
-    public void testDuplicateExports_packages2(Path base) throws Exception {
-        Path src = base.resolve("src");
-        tb.writeJavaFiles(src.resolve("m1"), "module m1 { exports p; exports p to m2; }");
-        tb.writeJavaFiles(src.resolve("m2"), "module m2 { }");
+        Path src_m1 = src.resolve("m1");
+        tb.writeFile(src_m1.resolve("module-info.java"), "module m1 { }");
+        Path src_m2 = src.resolve("m2");
+        tb.writeFile(src_m2.resolve("module-info.java"), "module m2 { requires transitive m1; requires static m1; }");
 
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
@@ -296,15 +276,115 @@ public class ModuleInfoTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("module-info.java:1:32: compiler.err.duplicate.exports: p"))
+        if (!log.contains("module-info.java:1:53: compiler.err.duplicate.requires: m1"))
             throw new Exception("expected output not found");
+    }
+
+    /**
+     * Verify that duplicate exported packages are detected correctly.
+     */
+    @Test
+    public void testConflictingExports_packages(Path base) throws Exception {
+        verifyConflictingExports_packages(base,
+                                          "exports p; exports q;",
+                                          null);
+        verifyConflictingExports_packages(base,
+                                          "exports p; exports p;",
+                                          "module-info.java:1:32: compiler.err.conflicting.exports: p");
+        verifyConflictingExports_packages(base,
+                                          "exports p; opens p;",
+                                          null);
+        verifyConflictingExports_packages(base,
+                                          "exports p; exports p to m2;",
+                                          "module-info.java:1:32: compiler.err.conflicting.exports: p");
+        verifyConflictingExports_packages(base,
+                                          "exports p; opens p to m2;",
+                                          null);
+        verifyConflictingExports_packages(base,
+                                          "opens p; exports p;",
+                                          null);
+        verifyConflictingExports_packages(base,
+                                          "opens p; opens p;",
+                                          "module-info.java:1:28: compiler.err.conflicting.opens: p");
+        verifyConflictingExports_packages(base,
+                                          "opens p; exports p to m2;",
+                                          null);
+        verifyConflictingExports_packages(base,
+                                          "opens p; opens p to m2;",
+                                          "module-info.java:1:28: compiler.err.conflicting.opens: p");
+        verifyConflictingExports_packages(base,
+                                          "exports p to m2; exports p;",
+                                          "module-info.java:1:38: compiler.err.conflicting.exports: p");
+        verifyConflictingExports_packages(base,
+                                          "exports p to m2; opens p;",
+                                          null);
+        verifyConflictingExports_packages(base,
+                                          "exports p to m2; exports p to m2;",
+                                          "module-info.java:1:43: compiler.err.conflicting.exports.to.module: m2");
+        verifyConflictingExports_packages(base,
+                                          "exports p to m2; opens p to m2;",
+                                          null);
+        verifyConflictingExports_packages(base,
+                                          "opens p to m2; exports p;",
+                                          null);
+        verifyConflictingExports_packages(base,
+                                          "opens p to m2; opens p;",
+                                          "module-info.java:1:34: compiler.err.conflicting.opens: p");
+        verifyConflictingExports_packages(base,
+                                          "opens p to m2; exports p to m2;",
+                                          null);
+        verifyConflictingExports_packages(base,
+                                          "opens p to m2; opens p to m2;",
+                                          "module-info.java:1:34: compiler.err.conflicting.opens: p");
+        verifyConflictingExports_packages(base,
+                                          "exports p to m2; exports p to m3;",
+                                          "module-info.java:1:38: compiler.err.conflicting.exports: p");
+        verifyConflictingExports_packages(base,
+                                          "exports p to m2; opens p to m3;",
+                                          null);
+        verifyConflictingExports_packages(base,
+                                          "opens p to m2; exports p to m3;",
+                                          null);
+        verifyConflictingExports_packages(base,
+                                          "opens p to m2; opens p to m3;",
+                                          "module-info.java:1:34: compiler.err.conflicting.opens: p");
+    }
+
+    private void verifyConflictingExports_packages(Path base, String code, String expected) throws Exception {
+        Files.createDirectories(base);
+        tb.cleanDirectory(base);
+
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src.resolve("m1"),
+                          "module m1 { " + code + " }",
+                          "package p; public class P {}",
+                          "package q; public class Q {}");
+        tb.writeJavaFiles(src.resolve("m2"),
+                          "module m2 { requires m1; }");
+        tb.writeJavaFiles(src.resolve("m3"),
+                          "module m3 { requires m1; }");
+
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+
+        String log = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "--module-source-path", src.toString())
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(expected != null ? Task.Expect.FAIL : Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        if (expected != null && !log.contains(expected))
+            throw new Exception("expected output not found, actual output: " + log);
     }
 
     /**
      * Verify that duplicate exported packages are detected.
      */
     @Test
-    public void testDuplicateExports_modules(Path base) throws Exception {
+    public void testConflictingExports_modules(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         tb.writeFile(src_m1.resolve("module-info.java"), "module m1 { }");
@@ -322,7 +402,7 @@ public class ModuleInfoTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("module-info.java:1:30: compiler.err.duplicate.exports: m1"))
+        if (!log.contains("module-info.java:1:30: compiler.err.conflicting.exports.to.module: m1"))
             throw new Exception("expected output not found");
     }
 
@@ -363,8 +443,12 @@ public class ModuleInfoTest extends ModuleTestBase {
                     .writeAll()
                     .getOutput(Task.OutputKind.DIRECT);
 
-            if (!log.matches("(?s)^module\\-info\\.java:\\d+:\\d+: compiler\\.err\\.expected: token\\.identifier.*"))
-                throw new Exception("expected output not found");
+            String expect_prefix = "(?s)^module\\-info\\.java:\\d+:\\d+: ";
+            String expect_message = "compiler\\.err\\.expected: token\\.identifier";
+            String expect_suffix = ".*";
+            String expect = expect_prefix + expect_message + expect_suffix;
+            if (!log.matches(expect))
+                throw new Exception("expected output not found for: " + moduleInfo + "; actual: " + log);
         }
     }
 }

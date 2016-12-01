@@ -110,7 +110,7 @@
  *        by including some or all of the modules dependencies. The value may be
  *        one of:
  *   <ul>
- *     <li> public -- each module specified explicitly on the command line is
+ *     <li> transitive -- each module specified explicitly on the command line is
  *          expanded to include the closure of its transitive dependencies
  *     <li> all    -- each module specified explicitly on the command line
  *          is expanded to include the closure of its transitive dependencies,

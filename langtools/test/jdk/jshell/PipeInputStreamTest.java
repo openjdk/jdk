@@ -25,7 +25,7 @@
  * @test 8167461
  * @summary Verify PipeInputStream works.
  * @modules jdk.compiler/com.sun.tools.javac.util
- *          jdk.jshell
+ *          jdk.jshell/jdk.jshell.execution:open
  * @run testng PipeInputStreamTest
  */
 

@@ -388,10 +388,10 @@ public final class Graph<T> {
         }
 
         static void printEdges(PrintWriter out, Graph<String> graph,
-                               String node, Set<String> requiresPublic) {
+                               String node, Set<String> requiresTransitive) {
             graph.adjacentNodes(node).forEach(dn -> {
                 String attr = dn.equals("java.base") ? REQUIRES_BASE
-                        : (requiresPublic.contains(dn) ? REEXPORTS : REQUIRES);
+                        : (requiresTransitive.contains(dn) ? REEXPORTS : REQUIRES);
                 out.format("  \"%s\" -> \"%s\" [%s];%n", node, dn, attr);
             });
         }

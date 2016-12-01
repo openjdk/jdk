@@ -55,19 +55,19 @@ public class GraphsTest extends ModuleTestBase {
 
     /**
      * Tests diamond graph with an automatic module added in.
-     * +-------------+          +--------------------+         +------------------+
-     * | module M    |          | module N           |         | module O         |
-     * |             | ----->   |                    | --->    |                  |  --> J.jar
-     * | require N   |          | requires public  O |         |                  |
-     * | require L   |          |                    |         +------------------+
-     * +-------------+          +--------------------+                  ^
+     * +-------------+          +-----------------------+         +------------------+
+     * | module M    |          | module N              |         | module O         |
+     * |             | ----->   |                       | --->    |                  |  --> J.jar
+     * | require N   |          | requires transitive O |         |                  |
+     * | require L   |          |                       |         +------------------+
+     * +-------------+          +-----------------------+                  ^
      *       |                                                          |
-     *       |                  +--------------------+                  |
-     *       ------------------>| module L           |                  |
-     *                          |                    |------------------
-     *                          | requires public O  |
-     *                          |                    |
-     *                          +--------------------+
+     *       |                  +-----------------------+                  |
+     *       ------------------>| module L              |                  |
+     *                          |                       |------------------
+     *                          | requires transitive O |
+     *                          |                       |
+     *                          +-----------------------+
      *
      */
     @Test
@@ -92,18 +92,18 @@ public class GraphsTest extends ModuleTestBase {
 
         new ModuleBuilder(tb, "O")
                 .exports("openO")
-                .requiresPublic("J", jarModules)
+                .requiresTransitive("J", jarModules)
                 .classes("package openO; public class O { openJ.J j; }")
                 .classes("package closedO; public class O { }")
                 .build(modSrc, modules);
         new ModuleBuilder(tb, "N")
-                .requiresPublic("O", modules, jarModules)
+                .requiresTransitive("O", modules, jarModules)
                 .exports("openN")
                 .classes("package openN; public class N { }")
                 .classes("package closedN; public class N { }")
                 .build(modSrc, modules);
         new ModuleBuilder(tb, "L")
-                .requiresPublic("O", modules, jarModules)
+                .requiresTransitive("O", modules, jarModules)
                 .exports("openL")
                 .classes("package openL; public class L { }")
                 .classes("package closedL; public class L { }")
@@ -171,18 +171,18 @@ public class GraphsTest extends ModuleTestBase {
     /**
      * Tests graph where module M reexport package of N, but N export the package only to M.
      *
-    +-------------+        +--------------------+        +---------------+
-    | module L    |        | module M           |        | module N      |
-    |             | -----> |                    | -----> |               |
-    |  requires M |        |  requires public N |        | exports P to M|
-    +-------------+        |                    |        +---------------+
-                           +--------------------+
+    +-------------+        +------------------------+        +---------------+
+    | module L    |        | module M               |        | module N      |
+    |             | -----> |                        | -----> |               |
+    |  requires M |        |  requires transitive N |        | exports P to M|
+    +-------------+        |                        |        +---------------+
+                           +------------------------+
     */
     @Test
     public void reexportOfQualifiedExport(Path base) throws Exception {
         Path modSrc = base.resolve("modSrc");
         new ModuleBuilder(tb, "M")
-                .requiresPublic("N")
+                .requiresTransitive("N")
                 .write(modSrc);
         new ModuleBuilder(tb, "N")
                 .exportsTo("pack", "M")
