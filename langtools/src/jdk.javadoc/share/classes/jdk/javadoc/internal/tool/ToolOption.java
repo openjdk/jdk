@@ -480,7 +480,7 @@ public enum ToolOption {
 
         void setExpandRequires(ToolOption opt, String arg) throws OptionException {
             switch (arg) {
-                case "public":
+                case "transitive":
                     jdtoolOpts.put(opt, AccessKind.PUBLIC);
                     break;
                 case "all":

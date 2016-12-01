@@ -114,6 +114,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      *
      * @param heading the heading for the section
      */
+    @Override
     public Content getModuleHeader(String heading) {
         HtmlTree bodyTree = getBody(true, getWindowTitle(mdle.getQualifiedName().toString()));
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
@@ -126,6 +127,9 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         }
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.header);
+        Content annotationContent = new HtmlTree(HtmlTag.P);
+        addAnnotationInfo(mdle, annotationContent);
+        div.addContent(annotationContent);
         Content tHeading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
                 HtmlStyle.title, contents.moduleLabel);
         tHeading.addContent(Contents.SPACE);
@@ -143,6 +147,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     /**
      * Get the content header.
      */
+    @Override
     public Content getContentHeader() {
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.contentContainer);
@@ -152,6 +157,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     /**
      * Get the summary section header.
      */
+    @Override
     public Content getSummaryHeader() {
         HtmlTree li = new HtmlTree(HtmlTag.LI);
         li.addStyle(HtmlStyle.blockList);
@@ -163,6 +169,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      *
      * @param summaryContentTree the content tree to be added to the summary tree.
      */
+    @Override
     public Content getSummaryTree(Content summaryContentTree) {
         HtmlTree ul = HtmlTree.UL(HtmlStyle.blockList, summaryContentTree);
         return ul;
@@ -225,7 +232,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * Add the list of directives for the module.
      *
      * @param dirs the list of module directives
-     * @params tbody the content tree to which the list is added
+     * @param tbody the content tree to which the list is added
      */
     public void addList(List<ModuleElement.Directive> dirs, Content tbody) {
         boolean altColor = true;
@@ -237,6 +244,9 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                     break;
                 case EXPORTS:
                     addExportedPackagesList((ModuleElement.ExportsDirective) direct, tbody, altColor);
+                    break;
+                case OPENS:
+                    //XXX ignore for now
                     break;
                 case USES:
                     addUsesList((ModuleElement.UsesDirective) direct, tbody, altColor);
@@ -254,6 +264,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addModulesSummary(Content summaryContentTree) {
         List<ModuleElement.Directive> dirs = directiveMap.get(DirectiveKind.REQUIRES);
         if (dirs != null && !dirs.isEmpty()) {
@@ -307,6 +318,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addPackagesSummary(Content summaryContentTree) {
         List<ModuleElement.Directive> dirs = directiveMap.get(DirectiveKind.EXPORTS);
         if (dirs != null && !dirs.isEmpty()) {
@@ -376,6 +388,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addServicesSummary(Content summaryContentTree) {
         List<ModuleElement.Directive> usesDirs = directiveMap.get(DirectiveKind.USES);
         List<ModuleElement.Directive> providesDirs = directiveMap.get(DirectiveKind.PROVIDES);
@@ -459,33 +472,60 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param altColor true if altColor style should be used or false if rowColor style should be used
      */
     public void addProvidesList(ModuleElement.ProvidesDirective direct, Content tbody, boolean altColor) {
-        TypeElement impl = direct.getImplementation();
-        TypeElement srv = direct.getService();
-        Content implLinkContent = getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.PACKAGE, impl));
-        Content srvLinkContent = getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.PACKAGE, srv));
-        HtmlTree thType = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, srvLinkContent);
-        thType.addContent(new HtmlTree(HtmlTag.BR));
-        thType.addContent("(");
-        HtmlTree implSpan = HtmlTree.SPAN(HtmlStyle.implementationLabel, contents.implementation);
-        thType.addContent(implSpan);
-        thType.addContent(Contents.SPACE);
-        thType.addContent(implLinkContent);
-        thType.addContent(")");
-        HtmlTree tdDesc = new HtmlTree(HtmlTag.TD);
-        tdDesc.addStyle(HtmlStyle.colLast);
-        addSummaryComment(srv, tdDesc);
-        HtmlTree tr = HtmlTree.TR(thType);
-        tr.addContent(tdDesc);
-        tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
-        tbody.addContent(tr);
+        List<? extends TypeElement> impls = direct.getImplementations();
+        for (TypeElement impl : impls) {
+            TypeElement srv = direct.getService();
+            Content implLinkContent = getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.PACKAGE, impl));
+            Content srvLinkContent = getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.PACKAGE, srv));
+            HtmlTree thType = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, srvLinkContent);
+            thType.addContent(new HtmlTree(HtmlTag.BR));
+            thType.addContent("(");
+            HtmlTree implSpan = HtmlTree.SPAN(HtmlStyle.implementationLabel, contents.implementation);
+            thType.addContent(implSpan);
+            thType.addContent(Contents.SPACE);
+            thType.addContent(implLinkContent);
+            thType.addContent(")");
+            HtmlTree tdDesc = new HtmlTree(HtmlTag.TD);
+            tdDesc.addStyle(HtmlStyle.colLast);
+            addSummaryComment(srv, tdDesc);
+            HtmlTree tr = HtmlTree.TR(thType);
+            tr.addContent(tdDesc);
+            tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
+            tbody.addContent(tr);
+        }
+    }
+
+    /**
+     * Add the module deprecation information to the documentation tree.
+     *
+     * @param div the content tree to which the deprecation information will be added
+     */
+    public void addDeprecationInfo(Content div) {
+        List<? extends DocTree> deprs = utils.getBlockTags(mdle, DocTree.Kind.DEPRECATED);
+        if (utils.isDeprecated(mdle)) {
+            CommentHelper ch = utils.getCommentHelper(mdle);
+            HtmlTree deprDiv = new HtmlTree(HtmlTag.DIV);
+            deprDiv.addStyle(HtmlStyle.deprecatedContent);
+            Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, contents.deprecatedPhrase);
+            deprDiv.addContent(deprPhrase);
+            if (!deprs.isEmpty()) {
+                List<? extends DocTree> commentTags = ch.getDescription(configuration, deprs.get(0));
+                if (!commentTags.isEmpty()) {
+                    addInlineDeprecatedComment(mdle, deprs.get(0), deprDiv);
+                }
+            }
+            div.addContent(deprDiv);
+        }
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addModuleDescription(Content moduleContentTree) {
         if (!utils.getFullBody(mdle).isEmpty()) {
             Content tree = configuration.allowTag(HtmlTag.SECTION) ? HtmlTree.SECTION() : moduleContentTree;
+            addDeprecationInfo(tree);
             tree.addContent(HtmlConstants.START_OF_MODULE_DESCRIPTION);
             tree.addContent(getMarkerAnchor(SectionName.MODULE_DESCRIPTION));
             addInlineComment(mdle, tree);
@@ -498,6 +538,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addModuleTags(Content moduleContentTree) {
         Content tree = (configuration.allowTag(HtmlTag.SECTION))
                 ? HtmlTree.SECTION()
@@ -513,6 +554,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      *
      * @param subDiv the content tree to which the summary detail links will be added
      */
+    @Override
     protected void addSummaryDetailLinks(Content subDiv) {
         Content div = HtmlTree.DIV(getNavSummaryLinks());
         subDiv.addContent(div);
@@ -560,6 +602,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addModuleContent(Content contentTree, Content moduleContentTree) {
         if (configuration.allowTag(HtmlTag.MAIN)) {
             mainTree.addContent(moduleContentTree);
@@ -572,6 +615,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addModuleFooter(Content contentTree) {
         Content htmlTree = (configuration.allowTag(HtmlTag.FOOTER))
                 ? HtmlTree.FOOTER()
@@ -633,6 +677,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      *
      * @return a content tree for the previous link
      */
+    @Override
     public Content getNavLinkPrevious() {
         Content li;
         if (prevModule == null) {
@@ -649,6 +694,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      *
      * @return a content tree for the next link
      */
+    @Override
     public Content getNavLinkNext() {
         Content li;
         if (nextModule == null) {

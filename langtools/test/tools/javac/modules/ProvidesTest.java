@@ -41,7 +41,6 @@ import java.util.List;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.Task.Expect;
-import toolbox.ToolBox;
 
 public class ProvidesTest extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -425,5 +424,97 @@ public class ProvidesTest extends ModuleTestBase {
                 .files(findJavaFiles(src))
                 .run(Expect.SUCCESS)
                 .writeAll();
+    }
+
+    @Test
+    public void testFactory(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                "module m { exports p1; provides p1.C1 with p2.C2; }",
+                "package p1; public interface C1 { }",
+                "package p2; public class C2 { public static p1.C1 provider() { return null; } }");
+
+        new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .outdir(Files.createDirectories(base.resolve("classes")))
+                .files(findJavaFiles(src))
+                .run()
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        List<String> output;
+        List<String> expected;
+
+        tb.writeJavaFiles(src,
+                "package p2; public class C2 { public p1.C1 provider() { return null; } }");
+
+        output = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .outdir(Files.createDirectories(base.resolve("classes")))
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        expected = Arrays.asList("module-info.java:1:46: compiler.err.service.implementation.must.be.subtype.of.service.interface",
+                                 "1 error");
+
+        if (!expected.equals(output)) {
+            throw new Exception("Expected output not found. Output: " + output);
+        }
+
+        tb.writeJavaFiles(src,
+                "package p2; public class C2 { static p1.C1 provider() { return null; } }");
+
+        output = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .outdir(Files.createDirectories(base.resolve("classes")))
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        expected = Arrays.asList("module-info.java:1:46: compiler.err.service.implementation.must.be.subtype.of.service.interface",
+                                 "1 error");
+
+        if (!expected.equals(output)) {
+            throw new Exception("Expected output not found. Output: " + output);
+        }
+
+        tb.writeJavaFiles(src,
+                "package p2; public class C2 { public static Object provider() { return null; } }");
+
+        output = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .outdir(Files.createDirectories(base.resolve("classes")))
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        expected = Arrays.asList("module-info.java:1:46: compiler.err.service.implementation.provider.return.must.be.subtype.of.service.interface",
+                                 "1 error");
+
+        if (!expected.equals(output)) {
+            throw new Exception("Expected output not found. Output: " + output);
+        }
+
+        tb.writeJavaFiles(src,
+                "package p2; public class C2 { public static p1.C1 provider = new p1.C1() {}; }");
+
+        output = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .outdir(Files.createDirectories(base.resolve("classes")))
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        expected = Arrays.asList("module-info.java:1:46: compiler.err.service.implementation.must.be.subtype.of.service.interface",
+                                 "1 error");
+
+        if (!expected.equals(output)) {
+            throw new Exception("Expected output not found. Output: " + output);
+        }
     }
 }

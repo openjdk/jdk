@@ -82,7 +82,7 @@ public class RepeatedUsesAndProvidesTest extends ModuleTestBase {
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
-        if (!log.contains("module-info.java:1:39: compiler.err.duplicate.provides"))
+        if (!log.contains("module-info.java:1:61: compiler.err.duplicate.provides"))
             throw new Exception("expected output not found");
     }
 }
