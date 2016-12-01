@@ -29,11 +29,9 @@ import com.sun.tools.classfile.Dependency.Location;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Deque;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -263,7 +261,7 @@ public class DepsAnalyzer {
 
     public static enum Info {
         REQUIRES,
-        REQUIRES_PUBLIC,
+        REQUIRES_TRANSITIVE,
         EXPORTED_API,
         MODULE_PRIVATE,
         QUALIFIED_EXPORTED_API,
@@ -288,7 +286,7 @@ public class DepsAnalyzer {
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            if (info != Info.REQUIRES && info != Info.REQUIRES_PUBLIC)
+            if (info != Info.REQUIRES && info != Info.REQUIRES_TRANSITIVE)
                 sb.append(source).append("/");
 
             sb.append(name);
@@ -325,7 +323,7 @@ public class DepsAnalyzer {
      * Returns a graph of module dependences.
      *
      * Each Node represents a module and each edge is a dependence.
-     * No analysis on "requires public".
+     * No analysis on "requires transitive".
      */
     public Graph<Node> moduleGraph() {
         Graph.Builder<Node> builder = new Graph.Builder<>();

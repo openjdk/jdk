@@ -98,7 +98,7 @@ public class ModuleGraphBuilder extends Graph.Builder<Module> {
             });
         });
 
-        // read requires public from ModuleDescriptor
+        // read requires transitive from ModuleDescriptor
         Module source;
         while ((source = deque.poll()) != null) {
             if (visited.contains(source))
@@ -107,7 +107,7 @@ public class ModuleGraphBuilder extends Graph.Builder<Module> {
             visited.add(source);
             builder.addNode(source);
             Module from = source;
-            requiresPublic(from).forEach(m -> {
+            requiresTransitive(from).forEach(m -> {
                 deque.add(m);
                 builder.addEdge(from, m);
             });
@@ -116,13 +116,13 @@ public class ModuleGraphBuilder extends Graph.Builder<Module> {
     }
 
     /*
-     * Returns a stream of modules upon which the given module `requires public`
+     * Returns a stream of modules upon which the given module `requires transitive`
      */
-    public Stream<Module> requiresPublic(Module m) {
-        // find requires public
+    public Stream<Module> requiresTransitive(Module m) {
+        // find requires transitive
         return m.descriptor()
                 .requires().stream()
-                .filter(req -> req.modifiers().contains(PUBLIC))
+                .filter(req -> req.modifiers().contains(TRANSITIVE))
                 .map(ModuleDescriptor.Requires::name)
                 .map(config::findModule)
                 .flatMap(Optional::stream);

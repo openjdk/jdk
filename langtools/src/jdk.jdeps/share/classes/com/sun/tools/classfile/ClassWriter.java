@@ -55,6 +55,9 @@ public class ClassWriter {
 
     /**
      * Write a ClassFile data structure to a file.
+     * @param classFile the classfile object to be written
+     * @param f the file
+     * @throws IOException if an error occurs while writing the file
      */
     public void write(ClassFile classFile, File f) throws IOException {
         try (FileOutputStream f_out = new FileOutputStream(f)) {
@@ -64,6 +67,9 @@ public class ClassWriter {
 
     /**
      * Write a ClassFile data structure to a stream.
+     * @param classFile the classfile object to be written
+     * @param s the stream
+     * @throws IOException if an error occurs while writing the file
      */
     public void write(ClassFile classFile, OutputStream s) throws IOException {
         this.classFile = classFile;
@@ -419,7 +425,7 @@ public class ClassWriter {
         }
 
         @Override
-        public Void visitConcealedPackages(ConcealedPackages_attribute attr, ClassOutputStream out) {
+        public Void visitModulePackages(ModulePackages_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.packages_count);
             for (int i: attr.packages_index)
                 out.writeShort(i);
@@ -461,12 +467,15 @@ public class ClassWriter {
         }
 
         @Override
-        public Void visitHashes(Hashes_attribute attr, ClassOutputStream out) {
+        public Void visitModuleHashes(ModuleHashes_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.algorithm_index);
             out.writeShort(attr.hashes_table.length);
-            for (Hashes_attribute.Entry e: attr.hashes_table) {
-                out.writeShort(e.requires_index);
-                out.writeShort(e.hash_index);
+            for (ModuleHashes_attribute.Entry e: attr.hashes_table) {
+                out.writeShort(e.module_name_index);
+                out.writeShort(e.hash.length);
+                for (byte b: e.hash) {
+                    out.writeByte(b);
+                }
             }
             return null;
         }
@@ -534,33 +543,54 @@ public class ClassWriter {
         }
 
         @Override
-        public Void visitMainClass(MainClass_attribute attr, ClassOutputStream out) {
+        public Void visitModuleMainClass(ModuleMainClass_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.main_class_index);
             return null;
         }
 
         @Override
         public Void visitModule(Module_attribute attr, ClassOutputStream out) {
+            out.writeShort(attr.module_name);
+            out.writeShort(attr.module_flags);
+
             out.writeShort(attr.requires.length);
             for (Module_attribute.RequiresEntry e: attr.requires) {
                 out.writeShort(e.requires_index);
                 out.writeShort(e.requires_flags);
             }
+
             out.writeShort(attr.exports.length);
             for (Module_attribute.ExportsEntry e: attr.exports) {
                 out.writeShort(e.exports_index);
+                out.writeShort(e.exports_flags);
                 out.writeShort(e.exports_to_index.length);
                 for (int index: e.exports_to_index)
                     out.writeShort(index);
             }
+
+            out.writeShort(attr.opens.length);
+            for (Module_attribute.OpensEntry e: attr.opens) {
+                out.writeShort(e.opens_index);
+                out.writeShort(e.opens_flags);
+                out.writeShort(e.opens_to_index.length);
+                for (int index: e.opens_to_index)
+                    out.writeShort(index);
+            }
+
             out.writeShort(attr.uses_index.length);
-            for (int index: attr.uses_index)
+            for (int index: attr.uses_index) {
                 out.writeShort(index);
+            }
+
             out.writeShort(attr.provides.length);
             for (Module_attribute.ProvidesEntry e: attr.provides) {
                 out.writeShort(e.provides_index);
-                out.writeShort(e.with_index);
+                out.writeShort(e.with_count);
+                for (int with : e.with_index) {
+                    out.writeShort(with);
+                }
             }
+
             return null;
         }
 
@@ -656,7 +686,7 @@ public class ClassWriter {
         }
 
         @Override
-        public Void visitTargetPlatform(TargetPlatform_attribute attr, ClassOutputStream out) {
+        public Void visitModuleTarget(ModuleTarget_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.os_name_index);
             out.writeShort(attr.os_arch_index);
             out.writeShort(attr.os_version_index);
@@ -668,7 +698,7 @@ public class ClassWriter {
         }
 
         @Override
-        public Void visitVersion(Version_attribute attr, ClassOutputStream out) {
+        public Void visitModuleVersion(ModuleVersion_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.version_index);
             return null;
         }

@@ -167,6 +167,9 @@ public class Enter extends JCTree.Visitor {
      */
     ListBuffer<ClassSymbol> uncompleted;
 
+    /** The queue of modules whose imports still need to be checked. */
+    ListBuffer<JCCompilationUnit> unfinishedModules = new ListBuffer<>();
+
     /** A dummy class to serve as enclClass for toplevel environments.
      */
     private JCClassDecl predefClassDef;
@@ -308,6 +311,10 @@ public class Enter extends JCTree.Visitor {
         boolean isPkgInfo = tree.sourcefile.isNameCompatible("package-info",
                                                              JavaFileObject.Kind.SOURCE);
         if (TreeInfo.isModuleInfo(tree)) {
+            JCPackageDecl pd = tree.getPackage();
+            if (pd != null) {
+                log.error(pd.pos(), Errors.NoPkgInModuleInfoJava);
+            }
             tree.packge = syms.rootPackage;
             Env<AttrContext> topEnv = topLevelEnv(tree);
             classEnter(tree.defs, topEnv);
@@ -509,7 +516,9 @@ public class Enter extends JCTree.Visitor {
     public void visitModuleDef(JCModuleDecl tree) {
         Env<AttrContext> moduleEnv = moduleEnv(tree, env);
         typeEnvs.put(tree.sym, moduleEnv);
-        todo.append(moduleEnv);
+        if (modules.isInModuleGraph(tree.sym)) {
+            todo.append(moduleEnv);
+        }
     }
 
     /** Default class enter visitor method: do nothing.
@@ -552,7 +561,19 @@ public class Enter extends JCTree.Visitor {
                         prevUncompleted.append(clazz);
                 }
 
-                typeEnter.ensureImportsChecked(trees);
+                if (!modules.modulesInitialized()) {
+                    for (JCCompilationUnit cut : trees) {
+                        if (cut.getModuleDecl() != null) {
+                            unfinishedModules.append(cut);
+                        } else {
+                            typeEnter.ensureImportsChecked(List.of(cut));
+                        }
+                    }
+                } else {
+                    typeEnter.ensureImportsChecked(unfinishedModules.toList());
+                    unfinishedModules.clear();
+                    typeEnter.ensureImportsChecked(trees);
+                }
             }
         } finally {
             uncompleted = prevUncompleted;

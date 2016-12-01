@@ -169,7 +169,7 @@ public class ExportsUnexported extends ModuleTestBase {
                           "    exports api;\n" +
                           "    exports qapi1 to qual1;\n" +
                           "    exports qapi2 to qual1, qual2;\n" +
-                          "    requires public lib1;\n" +
+                          "    requires transitive lib1;\n" +
                           "    requires lib2;\n" +
                           "}\n",
                           "package api;\n" +
@@ -209,7 +209,7 @@ public class ExportsUnexported extends ModuleTestBase {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
-            "Api.java:4:16: compiler.warn.leaks.not.accessible.not.required.public: kindname.class, lib2.Lib2, lib2",
+            "Api.java:4:16: compiler.warn.leaks.not.accessible.not.required.transitive: kindname.class, lib2.Lib2, lib2",
             "Api.java:5:17: compiler.warn.leaks.not.accessible.unexported.qualified: kindname.class, qapi1.QApi1, api",
             "Api.java:6:16: compiler.warn.leaks.not.accessible.unexported: kindname.class, impl.Impl, api",
             "- compiler.err.warnings.and.werror",

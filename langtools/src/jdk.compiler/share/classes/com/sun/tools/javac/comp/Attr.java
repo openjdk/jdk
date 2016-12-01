@@ -4432,6 +4432,17 @@ public class Attr extends JCTree.Visitor {
 
     public void visitModuleDef(JCModuleDecl tree) {
         tree.sym.completeUsesProvides();
+        ModuleSymbol msym = tree.sym;
+        Lint lint = env.outer.info.lint = env.outer.info.lint.augment(msym);
+        Lint prevLint = chk.setLint(lint);
+
+        chk.checkDeprecatedAnnotation(tree, msym);
+
+        try {
+            deferredLintHandler.flush(tree.pos());
+        } finally {
+            chk.setLint(prevLint);
+        }
     }
 
     /** Finish the attribution of a class. */

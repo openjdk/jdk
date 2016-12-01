@@ -154,6 +154,7 @@ class JdepsTask {
         ANALYZE_DEPS(""),
         GENERATE_DOT_FILE("-dotoutput", "--dot-output"),
         GENERATE_MODULE_INFO("--generate-module-info"),
+        GENERATE_OPEN_MODULE("--generate-open-module"),
         LIST_DEPS("--list-deps"),
         LIST_REDUCED_DEPS("--list-reduced-deps"),
         CHECK_MODULES("--check");
@@ -248,7 +249,15 @@ class JdepsTask {
                 if (task.command != null) {
                     throw new BadArgs("err.command.set", task.command, opt);
                 }
-                task.command = task.genModuleInfo(Paths.get(arg));
+                task.command = task.genModuleInfo(Paths.get(arg), false);
+            }
+        },
+        new Option(true, CommandOption.GENERATE_OPEN_MODULE) {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                if (task.command != null) {
+                    throw new BadArgs("err.command.set", task.command, opt);
+                }
+                task.command = task.genModuleInfo(Paths.get(arg), true);
             }
         },
         new Option(false, CommandOption.LIST_DEPS) {
@@ -597,11 +606,11 @@ class JdepsTask {
         return new GenDotFile(dir);
     }
 
-    private GenModuleInfo genModuleInfo(Path dir) throws BadArgs {
+    private GenModuleInfo genModuleInfo(Path dir, boolean openModule) throws BadArgs {
         if (Files.exists(dir) && (!Files.isDirectory(dir) || !Files.isWritable(dir))) {
             throw new BadArgs("err.invalid.path", dir.toString());
         }
-        return new GenModuleInfo(dir);
+        return new GenModuleInfo(dir, openModule);
     }
 
     private ListModuleDeps listModuleDeps(boolean reduced) throws BadArgs {
@@ -829,9 +838,11 @@ class JdepsTask {
 
     class GenModuleInfo extends Command {
         final Path dir;
-        GenModuleInfo(Path dir) {
+        final boolean openModule;
+        GenModuleInfo(Path dir, boolean openModule) {
             super(CommandOption.GENERATE_MODULE_INFO);
             this.dir = dir;
+            this.openModule = openModule;
         }
 
         @Override
@@ -872,7 +883,7 @@ class JdepsTask {
             }
 
             ModuleInfoBuilder builder
-                 = new ModuleInfoBuilder(config, inputArgs, dir);
+                 = new ModuleInfoBuilder(config, inputArgs, dir, openModule);
             boolean ok = builder.run();
 
             if (!ok && !options.nowarning) {

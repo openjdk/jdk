@@ -498,6 +498,14 @@ public interface TreeVisitor<R,P> {
     R visitExports(ExportsTree node, P p);
 
     /**
+     * Visits an OpensTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
+    R visitOpens(OpensTree node, P p);
+
+    /**
      * Visits a ProvidesTree node.
      * @param node the node being visited
      * @param p a parameter value
