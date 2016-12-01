@@ -153,15 +153,8 @@ import com.sun.security.auth.UnixNumericGroupPrincipal;
  */
 public class JndiLoginModule implements LoginModule {
 
-    private static final ResourceBundle rb = AccessController.doPrivileged(
-            new PrivilegedAction<ResourceBundle>() {
-                public ResourceBundle run() {
-                    return ResourceBundle.getBundle(
-                            "sun.security.util.AuthResources",
-                            sun.security.util.ResourcesMgr.class.getModule());
-                }
-            }
-    );
+    private static final ResourceBundle rb =
+        ResourceBundle.getBundle("sun.security.util.AuthResources");
 
     /** JNDI Provider */
     public final String USER_PROVIDER = "user.provider.url";

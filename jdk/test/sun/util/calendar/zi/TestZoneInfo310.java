@@ -26,7 +26,7 @@
  * @bug 8007572 8008161 8157792
  * @summary Test whether the TimeZone generated from JSR310 tzdb is the same
  * as the one from the tz data from javazic
- * @modules java.base/sun.util.calendar
+ * @modules java.base/sun.util.calendar:+open
  * @build BackEnd Checksum DayOfWeek Gen GenDoc Main Mappings Month
  *        Rule RuleDay RuleRec Simple TestZoneInfo310 Time Timezone
  *        TzIDOldMapping Zone ZoneInfoFile ZoneInfoOld ZoneRec Zoneinfo

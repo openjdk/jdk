@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Layer;
+import java.lang.reflect.Method;
 import java.lang.reflect.Module;
 import java.net.URL;
 import java.security.AccessControlContext;
@@ -36,12 +37,19 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
-import jdk.internal.module.ServicesCatalog;
 import jdk.internal.reflect.ConstantPool;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
 
 public interface JavaLangAccess {
+
+    /**
+     * Returns a {@code Method} object that reflects the specified public
+     * member method of the given class. Returns {@code null} if the
+     * method is not defined.
+     */
+    Method getMethodOrNull(Class<?> klass, String name, Class<?>... parameterTypes);
+
     /** Return the constant pool for a class. */
     ConstantPool getConstantPool(Class<?> klass);
 
@@ -134,17 +142,6 @@ public interface JavaLangAccess {
      * Returns the boot Layer
      */
     Layer getBootLayer();
-
-    /**
-     * Returns the ServicesCatalog for the given class loader.
-     */
-    ServicesCatalog getServicesCatalog(ClassLoader cl);
-
-    /**
-     * Returns the ServicesCatalog for the given class loader, creating it
-     * if doesn't already exist.
-     */
-    ServicesCatalog createOrGetServicesCatalog(ClassLoader cl);
 
     /**
      * Returns the ConcurrentHashMap used as a storage for ClassLoaderValue(s)

@@ -136,10 +136,6 @@ public class ResourceBundleTest {
         // class resource bundle in another named module m1.
         failToLoadResourceBundle("mylogger.g", "p1.resource.ClassResource",
                 true, NAMED_NEGATIVE_CLASSBUNDLE_MSG);
-        // in named module m2, try to create a logger with
-        // class resource bundle in an unnamed module.
-        failToLoadResourceBundle("mylogger.h", "p3.resource.ClassResource",
-                true, NAMED_NEGATIVE_CLASSBUNDLE_MSG);
     }
 
     static void failToLoadPropertyRBs() {
@@ -152,10 +148,6 @@ public class ResourceBundleTest {
         // in named module m2, try to create a logger with
         // property resource bundle in another named module m1.
         failToLoadResourceBundle("mylogger.k", "p1.resource.p",
-                true, NAMED_NEGATIVE_PROPERTYBUNDLE_MSG);
-        // in named module m2, try to create a logger with
-        // property resource bundle in an unnamed module.
-        failToLoadResourceBundle("mylogger.l", "p3.resource.p",
                 true, NAMED_NEGATIVE_PROPERTYBUNDLE_MSG);
     }
 

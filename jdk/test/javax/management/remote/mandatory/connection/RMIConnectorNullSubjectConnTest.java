@@ -38,7 +38,7 @@ import javax.management.remote.rmi.RMIConnector;
  * @bug 6566891
  * @summary Check no memory leak on RMIConnector's nullSubjectConn
  * @author Shanliang JIANG
- * @modules java.management
+ * @modules java.management/javax.management.remote.rmi:open
  * @run clean RMIConnectorNullSubjectConnTest
  * @run build RMIConnectorNullSubjectConnTest
  * @run main RMIConnectorNullSubjectConnTest

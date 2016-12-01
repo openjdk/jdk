@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 4405807
+ * @modules java.base/java.util:open
  * @run main/othervm -Xms10m ReferencesTest
  * @summary Verify that references from ResourceBundle cache don't prevent
  * class loader reclamation.

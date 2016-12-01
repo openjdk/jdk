@@ -45,6 +45,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static jdk.internal.module.Checks.*;
 import static java.util.Objects.*;
@@ -57,9 +59,11 @@ import jdk.internal.module.ModuleHashes;
  * A module descriptor.
  *
  * <p> A {@code ModuleDescriptor} is typically created from the binary form
- * of a module declaration. The associated {@link ModuleDescriptor.Builder}
- * class can also be used to create a {@code ModuleDescriptor} from its
- * components. </p>
+ * of a module declaration. Alternatively, the {@link ModuleDescriptor.Builder}
+ * class can be used to create a {@code ModuleDescriptor} from its components.
+ * The {@link #module module}, {@link #openModule openModule}, and {@link
+ * #automaticModule automaticModule} methods create builders for building
+ * different kinds of modules. </p>
  *
  * <p> {@code ModuleDescriptor} objects are immutable and safe for use by
  * multiple concurrent threads.</p>
@@ -95,7 +99,13 @@ public class ModuleDescriptor
              * module</i> to have an implicitly declared dependence on the module
              * named by the {@code Requires}.
              */
-            PUBLIC,
+            TRANSITIVE,
+
+            /**
+             * The dependence is mandatory in the static phase, during compilation,
+             * but is optional in the dynamic phase, during execution.
+             */
+            STATIC,
 
             /**
              * The dependence was not explicitly or implicitly declared in the
@@ -115,16 +125,18 @@ public class ModuleDescriptor
         private final String name;
 
         private Requires(Set<Modifier> ms, String mn) {
-            this(ms, mn, true);
-        }
-        private Requires(Set<Modifier> ms, String mn, boolean check) {
-            if (ms == null || ms.isEmpty()) {
-                mods = Collections.emptySet();
+            if (ms.isEmpty()) {
+                ms = Collections.emptySet();
             } else {
-                mods = check ? Collections.unmodifiableSet(EnumSet.copyOf(ms))
-                             : ms;
+                ms = Collections.unmodifiableSet(EnumSet.copyOf(ms));
             }
-            this.name = check ? requireModuleName(mn) : mn;
+            this.mods = ms;
+            this.name = mn;
+        }
+
+        private Requires(Set<Modifier> ms, String mn, boolean unused) {
+            this.mods = ms;
+            this.name = mn;
         }
 
         /**
@@ -223,9 +235,8 @@ public class ModuleDescriptor
          */
         @Override
         public String toString() {
-            return Dependence.toString(mods, name);
+            return ModuleDescriptor.toString(mods, name);
         }
-
     }
 
 
@@ -239,36 +250,61 @@ public class ModuleDescriptor
 
     public final static class Exports {
 
+        /**
+         * A modifier on a module export.
+         *
+         * @since 9
+         */
+        public static enum Modifier {
+
+            /**
+             * The export was not explicitly or implicitly declared in the
+             * source of the module declaration.
+             */
+            SYNTHETIC,
+
+            /**
+             * The export was implicitly declared in the source of the module
+             * declaration.
+             */
+            MANDATED;
+
+        }
+
+        private final Set<Modifier> mods;
         private final String source;
         private final Set<String> targets;  // empty if unqualified export
 
         /**
-         * Constructs a qualified export.
+         * Constructs an export
          */
-        private Exports(String source, Set<String> targets) {
-            this(source, targets, true);
+        private Exports(Set<Modifier> ms, String source, Set<String> targets) {
+            if (ms.isEmpty()) {
+                ms = Collections.emptySet();
+            } else {
+                ms = Collections.unmodifiableSet(EnumSet.copyOf(ms));
+            }
+            this.mods = ms;
+            this.source = source;
+            this.targets = emptyOrUnmodifiableSet(targets);
         }
 
-        private Exports(String source, Set<String> targets, boolean check) {
-            this.source = check ? requirePackageName(source) : source;
-            targets = check ? Collections.unmodifiableSet(new HashSet<>(targets))
-                            : Collections.unmodifiableSet(targets);
-            if (targets.isEmpty())
-                throw new IllegalArgumentException("Empty target set");
-            if (check)
-                targets.stream().forEach(Checks::requireModuleName);
+        private Exports(Set<Modifier> ms,
+                        String source,
+                        Set<String> targets,
+                        boolean unused) {
+            this.mods = ms;
+            this.source = source;
             this.targets = targets;
         }
 
         /**
-         * Constructs an unqualified export.
+         * Returns the set of modifiers.
+         *
+         * @return A possibly-empty unmodifiable set of modifiers
          */
-        private Exports(String source) {
-            this(source, true);
-        }
-        private Exports(String source, boolean check) {
-            this.source = check ? requirePackageName(source) : source;
-            this.targets = Collections.emptySet();
+        public Set<Modifier> modifiers() {
+            return mods;
         }
 
         /**
@@ -304,25 +340,27 @@ public class ModuleDescriptor
         /**
          * Computes a hash code for this module export.
          *
-         * <p> The hash code is based upon the package name, and for a
-         * qualified export, the set of modules names to which the package
-         * is exported. It satisfies the general contract of the {@link
-         * Object#hashCode Object.hashCode} method.
+         * <p> The hash code is based upon the modifiers, the package name,
+         * and for a qualified export, the set of modules names to which the
+         * package is exported. It satisfies the general contract of the
+         * {@link Object#hashCode Object.hashCode} method.
          *
          * @return The hash-code value for this module export
          */
         @Override
         public int hashCode() {
-            return hash(source, targets);
+            int hash = mods.hashCode();
+            hash = hash * 43 + source.hashCode();
+            return hash * 43 + targets.hashCode();
         }
 
         /**
          * Tests this module export for equality with the given object.
          *
          * <p> If the given object is not an {@code Exports} then this method
-         * returns {@code false}. Two module exports objects are equal if the
-         * package names are equal and the set of target module names is equal.
-         * </p>
+         * returns {@code false}. Two module exports objects are equal if their
+         * set of modifiers is equal, the package names are equal and the set
+         * of target module names is equal. </p>
          *
          * <p> This method satisfies the general contract of the {@link
          * java.lang.Object#equals(Object) Object.equals} method. </p>
@@ -338,8 +376,9 @@ public class ModuleDescriptor
             if (!(ob instanceof Exports))
                 return false;
             Exports other = (Exports)ob;
-            return Objects.equals(this.source, other.source) &&
-                Objects.equals(this.targets, other.targets);
+            return Objects.equals(this.mods, other.mods)
+                    && Objects.equals(this.source, other.source)
+                    && Objects.equals(this.targets, other.targets);
         }
 
         /**
@@ -349,15 +388,177 @@ public class ModuleDescriptor
          */
         @Override
         public String toString() {
+            String s = ModuleDescriptor.toString(mods, source);
             if (targets.isEmpty())
-                return source;
+                return s;
             else
-                return source + " to " + targets;
+                return s + " to " + targets;
         }
-
     }
 
-
+
+    /**
+     * <p> Represents a module <em>opens</em> directive, may be qualified or
+     * unqualified. </p>
+     *
+     * <p> The <em>opens</em> directive in a module declaration declares a
+     * package to be open to allow all types in the package, and all their
+     * members, not just public types and their public members to be reflected
+     * on by APIs that support private access or a way to bypass or suppress
+     * default Java language access control checks. </p>
+     *
+     * @see ModuleDescriptor#opens()
+     * @since 9
+     */
+
+    public final static class Opens {
+
+        /**
+         * A modifier on a module <em>opens</em> directive.
+         *
+         * @since 9
+         */
+        public static enum Modifier {
+
+            /**
+             * The opens was not explicitly or implicitly declared in the
+             * source of the module declaration.
+             */
+            SYNTHETIC,
+
+            /**
+             * The opens was implicitly declared in the source of the module
+             * declaration.
+             */
+            MANDATED;
+
+        }
+
+        private final Set<Modifier> mods;
+        private final String source;
+        private final Set<String> targets;  // empty if unqualified export
+
+        /**
+         * Constructs an Opens
+         */
+        private Opens(Set<Modifier> ms, String source, Set<String> targets) {
+            if (ms.isEmpty()) {
+                ms = Collections.emptySet();
+            } else {
+                ms = Collections.unmodifiableSet(EnumSet.copyOf(ms));
+            }
+            this.mods = ms;
+            this.source = source;
+            this.targets = emptyOrUnmodifiableSet(targets);
+        }
+
+        private Opens(Set<Modifier> ms,
+                      String source,
+                      Set<String> targets,
+                      boolean unused) {
+            this.mods = ms;
+            this.source = source;
+            this.targets = targets;
+        }
+
+        /**
+         * Returns the set of modifiers.
+         *
+         * @return A possibly-empty unmodifiable set of modifiers
+         */
+        public Set<Modifier> modifiers() {
+            return mods;
+        }
+
+        /**
+         * Returns {@code true} if this is a qualified opens.
+         *
+         * @return {@code true} if this is a qualified opens
+         */
+        public boolean isQualified() {
+            return !targets.isEmpty();
+        }
+
+        /**
+         * Returns the package name.
+         *
+         * @return The package name
+         */
+        public String source() {
+            return source;
+        }
+
+        /**
+         * For a qualified opens, returns the non-empty and immutable set
+         * of the module names to which the package is open. For an
+         * unqualified opens, returns an empty set.
+         *
+         * @return The set of target module names or for an unqualified
+         *         opens, an empty set
+         */
+        public Set<String> targets() {
+            return targets;
+        }
+
+        /**
+         * Computes a hash code for this module opens.
+         *
+         * <p> The hash code is based upon the modifiers, the package name,
+         * and for a qualified opens, the set of modules names to which the
+         * package is opened. It satisfies the general contract of the
+         * {@link Object#hashCode Object.hashCode} method.
+         *
+         * @return The hash-code value for this module opens
+         */
+        @Override
+        public int hashCode() {
+            int hash = mods.hashCode();
+            hash = hash * 43 + source.hashCode();
+            return hash * 43 + targets.hashCode();
+        }
+
+        /**
+         * Tests this module opens for equality with the given object.
+         *
+         * <p> If the given object is not an {@code Opens} then this method
+         * returns {@code false}. Two {@code Opens} objects are equal if their
+         * set of modifiers is equal, the package names are equal and the set
+         * of target module names is equal. </p>
+         *
+         * <p> This method satisfies the general contract of the {@link
+         * java.lang.Object#equals(Object) Object.equals} method. </p>
+         *
+         * @param   ob
+         *          the object to which this object is to be compared
+         *
+         * @return  {@code true} if, and only if, the given object is a module
+         *          dependence that is equal to this module dependence
+         */
+        @Override
+        public boolean equals(Object ob) {
+            if (!(ob instanceof Opens))
+                return false;
+            Opens other = (Opens)ob;
+            return Objects.equals(this.mods, other.mods)
+                    && Objects.equals(this.source, other.source)
+                    && Objects.equals(this.targets, other.targets);
+        }
+
+        /**
+         * Returns a string describing module opens.
+         *
+         * @return A string describing module opens
+         */
+        @Override
+        public String toString() {
+            String s = ModuleDescriptor.toString(mods, source);
+            if (targets.isEmpty())
+                return s;
+            else
+                return s + " to " + targets;
+        }
+    }
+
 
     /**
      * <p> A service that a module provides one or more implementations of. </p>
@@ -369,21 +570,15 @@ public class ModuleDescriptor
     public final static class Provides {
 
         private final String service;
-        private final Set<String> providers;
+        private final List<String> providers;
 
-        private Provides(String service, Set<String> providers) {
-            this(service, providers, true);
+        private Provides(String service, List<String> providers) {
+            this.service = service;
+            this.providers = Collections.unmodifiableList(providers);
         }
 
-        private Provides(String service, Set<String> providers, boolean check) {
-            this.service = check ? requireServiceTypeName(service) : service;
-            providers = check
-                ? Collections.unmodifiableSet(new LinkedHashSet<>(providers))
-                : Collections.unmodifiableSet(providers);
-            if (providers.isEmpty())
-                throw new IllegalArgumentException("Empty providers set");
-            if (check)
-                providers.forEach(Checks::requireServiceProviderName);
+        private Provides(String service, List<String> providers, boolean unused) {
+            this.service = service;
             this.providers = providers;
         }
 
@@ -395,12 +590,13 @@ public class ModuleDescriptor
         public String service() { return service; }
 
         /**
-         * Returns the set of the fully qualified class names of the providers.
+         * Returns the list of the fully qualified class names of the providers
+         * or provider factories.
          *
-         * @return A non-empty and unmodifiable set of the fully qualified class
-         *         names of the providers.
+         * @return A non-empty and unmodifiable list of the fully qualified class
+         *         names of the providers or provider factories
          */
-        public Set<String> providers() { return providers; }
+        public List<String> providers() { return providers; }
 
         /**
          * Computes a hash code for this provides.
@@ -413,7 +609,7 @@ public class ModuleDescriptor
          */
         @Override
         public int hashCode() {
-            return hash(service, providers);
+            return service.hashCode() * 43 + providers.hashCode();
         }
 
         /**
@@ -421,7 +617,7 @@ public class ModuleDescriptor
          *
          * <p> If the given object is not a {@code Provides} then this method
          * returns {@code false}. Two {@code Provides} objects are equal if the
-         * service type is equal and the set of providers is equal. </p>
+         * service type is equal and the list of providers is equal. </p>
          *
          * <p> This method satisfies the general contract of the {@link
          * java.lang.Object#equals(Object) Object.equals} method. </p>
@@ -774,16 +970,19 @@ public class ModuleDescriptor
 
     // From module declarations
     private final String name;
-    private final Set<Requires> requires;
-    private final Set<Exports> exports;
-    private final Set<String> uses;
-    private final Map<String, Provides> provides;
+    private final boolean open;
 
     // Indicates if synthesised for a JAR file found on the module path
     private final boolean automatic;
 
     // Not generated from a module-info.java
     private final boolean synthetic;
+
+    private final Set<Requires> requires;
+    private final Set<Exports> exports;
+    private final Set<Opens> opens;
+    private final Set<String> uses;
+    private final Set<Provides> provides;
 
     // "Extended" information, added post-compilation by tools
     private final Version version;
@@ -796,12 +995,14 @@ public class ModuleDescriptor
 
 
     private ModuleDescriptor(String name,
+                             boolean open,
                              boolean automatic,
                              boolean synthetic,
-                             Map<String, Requires> requires,
+                             Set<Requires> requires,
+                             Set<Exports> exports,
+                             Set<Opens> opens,
                              Set<String> uses,
-                             Map<String, Exports> exports,
-                             Map<String, Provides> provides,
+                             Set<Provides> provides,
                              Version version,
                              String mainClass,
                              String osName,
@@ -812,31 +1013,24 @@ public class ModuleDescriptor
     {
 
         this.name = name;
+        this.open = open;
         this.automatic = automatic;
         this.synthetic = synthetic;
 
-        Set<Requires> rqs = new HashSet<>(requires.values());
-        assert (rqs.stream().map(Requires::name).sorted().distinct().count()
-                == rqs.size())
-            : "Module " + name + " has duplicate requires";
-        this.requires = emptyOrUnmodifiableSet(rqs);
+        assert (requires.stream().map(Requires::name).distinct().count()
+                == requires.size());
+        this.requires = emptyOrUnmodifiableSet(requires);
 
-        Set<Exports> exs = new HashSet<>(exports.values());
-        assert (exs.stream().map(Exports::source).sorted().distinct().count()
-                == exs.size())
-            : "Module " + name + " has duplicate exports";
-        this.exports = emptyOrUnmodifiableSet(exs);
-
+        this.exports = emptyOrUnmodifiableSet(exports);
+        this.opens = emptyOrUnmodifiableSet(opens);
         this.uses = emptyOrUnmodifiableSet(uses);
-        this.provides = emptyOrUnmodifiableMap(provides);
-
+        this.provides = emptyOrUnmodifiableSet(provides);
         this.version = version;
         this.mainClass = mainClass;
         this.osName = osName;
         this.osArch = osArch;
         this.osVersion = osVersion;
         this.hashes = hashes;
-
         this.packages = emptyOrUnmodifiableSet(packages);
     }
 
@@ -845,11 +1039,13 @@ public class ModuleDescriptor
      */
     ModuleDescriptor(ModuleDescriptor md, Set<String> pkgs) {
         this.name = md.name;
+        this.open = md.open;
         this.automatic = md.automatic;
         this.synthetic = md.synthetic;
 
         this.requires = md.requires;
         this.exports = md.exports;
+        this.opens = md.opens;
         this.uses = md.uses;
         this.provides = md.provides;
 
@@ -866,38 +1062,44 @@ public class ModuleDescriptor
     }
 
     /**
-     * Creates a module descriptor from its components. This method is intended
-     * for use by the jlink plugin.
+     * Creates a module descriptor from its components.
+     * The arguments are pre-validated and sets are unmodifiable sets.
      */
     ModuleDescriptor(String name,
+                     boolean open,
                      boolean automatic,
                      boolean synthetic,
                      Set<Requires> requires,
-                     Set<String> uses,
                      Set<Exports> exports,
-                     Map<String, Provides> provides,
+                     Set<Opens> opens,
+                     Set<String> uses,
+                     Set<Provides> provides,
                      Version version,
                      String mainClass,
                      String osName,
                      String osArch,
                      String osVersion,
                      Set<String> packages,
-                     ModuleHashes hashes) {
+                     ModuleHashes hashes,
+                     int hashCode,
+                     boolean unused) {
         this.name = name;
+        this.open = open;
         this.automatic = automatic;
         this.synthetic = synthetic;
-        this.requires = Collections.unmodifiableSet(requires);
-        this.exports = Collections.unmodifiableSet(exports);
-        this.uses = Collections.unmodifiableSet(uses);
-        this.provides = Collections.unmodifiableMap(provides);
-        this.packages = Collections.unmodifiableSet(packages);
-
+        this.requires = requires;
+        this.exports = exports;
+        this.opens = opens;
+        this.uses = uses;
+        this.provides = provides;
+        this.packages = packages;
         this.version = version;
         this.mainClass = mainClass;
         this.osName = osName;
         this.osArch = osArch;
         this.osVersion = osVersion;
         this.hashes = hashes;
+        this.hash = hashCode;
     }
 
     /**
@@ -907,6 +1109,19 @@ public class ModuleDescriptor
      */
     public String name() {
         return name;
+    }
+
+    /**
+     * <p> Returns {@code true} if this is an open module. </p>
+     *
+     * <p> An open module does not declare any open packages (the {@link #opens()
+     * opens} method returns an empty set) but the resulting module is treated
+     * as if all packages are open. </p>
+     *
+     * @return  {@code true} if this is an open module
+     */
+    public boolean isOpen() {
+        return open;
     }
 
     /**
@@ -933,8 +1148,6 @@ public class ModuleDescriptor
      *
      * @return  {@code true} if this module descriptor was not generated by
      *          an explicit or implicit module declaration
-     *
-     * @jvms 4.7.8 The {@code Synthetic} Attribute
      */
     public boolean isSynthetic() {
         return synthetic;
@@ -950,6 +1163,33 @@ public class ModuleDescriptor
     }
 
     /**
+     * <p> The module exports. </p>
+     *
+     * @return  A possibly-empty unmodifiable set of exported packages
+     */
+    public Set<Exports> exports() {
+        return exports;
+    }
+
+    /**
+     * <p> The module <em>opens</em> directives. </p>
+     *
+     * <p> Each {@code Opens} object in the set represents a package (and
+     * the set of target module names when qualified) where all types in the
+     * package, and all their members, not just public types and their public
+     * members, can be reflected on when using APIs that bypass or suppress
+     * default Java language access control checks. </p>
+     *
+     * <p> This method returns an empty set when invoked on {@link #isOpen()
+     * open} module. </p>
+     *
+     * @return  A possibly-empty unmodifiable set of open packages
+     */
+    public Set<Opens> opens() {
+        return opens;
+    }
+
+    /**
      * <p> The service dependences of this module. </p>
      *
      * @return  A possibly-empty unmodifiable set of the fully qualified class
@@ -962,21 +1202,11 @@ public class ModuleDescriptor
     /**
      * <p> The services that this module provides. </p>
      *
-     * @return The possibly-empty unmodifiable map of the services that this
-     *         module provides. The map key is fully qualified class name of
-     *         the service type.
+     * @return The possibly-empty unmodifiable set of the services that this
+     *         module provides
      */
-    public Map<String, Provides> provides() {
+    public Set<Provides> provides() {
         return provides;
-    }
-
-    /**
-     * <p> The module exports. </p>
-     *
-     * @return  A possibly-empty unmodifiable set of exported packages
-     */
-    public Set<Exports> exports() {
-        return exports;
     }
 
     /**
@@ -1046,22 +1276,9 @@ public class ModuleDescriptor
     }
 
     /**
-     * Returns the names of the packages defined in, but not exported by, this
-     * module.
+     * Returns the names of all packages in this module.
      *
-     * @return A possibly-empty unmodifiable set of the concealed packages
-     */
-    public Set<String> conceals() {
-        Set<String> conceals = new HashSet<>(packages);
-        exports.stream().map(Exports::source).forEach(conceals::remove);
-        return emptyOrUnmodifiableSet(conceals);
-    }
-
-    /**
-     * Returns the names of all the packages defined in this module, whether
-     * exported or concealed.
-     *
-     * @return A possibly-empty unmodifiable set of the all packages
+     * @return A possibly-empty unmodifiable set of all packages in the module
      */
     public Set<String> packages() {
         return packages;
@@ -1078,31 +1295,39 @@ public class ModuleDescriptor
     /**
      * A builder used for building {@link ModuleDescriptor} objects.
      *
-     * <p> Example usage: </p>
+     * <p> {@code ModuleDescriptor} defines the {@link #module module}, {@link
+     * #openModule openModule}, and {@link #automaticModule automaticModule}
+     * methods to create builders for building different kinds of modules. </p>
      *
-     * <pre>{@code
-     *     ModuleDescriptor descriptor = new ModuleDescriptor.Builder("m1")
-     *         .requires("m2")
+     * <p> Example usage: </p>
+     * <pre>{@code    ModuleDescriptor descriptor = ModuleDescriptor.module("m1")
      *         .exports("p")
+     *         .requires("m2")
      *         .build();
      * }</pre>
      *
-     * @apiNote A {@code Builder} cannot be used to create an {@link
-     * ModuleDescriptor#isAutomatic() automatic} or a {@link
-     * ModuleDescriptor#isSynthetic() synthetic} module.
+     * @apiNote A {@code Builder} checks the components and invariants as
+     * components are added to the builder. The rational for this is to detect
+     * errors as early as possible and not defer all validation to the
+     * {@link #build build} method. A {@code Builder} cannot be used to create
+     * a {@link ModuleDescriptor#isSynthetic() synthetic} module.
      *
      * @since 9
      */
     public static final class Builder {
-
         final String name;
+        final boolean strict; // true if module names are checked
+        boolean open;
         boolean automatic;
         boolean synthetic;
         final Map<String, Requires> requires = new HashMap<>();
-        final Set<String> uses = new HashSet<>();
+
         final Map<String, Exports> exports = new HashMap<>();
+        final Map<String, Opens> opens = new HashMap<>();
+        final Set<String> concealedPackages = new HashSet<>();
+
+        final Set<String> uses = new HashSet<>();
         final Map<String, Provides> provides = new HashMap<>();
-        Set<String> conceals = Collections.emptySet();
         Version version;
         String osName;
         String osArch;
@@ -1113,27 +1338,28 @@ public class ModuleDescriptor
         /**
          * Initializes a new builder with the given module name.
          *
-         * @param  name
-         *         The module name
-         *
-         * @throws IllegalArgumentException
-         *         If the module name is {@code null} or is not a legal Java
-         *         identifier
+         * @param strict
+         *        Indicates whether module names are checked or not
          */
-        public Builder(String name) {
-            this.name = requireModuleName(name);
+        Builder(String name, boolean strict) {
+            this.strict = strict;
+            this.name = (strict) ? requireModuleName(name) : name;
         }
 
-        /**
-         * Updates the builder so that it builds an automatic module.
-         *
-         * @return This builder
-         *
-         * @see ModuleDescriptor#isAutomatic()
-         */
-        /* package */ Builder automatic() {
-            this.automatic = true;
+        /* package */ Builder open(boolean open) {
+            this.open = open;
             return this;
+        }
+
+        /* package */ Builder automatic(boolean automatic) {
+            this.automatic = automatic;
+            return this;
+        }
+
+        /* package */ boolean isOpen() { return open; }
+
+        /* package */ boolean isAutomatic() {
+            return automatic;
         }
 
         /**
@@ -1165,7 +1391,7 @@ public class ModuleDescriptor
          * Adds a dependence on a module with the given (and possibly empty)
          * set of modifiers.
          *
-         * @param  mods
+         * @param  ms
          *         The set of modifiers
          * @param  mn
          *         The module name
@@ -1179,14 +1405,10 @@ public class ModuleDescriptor
          * @throws IllegalStateException
          *         If the dependence on the module has already been declared
          */
-        public Builder requires(Set<Requires.Modifier> mods, String mn) {
-            if (name.equals(mn))
-                throw new IllegalArgumentException("Dependence on self");
-            if (requires.containsKey(mn))
-                throw new IllegalStateException("Dependence upon " + mn
-                                                + " already declared");
-            requires.put(mn, new Requires(mods, mn)); // checks mn
-            return this;
+        public Builder requires(Set<Requires.Modifier> ms, String mn) {
+            if (strict)
+                mn = requireModuleName(mn);
+            return requires(new Requires(ms, mn));
         }
 
         /**
@@ -1209,62 +1431,6 @@ public class ModuleDescriptor
         }
 
         /**
-         * Adds a dependence on a module with the given modifier.
-         *
-         * @param  mod
-         *         The modifier
-         * @param  mn
-         *         The module name
-         *
-         * @return This builder
-         *
-         * @throws IllegalArgumentException
-         *         If the module name is {@code null}, is not a legal Java
-         *         identifier, or is equal to the module name that this builder
-         *         was initialized to build
-         * @throws IllegalStateException
-         *         If the dependence on the module has already been declared
-         */
-        public Builder requires(Requires.Modifier mod, String mn) {
-            return requires(EnumSet.of(mod), mn);
-        }
-
-        /**
-         * Adds a service dependence.
-         *
-         * @param  st
-         *         The service type
-         *
-         * @return This builder
-         *
-         * @throws IllegalArgumentException
-         *         If the service type is {@code null} or is not a legal Java
-         *         identifier
-         * @throws IllegalStateException
-         *         If a dependency on the service type has already been declared
-         */
-        public Builder uses(String st) {
-            if (uses.contains(requireServiceTypeName(st)))
-                throw new IllegalStateException("Dependence upon service "
-                                                + st + " already declared");
-            uses.add(st);
-            return this;
-        }
-
-        /**
-         * Ensures that the given package name has not been declared as an
-         * exported or concealed package.
-         */
-        private void ensureNotExportedOrConcealed(String pn) {
-            if (exports.containsKey(pn))
-                throw new IllegalStateException("Export of package "
-                                                + pn + " already declared");
-            if (conceals.contains(pn))
-                throw new IllegalStateException("Concealed package "
-                                                + pn + " already declared");
-        }
-
-        /**
          * Adds an export.
          *
          * @param  e
@@ -1273,18 +1439,90 @@ public class ModuleDescriptor
          * @return This builder
          *
          * @throws IllegalStateException
-         *         If the package is already declared as an exported or
-         *         concealed package
+         *         If the package is already declared as a package with the
+         *         {@link #contains contains} method or the package is already
+         *         declared as exported
          */
         public Builder exports(Exports e) {
-            String pn = e.source();
-            ensureNotExportedOrConcealed(pn);
-            exports.put(pn, e);
+            // can't be exported and concealed
+            String source = e.source();
+            if (concealedPackages.contains(source)) {
+                throw new IllegalStateException("Package " + source
+                                                 + " already declared");
+            }
+            if (exports.containsKey(source)) {
+                throw new IllegalStateException("Exported package " + source
+                                                 + " already declared");
+            }
+
+            exports.put(source, e);
             return this;
         }
 
         /**
-         * Adds an export to a set of target modules.
+         * Adds an export, with the given (and possibly empty) set of modifiers,
+         * to export a package to a set of target modules.
+         *
+         * @param  ms
+         *         The set of modifiers
+         * @param  pn
+         *         The package name
+         * @param  targets
+         *         The set of target modules names
+         *
+         * @return This builder
+         *
+         * @throws IllegalArgumentException
+         *         If the package name or any of the target modules is {@code
+         *         null} or is not a legal Java identifier, or the set of
+         *         targets is empty
+         * @throws IllegalStateException
+         *         If the package is already declared as a package with the
+         *         {@link #contains contains} method or the package is already
+         *         declared as exported
+         */
+        public Builder exports(Set<Exports.Modifier> ms,
+                               String pn,
+                               Set<String> targets)
+        {
+            Exports e = new Exports(ms, requirePackageName(pn), targets);
+
+            // check targets
+            targets = e.targets();
+            if (targets.isEmpty())
+                throw new IllegalArgumentException("Empty target set");
+            if (strict)
+                targets.stream().forEach(Checks::requireModuleName);
+
+            return exports(e);
+        }
+
+        /**
+         * Adds an unqualified export with the given (and possibly empty) set
+         * of modifiers.
+         *
+         * @param  ms
+         *         The set of modifiers
+         * @param  pn
+         *         The package name
+         *
+         * @return This builder
+         *
+         * @throws IllegalArgumentException
+         *         If the package name is {@code null} or is not a legal Java
+         *         identifier
+         * @throws IllegalStateException
+         *         If the package is already declared as a package with the
+         *         {@link #contains contains} method or the package is already
+         *         declared as exported
+         */
+        public Builder exports(Set<Exports.Modifier> ms, String pn) {
+            Exports e = new Exports(ms, requirePackageName(pn), Collections.emptySet());
+            return exports(e);
+        }
+
+        /**
+         * Adds an export to export a package to a set of target modules.
          *
          * @param  pn
          *         The package name
@@ -1298,38 +1536,16 @@ public class ModuleDescriptor
          *         null} or is not a legal Java identifier, or the set of
          *         targets is empty
          * @throws IllegalStateException
-         *         If the package is already declared as an exported or
-         *         concealed package
+         *         If the package is already declared as a package with the
+         *         {@link #contains contains} method or the package is already
+         *         declared as exported
          */
         public Builder exports(String pn, Set<String> targets) {
-            ensureNotExportedOrConcealed(pn);
-            exports.put(pn, new Exports(pn, targets)); // checks pn and targets
-            return this;
+            return exports(Collections.emptySet(), pn, targets);
         }
 
         /**
-         * Adds an export to a target module.
-         *
-         * @param  pn
-         *         The package name
-         * @param  target
-         *         The target module name
-         *
-         * @return This builder
-         *
-         * @throws IllegalArgumentException
-         *         If the package name or target module is {@code null} or is
-         *         not a legal Java identifier
-         * @throws IllegalStateException
-         *         If the package is already declared as an exported or
-         *         concealed package
-         */
-        public Builder exports(String pn, String target) {
-            return exports(pn, Collections.singleton(target));
-        }
-
-        /**
-         * Adds an export.
+         * Adds an unqualified export.
          *
          * @param  pn
          *         The package name
@@ -1340,18 +1556,186 @@ public class ModuleDescriptor
          *         If the package name is {@code null} or is not a legal Java
          *         identifier
          * @throws IllegalStateException
-         *         If the package is already declared as an exported or
-         *         concealed package
+         *         If the package is already declared as a package with the
+         *         {@link #contains contains} method or the package is already
+         *         declared as exported
          */
         public Builder exports(String pn) {
-            ensureNotExportedOrConcealed(pn);
-            exports.put(pn, new Exports(pn)); // checks pn
+            return exports(Collections.emptySet(), pn);
+        }
+
+        /**
+         * Adds an <em>opens</em> directive.
+         *
+         * @param  obj
+         *         The {@code Opens} object
+         *
+         * @return This builder
+         *
+         * @throws IllegalStateException
+         *         If the package is already declared as a package with the
+         *         {@link #contains contains} method, the package is already
+         *         declared as open, or this is a builder for an open module
+         */
+        public Builder opens(Opens obj) {
+            if (open) {
+                throw new IllegalStateException("open modules cannot declare"
+                                                + " open packages");
+            }
+
+            // can't be open and concealed
+            String source = obj.source();
+            if (concealedPackages.contains(source)) {
+                throw new IllegalStateException("Package " + source
+                                                + " already declared");
+            }
+            if (opens.containsKey(source)) {
+                throw new IllegalStateException("Open package " + source
+                                                + " already declared");
+            }
+
+            opens.put(source, obj);
             return this;
         }
 
+
+        /**
+         * Adds an <em>opens</em> directive, with the given (and possibly empty)
+         * set of modifiers, to open a package to a set of target modules.
+         *
+         * @param  ms
+         *         The set of modifiers
+         * @param  pn
+         *         The package name
+         * @param  targets
+         *         The set of target modules names
+         *
+         * @return This builder
+         *
+         * @throws IllegalArgumentException
+         *         If the package name or any of the target modules is {@code
+         *         null} or is not a legal Java identifier, or the set of
+         *         targets is empty
+         * @throws IllegalStateException
+         *         If the package is already declared as a package with the
+         *         {@link #contains contains} method, the package is already
+         *         declared as open, or this is a builder for an open module
+         */
+        public Builder opens(Set<Opens.Modifier> ms,
+                             String pn,
+                             Set<String> targets)
+        {
+            Opens e = new Opens(ms, requirePackageName(pn), targets);
+
+            // check targets
+            targets = e.targets();
+            if (targets.isEmpty())
+                throw new IllegalArgumentException("Empty target set");
+            if (strict)
+                targets.stream().forEach(Checks::requireModuleName);
+
+            return opens(e);
+        }
+
+        /**
+         * Adds an <em>opens</em> directive to open a package with the given (and
+         * possibly empty) set of modifiers.
+         *
+         * @param  ms
+         *         The set of modifiers
+         * @param  pn
+         *         The package name
+         *
+         * @return This builder
+         *
+         * @throws IllegalArgumentException
+         *         If the package name is {@code null} or is not a legal Java
+         *         identifier
+         * @throws IllegalStateException
+         *         If the package is already declared as a package with the
+         *         {@link #contains contains} method, the package is already
+         *         declared as open, or this is a builder for an open module
+         */
+        public Builder opens(Set<Opens.Modifier> ms, String pn) {
+            Opens e = new Opens(ms, requirePackageName(pn), Collections.emptySet());
+            return opens(e);
+        }
+
+        /**
+         * Adds an <em>opens</em> directive to open a package to a set of target
+         * modules.
+         *
+         * @param  pn
+         *         The package name
+         * @param  targets
+         *         The set of target modules names
+         *
+         * @return This builder
+         *
+         * @throws IllegalArgumentException
+         *         If the package name or any of the target modules is {@code
+         *         null} or is not a legal Java identifier, or the set of
+         *         targets is empty
+         * @throws IllegalStateException
+         *         If the package is already declared as a package with the
+         *         {@link #contains contains} method, the package is already
+         *         declared as open, or this is a builder for an open module
+         */
+        public Builder opens(String pn, Set<String> targets) {
+            return opens(Collections.emptySet(), pn, targets);
+        }
+
+        /**
+         * Adds an <em>opens</em> directive to open a package.
+         *
+         * @param  pn
+         *         The package name
+         *
+         * @return This builder
+         *
+         * @throws IllegalArgumentException
+         *         If the package name is {@code null} or is not a legal Java
+         *         identifier
+         * @throws IllegalStateException
+         *         If the package is already declared as a package with the
+         *         {@link #contains contains} method, the package is already
+         *         declared as open, or this is a builder for an open module
+         */
+        public Builder opens(String pn) {
+            return opens(Collections.emptySet(), pn);
+        }
+
+
         // Used by ModuleInfo, after a packageFinder is invoked
-        /* package */ Set<String> exportedPackages() {
-            return exports.keySet();
+        /* package */ Set<String> exportedAndOpenPackages() {
+            if (opens.isEmpty())
+                return exports.keySet();
+            Set<String> result = new HashSet<>();
+            result.addAll(exports.keySet());
+            result.addAll(opens.keySet());
+            return result;
+        }
+
+        /**
+         * Adds a service dependence.
+         *
+         * @param  service
+         *         The service type
+         *
+         * @return This builder
+         *
+         * @throws IllegalArgumentException
+         *         If the service type is {@code null} or is not a legal Java
+         *         identifier
+         * @throws IllegalStateException
+         *         If a dependency on the service type has already been declared
+         */
+        public Builder uses(String service) {
+            if (uses.contains(requireServiceTypeName(service)))
+                throw new IllegalStateException("Dependence upon service "
+                                                + service + " already declared");
+            uses.add(service);
+            return this;
         }
 
         /**
@@ -1376,38 +1760,47 @@ public class ModuleDescriptor
         }
 
         /**
-         * Provides service {@code st} with implementations {@code pcs}.
+         * Provides implementations of a service.
          *
-         * @param  st
+         * @param  service
          *         The service type
-         * @param  pcs
-         *         The set of provider class names
+         * @param  providers
+         *         The list of provider or provider factory class names
          *
          * @return This builder
          *
          * @throws IllegalArgumentException
          *         If the service type or any of the provider class names is
-         *         {@code null} or is not a legal Java identifier, or the set
+         *         {@code null} or is not a legal Java identifier, or the list
          *         of provider class names is empty
          * @throws IllegalStateException
          *         If the providers for the service type have already been
          *         declared
          */
-        public Builder provides(String st, Set<String> pcs) {
-            if (provides.containsKey(st))
+        public Builder provides(String service, List<String> providers) {
+            if (provides.containsKey(service))
                 throw new IllegalStateException("Providers of service "
-                                                + st + " already declared");
-            provides.put(st, new Provides(st, pcs)); // checks st and pcs
+                                                + service + " already declared by " + name);
+
+            Provides p = new Provides(requireServiceTypeName(service), providers);
+
+            // check providers after the set has been copied.
+            List<String> providerNames = p.providers();
+            if (providerNames.isEmpty())
+                throw new IllegalArgumentException("Empty providers set");
+            providerNames.forEach(Checks::requireServiceProviderName);
+
+            provides.put(service, p);
             return this;
         }
 
         /**
-         * Provides service {@code st} with implementation {@code pc}.
+         * Provides an implementation of a service.
          *
-         * @param  st
+         * @param  service
          *         The service type
-         * @param  pc
-         *         The provider class name
+         * @param  provider
+         *         The provider or provider factory class name
          *
          * @return This builder
          *
@@ -1418,15 +1811,17 @@ public class ModuleDescriptor
          *         If the providers for the service type have already been
          *         declared
          */
-        public Builder provides(String st, String pc) {
-            return provides(st, Collections.singleton(pc));
+        public Builder provides(String service, String provider) {
+            if (provider == null)
+                throw new IllegalArgumentException("'provider' is null");
+            return provides(service, List.of(provider));
         }
 
         /**
-         * Adds a set of (possible empty) concealed packages.
+         * Adds a (possible empty) set of packages to the module
          *
          * @param  pns
-         *         The set of package names of the concealed packages
+         *         The set of package names
          *
          * @return This builder
          *
@@ -1434,16 +1829,17 @@ public class ModuleDescriptor
          *         If any of the package names is {@code null} or is not a
          *         legal Java identifier
          * @throws IllegalStateException
-         *         If any of packages are already declared as a concealed or
-         *         exported package
+         *         If any of packages are already declared as packages in
+         *         the module. This includes packages that are already
+         *         declared as exported or open packages.
          */
-        public Builder conceals(Set<String> pns) {
-            pns.forEach(this::conceals);
+        public Builder contains(Set<String> pns) {
+            pns.forEach(this::contains);
             return this;
         }
 
         /**
-         * Adds a concealed package.
+         * Adds a package to the module.
          *
          * @param  pn
          *         The package name
@@ -1454,15 +1850,25 @@ public class ModuleDescriptor
          *         If the package name is {@code null}, or is not a legal Java
          *         identifier
          * @throws IllegalStateException
-         *         If the package is already declared as a concealed or exported
-         *         package
+         *         If the package is already declared as a package in the
+         *         module. This includes the package already declared as an
+         *         exported or open package.
          */
-        public Builder conceals(String pn) {
+        public Builder contains(String pn) {
             Checks.requirePackageName(pn);
-            ensureNotExportedOrConcealed(pn);
-            if (conceals.isEmpty())
-                conceals = new HashSet<>();
-            conceals.add(pn);
+            if (concealedPackages.contains(pn)) {
+                throw new IllegalStateException("Package " + pn
+                                                + " already declared");
+            }
+            if (exports.containsKey(pn)) {
+                throw new IllegalStateException("Exported package "
+                                                + pn + " already declared");
+            }
+            if (opens.containsKey(pn)) {
+                throw new IllegalStateException("Open package "
+                                                 + pn + " already declared");
+            }
+            concealedPackages.add(pn);
             return this;
         }
 
@@ -1473,13 +1879,8 @@ public class ModuleDescriptor
          *         The version
          *
          * @return This builder
-         *
-         * @throws IllegalStateException
-         *         If the module version is already set
          */
         public Builder version(Version v) {
-            if (version != null)
-                throw new IllegalStateException("module version already set");
             version = requireNonNull(v);
             return this;
         }
@@ -1494,16 +1895,11 @@ public class ModuleDescriptor
          *
          * @throws IllegalArgumentException
          *         If {@code v} is null or cannot be parsed as a version string
-         * @throws IllegalStateException
-         *         If the module version is already set
          *
          * @see Version#parse(String)
          */
         public Builder version(String v) {
-            if (version != null)
-                throw new IllegalStateException("module version already set");
-            version = Version.parse(v);
-            return this;
+            return version(Version.parse(v));
         }
 
         /**
@@ -1516,12 +1912,8 @@ public class ModuleDescriptor
          *
          * @throws IllegalArgumentException
          *         If {@code mainClass} is null or is not a legal Java identifier
-         * @throws IllegalStateException
-         *         If the module main class is already set
          */
         public Builder mainClass(String mc) {
-            if (mainClass != null)
-                throw new IllegalStateException("main class already set");
             mainClass = requireJavaIdentifier("main class name", mc);
             return this;
         }
@@ -1536,12 +1928,8 @@ public class ModuleDescriptor
          *
          * @throws IllegalArgumentException
          *         If {@code name} is null or the empty String
-         * @throws IllegalStateException
-         *         If the operating system name is already set
          */
         public Builder osName(String name) {
-            if (osName != null)
-                throw new IllegalStateException("OS name already set");
             if (name == null || name.isEmpty())
                 throw new IllegalArgumentException("OS name is null or empty");
             osName = name;
@@ -1558,12 +1946,8 @@ public class ModuleDescriptor
          *
          * @throws IllegalArgumentException
          *         If {@code name} is null or the empty String
-         * @throws IllegalStateException
-         *         If the operating system architecture is already set
          */
         public Builder osArch(String arch) {
-            if (osArch != null)
-                throw new IllegalStateException("OS arch already set");
             if (arch == null || arch.isEmpty())
                 throw new IllegalArgumentException("OS arch is null or empty");
             osArch = arch;
@@ -1580,12 +1964,8 @@ public class ModuleDescriptor
          *
          * @throws IllegalArgumentException
          *         If {@code name} is null or the empty String
-         * @throws IllegalStateException
-         *         If the operating system version is already set
          */
         public Builder osVersion(String version) {
-            if (osVersion != null)
-                throw new IllegalStateException("OS version already set");
             if (version == null || version.isEmpty())
                 throw new IllegalArgumentException("OS version is null or empty");
             osVersion = version;
@@ -1596,7 +1976,6 @@ public class ModuleDescriptor
             this.hashes = hashes;
             return this;
         }
-
 
         /* package */ Builder synthetic(boolean v) {
             this.synthetic = v;
@@ -1609,16 +1988,24 @@ public class ModuleDescriptor
          * @return The module descriptor
          */
         public ModuleDescriptor build() {
-            assert name != null;
+            Set<Requires> requires = new HashSet<>(this.requires.values());
 
-            Set<String> packages = new HashSet<>(conceals);
-            packages.addAll(exportedPackages());
+            Set<String> packages = new HashSet<>(exportedAndOpenPackages());
+            packages.addAll(concealedPackages);
+
+            Set<Exports> exports = new HashSet<>(this.exports.values());
+            Set<Opens> opens = new HashSet<>(this.opens.values());
+
+            Set<Provides> provides = new HashSet<>(this.provides.values());
+
             return new ModuleDescriptor(name,
+                                        open,
                                         automatic,
                                         synthetic,
                                         requires,
-                                        uses,
                                         exports,
+                                        opens,
+                                        uses,
                                         provides,
                                         version,
                                         mainClass,
@@ -1630,7 +2017,6 @@ public class ModuleDescriptor
         }
 
     }
-
 
     /**
      * Compares this module descriptor to another.
@@ -1689,11 +2075,13 @@ public class ModuleDescriptor
             return false;
         ModuleDescriptor that = (ModuleDescriptor)ob;
         return (name.equals(that.name)
+                && open == that.open
                 && automatic == that.automatic
                 && synthetic == that.synthetic
                 && requires.equals(that.requires)
-                && uses.equals(that.uses)
                 && exports.equals(that.exports)
+                && opens.equals(that.opens)
+                && uses.equals(that.uses)
                 && provides.equals(that.provides)
                 && Objects.equals(version, that.version)
                 && Objects.equals(mainClass, that.mainClass)
@@ -1720,11 +2108,13 @@ public class ModuleDescriptor
         int hc = hash;
         if (hc == 0) {
             hc = name.hashCode();
+            hc = hc * 43 + Boolean.hashCode(open);
             hc = hc * 43 + Boolean.hashCode(automatic);
             hc = hc * 43 + Boolean.hashCode(synthetic);
             hc = hc * 43 + requires.hashCode();
-            hc = hc * 43 + uses.hashCode();
             hc = hc * 43 + exports.hashCode();
+            hc = hc * 43 + opens.hashCode();
+            hc = hc * 43 + uses.hashCode();
             hc = hc * 43 + provides.hashCode();
             hc = hc * 43 + Objects.hashCode(version);
             hc = hc * 43 + Objects.hashCode(mainClass);
@@ -1748,36 +2138,101 @@ public class ModuleDescriptor
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Module { name: ").append(toNameAndVersion());
+
+        if (isOpen())
+            sb.append("open ");
+        sb.append("module { name: ").append(toNameAndVersion());
         if (!requires.isEmpty())
             sb.append(", ").append(requires);
         if (!uses.isEmpty())
             sb.append(", ").append(uses);
         if (!exports.isEmpty())
             sb.append(", exports: ").append(exports);
+        if (!opens.isEmpty())
+            sb.append(", opens: ").append(opens);
         if (!provides.isEmpty()) {
-            sb.append(", provides: [");
-            for (Map.Entry<String, Provides> entry : provides.entrySet()) {
-                sb.append(entry.getKey())
-                   .append(" with ")
-                   .append(entry.getValue());
-            }
-            sb.append("]");
+            sb.append(", provides: ").append(provides);
         }
         sb.append(" }");
         return sb.toString();
     }
+
+
+    /**
+     * Instantiates a builder to build a module descriptor.
+     *
+     * @param  name
+     *         The module name
+     *
+     * @return A new builder
+     *
+     * @throws IllegalArgumentException
+     *         If the module name is {@code null} or is not a legal Java
+     *         identifier
+     */
+    public static Builder module(String name) {
+        return new Builder(name, true);
+    }
+
+    /**
+     * Instantiates a builder to build a module descriptor for an open module.
+     * An open module does not declare any open packages but the resulting
+     * module is treated as if all packages are open.
+     *
+     * <p> As an example, the following creates a module descriptor for an open
+     * name "{@code m}" containing two packages, one of which is exported. </p>
+     * <pre>{@code
+     *     ModuleDescriptor descriptor = ModuleDescriptor.openModule("m")
+     *         .requires("java.base")
+     *         .exports("p")
+     *         .contains("q")
+     *         .build();
+     * }</pre>
+     *
+     * @param  name
+     *         The module name
+     *
+     * @return A new builder that builds an open module
+     *
+     * @throws IllegalArgumentException
+     *         If the module name is {@code null} or is not a legal Java
+     *         identifier
+     */
+    public static Builder openModule(String name) {
+        return new Builder(name, true).open(true);
+    }
+
+    /**
+     * Instantiates a builder to build a module descriptor for an automatic
+     * module. Automatic modules receive special treatment during resolution
+     * (see {@link Configuration}) so that they read all other modules. When
+     * Instantiated in the Java virtual machine as a {@link java.lang.reflect.Module}
+     * then the Module reads every unnamed module in the Java virtual machine.
+     *
+     * @param  name
+     *         The module name
+     *
+     * @return A new builder that builds an automatic module
+     *
+     * @throws IllegalArgumentException
+     *         If the module name is {@code null} or is not a legal Java
+     *         identifier
+     *
+     * @see ModuleFinder#of(Path[])
+     */
+    public static Builder automaticModule(String name) {
+        return new Builder(name, true).automatic(true);
+    }
+
 
     /**
      * Reads the binary form of a module declaration from an input stream
      * as a module descriptor.
      *
      * <p> If the descriptor encoded in the input stream does not indicate a
-     * set of concealed packages then the {@code packageFinder} will be
-     * invoked.  The packages it returns, except for those indicated as
-     * exported in the encoded descriptor, will be considered to be concealed.
-     * If the {@code packageFinder} throws an {@link UncheckedIOException} then
-     * {@link IOException} cause will be re-thrown. </p>
+     * set of packages in the module then the {@code packageFinder} will be
+     * invoked. If the {@code packageFinder} throws an {@link UncheckedIOException}
+     * then {@link IOException} cause will be re-thrown. </p>
      *
      * <p> If there are bytes following the module descriptor then it is
      * implementation specific as to whether those bytes are read, ignored,
@@ -1789,12 +2244,12 @@ public class ModuleDescriptor
      *
      * @apiNote The {@code packageFinder} parameter is for use when reading
      * module descriptors from legacy module-artifact formats that do not
-     * record the set of concealed packages in the descriptor itself.
+     * record the set of packages in the descriptor itself.
      *
      * @param  in
      *         The input stream
      * @param  packageFinder
-     *         A supplier that can produce a set of package names
+     *         A supplier that can produce the set of packages
      *
      * @return The module descriptor
      *
@@ -1834,10 +2289,7 @@ public class ModuleDescriptor
      * as a module descriptor.
      *
      * <p> If the descriptor encoded in the byte buffer does not indicate a
-     * set of concealed packages then the {@code packageFinder} will be
-     * invoked.  The packages it returns, except for those indicated as
-     * exported in the encoded descriptor, will be considered to be
-     * concealed. </p>
+     * set of packages then the {@code packageFinder} will be invoked. </p>
      *
      * <p> The module descriptor is read from the buffer stating at index
      * {@code p}, where {@code p} is the buffer's {@link ByteBuffer#position()
@@ -1853,12 +2305,12 @@ public class ModuleDescriptor
      *
      * @apiNote The {@code packageFinder} parameter is for use when reading
      * module descriptors from legacy module-artifact formats that do not
-     * record the set of concealed packages in the descriptor itself.
+     * record the set of packages in the descriptor itself.
      *
      * @param  bb
      *         The byte buffer
      * @param  packageFinder
-     *         A supplier that can produce a set of package names
+     *         A supplier that can produce the set of packages
      *
      * @return The module descriptor
      *
@@ -1908,6 +2360,15 @@ public class ModuleDescriptor
         }
     }
 
+    /**
+     * Returns a string containing the given set of modifiers and label.
+     */
+    private static <M> String toString(Set<M> mods, String what) {
+        return (Stream.concat(mods.stream().map(e -> e.toString().toLowerCase()),
+                              Stream.of(what)))
+                .collect(Collectors.joining(" "));
+    }
+
     static {
         /**
          * Setup the shared secret to allow code in other packages access
@@ -1915,25 +2376,48 @@ public class ModuleDescriptor
          */
         jdk.internal.misc.SharedSecrets
             .setJavaLangModuleAccess(new jdk.internal.misc.JavaLangModuleAccess() {
+                @Override
+                public Builder newModuleBuilder(String mn, boolean strict) {
+                    return new Builder(mn, strict);
+                }
+
+                @Override
+                public Builder newOpenModuleBuilder(String mn, boolean strict) {
+                    return new Builder(mn, strict).open(true);
+                }
 
                 @Override
                 public Requires newRequires(Set<Requires.Modifier> ms, String mn) {
-                    return new Requires(ms, mn, false);
+                    return new Requires(ms, mn, true);
                 }
 
                 @Override
-                public Exports newExports(String source, Set<String> targets) {
-                    return new Exports(source, targets, false);
+                public Exports newExports(Set<Exports.Modifier> ms, String source) {
+                    return new Exports(ms, source, Collections.emptySet(), true);
                 }
 
                 @Override
-                public Exports newExports(String source) {
-                    return new Exports(source, false);
+                public Exports newExports(Set<Exports.Modifier> ms,
+                                          String source,
+                                          Set<String> targets) {
+                    return new Exports(ms, source, targets, true);
                 }
 
                 @Override
-                public Provides newProvides(String service, Set<String> providers) {
-                    return new Provides(service, providers, false);
+                public Opens newOpens(Set<Opens.Modifier> ms,
+                                      String source,
+                                      Set<String> targets) {
+                    return new Opens(ms, source, targets, true);
+                }
+
+                @Override
+                public Opens newOpens(Set<Opens.Modifier> ms, String source) {
+                    return new Opens(ms, source, Collections.emptySet(), true);
+                }
+
+                @Override
+                public Provides newProvides(String service, List<String> providers) {
+                    return new Provides(service, providers, true);
                 }
 
                 @Override
@@ -1949,25 +2433,30 @@ public class ModuleDescriptor
 
                 @Override
                 public ModuleDescriptor newModuleDescriptor(String name,
+                                                            boolean open,
                                                             boolean automatic,
                                                             boolean synthetic,
                                                             Set<Requires> requires,
-                                                            Set<String> uses,
                                                             Set<Exports> exports,
-                                                            Map<String, Provides> provides,
+                                                            Set<Opens> opens,
+                                                            Set<String> uses,
+                                                            Set<Provides> provides,
                                                             Version version,
                                                             String mainClass,
                                                             String osName,
                                                             String osArch,
                                                             String osVersion,
                                                             Set<String> packages,
-                                                            ModuleHashes hashes) {
+                                                            ModuleHashes hashes,
+                                                            int hashCode) {
                     return new ModuleDescriptor(name,
+                                                open,
                                                 automatic,
                                                 synthetic,
                                                 requires,
-                                                uses,
                                                 exports,
+                                                opens,
+                                                uses,
                                                 provides,
                                                 version,
                                                 mainClass,
@@ -1975,7 +2464,14 @@ public class ModuleDescriptor
                                                 osArch,
                                                 osVersion,
                                                 packages,
-                                                hashes);
+                                                hashes,
+                                                hashCode,
+                                                false);
+                }
+
+                @Override
+                public Optional<ModuleHashes> hashes(ModuleDescriptor descriptor) {
+                    return descriptor.hashes();
                 }
 
                 @Override
@@ -1992,11 +2488,6 @@ public class ModuleDescriptor
                                                         URI location,
                                                         Supplier<ModuleReader> s) {
                     return new ModuleReference(descriptor, location, s, true, null);
-                }
-
-                @Override
-                public Optional<ModuleHashes> hashes(ModuleDescriptor descriptor) {
-                    return descriptor.hashes();
                 }
 
                 @Override

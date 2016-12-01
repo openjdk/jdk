@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4992443 4994819
+ * @modules java.base/java.util.concurrent.atomic:open
  * @run main VMSupportsCS8
  * @summary Checks that the value of VMSupportsCS8 matches system properties.
  */

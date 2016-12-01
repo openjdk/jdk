@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,14 @@
 /* @test
  * @bug 6405995
  * @summary Unit test for selector wakeup and interruption
- * @library ..
+ * @library .. /lib/testlibrary/
  */
 
 import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
-import java.util.Random;
+import java.util.concurrent.CyclicBarrier;
 
 public class Wakeup {
 
@@ -44,91 +44,112 @@ public class Wakeup {
     }
 
     static class Sleeper extends TestThread {
+        private static final long TIMEOUT = jdk.testlibrary.Utils.adjustTimeout(20_000);
+
+        // barrier is used to synchronize sleeper thread and checking
+        // thread which is the main thread: when go() get to the end,
+        // then start checking the sleeper's status.
+        private static CyclicBarrier barrier = new CyclicBarrier(2);
+        private static int wakeups = 0;
+        private static int waits = 0;
+
+        volatile boolean interruptBeforeSelect = false;
         volatile boolean started = false;
-        volatile int entries = 0;
-        volatile int wakeups = 0;
         volatile boolean wantInterrupt = false;
-        volatile boolean gotInterrupt = false;
-        volatile Exception exception = null;
         volatile boolean closed = false;
         Object gate = new Object();
 
         Selector sel;
 
-        Sleeper(Selector sel) {
+        Sleeper(Selector sel, boolean wantInterrupt, boolean interruptBeforeSelect) {
             super("Sleeper", System.err);
             this.sel = sel;
+            this.wantInterrupt = wantInterrupt;
+            this.interruptBeforeSelect = interruptBeforeSelect;
         }
 
         public void go() throws Exception {
             started = true;
-            for (;;) {
+            if (interruptBeforeSelect) {
                 synchronized (gate) { }
-                entries++;
-                try {
-                    sel.select();
-                } catch (ClosedSelectorException x) {
-                    closed = true;
-                }
-                boolean intr = Thread.currentThread().isInterrupted();
-                wakeups++;
-                System.err.println("Wakeup " + wakeups
-                                   + (closed ? " (closed)" : "")
-                                   + (intr ? " (intr)" : ""));
-                if (wakeups > 1000)
-                    throw new Exception("Too many wakeups");
-                if (closed)
-                    return;
-                if (wantInterrupt) {
-                    while (!Thread.interrupted())
-                        Thread.yield();
-                    gotInterrupt = true;
-                    wantInterrupt = false;
-                }
             }
+            wakeups++;
+            System.err.println("Wakeup, selecting, " + wakeups);
+            try {
+                sel.select();
+            } catch (ClosedSelectorException x) {
+                closed = true;
+            }
+            boolean intr = Thread.currentThread().isInterrupted();
+            System.err.println("Wakeup " + wakeups
+                               + (closed ? " (closed)" : "")
+                               + (intr ? " (intr)" : ""));
+            if (closed)
+                return;
+            if (wantInterrupt) {
+                while (!Thread.interrupted())
+                    Thread.yield();
+            }
+            System.err.println("Wakeup, waiting, " + wakeups);
+            barrier.await();
+            System.err.println("Wakeup, wait successfully, " + wakeups);
         }
 
+        void check(boolean close) throws Exception {
+            waits++;
+            System.err.println("waiting sleeper, " + waits);
+            if (!close) {
+                barrier.await();
+                System.err.println("wait barrier successfully, " + waits);
+            }
+            if (finish(TIMEOUT) == 0)
+                throw new Exception("Test failed");
+            if (this.closed != close)
+                throw new Exception("Selector was closed");
+        }
+
+        void check() throws Exception {
+            check(false);
+        }
+
+        static Sleeper createSleeper(Selector sel, boolean wantInterrupt,
+                boolean interruptBeforeSelect) throws Exception {
+            if (!wantInterrupt && interruptBeforeSelect) {
+                throw new RuntimeException("Wrong parameters!");
+            }
+
+            Sleeper sleeper = new Sleeper(sel, wantInterrupt, interruptBeforeSelect);
+
+            if (interruptBeforeSelect) {
+                synchronized(sleeper.gate) {
+                    sleeper.start();
+                    while (!sleeper.started)
+                        sleep(50);
+                    sleeper.interrupt();
+                }
+            } else {
+                sleeper.start();
+                while (!sleeper.started)
+                    sleep(50);
+                if (wantInterrupt) {
+                    sleep(50);
+                    sleeper.interrupt();
+                }
+            }
+            return sleeper;
+        }
     }
 
-    private static int checkedWakeups = 0;
+    static Sleeper newSleeper(Selector sel) throws Exception {
+        return Sleeper.createSleeper(sel, false, false);
+    }
 
-    private static void check(Sleeper sleeper, boolean intr)
-        throws Exception
-    {
-        checkedWakeups++;
-        if (sleeper.wakeups > checkedWakeups) {
-            sleeper.finish(100);
-            throw new Exception("Sleeper has run ahead");
-        }
-        int n = 0;
-        while (sleeper.wakeups < checkedWakeups) {
-            sleep(50);
-            if ((n += 50) > 1000) {
-                sleeper.finish(100);
-                throw new Exception("Sleeper appears to be dead ("
-                                    + checkedWakeups + ")");
-            }
-        }
-        if (sleeper.wakeups > checkedWakeups) {
-            sleeper.finish(100);
-            throw new Exception("Too many wakeups: Expected "
-                                + checkedWakeups
-                                + ", got " + sleeper.wakeups);
-        }
-        if (intr) {
-            n = 0;
-            // Interrupts can sometimes be delayed, so wait
-            while (!sleeper.gotInterrupt) {
-                sleep(50);
-                if ((n += 50) > 1000) {
-                    sleeper.finish(100);
-                    throw new Exception("Interrupt never delivered");
-                }
-            }
-            sleeper.gotInterrupt = false;
-        }
-        System.err.println("Check " + checkedWakeups
-                           + (intr ? " (intr " + n + ")" : ""));
+    static Sleeper newSleeperWantInterrupt(Selector sel) throws Exception {
+        return Sleeper.createSleeper(sel, true, false);
+    }
+
+    static Sleeper newSleeperWantInterruptBeforeSelect(Selector sel) throws Exception {
+        return Sleeper.createSleeper(sel, true, true);
     }
 
     public static void main(String[] args) throws Exception {
@@ -138,60 +159,37 @@ public class Wakeup {
         // Wakeup before select
         sel.wakeup();
 
-        Sleeper sleeper = new Sleeper(sel);
-
-        sleeper.start();
-        while (!sleeper.started)
-            sleep(50);
-
-        check(sleeper, false);          // 1
+        Sleeper sleeper = newSleeper(sel); // 1
+        sleeper.check();
 
         for (int i = 2; i < 5; i++) {
             // Wakeup during select
+            sleeper = newSleeper(sel);
             sel.wakeup();
-            check(sleeper, false);      // 2 .. 4
+            sleeper.check();         // 2 .. 4
         }
 
         // Double wakeup
-        synchronized (sleeper.gate) {
-            sel.wakeup();
-            check(sleeper, false);      // 5
-            sel.wakeup();
-            sel.wakeup();
-        }
-        check(sleeper, false);          // 6
+        sel.wakeup();
+        sel.wakeup();
+        sleeper = newSleeper(sel);
+        sleeper.check();            // 5
 
         // Interrupt
-        synchronized (sleeper.gate) {
-            sleeper.wantInterrupt = true;
-            sleeper.interrupt();
-            check(sleeper, true);       // 7
-        }
+        sleeper = newSleeperWantInterrupt(sel);
+        sleeper.check();            // 6
 
         // Interrupt before select
-        while (sleeper.entries < 8)
-            Thread.yield();
-        synchronized (sleeper.gate) {
-            sel.wakeup();
-            check(sleeper, false);      // 8
-            sleeper.wantInterrupt = true;
-            sleeper.interrupt();
-            sleep(50);
-        }
-        check(sleeper, true);           // 9
+        sleeper = newSleeperWantInterruptBeforeSelect(sel);
+        sleeper.check();            // 7
 
         // Close during select
-        while (sleeper.entries < 10)
-            Thread.yield();
-        synchronized (sleeper.gate) {
-            sel.close();
-            check(sleeper, false);      // 10
-        }
+        sleeper = newSleeper(sel);
+        sel.close();
+        sleeper.check();           // 8
 
-        if (sleeper.finish(200) == 0)
-            throw new Exception("Test failed");
-        if (!sleeper.closed)
-            throw new Exception("Selector not closed");
+        sleeper = newSleeper(sel);
+        sleeper.check(true);
     }
 
 }

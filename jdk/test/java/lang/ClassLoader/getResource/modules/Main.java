@@ -21,13 +21,18 @@
  * questions.
  */
 
+import java.io.InputStream;
 import java.lang.module.Configuration;
 import java.lang.module.ResolvedModule;
 import java.lang.reflect.Layer;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 
 /**
  * Basic test of ClassLoader getResource and getResourceAsStream when
@@ -40,36 +45,242 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
-        // create m1/myresource containing "m1"
-        Path file = directoryFor("m1").resolve(NAME);
-        Files.write(file, "m1".getBytes("UTF-8"));
+        // create resources in m1
+        createResource("m1", Paths.get("."), "m1");
+        createResource("m1", Paths.get("p1"), "m1/p1");
+        createResource("m1", Paths.get("p1", "impl"), "m1/p1.impl");
+        createResource("m1", Paths.get("p1", "resources"), "m1/p1.resources");
 
-        // create m2/myresource containing "m2"
-        file = directoryFor("m2").resolve(NAME);
-        Files.write(file, "m2".getBytes("UTF-8"));
+        // create resources in m2
+        createResource("m2", Paths.get("."), "m2");
+        createResource("m2", Paths.get("p2"), "m2/p2");
+        createResource("m2", Paths.get("p2", "impl"), "m2/p2.impl");
+        createResource("m2", Paths.get("p2", "resources"), "m2/p2.resources");
 
-        // check that m3/myresource does not exist
-        assertTrue(Files.notExists(directoryFor("m3").resolve(NAME)));
 
         // invoke ClassLoader getResource from the unnamed module
-        assertNull(Main.class.getClassLoader().getResource("/" + NAME));
+        ClassLoader thisLoader = Main.class.getClassLoader();
 
-        // invoke ClassLoader getResource from modules m1-m3
-        // Resources in a named module are private to that module.
-        // ClassLoader.getResource should not find resource in named modules.
-        assertNull(p1.Main.getResourceInClassLoader("/" + NAME));
-        assertNull(p2.Main.getResourceInClassLoader("/" + NAME));
-        assertNull(p3.Main.getResourceInClassLoader("/" + NAME));
+        URL url = thisLoader.getResource(NAME);
+        assertNotNull(url);
+
+        url = thisLoader.getResource("p1/" + NAME);
+        assertNull(url);
+
+        url = thisLoader.getResource("p1/impl/" + NAME);
+        assertNull(url);
+
+        url = thisLoader.getResource("p1/resources/" + NAME);
+        assertEquals(readAllAsString(url), "m1/p1.resources");
+
+        url = thisLoader.getResource("p2/" + NAME);
+        assertNull(url);
+
+        url = thisLoader.getResource("p2/impl/" + NAME);
+        assertNull(url);
+
+        url = thisLoader.getResource("p2/resources/" + NAME);
+        assertNull(url);
+
+
+        // invoke ClassLoader getResource from module m1
+        url = p1.Main.getResourceInClassLoader(NAME);
+        assertNotNull(url);
+
+        url = p1.Main.getResourceInClassLoader("p1/" + NAME);
+        assertNull(url);
+
+        url = p1.Main.getResourceInClassLoader("p1/impl/" + NAME);
+        assertNull(url);
+
+        url = p1.Main.getResourceInClassLoader("p1/resources/" + NAME);
+        assertEquals(readAllAsString(url), "m1/p1.resources");
+
+        url = p1.Main.getResourceInClassLoader("p2/" + NAME);
+        assertNull(url);
+
+        url = p1.Main.getResourceInClassLoader("p2/impl/" + NAME);
+        assertNull(url);
+
+        url = p1.Main.getResourceInClassLoader("p2/resources/" + NAME);
+        assertNull(url);
+
+
+        // invoke ClassLoader getResource from module m2
+        url = p2.Main.getResourceInClassLoader(NAME);
+        assertNotNull(url);
+
+        url = p2.Main.getResourceInClassLoader("p1/" + NAME);
+        assertNull(url);
+
+        url = p2.Main.getResourceInClassLoader("p1/impl/" + NAME);
+        assertNull(url);
+
+        url = p2.Main.getResourceInClassLoader("p1/resources/" + NAME);
+        assertEquals(readAllAsString(url), "m1/p1.resources");
+
+        url = p2.Main.getResourceInClassLoader("p2/" + NAME);
+        assertNull(url);
+
+        url = p2.Main.getResourceInClassLoader("p2/impl/" + NAME);
+        assertNull(url);
+
+        url = p2.Main.getResourceInClassLoader("p2/resources/" + NAME);
+        assertNull(url);
+
+
+        // invoke ClassLoader getResources from the unnamed module
+        Enumeration<URL> urls = thisLoader.getResources(NAME);
+        List<String> resources = readAllAsStrings(urls);
+        assertTrue(resources.size() == 2);
+        assertTrue(resources.contains("m1"));
+        assertTrue(resources.contains("m2"));
+
+        urls = thisLoader.getResources("p1/" + NAME);
+        assertTrue(readAllAsStrings(urls).isEmpty());
+
+        urls = thisLoader.getResources("p1/impl/" + NAME);
+        assertTrue(readAllAsStrings(urls).isEmpty());
+
+        urls = thisLoader.getResources("p1/resources/" + NAME);
+        resources = readAllAsStrings(urls);
+        assertTrue(resources.size() == 1);
+        assertTrue(resources.contains("m1/p1.resources"));
+
+        urls = thisLoader.getResources("p2/" + NAME);
+        assertTrue(readAllAsStrings(urls).isEmpty());
+
+        urls = thisLoader.getResources("p2/impl/" + NAME);
+        assertTrue(readAllAsStrings(urls).isEmpty());
+
+        urls = thisLoader.getResources("p2/resources/" + NAME);
+        assertTrue(readAllAsStrings(urls).isEmpty());
+
+
+        // invoke ClassLoader getResources from m1
+        urls = p1.Main.getResourcesInClassLoader(NAME);
+        resources = readAllAsStrings(urls);
+        assertTrue(resources.size() == 2);
+        assertTrue(resources.contains("m1"));
+        assertTrue(resources.contains("m2"));
+
+        urls = p1.Main.getResourcesInClassLoader("p1/" + NAME);
+        assertTrue(readAllAsStrings(urls).isEmpty());
+
+        urls = p1.Main.getResourcesInClassLoader("p1/impl/" + NAME);
+        assertTrue(readAllAsStrings(urls).isEmpty());
+
+        urls = p1.Main.getResourcesInClassLoader("p1/resources/" + NAME);
+        resources = readAllAsStrings(urls);
+        assertTrue(resources.size() == 1);
+        assertTrue(resources.contains("m1/p1.resources"));
+
+        urls = p1.Main.getResourcesInClassLoader("p2/" + NAME);
+        assertTrue(readAllAsStrings(urls).isEmpty());
+
+        urls = p1.Main.getResourcesInClassLoader("p2/impl/" + NAME);
+        assertTrue(readAllAsStrings(urls).isEmpty());
+
+        urls = p1.Main.getResourcesInClassLoader("p2/resources/" + NAME);
+        assertTrue(readAllAsStrings(urls).isEmpty());
+
+
+        // invoke ClassLoader getResources from m2
+        urls = p2.Main.getResourcesInClassLoader(NAME);
+        resources = readAllAsStrings(urls);
+        assertTrue(resources.size() == 2);
+        assertTrue(resources.contains("m1"));
+        assertTrue(resources.contains("m2"));
+
+        urls = p2.Main.getResourcesInClassLoader("p1/" + NAME);
+        assertTrue(readAllAsStrings(urls).isEmpty());
+
+        urls = p2.Main.getResourcesInClassLoader("p1/impl/" + NAME);
+        assertTrue(readAllAsStrings(urls).isEmpty());
+
+        urls = p2.Main.getResourcesInClassLoader("p1/resources/" + NAME);
+        resources = readAllAsStrings(urls);
+        assertTrue(resources.size() == 1);
+        assertTrue(resources.contains("m1/p1.resources"));
+
+        urls = p2.Main.getResourcesInClassLoader("p2/" + NAME);
+        assertTrue(readAllAsStrings(urls).isEmpty());
+
+        urls = p2.Main.getResourcesInClassLoader("p2/impl/" + NAME);
+        assertTrue(readAllAsStrings(urls).isEmpty());
+
+        urls = p2.Main.getResourcesInClassLoader("p2/resources/" + NAME);
+        assertTrue(readAllAsStrings(urls).isEmpty());
+
 
         // invoke ClassLoader getResourceAsStream from the unnamed module
-        assertNull(Main.class.getClassLoader().getResourceAsStream("/" + NAME));
+        InputStream in = thisLoader.getResourceAsStream(NAME);
+        assertNotNull(in);
 
-        // invoke ClassLoader getResourceAsStream from modules m1-m3
-        // Resources in a named module are private to that module.
-        // ClassLoader.getResourceAsStream should not find resource in named modules.
-        assertNull(p1.Main.getResourceAsStreamInClassLoader("/" + NAME));
-        assertNull(p2.Main.getResourceAsStreamInClassLoader("/" + NAME));
-        assertNull(p3.Main.getResourceAsStreamInClassLoader("/" + NAME));
+        in = thisLoader.getResourceAsStream("p1/" + NAME);
+        assertNull(in);
+
+        in = thisLoader.getResourceAsStream("p1/impl/" + NAME);
+        assertNull(in);
+
+        in = thisLoader.getResourceAsStream("p1/resources/" + NAME);
+        assertEquals(readAllAsString(in), "m1/p1.resources");
+
+        in = thisLoader.getResourceAsStream("p2/" + NAME);
+        assertNull(in);
+
+        in = thisLoader.getResourceAsStream("p2/impl/" + NAME);
+        assertNull(in);
+
+        in = thisLoader.getResourceAsStream("p2/resources/" + NAME);
+        assertNull(in);
+
+
+        // invoke ClassLoader getResource from modules m1
+        in = p1.Main.getResourceAsStreamInClassLoader(NAME);
+        assertNotNull(in);
+
+        in = p1.Main.getResourceAsStreamInClassLoader("p1/" + NAME);
+        assertNull(in);
+
+        in = p1.Main.getResourceAsStreamInClassLoader("p1/impl/" + NAME);
+        assertNull(in);
+
+        in = p1.Main.getResourceAsStreamInClassLoader("p1/resources/" + NAME);
+        assertEquals(readAllAsString(in), "m1/p1.resources");
+
+        in = p1.Main.getResourceAsStreamInClassLoader("p2/" + NAME);
+        assertNull(in);
+
+        in = p1.Main.getResourceAsStreamInClassLoader("p2/impl/" + NAME);
+        assertNull(in);
+
+        in = p1.Main.getResourceAsStreamInClassLoader("p2/resources/" + NAME);
+        assertNull(in);
+
+
+        // invoke ClassLoader getResource from modules m2
+        in = p2.Main.getResourceAsStreamInClassLoader(NAME);
+        assertNotNull(in);
+
+        in = p2.Main.getResourceAsStreamInClassLoader("p1/" + NAME);
+        assertNull(in);
+
+        in = p2.Main.getResourceAsStreamInClassLoader("p1/impl/" + NAME);
+        assertNull(in);
+
+        in = p2.Main.getResourceAsStreamInClassLoader("p1/resources/" + NAME);
+        assertEquals(readAllAsString(in), "m1/p1.resources");
+
+        in = p2.Main.getResourceAsStreamInClassLoader("p2/" + NAME);
+        assertNull(in);
+
+        in = p2.Main.getResourceAsStreamInClassLoader("p2/impl/" + NAME);
+        assertNull(in);
+
+        in = p2.Main.getResourceAsStreamInClassLoader("p2/resources/" + NAME);
+        assertNull(in);
+
 
         // SecurityManager case
         System.setSecurityManager(new SecurityManager());
@@ -77,14 +288,21 @@ public class Main {
         assertNull(Main.class.getClassLoader().getResource("/" + NAME));
         assertNull(p1.Main.getResourceInClassLoader("/" + NAME));
         assertNull(p2.Main.getResourceInClassLoader("/" + NAME));
-        assertNull(p3.Main.getResourceInClassLoader("/" + NAME));
 
         assertNull(Main.class.getClassLoader().getResourceAsStream("/" + NAME));
         assertNull(p1.Main.getResourceAsStreamInClassLoader("/" + NAME));
         assertNull(p2.Main.getResourceAsStreamInClassLoader("/" + NAME));
-        assertNull(p3.Main.getResourceAsStreamInClassLoader("/" + NAME));
 
         System.out.println("Success!");
+    }
+
+    /**
+     * Create a resource in the sub-directory of the given exploded module
+     */
+    static void createResource(String mn, Path subdir, String msg) throws IOException {
+        Path dir = directoryFor(mn).resolve(subdir);
+        Path file = dir.resolve(NAME);
+        Files.write(file, msg.getBytes("UTF-8"));
     }
 
     /**
@@ -101,12 +319,60 @@ public class Main {
         return dir;
     }
 
+    static String readAllAsString(InputStream in) throws IOException {
+        if (in == null)
+            return null;
+        try (in) {
+            return new String(in.readAllBytes(), "UTF-8");
+        }
+    }
+
+    static String readAllAsString(URL url) throws IOException {
+        if (url == null)
+            return null;
+        InputStream in = url.openStream();
+        return readAllAsString(url.openStream());
+    }
+
+    static List<String> readAllAsStrings(Enumeration<URL> urls) throws IOException {
+        List<String> result = new ArrayList<>();
+        while (urls.hasMoreElements()) {
+            URL url = urls.nextElement();
+            result.add(readAllAsString(url));
+        }
+        return result;
+    }
+
     static void assertTrue(boolean condition) {
         if (!condition) throw new RuntimeException();
     }
 
+    static void assertFalse(boolean condition) {
+        if (condition) throw new RuntimeException();
+    }
+
     static void assertNull(Object o) {
         assertTrue(o == null);
+    }
+
+    static void assertNotNull(Object o) {
+        assertTrue(o != null);
+    }
+
+    static void assertEquals(Object actual, Object expected) {
+        if (expected == null) {
+            assertNull(actual);
+        } else {
+            assertTrue(expected.equals(actual));
+        }
+    }
+
+    static void assertNotEquals(Object actual, Object expected) {
+        if (expected == null) {
+            assertNotNull(actual);
+        } else {
+            assertTrue(!expected.equals(actual));
+        }
     }
 }
 

@@ -25,7 +25,8 @@
  * @bug 4290801 4692419 4693631 5101540 5104960 6296410 6336600 6371531
  *    6488442 7036905 8008577 8039317 8074350 8074351 8150324
  * @summary Basic tests for Currency class.
- * @modules jdk.localedata
+ * @modules java.base/java.util:open
+ *          jdk.localedata
  */
 
 import java.io.ByteArrayInputStream;

@@ -30,7 +30,7 @@
  * JVM and other components in the Java runtime.
  */
 module java.management {
-    requires public java.rmi;
+    requires transitive java.rmi;
     requires java.logging;
     requires java.naming;
 

@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8001596
+ * @modules java.base/javax.crypto.spec:open
  * @summary Incorrect condition check in PBKDF2KeyImpl.java
  */
 
