@@ -61,7 +61,7 @@ public class InverseDeps {
     private static final Path LIBS_DIR = Paths.get("libs");
 
     private static final Set<String> modules = new LinkedHashSet(
-        List.of("unsafe", "m4", "m5", "m6", "m7")
+        List.of("unsafe", "m4", "m5", "mVI", "mVII")
     );
 
     /**
@@ -108,8 +108,8 @@ public class InverseDeps {
                 }
             },
             { "jdk.unsupported", new String[][] {
-                    new String[] {"jdk.unsupported", "unsafe", "m6", "m7"},
-                    new String[] {"jdk.unsupported", "unsafe", "m7"}
+                    new String[] {"jdk.unsupported", "unsafe", "mVI", "mVII"},
+                    new String[] {"jdk.unsupported", "unsafe", "mVII"}
                 }
             },
         };
@@ -155,8 +155,8 @@ public class InverseDeps {
                     }
             },
             { "sun.misc", new String[][] {
-                        new String[] {"jdk.unsupported", "unsafe", "m6", "m7"},
-                        new String[] {"jdk.unsupported", "unsafe", "m7"}
+                        new String[] {"jdk.unsupported", "unsafe", "mVI", "mVII"},
+                        new String[] {"jdk.unsupported", "unsafe", "mVII"}
                     }
             }
         };
@@ -180,13 +180,13 @@ public class InverseDeps {
         return new Object[][] {
             // -regex and result
             { "org.safe.Lib", new String[][] {
-                    new String[] { "unsafe", "m7"},
-                    new String[] { "unsafe", "m6", "m7"},
+                    new String[] { "unsafe", "mVII"},
+                    new String[] { "unsafe", "mVI", "mVII"},
                 }
             },
             { "java.util.logging.*|org.safe.Lib", new String[][] {
-                    new String[] { "unsafe", "m7"},
-                    new String[] { "unsafe", "m6", "m7"},
+                    new String[] { "unsafe", "mVII"},
+                    new String[] { "unsafe", "mVI", "mVII"},
                     new String[] { "java.logging", "m5"},
                 }
             }
@@ -212,18 +212,18 @@ public class InverseDeps {
         return new Object[][] {
             // -regex and result
             { "sun.misc.Unsafe", new String[][] {
-                    new String[] {"jdk.unsupported", "unsafe.jar", "m6.jar", "m7.jar"},
-                    new String[] {"jdk.unsupported", "unsafe.jar", "m7.jar"}
+                    new String[] {"jdk.unsupported", "unsafe.jar", "mVI.jar", "mVII.jar"},
+                    new String[] {"jdk.unsupported", "unsafe.jar", "mVII.jar"}
                 }
             },
             { "org.safe.Lib", new String[][] {
-                    new String[] { "unsafe.jar", "m7.jar"},
-                    new String[] { "unsafe.jar", "m6.jar", "m7.jar"},
+                    new String[] { "unsafe.jar", "mVII.jar"},
+                    new String[] { "unsafe.jar", "mVI.jar", "mVII.jar"},
                 }
             },
             { "java.util.logging.*|org.safe.Lib", new String[][] {
-                    new String[] { "unsafe.jar", "m7.jar"},
-                    new String[] { "unsafe.jar", "m6.jar", "m7.jar"},
+                    new String[] { "unsafe.jar", "mVII.jar"},
+                    new String[] { "unsafe.jar", "mVI.jar", "mVII.jar"},
                     new String[] { "java.logging", "m5.jar"},
                 }
             }
@@ -234,11 +234,11 @@ public class InverseDeps {
     public void testClassPath(String name, String[][] expected) throws Exception {
         // -classpath
         String cpath = modules.stream()
-            .filter(mn -> !mn.equals("m7"))
+            .filter(mn -> !mn.equals("mVII"))
             .map(mn -> LIBS_DIR.resolve(mn + ".jar").toString())
             .collect(Collectors.joining(File.pathSeparator));
 
-        Path jarfile = LIBS_DIR.resolve("m7.jar");
+        Path jarfile = LIBS_DIR.resolve("mVII.jar");
 
         String cmd1 = String.format("jdeps --inverse -classpath %s -regex %s %s%n",
             cpath, name, jarfile);

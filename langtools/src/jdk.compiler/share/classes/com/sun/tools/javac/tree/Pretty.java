@@ -28,6 +28,7 @@ package com.sun.tools.javac.tree;
 import java.io.*;
 
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
+import com.sun.source.tree.ModuleTree.ModuleKind;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
@@ -441,6 +442,10 @@ public class Pretty extends JCTree.Visitor {
     @Override
     public void visitModuleDef(JCModuleDecl tree) {
         try {
+            printAnnotations(tree.mods.annotations);
+            if (tree.getModuleType() == ModuleKind.OPEN) {
+                print("open ");
+            }
             print("module ");
             printExpr(tree.qualId);
             if (tree.directives == null) {
@@ -457,7 +462,11 @@ public class Pretty extends JCTree.Visitor {
     @Override
     public void visitExports(JCExports tree) {
         try {
-            print("exports ");
+            if (tree.hasTag(EXPORTS)) {
+                print("exports ");
+            } else {
+                print("opens ");
+            }
             printExpr(tree.qualid);
             if (tree.moduleNames != null) {
                 print(" to ");
@@ -475,7 +484,7 @@ public class Pretty extends JCTree.Visitor {
             print("provides ");
             printExpr(tree.serviceName);
             print(" with ");
-            printExpr(tree.implName);
+            printExprs(tree.implNames);
             print(";");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -486,8 +495,10 @@ public class Pretty extends JCTree.Visitor {
     public void visitRequires(JCRequires tree) {
         try {
             print("requires ");
-            if (tree.isPublic)
-                print("public ");
+            if (tree.isStaticPhase)
+                print("static ");
+            if (tree.isTransitive)
+                print("transitive ");
             printExpr(tree.moduleName);
             print(";");
         } catch (IOException e) {

@@ -178,7 +178,7 @@ public class ModuleExportsAnalyzer extends DepsAnalyzer {
         RootModule(String name) {
             super(name);
 
-            ModuleDescriptor.Builder builder = new ModuleDescriptor.Builder(name);
+            ModuleDescriptor.Builder builder = ModuleDescriptor.module(name);
             this.descriptor = builder.build();
         }
 

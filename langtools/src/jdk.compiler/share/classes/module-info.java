@@ -28,7 +28,7 @@
  *  and its command line equivalent, <em>javac</em>, as well as <em>javah</em>.
  */
 module jdk.compiler {
-    requires public java.compiler;
+    requires transitive java.compiler;
 
     exports com.sun.source.doctree;
     exports com.sun.source.tree;

@@ -31,17 +31,24 @@ package com.sun.source.tree;
  * For example:
  * <pre>
  *    requires <em>module-name</em>;
- *    requires public <em>module-name</em>;
+ *    requires static <em>module-name</em>;
+ *    requires transitive <em>module-name</em>;
  * </pre>
  *
  * @since 9
  */
 public interface RequiresTree extends DirectiveTree {
     /**
-     * Returns true if this is a "requires public" directive.
-     * @return true if this is a "requires public" directive
+     * Returns true if this is a "requires static" directive.
+     * @return true if this is a "requires static" directive
      */
-    boolean isPublic();
+    boolean isStatic();
+
+    /**
+     * Returns true if this is a "requires transitive" directive.
+     * @return true if this is a "requires transitive" directive
+     */
+    boolean isTransitive();
 
     /**
      * Returns the name of the module that is required.

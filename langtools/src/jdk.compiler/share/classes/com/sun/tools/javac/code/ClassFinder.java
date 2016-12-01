@@ -29,13 +29,16 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import javax.lang.model.SourceVersion;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
+import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
@@ -558,17 +561,17 @@ public class ClassFinder {
 
         if (wantClassFiles && (classLocn != null)) {
             fillIn(p, classLocn,
-                   fileManager.list(classLocn,
-                                    packageName,
-                                    classKinds,
-                                    false));
+                   list(classLocn,
+                        p,
+                        packageName,
+                        classKinds));
         }
         if (wantSourceFiles && (sourceLocn != null)) {
             fillIn(p, sourceLocn,
-                   fileManager.list(sourceLocn,
-                                    packageName,
-                                    sourceKinds,
-                                    false));
+                   list(sourceLocn,
+                        p,
+                        packageName,
+                        sourceKinds));
         }
     }
 
@@ -620,23 +623,23 @@ public class ClassFinder {
         String packageName = p.fullname.toString();
         if (wantSourceFiles && !haveSourcePath) {
             fillIn(p, CLASS_PATH,
-                   fileManager.list(CLASS_PATH,
-                                    packageName,
-                                    kinds,
-                                    false));
+                   list(CLASS_PATH,
+                        p,
+                        packageName,
+                        kinds));
         } else {
             if (wantClassFiles)
                 fillIn(p, CLASS_PATH,
-                       fileManager.list(CLASS_PATH,
-                                        packageName,
-                                        classKinds,
-                                        false));
+                       list(CLASS_PATH,
+                            p,
+                            packageName,
+                            classKinds));
             if (wantSourceFiles)
                 fillIn(p, SOURCE_PATH,
-                       fileManager.list(SOURCE_PATH,
-                                        packageName,
-                                        sourceKinds,
-                                        false));
+                       list(SOURCE_PATH,
+                            p,
+                            packageName,
+                            sourceKinds));
         }
     }
 
@@ -645,12 +648,12 @@ public class ClassFinder {
      */
     private void scanPlatformPath(PackageSymbol p) throws IOException {
         fillIn(p, PLATFORM_CLASS_PATH,
-               fileManager.list(PLATFORM_CLASS_PATH,
-                                p.fullname.toString(),
-                                allowSigFiles ? EnumSet.of(JavaFileObject.Kind.CLASS,
-                                                           JavaFileObject.Kind.OTHER)
-                                              : EnumSet.of(JavaFileObject.Kind.CLASS),
-                                false));
+               list(PLATFORM_CLASS_PATH,
+                    p,
+                    p.fullname.toString(),
+                    allowSigFiles ? EnumSet.of(JavaFileObject.Kind.CLASS,
+                                               JavaFileObject.Kind.OTHER)
+                                  : EnumSet.of(JavaFileObject.Kind.CLASS)));
     }
     // where
         @SuppressWarnings("fallthrough")
@@ -662,10 +665,7 @@ public class ClassFinder {
             for (JavaFileObject fo : files) {
                 switch (fo.getKind()) {
                 case OTHER:
-                    boolean sigFile = location == PLATFORM_CLASS_PATH &&
-                                      allowSigFiles &&
-                                      fo.getName().endsWith(".sig");
-                    if (!sigFile) {
+                    if (!isSigFile(location, fo)) {
                         extraFileActions(p, fo);
                         break;
                     }
@@ -682,8 +682,59 @@ public class ClassFinder {
                 }
                 default:
                     extraFileActions(p, fo);
+                    break;
                 }
             }
+        }
+
+        boolean isSigFile(Location location, JavaFileObject fo) {
+            return location == PLATFORM_CLASS_PATH &&
+                   allowSigFiles &&
+                   fo.getName().endsWith(".sig");
+        }
+
+        Iterable<JavaFileObject> list(Location location,
+                                      PackageSymbol p,
+                                      String packageName,
+                                      Set<Kind> kinds) throws IOException {
+            Iterable<JavaFileObject> listed = fileManager.list(location,
+                                                               packageName,
+                                                               EnumSet.allOf(Kind.class),
+                                                               false);
+            return () -> new Iterator<JavaFileObject>() {
+                private final Iterator<JavaFileObject> original = listed.iterator();
+                private JavaFileObject next;
+                @Override
+                public boolean hasNext() {
+                    if (next == null) {
+                        while (original.hasNext()) {
+                            JavaFileObject fo = original.next();
+
+                            if (fo.getKind() != Kind.CLASS &&
+                                fo.getKind() != Kind.SOURCE &&
+                                !isSigFile(currentLoc, fo)) {
+                                p.flags_field |= Flags.HAS_RESOURCE;
+                            }
+
+                            if (kinds.contains(fo.getKind())) {
+                                next = fo;
+                                break;
+                            }
+                        }
+                    }
+                    return next != null;
+                }
+
+                @Override
+                public JavaFileObject next() {
+                    if (!hasNext())
+                        throw new NoSuchElementException();
+                    JavaFileObject result = next;
+                    next = null;
+                    return result;
+                }
+
+            };
         }
 
     /**
