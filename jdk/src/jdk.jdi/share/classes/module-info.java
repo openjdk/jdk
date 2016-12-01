@@ -23,6 +23,9 @@
  * questions.
  */
 
+/**
+ * Defines the Java Debugger Interface.
+ */
 module jdk.jdi {
     requires jdk.attach;
     requires jdk.jdwp.agent;
@@ -37,10 +40,11 @@ module jdk.jdi {
     uses com.sun.jdi.connect.spi.TransportService;
 
     // windows shared memory connector providers are added at build time
-    provides com.sun.jdi.connect.Connector with com.sun.tools.jdi.ProcessAttachingConnector;
-    provides com.sun.jdi.connect.Connector with com.sun.tools.jdi.RawCommandLineLauncher;
-    provides com.sun.jdi.connect.Connector with com.sun.tools.jdi.SocketAttachingConnector;
-    provides com.sun.jdi.connect.Connector with com.sun.tools.jdi.SocketListeningConnector;
-    provides com.sun.jdi.connect.Connector with com.sun.tools.jdi.SunCommandLineLauncher;
+    provides com.sun.jdi.connect.Connector with
+        com.sun.tools.jdi.ProcessAttachingConnector,
+        com.sun.tools.jdi.RawCommandLineLauncher,
+        com.sun.tools.jdi.SocketAttachingConnector,
+        com.sun.tools.jdi.SocketListeningConnector,
+        com.sun.tools.jdi.SunCommandLineLauncher;
 }
 

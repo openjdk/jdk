@@ -770,12 +770,6 @@ struct JNINativeInterface_ {
 
     jobject (JNICALL *GetModule)
        (JNIEnv* env, jclass clazz);
-
-    void (JNICALL *AddModuleReads)
-        (JNIEnv* env, jobject m1, jobject m2);
-
-    jboolean (JNICALL *CanReadModule)
-        (JNIEnv* env, jobject m1, jobject m2);
 };
 
 /*
@@ -1872,14 +1866,6 @@ struct JNIEnv_ {
 
     jobject GetModule(jclass clazz) {
         return functions->GetModule(this, clazz);
-    }
-
-    void AddModuleReads(jobject m1, jobject m2) {
-        functions->AddModuleReads(this, m1, m2);
-    }
-
-    jboolean CanReadModule(jobject m1, jobject m2) {
-        return functions->CanReadModule(this, m1, m2);
     }
 
 #endif /* __cplusplus */

@@ -22,11 +22,10 @@
  */
 
 import java.lang.module.ModuleDescriptor;
-import java.lang.module.ModuleDescriptor.Requires.Modifier;
+import java.lang.module.ModuleDescriptor.*;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
-import java.util.Collections;
-import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -58,20 +57,49 @@ public class SystemModulesTest {
     }
 
     private void testModuleDescriptor(ModuleDescriptor md) {
-        assertUnmodifiable(md.conceals(), "conceal");
         assertUnmodifiable(md.packages(), "package");
         assertUnmodifiable(md.requires(),
-                           jlma.newRequires(EnumSet.allOf(Modifier.class), "require"));
-        assertUnmodifiable(md.exports(), jlma.newExports("export"));
+                           jlma.newRequires(Set.of(Requires.Modifier.TRANSITIVE), "require"));
+        for (Requires req : md.requires()) {
+            assertUnmodifiable(req.modifiers(), Requires.Modifier.TRANSITIVE);
+        }
+
+        assertUnmodifiable(md.exports(), jlma.newExports(Set.of(), "export", Set.of()));
+        for (Exports exp : md.exports()) {
+            assertUnmodifiable(exp.modifiers(), Exports.Modifier.SYNTHETIC);
+            assertUnmodifiable(exp.targets(), "target");
+        }
+
+        assertUnmodifiable(md.opens(), jlma.newOpens(Set.of(), "open", Set.of()));
+        for (Opens opens : md.opens()) {
+            assertUnmodifiable(opens.modifiers(), Opens.Modifier.SYNTHETIC);
+            assertUnmodifiable(opens.targets(), "target");
+        }
+
         assertUnmodifiable(md.uses(), "use");
-        assertUnmodifiable(md.provides(), "provide",
-                           jlma.newProvides("provide", Collections.singleton("provide")));
+
+        assertUnmodifiable(md.provides(),
+                           jlma.newProvides("provide", List.of("provide")));
+        for (Provides provides : md.provides()) {
+            assertUnmodifiable(provides.providers(), "provide");
+        }
 
     }
 
     private <T> void assertUnmodifiable(Set<T> set, T dummy) {
         try {
             set.add(dummy);
+            fail("Should throw UnsupportedOperationException");
+        } catch (UnsupportedOperationException e) {
+            // pass
+        } catch (Exception e) {
+            fail("Should throw UnsupportedOperationException");
+        }
+    }
+
+    private <T> void assertUnmodifiable(List<T> list, T dummy) {
+        try {
+            list.add(dummy);
             fail("Should throw UnsupportedOperationException");
         } catch (UnsupportedOperationException e) {
             // pass

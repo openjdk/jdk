@@ -28,20 +28,24 @@ package jdk.internal.module;
 import java.lang.reflect.Module;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Provides;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import jdk.internal.loader.ClassLoaderValue;
 
 /**
  * A <em>services catalog</em>. Each {@code ClassLoader} and {@code Layer} has
  * an optional {@code ServicesCatalog} for modules that provide services.
  *
- * @see java.util.ServiceLoader
+ * @apiNote This class will be replaced once the ServiceLoader is further
+ *          specified
  */
-public interface ServicesCatalog {
+public final class ServicesCatalog {
 
     /**
      * Represents a service provider in the services catalog.
@@ -78,56 +82,98 @@ public interface ServicesCatalog {
         }
     }
 
-    /**
-     * Registers the providers in the given module in this services catalog.
-     *
-     * @throws UnsupportedOperationException
-     *         If this services catalog is immutable
-     */
-    void register(Module module);
+    // service name -> list of providers
+    private final Map<String, List<ServiceProvider>> map = new ConcurrentHashMap<>();
 
-    /**
-     * Returns the (possibly empty) set of service providers that implement the
-     * given service type.
-     */
-    Set<ServiceProvider> findServices(String service);
+    private ServicesCatalog() { }
 
     /**
      * Creates a ServicesCatalog that supports concurrent registration and
-     * and lookup.
+     * and lookup
      */
-    static ServicesCatalog create() {
-        return new ServicesCatalog() {
-
-            private Map<String, Set<ServiceProvider>> map = new ConcurrentHashMap<>();
-
-            @Override
-            public void register(Module m) {
-                ModuleDescriptor descriptor = m.getDescriptor();
-
-                for (Provides provides : descriptor.provides().values()) {
-                    String service = provides.service();
-                    Set<String> providerNames = provides.providers();
-
-                    // create a new set to replace the existing
-                    Set<ServiceProvider> result = new HashSet<>();
-                    Set<ServiceProvider> providers = map.get(service);
-                    if (providers != null) {
-                        result.addAll(providers);
-                    }
-                    for (String pn : providerNames) {
-                        result.add(new ServiceProvider(m, pn));
-                    }
-                    map.put(service, Collections.unmodifiableSet(result));
-                }
-
-            }
-
-            @Override
-            public Set<ServiceProvider> findServices(String service) {
-                return map.getOrDefault(service, Collections.emptySet());
-            }
-
-        };
+    public static ServicesCatalog create() {
+        return new ServicesCatalog();
     }
+
+    /**
+     * Returns the list of service provides for the given service type
+     * name, creating it if needed.
+     */
+    private List<ServiceProvider> providers(String service) {
+        // avoid computeIfAbsent here
+        List<ServiceProvider> list = map.get(service);
+        if (list == null) {
+            list = new CopyOnWriteArrayList<>();
+            List<ServiceProvider> prev = map.putIfAbsent(service, list);
+            if (prev != null)
+                list = prev;  // someone else got there
+        }
+        return list;
+    }
+
+    /**
+     * Registers the providers in the given module in this services catalog.
+     */
+    public void register(Module module) {
+        ModuleDescriptor descriptor = module.getDescriptor();
+        for (Provides provides : descriptor.provides()) {
+            String service = provides.service();
+            List<String> providerNames = provides.providers();
+            int count = providerNames.size();
+            if (count == 1) {
+                String pn = providerNames.get(0);
+                providers(service).add(new ServiceProvider(module, pn));
+            } else {
+                List<ServiceProvider> list = new ArrayList<>(count);
+                for (String pn : providerNames) {
+                    list.add(new ServiceProvider(module, pn));
+                }
+                providers(service).addAll(list);
+            }
+        }
+    }
+
+    /**
+     * Add a provider in the given module to this services catalog
+     *
+     * @apiNote This method is for use by java.lang.instrument
+     */
+    public void addProvider(Module module, Class<?> service, Class<?> impl) {
+        List<ServiceProvider> list = providers(service.getName());
+        list.add(new ServiceProvider(module, impl.getName()));
+    }
+
+    /**
+     * Returns the (possibly empty) list of service providers that implement
+     * the given service type.
+     */
+    public List<ServiceProvider> findServices(String service) {
+        return map.getOrDefault(service, Collections.emptyList());
+    }
+
+    /**
+     * Returns the ServicesCatalog for the given class loader or {@code null}
+     * if there is none.
+     */
+    public static ServicesCatalog getServicesCatalogOrNull(ClassLoader loader) {
+        return CLV.get(loader);
+    }
+
+    /**
+     * Returns the ServicesCatalog for the given class loader, creating it if
+     * needed.
+     */
+    public static ServicesCatalog getServicesCatalog(ClassLoader loader) {
+        // CLV.computeIfAbsent(loader, (cl, clv) -> create());
+        ServicesCatalog catalog = CLV.get(loader);
+        if (catalog == null) {
+            catalog = create();
+            ServicesCatalog previous = CLV.putIfAbsent(loader, catalog);
+            if (previous != null) catalog = previous;
+        }
+        return catalog;
+    }
+
+    // the ServicesCatalog registered to a class loader
+    private static final ClassLoaderValue<ServicesCatalog> CLV = new ClassLoaderValue<>();
 }

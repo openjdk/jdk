@@ -30,7 +30,7 @@
  * exceptions by the 'Java Language to IDL Mapping Specification'.
  */
 module java.transaction {
-    requires public java.rmi;
+    requires transitive java.rmi;
     exports javax.transaction;
 }
 

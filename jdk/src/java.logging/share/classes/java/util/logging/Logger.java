@@ -38,6 +38,9 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
+
+import jdk.internal.misc.JavaUtilResourceBundleAccess;
+import jdk.internal.misc.SharedSecrets;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import static jdk.internal.logger.DefaultLoggerFinder.isSystem;
@@ -256,8 +259,8 @@ public class Logger {
     private static final LoggerBundle NO_RESOURCE_BUNDLE =
             new LoggerBundle(null, null);
 
-    private static final RuntimePermission GET_CLASS_LOADER_PERMISSION =
-            new RuntimePermission("getClassLoader");
+    private static final JavaUtilResourceBundleAccess RB_ACCESS =
+            SharedSecrets.getJavaUtilResourceBundleAccess();
 
     // A value class that holds the logger configuration data.
     // This configuration can be shared between an application logger
@@ -2180,9 +2183,7 @@ public class Logger {
         if (!useCallersModule || callerModule == null || !callerModule.isNamed()) {
             try {
                 Module mod = cl.getUnnamedModule();
-                PrivilegedAction<ResourceBundle> pa = () ->
-                    ResourceBundle.getBundle(name, currentLocale, mod);
-                catalog = AccessController.doPrivileged(pa, null, GET_CLASS_LOADER_PERMISSION);
+                catalog = RB_ACCESS.getBundle(name, currentLocale, mod);
                 catalogName = name;
                 catalogLocale = currentLocale;
                 return catalog;
@@ -2226,9 +2227,7 @@ public class Logger {
             // Try with the caller's module
             try {
                 // Use the caller's module
-                PrivilegedAction<ResourceBundle> pa = () ->
-                    ResourceBundle.getBundle(name, currentLocale, callerModule);
-                catalog = AccessController.doPrivileged(pa, null, GET_CLASS_LOADER_PERMISSION);
+                catalog = RB_ACCESS.getBundle(name, currentLocale, callerModule);
                 catalogName = name;
                 catalogLocale = currentLocale;
                 return catalog;

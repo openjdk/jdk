@@ -195,10 +195,10 @@ public class ApiTest {
             case "AES-128":
             case "AES-192":
             case "AES-256":
-                int algoStrength = Integer.parseInt(alg.replaceAll("AES-", ""));
-                int maxStrengthSupported = Cipher.getMaxAllowedKeyLength("AES");
-                if (strength > maxStrengthSupported
-                        || algoStrength > maxStrengthSupported) {
+                int algoStrength = Integer.parseInt(alg.substring("AES-".length()));
+                int maxAESStrength = Cipher.getMaxAllowedKeyLength("AES");
+                if (strength > algoStrength
+                        || algoStrength > maxAESStrength) {
                     error = false;
                 }
                 break;

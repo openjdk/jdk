@@ -60,8 +60,8 @@ public final class ModuleReference {
     // the function that computes the hash of this module reference
     private final HashSupplier hasher;
 
-    // cached hash string to avoid needing to compute it many times
-    private String cachedHash;
+    // cached hash to avoid needing to compute it many times
+    private byte[] cachedHash;
 
 
     /**
@@ -183,13 +183,13 @@ public final class ModuleReference {
     }
 
     /**
-     * Computes the hash of this module, returning it as a hex string.
-     * Returns {@code null} if the hash cannot be computed.
+     * Computes the hash of this module. Returns {@code null} if the hash
+     * cannot be computed.
      *
      * @throws java.io.UncheckedIOException if an I/O error occurs
      */
-    String computeHash(String algorithm) {
-        String result = cachedHash;
+    byte[] computeHash(String algorithm) {
+        byte[] result = cachedHash;
         if (result != null)
             return result;
         if (hasher == null)
@@ -211,8 +211,11 @@ public final class ModuleReference {
     public int hashCode() {
         int hc = hash;
         if (hc == 0) {
-            hc = Objects.hash(descriptor, location, readerSupplier, hasher,
-                    Boolean.valueOf(patched));
+            hc = descriptor.hashCode();
+            hc = 43 * hc + readerSupplier.hashCode();
+            hc = 43 * hc + Objects.hashCode(location);
+            hc = 43 * hc + Objects.hashCode(hasher);
+            hc = 43 * hc + Boolean.hashCode(patched);
             if (hc == 0)
                 hc = -1;
             hash = hc;

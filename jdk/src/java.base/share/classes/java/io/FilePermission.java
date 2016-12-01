@@ -1075,8 +1075,7 @@ final class FilePermissionCollection extends PermissionCollection
         FilePermission fp = (FilePermission)permission;
 
         // Add permission to map if it is absent, or replace with new
-        // permission if applicable. NOTE: cannot use lambda for
-        // remappingFunction parameter until JDK-8076596 is fixed.
+        // permission if applicable.
         perms.merge(fp.getName(), fp,
                 (existingVal, newVal) -> {
                     int oldMask = ((FilePermission)existingVal).getMask();
