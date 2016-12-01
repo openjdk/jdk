@@ -33,6 +33,7 @@
  */
 
 import static jdk.test.lib.Asserts.*;
+import java.sql.Time;
 
 public class JVMDefineModule {
 
@@ -237,6 +238,39 @@ public class JVMDefineModule {
               throw new RuntimeException("Failed to get expected IAE message for bad package name: " + e.getMessage());
             }
         }
+
+        // Package named "java" defined to a class loader other than the boot or platform class loader, expect an IAE
+        m = ModuleHelper.ModuleObject("modulejavapkg1", cl, new String[] { "java/foo" });
+        try {
+            // module m is defined to an instance of MyClassLoader class loader
+            ModuleHelper.DefineModule(m, "9.0", "modulejavapkg1", new String[] { "java/foo" });
+            throw new RuntimeException("Failed to get expected IAE for package java/foo");
+        } catch(IllegalArgumentException e) {
+            if (!e.getMessage().contains("prohibited package name")) {
+              throw new RuntimeException("Failed to get expected IAE message for prohibited package name: " + e.getMessage());
+            }
+        }
+
+        // Package named "javabar" defined to a class loader other than the boot or platform class loader, should be ok
+        m = ModuleHelper.ModuleObject("modulejavapkg2", cl, new String[] { "javabar" });
+        assertNotNull(m, "Module should not be null");
+        ModuleHelper.DefineModule(m, "9.0", "modulejavapkg2", new String[] { "javabar" });
+
+        // Package named "java" defined to the boot class loader, should be ok
+        //   m's type is a java.lang.Object, module is java.base
+        //   java.base module is defined to the boot loader
+        ClassLoader boot_loader = m.getClass().getClassLoader();
+        m = ModuleHelper.ModuleObject("modulejavapkg3", boot_loader, new String[] { "java/foo" });
+        assertNotNull(m, "Module should not be null");
+        ModuleHelper.DefineModule(m, "9.0", "modulejavapkg3", new String[] { "java/foo" });
+
+        // Package named "java" defined to the platform class loader, should be ok
+        //   java.sql module defined to the platform class loader.
+        java.sql.Time jst = new java.sql.Time(45 * 1000);
+        ClassLoader platform_loader = jst.getClass().getClassLoader();
+        m = ModuleHelper.ModuleObject("modulejavapkg4", platform_loader, new String[] { "java/foo" });
+        assertNotNull(m, "Module should not be null");
+        ModuleHelper.DefineModule(m, "9.0", "modulejavapkg4", new String[] { "java/foo" });
 
         // module version that is null, should be okay
         m = ModuleHelper.ModuleObject("module8", cl, new String[] { "a_package_8" });

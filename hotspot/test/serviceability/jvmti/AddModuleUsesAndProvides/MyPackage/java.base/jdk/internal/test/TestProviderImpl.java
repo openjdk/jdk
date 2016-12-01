@@ -21,15 +21,11 @@
  * questions.
  */
 
-/**
- * The JDWP CANREAD command
- */
-public class JdwpCanReadCmd extends JdwpCmd<JdwpCanReadReply> {
+package jdk.internal.test;
 
-    public JdwpCanReadCmd(long modId, long srcModId) {
-        super(3, 18, JdwpCanReadReply.class, 2 * refLen());
-        putRefId(modId);
-        putRefId(srcModId);
-    }
+import java.lang.TestProvider;
 
+public class TestProviderImpl implements TestProvider {
+    public TestProviderImpl() { }
 }
+
