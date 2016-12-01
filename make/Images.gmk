@@ -64,47 +64,8 @@ JRE_COMPACT2_MODULES_LIST := $(call CommaList, $(JRE_COMPACT2_MODULES))
 JRE_COMPACT3_MODULES_LIST := $(call CommaList, $(JRE_COMPACT3_MODULES))
 
 ################################################################################
-# Release file
 
 BASE_RELEASE_FILE := $(JDK_OUTPUTDIR)/release
-
-# Common way to emit a line into the release or info file
-define info-file-item # name value
-  $(PRINTF) '%s="%s"\n' $1 $2 >> $@
-endef
-
-# Param 1 - The file containing the MODULES list
-define create-info-file
-  $(if $(JDK_ARCH_ABI_PROP_NAME), \
-    $(call info-file-item, "SUN_ARCH_ABI", "$(JDK_ARCH_ABI_PROP_NAME)"))
-  $(call info-file-item, "SOURCE", "$(strip $(SOURCE_REVISION))")
-endef
-
-# Param 1 - The file containing the MODULES list
-define prepare-info-file
-  $(ECHO) $(LOG_INFO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-  $(MKDIR) -p $(@D)
-  $(RM) $@
-endef
-
-define info-file
-  $(call prepare-info-file)
-  $(call create-info-file)
-endef
-
-# Create a variable dependency file common for all release info files.
-INFO_FILE_VARDEPS := $(call DependOnVariable, create-info-file)
-
-SOURCE_REVISION = $(shell \
-    if [ -f $(SOURCE_REVISION_TRACKER) ] ; then \
-      $(CAT) $(SOURCE_REVISION_TRACKER) ; \
-    fi)
-
-# The SOURCE_REVISION_TRACKER file may not exist. Only depend on it if it does.
-$(BASE_RELEASE_FILE): $(INFO_FILE_VARDEPS) $(wildcard $(SOURCE_REVISION_TRACKER))
-	$(info-file)
-
-################################################################################
 
 JMODS := $(wildcard $(IMAGES_OUTPUTDIR)/jmods/*.jmod)
 
