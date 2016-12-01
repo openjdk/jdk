@@ -324,13 +324,16 @@ profiles:
 mac-bundles-jdk:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f MacBundles.gmk)
 
+release-file:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f ReleaseFile.gmk)
+
 exploded-image-optimize:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f ExplodedImageOptimize.gmk)
 
 ALL_TARGETS += store-source-revision create-source-revision-tracker bootcycle-images zip-security \
     zip-source jrtfs-jar jdk-image jre-image \
     symbols-image profiles mac-bundles-jdk \
-    exploded-image-optimize
+    release-file exploded-image-optimize
 
 ################################################################################
 # Docs targets
@@ -679,10 +682,12 @@ else
     java.base-jmod jdk-image jre-image: generate-link-opt-data
   endif
 
-  jdk-image: jmods zip-source create-source-revision-tracker demos samples
-  jre-image: jmods create-source-revision-tracker
+  release-file: create-source-revision-tracker
 
-  profiles: jmods zip-source create-source-revision-tracker
+  jdk-image: jmods zip-source demos samples release-file
+  jre-image: jmods release-file
+
+  profiles: jmods release-file
 
   mac-bundles-jdk: jdk-image jre-image
 
@@ -789,7 +794,7 @@ samples: samples-jdk
 
 # The "exploded image" is a locally runnable JDK in $(BUILD_OUTPUT)/jdk.
 exploded-image-base: $(ALL_MODULES)
-exploded-image: exploded-image-base
+exploded-image: exploded-image-base release-file
 # When cross compiling, no need to optimize the exploded image since it won't
 # be runnable on the host platform anyway.
 ifneq ($(COMPILE_TYPE), cross)
