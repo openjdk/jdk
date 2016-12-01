@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -337,6 +337,7 @@ class ciMethod : public ciMetadata {
   bool has_reserved_stack_access() const         { return _has_reserved_stack_access; }
   bool is_boxing_method() const;
   bool is_unboxing_method() const;
+  bool is_object_initializer() const;
 
   // Replay data methods
   void dump_name_as_ascii(outputStream* st);
