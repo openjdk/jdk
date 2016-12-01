@@ -23,13 +23,10 @@
 
 package jdk.test1;
 
-import java.lang.reflect.Field;
 import jdk.internal.misc.Unsafe;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-        theUnsafe.setAccessible(true);
-        Unsafe unsafe = (Unsafe) theUnsafe.get(null);
+        Unsafe unsafe = Unsafe.getUnsafe();
     }
 }

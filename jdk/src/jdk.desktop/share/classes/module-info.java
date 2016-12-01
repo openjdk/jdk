@@ -28,7 +28,7 @@
  */
 
 module jdk.desktop {
-    requires public java.desktop;
+    requires transitive java.desktop;
 
     exports jdk.awt;
 }

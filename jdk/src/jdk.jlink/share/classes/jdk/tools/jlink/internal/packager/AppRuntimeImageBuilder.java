@@ -118,7 +118,7 @@ public final class AppRuntimeImageBuilder {
                                         null));
         }
 
-        plugins.add(Jlink.newPlugin("installed-modules", Collections.emptyMap(), null));
+        plugins.add(Jlink.newPlugin("system-modules", Collections.emptyMap(), null));
 
         // build the image
         Jlink.PluginsConfiguration pluginConfig = new Jlink.PluginsConfiguration(

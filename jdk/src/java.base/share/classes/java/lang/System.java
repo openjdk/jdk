@@ -38,6 +38,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Layer;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Module;
 import java.net.URL;
@@ -69,7 +70,6 @@ import jdk.internal.logger.LazyLoggers;
 import jdk.internal.logger.LocalizedLoggerWrapper;
 
 import jdk.internal.module.ModuleBootstrap;
-import jdk.internal.module.ServicesCatalog;
 
 /**
  * The <code>System</code> class contains several useful class fields
@@ -1987,7 +1987,10 @@ public final class System {
 
     private static void setJavaLangAccess() {
         // Allow privileged classes outside of java.lang
-        SharedSecrets.setJavaLangAccess(new JavaLangAccess(){
+        SharedSecrets.setJavaLangAccess(new JavaLangAccess() {
+            public Method getMethodOrNull(Class<?> klass, String name, Class<?>... parameterTypes) {
+                return klass.getMethodOrNull(name, parameterTypes);
+            }
             public jdk.internal.reflect.ConstantPool getConstantPool(Class<?> klass) {
                 return klass.getConstantPool();
             }
@@ -2030,12 +2033,6 @@ public final class System {
             }
             public Layer getBootLayer() {
                 return bootLayer;
-            }
-            public ServicesCatalog getServicesCatalog(ClassLoader cl) {
-                return cl.getServicesCatalog();
-            }
-            public ServicesCatalog createOrGetServicesCatalog(ClassLoader cl) {
-                return cl.createOrGetServicesCatalog();
             }
             public ConcurrentHashMap<?, ?> createOrGetClassLoaderValueMap(ClassLoader cl) {
                 return cl.createOrGetClassLoaderValueMap();

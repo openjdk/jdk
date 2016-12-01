@@ -38,8 +38,8 @@ import static org.testng.Assert.*;
  * @modules jdk.compiler
  * @build AccessTest CompilerUtils jdk.testlibrary.*
  * @run testng AccessTest
- * @summary Driver for test that checks access to public members in exported
- *          and non-exported packages.
+ * @summary Driver for test that checks access to access to types in
+ *          exported and non-exported packages.
  */
 
 @Test
@@ -74,6 +74,7 @@ public class AccessTest {
         int exitValue
             = executeTestJava("--module-path", MODS_DIR.toString(),
                               "--add-modules", "target",
+                              "-Dsun.reflect.enableStrictMode=true",
                               "-m", "test/test.Main")
                 .outputTo(System.out)
                 .errorTo(System.out)

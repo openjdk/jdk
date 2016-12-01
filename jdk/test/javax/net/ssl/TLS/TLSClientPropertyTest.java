@@ -28,11 +28,11 @@
  * @summary javax/net/ssl/TLS/TLSClientPropertyTest.java needs to be
  *     updated for JDK-8061210
  * @modules java.security.jgss
+ *          java.security.jgss/sun.security.krb5:+open
+ *          java.security.jgss/sun.security.krb5.internal:+open
+ *          java.security.jgss/sun.security.krb5.internal.ccache
  *          java.security.jgss/sun.security.krb5.internal.crypto
  *          java.security.jgss/sun.security.krb5.internal.ktab
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal
  *          java.base/sun.security.util
  * @run main/othervm TLSClientPropertyTest NoProperty
  * @run main/othervm TLSClientPropertyTest SSLv3

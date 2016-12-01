@@ -78,7 +78,6 @@ public class ModulesTest extends TestScaffold {
         }
         // Sanity checks: make sure there is no crash or exception
         String otherName = other.name();
-        boolean cond = module.canRead(other);
         return true;
     }
 
@@ -159,8 +158,6 @@ public class ModulesTest extends TestScaffold {
             }
             bootUnnamedModule = module;
         }
-        boolean cond = module.canRead(other);
-        println("    can read: " + cond);
     }
 
     // Check that the java.lang.String class was loaded by the java.base module.
@@ -197,24 +194,6 @@ public class ModulesTest extends TestScaffold {
         if (extUnnamedModule == null) {
             testFailed = true;
             println(FailPrefix + "unnamed module of PlatformClassLoader was not observed");
-        }
-
-        for (ModuleReference module : modules) {
-            if (!bootUnnamedModule.canRead(module)) {
-                testFailed = true;
-                println(FailPrefix + "boot unnamed module must read any module" +
-                        "but a non-readible module is found: " + module.name());
-            }
-            if (!appUnnamedModule.canRead(module)) {
-                testFailed = true;
-                println(FailPrefix + "app unnamed module must read any module" +
-                        "but a non-readible module is found: " + module.name());
-            }
-            if (!extUnnamedModule.canRead(module)) {
-                testFailed = true;
-                println(FailPrefix + "ext unnamed module must read any module" +
-                        "but a non-readible module is found: " + module.name());
-            }
         }
     }
 

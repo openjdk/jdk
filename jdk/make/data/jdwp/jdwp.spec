@@ -2709,22 +2709,6 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error VM_DEAD)
         )
     )
-    (Command CanRead=3
-        "Returns true if this module can read the source module; false otherwise."
-        "<p>Since JDWP version 9."
-        (Out
-            (moduleID module "This module.")
-            (moduleID sourceModule "The source module.")
-        )
-        (Reply
-            (boolean canRead  "true if this module can read the source module; false otherwise.")
-        )
-        (ErrorSet
-            (Error INVALID_MODULE  "This module or sourceModule is not the ID of a module.")
-            (Error NOT_IMPLEMENTED)
-            (Error VM_DEAD)
-        )
-    )
 )
 (CommandSet Event=64
     (Command Composite=100

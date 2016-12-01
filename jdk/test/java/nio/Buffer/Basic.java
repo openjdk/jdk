@@ -27,7 +27,8 @@
  *      4526177 4463011 4660660 4661219 4663521 4782970 4804304 4938424 6231529
  *      6221101 6234263 6535542 6591971 6593946 6795561 7190219 7199551 8065556
  *      8149469
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/java.nio:open
+ *          java.base/jdk.internal.misc
  * @author Mark Reinhold
  */
 

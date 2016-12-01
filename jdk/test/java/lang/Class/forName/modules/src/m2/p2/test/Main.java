@@ -44,7 +44,7 @@ public class Main {
         try {
             Class<?> c = findClass(m1, "p1.internal.B");
             c.newInstance();
-            throw new RuntimeException(c.getName() + " is not exported to m2");
+            throw new RuntimeException(c.getName() + " should not be exported to m2");
         } catch (IllegalAccessException e) {}
     }
 

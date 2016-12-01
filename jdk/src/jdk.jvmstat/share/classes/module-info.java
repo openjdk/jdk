@@ -36,7 +36,8 @@ module jdk.jvmstat {
         jdk.jstatd;
 
     uses sun.jvmstat.monitor.MonitoredHostService;
-    provides sun.jvmstat.monitor.MonitoredHostService with sun.jvmstat.perfdata.monitor.protocol.file.MonitoredHostFileService;
-    provides sun.jvmstat.monitor.MonitoredHostService with sun.jvmstat.perfdata.monitor.protocol.local.MonitoredHostLocalService;
+    provides sun.jvmstat.monitor.MonitoredHostService with
+        sun.jvmstat.perfdata.monitor.protocol.file.MonitoredHostFileService,
+        sun.jvmstat.perfdata.monitor.protocol.local.MonitoredHostLocalService;
 }
 

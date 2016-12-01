@@ -26,10 +26,14 @@ package jdk.test.bar;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Requires;
-import java.lang.reflect.Method;
+import java.lang.module.ModuleDescriptor.Provides;
 import java.util.Optional;
 import java.util.StringJoiner;
+import java.util.HashSet;
+import java.util.Set;
 
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaLangModuleAccess;
 import jdk.internal.module.ModuleHashes;
 import jdk.test.bar.internal.Message;
 
@@ -56,19 +60,20 @@ public class Bar {
             System.out.println("uses:" + sj.toString());
 
         sj = new StringJoiner(",");
-        md.provides().keySet().stream().sorted().forEach(sj::add);
+        md.provides().stream().map(Provides::service).sorted().forEach(sj::add);
         if (!sj.toString().equals(""))
             System.out.println("provides:" + sj.toString());
 
         sj = new StringJoiner(",");
-        md.conceals().forEach(sj::add);
+        Set<String> concealed = new HashSet<>(md.packages());
+        md.exports().stream().map(Exports::source).forEach(concealed::remove);
+        concealed.forEach(sj::add);
         if (!sj.toString().equals(""))
-            System.out.println("conceals:" + sj.toString());
+            System.out.println("contains:" + sj.toString());
 
-        Method m = ModuleDescriptor.class.getDeclaredMethod("hashes");
-        m.setAccessible(true);
         ModuleDescriptor foo = jdk.test.foo.Foo.class.getModule().getDescriptor();
-        Optional<ModuleHashes> oHashes = (Optional<ModuleHashes>) m.invoke(foo);
+        JavaLangModuleAccess jlma = SharedSecrets.getJavaLangModuleAccess();
+        Optional<ModuleHashes> oHashes = jlma.hashes(foo);
         System.out.println("hashes:" + oHashes.get().hashFor("bar"));
     }
 }
