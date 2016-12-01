@@ -161,6 +161,9 @@ endif
 JTREG_TESTVM_MEMORY_OPTION = -vmoption:-Xmx768m
 JTREG_OPTIONS += $(JTREG_TESTVM_MEMORY_OPTION)
 
+# Retain all files for failing tests
+JTREG_OPTIONS += -retain:fail,error
+
 ifdef EXTRA_JTREG_OPTIONS
   JTREG_OPTIONS += $(EXTRA_JTREG_OPTIONS)
 endif
