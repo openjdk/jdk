@@ -8,7 +8,6 @@
 ^src/share/tools/IdealGraphVisualizer/dist/
 ^src/share/tools/IdealGraphVisualizer/nbplatform/
 .igv.log
-^.hgtip
 .DS_Store
 ^\.mx.jvmci/env
 ^\.mx.jvmci/.*\.pyc

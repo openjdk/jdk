@@ -30,6 +30,7 @@
  *          java.compiler
  *          java.instrument
  *          java.management
+ *          jdk.attach
  *
  * @run main/othervm compiler.jsr292.RedefineMethodUsedByMultipleMethodHandles
  */
@@ -42,7 +43,6 @@ import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 
-import javax.tools.ToolProvider;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -132,7 +132,7 @@ public class RedefineMethodUsedByMultipleMethodHandles {
         int p = vmName.indexOf('@');
         assert p != -1 : "VM name not in <pid>@<host> format: " + vmName;
         String pid = vmName.substring(0, p);
-        ClassLoader cl = ToolProvider.getSystemToolClassLoader();
+        ClassLoader cl = ClassLoader.getSystemClassLoader();
         Class<?> c = Class.forName("com.sun.tools.attach.VirtualMachine", true, cl);
         Method attach = c.getDeclaredMethod("attach", String.class);
         Method loadAgent = c.getDeclaredMethod("loadAgent", String.class);

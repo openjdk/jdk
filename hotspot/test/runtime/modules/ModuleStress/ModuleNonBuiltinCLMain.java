@@ -57,7 +57,7 @@ public class ModuleNonBuiltinCLMain {
         // Packages:          p1
         // Packages exported: p1 is exported to unqualifiedly
         ModuleDescriptor descriptor_m1 =
-                new ModuleDescriptor.Builder("m1")
+                ModuleDescriptor.module("m1")
                         .requires("java.base")
                         .requires("m2")
                         .exports("p1")
@@ -71,7 +71,7 @@ public class ModuleNonBuiltinCLMain {
         targets.add("m1");
         targets.add("m3");
         ModuleDescriptor descriptor_m2 =
-                new ModuleDescriptor.Builder("m2")
+                ModuleDescriptor.module("m2")
                         .requires("java.base")
                         .requires("m3")
                         .exports("p2", targets)
@@ -82,7 +82,7 @@ public class ModuleNonBuiltinCLMain {
         // Packages:          p3
         // Packages exported: none
         ModuleDescriptor descriptor_m3 =
-                new ModuleDescriptor.Builder("m3")
+                ModuleDescriptor.module("m3")
                         .requires("java.base")
                         .build();
 
