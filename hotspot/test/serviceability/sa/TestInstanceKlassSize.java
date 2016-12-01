@@ -46,6 +46,7 @@ import java.util.*;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @compile -XDignore.symbol.file=true
+ *          --add-modules=jdk.hotspot.agent
  *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED
  *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED
  *          --add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED
