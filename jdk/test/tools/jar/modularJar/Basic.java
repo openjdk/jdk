@@ -46,6 +46,7 @@ import static java.lang.System.out;
 
 /*
  * @test
+ * @bug 8167328
  * @library /lib/testlibrary
  * @modules jdk.compiler
  *          jdk.jartool
@@ -756,6 +757,14 @@ public class Basic {
                                "Expected to find ", FOO.moduleName + "@" + FOO.version,
                                " in [", r.output, "]")
                 );
+
+            jar(option,
+                "--file=" + modularJar.toString(),
+                modularJar.toString())
+            .assertFailure();
+
+            jar(option, modularJar.toString())
+            .assertFailure();
         }
     }
 
