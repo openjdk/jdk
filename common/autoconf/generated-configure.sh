@@ -5093,7 +5093,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1480584361
+DATE_WHEN_GENERATED=1480601517
 
 ###############################################################################
 #
@@ -33584,9 +33584,11 @@ $as_echo "$as_me: Please use --enable-ccache instead of providing a wrapped comp
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     # cc -V output typically looks like
     #     cc: Sun C 5.12 Linux_i386 2011/11/16
+    # or
+    #     cc: Studio 12.5 Sun C 5.14 SunOS_sparc 2016/05/31
     COMPILER_VERSION_OUTPUT=`$COMPILER -V 2>&1`
     # Check that this is likely to be the Solaris Studio cc.
-    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.*: Sun $COMPILER_NAME" > /dev/null
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.* Sun $COMPILER_NAME" > /dev/null
     if test $? -ne 0; then
       ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
       { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5
@@ -34881,9 +34883,11 @@ $as_echo "$as_me: Please use --enable-ccache instead of providing a wrapped comp
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     # cc -V output typically looks like
     #     cc: Sun C 5.12 Linux_i386 2011/11/16
+    # or
+    #     cc: Studio 12.5 Sun C 5.14 SunOS_sparc 2016/05/31
     COMPILER_VERSION_OUTPUT=`$COMPILER -V 2>&1`
     # Check that this is likely to be the Solaris Studio cc.
-    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.*: Sun $COMPILER_NAME" > /dev/null
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.* Sun $COMPILER_NAME" > /dev/null
     if test $? -ne 0; then
       ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
       { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5
@@ -46962,9 +46966,11 @@ $as_echo "$as_me: Rewriting BUILD_STRIP to \"$new_complete\"" >&6;}
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     # cc -V output typically looks like
     #     cc: Sun C 5.12 Linux_i386 2011/11/16
+    # or
+    #     cc: Studio 12.5 Sun C 5.14 SunOS_sparc 2016/05/31
     COMPILER_VERSION_OUTPUT=`$COMPILER -V 2>&1`
     # Check that this is likely to be the Solaris Studio cc.
-    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.*: Sun $COMPILER_NAME" > /dev/null
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.* Sun $COMPILER_NAME" > /dev/null
     if test $? -ne 0; then
       ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
       { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5
@@ -47082,9 +47088,11 @@ $as_echo "$as_me: Using $TOOLCHAIN_TYPE $COMPILER_NAME compiler version $COMPILE
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     # cc -V output typically looks like
     #     cc: Sun C 5.12 Linux_i386 2011/11/16
+    # or
+    #     cc: Studio 12.5 Sun C 5.14 SunOS_sparc 2016/05/31
     COMPILER_VERSION_OUTPUT=`$COMPILER -V 2>&1`
     # Check that this is likely to be the Solaris Studio cc.
-    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.*: Sun $COMPILER_NAME" > /dev/null
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.* Sun $COMPILER_NAME" > /dev/null
     if test $? -ne 0; then
       ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
       { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5

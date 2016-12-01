@@ -333,9 +333,11 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     # cc -V output typically looks like
     #     cc: Sun C 5.12 Linux_i386 2011/11/16
+    # or
+    #     cc: Studio 12.5 Sun C 5.14 SunOS_sparc 2016/05/31
     COMPILER_VERSION_OUTPUT=`$COMPILER -V 2>&1`
     # Check that this is likely to be the Solaris Studio cc.
-    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.*: Sun $COMPILER_NAME" > /dev/null
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.* Sun $COMPILER_NAME" > /dev/null
     if test $? -ne 0; then
       ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
       AC_MSG_NOTICE([The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler.])
