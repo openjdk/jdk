@@ -75,7 +75,7 @@ public class UmodUPkg {
      // Packages:          p3
      // Packages exported: p3 is exported unqualifiedly
      ModuleDescriptor descriptor_m1 =
-             new ModuleDescriptor.Builder("m1")
+             ModuleDescriptor.module("m1")
                      .requires("java.base")
                      .exports("p3")
                      .build();
@@ -121,7 +121,7 @@ public class UmodUPkg {
      // Packages:          p3
      // Packages exported: p3 is exported unqualifiedly
      ModuleDescriptor descriptor_m1 =
-             new ModuleDescriptor.Builder("m1")
+             ModuleDescriptor.module("m1")
                      .requires("java.base")
                      .exports("p3")
                      .build();

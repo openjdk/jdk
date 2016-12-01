@@ -69,7 +69,7 @@ public class UmodUpkg_ExpQualOther {
         // Packages:          none
         // Packages exported: none
         ModuleDescriptor descriptor_m1 =
-                new ModuleDescriptor.Builder("m1")
+                ModuleDescriptor.module("m1")
                         .requires("java.base")
                         .requires("m2")
                         .requires("m3")
@@ -80,9 +80,9 @@ public class UmodUpkg_ExpQualOther {
         // Packages:          p6
         // Packages exported: p6 is exported to m3
         ModuleDescriptor descriptor_m2 =
-                new ModuleDescriptor.Builder("m2")
+                ModuleDescriptor.module("m2")
                         .requires("java.base")
-                        .exports("p6", "m3")
+                        .exports("p6", Set.of("m3"))
                         .build();
 
         // Define module:     m3
@@ -90,7 +90,7 @@ public class UmodUpkg_ExpQualOther {
         // Packages:          p3
         // Packages exported: none
         ModuleDescriptor descriptor_m3 =
-                new ModuleDescriptor.Builder("m3")
+                ModuleDescriptor.module("m3")
                         .requires("java.base")
                         .build();
 

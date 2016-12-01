@@ -26,7 +26,7 @@
  * @bug 8016474
  * @summary The bug only happens with C1 and G1 using a different ObjectAlignmentInBytes than KlassAlignmentInBytes (which is 8)
  *
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc:+open
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=32
  *                   compiler.unsafe.GetUnsafeObjectG1PreBarrier
  */
