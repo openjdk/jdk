@@ -71,8 +71,8 @@ public class BootLoader {
     private static final ServicesCatalog SERVICES_CATALOG = ServicesCatalog.create();
 
     // ClassLoaderValue map for boot class loader
-    private static final ConcurrentHashMap<?, ?> CLASS_LOADER_VALUE_MAP =
-        new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<?, ?> CLASS_LOADER_VALUE_MAP
+        = new ConcurrentHashMap<>();
 
     /**
      * Returns the unnamed module for the boot loader.
@@ -111,14 +111,27 @@ public class BootLoader {
     }
 
     /**
-     * Returns a URL to a resource in a named module defined to the boot loader.
+     * Loads the Class object with the given name in the given module
+     * defined to the boot loader. Returns {@code null} if not found.
+     */
+    public static Class<?> loadClass(Module module, String name) {
+        Class<?> c = loadClassOrNull(name);
+        if (c != null && c.getModule() == module) {
+            return c;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Returns a URL to a resource in a module defined to the boot loader.
      */
     public static URL findResource(String mn, String name) throws IOException {
         return ClassLoaders.bootLoader().findResource(mn, name);
     }
 
     /**
-     * Returns an input stream to a resource in a named module defined to the
+     * Returns an input stream to a resource in a module defined to the
      * boot loader.
      */
     public static InputStream findResourceAsStream(String mn, String name)
@@ -128,9 +141,8 @@ public class BootLoader {
     }
 
     /**
-     * Returns the URL to the given resource if the resource can be located
-     * on the boot class path. This method does not locate a resource in any
-     * of the named modules defined to the boot loader.
+     * Returns the URL to the given resource in any of the modules
+     * defined to the boot loader and the boot class path.
      */
     public static URL findResource(String name) {
         return ClassLoaders.bootLoader().findResource(name);
@@ -138,8 +150,7 @@ public class BootLoader {
 
     /**
      * Returns an Iterator to iterate over the resources of the given name
-     * on the boot class path. This method does not locate resources in any
-     * of the named modules defined to the boot loader.
+     * in any of the modules defined to the boot loader.
      */
     public static Enumeration<URL> findResources(String name) throws IOException {
         return ClassLoaders.bootLoader().findResources(name);

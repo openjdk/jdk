@@ -23,6 +23,9 @@
  * questions.
  */
 
+/**
+ * Defines the attach API.
+ */
 module jdk.attach {
     requires jdk.jvmstat;
 

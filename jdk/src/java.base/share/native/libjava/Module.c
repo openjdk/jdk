@@ -30,10 +30,10 @@
 
 JNIEXPORT void JNICALL
 Java_java_lang_reflect_Module_defineModule0(JNIEnv *env, jclass cls, jobject module,
-                                            jstring version, jstring location,
-                                            jobjectArray packages)
+                                            jboolean is_open, jstring version,
+                                            jstring location, jobjectArray packages)
 {
-    JVM_DefineModule(env, module, version, location, packages);
+    JVM_DefineModule(env, module, is_open, version, location, packages);
 }
 
 JNIEXPORT void JNICALL

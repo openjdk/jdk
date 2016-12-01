@@ -48,7 +48,6 @@ public class Main {
     }
 
     static void validate(ModuleDescriptor md) {
-        checkPackages(md.conceals(), "p1", "p2");
         checkPackages(md.packages(), "p1", "p2");
     }
 

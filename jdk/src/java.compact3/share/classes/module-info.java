@@ -28,15 +28,15 @@
  * Instrumentation, Preferences, Security, and XML cryptography APIs.
  */
 module java.compact3 {
-    requires public java.compact2;
-    requires public java.compiler;
-    requires public java.instrument;
-    requires public java.management;
-    requires public java.naming;
-    requires public java.prefs;
-    requires public java.security.jgss;
-    requires public java.security.sasl;
-    requires public java.sql.rowset;
-    requires public java.xml.crypto;
+    requires transitive java.compact2;
+    requires transitive java.compiler;
+    requires transitive java.instrument;
+    requires transitive java.management;
+    requires transitive java.naming;
+    requires transitive java.prefs;
+    requires transitive java.security.jgss;
+    requires transitive java.security.sasl;
+    requires transitive java.sql.rowset;
+    requires transitive java.xml.crypto;
 }
 

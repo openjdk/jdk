@@ -140,6 +140,9 @@ void JLI_ReportErrorMessageSys(const char * message, ...);
 /* Reports an error message only to stderr. */
 void JLI_ReportMessage(const char * message, ...);
 
+/* Reports a message only to stdout. */
+void JLI_ShowMessage(const char * message, ...);
+
 /*
  * Reports an exception which terminates the vm to stderr or a window
  * as appropriate.

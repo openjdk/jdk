@@ -38,6 +38,7 @@ import static org.testng.Assert.*;
  * @bug 6904367
  * @summary IdentityHashMap reallocates storage when inserting expected
  *          number of elements
+ * @modules java.base/java.util:open
  * @run testng Capacity
  * @key randomness
  */

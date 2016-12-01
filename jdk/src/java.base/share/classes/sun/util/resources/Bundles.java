@@ -58,8 +58,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.spi.ResourceBundleProvider;
 import jdk.internal.misc.JavaUtilResourceBundleAccess;
 import jdk.internal.misc.SharedSecrets;
-import sun.util.locale.provider.ResourceBundleProviderSupport;
-
 
 /**
  */
@@ -203,9 +201,13 @@ public abstract class Bundles {
                 bundle = loadBundleFromProviders(baseName, targetLocale, providers, cacheKey);
             } else {
                 try {
-                    bundle = ResourceBundleProviderSupport
-                                 .loadResourceBundle(Bundles.class.getModule(),
-                                      strategy.toBundleName(baseName, targetLocale));
+                    String bundleName = strategy.toBundleName(baseName, targetLocale);
+                    Class<?> c = Class.forName(Bundles.class.getModule(), bundleName);
+                    if (c != null && ResourceBundle.class.isAssignableFrom(c)) {
+                        @SuppressWarnings("unchecked")
+                        Class<ResourceBundle> bundleClass = (Class<ResourceBundle>) c;
+                        bundle = bundleAccess.newResourceBundle(bundleClass);
+                    }
                 } catch (Exception e) {
                     cacheKey.setCause(e);
                 }

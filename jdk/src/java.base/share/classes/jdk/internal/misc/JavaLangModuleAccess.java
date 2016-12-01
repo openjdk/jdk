@@ -27,23 +27,25 @@ package jdk.internal.misc;
 
 import java.io.PrintStream;
 import java.lang.module.Configuration;
-import jdk.internal.module.ModuleHashes;
-
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
+import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Version;
 import java.lang.module.ModuleFinder;
-import java.util.Collection;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
+
+import jdk.internal.module.ModuleHashes;
 
 /**
  * Provides access to non-public methods in java.lang.module.
@@ -52,28 +54,59 @@ import java.util.function.Supplier;
 public interface JavaLangModuleAccess {
 
     /**
-     * Returns {@code ModuleDescriptor.Requires} of the given modifier
+     * Creates a builder for building a module with the given module name.
+     *
+     * @param strict
+     *        Indicates whether module names are checked or not
+     */
+    ModuleDescriptor.Builder newModuleBuilder(String mn, boolean strict);
+
+    /**
+     * Creates a builder for building an open module with the given module name.
+     *
+     * @param strict
+     *        Indicates whether module names are checked or not
+     */
+    ModuleDescriptor.Builder newOpenModuleBuilder(String mn, boolean strict);
+
+    /**
+     * Returns a {@code ModuleDescriptor.Requires} of the given modifiers
      * and module name.
      */
     Requires newRequires(Set<Requires.Modifier> ms, String mn);
 
     /**
      * Returns an unqualified {@code ModuleDescriptor.Exports}
-     * of the given package name.
+     * of the given modifiers and package name source.
      */
-    Exports newExports(String source);
+    Exports newExports(Set<Exports.Modifier> ms,
+                       String source);
 
     /**
      * Returns a qualified {@code ModuleDescriptor.Exports}
-     * of the given package name and targets.
+     * of the given modifiers, package name source and targets.
      */
-    Exports newExports(String source, Set<String> targets);
+    Exports newExports(Set<Exports.Modifier> ms,
+                       String source,
+                       Set<String> targets);
+
+    /**
+     * Returns an unqualified {@code ModuleDescriptor.Opens}
+     * of the given modifiers and package name source.
+     */
+    Opens newOpens(Set<Opens.Modifier> ms, String source);
+
+    /**
+     * Returns a qualified {@code ModuleDescriptor.Opens}
+     * of the given modifiers, package name source and targets.
+     */
+    Opens newOpens(Set<Opens.Modifier> ms, String source, Set<String> targets);
 
     /**
      * Returns a {@code ModuleDescriptor.Provides}
      * of the given service name and providers.
      */
-    Provides newProvides(String service, Set<String> providers);
+    Provides newProvides(String service, List<String> providers);
 
     /**
      * Returns a {@code ModuleDescriptor.Version} of the given version.
@@ -89,19 +122,22 @@ public interface JavaLangModuleAccess {
      * Returns a new {@code ModuleDescriptor} instance.
      */
     ModuleDescriptor newModuleDescriptor(String name,
+                                         boolean open,
                                          boolean automatic,
                                          boolean synthetic,
                                          Set<Requires> requires,
-                                         Set<String> uses,
                                          Set<Exports> exports,
-                                         Map<String, Provides> provides,
+                                         Set<Opens> opens,
+                                         Set<String> uses,
+                                         Set<Provides> provides,
                                          Version version,
                                          String mainClass,
                                          String osName,
                                          String osArch,
                                          String osVersion,
                                          Set<String> packages,
-                                         ModuleHashes hashes);
+                                         ModuleHashes hashes,
+                                         int hashCode);
 
     /**
      * Returns the object with the hashes of other modules

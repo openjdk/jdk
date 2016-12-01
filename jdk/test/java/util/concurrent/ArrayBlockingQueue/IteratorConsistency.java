@@ -49,6 +49,7 @@ import java.util.concurrent.CountDownLatch;
 /*
  * @test
  * @bug 7014263
+ * @modules java.base/java.util.concurrent:open
  * @summary White box testing of ArrayBlockingQueue iterators.
  */
 
