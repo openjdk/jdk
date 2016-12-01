@@ -28,7 +28,7 @@
  * @library /tools/lib
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
- *      jdk.compiler/com.sun.tools.javac.file
+ *      jdk.compiler/com.sun.tools.javac.file:+open
  *      jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.ModuleBuilder ModuleTestBase
  * @run main PatchModulesTest

@@ -46,8 +46,8 @@ public class T4870651 {
                "v1(java.lang.String...)");
 
         verify("Test$Enum",
-               "flags: ACC_FINAL, ACC_SUPER, ACC_ENUM",
-               "flags: ACC_PUBLIC, ACC_STATIC, ACC_FINAL, ACC_ENUM");
+               "flags: (0x4030) ACC_FINAL, ACC_SUPER, ACC_ENUM",
+               "flags: (0x4019) ACC_PUBLIC, ACC_STATIC, ACC_FINAL, ACC_ENUM");
 
         if (errors > 0)
             throw new Error(errors + " found.");

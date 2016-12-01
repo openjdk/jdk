@@ -85,4 +85,29 @@ public class ModuleInfoTreeAccess extends ModuleTestBase {
             assertNotNull("docCommentTree", docCommentTree);
         }
     }
+
+    @Test
+    public void testTreePathForModuleDeclWithImport(Path base) throws Exception {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
+            Path src = base.resolve("src");
+            tb.writeJavaFiles(src, "import java.lang.Deprecated; /** Test module */ @Deprecated module m1 {}");
+
+            Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(findJavaFiles(src));
+            JavacTask task = (JavacTask) compiler.getTask(null, fm, null, null, null, files);
+
+            task.analyze();
+            JavacTrees trees = JavacTrees.instance(task);
+            ModuleElement mdle = (ModuleElement) task.getElements().getModuleElement("m1");
+
+            TreePath path = trees.getPath(mdle);
+            assertNotNull("path", path);
+
+            ModuleElement mdle1 = (ModuleElement) trees.getElement(path);
+            assertNotNull("mdle1", mdle1);
+
+            DocCommentTree docCommentTree = trees.getDocCommentTree(mdle);
+            assertNotNull("docCommentTree", docCommentTree);
+        }
+    }
 }

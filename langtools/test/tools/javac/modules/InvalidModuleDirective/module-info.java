@@ -8,8 +8,8 @@
 module java.transaction {
   requires java.base;
   resuires javax.interceptor.javax.interceptor.api;
-  requires public javax.enterprise.cdi.api;
-  requires public java.sql;
-  requires public java.rmi;
+  requires transitive javax.enterprise.cdi.api;
+  requires transitive java.sql;
+  requires transitive java.rmi;
   export javax.transaction;
 }

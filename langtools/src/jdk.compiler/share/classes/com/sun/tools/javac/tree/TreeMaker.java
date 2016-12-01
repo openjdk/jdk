@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package com.sun.tools.javac.tree;
 
 import java.util.Iterator;
 
+import com.sun.source.tree.ModuleTree.ModuleKind;
+import com.sun.source.tree.Tree.Kind;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
@@ -538,8 +540,9 @@ public class TreeMaker implements JCTree.Factory {
     }
 
     @Override
-    public JCModuleDecl ModuleDef(JCExpression qualid, List<JCDirective> directives) {
-        JCModuleDecl tree = new JCModuleDecl(qualid, directives);
+    public JCModuleDecl ModuleDef(JCModifiers mods, ModuleKind kind,
+            JCExpression qualid, List<JCDirective> directives) {
+        JCModuleDecl tree = new JCModuleDecl(mods, kind, qualid, directives);
         tree.pos = pos;
         return tree;
     }
@@ -552,15 +555,22 @@ public class TreeMaker implements JCTree.Factory {
     }
 
     @Override
-    public JCProvides Provides(JCExpression serviceName, JCExpression implName) {
-        JCProvides tree = new JCProvides(serviceName, implName);
+    public JCOpens Opens(JCExpression qualId, List<JCExpression> moduleNames) {
+        JCOpens tree = new JCOpens(qualId, moduleNames);
         tree.pos = pos;
         return tree;
     }
 
     @Override
-    public JCRequires Requires(boolean isPublic, JCExpression qualId) {
-        JCRequires tree = new JCRequires(isPublic, qualId);
+    public JCProvides Provides(JCExpression serviceName, List<JCExpression> implNames) {
+        JCProvides tree = new JCProvides(serviceName, implNames);
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override
+    public JCRequires Requires(boolean isTransitive, boolean isStaticPhase, JCExpression qualId) {
+        JCRequires tree = new JCRequires(isTransitive, isStaticPhase, qualId);
         tree.pos = pos;
         return tree;
     }

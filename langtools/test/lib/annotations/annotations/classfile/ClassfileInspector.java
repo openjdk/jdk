@@ -1188,7 +1188,7 @@ public class ClassfileInspector {
         }
 
         @Override
-        public Void visitConcealedPackages(ConcealedPackages_attribute attr, T p) {
+        public Void visitModulePackages(ModulePackages_attribute attr, T p) {
             return null;
         }
 
@@ -1238,7 +1238,7 @@ public class ClassfileInspector {
         }
 
         @Override
-        public Void visitHashes(Hashes_attribute attr, T p) {
+        public Void visitModuleHashes(ModuleHashes_attribute attr, T p) {
             return null;
         }
 
@@ -1263,7 +1263,7 @@ public class ClassfileInspector {
         }
 
         @Override
-        public Void visitMainClass(MainClass_attribute attr, T p) {
+        public Void visitModuleMainClass(ModuleMainClass_attribute attr, T p) {
             return null;
         }
 
@@ -1343,12 +1343,12 @@ public class ClassfileInspector {
         }
 
         @Override
-        public Void visitTargetPlatform(TargetPlatform_attribute attr, T p) {
+        public Void visitModuleTarget(ModuleTarget_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitVersion(Version_attribute attr, T p) {
+        public Void visitModuleVersion(ModuleVersion_attribute attr, T p) {
             return null;
         }
 

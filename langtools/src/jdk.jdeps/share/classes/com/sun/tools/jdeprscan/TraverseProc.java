@@ -136,7 +136,7 @@ public class TraverseProc extends AbstractProcessor {
         Set<PackageElement> set = new HashSet<>();
         for (ModuleElement m : mods) {
             for (ModuleElement.Directive dir : m.getDirectives()) {
-                if (dir.getKind() == ModuleElement.DirectiveKind.EXPORTS) {
+                if (dir.getKind() == ModuleElement.DirectiveKind.EXPORTS) { //XXX
                     ModuleElement.ExportsDirective exp = (ModuleElement.ExportsDirective)dir;
                     if (exp.getTargetModules() == null) {
                         set.add(exp.getPackage());

@@ -23,7 +23,7 @@
 
 module m4 {
     // not used in signature
-    requires public java.compiler;
+    requires transitive java.compiler;
 
     // unused dependence
     requires java.logging;
@@ -31,5 +31,5 @@ module m4 {
     exports p4;
 
     // unuused qualified exports
-    exports p4.internal to m6,m7;
+    exports p4.internal to mVI,mVII;
 }

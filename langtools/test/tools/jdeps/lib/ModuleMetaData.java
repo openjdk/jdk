@@ -70,8 +70,8 @@ public class ModuleMetaData {
         return this;
     }
 
-    ModuleMetaData requiresPublic(String name) {
-        requires.put(name, new ModuleRequires(name, PUBLIC));
+    ModuleMetaData requiresTransitive(String name) {
+        requires.put(name, new ModuleRequires(name, TRANSITIVE));
         return this;
     }
 
