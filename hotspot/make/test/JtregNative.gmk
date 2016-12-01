@@ -55,6 +55,9 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC := \
     $(HOTSPOT_TOPDIR)/test/compiler/calls \
     $(HOTSPOT_TOPDIR)/test/compiler/native \
     $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/GetNamedModule \
+    $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/AddModuleReads \
+    $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/AddModuleExportsAndOpens \
+    $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/AddModuleUsesAndProvides \
     $(HOTSPOT_TOPDIR)/test/testlibrary/jvmti \
     $(HOTSPOT_TOPDIR)/test/compiler/jvmci/jdk.vm.ci.code.test \
     $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/GetModulesInfo \
@@ -81,6 +84,9 @@ ifeq ($(TOOLCHAIN_TYPE), solstudio)
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_liboverflow := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libSimpleClassFileLoadHook := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libGetNamedModuleTest := -lc
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libAddModuleReadsTest := -lc
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libAddModuleExportsAndOpensTest := -lc
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libAddModuleUsesAndProvidesTest := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMAAClassFileLoadHook := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMAAClassLoadPrepare := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMAAThreadStart := -lc

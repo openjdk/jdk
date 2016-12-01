@@ -47,8 +47,8 @@ requires.properties= \
     vm.gc.ConcMarkSweep \
     vm.debug
 
-# Tests using jtreg 4.2 b03 features
-requiredVersion=4.2 b03
+# Tests using jtreg 4.2 b04 features
+requiredVersion=4.2 b04
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

@@ -170,6 +170,8 @@ bool needs_module_property_warning = false;
 #define ADDEXPORTS_LEN 10
 #define ADDREADS "addreads"
 #define ADDREADS_LEN 8
+#define ADDOPENS "addopens"
+#define ADDOPENS_LEN 8
 #define PATCH "patch"
 #define PATCH_LEN 5
 #define ADDMODS "addmods"
@@ -196,6 +198,7 @@ bool Arguments::is_internal_module_property(const char* property) {
     const char* property_suffix = property + MODULE_PROPERTY_PREFIX_LEN;
     if (matches_property_suffix(property_suffix, ADDEXPORTS, ADDEXPORTS_LEN) ||
         matches_property_suffix(property_suffix, ADDREADS, ADDREADS_LEN) ||
+        matches_property_suffix(property_suffix, ADDOPENS, ADDOPENS_LEN) ||
         matches_property_suffix(property_suffix, PATCH, PATCH_LEN) ||
         matches_property_suffix(property_suffix, ADDMODS, ADDMODS_LEN) ||
         matches_property_suffix(property_suffix, LIMITMODS, LIMITMODS_LEN) ||
@@ -2555,6 +2558,7 @@ bool Arguments::parse_uintx(const char* value,
 
 unsigned int addreads_count = 0;
 unsigned int addexports_count = 0;
+unsigned int addopens_count = 0;
 unsigned int addmods_count = 0;
 unsigned int patch_mod_count = 0;
 
@@ -2807,6 +2811,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       }
     } else if (match_option(option, "--add-exports=", &tail)) {
       if (!create_numbered_property("jdk.module.addexports", tail, addexports_count++)) {
+        return JNI_ENOMEM;
+      }
+    } else if (match_option(option, "--add-opens=", &tail)) {
+      if (!create_numbered_property("jdk.module.addopens", tail, addopens_count++)) {
         return JNI_ENOMEM;
       }
     } else if (match_option(option, "--add-modules=", &tail)) {

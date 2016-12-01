@@ -72,8 +72,7 @@ public class JvmtiGetAllModulesTest {
 
         // Load a new named module
         ModuleDescriptor descriptor
-                = new ModuleDescriptor.Builder(MY_MODULE_NAME)
-                .build();
+                = ModuleDescriptor.module(MY_MODULE_NAME).build();
         ModuleFinder finder = finderOf(descriptor);
         ClassLoader loader = new ClassLoader() {};
         Configuration parent = Layer.boot().configuration();
