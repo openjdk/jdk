@@ -27,7 +27,7 @@
  * Defines the JavaBeans Activation Framework (JAF) API.
  */
 module java.activation {
-    requires public java.datatransfer;
+    requires transitive java.datatransfer;
     requires java.logging;
 
     exports javax.activation;
