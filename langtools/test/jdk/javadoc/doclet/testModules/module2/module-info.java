@@ -25,7 +25,11 @@
 
 /**
   * This is a test description for the module2 module. Search word {@index search_word} with no description.
+  *
+  * @deprecated This module is deprecated using just the javadoc tag.
   */
+@testpkgmdl2.AnnotationType(optional="Module Annotation", required=2016)
+@testpkgmdl2.AnnotationTypeUndocumented(optional="Module Annotation", required=2016)
 module module2 {
     exports testpkgmdl2;
 

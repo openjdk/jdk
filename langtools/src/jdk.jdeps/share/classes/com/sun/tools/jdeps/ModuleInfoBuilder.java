@@ -47,13 +47,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import static java.util.stream.Collectors.*;
 
 
 public class ModuleInfoBuilder {
     final JdepsConfiguration configuration;
     final Path outputdir;
+    final boolean open;
 
     final DependencyFinder dependencyFinder;
     final Analyzer analyzer;
@@ -63,9 +64,11 @@ public class ModuleInfoBuilder {
     final Map<Module, Module> automaticToExplicitModule;
     public ModuleInfoBuilder(JdepsConfiguration configuration,
                              List<String> args,
-                             Path outputdir) {
+                             Path outputdir,
+                             boolean open) {
         this.configuration = configuration;
         this.outputdir = outputdir;
+        this.open = open;
 
         this.dependencyFinder = new DependencyFinder(configuration, DEFAULT_FILTER);
         this.analyzer = new Analyzer(configuration, Type.CLASS, DEFAULT_FILTER);
@@ -73,13 +76,13 @@ public class ModuleInfoBuilder {
         // add targets to modulepath if it has module-info.class
         List<Path> paths = args.stream()
             .map(fn -> Paths.get(fn))
-            .collect(Collectors.toList());
+            .collect(toList());
 
         // automatic module to convert to explicit module
         this.automaticToExplicitModule = ModuleFinder.of(paths.toArray(new Path[0]))
                 .findAll().stream()
                 .map(configuration::toModule)
-                .collect(Collectors.toMap(Function.identity(), Function.identity()));
+                .collect(toMap(Function.identity(), Function.identity()));
 
         Optional<Module> om = automaticToExplicitModule.keySet().stream()
                                     .filter(m -> !m.descriptor().isAutomatic())
@@ -96,7 +99,7 @@ public class ModuleInfoBuilder {
     public boolean run() throws IOException {
         try {
             // pass 1: find API dependencies
-            Map<Archive, Set<Archive>> requiresPublic = computeRequiresPublic();
+            Map<Archive, Set<Archive>> requiresTransitive = computeRequiresTransitive();
 
             // pass 2: analyze all class dependences
             dependencyFinder.parse(automaticModules().stream());
@@ -105,13 +108,13 @@ public class ModuleInfoBuilder {
 
             boolean missingDeps = false;
             for (Module m : automaticModules()) {
-                Set<Archive> apiDeps = requiresPublic.containsKey(m)
-                                            ? requiresPublic.get(m)
+                Set<Archive> apiDeps = requiresTransitive.containsKey(m)
+                                            ? requiresTransitive.get(m)
                                             : Collections.emptySet();
 
                 Path file = outputdir.resolve(m.name()).resolve("module-info.java");
 
-                // computes requires and requires public
+                // computes requires and requires transitive
                 Module explicitModule = toExplicitModule(m, apiDeps);
                 if (explicitModule != null) {
                     automaticToExplicitModule.put(m, explicitModule);
@@ -136,7 +139,7 @@ public class ModuleInfoBuilder {
         return m == NOT_FOUND || m == REMOVED_JDK_INTERNALS;
     }
 
-    private Module toExplicitModule(Module module, Set<Archive> requiresPublic)
+    private Module toExplicitModule(Module module, Set<Archive> requiresTransitive)
         throws IOException
     {
         // done analysis
@@ -148,7 +151,7 @@ public class ModuleInfoBuilder {
         }
 
         Map<String, Boolean> requires = new HashMap<>();
-        requiresPublic.stream()
+        requiresTransitive.stream()
             .map(Archive::getModule)
             .forEach(m -> requires.put(m.name(), Boolean.TRUE));
 
@@ -183,53 +186,60 @@ public class ModuleInfoBuilder {
             });
     }
 
-    void writeModuleInfo(Path file, ModuleDescriptor descriptor) {
+    void writeModuleInfo(Path file, ModuleDescriptor md) {
         try {
             Files.createDirectories(file.getParent());
             try (PrintWriter pw = new PrintWriter(Files.newOutputStream(file))) {
-                printModuleInfo(pw, descriptor);
+                printModuleInfo(pw, md);
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    private void printModuleInfo(PrintWriter writer, ModuleDescriptor descriptor) {
-        writer.format("module %s {%n", descriptor.name());
+    private void printModuleInfo(PrintWriter writer, ModuleDescriptor md) {
+        writer.format("%smodule %s {%n", open ? "open " : "", md.name());
 
         Map<String, Module> modules = configuration.getModules();
         // first print the JDK modules
-        descriptor.requires().stream()
-                  .filter(req -> !req.name().equals("java.base"))   // implicit requires
-                  .sorted(Comparator.comparing(Requires::name))
-                  .forEach(req -> writer.format("    requires %s;%n", req));
+        md.requires().stream()
+          .filter(req -> !req.name().equals("java.base"))   // implicit requires
+          .sorted(Comparator.comparing(Requires::name))
+          .forEach(req -> writer.format("    requires %s;%n", req));
 
-        descriptor.exports().stream()
-                  .peek(exp -> {
-                      if (exp.targets().size() > 0)
-                          throw new InternalError(descriptor.name() + " qualified exports: " + exp);
-                  })
-                  .sorted(Comparator.comparing(Exports::source))
-                  .forEach(exp -> writer.format("    exports %s;%n", exp.source()));
+        if (!open) {
+            md.exports().stream()
+              .peek(exp -> {
+                 if (exp.targets().size() > 0)
+                    throw new InternalError(md.name() + " qualified exports: " + exp);
+              })
+              .sorted(Comparator.comparing(Exports::source))
+              .forEach(exp -> writer.format("    exports %s;%n", exp.source()));
+        }
 
-        descriptor.provides().values().stream()
-                    .sorted(Comparator.comparing(Provides::service))
-                    .forEach(p -> p.providers().stream()
-                        .sorted()
-                        .forEach(impl -> writer.format("    provides %s with %s;%n", p.service(), impl)));
+        md.provides().stream()
+          .sorted(Comparator.comparing(Provides::service))
+          .map(p -> p.providers().stream()
+                     .map(impl -> "        " + impl.replace('$', '.'))
+                     .collect(joining(",\n",
+                                      String.format("    provides %s with%n",
+                                                    p.service().replace('$', '.')),
+                                      ";")))
+          .forEach(writer::println);
 
         writer.println("}");
     }
-
 
     private Set<Module> automaticModules() {
         return automaticToExplicitModule.keySet();
     }
 
     /**
-     * Compute 'requires public' dependences by analyzing API dependencies
+     * Compute 'requires transitive' dependences by analyzing API dependencies
      */
-    private Map<Archive, Set<Archive>> computeRequiresPublic() throws IOException {
+    private Map<Archive, Set<Archive>> computeRequiresTransitive()
+        throws IOException
+    {
         // parse the input modules
         dependencyFinder.parseExportedAPIs(automaticModules().stream());
 

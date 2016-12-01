@@ -83,9 +83,12 @@ public class NoJavaLangTest {
         // need to ensure there is an empty java.base to avoid different error message
         Files.createDirectories(Paths.get("modules/java.base"));
         new JavacTask(tb)
-                .sources("module java.base { }")
+                .sources("module java.base { }",
+                         "package java.lang; public class Object {}")
                 .outdir("modules/java.base")
                 .run();
+
+        Files.delete(Paths.get("modules", "java.base", "java", "lang", "Object.class"));
 
         // ideally we'd have a better message for this case
         String[] mpOpts = { "--system", "none", "--module-path", "modules" };

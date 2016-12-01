@@ -58,7 +58,7 @@ public class TransitiveDeps {
     private static final Path LIBS_DIR = Paths.get("libs");
 
     // the names of the modules in this test
-    private static String[] modules = new String[] {"unsafe", "m6", "m7"};
+    private static String[] modules = new String[] {"unsafe", "mVI", "mVII"};
     /**
      * Compiles all modules used by the test
      */
@@ -86,15 +86,15 @@ public class TransitiveDeps {
     @DataProvider(name = "modules")
     public Object[][] expected1() {
         return new Object[][]{
-            { "m7",
-               List.of(new ModuleMetaData("m7")
-                            .requires("m6")
+            { "mVII",
+               List.of(new ModuleMetaData("mVII")
+                            .requires("mVI")
                             .requires("unsafe")
                             .reference("p7.Main", "java.lang.Object", "java.base")
                             .reference("p7.Main", "java.lang.String", "java.base")
                             .reference("p7.Main", "org.safe.Lib", "unsafe")
-                            .reference("p7.Main", "p6.safe.Lib", "m6"),
-                        new ModuleMetaData("m6")
+                            .reference("p7.Main", "p6.safe.Lib", "mVI"),
+                        new ModuleMetaData("mVI")
                             .requires("unsafe")
                             .reference("p6.indirect.UnsafeRef", "java.lang.Object", "java.base")
                             .reference("p6.indirect.UnsafeRef", "org.unsafe.UseUnsafe ", "unsafe")
@@ -121,7 +121,7 @@ public class TransitiveDeps {
 
     @Test(dataProvider = "modules")
     public void testModulePath(String name, List<ModuleMetaData> data) throws IOException {
-        Set<String> roots = Set.of("m6", "unsafe");
+        Set<String> roots = Set.of("mVI", "unsafe");
 
         String cmd1 = String.format("jdeps --module-path %s --add-modules %s -m %s%n", MODS_DIR,
             roots.stream().collect(Collectors.joining(",")), name);
@@ -152,13 +152,13 @@ public class TransitiveDeps {
     @DataProvider(name = "jars")
     public Object[][] expected2() {
         return new Object[][]{
-            { "m7", List.of(new ModuleMetaData("m7.jar")
-                                .requires("m6.jar")
+            { "mVII", List.of(new ModuleMetaData("mVII.jar")
+                                .requires("mVI.jar")
                                 .requires("unsafe.jar")
                                 .reference("p7.Main", "java.lang.Object", "java.base")
                                 .reference("p7.Main", "java.lang.String", "java.base")
                                 .reference("p7.Main", "org.safe.Lib", "unsafe.jar")
-                                .reference("p7.Main", "p6.safe.Lib", "m6.jar"))
+                                .reference("p7.Main", "p6.safe.Lib", "mVI.jar"))
             },
         };
     }
@@ -185,15 +185,15 @@ public class TransitiveDeps {
     @DataProvider(name = "compileTimeView")
     public Object[][] expected3() {
         return new Object[][] {
-            {"m7",
-             List.of(new ModuleMetaData("m7.jar")
-                        .requires("m6.jar")
+            {"mVII",
+             List.of(new ModuleMetaData("mVII.jar")
+                        .requires("mVI.jar")
                         .requires("unsafe.jar")
                         .reference("p7.Main", "java.lang.Object", "java.base")
                         .reference("p7.Main", "java.lang.String", "java.base")
                         .reference("p7.Main", "org.safe.Lib", "unsafe.jar")
-                        .reference("p7.Main", "p6.safe.Lib", "m6.jar"),
-                    new ModuleMetaData("m6.jar")
+                        .reference("p7.Main", "p6.safe.Lib", "mVI.jar"),
+                    new ModuleMetaData("mVI.jar")
                         .requires("unsafe.jar")
                         .reference("p6.indirect.UnsafeRef", "java.lang.Object", "java.base")
                         .reference("p6.indirect.UnsafeRef", "org.unsafe.UseUnsafe ", "unsafe.jar")
@@ -240,15 +240,15 @@ public class TransitiveDeps {
     @DataProvider(name = "recursiveDeps")
     public Object[][] expected4() {
         return new Object[][] {
-            {"m7",
-                List.of(new ModuleMetaData("m7.jar")
-                        .requires("m6.jar")
+            {"mVII",
+                List.of(new ModuleMetaData("mVII.jar")
+                        .requires("mVI.jar")
                         .requires("unsafe.jar")
                         .reference("p7.Main", "java.lang.Object", "java.base")
                         .reference("p7.Main", "java.lang.String", "java.base")
                         .reference("p7.Main", "org.safe.Lib", "unsafe.jar")
-                        .reference("p7.Main", "p6.safe.Lib", "m6.jar"),
-                    new ModuleMetaData("m6.jar")
+                        .reference("p7.Main", "p6.safe.Lib", "mVI.jar"),
+                    new ModuleMetaData("mVI.jar")
                         .requires("unsafe.jar")
                         .reference("p6.safe.Lib", "java.io.PrintStream", "java.base")
                         .reference("p6.safe.Lib", "java.lang.Class", "java.base")

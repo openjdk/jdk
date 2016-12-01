@@ -495,10 +495,10 @@ public class ElementsTable {
     private Set<ModuleElement> getModuleRequires(ModuleElement mdle, boolean isPublic) {
         Set<ModuleElement> result = new HashSet<>();
         for (RequiresDirective rd : ElementFilter.requiresIn(mdle.getDirectives())) {
-            if (isPublic && rd.isPublic()) {
+            if (isPublic && rd.isTransitive()) {
                 result.add(rd.getDependency());
             }
-            if (!isPublic && !rd.isPublic()) {
+            if (!isPublic && !rd.isTransitive()) {
                 result.add(rd.getDependency());
             }
         }

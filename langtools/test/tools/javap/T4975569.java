@@ -42,12 +42,12 @@ public class T4975569 {
     }
 
     void run() {
-        verify(Anno.class.getName(), "flags: ACC_INTERFACE, ACC_ABSTRACT, ACC_ANNOTATION");
-        verify(E.class.getName(),    "flags: ACC_FINAL, ACC_SUPER, ACC_ENUM");
-        verify(S.class.getName(),    "flags: ACC_BRIDGE, ACC_SYNTHETIC",
+        verify(Anno.class.getName(), "flags: \\(0x2600\\) ACC_INTERFACE, ACC_ABSTRACT, ACC_ANNOTATION");
+        verify(E.class.getName(),    "flags: \\(0x4030\\) ACC_FINAL, ACC_SUPER, ACC_ENUM");
+        verify(S.class.getName(),    "flags: \\(0x1040\\) ACC_BRIDGE, ACC_SYNTHETIC",
                                      "InnerClasses:\n  static [# =\\w]+; +// ");
         verify(V.class.getName(),    "void m\\(java.lang.String...\\)",
-                                     "flags: ACC_VARARGS");
+                                     "flags: \\(0x0080\\) ACC_VARARGS");
         verify(Prot.class.getName(), "InnerClasses:\n  protected [# =\\w]+; +// ");
         verify(Priv.class.getName(), new String[]{"-p"},
                                      "InnerClasses:\n  private [# =\\w]+; +// ");

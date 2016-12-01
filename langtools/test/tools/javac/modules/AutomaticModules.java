@@ -193,7 +193,7 @@ public class AutomaticModules extends ModuleTestBase {
         Files.createDirectories(depClasses);
 
         tb.writeJavaFiles(depSrc,
-                          "module m1 { requires public automatic; }",
+                          "module m1 { requires transitive automatic; }",
                           "package dep; public class Dep { api.Api api; }");
 
         new JavacTask(tb)
@@ -261,7 +261,7 @@ public class AutomaticModules extends ModuleTestBase {
         Path moduleSrc = base.resolve("module-src");
 
         tb.writeJavaFiles(moduleSrc.resolve("m1"),
-                          "module m1 { requires automaticA; }",
+                          "module m1 { requires static automaticA; }",
                           "package impl; public class Impl { apiA.Api a; apiB.Api b; m2.M2 m;}");
 
         tb.writeJavaFiles(moduleSrc.resolve("m2"),
@@ -307,5 +307,55 @@ public class AutomaticModules extends ModuleTestBase {
         if (!expected.equals(log)) {
             throw new Exception("expected output not found: " + log);
         }
+    }
+
+    @Test
+    public void testDropTrailingVersion(Path base) throws Exception {
+        Path legacySrc = base.resolve("legacy-src");
+        tb.writeJavaFiles(legacySrc,
+                          "package api; public class Api {}");
+        Path legacyClasses = base.resolve("legacy-classes");
+        Files.createDirectories(legacyClasses);
+
+        String log = new JavacTask(tb)
+                .options()
+                .outdir(legacyClasses)
+                .files(findJavaFiles(legacySrc))
+                .run()
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        if (!log.isEmpty()) {
+            throw new Exception("unexpected output: " + log);
+        }
+
+        Path modulePath = base.resolve("module-path");
+
+        Files.createDirectories(modulePath);
+
+        Path jar = modulePath.resolve("test1.jar");
+
+        new JarTask(tb, jar)
+          .baseDir(legacyClasses)
+          .files("api/Api.class")
+          .run();
+
+        Path moduleSrc = base.resolve("module-src");
+        Path m = moduleSrc.resolve("m");
+
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        tb.writeJavaFiles(m,
+                          "module m { requires test; }",
+                          "package impl; public class Impl { public void e(api.Api api) { } }");
+
+        new JavacTask(tb)
+                .options("--module-source-path", moduleSrc.toString(), "--module-path", modulePath.toString())
+                .outdir(classes)
+                .files(findJavaFiles(moduleSrc))
+                .run()
+                .writeAll();
     }
 }
