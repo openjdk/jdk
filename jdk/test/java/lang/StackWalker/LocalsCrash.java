@@ -25,6 +25,7 @@
  * @test
  * @bug 8147039
  * @summary Test for -Xcomp crash that happened before 8147039 fix
+ * @modules java.base/java.lang:open
  * @run testng/othervm -Xcomp LocalsCrash
  */
 

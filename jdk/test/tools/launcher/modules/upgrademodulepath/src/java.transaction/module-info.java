@@ -22,6 +22,6 @@
  */
 
 module java.transaction {
-    requires public java.enterprise;
+    requires transitive java.enterprise;
     exports javax.transaction;
 }

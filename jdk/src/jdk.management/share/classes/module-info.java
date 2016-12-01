@@ -24,7 +24,7 @@
  */
 
 module jdk.management {
-    requires public java.management;
+    requires transitive java.management;
 
     exports com.sun.management;
 

@@ -30,6 +30,7 @@ import java.awt.image.BufferedImage;
  *          of the ActionEvent triggered when TrayIcon is double clicked
  *          (single clicked, on Mac)
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
+ * @modules java.desktop/java.awt:open
  * @library ../../../../lib/testlibrary ../
  * @library /java/awt/patchlib
  * @build java.desktop/java.awt.Helper

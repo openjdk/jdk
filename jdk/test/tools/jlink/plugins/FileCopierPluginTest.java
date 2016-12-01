@@ -75,11 +75,11 @@ public class FileCopierPluginTest {
 
         String target = "target" + File.separator + name;
         Files.write(txt.toPath(), content.getBytes());
-        File lic = new File(System.getProperty("java.home"), "LICENSE");
+        File lic = new File(System.getProperty("java.home"), "LICENSE.txt");
         StringBuilder builder = new StringBuilder();
         int expected = lic.exists() ? 4 : 3;
         if (lic.exists()) {
-            builder.append("LICENSE,");
+            builder.append("LICENSE.txt,");
         }
         builder.append(txt.getAbsolutePath()+",");
         builder.append(txt.getAbsolutePath() + "=" + target+",");
@@ -116,9 +116,9 @@ public class FileCopierPluginTest {
         imgbuilder.storeFiles(pool);
 
         if (lic.exists()) {
-            File license = new File(root.toFile(), "LICENSE");
+            File license = new File(root.toFile(), "LICENSE.txt");
             if (!license.exists() || license.length() == 0) {
-                throw new AssertionError("Invalide license file "
+                throw new AssertionError("Invalid license file "
                         + license.getAbsoluteFile());
             }
         }

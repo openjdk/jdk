@@ -40,6 +40,7 @@ import java.lang.module.ModuleReference;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
+import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Version;
@@ -83,6 +84,7 @@ import java.util.jar.JarOutputStream;
 import java.util.stream.Collectors;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -97,6 +99,7 @@ import jdk.internal.joptsimple.OptionParser;
 import jdk.internal.joptsimple.OptionSet;
 import jdk.internal.joptsimple.OptionSpec;
 import jdk.internal.joptsimple.ValueConverter;
+import jdk.internal.loader.ResourceHelper;
 import jdk.internal.misc.JavaLangModuleAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.module.ModuleHashes;
@@ -261,9 +264,9 @@ public class JmodTask {
         }
     }
 
-    static <T> String toString(Set<T> set) {
-        if (set.isEmpty()) { return ""; }
-        return set.stream().map(e -> e.toString().toLowerCase(Locale.ROOT))
+    static <T> String toString(Collection<T> c) {
+        if (c.isEmpty()) { return ""; }
+        return c.stream().map(e -> e.toString().toLowerCase(Locale.ROOT))
                   .collect(joining(" "));
     }
 
@@ -291,14 +294,21 @@ public class JmodTask {
             .sorted(Comparator.comparing(Exports::source))
             .forEach(p -> sb.append("\n  exports ").append(p));
 
-        md.conceals().stream().sorted()
-            .forEach(p -> sb.append("\n  conceals ").append(p));
+        md.opens().stream()
+            .sorted(Comparator.comparing(Opens::source))
+            .forEach(p -> sb.append("\n  opens ").append(p));
 
-        md.provides().values().stream()
+        Set<String> concealed = new HashSet<>(md.packages());
+        md.exports().stream().map(Exports::source).forEach(concealed::remove);
+        md.opens().stream().map(Opens::source).forEach(concealed::remove);
+        concealed.stream().sorted()
+                 .forEach(p -> sb.append("\n  contains ").append(p));
+
+        md.provides().stream()
             .sorted(Comparator.comparing(Provides::service))
             .forEach(p -> sb.append("\n  provides ").append(p.service())
-                .append(" with ")
-                .append(toString(p.providers())));
+                            .append(" with ")
+                            .append(toString(p.providers())));
 
         md.mainClass().ifPresent(v -> sb.append("\n  main-class " + v));
 
@@ -311,8 +321,8 @@ public class JmodTask {
         JLMA.hashes(md).ifPresent(
             hashes -> hashes.names().stream().sorted().forEach(
                 mod -> sb.append("\n  hashes ").append(mod).append(" ")
-                    .append(hashes.algorithm()).append(" ")
-                    .append(hashes.hashFor(mod))));
+                         .append(hashes.algorithm()).append(" ")
+                         .append(hashes.hashFor(mod))));
 
         out.println(sb.toString());
     }
@@ -414,7 +424,7 @@ public class JmodTask {
         /**
          * Writes the updated module-info.class to the ZIP output stream.
          *
-         * The updated module-info.class will have a ConcealedPackages attribute
+         * The updated module-info.class will have a Packages attribute
          * with the set of module-private/non-exported packages.
          *
          * If --module-version, --main-class, or other options were provided
@@ -439,15 +449,9 @@ public class JmodTask {
             try (InputStream in = miSupplier.get()) {
                 ModuleInfoExtender extender = ModuleInfoExtender.newExtender(in);
 
-                // Add (or replace) the ConcealedPackages attribute
+                // Add (or replace) the Packages attribute
                 if (packages != null) {
-                    Set<String> exported = descriptor.exports().stream()
-                        .map(ModuleDescriptor.Exports::source)
-                        .collect(Collectors.toSet());
-                    Set<String> concealed = packages.stream()
-                        .filter(p -> !exported.contains(p))
-                        .collect(Collectors.toSet());
-                    extender.conceals(concealed);
+                    extender.packages(packages);
                 }
 
                 // --main-class
@@ -556,10 +560,11 @@ public class JmodTask {
         Set<String> findPackages(Path dir) {
             try {
                 return Files.find(dir, Integer.MAX_VALUE,
-                        ((path, attrs) -> attrs.isRegularFile() &&
-                                path.toString().endsWith(".class")))
-                        .map(path -> toPackageName(dir.relativize(path)))
-                        .filter(pkg -> pkg.length() > 0)   // module-info
+                                  ((path, attrs) -> attrs.isRegularFile()))
+                        .map(dir::relativize)
+                        .filter(path -> isResource(path.toString()))
+                        .map(path -> toPackageName(path))
+                        .filter(pkg -> pkg.length() > 0)
                         .distinct()
                         .collect(Collectors.toSet());
             } catch (IOException ioe) {
@@ -572,21 +577,30 @@ public class JmodTask {
          */
         Set<String> findPackages(JarFile jf) {
             return jf.stream()
-                     .filter(e -> e.getName().endsWith(".class"))
+                     .filter(e -> !e.isDirectory() && isResource(e.getName()))
                      .map(e -> toPackageName(e))
-                     .filter(pkg -> pkg.length() > 0)   // module-info
+                     .filter(pkg -> pkg.length() > 0)
                      .distinct()
                      .collect(Collectors.toSet());
         }
 
+        /**
+         * Returns true if it's a .class or a resource with an effective
+         * package name.
+         */
+        boolean isResource(String name) {
+            name = name.replace(File.separatorChar, '/');
+            return name.endsWith(".class") || !ResourceHelper.isSimpleResource(name);
+        }
+
+
         String toPackageName(Path path) {
             String name = path.toString();
-            assert name.endsWith(".class");
             int index = name.lastIndexOf(File.separatorChar);
             if (index != -1)
                 return name.substring(0, index).replace(File.separatorChar, '.');
 
-            if (!name.equals(MODULE_INFO)) {
+            if (name.endsWith(".class") && !name.equals(MODULE_INFO)) {
                 IOException e = new IOException(name  + " in the unnamed package");
                 throw new UncheckedIOException(e);
             }
@@ -595,12 +609,15 @@ public class JmodTask {
 
         String toPackageName(ZipEntry entry) {
             String name = entry.getName();
-            assert name.endsWith(".class");
             int index = name.lastIndexOf("/");
             if (index != -1)
                 return name.substring(0, index).replace('/', '.');
-            else
-                return "";
+
+            if (name.endsWith(".class") && !name.equals(MODULE_INFO)) {
+                IOException e = new IOException(name  + " in the unnamed package");
+                throw new UncheckedIOException(e);
+            }
+            return "";
         }
 
         void processClasses(JmodOutputStream out, List<Path> classpaths)

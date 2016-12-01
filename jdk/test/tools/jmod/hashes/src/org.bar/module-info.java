@@ -22,5 +22,5 @@
  */
 
 module org.bar {
-    requires public m1;
+    requires transitive m1;
 }

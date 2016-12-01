@@ -306,15 +306,8 @@ import com.sun.security.auth.UserPrincipal;
 public class LdapLoginModule implements LoginModule {
 
     // Use the default classloader for this class to load the prompt strings.
-    private static final ResourceBundle rb = AccessController.doPrivileged(
-            new PrivilegedAction<ResourceBundle>() {
-                public ResourceBundle run() {
-                    return ResourceBundle.getBundle(
-                        "sun.security.util.AuthResources",
-                        sun.security.util.ResourcesMgr.class.getModule());
-                }
-            }
-        );
+    private static final ResourceBundle rb =
+        ResourceBundle.getBundle("sun.security.util.AuthResources");
 
     // Keys to retrieve the stored username and password
     private static final String USERNAME_KEY = "javax.security.auth.login.name";

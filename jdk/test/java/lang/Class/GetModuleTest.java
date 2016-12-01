@@ -31,7 +31,6 @@
  */
 
 import java.awt.Component;
-import java.lang.reflect.Field;
 import java.lang.reflect.Module;
 
 import jdk.internal.org.objectweb.asm.ClassWriter;
@@ -44,16 +43,7 @@ import static org.testng.Assert.*;
 
 public class GetModuleTest {
 
-    static final Unsafe U;
-    static {
-        try {
-            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            theUnsafe.setAccessible(true);
-            U = (Unsafe) theUnsafe.get(null);
-        } catch (Exception e) {
-            throw new AssertionError(e);
-        }
-    }
+    private static final Unsafe U = Unsafe.getUnsafe();
 
     private static final Module TEST_MODULE = GetModuleTest.class.getModule();
 
