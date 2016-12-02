@@ -253,7 +253,11 @@ public abstract class EditorTestBase extends ReplToolTesting {
                 a -> assertEditOutput(a, "/ed", "b ==> 10", () -> {
                     writeSource(getSource() + "\nint b = 10");
                     exit();
-                })
+                }),
+
+                //TODO: this is a work-around to JDK-8170369
+                a -> assertCommand(a, "1234",
+                        null, "", null, null, "")
         );
     }
 

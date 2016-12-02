@@ -23,12 +23,16 @@
 
  /*
  * @test
- * @bug 8157395 8157393 8157517 8158738 8167128 8163840 8167637
+ * @bug 8157395 8157393 8157517 8158738 8167128 8163840 8167637 8170368
  * @summary Tests of jshell comand options, and undoing operations
  * @modules jdk.jshell/jdk.internal.jshell.tool
+ *          jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ * @library /tools/lib
  * @build ToolCommandOptionTest ReplToolTesting
  * @run testng ToolCommandOptionTest
  */
+import java.nio.file.Path;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertFalse;
 
@@ -240,6 +244,9 @@ public class ToolCommandOptionTest extends ReplToolTesting {
     }
 
     public void setStartTest() {
+        Compiler compiler = new Compiler();
+        Path startup = compiler.getPath("StartTest/startup.txt");
+        compiler.writeToFile(startup, "int iAmHere = 1234;");
         test(
                 (a) -> assertCommand(a, "/set start -furball",
                         "|  Unknown option: -furball -- /set start -furball"),
@@ -257,6 +264,13 @@ public class ToolCommandOptionTest extends ReplToolTesting {
                         ""),
                 (a) -> assertCommand(a, "/set start",
                         "|  /set start -default"),
+                (a) -> assertCommand(a, "/set start " + startup.toString(),
+                        ""),
+                (a) -> assertCommand(a, "/set start",
+                        "|  startup.jsh:\n" +
+                        "|  int iAmHere = 1234;\n" +
+                        "|  \n" +
+                        "|  /set start startup.jsh"),
                 (a) -> assertCommand(a, "/se sta -no",
                         ""),
                 (a) -> assertCommand(a, "/set start",
@@ -265,6 +279,9 @@ public class ToolCommandOptionTest extends ReplToolTesting {
     }
 
     public void retainStartTest() {
+        Compiler compiler = new Compiler();
+        Path startup = compiler.getPath("StartTest/startup.txt");
+        compiler.writeToFile(startup, "int iAmHere = 1234;");
         test(
                 (a) -> assertCommand(a, "/set start -retain -furball",
                         "|  Unknown option: -furball -- /set start -retain -furball"),
@@ -292,7 +309,14 @@ public class ToolCommandOptionTest extends ReplToolTesting {
                 (a) -> assertCommand(a, "/se st -ret",
                         ""),
                 (a) -> assertCommand(a, "/se sta",
-                        "|  /set start -retain -none")
+                        "|  /set start -retain -none"),
+                (a) -> assertCommand(a, "/set start -retain " + startup.toString(),
+                        ""),
+                (a) -> assertCommand(a, "/set start",
+                        "|  startup.jsh:\n" +
+                        "|  int iAmHere = 1234;\n" +
+                        "|  \n" +
+                        "|  /set start -retain startup.jsh")
         );
     }
 
