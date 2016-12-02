@@ -53,7 +53,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 # Minimum supported versions, empty means unspecified
 TOOLCHAIN_MINIMUM_VERSION_clang="3.2"
 TOOLCHAIN_MINIMUM_VERSION_gcc="4.3"
-TOOLCHAIN_MINIMUM_VERSION_microsoft=""
+TOOLCHAIN_MINIMUM_VERSION_microsoft="16.00.30319.01" # VS2010
 TOOLCHAIN_MINIMUM_VERSION_solstudio="5.13"
 TOOLCHAIN_MINIMUM_VERSION_xlc=""
 
@@ -69,15 +69,15 @@ AC_DEFUN([TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS],
   fi
 
   # We only check CC_VERSION_NUMBER since we assume CXX_VERSION_NUMBER is equal.
-  if [ [[ "[$]$1CC_VERSION_NUMBER" =~ (.*\.){3} ]] ]; then
-    AC_MSG_WARN([C compiler version number has more than three parts (X.Y.Z): [$]$1CC_VERSION_NUMBER. Comparisons might be wrong.])
+  if [ [[ "[$]$1CC_VERSION_NUMBER" =~ (.*\.){4} ]] ]; then
+    AC_MSG_WARN([C compiler version number has more than four parts (W.X.Y.Z): [$]$1CC_VERSION_NUMBER. Comparisons might be wrong.])
   fi
 
   if [ [[  "[$]$1CC_VERSION_NUMBER" =~ [0-9]{6} ]] ]; then
     AC_MSG_WARN([C compiler version number has a part larger than 99999: [$]$1CC_VERSION_NUMBER. Comparisons might be wrong.])
   fi
 
-  $2COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", [$]1, [$]2, [$]3) }' <<< "[$]$1CC_VERSION_NUMBER"`
+  $2COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "[$]$1CC_VERSION_NUMBER"`
 ])
 
 # Check if the configured compiler (C and C++) is of a specific version or
@@ -94,8 +94,8 @@ BASIC_DEFUN_NAMED([TOOLCHAIN_CHECK_COMPILER_VERSION],
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
   REFERENCE_VERSION=ARG_VERSION
 
-  if [ [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ]; then
-    AC_MSG_ERROR([Internal error: Cannot compare to ARG_VERSION, only three parts (X.Y.Z) is supported])
+  if [ [[ "$REFERENCE_VERSION" =~ (.*\.){4} ]] ]; then
+    AC_MSG_ERROR([Internal error: Cannot compare to ARG_VERSION, only four parts (W.X.Y.Z) is supported])
   fi
 
   if [ [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ]; then
@@ -103,7 +103,7 @@ BASIC_DEFUN_NAMED([TOOLCHAIN_CHECK_COMPILER_VERSION],
   fi
 
   # Version comparison method inspired by http://stackoverflow.com/a/24067243
-  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", [$]1, [$]2, [$]3) }' <<< "$REFERENCE_VERSION"`
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$REFERENCE_VERSION"`
 
   if test [$]ARG_PREFIX[COMPARABLE_ACTUAL_VERSION] -ge $COMPARABLE_REFERENCE_VERSION ; then
     :
