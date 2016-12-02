@@ -4906,7 +4906,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 # Minimum supported versions, empty means unspecified
 TOOLCHAIN_MINIMUM_VERSION_clang="3.2"
 TOOLCHAIN_MINIMUM_VERSION_gcc="4.3"
-TOOLCHAIN_MINIMUM_VERSION_microsoft=""
+TOOLCHAIN_MINIMUM_VERSION_microsoft="16.00.30319.01" # VS2010
 TOOLCHAIN_MINIMUM_VERSION_solstudio="5.13"
 TOOLCHAIN_MINIMUM_VERSION_xlc=""
 
@@ -5084,7 +5084,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1480671645
+DATE_WHEN_GENERATED=1480684711
 
 ###############################################################################
 #
@@ -35262,9 +35262,9 @@ $as_echo "$as_me: WARNING: This typically indicates a broken setup, and is not s
   fi
 
   # We only check CC_VERSION_NUMBER since we assume CXX_VERSION_NUMBER is equal.
-  if  [[ "[$]CC_VERSION_NUMBER" =~ (.*\.){3} ]] ; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has more than three parts (X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&5
-$as_echo "$as_me: WARNING: C compiler version number has more than three parts (X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
+  if  [[ "[$]CC_VERSION_NUMBER" =~ (.*\.){4} ]] ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has more than four parts (W.X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&5
+$as_echo "$as_me: WARNING: C compiler version number has more than four parts (W.X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
   fi
 
   if  [[  "[$]CC_VERSION_NUMBER" =~ [0-9]{6} ]] ; then
@@ -35272,7 +35272,7 @@ $as_echo "$as_me: WARNING: C compiler version number has more than three parts (
 $as_echo "$as_me: WARNING: C compiler version number has a part larger than 99999: $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
   fi
 
-  COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$CC_VERSION_NUMBER"`
+  COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", $1, $2, $3, $4) }' <<< "$CC_VERSION_NUMBER"`
 
 
   if test "x$TOOLCHAIN_MINIMUM_VERSION" != x; then
@@ -35330,8 +35330,8 @@ $as_echo "$as_me: WARNING: C compiler version number has a part larger than 9999
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
   REFERENCE_VERSION=$TOOLCHAIN_MINIMUM_VERSION
 
-  if  [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ; then
-    as_fn_error $? "Internal error: Cannot compare to $TOOLCHAIN_MINIMUM_VERSION, only three parts (X.Y.Z) is supported" "$LINENO" 5
+  if  [[ "$REFERENCE_VERSION" =~ (.*\.){4} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to $TOOLCHAIN_MINIMUM_VERSION, only four parts (W.X.Y.Z) is supported" "$LINENO" 5
   fi
 
   if  [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ; then
@@ -35339,7 +35339,7 @@ $as_echo "$as_me: WARNING: C compiler version number has a part larger than 9999
   fi
 
   # Version comparison method inspired by http://stackoverflow.com/a/24067243
-  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", $1, $2, $3, $4) }' <<< "$REFERENCE_VERSION"`
 
   if test $COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
     :
@@ -47203,9 +47203,9 @@ $as_echo "$as_me: WARNING: This typically indicates a broken setup, and is not s
   fi
 
   # We only check CC_VERSION_NUMBER since we assume CXX_VERSION_NUMBER is equal.
-  if  [[ "[$]BUILD_CC_VERSION_NUMBER" =~ (.*\.){3} ]] ; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has more than three parts (X.Y.Z): $BUILD_CC_VERSION_NUMBER. Comparisons might be wrong." >&5
-$as_echo "$as_me: WARNING: C compiler version number has more than three parts (X.Y.Z): $BUILD_CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
+  if  [[ "[$]BUILD_CC_VERSION_NUMBER" =~ (.*\.){4} ]] ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has more than four parts (W.X.Y.Z): $BUILD_CC_VERSION_NUMBER. Comparisons might be wrong." >&5
+$as_echo "$as_me: WARNING: C compiler version number has more than four parts (W.X.Y.Z): $BUILD_CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
   fi
 
   if  [[  "[$]BUILD_CC_VERSION_NUMBER" =~ [0-9]{6} ]] ; then
@@ -47213,7 +47213,7 @@ $as_echo "$as_me: WARNING: C compiler version number has more than three parts (
 $as_echo "$as_me: WARNING: C compiler version number has a part larger than 99999: $BUILD_CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
   fi
 
-  OPENJDK_BUILD_COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$BUILD_CC_VERSION_NUMBER"`
+  OPENJDK_BUILD_COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", $1, $2, $3, $4) }' <<< "$BUILD_CC_VERSION_NUMBER"`
 
   else
     # If we are not cross compiling, use the normal target compilers for
@@ -47239,9 +47239,9 @@ $as_echo "$as_me: WARNING: This typically indicates a broken setup, and is not s
   fi
 
   # We only check CC_VERSION_NUMBER since we assume CXX_VERSION_NUMBER is equal.
-  if  [[ "[$]CC_VERSION_NUMBER" =~ (.*\.){3} ]] ; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has more than three parts (X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&5
-$as_echo "$as_me: WARNING: C compiler version number has more than three parts (X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
+  if  [[ "[$]CC_VERSION_NUMBER" =~ (.*\.){4} ]] ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has more than four parts (W.X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&5
+$as_echo "$as_me: WARNING: C compiler version number has more than four parts (W.X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
   fi
 
   if  [[  "[$]CC_VERSION_NUMBER" =~ [0-9]{6} ]] ; then
@@ -47249,7 +47249,7 @@ $as_echo "$as_me: WARNING: C compiler version number has more than three parts (
 $as_echo "$as_me: WARNING: C compiler version number has a part larger than 99999: $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
   fi
 
-  OPENJDK_BUILD_COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$CC_VERSION_NUMBER"`
+  OPENJDK_BUILD_COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", $1, $2, $3, $4) }' <<< "$CC_VERSION_NUMBER"`
 
   fi
 
@@ -49857,8 +49857,8 @@ $as_echo "$supports" >&6; }
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
   REFERENCE_VERSION=6
 
-  if  [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ; then
-    as_fn_error $? "Internal error: Cannot compare to 6, only three parts (X.Y.Z) is supported" "$LINENO" 5
+  if  [[ "$REFERENCE_VERSION" =~ (.*\.){4} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to 6, only four parts (W.X.Y.Z) is supported" "$LINENO" 5
   fi
 
   if  [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ; then
@@ -49866,7 +49866,7 @@ $as_echo "$supports" >&6; }
   fi
 
   # Version comparison method inspired by http://stackoverflow.com/a/24067243
-  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", $1, $2, $3, $4) }' <<< "$REFERENCE_VERSION"`
 
   if test $COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
     :
@@ -50157,8 +50157,8 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
   REFERENCE_VERSION=4.8
 
-  if  [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ; then
-    as_fn_error $? "Internal error: Cannot compare to 4.8, only three parts (X.Y.Z) is supported" "$LINENO" 5
+  if  [[ "$REFERENCE_VERSION" =~ (.*\.){4} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to 4.8, only four parts (W.X.Y.Z) is supported" "$LINENO" 5
   fi
 
   if  [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ; then
@@ -50166,7 +50166,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   fi
 
   # Version comparison method inspired by http://stackoverflow.com/a/24067243
-  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", $1, $2, $3, $4) }' <<< "$REFERENCE_VERSION"`
 
   if test $COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
     :
@@ -50680,8 +50680,8 @@ $as_echo "$supports" >&6; }
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
   REFERENCE_VERSION=6
 
-  if  [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ; then
-    as_fn_error $? "Internal error: Cannot compare to 6, only three parts (X.Y.Z) is supported" "$LINENO" 5
+  if  [[ "$REFERENCE_VERSION" =~ (.*\.){4} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to 6, only four parts (W.X.Y.Z) is supported" "$LINENO" 5
   fi
 
   if  [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ; then
@@ -50689,7 +50689,7 @@ $as_echo "$supports" >&6; }
   fi
 
   # Version comparison method inspired by http://stackoverflow.com/a/24067243
-  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", $1, $2, $3, $4) }' <<< "$REFERENCE_VERSION"`
 
   if test $OPENJDK_BUILD_COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
     :
@@ -50980,8 +50980,8 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
   REFERENCE_VERSION=4.8
 
-  if  [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ; then
-    as_fn_error $? "Internal error: Cannot compare to 4.8, only three parts (X.Y.Z) is supported" "$LINENO" 5
+  if  [[ "$REFERENCE_VERSION" =~ (.*\.){4} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to 4.8, only four parts (W.X.Y.Z) is supported" "$LINENO" 5
   fi
 
   if  [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ; then
@@ -50989,7 +50989,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   fi
 
   # Version comparison method inspired by http://stackoverflow.com/a/24067243
-  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", $1, $2, $3, $4) }' <<< "$REFERENCE_VERSION"`
 
   if test $OPENJDK_BUILD_COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
     :
