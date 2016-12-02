@@ -829,7 +829,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     BUILD_SYSROOT_CFLAGS="$SYSROOT_CFLAGS"
     BUILD_SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS"
     BUILD_AR="$AR"
-    
+
     TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS([], [OPENJDK_BUILD_])
   fi
 
@@ -842,36 +842,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
   AC_SUBST(BUILD_SYSROOT_CFLAGS)
   AC_SUBST(BUILD_SYSROOT_LDFLAGS)
   AC_SUBST(BUILD_AR)
-])
-
-# Setup legacy variables that are still needed as alternative ways to refer to
-# parts of the toolchain.
-AC_DEFUN_ONCE([TOOLCHAIN_SETUP_LEGACY],
-[
-  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # For hotspot, we need these in Windows mixed path,
-    # so rewrite them all. Need added .exe suffix.
-    HOTSPOT_CXX="$CXX.exe"
-    HOTSPOT_LD="$LD.exe"
-    HOTSPOT_MT="$MT.exe"
-    HOTSPOT_RC="$RC.exe"
-    BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH(HOTSPOT_CXX)
-    BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH(HOTSPOT_LD)
-    BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH(HOTSPOT_MT)
-    BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH(HOTSPOT_RC)
-    AC_SUBST(HOTSPOT_MT)
-    AC_SUBST(HOTSPOT_RC)
-  else
-    HOTSPOT_CXX="$CXX"
-    HOTSPOT_LD="$LD"
-  fi
-  AC_SUBST(HOTSPOT_CXX)
-  AC_SUBST(HOTSPOT_LD)
-
-  if test  "x$TOOLCHAIN_TYPE" = xclang; then
-    USE_CLANG=true
-  fi
-  AC_SUBST(USE_CLANG)
 ])
 
 # Do some additional checks on the detected tools.
