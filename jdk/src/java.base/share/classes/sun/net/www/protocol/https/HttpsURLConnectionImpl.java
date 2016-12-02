@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.net.URL;
 import java.net.Proxy;
 import java.net.ProtocolException;
 import java.io.*;
+import java.net.Authenticator;
 import javax.net.ssl.*;
 import java.security.Permission;
 import java.security.Principal;
@@ -516,5 +517,10 @@ public class HttpsURLConnectionImpl
 
     public void setChunkedStreamingMode (int chunklen) {
         delegate.setChunkedStreamingMode(chunklen);
+    }
+
+    @Override
+    public void setAuthenticator(Authenticator auth) {
+        delegate.setAuthenticator(auth);
     }
 }

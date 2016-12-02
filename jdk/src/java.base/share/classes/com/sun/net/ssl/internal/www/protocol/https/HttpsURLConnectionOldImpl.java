@@ -39,6 +39,7 @@ import java.net.URL;
 import java.net.Proxy;
 import java.net.ProtocolException;
 import java.io.*;
+import java.net.Authenticator;
 import javax.net.ssl.*;
 import java.security.Permission;
 import java.util.Map;
@@ -488,5 +489,10 @@ public class HttpsURLConnectionOldImpl
 
     public void setChunkedStreamingMode (int chunklen) {
         delegate.setChunkedStreamingMode(chunklen);
+    }
+
+    @Override
+    public void setAuthenticator(Authenticator auth) {
+        delegate.setAuthenticator(auth);
     }
 }

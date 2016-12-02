@@ -25,6 +25,8 @@
 
 package java.net;
 
+import sun.net.www.protocol.http.AuthenticatorKeys;
+
 /**
  * The class Authenticator represents an object that knows how to obtain
  * authentication for a network connection.  Usually, it will do this
@@ -70,6 +72,7 @@ class Authenticator {
     private String requestingScheme;
     private URL requestingURL;
     private RequestorType requestingAuthType;
+    private final String key = AuthenticatorKeys.computeKey(this);
 
     /**
      * The type of the entity requesting authentication.
@@ -349,6 +352,75 @@ class Authenticator {
     }
 
     /**
+     * Ask the given {@code authenticator} for a password. If the given
+     * {@code authenticator} is null, the authenticator, if any, that has been
+     * registered with the system using {@link #setDefault(java.net.Authenticator)
+     * setDefault} is used.
+     * <p>
+     * First, if there is a security manager, its {@code checkPermission}
+     * method is called with a
+     * {@code NetPermission("requestPasswordAuthentication")} permission.
+     * This may result in a java.lang.SecurityException.
+     *
+     * @param authenticator the authenticator, or {@code null}.
+     * @param host The hostname of the site requesting authentication.
+     * @param addr The InetAddress of the site requesting authorization,
+     *             or null if not known.
+     * @param port the port for the requested connection
+     * @param protocol The protocol that's requesting the connection
+     *          ({@link java.net.Authenticator#getRequestingProtocol()})
+     * @param prompt A prompt string for the user
+     * @param scheme The authentication scheme
+     * @param url The requesting URL that caused the authentication
+     * @param reqType The type (server or proxy) of the entity requesting
+     *              authentication.
+     *
+     * @return The username/password, or {@code null} if one can't be gotten.
+     *
+     * @throws SecurityException
+     *        if a security manager exists and its
+     *        {@code checkPermission} method doesn't allow
+     *        the password authentication request.
+     *
+     * @see SecurityManager#checkPermission
+     * @see java.net.NetPermission
+     *
+     * @since 9
+     */
+    public static PasswordAuthentication requestPasswordAuthentication(
+                                    Authenticator authenticator,
+                                    String host,
+                                    InetAddress addr,
+                                    int port,
+                                    String protocol,
+                                    String prompt,
+                                    String scheme,
+                                    URL url,
+                                    RequestorType reqType) {
+
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            NetPermission requestPermission
+                = new NetPermission("requestPasswordAuthentication");
+            sm.checkPermission(requestPermission);
+        }
+
+        Authenticator a = authenticator == null ? theAuthenticator : authenticator;
+        if (a == null) {
+            return null;
+        } else {
+            return a.requestPasswordAuthenticationInstance(host,
+                                                           addr,
+                                                           port,
+                                                           protocol,
+                                                           prompt,
+                                                           scheme,
+                                                           url,
+                                                           reqType);
+        }
+    }
+
+    /**
      * Ask this authenticator for a password.
      *
      * @param host The hostname of the site requesting authentication.
@@ -492,5 +564,12 @@ class Authenticator {
      */
     protected RequestorType getRequestorType () {
         return requestingAuthType;
+    }
+
+    static String getKey(Authenticator a) {
+        return a.key;
+    }
+    static {
+        AuthenticatorKeys.setAuthenticatorKeyAccess(Authenticator::getKey);
     }
 }
