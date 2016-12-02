@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,18 +28,45 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
+ * @bug 8167340
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.StreamReaderTest
  * @run testng/othervm stream.XMLStreamReaderTest.StreamReaderTest
- * @summary Test XMLStreamReader.hasName() returns false for ENTITY_REFERENCE.
+ * @summary Verifies patches for StreamReader bugs
  */
 @Listeners({jaxp.library.FilePolicy.class})
 public class StreamReaderTest {
+    /**
+     * Verifies that after switching to a different XML Version (1.1), the parser
+     * is initialized properly (the listener was not registered in this case).
+     *
+     * @param path the path to XML source
+     * @throws Exception
+     */
+    @Test(dataProvider = "getPaths")
+    public void testSwitchXMLVersions(String path) throws Exception {
+        XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+        xmlInputFactory.setProperty("javax.xml.stream.isCoalescing", true);
+        XMLStreamReader xmlStreamReader = xmlInputFactory.createXMLStreamReader(
+                this.getClass().getResourceAsStream(path));
+
+        while (xmlStreamReader.hasNext()) {
+            int event = xmlStreamReader.next();
+            if (event == XMLStreamConstants.START_ELEMENT) {
+                if (xmlStreamReader.getLocalName().equals("body")) {
+                    String elementText = xmlStreamReader.getElementText();
+                    Assert.assertTrue(!elementText.contains("</body>"),
+                            "Fail: elementText contains </body>");
+                }
+            }
+        }
+    }
 
     /**
      * CR 6631264 / sjsxp Issue 45:
@@ -50,7 +77,8 @@ public class StreamReaderTest {
     public void testHasNameOnEntityEvent() throws Exception {
         XMLInputFactory xif = XMLInputFactory.newInstance();
         xif.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
-        XMLStreamReader r = xif.createXMLStreamReader(this.getClass().getResourceAsStream("ExternalDTD.xml"));
+        XMLStreamReader r = xif.createXMLStreamReader(
+                this.getClass().getResourceAsStream("ExternalDTD.xml"));
         while (r.next() != XMLStreamConstants.ENTITY_REFERENCE) {
             System.out.println("event type: " + r.getEventType());
             continue;
@@ -61,4 +89,15 @@ public class StreamReaderTest {
         Assert.assertFalse(r.hasName()); // fails
     }
 
+    /*
+       DataProvider: provides paths to xml sources
+       Data: path to xml source
+     */
+    @DataProvider(name = "getPaths")
+    public Object[][] getPaths() {
+        return new Object[][]{
+            {"Bug8167340_1-0.xml"},
+            {"Bug8167340_1-1.xml"}
+        };
+    }
 }
