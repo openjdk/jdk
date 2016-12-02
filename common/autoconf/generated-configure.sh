@@ -791,11 +791,6 @@ JTREGEXE
 HOTSPOT_TOOLCHAIN_TYPE
 USING_BROKEN_SUSE_LD
 PACKAGE_PATH
-USE_CLANG
-HOTSPOT_LD
-HOTSPOT_CXX
-HOTSPOT_RC
-HOTSPOT_MT
 BUILD_AS
 BUILD_LDCXX
 BUILD_LD
@@ -4982,10 +4977,6 @@ TOOLCHAIN_MINIMUM_VERSION_xlc=""
 # for this, we can only do this after these have been setup.
 
 
-# Setup legacy variables that are still needed as alternative ways to refer to
-# parts of the toolchain.
-
-
 # Do some additional checks on the detected tools.
 
 
@@ -5093,7 +5084,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1480601517
+DATE_WHEN_GENERATED=1480671645
 
 ###############################################################################
 #
@@ -47270,68 +47261,6 @@ $as_echo "$as_me: WARNING: C compiler version number has a part larger than 9999
 
 
 
-
-
-
-  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # For hotspot, we need these in Windows mixed path,
-    # so rewrite them all. Need added .exe suffix.
-    HOTSPOT_CXX="$CXX.exe"
-    HOTSPOT_LD="$LD.exe"
-    HOTSPOT_MT="$MT.exe"
-    HOTSPOT_RC="$RC.exe"
-
-  unix_path="$HOTSPOT_CXX"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    windows_path=`$CYGPATH -m "$unix_path"`
-    HOTSPOT_CXX="$windows_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    windows_path=`cmd //c echo $unix_path`
-    HOTSPOT_CXX="$windows_path"
-  fi
-
-
-  unix_path="$HOTSPOT_LD"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    windows_path=`$CYGPATH -m "$unix_path"`
-    HOTSPOT_LD="$windows_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    windows_path=`cmd //c echo $unix_path`
-    HOTSPOT_LD="$windows_path"
-  fi
-
-
-  unix_path="$HOTSPOT_MT"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    windows_path=`$CYGPATH -m "$unix_path"`
-    HOTSPOT_MT="$windows_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    windows_path=`cmd //c echo $unix_path`
-    HOTSPOT_MT="$windows_path"
-  fi
-
-
-  unix_path="$HOTSPOT_RC"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    windows_path=`$CYGPATH -m "$unix_path"`
-    HOTSPOT_RC="$windows_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    windows_path=`cmd //c echo $unix_path`
-    HOTSPOT_RC="$windows_path"
-  fi
-
-
-
-  else
-    HOTSPOT_CXX="$CXX"
-    HOTSPOT_LD="$LD"
-  fi
-
-
-
-  if test  "x$TOOLCHAIN_TYPE" = xclang; then
-    USE_CLANG=true
-  fi
 
 
 
