@@ -86,73 +86,7 @@ DISABLE_WARNING_PREFIX := @BUILD_CC_DISABLE_WARNING_PREFIX@
 # Save speed and disk space by not enabling debug symbols for the buildjdk
 ENABLE_DEBUG_SYMBOLS := false
 
-####################################################
-#
-# Legacy Hotspot support
-
-# Legacy setting: OPT or DBG
-VARIANT := OPT
-# Legacy setting: true or false
-FASTDEBUG := false
-# Legacy setting: debugging the class files?
-DEBUG_CLASSFILES := false
-
-# Some users still set EXTRA_*FLAGS on the make command line. Must
-# make sure to override that when building buildjdk.
-override EXTRA_CFLAGS :=
-override EXTRA_CXXFLAGS :=
-override EXTRA_LDFLAGS :=
-
-# The HOSTCC/HOSTCXX is Hotspot terminology for the BUILD_CC/BUILD_CXX, i.e. the
-# compiler that produces code that can be run on the build platform.
-HOSTCC := $(BUILD_CC)
-HOSTCXX := $(BUILD_CXX)
-
-# Old name for OPENJDK_TARGET_OS (aix,bsd,hpux,linux,macosx,solaris,windows etc)
-PLATFORM := $(OPENJDK_BUILD_OS)
-# 32 or 64 bit
-ARCH_DATA_MODEL := $(OPENJDK_BUILD_CPU_BITS)
-
-ALT_BOOTDIR := $(BOOT_JDK)
-# Yet another name for arch used for an extra subdir below the jvm lib.
-# Uses i386 and amd64, instead of x86 and x86_64.
-LIBARCH := @OPENJDK_BUILD_CPU_LEGACY_LIB@
-# Set the cpu architecture. Some users still set ARCH on the make command line. Must
-# make sure to override that when building buildjdk.
-override ARCH := $(OPENJDK_BUILD_CPU_ARCH)
-# Legacy setting for building for a 64 bit machine.
-# If yes then this expands to _LP64 := 1
-ifeq ($(OPENJDK_BUILD_CPU_BITS), 64)
-  _LP64 := 1
-endif
-
-ALT_OUTPUTDIR := $(HOTSPOT_OUTPUTDIR)
-ALT_EXPORT_PATH := $(HOTSPOT_DIST)
-
-JVM_INTERPRETER := @JVM_INTERPRETER@
-ifeq ($(JVM_INTERPRETER), cpp)
-  CC_INTERP=true
-endif
-
-HOTSPOT_MAKE_ARGS := product docs export_product
-
 # Control wether Hotspot builds gtest tests
 BUILD_GTEST := false
 
-USE_PRECOMPILED_HEADER := @USE_PRECOMPILED_HEADER@
-
-# Hotspot expects the variable FULL_DEBUG_SYMBOLS=1/0 to control debug symbols
-# creation.
-FULL_DEBUG_SYMBOLS := 0
-ZIP_DEBUGINFO_FILES := 0
-# Disable stripping
-STRIP_POLICY := none
-
 JVM_VARIANTS := server
-JVM_VARIANT_SERVER := true
-JVM_VARIANT_CLIENT := false
-JVM_VARIANT_MINIMAL1 := false
-JVM_VARIANT_KERNEL := false
-JVM_VARIANT_ZERO := false
-JVM_VARIANT_ZEROSHARK := false
-JVM_VARIANT_CORE := false

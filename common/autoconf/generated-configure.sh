@@ -700,8 +700,6 @@ JVM_FEATURES_client
 JVM_FEATURES_server
 INCLUDE_DTRACE
 GCOV_ENABLED
-STRIP_POLICY
-DEBUG_BINARIES
 ZIP_EXTERNAL_DEBUG_SYMBOLS
 COPY_DEBUG_SYMBOLS
 COMPILE_WITH_DEBUG_SYMBOLS
@@ -5084,7 +5082,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1480690601
+DATE_WHEN_GENERATED=1480691704
 
 ###############################################################################
 #
@@ -52526,28 +52524,14 @@ $as_echo "$NATIVE_DEBUG_SYMBOLS" >&6; }
     COMPILE_WITH_DEBUG_SYMBOLS=true
     COPY_DEBUG_SYMBOLS=true
     ZIP_EXTERNAL_DEBUG_SYMBOLS=true
-
-    # Hotspot legacy support, not relevant with COPY_DEBUG_SYMBOLS=true
-    DEBUG_BINARIES=false
-    STRIP_POLICY=min_strip
-
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xnone; then
     COMPILE_WITH_DEBUG_SYMBOLS=false
     COPY_DEBUG_SYMBOLS=false
     ZIP_EXTERNAL_DEBUG_SYMBOLS=false
-
-    DEBUG_BINARIES=false
-    STRIP_POLICY=no_strip
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xinternal; then
     COMPILE_WITH_DEBUG_SYMBOLS=true
     COPY_DEBUG_SYMBOLS=false
     ZIP_EXTERNAL_DEBUG_SYMBOLS=false
-
-    # Hotspot legacy support, will turn on -g when COPY_DEBUG_SYMBOLS=false
-    DEBUG_BINARIES=true
-    STRIP_POLICY=no_strip
-    STRIP=""
-
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xexternal; then
 
     if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
@@ -52561,10 +52545,6 @@ $as_echo "$NATIVE_DEBUG_SYMBOLS" >&6; }
     COMPILE_WITH_DEBUG_SYMBOLS=true
     COPY_DEBUG_SYMBOLS=true
     ZIP_EXTERNAL_DEBUG_SYMBOLS=false
-
-    # Hotspot legacy support, not relevant with COPY_DEBUG_SYMBOLS=true
-    DEBUG_BINARIES=false
-    STRIP_POLICY=min_strip
   else
     as_fn_error $? "Allowed native debug symbols are: none, internal, external, zipped" "$LINENO" 5
   fi
@@ -52610,10 +52590,6 @@ $as_echo "$as_me: WARNING: Please use --with-native-debug-symbols=zipped ." >&2;
 
 
 
-
-
-
-  # Legacy values
 
 
 
