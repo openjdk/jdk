@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -280,6 +280,16 @@ public class ToolSimpleTest extends ReplToolTesting {
         );
     }
 
+    public void testApplicationOfPost() {
+        test(
+                (a) -> assertCommand(a, "/set mode t normal -command", "|  Created new feedback mode: t"),
+                (a) -> assertCommand(a, "/set feedback t", "|  Feedback mode: t"),
+                (a) -> assertCommand(a, "/set format t post \"$%n\"", ""),
+                (a) -> assertCommand(a, "/set prompt t \"+\" \"-\"", ""),
+                (a) -> assertCommand(a, "/set prompt t", "|  /set prompt t \"+\" \"-\"$")
+        );
+    }
+
     public void testHelpLength() {
         Consumer<String> testOutput = (s) -> {
             List<String> ss = Stream.of(s.split("\n"))
@@ -300,14 +310,35 @@ public class ToolSimpleTest extends ReplToolTesting {
                 (a) -> assertHelp(a, "/help", "/list", "/help", "/exit", "intro"),
                 (a) -> assertHelp(a, "/help short", "shortcuts", "<tab>"),
                 (a) -> assertHelp(a, "/? /li", "/list -all", "snippets"),
+                (a) -> assertHelp(a, "/help /set prompt", "optionally contain '%s'", "quoted"),
                 (a) -> assertHelp(a, "/help /help", "/help <command>")
+        );
+    }
+
+    public void testHelpFormat() {
+        test(
+                (a) -> assertCommandCheckOutput(a, "/help", s -> {
+                    String[] lines = s.split("\\R");
+                    assertTrue(lines.length > 20,
+                            "Too few lines of /help output: " + lines.length
+                          + "\n" + s);
+                    for (int i = 0; i < lines.length; ++i) {
+                        String l = lines[i];
+                        assertTrue(l.startsWith("| "),
+                                "Expected /help line to start with | :\n" + l);
+                        assertTrue(l.length() <= 80,
+                                "/help line too long: " + l.length() + "\n" + l);
+                    }
+                 })
         );
     }
 
     private void assertHelp(boolean a, String command, String... find) {
         assertCommandCheckOutput(a, command, s -> {
             for (String f : find) {
-                assertTrue(s.contains(f), "Expected output of " + command + " to contain: " + f);
+                assertTrue(s.contains(f),
+                        "Expected output of " + command + " to contain: " + f
+                      + "\n" + s);
             }
         });
     }
