@@ -28,6 +28,7 @@
  * @modules jdk.naming.rmi/com.sun.jndi.rmi.registry java.rmi/sun.rmi.registry
  *     java.rmi/sun.rmi.server java.rmi/sun.rmi.transport java.rmi/sun.rmi.transport.tcp
  * @library ../../../../../../java/rmi/testlibrary
+ * @build TestLibrary
  * @compile --add-modules jdk.naming.rmi ContextWithNullProperties.java
  * @run main ContextWithNullProperties
  */
