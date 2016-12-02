@@ -412,6 +412,17 @@ public class Enter extends JCTree.Visitor {
             if (owner.kind == TYP) {
                 // We are seeing a member class.
                 c = syms.enterClass(env.toplevel.modle, tree.name, (TypeSymbol)owner);
+                if (c.owner != owner) {
+                    //anonymous class loaded from a classfile may be recreated from source (see below)
+                    //if this class is a member of such an anonymous class, fix the owner:
+                    Assert.check(owner.owner.kind != TYP, () -> owner.toString());
+                    Assert.check(c.owner.kind == TYP, () -> c.owner.toString());
+                    ClassSymbol cowner = (ClassSymbol) c.owner;
+                    if (cowner.members_field != null) {
+                        cowner.members_field.remove(c);
+                    }
+                    c.owner = owner;
+                }
                 if ((owner.flags_field & INTERFACE) != 0) {
                     tree.mods.flags |= PUBLIC | STATIC;
                 }
