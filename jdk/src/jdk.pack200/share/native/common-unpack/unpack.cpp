@@ -2293,10 +2293,15 @@ void unpacker::read_ics() {
         number.set(null,0);
         name = n.slice(dollar2+1, nlen);
       }
-      if (number.ptr == null)
+      if (number.ptr == null) {
+        if (dollar1 < 0) {
+          abort();
+          return;
+        }
         pkgOuter = n.slice(0, dollar1);
-      else
+      } else {
         pkgOuter.set(null,0);
+      }
       PRINTCR((5,"=> %s$ 0%s $%s",
               pkgOuter.string(), number.string(), name.string()));
 
@@ -4197,6 +4202,7 @@ void unpacker::write_bc_ops() {
         // Note that insnMap has one entry for all these bytes.
         --wp;  // not really part of the code
         int size = bc_escsize.getInt();
+        if (size < 0) { assert(false); continue; }
         ensure_put_space(size);
         for (int j = 0; j < size; j++)
           putu1_fast(bc_escbyte.getByte());
