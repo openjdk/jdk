@@ -395,7 +395,7 @@ LCMS_CFLAGS=-DCMS_DONT_USE_FAST_FLOOR
 
 ifeq ($(USE_EXTERNAL_LCMS), true)
   # If we're using an external library, we'll just need the wrapper part.
-  # By including it explicitely, all other files will be excluded.
+  # By including it explicitly, all other files will be excluded.
   BUILD_LIBLCMS_INCLUDE_FILES := LCMS.c
 else
   BUILD_LIBLCMS_INCLUDE_FILES :=
