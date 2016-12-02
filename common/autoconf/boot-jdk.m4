@@ -98,7 +98,7 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
   fi
 ])
 
-# Test: Is bootjdk explicitely set by command line arguments?
+# Test: Is bootjdk explicitly set by command line arguments?
 AC_DEFUN([BOOTJDK_CHECK_ARGUMENTS],
 [
   if test "x$with_boot_jdk" != x; then
@@ -238,7 +238,7 @@ AC_DEFUN([BOOTJDK_CHECK_TOOL_IN_BOOTJDK],
       $1=$BOOT_JDK/bin/$2
       if test ! -x [$]$1; then
         AC_MSG_RESULT(not found)
-        AC_MSG_NOTICE([Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk])
+        AC_MSG_NOTICE([Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk])
         AC_MSG_ERROR([Could not find $2 in the Boot JDK])
       fi
       AC_MSG_RESULT(ok)
@@ -262,7 +262,7 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   # we detected something (if so, the path to the jdk is in BOOT_JDK). But we
   # must check if this is indeed valid; otherwise we'll continue looking.
 
-  # Test: Is bootjdk explicitely set by command line arguments?
+  # Test: Is bootjdk explicitly set by command line arguments?
   BOOTJDK_DO_CHECK([BOOTJDK_CHECK_ARGUMENTS])
   if test "x$with_boot_jdk" != x && test "x$BOOT_JDK_FOUND" = xno; then
     # Having specified an argument which is incorrect will produce an instant failure;
@@ -286,7 +286,7 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   if test "x$BOOT_JDK_FOUND" = xno; then
     HELP_MSG_MISSING_DEPENDENCY([openjdk])
     AC_MSG_NOTICE([Could not find a valid Boot JDK. $HELP_MSG])
-    AC_MSG_NOTICE([This might be fixed by explicitely setting --with-boot-jdk])
+    AC_MSG_NOTICE([This might be fixed by explicitly setting --with-boot-jdk])
     AC_MSG_ERROR([Cannot continue])
   fi
 

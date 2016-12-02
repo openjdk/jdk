@@ -3844,7 +3844,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # $1 A command line (typically autoconf macro) to execute
 
 
-# Test: Is bootjdk explicitely set by command line arguments?
+# Test: Is bootjdk explicitly set by command line arguments?
 
 
 # Test: Is $JAVA_HOME set?
@@ -5082,7 +5082,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1480691704
+DATE_WHEN_GENERATED=1480691844
 
 ###############################################################################
 #
@@ -15512,7 +15512,7 @@ test -n "$target_alias" &&
       ;;
   esac
 
-  # ..and setup our own variables. (Do this explicitely to facilitate searching)
+  # ..and setup our own variables. (Do this explicitly to facilitate searching)
   OPENJDK_BUILD_OS="$VAR_OS"
   if test "x$VAR_OS_TYPE" != x; then
     OPENJDK_BUILD_OS_TYPE="$VAR_OS_TYPE"
@@ -15651,7 +15651,7 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
       ;;
   esac
 
-  # ... and setup our own variables. (Do this explicitely to facilitate searching)
+  # ... and setup our own variables. (Do this explicitly to facilitate searching)
   OPENJDK_TARGET_OS="$VAR_OS"
   if test "x$VAR_OS_TYPE" != x; then
     OPENJDK_TARGET_OS_TYPE="$VAR_OS_TYPE"
@@ -24389,7 +24389,7 @@ fi
         as_fn_error $? "Version string contains + but both 'BUILD' and 'OPT' are missing" "$LINENO" 5
       fi
       # Stop the version part process from setting default values.
-      # We still allow them to explicitely override though.
+      # We still allow them to explicitly override though.
       NO_DEFAULT_VERSION_PARTS=true
     else
       as_fn_error $? "--with-version-string fails to parse as a valid version string: $with_version_string" "$LINENO" 5
@@ -24758,7 +24758,7 @@ fi
   # we detected something (if so, the path to the jdk is in BOOT_JDK). But we
   # must check if this is indeed valid; otherwise we'll continue looking.
 
-  # Test: Is bootjdk explicitely set by command line arguments?
+  # Test: Is bootjdk explicitly set by command line arguments?
 
   if test "x$BOOT_JDK_FOUND" = xno; then
     # Now execute the test
@@ -29876,8 +29876,8 @@ $as_echo "$BOOT_JDK_VERSION" >&6; }
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find a valid Boot JDK. $HELP_MSG" >&5
 $as_echo "$as_me: Could not find a valid Boot JDK. $HELP_MSG" >&6;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: This might be fixed by explicitly setting --with-boot-jdk" >&6;}
     as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
@@ -29899,8 +29899,8 @@ $as_echo_n "checking for java in Boot JDK... " >&6; }
       if test ! -x $JAVA; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find java in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -29927,8 +29927,8 @@ $as_echo_n "checking for java in Boot JDK... " >&6; }
       if test ! -x $JAVA; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find java in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -30037,8 +30037,8 @@ $as_echo_n "checking for javac in Boot JDK... " >&6; }
       if test ! -x $JAVAC; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find javac in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -30065,8 +30065,8 @@ $as_echo_n "checking for javac in Boot JDK... " >&6; }
       if test ! -x $JAVAC; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find javac in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -30175,8 +30175,8 @@ $as_echo_n "checking for javah in Boot JDK... " >&6; }
       if test ! -x $JAVAH; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find javah in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -30203,8 +30203,8 @@ $as_echo_n "checking for javah in Boot JDK... " >&6; }
       if test ! -x $JAVAH; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find javah in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -30313,8 +30313,8 @@ $as_echo_n "checking for jar in Boot JDK... " >&6; }
       if test ! -x $JAR; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find jar in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -30341,8 +30341,8 @@ $as_echo_n "checking for jar in Boot JDK... " >&6; }
       if test ! -x $JAR; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find jar in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -30451,8 +30451,8 @@ $as_echo_n "checking for jarsigner in Boot JDK... " >&6; }
       if test ! -x $JARSIGNER; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find jarsigner in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -30479,8 +30479,8 @@ $as_echo_n "checking for jarsigner in Boot JDK... " >&6; }
       if test ! -x $JARSIGNER; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find jarsigner in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -51858,8 +51858,8 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if native warnings are errors" >&5
 $as_echo_n "checking if native warnings are errors... " >&6; }
   if test "x$enable_warnings_as_errors" = "xyes"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (explicitely set)" >&5
-$as_echo "yes (explicitely set)" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (explicitly set)" >&5
+$as_echo "yes (explicitly set)" >&6; }
     WARNINGS_AS_ERRORS=true
   elif test "x$enable_warnings_as_errors" = "xno"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -53114,7 +53114,7 @@ fi
 
 
   if test "x$with_msvcr_dll" != x; then
-    # If given explicitely by user, do not probe. If not present, fail directly.
+    # If given explicitly by user, do not probe. If not present, fail directly.
 
   DLL_NAME="$MSVCR_NAME"
   POSSIBLE_MSVC_DLL="$with_msvcr_dll"
@@ -54463,7 +54463,7 @@ fi
 
   if test "x$MSVCP_NAME" != "x"; then
     if test "x$with_msvcp_dll" != x; then
-      # If given explicitely by user, do not probe. If not present, fail directly.
+      # If given explicitly by user, do not probe. If not present, fail directly.
 
   DLL_NAME="$MSVCP_NAME"
   POSSIBLE_MSVC_DLL="$with_msvcp_dll"
@@ -55822,7 +55822,7 @@ $as_echo "$as_me: WARNING: X11 is not used, so --with-x is ignored" >&2;}
 
     if test "x${with_x}" != x &&  test "x${with_x}" != xyes; then
       # The user has specified a X11 base directory. Use it for includes and
-      # libraries, unless explicitely overridden.
+      # libraries, unless explicitly overridden.
       if test "x$x_includes" = xNONE; then
         x_includes="${with_x}/include"
       fi
