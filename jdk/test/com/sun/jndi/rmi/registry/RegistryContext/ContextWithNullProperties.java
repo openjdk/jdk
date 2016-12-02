@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.rmi.registry.Registry;
 
 public class ContextWithNullProperties {
     public static void main(String[] args) throws Exception {
-        Registry registry = TestLibrary.createRegistryOnUnusedPort();
+        Registry registry = TestLibrary.createRegistryOnEphemeralPort();
         int registryPort = TestLibrary.getRegistryPort(registry);
         System.out.println("Connecting to the default Registry...");
         // Connect to the default Registry.
