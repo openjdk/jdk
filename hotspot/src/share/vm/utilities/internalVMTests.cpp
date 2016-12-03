@@ -53,9 +53,6 @@ void InternalVMTests::run() {
 #if INCLUDE_VM_STRUCTS
   run_unit_test(VMStructs_test);
 #endif
-#if INCLUDE_ALL_GCS
-  run_unit_test(ParallelCompact_test);
-#endif
   tty->print_cr("All internal VM tests passed");
 }
 
