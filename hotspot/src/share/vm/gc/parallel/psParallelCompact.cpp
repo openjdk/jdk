@@ -263,6 +263,13 @@ print_generic_summary_data(ParallelCompactData& summary_data,
 }
 
 void
+PSParallelCompact::print_generic_summary_data(ParallelCompactData& summary_data,
+                                              HeapWord* const beg_addr,
+                                              HeapWord* const end_addr) {
+  ::print_generic_summary_data(summary_data,beg_addr, end_addr);
+}
+
+void
 print_generic_summary_data(ParallelCompactData& summary_data,
                            SpaceInfo* space_info)
 {
@@ -376,26 +383,6 @@ print_initial_summary_data(ParallelCompactData& summary_data,
     space = space_info[id].space();
     print_generic_summary_data(summary_data, space->bottom(), space->top());
   } while (++id < PSParallelCompact::last_space_id);
-}
-
-void ParallelCompact_test() {
-  if (!UseParallelOldGC) {
-    return;
-  }
-  // Check that print_generic_summary_data() does not print the
-  // end region by placing a bad value in the destination of the
-  // end region.  The end region should not be printed because it
-  // corresponds to the space after the end of the heap.
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  ParCompactionManager* const vmthread_cm =
-    ParCompactionManager::manager_array(ParallelGCThreads);
-  HeapWord* begin_heap =
-    (HeapWord*) heap->old_gen()->virtual_space()->low_boundary();
-  HeapWord* end_heap =
-    (HeapWord*) heap->young_gen()->virtual_space()->high_boundary();
-
-  print_generic_summary_data(PSParallelCompact::summary_data(),
-    begin_heap, end_heap);
 }
 #endif  // #ifndef PRODUCT
 
