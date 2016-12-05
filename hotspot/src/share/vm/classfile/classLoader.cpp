@@ -751,6 +751,21 @@ void ClassLoader::setup_patch_mod_entries() {
   }
 }
 
+// Determine whether the module has been patched via the command-line
+// option --patch-module
+bool ClassLoader::is_in_patch_mod_entries(Symbol* module_name) {
+  if (_patch_mod_entries != NULL && _patch_mod_entries->is_nonempty()) {
+    int table_len = _patch_mod_entries->length();
+    for (int i = 0; i < table_len; i++) {
+      ModuleClassPathList* patch_mod = _patch_mod_entries->at(i);
+      if (module_name->fast_compare(patch_mod->module_name()) == 0) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 void ClassLoader::setup_search_path(const char *class_path, bool bootstrap_search) {
   int len = (int)strlen(class_path);
   int end = 0;
@@ -1764,15 +1779,16 @@ void classLoader_init1() {
 
 // Complete the ClassPathEntry setup for the boot loader
 void ClassLoader::classLoader_init2(TRAPS) {
-  // Create the moduleEntry for java.base
-  create_javabase();
-
   // Setup the list of module/path pairs for --patch-module processing
   // This must be done after the SymbolTable is created in order
   // to use fast_compare on module names instead of a string compare.
   if (Arguments::get_patch_mod_prefix() != NULL) {
     setup_patch_mod_entries();
   }
+
+  // Create the ModuleEntry for java.base (must occur after setup_patch_mod_entries
+  // to successfully determine if java.base has been patched)
+  create_javabase();
 
   // Setup the initial java.base/path pair for the exploded build entries.
   // As more modules are defined during module system initialization, more

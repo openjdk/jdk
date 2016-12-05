@@ -63,6 +63,7 @@ private:
   bool _can_read_all_unnamed;
   bool _has_default_read_edges;        // JVMTI redefine/retransform support
   bool _must_walk_reads;               // walk module's reads list at GC safepoints to purge out dead modules
+  bool _is_patched;                    // whether the module is patched via --patch-module
   TRACE_DEFINE_TRACE_ID_FIELD;
   enum {MODULE_READS_SIZE = 101};      // Initial size of list of modules that the module can read.
 
@@ -77,6 +78,7 @@ public:
     _can_read_all_unnamed = false;
     _has_default_read_edges = false;
     _must_walk_reads = false;
+    _is_patched = false;
   }
 
   Symbol*          name() const                        { return literal(); }
@@ -129,6 +131,13 @@ public:
     bool prev = _has_default_read_edges;
     _has_default_read_edges = true;
     return prev;
+  }
+
+  void set_is_patched() {
+      _is_patched = true;
+  }
+  bool is_patched() {
+      return _is_patched;
   }
 
   ModuleEntry* next() const {
