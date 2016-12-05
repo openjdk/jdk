@@ -146,9 +146,10 @@ public class GenModuleInfoSource {
             for (String l : lines) {
                 writer.println(l);
                 if (l.trim().startsWith("module ")) {
-                    writer.format("    // source file: %s%n", sourceFile);
+                    // print URI rather than file path to avoid escape
+                    writer.format("    // source file: %s%n", sourceFile.toUri());
                     for (Path file: extraFiles) {
-                        writer.format("    //              %s%n", file);
+                        writer.format("    //              %s%n", file.toUri());
                     }
                     break;
                 }

@@ -28,6 +28,7 @@ package sun.net.www.http;
 import java.io.*;
 import java.net.*;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Properties;
 import sun.net.NetworkClient;
 import sun.net.ProgressSource;
@@ -35,6 +36,7 @@ import sun.net.www.MessageHeader;
 import sun.net.www.HeaderParser;
 import sun.net.www.MeteredStream;
 import sun.net.www.ParseUtil;
+import sun.net.www.protocol.http.AuthenticatorKeys;
 import sun.net.www.protocol.http.HttpURLConnection;
 import sun.util.logging.PlatformLogger;
 import static sun.net.www.protocol.http.HttpURLConnection.TunnelState.*;
@@ -131,6 +133,8 @@ public class HttpClient extends NetworkClient {
             logger.finest(msg);
         }
     }
+
+    protected volatile String authenticatorKey;
 
     /**
      * A NOP method kept for backwards binary compatibility
@@ -279,10 +283,12 @@ public class HttpClient extends NetworkClient {
                     ret = null;
                 }
             }
-
             if (ret != null) {
-                if ((ret.proxy != null && ret.proxy.equals(p)) ||
-                    (ret.proxy == null && p == null)) {
+                String ak = httpuc == null ? AuthenticatorKeys.DEFAULT
+                     : httpuc.getAuthenticatorKey();
+                boolean compatible = Objects.equals(ret.proxy, p)
+                     && Objects.equals(ret.getAuthenticatorKey(), ak);
+                if (compatible) {
                     synchronized (ret) {
                         ret.cachedHttpClient = true;
                         assert ret.inCache;
@@ -306,6 +312,9 @@ public class HttpClient extends NetworkClient {
         }
         if (ret == null) {
             ret = new HttpClient(url, p, to);
+            if (httpuc != null) {
+                ret.authenticatorKey = httpuc.getAuthenticatorKey();
+            }
         } else {
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
@@ -339,6 +348,12 @@ public class HttpClient extends NetworkClient {
         throws IOException {
         return New(url, newHttpProxy(proxyHost, proxyPort, "http"),
             to, useCache, httpuc);
+    }
+
+    public final String getAuthenticatorKey() {
+        String k = authenticatorKey;
+        if (k == null) return AuthenticatorKeys.DEFAULT;
+        return k;
     }
 
     /* return it to the cache as still usable, if:
