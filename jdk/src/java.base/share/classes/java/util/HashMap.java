@@ -1502,8 +1502,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             if (modCount != expectedModCount)
                 throw new ConcurrentModificationException();
             current = null;
-            K key = p.key;
-            removeNode(hash(key), key, null, false, false);
+            removeNode(p.hash, p.key, null, false, false);
             expectedModCount = modCount;
         }
     }
