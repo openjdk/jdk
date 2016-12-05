@@ -151,22 +151,6 @@ IsJavaw()
 }
 
 /*
- * Returns the arch path, to get the current arch use the
- * macro GetArch, nbits here is ignored for now.
- */
-const char *
-GetArchPath(int nbits)
-{
-#ifdef _M_AMD64
-    return "amd64";
-#elif defined(_M_IA64)
-    return "ia64";
-#else
-    return "i386";
-#endif
-}
-
-/*
  *
  */
 void
@@ -207,8 +191,8 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
         exit(2);
     }
 
-    JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%s%s%sjvm.cfg",
-        jrepath, FILESEP, FILESEP, (char*)GetArch(), FILESEP);
+    JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
+        jrepath, FILESEP, FILESEP);
 
     /* Find the specified JVM type */
     if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
