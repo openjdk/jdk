@@ -301,6 +301,14 @@ ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle
   entry->set_version(version);
   entry->set_location(location);
 
+  if (ClassLoader::is_in_patch_mod_entries(name)) {
+    entry->set_is_patched();
+    if (log_is_enabled(Trace, modules, patch)) {
+      ResourceMark rm;
+      log_trace(modules, patch)("Marked module %s as patched from --patch-module", name->as_C_string());
+    }
+  }
+
   TRACE_INIT_MODULE_ID(entry);
 
   return entry;
