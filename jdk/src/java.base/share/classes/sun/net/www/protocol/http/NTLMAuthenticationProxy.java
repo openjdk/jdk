@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,21 +45,22 @@ class NTLMAuthenticationProxy {
     static final boolean supported = proxy != null ? true : false;
     static final boolean supportsTransparentAuth = supported ? supportsTransparentAuth() : false;
 
-    private final Constructor<? extends AuthenticationInfo> threeArgCtr;
-    private final Constructor<? extends AuthenticationInfo> fiveArgCtr;
+    private final Constructor<? extends AuthenticationInfo> fourArgCtr;
+    private final Constructor<? extends AuthenticationInfo> sixArgCtr;
 
-    private NTLMAuthenticationProxy(Constructor<? extends AuthenticationInfo> threeArgCtr,
-                                    Constructor<? extends AuthenticationInfo> fiveArgCtr) {
-        this.threeArgCtr = threeArgCtr;
-        this.fiveArgCtr = fiveArgCtr;
+    private NTLMAuthenticationProxy(Constructor<? extends AuthenticationInfo> fourArgCtr,
+                                    Constructor<? extends AuthenticationInfo> sixArgCtr) {
+        this.fourArgCtr = fourArgCtr;
+        this.sixArgCtr = sixArgCtr;
     }
 
 
     AuthenticationInfo create(boolean isProxy,
                               URL url,
-                              PasswordAuthentication pw) {
+                              PasswordAuthentication pw,
+                              String authenticatorKey) {
         try {
-            return threeArgCtr.newInstance(isProxy, url, pw);
+            return fourArgCtr.newInstance(isProxy, url, pw, authenticatorKey);
         } catch (ReflectiveOperationException roe) {
             finest(roe);
         }
@@ -70,9 +71,10 @@ class NTLMAuthenticationProxy {
     AuthenticationInfo create(boolean isProxy,
                               String host,
                               int port,
-                              PasswordAuthentication pw) {
+                              PasswordAuthentication pw,
+                              String authenticatorKey) {
         try {
-            return fiveArgCtr.newInstance(isProxy, host, port, pw);
+            return sixArgCtr.newInstance(isProxy, host, port, pw, authenticatorKey);
         } catch (ReflectiveOperationException roe) {
             finest(roe);
         }
@@ -115,21 +117,23 @@ class NTLMAuthenticationProxy {
     @SuppressWarnings("unchecked")
     private static NTLMAuthenticationProxy tryLoadNTLMAuthentication() {
         Class<? extends AuthenticationInfo> cl;
-        Constructor<? extends AuthenticationInfo> threeArg, fiveArg;
+        Constructor<? extends AuthenticationInfo> fourArg, sixArg;
         try {
             cl = (Class<? extends AuthenticationInfo>)Class.forName(clazzStr, true, null);
             if (cl != null) {
-                threeArg = cl.getConstructor(boolean.class,
+                fourArg = cl.getConstructor(boolean.class,
                                              URL.class,
-                                             PasswordAuthentication.class);
-                fiveArg = cl.getConstructor(boolean.class,
+                                             PasswordAuthentication.class,
+                                             String.class);
+                sixArg = cl.getConstructor(boolean.class,
                                             String.class,
                                             int.class,
-                                            PasswordAuthentication.class);
+                                            PasswordAuthentication.class,
+                                            String.class);
                 supportsTA = cl.getDeclaredMethod(supportsTAStr);
                 isTrustedSite = cl.getDeclaredMethod(isTrustedSiteStr, java.net.URL.class);
-                return new NTLMAuthenticationProxy(threeArg,
-                                                   fiveArg);
+                return new NTLMAuthenticationProxy(fourArg,
+                                                   sixArg);
             }
         } catch (ClassNotFoundException cnfe) {
             finest(cnfe);

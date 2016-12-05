@@ -24,6 +24,8 @@
 /*
  * @test
  * @bug 4666195
+ * @build getResponseCode
+ * @run main getResponseCode
  * @summary REGRESSION: HttpURLConnection.getResponseCode() returns always -1
 */
 import java.net.*;

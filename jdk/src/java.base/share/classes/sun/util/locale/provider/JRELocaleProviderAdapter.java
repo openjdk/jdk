@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
 import java.util.spi.TimeZoneNameProvider;
+import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.resources.LocaleData;
 import sun.util.spi.CalendarProvider;
 
@@ -109,6 +110,8 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
             return (P) getCalendarNameProvider();
         case "CalendarProvider":
             return (P) getCalendarProvider();
+        case "JavaTimeDateTimePatternProvider":
+            return (P) getJavaTimeDateTimePatternProvider();
         default:
             throw new InternalError("should not come down here");
         }
@@ -128,6 +131,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     private volatile CalendarNameProvider calendarNameProvider;
 
     private volatile CalendarProvider calendarProvider;
+    private volatile JavaTimeDateTimePatternProvider javaTimeDateTimePatternProvider;
 
     /*
      * Getter methods for java.text.spi.* providers
@@ -352,6 +356,27 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
             }
         }
         return calendarProvider;
+    }
+
+    /**
+     * Getter methods for sun.text.spi.JavaTimeDateTimePatternProvider provider
+     */
+    @Override
+    public JavaTimeDateTimePatternProvider getJavaTimeDateTimePatternProvider() {
+        if (javaTimeDateTimePatternProvider == null) {
+            JavaTimeDateTimePatternProvider provider = AccessController.doPrivileged(
+                    (PrivilegedAction<JavaTimeDateTimePatternProvider>) ()
+                    -> new JavaTimeDateTimePatternImpl(
+                            getAdapterType(),
+                            getLanguageTagSet("FormatData")));
+
+            synchronized (this) {
+                if (javaTimeDateTimePatternProvider == null) {
+                    javaTimeDateTimePatternProvider = provider;
+                }
+            }
+        }
+        return javaTimeDateTimePatternProvider;
     }
 
     @Override

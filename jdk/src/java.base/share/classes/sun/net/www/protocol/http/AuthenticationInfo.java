@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.ObjectInputStream;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Objects;
 
 import sun.net.www.HeaderParser;
 
@@ -190,8 +191,18 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
     /** The shortest path from the URL we authenticated against. */
     String path;
 
+    /**
+     * A key identifying the authenticator from which the credentials
+     * were obtained.
+     * {@link AuthenticatorKeys#DEFAULT} identifies the {@linkplain
+     * java.net.Authenticator#setDefault(java.net.Authenticator) default}
+     * authenticator.
+     */
+     String authenticatorKey;
+
     /** Use this constructor only for proxy entries */
-    public AuthenticationInfo(char type, AuthScheme authScheme, String host, int port, String realm) {
+    public AuthenticationInfo(char type, AuthScheme authScheme, String host,
+                              int port, String realm, String authenticatorKey) {
         this.type = type;
         this.authScheme = authScheme;
         this.protocol = "";
@@ -199,6 +210,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         this.port = port;
         this.realm = realm;
         this.path = null;
+        this.authenticatorKey = Objects.requireNonNull(authenticatorKey);
     }
 
     public Object clone() {
@@ -214,7 +226,8 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * Constructor used to limit the authorization to the path within
      * the URL. Use this constructor for origin server entries.
      */
-    public AuthenticationInfo(char type, AuthScheme authScheme, URL url, String realm) {
+    public AuthenticationInfo(char type, AuthScheme authScheme, URL url, String realm,
+                              String authenticatorKey) {
         this.type = type;
         this.authScheme = authScheme;
         this.protocol = url.getProtocol().toLowerCase();
@@ -231,7 +244,16 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         else {
             this.path = reducePath (urlPath);
         }
+        this.authenticatorKey = Objects.requireNonNull(authenticatorKey);
+    }
 
+    /**
+     * The {@linkplain java.net.Authenticator#getKey(java.net.Authenticator) key}
+     * of the authenticator that was used to obtain the credentials.
+     * @return The authenticator's key.
+     */
+    public final String getAuthenticatorKey() {
+        return authenticatorKey;
     }
 
     /*
@@ -256,13 +278,14 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * don't yet know the realm
      * (i.e. when we're preemptively setting the auth).
      */
-    static AuthenticationInfo getServerAuth(URL url) {
+    static AuthenticationInfo getServerAuth(URL url, String authenticatorKey) {
         int port = url.getPort();
         if (port == -1) {
             port = url.getDefaultPort();
         }
         String key = SERVER_AUTHENTICATION + ":" + url.getProtocol().toLowerCase()
-                + ":" + url.getHost().toLowerCase() + ":" + port;
+                + ":" + url.getHost().toLowerCase() + ":" + port
+                + ";auth=" + authenticatorKey;
         return getAuth(key, url);
     }
 
@@ -272,13 +295,17 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * In this case we do not use the path because the protection space
      * is identified by the host:port:realm only
      */
-    static String getServerAuthKey(URL url, String realm, AuthScheme scheme) {
+    static String getServerAuthKey(URL url, String realm, AuthScheme scheme,
+                                   String authenticatorKey) {
         int port = url.getPort();
         if (port == -1) {
             port = url.getDefaultPort();
         }
-        String key = SERVER_AUTHENTICATION + ":" + scheme + ":" + url.getProtocol().toLowerCase()
-                     + ":" + url.getHost().toLowerCase() + ":" + port + ":" + realm;
+        String key = SERVER_AUTHENTICATION + ":" + scheme + ":"
+                     + url.getProtocol().toLowerCase()
+                     + ":" + url.getHost().toLowerCase()
+                     + ":" + port + ":" + realm
+                     + ";auth=" + authenticatorKey;
         return key;
     }
 
@@ -309,8 +336,10 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * for preemptive header-setting. Note, the protocol field is always
      * blank for proxies.
      */
-    static AuthenticationInfo getProxyAuth(String host, int port) {
-        String key = PROXY_AUTHENTICATION + "::" + host.toLowerCase() + ":" + port;
+    static AuthenticationInfo getProxyAuth(String host, int port,
+                                           String authenticatorKey) {
+        String key = PROXY_AUTHENTICATION + "::" + host.toLowerCase() + ":" + port
+                     + ";auth=" + authenticatorKey;
         AuthenticationInfo result = (AuthenticationInfo) cache.get(key, null);
         return result;
     }
@@ -320,9 +349,12 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * Used in response to a challenge. Note, the protocol field is always
      * blank for proxies.
      */
-    static String getProxyAuthKey(String host, int port, String realm, AuthScheme scheme) {
-        String key = PROXY_AUTHENTICATION + ":" + scheme + "::" + host.toLowerCase()
-                        + ":" + port + ":" + realm;
+    static String getProxyAuthKey(String host, int port, String realm,
+                                  AuthScheme scheme, String authenticatorKey) {
+        String key = PROXY_AUTHENTICATION + ":" + scheme
+                        + "::" + host.toLowerCase()
+                        + ":" + port + ":" + realm
+                        + ";auth=" + authenticatorKey;
         return key;
     }
 
@@ -424,27 +456,34 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
     String cacheKey(boolean includeRealm) {
         // This must be kept in sync with the getXXXAuth() methods in this
         // class.
+        String authenticatorKey = getAuthenticatorKey();
         if (includeRealm) {
             return type + ":" + authScheme + ":" + protocol + ":"
-                        + host + ":" + port + ":" + realm;
+                        + host + ":" + port + ":" + realm
+                     + ";auth=" + authenticatorKey;
         } else {
-            return type + ":" + protocol + ":" + host + ":" + port;
+            return type + ":" + protocol + ":" + host + ":" + port
+                     + ";auth=" + authenticatorKey;
         }
     }
 
     String s1, s2;  /* used for serialization of pw */
 
-    private void readObject(ObjectInputStream s)
+    private synchronized void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException
     {
         s.defaultReadObject ();
         pw = new PasswordAuthentication (s1, s2.toCharArray());
         s1 = null; s2= null;
+        if (authenticatorKey == null) {
+            authenticatorKey = AuthenticatorKeys.DEFAULT;
+        }
     }
 
     private synchronized void writeObject(java.io.ObjectOutputStream s)
         throws IOException
     {
+        Objects.requireNonNull(authenticatorKey);
         s1 = pw.getUserName();
         s2 = new String (pw.getPassword());
         s.defaultWriteObject ();

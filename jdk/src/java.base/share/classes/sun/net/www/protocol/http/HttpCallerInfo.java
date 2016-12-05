@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.net.www.protocol.http;
 
+import java.net.Authenticator;
 import java.net.Authenticator.RequestorType;
 import java.net.InetAddress;
 import java.net.URL;
@@ -49,6 +50,7 @@ public final class HttpCallerInfo {
     public final int port;
     public final InetAddress addr;
     public final RequestorType authType;
+    public final Authenticator authenticator;
 
     /**
      * Create a schemed object based on an un-schemed one.
@@ -62,12 +64,13 @@ public final class HttpCallerInfo {
         this.addr = old.addr;
         this.authType = old.authType;
         this.scheme = scheme;
+        this.authenticator =  old.authenticator;
     }
 
     /**
      * Constructor an un-schemed object for site access.
      */
-    public HttpCallerInfo(URL url) {
+    public HttpCallerInfo(URL url, Authenticator a) {
         this.url= url;
         prompt = "";
         host = url.getHost();
@@ -90,12 +93,13 @@ public final class HttpCallerInfo {
         protocol = url.getProtocol();
         authType = RequestorType.SERVER;
         scheme = "";
+        authenticator = a;
     }
 
     /**
      * Constructor an un-schemed object for proxy access.
      */
-    public HttpCallerInfo(URL url, String host, int port) {
+    public HttpCallerInfo(URL url, String host, int port, Authenticator a) {
         this.url= url;
         this.host = host;
         this.port = port;
@@ -104,5 +108,6 @@ public final class HttpCallerInfo {
         protocol = url.getProtocol();
         authType = RequestorType.PROXY;
         scheme = "";
+        authenticator = a;
     }
 }
