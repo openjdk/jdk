@@ -1869,6 +1869,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
      */
     public static class UndetVar extends DelegatedType {
 
+        enum Kind {
+            NORMAL,
+            CAPTURED,
+            THROWS;
+        }
+
         /** Inference variable change listener. The listener method is called
          *  whenever a change to the inference variable's bounds occurs
          */
@@ -1929,6 +1935,8 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         /** inference variable's change listener */
         public UndetVarListener listener = null;
 
+        Kind kind;
+
         @Override
         public <R,S> R accept(Type.Visitor<R,S> v, S s) {
             return v.visitUndetVar(this, s);
@@ -1937,6 +1945,9 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public UndetVar(TypeVar origin, UndetVarListener listener, Types types) {
             // This is a synthesized internal type, so we cannot annotate it.
             super(UNDETVAR, origin);
+            this.kind = origin.isCaptured() ?
+                    Kind.CAPTURED :
+                    Kind.NORMAL;
             this.listener = listener;
             bounds = new EnumMap<>(InferenceBound.class);
             List<Type> declaredBounds = types.getBounds(origin);
@@ -1947,6 +1958,10 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             for (Type t : declaredBounds.reverse()) {
                 //add bound works in reverse order
                 addBound(InferenceBound.UPPER, t, types, true);
+            }
+            if (origin.isCaptured() && !origin.lower.hasTag(BOT)) {
+                //add lower bound if needed
+                addBound(InferenceBound.LOWER, origin.lower, types, true);
             }
         }
 
@@ -1975,6 +1990,14 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                 }
             }
             return result;
+        }
+
+        public void setThrow() {
+            if (this.kind == Kind.CAPTURED) {
+                //invalid state transition
+                throw new IllegalStateException();
+            }
+            this.kind = Kind.THROWS;
         }
 
         /**
@@ -2062,17 +2085,29 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             addBound(ib, bound, types, false);
         }
 
-        protected void addBound(InferenceBound ib, Type bound, Types types, boolean update) {
-            Type bound2 = bound.map(toTypeVarMap).baseType();
-            List<Type> prevBounds = bounds.get(ib);
-            if (bound == qtype) return;
-            for (Type b : prevBounds) {
-                //check for redundancy - use strict version of isSameType on tvars
-                //(as the standard version will lead to false positives w.r.t. clones ivars)
-                if (types.isSameType(b, bound2, true)) return;
+        @SuppressWarnings("fallthrough")
+        private void addBound(InferenceBound ib, Type bound, Types types, boolean update) {
+            if (kind == Kind.CAPTURED && !update) {
+                //Captured inference variables bounds must not be updated during incorporation,
+                //except when some inference variable (beta) has been instantiated in the
+                //right-hand-side of a 'C<alpha> = capture(C<? extends/super beta>) constraint.
+                if (bound.hasTag(UNDETVAR) && !((UndetVar)bound).isCaptured()) {
+                    //If the new incoming bound is itself a (regular) inference variable,
+                    //then we are allowed to propagate this inference variable bounds to it.
+                    ((UndetVar)bound).addBound(ib.complement(), this, types, false);
+                }
+            } else {
+                Type bound2 = bound.map(toTypeVarMap).baseType();
+                List<Type> prevBounds = bounds.get(ib);
+                if (bound == qtype) return;
+                for (Type b : prevBounds) {
+                    //check for redundancy - use strict version of isSameType on tvars
+                    //(as the standard version will lead to false positives w.r.t. clones ivars)
+                    if (types.isSameType(b, bound2, true)) return;
+                }
+                bounds.put(ib, prevBounds.prepend(bound2));
+                notifyBoundChange(ib, bound2, false);
             }
-            bounds.put(ib, prevBounds.prepend(bound2));
-            notifyBoundChange(ib, bound2, false);
         }
         //where
             TypeMapping<Void> toTypeVarMap = new TypeMapping<Void>() {
@@ -2128,46 +2163,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             }
         }
 
-        public boolean isCaptured() {
-            return false;
-        }
-    }
-
-    /**
-     * This class is used to represent synthetic captured inference variables
-     * that can be generated during nested generic method calls. The only difference
-     * between these inference variables and ordinary ones is that captured inference
-     * variables cannot get new bounds through incorporation.
-     */
-    public static class CapturedUndetVar extends UndetVar {
-
-        public CapturedUndetVar(CapturedType origin, UndetVarListener listener, Types types) {
-            super(origin, listener, types);
-            if (!origin.lower.hasTag(BOT)) {
-                addBound(InferenceBound.LOWER, origin.lower, types, true);
-            }
+        public final boolean isCaptured() {
+            return kind == Kind.CAPTURED;
         }
 
-        @Override
-        public void addBound(InferenceBound ib, Type bound, Types types, boolean update) {
-            if (update) {
-                //only change bounds if request comes from substBounds
-                super.addBound(ib, bound, types, update);
-            }
-            else if (bound.hasTag(UNDETVAR) && !((UndetVar) bound).isCaptured()) {
-                ((UndetVar) bound).addBound(ib.complement(), this, types, false);
-            }
-        }
-
-        @Override
-        public boolean isCaptured() {
-            return true;
-        }
-
-        public UndetVar dup(Types types) {
-            UndetVar uv2 = new CapturedUndetVar((CapturedType)qtype, listener, types);
-            dupTo(uv2, types);
-            return uv2;
+        public final boolean isThrows() {
+            return kind == Kind.THROWS;
         }
     }
 
