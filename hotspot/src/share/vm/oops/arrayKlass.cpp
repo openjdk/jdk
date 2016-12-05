@@ -105,7 +105,7 @@ void ArrayKlass::complete_create_array_klass(ArrayKlass* k, KlassHandle super_kl
   // These classes will be put on a fixup list and their module fields will be patched once
   // java.base is defined.
   assert((module_entry != NULL) || ((module_entry == NULL) && !ModuleEntryTable::javabase_defined()),
-         "module entry not available post java.base definition");
+         "module entry not available post " JAVA_BASE_NAME " definition");
   oop module = (module_entry != NULL) ? JNIHandles::resolve(module_entry->module()) : (oop)NULL;
   java_lang_Class::create_mirror(k, Handle(THREAD, k->class_loader()), Handle(THREAD, module), Handle(NULL), CHECK);
 }
