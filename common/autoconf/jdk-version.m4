@@ -110,7 +110,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
         AC_MSG_ERROR([Version string contains + but both 'BUILD' and 'OPT' are missing])
       fi
       # Stop the version part process from setting default values.
-      # We still allow them to explicitely override though.
+      # We still allow them to explicitly override though.
       NO_DEFAULT_VERSION_PARTS=true
     else
       AC_MSG_ERROR([--with-version-string fails to parse as a valid version string: $with_version_string])
