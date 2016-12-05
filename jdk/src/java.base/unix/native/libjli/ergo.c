@@ -91,7 +91,7 @@ ServerClassMachineImpl(void) {
       result = JNI_TRUE;
     }
   }
-  JLI_TraceLauncher("unix_" LIBARCHNAME "_ServerClassMachine: %s\n",
+  JLI_TraceLauncher("unix_ServerClassMachine: %s\n",
            (result == JNI_TRUE ? "JNI_TRUE" : "JNI_FALSE"));
   return result;
 }

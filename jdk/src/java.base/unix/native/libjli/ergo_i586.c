@@ -99,7 +99,7 @@ ServerClassMachineImpl(void) {
       result = JNI_TRUE;
     }
   }
-  JLI_TraceLauncher("solaris_" LIBARCHNAME "_ServerClassMachine: %s\n",
+  JLI_TraceLauncher("solaris_ServerClassMachine: %s\n",
            (result == JNI_TRUE ? "true" : "false"));
   return result;
 }
@@ -193,7 +193,7 @@ ServerClassMachineImpl(void) {
       result = JNI_TRUE;
     }
   }
-  JLI_TraceLauncher("linux_" LIBARCHNAME "_ServerClassMachine: %s\n",
+  JLI_TraceLauncher("linux_ServerClassMachine: %s\n",
            (result == JNI_TRUE ? "true" : "false"));
   return result;
 }
