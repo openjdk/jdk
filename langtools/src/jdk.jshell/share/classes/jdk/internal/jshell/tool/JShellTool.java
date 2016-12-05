@@ -1091,6 +1091,7 @@ public class JShellTool implements MessageHandler {
             }
             if (path.isEmpty()) {
                 StreamSupport.stream(FileSystems.getDefault().getRootDirectories().spliterator(), false)
+                             .filter(root -> Files.exists(root))
                              .filter(root -> accept.test(root) && root.toString().startsWith(prefix))
                              .map(root -> new ArgSuggestion(root.toString()))
                              .forEach(result::add);
