@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 import java.io.PrintStream;
 import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKeyFactory;
@@ -69,6 +70,15 @@ public class AESPBEWrapper extends PBEWrapper {
      */
     @Override
     public boolean execute(int edMode, byte[] inputText, int offset, int len) {
+        boolean isUnlimited;
+        try {
+            isUnlimited =
+                (Cipher.getMaxAllowedKeyLength(this.algo) == Integer.MAX_VALUE);
+        } catch (NoSuchAlgorithmException nsae) {
+            out.println("Got unexpected exception for " + this.algo);
+            nsae.printStackTrace(out);
+            return false;
+        }
         try {
             // init Cipher
             if (Cipher.ENCRYPT_MODE == edMode) {
@@ -76,6 +86,11 @@ public class AESPBEWrapper extends PBEWrapper {
                 pbeParams = ci.getParameters();
             } else {
                 ci.init(Cipher.DECRYPT_MODE, this.key, pbeParams);
+            }
+
+            if (this.algo.endsWith("AES_256") && !isUnlimited) {
+                out.print("Expected exception not thrown for " + this.algo);
+                return false;
             }
 
             // First, generate the cipherText at an allocated buffer
@@ -86,29 +101,19 @@ public class AESPBEWrapper extends PBEWrapper {
             int off = ci.update(inputText, offset, len, inputText, myoff);
             ci.doFinal(inputText, myoff + off);
 
-            if (this.algo.endsWith("AES_256")) {
-                out.print("Expected exception uncaught, "
-                        + "keyStrength > 128 within " + this.algo);
-
-                return false;
-            }
-
             // Compare to see whether the two results are the same or not
             return equalsBlock(inputText, myoff, outputText, 0,
                     outputText.length);
         } catch (Exception ex) {
             if ((ex instanceof InvalidKeyException)
-                    && this.algo.endsWith("AES_256")) {
-                out.println("Expected InvalidKeyException exception: "
-                        + ex.getMessage());
-
+                    && this.algo.endsWith("AES_256") && !isUnlimited) {
+                out.println("Expected InvalidKeyException thrown");
                 return true;
+            } else {
+                out.println("Got unexpected exception for " + algo);
+                ex.printStackTrace(out);
+                return false;
             }
-
-            out.println("Catch unexpected exception within " + algo);
-            ex.printStackTrace(out);
-
-            return false;
         }
     }
 }

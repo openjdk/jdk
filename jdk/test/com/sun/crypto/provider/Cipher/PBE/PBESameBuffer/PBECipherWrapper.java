@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.util.StringTokenizer;
 
 import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 
 import java.io.PrintStream;
@@ -64,9 +65,25 @@ public class PBECipherWrapper extends PBEWrapper {
         StringTokenizer st = new StringTokenizer(algo, "/");
         String baseAlgo = st.nextToken().toUpperCase();
 
+        boolean isUnlimited;
+        try {
+            isUnlimited =
+                (Cipher.getMaxAllowedKeyLength(this.algo) == Integer.MAX_VALUE);
+        } catch (NoSuchAlgorithmException nsae) {
+            out.println("Got unexpected exception for " + this.algo);
+            nsae.printStackTrace(out);
+            return false;
+        }
+
         // Perform encryption or decryption depends on the specified edMode
         try {
             ci.init(edMode, key, aps);
+            if ((baseAlgo.endsWith("TRIPLEDES")
+                    || baseAlgo.endsWith("AES_256")) && !isUnlimited) {
+                out.print("Expected InvalidKeyException not thrown: "
+                    + this.algo);
+                return false;
+            }
 
             // First, generate the cipherText at an allocated buffer
             byte[] outputText = ci.doFinal(inputText, offset, len);
@@ -78,33 +95,24 @@ public class PBECipherWrapper extends PBEWrapper {
 
             ci.doFinal(inputText, myoff + off);
 
-            if (baseAlgo.endsWith("TRIPLEDES")
-                    || baseAlgo.endsWith("AES_256")) {
-                out.print("Expected exception uncaught,"
-                        + "keyStrength > 128 within " + this.algo);
-
-                return false;
-            }
-
             // Compare to see whether the two results are the same or not
             boolean result = equalsBlock(inputText, myoff, outputText, 0,
                     outputText.length);
 
             return result;
         } catch (Exception ex) {
-            if ((ex instanceof InvalidKeyException)
-                    && (baseAlgo.endsWith("TRIPLEDES")
-                    || baseAlgo.endsWith("AES_256"))) {
-                out.println("Expected InvalidKeyException exception: "
-                        + ex.getMessage());
-
+            if ((ex instanceof InvalidKeyException) &&
+                    (baseAlgo.endsWith("TRIPLEDES")
+                        || baseAlgo.endsWith("AES_256")) &&
+                !isUnlimited) {
+                out.println("Expected InvalidKeyException thrown for "
+                    + algo);
                 return true;
+            } else {
+                out.println("Got unexpected exception for " + algo);
+                ex.printStackTrace(out);
+                return false;
             }
-
-            out.println("Catch unexpected exception within " + algo);
-            ex.printStackTrace(out);
-
-            return false;
         }
     }
 }
