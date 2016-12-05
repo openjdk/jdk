@@ -42,7 +42,7 @@ then
   exit 0
 fi
 
-LD_LIBRARY_PATH=.:${TESTJAVA}/jre/lib/${VM_CPU}/${VM_TYPE}:${TESTJAVA}/lib/${VM_CPU}/${VM_TYPE}:/usr/lib:$LD_LIBRARY_PATH
+LD_LIBRARY_PATH=.:${TESTJAVA}/lib/${VM_TYPE}:/usr/lib:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH
 
 # Run the test for a java and native overflow
