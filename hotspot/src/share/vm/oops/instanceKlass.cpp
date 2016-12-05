@@ -2247,7 +2247,7 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
         // the java.base module.  If a non-java.base package is erroneously placed
         // in the java.base module it will be caught later when java.base
         // is defined by ModuleEntryTable::verify_javabase_packages check.
-        assert(ModuleEntryTable::javabase_moduleEntry() != NULL, "java.base module is NULL");
+        assert(ModuleEntryTable::javabase_moduleEntry() != NULL, JAVA_BASE_NAME " module is NULL");
         _package_entry = loader_data->packages()->lookup(pkg_name, ModuleEntryTable::javabase_moduleEntry());
       } else {
         assert(loader_data->modules()->unnamed_module() != NULL, "unnamed module is NULL");
