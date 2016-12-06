@@ -214,7 +214,7 @@ PackageEntry* PackageEntryTable::new_entry(unsigned int hash, Symbol* name, Modu
   entry->set_hash(hash);
   entry->set_literal(name);
 
-  TRACE_INIT_PACKAGE_ID(entry);
+  TRACE_INIT_ID(entry);
 
   // Initialize fields specific to a PackageEntry
   entry->init();

@@ -309,7 +309,7 @@ ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle
     }
   }
 
-  TRACE_INIT_MODULE_ID(entry);
+  TRACE_INIT_ID(entry);
 
   return entry;
 }

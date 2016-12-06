@@ -488,7 +488,7 @@ void Klass::oops_do(OopClosure* cl) {
 
 void Klass::remove_unshareable_info() {
   assert (DumpSharedSpaces, "only called for DumpSharedSpaces");
-  TRACE_REMOVE_KLASS_ID(this);
+  TRACE_REMOVE_ID(this);
 
   set_subklass(NULL);
   set_next_sibling(NULL);
@@ -501,7 +501,7 @@ void Klass::remove_unshareable_info() {
 }
 
 void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
-  TRACE_RESTORE_KLASS_ID(this);
+  TRACE_RESTORE_ID(this);
 
   // If an exception happened during CDS restore, some of these fields may already be
   // set.  We leave the class on the CLD list, even if incomplete so that we don't
