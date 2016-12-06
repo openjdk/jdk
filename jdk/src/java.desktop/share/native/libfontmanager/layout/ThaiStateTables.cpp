@@ -49,7 +49,7 @@ const le_uint8 ThaiShaping::classTable[] = {
     /*0E50*/ NON, NON, NON, NON, NON, NON, NON, NON, NON, NON, NON, NON
 };
 
-const ThaiShaping::StateTransition ThaiShaping::thaiStateTable[][ThaiShaping::classCount] = {
+const ThaiShaping::StateTransition ThaiShaping::thaiStateTable[ThaiShaping::stateCount][ThaiShaping::classCount] = {
     //+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     //|         N         C         C         C         L         F         F         F         B         B         B         T         A         A         A         N         A         A         A    |
     //|         O         O         O         O         V         V         V         V         V         V         D         O         D         D         D         I         V         V         V    |

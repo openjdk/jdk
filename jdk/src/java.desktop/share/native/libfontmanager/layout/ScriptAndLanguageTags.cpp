@@ -33,13 +33,14 @@
  * Generated on: 10/26/2010 02:53:33 PM PDT
  */
 
+#include "LEScripts.h"
 #include "LETypes.h"
 #include "ScriptAndLanguageTags.h"
 #include "OpenTypeLayoutEngine.h"
 
 U_NAMESPACE_BEGIN
 
-const LETag OpenTypeLayoutEngine::scriptTags[] = {
+const LETag OpenTypeLayoutEngine::scriptTags[scriptCodeCount] = {
     zyyyScriptTag, /* 'zyyy' (COMMON) */
     zinhScriptTag, /* 'zinh' (INHERITED) */
     arabScriptTag, /* 'arab' (ARABIC) */

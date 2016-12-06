@@ -80,7 +80,8 @@ public:
         tG  =  5,
         tH  =  6,
         tR  =  7,
-        tS  =  8
+        tS  =  8,
+        stateCount = 52
     };
 
     struct StateTransition
@@ -100,7 +101,7 @@ private:
     ThaiShaping();
 
     static const le_uint8 classTable[];
-    static const StateTransition thaiStateTable[][classCount];
+    static const StateTransition thaiStateTable[stateCount][classCount];
 
     inline static StateTransition getTransition(le_uint8 state, le_uint8 currClass);
 
