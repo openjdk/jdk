@@ -302,7 +302,7 @@ le_int32 ThaiShaping::compose(const LEUnicode *input, le_int32 offset, le_int32 
         le_uint8 charClass;
 
         // Decompose SARA AM into NIKHAHIT + SARA AA
-        if (ch == CH_SARA_AM && isLegalHere(ch, state)) {
+        if (ch == CH_SARA_AM && isLegalHere(ch, state) && conState < stateCount) {
             outputIndex = conOutput;
             state = getNextState(CH_NIKHAHIT, conState, inputIndex, glyphSet, errorChar, charClass,
                 output, glyphStorage, outputIndex);
