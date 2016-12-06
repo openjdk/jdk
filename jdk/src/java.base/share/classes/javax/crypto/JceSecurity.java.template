@@ -23,10 +23,33 @@
  * questions.
  */
 
+/*
+ * README README README README README README README README README
+ *
+ * This file is the template for generating the JceSecurity.java source
+ * file.
+ *
+ * In the current jdk builds, this file is first preprocessed to replace
+ * @@JCE_DEFAULT_POLICY@ [sic] with "limited" or "unlimited" which is
+ * determined by the $(UNLIMTED_CRYPTO) make variable.  This variable is
+ * set by top-level configure script, using either
+ * --disable-unlimited-crypto or --enable-unlimited-crypto [default].
+ *
+ * Since this file is a generated source, incremental changes to
+ * this file require regenerating the source.  Compilation options:
+ *
+ *     (fewer dependencies/"faster" ones first)
+ *
+ * 1.  make JDK_FILTER=javax/crypto java.base-gensrc-only java.base-java-only
+ * 2.  make java.base-gensrc-only java.base-java-only
+ * 3.  make java.base-gensrc-only java.base-only
+ * 4.  make java.base-only
+ * 5.  make
+ */
+
 package javax.crypto;
 
 import java.util.*;
-import java.util.jar.*;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.*;
@@ -36,6 +59,7 @@ import java.security.Provider.Service;
 
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
+import sun.security.util.Debug;
 
 /**
  * This class instantiates implementations of JCE engine classes from
@@ -47,6 +71,9 @@ import sun.security.jca.GetInstance.Instance;
  */
 
 final class JceSecurity {
+  
+  	
+    private static final Debug debug = Debug.getInstance("jca");
 
     static final SecureRandom RANDOM = new SecureRandom();
 
@@ -251,10 +278,27 @@ final class JceSecurity {
         // directory entry, no pseudo-directories (".", "..", leading/trailing
         // path separators). normalize()/getParent() will help later.
         String cryptoPolicyProperty = Security.getProperty("crypto.policy");
+
+        /*
+         * In case no property is present, rather than fail catastrophically,
+         * we at least try for a "sane" value, which is what we were
+         * built with.  We first preprocess this file to plug in that
+         * value, then compile the result gensrc.
+         *
+         * Log the warning first.
+         */
+        if (cryptoPolicyProperty == null) {
+            cryptoPolicyProperty = "@@JCE_DEFAULT_POLICY@@";
+            if (debug != null) {
+                debug.println(
+                    "Security Property 'crypto.policy' not found: "
+                    + "using '" + cryptoPolicyProperty + "' as fallback");
+            }
+        }
+
         Path cpPath = Paths.get(cryptoPolicyProperty);
 
-        if ((cryptoPolicyProperty == null) ||
-                (cpPath.getNameCount() != 1) ||
+        if ((cpPath.getNameCount() != 1) ||
                 (cpPath.compareTo(cpPath.getFileName()) != 0)) {
             throw new SecurityException(
                 "Invalid policy directory name format: " +
