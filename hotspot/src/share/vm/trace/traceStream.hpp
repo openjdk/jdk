@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
 
 #include "utilities/macros.hpp"
 #if INCLUDE_TRACE
+#include "classfile/classLoaderData.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
@@ -99,6 +101,33 @@ class TraceStream : public StackObj {
       description = val->name_and_sig_as_C_string();
     }
     _st.print("%s = %s", label, description);
+  }
+
+  void print_val(const char* label, const ClassLoaderData* const cld) {
+    ResourceMark rm;
+    if (cld == NULL || cld->is_anonymous()) {
+      _st.print("%s = NULL", label);
+      return;
+    }
+    const oop class_loader_oop = cld->class_loader();
+    if (class_loader_oop == NULL) {
+      _st.print("%s = NULL", label);
+      return;
+    }
+    const char* class_loader_name = "NULL";
+    const char* klass_name = "NULL";
+    const oop class_loader_name_oop =
+      java_lang_ClassLoader::name(class_loader_oop);
+    if (class_loader_name_oop != NULL) {
+      class_loader_name =
+        java_lang_String::as_utf8_string(class_loader_name_oop);
+    }
+    const Klass* const k = class_loader_oop->klass();
+    const Symbol* klass_name_sym = k->name();
+    if (klass_name_sym != NULL) {
+      klass_name = klass_name_sym->as_C_string();
+    }
+    _st.print("%s = name=%s class=%s", label, class_loader_name, klass_name);
   }
 
   void print_val(const char* label, const char* val) {
