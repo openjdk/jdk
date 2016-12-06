@@ -1967,8 +1967,8 @@ Optional Features:
   --enable-debug          set the debug level to fastdebug (shorthand for
                           --with-debug-level=fastdebug) [disabled]
   --enable-headless-only  only build headless (no GUI) support [disabled]
-  --enable-unlimited-crypto
-                          Enable unlimited crypto policy [disabled]
+  --disable-unlimited-crypto
+                          Disable unlimited crypto policy [enabled]
   --disable-keep-packaged-modules
                           Do not keep packaged modules in jdk image [enable]
   --enable-static-build   enable static library build [disabled]
@@ -5082,7 +5082,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1480691844
+DATE_WHEN_GENERATED=1480714260
 
 ###############################################################################
 #
@@ -24229,7 +24229,7 @@ fi
 if test "${enable_unlimited_crypto+set}" = set; then :
   enableval=$enable_unlimited_crypto;
 else
-  enable_unlimited_crypto=no
+  enable_unlimited_crypto=yes
 fi
 
   if test "x$enable_unlimited_crypto" = "xyes"; then
