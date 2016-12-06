@@ -163,9 +163,9 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   AC_SUBST(CACERTS_FILE)
 
   # Enable or disable unlimited crypto
-  AC_ARG_ENABLE(unlimited-crypto, [AS_HELP_STRING([--enable-unlimited-crypto],
-      [Enable unlimited crypto policy @<:@disabled@:>@])],,
-      [enable_unlimited_crypto=no])
+  AC_ARG_ENABLE(unlimited-crypto, [AS_HELP_STRING([--disable-unlimited-crypto],
+      [Disable unlimited crypto policy @<:@enabled@:>@])],,
+      [enable_unlimited_crypto=yes])
   if test "x$enable_unlimited_crypto" = "xyes"; then
     UNLIMITED_CRYPTO=true
   else
