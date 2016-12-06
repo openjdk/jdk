@@ -31,7 +31,7 @@
  *     jdk.naming.rmi
  * @library ../../../../../../java/rmi/testlibrary
  * @build TestLibrary
- * @run main UnbindIdempotent
+ * @run main/othervm UnbindIdempotent
  */
 
 import java.rmi.registry.Registry;
