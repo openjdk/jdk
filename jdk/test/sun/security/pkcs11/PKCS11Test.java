@@ -642,6 +642,8 @@ public abstract class PKCS11Test {
     static final boolean badNSSVersion =
             getNSSVersion() >= 3.11 && getNSSVersion() < 3.12;
 
+    private static final String distro = distro();
+
     static final boolean badSolarisSparc =
             System.getProperty("os.name").equals("SunOS") &&
             System.getProperty("os.arch").equals("sparcv9") &&
@@ -735,13 +737,17 @@ public abstract class PKCS11Test {
      * Get the identifier for the operating system distribution
      */
     static String getDistro() {
+        return distro;
+    }
+
+    private static String distro() {
         try (BufferedReader in =
             new BufferedReader(new InputStreamReader(
                 Runtime.getRuntime().exec("uname -v").getInputStream()))) {
 
             return in.readLine();
         } catch (Exception e) {
-            return "";
+            throw new RuntimeException("Failed to determine distro.", e);
         }
     }
 
