@@ -90,3 +90,9 @@ ENABLE_DEBUG_SYMBOLS := false
 BUILD_GTEST := false
 
 JVM_VARIANTS := server
+
+# Some users still set EXTRA_*FLAGS on the make command line. Must
+# make sure to override that when building buildjdk.
+override EXTRA_CFLAGS :=
+override EXTRA_CXXFLAGS :=
+override EXTRA_LDFLAGS :=
