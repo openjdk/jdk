@@ -1164,6 +1164,13 @@ public class ObjectInputStream
      * for each class and reference in the stream.
      * The filter can check any or all of the class, the array length, the number
      * of references, the depth of the graph, and the size of the input stream.
+     * The depth is the number of nested {@linkplain #readObject readObject}
+     * calls starting with the reading of the root of the graph being deserialized
+     * and the current object being deserialized.
+     * The number of references is the cumulative number of objects and references
+     * to objects already read from the stream including the current object being read.
+     * The filter is invoked only when reading objects from the stream and for
+     * not primitives.
      * <p>
      * If the filter returns {@link ObjectInputFilter.Status#REJECTED Status.REJECTED},
      * {@code null} or throws a {@link RuntimeException},
@@ -1178,8 +1185,9 @@ public class ObjectInputStream
      *
      * @implSpec
      * The filter, when not {@code null}, is invoked during {@link #readObject readObject}
-     * and {@link #readUnshared readUnshared} for each object
-     * (regular or class) in the stream including the following:
+     * and {@link #readUnshared readUnshared} for each object (regular or class) in the stream.
+     * Strings are treated as primitives and do not invoke the filter.
+     * The filter is called for:
      * <ul>
      *     <li>each object reference previously deserialized from the stream
      *     (class is {@code null}, arrayLength is -1),
