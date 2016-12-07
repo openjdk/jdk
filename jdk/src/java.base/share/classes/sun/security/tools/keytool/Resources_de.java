@@ -126,16 +126,24 @@ public class Resources_de extends java.util.ListResourceBundle {
                 "Schl\u00FCsselbitgr\u00F6\u00DFe"}, //-keysize
         {"keystore.name",
                 "Keystore-Name"}, //-keystore
+        {"access.the.cacerts.keystore",
+                "Zugriff auf den cacerts Keystore"}, // -cacerts
+        {"warning.cacerts.option",
+                "Warnung: Verwenden Sie die Option -cacerts f\u00FCr den Zugriff auf den cacerts Keystore"},
         {"new.password",
                 "Neues Kennwort"}, //-new
         {"do.not.prompt",
                 "Kein Prompt"}, //-noprompt
         {"password.through.protected.mechanism",
                 "Kennwort \u00FCber gesch\u00FCtzten Mechanismus"}, //-protected
-        {"provider.argument",
-                "Providerargument"}, //-providerarg
-        {"provider.class.name",
-                "Providerklassenname"}, //-providerclass
+
+        // The following 2 values should span 2 lines, the first for the
+        // option itself, the second for its -providerArg value.
+        {"addprovider.option",
+                "Sicherheitsprovider nach Name hinzuf\u00FCgen (z.B. SunPKCS11)\nArgument f\u00FCr -addprovider konfigurieren"}, //-addprovider
+        {"provider.class.option",
+                "Sicherheitsprovider nach vollst\u00E4ndig angegebenem Klassennamen hinzuf\u00FCgen\nArgument f\u00FCr -providerclass konfigurieren"}, //-providerclass
+
         {"provider.name",
                 "Providername"}, //-providername
         {"provider.classpath",
@@ -187,6 +195,8 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"Command.option.flag.needs.an.argument.", "Befehlsoption {0} ben\u00F6tigt ein Argument."},
         {"Warning.Different.store.and.key.passwords.not.supported.for.PKCS12.KeyStores.Ignoring.user.specified.command.value.",
                 "Warnung: Keine Unterst\u00FCtzung f\u00FCr unterschiedliche Speicher- und Schl\u00FCsselkennw\u00F6rter bei PKCS12 KeyStores. Der benutzerdefinierte Wert {0} wird ignoriert."},
+        {"the.keystore.or.storetype.option.cannot.be.used.with.the.cacerts.option",
+            "Die Option -keystore oder -storetype kann nicht mit der Option -cacerts verwendet werden"},
         {".keystore.must.be.NONE.if.storetype.is.{0}",
                 "-keystore muss NONE sein, wenn -storetype {0} ist"},
         {"Too.many.retries.program.terminated",
@@ -208,7 +218,9 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"Illegal.startdate.value", "Ung\u00FCltiger Wert f\u00FCr Anfangsdatum"},
         {"Validity.must.be.greater.than.zero",
                 "G\u00FCltigkeit muss gr\u00F6\u00DFer als null sein"},
-        {"provName.not.a.provider", "{0} kein Provider"},
+        {"provclass.not.a.provider", "%s kein Provider"},
+        {"provider.name.not.found", "Provider namens \"%s\" nicht gefunden"},
+        {"provider.class.not.found", "Provider \"%s\" nicht gefunden"},
         {"Usage.error.no.command.provided", "Verwendungsfehler: Kein Befehl angegeben"},
         {"Source.keystore.file.exists.but.is.empty.", "Quell-Keystore-Datei ist zwar vorhanden, ist aber leer: "},
         {"Please.specify.srckeystore", "Geben Sie -srckeystore an"},

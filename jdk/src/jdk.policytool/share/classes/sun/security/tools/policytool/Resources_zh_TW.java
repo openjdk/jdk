@@ -68,7 +68,7 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
                 "\u7121\u6CD5\u958B\u555F\u539F\u5247\u6A94\u6848: {0}: {1}"},
         {"Policy.Tool", "\u539F\u5247\u5DE5\u5177"},
         {"Errors.have.occurred.while.opening.the.policy.configuration.View.the.Warning.Log.for.more.information.",
-                "\u958B\u555F\u539F\u5247\u8A18\u7F6E\u6642\u767C\u751F\u932F\u8AA4\u3002\u8ACB\u6AA2\u8996\u8B66\u544A\u8A18\u9304\u4EE5\u53D6\u5F97\u66F4\u591A\u7684\u8CC7\u8A0A"},
+                "\u958B\u555F\u539F\u5247\u7D44\u614B\u6642\u767C\u751F\u932F\u8AA4\u3002\u8ACB\u6AA2\u8996\u8B66\u544A\u8A18\u9304\u4EE5\u53D6\u5F97\u66F4\u591A\u7684\u8CC7\u8A0A"},
         {"Error", "\u932F\u8AA4"},
         {"OK", "\u78BA\u5B9A"},
         {"Status", "\u72C0\u614B"},
