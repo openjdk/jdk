@@ -31,7 +31,6 @@
  * @modules jdk.vm.ci/jdk.vm.ci.hotspot
  *          jdk.vm.ci/jdk.vm.ci.meta
  *
- * @ignore 8158860
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  *        jdk.vm.ci/jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject
  *        sun.hotspot.WhiteBox

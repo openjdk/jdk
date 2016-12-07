@@ -32,7 +32,6 @@ import static jdk.test.lib.Asserts.assertTrue;
  * @test
  * @summary Tests the modules-related JDWP commands
  * @library /test/lib
- * @ignore 8168478
  * @modules jdk.jdwp.agent
  * @modules java.base/jdk.internal.misc
  * @compile AllModulesCommandTestDebuggee.java
