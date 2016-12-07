@@ -27,116 +27,71 @@
 
 #include "utilities/macros.hpp"
 #if INCLUDE_TRACE
-#include "classfile/classLoaderData.hpp"
-#include "classfile/javaClasses.inline.hpp"
-#include "memory/resourceArea.hpp"
-#include "oops/klass.hpp"
-#include "oops/method.hpp"
-#include "oops/symbol.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 
+class ClassLoaderData;
+class Klass;
+class Method;
+
 class TraceStream : public StackObj {
- private:
-  outputStream& _st;
-
  public:
-  TraceStream(outputStream& stream): _st(stream) {}
-
-  void print_val(const char* label, u1 val) {
-    _st.print("%s = " UINT32_FORMAT, label, val);
+  TraceStream() {
+    assert(tty != NULL, "invariant");
   }
 
-  void print_val(const char* label, u2 val) {
-    _st.print("%s = " UINT32_FORMAT, label, val);
+  void print(const char* val) const {
+    tty->print("%s", val);
   }
 
-  void print_val(const char* label, s2 val) {
-    _st.print("%s = " INT32_FORMAT, label, val);
+  void print_val(const char* label, u1 val) const {
+    tty->print("%s = " UINT32_FORMAT, label, val);
   }
 
-  void print_val(const char* label, u4 val) {
-    _st.print("%s = " UINT32_FORMAT, label, val);
+  void print_val(const char* label, u2 val) const {
+    tty->print("%s = " UINT32_FORMAT, label, val);
   }
 
-  void print_val(const char* label, s4 val) {
-    _st.print("%s = " INT32_FORMAT, label, val);
+  void print_val(const char* label, s2 val) const {
+    tty->print("%s = " INT32_FORMAT, label, val);
   }
 
-  void print_val(const char* label, u8 val) {
-    _st.print("%s = " UINT64_FORMAT, label, val);
+  void print_val(const char* label, u4 val) const {
+    tty->print("%s = " UINT32_FORMAT, label, val);
   }
 
-  void print_val(const char* label, s8 val) {
-    _st.print("%s = " INT64_FORMAT, label, (int64_t) val);
+  void print_val(const char* label, s4 val) const {
+    tty->print("%s = " INT32_FORMAT, label, val);
   }
 
-  void print_val(const char* label, bool val) {
-    _st.print("%s = %s", label, val ? "true" : "false");
+  void print_val(const char* label, u8 val) const {
+    tty->print("%s = " UINT64_FORMAT, label, val);
   }
 
-  void print_val(const char* label, float val) {
-    _st.print("%s = %f", label, val);
+  void print_val(const char* label, s8 val) const {
+    tty->print("%s = " INT64_FORMAT, label, (int64_t) val);
   }
 
-  void print_val(const char* label, double val) {
-    _st.print("%s = %f", label, val);
+  void print_val(const char* label, bool val) const {
+    tty->print("%s = %s", label, val ? "true" : "false");
   }
 
-  void print_val(const char* label, const Klass* const val) {
-    ResourceMark rm;
-    const char* description = "NULL";
-    if (val != NULL) {
-      Symbol* name = val->name();
-      if (name != NULL) {
-        description = name->as_C_string();
-      }
-    }
-    _st.print("%s = %s", label, description);
+  void print_val(const char* label, float val) const {
+    tty->print("%s = %f", label, val);
   }
 
-  void print_val(const char* label, const Method* const val) {
-    ResourceMark rm;
-    const char* description = "NULL";
-    if (val != NULL) {
-      description = val->name_and_sig_as_C_string();
-    }
-    _st.print("%s = %s", label, description);
+  void print_val(const char* label, double val) const {
+    tty->print("%s = %f", label, val);
   }
 
-  void print_val(const char* label, const ClassLoaderData* const cld) {
-    ResourceMark rm;
-    if (cld == NULL || cld->is_anonymous()) {
-      _st.print("%s = NULL", label);
-      return;
-    }
-    const oop class_loader_oop = cld->class_loader();
-    if (class_loader_oop == NULL) {
-      _st.print("%s = NULL", label);
-      return;
-    }
-    const char* class_loader_name = "NULL";
-    const char* klass_name = "NULL";
-    const oop class_loader_name_oop =
-      java_lang_ClassLoader::name(class_loader_oop);
-    if (class_loader_name_oop != NULL) {
-      class_loader_name =
-        java_lang_String::as_utf8_string(class_loader_name_oop);
-    }
-    const Klass* const k = class_loader_oop->klass();
-    const Symbol* klass_name_sym = k->name();
-    if (klass_name_sym != NULL) {
-      klass_name = klass_name_sym->as_C_string();
-    }
-    _st.print("%s = name=%s class=%s", label, class_loader_name, klass_name);
+  void print_val(const char* label, const char* val) const {
+    tty->print("%s = '%s'", label, val);
   }
 
-  void print_val(const char* label, const char* val) {
-    _st.print("%s = '%s'", label, val);
-  }
-
-  void print(const char* val) {
-    _st.print("%s", val);
-  }
+  void print_val(const char* label, const Klass* val) const;
+  void print_val(const char* label, const Method* val) const ;
+  void print_val(const char* label, const ClassLoaderData* cld) const;
 };
 
 #endif // INCLUDE_TRACE
