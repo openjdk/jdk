@@ -201,12 +201,14 @@ JNU_ThrowByNameWithMessageAndLastError
                 jio_snprintf(str1, messageextlen, " (%s)", message);
                 s2 = (*env)->NewStringUTF(env, str1);
                 free(str1);
+                JNU_CHECK_EXCEPTION(env);
                 if (s2 != NULL) {
                     jstring s3 = JNU_CallMethodByName(
                                      env, NULL, s, "concat",
                                      "(Ljava/lang/String;)Ljava/lang/String;",
                                      s2).l;
                     (*env)->DeleteLocalRef(env, s2);
+                    JNU_CHECK_EXCEPTION(env);
                     if (s3 != NULL) {
                         (*env)->DeleteLocalRef(env, s);
                         s = s3;
