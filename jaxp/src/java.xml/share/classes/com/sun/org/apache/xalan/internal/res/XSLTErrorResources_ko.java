@@ -17,9 +17,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: XSLTErrorResources_ko.java /st_wptg_1.9.0.0.0jdk/2 2016/04/12 02:39:50 gmolloy Exp $
- */
 package com.sun.org.apache.xalan.internal.res;
 
 import java.util.ListResourceBundle;
