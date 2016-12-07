@@ -17,9 +17,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: XPATHErrorResources_fr.java /st_wptg_1.9.0.0.0jdk/2 2016/04/12 05:13:35 gmolloy Exp $
- */
 package com.sun.org.apache.xpath.internal.res;
 
 import java.util.ListResourceBundle;
@@ -93,6 +90,7 @@ public class XPATHErrorResources_fr extends ListResourceBundle
   public static final String ER_CURRENT_TAKES_NO_ARGS =
          "ER_CURRENT_TAKES_NO_ARGS";
   public static final String ER_DOCUMENT_REPLACED = "ER_DOCUMENT_REPLACED";
+  public static final String ER_CONTEXT_CAN_NOT_BE_NULL = "ER_CONTEXT_CAN_NOT_BE_NULL";
   public static final String ER_CONTEXT_HAS_NO_OWNERDOC =
          "ER_CONTEXT_HAS_NO_OWNERDOC";
   public static final String ER_LOCALNAME_HAS_TOO_MANY_ARGS =
@@ -367,6 +365,9 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_DOCUMENT_REPLACED,
       "L'impl\u00E9mentation de la fonction document() a \u00E9t\u00E9 remplac\u00E9e par com.sun.org.apache.xalan.internal.xslt.FuncDocument."},
+
+  { ER_CONTEXT_CAN_NOT_BE_NULL,
+      "Le contexte ne peut pas \u00EAtre NULL lorsque l'op\u00E9ration en d\u00E9pend."},
 
   { ER_CONTEXT_HAS_NO_OWNERDOC,
       "le contexte ne poss\u00E8de pas de document propri\u00E9taire."},
