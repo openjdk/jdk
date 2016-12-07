@@ -34,7 +34,6 @@
  *          jdk.vm.ci/jdk.vm.ci.code
  *          jdk.vm.ci/jdk.vm.ci.runtime
  *
- * @ignore 8163894
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.compilerToVM.InvalidateInstalledCodeTest
  * @build sun.hotspot.WhiteBox

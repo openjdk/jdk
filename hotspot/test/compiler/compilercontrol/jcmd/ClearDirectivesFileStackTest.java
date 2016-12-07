@@ -28,7 +28,6 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  *
- * @ignore 8140405
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission

@@ -314,6 +314,21 @@ ifndef JT_HOME
   endif
 endif
 
+# Problematic tests to be excluded
+PROBLEM_LISTS=$(call MixedDirs,$(wildcard ProblemList.txt closed/ProblemList.txt))
+
+# Create exclude list for this platform and arch
+ifdef NO_EXCLUDES
+  JTREG_EXCLUSIONS =
+else
+  JTREG_EXCLUSIONS = $(PROBLEM_LISTS:%=-exclude:%)
+endif
+
+# convert list of directories to dos paths
+define MixedDirs
+$(foreach i,$1,$(shell $(GETMIXEDPATH) "${i}"))
+endef
+
 # When called from JPRT the TESTDIRS variable is set to the jtreg tests to run
 ifdef TESTDIRS
   TEST_SELECTION = $(TESTDIRS)
@@ -327,7 +342,7 @@ ifdef NUM_CORES
   else ifeq ($(shell expr $(CONCURRENCY) \> 12), 1)
     CONCURRENCY := 12
   endif
-else 
+else
   CONCURRENCY := 1
 endif
 JTREG_BASIC_OPTIONS += -concurrency:$(CONCURRENCY)
