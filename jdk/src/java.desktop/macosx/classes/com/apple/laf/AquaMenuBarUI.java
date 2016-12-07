@@ -34,10 +34,18 @@ import javax.swing.plaf.basic.BasicMenuBarUI;
 
 import sun.lwawt.macosx.LWCToolkit;
 import sun.security.action.GetBooleanAction;
-import sun.security.action.GetPropertyAction;
 
 // MenuBar implementation for Mac L&F
 public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvider {
+
+    static {
+        java.security.AccessController.doPrivileged(
+                (java.security.PrivilegedAction<Void>) () -> {
+            System.loadLibrary("osxui");
+            return null;
+        });
+    }
+
     // Utilities
     public void uninstallUI(final JComponent c) {
         if (fScreenMenuBar != null) {
@@ -134,7 +142,7 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvid
     ScreenMenuBar fScreenMenuBar;
     boolean useScreenMenuBar = getScreenMenuBarProperty();
 
-    static boolean getScreenMenuBarProperty() {
+    public static boolean getScreenMenuBarProperty() {
         // Do not allow AWT to set the screen menu bar if it's embedded in another UI toolkit
         if (LWCToolkit.isEmbedded()) return false;
         if (AccessController.doPrivileged(
