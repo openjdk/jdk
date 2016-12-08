@@ -802,7 +802,7 @@ void java_lang_Class::set_mirror_module_field(KlassHandle k, Handle mirror, Hand
     if (javabase_was_defined) {
       ModuleEntry *javabase_entry = ModuleEntryTable::javabase_moduleEntry();
       assert(javabase_entry != NULL && javabase_entry->module() != NULL,
-             "Setting class module field, java.base should be defined");
+             "Setting class module field, " JAVA_BASE_NAME " should be defined");
       Handle javabase_handle(THREAD, JNIHandles::resolve(javabase_entry->module()));
       set_module(mirror(), javabase_handle());
     }

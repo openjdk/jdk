@@ -534,13 +534,12 @@ void os::init_system_properties_values() {
 #define SYS_EXT_DIR     "/usr/jdk/packages"
 #define EXTENSIONS_DIR  "/lib/ext"
 
-  char cpu_arch[12];
   // Buffer that fits several sprintfs.
   // Note that the space for the colon and the trailing null are provided
   // by the nulls included by the sizeof operator.
   const size_t bufsize =
     MAX3((size_t)MAXPATHLEN,  // For dll_dir & friends.
-         sizeof(SYS_EXT_DIR) + sizeof("/lib/") + strlen(cpu_arch), // invariant ld_library_path
+         sizeof(SYS_EXT_DIR) + sizeof("/lib/"), // invariant ld_library_path
          (size_t)MAXPATHLEN + sizeof(EXTENSIONS_DIR) + sizeof(SYS_EXT_DIR) + sizeof(EXTENSIONS_DIR)); // extensions dir
   char *buf = (char *)NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
 
@@ -561,11 +560,7 @@ void os::init_system_properties_values() {
     if (pslash != NULL) {
       pslash = strrchr(buf, '/');
       if (pslash != NULL) {
-        *pslash = '\0';          // Get rid of /<arch>.
-        pslash = strrchr(buf, '/');
-        if (pslash != NULL) {
-          *pslash = '\0';        // Get rid of /lib.
-        }
+        *pslash = '\0';        // Get rid of /lib.
       }
     }
     Arguments::set_java_home(buf);
@@ -623,21 +618,8 @@ void os::init_system_properties_values() {
     // However, to prevent the proliferation of improperly built native
     // libraries, the new path component /usr/jdk/packages is added here.
 
-    // Determine the actual CPU architecture.
-    sysinfo(SI_ARCHITECTURE, cpu_arch, sizeof(cpu_arch));
-#ifdef _LP64
-    // If we are a 64-bit vm, perform the following translations:
-    //   sparc   -> sparcv9
-    //   i386    -> amd64
-    if (strcmp(cpu_arch, "sparc") == 0) {
-      strcat(cpu_arch, "v9");
-    } else if (strcmp(cpu_arch, "i386") == 0) {
-      strcpy(cpu_arch, "amd64");
-    }
-#endif
-
     // Construct the invariant part of ld_library_path.
-    sprintf(common_path, SYS_EXT_DIR "/lib/%s", cpu_arch);
+    sprintf(common_path, SYS_EXT_DIR "/lib");
 
     // Struct size is more than sufficient for the path components obtained
     // through the dlinfo() call, so only add additional space for the path
@@ -2076,18 +2058,9 @@ void os::jvm_path(char *buf, jint buflen) {
       // Look for JAVA_HOME in the environment.
       char* java_home_var = ::getenv("JAVA_HOME");
       if (java_home_var != NULL && java_home_var[0] != 0) {
-        char cpu_arch[12];
         char* jrelib_p;
         int   len;
-        sysinfo(SI_ARCHITECTURE, cpu_arch, sizeof(cpu_arch));
-#ifdef _LP64
-        // If we are on sparc running a 64-bit vm, look in jre/lib/sparcv9.
-        if (strcmp(cpu_arch, "sparc") == 0) {
-          strcat(cpu_arch, "v9");
-        } else if (strcmp(cpu_arch, "i386") == 0) {
-          strcpy(cpu_arch, "amd64");
-        }
-#endif
+
         // Check the current module name "libjvm.so".
         p = strrchr(buf, '/');
         assert(strstr(p, "/libjvm") == p, "invalid library name");
@@ -2098,9 +2071,9 @@ void os::jvm_path(char *buf, jint buflen) {
         len = strlen(buf);
         assert(len < buflen, "Ran out of buffer space");
         jrelib_p = buf + len;
-        snprintf(jrelib_p, buflen-len, "/jre/lib/%s", cpu_arch);
+        snprintf(jrelib_p, buflen-len, "/jre/lib");
         if (0 != access(buf, F_OK)) {
-          snprintf(jrelib_p, buflen-len, "/lib/%s", cpu_arch);
+          snprintf(jrelib_p, buflen-len, "/lib");
         }
 
         if (0 == access(buf, F_OK)) {

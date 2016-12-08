@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "code/codeCacheExtensions.hpp"
@@ -3435,9 +3436,9 @@ void Arguments::add_patch_mod_prefix(const char* module_name, const char* path, 
   // This check is only required for java.base, all other duplicate module specifications
   // will be checked during module system initialization.  The module system initialization
   // will throw an ExceptionInInitializerError if this situation occurs.
-  if (strcmp(module_name, "java.base") == 0) {
+  if (strcmp(module_name, JAVA_BASE_NAME) == 0) {
     if (*patch_mod_javabase) {
-      vm_exit_during_initialization("Cannot specify java.base more than once to --patch-module");
+      vm_exit_during_initialization("Cannot specify " JAVA_BASE_NAME " more than once to --patch-module");
     } else {
       *patch_mod_javabase = true;
     }

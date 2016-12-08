@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,87 +27,71 @@
 
 #include "utilities/macros.hpp"
 #if INCLUDE_TRACE
-#include "memory/resourceArea.hpp"
-#include "oops/klass.hpp"
-#include "oops/method.hpp"
-#include "oops/symbol.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 
+class ClassLoaderData;
+class Klass;
+class Method;
+
 class TraceStream : public StackObj {
- private:
-  outputStream& _st;
-
  public:
-  TraceStream(outputStream& stream): _st(stream) {}
-
-  void print_val(const char* label, u1 val) {
-    _st.print("%s = " UINT32_FORMAT, label, val);
+  TraceStream() {
+    assert(tty != NULL, "invariant");
   }
 
-  void print_val(const char* label, u2 val) {
-    _st.print("%s = " UINT32_FORMAT, label, val);
+  void print(const char* val) const {
+    tty->print("%s", val);
   }
 
-  void print_val(const char* label, s2 val) {
-    _st.print("%s = " INT32_FORMAT, label, val);
+  void print_val(const char* label, u1 val) const {
+    tty->print("%s = " UINT32_FORMAT, label, val);
   }
 
-  void print_val(const char* label, u4 val) {
-    _st.print("%s = " UINT32_FORMAT, label, val);
+  void print_val(const char* label, u2 val) const {
+    tty->print("%s = " UINT32_FORMAT, label, val);
   }
 
-  void print_val(const char* label, s4 val) {
-    _st.print("%s = " INT32_FORMAT, label, val);
+  void print_val(const char* label, s2 val) const {
+    tty->print("%s = " INT32_FORMAT, label, val);
   }
 
-  void print_val(const char* label, u8 val) {
-    _st.print("%s = " UINT64_FORMAT, label, val);
+  void print_val(const char* label, u4 val) const {
+    tty->print("%s = " UINT32_FORMAT, label, val);
   }
 
-  void print_val(const char* label, s8 val) {
-    _st.print("%s = " INT64_FORMAT, label, (int64_t) val);
+  void print_val(const char* label, s4 val) const {
+    tty->print("%s = " INT32_FORMAT, label, val);
   }
 
-  void print_val(const char* label, bool val) {
-    _st.print("%s = %s", label, val ? "true" : "false");
+  void print_val(const char* label, u8 val) const {
+    tty->print("%s = " UINT64_FORMAT, label, val);
   }
 
-  void print_val(const char* label, float val) {
-    _st.print("%s = %f", label, val);
+  void print_val(const char* label, s8 val) const {
+    tty->print("%s = " INT64_FORMAT, label, (int64_t) val);
   }
 
-  void print_val(const char* label, double val) {
-    _st.print("%s = %f", label, val);
+  void print_val(const char* label, bool val) const {
+    tty->print("%s = %s", label, val ? "true" : "false");
   }
 
-  void print_val(const char* label, const Klass* const val) {
-    ResourceMark rm;
-    const char* description = "NULL";
-    if (val != NULL) {
-      Symbol* name = val->name();
-      if (name != NULL) {
-        description = name->as_C_string();
-      }
-    }
-    _st.print("%s = %s", label, description);
+  void print_val(const char* label, float val) const {
+    tty->print("%s = %f", label, val);
   }
 
-  void print_val(const char* label, const Method* const val) {
-    ResourceMark rm;
-    const char* description = "NULL";
-    if (val != NULL) {
-      description = val->name_and_sig_as_C_string();
-    }
-    _st.print("%s = %s", label, description);
+  void print_val(const char* label, double val) const {
+    tty->print("%s = %f", label, val);
   }
 
-  void print_val(const char* label, const char* val) {
-    _st.print("%s = '%s'", label, val);
+  void print_val(const char* label, const char* val) const {
+    tty->print("%s = '%s'", label, val);
   }
 
-  void print(const char* val) {
-    _st.print("%s", val);
-  }
+  void print_val(const char* label, const Klass* val) const;
+  void print_val(const char* label, const Method* val) const ;
+  void print_val(const char* label, const ClassLoaderData* cld) const;
 };
 
 #endif // INCLUDE_TRACE

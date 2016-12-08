@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_CLASSFILE_VMSYMBOLS_HPP
 #define SHARE_VM_CLASSFILE_VMSYMBOLS_HPP
 
+#include "classfile/moduleEntry.hpp"
 #include "classfile/vmSymbols_ext.hpp"
 #include "oops/symbol.hpp"
 #include "memory/iterator.hpp"
@@ -50,7 +51,7 @@
 
 #define VM_SYMBOLS_DO(template, do_alias)                                                         \
   /* commonly used class, package, module names */                                                \
-  template(java_base,                                 "java.base")                                \
+  template(java_base,                                 JAVA_BASE_NAME)                             \
   template(java_lang_System,                          "java/lang/System")                         \
   template(java_lang_Object,                          "java/lang/Object")                         \
   template(java_lang_Class,                           "java/lang/Class")                          \

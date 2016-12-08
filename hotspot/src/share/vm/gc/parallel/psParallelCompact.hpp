@@ -965,6 +965,7 @@ class PSParallelCompact : AllStatic {
   friend class AdjustPointerClosure;
   friend class AdjustKlassClosure;
   friend class RefProcTaskProxy;
+  friend class PSParallelCompactTest;
 
  private:
   static STWGCTimer           _gc_timer;
@@ -1100,6 +1101,13 @@ class PSParallelCompact : AllStatic {
 
   // Reset time since last full gc
   static void reset_millis_since_last_gc();
+
+#ifndef PRODUCT
+  // Print generic summary data
+  static void print_generic_summary_data(ParallelCompactData& summary_data,
+                                         HeapWord* const beg_addr,
+                                         HeapWord* const end_addr);
+#endif  // #ifndef PRODUCT
 
  public:
 

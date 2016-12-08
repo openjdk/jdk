@@ -52,7 +52,6 @@ import java.util.stream.Collectors;
  * @library /test/lib /
  * @modules java.management java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox
- * @ignore 8156755
  *
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
