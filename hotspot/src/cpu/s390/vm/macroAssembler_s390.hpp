@@ -574,6 +574,7 @@ class MacroAssembler: public Assembler {
   static int call_far_patchable_ret_addr_offset() { return call_far_patchable_size(); }
 
   static bool call_far_patchable_requires_alignment_nop(address pc) {
+    if (!os::is_MP()) return false;
     int size = call_far_patchable_size();
     return ((intptr_t)(pc + size) & 0x03L) != 0;
   }

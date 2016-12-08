@@ -55,6 +55,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -1933,44 +1934,103 @@ char* SharedRuntime::generate_class_cast_message(
   return generate_class_cast_message(caster_klass, target_klass);
 }
 
+// The caller of class_loader_and_module_name() (or one of its callers)
+// must use a ResourceMark in order to correctly free the result.
+const char* class_loader_and_module_name(Klass* klass) {
+  const char* delim = "/";
+  size_t delim_len = strlen(delim);
+
+  const char* fqn = klass->external_name();
+  // Length of message to return; always include FQN
+  size_t msglen = strlen(fqn) + 1;
+
+  bool has_cl_name = false;
+  bool has_mod_name = false;
+  bool has_version = false;
+
+  // Use class loader name, if exists and not builtin
+  const char* class_loader_name = "";
+  ClassLoaderData* cld = klass->class_loader_data();
+  assert(cld != NULL, "class_loader_data should not be NULL");
+  if (!cld->is_builtin_class_loader_data()) {
+    // If not builtin, look for name
+    oop loader = klass->class_loader();
+    if (loader != NULL) {
+      oop class_loader_name_oop = java_lang_ClassLoader::name(loader);
+      if (class_loader_name_oop != NULL) {
+        class_loader_name = java_lang_String::as_utf8_string(class_loader_name_oop);
+        if (class_loader_name != NULL && class_loader_name[0] != '\0') {
+          has_cl_name = true;
+          msglen += strlen(class_loader_name) + delim_len;
+        }
+      }
+    }
+  }
+
+  const char* module_name = "";
+  const char* version = "";
+  Klass* bottom_klass = klass->is_objArray_klass() ?
+    ObjArrayKlass::cast(klass)->bottom_klass() : klass;
+  if (bottom_klass->is_instance_klass()) {
+    ModuleEntry* module = InstanceKlass::cast(bottom_klass)->module();
+    // Use module name, if exists
+    if (module->is_named()) {
+      has_mod_name = true;
+      module_name = module->name()->as_C_string();
+      msglen += strlen(module_name);
+      // Use version if exists and is not a jdk module
+      if (module->is_non_jdk_module() && module->version() != NULL) {
+        has_version = true;
+        version = module->version()->as_C_string();
+        msglen += strlen("@") + strlen(version);
+      }
+    }
+  } else {
+    // klass is an array of primitives, so its module is java.base
+    module_name = JAVA_BASE_NAME;
+  }
+
+  if (has_cl_name || has_mod_name) {
+    msglen += delim_len;
+  }
+
+  char* message = NEW_RESOURCE_ARRAY_RETURN_NULL(char, msglen);
+
+  // Just return the FQN if error in allocating string
+  if (message == NULL) {
+    return fqn;
+  }
+
+  jio_snprintf(message, msglen, "%s%s%s%s%s%s%s",
+               class_loader_name,
+               (has_cl_name) ? delim : "",
+               (has_mod_name) ? module_name : "",
+               (has_version) ? "@" : "",
+               (has_version) ? version : "",
+               (has_cl_name || has_mod_name) ? delim : "",
+               fqn);
+  return message;
+}
+
 char* SharedRuntime::generate_class_cast_message(
     Klass* caster_klass, Klass* target_klass) {
 
-  const char* caster_klass_name = caster_klass->external_name();
-  Klass* c_klass = caster_klass->is_objArray_klass() ?
-    ObjArrayKlass::cast(caster_klass)->bottom_klass() : caster_klass;
-  ModuleEntry* caster_module;
-  const char* caster_module_name;
-  if (c_klass->is_instance_klass()) {
-    caster_module = InstanceKlass::cast(c_klass)->module();
-    caster_module_name = caster_module->is_named() ?
-      caster_module->name()->as_C_string() : UNNAMED_MODULE;
-  } else {
-    caster_module_name = "java.base";
-  }
-  const char* target_klass_name = target_klass->external_name();
-  Klass* t_klass = target_klass->is_objArray_klass() ?
-    ObjArrayKlass::cast(target_klass)->bottom_klass() : target_klass;
-  ModuleEntry* target_module;
-  const char* target_module_name;
-  if (t_klass->is_instance_klass()) {
-    target_module = InstanceKlass::cast(t_klass)->module();
-    target_module_name = target_module->is_named() ?
-      target_module->name()->as_C_string(): UNNAMED_MODULE;
-  } else {
-    target_module_name = "java.base";
-  }
+  const char* caster_name = class_loader_and_module_name(caster_klass);
 
-  size_t msglen = strlen(caster_klass_name) + strlen(caster_module_name) +
-     strlen(target_klass_name) + strlen(target_module_name) + 50;
+  const char* target_name = class_loader_and_module_name(target_klass);
 
-  char* message = NEW_RESOURCE_ARRAY(char, msglen);
-  if (NULL == message) {
+  size_t msglen = strlen(caster_name) + strlen(" cannot be cast to ") + strlen(target_name) + 1;
+
+  char* message = NEW_RESOURCE_ARRAY_RETURN_NULL(char, msglen);
+  if (message == NULL) {
     // Shouldn't happen, but don't cause even more problems if it does
-    message = const_cast<char*>(caster_klass_name);
+    message = const_cast<char*>(caster_klass->external_name());
   } else {
-    jio_snprintf(message, msglen, "%s (in module: %s) cannot be cast to %s (in module: %s)",
-      caster_klass_name, caster_module_name, target_klass_name, target_module_name);
+    jio_snprintf(message,
+                 msglen,
+                 "%s cannot be cast to %s",
+                 caster_name,
+                 target_name);
   }
   return message;
 }
@@ -2540,6 +2600,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* finger
 AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& method) {
   AdapterHandlerEntry* entry = get_adapter0(method);
   if (method->is_shared()) {
+    // See comments around Method::link_method()
     MutexLocker mu(AdapterHandlerLibrary_lock);
     if (method->adapter() == NULL) {
       method->update_adapter_trampoline(entry);
@@ -2549,6 +2610,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
       CodeBuffer buffer(trampoline, (int)SharedRuntime::trampoline_size());
       MacroAssembler _masm(&buffer);
       SharedRuntime::generate_trampoline(&_masm, entry->get_c2i_entry());
+      assert(*(int*)trampoline != 0, "Instruction(s) for trampoline must not be encoded as zeros.");
 
       if (PrintInterpreter) {
         Disassembler::decode(buffer.insts_begin(), buffer.insts_end());
