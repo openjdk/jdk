@@ -407,10 +407,8 @@ void InterpreterMacroAssembler::jump_from_interpreted(Register method, Register 
     // JVMTI events, such as single-stepping, are implemented partly by avoiding running
     // compiled code in threads for which the event is enabled.  Check here for
     // interp_only_mode if these events CAN be enabled.
-    // interp_only is an int, on little endian it is sufficient to test the byte only
-    // Is a cmpl faster?
-    ldr(rscratch1, Address(rthread, JavaThread::interp_only_mode_offset()));
-    cbz(rscratch1, run_compiled_code);
+    ldrw(rscratch1, Address(rthread, JavaThread::interp_only_mode_offset()));
+    cbzw(rscratch1, run_compiled_code);
     ldr(rscratch1, Address(method, Method::interpreter_entry_offset()));
     br(rscratch1);
     bind(run_compiled_code);

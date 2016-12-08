@@ -280,8 +280,25 @@
   static_field(StubRoutines,                _aescrypt_decryptBlock,                           address)                               \
   static_field(StubRoutines,                _cipherBlockChaining_encryptAESCrypt,             address)                               \
   static_field(StubRoutines,                _cipherBlockChaining_decryptAESCrypt,             address)                               \
+  static_field(StubRoutines,                _counterMode_AESCrypt,                            address)                               \
+  static_field(StubRoutines,                _ghash_processBlocks,                             address)                               \
+  static_field(StubRoutines,                _sha1_implCompress,                               address)                               \
+  static_field(StubRoutines,                _sha1_implCompressMB,                             address)                               \
+  static_field(StubRoutines,                _sha256_implCompress,                             address)                               \
+  static_field(StubRoutines,                _sha256_implCompressMB,                           address)                               \
+  static_field(StubRoutines,                _sha512_implCompress,                             address)                               \
+  static_field(StubRoutines,                _sha512_implCompressMB,                           address)                               \
   static_field(StubRoutines,                _updateBytesCRC32,                                address)                               \
   static_field(StubRoutines,                _crc_table_adr,                                   address)                               \
+  static_field(StubRoutines,                _crc32c_table_addr,                               address)                               \
+  static_field(StubRoutines,                _updateBytesCRC32C,                               address)                               \
+  static_field(StubRoutines,                _updateBytesAdler32,                              address)                               \
+  static_field(StubRoutines,                _multiplyToLen,                                   address)                               \
+  static_field(StubRoutines,                _squareToLen,                                     address)                               \
+  static_field(StubRoutines,                _mulAdd,                                          address)                               \
+  static_field(StubRoutines,                _montgomeryMultiply,                              address)                               \
+  static_field(StubRoutines,                _montgomerySquare,                                address)                               \
+  static_field(StubRoutines,                _vectorizedMismatch,                              address)                               \
                                                                                                                                      \
   nonstatic_field(Thread,                   _tlab,                                            ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                   _allocated_bytes,                                 jlong)                                 \

@@ -41,7 +41,6 @@ void InternalVMTests::run_test(const char* name, void (*test)()) {
 
 void InternalVMTests::run() {
   tty->print_cr("Running internal VM tests");
-  run_unit_test(test_semaphore);
   run_unit_test(TestReservedSpace_test);
   run_unit_test(TestReserveMemorySpecial_test);
   run_unit_test(TestVirtualSpace_test);
@@ -49,8 +48,6 @@ void InternalVMTests::run() {
   run_unit_test(TestVirtualSpaceNode_test);
   run_unit_test(TestGlobalDefinitions_test);
   run_unit_test(GCTimer_test);
-  run_unit_test(CollectedHeap_test);
-  run_unit_test(TestBitMap_test);
   run_unit_test(ObjectMonitor_test);
   run_unit_test(DirectivesParser_test);
 #if INCLUDE_VM_STRUCTS

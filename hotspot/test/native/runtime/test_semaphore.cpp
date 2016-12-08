@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,16 +19,11 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
 #include "precompiled.hpp"
-#include "utilities/debug.hpp"
 #include "runtime/semaphore.hpp"
-
-/////////////// Unit tests ///////////////
-
-#ifndef PRODUCT
+#include "unittest.hpp"
 
 static void test_semaphore_single_separate(uint count) {
   Semaphore sem(0);
@@ -67,7 +62,19 @@ static void test_semaphore_many(uint value, uint max, uint increments) {
   }
 }
 
-static void test_semaphore_many() {
+TEST(Semaphore, single_separate) {
+  for (uint i = 1; i < 10; i++) {
+    test_semaphore_single_separate(i);
+  }
+}
+
+TEST(Semaphore, single_combined) {
+  for (uint i = 1; i < 10; i++) {
+    test_semaphore_single_combined(i);
+  }
+}
+
+TEST(Semaphore, many) {
   for (uint max = 0; max < 10; max++) {
     for (uint value = 0; value < max; value++) {
       for (uint inc = 1; inc <= max - value; inc++) {
@@ -76,18 +83,3 @@ static void test_semaphore_many() {
     }
   }
 }
-
-void test_semaphore() {
-  for (uint i = 1; i < 10; i++) {
-    test_semaphore_single_separate(i);
-  }
-
-  for (uint i = 0; i < 10; i++) {
-    test_semaphore_single_combined(i);
-  }
-
-  test_semaphore_many();
-}
-
-#endif // PRODUCT
-

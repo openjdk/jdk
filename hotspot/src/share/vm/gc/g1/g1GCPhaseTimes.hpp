@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_G1_G1GCPHASETIMES_HPP
 #define SHARE_VM_GC_G1_G1GCPHASETIMES_HPP
 
+#include "logging/logLevel.hpp"
 #include "memory/allocation.hpp"
 
 class LineBuffer;
@@ -129,12 +130,24 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double worker_time(GCParPhases phase, uint worker);
   void note_gc_end();
+  void reset();
 
   template <class T>
-  void details(T* phase, const char* indent);
-  void log_phase(WorkerDataArray<double>* phase, uint indent, outputStream* out, bool print_sum);
-  void debug_phase(WorkerDataArray<double>* phase);
-  void trace_phase(WorkerDataArray<double>* phase, bool print_sum = true);
+  void details(T* phase, const char* indent) const;
+
+  void log_phase(WorkerDataArray<double>* phase, uint indent, outputStream* out, bool print_sum) const;
+  void debug_phase(WorkerDataArray<double>* phase) const;
+  void trace_phase(WorkerDataArray<double>* phase, bool print_sum = true) const;
+
+  void info_time(const char* name, double value) const;
+  void debug_time(const char* name, double value) const;
+  void trace_time(const char* name, double value) const;
+  void trace_count(const char* name, size_t value) const;
+
+  double print_pre_evacuate_collection_set() const;
+  double print_evacuate_collection_set() const;
+  double print_post_evacuate_collection_set() const;
+  void print_other(double accounted_ms) const;
 
  public:
   G1GCPhaseTimes(uint max_gc_threads);
