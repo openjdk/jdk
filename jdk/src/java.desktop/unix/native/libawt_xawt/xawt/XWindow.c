@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -863,10 +863,10 @@ isKPevent(XEvent *event)
 }
 static void
 dumpKeysymArray(XEvent *event) {
-    printf("    0x%X\n",keycodeToKeysym(event->xkey.display, event->xkey.keycode, 0));
-    printf("    0x%X\n",keycodeToKeysym(event->xkey.display, event->xkey.keycode, 1));
-    printf("    0x%X\n",keycodeToKeysym(event->xkey.display, event->xkey.keycode, 2));
-    printf("    0x%X\n",keycodeToKeysym(event->xkey.display, event->xkey.keycode, 3));
+    printf("    0x%lX\n", (unsigned long)keycodeToKeysym(event->xkey.display, event->xkey.keycode, 0));
+    printf("    0x%lX\n", (unsigned long)keycodeToKeysym(event->xkey.display, event->xkey.keycode, 1));
+    printf("    0x%lX\n", (unsigned long)keycodeToKeysym(event->xkey.display, event->xkey.keycode, 2));
+    printf("    0x%lX\n", (unsigned long)keycodeToKeysym(event->xkey.display, event->xkey.keycode, 3));
 }
 /*
  * In a next redesign, get rid of this code altogether.

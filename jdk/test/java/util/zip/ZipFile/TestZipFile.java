@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8142508 8146431
+ * @modules java.base/java.util.zip:open
  * @summary Tests various ZipFile apis
  * @run main/manual TestZipFile
  */

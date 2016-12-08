@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8024500 8166446
  * @run testng SingletonIterator
  */
 
@@ -38,6 +39,15 @@ import static org.testng.Assert.fail;
 
 @Test(groups = "unit")
 public class SingletonIterator {
+    static void assertIteratorExhausted(Iterator<?> it) {
+        assertFalse(it.hasNext());
+        try {
+            it.next();
+            fail("should have thrown NoSuchElementException");
+        } catch (NoSuchElementException success) { }
+        it.forEachRemaining(e -> { throw new AssertionError("action called incorrectly"); });
+    }
+
     public void testForEachRemaining() {
         Iterator<String> it = Collections.singleton("TheOne").iterator();
         AtomicInteger cnt = new AtomicInteger(0);
@@ -48,13 +58,18 @@ public class SingletonIterator {
         });
 
         assertEquals(cnt.get(), 1);
-        assertFalse(it.hasNext());
+        assertIteratorExhausted(it);
+    }
+
+    static class SingletonException extends RuntimeException { }
+
+    public void testThrowFromForEachRemaining() {
+        Iterator<String> it = Collections.singleton("TheOne").iterator();
 
         try {
-            String str = it.next();
-            fail("Should throw NoSuchElementException at end");
-        } catch (NoSuchElementException ex) {
-            // ignore;
-        }
+            it.forEachRemaining(s -> { throw new SingletonException(); });
+        } catch (SingletonException ignore) { }
+
+        assertIteratorExhausted(it);
     }
 }
