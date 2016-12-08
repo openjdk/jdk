@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -697,14 +697,8 @@ err:
 }
 
 /**local function **/
-bool exists(const char *fname)
-{
-  int fd;
-  if ((fd = open(fname, O_RDONLY)) > 0) {
-    close(fd);
-    return true;
-  }
-  return false;
+bool exists(const char *fname) {
+  return access(fname, F_OK) == 0;
 }
 
 // we check: 1. lib

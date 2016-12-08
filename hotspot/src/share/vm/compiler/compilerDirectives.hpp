@@ -64,7 +64,7 @@
     cflags(TraceOptoOutput,         bool, false, TraceOptoOutput) \
     cflags(TraceSpilling,           bool, TraceSpilling, TraceSpilling) \
     cflags(Vectorize,               bool, false, Vectorize) \
-    cflags(VectorizeDebug,          bool, false, VectorizeDebug) \
+    cflags(VectorizeDebug,         uintx, 0, VectorizeDebug) \
     cflags(CloneMapDebug,           bool, false, CloneMapDebug) \
     cflags(DoReserveCopyInSuperWordDebug, bool, false, DoReserveCopyInSuperWordDebug) \
     cflags(IGVPrintLevel,           intx, PrintIdealGraphLevel, IGVPrintLevel) \
@@ -140,6 +140,7 @@ public:
   compilerdirectives_c1_flags(set_function_definition)
 
   void print_intx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" INTX_FORMAT " ", n, v); } }
+  void print_uintx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" UINTX_FORMAT " ", n, v); } }
   void print_bool(outputStream* st, ccstr n, bool v, bool mod) { if (mod) { st->print("%s:%s ", n, v ? "true" : "false"); } }
   void print_double(outputStream* st, ccstr n, double v, bool mod) { if (mod) { st->print("%s:%f ", n, v); } }
   void print_ccstr(outputStream* st, ccstr n, ccstr v, bool mod) { if (mod) { st->print("%s:%s ", n, v); } }

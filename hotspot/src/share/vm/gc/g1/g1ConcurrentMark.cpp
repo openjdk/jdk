@@ -2009,10 +2009,10 @@ public:
   { }
 
   void operator()(oop obj) const {
-    guarantee(obj->is_oop(),
+    guarantee(G1CMObjArrayProcessor::is_array_slice(obj) || obj->is_oop(),
               "Non-oop " PTR_FORMAT ", phase: %s, info: %d",
               p2i(obj), _phase, _info);
-    guarantee(!_g1h->obj_in_cs(obj),
+    guarantee(G1CMObjArrayProcessor::is_array_slice(obj) || !_g1h->obj_in_cs(obj),
               "obj: " PTR_FORMAT " in CSet, phase: %s, info: %d",
               p2i(obj), _phase, _info);
   }
@@ -2436,6 +2436,7 @@ bool G1CMTask::get_entries_from_global_stack() {
     if (elem == NULL) {
       break;
     }
+    assert(G1CMObjArrayProcessor::is_array_slice(elem) || elem->is_oop(), "Element " PTR_FORMAT " must be an array slice or oop", p2i(elem));
     bool success = _task_queue->push(elem);
     // We only call this when the local queue is empty or under a
     // given target limit. So, we do not expect this push to fail.
@@ -2448,7 +2449,9 @@ bool G1CMTask::get_entries_from_global_stack() {
 }
 
 void G1CMTask::drain_local_queue(bool partially) {
-  if (has_aborted()) return;
+  if (has_aborted()) {
+    return;
+  }
 
   // Decide what the target size is, depending whether we're going to
   // drain it partially (so that other tasks can steal if they run out
@@ -2464,12 +2467,7 @@ void G1CMTask::drain_local_queue(bool partially) {
     oop obj;
     bool ret = _task_queue->pop_local(obj);
     while (ret) {
-      assert(_g1h->is_in_g1_reserved((HeapWord*) obj), "invariant" );
-      assert(!_g1h->is_on_master_free_list(
-                  _g1h->heap_region_containing((HeapWord*) obj)), "invariant");
-
       scan_object(obj);
-
       if (_task_queue->size() <= target_size || has_aborted()) {
         ret = false;
       } else {
@@ -2880,8 +2878,6 @@ void G1CMTask::do_marking_step(double time_target_ms,
     while (!has_aborted()) {
       oop obj;
       if (_cm->try_stealing(_worker_id, &_hash_seed, obj)) {
-        assert(_nextMarkBitMap->isMarked((HeapWord*) obj),
-               "any stolen object should be marked");
         scan_object(obj);
 
         // And since we're towards the end, let's totally drain the
@@ -3003,6 +2999,7 @@ G1CMTask::G1CMTask(uint worker_id,
                    G1CMTaskQueueSet* task_queues)
   : _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id), _cm(cm),
+    _objArray_processor(this),
     _claimed(false),
     _nextMarkBitMap(NULL), _hash_seed(17),
     _task_queue(task_queue),

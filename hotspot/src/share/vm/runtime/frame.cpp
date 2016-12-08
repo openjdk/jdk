@@ -664,8 +664,10 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
         if (module->is_named()) {
           module->name()->as_C_string(buf, buflen);
           st->print(" %s", buf);
-          module->version()->as_C_string(buf, buflen);
-          st->print("@%s", buf);
+          if (module->version() != NULL) {
+            module->version()->as_C_string(buf, buflen);
+            st->print("@%s", buf);
+          }
         }
       } else {
         st->print("j  " PTR_FORMAT, p2i(pc()));
@@ -694,8 +696,10 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
         if (module->is_named()) {
           module->name()->as_C_string(buf, buflen);
           st->print(" %s", buf);
-          module->version()->as_C_string(buf, buflen);
-          st->print("@%s", buf);
+          if (module->version() != NULL) {
+            module->version()->as_C_string(buf, buflen);
+            st->print("@%s", buf);
+          }
         }
         st->print(" (%d bytes) @ " PTR_FORMAT " [" PTR_FORMAT "+" INTPTR_FORMAT "]",
                   m->code_size(), p2i(_pc), p2i(_cb->code_begin()), _pc - _cb->code_begin());

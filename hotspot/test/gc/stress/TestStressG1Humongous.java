@@ -21,7 +21,7 @@
  * questions.
  */
 
- /*
+/*
  * @test TestStressG1Humongous
  * @key gc
  * @key stress
@@ -42,8 +42,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestStressG1Humongous {
@@ -56,7 +54,7 @@ public class TestStressG1Humongous {
     private static final int NUMBER_OF_FREE_REGIONS = 2;
 
     private volatile boolean isRunning;
-    private final ExecutorService threadExecutor;
+    private final Thread[] threads;
     private final AtomicInteger alocatedObjectsCount;
     private CountDownLatch countDownLatch;
     public static final List<Object> GARBAGE = Collections.synchronizedList(new ArrayList<>());
@@ -67,12 +65,12 @@ public class TestStressG1Humongous {
 
     public TestStressG1Humongous() {
         isRunning = true;
-        threadExecutor = Executors.newFixedThreadPool(THREAD_COUNT + 1);
+        threads = new Thread[THREAD_COUNT];
         alocatedObjectsCount = new AtomicInteger(0);
     }
 
     private void run() throws InterruptedException {
-        threadExecutor.submit(new Timer());
+        new Thread(new Timer()).start();
         int checkedAmountOfHObjects = getExpectedAmountOfObjects();
         while (isRunning()) {
             countDownLatch = new CountDownLatch(THREAD_COUNT);
@@ -82,7 +80,6 @@ public class TestStressG1Humongous {
             System.out.println("Allocated " + alocatedObjectsCount.get() + " objects.");
             alocatedObjectsCount.set(0);
         }
-        threadExecutor.shutdown();
         System.out.println("Done!");
     }
 
@@ -110,9 +107,12 @@ public class TestStressG1Humongous {
         int objectsPerThread = totalObjects / THREAD_COUNT;
         int objectsForLastThread = objectsPerThread + totalObjects % THREAD_COUNT;
         for (int i = 0; i < THREAD_COUNT - 1; ++i) {
-            threadExecutor.submit(new AllocationThread(countDownLatch, objectsPerThread, alocatedObjectsCount));
+            threads[i] = new Thread(new AllocationThread(countDownLatch, objectsPerThread, alocatedObjectsCount));
         }
-        threadExecutor.submit(new AllocationThread(countDownLatch, objectsForLastThread, alocatedObjectsCount));
+        threads[THREAD_COUNT - 1] = new Thread(new AllocationThread(countDownLatch, objectsForLastThread, alocatedObjectsCount));
+        for (int i = 0; i < THREAD_COUNT; ++i) {
+            threads[i].start();
+        }
     }
 
     /**
