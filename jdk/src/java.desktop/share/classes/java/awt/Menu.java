@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
+import java.awt.event.KeyEvent;
+import java.awt.peer.MenuPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.util.Vector;
 import java.util.Enumeration;
-import java.awt.peer.MenuPeer;
-import java.awt.event.KeyEvent;
-import javax.accessibility.*;
+import java.util.Vector;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+
 import sun.awt.AWTAccessor;
 
 /**
@@ -78,7 +83,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * @serial
      * @see #countItems()
      */
-    Vector<MenuItem> items = new Vector<>();
+    private final Vector<MenuItem> items = new Vector<>();
 
     /**
      * This field indicates whether the menu has the
@@ -92,7 +97,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * @serial
      * @see #isTearOff()
      */
-    boolean             tearOff;
+    private final boolean tearOff;
 
     /**
      * This field will be set to {@code true}
@@ -102,7 +107,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      *
      * @serial
      */
-    boolean             isHelpMenu;
+    volatile boolean isHelpMenu;
 
     private static final String base = "menu";
     private static int nameCounter = 0;
@@ -415,8 +420,8 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
             if (peer != null) {
                 peer.delItem(index);
                 mi.removeNotify();
-                mi.parent = null;
             }
+            mi.parent = null;
         }
     }
 
