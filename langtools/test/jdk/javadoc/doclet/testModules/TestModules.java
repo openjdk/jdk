@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363 8168766
+ * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363 8168766 8168688
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -56,6 +56,7 @@ public class TestModules extends JavadocTester {
         checkModuleClickThrough(true);
         checkModuleFilesAndLinks(true);
         checkModulesInSearch(true);
+        checkOverviewFrame(true);
     }
 
     /**
@@ -76,6 +77,7 @@ public class TestModules extends JavadocTester {
         checkModuleClickThrough(true);
         checkModuleFilesAndLinks(true);
         checkModulesInSearch(true);
+        checkOverviewFrame(true);
     }
 
     /**
@@ -92,6 +94,7 @@ public class TestModules extends JavadocTester {
         checkNoDescription(true);
         checkModuleLink();
         checkModuleFilesAndLinks(true);
+        checkOverviewFrame(true);
     }
 
     /**
@@ -108,6 +111,7 @@ public class TestModules extends JavadocTester {
         checkHtml5NoDescription(true);
         checkModuleLink();
         checkModuleFilesAndLinks(true);
+        checkOverviewFrame(true);
     }
 
     /**
@@ -123,6 +127,7 @@ public class TestModules extends JavadocTester {
         checkModuleClickThrough(false);
         checkModuleFilesAndLinks(false);
         checkModulesInSearch(false);
+        checkOverviewFrame(false);
     }
 
     /**
@@ -137,6 +142,7 @@ public class TestModules extends JavadocTester {
         checkHtml5OverviewSummaryPackages();
         checkModuleFilesAndLinks(false);
         checkModulesInSearch(false);
+        checkOverviewFrame(false);
     }
 
     /**
@@ -179,6 +185,7 @@ public class TestModules extends JavadocTester {
                 "testpkgmdl1");
         checkExit(Exit.OK);
         checkModuleFilesAndLinks(true);
+        checkNegatedOverviewFrame();
     }
 
     /**
@@ -620,4 +627,18 @@ public class TestModules extends JavadocTester {
         checkOutput("module2-summary.html", false,
                 "@AnnotationTypeUndocumented");
 }
+
+    void checkOverviewFrame(boolean found) {
+        checkOutput("index.html", !found,
+                "<iframe src=\"overview-frame.html\" name=\"packageListFrame\" title=\"All Packages\"></iframe>");
+        checkOutput("index.html", found,
+                "<iframe src=\"module-overview-frame.html\" name=\"packageListFrame\" title=\"All Modules\"></iframe>");
+}
+
+    void checkNegatedOverviewFrame() {
+        checkOutput("index.html", false,
+                "<iframe src=\"overview-frame.html\" name=\"packageListFrame\" title=\"All Packages\"></iframe>");
+        checkOutput("index.html", false,
+                "<iframe src=\"module-overview-frame.html\" name=\"packageListFrame\" title=\"All Modules\"></iframe>");
+    }
 }
