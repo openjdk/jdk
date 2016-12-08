@@ -291,7 +291,6 @@ java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java 8062512 
 
 java/util/BitSet/BitSetStreamTest.java                          8079538 generic-all
 
-java/util/Locale/LocaleTest.java                                8170840 generic-all
 
 ############################################################################
 
