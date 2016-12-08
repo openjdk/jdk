@@ -657,13 +657,11 @@ public class ObjectInputStream
      * <pre>
      *     Class.forName(desc.getName(), false, loader)
      * </pre>
-     * where <code>loader</code> is determined as follows: if there is a
-     * method on the current thread's stack whose declaring class is not a
-     * <a href="../lang/ClassLoader.html#builtinLoaders">
-     * <em>platform class</em></a>, then <code>loader</code> is
-     * the class loader of such class; otherwise, <code>loader</code>
-     * is the {@linkplain ClassLoader#getPlatformClassLoader()
-     * platform class loader}.  If this call results in a
+     * where <code>loader</code> is the first class loader on the current
+     * thread's stack (starting from the currently executing method) that is
+     * neither the {@linkplain ClassLoader#getPlatformClassLoader() platform
+     * class loader} nor its ancestor; otherwise, <code>loader</code> is the
+     * <em>platform class loader</em>. If this call results in a
      * <code>ClassNotFoundException</code> and the name of the passed
      * <code>ObjectStreamClass</code> instance is the Java language keyword
      * for a primitive type or void, then the <code>Class</code> object
@@ -721,13 +719,11 @@ public class ObjectInputStream
      * <pre>
      *     Class.forName(i, false, loader)
      * </pre>
-     * where <code>loader</code> is determined as follows: if there is a
-     * method on the current thread's stack whose declaring class is not a
-     * <a href="../lang/ClassLoader.html#builtinLoaders">
-     * <em>platform class</em></a>, then <code>loader</code> is
-     * the class loader of such class; otherwise, <code>loader</code>
-     * is the {@linkplain ClassLoader#getPlatformClassLoader()
-     * platform class loader}.
+     * where <code>loader</code> is the first class loader on the current
+     * thread's stack (starting from the currently executing method) that is
+     * neither the {@linkplain ClassLoader#getPlatformClassLoader() platform
+     * class loader} nor its ancestor; otherwise, <code>loader</code> is the
+     * <em>platform class loader</em>.
      * Unless any of the resolved interfaces are non-public, this same value
      * of <code>loader</code> is also the class loader passed to
      * <code>Proxy.getProxyClass</code>; if non-public interfaces are present,
@@ -1168,6 +1164,13 @@ public class ObjectInputStream
      * for each class and reference in the stream.
      * The filter can check any or all of the class, the array length, the number
      * of references, the depth of the graph, and the size of the input stream.
+     * The depth is the number of nested {@linkplain #readObject readObject}
+     * calls starting with the reading of the root of the graph being deserialized
+     * and the current object being deserialized.
+     * The number of references is the cumulative number of objects and references
+     * to objects already read from the stream including the current object being read.
+     * The filter is invoked only when reading objects from the stream and for
+     * not primitives.
      * <p>
      * If the filter returns {@link ObjectInputFilter.Status#REJECTED Status.REJECTED},
      * {@code null} or throws a {@link RuntimeException},
@@ -1182,8 +1185,9 @@ public class ObjectInputStream
      *
      * @implSpec
      * The filter, when not {@code null}, is invoked during {@link #readObject readObject}
-     * and {@link #readUnshared readUnshared} for each object
-     * (regular or class) in the stream including the following:
+     * and {@link #readUnshared readUnshared} for each object (regular or class) in the stream.
+     * Strings are treated as primitives and do not invoke the filter.
+     * The filter is called for:
      * <ul>
      *     <li>each object reference previously deserialized from the stream
      *     (class is {@code null}, arrayLength is -1),
@@ -2370,16 +2374,10 @@ public class ObjectInputStream
                                               int ndoubles);
 
     /**
-     * Returns the first non-null and non-platform class loader
-     * (not counting class loaders of generated reflection implementation classes)
-     * up the execution stack, or null if only code from the bootstrap and
-     * platform class loader is on the stack.
-     * This method is also called via reflection by the following RMI-IIOP class:
-     *
-     *     com.sun.corba.se.internal.util.JDKClassLoader
-     *
-     * This method should not be removed or its signature changed without
-     * corresponding modifications to the above class.
+     * Returns the first non-null and non-platform class loader (not counting
+     * class loaders of generated reflection implementation classes) up the
+     * execution stack, or the platform class loader if only code from the
+     * bootstrap and platform class loader is on the stack.
      */
     private static ClassLoader latestUserDefinedLoader() {
         return jdk.internal.misc.VM.latestUserDefinedLoader();

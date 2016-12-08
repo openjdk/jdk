@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -34,7 +34,7 @@
  *   Dr Vipul Gupta <vipul.gupta@sun.com> and
  *   Douglas Stebila <douglas@stebila.ca>, Sun Microsystems Laboratories
  *
- * Last Modified Date from the Original Code: April 2015
+ * Last Modified Date from the Original Code: Nov 2016
  *********************************************************************** */
 
 #include "mplogic.h"
@@ -258,6 +258,7 @@ ec_NewKey(ECParams *ecParams, ECPrivateKey **privKey,
 #if EC_DEBUG
     printf("ec_NewKey called\n");
 #endif
+    k.dp = (mp_digit*)NULL;
 
     if (!ecParams || !privKey || !privKeyBytes || (privKeyLen < 0)) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);

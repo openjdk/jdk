@@ -43,7 +43,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Illegal.option.option", "Otill\u00E5tet alternativ: {0}"},
         {"Usage.policytool.options.", "Syntax: policytool [alternativ]"},
         {".file.file.policy.file.location",
-                "  [-file <fil>]    policyfilens plats"},
+                "  [-file <fil>]    policyfiladress"},
         {"New", "&Nytt"},
         {"Open", "&\u00D6ppna..."},
         {"Save", "S&para"},

@@ -126,16 +126,24 @@ public class Resources_fr extends java.util.ListResourceBundle {
                 "taille en bits de la cl\u00E9"}, //-keysize
         {"keystore.name",
                 "nom du fichier de cl\u00E9s"}, //-keystore
+        {"access.the.cacerts.keystore",
+                "acc\u00E9der au fichier de cl\u00E9s cacerts"}, // -cacerts
+        {"warning.cacerts.option",
+                "Avertissement : utiliser l'option -cacerts pour acc\u00E9der au fichier de cl\u00E9s cacerts"},
         {"new.password",
                 "nouveau mot de passe"}, //-new
         {"do.not.prompt",
                 "ne pas inviter"}, //-noprompt
         {"password.through.protected.mechanism",
                 "mot de passe via m\u00E9canisme prot\u00E9g\u00E9"}, //-protected
-        {"provider.argument",
-                "argument du fournisseur"}, //-providerarg
-        {"provider.class.name",
-                "nom de la classe de fournisseur"}, //-providerclass
+
+        // The following 2 values should span 2 lines, the first for the
+        // option itself, the second for its -providerArg value.
+        {"addprovider.option",
+                "ajouter un fournisseur de s\u00E9curit\u00E9 par nom (par ex. SunPKCS11)\nconfigurer l'argument pour -addprovider"}, //-addprovider
+        {"provider.class.option",
+                "ajouter un fournisseur de s\u00E9curit\u00E9 par nom de classe qualifi\u00E9 complet\nconfigurer l'argument pour -providerclass"}, //-providerclass
+
         {"provider.name",
                 "nom du fournisseur"}, //-providername
         {"provider.classpath",
@@ -187,6 +195,8 @@ public class Resources_fr extends java.util.ListResourceBundle {
         {"Command.option.flag.needs.an.argument.", "L''option de commande {0} requiert un argument."},
         {"Warning.Different.store.and.key.passwords.not.supported.for.PKCS12.KeyStores.Ignoring.user.specified.command.value.",
                 "Avertissement\u00A0: les mots de passe de cl\u00E9 et de banque distincts ne sont pas pris en charge pour les fichiers de cl\u00E9s d''acc\u00E8s PKCS12. La valeur {0} sp\u00E9cifi\u00E9e par l''utilisateur est ignor\u00E9e."},
+        {"the.keystore.or.storetype.option.cannot.be.used.with.the.cacerts.option",
+            "Les options -keystore ou -storetype ne peuvent pas \u00EAtre utilis\u00E9es avec l'option -cacerts"},
         {".keystore.must.be.NONE.if.storetype.is.{0}",
                 "-keystore doit \u00EAtre d\u00E9fini sur NONE si -storetype est {0}"},
         {"Too.many.retries.program.terminated",
@@ -208,7 +218,9 @@ public class Resources_fr extends java.util.ListResourceBundle {
         {"Illegal.startdate.value", "Valeur de date de d\u00E9but non admise"},
         {"Validity.must.be.greater.than.zero",
                 "La validit\u00E9 doit \u00EAtre sup\u00E9rieure \u00E0 z\u00E9ro"},
-        {"provName.not.a.provider", "{0} n''est pas un fournisseur"},
+        {"provclass.not.a.provider", "%s n'est pas un fournisseur"},
+        {"provider.name.not.found", "Fournisseur nomm\u00E9 \"%s\" introuvable"},
+        {"provider.class.not.found", "Fournisseur \"%s\" introuvable"},
         {"Usage.error.no.command.provided", "Erreur de syntaxe\u00A0: aucune commande fournie"},
         {"Source.keystore.file.exists.but.is.empty.", "Le fichier de cl\u00E9s source existe mais il est vide : "},
         {"Please.specify.srckeystore", "Indiquez -srckeystore"},
