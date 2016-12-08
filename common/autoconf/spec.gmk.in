@@ -220,6 +220,7 @@ JDK_VARIANT:=@JDK_VARIANT@
 
 # Which JVM variants to build (space-separated list)
 JVM_VARIANTS := @JVM_VARIANTS@
+JVM_VARIANT_MAIN := @JVM_VARIANT_MAIN@
 
 # Lists of features per variant. Only relevant for the variants listed in
 # JVM_VARIANTS.
@@ -272,8 +273,6 @@ JAVADOC_OUTPUTDIR = $(DOCS_IMAGE_DIR)
 # This does not get overridden in a bootcycle build
 CONFIGURESUPPORT_OUTPUTDIR:=@CONFIGURESUPPORT_OUTPUTDIR@
 BUILDJDK_OUTPUTDIR=$(BUILD_OUTPUT)/buildjdk
-
-HOTSPOT_DIST=@HOTSPOT_DIST@
 
 BUILD_HOTSPOT=@BUILD_HOTSPOT@
 

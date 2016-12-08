@@ -111,8 +111,23 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_VARIANTS],
     AC_MSG_ERROR([You cannot build multiple variants with anything else than $VALID_MULTIPLE_JVM_VARIANTS.])
   fi
 
+  # The "main" variant is the one used by other libs to link against during the
+  # build.
+  if test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = "xtrue"; then
+    MAIN_VARIANT_PRIO_ORDER="server client minimal"
+    for variant in $MAIN_VARIANT_PRIO_ORDER; do
+      if HOTSPOT_CHECK_JVM_VARIANT($variant); then
+        JVM_VARIANT_MAIN="$variant"
+        break
+      fi
+    done
+  else
+    JVM_VARIANT_MAIN="$JVM_VARIANTS"
+  fi
+
   AC_SUBST(JVM_VARIANTS)
   AC_SUBST(VALID_JVM_VARIANTS)
+  AC_SUBST(JVM_VARIANT_MAIN)
 
   if HOTSPOT_CHECK_JVM_VARIANT(zero) || HOTSPOT_CHECK_JVM_VARIANT(zeroshark); then
     # zero behaves as a platform and rewrites these values. This is really weird. :(
