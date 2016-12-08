@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -315,10 +315,14 @@ public abstract class MethodImpl extends TypeComponentImpl
             return;
         }
         Value nthArgValue = arguments.get(paramCount - 1);
-        if (nthArgValue == null) {
+        if (nthArgValue == null && argCount == paramCount) {
+            // We have one varargs parameter and it is null
+            // so we don't have to do anything.
             return;
         }
-        Type nthArgType = nthArgValue.type();
+        // If the first varargs parameter is null, then don't
+        // access its type since it can't be an array.
+        Type nthArgType = (nthArgValue == null) ? null : nthArgValue.type();
         if (nthArgType instanceof ArrayTypeImpl) {
             if (argCount == paramCount &&
                 ((ArrayTypeImpl)nthArgType).isAssignableTo(lastParamType)) {
