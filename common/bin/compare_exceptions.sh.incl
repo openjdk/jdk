@@ -57,21 +57,21 @@ if [ "$OPENJDK_TARGET_OS" = "linux" ]; then
       ./demo/jvmti/mtrace/lib/libmtrace.so
       ./demo/jvmti/versionCheck/lib/libversionCheck.so
       ./demo/jvmti/waiters/lib/libwaiters.so
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/client/libjsig.so
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/client/libjvm.so
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libattach.so
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libdt_socket.so
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libinstrument.so
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libjsdt.so
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libjsig.so
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libmanagement.so
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libnet.so
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libnpt.so
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libverify.so
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/minimal/libjsig.so
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/minimal/libjvm.so
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/server/libjsig.so
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/server/libjvm.so
+      ./lib/client/libjsig.so
+      ./lib/client/libjvm.so
+      ./lib/libattach.so
+      ./lib/libdt_socket.so
+      ./lib/libinstrument.so
+      ./lib/libjsdt.so
+      ./lib/libjsig.so
+      ./lib/libmanagement.so
+      ./lib/libnet.so
+      ./lib/libnpt.so
+      ./lib/libverify.so
+      ./lib/minimal/libjsig.so
+      ./lib/minimal/libjvm.so
+      ./lib/server/libjsig.so
+      ./lib/server/libjvm.so
       ./bin/appletviewer
       ./bin/idlj
       ./bin/jar
@@ -122,12 +122,12 @@ if [ "$OPENJDK_TARGET_OS" = "linux" ]; then
     # So for now, accept the difference but put a limit on the size. The
     # different order of functions shouldn't result in a very big diff.
     KNOWN_FULLDUMP_DIFF="
-        ./lib$OPENJDK_TARGET_CPU_LIBDIR/minimal/libjvm.so
+        ./lib/minimal/libjvm.so
         "
 
     # Link time optimization adds random numbers to symbol names
     NEED_DIS_DIFF_FILTER="
-        ./lib$OPENJDK_TARGET_CPU_LIBDIR/minimal/libjvm.so
+        ./lib/minimal/libjvm.so
         "
     DIS_DIFF_FILTER="$SED -r \
         -e 's/\.[0-9]+/.X/g' \
@@ -135,12 +135,12 @@ if [ "$OPENJDK_TARGET_OS" = "linux" ]; then
         -e 's/\t[0-9a-f]{5,} /\t<HEX> /' \
         "
     KNOWN_DIS_DIFF="
-        ./lib$OPENJDK_TARGET_CPU_LIBDIR/minimal/libjvm.so
+        ./lib/minimal/libjvm.so
         "
     MAX_KNOWN_DIS_DIFF_SIZE="3000"
 
     NEED_SYMBOLS_DIFF_FILTER="
-        ./lib$OPENJDK_TARGET_CPU_LIBDIR/minimal/libjvm.so
+        ./lib/minimal/libjvm.so
         "
     SYMBOLS_DIFF_FILTER="$SED -r \
         -e 's/\.[0-9]+/.X/g'
@@ -163,11 +163,11 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "x86_64" ];
       "
 
   SORT_SYMBOLS="
-      ./lib/amd64/server/libjvm.so
-      ./lib/amd64/libfontmanager.so
-      ./lib/amd64/libjimage.so
-      ./lib/amd64/libsaproc.so
-      ./lib/amd64/libunpack.so
+      ./lib/server/libjvm.so
+      ./lib/libfontmanager.so
+      ./lib/libjimage.so
+      ./lib/libsaproc.so
+      ./lib/libunpack.so
       ./bin/unpack200
       "
 
@@ -183,48 +183,48 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "x86_64" ];
       ./demo/jvmti/mtrace/lib/libmtrace.so
       ./demo/jvmti/versionCheck/lib/libversionCheck.so
       ./demo/jvmti/waiters/lib/libwaiters.so
-      ./lib/amd64/jli/libjli.so
-      ./lib/amd64/jspawnhelper
-      ./lib/amd64/libJdbcOdbc.so
-      ./lib/amd64/libattach.so
-      ./lib/amd64/libawt.so
-      ./lib/amd64/libawt_headless.so
-      ./lib/amd64/libawt_xawt.so
-      ./lib/amd64/libdcpr.so
-      ./lib/amd64/libdt_socket.so
-      ./lib/amd64/libfontmanager.so
-      ./lib/amd64/libinstrument.so
-      ./lib/amd64/libj2gss.so
-      ./lib/amd64/libj2pcsc.so
-      ./lib/amd64/libj2pkcs11.so
-      ./lib/amd64/libj2ucrypto.so
-      ./lib/amd64/libjaas_unix.so
-      ./lib/amd64/libjava.so
-      ./lib/amd64/libjawt.so
-      ./lib/amd64/libjdwp.so
-      ./lib/amd64/libjpeg.so
-      ./lib/amd64/libjsdt.so
-      ./lib/amd64/libjsound.so
-      ./lib/amd64/libkcms.so
-      ./lib/amd64/liblcms.so
-      ./lib/amd64/libmanagement.so
-      ./lib/amd64/libmlib_image.so
-      ./lib/amd64/libnet.so
-      ./lib/amd64/libnio.so
-      ./lib/amd64/libnpt.so
-      ./lib/amd64/libsctp.so
-      ./lib/amd64/libsplashscreen.so
-      ./lib/amd64/libsunec.so
-      ./lib/amd64/libsunwjdga.so
-      ./lib/amd64/libt2k.so
-      ./lib/amd64/libunpack.so
-      ./lib/amd64/libverify.so
-      ./lib/amd64/libzip.so
-      ./lib/amd64/server/64/libjvm_db.so
-      ./lib/amd64/server/64/libjvm_dtrace.so
-      ./lib/amd64/server/libjvm.so
-      ./lib/amd64/server/libjvm_db.so
-      ./lib/amd64/server/libjvm_dtrace.so
+      ./lib/jli/libjli.so
+      ./lib/jspawnhelper
+      ./lib/libJdbcOdbc.so
+      ./lib/libattach.so
+      ./lib/libawt.so
+      ./lib/libawt_headless.so
+      ./lib/libawt_xawt.so
+      ./lib/libdcpr.so
+      ./lib/libdt_socket.so
+      ./lib/libfontmanager.so
+      ./lib/libinstrument.so
+      ./lib/libj2gss.so
+      ./lib/libj2pcsc.so
+      ./lib/libj2pkcs11.so
+      ./lib/libj2ucrypto.so
+      ./lib/libjaas_unix.so
+      ./lib/libjava.so
+      ./lib/libjawt.so
+      ./lib/libjdwp.so
+      ./lib/libjpeg.so
+      ./lib/libjsdt.so
+      ./lib/libjsound.so
+      ./lib/libkcms.so
+      ./lib/liblcms.so
+      ./lib/libmanagement.so
+      ./lib/libmlib_image.so
+      ./lib/libnet.so
+      ./lib/libnio.so
+      ./lib/libnpt.so
+      ./lib/libsctp.so
+      ./lib/libsplashscreen.so
+      ./lib/libsunec.so
+      ./lib/libsunwjdga.so
+      ./lib/libt2k.so
+      ./lib/libunpack.so
+      ./lib/libverify.so
+      ./lib/libzip.so
+      ./lib/server/64/libjvm_db.so
+      ./lib/server/64/libjvm_dtrace.so
+      ./lib/server/libjvm.so
+      ./lib/server/libjvm_db.so
+      ./lib/server/libjvm_dtrace.so
       ./bin/appletviewer
       ./bin/idlj
       ./bin/jar
@@ -292,13 +292,13 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "sparcv9" ]
 
   SORT_SYMBOLS="
       ./demo/jvmti/waiters/lib/libwaiters.so
-      ./lib/sparcv9/libjsig.so
-      ./lib/sparcv9/libfontmanager.so
-      ./lib/sparcv9/libjimage.so
-      ./lib/sparcv9/libsaproc.so
-      ./lib/sparcv9/libunpack.so
-      ./lib/sparcv9/server/libjvm.so
-      ./lib/sparcv9/server/libjvm_dtrace.so
+      ./lib/libjsig.so
+      ./lib/libfontmanager.so
+      ./lib/libjimage.so
+      ./lib/libsaproc.so
+      ./lib/libunpack.so
+      ./lib/server/libjvm.so
+      ./lib/server/libjvm_dtrace.so
       ./bin/unpack200
       "
 
@@ -314,46 +314,46 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "sparcv9" ]
       ./demo/jvmti/mtrace/lib/libmtrace.so
       ./demo/jvmti/versionCheck/lib/libversionCheck.so
       ./demo/jvmti/waiters/lib/libwaiters.so
-      ./lib/sparcv9/client/libjvm.so
-      ./lib/sparcv9/jli/libjli.so
-      ./lib/sparcv9/jspawnhelper
-      ./lib/sparcv9/libJdbcOdbc.so
-      ./lib/sparcv9/libattach.so
-      ./lib/sparcv9/libawt.so
-      ./lib/sparcv9/libawt_headless.so
-      ./lib/sparcv9/libawt_xawt.so
-      ./lib/sparcv9/libdcpr.so
-      ./lib/sparcv9/libdt_socket.so
-      ./lib/sparcv9/libfontmanager.so
-      ./lib/sparcv9/libinstrument.so
-      ./lib/sparcv9/libj2gss.so
-      ./lib/sparcv9/libj2pcsc.so
-      ./lib/sparcv9/libj2pkcs11.so
-      ./lib/sparcv9/libj2ucrypto.so
-      ./lib/sparcv9/libjaas_unix.so
-      ./lib/sparcv9/libjava.so
-      ./lib/sparcv9/libjawt.so
-      ./lib/sparcv9/libjdwp.so
-      ./lib/sparcv9/libjpeg.so
-      ./lib/sparcv9/libjsdt.so
-      ./lib/sparcv9/libjsound.so
-      ./lib/sparcv9/libkcms.so
-      ./lib/sparcv9/liblcms.so
-      ./lib/sparcv9/libmanagement.so
-      ./lib/sparcv9/libmlib_image.so
-      ./lib/sparcv9/libmlib_image_v.so
-      ./lib/sparcv9/libnet.so
-      ./lib/sparcv9/libnio.so
-      ./lib/sparcv9/libnpt.so
-      ./lib/sparcv9/libsctp.so
-      ./lib/sparcv9/libsplashscreen.so
-      ./lib/sparcv9/libsunec.so
-      ./lib/sparcv9/libsunwjdga.so
-      ./lib/sparcv9/libt2k.so
-      ./lib/sparcv9/libunpack.so
-      ./lib/sparcv9/libverify.so
-      ./lib/sparcv9/libzip.so
-      ./lib/sparcv9/server/libjvm.so
+      ./lib/client/libjvm.so
+      ./lib/jli/libjli.so
+      ./lib/jspawnhelper
+      ./lib/libJdbcOdbc.so
+      ./lib/libattach.so
+      ./lib/libawt.so
+      ./lib/libawt_headless.so
+      ./lib/libawt_xawt.so
+      ./lib/libdcpr.so
+      ./lib/libdt_socket.so
+      ./lib/libfontmanager.so
+      ./lib/libinstrument.so
+      ./lib/libj2gss.so
+      ./lib/libj2pcsc.so
+      ./lib/libj2pkcs11.so
+      ./lib/libj2ucrypto.so
+      ./lib/libjaas_unix.so
+      ./lib/libjava.so
+      ./lib/libjawt.so
+      ./lib/libjdwp.so
+      ./lib/libjpeg.so
+      ./lib/libjsdt.so
+      ./lib/libjsound.so
+      ./lib/libkcms.so
+      ./lib/liblcms.so
+      ./lib/libmanagement.so
+      ./lib/libmlib_image.so
+      ./lib/libmlib_image_v.so
+      ./lib/libnet.so
+      ./lib/libnio.so
+      ./lib/libnpt.so
+      ./lib/libsctp.so
+      ./lib/libsplashscreen.so
+      ./lib/libsunec.so
+      ./lib/libsunwjdga.so
+      ./lib/libt2k.so
+      ./lib/libunpack.so
+      ./lib/libverify.so
+      ./lib/libzip.so
+      ./lib/server/libjvm.so
       ./bin/appletviewer
       ./bin/idlj
       ./bin/jar
@@ -409,7 +409,7 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "sparcv9" ]
       "
 
   KNOWN_DIS_DIFF="
-      ./lib/sparcv9/libsaproc.so
+      ./lib/libsaproc.so
   "
 
   MAX_KNOWN_DIS_DIFF_SIZE="3000"
@@ -417,8 +417,8 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "sparcv9" ]
   # On slowdebug the disassembly can differ randomly.
   if [ "$DEBUG_LEVEL" = "slowdebug" ]; then
     ACCEPTED_DIS_DIFF="
-        ./lib/sparcv9/libfontmanager.so
-        ./lib/sparcv9/server/libjvm.so
+        ./lib/libfontmanager.so
+        ./lib/server/libjvm.so
     "
   fi
 

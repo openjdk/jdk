@@ -980,10 +980,8 @@ OPENJDK_BUILD_BUNDLE_PLATFORM
 OPENJDK_BUILD_CPU_BUNDLE
 OPENJDK_BUILD_OS_BUNDLE
 OPENJDK_BUILD_OS_EXPORT_DIR
-OPENJDK_BUILD_CPU_JLI_CFLAGS
 OPENJDK_BUILD_CPU_OSARCH
 OPENJDK_BUILD_CPU_ISADIR
-OPENJDK_BUILD_CPU_LIBDIR
 OPENJDK_BUILD_CPU_LEGACY_LIB
 OPENJDK_BUILD_CPU_LEGACY
 HOTSPOT_TARGET_CPU_DEFINE
@@ -997,10 +995,8 @@ OPENJDK_TARGET_BUNDLE_PLATFORM
 OPENJDK_TARGET_CPU_BUNDLE
 OPENJDK_TARGET_OS_BUNDLE
 OPENJDK_TARGET_OS_EXPORT_DIR
-OPENJDK_TARGET_CPU_JLI_CFLAGS
 OPENJDK_TARGET_CPU_OSARCH
 OPENJDK_TARGET_CPU_ISADIR
-OPENJDK_TARGET_CPU_LIBDIR
 OPENJDK_TARGET_CPU_LEGACY_LIB
 OPENJDK_TARGET_CPU_LEGACY
 REQUIRED_OS_VERSION
@@ -5086,7 +5082,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1481210228
+DATE_WHEN_GENERATED=1481213545
 
 ###############################################################################
 #
@@ -15788,15 +15784,6 @@ $as_echo "$COMPILE_TYPE" >&6; }
   fi
 
 
-  # This is the name of the cpu (but using i386 and amd64 instead of
-  # x86 and x86_64, respectively), preceeded by a /, to be used when
-  # locating libraries. On macosx, it's empty, though.
-  OPENJDK_TARGET_CPU_LIBDIR="/$OPENJDK_TARGET_CPU_LEGACY_LIB"
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    OPENJDK_TARGET_CPU_LIBDIR=""
-  fi
-
-
   # OPENJDK_TARGET_CPU_ISADIR is normally empty. On 64-bit Solaris systems, it is set to
   # /amd64 or /sparcv9. This string is appended to some library paths, like this:
   # /usr/lib${OPENJDK_TARGET_CPU_ISADIR}/libexample.so
@@ -15828,16 +15815,6 @@ $as_echo "$COMPILE_TYPE" >&6; }
     # On all platforms except macosx, we replace x86_64 with amd64.
     OPENJDK_TARGET_CPU_JLI="amd64"
   fi
-  # Now setup the -D flags for building libjli.
-  OPENJDK_TARGET_CPU_JLI_CFLAGS="-DLIBARCHNAME='\"$OPENJDK_TARGET_CPU_JLI\"'"
-  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    if test "x$OPENJDK_TARGET_CPU_ARCH" = xsparc; then
-      OPENJDK_TARGET_CPU_JLI_CFLAGS="$OPENJDK_TARGET_CPU_JLI_CFLAGS -DLIBARCH32NAME='\"sparc\"' -DLIBARCH64NAME='\"sparcv9\"'"
-    elif test "x$OPENJDK_TARGET_CPU_ARCH" = xx86; then
-      OPENJDK_TARGET_CPU_JLI_CFLAGS="$OPENJDK_TARGET_CPU_JLI_CFLAGS -DLIBARCH32NAME='\"i386\"' -DLIBARCH64NAME='\"amd64\"'"
-    fi
-  fi
-
 
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
       OPENJDK_TARGET_OS_EXPORT_DIR=macosx
@@ -15963,15 +15940,6 @@ $as_echo "$COMPILE_TYPE" >&6; }
   fi
 
 
-  # This is the name of the cpu (but using i386 and amd64 instead of
-  # x86 and x86_64, respectively), preceeded by a /, to be used when
-  # locating libraries. On macosx, it's empty, though.
-  OPENJDK_BUILD_CPU_LIBDIR="/$OPENJDK_BUILD_CPU_LEGACY_LIB"
-  if test "x$OPENJDK_BUILD_OS" = xmacosx; then
-    OPENJDK_BUILD_CPU_LIBDIR=""
-  fi
-
-
   # OPENJDK_BUILD_CPU_ISADIR is normally empty. On 64-bit Solaris systems, it is set to
   # /amd64 or /sparcv9. This string is appended to some library paths, like this:
   # /usr/lib${OPENJDK_BUILD_CPU_ISADIR}/libexample.so
@@ -16003,16 +15971,6 @@ $as_echo "$COMPILE_TYPE" >&6; }
     # On all platforms except macosx, we replace x86_64 with amd64.
     OPENJDK_BUILD_CPU_JLI="amd64"
   fi
-  # Now setup the -D flags for building libjli.
-  OPENJDK_BUILD_CPU_JLI_CFLAGS="-DLIBARCHNAME='\"$OPENJDK_BUILD_CPU_JLI\"'"
-  if test "x$OPENJDK_BUILD_OS" = xsolaris; then
-    if test "x$OPENJDK_BUILD_CPU_ARCH" = xsparc; then
-      OPENJDK_BUILD_CPU_JLI_CFLAGS="$OPENJDK_BUILD_CPU_JLI_CFLAGS -DLIBARCH32NAME='\"sparc\"' -DLIBARCH64NAME='\"sparcv9\"'"
-    elif test "x$OPENJDK_BUILD_CPU_ARCH" = xx86; then
-      OPENJDK_BUILD_CPU_JLI_CFLAGS="$OPENJDK_BUILD_CPU_JLI_CFLAGS -DLIBARCH32NAME='\"i386\"' -DLIBARCH64NAME='\"amd64\"'"
-    fi
-  fi
-
 
   if test "x$OPENJDK_BUILD_OS" = xmacosx; then
       OPENJDK_BUILD_OS_EXPORT_DIR=macosx
@@ -50376,7 +50334,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     JDKLIB_LIBS=""
   else
     JAVA_BASE_LDFLAGS="${JAVA_BASE_LDFLAGS} \
-        -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)"
+        -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base"
 
     if test "xTARGET" = "xTARGET"; then
       # On some platforms (mac) the linker warns about non existing -L dirs.
@@ -50386,15 +50344,15 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
       if   [[ " $JVM_VARIANTS " =~ " server " ]]   ||   [[ " $JVM_VARIANTS " =~ " client " ]]   \
           ||   [[ " $JVM_VARIANTS " =~ " minimal " ]]  ; then
         JAVA_BASE_LDFLAGS="${JAVA_BASE_LDFLAGS} \
-            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/$JVM_VARIANT_MAIN"
+            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/$JVM_VARIANT_MAIN"
       else
         JAVA_BASE_LDFLAGS="${JAVA_BASE_LDFLAGS} \
-            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/server"
+            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/server"
       fi
     elif test "xTARGET" = "xBUILD"; then
       # When building a buildjdk, it's always only the server variant
       JAVA_BASE_LDFLAGS="${JAVA_BASE_LDFLAGS} \
-          -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/server"
+          -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/server"
     fi
 
     JDKLIB_LIBS="-ljava -ljvm"
@@ -51198,7 +51156,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     OPENJDK_BUILD_JDKLIB_LIBS=""
   else
     OPENJDK_BUILD_JAVA_BASE_LDFLAGS="${OPENJDK_BUILD_JAVA_BASE_LDFLAGS} \
-        -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_BUILD_CPU_LIBDIR)"
+        -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base"
 
     if test "xBUILD" = "xTARGET"; then
       # On some platforms (mac) the linker warns about non existing -L dirs.
@@ -51208,15 +51166,15 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
       if   [[ " $JVM_VARIANTS " =~ " server " ]]   ||   [[ " $JVM_VARIANTS " =~ " client " ]]   \
           ||   [[ " $JVM_VARIANTS " =~ " minimal " ]]  ; then
         OPENJDK_BUILD_JAVA_BASE_LDFLAGS="${OPENJDK_BUILD_JAVA_BASE_LDFLAGS} \
-            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_BUILD_CPU_LIBDIR)/$JVM_VARIANT_MAIN"
+            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/$JVM_VARIANT_MAIN"
       else
         OPENJDK_BUILD_JAVA_BASE_LDFLAGS="${OPENJDK_BUILD_JAVA_BASE_LDFLAGS} \
-            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_BUILD_CPU_LIBDIR)/server"
+            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/server"
       fi
     elif test "xBUILD" = "xBUILD"; then
       # When building a buildjdk, it's always only the server variant
       OPENJDK_BUILD_JAVA_BASE_LDFLAGS="${OPENJDK_BUILD_JAVA_BASE_LDFLAGS} \
-          -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_BUILD_CPU_LIBDIR)/server"
+          -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/server"
     fi
 
     OPENJDK_BUILD_JDKLIB_LIBS="-ljava -ljvm"
