@@ -235,11 +235,12 @@ private:
 public:
   G1PretouchTask(char* start_address, char* end_address, size_t page_size) :
     AbstractGangTask("G1 PreTouch",
-                     Universe::is_fully_initialized() ? GCId::current_raw() :
-                                                        // During VM initialization there is
-                                                        // no GC cycle that this task can be
-                                                        // associated with.
-                                                        GCId::undefined()),
+                     Universe::is_fully_initialized() &&
+                     Thread::current()->is_Named_thread() ? GCId::current_raw() :
+                                                            // During VM initialization there is
+                                                            // no GC cycle that this task can be
+                                                            // associated with.
+                                                            GCId::undefined()),
     _cur_addr(start_address),
     _start_addr(start_address),
     _end_addr(end_address),
@@ -262,15 +263,20 @@ public:
 };
 
 void G1PageBasedVirtualSpace::pretouch(size_t start_page, size_t size_in_pages, WorkGang* pretouch_gang) {
-  guarantee(pretouch_gang != NULL, "No pretouch gang specified.");
-
-  size_t num_chunks = MAX2((size_t)1, size_in_pages * _page_size / MAX2(G1PretouchTask::chunk_size(), _page_size));
-
-  uint num_workers = MIN2((uint)num_chunks, pretouch_gang->active_workers());
   G1PretouchTask cl(page_start(start_page), bounded_end_addr(start_page + size_in_pages), _page_size);
-  log_debug(gc, heap)("Running %s with %u workers for " SIZE_FORMAT " work units pre-touching " SIZE_FORMAT "B.",
-                      cl.name(), num_workers, num_chunks, size_in_pages * _page_size);
-  pretouch_gang->run_task(&cl, num_workers);
+
+  if (pretouch_gang != NULL) {
+    size_t num_chunks = MAX2((size_t)1, size_in_pages * _page_size / MAX2(G1PretouchTask::chunk_size(), _page_size));
+
+    uint num_workers = MIN2((uint)num_chunks, pretouch_gang->active_workers());
+    log_debug(gc, heap)("Running %s with %u workers for " SIZE_FORMAT " work units pre-touching " SIZE_FORMAT "B.",
+                        cl.name(), num_workers, num_chunks, size_in_pages * _page_size);
+    pretouch_gang->run_task(&cl, num_workers);
+  } else {
+    log_debug(gc, heap)("Running %s pre-touching " SIZE_FORMAT "B.",
+                        cl.name(), size_in_pages * _page_size);
+    cl.work(0);
+  }
 }
 
 bool G1PageBasedVirtualSpace::contains(const void* p) const {

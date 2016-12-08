@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
+ * @requires vm.jvmci
  * @library ../../../../../
  * @modules jdk.vm.ci/jdk.vm.ci.meta
  *          jdk.vm.ci/jdk.vm.ci.runtime
@@ -278,7 +278,7 @@ public class TestResolvedJavaMethod extends MethodUniverse {
                 java.lang.reflect.Parameter exp = expected[i];
                 Parameter act = actual[i];
                 assertEquals(exp.getName(), act.getName());
-                assertEquals(exp.getModifiers(), act.getModifiers());
+                assertEquals(exp.isNamePresent(), act.isNamePresent());
                 assertEquals(exp.getModifiers(), act.getModifiers());
                 assertArrayEquals(exp.getAnnotations(), act.getAnnotations());
                 assertEquals(exp.getType().getName(), act.getType().toClassName());

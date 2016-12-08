@@ -1742,7 +1742,7 @@ void PhaseIdealLoop::mark_reductions(IdealLoopTree *loop) {
               // The result of the reduction must not be used in the loop
               for (DUIterator_Fast imax, i = def_node->fast_outs(imax); i < imax && ok; i++) {
                 Node* u = def_node->fast_out(i);
-                if (has_ctrl(u) && !loop->is_member(get_loop(get_ctrl(u)))) {
+                if (!loop->is_member(get_loop(ctrl_or_self(u)))) {
                   continue;
                 }
                 if (u == phi) {
