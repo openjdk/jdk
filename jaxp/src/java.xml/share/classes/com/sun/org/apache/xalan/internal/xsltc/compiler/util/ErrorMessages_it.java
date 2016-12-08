@@ -1,24 +1,21 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-/*
- * $Id: ErrorMessages_it.java /st_wptg_1.9.0.0.0jdk/2 2016/04/12 03:53:19 gmolloy Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler.util;
@@ -173,6 +170,13 @@ public class ErrorMessages_it extends ListResourceBundle {
         "URI ''{0}'' non valido."},
 
         /*
+         * Note to translators:  This message is displayed when the URI
+         * mentioned in the substitution text is not well-formed syntactically.
+         */
+        {ErrorMsg.CATALOG_EXCEPTION,
+        "JAXP08090001: il CatalogResolver \u00E8 abilitato con il catalogo \"{0}\", ma viene restituita una CatalogException."},
+
+        /*
          * Note to translators:  The file or URI named in the substitution text
          * exists but could not be opened.
          */
@@ -267,6 +271,13 @@ public class ErrorMessages_it extends ListResourceBundle {
          */
         {ErrorMsg.CIRCULAR_INCLUDE_ERR,
         "Importazione/inclusione circolare. Il foglio di stile ''{0}'' \u00E8 gi\u00E0 stato caricato."},
+
+        /*
+         * Note to translators:  "xsl:import" and "xsl:include" are keywords that
+         * should not be translated.
+         */
+        {ErrorMsg.IMPORT_PRECEDE_OTHERS_ERR,
+        "Gli elementi figlio dell'elemento xsl:import devono precedere tutti gli elementi figlio di xsl:stylesheet, inclusi eventuali elementi figlio di xsl:include."},
 
         /*
          * Note to translators:  A result-tree fragment is a portion of a
