@@ -79,8 +79,13 @@ public class Level implements java.io.Serializable {
     private static final String defaultBundle =
         "sun.util.logging.resources.logging";
 
-    private static final JavaUtilResourceBundleAccess RB_ACCESS =
-        SharedSecrets.getJavaUtilResourceBundleAccess();
+    // Calling SharedSecrets.getJavaUtilResourceBundleAccess()
+    // forces the initialization of ResourceBundle.class, which
+    // can be too early if the VM has not finished booting yet.
+    private static final class RbAccess {
+        static final JavaUtilResourceBundleAccess RB_ACCESS =
+            SharedSecrets.getJavaUtilResourceBundleAccess();
+    }
 
     /**
      * @serial  The non-localized name of the level.
@@ -286,7 +291,7 @@ public class Level implements java.io.Serializable {
         // or its defining class loader, if it's unnamed module,
         // of this Level instance that can be a custom Level subclass;
         Module module = this.getClass().getModule();
-        ResourceBundle rb = RB_ACCESS.getBundle(resourceBundleName,
+        ResourceBundle rb = RbAccess.RB_ACCESS.getBundle(resourceBundleName,
                 newLocale, module);
 
         final String localizedName = rb.getString(name);
