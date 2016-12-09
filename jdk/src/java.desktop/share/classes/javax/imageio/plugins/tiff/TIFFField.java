@@ -658,26 +658,31 @@ public final class TIFFField implements Cloneable {
 
     /**
      * Constructs a {@code TIFFField} with a single non-negative integral
-     * value.
-     * The field will have type
-     * {@link TIFFTag#TIFF_SHORT  TIFF_SHORT} if
-     * {@code val < 65536} and type
-     * {@link TIFFTag#TIFF_LONG TIFF_LONG} otherwise.  The count
-     * of the field will be unity.
+     * value. The field will have type {@link TIFFTag#TIFF_SHORT TIFF_SHORT}
+     * if {@code value} is in {@code [0,0xffff]}, and type
+     * {@link TIFFTag#TIFF_LONG TIFF_LONG} if {@code value} is in
+     * {@code [0x10000,0xffffffff]}. The count of the field will be unity.
      *
      * @param tag The tag to associate with this field.
      * @param value The value to associate with this field.
      * @throws NullPointerException if {@code tag == null}.
-     * @throws IllegalArgumentException if the derived type is unacceptable
-     * for the supplied {@code TIFFTag}.
-     * @throws IllegalArgumentException if {@code value < 0}.
+     * @throws IllegalArgumentException if {@code value} is not in
+     * {@code [0,0xffffffff]}.
+     * @throws IllegalArgumentException if {@code value} is in
+     * {@code [0,0xffff]} and {@code TIFF_SHORT} is an unacceptable type
+     * for the {@code TIFFTag}, or if {@code value} is in
+     * {@code [0x10000,0xffffffff]} and {@code TIFF_LONG} is an unacceptable
+     * type for the {@code TIFFTag}.
      */
-    public TIFFField(TIFFTag tag, int value) {
+    public TIFFField(TIFFTag tag, long value) {
         if(tag == null) {
             throw new NullPointerException("tag == null!");
         }
         if (value < 0) {
             throw new IllegalArgumentException("value < 0!");
+        }
+        if (value > 0xffffffffL) {
+            throw new IllegalArgumentException("value > 0xffffffff!");
         }
 
         this.tag = tag;
@@ -687,7 +692,8 @@ public final class TIFFField implements Cloneable {
         if (value < 65536) {
             if (!tag.isDataTypeOK(TIFFTag.TIFF_SHORT)) {
                 throw new IllegalArgumentException("Illegal data type "
-                    + TIFFTag.TIFF_SHORT + " for " + tag.getName() + " tag");
+                    + getTypeName(TIFFTag.TIFF_SHORT) + " for tag "
+                    + "\"" + tag.getName() + "\"");
             }
             this.type = TIFFTag.TIFF_SHORT;
             char[] cdata = new char[1];
@@ -696,7 +702,8 @@ public final class TIFFField implements Cloneable {
         } else {
             if (!tag.isDataTypeOK(TIFFTag.TIFF_LONG)) {
                 throw new IllegalArgumentException("Illegal data type "
-                    + TIFFTag.TIFF_LONG + " for " + tag.getName() + " tag");
+                    + getTypeName(TIFFTag.TIFF_LONG) + " for tag "
+                    + "\"" + tag.getName() + "\"");
             }
             this.type = TIFFTag.TIFF_LONG;
             long[] ldata = new long[1];
