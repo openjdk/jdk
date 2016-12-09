@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import static org.testng.Assert.assertTrue;
 
 /*
  * @test
+ * @bug 8170952
  * @library /lib/testlibrary
  * @build jdk.testlibrary.FileUtils jdk.testlibrary.JDKToolFinder
  * @run testng CLICompatibility
@@ -95,7 +96,7 @@ public class CLICompatibility {
     };
 
     static final FailCheckerWithMessage FAIL_TOO_MANY_MAIN_OPS =
-        new FailCheckerWithMessage("You must specify one of -ctxui options",
+        new FailCheckerWithMessage("You may not specify more than one '-cuxtid' options",
         /* legacy */ "{ctxui}[vfmn0Me] [jar-file] [manifest-file] [entry-point] [-C dir] files");
 
     // Create
@@ -279,11 +280,11 @@ public class CLICompatibility {
 
     @Test
     public void listBadArgs() {
-        jar("te")
+        jar("tx")
             .assertFailure()
             .resultChecker(FAIL_TOO_MANY_MAIN_OPS);
 
-        jar("-te")
+        jar("-tx")
             .assertFailure()
             .resultChecker(FAIL_TOO_MANY_MAIN_OPS);
 
@@ -344,10 +345,16 @@ public class CLICompatibility {
             .assertFailure()
             .resultChecker(FAIL_TOO_MANY_MAIN_OPS);
 
-        if (!legacyOnly)
+        if (!legacyOnly) {
             jar("--extract --generate-index")
                 .assertFailure()
+                .resultChecker(new FailCheckerWithMessage(
+                                   "option --generate-index requires an argument"));
+
+            jar("--extract --generate-index=foo")
+                .assertFailure()
                 .resultChecker(FAIL_TOO_MANY_MAIN_OPS);
+        }
     }
 
     @Test
