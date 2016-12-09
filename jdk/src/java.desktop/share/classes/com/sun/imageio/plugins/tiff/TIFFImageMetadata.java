@@ -87,7 +87,7 @@ public class TIFFImageMetadata extends IIOMetadata {
         rootIFD.initialize(stream, true, ignoreUnknownFields);
     }
 
-    public void addShortOrLongField(int tagNumber, int value) {
+    public void addShortOrLongField(int tagNumber, long value) {
         TIFFField field = new TIFFField(rootIFD.getTag(tagNumber), value);
         rootIFD.addTIFFField(field);
     }

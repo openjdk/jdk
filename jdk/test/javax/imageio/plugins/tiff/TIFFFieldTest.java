@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug     8152183 8149562
+ * @bug     8152183 8149562 8169725
  * @author  a.stepanov
  * @summary Some checks for TIFFField methods
  * @run     main TIFFFieldTest
@@ -65,7 +65,26 @@ public class TIFFFieldTest {
         ok = false;
         try { new TIFFField(tag, -1); }
         catch (IllegalArgumentException e) { ok = true; }
-        check(ok, CONSTRUCT + "invalid count");
+        check(ok, CONSTRUCT + "negative value");
+
+        ok = false;
+        try { new TIFFField(tag, 1L << 32); }
+        catch (IllegalArgumentException e) { ok = true; }
+        check(ok, CONSTRUCT + "value > 0xffffffff");
+
+        ok = false;
+        try {
+            TIFFTag t = new TIFFTag(NAME, NUM, 1 << TIFFTag.TIFF_SHORT);
+            new TIFFField(t, 0x10000);
+        } catch (IllegalArgumentException e) { ok = true; }
+        check(ok, CONSTRUCT + "value 0x10000 incompatible with TIFF_SHORT");
+
+        ok = false;
+        try {
+            TIFFTag t = new TIFFTag(NAME, NUM, 1 << TIFFTag.TIFF_LONG);
+            new TIFFField(t, 0xffff);
+        } catch (IllegalArgumentException e) { ok = true; }
+        check(ok, CONSTRUCT + "value 0xffff incompatible with TIFF_LONG");
 
         // check value type recognition
         int v = 1 << 16;
