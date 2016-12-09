@@ -90,7 +90,7 @@ public class ProxyAuthTest extends SSLSocketTemplate {
     }
 
     @Override
-    protected boolean isCustomizeClientConnection() {
+    protected boolean isCustomizedClientConnection() {
         return true;
     }
 
