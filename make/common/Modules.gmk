@@ -48,7 +48,6 @@ BOOT_MODULES += \
     java.base \
     java.datatransfer \
     java.desktop \
-    java.httpclient \
     java.instrument \
     java.logging \
     java.management \
@@ -98,6 +97,7 @@ PLATFORM_MODULES += \
 
 PLATFORM_MODULES += \
     java.compiler \
+    jdk.incubator.httpclient \
     java.scripting \
     java.security.jgss \
     java.smartcardio \
