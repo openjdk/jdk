@@ -263,14 +263,16 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  */
 public final class TIFFField implements Cloneable {
 
-    private static final String[] typeNames = {
+    private static final long MAX_UINT32 = 0xffffffffL;
+
+    private static final String[] TYPE_NAMES = {
         null,
         "Byte", "Ascii", "Short", "Long", "Rational",
         "SByte", "Undefined", "SShort", "SLong", "SRational",
         "Float", "Double", "IFDPointer"
     };
 
-    private static final boolean[] isIntegral = {
+    private static final boolean[] IS_INTEGRAL = {
         false,
         true, false, true, true, false,
         true, true, true, true, false,
@@ -544,6 +546,9 @@ public final class TIFFField implements Cloneable {
      * @throws IllegalArgumentException if {@code data} is an instance of
      * a class incompatible with the specified type.
      * @throws IllegalArgumentException if the size of the data array is wrong.
+     * @throws IllegalArgumentException if the type of the data array is
+     * {@code TIFF_LONG}, {@code TIFF_RATIONAL}, or {@code TIFF_IFD_POINTER}
+     * and any of the elements is negative or greater than {@code 0xffffffff}.
      */
     public TIFFField(TIFFTag tag, int type, int count, Object data) {
         if(tag == null) {
@@ -587,15 +592,50 @@ public final class TIFFField implements Cloneable {
         case TIFFTag.TIFF_LONG:
             isDataArrayCorrect = data instanceof long[]
                 && ((long[])data).length == count;
+            if (isDataArrayCorrect) {
+                for (long datum : (long[])data) {
+                    if (datum < 0) {
+                        throw new IllegalArgumentException
+                            ("Negative value supplied for TIFF_LONG");
+                    }
+                    if (datum > MAX_UINT32) {
+                        throw new IllegalArgumentException
+                            ("Too large value supplied for TIFF_LONG");
+                    }
+                }
+            }
             break;
         case TIFFTag.TIFF_IFD_POINTER:
             isDataArrayCorrect = data instanceof long[]
                 && ((long[])data).length == 1;
+            if (((long[])data)[0] < 0) {
+                throw new IllegalArgumentException
+                    ("Negative value supplied for TIFF_IFD_POINTER");
+            }
+            if (((long[])data)[0] > MAX_UINT32) {
+                throw new IllegalArgumentException
+                    ("Too large value supplied for TIFF_IFD_POINTER");
+            }
             break;
         case TIFFTag.TIFF_RATIONAL:
             isDataArrayCorrect = data instanceof long[][]
-                && ((long[][])data).length == count
-                && ((long[][])data)[0].length == 2;
+                && ((long[][])data).length == count;
+            if (isDataArrayCorrect) {
+                for (long[] datum : (long[][])data) {
+                    if (datum.length != 2) {
+                        isDataArrayCorrect = false;
+                        break;
+                    }
+                    if (datum[0] < 0 || datum[1] < 0) {
+                        throw new IllegalArgumentException
+                            ("Negative value supplied for TIFF_RATIONAL");
+                    }
+                    if (datum[0] > MAX_UINT32 || datum[1] > MAX_UINT32) {
+                        throw new IllegalArgumentException
+                            ("Too large value supplied for TIFF_RATIONAL");
+                    }
+                }
+            }
             break;
         case TIFFTag.TIFF_SSHORT:
             isDataArrayCorrect = data instanceof short[]
@@ -607,8 +647,15 @@ public final class TIFFField implements Cloneable {
             break;
         case TIFFTag.TIFF_SRATIONAL:
             isDataArrayCorrect = data instanceof int[][]
-                && ((int[][])data).length == count
-                && ((int[][])data)[0].length == 2;
+                && ((int[][])data).length == count;
+            if (isDataArrayCorrect) {
+                for (int[] datum : (int[][])data) {
+                    if (datum.length != 2) {
+                        isDataArrayCorrect = false;
+                        break;
+                    }
+                }
+            }
             break;
         case TIFFTag.TIFF_FLOAT:
             isDataArrayCorrect = data instanceof float[]
@@ -681,7 +728,7 @@ public final class TIFFField implements Cloneable {
         if (value < 0) {
             throw new IllegalArgumentException("value < 0!");
         }
-        if (value > 0xffffffffL) {
+        if (value > MAX_UINT32) {
             throw new IllegalArgumentException("value > 0xffffffff!");
         }
 
@@ -806,7 +853,7 @@ public final class TIFFField implements Cloneable {
             throw new IllegalArgumentException("Unknown data type "+dataType);
         }
 
-        return typeNames[dataType];
+        return TYPE_NAMES[dataType];
     }
 
     /**
@@ -819,7 +866,7 @@ public final class TIFFField implements Cloneable {
      */
     public static int getTypeByName(String typeName) {
         for (int i = TIFFTag.MIN_DATATYPE; i <= TIFFTag.MAX_DATATYPE; i++) {
-            if (typeName.equals(typeNames[i])) {
+            if (typeName.equals(TYPE_NAMES[i])) {
                 return i;
             }
         }
@@ -894,7 +941,7 @@ public final class TIFFField implements Cloneable {
      * @return Whether the field type is integral.
      */
     public boolean isIntegral() {
-        return isIntegral[type];
+        return IS_INTEGRAL[type];
     }
 
     /**
