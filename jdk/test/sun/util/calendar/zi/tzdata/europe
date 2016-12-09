@@ -924,7 +924,7 @@ Zone	Europe/Sofia	1:33:16 -	LMT	1880
 # Cyprus
 # Please see the 'asia' file for Asia/Nicosia.
 
-# Czech Republic
+# Czech Republic / Czechia
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Czech	1945	only	-	Apr	 8	2:00s	1:00	S
 Rule	Czech	1945	only	-	Nov	18	2:00s	0	-
@@ -2624,10 +2624,9 @@ Zone Europe/Astrakhan	 3:12:12 -	LMT	1924 May
 			 3:00	-	+03	2016 Mar 27  2:00s
 			 4:00	-	+04
 
-# From Paul Eggert (2016-03-18):
+# From Paul Eggert (2016-11-11):
 # Europe/Volgograd covers:
 # 34	RU-VGG	Volgograd Oblast
-# 64	RU-SAR	Saratov Oblast
 # The 1988 transition is from USSR act No. 5 (1988-01-04).
 
 Zone Europe/Volgograd	 2:57:40 -	LMT	1920 Jan  3
@@ -2639,6 +2638,27 @@ Zone Europe/Volgograd	 2:57:40 -	LMT	1920 Jan  3
 			 3:00	Russia	+03/+04	2011 Mar 27  2:00s
 			 4:00	-	+04	2014 Oct 26  2:00s
 			 3:00	-	+03
+
+# From Paul Eggert (2016-11-11):
+# Europe/Saratov covers:
+# 64	RU-SAR	Saratov Oblast
+
+# From Yuri Konotopov (2016-11-11):
+# Dec 4, 2016 02:00 UTC+3....  Saratov Region's local time will be ... UTC+4.
+# From Stepan Golosunov (2016-11-11):
+# ... Byalokoz listed Saratov on 03:04:18.
+# From Stepan Golosunov (2016-11-22):
+# http://publication.pravo.gov.ru/Document/View/0001201611220031
+
+Zone Europe/Saratov	 3:04:18 -	LMT	1919 Jul  1  0:00u
+			 3:00	-	+03	1930 Jun 21
+			 4:00	Russia	+04/+05	1988 Mar 27  2:00s
+			 3:00	Russia	+03/+04	1991 Mar 31  2:00s
+			 4:00	-	+04	1992 Mar 29  2:00s
+			 3:00	Russia	+03/+04	2011 Mar 27  2:00s
+			 4:00	-	+04	2014 Oct 26  2:00s
+			 3:00	-	+03	2016 Dec  4  2:00s
+			 4:00	-	+04
 
 # From Paul Eggert (2016-03-18):
 # Europe/Kirov covers:
