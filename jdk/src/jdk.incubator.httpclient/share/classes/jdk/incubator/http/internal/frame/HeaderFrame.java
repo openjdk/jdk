@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package jdk.incubator.http.internal.frame;
+
+import jdk.incubator.http.internal.common.ByteBufferReference;
+import jdk.incubator.http.internal.common.Utils;
+
+import java.nio.ByteBuffer;
+
+/**
+ * Either a HeadersFrame or a ContinuationFrame
+ */
+public abstract class HeaderFrame extends Http2Frame {
+
+    final int headerLength;
+    final ByteBufferReference[] headerBlocks;
+
+    public static final int END_STREAM = 0x1;
+    public static final int END_HEADERS = 0x4;
+
+    public HeaderFrame(int streamid, int flags, ByteBufferReference headerBlock) {
+        this(streamid, flags, new ByteBufferReference[]{headerBlock});
+    }
+
+    public HeaderFrame(int streamid, int flags, ByteBufferReference[] headerBlocks) {
+        super(streamid, flags);
+        this.headerBlocks = headerBlocks;
+        this.headerLength = Utils.remaining(headerBlocks);
+    }
+
+    @Override
+    public String flagAsString(int flag) {
+        switch (flag) {
+            case END_HEADERS:
+                return "END_HEADERS";
+            case END_STREAM:
+                return "END_STREAM";
+        }
+        return super.flagAsString(flag);
+    }
+
+
+    public ByteBufferReference[] getHeaderBlock() {
+        return headerBlocks;
+    }
+
+    int getHeaderLength() {
+        return headerLength;
+    }
+
+    /**
+     * Returns true if this block is the final block of headers.
+     */
+    public boolean endHeaders() {
+        return getFlag(END_HEADERS);
+    }
+}

@@ -24,12 +24,12 @@
 /*
  * @test
  * @bug 8153353
- * @modules java.httpclient/sun.net.httpclient.hpack
+ * @modules jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
  *          jdk.localedata
  * @key randomness
- * @compile/module=java.httpclient sun/net/httpclient/hpack/SpecHelper.java
- * @compile/module=java.httpclient sun/net/httpclient/hpack/TestHelper.java
- * @compile/module=java.httpclient sun/net/httpclient/hpack/BuffersTestingKit.java
- * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.HeaderTableTest
+ * @compile/module=jdk.incubator.httpclient jdk/incubator/http/internal/hpack/SpecHelper.java
+ * @compile/module=jdk.incubator.httpclient jdk/incubator/http/internal/hpack/TestHelper.java
+ * @compile/module=jdk.incubator.httpclient jdk/incubator/http/internal/hpack/BuffersTestingKit.java
+ * @run testng/othervm jdk.incubator.httpclient/jdk.incubator.http.internal.hpack.HeaderTableTest
  */
 public class HpackDriverHeaderTable { }

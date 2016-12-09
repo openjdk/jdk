@@ -23,7 +23,7 @@
 
 import com.sun.net.httpserver.*;
 import java.net.*;
-import java.net.http.*;
+import jdk.incubator.http.*;
 import java.io.*;
 import java.util.concurrent.*;
 import javax.net.ssl.*;
@@ -33,8 +33,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import jdk.testlibrary.SimpleSSLContext;
-import static java.net.http.HttpRequest.*;
-import static java.net.http.HttpResponse.*;
+import static jdk.incubator.http.HttpRequest.*;
+import static jdk.incubator.http.HttpResponse.*;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
