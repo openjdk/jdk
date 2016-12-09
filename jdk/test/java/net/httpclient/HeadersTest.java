@@ -21,7 +21,7 @@
  * questions.
  */
 
-import java.net.http.HttpRequest;
+import jdk.incubator.http.HttpRequest;
 import java.net.URI;
 
 /**
@@ -34,7 +34,7 @@ public class HeadersTest {
     static final URI TEST_URI = URI.create("http://www.foo.com/");
 
     static void bad(String name) {
-        HttpRequest.Builder builder = HttpRequest.create(TEST_URI);
+        HttpRequest.Builder builder = HttpRequest.newBuilder(TEST_URI);
         try {
             builder.header(name, "foo");
             throw new RuntimeException("Expected IAE for header:" + name);
@@ -42,7 +42,7 @@ public class HeadersTest {
     }
 
     static void good(String name) {
-        HttpRequest.Builder builder = HttpRequest.create(TEST_URI);
+        HttpRequest.Builder builder = HttpRequest.newBuilder(TEST_URI);
         try {
             builder.header(name, "foo");
         } catch (IllegalArgumentException e) {
