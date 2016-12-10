@@ -77,6 +77,12 @@ public final class JavacTool implements JavaCompiler {
     @Deprecated
     public JavacTool() {}
 
+    // @Override // can't add @Override until bootstrap JDK provides Tool.name()
+    @DefinedBy(Api.COMPILER)
+    public String name() {
+        return "javac";
+    }
+
     /**
      * Static factory method for creating new instances of this tool.
      * @return new instance of this tool
