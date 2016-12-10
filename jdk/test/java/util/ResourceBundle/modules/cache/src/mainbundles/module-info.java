@@ -21,7 +21,6 @@
  * questions.
  */
 
-module m1 {
-    exports p1;
-    opens p1.resources to test;
+module mainbundles {
+    exports jdk.test.util;
 }

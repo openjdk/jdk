@@ -650,6 +650,7 @@ public abstract class ResourceBundle {
         private Locale locale;
         private KeyElementReference<ClassLoader> loaderRef;
         private KeyElementReference<Module> moduleRef;
+        private KeyElementReference<Module> callerRef;
 
 
         // bundle format which is necessary for calling
@@ -680,7 +681,7 @@ public abstract class ResourceBundle {
         // Boolean.TRUE if the factory method caller provides a ResourceBundleProvier.
         private Boolean callerHasProvider;
 
-        CacheKey(String baseName, Locale locale, ClassLoader loader, Module module) {
+        CacheKey(String baseName, Locale locale, ClassLoader loader, Module module, Module caller) {
             Objects.requireNonNull(module);
 
             this.name = baseName;
@@ -691,6 +692,8 @@ public abstract class ResourceBundle {
                 this.loaderRef = new KeyElementReference<>(loader, referenceQueue, this);
             }
             this.moduleRef = new KeyElementReference<>(module, referenceQueue, this);
+            this.callerRef = new KeyElementReference<>(caller, referenceQueue, this);
+
             calculateHashCode();
         }
 
@@ -724,6 +727,10 @@ public abstract class ResourceBundle {
 
         Module getModule() {
             return moduleRef.get();
+        }
+
+        Module getCallerModule() {
+            return callerRef.get();
         }
 
         ServiceLoader<ResourceBundleProvider> getProviders() {
@@ -767,6 +774,8 @@ public abstract class ResourceBundle {
                 }
                 ClassLoader loader = getLoader();
                 Module module = getModule();
+                Module caller = getCallerModule();
+
                 return (otherEntry.loaderRef != null)
                         // with a null reference we can no longer find
                         // out which class loader or module was referenced; so
@@ -774,7 +783,9 @@ public abstract class ResourceBundle {
                         && (loader != null)
                         && (loader == otherEntry.getLoader())
                         && (module != null)
-                        && (module.equals(otherEntry.getModule()));
+                        && (module.equals(otherEntry.getModule()))
+                        && (caller != null)
+                        && (caller.equals(otherEntry.getCallerModule()));
             } catch (NullPointerException | ClassCastException e) {
             }
             return false;
@@ -796,6 +807,10 @@ public abstract class ResourceBundle {
             if (module != null) {
                 hashCodeCache ^= module.hashCode();
             }
+            Module caller = getCallerModule();
+            if (caller != null) {
+                hashCodeCache ^= caller.hashCode();
+            }
         }
 
         @Override
@@ -808,6 +823,9 @@ public abstract class ResourceBundle {
                 }
                 clone.moduleRef = new KeyElementReference<>(getModule(),
                                                             referenceQueue, clone);
+                clone.callerRef = new KeyElementReference<>(getCallerModule(),
+                                                            referenceQueue, clone);
+
                 // Clear the reference to ResourceBundleProviders and the flag
                 clone.providers = null;
                 clone.providersChecked = false;
@@ -1665,7 +1683,7 @@ public abstract class ResourceBundle {
         // loader, and module will never change during the bundle loading
         // process. We have to make sure that the locale is set before
         // using it as a cache key.
-        CacheKey cacheKey = new CacheKey(baseName, locale, loader, module);
+        CacheKey cacheKey = new CacheKey(baseName, locale, loader, module, callerModule);
         ResourceBundle bundle = null;
 
         // Quick lookup of the cache.
@@ -1869,7 +1887,7 @@ public abstract class ResourceBundle {
                     bundle = loadBundleFromProviders(baseName,
                                                      targetLocale,
                                                      cacheKey.getProviders(),
-                                                      cacheKey);
+                                                     cacheKey);
                 }
             }
 
@@ -2303,8 +2321,9 @@ public abstract class ResourceBundle {
 
     private static void clearCache(ClassLoader loader, Module module) {
         Set<CacheKey> set = cacheList.keySet();
-        set.stream().filter((key) -> (key.getLoader() == loader && key.getModule() == module))
-                .forEach(set::remove);
+        set.stream()
+           .filter((key) -> (key.getLoader() == loader && key.getModule() == module))
+           .forEach(set::remove);
     }
 
     /**
