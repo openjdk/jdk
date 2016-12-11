@@ -145,6 +145,13 @@ ifeq ($(INCLUDE_SA), false)
 endif
 
 ################################################################################
+# Filter out specific modules
+
+ifeq ($(INCLUDE_GRAAL), false)
+  MODULES_FILTER += jdk.vm.compiler
+endif
+
+################################################################################
 # Module list macros
 
 # Use append so that the custom extension may add to these variables

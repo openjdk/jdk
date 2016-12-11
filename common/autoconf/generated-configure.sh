@@ -700,6 +700,7 @@ JVM_FEATURES_minimal
 JVM_FEATURES_core
 JVM_FEATURES_client
 JVM_FEATURES_server
+INCLUDE_GRAAL
 INCLUDE_DTRACE
 GCOV_ENABLED
 ZIP_EXTERNAL_DEBUG_SYMBOLS
@@ -4247,7 +4248,7 @@ pkgadd_help() {
 
 # All valid JVM features, regardless of platform
 VALID_JVM_FEATURES="compiler1 compiler2 zero shark minimal dtrace jvmti jvmci \
-    fprof vm-structs jni-check services management all-gcs nmt cds static-build"
+    graal fprof vm-structs jni-check services management all-gcs nmt cds static-build"
 
 # All valid JVM variants
 VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
@@ -5082,7 +5083,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1481213545
+DATE_WHEN_GENERATED=1481486918
 
 ###############################################################################
 #
@@ -52761,18 +52762,44 @@ $as_echo "$JVM_FEATURES" >&6; }
 
   # Only enable jvmci on x86_64, sparcv9 and aarch64.
   if test "x$OPENJDK_TARGET_CPU" = "xx86_64" || \
-      test "x$OPENJDK_TARGET_CPU" = "xsparcv9" || \
-      test "x$OPENJDK_TARGET_CPU" = "xaarch64" ; then
+     test "x$OPENJDK_TARGET_CPU" = "xsparcv9" || \
+     test "x$OPENJDK_TARGET_CPU" = "xaarch64" ; then
     JVM_FEATURES_jvmci="jvmci"
   else
     JVM_FEATURES_jvmci=""
   fi
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jdk.vm.compiler should be built" >&5
+$as_echo_n "checking if jdk.vm.compiler should be built... " >&6; }
+  if   [[ " $JVM_FEATURES " =~ " graal " ]]  ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
+$as_echo "yes, forced" >&6; }
+    if test "x$JVM_FEATURES_jvmci" != "xjvmci" ; then
+      as_fn_error $? "Specified JVM feature 'graal' requires feature 'jvmci'" "$LINENO" 5
+    fi
+    INCLUDE_GRAAL="true"
+  else
+    # By default enable graal build on linux-X64 and when JVMCI is available
+    if test "x$JVM_FEATURES_jvmci" = "xjvmci" && test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-x86_64"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+      JVM_FEATURES_graal="graal"
+      INCLUDE_GRAAL="true"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      JVM_FEATURES_graal=""
+      INCLUDE_GRAAL="false"
+    fi
+  fi
+
+
+
   # All variants but minimal (and custom) get these features
   NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti fprof vm-structs jni-check services management all-gcs nmt cds"
 
   # Enable features depending on variant.
-  JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci"
+  JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci $JVM_FEATURES_graal"
   JVM_FEATURES_client="compiler1 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci"
   JVM_FEATURES_core="$NON_MINIMAL_FEATURES $JVM_FEATURES"
   JVM_FEATURES_minimal="compiler1 minimal $JVM_FEATURES"
