@@ -85,10 +85,14 @@ ifneq ($(CREATING_BUILDJDK), true)
 
   buildtools-modules:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileModuleTools.gmk)
+
+  buildtools-hotspot:
+	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileTools.gmk)
 endif
 
 ALL_TARGETS += buildtools-langtools interim-langtools \
-    interim-rmic interim-cldrconverter buildtools-jdk buildtools-modules
+    interim-rmic interim-cldrconverter buildtools-jdk buildtools-modules \
+    buildtools-hotspot
 
 ################################################################################
 # Special targets for certain modules
@@ -547,11 +551,13 @@ else
 
   buildtools-jdk: interim-langtools interim-cldrconverter
 
+  buildtools-hotspot: interim-langtools
+
   buildtools-modules: exploded-image-base
 
   $(CORBA_GENSRC_TARGETS): interim-langtools
 
-  $(HOTSPOT_GENSRC_TARGETS): interim-langtools
+  $(HOTSPOT_GENSRC_TARGETS): interim-langtools buildtools-hotspot
 
   $(JDK_GENSRC_TARGETS): interim-langtools buildtools-jdk
 
@@ -627,6 +633,14 @@ else
   # The annotation processing for jdk.vm.ci needs java.base classes from the
   # current JDK.
   jdk.vm.ci-gensrc-hotspot: java.base-java
+
+  # The annotation processing for jdk.vm.compiler needs classes from the current JDK.
+  jdk.vm.compiler-gensrc-hotspot: java.base-java java.management-java \
+      jdk.management-java jdk.vm.ci-java jdk.unsupported-java
+
+  # For jdk.vm.compiler, the gensrc step is generating a module-info.java.extra
+  # file to be processed by the gensrc-moduleinfo target.
+  jdk.vm.compiler-gensrc-moduleinfo: jdk.vm.compiler-gensrc-hotspot
 
   # Explicitly add dependencies for special targets
   java.base-java: unpack-sec
@@ -788,7 +802,7 @@ endif
 # Virtual targets without recipes
 
 buildtools: buildtools-langtools interim-langtools interim-rmic \
-    buildtools-jdk
+    buildtools-jdk buildtools-hotspot
 
 hotspot: $(HOTSPOT_VARIANT_TARGETS) hotspot-jsig
 

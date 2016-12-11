@@ -448,7 +448,47 @@ jdk.jvmstat_COPY := aliasmap
 
 ################################################################################
 
-jdk.vm.ci_ADD_JAVAC_FLAGS := -Xlint:-exports
+# -parameters provides method's parameters information in class file,
+# JVMCI compilers make use of that information for various sanity checks.
+# Don't use Indy strings concatenation to have good JVMCI startup performance.
+
+jdk.vm.ci_ADD_JAVAC_FLAGS := -parameters -Xlint:-exports -XDstringConcat=inline
+
+################################################################################
+
+jdk.vm.compiler_ADD_JAVAC_FLAGS := -parameters -XDstringConcat=inline
+
+jdk.vm.compiler_EXCLUDES += \
+    org.graalvm.compiler.core.match.processor \
+    org.graalvm.compiler.nodeinfo.processor \
+    org.graalvm.compiler.options.processor \
+    org.graalvm.compiler.serviceprovider.processor \
+    org.graalvm.compiler.replacements.verifier \
+    org.graalvm.compiler.api.directives.test \
+    org.graalvm.compiler.api.test \
+    org.graalvm.compiler.asm.aarch64.test \
+    org.graalvm.compiler.asm.amd64.test \
+    org.graalvm.compiler.asm.sparc.test \
+    org.graalvm.compiler.asm.test \
+    org.graalvm.compiler.core.amd64.test \
+    org.graalvm.compiler.core.sparc.test \
+    org.graalvm.compiler.core.test \
+    org.graalvm.compiler.debug.test \
+    org.graalvm.compiler.graph.test \
+    org.graalvm.compiler.hotspot.amd64.test \
+    org.graalvm.compiler.hotspot.lir.test \
+    org.graalvm.compiler.hotspot.test \
+    org.graalvm.compiler.jtt \
+    org.graalvm.compiler.lir.jtt \
+    org.graalvm.compiler.lir.test \
+    org.graalvm.compiler.microbenchmarks \
+    org.graalvm.compiler.nodes.test \
+    org.graalvm.compiler.options.test \
+    org.graalvm.compiler.phases.common.test \
+    org.graalvm.compiler.replacements.test \
+    org.graalvm.compiler.test \
+    org.graalvm.compiler.virtual.bench \
+    #
 
 ################################################################################
 
@@ -509,6 +549,14 @@ ifeq ($(MODULE), jdk.vm.ci)
       $(subst /$(MODULE)/,/*/, $(filter-out %processor/src, \
           $(wildcard $(HOTSPOT_TOPDIR)/src/jdk.vm.ci/share/classes/*/src)))
   MODULESOURCEPATH := $(call PathList, $(JVMCI_MODULESOURCEPATH))
+endif
+
+ifeq ($(MODULE), jdk.vm.compiler)
+  ## WORKAROUND jdk.vm.compiler source structure issue
+  VM_COMPILER_MODULESOURCEPATH := $(MODULESOURCEPATH) \
+      $(subst /$(MODULE)/,/*/, $(filter-out %processor/src %test/src %jtt/src %bench/src %microbenchmarks/src, \
+          $(wildcard $(HOTSPOT_TOPDIR)/src/$(MODULE)/share/classes/*/src)))
+  MODULESOURCEPATH := $(call PathList, $(VM_COMPILER_MODULESOURCEPATH))
 endif
 
 $(eval $(call SetupJavaCompilation, $(MODULE), \

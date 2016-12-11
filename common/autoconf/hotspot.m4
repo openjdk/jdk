@@ -25,7 +25,7 @@
 
 # All valid JVM features, regardless of platform
 VALID_JVM_FEATURES="compiler1 compiler2 zero shark minimal dtrace jvmti jvmci \
-    fprof vm-structs jni-check services management all-gcs nmt cds static-build"
+    graal fprof vm-structs jni-check services management all-gcs nmt cds static-build"
 
 # All valid JVM variants
 VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
@@ -256,18 +256,40 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
 
   # Only enable jvmci on x86_64, sparcv9 and aarch64.
   if test "x$OPENJDK_TARGET_CPU" = "xx86_64" || \
-      test "x$OPENJDK_TARGET_CPU" = "xsparcv9" || \
-      test "x$OPENJDK_TARGET_CPU" = "xaarch64" ; then
+     test "x$OPENJDK_TARGET_CPU" = "xsparcv9" || \
+     test "x$OPENJDK_TARGET_CPU" = "xaarch64" ; then
     JVM_FEATURES_jvmci="jvmci"
   else
     JVM_FEATURES_jvmci=""
   fi
 
+  AC_MSG_CHECKING([if jdk.vm.compiler should be built])
+  if HOTSPOT_CHECK_JVM_FEATURE(graal); then
+    AC_MSG_RESULT([yes, forced])
+    if test "x$JVM_FEATURES_jvmci" != "xjvmci" ; then
+      AC_MSG_ERROR([Specified JVM feature 'graal' requires feature 'jvmci'])
+    fi
+    INCLUDE_GRAAL="true"
+  else
+    # By default enable graal build on linux-X64 and when JVMCI is available
+    if test "x$JVM_FEATURES_jvmci" = "xjvmci" && test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-x86_64"; then
+      AC_MSG_RESULT([yes])
+      JVM_FEATURES_graal="graal"
+      INCLUDE_GRAAL="true"
+    else
+      AC_MSG_RESULT([no])
+      JVM_FEATURES_graal=""
+      INCLUDE_GRAAL="false"
+    fi
+  fi
+
+  AC_SUBST(INCLUDE_GRAAL)
+
   # All variants but minimal (and custom) get these features
   NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti fprof vm-structs jni-check services management all-gcs nmt cds"
 
   # Enable features depending on variant.
-  JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci"
+  JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci $JVM_FEATURES_graal"
   JVM_FEATURES_client="compiler1 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci"
   JVM_FEATURES_core="$NON_MINIMAL_FEATURES $JVM_FEATURES"
   JVM_FEATURES_minimal="compiler1 minimal $JVM_FEATURES"
