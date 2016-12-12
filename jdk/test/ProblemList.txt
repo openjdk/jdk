@@ -171,7 +171,7 @@ java/net/MulticastSocket/Test.java                              7145658 macosx-a
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 
-java/net/httpclient/TimeoutOrdering.java                        8170940 windows-all
+java/net/httpclient/TimeoutOrdering.java                        8170940 solaris-all,windows-all
 
 ############################################################################
 
