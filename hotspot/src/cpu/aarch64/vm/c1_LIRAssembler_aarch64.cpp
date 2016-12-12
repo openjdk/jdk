@@ -375,7 +375,7 @@ int LIR_Assembler::emit_exception_handler() {
   __ nop();
 
   // generate code for exception handler
-  address handler_base = __ start_a_stub(exception_handler_size);
+  address handler_base = __ start_a_stub(exception_handler_size());
   if (handler_base == NULL) {
     // not enough space left for the handler
     bailout("exception handler overflow");
@@ -393,7 +393,7 @@ int LIR_Assembler::emit_exception_handler() {
 
   // search an exception handler (r0: exception oop, r3: throwing pc)
   __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::handle_exception_from_callee_id)));  __ should_not_reach_here();
-  guarantee(code_offset() - offset <= exception_handler_size, "overflow");
+  guarantee(code_offset() - offset <= exception_handler_size(), "overflow");
   __ end_a_stub();
 
   return offset;
@@ -467,7 +467,7 @@ int LIR_Assembler::emit_deopt_handler() {
   __ nop();
 
   // generate code for exception handler
-  address handler_base = __ start_a_stub(deopt_handler_size);
+  address handler_base = __ start_a_stub(deopt_handler_size());
   if (handler_base == NULL) {
     // not enough space left for the handler
     bailout("deopt handler overflow");
@@ -478,7 +478,7 @@ int LIR_Assembler::emit_deopt_handler() {
 
   __ adr(lr, pc());
   __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
-  guarantee(code_offset() - offset <= deopt_handler_size, "overflow");
+  guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
   __ end_a_stub();
 
   return offset;
@@ -2001,7 +2001,7 @@ void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
 
 void LIR_Assembler::emit_static_call_stub() {
   address call_pc = __ pc();
-  address stub = __ start_a_stub(call_stub_size);
+  address stub = __ start_a_stub(call_stub_size());
   if (stub == NULL) {
     bailout("static call stub overflow");
     return;
@@ -2014,7 +2014,7 @@ void LIR_Assembler::emit_static_call_stub() {
   __ movptr(rscratch1, 0);
   __ br(rscratch1);
 
-  assert(__ offset() - start <= call_stub_size, "stub too big");
+  assert(__ offset() - start <= call_stub_size(), "stub too big");
   __ end_a_stub();
 }
 

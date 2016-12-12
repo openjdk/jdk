@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "aot/aotLoader.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -1151,13 +1152,21 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
   Symbol* h_name = k->name();
   assert(class_name == NULL || class_name == h_name, "name mismatch");
 
+  bool define_succeeded = false;
   // Add class just loaded
   // If a class loader supports parallel classloading handle parallel define requests
   // find_or_define_instance_class may return a different InstanceKlass
   if (is_parallelCapable(class_loader)) {
-    k = find_or_define_instance_class(h_name, class_loader, k, CHECK_NULL);
+    instanceKlassHandle defined_k = find_or_define_instance_class(h_name, class_loader, k, CHECK_NULL);
+    if (k() == defined_k()) {
+      // we have won over other concurrent threads (if any) that are
+      // competing to define the same class.
+      define_succeeded = true;
+    }
+    k = defined_k;
   } else {
     define_instance_class(k, CHECK_NULL);
+    define_succeeded = true;
   }
 
   // Make sure we have an entry in the SystemDictionary on success
@@ -1401,6 +1410,19 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
     // notify a class loaded from shared object
     ClassLoadingService::notify_class_loaded(ik(), true /* shared class */);
   }
+
+  ik->set_has_passed_fingerprint_check(false);
+  if (UseAOT && ik->supers_have_passed_fingerprint_checks()) {
+    uint64_t aot_fp = AOTLoader::get_saved_fingerprint(ik());
+    uint64_t cds_fp = ik->get_stored_fingerprint();
+    if (aot_fp != 0 && aot_fp == cds_fp) {
+      // This class matches with a class saved in an AOT library
+      ik->set_has_passed_fingerprint_check(true);
+    } else {
+      ResourceMark rm;
+      log_info(class, fingerprint)("%s :  expected = " PTR64_FORMAT " actual = " PTR64_FORMAT, ik->external_name(), aot_fp, cds_fp);
+    }
+  }
   return ik;
 }
 #endif // INCLUDE_CDS
@@ -1487,7 +1509,9 @@ instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Ha
 
     // find_or_define_instance_class may return a different InstanceKlass
     if (!k.is_null()) {
-      k = find_or_define_instance_class(class_name, class_loader, k, CHECK_(nh));
+      instanceKlassHandle defined_k =
+        find_or_define_instance_class(class_name, class_loader, k, CHECK_(nh));
+      k = defined_k;
     }
     return k;
   } else {

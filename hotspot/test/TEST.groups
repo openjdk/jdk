@@ -83,6 +83,7 @@ jdk = \
 # can be resolved in some cases by using tools from the compile-jdk.
 #
 needs_jdk = \
+  compiler/aot \
   gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
   gc/metaspace/TestPerfCountersAndMemoryPools.java \
@@ -273,6 +274,7 @@ hotspot_native_sanity = \
   native_sanity
 
 hotspot_fast_compiler_1 = \
+  compiler/aot/ \
   compiler/arraycopy/ \
   compiler/c1/ \
   compiler/c2/ \

@@ -153,7 +153,7 @@ int LIR_Assembler::emit_exception_handler() {
   __ nop();
 
   // Generate code for the exception handler.
-  address handler_base = __ start_a_stub(exception_handler_size);
+  address handler_base = __ start_a_stub(exception_handler_size());
 
   if (handler_base == NULL) {
     // Not enough space left for the handler.
@@ -168,7 +168,7 @@ int LIR_Assembler::emit_exception_handler() {
   __ mtctr(R0);
   __ bctr();
 
-  guarantee(code_offset() - offset <= exception_handler_size, "overflow");
+  guarantee(code_offset() - offset <= exception_handler_size(), "overflow");
   __ end_a_stub();
 
   return offset;
@@ -233,7 +233,7 @@ int LIR_Assembler::emit_deopt_handler() {
   __ nop();
 
   // Generate code for deopt handler.
-  address handler_base = __ start_a_stub(deopt_handler_size);
+  address handler_base = __ start_a_stub(deopt_handler_size());
 
   if (handler_base == NULL) {
     // Not enough space left for the handler.
@@ -244,7 +244,7 @@ int LIR_Assembler::emit_deopt_handler() {
   int offset = code_offset();
   __ bl64_patchable(SharedRuntime::deopt_blob()->unpack(), relocInfo::runtime_call_type);
 
-  guarantee(code_offset() - offset <= deopt_handler_size, "overflow");
+  guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
   __ end_a_stub();
 
   return offset;
@@ -1307,7 +1307,7 @@ int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
 
 void LIR_Assembler::emit_static_call_stub() {
   address call_pc = __ pc();
-  address stub = __ start_a_stub(max_static_call_stub_size);
+  address stub = __ start_a_stub(static_call_stub_size());
   if (stub == NULL) {
     bailout("static call stub overflow");
     return;
@@ -1346,7 +1346,7 @@ void LIR_Assembler::emit_static_call_stub() {
     return;
   }
 
-  assert(__ offset() - start <= max_static_call_stub_size, "stub too big");
+  assert(__ offset() - start <= static_call_stub_size(), "stub too big");
   __ end_a_stub();
 }
 

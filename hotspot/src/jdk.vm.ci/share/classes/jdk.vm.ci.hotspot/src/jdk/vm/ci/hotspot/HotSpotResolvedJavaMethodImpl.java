@@ -430,7 +430,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     public ProfilingInfo getProfilingInfo(boolean includeNormal, boolean includeOSR) {
         ProfilingInfo info;
 
-        if (methodData == null) {
+        if (Option.UseProfilingInformation.getBoolean() && methodData == null) {
             long metaspaceMethodData = UNSAFE.getAddress(metaspaceMethod + config().methodDataOffset);
             if (metaspaceMethodData != 0) {
                 methodData = new HotSpotMethodData(metaspaceMethodData, this);

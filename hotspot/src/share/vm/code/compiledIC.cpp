@@ -55,7 +55,7 @@ void* CompiledIC::cached_value() const {
   assert (!is_optimized(), "an optimized virtual call does not have a cached metadata");
 
   if (!is_in_transition_state()) {
-    void* data = (void*)_value->data();
+    void* data = get_data();
     // If we let the metadata value here be initialized to zero...
     assert(data != NULL || Universe::non_oop_word() == NULL,
            "no raw nulls in CompiledIC metadatas, because of patching races");
@@ -77,13 +77,13 @@ void CompiledIC::internal_set_ic_destination(address entry_point, bool is_icstub
   // Don't use ic_destination for this test since that forwards
   // through ICBuffer instead of returning the actual current state of
   // the CompiledIC.
-  if (is_icholder_entry(_ic_call->destination())) {
+  if (is_icholder_entry(_call->destination())) {
     // When patching for the ICStub case the cached value isn't
     // overwritten until the ICStub copied into the CompiledIC during
     // the next safepoint.  Make sure that the CompiledICHolder* is
     // marked for release at this point since it won't be identifiable
     // once the entry point is overwritten.
-    InlineCacheBuffer::queue_for_release((CompiledICHolder*)_value->data());
+    InlineCacheBuffer::queue_for_release((CompiledICHolder*)get_data());
   }
 
   if (TraceCompiledIC) {
@@ -102,10 +102,10 @@ void CompiledIC::internal_set_ic_destination(address entry_point, bool is_icstub
   {
     MutexLockerEx pl(SafepointSynchronize::is_at_safepoint() ? NULL : Patching_lock, Mutex::_no_safepoint_check_flag);
 #ifdef ASSERT
-    CodeBlob* cb = CodeCache::find_blob_unsafe(_ic_call);
+    CodeBlob* cb = CodeCache::find_blob_unsafe(_call->instruction_address());
     assert(cb != NULL && cb->is_compiled(), "must be compiled");
 #endif
-     _ic_call->set_destination_mt_safe(entry_point);
+    _call->set_destination_mt_safe(entry_point);
   }
 
   if (is_optimized() || is_icstub) {
@@ -118,7 +118,7 @@ void CompiledIC::internal_set_ic_destination(address entry_point, bool is_icstub
 
   if (cache == NULL)  cache = (void*)Universe::non_oop_word();
 
-  _value->set_data((intptr_t)cache);
+  set_data((intptr_t)cache);
 }
 
 
@@ -131,7 +131,7 @@ void CompiledIC::set_ic_destination(ICStub* stub) {
 address CompiledIC::ic_destination() const {
  assert (CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "");
  if (!is_in_transition_state()) {
-   return _ic_call->destination();
+   return _call->destination();
  } else {
    return InlineCacheBuffer::ic_destination_for((CompiledIC *)this);
  }
@@ -140,7 +140,7 @@ address CompiledIC::ic_destination() const {
 
 bool CompiledIC::is_in_transition_state() const {
   assert (CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "");
-  return InlineCacheBuffer::contains(_ic_call->destination());
+  return InlineCacheBuffer::contains(_call->destination());;
 }
 
 
@@ -153,7 +153,7 @@ bool CompiledIC::is_icholder_call() const {
 // the InlineCacheBuffer when it needs to find the stub.
 address CompiledIC::stub_address() const {
   assert(is_in_transition_state(), "should only be called when we are in a transition state");
-  return _ic_call->destination();
+  return _call->destination();
 }
 
 // Clears the IC stub if the compiled IC is in transition state
@@ -164,17 +164,16 @@ void CompiledIC::clear_ic_stub() {
   }
 }
 
-
 //-----------------------------------------------------------------------------
 // High-level access to an inline cache. Guaranteed to be MT-safe.
 
 void CompiledIC::initialize_from_iter(RelocIterator* iter) {
-  assert(iter->addr() == _ic_call->instruction_address(), "must find ic_call");
+  assert(iter->addr() == _call->instruction_address(), "must find ic_call");
 
   if (iter->type() == relocInfo::virtual_call_type) {
     virtual_call_Relocation* r = iter->virtual_call_reloc();
     _is_optimized = false;
-    _value = nativeMovConstReg_at(r->cached_value());
+    _value = _call->get_load_instruction(r);
   } else {
     assert(iter->type() == relocInfo::opt_virtual_call_type, "must be a virtual call");
     _is_optimized = true;
@@ -183,9 +182,10 @@ void CompiledIC::initialize_from_iter(RelocIterator* iter) {
 }
 
 CompiledIC::CompiledIC(CompiledMethod* cm, NativeCall* call)
-  : _ic_call(call)
+  : _method(cm)
 {
-  address ic_call = _ic_call->instruction_address();
+  _call = _method->call_wrapper_at((address) call);
+  address ic_call = _call->instruction_address();
 
   assert(ic_call != NULL, "ic_call address must be set");
   assert(cm != NULL, "must pass compiled method");
@@ -201,9 +201,10 @@ CompiledIC::CompiledIC(CompiledMethod* cm, NativeCall* call)
 }
 
 CompiledIC::CompiledIC(RelocIterator* iter)
-  : _ic_call(nativeCall_at(iter->addr()))
+  : _method(iter->code())
 {
-  address ic_call = _ic_call->instruction_address();
+  _call = _method->call_wrapper_at(iter->addr());
+  address ic_call = _call->instruction_address();
 
   CompiledMethod* nm = iter->code();
   assert(ic_call != NULL, "ic_call address must be set");
@@ -311,19 +312,16 @@ bool CompiledIC::is_call_to_interpreted() const {
     assert(!is_call_to_interpreted || (is_icholder_call() && cached_icholder() != NULL), "sanity check");
   } else {
     // Check if we are calling into our own codeblob (i.e., to a stub)
-    CodeBlob* cb = CodeCache::find_blob(_ic_call->instruction_address());
     address dest = ic_destination();
 #ifdef ASSERT
     {
-      CodeBlob* db = CodeCache::find_blob_unsafe(dest);
-      assert(!db->is_adapter_blob(), "must use stub!");
+      _call->verify_resolve_call(dest);
     }
 #endif /* ASSERT */
-    is_call_to_interpreted = cb->contains(dest);
+    is_call_to_interpreted = _call->is_call_to_interpreted(dest);
   }
   return is_call_to_interpreted;
 }
-
 
 void CompiledIC::set_to_clean(bool in_use) {
   assert(SafepointSynchronize::is_at_safepoint() || CompiledIC_lock->is_locked() , "MT-unsafe call");
@@ -332,16 +330,11 @@ void CompiledIC::set_to_clean(bool in_use) {
     print();
   }
 
-  address entry;
-  if (is_optimized()) {
-    entry = SharedRuntime::get_resolve_opt_virtual_call_stub();
-  } else {
-    entry = SharedRuntime::get_resolve_virtual_call_stub();
-  }
+  address entry = _call->get_resolve_call_stub(is_optimized());
 
   // A zombie transition will always be safe, since the metadata has already been set to NULL, so
   // we only need to patch the destination
-  bool safe_transition = !in_use || is_optimized() || SafepointSynchronize::is_at_safepoint();
+  bool safe_transition = _call->is_safe_for_patching() || !in_use || is_optimized() || SafepointSynchronize::is_at_safepoint();
 
   if (safe_transition) {
     // Kill any leftover stub we might have too
@@ -364,17 +357,14 @@ void CompiledIC::set_to_clean(bool in_use) {
   // assert(is_clean(), "sanity check");
 }
 
-
 bool CompiledIC::is_clean() const {
   assert (CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "");
   bool is_clean = false;
   address dest = ic_destination();
-  is_clean = dest == SharedRuntime::get_resolve_opt_virtual_call_stub() ||
-             dest == SharedRuntime::get_resolve_virtual_call_stub();
+  is_clean = dest == _call->get_resolve_call_stub(is_optimized());
   assert(!is_clean || is_optimized() || cached_value() == NULL, "sanity check");
   return is_clean;
 }
-
 
 void CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
   assert (CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "");
@@ -391,7 +381,7 @@ void CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
   // transitions are mt_safe
 
   Thread *thread = Thread::current();
-  if (info.to_interpreter()) {
+  if (info.to_interpreter() || info.to_aot()) {
     // Call to interpreter
     if (info.is_optimized() && is_optimized()) {
        assert(is_clean(), "unsafe IC path");
@@ -401,13 +391,14 @@ void CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
       // At code generation time, this call has been emitted as static call
       // Call via stub
       assert(info.cached_metadata() != NULL && info.cached_metadata()->is_method(), "sanity check");
-      CompiledStaticCall* csc = compiledStaticCall_at(instruction_address());
       methodHandle method (thread, (Method*)info.cached_metadata());
-      csc->set_to_interpreted(method, info.entry());
+      _call->set_to_interpreted(method, info);
+
       if (TraceICs) {
          ResourceMark rm(thread);
-         tty->print_cr ("IC@" INTPTR_FORMAT ": monomorphic to interpreter: %s",
+         tty->print_cr ("IC@" INTPTR_FORMAT ": monomorphic to %s: %s",
            p2i(instruction_address()),
+           (info.to_aot() ? "aot" : "interpreter"),
            method->print_value_string());
       }
     } else {
@@ -469,6 +460,7 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
                                            KlassHandle receiver_klass,
                                            bool is_optimized,
                                            bool static_bound,
+                                           bool caller_is_nmethod,
                                            CompiledICInfo& info,
                                            TRAPS) {
   CompiledMethod* method_code = method->code();
@@ -499,13 +491,19 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
       entry      = method_code->entry_point();
     }
   }
-  if (entry != NULL) {
-    // Call to compiled code
+  bool far_c2a = entry != NULL && caller_is_nmethod && method_code->is_far_code();
+  if (entry != NULL && !far_c2a) {
+    // Call to near compiled code (nmethod or aot).
     info.set_compiled_entry(entry, (static_bound || is_optimized) ? NULL : receiver_klass(), is_optimized);
   } else {
     if (is_optimized) {
-      // Use stub entry
-      info.set_interpreter_entry(method()->get_c2i_entry(), method());
+      if (far_c2a) {
+        // Call to aot code from nmethod.
+        info.set_aot_entry(entry, method());
+      } else {
+        // Use stub entry
+        info.set_interpreter_entry(method()->get_c2i_entry(), method());
+      }
     } else {
       // Use icholder entry
       assert(method_code == NULL || method_code->is_compiled(), "must be compiled");
@@ -522,20 +520,21 @@ bool CompiledIC::is_icholder_entry(address entry) {
   return (cb != NULL && cb->is_adapter_blob());
 }
 
+bool CompiledIC::is_icholder_call_site(virtual_call_Relocation* call_site, const CompiledMethod* cm) {
+  // This call site might have become stale so inspect it carefully.
+  address dest = cm->call_wrapper_at(call_site->addr())->destination();
+  return is_icholder_entry(dest);
+}
+
 // Release the CompiledICHolder* associated with this call site is there is one.
-void CompiledIC::cleanup_call_site(virtual_call_Relocation* call_site) {
+void CompiledIC::cleanup_call_site(virtual_call_Relocation* call_site, const CompiledMethod* cm) {
+  assert(cm->is_nmethod(), "must be nmethod");
   // This call site might have become stale so inspect it carefully.
   NativeCall* call = nativeCall_at(call_site->addr());
   if (is_icholder_entry(call->destination())) {
     NativeMovConstReg* value = nativeMovConstReg_at(call_site->cached_value());
     InlineCacheBuffer::queue_for_release((CompiledICHolder*)value->data());
   }
-}
-
-bool CompiledIC::is_icholder_call_site(virtual_call_Relocation* call_site) {
-  // This call site might have become stale so inspect it carefully.
-  NativeCall* call = nativeCall_at(call_site->addr());
-  return is_icholder_entry(call->destination());
 }
 
 // ----------------------------------------------------------------------------
@@ -545,31 +544,50 @@ void CompiledStaticCall::set_to_clean() {
   // Reset call site
   MutexLockerEx pl(SafepointSynchronize::is_at_safepoint() ? NULL : Patching_lock, Mutex::_no_safepoint_check_flag);
 #ifdef ASSERT
-  CodeBlob* cb = CodeCache::find_blob_unsafe(this);
+  CodeBlob* cb = CodeCache::find_blob_unsafe(instruction_address());
   assert(cb != NULL && cb->is_compiled(), "must be compiled");
 #endif
-  set_destination_mt_safe(SharedRuntime::get_resolve_static_call_stub());
+
+  set_destination_mt_safe(resolve_call_stub());
 
   // Do not reset stub here:  It is too expensive to call find_stub.
   // Instead, rely on caller (nmethod::clear_inline_caches) to clear
   // both the call and its stub.
 }
 
-
 bool CompiledStaticCall::is_clean() const {
-  return destination() == SharedRuntime::get_resolve_static_call_stub();
+  return destination() == resolve_call_stub();
 }
 
 bool CompiledStaticCall::is_call_to_compiled() const {
   return CodeCache::contains(destination());
 }
 
-
-bool CompiledStaticCall::is_call_to_interpreted() const {
+bool CompiledDirectStaticCall::is_call_to_interpreted() const {
   // It is a call to interpreted, if it calls to a stub. Hence, the destination
   // must be in the stub part of the nmethod that contains the call
   CompiledMethod* cm = CodeCache::find_compiled(instruction_address());
   return cm->stub_contains(destination());
+}
+
+bool CompiledDirectStaticCall::is_call_to_far() const {
+  // It is a call to aot method, if it calls to a stub. Hence, the destination
+  // must be in the stub part of the nmethod that contains the call
+  CodeBlob* desc = CodeCache::find_blob(instruction_address());
+  return desc->as_compiled_method()->stub_contains(destination());
+}
+
+void CompiledStaticCall::set_to_compiled(address entry) {
+  if (TraceICs) {
+    ResourceMark rm;
+    tty->print_cr("%s@" INTPTR_FORMAT ": set_to_compiled " INTPTR_FORMAT,
+        name(),
+        p2i(instruction_address()),
+        p2i(entry));
+  }
+  // Call to compiled code
+  assert(CodeCache::contains(entry), "wrong entry point");
+  set_destination_mt_safe(entry);
 }
 
 void CompiledStaticCall::set(const StaticCallInfo& info) {
@@ -584,26 +602,28 @@ void CompiledStaticCall::set(const StaticCallInfo& info) {
   if (info._to_interpreter) {
     // Call to interpreted code
     set_to_interpreted(info.callee(), info.entry());
+#if INCLUDE_AOT
+  } else if (info._to_aot) {
+    // Call to far code
+    set_to_far(info.callee(), info.entry());
+#endif
   } else {
-    if (TraceICs) {
-      ResourceMark rm;
-      tty->print_cr("CompiledStaticCall@" INTPTR_FORMAT ": set_to_compiled " INTPTR_FORMAT,
-                    p2i(instruction_address()),
-                    p2i(info.entry()));
-    }
-    // Call to compiled code
-    assert (CodeCache::contains(info.entry()), "wrong entry point");
-    set_destination_mt_safe(info.entry());
+    set_to_compiled(info.entry());
   }
 }
 
-
 // Compute settings for a CompiledStaticCall. Since we might have to set
 // the stub when calling to the interpreter, we need to return arguments.
-void CompiledStaticCall::compute_entry(const methodHandle& m, StaticCallInfo& info) {
+void CompiledStaticCall::compute_entry(const methodHandle& m, bool caller_is_nmethod, StaticCallInfo& info) {
   CompiledMethod* m_code = m->code();
   info._callee = m;
   if (m_code != NULL && m_code->is_in_use()) {
+    if (caller_is_nmethod && m_code->is_far_code()) {
+      // Call to far aot code from nmethod.
+      info._to_aot = true;
+    } else {
+      info._to_aot = false;
+    }
     info._to_interpreter = false;
     info._entry  = m_code->verified_entry_point();
   } else {
@@ -615,18 +635,18 @@ void CompiledStaticCall::compute_entry(const methodHandle& m, StaticCallInfo& in
   }
 }
 
-address CompiledStaticCall::find_stub() {
+address CompiledDirectStaticCall::find_stub_for(address instruction, bool is_aot) {
   // Find reloc. information containing this call-site
-  RelocIterator iter((nmethod*)NULL, instruction_address());
+  RelocIterator iter((nmethod*)NULL, instruction);
   while (iter.next()) {
-    if (iter.addr() == instruction_address()) {
+    if (iter.addr() == instruction) {
       switch(iter.type()) {
         case relocInfo::static_call_type:
-          return iter.static_call_reloc()->static_stub();
+          return iter.static_call_reloc()->static_stub(is_aot);
         // We check here for opt_virtual_call_type, since we reuse the code
         // from the CompiledIC implementation
         case relocInfo::opt_virtual_call_type:
-          return iter.opt_virtual_call_reloc()->static_stub();
+          return iter.opt_virtual_call_reloc()->static_stub(is_aot);
         case relocInfo::poll_type:
         case relocInfo::poll_return_type: // A safepoint can't overlap a call.
         default:
@@ -637,17 +657,20 @@ address CompiledStaticCall::find_stub() {
   return NULL;
 }
 
+address CompiledDirectStaticCall::find_stub(bool is_aot) {
+  return CompiledDirectStaticCall::find_stub_for(instruction_address(), is_aot);
+}
+
+address CompiledDirectStaticCall::resolve_call_stub() const {
+  return SharedRuntime::get_resolve_static_call_stub();
+}
 
 //-----------------------------------------------------------------------------
 // Non-product mode code
 #ifndef PRODUCT
 
 void CompiledIC::verify() {
-  // make sure code pattern is actually a call imm32 instruction
-  _ic_call->verify();
-  if (os::is_MP()) {
-    _ic_call->verify_alignment();
-  }
+  _call->verify();
   assert(is_clean() || is_call_to_compiled() || is_call_to_interpreted()
           || is_optimized() || is_megamorphic(), "sanity check");
 }
@@ -662,12 +685,14 @@ void CompiledIC::print_compiled_ic() {
              p2i(instruction_address()), is_call_to_interpreted() ? "interpreted " : "", p2i(ic_destination()), p2i(is_optimized() ? NULL : cached_value()));
 }
 
-void CompiledStaticCall::print() {
+void CompiledDirectStaticCall::print() {
   tty->print("static call at " INTPTR_FORMAT " -> ", p2i(instruction_address()));
   if (is_clean()) {
     tty->print("clean");
   } else if (is_call_to_compiled()) {
     tty->print("compiled");
+  } else if (is_call_to_far()) {
+    tty->print("far");
   } else if (is_call_to_interpreted()) {
     tty->print("interpreted");
   }
