@@ -2037,6 +2037,10 @@ public:
           "MaxRAM / MaxRAMFraction")                                        \
           range(0, max_uintx)                                               \
                                                                             \
+  experimental(bool, UseCGroupMemoryLimitForHeap, false,                    \
+          "Use CGroup memory limit as physical memory limit for heap "      \
+          "sizing")                                                         \
+                                                                            \
   product(uintx, MaxRAMFraction, 4,                                         \
           "Maximum fraction (1/n) of real memory used for maximum heap "    \
           "size")                                                           \
