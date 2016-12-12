@@ -75,6 +75,8 @@ friend class ArrayCopyStub;
     _deopt_handler_size = 7 * NativeInstruction::instruction_size
   };
 
+  void arithmetic_idiv(LIR_Op3* op, bool is_irem);
+
 public:
 
   void store_parameter(Register r, int offset_from_esp_in_words);
