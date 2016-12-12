@@ -478,6 +478,11 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         return UNSAFE.getInt(getMetaspaceKlass() + config.klassLayoutHelperOffset);
     }
 
+    @Override
+    public long getFingerprint() {
+        return compilerToVM().getFingerprint(getMetaspaceKlass());
+    }
+
     synchronized HotSpotResolvedJavaMethod createMethod(long metaspaceMethod) {
         HotSpotResolvedJavaMethodImpl method = null;
         if (methodCache == null) {

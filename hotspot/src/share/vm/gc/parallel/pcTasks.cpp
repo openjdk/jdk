@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "aot/aotLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
@@ -127,6 +128,7 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
     case code_cache:
       // Do not treat nmethods as strong roots for mark/sweep, since we can unload them.
       //CodeCache::scavenge_root_nmethods_do(CodeBlobToOopClosure(&mark_and_push_closure));
+      AOTLoader::oops_do(&mark_and_push_closure);
       break;
 
     default:

@@ -30,6 +30,8 @@
 #include "runtime/compilationPolicy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+#ifdef TIERED
+
 class CompileTask;
 class CompileQueue;
 
@@ -117,5 +119,7 @@ public:
             callee->has_loops();
   }
 };
+
+#endif // TIERED
 
 #endif // SHARE_VM_RUNTIME_SIMPLETHRESHOLDPOLICY_HPP

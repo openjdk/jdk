@@ -41,4 +41,32 @@ module jdk.vm.compiler {
     uses org.graalvm.compiler.hotspot.HotSpotBackendFactory;
     uses org.graalvm.compiler.nodes.graphbuilderconf.NodeIntrinsicPluginFactory;
 
+    exports org.graalvm.compiler.api.directives         to jdk.aot;
+    exports org.graalvm.compiler.api.runtime            to jdk.aot;
+    exports org.graalvm.compiler.api.replacements       to jdk.aot;
+    exports org.graalvm.compiler.asm.amd64              to jdk.aot;
+    exports org.graalvm.compiler.bytecode               to jdk.aot;
+    exports org.graalvm.compiler.code                   to jdk.aot;
+    exports org.graalvm.compiler.core                   to jdk.aot;
+    exports org.graalvm.compiler.core.common            to jdk.aot;
+    exports org.graalvm.compiler.core.target            to jdk.aot;
+    exports org.graalvm.compiler.debug                  to jdk.aot;
+    exports org.graalvm.compiler.debug.internal         to jdk.aot;
+    exports org.graalvm.compiler.graph                  to jdk.aot;
+    exports org.graalvm.compiler.hotspot                to jdk.aot;
+    exports org.graalvm.compiler.hotspot.meta           to jdk.aot;
+    exports org.graalvm.compiler.hotspot.replacements   to jdk.aot;
+    exports org.graalvm.compiler.hotspot.stubs          to jdk.aot;
+    exports org.graalvm.compiler.hotspot.word           to jdk.aot;
+    exports org.graalvm.compiler.java                   to jdk.aot;
+    exports org.graalvm.compiler.lir.asm                to jdk.aot;
+    exports org.graalvm.compiler.lir.phases             to jdk.aot;
+    exports org.graalvm.compiler.nodes                  to jdk.aot;
+    exports org.graalvm.compiler.nodes.graphbuilderconf to jdk.aot;
+    exports org.graalvm.compiler.options                to jdk.aot;
+    exports org.graalvm.compiler.phases                 to jdk.aot;
+    exports org.graalvm.compiler.phases.tiers           to jdk.aot;
+    exports org.graalvm.compiler.runtime                to jdk.aot;
+    exports org.graalvm.compiler.replacements           to jdk.aot;
+    exports org.graalvm.compiler.word                   to jdk.aot;
 }

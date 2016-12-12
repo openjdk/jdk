@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "aot/aotLoader.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -2170,6 +2171,7 @@ void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
 
   CodeBlobToOopClosure adjust_from_blobs(&oop_closure, CodeBlobToOopClosure::FixRelocations);
   CodeCache::blobs_do(&adjust_from_blobs);
+  AOTLoader::oops_do(&oop_closure);
   StringTable::oops_do(&oop_closure);
   ref_processor()->weak_oops_do(&oop_closure);
   // Roots were visited so references into the young gen in roots

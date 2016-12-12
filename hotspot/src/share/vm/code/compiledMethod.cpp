@@ -274,7 +274,7 @@ int CompiledMethod::verify_icholder_relocations() {
   RelocIterator iter(this);
   while(iter.next()) {
     if (iter.type() == relocInfo::virtual_call_type) {
-      if (CompiledIC::is_icholder_call_site(iter.virtual_call_reloc())) {
+      if (CompiledIC::is_icholder_call_site(iter.virtual_call_reloc(), this)) {
         CompiledIC *ic = CompiledIC_at(&iter);
         if (TraceCompiledIC) {
           tty->print("noticed icholder " INTPTR_FORMAT " ", p2i(ic->cached_icholder()));
@@ -409,6 +409,7 @@ class CheckClass : AllStatic {
 // This is called during a safepoint so can use static data
 BoolObjectClosure* CheckClass::_is_alive = NULL;
 #endif // ASSERT
+
 
 void CompiledMethod::clean_ic_if_metadata_is_dead(CompiledIC *ic, BoolObjectClosure *is_alive) {
   if (ic->is_icholder_call()) {

@@ -528,7 +528,7 @@ public:
     _hr(hr), _failures(false) {}
 
   void do_code_blob(CodeBlob* cb) {
-    nmethod* nm = (cb == NULL) ? NULL : cb->as_nmethod_or_null();
+    nmethod* nm = (cb == NULL) ? NULL : cb->as_compiled_method()->as_nmethod_or_null();
     if (nm != NULL) {
       // Verify that the nemthod is live
       if (!nm->is_alive()) {

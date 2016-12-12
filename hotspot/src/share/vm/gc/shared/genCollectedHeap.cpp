@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "aot/aotLoader.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -73,6 +74,7 @@ enum GCH_strong_roots_tasks {
   GCH_PS_ClassLoaderDataGraph_oops_do,
   GCH_PS_jvmti_oops_do,
   GCH_PS_CodeCache_oops_do,
+  GCH_PS_aot_oops_do,
   GCH_PS_younger_gens,
   // Leave this one last.
   GCH_PS_NumElements
@@ -607,6 +609,9 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
   }
   if (!_process_strong_tasks->is_task_claimed(GCH_PS_jvmti_oops_do)) {
     JvmtiExport::oops_do(strong_roots);
+  }
+  if (UseAOT && !_process_strong_tasks->is_task_claimed(GCH_PS_aot_oops_do)) {
+    AOTLoader::oops_do(strong_roots);
   }
 
   if (!_process_strong_tasks->is_task_claimed(GCH_PS_SystemDictionary_oops_do)) {
