@@ -145,10 +145,17 @@ ifeq ($(INCLUDE_SA), false)
 endif
 
 ################################################################################
-# Filter out specific modules
+# Filter out Graal specific modules if Graal build is disabled
 
 ifeq ($(INCLUDE_GRAAL), false)
   MODULES_FILTER += jdk.vm.compiler
+endif
+
+################################################################################
+# Filter out aot specific modules if aot is disabled
+
+ifeq ($(ENABLE_AOT), false)
+  MODULES_FILTER += jdk.aot
 endif
 
 ################################################################################

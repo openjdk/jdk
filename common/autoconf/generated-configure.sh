@@ -654,6 +654,17 @@ NUM_CORES
 ENABLE_GENERATE_CLASSLIST
 BUILD_FAILURE_HANDLER
 ENABLE_INTREE_EC
+VALID_JVM_FEATURES
+JVM_FEATURES_custom
+JVM_FEATURES_zeroshark
+JVM_FEATURES_zero
+JVM_FEATURES_minimal
+JVM_FEATURES_core
+JVM_FEATURES_client
+JVM_FEATURES_server
+INCLUDE_GRAAL
+ELF_LIBS
+ELF_CFLAGS
 STLPORT_LIB
 LIBZIP_CAN_USE_MMAP
 LIBDL
@@ -692,15 +703,7 @@ LIBCXX
 FIXPATH_DETACH_FLAG
 FIXPATH
 BUILD_GTEST
-VALID_JVM_FEATURES
-JVM_FEATURES_custom
-JVM_FEATURES_zeroshark
-JVM_FEATURES_zero
-JVM_FEATURES_minimal
-JVM_FEATURES_core
-JVM_FEATURES_client
-JVM_FEATURES_server
-INCLUDE_GRAAL
+ENABLE_AOT
 INCLUDE_DTRACE
 GCOV_ENABLED
 ZIP_EXTERNAL_DEBUG_SYMBOLS
@@ -1186,8 +1189,7 @@ enable_debug_symbols
 enable_zip_debug_info
 enable_native_coverage
 enable_dtrace
-with_jvm_features
-with_jvm_interpreter
+enable_aot
 enable_hotspot_gtest
 with_stdc__lib
 with_msvcr_dll
@@ -1215,6 +1217,11 @@ with_lcms
 with_dxsdk
 with_dxsdk_lib
 with_dxsdk_include
+with_libelf
+with_libelf_include
+with_libelf_lib
+with_jvm_features
+with_jvm_interpreter
 enable_jtreg_failure_handler
 enable_generate_classlist
 with_num_cores
@@ -1339,6 +1346,8 @@ PNG_CFLAGS
 PNG_LIBS
 LCMS_CFLAGS
 LCMS_LIBS
+ELF_CFLAGS
+ELF_LIBS
 ICECC_CMD
 ICECC_CREATE_ENV
 ICECC_WRAPPER
@@ -1984,6 +1993,10 @@ Optional Features:
   --enable-dtrace[=yes/no/auto]
                           enable dtrace. Default is auto, where dtrace is
                           enabled if all dependencies are present.
+  --enable-aot[=yes/no/auto]
+                          enable ahead of time compilation feature. Default is
+                          auto, where aot is enabled if all dependencies are
+                          present.
   --disable-hotspot-gtest Disables building of the Hotspot unit tests
   --disable-freetype-bundling
                           disable bundling of the freetype library with the
@@ -2111,10 +2124,6 @@ Optional Packages:
   --with-native-debug-symbols
                           set the native debug symbol configuration (none,
                           internal, external, zipped) [varying]
-  --with-jvm-features     additional JVM features to enable (separated by
-                          comma), use '--help' to show possible values [none]
-  --with-jvm-interpreter  Deprecated. Option is kept for backwards
-                          compatibility and is ignored
   --with-stdc++lib=<static>,<dynamic>,<default>
                           force linking of the C++ runtime on Linux to either
                           static or dynamic, default is static with dynamic as
@@ -2160,6 +2169,15 @@ Optional Packages:
   --with-dxsdk-lib        Deprecated. Option is kept for backwards
                           compatibility and is ignored
   --with-dxsdk-include    Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --with-libelf           specify prefix directory for the libelf package
+                          (expecting the libraries under PATH/lib and the
+                          headers under PATH/include)
+  --with-libelf-include   specify directory for the libelf include files
+  --with-libelf-lib       specify directory for the libelf library
+  --with-jvm-features     additional JVM features to enable (separated by
+                          comma), use '--help' to show possible values [none]
+  --with-jvm-interpreter  Deprecated. Option is kept for backwards
                           compatibility and is ignored
   --with-num-cores        number of cores in the build system, e.g.
                           --with-num-cores=8 [probed]
@@ -2290,6 +2308,8 @@ Some influential environment variables:
   PNG_LIBS    linker flags for PNG, overriding pkg-config
   LCMS_CFLAGS C compiler flags for LCMS, overriding pkg-config
   LCMS_LIBS   linker flags for LCMS, overriding pkg-config
+  ELF_CFLAGS  C compiler flags for ELF, overriding pkg-config
+  ELF_LIBS    linker flags for ELF, overriding pkg-config
   ICECC_CMD   Override default value for ICECC_CMD
   ICECC_CREATE_ENV
               Override default value for ICECC_CREATE_ENV
@@ -4177,6 +4197,8 @@ apt_help() {
       PKGHANDLER_COMMAND="sudo apt-get install ccache" ;;
     dtrace)
       PKGHANDLER_COMMAND="sudo apt-get install systemtap-sdt-dev" ;;
+    elf)
+      PKGHANDLER_COMMAND="sudo apt-get install libelf-dev" ;;
   esac
 }
 
@@ -4196,6 +4218,8 @@ yum_help() {
       PKGHANDLER_COMMAND="sudo yum install libXtst-devel libXt-devel libXrender-devel libXi-devel" ;;
     ccache)
       PKGHANDLER_COMMAND="sudo yum install ccache" ;;
+    elf)
+      PKGHANDLER_COMMAND="sudo yum install elfutils-libelf-devel" ;;
   esac
 }
 
@@ -4248,7 +4272,7 @@ pkgadd_help() {
 
 # All valid JVM features, regardless of platform
 VALID_JVM_FEATURES="compiler1 compiler2 zero shark minimal dtrace jvmti jvmci \
-    graal fprof vm-structs jni-check services management all-gcs nmt cds static-build"
+    graal fprof vm-structs jni-check services management all-gcs nmt cds static-build aot"
 
 # All valid JVM variants
 VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
@@ -4289,6 +4313,11 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 
 ###############################################################################
 # Check if dtrace should be enabled and has all prerequisites present.
+#
+
+
+################################################################################
+# Check if AOT should be enabled
 #
 
 
@@ -4715,6 +4744,36 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 ################################################################################
 
 
+#
+# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# Setup libelf (ELF library)
+################################################################################
+
+
 
 ################################################################################
 # Determine which libraries are needed for this configuration
@@ -5083,7 +5142,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1481486918
+DATE_WHEN_GENERATED=1481496095
 
 ###############################################################################
 #
@@ -52694,138 +52753,51 @@ $as_echo "yes, dependencies present" >&6; }
 
 
 
-  # The user can in some cases supply additional jvm features. For the custom
-  # variant, this defines the entire variant.
-
-# Check whether --with-jvm-features was given.
-if test "${with_jvm_features+set}" = set; then :
-  withval=$with_jvm_features;
+  # Check whether --enable-aot was given.
+if test "${enable_aot+set}" = set; then :
+  enableval=$enable_aot;
 fi
 
-  if test "x$with_jvm_features" != x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking additional JVM features" >&5
-$as_echo_n "checking additional JVM features... " >&6; }
-    JVM_FEATURES=`$ECHO $with_jvm_features | $SED -e 's/,/ /g'`
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JVM_FEATURES" >&5
-$as_echo "$JVM_FEATURES" >&6; }
-  fi
 
-  # Verify that dependencies are met for explicitly set features.
-  if   [[ " $JVM_FEATURES " =~ " jvmti " ]]   && !   [[ " $JVM_FEATURES " =~ " services " ]]  ; then
-    as_fn_error $? "Specified JVM feature 'jvmti' requires feature 'services'" "$LINENO" 5
-  fi
-
-  if   [[ " $JVM_FEATURES " =~ " management " ]]   && !   [[ " $JVM_FEATURES " =~ " nmt " ]]  ; then
-    as_fn_error $? "Specified JVM feature 'management' requires feature 'nmt'" "$LINENO" 5
-  fi
-
-  if   [[ " $JVM_FEATURES " =~ " jvmci " ]]   && ! (  [[ " $JVM_FEATURES " =~ " compiler1 " ]]   ||   [[ " $JVM_FEATURES " =~ " compiler2 " ]]  ); then
-    as_fn_error $? "Specified JVM feature 'jvmci' requires feature 'compiler2' or 'compiler1'" "$LINENO" 5
-  fi
-
-  if   [[ " $JVM_FEATURES " =~ " compiler2 " ]]   && !   [[ " $JVM_FEATURES " =~ " all-gcs " ]]  ; then
-    as_fn_error $? "Specified JVM feature 'compiler2' requires feature 'all-gcs'" "$LINENO" 5
-  fi
-
-  if   [[ " $JVM_FEATURES " =~ " vm-structs " ]]   && !   [[ " $JVM_FEATURES " =~ " all-gcs " ]]  ; then
-    as_fn_error $? "Specified JVM feature 'vm-structs' requires feature 'all-gcs'" "$LINENO" 5
-  fi
-
-  # Turn on additional features based on other parts of configure
-  if test "x$INCLUDE_DTRACE" = "xtrue"; then
-    JVM_FEATURES="$JVM_FEATURES dtrace"
+  if test "x$enable_aot" = "x" || test "x$enable_aot" = "xauto"; then
+    ENABLE_AOT="true"
+  elif test "x$enable_aot" = "xyes"; then
+    ENABLE_AOT="true"
+  elif test "x$enable_aot" = "xno"; then
+    ENABLE_AOT="false"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if aot should be enabled" >&5
+$as_echo_n "checking if aot should be enabled... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
+$as_echo "no, forced" >&6; }
   else
-    if   [[ " $JVM_FEATURES " =~ " dtrace " ]]  ; then
-      as_fn_error $? "To enable dtrace, you must use --enable-dtrace" "$LINENO" 5
-    fi
+    as_fn_error $? "Invalid value for --enable-aot: $enable_aot" "$LINENO" 5
   fi
 
-  if test "x$STATIC_BUILD" = "xtrue"; then
-    JVM_FEATURES="$JVM_FEATURES static-build"
-  else
-    if   [[ " $JVM_FEATURES " =~ " static-build " ]]  ; then
-      as_fn_error $? "To enable static-build, you must use --enable-static-build" "$LINENO" 5
-    fi
-  fi
-
-  if !   [[ " $JVM_VARIANTS " =~ " zero " ]]   && !   [[ " $JVM_VARIANTS " =~ " zeroshark " ]]  ; then
-    if   [[ " $JVM_FEATURES " =~ " zero " ]]  ; then
-      as_fn_error $? "To enable zero/zeroshark, you must use --with-jvm-variants=zero/zeroshark" "$LINENO" 5
-    fi
-  fi
-
-  if !   [[ " $JVM_VARIANTS " =~ " zeroshark " ]]  ; then
-    if   [[ " $JVM_FEATURES " =~ " shark " ]]  ; then
-      as_fn_error $? "To enable shark, you must use --with-jvm-variants=zeroshark" "$LINENO" 5
-    fi
-  fi
-
-  # Only enable jvmci on x86_64, sparcv9 and aarch64.
-  if test "x$OPENJDK_TARGET_CPU" = "xx86_64" || \
-     test "x$OPENJDK_TARGET_CPU" = "xsparcv9" || \
-     test "x$OPENJDK_TARGET_CPU" = "xaarch64" ; then
-    JVM_FEATURES_jvmci="jvmci"
-  else
-    JVM_FEATURES_jvmci=""
-  fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jdk.vm.compiler should be built" >&5
-$as_echo_n "checking if jdk.vm.compiler should be built... " >&6; }
-  if   [[ " $JVM_FEATURES " =~ " graal " ]]  ; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
-$as_echo "yes, forced" >&6; }
-    if test "x$JVM_FEATURES_jvmci" != "xjvmci" ; then
-      as_fn_error $? "Specified JVM feature 'graal' requires feature 'jvmci'" "$LINENO" 5
-    fi
-    INCLUDE_GRAAL="true"
-  else
-    # By default enable graal build on linux-X64 and when JVMCI is available
-    if test "x$JVM_FEATURES_jvmci" = "xjvmci" && test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-x86_64"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-      JVM_FEATURES_graal="graal"
-      INCLUDE_GRAAL="true"
+  if test "x$ENABLE_AOT" = "xtrue"; then
+    # Only enable AOT on linux-X64.
+    if test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-x86_64"; then
+      if test -e "$HOTSPOT_TOPDIR/src/jdk.aot"; then
+        if test -e "$HOTSPOT_TOPDIR/src/jdk.vm.compiler"; then
+          ENABLE_AOT="true"
+        else
+          ENABLE_AOT="false"
+          if test "x$enable_aot" = "xyes"; then
+            as_fn_error $? "Cannot build AOT without hotspot/src/jdk.vm.compiler sources. Remove --enable-aot." "$LINENO" 5
+          fi
+        fi
+      else
+        ENABLE_AOT="false"
+        if test "x$enable_aot" = "xyes"; then
+          as_fn_error $? "Cannot build AOT without hotspot/src/jdk.aot sources. Remove --enable-aot." "$LINENO" 5
+        fi
+      fi
     else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-      JVM_FEATURES_graal=""
-      INCLUDE_GRAAL="false"
+      ENABLE_AOT="false"
+      if test "x$enable_aot" = "xyes"; then
+        as_fn_error $? "AOT is currently only supported on Linux-x86_64. Remove --enable-aot." "$LINENO" 5
+      fi
     fi
   fi
-
-
-
-  # All variants but minimal (and custom) get these features
-  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti fprof vm-structs jni-check services management all-gcs nmt cds"
-
-  # Enable features depending on variant.
-  JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci $JVM_FEATURES_graal"
-  JVM_FEATURES_client="compiler1 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci"
-  JVM_FEATURES_core="$NON_MINIMAL_FEATURES $JVM_FEATURES"
-  JVM_FEATURES_minimal="compiler1 minimal $JVM_FEATURES"
-  JVM_FEATURES_zero="zero $NON_MINIMAL_FEATURES $JVM_FEATURES"
-  JVM_FEATURES_zeroshark="zero shark $NON_MINIMAL_FEATURES $JVM_FEATURES"
-  JVM_FEATURES_custom="$JVM_FEATURES"
-
-
-
-
-
-
-
-
-
-  # Used for verification of Makefiles by check-jvm-feature
-
-
-  # We don't support --with-jvm-interpreter anymore, use zero instead.
-
-
-# Check whether --with-jvm-interpreter was given.
-if test "${with_jvm_interpreter+set}" = set; then :
-  withval=$with_jvm_interpreter; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-jvm-interpreter is deprecated and will be ignored." >&5
-$as_echo "$as_me: WARNING: Option --with-jvm-interpreter is deprecated and will be ignored." >&2;}
-fi
 
 
 
@@ -63794,6 +63766,275 @@ $as_echo "no, not found at $STLPORT_LIB" >&6; }
 
 
 
+# Check whether --with-libelf was given.
+if test "${with_libelf+set}" = set; then :
+  withval=$with_libelf;
+fi
+
+
+# Check whether --with-libelf-include was given.
+if test "${with_libelf_include+set}" = set; then :
+  withval=$with_libelf_include;
+fi
+
+
+# Check whether --with-libelf-lib was given.
+if test "${with_libelf_lib+set}" = set; then :
+  withval=$with_libelf_lib;
+fi
+
+
+  if test "x$ENABLE_AOT" = xfalse; then
+    if (test "x${with_libelf}" != x && test "x${with_libelf}" != xno) || \
+        (test "x${with_libelf_include}" != x && test "x${with_libelf_include}" != xno) || \
+        (test "x${with_libelf_lib}" != x && test "x${with_libelf_lib}" != xno); then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libelf is not used, so --with-libelf[-*] is ignored" >&5
+$as_echo "$as_me: WARNING: libelf is not used, so --with-libelf[-*] is ignored" >&2;}
+    fi
+    LIBELF_CFLAGS=
+    LIBELF_LIBS=
+  else
+    LIBELF_FOUND=no
+
+    if test "x${with_libelf}" = xno || test "x${with_libelf_include}" = xno || test "x${with_libelf_lib}" = xno; then
+      ENABLE_AOT="false"
+      if test "x${enable_aot}" = xyes; then
+        as_fn_error $? "libelf is explicitly disabled, cannot build AOT. Enable libelf or remove --enable-aot to disable AOT." "$LINENO" 5
+      fi
+    else
+      if test "x${with_libelf}" != x; then
+        ELF_LIBS="-L${with_libelf}/lib -lelf"
+        ELF_CFLAGS="-I${with_libelf}/include"
+        LIBELF_FOUND=yes
+      fi
+      if test "x${with_libelf_include}" != x; then
+        ELF_CFLAGS="-I${with_libelf_include}"
+        LIBELF_FOUND=yes
+      fi
+      if test "x${with_libelf_lib}" != x; then
+        ELF_LIBS="-L${with_libelf_lib} -lelf"
+        LIBELF_FOUND=yes
+      fi
+      # Do not try pkg-config if we have a sysroot set.
+      if test "x$SYSROOT" = x; then
+        if test "x$LIBELF_FOUND" = xno; then
+          # Figure out ELF_CFLAGS and ELF_LIBS
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ELF" >&5
+$as_echo_n "checking for ELF... " >&6; }
+
+if test -n "$ELF_CFLAGS"; then
+    pkg_cv_ELF_CFLAGS="$ELF_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libelf\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libelf") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_ELF_CFLAGS=`$PKG_CONFIG --cflags "libelf" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$ELF_LIBS"; then
+    pkg_cv_ELF_LIBS="$ELF_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libelf\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libelf") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_ELF_LIBS=`$PKG_CONFIG --libs "libelf" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        ELF_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libelf" 2>&1`
+        else
+	        ELF_PKG_ERRORS=`$PKG_CONFIG --print-errors "libelf" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$ELF_PKG_ERRORS" >&5
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                LIBELF_FOUND=no
+elif test $pkg_failed = untried; then
+	LIBELF_FOUND=no
+else
+	ELF_CFLAGS=$pkg_cv_ELF_CFLAGS
+	ELF_LIBS=$pkg_cv_ELF_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	LIBELF_FOUND=yes
+fi
+        fi
+      fi
+      if test "x$LIBELF_FOUND" = xno; then
+        for ac_header in libelf.h
+do :
+  ac_fn_cxx_check_header_mongrel "$LINENO" "libelf.h" "ac_cv_header_libelf_h" "$ac_includes_default"
+if test "x$ac_cv_header_libelf_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBELF_H 1
+_ACEOF
+
+              LIBELF_FOUND=yes
+              ELF_CFLAGS=
+              ELF_LIBS=-lelf
+
+else
+  LIBELF_FOUND=no
+
+fi
+
+done
+
+      fi
+      if test "x$LIBELF_FOUND" = xno; then
+        ENABLE_AOT="false"
+
+  # Print a helpful message on how to acquire the necessary build dependency.
+  # elf is the help tag: freetype, cups, alsa etc
+  MISSING_DEPENDENCY=elf
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
+
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
+  fi
+
+        if test "x${enable_aot}" = xyes; then
+          as_fn_error $? "libelf not found, cannot build AOT. Remove --enable-aot to disable AOT or: $HELP_MSG" "$LINENO" 5
+        else
+          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libelf not found, cannot build AOT. $HELP_MSG" >&5
+$as_echo "$as_me: WARNING: libelf not found, cannot build AOT. $HELP_MSG" >&2;}
+        fi
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if libelf works" >&5
+$as_echo_n "checking if libelf works... " >&6; }
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+        OLD_CFLAGS="$CFLAGS"
+        CFLAGS="$CFLAGS $ELF_CFLAGS"
+        OLD_LIBS="$LIBS"
+        LIBS="$LIBS $ELF_LIBS"
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <libelf.h>
+int
+main ()
+{
+
+              elf_version(0);
+              return 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  LIBELF_WORKS=yes
+else
+  LIBELF_WORKS=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+        CFLAGS="$OLD_CFLAGS"
+        LIBS="$OLD_LIBS"
+        ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LIBELF_WORKS" >&5
+$as_echo "$LIBELF_WORKS" >&6; }
+
+        if test "x$LIBELF_WORKS" = xno; then
+          ENABLE_AOT="false"
+
+  # Print a helpful message on how to acquire the necessary build dependency.
+  # elf is the help tag: freetype, cups, alsa etc
+  MISSING_DEPENDENCY=elf
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
+
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
+  fi
+
+          if test "x$enable_aot" = "xyes"; then
+            as_fn_error $? "Found libelf but could not link and compile with it. Remove --enable-aot to disable AOT or: $HELP_MSG" "$LINENO" 5
+          else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Found libelf but could not link and compile with it. $HELP_MSG" >&5
+$as_echo "$as_me: WARNING: Found libelf but could not link and compile with it. $HELP_MSG" >&2;}
+          fi
+        fi
+      fi
+    fi
+  fi
 
 
 
@@ -63801,6 +64042,174 @@ $as_echo "no, not found at $STLPORT_LIB" >&6; }
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+# Hotspot setup depends on lib checks (AOT needs libelf).
+
+
+  # The user can in some cases supply additional jvm features. For the custom
+  # variant, this defines the entire variant.
+
+# Check whether --with-jvm-features was given.
+if test "${with_jvm_features+set}" = set; then :
+  withval=$with_jvm_features;
+fi
+
+  if test "x$with_jvm_features" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking additional JVM features" >&5
+$as_echo_n "checking additional JVM features... " >&6; }
+    JVM_FEATURES=`$ECHO $with_jvm_features | $SED -e 's/,/ /g'`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JVM_FEATURES" >&5
+$as_echo "$JVM_FEATURES" >&6; }
+  fi
+
+  # Verify that dependencies are met for explicitly set features.
+  if   [[ " $JVM_FEATURES " =~ " jvmti " ]]   && !   [[ " $JVM_FEATURES " =~ " services " ]]  ; then
+    as_fn_error $? "Specified JVM feature 'jvmti' requires feature 'services'" "$LINENO" 5
+  fi
+
+  if   [[ " $JVM_FEATURES " =~ " management " ]]   && !   [[ " $JVM_FEATURES " =~ " nmt " ]]  ; then
+    as_fn_error $? "Specified JVM feature 'management' requires feature 'nmt'" "$LINENO" 5
+  fi
+
+  if   [[ " $JVM_FEATURES " =~ " jvmci " ]]   && ! (  [[ " $JVM_FEATURES " =~ " compiler1 " ]]   ||   [[ " $JVM_FEATURES " =~ " compiler2 " ]]  ); then
+    as_fn_error $? "Specified JVM feature 'jvmci' requires feature 'compiler2' or 'compiler1'" "$LINENO" 5
+  fi
+
+  if   [[ " $JVM_FEATURES " =~ " compiler2 " ]]   && !   [[ " $JVM_FEATURES " =~ " all-gcs " ]]  ; then
+    as_fn_error $? "Specified JVM feature 'compiler2' requires feature 'all-gcs'" "$LINENO" 5
+  fi
+
+  if   [[ " $JVM_FEATURES " =~ " vm-structs " ]]   && !   [[ " $JVM_FEATURES " =~ " all-gcs " ]]  ; then
+    as_fn_error $? "Specified JVM feature 'vm-structs' requires feature 'all-gcs'" "$LINENO" 5
+  fi
+
+  # Turn on additional features based on other parts of configure
+  if test "x$INCLUDE_DTRACE" = "xtrue"; then
+    JVM_FEATURES="$JVM_FEATURES dtrace"
+  else
+    if   [[ " $JVM_FEATURES " =~ " dtrace " ]]  ; then
+      as_fn_error $? "To enable dtrace, you must use --enable-dtrace" "$LINENO" 5
+    fi
+  fi
+
+  if test "x$STATIC_BUILD" = "xtrue"; then
+    JVM_FEATURES="$JVM_FEATURES static-build"
+  else
+    if   [[ " $JVM_FEATURES " =~ " static-build " ]]  ; then
+      as_fn_error $? "To enable static-build, you must use --enable-static-build" "$LINENO" 5
+    fi
+  fi
+
+  if !   [[ " $JVM_VARIANTS " =~ " zero " ]]   && !   [[ " $JVM_VARIANTS " =~ " zeroshark " ]]  ; then
+    if   [[ " $JVM_FEATURES " =~ " zero " ]]  ; then
+      as_fn_error $? "To enable zero/zeroshark, you must use --with-jvm-variants=zero/zeroshark" "$LINENO" 5
+    fi
+  fi
+
+  if !   [[ " $JVM_VARIANTS " =~ " zeroshark " ]]  ; then
+    if   [[ " $JVM_FEATURES " =~ " shark " ]]  ; then
+      as_fn_error $? "To enable shark, you must use --with-jvm-variants=zeroshark" "$LINENO" 5
+    fi
+  fi
+
+  # Only enable jvmci on x86_64, sparcv9 and aarch64.
+  if test "x$OPENJDK_TARGET_CPU" = "xx86_64" || \
+     test "x$OPENJDK_TARGET_CPU" = "xsparcv9" || \
+     test "x$OPENJDK_TARGET_CPU" = "xaarch64" ; then
+    JVM_FEATURES_jvmci="jvmci"
+  else
+    JVM_FEATURES_jvmci=""
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jdk.vm.compiler should be built" >&5
+$as_echo_n "checking if jdk.vm.compiler should be built... " >&6; }
+  if   [[ " $JVM_FEATURES " =~ " graal " ]]  ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
+$as_echo "yes, forced" >&6; }
+    if test "x$JVM_FEATURES_jvmci" != "xjvmci" ; then
+      as_fn_error $? "Specified JVM feature 'graal' requires feature 'jvmci'" "$LINENO" 5
+    fi
+    INCLUDE_GRAAL="true"
+  else
+    # By default enable graal build where AOT is available
+    if test "x$ENABLE_AOT" = "xtrue"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+      JVM_FEATURES_graal="graal"
+      INCLUDE_GRAAL="true"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      JVM_FEATURES_graal=""
+      INCLUDE_GRAAL="false"
+    fi
+  fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if aot should be enabled" >&5
+$as_echo_n "checking if aot should be enabled... " >&6; }
+  if test "x$ENABLE_AOT" = "xtrue"; then
+    if test "x$enable_aot" = "xyes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
+$as_echo "yes, forced" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    fi
+    JVM_FEATURES_aot="aot"
+  else
+    if test "x$enable_aot" = "xno"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
+$as_echo "no, forced" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    fi
+    JVM_FEATURES_aot=""
+  fi
+
+  # All variants but minimal (and custom) get these features
+  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti fprof vm-structs jni-check services management all-gcs nmt cds"
+
+  # Enable features depending on variant.
+  JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci $JVM_FEATURES_aot $JVM_FEATURES_graal"
+  JVM_FEATURES_client="compiler1 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci"
+  JVM_FEATURES_core="$NON_MINIMAL_FEATURES $JVM_FEATURES"
+  JVM_FEATURES_minimal="compiler1 minimal $JVM_FEATURES"
+  JVM_FEATURES_zero="zero $NON_MINIMAL_FEATURES $JVM_FEATURES"
+  JVM_FEATURES_zeroshark="zero shark $NON_MINIMAL_FEATURES $JVM_FEATURES"
+  JVM_FEATURES_custom="$JVM_FEATURES"
+
+
+
+
+
+
+
+
+
+  # Used for verification of Makefiles by check-jvm-feature
+
+
+  # We don't support --with-jvm-interpreter anymore, use zero instead.
+
+
+# Check whether --with-jvm-interpreter was given.
+if test "${with_jvm_interpreter+set}" = set; then :
+  withval=$with_jvm_interpreter; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-jvm-interpreter is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-jvm-interpreter is deprecated and will be ignored." >&2;}
+fi
 
 
 

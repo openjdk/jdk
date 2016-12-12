@@ -25,7 +25,7 @@
 
 # All valid JVM features, regardless of platform
 VALID_JVM_FEATURES="compiler1 compiler2 zero shark minimal dtrace jvmti jvmci \
-    graal fprof vm-structs jni-check services management all-gcs nmt cds static-build"
+    graal fprof vm-structs jni-check services management all-gcs nmt cds static-build aot"
 
 # All valid JVM variants
 VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
@@ -189,6 +189,55 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_DTRACE],
   AC_SUBST(INCLUDE_DTRACE)
 ])
 
+################################################################################
+# Check if AOT should be enabled
+#
+AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_AOT],
+[
+  AC_ARG_ENABLE([aot], [AS_HELP_STRING([--enable-aot@<:@=yes/no/auto@:>@],
+      [enable ahead of time compilation feature. Default is auto, where aot is enabled if all dependencies are present.])])
+
+  if test "x$enable_aot" = "x" || test "x$enable_aot" = "xauto"; then
+    ENABLE_AOT="true"
+  elif test "x$enable_aot" = "xyes"; then
+    ENABLE_AOT="true"
+  elif test "x$enable_aot" = "xno"; then
+    ENABLE_AOT="false"
+    AC_MSG_CHECKING([if aot should be enabled])
+    AC_MSG_RESULT([no, forced])
+  else
+    AC_MSG_ERROR([Invalid value for --enable-aot: $enable_aot])
+  fi
+
+  if test "x$ENABLE_AOT" = "xtrue"; then
+    # Only enable AOT on linux-X64.
+    if test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-x86_64"; then
+      if test -e "$HOTSPOT_TOPDIR/src/jdk.aot"; then
+        if test -e "$HOTSPOT_TOPDIR/src/jdk.vm.compiler"; then
+          ENABLE_AOT="true"
+        else
+          ENABLE_AOT="false"
+          if test "x$enable_aot" = "xyes"; then
+            AC_MSG_ERROR([Cannot build AOT without hotspot/src/jdk.vm.compiler sources. Remove --enable-aot.])
+          fi
+        fi
+      else
+        ENABLE_AOT="false"
+        if test "x$enable_aot" = "xyes"; then
+          AC_MSG_ERROR([Cannot build AOT without hotspot/src/jdk.aot sources. Remove --enable-aot.])
+        fi
+      fi
+    else
+      ENABLE_AOT="false"
+      if test "x$enable_aot" = "xyes"; then
+        AC_MSG_ERROR([AOT is currently only supported on Linux-x86_64. Remove --enable-aot.])
+      fi
+    fi
+  fi
+
+  AC_SUBST(ENABLE_AOT)
+])
+
 ###############################################################################
 # Set up all JVM features for each JVM variant.
 #
@@ -271,8 +320,8 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     fi
     INCLUDE_GRAAL="true"
   else
-    # By default enable graal build on linux-X64 and when JVMCI is available
-    if test "x$JVM_FEATURES_jvmci" = "xjvmci" && test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-x86_64"; then
+    # By default enable graal build where AOT is available
+    if test "x$ENABLE_AOT" = "xtrue"; then
       AC_MSG_RESULT([yes])
       JVM_FEATURES_graal="graal"
       INCLUDE_GRAAL="true"
@@ -285,11 +334,28 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
 
   AC_SUBST(INCLUDE_GRAAL)
 
+  AC_MSG_CHECKING([if aot should be enabled])
+  if test "x$ENABLE_AOT" = "xtrue"; then
+    if test "x$enable_aot" = "xyes"; then
+      AC_MSG_RESULT([yes, forced])
+    else
+      AC_MSG_RESULT([yes])
+    fi
+    JVM_FEATURES_aot="aot"
+  else
+    if test "x$enable_aot" = "xno"; then
+      AC_MSG_RESULT([no, forced])
+    else
+      AC_MSG_RESULT([no])
+    fi
+    JVM_FEATURES_aot=""
+  fi
+
   # All variants but minimal (and custom) get these features
   NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti fprof vm-structs jni-check services management all-gcs nmt cds"
 
   # Enable features depending on variant.
-  JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci $JVM_FEATURES_graal"
+  JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci $JVM_FEATURES_aot $JVM_FEATURES_graal"
   JVM_FEATURES_client="compiler1 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci"
   JVM_FEATURES_core="$NON_MINIMAL_FEATURES $JVM_FEATURES"
   JVM_FEATURES_minimal="compiler1 minimal $JVM_FEATURES"
