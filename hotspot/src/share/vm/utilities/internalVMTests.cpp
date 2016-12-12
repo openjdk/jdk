@@ -49,9 +49,6 @@ void InternalVMTests::run() {
   run_unit_test(GCTimer_test);
   run_unit_test(ObjectMonitor_test);
   run_unit_test(DirectivesParser_test);
-#if INCLUDE_VM_STRUCTS
-  run_unit_test(VMStructs_test);
-#endif
   tty->print_cr("All internal VM tests passed");
 }
 
