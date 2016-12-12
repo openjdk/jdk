@@ -492,6 +492,10 @@ jdk.vm.compiler_EXCLUDES += \
 
 ################################################################################
 
+jdk.aot_ADD_JAVAC_FLAGS := -parameters -XDstringConcat=inline
+
+################################################################################
+
 jdk.xml.bind_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
 jdk.xml.bind_CLEAN := .properties
 jdk.xml.bind_COPY := .xsd JAXBContextFactory.java ZeroOneBooleanAdapter.java
@@ -557,6 +561,14 @@ ifeq ($(MODULE), jdk.vm.compiler)
       $(subst /$(MODULE)/,/*/, $(filter-out %processor/src %test/src %jtt/src %bench/src %microbenchmarks/src, \
           $(wildcard $(HOTSPOT_TOPDIR)/src/$(MODULE)/share/classes/*/src)))
   MODULESOURCEPATH := $(call PathList, $(VM_COMPILER_MODULESOURCEPATH))
+endif
+
+ifeq ($(MODULE), jdk.aot)
+  ## WORKAROUND jdk.aot source structure issue
+  AOT_MODULESOURCEPATH := $(MODULESOURCEPATH) \
+      $(subst /$(MODULE)/,/*/, $(filter-out %processor/src, \
+          $(wildcard $(HOTSPOT_TOPDIR)/src/$(MODULE)/share/classes/*/src)))
+  MODULESOURCEPATH := $(call PathList, $(AOT_MODULESOURCEPATH))
 endif
 
 $(eval $(call SetupJavaCompilation, $(MODULE), \
