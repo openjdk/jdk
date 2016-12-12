@@ -33,12 +33,12 @@
  * @run main compiler.aot.AotCompiler -libname CompiledInvokeSpecial2AotTest.so
  *      -class compiler.calls.common.InvokeSpecial
  *      -compile compiler.calls.common.InvokeSpecial.callee.*
- * @run main/othervm -XX:+UseAOT
+ * @run main/othervm -Xbatch -XX:+UseAOT
  *      -XX:AOTLibrary=./CompiledInvokeSpecial2AotTest.so
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.calls.common.InvokeSpecial -compileCaller 1
  *      -checkCalleeCompileLevel -1 -checkCallerCompileLevel 1
- * @run main/othervm -XX:+UseAOT
+ * @run main/othervm -Xbatch -XX:+UseAOT
  *      -XX:AOTLibrary=./CompiledInvokeSpecial2AotTest.so
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.calls.common.InvokeSpecial -compileCaller 4

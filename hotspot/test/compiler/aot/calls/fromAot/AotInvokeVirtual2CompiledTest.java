@@ -33,15 +33,15 @@
  * @run main compiler.aot.AotCompiler -libname AotInvokeVirtual2CompiledTest.so
  *      -class compiler.calls.common.InvokeVirtual
  *      -compile compiler.calls.common.InvokeVirtual.caller()V
- * @run main/othervm -XX:+UseAOT
+ * @run main/othervm -Xbatch -XX:+UseAOT
  *      -XX:AOTLibrary=./AotInvokeVirtual2CompiledTest.so
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.calls.common.InvokeVirtual -compileCallee 1
- *      -checkCallerCompileLevel -1 -checkCalleeCompileLevel 1
- * @run main/othervm -XX:+UseAOT
+ *      -checkCalleeCompileLevel 1
+ * @run main/othervm -Xbatch -XX:+UseAOT
  *      -XX:AOTLibrary=./AotInvokeVirtual2CompiledTest.so
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.calls.common.InvokeVirtual -compileCallee 4
- *      -checkCallerCompileLevel -1 -checkCalleeCompileLevel 4
+ *      -checkCalleeCompileLevel 4
  * @summary check calls from aot to jit-compiled code, using invokevirtual
  */

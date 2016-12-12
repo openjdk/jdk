@@ -36,12 +36,12 @@
  * @run main compiler.aot.AotCompiler -libname CompiledInvokeDynamic2AotTest.so
  *      -class compiler.calls.common.InvokeDynamic
  *      -compile compiler.calls.common.InvokeDynamic.callee.*
- * @run main/othervm -XX:+UseAOT
+ * @run main/othervm -Xbatch -XX:+UseAOT
  *      -XX:AOTLibrary=./CompiledInvokeDynamic2AotTest.so
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.calls.common.InvokeDynamic -compileCaller 1
  *      -checkCalleeCompileLevel -1 -checkCallerCompileLevel 1
- * @run main/othervm -XX:+UseAOT
+ * @run main/othervm -Xbatch -XX:+UseAOT
  *      -XX:AOTLibrary=./CompiledInvokeDynamic2AotTest.so
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.calls.common.InvokeDynamic -compileCaller 4

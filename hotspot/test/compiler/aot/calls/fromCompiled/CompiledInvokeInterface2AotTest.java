@@ -34,12 +34,12 @@
  *      -libname CompiledInvokeInterface2AotTest.so
  *      -class compiler.calls.common.InvokeInterface
  *      -compile compiler.calls.common.InvokeInterface.callee.*
- * @run main/othervm -XX:+UseAOT
+ * @run main/othervm -Xbatch -XX:+UseAOT
  *      -XX:AOTLibrary=./CompiledInvokeInterface2AotTest.so
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.calls.common.InvokeInterface -compileCaller 1
  *      -checkCalleeCompileLevel -1 -checkCallerCompileLevel 1
- * @run main/othervm -XX:+UseAOT
+ * @run main/othervm -Xbatch -XX:+UseAOT
  *      -XX:AOTLibrary=./CompiledInvokeInterface2AotTest.so
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.calls.common.InvokeInterface -compileCaller 4
