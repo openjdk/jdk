@@ -33,6 +33,7 @@ import java.awt.font.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.AffineTransform;
 import static java.awt.geom.AffineTransform.TYPE_FLIP;
+import static java.awt.geom.AffineTransform.TYPE_MASK_SCALE;
 import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
 import java.awt.print.PrinterGraphics;
 import java.text.BreakIterator;
@@ -2160,6 +2161,19 @@ public class SwingUtilities2 {
             return (tx.getType() & ~(TYPE_TRANSLATION | TYPE_FLIP)) != 0;
         }
         return false;
+    }
+
+    public static boolean isFloatingPointScale(AffineTransform tx) {
+        int type = tx.getType() & ~(TYPE_FLIP | TYPE_TRANSLATION);
+        if (type == 0) {
+            return false;
+        } else if ((type & ~TYPE_MASK_SCALE) == 0) {
+            double scaleX = tx.getScaleX();
+            double scaleY = tx.getScaleY();
+            return (scaleX != (int) scaleX) || (scaleY != (int) scaleY);
+        } else {
+            return false;
+        }
     }
 
     /**
