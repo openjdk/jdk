@@ -34,15 +34,15 @@
  *      -libname AotInvokeInterface2CompiledTest.so
  *      -class compiler.calls.common.InvokeInterface
  *      -compile compiler.calls.common.InvokeInterface.caller()V
- * @run main/othervm -XX:+UseAOT
+ * @run main/othervm -Xbatch -XX:+UseAOT
  *      -XX:AOTLibrary=./AotInvokeInterface2CompiledTest.so
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.calls.common.InvokeInterface -compileCallee 1
- *      -checkCallerCompileLevel -1 -checkCalleeCompileLevel 1
- * @run main/othervm -XX:+UseAOT
+ *      -checkCalleeCompileLevel 1
+ * @run main/othervm -Xbatch -XX:+UseAOT
  *      -XX:AOTLibrary=./AotInvokeInterface2CompiledTest.so
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.calls.common.InvokeInterface -compileCallee 4
- *      -checkCallerCompileLevel -1 -checkCalleeCompileLevel 4
+ *      -checkCalleeCompileLevel 4
  * @summary check calls from aot to jit-compiled code using invokeinterface
  */

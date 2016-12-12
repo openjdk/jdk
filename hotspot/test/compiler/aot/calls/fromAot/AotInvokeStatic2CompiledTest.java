@@ -33,15 +33,15 @@
  * @run main compiler.aot.AotCompiler -libname AotInvokeStatic2CompiledTest.so
  *      -class compiler.calls.common.InvokeStatic
  *      -compile compiler.calls.common.InvokeStatic.caller()V
- * @run main/othervm -XX:+UseAOT
+ * @run main/othervm -Xbatch -XX:+UseAOT
  *      -XX:AOTLibrary=./AotInvokeStatic2CompiledTest.so
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.calls.common.InvokeStatic -compileCallee 1
- *      -checkCallerCompileLevel -1 -checkCalleeCompileLevel 1
- * @run main/othervm -XX:+UseAOT
+ *      -checkCalleeCompileLevel 1
+ * @run main/othervm -Xbatch -XX:+UseAOT
  *      -XX:AOTLibrary=./AotInvokeStatic2CompiledTest.so
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.calls.common.InvokeStatic -compileCallee 4
- *      -checkCallerCompileLevel -1 -checkCalleeCompileLevel 4
+ *      -checkCalleeCompileLevel 4
  * @summary check calls from aot to jit-compiled code using invokestatic
  */
