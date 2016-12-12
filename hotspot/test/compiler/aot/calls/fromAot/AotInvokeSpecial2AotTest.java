@@ -32,6 +32,7 @@
  *      sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main compiler.aot.AotCompiler -libname AotInvokeSpecial2AotTest.so
  *      -class compiler.calls.common.InvokeSpecial
+ *      -extraopt -XX:+UnlockDiagnosticVMOptions -extraopt -XX:+WhiteBoxAPI -extraopt -Xbootclasspath/a:.
  * @run main/othervm -XX:+UseAOT -XX:AOTLibrary=./AotInvokeSpecial2AotTest.so
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.calls.common.InvokeSpecial
