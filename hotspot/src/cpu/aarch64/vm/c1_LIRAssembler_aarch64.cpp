@@ -1055,7 +1055,7 @@ int LIR_Assembler::array_element_size(BasicType type) const {
   return exact_log2(elem_size);
 }
 
-void LIR_Assembler::emit_op3(LIR_Op3* op) {
+void LIR_Assembler::arithmetic_idiv(LIR_Op3* op, bool is_irem) {
   Register Rdividend = op->in_opr1()->as_register();
   Register Rdivisor  = op->in_opr2()->as_register();
   Register Rscratch  = op->in_opr3()->as_register();
@@ -1076,12 +1076,31 @@ void LIR_Assembler::emit_op3(LIR_Op3* op) {
     // convert division by a power of two into some shifts and logical operations
   }
 
-  if (op->code() == lir_irem) {
-    __ corrected_idivl(Rresult, Rdividend, Rdivisor, true, rscratch1);
-   } else if (op->code() == lir_idiv) {
-    __ corrected_idivl(Rresult, Rdividend, Rdivisor, false, rscratch1);
-  } else
-    ShouldNotReachHere();
+  __ corrected_idivl(Rresult, Rdividend, Rdivisor, is_irem, rscratch1);
+}
+
+void LIR_Assembler::emit_op3(LIR_Op3* op) {
+  switch (op->code()) {
+  case lir_idiv:
+    arithmetic_idiv(op, false);
+    break;
+  case lir_irem:
+    arithmetic_idiv(op, true);
+    break;
+  case lir_fmad:
+    __ fmaddd(op->result_opr()->as_double_reg(),
+              op->in_opr1()->as_double_reg(),
+              op->in_opr2()->as_double_reg(),
+              op->in_opr3()->as_double_reg());
+    break;
+  case lir_fmaf:
+    __ fmadds(op->result_opr()->as_float_reg(),
+              op->in_opr1()->as_float_reg(),
+              op->in_opr2()->as_float_reg(),
+              op->in_opr3()->as_float_reg());
+    break;
+  default:      ShouldNotReachHere(); break;
+  }
 }
 
 void LIR_Assembler::emit_opBranch(LIR_OpBranch* op) {
