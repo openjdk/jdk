@@ -31,3 +31,6 @@ opens   jdk.internal.misc to jdk.vm.compiler;
 opens com.sun.crypto.provider to jdk.vm.compiler;
 
 exports jdk.internal.module to jdk.vm.compiler;
+
+// AOT uses jdk.internal.misc.Unsafe
+exports jdk.internal.misc to jdk.aot;
