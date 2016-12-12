@@ -38,6 +38,7 @@ import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
 
 /**
  * @test
+ * @key intermittent
  * @summary Ensures that timeouts of multiple requests are handled in correct order
  * @run main/othervm TimeoutOrdering
  */
