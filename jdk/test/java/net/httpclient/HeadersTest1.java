@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -26,83 +24,103 @@
 /*
  * @test
  * @bug 8153142
- * @modules java.httpclient
+ * @modules jdk.incubator.httpclient
  *          jdk.httpserver
- * @run main/othervm HeadersTest1
- * @summary HeadersTest1
+ * @run testng/othervm HeadersTest1
  */
 
-import com.sun.net.httpserver.HttpContext;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.Headers;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
-import java.net.http.HttpResponse;
-import java.net.http.HttpRequest;
+import jdk.incubator.http.HttpClient;
+import jdk.incubator.http.HttpHeaders;
+import jdk.incubator.http.HttpRequest;
+import jdk.incubator.http.HttpResponse;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.List;
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import org.testng.annotations.Test;
+import static jdk.incubator.http.HttpResponse.BodyHandler.asString;
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+
 
 public class HeadersTest1 {
 
-    final static String RESPONSE = "Hello world";
+    private static final String RESPONSE = "Hello world";
 
-    public static void main(String[] args) throws Exception {
+    @Test
+    public void test() throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 10);
-        ExecutorService e = Executors.newCachedThreadPool();
         Handler h = new Handler();
-        HttpContext serverContext = server.createContext("/test", h);
+        server.createContext("/test", h);
         int port = server.getAddress().getPort();
         System.out.println("Server port = " + port);
 
+        ExecutorService e = Executors.newCachedThreadPool();
         server.setExecutor(e);
         server.start();
-        HttpClient client = HttpClient.create()
+        HttpClient client = HttpClient.newBuilder()
+                                      .executor(e)
                                       .build();
 
         try {
             URI uri = new URI("http://127.0.0.1:" + Integer.toString(port) + "/test/foo");
-            HttpRequest req = client.request(uri)
-                .headers("X-Bar", "foo1")
-                .headers("X-Bar", "foo2")
-                .GET();
+            HttpRequest req = HttpRequest.newBuilder(uri)
+                                         .headers("X-Bar", "foo1")
+                                         .headers("X-Bar", "foo2")
+                                         .GET()
+                                         .build();
 
-            HttpResponse resp = req.response();
-            if (resp.statusCode() != 200)
-                throw new RuntimeException("Test failed: status code");
+            HttpResponse<?> resp = client.send(req, asString());
+            if (resp.statusCode() != 200) {
+                throw new RuntimeException("Expected 200, got: " + resp.statusCode());
+            }
             HttpHeaders hd = resp.headers();
-            List<String> v = hd.allValues("X-Foo-Response");
-            if (!v.contains("resp1"))
-                throw new RuntimeException("Test failed: resp1");
-            if (!v.contains("resp2"))
-                throw new RuntimeException("Test failed: resp2");
 
+            assertTrue(!hd.firstValue("Non-Existent-Header").isPresent());
+
+            List<String> v1 = hd.allValues("Non-Existent-Header");
+            assertNotNull(v1);
+            assertTrue(v1.isEmpty(), String.valueOf(v1));
+            TestKit.assertUnmodifiableList(v1);
+
+            List<String> v2 = hd.allValues("X-Foo-Response");
+            assertNotNull(v2);
+            assertEquals(new HashSet<>(v2), Set.of("resp1", "resp2"));
+            TestKit.assertUnmodifiableList(v2);
+
+            Map<String, List<String>> map = hd.map();
+            TestKit.assertUnmodifiableMap(map);
+            for (List<String> values : map.values()) {
+                TestKit.assertUnmodifiableList(values);
+            }
         } finally {
-            client.executorService().shutdownNow();
             server.stop(0);
             e.shutdownNow();
         }
         System.out.println("OK");
     }
 
-   static class Handler implements HttpHandler {
+    private static final class Handler implements HttpHandler {
 
         @Override
         public void handle(HttpExchange he) throws IOException {
-            String method = he.getRequestMethod();
-            InputStream is = he.getRequestBody();
             List<String> l = he.getRequestHeaders().get("X-Bar");
             if (!l.contains("foo1") || !l.contains("foo2")) {
-                for (String s : l)
+                for (String s : l) {
                     System.out.println("HH: " + s);
+                }
                 he.sendResponseHeaders(500, -1);
                 he.close();
                 return;
@@ -115,6 +133,5 @@ public class HeadersTest1 {
             os.write(RESPONSE.getBytes(US_ASCII));
             os.close();
         }
-
-   }
+    }
 }

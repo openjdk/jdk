@@ -243,8 +243,8 @@ static void AddFontsToX11FontPath ( fDirRecord *fDirP )
 
         appendDirList[index] = 0;
         if ( doNotAppend == 0 ) {
-            strcpy ( fontDirPath, fDirP->name[index] );
-            strcat ( fontDirPath, "/fonts.dir" );
+            snprintf(fontDirPath, sizeof(fontDirPath), "%s/fonts.dir", fDirP->name[index]);
+            fontDirPath[sizeof(fontDirPath) - 1] = '\0';
             dirFile = open ( fontDirPath, O_RDONLY, 0 );
             if ( dirFile == -1 ) {
                 doNotAppend = 1;

@@ -141,37 +141,41 @@ public final class DefaultImageBuilder implements ImageBuilder {
         Files.createDirectories(mdir);
     }
 
-    private void storeFiles(Set<String> modules, Properties release) throws IOException {
-        if (release != null) {
-            addModules(release, modules);
-            File r = new File(root.toFile(), "release");
-            try (FileOutputStream fo = new FileOutputStream(r)) {
-                release.store(fo, null);
+    private void storeRelease(ResourcePool pool) throws IOException {
+        Properties props = new Properties();
+        Optional<ResourcePoolEntry> release = pool.findEntry("/java.base/release");
+        if (release.isPresent()) {
+            try (InputStream is = release.get().content()) {
+                props.load(is);
             }
         }
-    }
-
-    private void addModules(Properties props, Set<String> modules) throws IOException {
-        StringBuilder builder = new StringBuilder();
-        int i = 0;
-        for (String m : modules) {
-            builder.append(m);
-            if (i < modules.size() - 1) {
-                builder.append(",");
-            }
-            i++;
+        File r = new File(root.toFile(), "release");
+        try (FileOutputStream fo = new FileOutputStream(r)) {
+            props.store(fo, null);
         }
-        props.setProperty("MODULES", quote(builder.toString()));
     }
 
     @Override
     public void storeFiles(ResourcePool files) {
         try {
-            // populate release properties up-front. targetOsName
-            // field is assigned from there and used elsewhere.
-            Properties release = releaseProperties(files);
-            Path bin = root.resolve("bin");
+            // populate targetOsName field up-front because it's used elsewhere.
+            Optional<ResourcePoolModule> javaBase = files.moduleView().findModule("java.base");
+            javaBase.ifPresent(mod -> {
+                // fill release information available from transformed "java.base" module!
+                ModuleDescriptor desc = mod.descriptor();
+                desc.osName().ifPresent(s -> {
+                    this.targetOsName = s;
+                });
+            });
 
+            if (this.targetOsName == null) {
+                throw new PluginException("TargetPlatform attribute is missing for java.base module");
+            }
+
+            // store 'release' file
+            storeRelease(files);
+
+            Path bin = root.resolve("bin");
             // check any duplicated resource files
             Map<Path, Set<String>> duplicates = new HashMap<>();
             files.entries()
@@ -209,8 +213,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
                 }
             });
 
-            storeFiles(modules, release);
-
             if (root.getFileSystem().supportedFileAttributeViews()
                     .contains("posix")) {
                 // launchers in the bin directory need execute permission.
@@ -239,52 +241,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
         } catch (IOException ex) {
             throw new PluginException(ex);
         }
-    }
-
-    // Parse version string and return a string that includes only version part
-    // leaving "pre", "build" information. See also: java.lang.Runtime.Version.
-    private static String parseVersion(String str) {
-        return Runtime.Version.parse(str).
-            version().
-            stream().
-            map(Object::toString).
-            collect(joining("."));
-    }
-
-    private static String quote(String str) {
-        return "\"" + str + "\"";
-    }
-
-    private Properties releaseProperties(ResourcePool pool) throws IOException {
-        Properties props = new Properties();
-        Optional<ResourcePoolModule> javaBase = pool.moduleView().findModule("java.base");
-        javaBase.ifPresent(mod -> {
-            // fill release information available from transformed "java.base" module!
-            ModuleDescriptor desc = mod.descriptor();
-            desc.osName().ifPresent(s -> {
-                props.setProperty("OS_NAME", quote(s));
-                this.targetOsName = s;
-            });
-            desc.osVersion().ifPresent(s -> props.setProperty("OS_VERSION", quote(s)));
-            desc.osArch().ifPresent(s -> props.setProperty("OS_ARCH", quote(s)));
-            desc.version().ifPresent(s -> props.setProperty("JAVA_VERSION",
-                    quote(parseVersion(s.toString()))));
-            desc.version().ifPresent(s -> props.setProperty("JAVA_FULL_VERSION",
-                    quote(s.toString())));
-        });
-
-        if (this.targetOsName == null) {
-            throw new PluginException("TargetPlatform attribute is missing for java.base module");
-        }
-
-        Optional<ResourcePoolEntry> release = pool.findEntry("/java.base/release");
-        if (release.isPresent()) {
-            try (InputStream is = release.get().content()) {
-                props.load(is);
-            }
-        }
-
-        return props;
     }
 
     /**
@@ -561,7 +517,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
             }
             String mods = release.getProperty("MODULES");
             if (mods != null) {
-                String[] arr = mods.split(",");
+                String[] arr = mods.substring(1, mods.length() - 1).split(" ");
                 for (String m : arr) {
                     modules.add(m.trim());
                 }

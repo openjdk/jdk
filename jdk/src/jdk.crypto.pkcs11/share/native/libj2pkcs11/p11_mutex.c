@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -95,6 +95,8 @@ CK_C_INITIALIZE_ARGS_PTR makeCKInitArgsAdapter(JNIEnv *env, jobject jInitArgs)
         throwOutOfMemoryError(env, 0);
         return NULL_PTR;
     }
+    ckpInitArgs->flags = (CK_FLAGS)0;
+    ckpInitArgs->pReserved = (CK_VOID_PTR)NULL;
 
     /* Set the mutex functions that will call the Java mutex functions, but
      * only set it, if the field is not null.

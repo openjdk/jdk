@@ -56,7 +56,11 @@ public class ResourcePoolManager {
                       + " module");
         }
         ByteBuffer bb = ByteBuffer.wrap(content.get().contentBytes());
-        return ModuleDescriptor.read(bb);
+        try {
+            return ModuleDescriptor.read(bb);
+        } catch (RuntimeException re) {
+            throw new RuntimeException("module descriptor cannot be read for " + mod.name(), re);
+        }
     }
 
     /**

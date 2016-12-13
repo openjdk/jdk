@@ -34,5 +34,4 @@ module java.se {
     requires transitive java.compact3;
     requires transitive java.datatransfer;
     requires transitive java.desktop;
-    requires transitive java.httpclient;
 }

@@ -204,14 +204,15 @@ class Main {
      * iflag: generate jar index
      * nflag: Perform jar normalization at the end
      * pflag: preserve/don't strip leading slash and .. component from file name
+     * dflag: print module descriptor
      */
-    boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag, nflag, pflag;
+    boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag, nflag, pflag, dflag;
 
     /* To support additional GNU Style informational options */
     enum Info {
         HELP(GNUStyleOptions::printHelp),
         COMPAT_HELP(GNUStyleOptions::printCompatHelp),
-        USAGE_SUMMARY(GNUStyleOptions::printUsageSummary),
+        USAGE_TRYHELP(GNUStyleOptions::printUsageTryHelp),
         VERSION(GNUStyleOptions::printVersion);
 
         private Consumer<PrintWriter> printFunction;
@@ -220,8 +221,8 @@ class Main {
     };
     Info info;
 
+
     /* Modular jar related options */
-    boolean printModuleDescriptor;
     Version moduleVersion;
     Pattern modulesToHash;
     ModuleFinder moduleFinder = ModuleFinder.of();
@@ -509,7 +510,7 @@ class Main {
             } else if (iflag) {
                 String[] files = filesMap.get(BASE_VERSION);  // base entries only, can be null
                 genIndex(rootjar, files);
-            } else if (printModuleDescriptor) {
+            } else if (dflag) {
                 boolean found;
                 if (fname != null) {
                     try (ZipFile zf = new ZipFile(fname)) {
@@ -671,14 +672,16 @@ class Main {
                 try {
                     count = GNUStyleOptions.parseOptions(this, args);
                 } catch (GNUStyleOptions.BadArgs x) {
-                    if (info != null) {
-                        info.print(out);
-                        return true;
+                    if (info == null) {
+                        error(x.getMessage());
+                        if (x.showUsage)
+                            Info.USAGE_TRYHELP.print(err);
+                        return false;
                     }
-                    error(x.getMessage());
-                    if (x.showUsage)
-                        Info.USAGE_SUMMARY.print(err);
-                    return false;
+                }
+                if (info != null) {
+                    info.print(out);
+                    return true;
                 }
             } else {
                 // Legacy/compatibility options
@@ -689,28 +692,28 @@ class Main {
                     switch (flags.charAt(i)) {
                         case 'c':
                             if (xflag || tflag || uflag || iflag) {
-                                usageError();
+                                usageError(getMsg("error.multiple.main.operations"));
                                 return false;
                             }
                             cflag = true;
                             break;
                         case 'u':
                             if (cflag || xflag || tflag || iflag) {
-                                usageError();
+                                usageError(getMsg("error.multiple.main.operations"));
                                 return false;
                             }
                             uflag = true;
                             break;
                         case 'x':
                             if (cflag || uflag || tflag || iflag) {
-                                usageError();
+                                usageError(getMsg("error.multiple.main.operations"));
                                 return false;
                             }
                             xflag = true;
                             break;
                         case 't':
                             if (cflag || uflag || xflag || iflag) {
-                                usageError();
+                                usageError(getMsg("error.multiple.main.operations"));
                                 return false;
                             }
                             tflag = true;
@@ -732,7 +735,7 @@ class Main {
                             break;
                         case 'i':
                             if (cflag || uflag || xflag || tflag) {
-                                usageError();
+                                usageError(getMsg("error.multiple.main.operations"));
                                 return false;
                             }
                             // do not increase the counter, files will contain rootjar
@@ -749,35 +752,27 @@ class Main {
                             pflag = true;
                             break;
                         default:
-                            error(formatMsg("error.illegal.option",
-                                    String.valueOf(flags.charAt(i))));
-                            usageError();
+                            usageError(formatMsg("error.illegal.option",
+                                       String.valueOf(flags.charAt(i))));
                             return false;
                     }
                 }
             }
         } catch (ArrayIndexOutOfBoundsException e) {
-            usageError();
+            usageError(getMsg("main.usage.summary"));
+            return false;
+        }
+        if (!cflag && !tflag && !xflag && !uflag && !iflag && !dflag) {
+            usageError(getMsg("error.bad.option"));
             return false;
         }
 
-        if (info != null) {
-            info.print(out);
-            return true;
-        }
-
-        if (!cflag && !tflag && !xflag && !uflag && !iflag && !printModuleDescriptor) {
-            error(getMsg("error.bad.option"));
-            usageError();
-            return false;
-        }
         /* parse file arguments */
         int n = args.length - count;
         if (n > 0) {
-            if (printModuleDescriptor) {
+            if (dflag) {
                 // "--print-module-descriptor/-d" does not require file argument(s)
-                error(formatMsg("error.bad.dflag", args[count]));
-                usageError();
+                usageError(formatMsg("error.bad.dflag", args[count]));
                 return false;
             }
             int version = BASE_VERSION;
@@ -806,8 +801,7 @@ class Main {
                             // this will fall into the next error, thus returning false
                         }
                         if (v < 9) {
-                            error(formatMsg("error.release.value.toosmall", String.valueOf(v)));
-                            usageError();
+                            usageError(formatMsg("error.release.value.toosmall", String.valueOf(v)));
                             return false;
                         }
                         // associate the files, if any, with the previous version number
@@ -827,7 +821,7 @@ class Main {
                     }
                 }
             } catch (ArrayIndexOutOfBoundsException e) {
-                usageError();
+                usageError(getMsg("error.bad.file.arg"));
                 return false;
             }
             // associate remaining files, if any, with a version
@@ -838,16 +832,14 @@ class Main {
                 isMultiRelease = version > BASE_VERSION;
             }
         } else if (cflag && (mname == null)) {
-            error(getMsg("error.bad.cflag"));
-            usageError();
+            usageError(getMsg("error.bad.cflag"));
             return false;
         } else if (uflag) {
             if ((mname != null) || (ename != null)) {
                 /* just want to update the manifest */
                 return true;
             } else {
-                error(getMsg("error.bad.uflag"));
-                usageError();
+                usageError(getMsg("error.bad.uflag"));
                 return false;
             }
         }
@@ -1354,8 +1346,7 @@ class Main {
         if (ename != null) {
             Attributes global = m.getMainAttributes();
             if ((global.get(Attributes.Name.MAIN_CLASS) != null)) {
-                error(getMsg("error.bad.eflag"));
-                usageError();
+                usageError(getMsg("error.bad.eflag"));
                 return true;
             }
         }
@@ -1831,8 +1822,9 @@ class Main {
     /**
      * Prints usage message.
      */
-    void usageError() {
-        Info.USAGE_SUMMARY.print(err);
+    void usageError(String s) {
+        err.println(s);
+        Info.USAGE_TRYHELP.print(err);
     }
 
     /**
