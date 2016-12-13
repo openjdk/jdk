@@ -1163,19 +1163,18 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
         -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)"
 
     if test "x$1" = "xTARGET"; then
-    # On some platforms (mac) the linker warns about non existing -L dirs.
-    # Add server first if available. Linking aginst client does not always produce the same results.
-      # Only add client/minimal dir if client/minimal is being built.
-    # Default to server for other variants.
-      if HOTSPOT_CHECK_JVM_VARIANT(server); then
-        $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/server"
-      elif HOTSPOT_CHECK_JVM_VARIANT(client); then
-        $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/client"
-      elif HOTSPOT_CHECK_JVM_VARIANT(minimal); then
-        $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/minimal"
-    else
-        $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/server"
-    fi
+      # On some platforms (mac) the linker warns about non existing -L dirs.
+      # For any of the variants server, client or minimal, the dir matches the
+      # variant name. The "main" variant should be used for linking. For the
+      # rest, the dir is just server.
+      if HOTSPOT_CHECK_JVM_VARIANT(server) || HOTSPOT_CHECK_JVM_VARIANT(client) \
+          || HOTSPOT_CHECK_JVM_VARIANT(minimal); then
+        $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} \
+            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/$JVM_VARIANT_MAIN"
+      else
+        $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} \
+            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/server"
+      fi
     elif test "x$1" = "xBUILD"; then
       # When building a buildjdk, it's always only the server variant
       $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} \

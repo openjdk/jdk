@@ -44,7 +44,6 @@ SYSROOT_LDFLAGS := @BUILD_SYSROOT_LDFLAGS@
 
 # These directories should not be moved to BUILDJDK_OUTPUTDIR
 HOTSPOT_OUTPUTDIR := $(patsubst $(BUILD_OUTPUT)%,$(BUILDJDK_OUTPUTDIR)%,$(HOTSPOT_OUTPUTDIR))
-HOTSPOT_DIST := $(patsubst $(BUILD_OUTPUT)%,$(BUILDJDK_OUTPUTDIR)%,$(HOTSPOT_DIST))
 SUPPORT_OUTPUTDIR := $(patsubst $(BUILD_OUTPUT)%,$(BUILDJDK_OUTPUTDIR)%,$(SUPPORT_OUTPUTDIR))
 JDK_OUTPUTDIR := $(patsubst $(BUILD_OUTPUT)%,$(BUILDJDK_OUTPUTDIR)%,$(JDK_OUTPUTDIR))
 IMAGES_OUTPUTDIR := $(patsubst $(BUILD_OUTPUT)%,$(BUILDJDK_OUTPUTDIR)%,$(IMAGES_OUTPUTDIR))
@@ -90,6 +89,7 @@ ENABLE_DEBUG_SYMBOLS := false
 BUILD_GTEST := false
 
 JVM_VARIANTS := server
+JVM_VARIANT_MAIN := server
 
 # Some users still set EXTRA_*FLAGS on the make command line. Must
 # make sure to override that when building buildjdk.
