@@ -219,8 +219,6 @@ sun/security/krb5/auto/HttpNegotiateServer.java                 8038079 generic-
 
 sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java         8161232 macosx-all
 
-sun/net/www/protocol/https/HttpsClient/ServerIdentityTest.java  8171043 windows-all
-
 ############################################################################
 
 # jdk_sound
