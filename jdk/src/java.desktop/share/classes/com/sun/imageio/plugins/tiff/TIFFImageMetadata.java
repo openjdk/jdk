@@ -82,9 +82,10 @@ public class TIFFImageMetadata extends IIOMetadata {
     }
 
     public void initializeFromStream(ImageInputStream stream,
-                                     boolean ignoreUnknownFields)
+                                     boolean ignoreMetadata,
+                                     boolean readUnknownTags)
         throws IOException {
-        rootIFD.initialize(stream, true, ignoreUnknownFields);
+        rootIFD.initialize(stream, true, ignoreMetadata, readUnknownTags);
     }
 
     public void addShortOrLongField(int tagNumber, long value) {

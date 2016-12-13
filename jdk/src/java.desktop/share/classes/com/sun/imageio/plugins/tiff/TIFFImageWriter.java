@@ -3015,7 +3015,7 @@ public class TIFFImageWriter extends ImageWriter {
         List<TIFFTagSet> tagSets = new ArrayList<TIFFTagSet>(1);
         tagSets.add(BaselineTIFFTagSet.getInstance());
         TIFFIFD rootIFD = new TIFFIFD(tagSets);
-        rootIFD.initialize(stream, true, true);
+        rootIFD.initialize(stream, true, false, false);
         stream.reset();
 
         return rootIFD;
