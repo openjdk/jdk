@@ -29,13 +29,13 @@
  * Read-Eval-Print Loops (REPLs).
  */
 module jdk.jshell {
-    requires public java.compiler;
+    requires transitive java.compiler;
+    requires transitive jdk.jdi;
     requires java.prefs;
     requires jdk.compiler;
     requires jdk.internal.le;
     requires jdk.internal.ed;
     requires jdk.internal.opt;
-    requires jdk.jdi;
 
     exports jdk.jshell;
     exports jdk.jshell.spi;

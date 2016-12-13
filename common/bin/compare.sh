@@ -1295,8 +1295,8 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
         OTHER_JDK="$OTHER/images/jdk"
         OTHER_JRE="$OTHER/images/jre"
         echo "Selecting jdk images for compare"
-    elif [ -d "$(ls -d $THIS/licensee-src/build/*/images/jdk)" ] \
-        && [ -d "$(ls -d $OTHER/licensee-src/build/*/images/jdk)" ]
+    elif [ -d "$(ls -d $THIS/licensee-src/build/*/images/jdk 2> /dev/null)" ] \
+        && [ -d "$(ls -d $OTHER/licensee-src/build/*/images/jdk 2> /dev/null)" ]
     then
         echo "Selecting licensee images for compare"
         # Simply override the THIS and OTHER dir with the build dir from

@@ -33,7 +33,7 @@ include MakeBase.gmk
 # Allow custom to overwrite.
 JAVADOC_SOURCE_DIRS = \
       $(SUPPORT_OUTPUTDIR)/gensrc/* \
-      $(if $(IMPORT_MODULES_SRC), $(IMPORT_MODULES_SRC)/*) \
+      $(addsuffix /*, $(IMPORT_MODULES_SRC)) \
       $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS)/classes \
       $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS_TYPE)/classes \
       $(JDK_TOPDIR)/src/*/share/classes \
@@ -496,6 +496,21 @@ $(eval $(call SetupJavadocGeneration, httpserver, \
 ))
 
 TARGETS += $(httpserver)
+
+################################################################################
+
+$(eval $(call SetupJavadocGeneration, httpclient, \
+    MODULES := jdk.incubator.httpclient, \
+    PACKAGES := \
+        jdk.incubator.http, \
+    API_ROOT := jre, \
+    DEST_DIR := incubator/httpclient/spec, \
+    TITLE := Java&trade; HTTP Client API (incubator module), \
+    FIRST_COPYRIGHT_YEAR := 2015, \
+    DISABLED_DOCLINT := accessibility missing syntax, \
+))
+
+TARGETS += $(httpclient)
 
 ################################################################################
 

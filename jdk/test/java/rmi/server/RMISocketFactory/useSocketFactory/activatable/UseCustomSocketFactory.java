@@ -32,7 +32,8 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary Echo EchoImpl EchoImpl_Stub
+ *          java.base/sun.nio.ch
+ * @build TestLibrary Echo EchoImpl EchoImpl_Stub RMIDSelectorProvider
  * @run main/othervm/policy=security.policy/timeout=360 UseCustomSocketFactory
  */
 
@@ -61,7 +62,7 @@ public class UseCustomSocketFactory {
         RMID rmid = null;
 
         try {
-            rmid = RMID.createRMID();
+            rmid = RMID.createRMIDOnEphemeralPort();
             rmid.addArguments(new String[] {
                 "-C-Djava.security.policy=" +
                     TestParams.defaultGroupPolicy +

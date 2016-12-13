@@ -26,7 +26,7 @@
  * @test
  * @bug 8163561
  * @modules java.base/sun.net.www
- *          java.httpclient
+ *          jdk.incubator.httpclient
  * @summary Verify that Proxy-Authenticate header is correctly handled
  *
  * @run main/othervm ProxyAuthTest
@@ -45,11 +45,12 @@ import java.net.ProxySelector;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpResponse;
+import jdk.incubator.http.HttpClient;
+import jdk.incubator.http.HttpRequest;
+import jdk.incubator.http.HttpResponse;
 import java.util.Base64;
-
 import sun.net.www.MessageHeader;
+import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
 
 public class ProxyAuthTest {
     private static final String AUTH_USER = "user";
@@ -66,14 +67,12 @@ public class ProxyAuthTest {
             InetSocketAddress paddr = new InetSocketAddress("localhost", port);
 
             URI uri = new URI("http://www.google.ie/");
-            HttpClient client = HttpClient.create()
-                    .proxy(ProxySelector.of(paddr))
-                    .authenticator(auth)
-                    .build();
-            HttpResponse resp = client.request(uri)
-                    .GET()
-                    .responseAsync()
-                    .get();
+            HttpClient client = HttpClient.newBuilder()
+                                          .proxy(ProxySelector.of(paddr))
+                                          .authenticator(auth)
+                                          .build();
+            HttpRequest req = HttpRequest.newBuilder(uri).GET().build();
+            HttpResponse<?> resp = client.sendAsync(req, discard(null)).get();
             if (resp.statusCode() != 404) {
                 throw new RuntimeException("Unexpected status code: " + resp.statusCode());
             }
@@ -121,8 +120,7 @@ public class ProxyAuthTest {
                     MessageHeader headers = new MessageHeader(in);
                     System.out.println("Proxy: received " + headers);
 
-                    String authInfo = headers
-                            .findValue("Proxy-Authorization");
+                    String authInfo = headers.findValue("Proxy-Authorization");
                     if (authInfo != null) {
                         authenticate(authInfo);
                         out.print("HTTP/1.1 404 Not found\r\n");
@@ -172,4 +170,3 @@ public class ProxyAuthTest {
     }
 
 }
-

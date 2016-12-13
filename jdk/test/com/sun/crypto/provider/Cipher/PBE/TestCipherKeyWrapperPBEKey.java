@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,9 @@ public class TestCipherKeyWrapperPBEKey {
                 = new StringTokenizer(algo, "/").nextToken().toUpperCase();
         boolean isAES = baseAlgo.contains("AES");
 
+        boolean isUnlimited =
+            (Cipher.getMaxAllowedKeyLength(algo) == Integer.MAX_VALUE);
+
         try {
             // Initialization
             new Random().nextBytes(salt);
@@ -129,7 +132,6 @@ public class TestCipherKeyWrapperPBEKey {
             SecretKey key = skf.generateSecret(new PBEKeySpec(
                     "Secret Key".toCharArray()));
             Cipher ci = Cipher.getInstance(algo);
-
             if (isAES) {
                 ci.init(Cipher.WRAP_MODE, key);
                 pbeParams = ci.getParameters();
@@ -146,10 +148,10 @@ public class TestCipherKeyWrapperPBEKey {
 
             Key unwrappedKey = ci.unwrap(keyWrapper, algo, Cipher.SECRET_KEY);
 
-            if (baseAlgo.endsWith("TRIPLEDES")
-                    || baseAlgo.endsWith("AES_256")) {
+            if ((baseAlgo.endsWith("TRIPLEDES")
+                    || baseAlgo.endsWith("AES_256")) && !isUnlimited) {
                 out.print(
-                        "InvalidKeyException not thrown when keyStrength > 128");
+                        "Expected InvalidKeyException not thrown");
                 return false;
             }
 
@@ -158,8 +160,9 @@ public class TestCipherKeyWrapperPBEKey {
         } catch (InvalidKeyException ex) {
 
             if ((baseAlgo.endsWith("TRIPLEDES")
-                    || baseAlgo.endsWith("AES_256"))) {
-                out.println("Expected InvalidKeyException, keyStrength > 128");
+                    || baseAlgo.endsWith("AES_256")) && !isUnlimited) {
+                out.print(
+                        "Expected InvalidKeyException thrown");
                 return true;
             } else {
                 throw ex;

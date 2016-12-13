@@ -2494,6 +2494,11 @@ public class Attr extends JCTree.Visitor {
                     List<Type> thrownTypes = resultInfo.checkContext.inferenceContext().asUndetVars(lambdaType.getThrownTypes());
 
                     chk.unhandled(inferredThrownTypes, thrownTypes);
+
+                    //18.2.5: "In addition, for all j (1 <= j <= n), the constraint reduces to the bound throws Ej"
+                    thrownTypes.stream()
+                            .filter(t -> t.hasTag(UNDETVAR))
+                            .forEach(t -> ((UndetVar)t).setThrow());
                 }
 
                 checkAccessibleTypes(that, localEnv, resultInfo.checkContext.inferenceContext(), lambdaType, currentTarget);
@@ -3074,6 +3079,10 @@ public class Attr extends JCTree.Visitor {
             if (chk.unhandled(refType.getThrownTypes(), thrownTypes).nonEmpty()) {
                 log.error(tree, "incompatible.thrown.types.in.mref", refType.getThrownTypes());
             }
+            //18.2.5: "In addition, for all j (1 <= j <= n), the constraint reduces to the bound throws Ej"
+            thrownTypes.stream()
+                    .filter(t -> t.hasTag(UNDETVAR))
+                    .forEach(t -> ((UndetVar)t).setThrow());
         }
     }
 
@@ -4432,6 +4441,17 @@ public class Attr extends JCTree.Visitor {
 
     public void visitModuleDef(JCModuleDecl tree) {
         tree.sym.completeUsesProvides();
+        ModuleSymbol msym = tree.sym;
+        Lint lint = env.outer.info.lint = env.outer.info.lint.augment(msym);
+        Lint prevLint = chk.setLint(lint);
+
+        chk.checkDeprecatedAnnotation(tree, msym);
+
+        try {
+            deferredLintHandler.flush(tree.pos());
+        } finally {
+            chk.setLint(prevLint);
+        }
     }
 
     /** Finish the attribution of a class. */

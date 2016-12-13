@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
+ * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363 8168766 8168688
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -56,6 +56,7 @@ public class TestModules extends JavadocTester {
         checkModuleClickThrough(true);
         checkModuleFilesAndLinks(true);
         checkModulesInSearch(true);
+        checkOverviewFrame(true);
     }
 
     /**
@@ -76,6 +77,7 @@ public class TestModules extends JavadocTester {
         checkModuleClickThrough(true);
         checkModuleFilesAndLinks(true);
         checkModulesInSearch(true);
+        checkOverviewFrame(true);
     }
 
     /**
@@ -92,6 +94,7 @@ public class TestModules extends JavadocTester {
         checkNoDescription(true);
         checkModuleLink();
         checkModuleFilesAndLinks(true);
+        checkOverviewFrame(true);
     }
 
     /**
@@ -108,6 +111,7 @@ public class TestModules extends JavadocTester {
         checkHtml5NoDescription(true);
         checkModuleLink();
         checkModuleFilesAndLinks(true);
+        checkOverviewFrame(true);
     }
 
     /**
@@ -123,6 +127,7 @@ public class TestModules extends JavadocTester {
         checkModuleClickThrough(false);
         checkModuleFilesAndLinks(false);
         checkModulesInSearch(false);
+        checkOverviewFrame(false);
     }
 
     /**
@@ -137,6 +142,7 @@ public class TestModules extends JavadocTester {
         checkHtml5OverviewSummaryPackages();
         checkModuleFilesAndLinks(false);
         checkModulesInSearch(false);
+        checkOverviewFrame(false);
     }
 
     /**
@@ -179,6 +185,35 @@ public class TestModules extends JavadocTester {
                 "testpkgmdl1");
         checkExit(Exit.OK);
         checkModuleFilesAndLinks(true);
+        checkNegatedOverviewFrame();
+    }
+
+    /**
+     * Test generated module pages for a deprecated module.
+     */
+    @Test
+    void testModuleDeprecation() {
+        javadoc("-d", "out-moduledepr",
+                "-tag", "regular:a:Regular Tag:",
+                "-tag", "moduletag:s:Module Tag:",
+                "--module-source-path", testSrc,
+                "--module", "module1,module2,moduletags",
+                "testpkgmdl1", "testpkgmdl2", "testpkgmdltags");
+        checkExit(Exit.OK);
+        checkModuleDeprecation(true);
+    }
+
+    /**
+     * Test annotations on modules.
+     */
+    @Test
+    void testModuleAnnotation() {
+        javadoc("-d", "out-moduleanno",
+                "--module-source-path", testSrc,
+                "--module", "module1,module2",
+                "testpkgmdl1", "testpkgmdl2");
+        checkExit(Exit.OK);
+        checkModuleAnnotation();
     }
 
     void checkDescription(boolean found) {
@@ -218,6 +253,9 @@ public class TestModules extends JavadocTester {
     void checkHtml5Description(boolean found) {
         checkOutput("module1-summary.html", found,
                 "<section role=\"region\">\n"
+                + "<div class=\"deprecatedContent\"><span class=\"deprecatedLabel\">Deprecated.</span>\n"
+                + "<div class=\"block\"><span class=\"deprecationComment\">This module is deprecated.</span></div>\n"
+                + "</div>\n"
                 + "<!-- ============ MODULE DESCRIPTION =========== -->\n"
                 + "<a id=\"module.description\">\n"
                 + "<!--   -->\n"
@@ -556,4 +594,51 @@ public class TestModules extends JavadocTester {
                 + "<dd>&nbsp;</dd>\n"
                 + "</dl>");
 }
+
+    void checkModuleDeprecation(boolean found) {
+        checkOutput("module1-summary.html", found,
+                "<div class=\"deprecatedContent\"><span class=\"deprecatedLabel\">Deprecated.</span>\n"
+                + "<div class=\"block\"><span class=\"deprecationComment\">This module is deprecated.</span></div>\n"
+                + "</div>");
+        checkOutput("deprecated-list.html", found,
+                "<ul>\n"
+                + "<li><a href=\"#module\">Deprecated Modules</a></li>\n"
+                + "</ul>",
+                "<tr class=\"altColor\">\n"
+                + "<th class=\"colFirst\" scope=\"row\"><a href=\"module1-summary.html\">module1</a></th>\n"
+                + "<td class=\"colLast\">\n"
+                + "<div class=\"block\"><span class=\"deprecationComment\">This module is deprecated.</span></div>\n"
+                + "</td>\n"
+                + "</tr>");
+        checkOutput("module2-summary.html", !found,
+                "<div class=\"deprecatedContent\"><span class=\"deprecatedLabel\">Deprecated.</span>\n"
+                + "<div class=\"block\"><span class=\"deprecationComment\">This module is deprecated using just the javadoc tag.</span></div>");
+        checkOutput("moduletags-summary.html", found,
+                "<p>@Deprecated\n"
+                + "</p>",
+                "<div class=\"deprecatedContent\"><span class=\"deprecatedLabel\">Deprecated.</span></div>");
+    }
+
+    void checkModuleAnnotation() {
+        checkOutput("module2-summary.html", true,
+                "<p><a href=\"testpkgmdl2/AnnotationType.html\" title=\"annotation in testpkgmdl2\">@AnnotationType</a>(<a href=\"testpkgmdl2/AnnotationType.html#optional--\">optional</a>=\"Module Annotation\",\n"
+                + "                <a href=\"testpkgmdl2/AnnotationType.html#required--\">required</a>=2016)\n"
+                + "</p>");
+        checkOutput("module2-summary.html", false,
+                "@AnnotationTypeUndocumented");
+}
+
+    void checkOverviewFrame(boolean found) {
+        checkOutput("index.html", !found,
+                "<iframe src=\"overview-frame.html\" name=\"packageListFrame\" title=\"All Packages\"></iframe>");
+        checkOutput("index.html", found,
+                "<iframe src=\"module-overview-frame.html\" name=\"packageListFrame\" title=\"All Modules\"></iframe>");
+}
+
+    void checkNegatedOverviewFrame() {
+        checkOutput("index.html", false,
+                "<iframe src=\"overview-frame.html\" name=\"packageListFrame\" title=\"All Packages\"></iframe>");
+        checkOutput("index.html", false,
+                "<iframe src=\"module-overview-frame.html\" name=\"packageListFrame\" title=\"All Modules\"></iframe>");
+    }
 }

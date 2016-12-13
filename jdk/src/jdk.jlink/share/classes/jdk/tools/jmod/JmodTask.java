@@ -31,7 +31,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.lang.module.Configuration;
@@ -84,7 +83,6 @@ import java.util.jar.JarOutputStream;
 import java.util.stream.Collectors;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -138,6 +136,8 @@ public class JmodTask {
     private static final String PROGNAME = "jmod";
     private static final String MODULE_INFO = "module-info.class";
 
+    private static final Path CWD = Paths.get("");
+
     private Options options;
     private PrintWriter out = new PrintWriter(System.out, true);
     void setLog(PrintWriter out, PrintWriter err) {
@@ -153,6 +153,7 @@ public class JmodTask {
 
     enum Mode {
         CREATE,
+        EXTRACT,
         LIST,
         DESCRIBE,
         HASH
@@ -169,6 +170,7 @@ public class JmodTask {
         List<Path> libs;
         List<Path> headerFiles;
         List<Path> manPages;
+        List<Path> legalNotices;;
         ModuleFinder moduleFinder;
         Version moduleVersion;
         String mainClass;
@@ -178,6 +180,7 @@ public class JmodTask {
         Pattern modulesToHash;
         boolean dryrun;
         List<PathMatcher> excludes;
+        Path extractDir;
     }
 
     public int run(String[] args) {
@@ -201,6 +204,9 @@ public class JmodTask {
             switch (options.mode) {
                 case CREATE:
                     ok = create();
+                    break;
+                case EXTRACT:
+                    ok = extract();
                     break;
                 case LIST:
                     ok = list();
@@ -245,6 +251,32 @@ public class JmodTask {
         } finally {
             if (zip != null)
                 zip.close();
+        }
+    }
+
+    private boolean extract() throws IOException {
+        Path dir = options.extractDir != null ? options.extractDir : CWD;
+        try (JmodFile jf = new JmodFile(options.jmodFile)) {
+            jf.stream().forEach(e -> {
+                try {
+                    ZipEntry entry = e.zipEntry();
+                    String name = entry.getName();
+                    int index = name.lastIndexOf("/");
+                    if (index != -1) {
+                        Path p = dir.resolve(name.substring(0, index));
+                        if (Files.notExists(p))
+                            Files.createDirectories(p);
+                    }
+
+                    try (OutputStream os = Files.newOutputStream(dir.resolve(name))) {
+                        jf.getInputStream(e).transferTo(os);
+                    }
+                } catch (IOException x) {
+                    throw new UncheckedIOException(x);
+                }
+            });
+
+            return true;
         }
     }
 
@@ -359,6 +391,7 @@ public class JmodTask {
         final List<Path> classpath = options.classpath;
         final List<Path> headerFiles = options.headerFiles;
         final List<Path> manPages = options.manPages;
+        final List<Path> legalNotices = options.legalNotices;
 
         final Version moduleVersion = options.moduleVersion;
         final String mainClass = options.mainClass;
@@ -380,11 +413,12 @@ public class JmodTask {
             // classes
             processClasses(out, classpath);
 
-            processSection(out, Section.NATIVE_CMDS, cmds);
-            processSection(out, Section.NATIVE_LIBS, libs);
             processSection(out, Section.CONFIG, configs);
             processSection(out, Section.HEADER_FILES, headerFiles);
+            processSection(out, Section.LEGAL_NOTICES, legalNotices);
             processSection(out, Section.MAN_PAGES, manPages);
+            processSection(out, Section.NATIVE_CMDS, cmds);
+            processSection(out, Section.NATIVE_LIBS, libs);
 
         }
 
@@ -644,39 +678,41 @@ public class JmodTask {
             if (paths == null)
                 return;
 
-            for (Path p : paths)
+            for (Path p : paths) {
                 processSection(out, section, p);
+            }
         }
 
-        void processSection(JmodOutputStream out, Section section, Path top)
+        void processSection(JmodOutputStream out, Section section, Path path)
             throws IOException
         {
-            Files.walkFileTree(top, Set.of(FileVisitOption.FOLLOW_LINKS),
-                    Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                    throws IOException
-                {
-                    Path relPath = top.relativize(file);
-                    if (relPath.toString().equals(MODULE_INFO)
-                        && !Section.CLASSES.equals(section))
-                        warning("warn.ignore.entry", MODULE_INFO, section);
+            Files.walkFileTree(path, Set.of(FileVisitOption.FOLLOW_LINKS),
+                Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                        throws IOException
+                    {
+                        Path relPath = path.relativize(file);
+                        if (relPath.toString().equals(MODULE_INFO)
+                                && !Section.CLASSES.equals(section))
+                            warning("warn.ignore.entry", MODULE_INFO, section);
 
-                    if (!relPath.toString().equals(MODULE_INFO)
-                        && !matches(relPath, excludes)) {
-                        try (InputStream in = Files.newInputStream(file)) {
-                            out.writeEntry(in, section, relPath.toString());
-                        } catch (IOException x) {
-                            if (x.getMessage().contains("duplicate entry")) {
-                                warning("warn.ignore.duplicate.entry", relPath.toString(), section);
-                                return FileVisitResult.CONTINUE;
+                        if (!relPath.toString().equals(MODULE_INFO)
+                                && !matches(relPath, excludes)) {
+                            try (InputStream in = Files.newInputStream(file)) {
+                                out.writeEntry(in, section, relPath.toString());
+                            } catch (IOException x) {
+                                if (x.getMessage().contains("duplicate entry")) {
+                                    warning("warn.ignore.duplicate.entry",
+                                            relPath.toString(), section);
+                                    return FileVisitResult.CONTINUE;
+                                }
+                                throw x;
                             }
-                            throw x;
                         }
+                        return FileVisitResult.CONTINUE;
                     }
-                    return FileVisitResult.CONTINUE;
-                }
-            });
+                });
         }
 
         boolean matches(Path path, List<PathMatcher> matchers) {
@@ -1019,8 +1055,6 @@ public class JmodTask {
     static class ClassPathConverter implements ValueConverter<Path> {
         static final ValueConverter<Path> INSTANCE = new ClassPathConverter();
 
-        private static final Path CWD = Paths.get("");
-
         @Override
         public Path convert(String value) {
             try {
@@ -1044,8 +1078,6 @@ public class JmodTask {
     static class DirPathConverter implements ValueConverter<Path> {
         static final ValueConverter<Path> INSTANCE = new DirPathConverter();
 
-        private static final Path CWD = Paths.get("");
-
         @Override
         public Path convert(String value) {
             try {
@@ -1054,6 +1086,33 @@ public class JmodTask {
                     throw new CommandException("err.path.not.found", path);
                 if (!Files.isDirectory(path))
                     throw new CommandException("err.path.not.a.dir", path);
+                return path;
+            } catch (InvalidPathException x) {
+                throw new CommandException("err.path.not.valid", value);
+            }
+        }
+
+        @Override  public Class<Path> valueType() { return Path.class; }
+
+        @Override  public String valuePattern() { return "path"; }
+    }
+
+    static class ExtractDirPathConverter implements ValueConverter<Path> {
+
+        @Override
+        public Path convert(String value) {
+            try {
+                Path path = CWD.resolve(value);
+                if (Files.exists(path)) {
+                    if (!Files.isDirectory(path))
+                        throw new CommandException("err.cannot.create.dir", path);
+                } else {
+                    try {
+                        Files.createDirectories(path);
+                    } catch (IOException ioe) {
+                        throw new CommandException("err.cannot.create.dir", path);
+                    }
+                }
                 return path;
             } catch (InvalidPathException x) {
                 throw new CommandException("err.path.not.valid", value);
@@ -1158,6 +1217,7 @@ public class JmodTask {
 
             builder.append(getMessage("main.opt.mode")).append("\n  ");
             builder.append(getMessage("main.opt.mode.create")).append("\n  ");
+            builder.append(getMessage("main.opt.mode.extract")).append("\n  ");
             builder.append(getMessage("main.opt.mode.list")).append("\n  ");
             builder.append(getMessage("main.opt.mode.describe")).append("\n  ");
             builder.append(getMessage("main.opt.mode.hash")).append("\n\n");
@@ -1203,8 +1263,13 @@ public class JmodTask {
                         .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
+        OptionSpec<Path> dir
+                = parser.accepts("dir", getMessage("main.opt.extractDir"))
+                        .withRequiredArg()
+                        .withValuesConvertedBy(new ExtractDirPathConverter());
+
         OptionSpec<Void> dryrun
-            = parser.accepts("dry-run", getMessage("main.opt.dry-run"));
+                = parser.accepts("dry-run", getMessage("main.opt.dry-run"));
 
         OptionSpec<PathMatcher> excludes
                 = parser.accepts("exclude", getMessage("main.opt.exclude"))
@@ -1221,10 +1286,10 @@ public class JmodTask {
                         .forHelp();
 
         OptionSpec<Path> headerFiles
-            = parser.accepts("header-files", getMessage("main.opt.header-files"))
-                    .withRequiredArg()
-                    .withValuesSeparatedBy(File.pathSeparatorChar)
-                    .withValuesConvertedBy(DirPathConverter.INSTANCE);
+                = parser.accepts("header-files", getMessage("main.opt.header-files"))
+                        .withRequiredArg()
+                        .withValuesSeparatedBy(File.pathSeparatorChar)
+                        .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
         OptionSpec<Path> libs
                 = parser.accepts("libs", getMessage("main.opt.libs"))
@@ -1232,13 +1297,20 @@ public class JmodTask {
                         .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
+        OptionSpec<Path> legalNotices
+                = parser.accepts("legal-notices", getMessage("main.opt.legal-notices"))
+                        .withRequiredArg()
+                        .withValuesSeparatedBy(File.pathSeparatorChar)
+                        .withValuesConvertedBy(DirPathConverter.INSTANCE);
+
+
         OptionSpec<String> mainClass
                 = parser.accepts("main-class", getMessage("main.opt.main-class"))
                         .withRequiredArg()
                         .describedAs(getMessage("main.opt.main-class.arg"));
 
         OptionSpec<Path> manPages
-            = parser.accepts("man-pages", getMessage("main.opt.man-pages"))
+                = parser.accepts("man-pages", getMessage("main.opt.man-pages"))
                         .withRequiredArg()
                         .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
@@ -1303,6 +1375,8 @@ public class JmodTask {
                 options.cmds = opts.valuesOf(cmds);
             if (opts.has(config))
                 options.configs = opts.valuesOf(config);
+            if (opts.has(dir))
+                options.extractDir = opts.valueOf(dir);
             if (opts.has(dryrun))
                 options.dryrun = true;
             if (opts.has(excludes))
@@ -1313,6 +1387,8 @@ public class JmodTask {
                 options.headerFiles = opts.valuesOf(headerFiles);
             if (opts.has(manPages))
                 options.manPages = opts.valuesOf(manPages);
+            if (opts.has(legalNotices))
+                options.legalNotices = opts.valuesOf(legalNotices);
             if (opts.has(modulePath)) {
                 Path[] dirs = opts.valuesOf(modulePath).toArray(new Path[0]);
                 options.moduleFinder = JLMA.newModulePath(Runtime.version(), true, dirs);
@@ -1347,7 +1423,8 @@ public class JmodTask {
                 if (options.mode.equals(Mode.CREATE) && Files.exists(path))
                     throw new CommandException("err.file.already.exists", path);
                 else if ((options.mode.equals(Mode.LIST) ||
-                            options.mode.equals(Mode.DESCRIBE))
+                            options.mode.equals(Mode.DESCRIBE) ||
+                            options.mode.equals((Mode.EXTRACT)))
                          && Files.notExists(path))
                     throw new CommandException("err.jmod.not.found", path);
 

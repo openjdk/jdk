@@ -82,7 +82,7 @@ public class JmodNegativeTest {
         jmod()
             .assertFailure()
             .resultChecker(r ->
-                assertContains(r.output, "Error: one of create, list, describe, or hash must be specified")
+                assertContains(r.output, "Error: one of create, extract, list, describe, or hash must be specified")
             );
     }
 
@@ -91,7 +91,7 @@ public class JmodNegativeTest {
         jmod("badAction")
             .assertFailure()
             .resultChecker(r ->
-                assertContains(r.output, "Error: mode must be one of create, list, describe, or hash")
+                assertContains(r.output, "Error: mode must be one of create, extract, list, describe, or hash")
             );
 
         jmod("--badOption")

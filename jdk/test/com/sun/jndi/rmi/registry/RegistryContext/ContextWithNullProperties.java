@@ -30,7 +30,7 @@
  * @library ../../../../../../java/rmi/testlibrary
  * @build TestLibrary
  * @compile --add-modules jdk.naming.rmi ContextWithNullProperties.java
- * @run main ContextWithNullProperties
+ * @run main/othervm ContextWithNullProperties
  */
 
 import com.sun.jndi.rmi.registry.RegistryContext;

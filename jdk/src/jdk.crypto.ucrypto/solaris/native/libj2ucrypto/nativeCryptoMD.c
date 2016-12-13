@@ -73,7 +73,7 @@ jlong JavaCritical_com_oracle_security_ucrypto_NativeDigestMD_nativeInit(jint me
     }
     break;
   default:
-    if (DEBUG) printf("ERROR: Unsupported mech %i\n", mech);
+    if (J2UC_DEBUG) printf("ERROR: Unsupported mech %i\n", mech);
   }
   return (jlong) pContext;
 }

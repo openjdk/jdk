@@ -69,6 +69,8 @@ compiler.misc.incompatible.eq.lower.bounds              # cannot happen?
 compiler.misc.module.name.mismatch
 compiler.misc.no.unique.minimal.instance.exists
 compiler.misc.no.unique.maximal.instance.exists         # cannot happen?
+compiler.err.module.non.zero.opens                      # bad class file
+compiler.misc.module.non.zero.opens                     # bad class file
 compiler.misc.resume.abort                              # prompt for a response
 compiler.misc.source.unavailable                        # DiagnosticSource
 compiler.misc.token.bad-symbol

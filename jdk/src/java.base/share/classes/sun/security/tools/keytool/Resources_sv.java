@@ -126,16 +126,24 @@ public class Resources_sv extends java.util.ListResourceBundle {
                 "nyckelbitstorlek"}, //-keysize
         {"keystore.name",
                 "namn p\u00E5 nyckellager"}, //-keystore
+        {"access.the.cacerts.keystore",
+                "\u00E5tkomst till nyckellagret cacerts"}, // -cacerts
+        {"warning.cacerts.option",
+                "Varning: anv\u00E4nd alternativet -cacerts f\u00F6r att f\u00E5 \u00E5tkomst till nyckellagret cacerts"},
         {"new.password",
                 "nytt l\u00F6senord"}, //-new
         {"do.not.prompt",
                 "fr\u00E5ga inte"}, //-noprompt
         {"password.through.protected.mechanism",
                 "l\u00F6senord med skyddad mekanism"}, //-protected
-        {"provider.argument",
-                "leverant\u00F6rsargument"}, //-providerarg
-        {"provider.class.name",
-                "namn p\u00E5 leverant\u00F6rsklass"}, //-providerclass
+
+        // The following 2 values should span 2 lines, the first for the
+        // option itself, the second for its -providerArg value.
+        {"addprovider.option",
+                "l\u00E4gg till s\u00E4kerhetsleverant\u00F6r per namn (t.ex. SunPKCS11)\nkonfigurera argument f\u00F6r -addprovider"}, //-addprovider
+        {"provider.class.option",
+                "l\u00E4gg till s\u00E4kerhetsleverant\u00F6r per fullt kvalificerat klassnamn\nkonfigurera argument f\u00F6r -providerclass"}, //-providerclass
+
         {"provider.name",
                 "leverant\u00F6rsnamn"}, //-providername
         {"provider.classpath",
@@ -187,6 +195,8 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Command.option.flag.needs.an.argument.", "Kommandoalternativet {0} beh\u00F6ver ett argument."},
         {"Warning.Different.store.and.key.passwords.not.supported.for.PKCS12.KeyStores.Ignoring.user.specified.command.value.",
                 "Varning!  PKCS12-nyckellager har inte st\u00F6d f\u00F6r olika l\u00F6senord f\u00F6r lagret och nyckeln. Det anv\u00E4ndarspecificerade {0}-v\u00E4rdet ignoreras."},
+        {"the.keystore.or.storetype.option.cannot.be.used.with.the.cacerts.option",
+            "Alternativen -keystore och -storetype kan inte anv\u00E4ndas med alternativet -cacerts"},
         {".keystore.must.be.NONE.if.storetype.is.{0}",
                 "-keystore m\u00E5ste vara NONE om -storetype \u00E4r {0}"},
         {"Too.many.retries.program.terminated",
@@ -208,7 +218,9 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Illegal.startdate.value", "Otill\u00E5tet v\u00E4rde f\u00F6r startdatum"},
         {"Validity.must.be.greater.than.zero",
                 "Giltigheten m\u00E5ste vara st\u00F6rre \u00E4n noll"},
-        {"provName.not.a.provider", "{0} \u00E4r inte en leverant\u00F6r"},
+        {"provclass.not.a.provider", "%s \u00E4r inte en leverant\u00F6r"},
+        {"provider.name.not.found", "Leverant\u00F6ren med namnet \"%s\" hittades inte"},
+        {"provider.class.not.found", "Leverant\u00F6ren \"%s\" hittades inte"},
         {"Usage.error.no.command.provided", "Syntaxfel: inget kommando angivet"},
         {"Source.keystore.file.exists.but.is.empty.", "Nyckellagrets k\u00E4llfil finns, men \u00E4r tom: "},
         {"Please.specify.srckeystore", "Ange -srckeystore"},

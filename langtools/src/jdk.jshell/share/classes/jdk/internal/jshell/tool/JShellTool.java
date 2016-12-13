@@ -279,7 +279,7 @@ public class JShellTool implements MessageHandler {
      */
     @Override
     public void hard(String format, Object... args) {
-        rawout(feedback.getPre() + format + feedback.getPost(), args);
+        rawout(prefix(format), args);
     }
 
     /**
@@ -289,7 +289,7 @@ public class JShellTool implements MessageHandler {
      * @param args printf args
      */
     void error(String format, Object... args) {
-        rawout(feedback.getErrorPre() + format + feedback.getErrorPost(), args);
+        rawout(prefixError(format), args);
     }
 
     /**
@@ -311,18 +311,6 @@ public class JShellTool implements MessageHandler {
     public void fluff(String format, Object... args) {
         if (showFluff()) {
             hard(format, args);
-        }
-    }
-
-    /**
-     * Optional output -- with embedded per- and post-fix
-     *
-     * @param format printf format
-     * @param args printf args
-     */
-    void fluffRaw(String format, Object... args) {
-        if (showFluff()) {
-            rawout(format, args);
         }
     }
 
@@ -351,28 +339,42 @@ public class JShellTool implements MessageHandler {
     }
 
     /**
-     * Add prefixing to embedded newlines in a string, leading with the normal
-     * prefix
+     * Add normal prefixing/postfixing to embedded newlines in a string,
+     * bracketing with normal prefix/postfix
      *
      * @param s the string to prefix
+     * @return the pre/post-fixed and bracketed string
      */
     String prefix(String s) {
-        return prefix(s, feedback.getPre());
+         return prefix(s, feedback.getPre(), feedback.getPost());
     }
 
     /**
-     * Add prefixing to embedded newlines in a string
+     * Add error prefixing/postfixing to embedded newlines in a string,
+     * bracketing with error prefix/postfix
      *
      * @param s the string to prefix
-     * @param leading the string to prepend
+     * @return the pre/post-fixed and bracketed string
      */
-    String prefix(String s, String leading) {
-        if (s == null || s.isEmpty()) {
+    String prefixError(String s) {
+         return prefix(s, feedback.getErrorPre(), feedback.getErrorPost());
+    }
+
+    /**
+     * Add prefixing/postfixing to embedded newlines in a string,
+     * bracketing with prefix/postfix
+     *
+     * @param s the string to prefix
+     * @param pre the string to prepend to each line
+     * @param post the string to append to each line (replacing newline)
+     * @return the pre/post-fixed and bracketed string
+     */
+    String prefix(String s, String pre, String post) {
+        if (s == null) {
             return "";
         }
-        return leading
-                + s.substring(0, s.length() - 1).replaceAll("\\R", System.getProperty("line.separator") + feedback.getPre())
-                + s.substring(s.length() - 1, s.length());
+        String pp = s.replaceAll("\\R", post + pre);
+        return pre + pp + post;
     }
 
     /**
@@ -381,8 +383,7 @@ public class JShellTool implements MessageHandler {
      * @param key the resource key
      */
     void hardrb(String key) {
-        String s = prefix(getResourceString(key));
-        cmdout.println(s);
+        hard(getResourceString(key));
     }
 
     /**
@@ -405,7 +406,7 @@ public class JShellTool implements MessageHandler {
      */
     @Override
     public void hardmsg(String key, Object... args) {
-        cmdout.println(prefix(messageFormat(key, args)));
+        hard(messageFormat(key, args));
     }
 
     /**
@@ -418,7 +419,7 @@ public class JShellTool implements MessageHandler {
     @Override
     public void errormsg(String key, Object... args) {
         if (isRunningInteractive()) {
-            cmdout.println(prefix(messageFormat(key, args), feedback.getErrorPre()));
+            rawout(prefixError(messageFormat(key, args)));
         } else {
             startmsg(key, args);
         }
@@ -431,7 +432,7 @@ public class JShellTool implements MessageHandler {
      * @param args
      */
     void startmsg(String key, Object... args) {
-        cmderr.println(prefix(messageFormat(key, args), ""));
+        cmderr.println(messageFormat(key, args));
     }
 
     /**
@@ -452,15 +453,9 @@ public class JShellTool implements MessageHandler {
         Map<String, String> a2b = stream.collect(toMap(a, b,
                 (m1, m2) -> m1,
                 () -> new LinkedHashMap<>()));
-        int aLen = 0;
-        for (String av : a2b.keySet()) {
-            aLen = Math.max(aLen, av.length());
-        }
-        String format = "   %-" + aLen + "s -- %s";
-        String indentedNewLine = LINE_SEP + feedback.getPre()
-                + String.format("   %-" + (aLen + 4) + "s", "");
         for (Entry<String, String> e : a2b.entrySet()) {
-            hard(format, e.getKey(), e.getValue().replaceAll("\n", indentedNewLine));
+            hard("%s", e.getKey());
+            rawout(prefix(e.getValue(), feedback.getPre() + "\t", feedback.getPost()));
         }
     }
 
@@ -1096,6 +1091,7 @@ public class JShellTool implements MessageHandler {
             }
             if (path.isEmpty()) {
                 StreamSupport.stream(FileSystems.getDefault().getRootDirectories().spliterator(), false)
+                             .filter(root -> Files.exists(root))
                              .filter(root -> accept.test(root) && root.toString().startsWith(prefix))
                              .map(root -> new ArgSuggestion(root.toString()))
                              .forEach(result::add);
@@ -1697,7 +1693,7 @@ public class JShellTool implements MessageHandler {
         } else if (start.isEmpty()) {
             stset = cmd + "-none";
         } else {
-            stset = prefix("startup.jsh:\n" + start + "\n" + cmd + "startup.jsh", "");
+            stset = "startup.jsh:\n" + start + "\n" + cmd + "startup.jsh";
         }
         hard(stset);
     }

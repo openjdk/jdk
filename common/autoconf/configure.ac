@@ -182,7 +182,6 @@ TOOLCHAIN_POST_DETECTION
 
 # Finally do some processing after the detection phase
 TOOLCHAIN_SETUP_BUILD_COMPILERS
-TOOLCHAIN_SETUP_LEGACY
 TOOLCHAIN_MISC_CHECKS
 
 # Setup the JTReg Regression Test Harness.

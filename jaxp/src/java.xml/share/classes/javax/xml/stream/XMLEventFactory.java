@@ -27,6 +27,7 @@
  */
 
 package javax.xml.stream;
+import com.sun.xml.internal.stream.events.XMLEventFactoryImpl;
 import java.util.Iterator;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
@@ -52,6 +53,19 @@ public abstract class XMLEventFactory {
     static final String JAXPFACTORYID = "javax.xml.stream.XMLEventFactory";
     static final String DEFAULIMPL = "com.sun.xml.internal.stream.events.XMLEventFactoryImpl";
 
+
+  /**
+   * Creates a new instance of the {@code XMLEventFactory} builtin
+   * system-default implementation.
+   *
+   * @return A new instance of the {@code XMLEventFactory} builtin
+   *         system-default implementation.
+   *
+   * @since 9
+   */
+  public static XMLEventFactory newDefaultFactory() {
+      return new XMLEventFactoryImpl();
+  }
 
   /**
    * Creates a new instance of the factory in exactly the same manner as the
@@ -108,7 +122,8 @@ public abstract class XMLEventFactory {
    * </li>
    * <li>
    *   <p>
-   *   Otherwise, the system-default implementation is returned.
+   *   Otherwise, the {@linkplain #newDefaultFactory() system-default}
+   *   implementation is returned.
    * </li>
    * </ul>
    * <p>

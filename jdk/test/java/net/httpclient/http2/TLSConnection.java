@@ -27,24 +27,23 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.http.Http2Handler;
-import java.net.http.Http2TestExchange;
-import java.net.http.Http2TestServer;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import jdk.incubator.http.HttpClient;
+import jdk.incubator.http.HttpRequest;
+import jdk.incubator.http.HttpResponse;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
+import static jdk.incubator.http.HttpRequest.BodyProcessor.fromString;
+import static jdk.incubator.http.HttpResponse.BodyHandler.asString;
 
 /*
  * @test
  * @bug 8150769 8157107
  * @key intermittent
+ * @library server
  * @summary Checks that SSL parameters can be set for HTTP/2 connection
- * @modules java.httpclient
- * @compile/module=java.httpclient java/net/http/Http2Handler.java
- * @compile/module=java.httpclient java/net/http/Http2TestExchange.java
- * @compile/module=java.httpclient java/net/http/Http2TestServer.java
+ * @modules jdk.incubator.httpclient/jdk.incubator.http.internal.common
+ *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
+ *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
  * @run main/othervm TLSConnection
  */
 public class TLSConnection {
@@ -56,7 +55,7 @@ public class TLSConnection {
     public static void main(String[] args) throws Exception {
 
         // enable all logging
-        System.setProperty("java.net.http.HttpClient.log", "all,frames:all");
+        System.setProperty("jdk.httpclient.HttpClient.log", "all,frames:all");
 
         // initialize JSSE
         System.setProperty("javax.net.ssl.keyStore", KEYSTORE);
@@ -66,7 +65,8 @@ public class TLSConnection {
 
         Handler handler = new Handler();
 
-        try (Http2TestServer server = new Http2TestServer(true, 0, handler)) {
+        try (Http2TestServer server = new Http2TestServer(true, 0)) {
+            server.addHandler(handler, "/");
             server.start();
 
             int port = server.getAddress().getPort();
@@ -158,17 +158,16 @@ public class TLSConnection {
     }
 
     private static void connect(String uriString, SSLParameters sslParameters)
-            throws URISyntaxException, IOException, InterruptedException {
-
-        String body = HttpClient.create()
-                .sslParameters(sslParameters)
-                .version(HttpClient.Version.HTTP_2)
-                .build()
-                .request(new URI(uriString))
-                .body(HttpRequest.fromString("body"))
-                .GET()
-                .response()
-                .body(HttpResponse.asString());
+        throws URISyntaxException, IOException, InterruptedException
+    {
+        HttpClient client = HttpClient.newBuilder()
+                                      .sslParameters(sslParameters)
+                                      .version(HttpClient.Version.HTTP_2)
+                                      .build();
+        HttpRequest request = HttpRequest.newBuilder(new URI(uriString))
+                                         .POST(fromString("body"))
+                                         .build();
+        String body = client.send(request, asString()).body();
 
         System.out.println("Response: " + body);
     }

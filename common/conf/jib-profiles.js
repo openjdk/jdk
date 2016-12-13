@@ -346,6 +346,35 @@ var getJibProfilesProfiles = function (input, common) {
     // Generate debug profiles for the open jprt profiles
     profiles = concatObjects(profiles, generateDebugProfiles(common, openOnlyProfiles));
 
+    // Profiles for building the zero jvm variant. These are used for verification
+    // in JPRT.
+    var zeroProfiles = {
+        "linux-x64-zero": {
+            target_os: "linux",
+            target_cpu: "x64",
+            dependencies: concat(common.dependencies, "devkit"),
+            configure_args: concat(common.configure_args,
+                "--with-zlib=system",
+                "--with-jvm-variants=zero",
+                "--enable-libffi-bundling"),
+            default_make_targets: common.default_make_targets
+        },
+
+        "linux-x86-zero": {
+            target_os: "linux",
+            target_cpu: "x86",
+            build_cpu: "x64",
+            dependencies: concat(common.dependencies, "devkit"),
+            configure_args: concat(common.configure_args, common.configure_args_32bit,
+                "--with-zlib=system",
+                "--with-jvm-variants=zero",
+                "--enable-libffi-bundling"),
+            default_make_targets: common.default_make_targets
+        },
+    }
+    profiles = concatObjects(profiles, zeroProfiles);
+    profiles = concatObjects(profiles, generateDebugProfiles(common, zeroProfiles));
+
     // Profiles used to run tests. Used in JPRT.
     var testOnlyProfiles = {
 
@@ -380,7 +409,7 @@ var getJibProfilesDependencies = function (input, common) {
         + (input.build_cpu == "x86" ? "i586" : input.build_cpu);
 
     var devkit_platform_revisions = {
-        linux_x64: "gcc4.9.2-OEL6.4+1.0",
+        linux_x64: "gcc4.9.2-OEL6.4+1.1",
         macosx_x64: "Xcode6.3-MacOSX10.9+1.0",
         solaris_x64: "SS12u4-Solaris11u1+1.0",
         solaris_sparcv9: "SS12u4-Solaris11u1+1.0",
@@ -427,7 +456,7 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "javare",
             revision: "4.2",
-            build_number: "b03",
+            build_number: "b04",
             checksum_file: "MD5_VALUES",
             file: "jtreg_bin-4.2.zip",
             environment_name: "JT_HOME",

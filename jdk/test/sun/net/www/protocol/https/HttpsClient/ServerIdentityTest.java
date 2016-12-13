@@ -21,86 +21,112 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /*
  * @test
  * @bug 4328195
  * @summary Need to include the alternate subject DN for certs,
  *          https should check for this
  * @library /javax/net/ssl/templates
- * @run main/othervm ServerIdentityTest dnsstore
- * @run main/othervm ServerIdentityTest ipstore
- *
- *     SunJSSE does not support dynamic system properties, no way to re-use
- *     system properties in samevm/agentvm mode.
+ * @run main/othervm ServerIdentityTest dnsstore localhost
+ * @run main/othervm ServerIdentityTest ipstore 127.0.0.1
  *
  * @author Yingxian Wang
  */
 
+import java.io.InputStream;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.security.KeyStore;
+
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
 
-public class ServerIdentityTest extends SSLSocketTemplate {
+public final class ServerIdentityTest extends SSLSocketTemplate {
 
-    private static final String PASSWORD = "changeit";
+    private static String keystore;
+    private static String hostname;
+    private static SSLContext context;
 
+    /*
+     * Run the test case.
+     */
     public static void main(String[] args) throws Exception {
-        final String keystore = args[0];
-        String keystoreFilename = TEST_SRC + "/" + keystore;
+        // Get the customized arguments.
+        initialize(args);
 
-        setup(keystoreFilename, keystoreFilename, PASSWORD);
+        (new ServerIdentityTest()).run();
+    }
 
-        SSLContext context = SSLContext.getInstance("SSL");
+    @Override
+    protected boolean isCustomizedClientConnection() {
+        return true;
+    }
 
-        KeyManager[] kms = new KeyManager[1];
-        KeyStore ks = loadJksKeyStore(keystoreFilename, PASSWORD);
-        KeyManager km = new MyKeyManager(ks, PASSWORD.toCharArray());
-        kms[0] = km;
-        context.init(kms, null, null);
+    @Override
+    protected void runServerApplication(SSLSocket socket) throws Exception {
+        InputStream sslIS = socket.getInputStream();
+        sslIS.read();
+        BufferedWriter bw = new BufferedWriter(
+                new OutputStreamWriter(socket.getOutputStream()));
+        bw.write("HTTP/1.1 200 OK\r\n\r\n\r\n");
+        bw.flush();
+        socket.getSession().invalidate();
+    }
+
+    @Override
+    protected void runClientApplication(int serverPort) throws Exception {
+        URL url = new URL(
+                "https://" + hostname + ":" + serverPort + "/index.html");
+
+        HttpURLConnection urlc = null;
+        InputStream is = null;
+        try {
+            urlc = (HttpURLConnection)url.openConnection();
+            is = urlc.getInputStream();
+        } finally {
+            if (is != null) {
+                is.close();
+            }
+            if (urlc != null) {
+                urlc.disconnect();
+            }
+        }
+    }
+
+    @Override
+    protected SSLContext createServerSSLContext() throws Exception {
+        return context;
+    }
+
+    @Override
+    protected SSLContext createClientSSLContext() throws Exception {
+        return context;
+    }
+
+    private static void initialize(String[] args) throws Exception {
+        keystore = args[0];
+        hostname = args[1];
+
+        String password = "changeit";
+        String keyFilename =
+                System.getProperty("test.src", ".") + "/" + keystore;
+        String trustFilename =
+                System.getProperty("test.src", ".") + "/" + keystore;
+
+        System.setProperty("javax.net.ssl.keyStore", keyFilename);
+        System.setProperty("javax.net.ssl.keyStorePassword", password);
+        System.setProperty("javax.net.ssl.trustStore", trustFilename);
+        System.setProperty("javax.net.ssl.trustStorePassword", password);
+
+        context = SSLContext.getDefault();
         HttpsURLConnection.setDefaultSSLSocketFactory(
                 context.getSocketFactory());
-
-        /*
-         * Start the test.
-         */
-        System.out.println("Testing " + keystore);
-
-        new SSLSocketTemplate()
-            .setSSLContext(context)
-            .setServerApplication((socket, test) -> {
-                BufferedWriter bw = new BufferedWriter(
-                        new OutputStreamWriter(socket.getOutputStream()));
-                bw.write("HTTP/1.1 200 OK\r\n\r\n\r\n");
-                bw.flush();
-                Thread.sleep(2000);
-                socket.getSession().invalidate();
-                print("Server application is done");
-            })
-            .setClientPeer((test) -> {
-                boolean serverIsReady = test.waitForServerSignal();
-                if (!serverIsReady) {
-                    print(
-                            "The server is not ready, ignore on client side.");
-                    return;
-                }
-
-                // Signal the server, the client is ready to communicate.
-                test.signalClientReady();
-
-                String host = keystore.equals("ipstore")
-                        ? "127.0.0.1" : "localhost";
-                URL url = new URL("https://" + host + ":" + test.getServerPort()
-                        + "/index.html");
-
-                ((HttpURLConnection) url.openConnection())
-                        .getInputStream().close();
-
-                print("Client is done");
-            }).runTest();
     }
 }

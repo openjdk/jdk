@@ -217,6 +217,13 @@ AC_DEFUN([BPERF_SETUP_CCACHE],
 AC_DEFUN([BPERF_SETUP_CCACHE_USAGE],
 [
   if test "x$CCACHE" != x; then
+    if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
+      HAS_BAD_CCACHE=[`$ECHO $CCACHE_VERSION | \
+          $GREP -e '^1\.' -e '^2\.' -e '^3\.0\.' -e '^3\.1\.'`]
+      if test "x$HAS_BAD_CCACHE" != "x"; then
+        AC_MSG_ERROR([On macosx, ccache 3.2 or later is required, found $CCACHE_VERSION])
+      fi
+    fi
     if test "x$USE_PRECOMPILED_HEADER" = "x1"; then
       HAS_BAD_CCACHE=[`$ECHO $CCACHE_VERSION | \
           $GREP -e '^1.*' -e '^2.*' -e '^3\.0.*' -e '^3\.1\.[0123]$'`]

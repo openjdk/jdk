@@ -27,7 +27,8 @@
  * @bug 8130150 8131779 8139907
  * @summary Verify that the Montgomery multiply and square intrinsic works and correctly checks their arguments.
  * @requires vm.flavor == "server"
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.math:open
  * @library /test/lib
  *
  * @build sun.hotspot.WhiteBox
