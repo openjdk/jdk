@@ -34,7 +34,9 @@
  *     -class compiler.whitebox.SimpleTestCaseHelper
  *     -extraopt -Dgraal.TieredAOT=true -extraopt -Dgraal.ProfileSimpleMethods=true
  *     -extraopt -XX:+UnlockDiagnosticVMOptions -extraopt -XX:+WhiteBoxAPI -extraopt -Xbootclasspath/a:.
- * @run main/othervm -Xmixed -Xbatch -XX:+UseAOT -XX:+TieredCompilation -XX:-UseCounterDecay
+ *     -extraopt -XX:-UseCompressedOops
+ * @run main/othervm -Xmixed -Xbatch -XX:+UseAOT -XX:+TieredCompilation
+ *     -XX:-UseCounterDecay -XX:-UseCompressedOops
  *     -XX:CompileCommand=dontinline,*.*
  *     -XX:AOTLibrary=./libRecompilationTest.so -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
