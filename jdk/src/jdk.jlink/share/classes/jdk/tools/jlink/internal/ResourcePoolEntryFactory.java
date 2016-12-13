@@ -51,6 +51,12 @@ public final class ResourcePoolEntryFactory {
                 original.path(), original.type(), file);
     }
 
+    public static ResourcePoolEntry createSymbolicLink(String path,
+                                                       ResourcePoolEntry.Type type,
+                                                       ResourcePoolEntry target) {
+        return new SymLinkResourcePoolEntry(moduleFrom(path), path, type, target);
+    }
+
     private static String moduleFrom(String path) {
         Objects.requireNonNull(path);
         if (path.isEmpty() || path.charAt(0) != '/') {
