@@ -263,6 +263,8 @@ tools/jimage/JImageExtractTest.java                             8169713 generic-
 tools/jimage/JImageListTest.java                                8169713 generic-all
 tools/jimage/JImageVerifyTest.java                              8169713 generic-all
 
+tools/jlink/ModuleNamesOrderTest.java                           8171070 generic-all
+
 ############################################################################
 
 # jdk_jdi
