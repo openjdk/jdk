@@ -23,9 +23,12 @@
  * questions.
  */
 
+/**
+ * Nashorn
+ */
 module jdk.scripting.nashorn {
     requires java.logging;
-    requires public java.scripting;
+    requires transitive java.scripting;
     requires jdk.dynalink;
 
     exports jdk.nashorn.api.scripting;

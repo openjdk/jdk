@@ -2218,7 +2218,7 @@ public class Lower extends TreeTranslator {
                 return builder.build(rval);
         }
         Name name = TreeInfo.name(rval);
-        if (name == names._super)
+        if (name == names._super || name == names._this)
             return builder.build(rval);
         VarSymbol var =
             new VarSymbol(FINAL|SYNTHETIC,
@@ -2387,6 +2387,7 @@ public class Lower extends TreeTranslator {
     public void visitModuleDef(JCModuleDecl tree) {
         ModuleSymbol msym = tree.sym;
         ClassSymbol c = msym.module_info;
+        c.setAttributes(msym);
         c.flags_field |= Flags.MODULE;
         createInfoClass(List.<JCAnnotation>nil(), tree.sym.module_info);
     }
@@ -3205,7 +3206,11 @@ public class Lower extends TreeTranslator {
                                                                       newTag,
                                                                       tree.type,
                                                                       tree.rhs.type);
-                        JCExpression expr = lhs;
+                        //Need to use the "lhs" at two places, once on the future left hand side
+                        //and once in the future binary operator. But further processing may change
+                        //the components of the tree in place (see visitSelect for e.g. <Class>.super.<ident>),
+                        //so cloning the tree to avoid interference between the uses:
+                        JCExpression expr = (JCExpression) lhs.clone();
                         if (expr.type != tree.type)
                             expr = make.TypeCast(tree.type, expr);
                         JCBinary opResult = make.Binary(newTag, expr, tree.rhs);
@@ -3288,9 +3293,14 @@ public class Lower extends TreeTranslator {
                             public JCExpression build(final JCExpression tmp2) {
                                 JCTree.Tag opcode = (tree.hasTag(POSTINC))
                                     ? PLUS_ASG : MINUS_ASG;
-                                JCTree lhs = cast
-                                    ? make.TypeCast(tree.arg.type, tmp1)
-                                    : tmp1;
+                                //"tmp1" and "tmp2" may refer to the same instance
+                                //(for e.g. <Class>.super.<ident>). But further processing may
+                                //change the components of the tree in place (see visitSelect),
+                                //so cloning the tree to avoid interference between the two uses:
+                                JCExpression lhs = (JCExpression)tmp1.clone();
+                                lhs = cast
+                                    ? make.TypeCast(tree.arg.type, lhs)
+                                    : lhs;
                                 JCExpression update = makeAssignop(opcode,
                                                              lhs,
                                                              make.Literal(1));

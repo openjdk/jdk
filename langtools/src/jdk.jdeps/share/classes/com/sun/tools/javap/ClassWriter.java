@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import com.sun.tools.classfile.ConstantPool;
 import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.ConstantValue_attribute;
 import com.sun.tools.classfile.Descriptor;
-import com.sun.tools.classfile.DescriptorException;
+import com.sun.tools.classfile.Descriptor.InvalidDescriptor;
 import com.sun.tools.classfile.Exceptions_attribute;
 import com.sun.tools.classfile.Field;
 import com.sun.tools.classfile.Method;
@@ -157,21 +157,36 @@ public class ClassWriter extends BasicWriter {
             indent(-1);
         }
 
-        String name = getJavaName(classFile);
         AccessFlags flags = cf.access_flags;
-
         writeModifiers(flags.getClassModifiers());
 
-        if (classFile.access_flags.is(AccessFlags.ACC_MODULE) && name.endsWith(".module-info")) {
-            print("module ");
-            print(name.replace(".module-info", ""));
+        if (classFile.access_flags.is(AccessFlags.ACC_MODULE)) {
+            Attribute attr = classFile.attributes.get(Attribute.Module);
+            if (attr instanceof Module_attribute) {
+                Module_attribute modAttr = (Module_attribute) attr;
+                String name;
+                try {
+                    name = getJavaName(constant_pool.getUTF8Value(modAttr.module_name));
+                } catch (ConstantPoolException e) {
+                    name = report(e);
+                }
+                if ((modAttr.module_flags & Module_attribute.ACC_OPEN) != 0) {
+                    print("open ");
+                }
+                print("module ");
+                print(name);
+            } else {
+                // fallback for malformed class files
+                print("class ");
+                print(getJavaName(classFile));
+            }
         } else {
             if (classFile.isClass())
                 print("class ");
             else if (classFile.isInterface())
                 print("interface ");
 
-            print(name);
+            print(getJavaName(classFile));
         }
 
         Signature_attribute sigAttr = getSignature(cf.attributes);
@@ -210,7 +225,23 @@ public class ClassWriter extends BasicWriter {
             indent(+1);
             println("minor version: " + cf.minor_version);
             println("major version: " + cf.major_version);
-            writeList("flags: ", flags.getClassFlags(), "\n");
+            writeList(String.format("flags: (0x%04x) ", flags.flags), flags.getClassFlags(), "\n");
+            print("this_class: #" + cf.this_class);
+            if (cf.this_class != 0) {
+                tab();
+                print("// " + constantWriter.stringValue(cf.this_class));
+            }
+            println();
+            print("super_class: #" + cf.super_class);
+            if (cf.super_class != 0) {
+                tab();
+                print("// " + constantWriter.stringValue(cf.super_class));
+            }
+            println();
+            print("interfaces: " + cf.interfaces.length);
+            print(", fields: " + cf.fields.length);
+            print(", methods: " + cf.methods.length);
+            println(", attributes: " + cf.attributes.attrs.length);
             indent(-1);
             constantWriter.writeConstantPool();
         } else {
@@ -249,17 +280,20 @@ public class ClassWriter extends BasicWriter {
                 return builder.toString();
             }
 
+            @Override
             public StringBuilder visitSimpleType(SimpleType type, StringBuilder sb) {
                 sb.append(getJavaName(type.name));
                 return sb;
             }
 
+            @Override
             public StringBuilder visitArrayType(ArrayType type, StringBuilder sb) {
                 append(sb, type.elemType);
                 sb.append("[]");
                 return sb;
             }
 
+            @Override
             public StringBuilder visitMethodType(MethodType type, StringBuilder sb) {
                 appendIfNotEmpty(sb, "<", type.typeParamTypes, "> ");
                 append(sb, type.returnType);
@@ -268,6 +302,7 @@ public class ClassWriter extends BasicWriter {
                 return sb;
             }
 
+            @Override
             public StringBuilder visitClassSigType(ClassSigType type, StringBuilder sb) {
                 appendIfNotEmpty(sb, "<", type.typeParamTypes, ">");
                 if (isInterface) {
@@ -283,6 +318,7 @@ public class ClassWriter extends BasicWriter {
                 return sb;
             }
 
+            @Override
             public StringBuilder visitClassType(ClassType type, StringBuilder sb) {
                 if (type.outerType != null) {
                     append(sb, type.outerType);
@@ -293,6 +329,7 @@ public class ClassWriter extends BasicWriter {
                 return sb;
             }
 
+            @Override
             public StringBuilder visitTypeParamType(TypeParamType type, StringBuilder sb) {
                 sb.append(type.name);
                 String sep = " extends ";
@@ -312,6 +349,7 @@ public class ClassWriter extends BasicWriter {
                 return sb;
             }
 
+            @Override
             public StringBuilder visitWildcardType(WildcardType type, StringBuilder sb) {
                 switch (type.kind) {
                     case UNBOUNDED:
@@ -402,7 +440,7 @@ public class ClassWriter extends BasicWriter {
             println("descriptor: " + getValue(f.descriptor));
 
         if (options.verbose)
-            writeList("flags: ", flags.getFieldFlags(), "\n");
+            writeList(String.format("flags: (0x%04x) ", flags.flags), flags.getFieldFlags(), "\n");
 
         if (options.showAllAttrs) {
             for (Attribute attr: f.attributes)
@@ -459,16 +497,20 @@ public class ClassWriter extends BasicWriter {
         if (methodType != null) {
             print(new JavaTypePrinter(false).printTypeArgs(methodType.typeParamTypes));
         }
-        if (getName(m).equals("<init>")) {
-            print(getJavaName(classFile));
-            print(getJavaParameterTypes(d, flags));
-        } else if (getName(m).equals("<clinit>")) {
-            print("{}");
-        } else {
-            print(getJavaReturnType(d));
-            print(" ");
-            print(getName(m));
-            print(getJavaParameterTypes(d, flags));
+        switch (getName(m)) {
+            case "<init>":
+                print(getJavaName(classFile));
+                print(getJavaParameterTypes(d, flags));
+                break;
+            case "<clinit>":
+                print("{}");
+                break;
+            default:
+                print(getJavaReturnType(d));
+                print(" ");
+                print(getName(m));
+                print(getJavaParameterTypes(d, flags));
+                break;
         }
 
         Attribute e_attr = m.attributes.get(Attribute.Exceptions);
@@ -499,7 +541,7 @@ public class ClassWriter extends BasicWriter {
         }
 
         if (options.verbose) {
-            writeList("flags: ", flags.getMethodFlags(), "\n");
+            writeList(String.format("flags: (0x%04x) ", flags.flags), flags.getMethodFlags(), "\n");
         }
 
         Code_attribute code = null;
@@ -555,18 +597,47 @@ public class ClassWriter extends BasicWriter {
         Module_attribute m = (Module_attribute) attr;
         for (Module_attribute.RequiresEntry entry: m.requires) {
             print("requires");
-            if ((entry.requires_flags & Module_attribute.ACC_PUBLIC) != 0)
-                print(" public");
+            if ((entry.requires_flags & Module_attribute.ACC_STATIC_PHASE) != 0)
+                print(" static");
+            if ((entry.requires_flags & Module_attribute.ACC_TRANSITIVE) != 0)
+                print(" transitive");
             print(" ");
             print(getUTF8Value(entry.requires_index).replace('/', '.'));
             println(";");
         }
 
         for (Module_attribute.ExportsEntry entry: m.exports) {
-            print("exports ");
+            print("exports");
+            print(" ");
             print(getUTF8Value(entry.exports_index).replace('/', '.'));
             boolean first = true;
             for (int i: entry.exports_to_index) {
+                String mname;
+                try {
+                    mname = classFile.constant_pool.getUTF8Value(i).replace('/', '.');
+                } catch (ConstantPoolException e) {
+                    mname = report(e);
+                }
+                if (first) {
+                    println(" to");
+                    indent(+1);
+                    first = false;
+                } else {
+                    println(",");
+                }
+                print(mname);
+            }
+            println(";");
+            if (!first)
+                indent(-1);
+        }
+
+        for (Module_attribute.OpensEntry entry: m.opens) {
+            print("opens");
+            print(" ");
+            print(getUTF8Value(entry.opens_index).replace('/', '.'));
+            boolean first = true;
+            for (int i: entry.opens_to_index) {
                 String mname;
                 try {
                     mname = classFile.constant_pool.getUTF8Value(i).replace('/', '.');
@@ -594,13 +665,22 @@ public class ClassWriter extends BasicWriter {
         }
 
         for (Module_attribute.ProvidesEntry entry: m.provides) {
-            print("provides ");
+            print("provides  ");
             print(getClassName(entry.provides_index).replace('/', '.'));
-            println(" with");
-            indent(+1);
-            print(getClassName(entry.with_index).replace('/', '.'));
+            boolean first = true;
+            for (int i: entry.with_index) {
+                if (first) {
+                    println(" with");
+                    indent(+1);
+                    first = false;
+                } else {
+                    println(",");
+                }
+                print(getClassName(i).replace('/', '.'));
+            }
             println(";");
-            indent(-1);
+            if (!first)
+                indent(-1);
         }
     }
 
@@ -679,7 +759,7 @@ public class ClassWriter extends BasicWriter {
             return getJavaName(d.getFieldType(constant_pool));
         } catch (ConstantPoolException e) {
             return report(e);
-        } catch (DescriptorException e) {
+        } catch (InvalidDescriptor e) {
             return report(e);
         }
     }
@@ -689,7 +769,7 @@ public class ClassWriter extends BasicWriter {
             return getJavaName(d.getReturnType(constant_pool));
         } catch (ConstantPoolException e) {
             return report(e);
-        } catch (DescriptorException e) {
+        } catch (InvalidDescriptor e) {
             return report(e);
         }
     }
@@ -699,7 +779,7 @@ public class ClassWriter extends BasicWriter {
             return getJavaName(adjustVarargs(flags, d.getParameterTypes(constant_pool)));
         } catch (ConstantPoolException e) {
             return report(e);
-        } catch (DescriptorException e) {
+        } catch (InvalidDescriptor e) {
             return report(e);
         }
     }
@@ -766,12 +846,16 @@ public class ClassWriter extends BasicWriter {
                     ConstantPool.CONSTANT_Integer_info info =
                             (ConstantPool.CONSTANT_Integer_info) cpInfo;
                     String t = d.getValue(constant_pool);
-                    if (t.equals("C")) { // character
-                        return getConstantCharValue((char) info.value);
-                    } else if (t.equals("Z")) { // boolean
-                        return String.valueOf(info.value == 1);
-                    } else { // other: assume integer
-                        return String.valueOf(info.value);
+                    switch (t) {
+                        case "C":
+                            // character
+                            return getConstantCharValue((char) info.value);
+                        case "Z":
+                            // boolean
+                            return String.valueOf(info.value == 1);
+                        default:
+                            // other: assume integer
+                            return String.valueOf(info.value);
                     }
                 }
 
@@ -823,10 +907,10 @@ public class ClassWriter extends BasicWriter {
         }
     }
 
-    private Options options;
-    private AttributeWriter attrWriter;
-    private CodeWriter codeWriter;
-    private ConstantWriter constantWriter;
+    private final Options options;
+    private final AttributeWriter attrWriter;
+    private final CodeWriter codeWriter;
+    private final ConstantWriter constantWriter;
     private ClassFile classFile;
     private URI uri;
     private long lastModified;

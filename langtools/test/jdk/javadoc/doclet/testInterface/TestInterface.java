@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4682448 4947464 5029946 8025633 8026567 8035473
+ * @bug      4682448 4947464 5029946 8025633 8026567 8035473 8139101
  * @summary  Verify that the public modifier does not show up in the
  *           documentation for public methods, as recommended by the JLS.
  *           If A implements I and B extends A, B should be in the list of
@@ -121,6 +121,11 @@ public class TestInterface extends JavadocTester {
         checkOutput("pkg/Interface.html", false,
                 "public int&nbsp;method()",
                 "public static final&nbsp;int field");
+
+        checkOutput("pkg/ClassWithStaticMethod.html", false,
+                //Make sure "Specified By" does not appear on class documentation when
+                //the method is a static method in the interface.
+                "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n");
     }
 
     @Test

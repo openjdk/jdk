@@ -375,7 +375,8 @@ public class JavacElements implements Elements {
     @DefinedBy(Api.LANGUAGE_MODEL)
     public boolean isDeprecated(Element e) {
         Symbol sym = cast(Symbol.class, e);
-        return (sym.flags() & Flags.DEPRECATED) != 0;
+        sym.complete();
+        return sym.isDeprecated();
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)

@@ -171,11 +171,7 @@ java/net/MulticastSocket/Test.java                              7145658 macosx-a
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 
-java/net/httpclient/SplitResponse.java                          8157533 generic-all 
-
-java/net/httpclient/http2/BasicTest.java                        8157408 linux-all
-java/net/httpclient/http2/ErrorTest.java                        8158127 solaris-all,windows-all
-java/net/httpclient/http2/TLSConnection.java                    8157482 macosx-all
+java/net/httpclient/TimeoutOrdering.java                        8170940 solaris-all,windows-all
 
 ############################################################################
 
@@ -265,6 +261,10 @@ tools/jimage/JImageExtractTest.java                             8169713 generic-
 tools/jimage/JImageListTest.java                                8169713 generic-all
 tools/jimage/JImageVerifyTest.java                              8169713 generic-all
 
+tools/jlink/ModuleNamesOrderTest.java                           8171070 generic-all
+
+tools/jlink/multireleasejar/JLinkMultiReleaseJarTest.java       8169971 windows-x64
+
 ############################################################################
 
 # jdk_jdi
@@ -291,6 +291,7 @@ java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java 8062512 
 
 java/util/BitSet/BitSetStreamTest.java                          8079538 generic-all
 
+
 ############################################################################
 
 # jdk_instrument
@@ -310,7 +311,7 @@ demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java       8151899 generic-
 # jdk_other
 
 com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8169942 linux-i586,macosx-all,windows-x64
-com/sun/jndi/rmi/registry/RegistryContext/UnbindIdempotent.java 8170669 generic-all
+
 javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8169737 linux-all
 
 javax/xml/ws/clientjar/TestWsImport.java			8170370 generic-all

@@ -561,6 +561,8 @@ public enum Option {
         }
     },
 
+    ADD_OPENS("--add-opens", null, null, HIDDEN, BASIC),
+
     ADD_READS("--add-reads", "opt.arg.addReads", "opt.addReads", EXTENDED, BASIC) {
         @Override
         public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {

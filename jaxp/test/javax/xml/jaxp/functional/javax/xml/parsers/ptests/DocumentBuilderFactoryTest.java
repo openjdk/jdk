@@ -34,6 +34,8 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertNotSame;
 
 import java.io.BufferedReader;
 import java.io.Closeable;
@@ -66,7 +68,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * @bug 8080907
+ * @bug 8080907 8169778
  * This checks the methods of DocumentBuilderFactoryImpl.
  */
 /*
@@ -77,10 +79,17 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 @Listeners({jaxp.library.FilePolicy.class})
 public class DocumentBuilderFactoryTest {
+
+    /**
+     * DocumentBuilderFactory builtin system-default implementation class name.
+     */
+    private static final String DEFAULT_IMPL_CLASS =
+        "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl";
+
     /**
      * DocumentBuilderFactory implementation class name.
      */
-    private static final String DOCUMENT_BUILDER_FACTORY_CLASSNAME = "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl";
+    private static final String DOCUMENT_BUILDER_FACTORY_CLASSNAME = DEFAULT_IMPL_CLASS;
 
     /**
      * Provide valid DocumentBuilderFactory instantiation parameters.
@@ -90,6 +99,21 @@ public class DocumentBuilderFactoryTest {
     @DataProvider(name = "parameters")
     public Object[][] getValidateParameters() {
         return new Object[][] { { DOCUMENT_BUILDER_FACTORY_CLASSNAME, null }, { DOCUMENT_BUILDER_FACTORY_CLASSNAME, this.getClass().getClassLoader() } };
+    }
+
+    /**
+     * Test if newDefaultInstance() method returns an instance
+     * of the expected factory.
+     * @throws Exception If any errors occur.
+     */
+    @Test
+    public void testDefaultInstance() throws Exception {
+        DocumentBuilderFactory dbf1 = DocumentBuilderFactory.newDefaultInstance();
+        DocumentBuilderFactory dbf2 = DocumentBuilderFactory.newInstance();
+        assertNotSame(dbf1, dbf2, "same instance returned:");
+        assertSame(dbf1.getClass(), dbf2.getClass(),
+                  "unexpected class mismatch for newDefaultInstance():");
+        assertEquals(dbf1.getClass().getName(), DEFAULT_IMPL_CLASS);
     }
 
     /**

@@ -671,6 +671,8 @@ LLVM_LIBS
 LLVM_LDFLAGS
 LLVM_CFLAGS
 LLVM_CONFIG
+LIBFFI_LIB_FILE
+ENABLE_LIBFFI_BUNDLING
 LIBFFI_LIBS
 LIBFFI_CFLAGS
 ALSA_LIBS
@@ -700,8 +702,6 @@ JVM_FEATURES_client
 JVM_FEATURES_server
 INCLUDE_DTRACE
 GCOV_ENABLED
-STRIP_POLICY
-DEBUG_BINARIES
 ZIP_EXTERNAL_DEBUG_SYMBOLS
 COPY_DEBUG_SYMBOLS
 COMPILE_WITH_DEBUG_SYMBOLS
@@ -791,11 +791,6 @@ JTREGEXE
 HOTSPOT_TOOLCHAIN_TYPE
 USING_BROKEN_SUSE_LD
 PACKAGE_PATH
-USE_CLANG
-HOTSPOT_LD
-HOTSPOT_CXX
-HOTSPOT_RC
-HOTSPOT_MT
 BUILD_AS
 BUILD_LDCXX
 BUILD_LD
@@ -1215,6 +1210,7 @@ with_alsa_lib
 with_libffi
 with_libffi_include
 with_libffi_lib
+enable_libffi_bundling
 with_libjpeg
 with_giflib
 with_libpng
@@ -1974,8 +1970,8 @@ Optional Features:
   --enable-debug          set the debug level to fastdebug (shorthand for
                           --with-debug-level=fastdebug) [disabled]
   --enable-headless-only  only build headless (no GUI) support [disabled]
-  --enable-unlimited-crypto
-                          Enable unlimited crypto policy [disabled]
+  --disable-unlimited-crypto
+                          Disable unlimited crypto policy [enabled]
   --disable-keep-packaged-modules
                           Do not keep packaged modules in jdk image [enable]
   --enable-static-build   enable static library build [disabled]
@@ -1997,6 +1993,9 @@ Optional Features:
                           disable bundling of the freetype library with the
                           build result [enabled on Windows or when using
                           --with-freetype, disabled otherwise]
+  --enable-libffi-bundling
+                          enable bundling of libffi.so to make the built JDK
+                          runnable on more systems
   --enable-jtreg-failure-handler
                           forces build of the jtreg failure handler to be
                           enabled, missing dependencies become fatal errors.
@@ -3851,7 +3850,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # $1 A command line (typically autoconf macro) to execute
 
 
-# Test: Is bootjdk explicitely set by command line arguments?
+# Test: Is bootjdk explicitly set by command line arguments?
 
 
 # Test: Is $JAVA_HOME set?
@@ -4178,7 +4177,7 @@ apt_help() {
     ffi)
       PKGHANDLER_COMMAND="sudo apt-get install libffi-dev" ;;
     x11)
-      PKGHANDLER_COMMAND="sudo apt-get install libX11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev" ;;
+      PKGHANDLER_COMMAND="sudo apt-get install libx11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev" ;;
     ccache)
       PKGHANDLER_COMMAND="sudo apt-get install ccache" ;;
     dtrace)
@@ -4911,7 +4910,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 # Minimum supported versions, empty means unspecified
 TOOLCHAIN_MINIMUM_VERSION_clang="3.2"
 TOOLCHAIN_MINIMUM_VERSION_gcc="4.3"
-TOOLCHAIN_MINIMUM_VERSION_microsoft=""
+TOOLCHAIN_MINIMUM_VERSION_microsoft="16.00.30319.01" # VS2010
 TOOLCHAIN_MINIMUM_VERSION_solstudio="5.13"
 TOOLCHAIN_MINIMUM_VERSION_xlc=""
 
@@ -4980,10 +4979,6 @@ TOOLCHAIN_MINIMUM_VERSION_xlc=""
 # that should be run on the build platform, not the target platform, as a build
 # helper). Since the non-cross-compile case uses the normal, target compilers
 # for this, we can only do this after these have been setup.
-
-
-# Setup legacy variables that are still needed as alternative ways to refer to
-# parts of the toolchain.
 
 
 # Do some additional checks on the detected tools.
@@ -5093,7 +5088,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1479997904
+DATE_WHEN_GENERATED=1481104795
 
 ###############################################################################
 #
@@ -15523,7 +15518,7 @@ test -n "$target_alias" &&
       ;;
   esac
 
-  # ..and setup our own variables. (Do this explicitely to facilitate searching)
+  # ..and setup our own variables. (Do this explicitly to facilitate searching)
   OPENJDK_BUILD_OS="$VAR_OS"
   if test "x$VAR_OS_TYPE" != x; then
     OPENJDK_BUILD_OS_TYPE="$VAR_OS_TYPE"
@@ -15662,7 +15657,7 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
       ;;
   esac
 
-  # ... and setup our own variables. (Do this explicitely to facilitate searching)
+  # ... and setup our own variables. (Do this explicitly to facilitate searching)
   OPENJDK_TARGET_OS="$VAR_OS"
   if test "x$VAR_OS_TYPE" != x; then
     OPENJDK_TARGET_OS_TYPE="$VAR_OS_TYPE"
@@ -24240,7 +24235,7 @@ fi
 if test "${enable_unlimited_crypto+set}" = set; then :
   enableval=$enable_unlimited_crypto;
 else
-  enable_unlimited_crypto=no
+  enable_unlimited_crypto=yes
 fi
 
   if test "x$enable_unlimited_crypto" = "xyes"; then
@@ -24400,7 +24395,7 @@ fi
         as_fn_error $? "Version string contains + but both 'BUILD' and 'OPT' are missing" "$LINENO" 5
       fi
       # Stop the version part process from setting default values.
-      # We still allow them to explicitely override though.
+      # We still allow them to explicitly override though.
       NO_DEFAULT_VERSION_PARTS=true
     else
       as_fn_error $? "--with-version-string fails to parse as a valid version string: $with_version_string" "$LINENO" 5
@@ -24462,11 +24457,10 @@ $as_echo "$as_me: WARNING: --with-version-opt value has been sanitized from '$wi
     fi
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
-      # Default is to calculate a string like this <timestamp>.<username>.<base dir name>
-      timestamp=`$DATE '+%Y-%m-%d-%H%M%S'`
+      # Default is to calculate a string like this 'adhoc.<username>.<base dir name>'
       # Outer [ ] to quote m4.
        basedirname=`$BASENAME "$TOPDIR" | $TR -d -c '[a-z][A-Z][0-9].-'`
-      VERSION_OPT="$timestamp.$USERNAME.$basedirname"
+      VERSION_OPT="adhoc.$USERNAME.$basedirname"
     fi
   fi
 
@@ -24769,7 +24763,7 @@ fi
   # we detected something (if so, the path to the jdk is in BOOT_JDK). But we
   # must check if this is indeed valid; otherwise we'll continue looking.
 
-  # Test: Is bootjdk explicitely set by command line arguments?
+  # Test: Is bootjdk explicitly set by command line arguments?
 
   if test "x$BOOT_JDK_FOUND" = xno; then
     # Now execute the test
@@ -29887,8 +29881,8 @@ $as_echo "$BOOT_JDK_VERSION" >&6; }
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find a valid Boot JDK. $HELP_MSG" >&5
 $as_echo "$as_me: Could not find a valid Boot JDK. $HELP_MSG" >&6;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: This might be fixed by explicitly setting --with-boot-jdk" >&6;}
     as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
@@ -29910,8 +29904,8 @@ $as_echo_n "checking for java in Boot JDK... " >&6; }
       if test ! -x $JAVA; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find java in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -29938,8 +29932,8 @@ $as_echo_n "checking for java in Boot JDK... " >&6; }
       if test ! -x $JAVA; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find java in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -30048,8 +30042,8 @@ $as_echo_n "checking for javac in Boot JDK... " >&6; }
       if test ! -x $JAVAC; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find javac in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -30076,8 +30070,8 @@ $as_echo_n "checking for javac in Boot JDK... " >&6; }
       if test ! -x $JAVAC; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find javac in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -30186,8 +30180,8 @@ $as_echo_n "checking for javah in Boot JDK... " >&6; }
       if test ! -x $JAVAH; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find javah in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -30214,8 +30208,8 @@ $as_echo_n "checking for javah in Boot JDK... " >&6; }
       if test ! -x $JAVAH; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find javah in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -30324,8 +30318,8 @@ $as_echo_n "checking for jar in Boot JDK... " >&6; }
       if test ! -x $JAR; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find jar in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -30352,8 +30346,8 @@ $as_echo_n "checking for jar in Boot JDK... " >&6; }
       if test ! -x $JAR; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find jar in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -30462,8 +30456,8 @@ $as_echo_n "checking for jarsigner in Boot JDK... " >&6; }
       if test ! -x $JARSIGNER; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find jarsigner in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -30490,8 +30484,8 @@ $as_echo_n "checking for jarsigner in Boot JDK... " >&6; }
       if test ! -x $JARSIGNER; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk" >&6;}
         as_fn_error $? "Could not find jarsigner in the Boot JDK" "$LINENO" 5
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
@@ -31197,6 +31191,12 @@ $as_echo "$as_me: The path of IMPORT_MODULES_TOPDIR, which resolves as \"$path\"
   fi
   if test -d "$IMPORT_MODULES_TOPDIR/modules_src"; then
     IMPORT_MODULES_SRC="$IMPORT_MODULES_TOPDIR/modules_src"
+  fi
+  # Workaround for using different imported module-info.java in Jake due to a
+  # change in format. Remove once new format is standard in JDK 9 and javafx
+  # delivers just that.
+  if test -d "$IMPORT_MODULES_TOPDIR/modules_src_jake"; then
+    IMPORT_MODULES_SRC="$IMPORT_MODULES_TOPDIR/modules_src_jake $IMPORT_MODULES_SRC"
   fi
   if test -d "$IMPORT_MODULES_TOPDIR/make"; then
     IMPORT_MODULES_MAKE="$IMPORT_MODULES_TOPDIR/make"
@@ -33578,9 +33578,11 @@ $as_echo "$as_me: Please use --enable-ccache instead of providing a wrapped comp
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     # cc -V output typically looks like
     #     cc: Sun C 5.12 Linux_i386 2011/11/16
+    # or
+    #     cc: Studio 12.5 Sun C 5.14 SunOS_sparc 2016/05/31
     COMPILER_VERSION_OUTPUT=`$COMPILER -V 2>&1`
     # Check that this is likely to be the Solaris Studio cc.
-    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.*: Sun $COMPILER_NAME" > /dev/null
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.* Sun $COMPILER_NAME" > /dev/null
     if test $? -ne 0; then
       ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
       { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5
@@ -34875,9 +34877,11 @@ $as_echo "$as_me: Please use --enable-ccache instead of providing a wrapped comp
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     # cc -V output typically looks like
     #     cc: Sun C 5.12 Linux_i386 2011/11/16
+    # or
+    #     cc: Studio 12.5 Sun C 5.14 SunOS_sparc 2016/05/31
     COMPILER_VERSION_OUTPUT=`$COMPILER -V 2>&1`
     # Check that this is likely to be the Solaris Studio cc.
-    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.*: Sun $COMPILER_NAME" > /dev/null
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.* Sun $COMPILER_NAME" > /dev/null
     if test $? -ne 0; then
       ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
       { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5
@@ -35261,9 +35265,9 @@ $as_echo "$as_me: WARNING: This typically indicates a broken setup, and is not s
   fi
 
   # We only check CC_VERSION_NUMBER since we assume CXX_VERSION_NUMBER is equal.
-  if  [[ "[$]CC_VERSION_NUMBER" =~ (.*\.){3} ]] ; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has more than three parts (X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&5
-$as_echo "$as_me: WARNING: C compiler version number has more than three parts (X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
+  if  [[ "[$]CC_VERSION_NUMBER" =~ (.*\.){4} ]] ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has more than four parts (W.X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&5
+$as_echo "$as_me: WARNING: C compiler version number has more than four parts (W.X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
   fi
 
   if  [[  "[$]CC_VERSION_NUMBER" =~ [0-9]{6} ]] ; then
@@ -35271,7 +35275,7 @@ $as_echo "$as_me: WARNING: C compiler version number has more than three parts (
 $as_echo "$as_me: WARNING: C compiler version number has a part larger than 99999: $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
   fi
 
-  COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$CC_VERSION_NUMBER"`
+  COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", $1, $2, $3, $4) }' <<< "$CC_VERSION_NUMBER"`
 
 
   if test "x$TOOLCHAIN_MINIMUM_VERSION" != x; then
@@ -35329,8 +35333,8 @@ $as_echo "$as_me: WARNING: C compiler version number has a part larger than 9999
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
   REFERENCE_VERSION=$TOOLCHAIN_MINIMUM_VERSION
 
-  if  [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ; then
-    as_fn_error $? "Internal error: Cannot compare to $TOOLCHAIN_MINIMUM_VERSION, only three parts (X.Y.Z) is supported" "$LINENO" 5
+  if  [[ "$REFERENCE_VERSION" =~ (.*\.){4} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to $TOOLCHAIN_MINIMUM_VERSION, only four parts (W.X.Y.Z) is supported" "$LINENO" 5
   fi
 
   if  [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ; then
@@ -35338,7 +35342,7 @@ $as_echo "$as_me: WARNING: C compiler version number has a part larger than 9999
   fi
 
   # Version comparison method inspired by http://stackoverflow.com/a/24067243
-  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", $1, $2, $3, $4) }' <<< "$REFERENCE_VERSION"`
 
   if test $COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
     :
@@ -46956,9 +46960,11 @@ $as_echo "$as_me: Rewriting BUILD_STRIP to \"$new_complete\"" >&6;}
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     # cc -V output typically looks like
     #     cc: Sun C 5.12 Linux_i386 2011/11/16
+    # or
+    #     cc: Studio 12.5 Sun C 5.14 SunOS_sparc 2016/05/31
     COMPILER_VERSION_OUTPUT=`$COMPILER -V 2>&1`
     # Check that this is likely to be the Solaris Studio cc.
-    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.*: Sun $COMPILER_NAME" > /dev/null
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.* Sun $COMPILER_NAME" > /dev/null
     if test $? -ne 0; then
       ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
       { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5
@@ -47076,9 +47082,11 @@ $as_echo "$as_me: Using $TOOLCHAIN_TYPE $COMPILER_NAME compiler version $COMPILE
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     # cc -V output typically looks like
     #     cc: Sun C 5.12 Linux_i386 2011/11/16
+    # or
+    #     cc: Studio 12.5 Sun C 5.14 SunOS_sparc 2016/05/31
     COMPILER_VERSION_OUTPUT=`$COMPILER -V 2>&1`
     # Check that this is likely to be the Solaris Studio cc.
-    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.*: Sun $COMPILER_NAME" > /dev/null
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.* Sun $COMPILER_NAME" > /dev/null
     if test $? -ne 0; then
       ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
       { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5
@@ -47198,9 +47206,9 @@ $as_echo "$as_me: WARNING: This typically indicates a broken setup, and is not s
   fi
 
   # We only check CC_VERSION_NUMBER since we assume CXX_VERSION_NUMBER is equal.
-  if  [[ "[$]BUILD_CC_VERSION_NUMBER" =~ (.*\.){3} ]] ; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has more than three parts (X.Y.Z): $BUILD_CC_VERSION_NUMBER. Comparisons might be wrong." >&5
-$as_echo "$as_me: WARNING: C compiler version number has more than three parts (X.Y.Z): $BUILD_CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
+  if  [[ "[$]BUILD_CC_VERSION_NUMBER" =~ (.*\.){4} ]] ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has more than four parts (W.X.Y.Z): $BUILD_CC_VERSION_NUMBER. Comparisons might be wrong." >&5
+$as_echo "$as_me: WARNING: C compiler version number has more than four parts (W.X.Y.Z): $BUILD_CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
   fi
 
   if  [[  "[$]BUILD_CC_VERSION_NUMBER" =~ [0-9]{6} ]] ; then
@@ -47208,7 +47216,7 @@ $as_echo "$as_me: WARNING: C compiler version number has more than three parts (
 $as_echo "$as_me: WARNING: C compiler version number has a part larger than 99999: $BUILD_CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
   fi
 
-  OPENJDK_BUILD_COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$BUILD_CC_VERSION_NUMBER"`
+  OPENJDK_BUILD_COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", $1, $2, $3, $4) }' <<< "$BUILD_CC_VERSION_NUMBER"`
 
   else
     # If we are not cross compiling, use the normal target compilers for
@@ -47234,9 +47242,9 @@ $as_echo "$as_me: WARNING: This typically indicates a broken setup, and is not s
   fi
 
   # We only check CC_VERSION_NUMBER since we assume CXX_VERSION_NUMBER is equal.
-  if  [[ "[$]CC_VERSION_NUMBER" =~ (.*\.){3} ]] ; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has more than three parts (X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&5
-$as_echo "$as_me: WARNING: C compiler version number has more than three parts (X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
+  if  [[ "[$]CC_VERSION_NUMBER" =~ (.*\.){4} ]] ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has more than four parts (W.X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&5
+$as_echo "$as_me: WARNING: C compiler version number has more than four parts (W.X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
   fi
 
   if  [[  "[$]CC_VERSION_NUMBER" =~ [0-9]{6} ]] ; then
@@ -47244,7 +47252,7 @@ $as_echo "$as_me: WARNING: C compiler version number has more than three parts (
 $as_echo "$as_me: WARNING: C compiler version number has a part larger than 99999: $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
   fi
 
-  OPENJDK_BUILD_COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$CC_VERSION_NUMBER"`
+  OPENJDK_BUILD_COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", $1, $2, $3, $4) }' <<< "$CC_VERSION_NUMBER"`
 
   fi
 
@@ -47256,68 +47264,6 @@ $as_echo "$as_me: WARNING: C compiler version number has a part larger than 9999
 
 
 
-
-
-
-  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # For hotspot, we need these in Windows mixed path,
-    # so rewrite them all. Need added .exe suffix.
-    HOTSPOT_CXX="$CXX.exe"
-    HOTSPOT_LD="$LD.exe"
-    HOTSPOT_MT="$MT.exe"
-    HOTSPOT_RC="$RC.exe"
-
-  unix_path="$HOTSPOT_CXX"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    windows_path=`$CYGPATH -m "$unix_path"`
-    HOTSPOT_CXX="$windows_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    windows_path=`cmd //c echo $unix_path`
-    HOTSPOT_CXX="$windows_path"
-  fi
-
-
-  unix_path="$HOTSPOT_LD"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    windows_path=`$CYGPATH -m "$unix_path"`
-    HOTSPOT_LD="$windows_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    windows_path=`cmd //c echo $unix_path`
-    HOTSPOT_LD="$windows_path"
-  fi
-
-
-  unix_path="$HOTSPOT_MT"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    windows_path=`$CYGPATH -m "$unix_path"`
-    HOTSPOT_MT="$windows_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    windows_path=`cmd //c echo $unix_path`
-    HOTSPOT_MT="$windows_path"
-  fi
-
-
-  unix_path="$HOTSPOT_RC"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    windows_path=`$CYGPATH -m "$unix_path"`
-    HOTSPOT_RC="$windows_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    windows_path=`cmd //c echo $unix_path`
-    HOTSPOT_RC="$windows_path"
-  fi
-
-
-
-  else
-    HOTSPOT_CXX="$CXX"
-    HOTSPOT_LD="$LD"
-  fi
-
-
-
-  if test  "x$TOOLCHAIN_TYPE" = xclang; then
-    USE_CLANG=true
-  fi
 
 
 
@@ -49914,8 +49860,8 @@ $as_echo "$supports" >&6; }
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
   REFERENCE_VERSION=6
 
-  if  [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ; then
-    as_fn_error $? "Internal error: Cannot compare to 6, only three parts (X.Y.Z) is supported" "$LINENO" 5
+  if  [[ "$REFERENCE_VERSION" =~ (.*\.){4} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to 6, only four parts (W.X.Y.Z) is supported" "$LINENO" 5
   fi
 
   if  [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ; then
@@ -49923,7 +49869,7 @@ $as_echo "$supports" >&6; }
   fi
 
   # Version comparison method inspired by http://stackoverflow.com/a/24067243
-  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", $1, $2, $3, $4) }' <<< "$REFERENCE_VERSION"`
 
   if test $COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
     :
@@ -50214,8 +50160,8 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
   REFERENCE_VERSION=4.8
 
-  if  [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ; then
-    as_fn_error $? "Internal error: Cannot compare to 4.8, only three parts (X.Y.Z) is supported" "$LINENO" 5
+  if  [[ "$REFERENCE_VERSION" =~ (.*\.){4} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to 4.8, only four parts (W.X.Y.Z) is supported" "$LINENO" 5
   fi
 
   if  [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ; then
@@ -50223,7 +50169,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   fi
 
   # Version comparison method inspired by http://stackoverflow.com/a/24067243
-  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", $1, $2, $3, $4) }' <<< "$REFERENCE_VERSION"`
 
   if test $COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
     :
@@ -50737,8 +50683,8 @@ $as_echo "$supports" >&6; }
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
   REFERENCE_VERSION=6
 
-  if  [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ; then
-    as_fn_error $? "Internal error: Cannot compare to 6, only three parts (X.Y.Z) is supported" "$LINENO" 5
+  if  [[ "$REFERENCE_VERSION" =~ (.*\.){4} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to 6, only four parts (W.X.Y.Z) is supported" "$LINENO" 5
   fi
 
   if  [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ; then
@@ -50746,7 +50692,7 @@ $as_echo "$supports" >&6; }
   fi
 
   # Version comparison method inspired by http://stackoverflow.com/a/24067243
-  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", $1, $2, $3, $4) }' <<< "$REFERENCE_VERSION"`
 
   if test $OPENJDK_BUILD_COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
     :
@@ -51037,8 +50983,8 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
   REFERENCE_VERSION=4.8
 
-  if  [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ; then
-    as_fn_error $? "Internal error: Cannot compare to 4.8, only three parts (X.Y.Z) is supported" "$LINENO" 5
+  if  [[ "$REFERENCE_VERSION" =~ (.*\.){4} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to 4.8, only four parts (W.X.Y.Z) is supported" "$LINENO" 5
   fi
 
   if  [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ; then
@@ -51046,7 +50992,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   fi
 
   # Version comparison method inspired by http://stackoverflow.com/a/24067243
-  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", $1, $2, $3, $4) }' <<< "$REFERENCE_VERSION"`
 
   if test $OPENJDK_BUILD_COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
     :
@@ -51917,8 +51863,8 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if native warnings are errors" >&5
 $as_echo_n "checking if native warnings are errors... " >&6; }
   if test "x$enable_warnings_as_errors" = "xyes"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (explicitely set)" >&5
-$as_echo "yes (explicitely set)" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (explicitly set)" >&5
+$as_echo "yes (explicitly set)" >&6; }
     WARNINGS_AS_ERRORS=true
   elif test "x$enable_warnings_as_errors" = "xno"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -52583,28 +52529,14 @@ $as_echo "$NATIVE_DEBUG_SYMBOLS" >&6; }
     COMPILE_WITH_DEBUG_SYMBOLS=true
     COPY_DEBUG_SYMBOLS=true
     ZIP_EXTERNAL_DEBUG_SYMBOLS=true
-
-    # Hotspot legacy support, not relevant with COPY_DEBUG_SYMBOLS=true
-    DEBUG_BINARIES=false
-    STRIP_POLICY=min_strip
-
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xnone; then
     COMPILE_WITH_DEBUG_SYMBOLS=false
     COPY_DEBUG_SYMBOLS=false
     ZIP_EXTERNAL_DEBUG_SYMBOLS=false
-
-    DEBUG_BINARIES=false
-    STRIP_POLICY=no_strip
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xinternal; then
     COMPILE_WITH_DEBUG_SYMBOLS=true
     COPY_DEBUG_SYMBOLS=false
     ZIP_EXTERNAL_DEBUG_SYMBOLS=false
-
-    # Hotspot legacy support, will turn on -g when COPY_DEBUG_SYMBOLS=false
-    DEBUG_BINARIES=true
-    STRIP_POLICY=no_strip
-    STRIP=""
-
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xexternal; then
 
     if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
@@ -52618,10 +52550,6 @@ $as_echo "$NATIVE_DEBUG_SYMBOLS" >&6; }
     COMPILE_WITH_DEBUG_SYMBOLS=true
     COPY_DEBUG_SYMBOLS=true
     ZIP_EXTERNAL_DEBUG_SYMBOLS=false
-
-    # Hotspot legacy support, not relevant with COPY_DEBUG_SYMBOLS=true
-    DEBUG_BINARIES=false
-    STRIP_POLICY=min_strip
   else
     as_fn_error $? "Allowed native debug symbols are: none, internal, external, zipped" "$LINENO" 5
   fi
@@ -52667,10 +52595,6 @@ $as_echo "$as_me: WARNING: Please use --with-native-debug-symbols=zipped ." >&2;
 
 
 
-
-
-
-  # Legacy values
 
 
 
@@ -53195,7 +53119,7 @@ fi
 
 
   if test "x$with_msvcr_dll" != x; then
-    # If given explicitely by user, do not probe. If not present, fail directly.
+    # If given explicitly by user, do not probe. If not present, fail directly.
 
   DLL_NAME="$MSVCR_NAME"
   POSSIBLE_MSVC_DLL="$with_msvcr_dll"
@@ -54544,7 +54468,7 @@ fi
 
   if test "x$MSVCP_NAME" != "x"; then
     if test "x$with_msvcp_dll" != x; then
-      # If given explicitely by user, do not probe. If not present, fail directly.
+      # If given explicitly by user, do not probe. If not present, fail directly.
 
   DLL_NAME="$MSVCP_NAME"
   POSSIBLE_MSVC_DLL="$with_msvcp_dll"
@@ -55903,7 +55827,7 @@ $as_echo "$as_me: WARNING: X11 is not used, so --with-x is ignored" >&2;}
 
     if test "x${with_x}" != x &&  test "x${with_x}" != xyes; then
       # The user has specified a X11 base directory. Use it for includes and
-      # libraries, unless explicitely overridden.
+      # libraries, unless explicitly overridden.
       if test "x$x_includes" = xNONE; then
         x_includes="${with_x}/include"
       fi
@@ -62715,6 +62639,11 @@ if test "${with_libffi_lib+set}" = set; then :
   withval=$with_libffi_lib;
 fi
 
+  # Check whether --enable-libffi-bundling was given.
+if test "${enable_libffi_bundling+set}" = set; then :
+  enableval=$enable_libffi_bundling;
+fi
+
 
   if test "x$NEEDS_LIB_FFI" = xfalse; then
     if (test "x${with_libffi}" != x && test "x${with_libffi}" != xno) || \
@@ -62733,6 +62662,7 @@ $as_echo "$as_me: WARNING: libffi not used, so --with-libffi[-*] is ignored" >&2
     fi
 
     if test "x${with_libffi}" != x; then
+      LIBFFI_LIB_PATH="${with_libffi}/lib"
       LIBFFI_LIBS="-L${with_libffi}/lib -lffi"
       LIBFFI_CFLAGS="-I${with_libffi}/include"
       LIBFFI_FOUND=yes
@@ -62742,6 +62672,7 @@ $as_echo "$as_me: WARNING: libffi not used, so --with-libffi[-*] is ignored" >&2
       LIBFFI_FOUND=yes
     fi
     if test "x${with_libffi_lib}" != x; then
+      LIBFFI_LIB_PATH="${with_libffi_lib}"
       LIBFFI_LIBS="-L${with_libffi_lib} -lffi"
       LIBFFI_FOUND=yes
     fi
@@ -62951,7 +62882,70 @@ $as_echo "$LIBFFI_WORKS" >&6; }
 
       as_fn_error $? "Found libffi but could not link and compile with it. $HELP_MSG" "$LINENO" 5
     fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if libffi should be bundled" >&5
+$as_echo_n "checking if libffi should be bundled... " >&6; }
+    if test "x$enable_libffi_bundling" = "x"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      ENABLE_LIBFFI_BUNDLING=false
+    elif  test "x$enable_libffi_bundling" = "xno"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
+$as_echo "no, forced" >&6; }
+      ENABLE_LIBFFI_BUNDLING=false
+    elif  test "x$enable_libffi_bundling" = "xyes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
+$as_echo "yes, forced" >&6; }
+      ENABLE_LIBFFI_BUNDLING=true
+    else
+      as_fn_error $? "Invalid value for --enable-libffi-bundling" "$LINENO" 5
+    fi
+
+    # Find the libffi.so.X to bundle
+    if test "x${ENABLE_LIBFFI_BUNDLING}" = "xtrue"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libffi lib file location" >&5
+$as_echo_n "checking for libffi lib file location... " >&6; }
+      if test "x${LIBFFI_LIB_PATH}" != x; then
+        if test -e ${LIBFFI_LIB_PATH}/libffi.so.?; then
+          LIBFFI_LIB_FILE="${LIBFFI_LIB_PATH}/libffi.so.?"
+        else
+          as_fn_error $? "Could not locate libffi.so.? for bundling in ${LIBFFI_LIB_PATH}" "$LINENO" 5
+        fi
+      else
+        # If we don't have an explicit path, look in a few obvious places
+        if test "x${OPENJDK_TARGET_CPU}" = "xx86"; then
+          if test -e ${SYSROOT}/usr/lib/libffi.so.? ; then
+            LIBFFI_LIB_FILE="${SYSROOT}/usr/lib/libffi.so.?"
+          elif test -e ${SYSROOT}/usr/lib/i386-linux-gnu/libffi.so.? ; then
+            LIBFFI_LIB_FILE="${SYSROOT}/usr/lib/i386-linux-gnu/libffi.so.?"
+          else
+            as_fn_error $? "Could not locate libffi.so.? for bundling" "$LINENO" 5
+          fi
+        elif test "x${OPENJDK_TARGET_CPU}" = "xx86_64"; then
+          if test -e ${SYSROOT}/usr/lib64/libffi.so.? ; then
+            LIBFFI_LIB_FILE="${SYSROOT}/usr/lib64/libffi.so.?"
+          elif test -e ${SYSROOT}/usr/lib/x86_64-linux-gnu/libffi.so.? ; then
+            LIBFFI_LIB_FILE="${SYSROOT}/usr/lib/x86_64-linux-gnu/libffi.so.?"
+          else
+            as_fn_error $? "Could not locate libffi.so.? for bundling" "$LINENO" 5
+          fi
+        else
+          # Fallback on the default /usr/lib dir
+          if test -e ${SYSROOT}/usr/lib/libffi.so.? ; then
+            LIBFFI_LIB_FILE="${SYSROOT}/usr/lib/libffi.so.?"
+          else
+            as_fn_error $? "Could not locate libffi.so.? for bundling" "$LINENO" 5
+          fi
+        fi
+      fi
+      # Make sure the wildcard is evaluated
+      LIBFFI_LIB_FILE="$(ls ${LIBFFI_LIB_FILE})"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${LIBFFI_LIB_FILE}" >&5
+$as_echo "${LIBFFI_LIB_FILE}" >&6; }
+    fi
   fi
+
+
 
 
 
@@ -65525,6 +65519,13 @@ $as_echo "$as_me: WARNING: --with-ccache-dir has no meaning when ccache is not e
   if test "x$CCACHE" != x; then
 
   if test "x$CCACHE" != x; then
+    if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
+      HAS_BAD_CCACHE=`$ECHO $CCACHE_VERSION | \
+          $GREP -e '^1\.' -e '^2\.' -e '^3\.0\.' -e '^3\.1\.'`
+      if test "x$HAS_BAD_CCACHE" != "x"; then
+        as_fn_error $? "On macosx, ccache 3.2 or later is required, found $CCACHE_VERSION" "$LINENO" 5
+      fi
+    fi
     if test "x$USE_PRECOMPILED_HEADER" = "x1"; then
       HAS_BAD_CCACHE=`$ECHO $CCACHE_VERSION | \
           $GREP -e '^1.*' -e '^2.*' -e '^3\.0.*' -e '^3\.1\.[0123]$'`

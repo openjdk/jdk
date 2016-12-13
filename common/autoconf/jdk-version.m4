@@ -110,7 +110,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
         AC_MSG_ERROR([Version string contains + but both 'BUILD' and 'OPT' are missing])
       fi
       # Stop the version part process from setting default values.
-      # We still allow them to explicitely override though.
+      # We still allow them to explicitly override though.
       NO_DEFAULT_VERSION_PARTS=true
     else
       AC_MSG_ERROR([--with-version-string fails to parse as a valid version string: $with_version_string])
@@ -160,11 +160,10 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     fi
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
-      # Default is to calculate a string like this <timestamp>.<username>.<base dir name>
-      timestamp=`$DATE '+%Y-%m-%d-%H%M%S'`
+      # Default is to calculate a string like this 'adhoc.<username>.<base dir name>'
       # Outer [ ] to quote m4.
       [ basedirname=`$BASENAME "$TOPDIR" | $TR -d -c '[a-z][A-Z][0-9].-'` ]
-      VERSION_OPT="$timestamp.$USERNAME.$basedirname"
+      VERSION_OPT="adhoc.$USERNAME.$basedirname"
     fi
   fi
 

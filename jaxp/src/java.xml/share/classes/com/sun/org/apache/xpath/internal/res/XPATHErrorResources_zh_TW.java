@@ -17,9 +17,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: XPATHErrorResources_zh_TW.java /st_wptg_1.9.0.0.0jdk/2 2016/04/11 20:46:43 gmolloy Exp $
- */
 package com.sun.org.apache.xpath.internal.res;
 
 import java.util.ListResourceBundle;
@@ -93,6 +90,7 @@ public class XPATHErrorResources_zh_TW extends ListResourceBundle
   public static final String ER_CURRENT_TAKES_NO_ARGS =
          "ER_CURRENT_TAKES_NO_ARGS";
   public static final String ER_DOCUMENT_REPLACED = "ER_DOCUMENT_REPLACED";
+  public static final String ER_CONTEXT_CAN_NOT_BE_NULL = "ER_CONTEXT_CAN_NOT_BE_NULL";
   public static final String ER_CONTEXT_HAS_NO_OWNERDOC =
          "ER_CONTEXT_HAS_NO_OWNERDOC";
   public static final String ER_LOCALNAME_HAS_TOO_MANY_ARGS =
@@ -367,6 +365,9 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_DOCUMENT_REPLACED,
       "document() \u51FD\u6578\u5BE6\u884C\u5DF2\u7531 com.sun.org.apache.xalan.internal.xslt.FuncDocument \u53D6\u4EE3\u3002"},
+
+  { ER_CONTEXT_CAN_NOT_BE_NULL,
+      "\u5982\u679C\u4F5C\u696D\u8207\u76F8\u95DC\u8CC7\u8A0A\u74B0\u5883\u76F8\u4F9D\uFF0C\u5247\u76F8\u95DC\u8CC7\u8A0A\u74B0\u5883\u4E0D\u53EF\u4EE5\u662F\u7A7A\u503C\u3002"},
 
   { ER_CONTEXT_HAS_NO_OWNERDOC,
       "\u76F8\u95DC\u8CC7\u8A0A\u74B0\u5883\u4E0D\u5177\u6709\u64C1\u6709\u8005\u6587\u4EF6\uFF01"},

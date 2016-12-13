@@ -58,7 +58,7 @@ public class ModuleTest {
 
     // the names of the modules in this test
     private static final String UNSUPPORTED = "unsupported";
-    private static String[] modules = new String[] {"m1", "m2", "m3", "m4", UNSUPPORTED};
+    private static String[] modules = new String[] {"mI", "mII", "mIII", "m4", UNSUPPORTED};
     /**
      * Compiles all modules used by the test
      */
@@ -70,37 +70,37 @@ public class ModuleTest {
         assertTrue(CompilerUtils.compileModule(SRC_DIR, MODS_DIR, UNSUPPORTED,
                                                "--add-exports", "java.base/jdk.internal.perf=" + UNSUPPORTED));
         // m4 is not referenced
-        Arrays.asList("m1", "m2", "m3", "m4")
+        Arrays.asList("mI", "mII", "mIII", "m4")
               .forEach(mn -> assertTrue(CompilerUtils.compileModule(SRC_DIR, MODS_DIR, mn)));
 
-        assertTrue(CompilerUtils.compile(SRC_DIR.resolve("m3"), UNNAMED_DIR, "-p", MODS_DIR.toString()));
+        assertTrue(CompilerUtils.compile(SRC_DIR.resolve("mIII"), UNNAMED_DIR, "-p", MODS_DIR.toString()));
         Files.delete(UNNAMED_DIR.resolve("module-info.class"));
     }
 
     @DataProvider(name = "modules")
     public Object[][] expected() {
         return new Object[][]{
-                { "m3", new ModuleMetaData("m3").requiresPublic("java.sql")
-                            .requiresPublic("m2")
+                { "mIII", new ModuleMetaData("mIII").requiresTransitive("java.sql")
+                            .requiresTransitive("mII")
                             .requires("java.logging")
-                            .requiresPublic("m1")
+                            .requiresTransitive("mI")
                             .reference("p3", "java.lang", "java.base")
                             .reference("p3", "java.sql", "java.sql")
                             .reference("p3", "java.util.logging", "java.logging")
-                            .reference("p3", "p1", "m1")
-                            .reference("p3", "p2", "m2")
-                            .qualified("p3", "p2.internal", "m2")
+                            .reference("p3", "p1", "mI")
+                            .reference("p3", "p2", "mII")
+                            .qualified("p3", "p2.internal", "mII")
                 },
-                { "m2", new ModuleMetaData("m2").requiresPublic("m1")
+                { "mII", new ModuleMetaData("mII").requiresTransitive("mI")
                             .reference("p2", "java.lang", "java.base")
-                            .reference("p2", "p1", "m1")
+                            .reference("p2", "p1", "mI")
                             .reference("p2.internal", "java.lang", "java.base")
                             .reference("p2.internal", "java.io", "java.base")
                 },
-                { "m1", new ModuleMetaData("m1").requires("unsupported")
+                { "mI", new ModuleMetaData("mI").requires("unsupported")
                             .reference("p1", "java.lang", "java.base")
                             .reference("p1.internal", "java.lang", "java.base")
-                            .reference("p1.internal", "p1", "m1")
+                            .reference("p1.internal", "p1", "mI")
                             .reference("p1.internal", "q", "unsupported")
                 },
                 { "unsupported", new ModuleMetaData("unsupported")
@@ -115,7 +115,7 @@ public class ModuleTest {
         // jdeps --module-path mods -m <name>
         runTest(data, MODS_DIR.toString(), Set.of(name));
 
-        // jdeps --module-path libs/m1.jar:.... -m <name>
+        // jdeps --module-path libs/mI.jar:.... -m <name>
         String mp = Arrays.stream(modules)
                 .filter(mn -> !mn.equals(name))
                 .map(mn -> MODS_DIR.resolve(mn).toString())
@@ -129,21 +129,21 @@ public class ModuleTest {
                 { "unnamed", new ModuleMetaData("unnamed", false)
                             .depends("java.sql")
                             .depends("java.logging")
-                            .depends("m1")
-                            .depends("m2")
+                            .depends("mI")
+                            .depends("mII")
                             .reference("p3", "java.lang", "java.base")
                             .reference("p3", "java.sql", "java.sql")
                             .reference("p3", "java.util.logging", "java.logging")
-                            .reference("p3", "p1", "m1")
-                            .reference("p3", "p2", "m2")
-                            .internal("p3", "p2.internal", "m2")
+                            .reference("p3", "p1", "mI")
+                            .reference("p3", "p2", "mII")
+                            .internal("p3", "p2.internal", "mII")
                 },
         };
     }
 
     @Test(dataProvider = "unnamed")
     public void unnamedTest(String name, ModuleMetaData data) throws IOException {
-        runTest(data, MODS_DIR.toString(), Set.of("m1", "m2"), UNNAMED_DIR);
+        runTest(data, MODS_DIR.toString(), Set.of("mI", "mII"), UNNAMED_DIR);
     }
 
     private void runTest(ModuleMetaData data, String modulepath,

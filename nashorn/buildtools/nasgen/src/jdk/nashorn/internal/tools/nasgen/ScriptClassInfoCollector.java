@@ -210,6 +210,7 @@ public class ScriptClassInfoCollector extends ClassVisitor {
                         private Where   where;
                         private boolean isSpecializedConstructor;
                         private boolean isOptimistic;
+                        private boolean convertsNumericArgs;
                         private Type    linkLogicClass = MethodGenerator.EMPTY_LINK_LOGIC_TYPE;
 
                         @Override
@@ -237,6 +238,10 @@ public class ScriptClassInfoCollector extends ClassVisitor {
                                 break;
                             case "linkLogic":
                                 this.linkLogicClass = (Type)annotationValue;
+                                break;
+                            case "convertsNumericArgs":
+                                assert annoKind == Kind.SPECIALIZED_FUNCTION;
+                                this.convertsNumericArgs = (Boolean)annotationValue;
                                 break;
                             default:
                                 break;
@@ -298,6 +303,7 @@ public class ScriptClassInfoCollector extends ClassVisitor {
                             memInfo.setLinkLogicClass(linkLogicClass);
                             memInfo.setIsSpecializedConstructor(isSpecializedConstructor);
                             memInfo.setIsOptimistic(isOptimistic);
+                            memInfo.setConvertsNumericArgs(convertsNumericArgs);
                         }
                     };
                 }

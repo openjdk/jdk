@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -26,7 +24,7 @@
 /**
  * @test
  * @bug 8087112
- * @modules java.httpclient
+ * @modules jdk.incubator.httpclient
  *          jdk.httpserver
  * @run main/othervm BasicAuthTest
  * @summary Basic Authentication Test
@@ -43,10 +41,12 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.URI;
-import java.net.http.*;
+import jdk.incubator.http.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static jdk.incubator.http.HttpRequest.BodyProcessor.fromString;
+import static jdk.incubator.http.HttpResponse.BodyHandler.asString;
 
 public class BasicAuthTest {
 
@@ -67,43 +67,39 @@ public class BasicAuthTest {
         serverContext.setAuthenticator(sa);
         server.setExecutor(e);
         server.start();
-        HttpClient client = HttpClient.create()
+        HttpClient client = HttpClient.newBuilder()
                                       .authenticator(ca)
                                       .build();
 
         try {
             URI uri = new URI("http://127.0.0.1:" + Integer.toString(port) + "/test/foo");
-            HttpRequest req = client.request(uri).GET();
+            HttpRequest req = HttpRequest.newBuilder(uri).GET().build();
 
-            HttpResponse resp = req.response();
-            ok = resp.statusCode() == 200 &&
-                    resp.body(HttpResponse.asString()).equals(RESPONSE);
+            HttpResponse resp = client.send(req, asString());
+            ok = resp.statusCode() == 200 && resp.body().equals(RESPONSE);
 
             if (!ok || ca.count != 1)
                 throw new RuntimeException("Test failed");
 
             // repeat same request, should succeed but no additional authenticator calls
 
-            req = client.request(uri).GET();
-            resp = req.response();
-            ok = resp.statusCode() == 200 &&
-                    resp.body(HttpResponse.asString()).equals(RESPONSE);
+            resp = client.send(req, asString());
+            ok = resp.statusCode() == 200 && resp.body().equals(RESPONSE);
 
             if (!ok || ca.count != 1)
                 throw new RuntimeException("Test failed");
 
             // try a POST
 
-            req = client.request(uri)
-                    .body(HttpRequest.fromString(POST_BODY))
-                    .POST();
-            resp = req.response();
+            req = HttpRequest.newBuilder(uri)
+                             .POST(fromString(POST_BODY))
+                             .build();
+            resp = client.send(req, asString());
             ok = resp.statusCode() == 200;
 
             if (!ok || ca.count != 1)
                 throw new RuntimeException("Test failed");
         } finally {
-            client.executorService().shutdownNow();
             server.stop(0);
             e.shutdownNow();
         }

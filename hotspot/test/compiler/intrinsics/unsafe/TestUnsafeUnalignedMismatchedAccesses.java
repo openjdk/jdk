@@ -25,7 +25,7 @@
  * @test
  * @bug 8136473
  * @summary Mismatched stores on same slice possible with Unsafe.Put*Unaligned methods
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc:+open
  *
  * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
  *      compiler.intrinsics.unsafe.TestUnsafeUnalignedMismatchedAccesses

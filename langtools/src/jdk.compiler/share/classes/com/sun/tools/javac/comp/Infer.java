@@ -627,12 +627,11 @@ public class Infer {
     TypeMapping<Void> fromTypeVarFun = new TypeMapping<Void>() {
         @Override
         public Type visitTypeVar(TypeVar tv, Void aVoid) {
-            return new UndetVar(tv, incorporationEngine(), types);
-        }
-
-        @Override
-        public Type visitCapturedType(CapturedType t, Void aVoid) {
-            return new CapturedUndetVar(t, incorporationEngine(), types);
+            UndetVar uv = new UndetVar(tv, incorporationEngine(), types);
+            if ((tv.tsym.flags() & Flags.THROWS) != 0) {
+                uv.setThrow();
+            }
+            return uv;
         }
     };
 
@@ -1463,7 +1462,7 @@ public class Infer {
         THROWS(InferenceBound.UPPER) {
             @Override
             public boolean accepts(UndetVar t, InferenceContext inferenceContext) {
-                if ((t.qtype.tsym.flags() & Flags.THROWS) == 0) {
+                if (!t.isThrows()) {
                     //not a throws undet var
                     return false;
                 }

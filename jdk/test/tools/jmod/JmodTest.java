@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8142968
+ * @bug 8142968 8166568
  * @summary Basic test for jmod
  * @library /lib/testlibrary
  * @modules jdk.compiler
@@ -131,6 +131,70 @@ public class JmodTest {
                 assertContains(r.output, CLASSES_PREFIX + "jdk/test/foo/Foo.class");
                 assertContains(r.output, CLASSES_PREFIX + "jdk/test/foo/internal/Message.class");
                 assertContains(r.output, CLASSES_PREFIX + "jdk/test/foo/resources/foo.properties");
+            });
+    }
+
+    @Test
+    public void testExtractCWD() throws IOException {
+        Path cp = EXPLODED_DIR.resolve("foo").resolve("classes");
+        jmod("create",
+             "--class-path", cp.toString(),
+             MODS_DIR.resolve("fooExtractCWD.jmod").toString())
+            .assertSuccess();
+
+        jmod("extract",
+             MODS_DIR.resolve("fooExtractCWD.jmod").toString())
+            .assertSuccess()
+            .resultChecker(r -> {
+                // module-info should exist, but jmod will have added its Packages attr.
+                assertTrue(Files.exists(Paths.get("classes/module-info.class")));
+                assertSameContent(cp.resolve("jdk/test/foo/Foo.class"),
+                                  Paths.get("classes/jdk/test/foo/Foo.class"));
+                assertSameContent(cp.resolve("jdk/test/foo/internal/Message.class"),
+                                  Paths.get("classes/jdk/test/foo/internal/Message.class"));
+                assertSameContent(cp.resolve("jdk/test/foo/resources/foo.properties"),
+                                  Paths.get("classes/jdk/test/foo/resources/foo.properties"));
+            });
+    }
+
+    @Test
+    public void testExtractDir() throws IOException {
+        if (Files.exists(Paths.get("extractTestDir")))
+            FileUtils.deleteFileTreeWithRetry(Paths.get("extractTestDir"));
+        Path cp = EXPLODED_DIR.resolve("foo").resolve("classes");
+        Path bp = EXPLODED_DIR.resolve("foo").resolve("bin");
+        Path lp = EXPLODED_DIR.resolve("foo").resolve("lib");
+        Path cf = EXPLODED_DIR.resolve("foo").resolve("conf");
+
+        jmod("create",
+             "--conf", cf.toString(),
+             "--cmds", bp.toString(),
+             "--libs", lp.toString(),
+             "--class-path", cp.toString(),
+             MODS_DIR.resolve("fooExtractDir.jmod").toString())
+            .assertSuccess();
+
+        jmod("extract",
+             "--dir", "extractTestDir",
+             MODS_DIR.resolve("fooExtractDir.jmod").toString())
+            .assertSuccess();
+
+        jmod("extract",
+             "--dir", "extractTestDir",
+             MODS_DIR.resolve("fooExtractDir.jmod").toString())
+            .assertSuccess()
+            .resultChecker(r -> {
+                // check a sample of the extracted files
+                Path p = Paths.get("extractTestDir");
+                assertTrue(Files.exists(p.resolve("classes/module-info.class")));
+                assertSameContent(cp.resolve("jdk/test/foo/Foo.class"),
+                                  p.resolve("classes/jdk/test/foo/Foo.class"));
+                assertSameContent(bp.resolve("first"),
+                                  p.resolve(CMDS_PREFIX).resolve("first"));
+                assertSameContent(lp.resolve("first.so"),
+                                  p.resolve(LIBS_PREFIX).resolve("second.so"));
+                assertSameContent(cf.resolve("second.cfg"),
+                                  p.resolve(CONFIGS_PREFIX).resolve("second.cfg"));
             });
     }
 
@@ -529,6 +593,16 @@ public class JmodTest {
             for (String s : actual)
                 sb.append("\t" + s + "\n");
             assertTrue(false, "Jmod content check failed.\n" + sb.toString());
+        }
+    }
+
+    static void assertSameContent(Path p1, Path p2) {
+        try {
+            byte[] ba1 = Files.readAllBytes(p1);
+            byte[] ba2 = Files.readAllBytes(p2);
+            assertEquals(ba1, ba2);
+        } catch (IOException x) {
+            throw new UncheckedIOException(x);
         }
     }
 

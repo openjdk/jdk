@@ -25,6 +25,7 @@
 
 package com.sun.tools.jdeps;
 
+import com.sun.tools.classfile.AccessFlags;
 import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.Dependencies.ClassFileError;
@@ -170,7 +171,9 @@ public class ClassFileReader implements Closeable {
     protected Set<String> scan() {
         try {
             ClassFile cf = ClassFile.read(path);
-            return Collections.singleton(cf.getName());
+            String name = cf.access_flags.is(AccessFlags.ACC_MODULE)
+                ? "module-info" : cf.getName();
+            return Collections.singleton(name);
         } catch (ConstantPoolException|IOException e) {
             throw new ClassFileError(e);
         }

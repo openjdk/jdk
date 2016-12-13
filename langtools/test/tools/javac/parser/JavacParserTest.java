@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,7 +370,7 @@ public class JavacParserTest extends TestCase {
     }
 
     @Test
-    void testCorrectWilcardPositions1() throws IOException {
+    void testCorrectWildcardPositions1() throws IOException {
         performWildcardPositionsTest("package test; import java.util.List; " +
                 "class Test { private void method() { List<? extends List<? extends String>> l; } }",
 
@@ -385,7 +385,7 @@ public class JavacParserTest extends TestCase {
     }
 
     @Test
-    void testCorrectWilcardPositions2() throws IOException {
+    void testCorrectWildcardPositions2() throws IOException {
         performWildcardPositionsTest("package test; import java.util.List; "
                 + "class Test { private void method() { List<? super List<? super String>> l; } }",
                 Arrays.asList("List<? super List<? super String>> l;",
@@ -399,7 +399,7 @@ public class JavacParserTest extends TestCase {
     }
 
     @Test
-    void testCorrectWilcardPositions3() throws IOException {
+    void testCorrectWildcardPositions3() throws IOException {
         performWildcardPositionsTest("package test; import java.util.List; " +
                 "class Test { private void method() { List<? super List<?>> l; } }",
 
@@ -413,7 +413,7 @@ public class JavacParserTest extends TestCase {
     }
 
     @Test
-    void testCorrectWilcardPositions4() throws IOException {
+    void testCorrectWildcardPositions4() throws IOException {
         performWildcardPositionsTest("package test; import java.util.List; " +
                 "class Test { private void method() { " +
                 "List<? extends List<? extends List<? extends String>>> l; } }",
@@ -432,7 +432,7 @@ public class JavacParserTest extends TestCase {
     }
 
     @Test
-    void testCorrectWilcardPositions5() throws IOException {
+    void testCorrectWildcardPositions5() throws IOException {
         performWildcardPositionsTest("package test; import java.util.List; " +
                 "class Test { private void method() { " +
                 "List<? extends List<? extends List<? extends String   >>> l; } }",
@@ -701,7 +701,7 @@ public class JavacParserTest extends TestCase {
             }
         }.scan(cut, null);
 
-        assertEquals("testSwitchError: The Erroneous tree "
+        assertEquals("testOperatorMissingError: The Erroneous tree "
                 + "error values: " + values
                 + " do not match expected error values: "
                 + expectedValues, values, expectedValues);
@@ -726,7 +726,7 @@ public class JavacParserTest extends TestCase {
             }
         }.scan(cut, null);
 
-        assertEquals("testSwitchError: The Erroneous tree "
+        assertEquals("testMissingParenthesisError: The Erroneous tree "
                 + "error values: " + values
                 + " do not match expected error values: "
                 + expectedValues, values, expectedValues);
@@ -751,7 +751,7 @@ public class JavacParserTest extends TestCase {
             }
         }.scan(cut, null);
 
-        assertEquals("testSwitchError: The Erroneous tree "
+        assertEquals("testMissingClassError: The Erroneous tree "
                 + "error values: " + values
                 + " do not match expected error values: "
                 + expectedValues, values, expectedValues);

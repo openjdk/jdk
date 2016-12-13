@@ -33,13 +33,14 @@
 
 var Arrays = Java.type("java.util.Arrays");
 var CharArray = Java.type("char[]");
+var Reflector = Java.type("jdk.nashorn.test.models.Reflector");
 var DebuggerSupport = Java.type("jdk.nashorn.internal.runtime.DebuggerSupport");
 var DebuggerValueDesc = Java.type("jdk.nashorn.internal.runtime.DebuggerSupport.DebuggerValueDesc");
 
 var valueDescFields = DebuggerValueDesc.class.declaredFields;
 Arrays.sort(valueDescFields, function(f1, f2) f1.name.compareTo(f2.name));
 for each (var f in valueDescFields) {
-    f.accessible = true;
+    Reflector.setAccessible(f);
 }
 
 var debuggerSupportMethods = DebuggerSupport.class.declaredMethods;
@@ -49,7 +50,7 @@ var evalMethod, valueInfoMethod, valueInfosMethod;
 var getSourceInfoMethod, valueAsStringMethod;
 
 for each (var m in debuggerSupportMethods) {
-    m.accessible = true;
+    Reflector.setAccessible(m);
     switch (m.name) {
         case "eval":
             evalMethod = m;
@@ -129,10 +130,10 @@ var stringCls = Java.type("java.lang.String").class;
 // private compile method of Context class
 var compileMethod = contextCls.getDeclaredMethod("compile",
                 sourceCls, errorMgrCls, booleanCls, booleanCls);
-compileMethod.accessible = true;
+Reflector.setAccessible(compileMethod);
 
 var getContextMethod = contextCls.getMethod("getContext");
-getContextMethod.accessible = true;
+Reflector.setAccessible(getContextMethod);
 
 var sourceForMethod = sourceCls.getMethod("sourceFor", stringCls, stringCls);
 var scriptCls = compileMethod.invoke(getContextMethod.invoke(null),
@@ -149,7 +150,7 @@ Arrays.sort(srcInfoFields, function(f1, f2) f1.name.compareTo(f2.name));
 
 print("Source info");
 for each (var f in srcInfoFields) {
-    f.accessible = true;
+    Reflector.setAccessible(f);
     var fieldValue = f.get(srcInfo);
     if (fieldValue instanceof CharArray) {
         fieldValue = new java.lang.String(fieldValue);

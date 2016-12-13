@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.testng.annotations.Test;
 
@@ -144,7 +145,7 @@ public class CommandCompletionTest extends ReplToolTesting {
         Compiler compiler = new Compiler();
         assertCompletion("/o|", false, "/open ");
         List<String> p1 = listFiles(Paths.get(""));
-        FileSystems.getDefault().getRootDirectories().forEach(s -> p1.add(s.toString()));
+        getRootDirectories().forEach(s -> p1.add(s.toString()));
         Collections.sort(p1);
         assertCompletion("/open |", false, p1.toArray(new String[p1.size()]));
         Path classDir = compiler.getClassDir();
@@ -157,7 +158,7 @@ public class CommandCompletionTest extends ReplToolTesting {
         assertCompletion("/s|", false, "/save ", "/set ");
         List<String> p1 = listFiles(Paths.get(""));
         Collections.addAll(p1, "-all ", "-history ", "-start ");
-        FileSystems.getDefault().getRootDirectories().forEach(s -> p1.add(s.toString()));
+        getRootDirectories().forEach(s -> p1.add(s.toString()));
         Collections.sort(p1);
         assertCompletion("/save |", false, p1.toArray(new String[p1.size()]));
         Path classDir = compiler.getClassDir();
@@ -198,7 +199,7 @@ public class CommandCompletionTest extends ReplToolTesting {
 
     public void testSet() throws IOException {
         List<String> p1 = listFiles(Paths.get(""));
-        FileSystems.getDefault().getRootDirectories().forEach(s -> p1.add(s.toString()));
+        getRootDirectories().forEach(s -> p1.add(s.toString()));
         Collections.sort(p1);
 
         String[] modes = {"concise ", "normal ", "silent ", "verbose "};
@@ -267,4 +268,13 @@ public class CommandCompletionTest extends ReplToolTesting {
                     (Files.isDirectory(file) ||
                      file.getFileName().toString().endsWith(".jar") ||
                      file.getFileName().toString().endsWith(".zip"));
+
+    private static Iterable<? extends Path> getRootDirectories() {
+        return StreamSupport.stream(FileSystems.getDefault()
+                                               .getRootDirectories()
+                                               .spliterator(),
+                                    false)
+                            .filter(p -> Files.exists(p))
+                            .collect(Collectors.toList());
+    }
 }
