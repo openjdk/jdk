@@ -5088,7 +5088,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1481104795
+DATE_WHEN_GENERATED=1481559330
 
 ###############################################################################
 #
@@ -31188,6 +31188,12 @@ $as_echo "$as_me: The path of IMPORT_MODULES_TOPDIR, which resolves as \"$path\"
   fi
   if test -d "$IMPORT_MODULES_TOPDIR/modules_conf"; then
     IMPORT_MODULES_CONF="$IMPORT_MODULES_TOPDIR/modules_conf"
+  fi
+  if test -d "$IMPORT_MODULES_TOPDIR/modules_legal"; then
+    IMPORT_MODULES_LEGAL="$IMPORT_MODULES_TOPDIR/modules_legal"
+  fi
+  if test -d "$IMPORT_MODULES_TOPDIR/modules_man"; then
+    IMPORT_MODULES_MAN="$IMPORT_MODULES_TOPDIR/modules_man"
   fi
   if test -d "$IMPORT_MODULES_TOPDIR/modules_src"; then
     IMPORT_MODULES_SRC="$IMPORT_MODULES_TOPDIR/modules_src"
