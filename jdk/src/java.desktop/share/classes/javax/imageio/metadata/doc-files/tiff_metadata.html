@@ -216,22 +216,27 @@ second on the inferred color space.</p>
 
 <h4><a name="MetadataIssuesRead"/>Metadata Issues</h4>
 
-By default all fields in the TIFF image file directory (IFD) are loaded into
-the native image metadata object. In cases where the IFD includes fields which
-contain large amounts of data this could be very inefficient. Which fields
-are loaded may be controlled by setting which TIFF tags the reader is allowed
-to recognize and whether it is ignoring metadata. The reader is informed to
-disregard metadata as usual via the <code>ignoreMetadata</code> parameter of
+By default all recognized fields in the TIFF image file directory (IFD) are
+loaded into the native image metadata object. Which fields are loaded may be
+controlled by setting which TIFF tags the reader is allowed to recognize,
+whether to read fields with unrecognized tags, and whether to ignore all
+metadata. The reader is informed to disregard all metadata as usual via the
+<code>ignoreMetadata</code> parameter of
 <code>ImageReader.setInput(Object,boolean,boolean)</code>. It is
 informed of which <a href="../../plugins/tiff/TIFFTag.html">TIFFTag</a>s to
 recognize or not to recognize via
-<code>TIFFImageReadParam.addAllowedTagSet(TIFFTagSet)</code>
-and
+<code>TIFFImageReadParam.addAllowedTagSet(TIFFTagSet)</code> and
 <code>TIFFImageReadParam.removeAllowedTagSet(TIFFTagSet)</code>.
-If <code>ignoreMetadata</code> is <code>true</code>, then the reader will
-load into the native image metadata object only those fields which have a
-<code>TIFFTag</code> contained in the one of the allowed
-<code>TIFFTagSet</code>s.
+If <code>ignoreMetadata</code> is <code>true</code>, then only metadata
+essential to reading the image will be loaded into the native image metadata
+object. If <code>ignoreMetadata</code> is <code>false</code>, then the reader
+will by default load into the native image metadata object only those fields
+which are either essential to reading the image or have a <code>TIFFTag</code>
+contained in the one of the allowed <code>TIFFTagSet</code>s. Reading of
+fields with tags not in the allowed <code>TIFFTagSet</code>s may be forced
+by passing in a <code>TIFFImageReadParam</code> on which
+<code>TIFFImageReadParam.setReadUnknownTags(boolean)</code> has been
+invoked with parameter <code>true</code>.
 
 <p>Use of a <a href="../../plugins/tiff/TIFFDirectory.html">TIFFDirectory</a>
 object may simplify gaining access to metadata values. An instance of
