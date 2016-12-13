@@ -65,7 +65,9 @@ bool AbstractInterpreter::can_be_compiled(methodHandle m) {
     case Interpreter::java_lang_math_log10   : // fall thru
     case Interpreter::java_lang_math_sqrt    : // fall thru
     case Interpreter::java_lang_math_pow     : // fall thru
-    case Interpreter::java_lang_math_exp     :
+    case Interpreter::java_lang_math_exp     : // fall thru
+    case Interpreter::java_lang_math_fmaD    : // fall thru
+    case Interpreter::java_lang_math_fmaF    :
       return false;
     default:
       return true;

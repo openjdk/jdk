@@ -134,7 +134,19 @@ const char* Abstract_VM_Version::vm_info_string() {
     case Arguments::_int:
       return UseSharedSpaces ? "interpreted mode, sharing" : "interpreted mode";
     case Arguments::_mixed:
-      return UseSharedSpaces ? "mixed mode, sharing"       :  "mixed mode";
+      if (UseSharedSpaces) {
+          if (UseAOT) {
+            return "mixed mode, aot, sharing";
+          } else {
+            return "mixed mode, sharing";
+          }
+      } else {
+        if (UseAOT) {
+          return "mixed mode, aot";
+        } else {
+          return "mixed mode";
+        }
+      }
     case Arguments::_comp:
       return UseSharedSpaces ? "compiled mode, sharing"    : "compiled mode";
   };

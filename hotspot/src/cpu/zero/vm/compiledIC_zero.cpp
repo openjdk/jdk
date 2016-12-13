@@ -60,11 +60,11 @@ int CompiledStaticCall::reloc_to_interp_stub() {
   return 0;
 }
 
-void CompiledStaticCall::set_to_interpreted(methodHandle callee, address entry) {
+void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, address entry) {
   ShouldNotReachHere(); // Only needed for COMPILER2.
 }
 
-void CompiledStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
+void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
   ShouldNotReachHere(); // Only needed for COMPILER2.
 }
 
@@ -72,7 +72,7 @@ void CompiledStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) 
 // Non-product mode code.
 #ifndef PRODUCT
 
-void CompiledStaticCall::verify() {
+void CompiledDirectStaticCall::verify() {
   ShouldNotReachHere(); // Only needed for COMPILER2.
 }
 

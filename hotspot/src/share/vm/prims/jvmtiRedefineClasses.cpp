@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "aot/aotLoader.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -4011,7 +4012,17 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
     scratch_class->enclosing_method_method_index());
   scratch_class->set_enclosing_method_indices(old_class_idx, old_method_idx);
 
+  // Replace fingerprint data
+  the_class->set_has_passed_fingerprint_check(scratch_class->has_passed_fingerprint_check());
+  the_class->store_fingerprint(scratch_class->get_stored_fingerprint());
+
   the_class->set_has_been_redefined();
+
+  if (!the_class->should_be_initialized()) {
+    // Class was already initialized, so AOT has only seen the original version.
+    // We need to let AOT look at it again.
+    AOTLoader::load_for_klass(the_class, THREAD);
+  }
 
   // keep track of previous versions of this class
   the_class->add_previous_version(scratch_class, emcp_method_count);

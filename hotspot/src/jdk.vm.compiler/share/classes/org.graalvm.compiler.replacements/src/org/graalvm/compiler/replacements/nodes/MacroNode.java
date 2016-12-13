@@ -1,0 +1,204 @@
+/*
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+package org.graalvm.compiler.replacements.nodes;
+
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
+import static jdk.vm.ci.code.BytecodeFrame.isPlaceholderBci;
+
+import org.graalvm.compiler.api.replacements.MethodSubstitution;
+import org.graalvm.compiler.api.replacements.Snippet;
+import org.graalvm.compiler.core.common.type.StampPair;
+import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.graph.NodeInputList;
+import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
+import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.InvokeNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.StructuredGraph.GuardsStage;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
+import org.graalvm.compiler.nodes.spi.Lowerable;
+import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import org.graalvm.compiler.phases.common.FrameStateAssignmentPhase;
+import org.graalvm.compiler.phases.common.GuardLoweringPhase;
+import org.graalvm.compiler.phases.common.LoweringPhase;
+import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
+import org.graalvm.compiler.phases.common.inlining.InliningUtil;
+import org.graalvm.compiler.phases.tiers.PhaseContext;
+
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+
+/**
+ * Macro nodes can be used to temporarily replace an invoke. They can, for example, be used to
+ * implement constant folding for known JDK functions like {@link Class#isInterface()}.<br/>
+ * <br/>
+ * During lowering, multiple sources are queried in order to look for a replacement:
+ * <ul>
+ * <li>If {@link #getLoweredSnippetGraph(LoweringTool)} returns a non-null result, this graph is
+ * used as a replacement.</li>
+ * <li>If a {@link MethodSubstitution} for the target method is found, this substitution is used as
+ * a replacement.</li>
+ * <li>Otherwise, the macro node is replaced with an {@link InvokeNode}. Note that this is only
+ * possible if the macro node is a {@link MacroStateSplitNode}.</li>
+ * </ul>
+ */
+//@formatter:off
+@NodeInfo(cycles = CYCLES_UNKNOWN,
+          cyclesRationale = "If this node is not optimized away it will be lowered to a call, which we cannot estimate",
+          size = SIZE_UNKNOWN,
+          sizeRationale = "If this node is not optimized away it will be lowered to a call, which we cannot estimate")
+//@formatter:on
+public abstract class MacroNode extends FixedWithNextNode implements Lowerable {
+
+    public static final NodeClass<MacroNode> TYPE = NodeClass.create(MacroNode.class);
+    @Input protected NodeInputList<ValueNode> arguments;
+
+    protected final int bci;
+    protected final ResolvedJavaMethod targetMethod;
+    protected final StampPair returnStamp;
+    protected final InvokeKind invokeKind;
+
+    protected MacroNode(NodeClass<? extends MacroNode> c, InvokeKind invokeKind, ResolvedJavaMethod targetMethod, int bci, StampPair returnStamp, ValueNode... arguments) {
+        super(c, returnStamp.getTrustedStamp());
+        assert targetMethod.getSignature().getParameterCount(!targetMethod.isStatic()) == arguments.length;
+        this.arguments = new NodeInputList<>(this, arguments);
+        this.bci = bci;
+        this.targetMethod = targetMethod;
+        this.returnStamp = returnStamp;
+        this.invokeKind = invokeKind;
+        assert !isPlaceholderBci(bci);
+    }
+
+    public int getBci() {
+        return bci;
+    }
+
+    public ResolvedJavaMethod getTargetMethod() {
+        return targetMethod;
+    }
+
+    protected FrameState stateAfter() {
+        return null;
+    }
+
+    /**
+     * Gets a snippet to be used for lowering this macro node. The returned graph (if non-null) must
+     * have been {@linkplain #lowerReplacement(StructuredGraph, LoweringTool) lowered}.
+     */
+    @SuppressWarnings("unused")
+    protected StructuredGraph getLoweredSnippetGraph(LoweringTool tool) {
+        return null;
+    }
+
+    /**
+     * Applies {@linkplain LoweringPhase lowering} to a replacement graph.
+     *
+     * @param replacementGraph a replacement (i.e., snippet or method substitution) graph
+     */
+    @SuppressWarnings("try")
+    protected StructuredGraph lowerReplacement(final StructuredGraph replacementGraph, LoweringTool tool) {
+        final PhaseContext c = new PhaseContext(tool.getMetaAccess(), tool.getConstantReflection(), tool.getConstantFieldProvider(), tool.getLowerer(), tool.getReplacements(),
+                        tool.getStampProvider(), tool.getNodeCostProvider());
+        if (!graph().hasValueProxies()) {
+            new RemoveValueProxyPhase().apply(replacementGraph);
+        }
+        GuardsStage guardsStage = graph().getGuardsStage();
+        if (!guardsStage.allowsFloatingGuards()) {
+            new GuardLoweringPhase().apply(replacementGraph, null);
+            if (guardsStage.areFrameStatesAtDeopts()) {
+                new FrameStateAssignmentPhase().apply(replacementGraph);
+            }
+        }
+        try (Scope s = Debug.scope("LoweringSnippetTemplate", replacementGraph)) {
+            new LoweringPhase(new CanonicalizerPhase(), tool.getLoweringStage()).apply(replacementGraph, c);
+        } catch (Throwable e) {
+            throw Debug.handle(e);
+        }
+        return replacementGraph;
+    }
+
+    @Override
+    public void lower(LoweringTool tool) {
+        StructuredGraph replacementGraph = getLoweredSnippetGraph(tool);
+
+        InvokeNode invoke = replaceWithInvoke();
+        assert invoke.verify();
+
+        if (replacementGraph != null) {
+            // Pull out the receiver null check so that a replaced
+            // receiver can be lowered if necessary
+            if (!targetMethod.isStatic()) {
+                ValueNode nonNullReceiver = InliningUtil.nonNullReceiver(invoke);
+                if (nonNullReceiver instanceof Lowerable) {
+                    ((Lowerable) nonNullReceiver).lower(tool);
+                }
+            }
+            InliningUtil.inline(invoke, replacementGraph, false, null, targetMethod);
+            Debug.dump(Debug.INFO_LOG_LEVEL, graph(), "After inlining replacement %s", replacementGraph);
+        } else {
+            if (isPlaceholderBci(invoke.bci())) {
+                throw new GraalError("%s: cannot lower to invoke with placeholder BCI: %s", graph(), this);
+            }
+
+            if (invoke.stateAfter() == null) {
+                ResolvedJavaMethod method = graph().method();
+                if (method.getAnnotation(MethodSubstitution.class) != null || method.getAnnotation(Snippet.class) != null) {
+                    // One cause for this is that a MacroNode is created for a method that
+                    // no longer needs a MacroNode. For example, Class.getComponentType()
+                    // only needs a MacroNode prior to JDK9 as it was given a non-native
+                    // implementation in JDK9.
+                    throw new GraalError("%s macro created for call to %s in %s must be lowerable to a snippet or intrinsic graph. " +
+                                    "Maybe a macro node is not needed for this method in the current JDK?", getClass().getSimpleName(), targetMethod.format("%h.%n(%p)"), graph());
+                }
+                throw new GraalError("%s: cannot lower to invoke without state: %s", graph(), this);
+            }
+            invoke.lower(tool);
+        }
+    }
+
+    protected InvokeNode replaceWithInvoke() {
+        InvokeNode invoke = createInvoke();
+        graph().replaceFixedWithFixed(this, invoke);
+        return invoke;
+    }
+
+    protected InvokeNode createInvoke() {
+        MethodCallTargetNode callTarget = graph().add(new MethodCallTargetNode(invokeKind, targetMethod, arguments.toArray(new ValueNode[arguments.size()]), returnStamp, null));
+        InvokeNode invoke = graph().add(new InvokeNode(callTarget, bci));
+        if (stateAfter() != null) {
+            invoke.setStateAfter(stateAfter().duplicate());
+            if (getStackKind() != JavaKind.Void) {
+                invoke.stateAfter().replaceFirstInput(this, invoke);
+            }
+        }
+        return invoke;
+    }
+}

@@ -107,7 +107,7 @@ filelist: $(SRC_FILES)
 INIT: $(DIST_DIR)
 	$(shell if [ ! -d $(CLASSES_DIR) ]; then mkdir -p $(CLASSES_DIR); fi)
 
-install: clean_testbase testgroup testroot copytestlibrary JAR cleantmp
+install: clean_testbase testgroup testroot copytestlibrary copyaot JAR cleantmp
 	$(JAVA) --add-exports=java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -ea -jar $(DIST_JAR) $(APPLICATION_ARGS)
 
 clean_testbase:
@@ -121,6 +121,9 @@ copytestlibrary: $(TESTBASE_DIR)/jdk/test/lib/jittester/jtreg
 	@cp -r src/jdk/test/lib/jittester/jtreg/*.java $(TESTBASE_DIR)/jdk/test/lib/jittester/jtreg
 	@cp -r $(TESTLIBRARY_SRC_DIR) $(TESTBASE_DIR)/jdk/test/
 
+copyaot: $(TESTBASE_DIR)/compiler/aot
+	@cp ../../compiler/aot/AotCompiler.java $(TESTBASE_DIR)/compiler/aot
+
 testgroup: $(TESTBASE_DIR)
 	@echo 'jittester_all = \\' > $(TESTGROUP_FILE)
 	@echo '	/' >> $(TESTGROUP_FILE)
@@ -129,6 +132,6 @@ testgroup: $(TESTBASE_DIR)
 testroot: $(TESTBASE_DIR)
 	@echo 'groups=TEST.groups' > $(TESTROOT_FILE)
 
-$(TESTBASE_DIR) $(DIST_DIR) $(TESTBASE_DIR)/jdk/test/lib/jittester/jtreg:
+$(TESTBASE_DIR) $(DIST_DIR) $(TESTBASE_DIR)/jdk/test/lib/jittester/jtreg $(TESTBASE_DIR)/compiler/aot:
 	$(shell if [ ! -d $@ ]; then mkdir -p $@; fi)
 

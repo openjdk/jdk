@@ -124,15 +124,14 @@ fi
 
 # We will set the LD_LIBRARY_PATH as follows:
 #     o		$JVMPATH (directory portion only)
-#     o		$JRE/lib/$ARCH
+#     o		$JRE/lib
 # followed by the user's previous effective LD_LIBRARY_PATH, if
 # any.
 JRE=$JDK
 JAVA_HOME=$JDK
 export JAVA_HOME
 
-ARCH=@@LIBARCH@@
-SBP=${MYDIR}:${JRE}/lib/${ARCH}
+SBP=${MYDIR}:${JRE}/lib
 
 
 # Set up a suitable LD_LIBRARY_PATH or DYLD_LIBRARY_PATH

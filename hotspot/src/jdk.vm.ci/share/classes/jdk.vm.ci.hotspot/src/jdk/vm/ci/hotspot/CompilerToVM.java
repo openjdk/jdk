@@ -333,7 +333,7 @@ final class CompilerToVM {
      *         {@link HotSpotVMConfig#codeInstallResultDependenciesInvalid}.
      * @throws JVMCIError if there is something wrong with the compiled code or the metadata
      */
-    public native int getMetadata(TargetDescription target, HotSpotCompiledCode compiledCode, HotSpotMetaData metaData);
+    native int getMetadata(TargetDescription target, HotSpotCompiledCode compiledCode, HotSpotMetaData metaData);
 
     /**
      * Resets all compilation statistics.
@@ -603,6 +603,14 @@ final class CompilerToVM {
      * @throws IllegalArgumentException if an out of range position is given
      */
     native int methodDataProfileDataSize(long metaspaceMethodData, int position);
+
+    /**
+     * Gets the fingerprint for a given Klass*
+     *
+     * @param metaspaceKlass
+     * @return the value of the fingerprint (zero for arrays and synthetic classes).
+     */
+    native long getFingerprint(long metaspaceKlass);
 
     /**
      * Return the amount of native stack required for the interpreter frames represented by

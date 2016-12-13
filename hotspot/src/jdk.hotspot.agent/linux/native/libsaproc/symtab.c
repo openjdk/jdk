@@ -387,8 +387,8 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
 
     if (shdr->sh_type == sym_section) {
       ELF_SYM  *syms;
-      int j, n, rslt;
-      size_t size;
+      int rslt;
+      size_t size, n, j, htab_sz;
 
       // FIXME: there could be multiple data buffers associated with the
       // same ELF section. Here we can handle only one buffer. See man page
@@ -407,6 +407,15 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
 
       // create hash table, we use hcreate_r, hsearch_r and hdestroy_r to
       // manipulate the hash table.
+
+      // NOTES section in the man page of hcreate_r says
+      // "Hash table implementations are usually more efficient when
+      // the table contains enough free space to minimize collisions.
+      // Typically, this means that nel should be at least 25% larger
+      // than the maximum number of elements that the caller expects
+      // to store in the table."
+      htab_sz = n*1.25;
+
       symtab->hash_table = (struct hsearch_data*) calloc(1, sizeof(struct hsearch_data));
       rslt = hcreate_r(n, symtab->hash_table);
       // guarantee(rslt, "unexpected failure: hcreate_r");
@@ -452,7 +461,6 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
         symtab->symbols[j].offset = sym_value - baseaddr;
         item.key = sym_name;
         item.data = (void *)&(symtab->symbols[j]);
-
         hsearch_r(item, ENTER, &ret, symtab->hash_table);
       }
     }

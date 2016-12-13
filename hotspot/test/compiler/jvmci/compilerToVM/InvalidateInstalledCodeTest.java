@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8136421
- * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
+ * @requires vm.jvmci
  * @library /test/lib /
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
@@ -34,7 +34,6 @@
  *          jdk.vm.ci/jdk.vm.ci.code
  *          jdk.vm.ci/jdk.vm.ci.runtime
  *
- * @ignore 8163894
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.compilerToVM.InvalidateInstalledCodeTest
  * @build sun.hotspot.WhiteBox

@@ -214,7 +214,7 @@ PackageEntry* PackageEntryTable::new_entry(unsigned int hash, Symbol* name, Modu
   entry->set_hash(hash);
   entry->set_literal(name);
 
-  TRACE_INIT_PACKAGE_ID(entry);
+  TRACE_INIT_ID(entry);
 
   // Initialize fields specific to a PackageEntry
   entry->init();
@@ -293,7 +293,7 @@ void PackageEntryTable::verify_javabase_packages(GrowableArray<Symbol*> *pkg_lis
           (module_name->fast_compare(vmSymbols::java_base()) == 0) &&
           !pkg_list->contains(entry->name())) {
         ResourceMark rm;
-        vm_exit_during_initialization("A non-java.base package was loaded prior to module system initialization", entry->name()->as_C_string());
+        vm_exit_during_initialization("A non-" JAVA_BASE_NAME " package was loaded prior to module system initialization", entry->name()->as_C_string());
       }
     }
   }

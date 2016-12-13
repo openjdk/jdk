@@ -41,7 +41,8 @@ struct CodeBlobType {
     NonNMethod          = 2,    // Non-nmethods like Buffers, Adapters and Runtime Stubs
     All                 = 3,    // All types (No code cache segmentation)
     Pregenerated        = 4,    // Special blobs, managed by CodeCacheExtensions
-    NumTypes            = 5     // Number of CodeBlobTypes
+    AOT                 = 5,    // AOT methods
+    NumTypes            = 6     // Number of CodeBlobTypes
   };
 };
 
@@ -118,6 +119,7 @@ public:
   virtual bool is_safepoint_stub() const              { return false; }
   virtual bool is_adapter_blob() const                { return false; }
   virtual bool is_method_handles_adapter_blob() const { return false; }
+  virtual bool is_aot() const                         { return false; }
   virtual bool is_compiled() const                    { return false; }
 
   inline bool is_compiled_by_c1() const    { return _type == compiler_c1; };
@@ -131,6 +133,7 @@ public:
   nmethod* as_nmethod()                        { assert(is_nmethod(), "must be nmethod"); return (nmethod*) this; }
   CompiledMethod* as_compiled_method_or_null() { return is_compiled() ? (CompiledMethod*) this : NULL; }
   CompiledMethod* as_compiled_method()         { assert(is_compiled(), "must be compiled"); return (CompiledMethod*) this; }
+  CodeBlob* as_codeblob_or_null() const        { return (CodeBlob*) this; }
 
   // Boundaries
   address header_begin() const        { return (address) this; }
@@ -159,7 +162,8 @@ public:
   bool blob_contains(address addr) const         { return header_begin()       <= addr && addr < data_end();       }
   bool code_contains(address addr) const         { return code_begin()         <= addr && addr < code_end();       }
   bool contains(address addr) const              { return content_begin()      <= addr && addr < content_end();    }
-  bool is_frame_complete_at(address addr) const  { return code_contains(addr) && addr >= code_begin() + _frame_complete_offset; }
+  bool is_frame_complete_at(address addr) const  { return _frame_complete_offset != CodeOffsets::frame_never_safe &&
+                                                          code_contains(addr) && addr >= code_begin() + _frame_complete_offset; }
 
   // CodeCache support: really only used by the nmethods, but in order to get
   // asserts and certain bookkeeping to work in the CodeCache they are defined
@@ -205,6 +209,7 @@ public:
 
   // Transfer ownership of comments to this CodeBlob
   void set_strings(CodeStrings& strings) {
+    assert(!is_aot(), "invalid on aot");
     _strings.assign(strings);
   }
 

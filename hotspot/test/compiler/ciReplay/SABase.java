@@ -39,7 +39,12 @@ import jdk.test.lib.process.ProcessTools;
 public class SABase extends CiReplayBase {
     private static final String REPLAY_FILE_COPY = "replay_vm.txt";
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws Exception {
+        if (!Platform.shouldSAAttach()) {
+            System.out.println("SA attach not expected to work - test skipped.");
+            return;
+        }
+
         checkSetLimits();
         new SABase(args).runTest(/* needCoreDump = */ true, args);
     }
