@@ -31,115 +31,57 @@
  * @bug 4392475
  * @library /javax/net/ssl/templates
  * @summary Calling setWantClientAuth(true) disables anonymous suites
- * @run main/othervm/timeout=180 AnonCipherWithWantClientAuth
+ * @run main/othervm AnonCipherWithWantClientAuth
  */
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.Security;
-
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 
 public class AnonCipherWithWantClientAuth extends SSLSocketTemplate {
-
     /*
-     * Where do we find the keystores?
+     * Run the test case.
      */
-    static String pathToStores = "../../../../javax/net/ssl/etc";
-    static String keyStoreFile = "keystore";
-    static String trustStoreFile = "truststore";
-    static String passwd = "passphrase";
-
     public static void main(String[] args) throws Exception {
+        // reset the security property to make sure that the algorithms
+        // and keys used in this test are not disabled.
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
         Security.setProperty("jdk.certpath.disabledAlgorithms", "");
 
-        String keyFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + keyStoreFile;
-        String trustFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + trustStoreFile;
-        setup(keyFilename, trustFilename, passwd);
+        (new AnonCipherWithWantClientAuth()).run();
+    }
 
-        new SSLSocketTemplate()
-            .setServerPeer(test -> {
-                SSLServerSocketFactory sslssf =
-                        (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-                SSLServerSocket sslServerSocket =
-                        (SSLServerSocket) sslssf.createServerSocket(FREE_PORT);
-                test.setServerPort(sslServerSocket.getLocalPort());
-                print("Server is listening on port "
-                        + test.getServerPort());
+    @Override
+    protected void runServerApplication(SSLSocket socket) throws Exception {
+        String ciphers[] = {
+                "SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
+                "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
+                "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA" };
+        socket.setEnabledCipherSuites(ciphers);
+        socket.setWantClientAuth(true);
 
-                String ciphers[] = {
-                        "SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
-                        "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
-                        "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA" };
-                sslServerSocket.setEnabledCipherSuites(ciphers);
-                sslServerSocket.setWantClientAuth(true);
+        InputStream sslIS = socket.getInputStream();
+        OutputStream sslOS = socket.getOutputStream();
 
-                // Signal the client, the server is ready to accept connection.
-                test.signalServerReady();
+        sslIS.read();
+        sslOS.write(85);
+        sslOS.flush();
+    }
 
-                // Try to accept a connection in 30 seconds.
-                SSLSocket sslSocket = accept(sslServerSocket);
-                if (sslSocket == null) {
-                    // Ignore the test case if no connection within 30 seconds.
-                    print("No incoming client connection in 30 seconds."
-                            + " Ignore in server side.");
-                    return;
-                }
-                print("Server accepted connection");
+    @Override
+    protected void runClientApplication(SSLSocket socket) throws Exception {
+        String ciphers[] = {
+                "SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
+                "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5" };
+        socket.setEnabledCipherSuites(ciphers);
+        socket.setUseClientMode(true);
 
-                // handle the connection
-                try {
-                    // Is it the expected client connection?
-                    //
-                    // Naughty test cases or third party routines may try to
-                    // connection to this server port unintentionally.  In
-                    // order to mitigate the impact of unexpected client
-                    // connections and avoid intermittent failure, it should
-                    // be checked that the accepted connection is really linked
-                    // to the expected client.
-                    boolean clientIsReady = test.waitForClientSignal();
+        InputStream sslIS = socket.getInputStream();
+        OutputStream sslOS = socket.getOutputStream();
 
-                    if (clientIsReady) {
-                        // Run the application in server side.
-                        print("Run server application");
-
-                        InputStream sslIS = sslSocket.getInputStream();
-                        OutputStream sslOS = sslSocket.getOutputStream();
-
-                        sslIS.read();
-                        sslOS.write(85);
-                        sslOS.flush();
-                    } else {
-                        System.out.println(
-                                "The client is not the expected one or timeout. "
-                                        + "Ignore in server side.");
-                    }
-                } finally {
-                    sslSocket.close();
-                    sslServerSocket.close();
-                }
-            })
-            .setClientApplication((socket, test) -> {
-                String ciphers[] = {
-                        "SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
-                        "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5" };
-                socket.setEnabledCipherSuites(ciphers);
-                socket.setUseClientMode(true);
-
-                InputStream sslIS = socket.getInputStream();
-                OutputStream sslOS = socket.getOutputStream();
-
-                sslOS.write(280);
-                sslOS.flush();
-                sslIS.read();
-            })
-            .runTest();
+        sslOS.write(280);
+        sslOS.flush();
+        sslIS.read();
     }
 }

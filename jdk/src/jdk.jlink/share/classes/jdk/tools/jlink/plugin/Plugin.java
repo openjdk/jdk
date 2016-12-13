@@ -36,15 +36,15 @@ import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
 public interface Plugin {
 
     /**
-     * Order of categories:
+     * Order of categories matches the plugin sort order.
      * <ol>
      * <li>FILTER: Filter in/out resources or files.</li>
      * <li>TRANSFORMER: Transform resources or files(eg: refactoring, bytecode
      * manipulation).</li>
      * <li>MODULEINFO_TRANSFORMER: Transform only module-info.class</li>
      * <li>SORTER: Sort resources within the resource container.</li>
-     * <li>COMPRESSOR: Compress resource within the resouce containers.</li>
      * <li>METAINFO_ADDER: Added meta info (like release, copyright etc.)</li>
+     * <li>COMPRESSOR: Compress resource within the resouce containers.</li>
      * <li>VERIFIER: Does some image verification.</li>
      * <li>PROCESSOR: Does some post processing on image.</li>
      * <li>PACKAGER: Final processing</li>
@@ -55,8 +55,8 @@ public interface Plugin {
         TRANSFORMER("TRANSFORMER"),
         MODULEINFO_TRANSFORMER("MODULEINFO_TRANSFORMER"),
         SORTER("SORTER"),
-        COMPRESSOR("COMPRESSOR"),
         METAINFO_ADDER("METAINFO_ADDER"),
+        COMPRESSOR("COMPRESSOR"),
         VERIFIER("VERIFIER"),
         PROCESSOR("PROCESSOR"),
         PACKAGER("PACKAGER");

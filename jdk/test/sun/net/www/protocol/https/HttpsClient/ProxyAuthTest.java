@@ -21,6 +21,11 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /*
  * @test
  * @bug 4323990 4413069 8160838
@@ -29,18 +34,24 @@
  * @modules java.base/sun.net.www
  * @library /javax/net/ssl/templates
  * @run main/othervm ProxyAuthTest fail
- * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=Basic ProxyAuthTest fail
- * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=Basic, ProxyAuthTest fail
- * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=BAsIc ProxyAuthTest fail
- * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=Basic,Digest ProxyAuthTest fail
- * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=Unknown,bAsIc ProxyAuthTest fail
- * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes= ProxyAuthTest succeed
- * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=Digest,NTLM,Negotiate ProxyAuthTest succeed
- * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=UNKNOWN,notKnown ProxyAuthTest succeed
+ * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=Basic
+ *      ProxyAuthTest fail
+ * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=Basic,
+ *      ProxyAuthTest fail
+ * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=BAsIc
+ *      ProxyAuthTest fail
+ * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=Basic,Digest
+ *      ProxyAuthTest fail
+ * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=Unknown,bAsIc
+ *      ProxyAuthTest fail
+ * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=
+ *      ProxyAuthTest succeed
+ * @run main/othervm
+ *      -Djdk.http.auth.tunneling.disabledSchemes=Digest,NTLM,Negotiate
+ *      ProxyAuthTest succeed
+ * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=UNKNOWN,notKnown
+ *      ProxyAuthTest succeed
  */
-
-// No way to reserve and restore java.lang.Authenticator, as well as read-once
-// system properties, so this tests needs to run in othervm mode.
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -54,6 +65,8 @@ import java.net.URL;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLContext;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /*
@@ -64,13 +77,128 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
  */
 
 public class ProxyAuthTest extends SSLSocketTemplate {
+    private static boolean expectSuccess;
+
     /*
-     * Where do we find the keystores?
+     * Run the test case.
      */
-    static String pathToStores = "../../../../../../javax/net/ssl/etc";
-    static String keyStoreFile = "keystore";
-    static String trustStoreFile = "truststore";
-    static String passwd = "passphrase";
+    public static void main(String[] args) throws Exception {
+        // Get the customized arguments.
+        parseArguments(args);
+
+        (new ProxyAuthTest()).run();
+    }
+
+    @Override
+    protected boolean isCustomizedClientConnection() {
+        return true;
+    }
+
+    @Override
+    protected void runServerApplication(SSLSocket socket) throws Exception {
+        String response = "Proxy authentication for tunneling succeeded ..";
+        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+        try {
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream()));
+
+            // read the request
+            readRequest(in);
+
+            // retrieve bytecodes
+            byte[] bytecodes = response.getBytes(US_ASCII);
+
+            // send bytecodes in response (assumes HTTP/1.0 or later)
+            out.writeBytes("HTTP/1.0 200 OK\r\n");
+            out.writeBytes("Content-Length: " + bytecodes.length + "\r\n");
+            out.writeBytes("Content-Type: text/html\r\n\r\n");
+            out.write(bytecodes);
+            out.flush();
+        } catch (IOException e) {
+            // write out error response
+            out.writeBytes("HTTP/1.0 400 " + e.getMessage() + "\r\n");
+            out.writeBytes("Content-Type: text/html\r\n\r\n");
+            out.flush();
+        }
+    }
+
+    @Override
+    protected void runClientApplication(int serverPort) throws Exception {
+        /*
+         * Set the default SSLSocketFactory.
+         */
+        SSLContext context = createClientSSLContext();
+        HttpsURLConnection.setDefaultSSLSocketFactory(
+                context.getSocketFactory());
+
+        /*
+         * setup up a proxy with authentication information
+         */
+        ProxyTunnelServer ps = setupProxy();
+
+        /*
+         * we want to avoid URLspoofCheck failures in cases where the cert
+         * DN name does not match the hostname in the URL.
+         */
+        HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
+
+        InetSocketAddress paddr =
+                new InetSocketAddress("localhost", ps.getPort());
+        Proxy proxy = new Proxy(Proxy.Type.HTTP, paddr);
+
+        URL url = new URL(
+                "https://" + "localhost:" + serverPort + "/index.html");
+        BufferedReader in = null;
+        HttpsURLConnection uc = (HttpsURLConnection) url.openConnection(proxy);
+        try {
+            in = new BufferedReader(new InputStreamReader(uc.getInputStream()));
+            String inputLine;
+            System.out.print("Client recieved from the server: ");
+            while ((inputLine = in.readLine()) != null) {
+                System.out.println(inputLine);
+            }
+            if (!expectSuccess) {
+                throw new RuntimeException(
+                    "Expected exception/failure to connect, but succeeded.");
+            }
+        } catch (IOException e) {
+            if (expectSuccess) {
+                System.out.println("Client side failed: " + e.getMessage());
+                throw e;
+            }
+
+            // Assert that the error stream is not accessible from the failed
+            // tunnel setup.
+            if (uc.getErrorStream() != null) {
+                throw new RuntimeException("Unexpected error stream.");
+            }
+
+            if (!e.getMessage().contains("Unable to tunnel through proxy") ||
+                !e.getMessage().contains("407")) {
+
+                throw new RuntimeException(
+                        "Expected exception about cannot tunnel, " +
+                        "407, etc, but got", e);
+            } else {
+                // Informative
+                System.out.println(
+                        "Caught expected exception: " + e.getMessage());
+            }
+        } finally {
+            if (in != null) {
+                in.close();
+            }
+        }
+    }
+
+
+    private static void parseArguments(String[] args) {
+        if (args[0].equals("succeed")) {
+            expectSuccess = true;
+        } else {
+            expectSuccess = false;
+        }
+    }
 
     /**
      * read the response, don't care for the syntax of the request-line
@@ -88,143 +216,7 @@ public class ProxyAuthTest extends SSLSocketTemplate {
                 (line.charAt(0) != '\r') && (line.charAt(0) != '\n'));
     }
 
-    /*
-     * Main method to create the server and the client
-     */
-    public static void main(String args[]) throws Exception {
-        boolean expectSuccess;
-        expectSuccess = args[0].equals("succeed");
-
-        String keyFilename =
-            TEST_SRC + "/" + pathToStores + "/" + keyStoreFile;
-        String trustFilename =
-            TEST_SRC + "/" + pathToStores + "/" + trustStoreFile;
-
-        setup(keyFilename, trustFilename, passwd);
-
-        new SSLSocketTemplate()
-            .setServerApplication((socket, test) -> {
-                DataOutputStream out = new DataOutputStream(
-                        socket.getOutputStream());
-
-                try {
-                    BufferedReader in = new BufferedReader(
-                            new InputStreamReader(socket.getInputStream()));
-
-                    // read the request
-                    readRequest(in);
-
-                    // retrieve bytecodes
-                    byte[] bytecodes =
-                            "Proxy authentication for tunneling succeeded .."
-                                    .getBytes(US_ASCII);
-
-                    // send bytecodes in response (assumes HTTP/1.0 or later)
-                    out.writeBytes("HTTP/1.0 200 OK\r\n");
-                    out.writeBytes("Content-Length: " + bytecodes.length +
-                                   "\r\n");
-                    out.writeBytes("Content-Type: text/html\r\n\r\n");
-                    out.write(bytecodes);
-                    out.flush();
-                } catch (IOException e) {
-                    // write out error response
-                    out.writeBytes("HTTP/1.0 400 " + e.getMessage() + "\r\n");
-                    out.writeBytes("Content-Type: text/html\r\n\r\n");
-                    out.flush();
-                }
-            })
-            .setClientPeer(test -> {
-                try {
-                    doClientSide(test);
-                    if (!expectSuccess) {
-                        throw new RuntimeException("Expected exception/failure "
-                                + "to connect, but succeeded.");
-                    }
-                } catch (IOException e) {
-                    if (expectSuccess) {
-                        System.out.println("Client side failed: "
-                                + e.getMessage());
-                        throw e;
-                    }
-
-                    if (! (e.getMessage().contains(
-                                "Unable to tunnel through proxy") &&
-                           e.getMessage().contains("407")) ) {
-
-                        throw new RuntimeException(
-                                "Expected exception about cannot tunnel, "
-                                        + "407, etc, but got", e);
-                    } else {
-                        // Informative
-                        System.out.println("Caught expected exception: "
-                                + e.getMessage());
-                    }
-                }
-            })
-            .runTest();
-    }
-
-    static void doClientSide(SSLSocketTemplate test) throws IOException {
-
-        // Wait for server to get started.
-        //
-        // The server side takes care of the issue if the server cannot
-        // get started in 90 seconds.  The client side would just ignore
-        // the test case if the serer is not ready.
-        try {
-            if (!test.waitForServerSignal()) {
-                System.out.print("The server is not ready yet in 90 seconds. "
-                        + "Ignore in client side.");
-                return;
-            }
-        } catch (InterruptedException e) {
-            System.out.print("InterruptedException occured. "
-                    + "Ignore in client side.");
-            return;
-        }
-
-        /*
-         * setup up a proxy with authentication information
-         */
-        ProxyTunnelServer ps = setupProxy();
-
-        /*
-         * we want to avoid URLspoofCheck failures in cases where the cert
-         * DN name does not match the hostname in the URL.
-         */
-        HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
-
-        InetSocketAddress paddr = new InetSocketAddress(
-                "localhost", ps.getPort());
-        Proxy proxy = new Proxy(Proxy.Type.HTTP, paddr);
-
-        URL url = new URL("https://" + "localhost:" + test.getServerPort()
-                + "/index.html");
-
-        // Signal the server, the client is ready to communicate.
-        test.signalClientReady();
-
-        HttpsURLConnection uc = (HttpsURLConnection) url.openConnection(proxy);
-        try (BufferedReader in = new BufferedReader(
-                new InputStreamReader(uc.getInputStream()))) {
-
-            String inputLine;
-            System.out.print("Client recieved from the server: ");
-            while ((inputLine = in.readLine()) != null) {
-                System.out.println(inputLine);
-            }
-        } catch (IOException e) {
-            // Assert that the error stream is not accessible from the failed
-            // tunnel setup.
-            if (uc.getErrorStream() != null) {
-                throw new RuntimeException("Unexpected error stream.");
-            }
-
-            throw e;
-        }
-    }
-
-    static class NameVerifier implements HostnameVerifier {
+    private static class NameVerifier implements HostnameVerifier {
 
         @Override
         public boolean verify(String hostname, SSLSession session) {
@@ -232,8 +224,9 @@ public class ProxyAuthTest extends SSLSocketTemplate {
         }
     }
 
-    static ProxyTunnelServer setupProxy() throws IOException {
+    private static ProxyTunnelServer setupProxy() throws IOException {
         ProxyTunnelServer pserver = new ProxyTunnelServer();
+
         /*
          * register a system wide authenticator and setup the proxy for
          * authentication
@@ -248,7 +241,7 @@ public class ProxyAuthTest extends SSLSocketTemplate {
         return pserver;
     }
 
-    public static class TestAuthenticator extends Authenticator {
+    private static class TestAuthenticator extends Authenticator {
 
         @Override
         public PasswordAuthentication getPasswordAuthentication() {

@@ -21,8 +21,16 @@
  * questions.
  */
 
+import org.testng.annotations.Test;
+
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.IllegalFormatException;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 
 import static org.testng.Assert.assertEquals;
@@ -37,12 +45,8 @@ import static org.testng.Assert.assertTrue;
  */
 public final class TestKitTest {
 
-    public static void main(String[] args) {
-        testAssertNotThrows();
-        testAssertThrows();
-    }
-
-    private static void testAssertNotThrows() {
+    @Test
+    public void testAssertNotThrows() {
         Integer integer = TestKit.assertNotThrows(
                 () -> TestKit.assertNotThrows(() -> 1)
         );
@@ -69,7 +73,8 @@ public final class TestKitTest {
                         + "java.io.IOException");
     }
 
-    private static void testAssertThrows() {
+    @Test
+    public void testAssertThrows() {
         NullPointerException npe = TestKit.assertThrows(
                 NullPointerException.class,
                 () -> TestKit.assertThrows(null, null)
@@ -126,5 +131,22 @@ public final class TestKitTest {
         assertEquals(re.getMessage(),
                 "Expected to catch an exception of type java.util.IllegalFormatException"
                         + ", but caught java.lang.IndexOutOfBoundsException");
+    }
+
+    @Test
+    public void testAssertUnmodifiable() {
+        TestKit.assertUnmodifiableList(
+                Collections.unmodifiableList(
+                        new ArrayList<>(Arrays.asList(1, 2, 3))));
+        TestKit.assertThrows(RuntimeException.class,
+                () -> TestKit.assertUnmodifiableList(new ArrayList<>()));
+        TestKit.assertThrows(RuntimeException.class,
+                () -> TestKit.assertUnmodifiableList(new LinkedList<>()));
+        TestKit.assertThrows(RuntimeException.class,
+                () -> TestKit.assertUnmodifiableList(
+                        new ArrayList<>(Arrays.asList(1, 2, 3))));
+        TestKit.assertUnmodifiableMap(Collections.unmodifiableMap(Map.of()));
+        TestKit.assertThrows(RuntimeException.class,
+                () -> TestKit.assertUnmodifiableMap(new HashMap<>()));
     }
 }

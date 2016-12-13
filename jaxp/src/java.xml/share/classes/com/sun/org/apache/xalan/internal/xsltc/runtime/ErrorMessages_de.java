@@ -17,9 +17,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: ErrorMessages_de.java,v 1.2.4.1 2005/09/14 05:13:15 pvedula Exp $
- */
 
 package com.sun.org.apache.xalan.internal.xsltc.runtime;
 

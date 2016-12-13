@@ -65,36 +65,37 @@ import java.util.function.ToLongFunction;
  * common mutable reduction tasks:
  *
  * <pre>{@code
- *     // Accumulate names into a List
- *     List<String> list = people.stream().map(Person::getName).collect(Collectors.toList());
+ * // Accumulate names into a List
+ * List<String> list = people.stream()
+ *   .map(Person::getName)
+ *   .collect(Collectors.toList());
  *
- *     // Accumulate names into a TreeSet
- *     Set<String> set = people.stream().map(Person::getName).collect(Collectors.toCollection(TreeSet::new));
+ * // Accumulate names into a TreeSet
+ * Set<String> set = people.stream()
+ *   .map(Person::getName)
+ *   .collect(Collectors.toCollection(TreeSet::new));
  *
- *     // Convert elements to strings and concatenate them, separated by commas
- *     String joined = things.stream()
- *                           .map(Object::toString)
- *                           .collect(Collectors.joining(", "));
+ * // Convert elements to strings and concatenate them, separated by commas
+ * String joined = things.stream()
+ *   .map(Object::toString)
+ *   .collect(Collectors.joining(", "));
  *
- *     // Compute sum of salaries of employee
- *     int total = employees.stream()
- *                          .collect(Collectors.summingInt(Employee::getSalary)));
+ * // Compute sum of salaries of employee
+ * int total = employees.stream()
+ *   .collect(Collectors.summingInt(Employee::getSalary));
  *
- *     // Group employees by department
- *     Map<Department, List<Employee>> byDept
- *         = employees.stream()
- *                    .collect(Collectors.groupingBy(Employee::getDepartment));
+ * // Group employees by department
+ * Map<Department, List<Employee>> byDept = employees.stream()
+ *   .collect(Collectors.groupingBy(Employee::getDepartment));
  *
- *     // Compute sum of salaries by department
- *     Map<Department, Integer> totalByDept
- *         = employees.stream()
- *                    .collect(Collectors.groupingBy(Employee::getDepartment,
- *                                                   Collectors.summingInt(Employee::getSalary)));
+ * // Compute sum of salaries by department
+ * Map<Department, Integer> totalByDept = employees.stream()
+ *   .collect(Collectors.groupingBy(Employee::getDepartment,
+ *                                  Collectors.summingInt(Employee::getSalary)));
  *
- *     // Partition students into passing and failing
- *     Map<Boolean, List<Student>> passingFailing =
- *         students.stream()
- *                 .collect(Collectors.partitioningBy(s -> s.getGrade() >= PASS_THRESHOLD));
+ * // Partition students into passing and failing
+ * Map<Boolean, List<Student>> passingFailing = students.stream()
+ *   .collect(Collectors.partitioningBy(s -> s.getGrade() >= PASS_THRESHOLD));
  *
  * }</pre>
  *
@@ -248,8 +249,8 @@ public final class Collectors {
      *
      * @param <T> the type of the input elements
      * @param <C> the type of the resulting {@code Collection}
-     * @param collectionFactory a {@code Supplier} which returns a new, empty
-     * {@code Collection} of the appropriate type
+     * @param collectionFactory a supplier providing a new empty {@code Collection}
+     *                          into which the results will be inserted
      * @return a {@code Collector} which collects all the input elements into a
      * {@code Collection}, in encounter order
      */
@@ -384,9 +385,11 @@ public final class Collectors {
      * {@code partitioningBy}.  For example, given a stream of
      * {@code Person}, to accumulate the set of last names in each city:
      * <pre>{@code
-     *     Map<City, Set<String>> lastNamesByCity
-     *         = people.stream().collect(groupingBy(Person::getCity,
-     *                                              mapping(Person::getLastName, toSet())));
+     * Map<City, Set<String>> lastNamesByCity
+     *   = people.stream().collect(
+     *     groupingBy(Person::getCity,
+     *                mapping(Person::getLastName,
+     *                        toSet())));
      * }</pre>
      *
      * @param <T> the type of the input elements
@@ -424,9 +427,11 @@ public final class Collectors {
      * {@code partitioningBy}.  For example, given a stream of
      * {@code Order}, to accumulate the set of line items for each customer:
      * <pre>{@code
-     *     Map<String, Set<LineItem>> itemsByCustomerName
-     *         = orders.stream().collect(groupingBy(Order::getCustomerName,
-     *                                              flatMapping(order -> order.getLineItems().stream(), toSet())));
+     * Map<String, Set<LineItem>> itemsByCustomerName
+     *   = orders.stream().collect(
+     *     groupingBy(Order::getCustomerName,
+     *                flatMapping(order -> order.getLineItems().stream(),
+     *                            toSet())));
      * }</pre>
      *
      * @param <T> the type of the input elements
@@ -468,9 +473,11 @@ public final class Collectors {
      * {@code Employee}, to accumulate the employees in each department that have a
      * salary above a certain threshold:
      * <pre>{@code
-     *     Map<Department, Set<Employee>> wellPaidEmployeesByDepartment
-     *         = employees.stream().collect(groupingBy(Employee::getDepartment,
-     *                                              filtering(e -> e.getSalary() > 2000, toSet())));
+     * Map<Department, Set<Employee>> wellPaidEmployeesByDepartment
+     *   = employees.stream().collect(
+     *     groupingBy(Employee::getDepartment,
+     *                filtering(e -> e.getSalary() > 2000,
+     *                          toSet())));
      * }</pre>
      * A filtering collector differs from a stream's {@code filter()} operation.
      * In this example, suppose there are no employees whose salary is above the
@@ -491,7 +498,7 @@ public final class Collectors {
      */
     public static <T, A, R>
     Collector<T, ?, R> filtering(Predicate<? super T> predicate,
-                               Collector<? super T, A, R> downstream) {
+                                 Collector<? super T, A, R> downstream) {
         BiConsumer<A, ? super T> downstreamAccumulator = downstream.accumulator();
         return new CollectorImpl<>(downstream.supplier(),
                                    (r, t) -> {
@@ -508,8 +515,9 @@ public final class Collectors {
      * transformation.  For example, one could adapt the {@link #toList()}
      * collector to always produce an immutable list with:
      * <pre>{@code
-     *     List<String> list
-     *         = people.stream().collect(collectingAndThen(toList(), Collections::unmodifiableList));
+     * List<String> list = people.stream().collect(
+     *   collectingAndThen(toList(),
+     *                     Collections::unmodifiableList));
      * }</pre>
      *
      * @param <T> the type of the input elements
@@ -829,9 +837,11 @@ public final class Collectors {
      * <p>For example, given a stream of {@code Person}, to calculate tallest
      * person in each city:
      * <pre>{@code
-     *     Comparator<Person> byHeight = Comparator.comparing(Person::getHeight);
-     *     Map<City, Optional<Person>> tallestByCity
-     *         = people.stream().collect(groupingBy(Person::getCity, reducing(BinaryOperator.maxBy(byHeight))));
+     * Comparator<Person> byHeight = Comparator.comparing(Person::getHeight);
+     * Map<City, Optional<Person>> tallestByCity
+     *   = people.stream().collect(
+     *     groupingBy(Person::getCity,
+     *                reducing(BinaryOperator.maxBy(byHeight))));
      * }</pre>
      *
      * @param <T> element type for the input and output of the reduction
@@ -882,10 +892,13 @@ public final class Collectors {
      * <p>For example, given a stream of {@code Person}, to calculate the longest
      * last name of residents in each city:
      * <pre>{@code
-     *     Comparator<String> byLength = Comparator.comparing(String::length);
-     *     Map<City, String> longestLastNameByCity
-     *         = people.stream().collect(groupingBy(Person::getCity,
-     *                                              reducing("", Person::getLastName, BinaryOperator.maxBy(byLength))));
+     * Comparator<String> byLength = Comparator.comparing(String::length);
+     * Map<City, String> longestLastNameByCity
+     *   = people.stream().collect(
+     *     groupingBy(Person::getCity,
+     *                reducing("",
+     *                         Person::getLastName,
+     *                         BinaryOperator.maxBy(byLength))));
      * }</pre>
      *
      * @param <T> the type of the input elements
@@ -969,9 +982,11 @@ public final class Collectors {
      *
      * <p>For example, to compute the set of last names of people in each city:
      * <pre>{@code
-     *     Map<City, Set<String>> namesByCity
-     *         = people.stream().collect(groupingBy(Person::getCity,
-     *                                              mapping(Person::getLastName, toSet())));
+     * Map<City, Set<String>> namesByCity
+     *   = people.stream().collect(
+     *     groupingBy(Person::getCity,
+     *                mapping(Person::getLastName,
+     *                        toSet())));
      * }</pre>
      *
      * @implNote
@@ -1016,9 +1031,12 @@ public final class Collectors {
      * <p>For example, to compute the set of last names of people in each city,
      * where the city names are sorted:
      * <pre>{@code
-     *     Map<City, Set<String>> namesByCity
-     *         = people.stream().collect(groupingBy(Person::getCity, TreeMap::new,
-     *                                              mapping(Person::getLastName, toSet())));
+     * Map<City, Set<String>> namesByCity
+     *   = people.stream().collect(
+     *     groupingBy(Person::getCity,
+     *                TreeMap::new,
+     *                mapping(Person::getLastName,
+     *                        toSet())));
      * }</pre>
      *
      * @implNote
@@ -1036,8 +1054,8 @@ public final class Collectors {
      * @param <M> the type of the resulting {@code Map}
      * @param classifier a classifier function mapping input elements to keys
      * @param downstream a {@code Collector} implementing the downstream reduction
-     * @param mapFactory a function which, when called, produces a new empty
-     *                   {@code Map} of the desired type
+     * @param mapFactory a supplier providing a new empty {@code Map}
+     *                   into which the results will be inserted
      * @return a {@code Collector} implementing the cascaded group-by operation
      *
      * @see #groupingBy(Function, Collector)
@@ -1127,7 +1145,7 @@ public final class Collectors {
      * <p>The classification function maps elements to some key type {@code K}.
      * The downstream collector operates on elements of type {@code T} and
      * produces a result of type {@code D}. The resulting collector produces a
-     * {@code Map<K, D>}.
+     * {@code ConcurrentMap<K, D>}.
      *
      * <p>There are no guarantees on the type, mutability, or serializability
      * of the {@code ConcurrentMap} returned.
@@ -1135,9 +1153,11 @@ public final class Collectors {
      * <p>For example, to compute the set of last names of people in each city,
      * where the city names are sorted:
      * <pre>{@code
-     *     ConcurrentMap<City, Set<String>> namesByCity
-     *         = people.stream().collect(groupingByConcurrent(Person::getCity,
-     *                                                        mapping(Person::getLastName, toSet())));
+     * ConcurrentMap<City, Set<String>> namesByCity
+     *   = people.stream().collect(
+     *     groupingByConcurrent(Person::getCity,
+     *                          mapping(Person::getLastName,
+     *                                  toSet())));
      * }</pre>
      *
      * @param <T> the type of the input elements
@@ -1172,16 +1192,18 @@ public final class Collectors {
      * <p>The classification function maps elements to some key type {@code K}.
      * The downstream collector operates on elements of type {@code T} and
      * produces a result of type {@code D}. The resulting collector produces a
-     * {@code Map<K, D>}.
+     * {@code ConcurrentMap<K, D>}.
      *
      * <p>For example, to compute the set of last names of people in each city,
      * where the city names are sorted:
      * <pre>{@code
-     *     ConcurrentMap<City, Set<String>> namesByCity
-     *         = people.stream().collect(groupingBy(Person::getCity, ConcurrentSkipListMap::new,
-     *                                              mapping(Person::getLastName, toSet())));
+     * ConcurrentMap<City, Set<String>> namesByCity
+     *   = people.stream().collect(
+     *     groupingByConcurrent(Person::getCity,
+     *                          ConcurrentSkipListMap::new,
+     *                          mapping(Person::getLastName,
+     *                                  toSet())));
      * }</pre>
-     *
      *
      * @param <T> the type of the input elements
      * @param <K> the type of the keys
@@ -1190,8 +1212,8 @@ public final class Collectors {
      * @param <M> the type of the resulting {@code ConcurrentMap}
      * @param classifier a classifier function mapping input elements to keys
      * @param downstream a {@code Collector} implementing the downstream reduction
-     * @param mapFactory a function which, when called, produces a new empty
-     *                   {@code ConcurrentMap} of the desired type
+     * @param mapFactory a supplier providing a new empty {@code ConcurrentMap}
+     *                   into which the results will be inserted
      * @return a concurrent, unordered {@code Collector} implementing the cascaded group-by operation
      *
      * @see #groupingByConcurrent(Function)
@@ -1311,7 +1333,7 @@ public final class Collectors {
      * {@code Map} whose keys and values are the result of applying the provided
      * mapping functions to the input elements.
      *
-     * <p>If the mapped keys contains duplicates (according to
+     * <p>If the mapped keys contain duplicates (according to
      * {@link Object#equals(Object)}), an {@code IllegalStateException} is
      * thrown when the collection operation is performed.  If the mapped keys
      * may have duplicates, use {@link #toMap(Function, Function, BinaryOperator)}
@@ -1327,16 +1349,18 @@ public final class Collectors {
      * For example, the following produces a {@code Map} mapping
      * students to their grade point average:
      * <pre>{@code
-     *     Map<Student, Double> studentToGPA
-     *         students.stream().collect(toMap(Function.identity(),
-     *                                         student -> computeGPA(student)));
+     * Map<Student, Double> studentToGPA
+     *   = students.stream().collect(
+     *     toMap(Function.identity(),
+     *           student -> computeGPA(student)));
      * }</pre>
      * And the following produces a {@code Map} mapping a unique identifier to
      * students:
      * <pre>{@code
-     *     Map<String, Student> studentIdToStudent
-     *         students.stream().collect(toMap(Student::getId,
-     *                                         Function.identity());
+     * Map<String, Student> studentIdToStudent
+     *   = students.stream().collect(
+     *     toMap(Student::getId,
+     *           Function.identity()));
      * }</pre>
      *
      * @implNote
@@ -1375,7 +1399,7 @@ public final class Collectors {
      * mapping functions to the input elements.
      *
      * <p>If the mapped
-     * keys contains duplicates (according to {@link Object#equals(Object)}),
+     * keys contain duplicates (according to {@link Object#equals(Object)}),
      * the value mapping function is applied to each equal element, and the
      * results are merged using the provided merging function.
      *
@@ -1389,13 +1413,14 @@ public final class Collectors {
      * more flexible merge policies.  For example, if you have a stream
      * of {@code Person}, and you want to produce a "phone book" mapping name to
      * address, but it is possible that two persons have the same name, you can
-     * do as follows to gracefully deals with these collisions, and produce a
+     * do as follows to gracefully deal with these collisions, and produce a
      * {@code Map} mapping names to a concatenated list of addresses:
      * <pre>{@code
-     *     Map<String, String> phoneBook
-     *         people.stream().collect(toMap(Person::getName,
-     *                                       Person::getAddress,
-     *                                       (s, a) -> s + ", " + a));
+     * Map<String, String> phoneBook
+     *   = people.stream().collect(
+     *     toMap(Person::getName,
+     *           Person::getAddress,
+     *           (s, a) -> s + ", " + a));
      * }</pre>
      *
      * @implNote
@@ -1437,7 +1462,7 @@ public final class Collectors {
      * mapping functions to the input elements.
      *
      * <p>If the mapped
-     * keys contains duplicates (according to {@link Object#equals(Object)}),
+     * keys contain duplicates (according to {@link Object#equals(Object)}),
      * the value mapping function is applied to each equal element, and the
      * results are merged using the provided merging function.  The {@code Map}
      * is created by a provided supplier function.
@@ -1459,8 +1484,8 @@ public final class Collectors {
      * @param mergeFunction a merge function, used to resolve collisions between
      *                      values associated with the same key, as supplied
      *                      to {@link Map#merge(Object, Object, BiFunction)}
-     * @param mapSupplier a function which returns a new, empty {@code Map} into
-     *                    which the results will be inserted
+     * @param mapFactory a supplier providing a new empty {@code Map}
+     *                   into which the results will be inserted
      * @return a {@code Collector} which collects elements into a {@code Map}
      * whose keys are the result of applying a key mapping function to the input
      * elements, and whose values are the result of applying a value mapping
@@ -1473,13 +1498,13 @@ public final class Collectors {
      */
     public static <T, K, U, M extends Map<K, U>>
     Collector<T, ?, M> toMap(Function<? super T, ? extends K> keyMapper,
-                                Function<? super T, ? extends U> valueMapper,
-                                BinaryOperator<U> mergeFunction,
-                                Supplier<M> mapSupplier) {
+                             Function<? super T, ? extends U> valueMapper,
+                             BinaryOperator<U> mergeFunction,
+                             Supplier<M> mapFactory) {
         BiConsumer<M, T> accumulator
                 = (map, element) -> map.merge(keyMapper.apply(element),
                                               valueMapper.apply(element), mergeFunction);
-        return new CollectorImpl<>(mapSupplier, accumulator, mapMerger(mergeFunction), CH_ID);
+        return new CollectorImpl<>(mapFactory, accumulator, mapMerger(mergeFunction), CH_ID);
     }
 
     /**
@@ -1487,7 +1512,7 @@ public final class Collectors {
      * {@code ConcurrentMap} whose keys and values are the result of applying
      * the provided mapping functions to the input elements.
      *
-     * <p>If the mapped keys contains duplicates (according to
+     * <p>If the mapped keys contain duplicates (according to
      * {@link Object#equals(Object)}), an {@code IllegalStateException} is
      * thrown when the collection operation is performed.  If the mapped keys
      * may have duplicates, use
@@ -1500,19 +1525,21 @@ public final class Collectors {
      * It is common for either the key or the value to be the input elements.
      * In this case, the utility method
      * {@link java.util.function.Function#identity()} may be helpful.
-     * For example, the following produces a {@code Map} mapping
+     * For example, the following produces a {@code ConcurrentMap} mapping
      * students to their grade point average:
      * <pre>{@code
-     *     Map<Student, Double> studentToGPA
-     *         students.stream().collect(toMap(Function.identity(),
-     *                                         student -> computeGPA(student)));
+     * ConcurrentMap<Student, Double> studentToGPA
+     *   = students.stream().collect(
+     *     toConcurrentMap(Function.identity(),
+     *                     student -> computeGPA(student)));
      * }</pre>
-     * And the following produces a {@code Map} mapping a unique identifier to
-     * students:
+     * And the following produces a {@code ConcurrentMap} mapping a
+     * unique identifier to students:
      * <pre>{@code
-     *     Map<String, Student> studentIdToStudent
-     *         students.stream().collect(toConcurrentMap(Student::getId,
-     *                                                   Function.identity());
+     * ConcurrentMap<String, Student> studentIdToStudent
+     *   = students.stream().collect(
+     *     toConcurrentMap(Student::getId,
+     *                     Function.identity()));
      * }</pre>
      *
      * <p>This is a {@link Collector.Characteristics#CONCURRENT concurrent} and
@@ -1546,7 +1573,7 @@ public final class Collectors {
      * {@code ConcurrentMap} whose keys and values are the result of applying
      * the provided mapping functions to the input elements.
      *
-     * <p>If the mapped keys contains duplicates (according to {@link Object#equals(Object)}),
+     * <p>If the mapped keys contain duplicates (according to {@link Object#equals(Object)}),
      * the value mapping function is applied to each equal element, and the
      * results are merged using the provided merging function.
      *
@@ -1560,13 +1587,14 @@ public final class Collectors {
      * more flexible merge policies.  For example, if you have a stream
      * of {@code Person}, and you want to produce a "phone book" mapping name to
      * address, but it is possible that two persons have the same name, you can
-     * do as follows to gracefully deals with these collisions, and produce a
-     * {@code Map} mapping names to a concatenated list of addresses:
+     * do as follows to gracefully deal with these collisions, and produce a
+     * {@code ConcurrentMap} mapping names to a concatenated list of addresses:
      * <pre>{@code
-     *     Map<String, String> phoneBook
-     *         people.stream().collect(toConcurrentMap(Person::getName,
-     *                                                 Person::getAddress,
-     *                                                 (s, a) -> s + ", " + a));
+     * ConcurrentMap<String, String> phoneBook
+     *   = people.stream().collect(
+     *     toConcurrentMap(Person::getName,
+     *                     Person::getAddress,
+     *                     (s, a) -> s + ", " + a));
      * }</pre>
      *
      * <p>This is a {@link Collector.Characteristics#CONCURRENT concurrent} and
@@ -1603,7 +1631,7 @@ public final class Collectors {
      * {@code ConcurrentMap} whose keys and values are the result of applying
      * the provided mapping functions to the input elements.
      *
-     * <p>If the mapped keys contains duplicates (according to {@link Object#equals(Object)}),
+     * <p>If the mapped keys contain duplicates (according to {@link Object#equals(Object)}),
      * the value mapping function is applied to each equal element, and the
      * results are merged using the provided merging function.  The
      * {@code ConcurrentMap} is created by a provided supplier function.
@@ -1620,8 +1648,8 @@ public final class Collectors {
      * @param mergeFunction a merge function, used to resolve collisions between
      *                      values associated with the same key, as supplied
      *                      to {@link Map#merge(Object, Object, BiFunction)}
-     * @param mapSupplier a function which returns a new, empty {@code Map} into
-     *                    which the results will be inserted
+     * @param mapFactory a supplier providing a new empty {@code ConcurrentMap}
+     *                   into which the results will be inserted
      * @return a concurrent, unordered {@code Collector} which collects elements into a
      * {@code ConcurrentMap} whose keys are the result of applying a key mapping
      * function to the input elements, and whose values are the result of
@@ -1636,11 +1664,11 @@ public final class Collectors {
     Collector<T, ?, M> toConcurrentMap(Function<? super T, ? extends K> keyMapper,
                                        Function<? super T, ? extends U> valueMapper,
                                        BinaryOperator<U> mergeFunction,
-                                       Supplier<M> mapSupplier) {
+                                       Supplier<M> mapFactory) {
         BiConsumer<M, T> accumulator
                 = (map, element) -> map.merge(keyMapper.apply(element),
                                               valueMapper.apply(element), mergeFunction);
-        return new CollectorImpl<>(mapSupplier, accumulator, mapMerger(mergeFunction), CH_CONCURRENT_ID);
+        return new CollectorImpl<>(mapFactory, accumulator, mapMerger(mergeFunction), CH_CONCURRENT_ID);
     }
 
     /**

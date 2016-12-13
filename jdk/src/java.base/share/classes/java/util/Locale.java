@@ -46,6 +46,7 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
 import java.text.MessageFormat;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.LocaleNameProvider;
 
 import sun.security.action.GetPropertyAction;
@@ -600,6 +601,68 @@ public final class Locale implements Cloneable, Serializable {
     static final long serialVersionUID = 9149081749638150636L;
 
     /**
+     * Enum for specifying the type defined in ISO 3166. This enum is used to
+     * retrieve the two-letter ISO3166-1 alpha-2, three-letter ISO3166-1
+     * alpha-3, four-letter ISO3166-3 country codes.
+     *
+     * @see #getISOCountries(Locale.IsoCountryCode)
+     * @since 9
+     */
+    public static enum IsoCountryCode {
+        /**
+         * PART1_ALPHA2 is used to represent the ISO3166-1 alpha-2 two letter
+         * country codes.
+         */
+        PART1_ALPHA2 {
+            @Override
+            Set<String> createCountryCodeSet() {
+                return Set.of(Locale.getISOCountries());
+            }
+        },
+
+        /**
+         *
+         * PART1_ALPHA3 is used to represent the ISO3166-1 alpha-3 three letter
+         * country codes.
+         */
+        PART1_ALPHA3 {
+            @Override
+            Set<String> createCountryCodeSet() {
+                return LocaleISOData.computeISO3166_1Alpha3Countries();
+            }
+        },
+
+        /**
+         * PART3 is used to represent the ISO3166-3 four letter country codes.
+         */
+        PART3 {
+            @Override
+            Set<String> createCountryCodeSet() {
+                return Set.of(LocaleISOData.ISO3166_3);
+            }
+        };
+
+        /**
+         * Concrete implementation of this method attempts to compute value
+         * for iso3166CodesMap for each IsoCountryCode type key.
+         */
+        abstract Set<String> createCountryCodeSet();
+
+        /**
+         * Map to hold country codes for each ISO3166 part.
+         */
+        private static Map<IsoCountryCode, Set<String>> iso3166CodesMap = new ConcurrentHashMap<>();
+
+        /**
+         * This method is called from Locale class to retrieve country code set
+         * for getISOCountries(type)
+         */
+        static Set<String> retrieveISOCountryCodes(IsoCountryCode type) {
+            return iso3166CodesMap.computeIfAbsent(type, IsoCountryCode::createCountryCodeSet);
+        }
+    }
+
+    /**
      * Display types for retrieving localized names from the name providers.
      */
     private static final int DISPLAY_LANGUAGE = 0;
@@ -996,12 +1059,18 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Returns a list of all 2-letter country codes defined in ISO 3166.
      * Can be used to create Locales.
+     * This method is equivalent to {@link #getISOCountries(Locale.IsoCountryCode type)}
+     * with {@code type}  {@link IsoCountryCode#PART1_ALPHA2}.
      * <p>
      * <b>Note:</b> The <code>Locale</code> class also supports other codes for
      * country (region), such as 3-letter numeric UN M.49 area codes.
      * Therefore, the list returned by this method does not contain ALL valid
      * codes that can be used to create Locales.
-     *
+     * <p>
+     * Note that this method does not return obsolete 2-letter country codes.
+     * ISO3166-3 codes which designate country codes for those obsolete codes,
+     * can be retrieved from {@link #getISOCountries(Locale.IsoCountryCode type)} with
+     * {@code type}  {@link IsoCountryCode#PART3}.
      * @return An array of ISO 3166 two-letter country codes.
      */
     public static String[] getISOCountries() {
@@ -1011,6 +1080,20 @@ public final class Locale implements Cloneable, Serializable {
         String[] result = new String[isoCountries.length];
         System.arraycopy(isoCountries, 0, result, 0, isoCountries.length);
         return result;
+    }
+
+    /**
+     * Returns a {@code Set} of ISO3166 country codes for the specified type.
+     *
+     * @param type {@link Locale.IsoCountryCode} specified ISO code type.
+     * @see java.util.Locale.IsoCountryCode
+     * @throws NullPointerException if type is null
+     * @return a {@code Set} of ISO country codes for the specified type.
+     * @since 9
+     */
+    public static Set<String> getISOCountries(IsoCountryCode type) {
+        Objects.requireNonNull(type);
+        return IsoCountryCode.retrieveISOCountryCodes(type);
     }
 
     /**
