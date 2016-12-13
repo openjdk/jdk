@@ -952,6 +952,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     public Location getLocationForModule(Location location, String moduleName) throws IOException {
         checkModuleOrientedOrOutputLocation(location);
         nullCheck(moduleName);
+        if (location == SOURCE_OUTPUT && getSourceOutDir() == null)
+            location = CLASS_OUTPUT;
         return locations.getLocationForModule(location, moduleName);
     }
 
