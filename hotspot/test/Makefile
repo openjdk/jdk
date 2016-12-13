@@ -95,29 +95,6 @@ hotspot_internal:
 ALT_MAKE ?= closed
 -include $(ALT_MAKE)/Makefile
 
-# Make sure jtreg exists
-$(JTREG): $(JT_HOME)
-
-jtreg_tests: prep $(PRODUCT_HOME) $(JTREG)
-	(                                                                    \
-	  ( JT_HOME=$(shell $(GETMIXEDPATH) "$(JT_HOME)");                   \
-            export JT_HOME;                                                  \
-            $(shell $(GETMIXEDPATH) "$(JTREG)")                              \
-              $(JTREG_BASIC_OPTIONS)                                         \
-              -r:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTreport")  \
-              -w:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTwork")    \
-              -jdk:$(shell $(GETMIXEDPATH) "$(PRODUCT_HOME)")                \
-              $(JTREG_NATIVE_PATH)                                           \
-              $(JTREG_FAILURE_HANDLER_OPTIONS)                               \
-              $(JTREG_EXCLUSIONS)                                            \
-              $(JTREG_TEST_OPTIONS)                                          \
-              $(TEST_SELECTION)                                              \
-	  ) ;                                                                \
-	  $(BUNDLE_UP_AND_EXIT)                                              \
-	) 2>&1 | $(TEE) $(ABS_TEST_OUTPUT_DIR)/output.txt ; $(TESTEXIT)
-
-PHONY_LIST += jtreg_tests
-
 # flags used to execute java in test targets
 TEST_FLAGS += -version -Xinternalversion -X -help
 
