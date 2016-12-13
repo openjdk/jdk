@@ -36,7 +36,9 @@ import javax.lang.model.SourceVersion;
  *  deletion without notice.</b>
  */
 public class MatchingUtils {
-    private static final Pattern allMatches = Pattern.compile(".*");
+
+    private static final String allMatchesString = ".*";
+    private static final Pattern allMatches = Pattern.compile(allMatchesString);
 
     /**
      * Return true if the argument string is a valid import-style
@@ -72,9 +74,9 @@ public class MatchingUtils {
         return valid;
     }
 
-    public static Pattern validImportStringToPattern(String s) {
+    public static String validImportStringToPatternString(String s) {
         if (s.equals("*")) {
-            return allMatches;
+            return allMatchesString;
         } else {
             String s_prime = s.replace(".", "\\.");
 
@@ -82,7 +84,17 @@ public class MatchingUtils {
                 s_prime =  s_prime.substring(0, s_prime.length() - 1) + ".+";
             }
 
-            return Pattern.compile(s_prime);
+            return s_prime;
+        }
+    }
+
+    public static Pattern validImportStringToPattern(String s) {
+        String pattern = validImportStringToPatternString(s);
+
+        if (pattern == allMatchesString) {
+            return allMatches;
+        } else {
+            return Pattern.compile(pattern);
         }
     }
 

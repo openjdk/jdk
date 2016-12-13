@@ -1,4 +1,4 @@
-Processor Test matches [java.lang.Override] and returns true.
+Processor Test matches [java.base/java.lang.Override] and returns true.
 - compiler.note.proc.messager: round 1
 Processor Test matches [] and returns true.
 - compiler.note.proc.messager: round 2
