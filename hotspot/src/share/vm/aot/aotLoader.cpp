@@ -125,14 +125,18 @@ void AOTLoader::initialize() {
   if (UseAOT) {
     // EagerInitialization is not compatible with AOT
     if (EagerInitialization) {
-      warning("EagerInitialization is not compatible with AOT (switching AOT off)");
+      if (PrintAOT) {
+        warning("EagerInitialization is not compatible with AOT (switching AOT off)");
+      }
       FLAG_SET_DEFAULT(UseAOT, false);
       return;
     }
 
     // -Xint is not compatible with AOT
     if (Arguments::is_interpreter_only()) {
-      warning("-Xint is not compatible with AOT (switching AOT off)");
+      if (PrintAOT) {
+        warning("-Xint is not compatible with AOT (switching AOT off)");
+      }
       FLAG_SET_DEFAULT(UseAOT, false);
       return;
     }
