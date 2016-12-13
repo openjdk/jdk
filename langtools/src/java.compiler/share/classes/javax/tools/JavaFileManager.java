@@ -479,8 +479,10 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
 
     /**
      * Gets a location for the module containing a specific file representing a Java
-     * source or class, to be found in a module-oriented location.
-     * The result will be a package-oriented location.
+     * source or class, to be found within a location, which may be either
+     * a module-oriented location or an output location.
+     * The result will be an output location if the given location is
+     * an output location, or it will be a package-oriented location.
      *
      * @apiNote the package name is used to identify the position of the file object
      * within the <em>module/package/class</em> hierarchy identified by by the location.
@@ -494,7 +496,8 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      *
      * @throws IOException if an I/O error occurred
      * @throws UnsupportedOperationException if this operation if not supported by this file manager
-     * @throws IllegalArgumentException if the location is not a module-oriented location
+     * @throws IllegalArgumentException if the location is neither an output location nor a
+     * module-oriented location
      * @since 9
      */
     default Location getLocationForModule(Location location, JavaFileObject fo, String pkgName) throws IOException {
@@ -543,8 +546,9 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
     }
 
     /**
-     * Lists the locations for all the modules in a module-oriented location.
-     * The locations that are returned will be package-oriented locations.
+     * Lists the locations for all the modules in a module-oriented location or an output location.
+     * The locations that are returned will be output locations if the given location is an output,
+     * or it will be a package-oriented locations.
      *
      * @implSpec This implementation throws {@code UnsupportedOperationException}.
      *

@@ -950,11 +950,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     @Override @DefinedBy(Api.COMPILER)
     public Location getLocationForModule(Location location, String moduleName) throws IOException {
-        Objects.requireNonNull(location);
-        if (!location.isOutputLocation() && !location.isModuleOrientedLocation())
-            throw new IllegalArgumentException(
-                    "location is not an output location or a module-oriented location: "
-                            + location.getName());
+        checkModuleOrientedOrOutputLocation(location);
         nullCheck(moduleName);
         return locations.getLocationForModule(location, moduleName);
     }
@@ -978,7 +974,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     @Override @DefinedBy(Api.COMPILER)
     public Location getLocationForModule(Location location, JavaFileObject fo, String pkgName) throws IOException {
-        checkModuleOrientedLocation(location);
+        checkModuleOrientedOrOutputLocation(location);
         if (!(fo instanceof PathFileObject))
             throw new IllegalArgumentException(fo.getName());
         int depth = 1; // allow 1 for filename
@@ -1012,7 +1008,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     @Override @DefinedBy(Api.COMPILER)
     public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
-        checkModuleOrientedLocation(location);
+        checkModuleOrientedOrOutputLocation(location);
         return locations.listLocationsForModules(location);
     }
 
@@ -1098,10 +1094,12 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             throw new IllegalArgumentException("location is not an output location: " + location.getName());
     }
 
-    private void checkModuleOrientedLocation(Location location) {
+    private void checkModuleOrientedOrOutputLocation(Location location) {
         Objects.requireNonNull(location);
-        if (!location.isModuleOrientedLocation())
-            throw new IllegalArgumentException("location is not module-oriented: " + location.getName());
+        if (!location.isModuleOrientedLocation() && !location.isOutputLocation())
+            throw new IllegalArgumentException(
+                    "location is not an output location or a module-oriented location: "
+                            + location.getName());
     }
 
     private void checkNotModuleOrientedLocation(Location location) {
