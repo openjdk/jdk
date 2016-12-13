@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ void handleError(char *messageTitle, char *messageBody) {
 // method to load the dynamic library libjvm
 void loadJVM() {
   char lib[PATH_MAX];
-  snprintf(lib, sizeof (lib), "%s/lib/sparcv9/server/libjvm.so", path);
+  snprintf(lib, sizeof (lib), "%s/lib/server/libjvm.so", path);
   handle = dlopen(lib, RTLD_LAZY);
   if (!handle) {
     handleError(dlerror(), "2");

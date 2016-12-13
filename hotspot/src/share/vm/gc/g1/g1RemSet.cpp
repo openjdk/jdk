@@ -575,18 +575,26 @@ bool G1RemSet::refine_card(jbyte* card_ptr,
   // And find the region containing it.
   HeapRegion* r = _g1->heap_region_containing(start);
 
-  // Why do we have to check here whether a card is on a young region,
-  // given that we dirty young regions and, as a result, the
-  // post-barrier is supposed to filter them out and never to enqueue
-  // them? When we allocate a new region as the "allocation region" we
-  // actually dirty its cards after we release the lock, since card
-  // dirtying while holding the lock was a performance bottleneck. So,
-  // as a result, it is possible for other threads to actually
-  // allocate objects in the region (after the acquire the lock)
-  // before all the cards on the region are dirtied. This is unlikely,
-  // and it doesn't happen often, but it can happen. So, the extra
-  // check below filters out those cards.
-  if (r->is_young()) {
+  // This check is needed for some uncommon cases where we should
+  // ignore the card.
+  //
+  // The region could be young.  Cards for young regions are
+  // distinctly marked (set to g1_young_gen), so the post-barrier will
+  // filter them out.  However, that marking is performed
+  // concurrently.  A write to a young object could occur before the
+  // card has been marked young, slipping past the filter.
+  //
+  // The card could be stale, because the region has been freed since
+  // the card was recorded. In this case the region type could be
+  // anything.  If (still) free or (reallocated) young, just ignore
+  // it.  If (reallocated) old or humongous, the later card trimming
+  // and additional checks in iteration may detect staleness.  At
+  // worst, we end up processing a stale card unnecessarily.
+  //
+  // In the normal (non-stale) case, the synchronization between the
+  // enqueueing of the card and processing it here will have ensured
+  // we see the up-to-date region type here.
+  if (!r->is_old_or_humongous()) {
     return false;
   }
 
@@ -617,26 +625,69 @@ bool G1RemSet::refine_card(jbyte* card_ptr,
     assert(!check_for_refs_into_cset, "sanity");
     assert(!SafepointSynchronize::is_at_safepoint(), "sanity");
 
+    const jbyte* orig_card_ptr = card_ptr;
     card_ptr = _hot_card_cache->insert(card_ptr);
     if (card_ptr == NULL) {
       // There was no eviction. Nothing to do.
       return false;
-    }
+    } else if (card_ptr != orig_card_ptr) {
+      // Original card was inserted and an old card was evicted.
+      start = _ct_bs->addr_for(card_ptr);
+      r = _g1->heap_region_containing(start);
 
-    start = _ct_bs->addr_for(card_ptr);
-    r = _g1->heap_region_containing(start);
-
-    // Checking whether the region we got back from the cache
-    // is young here is inappropriate. The region could have been
-    // freed, reallocated and tagged as young while in the cache.
-    // Hence we could see its young type change at any time.
+      // Check whether the region formerly in the cache should be
+      // ignored, as discussed earlier for the original card.  The
+      // region could have been freed while in the cache.  The cset is
+      // not relevant here, since we're in concurrent phase.
+      if (!r->is_old_or_humongous()) {
+        return false;
+      }
+    } // Else we still have the original card.
   }
 
+  // Trim the region designated by the card to what's been allocated
+  // in the region.  The card could be stale, or the card could cover
+  // (part of) an object at the end of the allocated space and extend
+  // beyond the end of allocation.
+  HeapWord* scan_limit;
+  if (_g1->is_gc_active()) {
+    // If we're in a STW GC, then a card might be in a GC alloc region
+    // and extend onto a GC LAB, which may not be parsable.  Stop such
+    // at the "scan_top" of the region.
+    scan_limit = r->scan_top();
+  } else {
+    // Non-humongous objects are only allocated in the old-gen during
+    // GC, so if region is old then top is stable.  Humongous object
+    // allocation sets top last; if top has not yet been set, this is
+    // a stale card and we'll end up with an empty intersection.  If
+    // this is not a stale card, the synchronization between the
+    // enqueuing of the card and processing it here will have ensured
+    // we see the up-to-date top here.
+    scan_limit = r->top();
+  }
+  if (scan_limit <= start) {
+    // If the trimmed region is empty, the card must be stale.
+    return false;
+  }
+
+  // Okay to clean and process the card now.  There are still some
+  // stale card cases that may be detected by iteration and dealt with
+  // as iteration failure.
+  *const_cast<volatile jbyte*>(card_ptr) = CardTableModRefBS::clean_card_val();
+
+  // This fence serves two purposes.  First, the card must be cleaned
+  // before processing the contents.  Second, we can't proceed with
+  // processing until after the read of top, for synchronization with
+  // possibly concurrent humongous object allocation.  It's okay that
+  // reading top and reading type were racy wrto each other.  We need
+  // both set, in any order, to proceed.
+  OrderAccess::fence();
+
   // Don't use addr_for(card_ptr + 1) which can ask for
-  // a card beyond the heap.  This is not safe without a perm
-  // gen at the upper end of the heap.
-  HeapWord* end   = start + CardTableModRefBS::card_size_in_words;
-  MemRegion dirtyRegion(start, end);
+  // a card beyond the heap.
+  HeapWord* end = start + CardTableModRefBS::card_size_in_words;
+  MemRegion dirty_region(start, MIN2(scan_limit, end));
+  assert(!dirty_region.is_empty(), "sanity");
 
   G1UpdateRSOrPushRefOopClosure update_rs_oop_cl(_g1,
                                                  _g1->g1_rem_set(),
@@ -655,29 +706,15 @@ bool G1RemSet::refine_card(jbyte* card_ptr,
                                 (OopClosure*)&mux :
                                 (OopClosure*)&update_rs_oop_cl));
 
-  // The region for the current card may be a young region. The
-  // current card may have been a card that was evicted from the
-  // card cache. When the card was inserted into the cache, we had
-  // determined that its region was non-young. While in the cache,
-  // the region may have been freed during a cleanup pause, reallocated
-  // and tagged as young.
-  //
-  // We wish to filter out cards for such a region but the current
-  // thread, if we're running concurrently, may "see" the young type
-  // change at any time (so an earlier "is_young" check may pass or
-  // fail arbitrarily). We tell the iteration code to perform this
-  // filtering when it has been determined that there has been an actual
-  // allocation in this region and making it safe to check the young type.
-
   bool card_processed =
-    r->oops_on_card_seq_iterate_careful(dirtyRegion,
-                                        &filter_then_update_rs_oop_cl,
-                                        card_ptr);
+    r->oops_on_card_seq_iterate_careful(dirty_region,
+                                        &filter_then_update_rs_oop_cl);
 
   // If unable to process the card then we encountered an unparsable
-  // part of the heap (e.g. a partially allocated object).  Redirty
-  // and re-enqueue: if we put off the card until a GC pause, then the
-  // allocation will have completed.
+  // part of the heap (e.g. a partially allocated object) while
+  // processing a stale card.  Despite the card being stale, redirty
+  // and re-enqueue, because we've already cleaned the card.  Without
+  // this we could incorrectly discard a non-stale card.
   if (!card_processed) {
     assert(!_g1->is_gc_active(), "Unparsable heap during GC");
     // The card might have gotten re-dirtied and re-enqueued while we

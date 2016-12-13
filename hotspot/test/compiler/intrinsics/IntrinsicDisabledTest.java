@@ -25,7 +25,7 @@
  * @test
  * @bug 8138651
  * @modules java.base/jdk.internal.misc
- * @library /test/lib
+ * @library /test/lib /
  *
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
@@ -44,6 +44,7 @@ package compiler.intrinsics;
 
 import jdk.test.lib.Platform;
 import sun.hotspot.WhiteBox;
+import compiler.whitebox.CompilerWhiteBoxTest;
 
 import java.lang.reflect.Executable;
 import java.util.Objects;
@@ -51,12 +52,6 @@ import java.util.Objects;
 public class IntrinsicDisabledTest {
 
     private static final WhiteBox wb = WhiteBox.getWhiteBox();
-
-    /* Compilation level corresponding to C1. */
-    private static final int COMP_LEVEL_SIMPLE = 1;
-
-    /* Compilation level corresponding to C2. */
-    private static final int COMP_LEVEL_FULL_OPTIMIZATION = 4;
 
     /* Determine if tiered compilation is enabled. */
     private static final boolean TIERED_COMPILATION = wb.getBooleanVMFlag("TieredCompilation");
@@ -202,13 +197,13 @@ public class IntrinsicDisabledTest {
     }
 
     public static void main(String args[]) {
-        if (Platform.isServer() && (TIERED_STOP_AT_LEVEL == COMP_LEVEL_FULL_OPTIMIZATION)) {
+        if (Platform.isServer() && (TIERED_STOP_AT_LEVEL == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION)) {
             if (TIERED_COMPILATION) {
-                test(COMP_LEVEL_SIMPLE);
+                test(CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE);
             }
-            test(COMP_LEVEL_FULL_OPTIMIZATION);
+            test(CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
         } else {
-            test(COMP_LEVEL_SIMPLE);
+            test(CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE);
         }
     }
 }

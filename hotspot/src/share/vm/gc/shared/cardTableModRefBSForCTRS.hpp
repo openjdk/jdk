@@ -85,7 +85,7 @@ private:
   CardArr* _lowest_non_clean;
   size_t*  _lowest_non_clean_chunk_size;
   uintptr_t* _lowest_non_clean_base_chunk_index;
-  int* _last_LNC_resizing_collection;
+  volatile int* _last_LNC_resizing_collection;
 
   // Initializes "lowest_non_clean" to point to the array for the region
   // covering "sp", and "lowest_non_clean_base_chunk_index" to the chunk

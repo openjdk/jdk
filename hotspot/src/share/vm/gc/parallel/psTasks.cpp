@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "aot/aotLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/parallel/cardTableExtension.hpp"
@@ -101,6 +102,7 @@ void ScavengeRootsTask::do_it(GCTaskManager* manager, uint which) {
       {
         MarkingCodeBlobClosure each_scavengable_code_blob(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations);
         CodeCache::scavenge_root_nmethods_do(&each_scavengable_code_blob);
+        AOTLoader::oops_do(&roots_closure);
       }
       break;
 

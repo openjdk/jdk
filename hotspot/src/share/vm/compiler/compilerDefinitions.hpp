@@ -47,8 +47,9 @@ enum MethodCompilation {
 
 // Enumeration to distinguish tiers of compilation
 enum CompLevel {
-  CompLevel_any               = -1,
-  CompLevel_all               = -1,
+  CompLevel_any               = -2,
+  CompLevel_all               = -2,
+  CompLevel_aot               = -1,
   CompLevel_none              = 0,         // Interpreter
   CompLevel_simple            = 1,         // C1
   CompLevel_limited_profile   = 2,         // C1, invocation & backedge counters

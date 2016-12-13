@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "code/codeCacheExtensions.hpp"
@@ -378,6 +379,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "AutoGCSelectPauseMillis",      JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "UseAutoGCSelectPolicy",        JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "UseParNewGC",                  JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
+  { "ExplicitGCInvokesConcurrentAndUnloadsClasses", JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "ConvertSleepToYield",          JDK_Version::jdk(9), JDK_Version::jdk(10),     JDK_Version::jdk(11) },
   { "ConvertYieldToSleep",          JDK_Version::jdk(9), JDK_Version::jdk(10),     JDK_Version::jdk(11) },
 
@@ -1318,22 +1320,31 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
 #if INCLUDE_CDS
 void Arguments::check_unsupported_dumping_properties() {
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
-  const char* unsupported_properties[5] = { "jdk.module.main",
+  const char* unsupported_properties[] = { "jdk.module.main",
+                                           "jdk.module.limitmods",
                                            "jdk.module.path",
                                            "jdk.module.upgrade.path",
-                                           "jdk.module.addmods.0",
-                                           "jdk.module.limitmods" };
-  const char* unsupported_options[5] = { "-m",
+                                           "jdk.module.addmods.0" };
+  const char* unsupported_options[] = { "-m",
+                                        "--limit-modules",
                                         "--module-path",
                                         "--upgrade-module-path",
-                                        "--add-modules",
-                                        "--limit-modules" };
+                                        "--add-modules" };
+  assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
+  // If a vm option is found in the unsupported_options array with index less than the warning_idx,
+  // vm will exit with an error message. Otherwise, it will result in a warning message.
+  uint warning_idx = 2;
   SystemProperty* sp = system_properties();
   while (sp != NULL) {
-    for (int i = 0; i < 5; i++) {
+    for (uint i = 0; i < ARRAY_SIZE(unsupported_properties); i++) {
       if (strcmp(sp->key(), unsupported_properties[i]) == 0) {
+        if (i < warning_idx) {
           vm_exit_during_initialization(
             "Cannot use the following option when dumping the shared archive", unsupported_options[i]);
+        } else {
+          warning(
+            "the %s option is ignored when dumping the shared archive", unsupported_options[i]);
+        }
       }
     }
     sp = sp->next();
@@ -2027,9 +2038,35 @@ julong Arguments::limit_by_allocatable_memory(julong limit) {
 static const size_t DefaultHeapBaseMinAddress = HeapBaseMinAddress;
 
 void Arguments::set_heap_size() {
-  const julong phys_mem =
+  julong phys_mem =
     FLAG_IS_DEFAULT(MaxRAM) ? MIN2(os::physical_memory(), (julong)MaxRAM)
                             : (julong)MaxRAM;
+
+  // Experimental support for CGroup memory limits
+  if (UseCGroupMemoryLimitForHeap) {
+    // This is a rough indicator that a CGroup limit may be in force
+    // for this process
+    const char* lim_file = "/sys/fs/cgroup/memory/memory.limit_in_bytes";
+    FILE *fp = fopen(lim_file, "r");
+    if (fp != NULL) {
+      julong cgroup_max = 0;
+      int ret = fscanf(fp, JULONG_FORMAT, &cgroup_max);
+      if (ret == 1 && cgroup_max > 0) {
+        // If unlimited, cgroup_max will be a very large, but unspecified
+        // value, so use initial phys_mem as a limit
+        log_info(gc, heap)("Setting phys_mem to the min of cgroup limit ("
+                           JULONG_FORMAT "MB) and initial phys_mem ("
+                           JULONG_FORMAT "MB)", cgroup_max/M, phys_mem/M);
+        phys_mem = MIN2(cgroup_max, phys_mem);
+      } else {
+        warning("Unable to read/parse cgroup memory limit from %s: %s",
+                lim_file, errno != 0 ? strerror(errno) : "unknown error");
+      }
+      fclose(fp);
+    } else {
+      warning("Unable to open cgroup memory limit file %s (%s)", lim_file, strerror(errno));
+    }
+  }
 
   // If the maximum heap size has not been set with -Xmx,
   // then set it as fraction of the size of physical memory,
@@ -3425,9 +3462,9 @@ void Arguments::add_patch_mod_prefix(const char* module_name, const char* path, 
   // This check is only required for java.base, all other duplicate module specifications
   // will be checked during module system initialization.  The module system initialization
   // will throw an ExceptionInInitializerError if this situation occurs.
-  if (strcmp(module_name, "java.base") == 0) {
+  if (strcmp(module_name, JAVA_BASE_NAME) == 0) {
     if (*patch_mod_javabase) {
-      vm_exit_during_initialization("Cannot specify java.base more than once to --patch-module");
+      vm_exit_during_initialization("Cannot specify " JAVA_BASE_NAME " more than once to --patch-module");
     } else {
       *patch_mod_javabase = true;
     }

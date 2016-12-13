@@ -22,11 +22,13 @@
  *
  */
 #include "precompiled.hpp"
+#include "aot/aotLoader.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/defaultMethods.hpp"
+#include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/symbolTable.hpp"
@@ -4349,13 +4351,34 @@ static void check_super_class_access(const InstanceKlass* this_klass, TRAPS) {
   assert(this_klass != NULL, "invariant");
   const Klass* const super = this_klass->super();
   if (super != NULL) {
+
+    // If the loader is not the boot loader then throw an exception if its
+    // superclass is in package jdk.internal.reflect and its loader is not a
+    // special reflection class loader
+    if (!this_klass->class_loader_data()->is_the_null_class_loader_data()) {
+      assert(super->is_instance_klass(), "super is not instance klass");
+      PackageEntry* super_package = super->package();
+      if (super_package != NULL &&
+          super_package->name()->fast_compare(vmSymbols::jdk_internal_reflect()) == 0 &&
+          !java_lang_ClassLoader::is_reflection_class_loader(this_klass->class_loader())) {
+        ResourceMark rm(THREAD);
+        Exceptions::fthrow(
+          THREAD_AND_LOCATION,
+          vmSymbols::java_lang_IllegalAccessError(),
+          "class %s loaded by %s cannot access jdk/internal/reflect superclass %s",
+          this_klass->external_name(),
+          this_klass->class_loader_data()->loader_name(),
+          super->external_name());
+        return;
+      }
+    }
+
     Reflection::VerifyClassAccessResults vca_result =
       Reflection::verify_class_access(this_klass, super, false);
     if (vca_result != Reflection::ACCESS_OK) {
       ResourceMark rm(THREAD);
       char* msg =  Reflection::verify_class_access_msg(this_klass, super, vca_result);
       if (msg == NULL) {
-        ResourceMark rm(THREAD);
         Exceptions::fthrow(
           THREAD_AND_LOCATION,
           vmSymbols::java_lang_IllegalAccessError(),
@@ -5190,6 +5213,19 @@ InstanceKlass* ClassFileParser::create_instance_klass(bool changed_by_loadhook, 
 
   assert(_klass == ik, "invariant");
 
+  ik->set_has_passed_fingerprint_check(false);
+  if (UseAOT && ik->supers_have_passed_fingerprint_checks()) {
+    uint64_t aot_fp = AOTLoader::get_saved_fingerprint(ik);
+    if (aot_fp != 0 && aot_fp == _stream->compute_fingerprint()) {
+      // This class matches with a class saved in an AOT library
+      ik->set_has_passed_fingerprint_check(true);
+    } else {
+      ResourceMark rm;
+      log_info(class, fingerprint)("%s :  expected = " PTR64_FORMAT " actual = " PTR64_FORMAT,
+                                 ik->external_name(), aot_fp, _stream->compute_fingerprint());
+    }
+  }
+
   return ik;
 }
 
@@ -5391,7 +5427,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
     }
   }
 
-  TRACE_INIT_KLASS_ID(ik);
+  TRACE_INIT_ID(ik);
 
   // If we reach here, all is well.
   // Now remove the InstanceKlass* from the _klass_to_deallocate field

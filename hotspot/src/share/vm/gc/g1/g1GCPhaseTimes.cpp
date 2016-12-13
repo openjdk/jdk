@@ -36,7 +36,9 @@
 static const char* Indents[5] = {"", "  ", "    ", "      ", "        "};
 
 G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
-  _max_gc_threads(max_gc_threads)
+  _max_gc_threads(max_gc_threads),
+  _gc_start_counter(0),
+  _gc_pause_time_ms(0.0)
 {
   assert(max_gc_threads > 0, "Must have some GC threads");
 
@@ -67,6 +69,9 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   }
   _gc_par_phases[ScanRS] = new WorkerDataArray<double>(max_gc_threads, "Scan RS (ms):");
   _gc_par_phases[CodeRoots] = new WorkerDataArray<double>(max_gc_threads, "Code Root Scanning (ms):");
+#if INCLUDE_AOT
+  _gc_par_phases[AOTCodeRoots] = new WorkerDataArray<double>(max_gc_threads, "AOT Root Scanning (ms):");
+#endif
   _gc_par_phases[ObjCopy] = new WorkerDataArray<double>(max_gc_threads, "Object Copy (ms):");
   _gc_par_phases[Termination] = new WorkerDataArray<double>(max_gc_threads, "Termination (ms):");
   _gc_par_phases[GCWorkerTotal] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Total (ms):");
@@ -95,19 +100,51 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _gc_par_phases[NonYoungFreeCSet] = new WorkerDataArray<double>(max_gc_threads, "Non-Young Free Collection Set (ms):");
 
   _gc_par_phases[PreserveCMReferents] = new WorkerDataArray<double>(max_gc_threads, "Parallel Preserve CM Refs (ms):");
+
+  reset();
 }
 
-void G1GCPhaseTimes::note_gc_start() {
-  _gc_start_counter = os::elapsed_counter();
+void G1GCPhaseTimes::reset() {
+  _cur_collection_par_time_ms = 0.0;
+  _cur_collection_code_root_fixup_time_ms = 0.0;
+  _cur_strong_code_root_purge_time_ms = 0.0;
+  _cur_evac_fail_recalc_used = 0.0;
+  _cur_evac_fail_restore_remsets = 0.0;
+  _cur_evac_fail_remove_self_forwards = 0.0;
+  _cur_string_dedup_fixup_time_ms = 0.0;
+  _cur_clear_ct_time_ms = 0.0;
   _cur_expand_heap_time_ms = 0.0;
+  _cur_ref_proc_time_ms = 0.0;
+  _cur_ref_enq_time_ms = 0.0;
+  _cur_collection_start_sec = 0.0;
+  _root_region_scan_wait_time_ms = 0.0;
   _external_accounted_time_ms = 0.0;
   _recorded_clear_claimed_marks_time_ms = 0.0;
+  _recorded_young_cset_choice_time_ms = 0.0;
+  _recorded_non_young_cset_choice_time_ms = 0.0;
+  _recorded_redirty_logged_cards_time_ms = 0.0;
+  _recorded_preserve_cm_referents_time_ms = 0.0;
+  _recorded_merge_pss_time_ms = 0.0;
+  _recorded_total_free_cset_time_ms = 0.0;
+  _recorded_serial_free_cset_time_ms = 0.0;
+  _cur_fast_reclaim_humongous_time_ms = 0.0;
+  _cur_fast_reclaim_humongous_register_time_ms = 0.0;
+  _cur_fast_reclaim_humongous_total = 0;
+  _cur_fast_reclaim_humongous_candidates = 0;
+  _cur_fast_reclaim_humongous_reclaimed = 0;
+  _cur_verify_before_time_ms = 0.0;
+  _cur_verify_after_time_ms = 0.0;
 
   for (int i = 0; i < GCParPhasesSentinel; i++) {
     if (_gc_par_phases[i] != NULL) {
       _gc_par_phases[i]->reset();
     }
   }
+}
+
+void G1GCPhaseTimes::note_gc_start() {
+  _gc_start_counter = os::elapsed_counter();
+  reset();
 }
 
 #define ASSERT_PHASE_UNINITIALIZED(phase) \
@@ -184,7 +221,7 @@ size_t G1GCPhaseTimes::sum_thread_work_items(GCParPhases phase) {
 }
 
 template <class T>
-void G1GCPhaseTimes::details(T* phase, const char* indent) {
+void G1GCPhaseTimes::details(T* phase, const char* indent) const {
   Log(gc, phases, task) log;
   if (log.is_level(LogLevel::Trace)) {
     outputStream* trace_out = log.trace_stream();
@@ -193,7 +230,7 @@ void G1GCPhaseTimes::details(T* phase, const char* indent) {
   }
 }
 
-void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent, outputStream* out, bool print_sum) {
+void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent, outputStream* out, bool print_sum) const {
   out->print("%s", Indents[indent]);
   phase->print_summary_on(out, print_sum);
   details(phase, Indents[indent]);
@@ -206,7 +243,7 @@ void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent, outp
   }
 }
 
-void G1GCPhaseTimes::debug_phase(WorkerDataArray<double>* phase) {
+void G1GCPhaseTimes::debug_phase(WorkerDataArray<double>* phase) const {
   Log(gc, phases) log;
   if (log.is_level(LogLevel::Debug)) {
     ResourceMark rm;
@@ -214,7 +251,7 @@ void G1GCPhaseTimes::debug_phase(WorkerDataArray<double>* phase) {
   }
 }
 
-void G1GCPhaseTimes::trace_phase(WorkerDataArray<double>* phase, bool print_sum) {
+void G1GCPhaseTimes::trace_phase(WorkerDataArray<double>* phase, bool print_sum) const {
   Log(gc, phases) log;
   if (log.is_level(LogLevel::Trace)) {
     ResourceMark rm;
@@ -222,37 +259,50 @@ void G1GCPhaseTimes::trace_phase(WorkerDataArray<double>* phase, bool print_sum)
   }
 }
 
-#define PHASE_DOUBLE_FORMAT "%s%s: %.1lfms"
-#define PHASE_SIZE_FORMAT "%s%s: " SIZE_FORMAT
+#define TIME_FORMAT "%.1lfms"
 
-#define info_line(str, value) \
-  log_info(gc, phases)(PHASE_DOUBLE_FORMAT, Indents[1], str, value);
+void G1GCPhaseTimes::info_time(const char* name, double value) const {
+  log_info(gc, phases)("%s%s: " TIME_FORMAT, Indents[1], name, value);
+}
 
-#define debug_line(str, value) \
-  log_debug(gc, phases)(PHASE_DOUBLE_FORMAT, Indents[2], str, value);
+void G1GCPhaseTimes::debug_time(const char* name, double value) const {
+  log_debug(gc, phases)("%s%s: " TIME_FORMAT, Indents[2], name, value);
+}
 
-#define trace_line(str, value) \
-  log_trace(gc, phases)(PHASE_DOUBLE_FORMAT, Indents[3], str, value);
+void G1GCPhaseTimes::trace_time(const char* name, double value) const {
+  log_trace(gc, phases)("%s%s: " TIME_FORMAT, Indents[3], name, value);
+}
 
-#define trace_line_sz(str, value) \
-  log_trace(gc, phases)(PHASE_SIZE_FORMAT, Indents[3], str, value);
+void G1GCPhaseTimes::trace_count(const char* name, size_t value) const {
+  log_trace(gc, phases)("%s%s: " SIZE_FORMAT, Indents[3], name, value);
+}
 
-#define trace_line_ms(str, value) \
-  log_trace(gc, phases)(PHASE_SIZE_FORMAT, Indents[3], str, value);
+double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
+  const double sum_ms = _root_region_scan_wait_time_ms +
+                        _recorded_young_cset_choice_time_ms +
+                        _recorded_non_young_cset_choice_time_ms +
+                        _cur_fast_reclaim_humongous_register_time_ms;
 
-#define info_line_and_account(str, value) \
-  info_line(str, value);                  \
-  accounted_time_ms += value;
+  info_time("Pre Evacuate Collection Set", sum_ms);
 
-void G1GCPhaseTimes::print() {
-  note_gc_end();
-
-  double accounted_time_ms = _external_accounted_time_ms;
   if (_root_region_scan_wait_time_ms > 0.0) {
-    info_line_and_account("Root Region Scan Waiting", _root_region_scan_wait_time_ms);
+    debug_time("Root Region Scan Waiting", _root_region_scan_wait_time_ms);
+  }
+  debug_time("Choose Collection Set", (_recorded_young_cset_choice_time_ms + _recorded_non_young_cset_choice_time_ms));
+  if (G1EagerReclaimHumongousObjects) {
+    debug_time("Humongous Register", _cur_fast_reclaim_humongous_register_time_ms);
+    trace_count("Humongous Total", _cur_fast_reclaim_humongous_total);
+    trace_count("Humongous Candidate", _cur_fast_reclaim_humongous_candidates);
   }
 
-  info_line_and_account("Evacuate Collection Set", _cur_collection_par_time_ms);
+  return sum_ms;
+}
+
+double G1GCPhaseTimes::print_evacuate_collection_set() const {
+  const double sum_ms = _cur_collection_par_time_ms;
+
+  info_time("Evacuate Collection Set", sum_ms);
+
   trace_phase(_gc_par_phases[GCWorkerStart], false);
   debug_phase(_gc_par_phases[ExtRootScan]);
   for (int i = ThreadRoots; i <= SATBFiltering; i++) {
@@ -264,63 +314,107 @@ void G1GCPhaseTimes::print() {
   }
   debug_phase(_gc_par_phases[ScanRS]);
   debug_phase(_gc_par_phases[CodeRoots]);
+#if INCLUDE_AOT
+  debug_phase(_gc_par_phases[AOTCodeRoots]);
+#endif
   debug_phase(_gc_par_phases[ObjCopy]);
   debug_phase(_gc_par_phases[Termination]);
   debug_phase(_gc_par_phases[Other]);
   debug_phase(_gc_par_phases[GCWorkerTotal]);
   trace_phase(_gc_par_phases[GCWorkerEnd], false);
 
-  info_line_and_account("Code Roots", _cur_collection_code_root_fixup_time_ms + _cur_strong_code_root_purge_time_ms);
-  debug_line("Code Roots Fixup", _cur_collection_code_root_fixup_time_ms);
-  debug_line("Code Roots Purge", _cur_strong_code_root_purge_time_ms);
+  return sum_ms;
+}
+
+double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
+  const double evac_fail_handling = _cur_evac_fail_recalc_used +
+                                    _cur_evac_fail_remove_self_forwards +
+                                    _cur_evac_fail_restore_remsets;
+  const double sum_ms = evac_fail_handling +
+                        _cur_collection_code_root_fixup_time_ms +
+                        _recorded_preserve_cm_referents_time_ms +
+                        _cur_ref_proc_time_ms +
+                        _cur_ref_enq_time_ms +
+                        _cur_clear_ct_time_ms +
+                        _recorded_merge_pss_time_ms +
+                        _cur_strong_code_root_purge_time_ms +
+                        _recorded_redirty_logged_cards_time_ms +
+                        _recorded_clear_claimed_marks_time_ms +
+                        _recorded_total_free_cset_time_ms +
+                        _cur_fast_reclaim_humongous_time_ms +
+                        _cur_expand_heap_time_ms +
+                        _cur_string_dedup_fixup_time_ms;
+
+  info_time("Post Evacuate Collection Set", sum_ms);
+
+  debug_time("Code Roots Fixup", _cur_collection_code_root_fixup_time_ms);
+
+  debug_time("Preserve CM Refs", _recorded_preserve_cm_referents_time_ms);
+  trace_phase(_gc_par_phases[PreserveCMReferents]);
+
+  debug_time("Reference Processing", _cur_ref_proc_time_ms);
 
   if (G1StringDedup::is_enabled()) {
-    info_line_and_account("String Dedup Fixup", _cur_string_dedup_fixup_time_ms);
+    debug_time("String Dedup Fixup", _cur_string_dedup_fixup_time_ms);
     debug_phase(_gc_par_phases[StringDedupQueueFixup]);
     debug_phase(_gc_par_phases[StringDedupTableFixup]);
   }
-  info_line_and_account("Clear Card Table", _cur_clear_ct_time_ms);
-  info_line_and_account("Expand Heap After Collection", _cur_expand_heap_time_ms);
 
-  info_line_and_account("Free Collection Set", _recorded_total_free_cset_time_ms);
-  debug_line("Free Collection Set Serial", _recorded_serial_free_cset_time_ms);
-  debug_phase(_gc_par_phases[YoungFreeCSet]);
-  debug_phase(_gc_par_phases[NonYoungFreeCSet]);
+  debug_time("Clear Card Table", _cur_clear_ct_time_ms);
 
-  info_line_and_account("Merge Per-Thread State", _recorded_merge_pss_time_ms);
-
-  info_line("Other", _gc_pause_time_ms - accounted_time_ms);
-  if (_cur_verify_before_time_ms > 0.0) {
-    debug_line("Verify Before", _cur_verify_before_time_ms);
-  }
   if (G1CollectedHeap::heap()->evacuation_failed()) {
-    double evac_fail_handling = _cur_evac_fail_recalc_used + _cur_evac_fail_remove_self_forwards +
-      _cur_evac_fail_restore_remsets;
-    debug_line("Evacuation Failure", evac_fail_handling);
-    trace_line("Recalculate Used", _cur_evac_fail_recalc_used);
-    trace_line("Remove Self Forwards",_cur_evac_fail_remove_self_forwards);
-    trace_line("Restore RemSet", _cur_evac_fail_restore_remsets);
+    debug_time("Evacuation Failure", evac_fail_handling);
+    trace_time("Recalculate Used", _cur_evac_fail_recalc_used);
+    trace_time("Remove Self Forwards",_cur_evac_fail_remove_self_forwards);
+    trace_time("Restore RemSet", _cur_evac_fail_restore_remsets);
   }
-  debug_line("Choose CSet", (_recorded_young_cset_choice_time_ms + _recorded_non_young_cset_choice_time_ms));
-  debug_line("Preserve CM Refs", _recorded_preserve_cm_referents_time_ms);
-  trace_phase(_gc_par_phases[PreserveCMReferents]);
-  debug_line("Reference Processing", _cur_ref_proc_time_ms);
-  debug_line("Reference Enqueuing", _cur_ref_enq_time_ms);
-  debug_line("Redirty Cards", _recorded_redirty_logged_cards_time_ms);
+
+  debug_time("Reference Enqueuing", _cur_ref_enq_time_ms);
+
+  debug_time("Merge Per-Thread State", _recorded_merge_pss_time_ms);
+  debug_time("Code Roots Purge", _cur_strong_code_root_purge_time_ms);
+
+  debug_time("Redirty Cards", _recorded_redirty_logged_cards_time_ms);
   if (_recorded_clear_claimed_marks_time_ms > 0.0) {
-    debug_line("Clear Claimed Marks", _recorded_clear_claimed_marks_time_ms);
+    debug_time("Clear Claimed Marks", _recorded_clear_claimed_marks_time_ms);
   }
 
   trace_phase(_gc_par_phases[RedirtyCards]);
+
+  debug_time("Free Collection Set", _recorded_total_free_cset_time_ms);
+  trace_time("Free Collection Set Serial", _recorded_serial_free_cset_time_ms);
+  trace_phase(_gc_par_phases[YoungFreeCSet]);
+  trace_phase(_gc_par_phases[NonYoungFreeCSet]);
+
   if (G1EagerReclaimHumongousObjects) {
-    debug_line("Humongous Register", _cur_fast_reclaim_humongous_register_time_ms);
-    trace_line_sz("Humongous Total", _cur_fast_reclaim_humongous_total);
-    trace_line_sz("Humongous Candidate", _cur_fast_reclaim_humongous_candidates);
-    debug_line("Humongous Reclaim", _cur_fast_reclaim_humongous_time_ms);
-    trace_line_sz("Humongous Reclaimed", _cur_fast_reclaim_humongous_reclaimed);
+    debug_time("Humongous Reclaim", _cur_fast_reclaim_humongous_time_ms);
+    trace_count("Humongous Reclaimed", _cur_fast_reclaim_humongous_reclaimed);
   }
+  debug_time("Expand Heap After Collection", _cur_expand_heap_time_ms);
+
+
+  return sum_ms;
+}
+
+void G1GCPhaseTimes::print_other(double accounted_ms) const {
+  info_time("Other", _gc_pause_time_ms - accounted_ms);
+}
+
+void G1GCPhaseTimes::print() {
+  note_gc_end();
+
+  if (_cur_verify_before_time_ms > 0.0) {
+    debug_time("Verify Before", _cur_verify_before_time_ms);
+  }
+
+  double accounted_ms = 0.0;
+  accounted_ms += print_pre_evacuate_collection_set();
+  accounted_ms += print_evacuate_collection_set();
+  accounted_ms += print_post_evacuate_collection_set();
+  print_other(accounted_ms);
+
   if (_cur_verify_after_time_ms > 0.0) {
-    debug_line("Verify After", _cur_verify_after_time_ms);
+    debug_time("Verify After", _cur_verify_after_time_ms);
   }
 }
 
