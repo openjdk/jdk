@@ -28,7 +28,7 @@
   *
   * @deprecated This module is deprecated.
   */
-@Deprecated
+@Deprecated(forRemoval=true)
 module module1 {
     requires module2;
 
