@@ -689,6 +689,7 @@ else
 
   jdk-image: jmods zip-source demos samples release-file
   jre-image: jmods release-file
+  symbols-image: $(LIBS_TARGETS) $(LAUNCHER_TARGETS)
 
   profiles: jmods release-file
 
