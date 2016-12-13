@@ -92,6 +92,7 @@ JLINK_TOOL := $(JLINK) -J-Djlink.debug=true \
     --endian $(OPENJDK_BUILD_CPU_ENDIAN) \
     --release-info $(BASE_RELEASE_FILE) \
     --order-resources=$(call CommaList, $(JLINK_ORDER_RESOURCES)) \
+    --dedup-legal-notices=error-if-not-same-content \
     $(JLINK_JLI_CLASSES) \
     #
 
@@ -287,8 +288,6 @@ endif # Windows
 ################################################################################
 # doc files
 
-JRE_DOC_FILES ?= LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
-JDK_DOC_FILES ?= LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
 JRE_DOC_LOCATION ?= $(JDK_TOPDIR)
 JDK_DOC_LOCATION ?= $(JDK_TOPDIR)
 
