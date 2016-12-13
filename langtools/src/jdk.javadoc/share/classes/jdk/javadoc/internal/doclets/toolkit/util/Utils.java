@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -74,10 +75,12 @@ import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
+import com.sun.tools.javac.model.JavacTypes;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentDuo;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.WorkArounds;
+import jdk.javadoc.internal.tool.DocEnvImpl;
 
 import static javax.lang.model.element.ElementKind.*;
 import static javax.lang.model.element.Modifier.*;
@@ -1474,6 +1477,30 @@ public class Utils {
             return configuration.workArounds.isDeprecated0(e);
         }
         return elementUtils.isDeprecated(e);
+    }
+
+    /**
+     * Return true if the given Element is deprecated for removal.
+     *
+     * @param e the Element to check.
+     * @return true if the given Element is deprecated for removal.
+     */
+    public boolean isDeprecatedForRemoval(Element e) {
+        List<? extends AnnotationMirror> annotationList = e.getAnnotationMirrors();
+        JavacTypes jctypes = ((DocEnvImpl) configuration.docEnv).toolEnv.typeutils;
+        for (AnnotationMirror anno : annotationList) {
+            if (jctypes.isSameType(anno.getAnnotationType().asElement().asType(), getDeprecatedType())) {
+                Map<? extends ExecutableElement, ? extends AnnotationValue> pairs = anno.getElementValues();
+                if (!pairs.isEmpty()) {
+                    for (ExecutableElement element : pairs.keySet()) {
+                        if (element.getSimpleName().contentEquals("forRemoval")) {
+                            return Boolean.parseBoolean((pairs.get(element)).toString());
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     /**

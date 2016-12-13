@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363 8168766 8168688
+ * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363 8168766 8168688 8162674
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -253,7 +253,8 @@ public class TestModules extends JavadocTester {
     void checkHtml5Description(boolean found) {
         checkOutput("module1-summary.html", found,
                 "<section role=\"region\">\n"
-                + "<div class=\"deprecatedContent\"><span class=\"deprecatedLabel\">Deprecated.</span>\n"
+                + "<div class=\"deprecatedContent\"><span class=\"deprecatedLabel\">Deprecated, for removal:"
+                + " This API element is subject to removal in a future version. </span>\n"
                 + "<div class=\"block\"><span class=\"deprecationComment\">This module is deprecated.</span></div>\n"
                 + "</div>\n"
                 + "<!-- ============ MODULE DESCRIPTION =========== -->\n"
@@ -597,11 +598,13 @@ public class TestModules extends JavadocTester {
 
     void checkModuleDeprecation(boolean found) {
         checkOutput("module1-summary.html", found,
-                "<div class=\"deprecatedContent\"><span class=\"deprecatedLabel\">Deprecated.</span>\n"
+                "<div class=\"deprecatedContent\"><span class=\"deprecatedLabel\">Deprecated, for removal:"
+                + " This API element is subject to removal in a future version. </span>\n"
                 + "<div class=\"block\"><span class=\"deprecationComment\">This module is deprecated.</span></div>\n"
                 + "</div>");
         checkOutput("deprecated-list.html", found,
                 "<ul>\n"
+                + "<li><a href=\"#forRemoval\">Deprecated For Removal</a></li>\n"
                 + "<li><a href=\"#module\">Deprecated Modules</a></li>\n"
                 + "</ul>",
                 "<tr class=\"altColor\">\n"

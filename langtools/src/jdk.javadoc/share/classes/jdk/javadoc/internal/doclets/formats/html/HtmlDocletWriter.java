@@ -412,7 +412,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 HtmlTree tdClassDescription = new HtmlTree(HtmlTag.TD);
                 tdClassDescription.addStyle(HtmlStyle.colLast);
                 if (utils.isDeprecated(te)) {
-                    tdClassDescription.addContent(contents.deprecatedLabel);
+                    tdClassDescription.addContent(getDeprecatedPhrase(te));
                     List<? extends DocTree> tags = utils.getDeprecatedTrees(te);
                     if (!tags.isEmpty()) {
                         addSummaryDeprecatedComment(te, tags.get(0), tdClassDescription);
@@ -1614,6 +1614,18 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> description = ch.getDescription(configuration, tag);
         addCommentTags(element, tag, description, false, false, htmltree);
+    }
+
+    /**
+     * Get the deprecated phrase as content.
+     *
+     * @param e the Element for which the inline deprecated comment will be added
+     * @return a content tree for the deprecated phrase.
+     */
+    public Content getDeprecatedPhrase(Element e) {
+        return (utils.isDeprecatedForRemoval(e))
+                ? contents.deprecatedForRemovalPhrase
+                : contents.deprecatedPhrase;
     }
 
     /**
