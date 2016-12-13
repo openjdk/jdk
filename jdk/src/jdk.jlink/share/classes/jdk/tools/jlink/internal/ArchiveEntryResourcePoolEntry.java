@@ -66,17 +66,19 @@ final class ArchiveEntryResourcePoolEntry extends AbstractResourcePoolEntry {
     private static ResourcePoolEntry.Type getImageFileType(Archive.Entry entry) {
         switch(entry.type()) {
             case CLASS_OR_RESOURCE:
-                return ResourcePoolEntry.Type.CLASS_OR_RESOURCE;
+                return Type.CLASS_OR_RESOURCE;
             case CONFIG:
-                return ResourcePoolEntry.Type.CONFIG;
-            case NATIVE_CMD:
-                return ResourcePoolEntry.Type.NATIVE_CMD;
-            case NATIVE_LIB:
-                return ResourcePoolEntry.Type.NATIVE_LIB;
+                return Type.CONFIG;
             case HEADER_FILE:
-                return ResourcePoolEntry.Type.HEADER_FILE;
+                return Type.HEADER_FILE;
+            case LEGAL_NOTICE:
+                return Type.LEGAL_NOTICE;
             case MAN_PAGE:
-                return ResourcePoolEntry.Type.MAN_PAGE;
+                return Type.MAN_PAGE;
+            case NATIVE_CMD:
+                return Type.NATIVE_CMD;
+            case NATIVE_LIB:
+                return Type.NATIVE_LIB;
             default:
                 return ResourcePoolEntry.Type.OTHER;
         }
