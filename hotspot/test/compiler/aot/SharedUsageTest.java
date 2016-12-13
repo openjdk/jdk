@@ -30,7 +30,9 @@
  *        compiler.aot.AotCompiler
  * @run main compiler.aot.AotCompiler -libname libSharedUsageTest.so
  *      -class compiler.aot.SharedUsageTest
+ *      -extraopt -XX:-UseCompressedOops
  * @run main/othervm -XX:+UseAOT -XX:AOTLibrary=./libSharedUsageTest.so
+ *      -XX:-UseCompressedOops
  *      -Dcompiler.aot.SharedUsageTest.parent=true
  *      compiler.aot.SharedUsageTest
  * @summary check if .so can be successfully shared with 2 java processes
