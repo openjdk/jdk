@@ -54,6 +54,17 @@ void ModuleEntry::set_location(Symbol* location) {
   }
 }
 
+bool ModuleEntry::is_non_jdk_module() {
+  ResourceMark rm;
+  if (location() != NULL) {
+    const char* loc = location()->as_C_string();
+    if (strncmp(loc, "jrt:/java.", 10) != 0 && strncmp(loc, "jrt:/jdk.", 9) != 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void ModuleEntry::set_version(Symbol* version) {
   if (_version != NULL) {
     // _version symbol's refcounts are managed by ModuleEntry,

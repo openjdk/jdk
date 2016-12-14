@@ -460,9 +460,11 @@ void CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
 }
 
 
-// is_optimized: Compiler has generated an optimized call (i.e., no inline
-// cache) static_bound: The call can be static bound (i.e, no need to use
-// inline cache)
+// is_optimized: Compiler has generated an optimized call (i.e. fixed, no inline cache)
+// static_bound: The call can be static bound. If it isn't also optimized, the property
+// wasn't provable at time of compilation. An optimized call will have any necessary
+// null check, while a static_bound won't. A static_bound (but not optimized) must
+// therefore use the unverified entry point.
 void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
                                            KlassHandle receiver_klass,
                                            bool is_optimized,
@@ -475,7 +477,23 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
   if (method_code != NULL && method_code->is_in_use()) {
     assert(method_code->is_compiled(), "must be compiled");
     // Call to compiled code
-    if (static_bound || is_optimized) {
+    //
+    // Note: the following problem exists with Compiler1:
+    //   - at compile time we may or may not know if the destination is final
+    //   - if we know that the destination is final (is_optimized), we will emit
+    //     an optimized virtual call (no inline cache), and need a Method* to make
+    //     a call to the interpreter
+    //   - if we don't know if the destination is final, we emit a standard
+    //     virtual call, and use CompiledICHolder to call interpreted code
+    //     (no static call stub has been generated)
+    //   - In the case that we here notice the call is static bound we
+    //     convert the call into what looks to be an optimized virtual call,
+    //     but we must use the unverified entry point (since there will be no
+    //     null check on a call when the target isn't loaded).
+    //     This causes problems when verifying the IC because
+    //     it looks vanilla but is optimized. Code in is_call_to_interpreted
+    //     is aware of this and weakens its asserts.
+    if (is_optimized) {
       entry      = method_code->verified_entry_point();
     } else {
       entry      = method_code->entry_point();
@@ -485,38 +503,6 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
     // Call to compiled code
     info.set_compiled_entry(entry, (static_bound || is_optimized) ? NULL : receiver_klass(), is_optimized);
   } else {
-    // Note: the following problem exists with Compiler1:
-    //   - at compile time we may or may not know if the destination is final
-    //   - if we know that the destination is final, we will emit an optimized
-    //     virtual call (no inline cache), and need a Method* to make a call
-    //     to the interpreter
-    //   - if we do not know if the destination is final, we emit a standard
-    //     virtual call, and use CompiledICHolder to call interpreted code
-    //     (no static call stub has been generated)
-    //     However in that case we will now notice it is static_bound
-    //     and convert the call into what looks to be an optimized
-    //     virtual call. This causes problems in verifying the IC because
-    //     it look vanilla but is optimized. Code in is_call_to_interpreted
-    //     is aware of this and weakens its asserts.
-
-    // static_bound should imply is_optimized -- otherwise we have a
-    // performance bug (statically-bindable method is called via
-    // dynamically-dispatched call note: the reverse implication isn't
-    // necessarily true -- the call may have been optimized based on compiler
-    // analysis (static_bound is only based on "final" etc.)
-#ifdef COMPILER2
-#ifdef TIERED
-#if defined(ASSERT)
-    // can't check the assert because we don't have the CompiledIC with which to
-    // find the address if the call instruction.
-    //
-    // CodeBlob* cb = find_blob_unsafe(instruction_address());
-    // assert(cb->is_compiled_by_c1() || !static_bound || is_optimized, "static_bound should imply is_optimized");
-#endif // ASSERT
-#else
-    assert(!static_bound || is_optimized, "static_bound should imply is_optimized");
-#endif // TIERED
-#endif // COMPILER2
     if (is_optimized) {
       // Use stub entry
       info.set_interpreter_entry(method()->get_c2i_entry(), method());

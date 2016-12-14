@@ -178,44 +178,37 @@ G1SATBCardTableLoggingModRefBS::write_ref_field_work(void* field,
 }
 
 void
-G1SATBCardTableLoggingModRefBS::invalidate(MemRegion mr, bool whole_heap) {
+G1SATBCardTableLoggingModRefBS::invalidate(MemRegion mr) {
   volatile jbyte* byte = byte_for(mr.start());
   jbyte* last_byte = byte_for(mr.last());
   Thread* thr = Thread::current();
-  if (whole_heap) {
-    while (byte <= last_byte) {
-      *byte = dirty_card;
-      byte++;
-    }
-  } else {
     // skip all consecutive young cards
-    for (; byte <= last_byte && *byte == g1_young_gen; byte++);
+  for (; byte <= last_byte && *byte == g1_young_gen; byte++);
 
-    if (byte <= last_byte) {
-      OrderAccess::storeload();
-      // Enqueue if necessary.
-      if (thr->is_Java_thread()) {
-        JavaThread* jt = (JavaThread*)thr;
-        for (; byte <= last_byte; byte++) {
-          if (*byte == g1_young_gen) {
-            continue;
-          }
-          if (*byte != dirty_card) {
-            *byte = dirty_card;
-            jt->dirty_card_queue().enqueue(byte);
-          }
+  if (byte <= last_byte) {
+    OrderAccess::storeload();
+    // Enqueue if necessary.
+    if (thr->is_Java_thread()) {
+      JavaThread* jt = (JavaThread*)thr;
+      for (; byte <= last_byte; byte++) {
+        if (*byte == g1_young_gen) {
+          continue;
         }
-      } else {
-        MutexLockerEx x(Shared_DirtyCardQ_lock,
-                        Mutex::_no_safepoint_check_flag);
-        for (; byte <= last_byte; byte++) {
-          if (*byte == g1_young_gen) {
-            continue;
-          }
-          if (*byte != dirty_card) {
-            *byte = dirty_card;
-            _dcqs.shared_dirty_card_queue()->enqueue(byte);
-          }
+        if (*byte != dirty_card) {
+          *byte = dirty_card;
+          jt->dirty_card_queue().enqueue(byte);
+        }
+      }
+    } else {
+      MutexLockerEx x(Shared_DirtyCardQ_lock,
+                      Mutex::_no_safepoint_check_flag);
+      for (; byte <= last_byte; byte++) {
+        if (*byte == g1_young_gen) {
+          continue;
+        }
+        if (*byte != dirty_card) {
+          *byte = dirty_card;
+          _dcqs.shared_dirty_card_queue()->enqueue(byte);
         }
       }
     }

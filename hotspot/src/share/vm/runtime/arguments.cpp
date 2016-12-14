@@ -378,6 +378,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "AutoGCSelectPauseMillis",      JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "UseAutoGCSelectPolicy",        JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "UseParNewGC",                  JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
+  { "ExplicitGCInvokesConcurrentAndUnloadsClasses", JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "ConvertSleepToYield",          JDK_Version::jdk(9), JDK_Version::jdk(10),     JDK_Version::jdk(11) },
   { "ConvertYieldToSleep",          JDK_Version::jdk(9), JDK_Version::jdk(10),     JDK_Version::jdk(11) },
 
@@ -1318,22 +1319,31 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
 #if INCLUDE_CDS
 void Arguments::check_unsupported_dumping_properties() {
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
-  const char* unsupported_properties[5] = { "jdk.module.main",
+  const char* unsupported_properties[] = { "jdk.module.main",
+                                           "jdk.module.limitmods",
                                            "jdk.module.path",
                                            "jdk.module.upgrade.path",
-                                           "jdk.module.addmods.0",
-                                           "jdk.module.limitmods" };
-  const char* unsupported_options[5] = { "-m",
+                                           "jdk.module.addmods.0" };
+  const char* unsupported_options[] = { "-m",
+                                        "--limit-modules",
                                         "--module-path",
                                         "--upgrade-module-path",
-                                        "--add-modules",
-                                        "--limit-modules" };
+                                        "--add-modules" };
+  assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
+  // If a vm option is found in the unsupported_options array with index less than the warning_idx,
+  // vm will exit with an error message. Otherwise, it will result in a warning message.
+  uint warning_idx = 2;
   SystemProperty* sp = system_properties();
   while (sp != NULL) {
-    for (int i = 0; i < 5; i++) {
+    for (uint i = 0; i < ARRAY_SIZE(unsupported_properties); i++) {
       if (strcmp(sp->key(), unsupported_properties[i]) == 0) {
+        if (i < warning_idx) {
           vm_exit_during_initialization(
             "Cannot use the following option when dumping the shared archive", unsupported_options[i]);
+        } else {
+          warning(
+            "the %s option is ignored when dumping the shared archive", unsupported_options[i]);
+        }
       }
     }
     sp = sp->next();

@@ -975,7 +975,7 @@ public class InstanceKlass extends Klass {
     while (l <= h) {
       int mid = (l + h) >> 1;
       Method m = methods.at(mid);
-      int res = m.getName().fastCompare(name);
+      long res = m.getName().fastCompare(name);
       if (res == 0) {
         // found matching name; do linear search to find matching signature
         // first, quick check for common case

@@ -1075,8 +1075,7 @@ void LIR_Assembler::reg2mem(LIR_Opr from, LIR_Opr dest_opr, BasicType type,
       {
         if (UseCompressedOops && !wide) {
           Register compressed_src = Z_R14;
-          __ z_lgr(compressed_src, from->as_register());
-          __ encode_heap_oop(compressed_src);
+          __ oop_encoder(compressed_src, from->as_register(), true, (disp_reg != Z_R1) ? Z_R1 : Z_R0, -1, true);
           offset = code_offset();
           if (short_disp) {
             __ z_st(compressed_src,  disp_value, disp_reg, dest);
