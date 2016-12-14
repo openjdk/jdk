@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,35 +27,30 @@ include LibCommon.gmk
 
 ################################################################################
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK, \
-    LIBRARY := unpack, \
+LIBJ2PKCS11_SRC := $(JDK_TOPDIR)/src/jdk.crypto.token/share/native/libj2pkcs11 \
+    $(JDK_TOPDIR)/src/jdk.crypto.token/$(OPENJDK_TARGET_OS_TYPE)/native/libj2pkcs11
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBJ2PKCS11, \
+    LIBRARY := j2pkcs11, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-    SRC := $(JDK_TOPDIR)/src/jdk.pack200/share/native/libunpack \
-        $(JDK_TOPDIR)/src/jdk.pack200/share/native/common-unpack, \
-    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
+    SRC := $(LIBJ2PKCS11_SRC), \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CXXFLAGS_JDKLIB) \
-        -DNO_ZLIB -DUNPACK_JNI -DFULL \
-        -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
-        -I$(JDK_TOPDIR)/src/jdk.pack200/share/native/common-unpack \
-        $(LIBJAVA_HEADER_FLAGS), \
-    CFLAGS_release := -DPRODUCT, \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libunpack/mapfile-vers, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
+    CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBJ2PKCS11_SRC)) \
+        $(LIBJAVA_HEADER_FLAGS) \
+        -I$(SUPPORT_OUTPUTDIR)/headers/jdk.crypto.token, \
+    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libj2pkcs11/mapfile-vers, \
+    LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_windows := -map:$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/unpack.map -debug, \
-    LIBS_unix := -ljvm $(LIBCXX) -ljava -lc, \
-    LIBS_windows := jvm.lib $(WIN_JAVA_LIB), \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libunpack, \
+    LIBS_unix := $(LIBDL), \
+    LIBS_solaris := -lc, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=unpack.dll" \
-        -D "JDK_INTERNAL_NAME=unpack" \
+        -D "JDK_FNAME=j2pkcs11.dll" \
+        -D "JDK_INTERNAL_NAME=j2pkcs11" \
         -D "JDK_FTYPE=0x2L", \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libj2pkcs11, \
 ))
 
-$(BUILD_LIBUNPACK): $(call FindLib, java.base, java)
-
-TARGETS += $(BUILD_LIBUNPACK)
+TARGETS += $(BUILD_LIBJ2PKCS11)
 
 ################################################################################

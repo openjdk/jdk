@@ -27,7 +27,7 @@
  * @summary Basic known-answer-test for Hmac algorithms
  * @author Andreas Sterbenz
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm MacKAT
  * @run main/othervm MacKAT sm
  */

@@ -218,7 +218,7 @@ module java.base {
         java.security.jgss;
     exports sun.nio.ch to
         java.management,
-        jdk.crypto.pkcs11,
+        jdk.crypto.token,
         jdk.sctp;
     exports sun.nio.cs to
         java.desktop,
@@ -242,14 +242,14 @@ module java.base {
         java.desktop,
         java.security.jgss;
     exports sun.security.internal.interfaces to
-        jdk.crypto.pkcs11;
+        jdk.crypto.token;
     exports sun.security.internal.spec to
-        jdk.crypto.pkcs11;
+        jdk.crypto.token;
     exports sun.security.jca to
         java.smartcardio,
         java.xml.crypto,
         jdk.crypto.ec,
-        jdk.crypto.pkcs11,
+        jdk.crypto.token,
         jdk.naming.dns;
     exports sun.security.pkcs to
         jdk.crypto.ec,
@@ -257,13 +257,13 @@ module java.base {
     exports sun.security.provider to
         java.rmi,
         java.security.jgss,
-        jdk.crypto.pkcs11,
+        jdk.crypto.token,
         jdk.policytool,
         jdk.security.auth;
     exports sun.security.provider.certpath to
         java.naming;
     exports sun.security.rsa to
-        jdk.crypto.pkcs11;
+        jdk.crypto.token;
     exports sun.security.ssl to
         java.security.jgss;
     exports sun.security.timestamp to
@@ -278,14 +278,14 @@ module java.base {
         java.security.sasl,
         java.smartcardio,
         jdk.crypto.ec,
-        jdk.crypto.pkcs11,
+        jdk.crypto.token,
         jdk.jartool,
         jdk.policytool,
         jdk.security.auth,
         jdk.security.jgss;
     exports sun.security.x509 to
         jdk.crypto.ec,
-        jdk.crypto.pkcs11,
+        jdk.crypto.token,
         jdk.jartool,
         jdk.security.auth;
     exports sun.text.resources to
