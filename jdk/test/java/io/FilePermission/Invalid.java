@@ -37,6 +37,9 @@ public class Invalid {
 
     public static void main(String args[]) throws Exception {
 
+        // Allmighty
+        FilePermission af = new FilePermission("<<ALL FILES>>", "read");
+
         // Normal
         FilePermission fp = new FilePermission("a", "read");
 
@@ -56,6 +59,9 @@ public class Invalid {
 
         // Invalid implies itself
         Asserts.assertTrue(fp1.implies(fp1));
+
+        // <<ALL FILES>> implies invalid
+        Asserts.assertTrue(af.implies(fp1));
 
         // and not implies or implied by anything else, including other
         // invalid ones

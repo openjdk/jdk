@@ -62,7 +62,7 @@ public class CheckSecurityProvider {
         if (os.equals("SunOS")) {
             layer.findModule("jdk.crypto.ucrypto")
                 .ifPresent(m -> expected.add("com.oracle.security.ucrypto.UcryptoProvider"));
-            layer.findModule("jdk.crypto.pkcs11")
+            layer.findModule("jdk.crypto.token")
                 .ifPresent(m -> expected.add("sun.security.pkcs11.SunPKCS11"));
         }
         expected.add("sun.security.provider.Sun");
@@ -91,7 +91,7 @@ public class CheckSecurityProvider {
             expected.add("apple.security.AppleProvider");
         }
         if (!os.equals("SunOS")) {
-            layer.findModule("jdk.crypto.pkcs11")
+            layer.findModule("jdk.crypto.token")
                 .ifPresent(m -> expected.add("sun.security.pkcs11.SunPKCS11"));
         }
 

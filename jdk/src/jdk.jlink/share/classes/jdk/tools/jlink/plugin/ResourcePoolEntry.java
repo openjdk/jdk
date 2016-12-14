@@ -52,7 +52,10 @@ public interface ResourcePoolEntry {
      * <li>
      * <ul>CLASS_OR_RESOURCE: A java class or resource file.</ul>
      * <ul>CONFIG: A configuration file.</ul>
-     * <ul>NATIVE_CMD: A native process launcher.</ul>
+     * <ul>HEADER_FILE: A header file.</ul>
+     * <ul>LEGAL_NOTICE: A legal notice.</ul>
+     * <ul>MAN_PAGE: A man page.</ul>
+     * <ul>NATIVE_CMD: A native executable launcher.</ul>
      * <ul>NATIVE_LIB: A native library.</ul>
      * <ul>TOP: A top-level file in the jdk run-time image directory.</ul>
      * <ul>OTHER: Other kind of file.</ul>
@@ -61,10 +64,11 @@ public interface ResourcePoolEntry {
     public enum Type {
         CLASS_OR_RESOURCE,
         CONFIG,
+        HEADER_FILE,
+        LEGAL_NOTICE,
+        MAN_PAGE,
         NATIVE_CMD,
         NATIVE_LIB,
-        HEADER_FILE,
-        MAN_PAGE,
         TOP,
         OTHER
     }
@@ -103,6 +107,17 @@ public interface ResourcePoolEntry {
      * @return The resource content as an InputStream.
      */
     public InputStream content();
+
+    /**
+     * Returns a target linked with this entry.
+     *
+     * @implSpec The default implementation returns {@code null}.
+     *
+     * @return the target ResourcePoolEntry linked with this entry.
+     */
+    public default ResourcePoolEntry linkedTarget() {
+        return null;
+    }
 
     /**
      * The ResourcePoolEntry content as an array of bytes.
@@ -198,5 +213,22 @@ public interface ResourcePoolEntry {
      */
     public static ResourcePoolEntry create(String path, Path file) {
         return create(path, Type.CLASS_OR_RESOURCE, file);
+    }
+
+    /**
+     * Create a ResourcePoolEntry for a resource the given path and type.
+     * If the target platform supports symbolic links, it will be created
+     * as a symbolic link to the given target entry; otherwise, the
+     * ResourcePoolEntry contains the relative path to the target entry.
+     *
+     * @param path The resource path.
+     * @param type The ResourcePoolEntry type.
+     * @param target The target entry
+     * @return A new ResourcePoolEntry
+     */
+    public static ResourcePoolEntry createSymLink(String path,
+                                                  ResourcePoolEntry.Type type,
+                                                  ResourcePoolEntry target) {
+        return ResourcePoolEntryFactory.createSymbolicLink(path, type, target);
     }
 }

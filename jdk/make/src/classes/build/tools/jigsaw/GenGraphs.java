@@ -35,9 +35,11 @@ import java.lang.module.ResolvedModule;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -112,6 +114,7 @@ public class GenGraphs {
     private static final String REQUIRES_BASE = "color=\"" + GRAY + "\"";
 
     private static final Map<String,Integer> weights = new HashMap<>();
+    private static final List<Set<String>> ranks = new ArrayList<>();
 
     private static void weight(String s, String t, int w) {
         weights.put(s + ":" + t, w);
@@ -128,23 +131,37 @@ public class GenGraphs {
 
     static {
         int h = 1000;
-        weight("java.se", "java.compact3", h * 10);
-        weight("jdk.compact3", "java.compact3", h * 10);
-        weight("java.compact3", "java.compact2", h * 10);
-        weight("java.compact2", "java.compact1", h * 10);
-        weight("java.compact1", "java.logging", h * 10);
-        weight("java.logging", "java.base", h * 10);
+        weight("java.se", "java.sql.rowset", h * 10);
+        weight("java.sql.rowset", "java.sql", h * 10);
+        weight("java.sql", "java.xml", h * 10);
+        weight("java.xml", "java.base", h * 10);
+
+        ranks.add(Set.of("java.logging", "java.scripting", "java.xml"));
+        ranks.add(Set.of("java.sql"));
+        ranks.add(Set.of("java.compiler", "java.instrument"));
+        ranks.add(Set.of("java.desktop", "java.management"));
+        ranks.add(Set.of("java.corba", "java.xml.ws"));
+        ranks.add(Set.of("java.xml.bind", "java.annotations.common"));
+
     }
 
     private void genDotFile(Path dir, String name, Configuration cf) throws IOException {
         try (PrintStream out
                  = new PrintStream(Files.newOutputStream(dir.resolve(name + ".dot")))) {
 
-            Map<String, ModuleDescriptor> nameToModule = cf.modules().stream()
+            Map<String, ModuleDescriptor> nameToModule;
+            if (name.equals("java.se.ee")) {
+                nameToModule = cf.modules().stream()
+                    .map(ResolvedModule::reference)
+                    .map(ModuleReference::descriptor)
+                    .filter(md -> !md.name().startsWith("jdk."))
+                    .collect(Collectors.toMap(ModuleDescriptor::name, Function.identity()));
+            } else {
+                nameToModule = cf.modules().stream()
                     .map(ResolvedModule::reference)
                     .map(ModuleReference::descriptor)
                     .collect(Collectors.toMap(ModuleDescriptor::name, Function.identity()));
-
+            }
             Set<ModuleDescriptor> descriptors = new TreeSet<>(nameToModule.values());
 
             out.format("digraph \"%s\" {%n", name);
@@ -162,6 +179,17 @@ public class GenGraphs {
                 .forEach(mn -> out.format("  \"%s\" [fontcolor=\"%s\", group=%s];%n",
                                           mn, ORANGE, "java"));
             out.format("}%n");
+
+            // same ranks
+            ranks.stream()
+                .forEach(group -> out.format("{rank=same %s}%n",
+                    descriptors.stream()
+                        .map(ModuleDescriptor::name)
+                        .filter(group::contains)
+                        .map(mn -> "\"" + mn + "\"")
+                        .collect(Collectors.joining(","))
+                ));
+
             descriptors.stream()
                 .filter(jdkGroup::contains)
                 .map(ModuleDescriptor::name)
@@ -177,14 +205,17 @@ public class GenGraphs {
                         .map(d -> d.name())
                         .collect(Collectors.toSet());
 
-                graph.adjacentNodes(mn).forEach(dn -> {
-                    String attr = dn.equals("java.base") ? REQUIRES_BASE
-                            : (requiresTransitive.contains(dn) ? REEXPORTS : REQUIRES);
-                    int w = weightOf(mn, dn);
-                    if (w > 1)
-                        attr += "weight=" + w;
-                    out.format("  \"%s\" -> \"%s\" [%s];%n", mn, dn, attr);
-                });
+                graph.adjacentNodes(mn)
+                     .stream()
+                     .filter(nameToModule::containsKey)
+                     .forEach(dn -> {
+                         String attr = dn.equals("java.base") ? REQUIRES_BASE
+                                : (requiresTransitive.contains(dn) ? REEXPORTS : REQUIRES);
+                         int w = weightOf(mn, dn);
+                         if (w > 1)
+                             attr += "weight=" + w;
+                         out.format("  \"%s\" -> \"%s\" [%s];%n", mn, dn, attr);
+                     });
             });
 
             out.println("}");

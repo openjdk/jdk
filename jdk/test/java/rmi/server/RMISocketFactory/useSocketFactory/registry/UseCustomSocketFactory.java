@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class UseCustomSocketFactory {
         System.out.println("\nRegression test for bug 4148850\n");
 
         TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
-        int registryPort = TestLibrary.getUnusedRandomPort();
+        int registryPort = -1;
 
         try {
             impl = new HelloImpl();
@@ -68,9 +68,10 @@ public class UseCustomSocketFactory {
              * allow the rmiregistry to be secure.
              */
             registry = LocateRegistry.
-                createRegistry(registryPort,
+                createRegistry(0,
                                new Compress.CompressRMIClientSocketFactory(),
                                new Compress.CompressRMIServerSocketFactory());
+            registryPort = TestLibrary.getRegistryPort(registry);
             registry.rebind("/HelloServer", impl);
             checkStub(registry, "RMIServerSocket");
 
