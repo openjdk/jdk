@@ -85,7 +85,7 @@ public class StubClassesPermitted
         try {
             TestLibrary.suggestSecurityManager("java.lang.SecurityManager");
 
-            registry = TestLibrary.createRegistryOnUnusedPort();
+            registry = TestLibrary.createRegistryOnEphemeralPort();
             registryPort = TestLibrary.getRegistryPort(registry);
 
             // must run with java.lang.SecurityManager or the test
