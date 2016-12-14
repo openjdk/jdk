@@ -590,6 +590,7 @@ public:
 #endif
 
   static int patch_oop(address insn_addr, address o);
+  static int patch_narrow_klass(address insn_addr, narrowKlass n);
 
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
 

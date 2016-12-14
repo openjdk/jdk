@@ -1988,7 +1988,7 @@ public:
   experimental(uintx, WorkStealingSpinToYieldRatio, 10,                     \
           "Ratio of hard spins to calls to yield")                          \
                                                                             \
-  develop(uintx, ObjArrayMarkingStride, 512,                                \
+  develop(uintx, ObjArrayMarkingStride, 2048,                               \
           "Number of object array elements to push onto the marking stack " \
           "before pushing a continuation entry")                            \
                                                                             \

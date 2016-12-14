@@ -131,10 +131,9 @@ TEST(LogDecorations, iso8601_time) {
   time_t expected_ts = time(NULL);
 
   // Verify format
-  int y, M, d, h, m;
-  double s;
-  int read = sscanf(timestr, "%d-%d-%dT%d:%d:%lf", &y, &M, &d, &h, &m, &s);
-  ASSERT_EQ(6, read) << "Invalid format: " << timestr;
+  int y, M, d, h, m, s, ms;
+  int read = sscanf(timestr, "%d-%d-%dT%d:%d:%d.%d", &y, &M, &d, &h, &m, &s, &ms);
+  ASSERT_EQ(7, read) << "Invalid format: " << timestr;
 
   // Verify reported time & date
   struct tm reported_time = {0};
@@ -167,17 +166,16 @@ TEST(LogDecorations, iso8601_utctime) {
 
   // Verify format
   char trailing_character;
-  int y, M, d, h, m, offset;
-  double s;
-  int read = sscanf(timestr, "%d-%d-%dT%d:%d:%lf%c%d", &y, &M, &d, &h, &m, &s, &trailing_character, &offset);
-  ASSERT_GT(read, 7) << "Invalid format: " << timestr;
+  int y, M, d, h, m, s, ms, offset;
+
+  int read = sscanf(timestr, "%d-%d-%dT%d:%d:%d.%d%c%d", &y, &M, &d, &h, &m, &s, &ms, &trailing_character, &offset);
+
+  ASSERT_EQ(9, read) << "Invalid format: " << timestr;
 
   // Ensure time is UTC (no offset)
-  if (trailing_character == '+') {
-    ASSERT_EQ(0, offset) << "Invalid offset: " << timestr;
-  } else {
-    ASSERT_EQ('Z', trailing_character) << "Invalid offset: " << timestr;
-  }
+  ASSERT_EQ('+', trailing_character) << "Invalid trailing character for UTC: "
+          << trailing_character;
+  ASSERT_EQ(0, offset) << "Invalid offset: " << timestr;
 
   struct tm reported_time = {0};
   reported_time.tm_year = y - 1900;
