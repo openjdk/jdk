@@ -3370,7 +3370,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
 	  </constant>
 	  <constant id="JVMTI_HEAP_REFERENCE_SUPERCLASS" num="10">
             Reference from a class to its superclass. 
-            A callback is bot sent if the superclass is <code>java.lang.Object</code>.
+            A callback is not sent if the superclass is <code>java.lang.Object</code>.
             Note: loaded classes define superclasses via a constant pool
             reference, so the referenced superclass may also be reported with 
             a <code>JVMTI_HEAP_REFERENCE_CONSTANT_POOL</code> reference kind.
