@@ -187,7 +187,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         List<? extends DocTree> deprs = utils.getBlockTags(member, DocTree.Kind.DEPRECATED);
         Content div;
         if (utils.isDeprecated(member)) {
-            Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, contents.deprecatedPhrase);
+            Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(member));
             div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
             div.addContent(Contents.SPACE);
             if (!deprs.isEmpty()) {
@@ -198,7 +198,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         } else {
             Element te = member.getEnclosingElement();
             if (te != null &&  utils.isTypeElement(te) && utils.isDeprecated(te)) {
-                Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, contents.deprecatedPhrase);
+                Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(te));
                 div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
                 div.addContent(Contents.SPACE);
                 tdSummary.addContent(div);

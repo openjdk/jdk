@@ -30,6 +30,7 @@ import java.util.Map;
 /**
  * @deprecated interface_test1 passes.
  */
+@Deprecated(forRemoval=true)
 public class TestInterface {
 
     /**

@@ -405,46 +405,6 @@ public abstract class AbstractMemberWriter {
     }
 
     /**
-     * Add deprecated information to the documentation tree
-     *
-     * @param deprmembers list of deprecated members
-     * @param headingKey the caption for the deprecated members table
-     * @param tableSummary the summary for the deprecated members table
-     * @param tableHeader table headers for the deprecated members table
-     * @param contentTree the content tree to which the deprecated members table will be added
-     */
-    protected void addDeprecatedAPI(Collection<Element> deprmembers, String headingKey,
-            String tableSummary, List<String> tableHeader, Content contentTree) {
-        if (deprmembers.size() > 0) {
-            Content caption = writer.getTableCaption(configuration.getContent(headingKey));
-            Content table = (configuration.isOutputHtml5())
-                    ? HtmlTree.TABLE(HtmlStyle.deprecatedSummary, caption)
-                    : HtmlTree.TABLE(HtmlStyle.deprecatedSummary, tableSummary, caption);
-            table.addContent(writer.getSummaryTableHeader(tableHeader, "col"));
-            Content tbody = new HtmlTree(HtmlTag.TBODY);
-            boolean altColor = true;
-            for (Element member : deprmembers) {
-                HtmlTree thRow = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, getDeprecatedLink(member));
-                HtmlTree tr = HtmlTree.TR(thRow);
-                HtmlTree td = new HtmlTree(HtmlTag.TD);
-                td.addStyle(HtmlStyle.colLast);
-                List<? extends DocTree> deprTrees = utils.getBlockTags(member, DocTree.Kind.DEPRECATED);
-                if (!deprTrees.isEmpty()) {
-                    writer.addInlineDeprecatedComment(member, deprTrees.get(0), td);
-                }
-                tr.addContent(td);
-                tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
-                altColor = !altColor;
-                tbody.addContent(tr);
-            }
-            table.addContent(tbody);
-            Content li = HtmlTree.LI(HtmlStyle.blockList, table);
-            Content ul = HtmlTree.UL(HtmlStyle.blockList, li);
-            contentTree.addContent(ul);
-        }
-    }
-
-    /**
      * Add use information to the documentation tree.
      *
      * @param mems list of program elements for which the use information will be added
