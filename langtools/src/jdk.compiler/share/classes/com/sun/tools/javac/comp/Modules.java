@@ -476,8 +476,18 @@ public class Modules extends JCTree.Visitor {
     private Location getModuleLocation(JavaFileObject fo, Name pkgName) throws IOException {
         // For now, just check module source path.
         // We may want to check source path as well.
-        return fileManager.getLocationForModule(StandardLocation.MODULE_SOURCE_PATH,
-                fo, (pkgName == null) ? null : pkgName.toString());
+        Location loc =
+                fileManager.getLocationForModule(StandardLocation.MODULE_SOURCE_PATH,
+                                                 fo, (pkgName == null) ? null : pkgName.toString());
+        if (loc == null) {
+            Location sourceOutput = fileManager.hasLocation(StandardLocation.SOURCE_OUTPUT) ?
+                    StandardLocation.SOURCE_OUTPUT : StandardLocation.CLASS_OUTPUT;
+            loc =
+                fileManager.getLocationForModule(sourceOutput,
+                                                 fo, (pkgName == null) ? null : pkgName.toString());
+        }
+
+        return loc;
     }
 
     private void checkSpecifiedModule(List<JCCompilationUnit> trees, JCDiagnostic.Error error) {
@@ -612,6 +622,11 @@ public class Modules extends JCTree.Visitor {
             }
 
         };
+    }
+
+    public boolean isRootModule(ModuleSymbol module) {
+        Assert.checkNonNull(rootModules);
+        return rootModules.contains(module);
     }
 
     class ModuleVisitor extends JCTree.Visitor {
