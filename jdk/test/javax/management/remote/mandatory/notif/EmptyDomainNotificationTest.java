@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,20 +103,13 @@ public class EmptyDomainNotificationTest {
         mbsc.invoke(mbean, "emitNotification", null, null);
 
         System.out.println("EmptyDomainNotificationTest-main: waiting notif...");
-        final long stopTime = System.currentTimeMillis() + 2000;
         synchronized(li) {
-            long toWait = stopTime - System.currentTimeMillis();
-
-            while (li.received < 1 && toWait > 0) {
-                li.wait(toWait);
-
-                toWait = stopTime - System.currentTimeMillis();
+            while (li.received < 1) {
+                li.wait();
             }
         }
 
-        if (li.received < 1) {
-            throw new RuntimeException("No notif received!");
-        } else if (li.received > 1) {
+        if (li.received != 1) {
             throw new RuntimeException("Wait one notif but got: "+li.received);
         }
 

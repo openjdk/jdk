@@ -43,6 +43,7 @@ import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -70,6 +71,8 @@ public final class ServerIdentityTest extends SSLSocketTemplate {
 
     @Override
     protected void runServerApplication(SSLSocket socket) throws Exception {
+        InputStream sslIS = socket.getInputStream();
+        sslIS.read();
         BufferedWriter bw = new BufferedWriter(
                 new OutputStreamWriter(socket.getOutputStream()));
         bw.write("HTTP/1.1 200 OK\r\n\r\n\r\n");

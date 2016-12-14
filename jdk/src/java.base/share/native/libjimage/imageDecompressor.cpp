@@ -181,7 +181,7 @@ void ImageDecompressor::decompress_resource(u1* compressed, u1* uncompressed,
         }
     } while (has_header);
     memcpy(uncompressed, decompressed_resource, (size_t) uncompressed_size);
-    delete decompressed_resource;
+    delete[] decompressed_resource;
 }
 
 // Zip decompressor

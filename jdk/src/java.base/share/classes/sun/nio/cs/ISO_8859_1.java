@@ -157,6 +157,9 @@ class ISO_8859_1
         // Method possible replaced with a compiler intrinsic.
         private static int encodeISOArray(char[] sa, int sp,
                                           byte[] da, int dp, int len) {
+            if (len <= 0) {
+                return 0;
+            }
             encodeISOArrayCheck(sa, sp, da, dp, len);
             return implEncodeISOArray(sa, sp, da, dp, len);
         }
@@ -177,10 +180,6 @@ class ISO_8859_1
 
         private static void encodeISOArrayCheck(char[] sa, int sp,
                                                 byte[] da, int dp, int len) {
-            if (len <= 0) {
-                return;  // not an error because encodeISOArrayImpl won't execute if len <= 0
-            }
-
             Objects.requireNonNull(sa);
             Objects.requireNonNull(da);
 

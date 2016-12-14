@@ -81,5 +81,8 @@ module jdk.compiler {
 
     provides javax.tools.JavaCompiler
         with com.sun.tools.javac.api.JavacTool;
+
+    provides javax.tools.Tool
+        with com.sun.tools.javac.api.JavacTool;
 }
 

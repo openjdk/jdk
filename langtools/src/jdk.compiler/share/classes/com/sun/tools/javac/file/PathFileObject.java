@@ -499,11 +499,10 @@ public abstract class PathFileObject implements JavaFileObject {
     }
 
     boolean isSameFile(PathFileObject other) {
-        try {
-            return Files.isSameFile(path, other.path);
-        } catch (IOException e) {
-            return false;
-        }
+        // By construction, the "path" field should be canonical in all likely, supported scenarios.
+        // (Any exceptions would involve the use of symlinks within a package hierarchy.)
+        // Therefore, it is sufficient to check that the paths are .equals.
+        return path.equals(other.path);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,18 +196,10 @@ dbgsysSetSocketOption(int fd, jint cmd, jboolean on, jvalue value)
     } else if (cmd == SO_LINGER) {
         struct linger arg;
         arg.l_onoff = on;
-
-        if(on) {
-            arg.l_linger = (unsigned short)value.i;
-            if(setsockopt(fd, SOL_SOCKET, SO_LINGER,
-                          (char*)&arg, sizeof(arg)) < 0) {
-                return SYS_ERR;
-            }
-        } else {
-            if (setsockopt(fd, SOL_SOCKET, SO_LINGER,
-                           (char*)&arg, sizeof(arg)) < 0) {
-                return SYS_ERR;
-            }
+        arg.l_linger = (on) ? (unsigned short)value.i : 0;
+        if (setsockopt(fd, SOL_SOCKET, SO_LINGER,
+                       (char*)&arg, sizeof(arg)) < 0) {
+          return SYS_ERR;
         }
     } else if (cmd == SO_SNDBUF) {
         jint buflen = value.i;
