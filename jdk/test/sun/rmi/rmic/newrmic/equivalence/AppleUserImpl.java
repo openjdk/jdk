@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,7 +253,7 @@ public class AppleUserImpl
             int port = -1;
             // create new registry and bind new AppleUserImpl in registry
             try {
-                Registry registry = TestLibrary.createRegistryOnUnusedPort();
+                Registry registry = TestLibrary.createRegistryOnEphemeralPort();
                 port = TestLibrary.getRegistryPort(registry);
                 Naming.rebind("rmi://localhost:" + port + "/AppleUser",user);
             } catch (RemoteException e) {

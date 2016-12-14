@@ -27,7 +27,7 @@
  * @summary XXX todo
  * @author Andreas Sterbenz
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  */
 
 import java.security.Provider;

@@ -1268,9 +1268,15 @@ public final class Collectors {
      * to a {@code Predicate}, and organizes them into a
      * {@code Map<Boolean, List<T>>}.
      *
+     * The returned {@code Map} always contains mappings for both
+     * {@code false} and {@code true} keys.
      * There are no guarantees on the type, mutability,
      * serializability, or thread-safety of the {@code Map} or {@code List}
      * returned.
+     *
+     * @apiNote
+     * If a partition has no elements, its value in the result Map will be
+     * an empty List.
      *
      * @param <T> the type of the input elements
      * @param predicate a predicate used for classifying input elements
@@ -1290,8 +1296,16 @@ public final class Collectors {
      * {@code Map<Boolean, D>} whose values are the result of the downstream
      * reduction.
      *
-     * <p>There are no guarantees on the type, mutability,
+     * <p>
+     * The returned {@code Map} always contains mappings for both
+     * {@code false} and {@code true} keys.
+     * There are no guarantees on the type, mutability,
      * serializability, or thread-safety of the {@code Map} returned.
+     *
+     * @apiNote
+     * If a partition has no elements, its value in the result Map will be
+     * obtained by calling the downstream collector's supplier function and then
+     * applying the finisher function.
      *
      * @param <T> the type of the input elements
      * @param <A> the intermediate accumulation type of the downstream collector

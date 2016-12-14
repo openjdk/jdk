@@ -80,8 +80,8 @@ public class MiscTests extends TestHelper {
         createFile(new File(mainClass + ".java"), scratch);
 
         compile(mainClass + ".java",
-                "--add-modules=jdk.crypto.pkcs11",
-                "--add-exports=jdk.crypto.pkcs11/sun.security.pkcs11=ALL-UNNAMED");
+                "--add-modules=jdk.crypto.token",
+                "--add-exports=jdk.crypto.token/sun.security.pkcs11=ALL-UNNAMED");
 
         File testJar = new File("Foo.jar");
         testJar.delete();

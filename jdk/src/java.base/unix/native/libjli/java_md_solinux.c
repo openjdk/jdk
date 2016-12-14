@@ -444,13 +444,13 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
             return;
         }
 #else
-            JLI_MemFree(newargv);
-            return;
+        JLI_MemFree(newargv);
+        return;
 #endif /* SETENV_REQUIRED */
-    } else {  /* do the same speculatively or exit */
+      } else {  /* do the same speculatively or exit */
         JLI_ReportErrorMessage(JRE_ERROR2, wanted);
         exit(1);
-    }
+      }
 #ifdef SETENV_REQUIRED
         if (mustsetenv) {
             /*
@@ -515,25 +515,25 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 #endif /* __solaris__ */
 
             /* runpath contains current effective LD_LIBRARY_PATH setting */
-
-            jvmpath = JLI_StringDup(jvmpath);
-            new_runpath_size = ((runpath != NULL) ? JLI_StrLen(runpath) : 0) +
-                    2 * JLI_StrLen(jrepath) + 2 * JLI_StrLen(arch) +
+            { /* New scope to declare local variable */
+              char *new_jvmpath = JLI_StringDup(jvmpath);
+              new_runpath_size = ((runpath != NULL) ? JLI_StrLen(runpath) : 0) +
+                      2 * JLI_StrLen(jrepath) + 2 * JLI_StrLen(arch) +
 #ifdef AIX
-                    /* On AIX we additionally need 'jli' in the path because ld doesn't support $ORIGIN. */
-                    JLI_StrLen(jrepath) + JLI_StrLen(arch) + JLI_StrLen("/lib//jli:") +
+                      /* On AIX we additionally need 'jli' in the path because ld doesn't support $ORIGIN. */
+                      JLI_StrLen(jrepath) + JLI_StrLen(arch) + JLI_StrLen("/lib//jli:") +
 #endif
-                    JLI_StrLen(jvmpath) + 52;
-            new_runpath = JLI_MemAlloc(new_runpath_size);
-            newpath = new_runpath + JLI_StrLen(LD_LIBRARY_PATH "=");
+                      JLI_StrLen(new_jvmpath) + 52;
+              new_runpath = JLI_MemAlloc(new_runpath_size);
+              newpath = new_runpath + JLI_StrLen(LD_LIBRARY_PATH "=");
 
 
-            /*
-             * Create desired LD_LIBRARY_PATH value for target data model.
-             */
-            {
+              /*
+               * Create desired LD_LIBRARY_PATH value for target data model.
+               */
+              {
                 /* remove the name of the .so from the JVM path */
-                lastslash = JLI_StrRChr(jvmpath, '/');
+                lastslash = JLI_StrRChr(new_jvmpath, '/');
                 if (lastslash)
                     *lastslash = '\0';
 
@@ -544,7 +544,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                         "%s/lib/%s/jli:" /* Needed on AIX because ld doesn't support $ORIGIN. */
 #endif
                         "%s/../lib/%s",
-                        jvmpath,
+                        new_jvmpath,
                         jrepath, arch,
 #ifdef AIX
                         jrepath, arch,
@@ -552,6 +552,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                         jrepath, arch
                         );
 
+                JLI_MemFree(new_jvmpath);
 
                 /*
                  * Check to make sure that the prefix of the current path is the
@@ -571,6 +572,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                     JLI_MemFree(new_runpath);
                     return;
                 }
+              }
             }
 
             /*

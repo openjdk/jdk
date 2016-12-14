@@ -28,7 +28,7 @@
  * with unsupported key sizes
  * @library ..
  * @key randomness
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm TestDSAKeyLength
  * @run main/othervm TestDSAKeyLength sm
  */
