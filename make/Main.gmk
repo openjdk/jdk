@@ -236,15 +236,35 @@ ALL_TARGETS += $(LAUNCHER_TARGETS)
 ################################################################################
 # Build hotspot target
 
-ifeq ($(BUILD_HOTSPOT),true)
-  hotspot:
-	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f BuildHotspot.gmk)
-endif
+HOTSPOT_VARIANT_TARGETS := $(addprefix hotspot-, $(JVM_VARIANTS))
+HOTSPOT_VARIANT_GENSRC_TARGETS := $(addsuffix -gensrc, $(HOTSPOT_VARIANT_TARGETS))
+HOTSPOT_VARIANT_LIBS_TARGETS := $(addsuffix -libs, $(HOTSPOT_VARIANT_TARGETS))
+
+define DeclareHotspotGensrcRecipe
+  hotspot-$1-gensrc:
+	$$(call LogInfo, Building JVM variant '$1' with features '$(JVM_FEATURES_$1)')
+	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) -f gensrc/GenerateSources.gmk \
+	    JVM_VARIANT=$1)
+endef
+
+$(foreach v, $(JVM_VARIANTS), $(eval $(call DeclareHotspotGensrcRecipe,$v)))
+
+define DeclareHotspotLibsRecipe
+  hotspot-$1-libs:
+	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) -f lib/CompileLibraries.gmk \
+	    JVM_VARIANT=$1)
+endef
+
+$(foreach v, $(JVM_VARIANTS), $(eval $(call DeclareHotspotLibsRecipe,$v)))
+
+hotspot-jsig:
+	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) -f lib/CompileLibjsig.gmk)
 
 hotspot-ide-project:
 	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f ide/CreateVSProject.gmk)
 
-ALL_TARGETS += hotspot hotspot-ide-project
+ALL_TARGETS += $(HOTSPOT_VARIANT_TARGETS) $(HOTSPOT_VARIANT_GENSRC_TARGETS) \
+    $(HOTSPOT_VARIANT_LIBS_TARGETS) hotspot-jsig hotspot-ide-project
 
 ################################################################################
 # Build demos and samples targets
@@ -545,11 +565,18 @@ else
 
   $(JAVA_TARGETS): interim-langtools
 
+  # Declare dependencies between hotspot-<variant>* targets
+  $(foreach v, $(JVM_VARIANTS), \
+      $(eval hotspot-$v: hotspot-$v-gensrc hotspot-$v-libs) \
+      $(eval hotspot-$v-libs: hotspot-$v-gensrc) \
+  )
+
   hotspot-ide-project: hotspot exploded-image
 
   generate-exported-symbols: java.base-libs jdk.jdwp.agent-libs
 
-  $(LIBS_TARGETS): hotspot
+  # Building one JVM variant is enough to start building the other libs
+  $(LIBS_TARGETS): hotspot-$(JVM_VARIANT_MAIN)-libs
 
   $(LAUNCHER_TARGETS): java.base-libs
 
@@ -615,6 +642,9 @@ else
         $(addsuffix -jmod, $(call FindAllUpgradeableModules)), $(JMOD_TARGETS))
   endif
 
+  # Building java.base-jmod requires all of hotspot to be built.
+  java.base-jmod: hotspot
+
   # Declare dependencies from <module>-jmod to all other module targets
   # When creating a BUILDJDK, the java compilation has already been done by the
   # normal build and copied in.
@@ -659,6 +689,9 @@ else
         exploded-image-optimize
   endif
 
+  # All modules include the main license files from java.base.
+  $(JMOD_TARGETS): java.base-copy
+
   zip-security: java.base-java java.security.jgss-java java.security.jgss-libs \
       $(filter jdk.crypto%, $(JAVA_TARGETS))
 
@@ -686,6 +719,7 @@ else
 
   jdk-image: jmods zip-source demos samples release-file
   jre-image: jmods release-file
+  symbols-image: $(LIBS_TARGETS) $(LAUNCHER_TARGETS)
 
   profiles: jmods release-file
 
@@ -702,7 +736,7 @@ else
   docs-javadoc: $(GENSRC_TARGETS) rmic
 
   # The gensrc step for jdk.jdi creates an html file that is used by docs-copy.
-  docs-copy: hotspot jdk.jdi-gensrc
+  docs-copy: hotspot-$(JVM_VARIANT_MAIN)-gensrc jdk.jdi-gensrc
 
   docs-zip: docs-javadoc docs-copy
 
@@ -725,7 +759,8 @@ else
 
   test-image-failure-handler: build-test-failure-handler
 
-  build-test-hotspot-jtreg-native: buildtools-jdk hotspot
+  build-test-hotspot-jtreg-native: buildtools-jdk \
+      hotspot-$(JVM_VARIANT_MAIN)-libs
 
   build-test-jdk-jtreg-native: buildtools-jdk
 
@@ -759,6 +794,16 @@ endif
 buildtools: buildtools-langtools interim-langtools interim-rmic \
     buildtools-jdk
 
+hotspot: $(HOTSPOT_VARIANT_TARGETS) hotspot-jsig
+
+hotspot-libs: hotspot-jsig
+
+# Create targets hotspot-libs and hotspot-gensrc.
+$(foreach v, $(JVM_VARIANTS), \
+  $(eval hotspot-libs: hotspot-$v-libs) \
+  $(eval hotspot-gensrc: hotspot-$v-gensrc) \
+)
+
 gensrc: $(GENSRC_TARGETS)
 
 gendata: $(GENDATA_TARGETS)
@@ -788,6 +833,10 @@ $(foreach m, $(RMIC_MODULES), $(eval $m: $m-rmic))
 $(foreach m, $(LIBS_MODULES), $(eval $m: $m-libs))
 $(foreach m, $(LAUNCHER_MODULES), $(eval $m: $m-launchers))
 $(foreach m, $(ALL_COPY_MODULES), $(eval $m: $m-copy))
+
+# Building java.base includes building all of hotspot.
+java.base: hotspot
+
 demos: demos-jdk
 
 samples: samples-jdk
@@ -843,7 +892,8 @@ all-images: product-images test-image docs-image
 # all-bundles packages all our deliverables as tar.gz bundles.
 all-bundles: product-bundles test-bundles docs-bundles
 
-ALL_TARGETS += buildtools gensrc gendata copy java rmic libs launchers jmods \
+ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-gensrc gensrc gendata \
+    copy java rmic libs launchers jmods \
     jdk.jdwp.agent-gensrc $(ALL_MODULES) demos samples \
     exploded-image-base exploded-image \
     create-buildjdk mac-bundles product-images docs-image test-image all-images \
