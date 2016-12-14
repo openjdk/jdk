@@ -47,16 +47,43 @@ JRE_MODULES += $(filter $(ALL_MODULES), $(BOOT_MODULES) \
     $(PLATFORM_MODULES) $(JRE_TOOL_MODULES))
 JDK_MODULES += $(ALL_MODULES)
 
-# Compact builds have additional modules
-COMPACT1_EXTRA_MODULES := jdk.localedata jdk.crypto.pkcs11 jdk.crypto.ec \
-    jdk.unsupported
-COMPACT2_EXTRA_MODULES := jdk.xml.dom jdk.httpserver
-COMPACT3_EXTRA_MODULES := java.smartcardio jdk.management \
-    jdk.naming.dns jdk.naming.rmi jdk.sctp jdk.security.auth
+# Modules list for compact builds 
+JRE_COMPACT1_MODULES := \
+    java.logging \
+    java.scripting \
+    jdk.localedata \
+    jdk.crypto.token \
+    jdk.crypto.ec \
+    jdk.unsupported \
+    #
 
-JRE_COMPACT1_MODULES := java.compact1 $(COMPACT1_EXTRA_MODULES)
-JRE_COMPACT2_MODULES := $(JRE_COMPACT1_MODULES) java.compact2 $(COMPACT2_EXTRA_MODULES)
-JRE_COMPACT3_MODULES := $(JRE_COMPACT2_MODULES) java.compact3 $(COMPACT3_EXTRA_MODULES)
+JRE_COMPACT2_MODULES := \
+    $(JRE_COMPACT1_MODULES) \
+    java.rmi \
+    java.sql \
+    java.xml \
+    jdk.xml.dom \
+    jdk.httpserver \
+    #
+
+JRE_COMPACT3_MODULES := \
+    $(JRE_COMPACT2_MODULES) \
+    java.smartcardio \
+    java.compiler \
+    java.instrument \
+    java.management \
+    java.naming \
+    java.prefs \
+    java.security.jgss \
+    java.security.sasl \
+    java.sql.rowset \
+    java.xml.crypto \
+    jdk.management \
+    jdk.naming.dns \
+    jdk.naming.rmi \
+    jdk.sctp \
+    jdk.security.auth \
+    #
 
 JRE_MODULES_LIST := $(call CommaList, $(JRE_MODULES))
 JDK_MODULES_LIST := $(call CommaList, $(JDK_MODULES))
