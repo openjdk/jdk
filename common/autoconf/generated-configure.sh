@@ -867,8 +867,6 @@ IMPORT_MODULES_CONF
 IMPORT_MODULES_LIBS
 IMPORT_MODULES_CMDS
 IMPORT_MODULES_CLASSES
-BUILD_HOTSPOT
-HOTSPOT_DIST
 BUILD_OUTPUT
 JDK_TOPDIR
 NASHORN_TOPDIR
@@ -961,6 +959,7 @@ CONF_NAME
 SPEC
 SDKROOT
 XCODEBUILD
+JVM_VARIANT_MAIN
 VALID_JVM_VARIANTS
 JVM_VARIANTS
 DEBUG_LEVEL
@@ -2097,9 +2096,8 @@ Optional Packages:
                           compatibility and is ignored
   --with-override-jdk     Deprecated. Option is kept for backwards
                           compatibility and is ignored
-  --with-import-hotspot   import hotspot binaries from this jdk image or
-                          hotspot build dist dir instead of building from
-                          source
+  --with-import_hotspot   Deprecated. Option is kept for backwards
+                          compatibility and is ignored
   --with-import-modules   import a set of prebuilt modules either as a zip
                           file or an exploded directory
   --with-toolchain-type   the toolchain type (or family) to use, use '--help'
@@ -5088,7 +5086,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1481104795
+DATE_WHEN_GENERATED=1481663811
 
 ###############################################################################
 #
@@ -16749,6 +16747,21 @@ $as_echo "$as_me: Unknown variant(s) specified: $INVALID_VARIANTS" >&6;}
   if  test "x$INVALID_MULTIPLE_VARIANTS" != x && test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = xtrue; then
     as_fn_error $? "You cannot build multiple variants with anything else than $VALID_MULTIPLE_JVM_VARIANTS." "$LINENO" 5
   fi
+
+  # The "main" variant is the one used by other libs to link against during the
+  # build.
+  if test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = "xtrue"; then
+    MAIN_VARIANT_PRIO_ORDER="server client minimal"
+    for variant in $MAIN_VARIANT_PRIO_ORDER; do
+      if   [[ " $JVM_VARIANTS " =~ " $variant " ]]  ; then
+        JVM_VARIANT_MAIN="$variant"
+        break
+      fi
+    done
+  else
+    JVM_VARIANT_MAIN="$JVM_VARIANTS"
+  fi
+
 
 
 
@@ -30992,33 +31005,17 @@ fi
 
   BUILD_OUTPUT="$OUTPUT_ROOT"
 
-
-  HOTSPOT_DIST="$OUTPUT_ROOT/hotspot/dist"
-  BUILD_HOTSPOT=true
+  JDK_OUTPUTDIR="$OUTPUT_ROOT/jdk"
 
 
 
-# Check whether --with-import-hotspot was given.
+# Check whether --with-import_hotspot was given.
 if test "${with_import_hotspot+set}" = set; then :
-  withval=$with_import_hotspot;
+  withval=$with_import_hotspot; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-import_hotspot is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-import_hotspot is deprecated and will be ignored." >&2;}
 fi
 
-  if test "x$with_import_hotspot" != x; then
-    CURDIR="$PWD"
-    cd "$with_import_hotspot"
-    HOTSPOT_DIST="`pwd`"
-    cd "$CURDIR"
-    if ! (test -d $HOTSPOT_DIST/lib && test -d $HOTSPOT_DIST/jre/lib); then
-      as_fn_error $? "You have to import hotspot from a full jdk image or hotspot build dist dir!" "$LINENO" 5
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if hotspot should be imported" >&5
-$as_echo_n "checking if hotspot should be imported... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes from $HOTSPOT_DIST" >&5
-$as_echo "yes from $HOTSPOT_DIST" >&6; }
-    BUILD_HOTSPOT=false
-  fi
 
-  JDK_OUTPUTDIR="$OUTPUT_ROOT/jdk"
 
 
 
@@ -31188,6 +31185,12 @@ $as_echo "$as_me: The path of IMPORT_MODULES_TOPDIR, which resolves as \"$path\"
   fi
   if test -d "$IMPORT_MODULES_TOPDIR/modules_conf"; then
     IMPORT_MODULES_CONF="$IMPORT_MODULES_TOPDIR/modules_conf"
+  fi
+  if test -d "$IMPORT_MODULES_TOPDIR/modules_legal"; then
+    IMPORT_MODULES_LEGAL="$IMPORT_MODULES_TOPDIR/modules_legal"
+  fi
+  if test -d "$IMPORT_MODULES_TOPDIR/modules_man"; then
+    IMPORT_MODULES_MAN="$IMPORT_MODULES_TOPDIR/modules_man"
   fi
   if test -d "$IMPORT_MODULES_TOPDIR/modules_src"; then
     IMPORT_MODULES_SRC="$IMPORT_MODULES_TOPDIR/modules_src"
@@ -50382,19 +50385,18 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
         -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)"
 
     if test "xTARGET" = "xTARGET"; then
-    # On some platforms (mac) the linker warns about non existing -L dirs.
-    # Add server first if available. Linking aginst client does not always produce the same results.
-      # Only add client/minimal dir if client/minimal is being built.
-    # Default to server for other variants.
-      if   [[ " $JVM_VARIANTS " =~ " server " ]]  ; then
-        JAVA_BASE_LDFLAGS="${JAVA_BASE_LDFLAGS} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/server"
-      elif   [[ " $JVM_VARIANTS " =~ " client " ]]  ; then
-        JAVA_BASE_LDFLAGS="${JAVA_BASE_LDFLAGS} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/client"
-      elif   [[ " $JVM_VARIANTS " =~ " minimal " ]]  ; then
-        JAVA_BASE_LDFLAGS="${JAVA_BASE_LDFLAGS} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/minimal"
-    else
-        JAVA_BASE_LDFLAGS="${JAVA_BASE_LDFLAGS} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/server"
-    fi
+      # On some platforms (mac) the linker warns about non existing -L dirs.
+      # For any of the variants server, client or minimal, the dir matches the
+      # variant name. The "main" variant should be used for linking. For the
+      # rest, the dir is just server.
+      if   [[ " $JVM_VARIANTS " =~ " server " ]]   ||   [[ " $JVM_VARIANTS " =~ " client " ]]   \
+          ||   [[ " $JVM_VARIANTS " =~ " minimal " ]]  ; then
+        JAVA_BASE_LDFLAGS="${JAVA_BASE_LDFLAGS} \
+            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/$JVM_VARIANT_MAIN"
+      else
+        JAVA_BASE_LDFLAGS="${JAVA_BASE_LDFLAGS} \
+            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/server"
+      fi
     elif test "xTARGET" = "xBUILD"; then
       # When building a buildjdk, it's always only the server variant
       JAVA_BASE_LDFLAGS="${JAVA_BASE_LDFLAGS} \
@@ -51205,19 +51207,18 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
         -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_BUILD_CPU_LIBDIR)"
 
     if test "xBUILD" = "xTARGET"; then
-    # On some platforms (mac) the linker warns about non existing -L dirs.
-    # Add server first if available. Linking aginst client does not always produce the same results.
-      # Only add client/minimal dir if client/minimal is being built.
-    # Default to server for other variants.
-      if   [[ " $JVM_VARIANTS " =~ " server " ]]  ; then
-        OPENJDK_BUILD_JAVA_BASE_LDFLAGS="${OPENJDK_BUILD_JAVA_BASE_LDFLAGS} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_BUILD_CPU_LIBDIR)/server"
-      elif   [[ " $JVM_VARIANTS " =~ " client " ]]  ; then
-        OPENJDK_BUILD_JAVA_BASE_LDFLAGS="${OPENJDK_BUILD_JAVA_BASE_LDFLAGS} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_BUILD_CPU_LIBDIR)/client"
-      elif   [[ " $JVM_VARIANTS " =~ " minimal " ]]  ; then
-        OPENJDK_BUILD_JAVA_BASE_LDFLAGS="${OPENJDK_BUILD_JAVA_BASE_LDFLAGS} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_BUILD_CPU_LIBDIR)/minimal"
-    else
-        OPENJDK_BUILD_JAVA_BASE_LDFLAGS="${OPENJDK_BUILD_JAVA_BASE_LDFLAGS} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_BUILD_CPU_LIBDIR)/server"
-    fi
+      # On some platforms (mac) the linker warns about non existing -L dirs.
+      # For any of the variants server, client or minimal, the dir matches the
+      # variant name. The "main" variant should be used for linking. For the
+      # rest, the dir is just server.
+      if   [[ " $JVM_VARIANTS " =~ " server " ]]   ||   [[ " $JVM_VARIANTS " =~ " client " ]]   \
+          ||   [[ " $JVM_VARIANTS " =~ " minimal " ]]  ; then
+        OPENJDK_BUILD_JAVA_BASE_LDFLAGS="${OPENJDK_BUILD_JAVA_BASE_LDFLAGS} \
+            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_BUILD_CPU_LIBDIR)/$JVM_VARIANT_MAIN"
+      else
+        OPENJDK_BUILD_JAVA_BASE_LDFLAGS="${OPENJDK_BUILD_JAVA_BASE_LDFLAGS} \
+            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_BUILD_CPU_LIBDIR)/server"
+      fi
     elif test "xBUILD" = "xBUILD"; then
       # When building a buildjdk, it's always only the server variant
       OPENJDK_BUILD_JAVA_BASE_LDFLAGS="${OPENJDK_BUILD_JAVA_BASE_LDFLAGS} \
