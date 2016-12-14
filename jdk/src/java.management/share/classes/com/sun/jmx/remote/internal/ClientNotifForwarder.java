@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,9 @@ import javax.management.remote.TargetedNotification;
 
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.rmi.UnmarshalException;
+import java.util.concurrent.RejectedExecutionException;
 
 
 public abstract class ClientNotifForwarder {
@@ -559,8 +561,36 @@ public abstract class ClientNotifForwarder {
                     }
                 }
             } else {
-                executor.execute(this);
+                try {
+                    executor.execute(this);
+                } catch (Exception e) {
+                    if (isRejectedExecutionException(e)) {
+                        // We reached here because the executor was shutdown.
+                        // If executor was supplied by client, then it was shutdown
+                        // abruptly or JMXConnector was shutdown along with executor
+                        // while this thread was suspended at L564.
+                        if (!(executor instanceof LinearExecutor)) {
+                            // Spawn new executor that will do cleanup if JMXConnector is closed
+                            // or keep notif system running otherwise
+                            executor = new LinearExecutor();
+                            executor.execute(this);
+                        }
+                    } else {
+                        throw e;
+                    }
+                }
             }
+        }
+
+        private boolean isRejectedExecutionException(Exception e) {
+            Throwable cause = e;
+            while (cause != null) {
+                if (cause instanceof RejectedExecutionException) {
+                    return true;
+                }
+                cause = cause.getCause();
+            }
+            return false;
         }
 
         void dispatchNotification(TargetedNotification tn,
@@ -866,7 +896,7 @@ public abstract class ClientNotifForwarder {
 // -------------------------------------------------
 
     private final ClassLoader defaultClassLoader;
-    private final Executor executor;
+    private Executor executor;
 
     private final Map<Integer, ClientListenerInfo> infoList =
             new HashMap<Integer, ClientListenerInfo>();

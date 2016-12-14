@@ -117,16 +117,28 @@ public class FrameOutputWriter extends HtmlDocletWriter {
         HtmlTree rightContainerDiv = new HtmlTree(HtmlTag.DIV);
         leftContainerDiv.addStyle(HtmlStyle.leftContainer);
         rightContainerDiv.addStyle(HtmlStyle.rightContainer);
-        if (noOfPackages <= 1) {
-            addAllClassesFrameTag(leftContainerDiv);
+        if (configuration.showModules && configuration.modules.size() > 1) {
+            addAllModulesFrameTag(leftContainerDiv);
         } else if (noOfPackages > 1) {
             addAllPackagesFrameTag(leftContainerDiv);
-            addAllClassesFrameTag(leftContainerDiv);
         }
+        addAllClassesFrameTag(leftContainerDiv);
         addClassFrameTag(rightContainerDiv);
         HtmlTree mainContainer = HtmlTree.DIV(HtmlStyle.mainContainer, leftContainerDiv);
         mainContainer.addContent(rightContainerDiv);
         return mainContainer;
+    }
+
+    /**
+     * Add the IFRAME tag for the frame that lists all modules.
+     *
+     * @param contentTree to which the information will be added
+     */
+    private void addAllModulesFrameTag(Content contentTree) {
+        HtmlTree frame = HtmlTree.IFRAME(DocPaths.MODULE_OVERVIEW_FRAME.getPath(),
+                "packageListFrame", configuration.getText("doclet.All_Modules"));
+        HtmlTree leftTop = HtmlTree.DIV(HtmlStyle.leftTop, frame);
+        contentTree.addContent(leftTop);
     }
 
     /**

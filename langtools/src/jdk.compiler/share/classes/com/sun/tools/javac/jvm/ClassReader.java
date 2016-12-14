@@ -2479,7 +2479,7 @@ public class ClassReader {
                     ? parameterNameIndices[index] : 0);
             Name name = nameIdx == 0 ? names.empty : readName(nameIdx);
             paramNames = paramNames.prepend(name);
-            index += Code.width(t);
+            index += sawMethodParameters ? 1 : Code.width(t);
         }
         sym.savedParameterNames = paramNames.reverse();
     }

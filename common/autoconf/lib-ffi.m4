@@ -35,6 +35,8 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBFFI],
       [specify directory for the libffi include files])])
   AC_ARG_WITH(libffi-lib, [AS_HELP_STRING([--with-libffi-lib],
       [specify directory for the libffi library])])
+  AC_ARG_ENABLE(libffi-bundling, [AS_HELP_STRING([--enable-libffi-bundling],
+      [enable bundling of libffi.so to make the built JDK runnable on more systems])])
 
   if test "x$NEEDS_LIB_FFI" = xfalse; then
     if (test "x${with_libffi}" != x && test "x${with_libffi}" != xno) || \
@@ -52,6 +54,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBFFI],
     fi
 
     if test "x${with_libffi}" != x; then
+      LIBFFI_LIB_PATH="${with_libffi}/lib"
       LIBFFI_LIBS="-L${with_libffi}/lib -lffi"
       LIBFFI_CFLAGS="-I${with_libffi}/include"
       LIBFFI_FOUND=yes
@@ -61,6 +64,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBFFI],
       LIBFFI_FOUND=yes
     fi
     if test "x${with_libffi_lib}" != x; then
+      LIBFFI_LIB_PATH="${with_libffi_lib}"
       LIBFFI_LIBS="-L${with_libffi_lib} -lffi"
       LIBFFI_FOUND=yes
     fi
@@ -109,8 +113,65 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBFFI],
       HELP_MSG_MISSING_DEPENDENCY([ffi])
       AC_MSG_ERROR([Found libffi but could not link and compile with it. $HELP_MSG])
     fi
+
+    AC_MSG_CHECKING([if libffi should be bundled])
+    if test "x$enable_libffi_bundling" = "x"; then
+      AC_MSG_RESULT([no])
+      ENABLE_LIBFFI_BUNDLING=false
+    elif  test "x$enable_libffi_bundling" = "xno"; then
+      AC_MSG_RESULT([no, forced])
+      ENABLE_LIBFFI_BUNDLING=false
+    elif  test "x$enable_libffi_bundling" = "xyes"; then
+      AC_MSG_RESULT([yes, forced])
+      ENABLE_LIBFFI_BUNDLING=true
+    else
+      AC_MSG_ERROR([Invalid value for --enable-libffi-bundling])
+    fi
+
+    # Find the libffi.so.X to bundle
+    if test "x${ENABLE_LIBFFI_BUNDLING}" = "xtrue"; then
+      AC_MSG_CHECKING([for libffi lib file location])
+      if test "x${LIBFFI_LIB_PATH}" != x; then
+        if test -e ${LIBFFI_LIB_PATH}/libffi.so.?; then
+          LIBFFI_LIB_FILE="${LIBFFI_LIB_PATH}/libffi.so.?"
+        else
+          AC_MSG_ERROR([Could not locate libffi.so.? for bundling in ${LIBFFI_LIB_PATH}])
+        fi
+      else
+        # If we don't have an explicit path, look in a few obvious places
+        if test "x${OPENJDK_TARGET_CPU}" = "xx86"; then
+          if test -e ${SYSROOT}/usr/lib/libffi.so.? ; then
+            LIBFFI_LIB_FILE="${SYSROOT}/usr/lib/libffi.so.?"
+          elif test -e ${SYSROOT}/usr/lib/i386-linux-gnu/libffi.so.? ; then
+            LIBFFI_LIB_FILE="${SYSROOT}/usr/lib/i386-linux-gnu/libffi.so.?"
+          else
+            AC_MSG_ERROR([Could not locate libffi.so.? for bundling])
+          fi
+        elif test "x${OPENJDK_TARGET_CPU}" = "xx86_64"; then
+          if test -e ${SYSROOT}/usr/lib64/libffi.so.? ; then
+            LIBFFI_LIB_FILE="${SYSROOT}/usr/lib64/libffi.so.?"
+          elif test -e ${SYSROOT}/usr/lib/x86_64-linux-gnu/libffi.so.? ; then
+            LIBFFI_LIB_FILE="${SYSROOT}/usr/lib/x86_64-linux-gnu/libffi.so.?"
+          else
+            AC_MSG_ERROR([Could not locate libffi.so.? for bundling])
+          fi
+        else
+          # Fallback on the default /usr/lib dir
+          if test -e ${SYSROOT}/usr/lib/libffi.so.? ; then
+            LIBFFI_LIB_FILE="${SYSROOT}/usr/lib/libffi.so.?"
+          else
+            AC_MSG_ERROR([Could not locate libffi.so.? for bundling])
+          fi
+        fi
+      fi
+      # Make sure the wildcard is evaluated
+      LIBFFI_LIB_FILE="$(ls ${LIBFFI_LIB_FILE})"
+      AC_MSG_RESULT([${LIBFFI_LIB_FILE}])
+    fi
   fi
 
   AC_SUBST(LIBFFI_CFLAGS)
   AC_SUBST(LIBFFI_LIBS)
+  AC_SUBST(ENABLE_LIBFFI_BUNDLING)
+  AC_SUBST(LIBFFI_LIB_FILE)
 ])
