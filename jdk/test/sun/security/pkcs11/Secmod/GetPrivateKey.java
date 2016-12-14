@@ -28,7 +28,7 @@
  *          and use a private key
  * @author Andreas Sterbenz
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm GetPrivateKey
  * @run main/othervm GetPrivateKey sm policy
  */

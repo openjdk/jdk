@@ -26,7 +26,7 @@
  * @bug 6837847
  * @summary Ensure a deserialized PKCS#11 SecureRandom is functional.
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  */
 
 import java.io.ByteArrayInputStream;

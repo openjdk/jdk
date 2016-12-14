@@ -27,7 +27,7 @@
  * @summary Test that the SunPKCS11 provider can be serialized
  * @author Andreas Sterbenz
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  */
 
 import java.io.ByteArrayInputStream;

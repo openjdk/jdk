@@ -33,7 +33,7 @@
  * @author Andreas Sterbenz
  * @library ..
  * @library ../../../../java/security/testlibrary
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm -Djdk.tls.namedGroups="secp256r1,sect193r1"
  *      ClientJSSEServerJSSE
  * @run main/othervm -Djdk.tls.namedGroups="secp256r1,sect193r1"

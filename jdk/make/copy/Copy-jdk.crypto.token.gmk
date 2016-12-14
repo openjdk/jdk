@@ -30,7 +30,7 @@ include CopyCommon.gmk
 ifeq ($(OPENJDK_TARGET_OS), solaris)
 
   SUNPKCS11_CFG_SRC := \
-      $(JDK_TOPDIR)/src/jdk.crypto.pkcs11/solaris/conf/security/sunpkcs11-solaris.cfg
+      $(JDK_TOPDIR)/src/jdk.crypto.token/solaris/conf/security/sunpkcs11-solaris.cfg
   SUNPKCS11_CFG_DST := $(CONF_DST_DIR)/security/sunpkcs11-solaris.cfg
 
   $(SUNPKCS11_CFG_DST): $(SUNPKCS11_CFG_SRC)
