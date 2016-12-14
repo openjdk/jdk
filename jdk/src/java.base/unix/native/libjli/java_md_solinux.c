@@ -515,23 +515,23 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 #endif /* __solaris__ */
 
             /* runpath contains current effective LD_LIBRARY_PATH setting */
-
-            char *new_jvmpath = JLI_StringDup(jvmpath);
-            new_runpath_size = ((runpath != NULL) ? JLI_StrLen(runpath) : 0) +
-                    2 * JLI_StrLen(jrepath) + 2 * JLI_StrLen(arch) +
+            { /* New scope to declare local variable */
+              char *new_jvmpath = JLI_StringDup(jvmpath);
+              new_runpath_size = ((runpath != NULL) ? JLI_StrLen(runpath) : 0) +
+                      2 * JLI_StrLen(jrepath) + 2 * JLI_StrLen(arch) +
 #ifdef AIX
-                    /* On AIX we additionally need 'jli' in the path because ld doesn't support $ORIGIN. */
-                    JLI_StrLen(jrepath) + JLI_StrLen(arch) + JLI_StrLen("/lib//jli:") +
+                      /* On AIX we additionally need 'jli' in the path because ld doesn't support $ORIGIN. */
+                      JLI_StrLen(jrepath) + JLI_StrLen(arch) + JLI_StrLen("/lib//jli:") +
 #endif
-                    JLI_StrLen(new_jvmpath) + 52;
-            new_runpath = JLI_MemAlloc(new_runpath_size);
-            newpath = new_runpath + JLI_StrLen(LD_LIBRARY_PATH "=");
+                      JLI_StrLen(new_jvmpath) + 52;
+              new_runpath = JLI_MemAlloc(new_runpath_size);
+              newpath = new_runpath + JLI_StrLen(LD_LIBRARY_PATH "=");
 
 
-            /*
-             * Create desired LD_LIBRARY_PATH value for target data model.
-             */
-            {
+              /*
+               * Create desired LD_LIBRARY_PATH value for target data model.
+               */
+              {
                 /* remove the name of the .so from the JVM path */
                 lastslash = JLI_StrRChr(new_jvmpath, '/');
                 if (lastslash)
@@ -572,6 +572,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                     JLI_MemFree(new_runpath);
                     return;
                 }
+              }
             }
 
             /*
