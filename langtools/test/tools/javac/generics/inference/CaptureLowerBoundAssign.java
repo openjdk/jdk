@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,20 @@
 
 /*
  * @test
- * @bug 8039214
- * @summary Capture variable passed through multiple levels of nested inference
- * @compile NestedCapture.java
- * @compile -Xlint:-options -source 7 NestedCapture.java
+ * @bug 8075793
+ * @summary Capture variable as an inference lower bound followed by an invariant assignment
+ * @compile CaptureLowerBoundAssign.java
+ * @compile -Xlint:-options -source 7 CaptureLowerBoundAssign.java
  */
 
-abstract class NestedCapture {
-  interface List<T> {}
-  abstract <T> List<T> copyOf(List<? extends T> lx);
-  abstract <E> List<E> filter(List<E> lx);
+class CaptureLowerBoundAssign {
 
-  <U> void test1(List<U> lx) {
-    copyOf(filter(lx));
-  }
+    static class C<T> {}
 
-  void test2(List<?> lx) {
-    copyOf(filter(lx));
-  }
+    <T> C<T> m(C<? extends T> x) { return null; }
+
+    void test(C<? extends Number> arg) {
+        C<Number> c = m(arg);
+    }
 
 }
