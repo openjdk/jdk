@@ -39,53 +39,34 @@ class SecuritySupport  {
 
 
     ClassLoader getContextClassLoader() throws SecurityException{
-        return (ClassLoader)
-                AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                ClassLoader cl = null;
-                //try {
-                cl = Thread.currentThread().getContextClassLoader();
-                //} catch (SecurityException ex) { }
+        return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> {
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
 
-                if (cl == null)
-                    cl = ClassLoader.getSystemClassLoader();
+            if (cl == null)
+                cl = ClassLoader.getSystemClassLoader();
 
-                return cl;
-            }
+            return cl;
         });
     }
 
     String getSystemProperty(final String propName) {
-        return (String)
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    return System.getProperty(propName);
-                }
-            });
+        return AccessController.doPrivileged((PrivilegedAction<String>) () ->
+                System.getProperty(propName));
     }
 
     FileInputStream getFileInputStream(final File file)
         throws FileNotFoundException
     {
         try {
-            return (FileInputStream)
-                AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                    public Object run() throws FileNotFoundException {
-                        return new FileInputStream(file);
-                    }
-                });
+            return AccessController.doPrivileged((PrivilegedExceptionAction<FileInputStream>) ()
+                    -> new FileInputStream(file));
         } catch (PrivilegedActionException e) {
             throw (FileNotFoundException)e.getException();
         }
     }
 
     boolean doesFileExist(final File f) {
-    return ((Boolean)
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    return new Boolean(f.exists());
-                }
-            })).booleanValue();
+        return AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> f.exists());
     }
 
 }

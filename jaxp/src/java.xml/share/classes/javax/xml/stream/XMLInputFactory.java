@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,10 +21,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
- * Copyright (c) 2009, 2013, by Oracle Corporation. All Rights Reserved.
  */
 
 package javax.xml.stream;
@@ -225,6 +222,7 @@ public abstract class XMLInputFactory {
    *   java.util.ServiceConfigurationError service configuration error} or if
    *   the implementation is not available or cannot be instantiated.
    */
+  @Deprecated(since="7")
   public static XMLInputFactory newFactory()
     throws FactoryConfigurationError
   {
@@ -246,6 +244,7 @@ public abstract class XMLInputFactory {
    *              #newFactory(java.lang.String, java.lang.ClassLoader)} method
    *              defines no changes in behavior.
    */
+  @Deprecated(since="7")
   public static XMLInputFactory newInstance(String factoryId,
           ClassLoader classLoader)
           throws FactoryConfigurationError {
