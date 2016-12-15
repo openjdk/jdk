@@ -58,7 +58,6 @@ import java.util.Set;
 import static java.util.stream.Collectors.*;
 
 import jdk.tools.jlink.internal.BasicImageWriter;
-import jdk.tools.jlink.internal.plugins.FileCopierPlugin.SymImageFile;
 import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
@@ -149,20 +148,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
         Files.createDirectories(mdir);
     }
 
-    private void storeRelease(ResourcePool pool) throws IOException {
-        Properties props = new Properties();
-        Optional<ResourcePoolEntry> release = pool.findEntry("/java.base/release");
-        if (release.isPresent()) {
-            try (InputStream is = release.get().content()) {
-                props.load(is);
-            }
-        }
-        File r = new File(root.toFile(), "release");
-        try (FileOutputStream fo = new FileOutputStream(r)) {
-            props.store(fo, null);
-        }
-    }
-
     @Override
     public void storeFiles(ResourcePool files) {
         try {
@@ -179,9 +164,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
             if (this.targetOsName == null) {
                 throw new PluginException("TargetPlatform attribute is missing for java.base module");
             }
-
-            // store 'release' file
-            storeRelease(files);
 
             Path bin = root.resolve(BIN_DIRNAME);
 
@@ -373,8 +355,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
                 return Paths.get(LEGAL_DIRNAME, entryToFileName(entry));
             case TOP:
                 return Paths.get(entryToFileName(entry));
-            case OTHER:
-                return Paths.get("other", entryToFileName(entry));
             default:
                 throw new IllegalArgumentException("invalid type: " + entry);
         }
@@ -412,19 +392,11 @@ public final class DefaultImageBuilder implements ImageBuilder {
                     }
                     break;
                 case TOP:
-                    break;
-                case OTHER:
-                    String filename = entryToFileName(file);
-                    if (file instanceof SymImageFile) {
-                        SymImageFile sym = (SymImageFile) file;
-                        Path target = root.resolve(sym.getTargetPath());
-                        if (!Files.exists(target)) {
-                            throw new IOException("Sym link target " + target
-                                    + " doesn't exist");
-                        }
-                        writeSymEntry(root.resolve(filename), target);
+                    // Copy TOP files of the "java.base" module (only)
+                    if ("java.base".equals(file.moduleName())) {
+                        writeEntry(in, root.resolve(entryToImagePath(file)));
                     } else {
-                        writeEntry(in, root.resolve(filename));
+                        throw new InternalError("unexpected TOP entry: " + file.path());
                     }
                     break;
                 default:

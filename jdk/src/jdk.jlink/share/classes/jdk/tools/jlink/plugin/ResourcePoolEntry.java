@@ -58,7 +58,6 @@ public interface ResourcePoolEntry {
      * <ul>NATIVE_CMD: A native executable launcher.</ul>
      * <ul>NATIVE_LIB: A native library.</ul>
      * <ul>TOP: A top-level file in the jdk run-time image directory.</ul>
-     * <ul>OTHER: Other kind of file.</ul>
      * </li>
      */
     public enum Type {
@@ -69,8 +68,7 @@ public interface ResourcePoolEntry {
         MAN_PAGE,
         NATIVE_CMD,
         NATIVE_LIB,
-        TOP,
-        OTHER
+        TOP
     }
 
     /**
