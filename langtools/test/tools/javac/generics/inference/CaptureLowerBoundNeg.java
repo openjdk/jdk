@@ -3,6 +3,7 @@
  * @bug 8039214
  * @summary Capture variable as an inference variable's lower bound
  * @compile/fail/ref=CaptureLowerBoundNeg.out -XDrawDiagnostics CaptureLowerBoundNeg.java
+ * @compile -Xlint:-options -source 7 CaptureLowerBoundNeg.java
  */
 
 public class CaptureLowerBoundNeg {
