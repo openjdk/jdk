@@ -643,9 +643,15 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
         ClassFileInfo cfInfo = read(fo);
         if (!className.endsWith(".class")) {
-            String cfName = cfInfo.cf.getName();
-            if (!cfName.replaceAll("[/$]", ".").equals(className.replaceAll("[/$]", "."))) {
-                reportWarning("warn.unexpected.class", className, cfName.replace('/', '.'));
+            if (cfInfo.cf.this_class == 0) {
+                if (!className.equals("module-info")) {
+                    reportWarning("warn.unexpected.class", fo.getName(), className);
+                }
+            } else {
+                String cfName = cfInfo.cf.getName();
+                if (!cfName.replaceAll("[/$]", ".").equals(className.replaceAll("[/$]", "."))) {
+                    reportWarning("warn.unexpected.class", fo.getName(), className);
+                }
             }
         }
         write(cfInfo);
