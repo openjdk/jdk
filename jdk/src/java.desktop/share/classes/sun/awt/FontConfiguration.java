@@ -182,11 +182,17 @@ public abstract class FontConfiguration {
             throw new Error("java.home property not set");
         }
         javaLib = javaHome + File.separator + "lib";
+        String javaConfFonts = javaHome +
+                               File.separator + "conf" +
+                               File.separator + "fonts";
         String userConfigFile = System.getProperty("sun.awt.fontconfig");
         if (userConfigFile != null) {
             fontConfigFile = new File(userConfigFile);
         } else {
-            fontConfigFile = findFontConfigFile(javaLib);
+            fontConfigFile = findFontConfigFile(javaConfFonts);
+            if (fontConfigFile == null) {
+                fontConfigFile = findFontConfigFile(javaLib);
+            }
         }
     }
 
@@ -275,8 +281,11 @@ public abstract class FontConfiguration {
         return null;
     }
 
-    private File findFontConfigFile(String javaLib) {
-        String baseName = javaLib + File.separator + "fontconfig";
+    private File findFontConfigFile(String dir) {
+        if (!(new File(dir)).exists()) {
+            return null;
+        }
+        String baseName = dir + File.separator + "fontconfig";
         File configFile;
         String osMajorVersion = null;
         if (osVersion != null && osName != null) {
