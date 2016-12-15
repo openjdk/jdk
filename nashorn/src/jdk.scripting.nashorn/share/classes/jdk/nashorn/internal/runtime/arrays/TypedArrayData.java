@@ -98,7 +98,7 @@ public abstract class TypedArrayData<T extends Buffer> extends ContinuousArrayDa
     }
 
     @Override
-    public void shiftLeft(final int by) {
+    public ArrayData shiftLeft(final int by) {
         throw new UnsupportedOperationException();
     }
 
