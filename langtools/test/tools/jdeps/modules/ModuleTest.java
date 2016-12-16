@@ -58,7 +58,7 @@ public class ModuleTest {
 
     // the names of the modules in this test
     private static final String UNSUPPORTED = "unsupported";
-    private static String[] modules = new String[] {"mI", "mII", "mIII", "m4", UNSUPPORTED};
+    private static String[] modules = new String[] {"mI", "mII", "mIII", "mIV", UNSUPPORTED};
     /**
      * Compiles all modules used by the test
      */
@@ -70,7 +70,7 @@ public class ModuleTest {
         assertTrue(CompilerUtils.compileModule(SRC_DIR, MODS_DIR, UNSUPPORTED,
                                                "--add-exports", "java.base/jdk.internal.perf=" + UNSUPPORTED));
         // m4 is not referenced
-        Arrays.asList("mI", "mII", "mIII", "m4")
+        Arrays.asList("mI", "mII", "mIII", "mIV")
               .forEach(mn -> assertTrue(CompilerUtils.compileModule(SRC_DIR, MODS_DIR, mn)));
 
         assertTrue(CompilerUtils.compile(SRC_DIR.resolve("mIII"), UNNAMED_DIR, "-p", MODS_DIR.toString()));

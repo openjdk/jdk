@@ -22,6 +22,6 @@
  */
 
 module use {
-     requires lib1;
-     requires lib2;
+     requires lib1x;
+     requires lib2x;
 }

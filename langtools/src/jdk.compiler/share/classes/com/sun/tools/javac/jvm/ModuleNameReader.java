@@ -100,30 +100,24 @@ public class ModuleNameReader {
         if (access_flags != 0x8000)
             throw new BadClassFile("invalid access flags for module: 0x" + Integer.toHexString(access_flags));
 
-        // FIXME: temporary compatibility code
         int this_class = nextChar();
-        if (this_class == 0) {
-            // new form
-            checkZero(nextChar(), "super_class");
-            checkZero(nextChar(), "interface_count");
-            checkZero(nextChar(), "fields_count");
-            checkZero(nextChar(), "methods_count");
-            int attributes_count = nextChar();
-            for (int i = 0; i < attributes_count; i++) {
-                int attr_name = nextChar();
-                int attr_length = nextInt();
-                if (getUtf8Value(attr_name, false).equals("Module") && attr_length > 2) {
-                    return getUtf8Value(nextChar(), true);
-                } else {
-                    // skip over unknown attributes
-                    bp += attr_length;
-                }
+        // could, should, check this_class == CONSTANT_Class("mdoule-info")
+        checkZero(nextChar(), "super_class");
+        checkZero(nextChar(), "interface_count");
+        checkZero(nextChar(), "fields_count");
+        checkZero(nextChar(), "methods_count");
+        int attributes_count = nextChar();
+        for (int i = 0; i < attributes_count; i++) {
+            int attr_name = nextChar();
+            int attr_length = nextInt();
+            if (getUtf8Value(attr_name, false).equals("Module") && attr_length > 2) {
+                return getModuleName(nextChar());
+            } else {
+                // skip over unknown attributes
+                bp += attr_length;
             }
-            throw new BadClassFile("no Module attribute");
-        } else {
-            // old form
-            return readModuleInfoName(this_class);
         }
+        throw new BadClassFile("no Module attribute");
     }
 
     void checkZero(int count, String name) throws BadClassFile {
@@ -172,6 +166,8 @@ public class ModuleNameReader {
             case CONSTANT_Class:
             case CONSTANT_String:
             case CONSTANT_MethodType:
+            case CONSTANT_Module:
+            case CONSTANT_Package:
                 bp = bp + 2;
                 break;
             case CONSTANT_MethodHandle:
@@ -211,33 +207,13 @@ public class ModuleNameReader {
         throw new BadClassFile("bad name at index " + index);
     }
 
-    /** Read the class name of a module-info.class file.
-     * The name is stored in a CONSTANT_Class entry, where the
-     * class name is of the form module-name/module-info.
-     */
-    String readModuleInfoName(int i) throws BadClassFile {
-        int classIndex = poolIdx[i];
-        if (buf[classIndex] == CONSTANT_Class) {
-            int utf8Index = poolIdx[getChar(classIndex + 1)];
-            if (buf[utf8Index] == CONSTANT_Utf8) {
-                int len = getChar(utf8Index + 1);
-                int start = utf8Index + 3;
-                String suffix = "/module-info";
-                if (endsWith(buf, start, len, suffix))
-                    return new String(ClassFile.internalize(buf, start, len - suffix.length()));
-            }
+    String getModuleName(int index) throws BadClassFile {
+        int infoIndex = poolIdx[index];
+        if (buf[infoIndex] == CONSTANT_Module) {
+            return getUtf8Value(getChar(infoIndex + 1), true);
+        } else {
+            throw new BadClassFile("bad module name at index " + index);
         }
-        throw new BadClassFile("bad module-info name");
-    }
-
-    private boolean endsWith(byte[] buf, int start, int len, String suffix) {
-        if (len <= suffix.length())
-            return false;
-        for (int i = 0; i < suffix.length(); i++) {
-            if (buf[start + len - suffix.length() + i] != suffix.charAt(i))
-                return false;
-        }
-        return true;
     }
 
     private static byte[] readInputStream(byte[] buf, InputStream s) throws IOException {

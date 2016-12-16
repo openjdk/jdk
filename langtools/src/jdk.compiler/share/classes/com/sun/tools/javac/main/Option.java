@@ -35,16 +35,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Locale;
-import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -60,7 +56,6 @@ import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.platform.PlatformProvider;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
-import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.JDK9Wrappers;
 import com.sun.tools.javac.util.Log;
@@ -634,6 +629,33 @@ public enum Option {
         }
     },
 
+    MODULE_VERSION("--module-version", "opt.arg.module.version", "opt.module.version", STANDARD, BASIC) {
+        @Override
+        public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
+            if (arg.isEmpty()) {
+                throw helper.newInvalidValueException("err.no.value.for.option", option);
+            } else {
+                try {
+                    Class.forName(JDK9Wrappers.ModuleDescriptor.Version.CLASSNAME);
+                    // use official parser if available
+                    try {
+                        JDK9Wrappers.ModuleDescriptor.Version.parse(arg);
+                    } catch (IllegalArgumentException e) {
+                        throw helper.newInvalidValueException("err.bad.value.for.option", option, arg);
+                    }
+                } catch (ClassNotFoundException ex) {
+                    // fall-back to simplistic rules when running on older platform
+                    if (!(arg.charAt(0) >= '0' && arg.charAt(0) <= '9') ||
+                        arg.endsWith("-") ||
+                        arg.endsWith("+")) {
+                        throw helper.newInvalidValueException("err.bad.value.for.option", option, arg);
+                    }
+                }
+            }
+            super.process(helper, option, arg);
+        }
+    },
+
     // This option exists only for the purpose of documenting itself.
     // It's actually implemented by the CommandLine class.
     AT("@", "opt.arg.file", "opt.AT", STANDARD, INFO, ArgKind.ADJACENT) {
@@ -681,7 +703,7 @@ public enum Option {
         @Override
         public void process(OptionHelper helper, String option) throws InvalidValueException {
             try {
-                Class.forName(JDK9Wrappers.VMHelper.VM_CLASSNAME);
+                Class.forName(JDK9Wrappers.VMHelper.CLASSNAME);
                 String[] runtimeArgs = JDK9Wrappers.VMHelper.getRuntimeArguments();
                 for (String arg : runtimeArgs) {
                     // Handle any supported runtime options; ignore all others.
@@ -1035,7 +1057,7 @@ public enum Option {
      * @param helper a helper to provide access to the environment
      * @param arg the arg string that identified this option
      * @param rest the remaining strings to be analysed
-     * @return true if the operation was successful, and false otherwise
+     * @throws InvalidValueException if the value of the option was invalid
      * @implNote The return value is the opposite of that used by {@link #process}.
      */
     public void handleOption(OptionHelper helper, String arg, Iterator<String> rest) throws InvalidValueException {
@@ -1084,6 +1106,7 @@ public enum Option {
      * @param option the option to be processed
      * @param arg the value to associate with the option, or a default value
      *  to be used if the option does not otherwise take an argument.
+     * @throws InvalidValueException if an error occurred
      */
     public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
         if (choices != null) {

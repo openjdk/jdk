@@ -100,7 +100,7 @@ public class OutputDirTest extends ModuleTestBase {
     public void testExplodedOutDir(Path base) throws Exception {
         Path modSrc = base.resolve("modSrc");
         tb.writeJavaFiles(modSrc,
-                "module m1 { exports p; }",
+                "module m1x { exports p; }",
                 "package p; public class CC { }");
         Path modClasses = base.resolve("modClasses");
         Files.createDirectories(modClasses);
@@ -114,7 +114,7 @@ public class OutputDirTest extends ModuleTestBase {
         Path src = base.resolve("src");
         Path src_m = src.resolve("m");
         tb.writeJavaFiles(src_m,
-                "module m { requires m1 ; }",
+                "module m { requires m1x ; }",
                 "class C { }");
 
         String log = new JavacTask(tb, Task.Mode.CMDLINE)
@@ -134,7 +134,7 @@ public class OutputDirTest extends ModuleTestBase {
     public void testInExplodedOutDir(Path base) throws Exception {
         Path modSrc = base.resolve("modSrc");
         tb.writeJavaFiles(modSrc,
-                "module m1 { exports p; }",
+                "module m1x { exports p; }",
                 "package p; public class CC { }");
         Path modClasses = base.resolve("modClasses");
         Files.createDirectories(modClasses);
@@ -147,7 +147,7 @@ public class OutputDirTest extends ModuleTestBase {
 
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
-                "module m { requires m1 ; }",
+                "module m { requires m1x ; }",
                 "class C { }");
 
         Path classes = modClasses.resolve("m");
