@@ -4684,16 +4684,7 @@ bool ClassFileParser::verify_unqualified_name(const char* name,
   for (const char* p = name; p != name + length;) {
     jchar ch = *p;
     if (ch < 128) {
-      if (ch == '.') {
-        // permit '.' in module names unless it's the first char, or
-        // preceding char is also a '.', or last char is a '.'.
-        if ((type != ClassFileParser::LegalModule) ||
-          (p == name) || (*(p-1) == '.') ||
-          (p == name + length - 1)) {
-          return false;
-        }
-      }
-      if (ch == ';' || ch == '[' ) {
+      if (ch == '.' || ch == ';' || ch == '[' ) {
         return false;   // do not permit '.', ';', or '['
       }
       if (ch == '/') {
