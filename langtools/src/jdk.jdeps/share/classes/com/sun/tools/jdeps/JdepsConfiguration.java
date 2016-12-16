@@ -416,7 +416,12 @@ public class JdepsConfiguration implements AutoCloseable {
                     }
                 };
 
-                return new ModuleReference(descriptor, uri, readerSupplier);
+                return new ModuleReference(descriptor, uri) {
+                    @Override
+                    public ModuleReader open() {
+                        return readerSupplier.get();
+                    }
+                };
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }

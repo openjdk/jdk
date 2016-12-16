@@ -117,6 +117,8 @@ public class ConstantPool {
     public static final int CONSTANT_MethodHandle = 15;
     public static final int CONSTANT_MethodType = 16;
     public static final int CONSTANT_InvokeDynamic = 18;
+    public static final int CONSTANT_Module = 19;
+    public static final int CONSTANT_Package = 20;
 
     public static enum RefKind {
         REF_getField(1),
@@ -213,8 +215,16 @@ public class ConstantPool {
                 pool[i] = new CONSTANT_Methodref_info(this, cr);
                 break;
 
+            case CONSTANT_Module:
+                pool[i] = new CONSTANT_Module_info(this, cr);
+                break;
+
             case CONSTANT_NameAndType:
                 pool[i] = new CONSTANT_NameAndType_info(this, cr);
+                break;
+
+            case CONSTANT_Package:
+                pool[i] = new CONSTANT_Package_info(this, cr);
                 break;
 
             case CONSTANT_String:
@@ -276,8 +286,16 @@ public class ConstantPool {
         return ((CONSTANT_Class_info) get(index, CONSTANT_Class));
     }
 
+    public CONSTANT_Module_info getModuleInfo(int index) throws InvalidIndex, UnexpectedEntry {
+        return ((CONSTANT_Module_info) get(index, CONSTANT_Module));
+    }
+
     public CONSTANT_NameAndType_info getNameAndTypeInfo(int index) throws InvalidIndex, UnexpectedEntry {
         return ((CONSTANT_NameAndType_info) get(index, CONSTANT_NameAndType));
+    }
+
+    public CONSTANT_Package_info getPackageInfo(int index) throws InvalidIndex, UnexpectedEntry {
+        return ((CONSTANT_Package_info) get(index, CONSTANT_Package));
     }
 
     public String getUTF8Value(int index) throws InvalidIndex, UnexpectedEntry {
@@ -339,10 +357,12 @@ public class ConstantPool {
         R visitInterfaceMethodref(CONSTANT_InterfaceMethodref_info info, P p);
         R visitInvokeDynamic(CONSTANT_InvokeDynamic_info info, P p);
         R visitLong(CONSTANT_Long_info info, P p);
-        R visitNameAndType(CONSTANT_NameAndType_info info, P p);
         R visitMethodref(CONSTANT_Methodref_info info, P p);
         R visitMethodHandle(CONSTANT_MethodHandle_info info, P p);
         R visitMethodType(CONSTANT_MethodType_info info, P p);
+        R visitModule(CONSTANT_Module_info info, P p);
+        R visitNameAndType(CONSTANT_NameAndType_info info, P p);
+        R visitPackage(CONSTANT_Package_info info, P p);
         R visitString(CONSTANT_String_info info, P p);
         R visitUtf8(CONSTANT_Utf8_info info, P p);
     }
@@ -781,6 +801,46 @@ public class ConstantPool {
         }
     }
 
+    public static class CONSTANT_Module_info extends CPInfo {
+        CONSTANT_Module_info(ConstantPool cp, ClassReader cr) throws IOException {
+            super(cp);
+            name_index = cr.readUnsignedShort();
+        }
+
+        public CONSTANT_Module_info(ConstantPool cp, int name_index) {
+            super(cp);
+            this.name_index = name_index;
+        }
+
+        public int getTag() {
+            return CONSTANT_Module;
+        }
+
+        public int  byteLength() {
+            return 3;
+        }
+
+        /**
+         * Get the raw value of the module name referenced by this constant pool entry.
+         * This will be the name of the module.
+         * @return the raw value of the module name
+         */
+        public String getName() throws ConstantPoolException {
+            return cp.getUTF8Value(name_index);
+        }
+
+        @Override
+        public String toString() {
+            return "CONSTANT_Module_info[name_index: " + name_index + "]";
+        }
+
+        public <R, D> R accept(Visitor<R, D> visitor, D data) {
+            return visitor.visitModule(this, data);
+        }
+
+        public final int name_index;
+    }
+
     public static class CONSTANT_NameAndType_info extends CPInfo {
         CONSTANT_NameAndType_info(ConstantPool cp, ClassReader cr) throws IOException {
             super(cp);
@@ -821,6 +881,46 @@ public class ConstantPool {
 
         public final int name_index;
         public final int type_index;
+    }
+
+    public static class CONSTANT_Package_info extends CPInfo {
+        CONSTANT_Package_info(ConstantPool cp, ClassReader cr) throws IOException {
+            super(cp);
+            name_index = cr.readUnsignedShort();
+        }
+
+        public CONSTANT_Package_info(ConstantPool cp, int name_index) {
+            super(cp);
+            this.name_index = name_index;
+        }
+
+        public int getTag() {
+            return CONSTANT_Package;
+        }
+
+        public int  byteLength() {
+            return 3;
+        }
+
+        /**
+         * Get the raw value of the package name referenced by this constant pool entry.
+         * This will be the name of the package, in internal form.
+         * @return the raw value of the module name
+         */
+        public String getName() throws ConstantPoolException {
+            return cp.getUTF8Value(name_index);
+        }
+
+        @Override
+        public String toString() {
+            return "CONSTANT_Package_info[name_index: " + name_index + "]";
+        }
+
+        public <R, D> R accept(Visitor<R, D> visitor, D data) {
+            return visitor.visitPackage(this, data);
+        }
+
+        public final int name_index;
     }
 
     public static class CONSTANT_String_info extends CPInfo {

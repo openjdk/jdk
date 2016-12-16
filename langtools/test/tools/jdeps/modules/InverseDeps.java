@@ -61,7 +61,7 @@ public class InverseDeps {
     private static final Path LIBS_DIR = Paths.get("libs");
 
     private static final Set<String> modules = new LinkedHashSet(
-        List.of("unsafe", "m4", "m5", "mVI", "mVII")
+        List.of("unsafe", "mIV", "mV", "mVI", "mVII")
     );
 
     /**
@@ -93,18 +93,18 @@ public class InverseDeps {
         return new Object[][] {
             // --require and result
             { "java.sql", new String[][] {
-                    new String[] { "java.sql", "m5" },
+                    new String[] { "java.sql", "mV" },
                 }
             },
             { "java.compiler", new String[][] {
-                    new String[] { "java.compiler", "m5" },
-                    new String[] { "java.compiler", "m4", "m5" },
+                    new String[] { "java.compiler", "mV" },
+                    new String[] { "java.compiler", "mIV", "mV" },
                 }
             },
             { "java.logging", new String[][]{
-                    new String[] {"java.logging", "m5"},
-                    new String[] {"java.logging", "m4", "m5"},
-                    new String[] {"java.logging", "java.sql", "m5"},
+                    new String[] {"java.logging", "mV"},
+                    new String[] {"java.logging", "mIV", "mV"},
+                    new String[] {"java.logging", "java.sql", "mV"},
                 }
             },
             { "jdk.unsupported", new String[][] {
@@ -146,12 +146,12 @@ public class InverseDeps {
         return new Object[][] {
             // -package and result
             { "p4", new String[][] {
-                        new String[] { "m4", "m5"},
+                        new String[] { "mIV", "mV"},
                     }
             },
             { "javax.tools", new String[][] {
-                        new String[] {"java.compiler", "m5"},
-                        new String[] {"java.compiler", "m4", "m5"},
+                        new String[] {"java.compiler", "mV"},
+                        new String[] {"java.compiler", "mIV", "mV"},
                     }
             },
             { "sun.misc", new String[][] {
@@ -187,7 +187,7 @@ public class InverseDeps {
             { "java.util.logging.*|org.safe.Lib", new String[][] {
                     new String[] { "unsafe", "mVII"},
                     new String[] { "unsafe", "mVI", "mVII"},
-                    new String[] { "java.logging", "m5"},
+                    new String[] { "java.logging", "mV"},
                 }
             }
         };
@@ -224,7 +224,7 @@ public class InverseDeps {
             { "java.util.logging.*|org.safe.Lib", new String[][] {
                     new String[] { "unsafe.jar", "mVII.jar"},
                     new String[] { "unsafe.jar", "mVI.jar", "mVII.jar"},
-                    new String[] { "java.logging", "m5.jar"},
+                    new String[] { "java.logging", "mV.jar"},
                 }
             }
         };

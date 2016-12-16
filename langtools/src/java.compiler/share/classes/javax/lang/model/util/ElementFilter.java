@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.lang.model.element.*;
 import javax.lang.model.element.ModuleElement.Directive;
 import javax.lang.model.element.ModuleElement.DirectiveKind;
 import javax.lang.model.element.ModuleElement.ExportsDirective;
+import javax.lang.model.element.ModuleElement.OpensDirective;
 import javax.lang.model.element.ModuleElement.ProvidesDirective;
 import javax.lang.model.element.ModuleElement.RequiresDirective;
 import javax.lang.model.element.ModuleElement.UsesDirective;
@@ -239,11 +240,9 @@ public class ElementFilter {
         return set;
     }
 
-
-
     /**
-     * Returns a list of export directives in {@code directives}.
-     * @return a list of export directives in {@code directives}
+     * Returns a list of {@code exports} directives in {@code directives}.
+     * @return a list of {@code exports} directives in {@code directives}
      * @param directives the directives to filter
      * @since 9
      */
@@ -253,8 +252,19 @@ public class ElementFilter {
     }
 
     /**
-     * Returns a list of provides directives in {@code directives}.
-     * @return a list of provides directives in {@code directives}
+     * Returns a list of {@code opens} directives in {@code directives}.
+     * @return a list of {@code opens} directives in {@code directives}
+     * @param directives the directives to filter
+     * @since 9
+     */
+    public static List<OpensDirective>
+            opensIn(Iterable<? extends Directive> directives) {
+        return listFilter(directives, DirectiveKind.OPENS, OpensDirective.class);
+    }
+
+    /**
+     * Returns a list of {@code provides} directives in {@code directives}.
+     * @return a list of {@code provides} directives in {@code directives}
      * @param directives the directives to filter
      * @since 9
      */
@@ -264,8 +274,8 @@ public class ElementFilter {
     }
 
     /**
-     * Returns a list of requires directives in {@code directives}.
-     * @return a list of requires directives in {@code directives}
+     * Returns a list of {@code requires} directives in {@code directives}.
+     * @return a list of {@code requires} directives in {@code directives}
      * @param directives the directives to filter
      * @since 9
      */
@@ -275,8 +285,8 @@ public class ElementFilter {
     }
 
     /**
-     * Returns a list of uses directives in {@code directives}.
-     * @return a list of uses directives in {@code directives}
+     * Returns a list of {@code uses} directives in {@code directives}.
+     * @return a list of {@code uses} directives in {@code directives}
      * @param directives the directives to filter
      * @since 9
      */

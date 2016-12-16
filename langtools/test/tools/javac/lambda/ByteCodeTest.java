@@ -619,6 +619,36 @@ public class ByteCodeTest {
         }
 
         @Override
+        public String visitModule(CONSTANT_Module_info c, Integer p) {
+
+            String value = slist.get(p);
+            if (value == null) {
+                try {
+                    value = visit(cfpool.get(c.name_index), c.name_index);
+                    slist.set(p, value);
+                } catch (ConstantPoolException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            return value;
+        }
+
+        @Override
+        public String visitPackage(CONSTANT_Package_info c, Integer p) {
+
+            String value = slist.get(p);
+            if (value == null) {
+                try {
+                    value = visit(cfpool.get(c.name_index), c.name_index);
+                    slist.set(p, value);
+                } catch (ConstantPoolException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            return value;
+        }
+
+        @Override
         public String visitString(CONSTANT_String_info c, Integer p) {
 
             try {

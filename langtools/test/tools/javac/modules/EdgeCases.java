@@ -97,9 +97,9 @@ public class EdgeCases extends ModuleTestBase {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
             Path moduleSrc = base.resolve("module-src");
-            Path m1 = moduleSrc.resolve("m1");
+            Path m1 = moduleSrc.resolve("m1x");
 
-            tb.writeJavaFiles(m1, "module m1 { }");
+            tb.writeJavaFiles(m1, "module m1x { }");
 
             Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(findJavaFiles(moduleSrc));
             com.sun.source.util.JavacTask task =
@@ -107,7 +107,7 @@ public class EdgeCases extends ModuleTestBase {
 
             task.analyze();
 
-            ModuleSymbol msym = (ModuleSymbol) task.getElements().getModuleElement("m1");
+            ModuleSymbol msym = (ModuleSymbol) task.getElements().getModuleElement("m1x");
 
             msym.outermostClass();
         }
@@ -118,9 +118,9 @@ public class EdgeCases extends ModuleTestBase {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
             Path moduleSrc = base.resolve("module-src");
-            Path m1 = moduleSrc.resolve("m1");
+            Path m1 = moduleSrc.resolve("m1x");
 
-            tb.writeJavaFiles(m1, "module m1 { }",
+            tb.writeJavaFiles(m1, "module m1x { }",
                                   "package p;",
                                   "package p; class T { }");
 
@@ -154,17 +154,17 @@ public class EdgeCases extends ModuleTestBase {
     @Test
     public void testModuleImplicitModuleBoundaries(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { exports api1; }",
+                          "module m1x { exports api1; }",
                           "package api1; public class Api1 { public void call() { } }");
-        Path src_m2 = src.resolve("m2");
+        Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2 { requires m1; exports api2; }",
+                          "module m2x { requires m1x; exports api2; }",
                           "package api2; public class Api2 { public static api1.Api1 get() { return null; } }");
-        Path src_m3 = src.resolve("m3");
+        Path src_m3 = src.resolve("m3x");
         tb.writeJavaFiles(src_m3,
-                          "module m3 { requires m2; }",
+                          "module m3x { requires m2x; }",
                           "package test; public class Test { { api2.Api2.get().call(); api2.Api2.get().toString(); } }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
@@ -214,13 +214,13 @@ public class EdgeCases extends ModuleTestBase {
           .run();
 
         Path src = base.resolve("src");
-        Path src_m2 = src.resolve("m2");
+        Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2 { requires a; exports api2; }",
+                          "module m2x { requires a; exports api2; }",
                           "package api2; public class Api2 { public static api1.Api1 get() { return null; } }");
-        Path src_m3 = src.resolve("m3");
+        Path src_m3 = src.resolve("m3x");
         tb.writeJavaFiles(src_m3,
-                          "module m3 { requires a; requires m2; }",
+                          "module m3x { requires a; requires m2x; }",
                           "package test; public class Test { { api2.Api2.get(); api1.Api1 a1; } }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
@@ -245,7 +245,7 @@ public class EdgeCases extends ModuleTestBase {
     @Test
     public void testEmptyImplicitModuleInfo(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         Files.createDirectories(src_m1);
         try (Writer w = Files.newBufferedWriter(src_m1.resolve("module-info.java"))) {}
         tb.writeJavaFiles(src_m1,
@@ -262,7 +262,7 @@ public class EdgeCases extends ModuleTestBase {
                 .writeAll();
 
         tb.writeJavaFiles(src_m1,
-                          "module m1 {}");
+                          "module m1x {}");
 
         new JavacTask(tb)
                 .options("--source-path", src_m1.toString())
@@ -276,16 +276,16 @@ public class EdgeCases extends ModuleTestBase {
     @Test
     public void testClassPackageClash(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { exports test.m1; }",
-                          "package test.m1;\n" +
+                          "module m1x { exports test.m1x; }",
+                          "package test.m1x;\n" +
                           "public class Test {}\n");
-        Path src_m2 = src.resolve("m2");
+        Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2 { requires m1; }",
+                          "module m2x { requires m1x; }",
                           "package test;\n" +
-                          "public class m1 {}\n");
+                          "public class m1x {}\n");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
@@ -299,7 +299,7 @@ public class EdgeCases extends ModuleTestBase {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
-            "m1.java:2:8: compiler.err.clash.with.pkg.of.same.name: kindname.class, test.m1",
+            "m1x.java:2:8: compiler.err.clash.with.pkg.of.same.name: kindname.class, test.m1x",
             "1 error"
         );
 
@@ -383,7 +383,7 @@ public class EdgeCases extends ModuleTestBase {
     @Test
     public void testModuleInfoNameMismatchSource(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path m1 = src.resolve("m1");
+        Path m1 = src.resolve("m1x");
         Files.createDirectories(m1);
         tb.writeJavaFiles(m1, "module other { }",
                               "package test; public class Test {}");
@@ -400,8 +400,8 @@ public class EdgeCases extends ModuleTestBase {
             .getOutputLines(OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
-                "module-info.java:1:1: compiler.err.module.name.mismatch: other, m1",
-                "- compiler.err.cant.access: m1.module-info, (compiler.misc.cant.resolve.modules)",
+                "module-info.java:1:1: compiler.err.module.name.mismatch: other, m1x",
+                "- compiler.err.cant.access: m1x.module-info, (compiler.misc.cant.resolve.modules)",
                 "2 errors");
 
         if (!expected.equals(log)) {
@@ -416,7 +416,7 @@ public class EdgeCases extends ModuleTestBase {
         tb.writeJavaFiles(src, "module other { }",
                                "package test; public class Test {}");
         Path classes = base.resolve("classes");
-        Path m1Classes = classes.resolve("m1");
+        Path m1Classes = classes.resolve("m1x");
         tb.createDirectories(m1Classes);
 
         new JavacTask(tb)
@@ -428,7 +428,7 @@ public class EdgeCases extends ModuleTestBase {
 
         Path src2 = base.resolve("src2");
         Files.createDirectories(src2);
-        tb.writeJavaFiles(src2, "module use { requires m1; }");
+        tb.writeJavaFiles(src2, "module use { requires m1x; }");
 
         Path classes2 = base.resolve("classes2");
         tb.createDirectories(classes2);
@@ -443,7 +443,7 @@ public class EdgeCases extends ModuleTestBase {
             .getOutputLines(OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
-                "- compiler.err.cant.access: m1.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.module.name.mismatch: other, m1))",
+                "- compiler.err.cant.access: m1x.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.module.name.mismatch: other, m1x))",
                 "1 error");
 
         if (!expected.equals(log)) {

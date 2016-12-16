@@ -474,6 +474,14 @@ public class ClassWriter extends ClassFile {
                 poolbuf.appendByte(CONSTANT_MethodHandle);
                 poolbuf.appendByte(ref.refKind);
                 poolbuf.appendChar(pool.put(ref.refSym));
+            } else if (value instanceof ModuleSymbol) {
+                ModuleSymbol m = (ModuleSymbol)value;
+                poolbuf.appendByte(CONSTANT_Module);
+                poolbuf.appendChar(pool.put(m.name));
+            } else if (value instanceof PackageSymbol) {
+                PackageSymbol m = (PackageSymbol)value;
+                poolbuf.appendByte(CONSTANT_Package);
+                poolbuf.appendChar(pool.put(names.fromUtf(externalize(m.fullname))));
             } else {
                 Assert.error("writePool " + value);
             }
@@ -954,8 +962,9 @@ public class ClassWriter extends ClassFile {
 
         int alenIdx = writeAttr(names.Module);
 
-        databuf.appendChar(pool.put(names.fromUtf(externalize(m.name))));
+        databuf.appendChar(pool.put(m));
         databuf.appendChar(ModuleFlags.value(m.flags)); // module_flags
+        databuf.appendChar(m.version != null ? pool.put(m.version) : 0);
 
         ListBuffer<RequiresDirective> requires = new ListBuffer<>();
         for (RequiresDirective r: m.requires) {
@@ -964,21 +973,22 @@ public class ClassWriter extends ClassFile {
         }
         databuf.appendChar(requires.size());
         for (RequiresDirective r: requires) {
-            databuf.appendChar(pool.put(names.fromUtf(externalize(r.module.name))));
+            databuf.appendChar(pool.put(r.module));
             databuf.appendChar(RequiresFlag.value(r.flags));
+            databuf.appendChar(r.module.version != null ? pool.put(r.module.version) : 0);
         }
 
         List<ExportsDirective> exports = m.exports;
         databuf.appendChar(exports.size());
         for (ExportsDirective e: exports) {
-            databuf.appendChar(pool.put(names.fromUtf(externalize(e.packge.flatName()))));
+            databuf.appendChar(pool.put(e.packge));
             databuf.appendChar(ExportsFlag.value(e.flags));
             if (e.modules == null) {
                 databuf.appendChar(0);
             } else {
                 databuf.appendChar(e.modules.size());
                 for (ModuleSymbol msym: e.modules) {
-                    databuf.appendChar(pool.put(names.fromUtf(externalize(msym.name))));
+                    databuf.appendChar(pool.put(msym));
                 }
             }
         }
@@ -986,14 +996,14 @@ public class ClassWriter extends ClassFile {
         List<OpensDirective> opens = m.opens;
         databuf.appendChar(opens.size());
         for (OpensDirective o: opens) {
-            databuf.appendChar(pool.put(names.fromUtf(externalize(o.packge.flatName()))));
+            databuf.appendChar(pool.put(o.packge));
             databuf.appendChar(OpensFlag.value(o.flags));
             if (o.modules == null) {
                 databuf.appendChar(0);
             } else {
                 databuf.appendChar(o.modules.size());
                 for (ModuleSymbol msym: o.modules) {
-                    databuf.appendChar(pool.put(names.fromUtf(externalize(msym.name))));
+                    databuf.appendChar(pool.put(msym));
                 }
             }
         }
@@ -1718,7 +1728,8 @@ public class ClassWriter extends ClassFile {
         databuf.appendChar(flags);
 
         if (c.owner.kind == MDL) {
-            databuf.appendChar(0);
+            PackageSymbol unnamed = ((ModuleSymbol) c.owner).unnamedPackage;
+            databuf.appendChar(pool.put(new ClassSymbol(0, names.module_info, unnamed)));
         } else {
             databuf.appendChar(pool.put(c));
         }
