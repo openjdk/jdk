@@ -925,6 +925,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         public Completer usesProvidesCompleter = Completer.NULL_COMPLETER;
         public final Set<ModuleFlags> flags = EnumSet.noneOf(ModuleFlags.class);
+        public final Set<ModuleResolutionFlags> resolutionFlags = EnumSet.noneOf(ModuleResolutionFlags.class);
 
         /**
          * Create a ModuleSymbol with an associated module-info ClassSymbol.
@@ -1037,7 +1038,26 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         }
 
         public final int value;
+    }
 
+    public enum ModuleResolutionFlags {
+        DO_NOT_RESOLVE_BY_DEFAULT(0x0001),
+        WARN_DEPRECATED(0x0002),
+        WARN_DEPRECATED_REMOVAL(0x0004),
+        WARN_INCUBATOR(0x0008);
+
+        public static int value(Set<ModuleResolutionFlags> s) {
+            int v = 0;
+            for (ModuleResolutionFlags f: s)
+                v |= f.value;
+            return v;
+        }
+
+        private ModuleResolutionFlags(int value) {
+            this.value = value;
+        }
+
+        public final int value;
     }
 
     /** A class for package symbols

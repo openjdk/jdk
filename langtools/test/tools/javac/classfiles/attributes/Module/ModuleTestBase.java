@@ -93,10 +93,10 @@ public class ModuleTestBase {
         tr.checkContains(actualRequires, moduleDescriptor.requires, "Lists of requires don't match");
     }
 
-    private void testExports(ModuleDescriptor moduleDescriptor, Module_attribute module, ConstantPool constantPool) throws ConstantPool.InvalidIndex, ConstantPool.UnexpectedEntry {
+    private void testExports(ModuleDescriptor moduleDescriptor, Module_attribute module, ConstantPool constantPool) throws ConstantPoolException {
         tr.checkEquals(module.exports_count, moduleDescriptor.exports.size(), "Wrong amount of exports.");
         for (Module_attribute.ExportsEntry export : module.exports) {
-            String pkg = constantPool.getUTF8Value(export.exports_index);
+            String pkg = constantPool.getPackageInfo(export.exports_index).getName();
             if (tr.checkTrue(moduleDescriptor.exports.containsKey(pkg), "Unexpected export " + pkg)) {
                 Export expectedExport = moduleDescriptor.exports.get(pkg);
                 tr.checkEquals(expectedExport.mask, export.exports_flags, "Wrong export flags");
@@ -104,7 +104,7 @@ public class ModuleTestBase {
                 tr.checkEquals(export.exports_to_count, expectedTo.size(), "Wrong amount of exports to");
                 List<String> actualTo = new ArrayList<>();
                 for (int toIdx : export.exports_to_index) {
-                    actualTo.add(constantPool.getUTF8Value(toIdx).replace('/', '.'));
+                    actualTo.add(constantPool.getModuleInfo(toIdx).getName().replace('/', '.'));
                 }
                 tr.checkContains(actualTo, expectedTo, "Lists of \"exports to\" don't match.");
             }

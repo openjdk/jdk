@@ -123,9 +123,9 @@ public class HelloWorldTest extends ModuleTestBase {
     @Test
     public void testModuleSourcePath(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
-        tb.writeFile(src_m1.resolve("module-info.java"), "module m1 { }");
-        tb.writeJavaFiles(src_m1, PKG_HELLO_WORLD);
+        Path src_m = src.resolve("m");
+        tb.writeFile(src_m.resolve("module-info.java"), "module m { }");
+        tb.writeJavaFiles(src_m, PKG_HELLO_WORLD);
 
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
@@ -133,13 +133,13 @@ public class HelloWorldTest extends ModuleTestBase {
         new JavacTask(tb)
             .options("--module-source-path", src.toString())
             .outdir(classes)
-            .files(src_m1.resolve("p/HelloWorld.java"))
+            .files(src_m.resolve("p/HelloWorld.java"))
             .run()
             .writeAll();
 
         checkFiles(
-            classes.resolve("m1/module-info.class"),
-            classes.resolve("m1/p/HelloWorld.class"));
+            classes.resolve("m/module-info.class"),
+            classes.resolve("m/p/HelloWorld.class"));
     }
 
     void checkFiles(Path... files) throws Exception {

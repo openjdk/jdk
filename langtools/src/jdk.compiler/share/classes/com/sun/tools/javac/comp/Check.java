@@ -2116,6 +2116,18 @@ public class Check {
         }
     }
 
+    public void checkModuleName (JCModuleDecl tree) {
+        Name moduleName = tree.sym.name;
+        Assert.checkNonNull(moduleName);
+        if (lint.isEnabled(LintCategory.MODULE)) {
+            String moduleNameString = moduleName.toString();
+            int nameLength = moduleNameString.length();
+            if (nameLength > 0 && Character.isDigit(moduleNameString.charAt(nameLength - 1))) {
+                log.warning(Lint.LintCategory.MODULE, tree.qualId.pos(), Warnings.PoorChoiceForModuleName(moduleName));
+            }
+        }
+    }
+
     private boolean checkNameClash(ClassSymbol origin, Symbol s1, Symbol s2) {
         ClashFilter cf = new ClashFilter(origin.type);
         return (cf.accepts(s1) &&
@@ -3877,4 +3889,17 @@ public class Check {
                 log.warning(LintCategory.EXPORTS, pos, Warnings.LeaksNotAccessibleNotRequiredTransitive(kindName(what), what, what.packge().modle));
             }
         }
+
+    void checkModuleExists(final DiagnosticPosition pos, ModuleSymbol msym) {
+        if (msym.kind != MDL) {
+            deferredLintHandler.report(new DeferredLintHandler.LintLogger() {
+                @Override
+                public void report() {
+                    if (lint.isEnabled(Lint.LintCategory.MODULE))
+                        log.warning(LintCategory.MODULE, pos, Warnings.ModuleNotFound(msym));
+                }
+            });
+        }
+    }
+
 }

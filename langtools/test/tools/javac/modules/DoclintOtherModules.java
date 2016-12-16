@@ -49,14 +49,14 @@ public class DoclintOtherModules extends ModuleTestBase {
     @Test
     public void testSimple(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path m1 = src.resolve("m1");
-        Path m2 = src.resolve("m2");
+        Path m1 = src.resolve("m1x");
+        Path m2 = src.resolve("m2x");
         tb.writeJavaFiles(m1,
-                          "module m1 {}",
-                          "package m1; /** @see m2.B */ @Deprecated public class A {}");
+                          "module m1x {}",
+                          "package m1x; /** @see m2x.B */ @Deprecated public class A {}");
         tb.writeJavaFiles(m2,
-                          "module m2 { requires m1; exports m2; }",
-                          "package m2; public class B extends Foo {} @Deprecated class Foo {}");
+                          "module m2x { requires m1x; exports m2x; }",
+                          "package m2x; public class B extends Foo {} @Deprecated class Foo {}");
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 

@@ -708,6 +708,10 @@ public class Dependencies {
                 return visitRef(info, p);
             }
 
+            public Void visitModule(CONSTANT_Module_info info, Void p) {
+                return null;
+            }
+
             public Void visitNameAndType(CONSTANT_NameAndType_info info, Void p) {
                 try {
                     new Signature(info.type_index).getType(constant_pool).accept(this, null);
@@ -715,6 +719,10 @@ public class Dependencies {
                 } catch (ConstantPoolException e) {
                     throw new ClassFileError(e);
                 }
+            }
+
+            public Void visitPackage(CONSTANT_Package_info info, Void p) {
+                return null;
             }
 
             public Void visitString(CONSTANT_String_info info, Void p) {

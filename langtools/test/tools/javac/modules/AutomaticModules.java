@@ -82,14 +82,14 @@ public class AutomaticModules extends ModuleTestBase {
           .run();
 
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
+        Path m1 = moduleSrc.resolve("m1x");
 
         Path classes = base.resolve("classes");
 
         Files.createDirectories(classes);
 
         tb.writeJavaFiles(m1,
-                          "module m1 { requires test.api; requires java.desktop; }",
+                          "module m1x { requires test.api; requires java.desktop; }",
                           "package impl; public class Impl { public void e(api.Api api) { api.actionPerformed(null); } }");
 
         new JavacTask(tb)
@@ -140,14 +140,14 @@ public class AutomaticModules extends ModuleTestBase {
           .run();
 
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
+        Path m1 = moduleSrc.resolve("m1x");
 
         Path classes = base.resolve("classes");
 
         Files.createDirectories(classes);
 
         tb.writeJavaFiles(m1,
-                          "module m1 { requires test.api; }",
+                          "module m1x { requires test.api; }",
                           "package impl; public class Impl { public void e(api.Api api) { api.run(\"\"); } }");
 
         new JavacTask(tb)
@@ -193,7 +193,7 @@ public class AutomaticModules extends ModuleTestBase {
         Files.createDirectories(depClasses);
 
         tb.writeJavaFiles(depSrc,
-                          "module m1 { requires transitive automatic; }",
+                          "module m1x { requires transitive automatic; }",
                           "package dep; public class Dep { api.Api api; }");
 
         new JavacTask(tb)
@@ -203,7 +203,7 @@ public class AutomaticModules extends ModuleTestBase {
                 .run()
                 .writeAll();
 
-        Path moduleJar = modulePath.resolve("m1.jar");
+        Path moduleJar = modulePath.resolve("m1x.jar");
 
         new JarTask(tb, moduleJar)
           .baseDir(depClasses)
@@ -217,7 +217,7 @@ public class AutomaticModules extends ModuleTestBase {
         Files.createDirectories(testClasses);
 
         tb.writeJavaFiles(testSrc,
-                          "module m2 { requires automatic; }",
+                          "module m2x { requires automatic; }",
                           "package test; public class Test { }");
 
         new JavacTask(tb)
@@ -260,13 +260,13 @@ public class AutomaticModules extends ModuleTestBase {
 
         Path moduleSrc = base.resolve("module-src");
 
-        tb.writeJavaFiles(moduleSrc.resolve("m1"),
-                          "module m1 { requires static automaticA; }",
-                          "package impl; public class Impl { apiA.Api a; apiB.Api b; m2.M2 m;}");
+        tb.writeJavaFiles(moduleSrc.resolve("m1x"),
+                          "module m1x { requires static automaticA; }",
+                          "package impl; public class Impl { apiA.Api a; apiB.Api b; m2x.M2 m;}");
 
-        tb.writeJavaFiles(moduleSrc.resolve("m2"),
-                          "module m2 { exports m2; }",
-                          "package m2; public class M2 { }");
+        tb.writeJavaFiles(moduleSrc.resolve("m2x"),
+                          "module m2x { exports m2x; }",
+                          "package m2x; public class M2 { }");
 
         Path classes = base.resolve("classes");
 
@@ -283,7 +283,7 @@ public class AutomaticModules extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expected = Arrays.asList("Impl.java:1:61: compiler.err.not.def.access.package.cant.access: m2.M2, m2",
+        List<String> expected = Arrays.asList("Impl.java:1:62: compiler.err.not.def.access.package.cant.access: m2x.M2, m2x",
                                               "1 error");
 
         if (!expected.equals(log)) {
@@ -301,7 +301,7 @@ public class AutomaticModules extends ModuleTestBase {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         expected = Arrays.asList("Impl.java:1:51: compiler.err.doesnt.exist: apiB",
-                                 "Impl.java:1:61: compiler.err.not.def.access.package.cant.access: m2.M2, m2",
+                                 "Impl.java:1:62: compiler.err.not.def.access.package.cant.access: m2x.M2, m2x",
                                  "2 errors");
 
         if (!expected.equals(log)) {

@@ -49,21 +49,21 @@ public class MOptionTest extends ModuleTestBase {
     @Test
     public void testOneModule(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path m1 = src.resolve("m1");
+        Path m1 = src.resolve("m1x");
         Path build = base.resolve("build");
         Files.createDirectories(build);
 
         tb.writeJavaFiles(m1,
-                "module m1 {}",
+                "module m1x {}",
                 "package test; public class Test {}");
 
         new JavacTask(tb)
-                .options("-m", "m1", "--module-source-path", src.toString(), "-d", build.toString())
+                .options("-m", "m1x", "--module-source-path", src.toString(), "-d", build.toString())
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
 
-        Path moduleInfoClass = build.resolve("m1/module-info.class");
-        Path testTestClass = build.resolve("m1/test/Test.class");
+        Path moduleInfoClass = build.resolve("m1x/module-info.class");
+        Path testTestClass = build.resolve("m1x/test/Test.class");
 
         FileTime moduleInfoTimeStamp = Files.getLastModifiedTime(moduleInfoClass);
         FileTime testTestTimeStamp = Files.getLastModifiedTime(testTestClass);
@@ -81,7 +81,7 @@ public class MOptionTest extends ModuleTestBase {
         Thread.sleep(2000); //timestamps
 
         new JavacTask(tb)
-                .options("-m", "m1", "--module-source-path", src.toString(), "-d", build.toString())
+                .options("-m", "m1x", "--module-source-path", src.toString(), "-d", build.toString())
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
 
@@ -98,7 +98,7 @@ public class MOptionTest extends ModuleTestBase {
         Files.setLastModifiedTime(testTest, FileTime.fromMillis(System.currentTimeMillis()));
 
         new JavacTask(tb)
-                .options("-m", "m1", "--module-source-path", src.toString(), "-d", build.toString())
+                .options("-m", "m1x", "--module-source-path", src.toString(), "-d", build.toString())
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
 
@@ -114,17 +114,17 @@ public class MOptionTest extends ModuleTestBase {
     @Test
     public void testNoOutputDir(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path m1 = src.resolve("m1");
+        Path m1 = src.resolve("m1x");
         Path build = base.resolve("build");
         Files.createDirectories(build);
 
         tb.writeJavaFiles(m1,
-                "module m1 {}",
+                "module m1x {}",
                 "package test; public class Test {}");
 
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
-                    "-m", "m1",
+                    "-m", "m1x",
                     "--module-source-path", src.toString())
                 .run(Task.Expect.FAIL)
                 .writeAll()
@@ -137,17 +137,17 @@ public class MOptionTest extends ModuleTestBase {
     @Test
     public void testNoModuleSourcePath(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path m1 = src.resolve("m1");
+        Path m1 = src.resolve("m1x");
         Path build = base.resolve("build");
         Files.createDirectories(build);
 
         tb.writeJavaFiles(m1,
-                "module m1 {}",
+                "module m1x {}",
                 "package test; public class Test {}");
 
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
-                        "-m", "m1",
+                        "-m", "m1x",
                         "-d", build.toString())
                 .run(Task.Expect.FAIL)
                 .writeAll()
@@ -160,29 +160,29 @@ public class MOptionTest extends ModuleTestBase {
     @Test
     public void testMultiModule(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path m1 = src.resolve("m1");
-        Path m2 = src.resolve("m2");
+        Path m1 = src.resolve("m1x");
+        Path m2 = src.resolve("m2x");
         Path build = base.resolve("build");
         Files.createDirectories(build);
 
         tb.writeJavaFiles(m1,
-                "module m1 {}",
+                "module m1x {}",
                 "package p1; public class C1 {}");
 
         tb.writeJavaFiles(m2,
-                "module m2 {}",
+                "module m2x {}",
                 "package p2; public class C2 {}");
 
         new JavacTask(tb)
-                .options("-m", "m1,m2", "--module-source-path", src.toString(), "-d", build.toString())
+                .options("-m", "m1x,m2x", "--module-source-path", src.toString(), "-d", build.toString())
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
 
-        Path m1ModuleInfoClass = build.resolve("m1/module-info.class");
-        Path classC1 = build.resolve("m1/p1/C1.class");
+        Path m1ModuleInfoClass = build.resolve("m1x/module-info.class");
+        Path classC1 = build.resolve("m1x/p1/C1.class");
 
-        Path m2ModuleInfoClass = build.resolve("m2/module-info.class");
-        Path classC2 = build.resolve("m2/p2/C2.class");
+        Path m2ModuleInfoClass = build.resolve("m2x/module-info.class");
+        Path classC2 = build.resolve("m2x/p2/C2.class");
 
         FileTime m1ModuleInfoTimeStamp = Files.getLastModifiedTime(m1ModuleInfoClass);
         FileTime C1TimeStamp = Files.getLastModifiedTime(classC1);
@@ -215,7 +215,7 @@ public class MOptionTest extends ModuleTestBase {
         Thread.sleep(2000); //timestamps
 
         new JavacTask(tb)
-                .options("-m", "m1,m2", "--module-source-path", src.toString(), "-d", build.toString())
+                .options("-m", "m1x,m2x", "--module-source-path", src.toString(), "-d", build.toString())
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
 
@@ -241,7 +241,7 @@ public class MOptionTest extends ModuleTestBase {
         Files.setLastModifiedTime(C2Source, FileTime.fromMillis(System.currentTimeMillis()));
 
         new JavacTask(tb)
-                .options("-m", "m1,m2", "--module-source-path", src.toString(), "-d", build.toString())
+                .options("-m", "m1x,m2x", "--module-source-path", src.toString(), "-d", build.toString())
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
 
