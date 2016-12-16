@@ -64,8 +64,10 @@ public class StringSharingDecompressor implements ResourceDecompressor {
     private static final int CONSTANT_MethodHandle = 15;
     private static final int CONSTANT_MethodType = 16;
     private static final int CONSTANT_InvokeDynamic = 18;
+    private static final int CONSTANT_Module = 19;
+    private static final int CONSTANT_Package = 20;
 
-    private static final int[] SIZES = new int[20];
+    private static final int[] SIZES = new int[21];
 
     static {
 
@@ -83,6 +85,8 @@ public class StringSharingDecompressor implements ResourceDecompressor {
         SIZES[CONSTANT_MethodHandle] = 3;
         SIZES[CONSTANT_MethodType] = 2;
         SIZES[CONSTANT_InvokeDynamic] = 4;
+        SIZES[CONSTANT_Module] = 2;
+        SIZES[CONSTANT_Package] = 2;
     }
 
     public static int[] getSizes() {
