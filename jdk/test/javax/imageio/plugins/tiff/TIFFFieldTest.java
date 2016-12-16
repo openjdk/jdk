@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug     8152183 8149562
+ * @bug     8152183 8149562 8169725 8169728
  * @author  a.stepanov
  * @summary Some checks for TIFFField methods
  * @run     main TIFFFieldTest
@@ -65,7 +65,26 @@ public class TIFFFieldTest {
         ok = false;
         try { new TIFFField(tag, -1); }
         catch (IllegalArgumentException e) { ok = true; }
-        check(ok, CONSTRUCT + "invalid count");
+        check(ok, CONSTRUCT + "negative value");
+
+        ok = false;
+        try { new TIFFField(tag, 1L << 32); }
+        catch (IllegalArgumentException e) { ok = true; }
+        check(ok, CONSTRUCT + "value > 0xffffffff");
+
+        ok = false;
+        try {
+            TIFFTag t = new TIFFTag(NAME, NUM, 1 << TIFFTag.TIFF_SHORT);
+            new TIFFField(t, 0x10000);
+        } catch (IllegalArgumentException e) { ok = true; }
+        check(ok, CONSTRUCT + "value 0x10000 incompatible with TIFF_SHORT");
+
+        ok = false;
+        try {
+            TIFFTag t = new TIFFTag(NAME, NUM, 1 << TIFFTag.TIFF_LONG);
+            new TIFFField(t, 0xffff);
+        } catch (IllegalArgumentException e) { ok = true; }
+        check(ok, CONSTRUCT + "value 0xffff incompatible with TIFF_LONG");
 
         // check value type recognition
         int v = 1 << 16;
@@ -151,6 +170,94 @@ public class TIFFFieldTest {
         check(ok, CONSTRUCT + "invalid data type");
         check((f.getDirectory() == null) && !f.hasDirectory(),
             "must not have directory");
+
+        ok = false;
+        try {
+            TIFFTag t = new TIFFTag(NAME, NUM, 1 << TIFFTag.TIFF_RATIONAL);
+            long[][] tiffRationals = new long[6][3];
+            new TIFFField(t, TIFFTag.TIFF_RATIONAL, tiffRationals.length,
+                tiffRationals);
+        } catch (IllegalArgumentException e) {
+            ok = true;
+        }
+
+        ok = false;
+        try {
+            TIFFTag t = new TIFFTag(NAME, NUM, 1 << TIFFTag.TIFF_SRATIONAL);
+            int[][] tiffSRationals = new int[6][3];
+            new TIFFField(t, TIFFTag.TIFF_SRATIONAL, tiffSRationals.length,
+                tiffSRationals);
+        } catch (IllegalArgumentException e) {
+            ok = true;
+        }
+
+        ok = false;
+        try {
+            TIFFTag t = new TIFFTag(NAME, NUM, 1 << TIFFTag.TIFF_LONG);
+            long[] tiffLongs = new long[] {0, -7, 10};
+            new TIFFField(t, TIFFTag.TIFF_LONG, tiffLongs.length,
+                tiffLongs);
+        } catch (IllegalArgumentException e) {
+            ok = true;
+        }
+
+        ok = false;
+        try {
+            TIFFTag t = new TIFFTag(NAME, NUM, 1 << TIFFTag.TIFF_LONG);
+            long[] tiffLongs = new long[] {0, 7, 0x100000000L};
+            new TIFFField(t, TIFFTag.TIFF_LONG, tiffLongs.length,
+                tiffLongs);
+        } catch (IllegalArgumentException e) {
+            ok = true;
+        }
+
+        ok = false;
+        try {
+            TIFFTag t = new TIFFTag(NAME, NUM, 1 << TIFFTag.TIFF_IFD_POINTER);
+            long[] tiffLongs = new long[] {-7};
+            new TIFFField(t, TIFFTag.TIFF_IFD_POINTER, tiffLongs.length,
+                tiffLongs);
+        } catch (IllegalArgumentException e) {
+            ok = true;
+        }
+
+        ok = false;
+        try {
+            TIFFTag t = new TIFFTag(NAME, NUM, 1 << TIFFTag.TIFF_IFD_POINTER);
+            long[] tiffLongs = new long[] {0x100000000L};
+            new TIFFField(t, TIFFTag.TIFF_IFD_POINTER, tiffLongs.length,
+                tiffLongs);
+        } catch (IllegalArgumentException e) {
+            ok = true;
+        }
+
+        ok = false;
+        try {
+            TIFFTag t = new TIFFTag(NAME, NUM, 1 << TIFFTag.TIFF_RATIONAL);
+            long[][] tiffRationals = new long[][] {
+                {10, 2},
+                {1, -3},
+                {4,  7}
+            };
+            new TIFFField(t, TIFFTag.TIFF_RATIONAL, tiffRationals.length,
+                tiffRationals);
+        } catch (IllegalArgumentException e) {
+            ok = true;
+        }
+
+        ok = false;
+        try {
+            TIFFTag t = new TIFFTag(NAME, NUM, 1 << TIFFTag.TIFF_RATIONAL);
+            long[][] tiffRationals = new long[][] {
+                {10, 2},
+                {0x100000000L, 3},
+                {4,  7}
+            };
+            new TIFFField(t, TIFFTag.TIFF_RATIONAL, tiffRationals.length,
+                tiffRationals);
+        } catch (IllegalArgumentException e) {
+            ok = true;
+        }
 
         // constructor: TIFFField(tag, type, offset, dir)
         List<TIFFTag> tags = new ArrayList<>();

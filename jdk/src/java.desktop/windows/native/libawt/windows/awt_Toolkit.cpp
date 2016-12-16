@@ -1590,7 +1590,7 @@ BOOL AwtToolkit::PreProcessMouseMsg(AwtComponent* p, MSG& msg)
      * the mouse, not the Component with the input focus.
      */
 
-    if (msg.message == WM_MOUSEWHEEL) {
+    if (msg.message == WM_MOUSEWHEEL || msg.message == WM_MOUSEHWHEEL) {
             //i.e. mouse is over client area for this window
             DWORD hWndForWheelProcess;
             DWORD hWndForWheelThread = ::GetWindowThreadProcessId(hWndForWheel, &hWndForWheelProcess);

@@ -44,20 +44,20 @@ import javax.swing.SwingUtilities;
  * @key headful
  * @summary [macos 10.12] Trackpad scrolling of text on OS X 10.12 Sierra
  *    is very fast (Trackpad, Retina only)
+ * @requires (os.family == "windows" | os.family == "mac")
  * @run main/manual/othervm TooMuchWheelRotationEventsTest
  */
 public class TooMuchWheelRotationEventsTest {
 
     private static volatile boolean testResult = false;
     private static volatile CountDownLatch countDownLatch;
-    private static final String INSTRUCTIONS = "INSTRUCTIONS:\n"
-            + "Try to check the issue on Mac OS X 10.12 Sierra with trackpad"
-            + " on Retina display.\n"
+    private static final String INSTRUCTIONS = " INSTRUCTIONS:\n"
+            + " Try to check the issue with trackpad\n"
             + "\n"
-            + "If the trackpad is not supported, press PASS\n"
+            + " If the trackpad is not supported, press PASS\n"
             + "\n"
-            + "Use the trackpad to slightly scroll the JTextArea horizontally and vertically.\n"
-            + "If the text area is scrolled too fast press FAIL, else press PASS.";
+            + " Use the trackpad to slightly scroll the JTextArea horizontally and vertically.\n"
+            + " If the text area is scrolled too fast press FAIL, else press PASS.";
 
     public static void main(String args[]) throws Exception {
         countDownLatch = new CountDownLatch(1);
@@ -138,6 +138,7 @@ public class TooMuchWheelRotationEventsTest {
                 countDownLatch.countDown();
             }
         });
+        mainFrame.setLocationRelativeTo(null);
         mainFrame.setVisible(true);
     }
 
