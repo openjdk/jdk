@@ -272,7 +272,7 @@ public class Locations {
             }
 
             try (Stream<Path> s = Files.list(dir)) {
-                s.filter(dirEntry -> isArchive(dirEntry))
+                s.filter(Locations.this::isArchive)
                         .forEach(dirEntry -> addFile(dirEntry, warn));
             } catch (IOException ignore) {
             }
@@ -946,7 +946,7 @@ public class Locations {
             if (searchPath == null)
                 return Collections.emptyList();
 
-            return () -> new ModulePathIterator();
+            return ModulePathIterator::new;
         }
 
         @Override

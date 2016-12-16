@@ -263,9 +263,7 @@ public abstract class AbstractDoclet implements Doclet {
         generateClassFiles(classtree);
         SortedSet<PackageElement> packages = new TreeSet<>(utils.makePackageComparator());
         packages.addAll(configuration.getSpecifiedPackageElements());
-        configuration.modulePackages.values().stream().forEach(pset -> {
-            packages.addAll(pset);
-        });
+        configuration.modulePackages.values().stream().forEach(packages::addAll);
         for (PackageElement pkg : packages) {
             generateClassFiles(utils.getAllClasses(pkg), classtree);
         }

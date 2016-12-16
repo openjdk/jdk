@@ -123,11 +123,7 @@ public class InferenceContext {
      * inference context
      */
     List<Type> restvars() {
-        return filterVars(new Filter<UndetVar>() {
-            public boolean accepts(UndetVar uv) {
-                return uv.getInst() == null;
-            }
-        });
+        return filterVars(uv -> uv.getInst() == null);
     }
 
     /**
@@ -135,11 +131,7 @@ public class InferenceContext {
      * inference context
      */
     List<Type> instvars() {
-        return filterVars(new Filter<UndetVar>() {
-            public boolean accepts(UndetVar uv) {
-                return uv.getInst() != null;
-            }
-        });
+        return filterVars(uv -> uv.getInst() != null);
     }
 
     /**
@@ -147,13 +139,9 @@ public class InferenceContext {
      * declared bounds).
      */
     final List<Type> boundedVars() {
-        return filterVars(new Filter<UndetVar>() {
-            public boolean accepts(UndetVar uv) {
-                return uv.getBounds(InferenceBound.UPPER)
-                         .diff(uv.getDeclaredBounds())
-                         .appendList(uv.getBounds(InferenceBound.EQ, InferenceBound.LOWER)).nonEmpty();
-            }
-        });
+        return filterVars(uv -> uv.getBounds(InferenceBound.UPPER)
+                 .diff(uv.getDeclaredBounds())
+                 .appendList(uv.getBounds(InferenceBound.EQ, InferenceBound.LOWER)).nonEmpty());
     }
 
     /* Returns the corresponding inference variables.
@@ -341,11 +329,7 @@ public class InferenceContext {
         //set up listeners to notify original inference contexts as
         //propagated vars are inferred in new context
         for (Type t : inferencevars) {
-            that.freeTypeListeners.put(new FreeTypeListener() {
-                public void typesInferred(InferenceContext inferenceContext) {
-                    InferenceContext.this.notifyChange();
-                }
-            }, List.of(t));
+            that.freeTypeListeners.put(inferenceContext -> InferenceContext.this.notifyChange(), List.of(t));
         }
     }
 

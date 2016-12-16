@@ -557,8 +557,8 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
      */
     public static <Z> Collector<Z, ListBuffer<Z>, List<Z>> collector() {
         return Collector.of(ListBuffer::new,
-                (buf, el)->buf.add(el),
+                ListBuffer::add,
                 (buf1, buf2)-> { buf1.addAll(buf2); return buf1; },
-                buf->buf.toList());
+                ListBuffer::toList);
     }
 }

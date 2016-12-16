@@ -1718,11 +1718,7 @@ public class JavacParser implements Parser {
     }
 
     /** Accepts all identifier-like tokens */
-    protected Filter<TokenKind> LAX_IDENTIFIER = new Filter<TokenKind>() {
-        public boolean accepts(TokenKind t) {
-            return t == IDENTIFIER || t == UNDERSCORE || t == ASSERT || t == ENUM;
-        }
-    };
+    protected Filter<TokenKind> LAX_IDENTIFIER = t -> t == IDENTIFIER || t == UNDERSCORE || t == ASSERT || t == ENUM;
 
     enum ParensResult {
         CAST,

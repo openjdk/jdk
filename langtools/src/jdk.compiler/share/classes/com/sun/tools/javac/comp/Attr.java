@@ -2651,12 +2651,8 @@ public class Attr extends JCTree.Visitor {
         private void checkAccessibleTypes(final DiagnosticPosition pos, final Env<AttrContext> env,
                 final InferenceContext inferenceContext, final List<Type> ts) {
             if (inferenceContext.free(ts)) {
-                inferenceContext.addFreeTypeListener(ts, new FreeTypeListener() {
-                    @Override
-                    public void typesInferred(InferenceContext inferenceContext) {
-                        checkAccessibleTypes(pos, env, inferenceContext, inferenceContext.asInstTypes(ts));
-                    }
-                });
+                inferenceContext.addFreeTypeListener(ts,
+                        solvedContext -> checkAccessibleTypes(pos, env, solvedContext, solvedContext.asInstTypes(ts)));
             } else {
                 for (Type t : ts) {
                     rs.checkAccessibleType(env, t);
@@ -3094,12 +3090,9 @@ public class Attr extends JCTree.Visitor {
     private void setFunctionalInfo(final Env<AttrContext> env, final JCFunctionalExpression fExpr,
             final Type pt, final Type descriptorType, final Type primaryTarget, final CheckContext checkContext) {
         if (checkContext.inferenceContext().free(descriptorType)) {
-            checkContext.inferenceContext().addFreeTypeListener(List.of(pt, descriptorType), new FreeTypeListener() {
-                public void typesInferred(InferenceContext inferenceContext) {
-                    setFunctionalInfo(env, fExpr, pt, inferenceContext.asInstType(descriptorType),
-                            inferenceContext.asInstType(primaryTarget), checkContext);
-                }
-            });
+            checkContext.inferenceContext().addFreeTypeListener(List.of(pt, descriptorType),
+                    inferenceContext -> setFunctionalInfo(env, fExpr, pt, inferenceContext.asInstType(descriptorType),
+                    inferenceContext.asInstType(primaryTarget), checkContext));
         } else {
             ListBuffer<Type> targets = new ListBuffer<>();
             if (pt.hasTag(CLASS)) {
@@ -4574,13 +4567,8 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        public static final Filter<Symbol> anyNonAbstractOrDefaultMethod = new Filter<Symbol>() {
-            @Override
-            public boolean accepts(Symbol s) {
-                return s.kind == MTH &&
-                       (s.flags() & (DEFAULT | ABSTRACT)) != ABSTRACT;
-            }
-        };
+        public static final Filter<Symbol> anyNonAbstractOrDefaultMethod = s ->
+                s.kind == MTH && (s.flags() & (DEFAULT | ABSTRACT)) != ABSTRACT;
 
         /** get a diagnostic position for an attribute of Type t, or null if attribute missing */
         private DiagnosticPosition getDiagnosticPosition(JCClassDecl tree, Type t) {

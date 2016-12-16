@@ -313,36 +313,32 @@ public class ConstantPool {
     }
 
     public Iterable<CPInfo> entries() {
-        return new Iterable<CPInfo>() {
-            public Iterator<CPInfo> iterator() {
-                return new Iterator<CPInfo>() {
+        return () -> new Iterator<CPInfo>() {
 
-                    public boolean hasNext() {
-                        return next < pool.length;
-                    }
-
-                    public CPInfo next() {
-                        current = pool[next];
-                        switch (current.getTag()) {
-                            case CONSTANT_Double:
-                            case CONSTANT_Long:
-                                next += 2;
-                                break;
-                            default:
-                                next += 1;
-                        }
-                        return current;
-                    }
-
-                    public void remove() {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    private CPInfo current;
-                    private int next = 1;
-
-                };
+            public boolean hasNext() {
+                return next < pool.length;
             }
+
+            public CPInfo next() {
+                current = pool[next];
+                switch (current.getTag()) {
+                    case CONSTANT_Double:
+                    case CONSTANT_Long:
+                        next += 2;
+                        break;
+                    default:
+                        next += 1;
+                }
+                return current;
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+
+            private CPInfo current;
+            private int next = 1;
+
         };
     }
 

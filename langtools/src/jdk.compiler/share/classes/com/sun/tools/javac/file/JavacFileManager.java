@@ -71,6 +71,7 @@ import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Context.Factory;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
@@ -134,12 +135,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
      * Register a Context.Factory to create a JavacFileManager.
      */
     public static void preRegister(Context context) {
-        context.put(JavaFileManager.class, new Context.Factory<JavaFileManager>() {
-            @Override
-            public JavaFileManager make(Context c) {
-                return new JavacFileManager(c, true, null);
-            }
-        });
+        context.put(JavaFileManager.class,
+                (Factory<JavaFileManager>)c -> new JavacFileManager(c, true, null));
     }
 
     /**

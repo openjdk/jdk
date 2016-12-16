@@ -590,7 +590,7 @@ public class Symtab {
         arrayClass.members().enter(arrayCloneMethod);
 
         if (java_base != noModule)
-            java_base.completer = sym -> moduleCompleter.complete(sym); //bootstrap issues
+            java_base.completer = moduleCompleter::complete; //bootstrap issues
 
     }
 
@@ -624,7 +624,7 @@ public class Symtab {
     }
 
     public ClassSymbol getClass(ModuleSymbol msym, Name flatName) {
-        Assert.checkNonNull(msym, () -> flatName.toString());
+        Assert.checkNonNull(msym, flatName::toString);
         return classes.getOrDefault(flatName, Collections.emptyMap()).get(msym);
     }
 
@@ -757,7 +757,8 @@ public class Symtab {
                 }
             };
         unnamedPackage.modle = module;
-        unnamedPackage.completer = sym -> initialCompleter.complete(sym);
+        //we cannot use a method reference below, as initialCompleter might be null now
+        unnamedPackage.completer = s -> initialCompleter.complete(s);
         module.unnamedPackage = unnamedPackage;
     }
 
@@ -770,7 +771,7 @@ public class Symtab {
         if (msym == null) {
             msym = ModuleSymbol.create(name, names.module_info);
             addRootPackageFor(msym);
-            msym.completer = sym -> moduleCompleter.complete(sym); //bootstrap issues
+            msym.completer = s -> moduleCompleter.complete(s); //bootstrap issues
             modules.put(name, msym);
         }
         return msym;

@@ -881,12 +881,8 @@ public class Resolve {
          */
         private void varargsAccessible(final Env<AttrContext> env, final Type t, final InferenceContext inferenceContext) {
             if (inferenceContext.free(t)) {
-                inferenceContext.addFreeTypeListener(List.of(t), new FreeTypeListener() {
-                    @Override
-                    public void typesInferred(InferenceContext inferenceContext) {
-                        varargsAccessible(env, inferenceContext.asInstType(t), inferenceContext);
-                    }
-                });
+                inferenceContext.addFreeTypeListener(List.of(t),
+                        solvedContext -> varargsAccessible(env, solvedContext.asInstType(t), solvedContext));
             } else {
                 if (!isAccessible(env, types.erasure(t))) {
                     Symbol location = env.enclClass.sym;
@@ -1851,47 +1847,43 @@ public class Resolve {
      * errors if some of the not-needed supertypes are missing/ill-formed).
      */
     Iterable<TypeSymbol> superclasses(final Type intype) {
-        return new Iterable<TypeSymbol>() {
-            public Iterator<TypeSymbol> iterator() {
-                return new Iterator<TypeSymbol>() {
+        return () -> new Iterator<TypeSymbol>() {
 
-                    List<TypeSymbol> seen = List.nil();
-                    TypeSymbol currentSym = symbolFor(intype);
-                    TypeSymbol prevSym = null;
+            List<TypeSymbol> seen = List.nil();
+            TypeSymbol currentSym = symbolFor(intype);
+            TypeSymbol prevSym = null;
 
-                    public boolean hasNext() {
-                        if (currentSym == syms.noSymbol) {
-                            currentSym = symbolFor(types.supertype(prevSym.type));
-                        }
-                        return currentSym != null;
-                    }
+            public boolean hasNext() {
+                if (currentSym == syms.noSymbol) {
+                    currentSym = symbolFor(types.supertype(prevSym.type));
+                }
+                return currentSym != null;
+            }
 
-                    public TypeSymbol next() {
-                        prevSym = currentSym;
-                        currentSym = syms.noSymbol;
-                        Assert.check(prevSym != null || prevSym != syms.noSymbol);
-                        return prevSym;
-                    }
+            public TypeSymbol next() {
+                prevSym = currentSym;
+                currentSym = syms.noSymbol;
+                Assert.check(prevSym != null || prevSym != syms.noSymbol);
+                return prevSym;
+            }
 
-                    public void remove() {
-                        throw new UnsupportedOperationException();
-                    }
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
 
-                    TypeSymbol symbolFor(Type t) {
-                        if (!t.hasTag(CLASS) &&
-                                !t.hasTag(TYPEVAR)) {
-                            return null;
-                        }
-                        t = types.skipTypeVars(t, false);
-                        if (seen.contains(t.tsym)) {
-                            //degenerate case in which we have a circular
-                            //class hierarchy - because of ill-formed classfiles
-                            return null;
-                        }
-                        seen = seen.prepend(t.tsym);
-                        return t.tsym;
-                    }
-                };
+            TypeSymbol symbolFor(Type t) {
+                if (!t.hasTag(CLASS) &&
+                        !t.hasTag(TYPEVAR)) {
+                    return null;
+                }
+                t = types.skipTypeVars(t, false);
+                if (seen.contains(t.tsym)) {
+                    //degenerate case in which we have a circular
+                    //class hierarchy - because of ill-formed classfiles
+                    return null;
+                }
+                seen = seen.prepend(t.tsym);
+                return t.tsym;
             }
         };
     }

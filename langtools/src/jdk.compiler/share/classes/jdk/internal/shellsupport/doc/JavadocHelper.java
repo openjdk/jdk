@@ -53,6 +53,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileManager;
@@ -240,7 +241,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                             List<String> throwsList =
                                     executableElement.getThrownTypes()
                                                      .stream()
-                                                     .map(exc -> exc.toString())
+                                                     .map(TypeMirror::toString)
                                                      .collect(Collectors.toList());
                             Set<String> missingParams = new HashSet<>(parameters);
                             Set<String> missingThrows = new HashSet<>(throwsList);

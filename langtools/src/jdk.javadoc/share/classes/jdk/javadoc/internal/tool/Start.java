@@ -211,7 +211,7 @@ public class Start extends ToolOption.Helper {
         Stream.of(ToolOption.values())
                     .filter(opt -> opt.kind == kind)
                     .sorted(comp)
-                    .forEach(opt -> showToolOption(opt));
+                    .forEach(this::showToolOption);
     }
 
     void showToolOption(ToolOption option) {
@@ -241,7 +241,7 @@ public class Start extends ToolOption.Helper {
         doclet.getSupportedOptions().stream()
                 .filter(opt -> opt.getKind() == kind)
                 .sorted(comp)
-                .forEach(opt -> showDocletOption(opt));
+                .forEach(this::showDocletOption);
     }
 
     void showDocletOption(Doclet.Option option) {

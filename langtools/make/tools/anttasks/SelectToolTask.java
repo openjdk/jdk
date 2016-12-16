@@ -203,14 +203,11 @@ public class SelectToolTask extends Task {
         if (toolName != null) {
             toolChoice.setSelectedItem(tool);
         }
-        toolChoice.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent e) {
-                ToolChoices tool = (ToolChoices)e.getItem();
-                argsField.setText(getDefaultArgsForTool(props, tool));
-                if (toolProperty != null)
-                    okButton.setEnabled(tool != ToolChoices.NONE);
-            }
+        toolChoice.addItemListener(e -> {
+            ToolChoices tool1 = (ToolChoices)e.getItem();
+            argsField.setText(getDefaultArgsForTool(props, tool1));
+            if (toolProperty != null)
+                okButton.setEnabled(tool1 != ToolChoices.NONE);
         });
         fc.anchor = GridBagConstraints.EAST;
 
@@ -248,12 +245,9 @@ public class SelectToolTask extends Task {
         final JOptionPane p = new JOptionPane(body);
         okButton = new JButton("OK");
         okButton.setEnabled(toolProperty == null || (toolName != null && !toolName.equals("")));
-        okButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JDialog d = (JDialog) SwingUtilities.getAncestorOfClass(JDialog.class, p);
-                d.setVisible(false);
-            }
+        okButton.addActionListener(e -> {
+            JDialog d = (JDialog) SwingUtilities.getAncestorOfClass(JDialog.class, p);
+            d.setVisible(false);
         });
         p.setOptions(new Object[] { okButton });
 

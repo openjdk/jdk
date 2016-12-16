@@ -150,6 +150,6 @@ enum Profile {
         }
         System.out.println("All JDK modules:-");
         JDK.stream().sorted(Comparator.comparing(Module::name))
-           .forEach(m -> System.out.println(m));
+           .forEach(System.out::println);
     }
 }

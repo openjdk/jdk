@@ -394,25 +394,20 @@ public class JdepsConfiguration implements AutoCloseable {
                 ModuleDescriptor descriptor = dropHashes(ModuleDescriptor.read(bin));
                 String mn = descriptor.name();
                 URI uri = URI.create("jrt:/" + path.getFileName().toString());
-                Supplier<ModuleReader> readerSupplier = new Supplier<>() {
+                Supplier<ModuleReader> readerSupplier = () -> new ModuleReader() {
                     @Override
-                    public ModuleReader get() {
-                        return new ModuleReader() {
-                            @Override
-                            public Optional<URI> find(String name) throws IOException {
-                                return name.equals(mn)
-                                    ? Optional.of(uri) : Optional.empty();
-                            }
+                    public Optional<URI> find(String name) throws IOException {
+                        return name.equals(mn)
+                            ? Optional.of(uri) : Optional.empty();
+                    }
 
-                            @Override
-                            public Stream<String> list() {
-                                return Stream.empty();
-                            }
+                    @Override
+                    public Stream<String> list() {
+                        return Stream.empty();
+                    }
 
-                            @Override
-                            public void close() {
-                            }
-                        };
+                    @Override
+                    public void close() {
                     }
                 };
 

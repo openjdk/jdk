@@ -337,12 +337,7 @@ public class JavaCompiler {
      * SourceCompleter that delegates to the readSourceFile method of this class.
      */
     protected final Symbol.Completer sourceCompleter =
-            new Symbol.Completer() {
-                @Override
-                public void complete(Symbol sym) throws CompletionFailure {
-                    readSourceFile((ClassSymbol) sym);
-                }
-            };
+            sym -> readSourceFile((ClassSymbol) sym);
 
     protected final ModuleFinder.ModuleInfoSourceFileCompleter moduleInfoSourceFileCompleter =
             fo -> (ModuleSymbol) readSourceFile(parseImplicitFile(fo), null, tl -> {

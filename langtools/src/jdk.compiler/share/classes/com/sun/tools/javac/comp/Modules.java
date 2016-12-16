@@ -424,12 +424,7 @@ public class Modules extends JCTree.Visitor {
                             checkNoAllModulePath();
                             defaultModule.complete();
                             // Question: why not do completeModule here?
-                            defaultModule.completer = new Completer() {
-                                @Override
-                                public void complete(Symbol sym) throws CompletionFailure {
-                                    completeModule((ModuleSymbol) sym);
-                                }
-                            };
+                            defaultModule.completer = sym -> completeModule((ModuleSymbol) sym);
                         }
                         rootModules.add(defaultModule);
                         break;
@@ -1522,7 +1517,7 @@ public class Modules extends JCTree.Visitor {
                 current.complete();
                 if ((current.flags() & Flags.ACYCLIC) != 0)
                     continue;
-                Assert.checkNonNull(current.requires, () -> current.toString());
+                Assert.checkNonNull(current.requires, current::toString);
                 for (RequiresDirective dep : current.requires) {
                     if (!dep.flags.contains(RequiresFlag.EXTRA))
                         queue = queue.prepend(dep.module);

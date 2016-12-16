@@ -889,15 +889,11 @@ class JdepsTask {
             if (!ok && !options.nowarning) {
                 reportError("err.missing.dependences");
                 builder.visitMissingDeps(
-                    new Analyzer.Visitor() {
-                        @Override
-                        public void visitDependence(String origin, Archive originArchive,
-                                                    String target, Archive targetArchive) {
+                        (origin, originArchive, target, targetArchive) -> {
                             if (builder.notFound(targetArchive))
                                 log.format("   %-50s -> %-50s %s%n",
                                     origin, target, targetArchive.getName());
-                        }
-                    });
+                        });
             }
             return ok;
         }
