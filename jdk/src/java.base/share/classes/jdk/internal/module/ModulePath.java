@@ -23,7 +23,7 @@
  * questions.
  */
 
-package java.lang.module;
+package jdk.internal.module;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -32,7 +32,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.lang.module.FindException;
+import java.lang.module.InvalidModuleDescriptorException;
+import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Requires;
+import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReference;
 import java.net.URI;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -59,7 +64,6 @@ import java.util.zip.ZipFile;
 
 import jdk.internal.jmod.JmodFile;
 import jdk.internal.jmod.JmodFile.Section;
-import jdk.internal.module.Checks;
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.util.jar.VersionedStream;
 
@@ -74,7 +78,7 @@ import jdk.internal.util.jar.VersionedStream;
  * modules in JMOD files.
  */
 
-class ModulePath implements ModuleFinder {
+public class ModulePath implements ModuleFinder {
     private static final String MODULE_INFO = "module-info.class";
 
     // the version to use for multi-release modular JARs
@@ -90,7 +94,7 @@ class ModulePath implements ModuleFinder {
     // map of module name to module reference map for modules already located
     private final Map<String, ModuleReference> cachedModules = new HashMap<>();
 
-    ModulePath(Runtime.Version version, boolean isLinkPhase, Path... entries) {
+    public ModulePath(Runtime.Version version, boolean isLinkPhase, Path... entries) {
         this.releaseVersion = version;
         this.isLinkPhase = isLinkPhase;
         this.entries = entries.clone();
@@ -99,7 +103,7 @@ class ModulePath implements ModuleFinder {
         }
     }
 
-    ModulePath(Path... entries) {
+    public ModulePath(Path... entries) {
         this(JarFile.runtimeVersion(), false, entries);
     }
 
@@ -343,11 +347,11 @@ class ModulePath implements ModuleFinder {
      */
     private ModuleReference readJMod(Path file) throws IOException {
         try (JmodFile jf = new JmodFile(file)) {
-            ModuleDescriptor md;
+            ModuleInfo.Attributes attrs;
             try (InputStream in = jf.getInputStream(Section.CLASSES, MODULE_INFO)) {
-                md = ModuleDescriptor.read(in, () -> jmodPackages(jf));
+                attrs  = ModuleInfo.read(in, () -> jmodPackages(jf));
             }
-            return ModuleReferences.newJModModule(md, file);
+            return ModuleReferences.newJModModule(attrs, file);
         }
     }
 
@@ -557,13 +561,14 @@ class ModulePath implements ModuleFinder {
                                       ZipFile.OPEN_READ,
                                       releaseVersion))
         {
-            ModuleDescriptor md;
+            ModuleInfo.Attributes attrs;
             JarEntry entry = jf.getJarEntry(MODULE_INFO);
             if (entry == null) {
 
                 // no module-info.class so treat it as automatic module
                 try {
-                    md = deriveModuleDescriptor(jf);
+                    ModuleDescriptor md = deriveModuleDescriptor(jf);
+                    attrs = new ModuleInfo.Attributes(md, null, null);
                 } catch (IllegalArgumentException iae) {
                     throw new FindException(
                         "Unable to derive module descriptor for: "
@@ -571,11 +576,11 @@ class ModulePath implements ModuleFinder {
                 }
 
             } else {
-                md = ModuleDescriptor.read(jf.getInputStream(entry),
-                                           () -> jarPackages(jf));
+                attrs = ModuleInfo.read(jf.getInputStream(entry),
+                                        () -> jarPackages(jf));
             }
 
-            return ModuleReferences.newJarModule(md, file);
+            return ModuleReferences.newJarModule(attrs, file);
         }
     }
 
@@ -604,15 +609,15 @@ class ModulePath implements ModuleFinder {
      */
     private ModuleReference readExplodedModule(Path dir) throws IOException {
         Path mi = dir.resolve(MODULE_INFO);
-        ModuleDescriptor md;
+        ModuleInfo.Attributes attrs;
         try (InputStream in = Files.newInputStream(mi)) {
-            md = ModuleDescriptor.read(new BufferedInputStream(in),
-                                       () -> explodedPackages(dir));
+            attrs = ModuleInfo.read(new BufferedInputStream(in),
+                                    () -> explodedPackages(dir));
         } catch (NoSuchFileException e) {
             // for now
             return null;
         }
-        return ModuleReferences.newExplodedModule(md, dir);
+        return ModuleReferences.newExplodedModule(attrs, dir);
     }
 
     /**

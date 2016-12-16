@@ -26,6 +26,7 @@
 /**
  * Aggregates {@code java.base}, {@code java.logging}, and {@code java.scripting}.
  */
+@SuppressWarnings("module")
 module java.compact1 {
     requires transitive java.logging;
     requires transitive java.scripting;

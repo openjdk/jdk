@@ -26,7 +26,9 @@
 package jdk.internal.module;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
@@ -35,6 +37,7 @@ import java.lang.module.ResolvedModule;
 import java.lang.reflect.Layer;
 import java.lang.reflect.Module;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -46,11 +49,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.perf.PerfCounter;
+import jdk.internal.reflect.Reflection;
 
 /**
  * Initializes/boots the module system.
@@ -195,7 +200,9 @@ public final class ModuleBootstrap {
         // module is the unnamed module of the application class loader. This
         // is implemented by resolving "java.se" and all (non-java.*) modules
         // that export an API. If "java.se" is not observable then all java.*
-        // modules are resolved.
+        // modules are resolved. Modules that have the DO_NOT_RESOLVE_BY_DEFAULT
+        // bit set in their ModuleResolution attribute flags are excluded from
+        // the default set of roots.
         if (mainModule == null || addAllDefaultModules) {
             boolean hasJava = false;
             if (systemModules.find(JAVA_SE).isPresent()) {
@@ -210,6 +217,9 @@ public final class ModuleBootstrap {
             for (ModuleReference mref : systemModules.findAll()) {
                 String mn = mref.descriptor().name();
                 if (hasJava && mn.startsWith("java."))
+                    continue;
+
+                if (ModuleResolution.doNotResolveByDefault(mref))
                     continue;
 
                 // add as root if observable and exports at least one package
@@ -231,6 +241,7 @@ public final class ModuleBootstrap {
             ModuleFinder f = finder;  // observable modules
             systemModules.findAll()
                 .stream()
+                .filter(mref -> !ModuleResolution.doNotResolveByDefault(mref))
                 .map(ModuleReference::descriptor)
                 .map(ModuleDescriptor::name)
                 .filter(mn -> f.find(mn).isPresent())  // observable
@@ -277,6 +288,8 @@ public final class ModuleBootstrap {
         // time to create configuration
         PerfCounters.resolveTime.addElapsedTimeFrom(t3);
 
+        // check module names and incubating status
+        checkModuleNamesAndStatus(cf);
 
         // mapping of modules to class loaders
         Function<String, ClassLoader> clf = ModuleLoaderMap.mappingFunction(cf);
@@ -496,7 +509,48 @@ public final class ModuleBootstrap {
         if (!extraOpens.isEmpty()) {
             addExtraExportsOrOpens(bootLayer, extraOpens, true);
         }
+
+        // DEBUG_ADD_OPENS is for debugging purposes only
+        String home = System.getProperty("java.home");
+        Path file = Paths.get(home, "conf", "DEBUG_ADD_OPENS");
+        if (Files.exists(file)) {
+            warn(file + " detected; may break encapsulation");
+            try (Stream<String> lines = Files.lines(file)) {
+                lines.map(line -> line.trim())
+                    .filter(line -> (!line.isEmpty() && !line.startsWith("#")))
+                    .forEach(line -> {
+                        String[] s = line.split("/");
+                        if (s.length != 2) {
+                            fail("Unable to parse as <module>/<package>: " + line);
+                        } else {
+                            String mn = s[0];
+                            String pkg = s[1];
+                            openPackage(bootLayer, mn, pkg);
+                        }
+                    });
+            } catch (IOException ioe) {
+                throw new UncheckedIOException(ioe);
+            }
+            Reflection.enableStackTraces();
+        }
     }
+
+    private static void openPackage(Layer bootLayer, String mn, String pkg) {
+        if (mn.equals("ALL-RESOLVED") && pkg.equals("ALL-PACKAGES")) {
+            bootLayer.modules().stream().forEach(m ->
+                m.getDescriptor().packages().forEach(pn -> openPackage(m, pn)));
+        } else {
+            bootLayer.findModule(mn)
+                     .filter(m -> m.getDescriptor().packages().contains(pkg))
+                     .ifPresent(m -> openPackage(m, pkg));
+        }
+    }
+
+    private static void openPackage(Module m, String pn) {
+        Modules.addOpensToAllUnnamed(m, pn);
+        warn("Opened for deep reflection: " + m.getName()  + "/" + pn);
+    }
+
 
     private static void addExtraExportsOrOpens(Layer bootLayer,
                                                Map<String, List<String>> map,
@@ -508,12 +562,12 @@ public final class ModuleBootstrap {
             String key = e.getKey();
             String[] s = key.split("/");
             if (s.length != 2)
-                fail("Unable to parse: " + key);
+                fail("Unable to parse as <module>/<package>: " + key);
 
             String mn = s[0];
             String pn = s[1];
             if (mn.isEmpty() || pn.isEmpty())
-                fail("Module and package name must be specified:" + key);
+                fail("Module and package name must be specified: " + key);
 
             // The exporting module is in the boot layer
             Module m;
@@ -585,7 +639,7 @@ public final class ModuleBootstrap {
 
             int pos = value.indexOf('=');
             if (pos == -1)
-                fail("Unable to parse: " + value);
+                fail("Unable to parse as <module>=<value>: " + value);
             if (pos == 0)
                 fail("Missing module name in: " + value);
 
@@ -594,7 +648,7 @@ public final class ModuleBootstrap {
 
             String rhs = value.substring(pos+1);
             if (rhs.isEmpty())
-                fail("Unable to parse: " + value);
+                fail("Unable to parse as <module>=<value>: " + value);
 
             // value is <module>(,<module>)* or <file>(<pathsep><file>)*
             if (!allowDuplicates && map.containsKey(key))
@@ -624,6 +678,33 @@ public final class ModuleBootstrap {
      */
     private static String getAndRemoveProperty(String key) {
         return (String)System.getProperties().remove(key);
+    }
+
+    /**
+     * Checks the names and resolution bit of each module in the configuration,
+     * emitting warnings if needed.
+     */
+    private static void checkModuleNamesAndStatus(Configuration cf) {
+        String incubating = null;
+        for (ResolvedModule rm : cf.modules()) {
+            ModuleReference mref = rm.reference();
+            String mn = mref.descriptor().name();
+
+            // emit warning if module name ends with a non-Java letter
+            //if (!Checks.hasLegalModuleNameLastCharacter(mn))
+            //    warn("Module name \"" + mn + "\" may soon be illegal");
+
+            // emit warning if the WARN_INCUBATING module resolution bit set
+            if (ModuleResolution.hasIncubatingWarning(mref)) {
+                if (incubating == null) {
+                    incubating = mn;
+                } else {
+                    incubating += ", " + mn;
+                }
+            }
+        }
+        if (incubating != null)
+            warn("Using incubator modules: " + incubating);
     }
 
     /**

@@ -67,6 +67,7 @@ import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -100,10 +101,11 @@ import jdk.internal.joptsimple.OptionSet;
 import jdk.internal.joptsimple.OptionSpec;
 import jdk.internal.joptsimple.ValueConverter;
 import jdk.internal.loader.ResourceHelper;
-import jdk.internal.misc.JavaLangModuleAccess;
-import jdk.internal.misc.SharedSecrets;
 import jdk.internal.module.ModuleHashes;
+import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleInfoExtender;
+import jdk.internal.module.ModulePath;
+import jdk.internal.module.ModuleResolution;
 import jdk.tools.jlink.internal.Utils;
 
 import static java.util.stream.Collectors.joining;
@@ -165,6 +167,7 @@ public class JmodTask {
         Mode mode;
         Path jmodFile;
         boolean help;
+        boolean helpExtra;
         boolean version;
         List<Path> classpath;
         List<Path> cmds;
@@ -179,6 +182,7 @@ public class JmodTask {
         String osArch;
         String osVersion;
         Pattern modulesToHash;
+        ModuleResolution moduleResolution;
         boolean dryrun;
         List<PathMatcher> excludes;
         Path extractDir;
@@ -192,7 +196,7 @@ public class JmodTask {
                 showUsageSummary();
                 return EXIT_CMDERR;
             }
-            if (options.help) {
+            if (options.help || options.helpExtra) {
                 showHelp();
                 return EXIT_OK;
             }
@@ -288,8 +292,8 @@ public class JmodTask {
     private boolean describe() throws IOException {
         try (JmodFile jf = new JmodFile(options.jmodFile)) {
             try (InputStream in = jf.getInputStream(Section.CLASSES, MODULE_INFO)) {
-                ModuleDescriptor md = ModuleDescriptor.read(in);
-                printModuleDescriptor(md);
+                ModuleInfo.Attributes attrs = ModuleInfo.read(in, null);
+                printModuleDescriptor(attrs.descriptor(), attrs.recordedHashes());
                 return true;
             } catch (IOException e) {
                 throw new CommandException("err.module.descriptor.not.found");
@@ -303,9 +307,7 @@ public class JmodTask {
                   .collect(joining(" "));
     }
 
-    private static final JavaLangModuleAccess JLMA = SharedSecrets.getJavaLangModuleAccess();
-
-    private void printModuleDescriptor(ModuleDescriptor md)
+    private void printModuleDescriptor(ModuleDescriptor md, ModuleHashes hashes)
         throws IOException
     {
         StringBuilder sb = new StringBuilder();
@@ -351,13 +353,22 @@ public class JmodTask {
 
         md.osVersion().ifPresent(v -> sb.append("\n  operating-system-version " + v));
 
-        JLMA.hashes(md).ifPresent(
-            hashes -> hashes.names().stream().sorted().forEach(
-                mod -> sb.append("\n  hashes ").append(mod).append(" ")
-                         .append(hashes.algorithm()).append(" ")
-                         .append(hashes.hashFor(mod))));
+        if (hashes != null) {
+            hashes.names().stream().sorted().forEach(
+                    mod -> sb.append("\n  hashes ").append(mod).append(" ")
+                             .append(hashes.algorithm()).append(" ")
+                             .append(toHex(hashes.hashFor(mod))));
+        }
 
         out.println(sb.toString());
+    }
+
+    private String toHex(byte[] ba) {
+        StringBuilder sb = new StringBuilder(ba.length);
+        for (byte b: ba) {
+            sb.append(String.format("%02x", b & 0xff));
+        }
+        return sb.toString();
     }
 
     private boolean create() throws IOException {
@@ -400,6 +411,7 @@ public class JmodTask {
         final String osVersion = options.osVersion;
         final List<PathMatcher> excludes = options.excludes;
         final Hasher hasher = hasher();
+        final ModuleResolution moduleResolution = options.moduleResolution;
 
         JmodFileWriter() { }
 
@@ -508,6 +520,10 @@ public class JmodTask {
                     }
                 }
 
+                if (moduleResolution != null && moduleResolution.value() != 0) {
+                    extender.moduleResolution(moduleResolution);
+                }
+
                 // write the (possibly extended or modified) module-info.class
                 out.writeEntry(extender.toByteArray(), Section.CLASSES, MODULE_INFO);
             }
@@ -536,12 +552,12 @@ public class JmodTask {
                 }
 
                 URI uri = options.jmodFile.toUri();
-                ModuleReference mref = new ModuleReference(descriptor, uri, new Supplier<>() {
+                ModuleReference mref = new ModuleReference(descriptor, uri) {
                     @Override
-                    public ModuleReader get() {
+                    public ModuleReader open() {
                         throw new UnsupportedOperationException();
                     }
-                });
+                };
 
                 // compose a module finder with the module path and also
                 // a module finder that can find the jmod file being created
@@ -1136,6 +1152,28 @@ public class JmodTask {
         @Override public String valuePattern() { return "module-version"; }
     }
 
+    static class WarnIfResolvedReasonConverter
+        implements ValueConverter<ModuleResolution>
+    {
+        @Override
+        public ModuleResolution convert(String value) {
+            if (value.equals("deprecated"))
+                return ModuleResolution.empty().withDeprecated();
+            else if (value.equals("deprecated-for-removal"))
+                return ModuleResolution.empty().withDeprecatedForRemoval();
+            else if (value.equals("incubating"))
+                return ModuleResolution.empty().withIncubating();
+            else
+                throw new CommandException("err.bad.WarnIfResolvedReason", value);
+        }
+
+        @Override public Class<ModuleResolution> valueType() {
+            return ModuleResolution.class;
+        }
+
+        @Override public String valuePattern() { return "reason"; }
+    }
+
     static class PatternConverter implements ValueConverter<Pattern> {
         @Override
         public Pattern convert(String value) {
@@ -1179,12 +1217,24 @@ public class JmodTask {
      */
     private static final class JmodHelpFormatter extends BuiltinHelpFormatter {
 
-        private JmodHelpFormatter() { super(80, 2); }
+        private final Options opts;
+
+        private JmodHelpFormatter(Options opts) {
+            super(80, 2);
+            this.opts = opts;
+        }
 
         @Override
         public String format(Map<String, ? extends OptionDescriptor> options) {
-            Map<String, OptionDescriptor> all = new HashMap<>();
+            Map<String, OptionDescriptor> all = new LinkedHashMap<>();
             all.putAll(options);
+
+            // extra options
+            if (!opts.helpExtra) {
+                all.remove("do-not-resolve-by-default");
+                all.remove("warn-if-resolved");
+            }
+
             all.put(CMD_FILENAME, new OptionDescriptor() {
                 @Override
                 public Collection<String> options() {
@@ -1240,7 +1290,8 @@ public class JmodTask {
     private final OptionParser parser = new OptionParser("hp");
 
     private void handleOptions(String[] args) {
-        parser.formatHelpWith(new JmodHelpFormatter());
+        options = new Options();
+        parser.formatHelpWith(new JmodHelpFormatter(options));
 
         OptionSpec<Path> classPath
                 = parser.accepts("class-path", getMessage("main.opt.class-path"))
@@ -1281,6 +1332,9 @@ public class JmodTask {
         OptionSpec<Void> help
                 = parser.acceptsAll(Set.of("h", "help"), getMessage("main.opt.help"))
                         .forHelp();
+
+        OptionSpec<Void> helpExtra
+                = parser.accepts("help-extra", getMessage("main.opt.help-extra"));
 
         OptionSpec<Path> headerFiles
             = parser.accepts("header-files", getMessage("main.opt.header-files"))
@@ -1332,6 +1386,15 @@ public class JmodTask {
                         .withRequiredArg()
                         .describedAs(getMessage("main.opt.os-version.arg"));
 
+        OptionSpec<Void> doNotResolveByDefault
+                = parser.accepts("do-not-resolve-by-default",
+                                 getMessage("main.opt.do-not-resolve-by-default"));
+
+        OptionSpec<ModuleResolution> warnIfResolved
+                = parser.accepts("warn-if-resolved", getMessage("main.opt.warn-if-resolved"))
+                        .withRequiredArg()
+                        .withValuesConvertedBy(new WarnIfResolvedReasonConverter());
+
         OptionSpec<Void> version
                 = parser.accepts("version", getMessage("main.opt.version"));
 
@@ -1341,9 +1404,9 @@ public class JmodTask {
         try {
             OptionSet opts = parser.parse(args);
 
-            if (opts.has(help) || opts.has(version)) {
-                options = new Options();
+            if (opts.has(help) || opts.has(helpExtra) || opts.has(version)) {
                 options.help = opts.has(help);
+                options.helpExtra = opts.has(helpExtra);
                 options.version = opts.has(version);
                 return;  // informational message will be shown
             }
@@ -1352,7 +1415,6 @@ public class JmodTask {
             if (words.isEmpty())
                 throw new CommandException("err.missing.mode").showUsage(true);
             String verb = words.get(0);
-            options = new Options();
             try {
                 options.mode = Enum.valueOf(Mode.class, verb.toUpperCase());
             } catch (IllegalArgumentException e) {
@@ -1379,7 +1441,7 @@ public class JmodTask {
                 options.manPages = opts.valuesOf(manPages);
             if (opts.has(modulePath)) {
                 Path[] dirs = opts.valuesOf(modulePath).toArray(new Path[0]);
-                options.moduleFinder = JLMA.newModulePath(Runtime.version(), true, dirs);
+                options.moduleFinder = new ModulePath(Runtime.version(), true, dirs);
             }
             if (opts.has(moduleVersion))
                 options.moduleVersion = opts.valueOf(moduleVersion);
@@ -1391,6 +1453,13 @@ public class JmodTask {
                 options.osArch = opts.valueOf(osArch);
             if (opts.has(osVersion))
                 options.osVersion = opts.valueOf(osVersion);
+            if (opts.has(warnIfResolved))
+                options.moduleResolution = opts.valueOf(warnIfResolved);
+            if (opts.has(doNotResolveByDefault)) {
+                if (options.moduleResolution == null)
+                    options.moduleResolution = ModuleResolution.empty();
+                options.moduleResolution = options.moduleResolution.withDoNotResolveByDefault();
+            }
             if (opts.has(hashModules)) {
                 options.modulesToHash = opts.valueOf(hashModules);
                 // if storing hashes then the module path is required
