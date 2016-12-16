@@ -338,7 +338,7 @@ public class Start extends ToolOption.Helper {
                     nargv);
             return (rc == 0) ? OK : ERROR;
         }
-        return begin(Arrays.asList(argv), Collections.<JavaFileObject> emptySet());
+        return begin(Arrays.asList(argv), Collections.emptySet());
     }
 
     // Called by 199 API.

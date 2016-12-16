@@ -1226,8 +1226,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         /** Print info about this round. */
         private void printRoundInfo(boolean lastRound) {
             if (printRounds || verbose) {
-                List<ClassSymbol> tlc = lastRound ? List.<ClassSymbol>nil() : topLevelClasses;
-                Set<TypeElement> ap = lastRound ? Collections.<TypeElement>emptySet() : annotationsPresent;
+                List<ClassSymbol> tlc = lastRound ? List.nil() : topLevelClasses;
+                Set<TypeElement> ap = lastRound ? Collections.emptySet() : annotationsPresent;
                 log.printLines("x.print.rounds",
                         number,
                         "{" + tlc.toString(", ") + "}",

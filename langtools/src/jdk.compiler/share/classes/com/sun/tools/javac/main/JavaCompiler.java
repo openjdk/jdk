@@ -583,7 +583,7 @@ public class JavaCompiler {
     }
 
     protected final <T> List<T> stopIfError(CompileState cs, List<T> list) {
-        return shouldStop(cs) ? List.<T>nil() : list;
+        return shouldStop(cs) ? List.nil() : list;
     }
 
     /** The number of warnings reported so far.
@@ -612,7 +612,7 @@ public class JavaCompiler {
      */
     protected JCCompilationUnit parse(JavaFileObject filename, CharSequence content) {
         long msec = now();
-        JCCompilationUnit tree = make.TopLevel(List.<JCTree>nil());
+        JCCompilationUnit tree = make.TopLevel(List.nil());
         if (content != null) {
             if (verbose) {
                 log.printVerbose("parsing.started", filename);
@@ -725,7 +725,7 @@ public class JavaCompiler {
                                       : make.Select(tree, names.fromString(s));
             }
             JCCompilationUnit toplevel =
-                make.TopLevel(List.<JCTree>nil());
+                make.TopLevel(List.nil());
             toplevel.modle = msym;
             toplevel.packge = msym.unnamedPackage;
             return attr.attribIdent(tree, toplevel);
@@ -792,7 +792,7 @@ public class JavaCompiler {
             return t;
         } catch (IOException e) {
             log.error("error.reading.file", filename, JavacFileManager.getMessage(e));
-            return make.TopLevel(List.<JCTree>nil());
+            return make.TopLevel(List.nil());
         } finally {
             log.useSource(prev);
         }
@@ -886,7 +886,7 @@ public class JavaCompiler {
 
     public void compile(List<JavaFileObject> sourceFileObject)
         throws Throwable {
-        compile(sourceFileObject, List.<String>nil(), null);
+        compile(sourceFileObject, List.nil(), null);
     }
 
     /**
@@ -1149,7 +1149,7 @@ public class JavaCompiler {
 
     // TODO: called by JavacTaskImpl
     public void processAnnotations(List<JCCompilationUnit> roots) {
-        processAnnotations(roots, List.<String>nil());
+        processAnnotations(roots, List.nil());
     }
 
     /**

@@ -1092,8 +1092,8 @@ public class Flow {
                                 attrEnv,
                                 types.skipTypeVars(sup, false),
                                 names.close,
-                                List.<Type>nil(),
-                                List.<Type>nil());
+                                List.nil(),
+                                List.nil());
                         Type mt = types.memberType(resource.type, closeMethod);
                         if (closeMethod.kind == MTH) {
                             for (Type t : mt.getThrownTypes()) {

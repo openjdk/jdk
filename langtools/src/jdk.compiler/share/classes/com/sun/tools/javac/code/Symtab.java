@@ -309,14 +309,14 @@ public class Symtab {
                     MethodSymbol boxMethod =
                         new MethodSymbol(PUBLIC | STATIC, names.valueOf,
                                          new MethodType(List.of(type), sym.type,
-                                List.<Type>nil(), methodClass),
+                                List.nil(), methodClass),
                             sym);
                     sym.members().enter(boxMethod);
                     MethodSymbol unboxMethod =
                         new MethodSymbol(PUBLIC,
                             type.tsym.name.append(names.Value), // x.intValue()
-                            new MethodType(List.<Type>nil(), type,
-                                List.<Type>nil(), methodClass),
+                            new MethodType(List.nil(), type,
+                                List.nil(), methodClass),
                             sym);
                     sym.members().enter(unboxMethod);
                 }
@@ -514,8 +514,8 @@ public class Symtab {
         enumFinalFinalize =
             new MethodSymbol(PROTECTED|FINAL|HYPOTHETICAL,
                              names.finalize,
-                             new MethodType(List.<Type>nil(), voidType,
-                                            List.<Type>nil(), methodClass),
+                             new MethodType(List.nil(), voidType,
+                                            List.nil(), methodClass),
                              enumSym);
         listType = enterClass("java.util.List");
         collectionsType = enterClass("java.util.Collections");
@@ -538,7 +538,7 @@ public class Symtab {
         autoCloseableType = enterClass("java.lang.AutoCloseable");
         autoCloseableClose = new MethodSymbol(PUBLIC,
                              names.close,
-                             new MethodType(List.<Type>nil(), voidType,
+                             new MethodType(List.nil(), voidType,
                                             List.of(exceptionType), methodClass),
                              autoCloseableType.tsym);
         trustMeType = enterClass("java.lang.SafeVarargs");
@@ -584,8 +584,8 @@ public class Symtab {
         arrayCloneMethod = new MethodSymbol(
             PUBLIC,
             names.clone,
-            new MethodType(List.<Type>nil(), objectType,
-                           List.<Type>nil(), methodClass),
+            new MethodType(List.nil(), objectType,
+                           List.nil(), methodClass),
             arrayClass);
         arrayClass.members().enter(arrayCloneMethod);
 

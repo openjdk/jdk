@@ -225,7 +225,7 @@ public class JavacTaskImpl extends BasicJavacTask {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Iterable<? extends CompilationUnitTree> parse() {
-        return handleExceptions(this::parseInternal, List.<CompilationUnitTree>nil(), List.<CompilationUnitTree>nil());
+        return handleExceptions(this::parseInternal, List.nil(), List.nil());
     }
 
     private Iterable<? extends CompilationUnitTree> parseInternal() {
@@ -352,7 +352,7 @@ public class JavacTaskImpl extends BasicJavacTask {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Iterable<? extends Element> analyze() {
-        return handleExceptions(() -> analyze(null), List.<Element>nil(), List.<Element>nil());
+        return handleExceptions(() -> analyze(null), List.nil(), List.nil());
     }
 
     /**
@@ -414,7 +414,7 @@ public class JavacTaskImpl extends BasicJavacTask {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Iterable<? extends JavaFileObject> generate() {
-        return handleExceptions(() -> generate(null), List.<JavaFileObject>nil(), List.<JavaFileObject>nil());
+        return handleExceptions(() -> generate(null), List.nil(), List.nil());
     }
 
     /**

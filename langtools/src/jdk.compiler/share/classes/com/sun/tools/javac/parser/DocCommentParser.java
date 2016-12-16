@@ -683,7 +683,7 @@ public class DocCommentParser {
             }
         }
 
-        return List.<DCTree>of(erroneous("dc.unterminated.inline.tag", pos));
+        return List.of(erroneous("dc.unterminated.inline.tag", pos));
     }
 
     protected void entity(ListBuffer<DCTree> list) {

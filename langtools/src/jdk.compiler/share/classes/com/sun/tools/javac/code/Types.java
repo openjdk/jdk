@@ -588,7 +588,7 @@ public class Types {
         csym.members_field = WriteableScope.create(csym);
         MethodSymbol instDescSym = new MethodSymbol(descSym.flags(), descSym.name, descType, csym);
         csym.members_field.enter(instDescSym);
-        Type.ClassType ctype = new Type.ClassType(Type.noType, List.<Type>nil(), csym);
+        Type.ClassType ctype = new Type.ClassType(Type.noType, List.nil(), csym);
         ctype.supertype_field = syms.objectType;
         ctype.interfaces_field = targets;
         csym.type = ctype;
@@ -3162,7 +3162,7 @@ public class Types {
                                      t.getMetadata());
             // the new bound should use the new type variable in place
             // of the old
-            tv.bound = subst(bound1, List.<Type>of(t), List.<Type>of(tv));
+            tv.bound = subst(bound1, List.of(t), List.of(tv));
             return tv;
         }
     }
@@ -3762,7 +3762,7 @@ public class Types {
                 List<Type> lci = List.of(asSuper(ts[startIdx], erasedSupertype.tsym));
                 for (int i = startIdx + 1 ; i < ts.length ; i++) {
                     Type superType = asSuper(ts[i], erasedSupertype.tsym);
-                    lci = intersect(lci, superType != null ? List.of(superType) : List.<Type>nil());
+                    lci = intersect(lci, superType != null ? List.of(superType) : List.nil());
                 }
                 candidates = candidates.appendList(lci);
             }

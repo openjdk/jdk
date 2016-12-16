@@ -2347,7 +2347,7 @@ public class Resolve {
                   Type site,
                   Name name,
                   boolean qualified) {
-        return accessInternal(sym, pos, location, site, name, qualified, List.<Type>nil(), null, basicLogResolveHelper);
+        return accessInternal(sym, pos, location, site, name, qualified, List.nil(), null, basicLogResolveHelper);
     }
 
     /** Same as original accessBase(), but without location.
@@ -2693,7 +2693,7 @@ public class Resolve {
                 (sym.flags_field & SYNTHETIC) == 0) {
                     List<Type> oldParams = sym.type.hasTag(FORALL) ?
                             ((ForAll)sym.type).tvars :
-                            List.<Type>nil();
+                            List.nil();
                     Type constrType = new ForAll(site.tsym.type.getTypeArguments().appendList(oldParams),
                                                  types.createMethodTypeWithReturn(sym.type.asMethodType(), site));
                     MethodSymbol newConstr = new MethodSymbol(sym.flags(), names.init, constrType, site.tsym) {
@@ -2721,7 +2721,7 @@ public class Resolve {
         site = types.capture(site);
 
         ReferenceLookupHelper lookupHelper = makeReferenceLookupHelper(
-                referenceTree, site, name, List.<Type>nil(), null, VARARITY);
+                referenceTree, site, name, List.nil(), null, VARARITY);
 
         Env<AttrContext> newEnv = env.dup(env.tree, env.info.dup());
         Symbol sym = lookupMethod(newEnv, env.tree.pos(), site.tsym,
@@ -3275,7 +3275,7 @@ public class Resolve {
         protected Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
             WriteableScope sc = WriteableScope.create(syms.arrayClass);
             MethodSymbol arrayConstr = new MethodSymbol(PUBLIC, name, null, site.tsym);
-            arrayConstr.type = new MethodType(List.<Type>of(syms.intType), site, List.<Type>nil(), syms.methodClass);
+            arrayConstr.type = new MethodType(List.of(syms.intType), site, List.nil(), syms.methodClass);
             sc.enter(arrayConstr);
             return findMethodInScope(env, site, name, argtypes, typeargtypes, sc, methodNotFound, phase.isBoxingRequired(), phase.isVarargsRequired(), false);
         }
@@ -3662,8 +3662,8 @@ public class Resolve {
                 Name name,
                 List<Type> argtypes,
                 List<Type> typeargtypes) {
-            argtypes = argtypes == null ? List.<Type>nil() : argtypes;
-            typeargtypes = typeargtypes == null ? List.<Type>nil() : typeargtypes;
+            argtypes = argtypes == null ? List.nil() : argtypes;
+            typeargtypes = typeargtypes == null ? List.nil() : typeargtypes;
             if (name == names.error)
                 return null;
 

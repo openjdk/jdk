@@ -809,7 +809,7 @@ public abstract class Scope {
 
             @Override
             public Iterable<Symbol> getSymbols(Filter<Symbol> sf, LookupKind lookupKind) {
-                return sf == null || sf.accepts(sym) ? content : Collections.<Symbol>emptyList();
+                return sf == null || sf.accepts(sym) ? content : Collections.emptyList();
             }
 
             @Override
@@ -817,7 +817,7 @@ public abstract class Scope {
                                                      Filter<Symbol> sf,
                                                      LookupKind lookupKind) {
                 return sym.name == name &&
-                       (sf == null || sf.accepts(sym)) ? content : Collections.<Symbol>emptyList();
+                       (sf == null || sf.accepts(sym)) ? content : Collections.emptyList();
             }
 
             @Override
