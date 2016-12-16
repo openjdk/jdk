@@ -1363,14 +1363,14 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         // Free resources
         this.close();
 
-        if (!taskListener.isEmpty())
-            taskListener.finished(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
-
         if (errorStatus && compiler.errorCount() == 0) {
             compiler.log.nerrors++;
         }
 
         compiler.enterTreesIfNeeded(roots);
+
+        if (!taskListener.isEmpty())
+            taskListener.finished(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
 
         return true;
     }

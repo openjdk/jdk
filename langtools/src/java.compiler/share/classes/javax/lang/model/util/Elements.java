@@ -47,10 +47,11 @@ import javax.lang.model.element.*;
 public interface Elements {
 
     /**
-     * Returns a package given its fully qualified name.
+     * Returns a package given its fully qualified name if the package is unique in the environment.
+     * If running with modules, all modules in the modules graph are searched for matching packages.
      *
      * @param name  fully qualified package name, or an empty string for an unnamed package
-     * @return the named package, or {@code null} if it cannot be found
+     * @return the named package, or {@code null} if it cannot be uniquely found
      */
     PackageElement getPackageElement(CharSequence name);
 
@@ -65,10 +66,12 @@ public interface Elements {
     PackageElement getPackageElement(ModuleElement module, CharSequence name);
 
     /**
-     * Returns a type element given its canonical name.
+     * Returns a type element given its canonical name if the type element is unique in the environment.
+     * If running with modules, all modules in the modules graph are searched for matching
+     * type elements.
      *
      * @param name  the canonical name
-     * @return the named type element, or {@code null} if it cannot be found
+     * @return the named type element, or {@code null} if it cannot be uniquely found
      */
     TypeElement getTypeElement(CharSequence name);
 
@@ -84,6 +87,10 @@ public interface Elements {
 
     /**
      * Returns a module element given its fully qualified name.
+     * If the named module cannot be found, null is returned. One situation where a module
+     * cannot be found is if the environment does not include modules, such as
+     * an annotation processing environment configured for
+     * a {@linkplain ProcessingEnvironment#getSourceVersion source version} without modules.      *
      *
      * @param name  the name
      * @return the named module element, or {@code null} if it cannot be found
@@ -159,6 +166,10 @@ public interface Elements {
     /**
      * Returns the module of an element.  The module of a module is
      * itself.
+     * If there is no module for the element, null is returned. One situation where there is
+     * no module for an element is if the environment does not include modules, such as
+     * an annotation processing environment configured for
+     * a {@linkplain ProcessingEnvironment#getSourceVersion source version} without modules.      *
      *
      * @param type the element being examined
      * @return the module of an element
