@@ -214,13 +214,13 @@ public class GenGraphs {
 
             // same ranks
             ranks.stream()
-                .forEach(group -> out.format("{rank=same %s}%n",
-                    descriptors.stream()
-                        .map(ModuleDescriptor::name)
-                        .filter(group::contains)
-                        .map(mn -> "\"" + mn + "\"")
-                        .collect(joining(","))
-                ));
+                .map(group -> descriptors.stream()
+                                         .map(ModuleDescriptor::name)
+                                         .filter(group::contains)
+                                         .map(mn -> "\"" + mn + "\"")
+                                         .collect(joining(",")))
+                .filter(group -> group.length() > 0)
+                .forEach(group -> out.format("{rank=same %s}%n", group));
 
             descriptors.stream()
                 .filter(jdkGroup::contains)
