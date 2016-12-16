@@ -38,7 +38,9 @@ import com.sun.tools.classfile.ConstantPool.CONSTANT_Long_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_MethodHandle_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_MethodType_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_Methodref_info;
+import com.sun.tools.classfile.ConstantPool.CONSTANT_Module_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_NameAndType_info;
+import com.sun.tools.classfile.ConstantPool.CONSTANT_Package_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_String_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_Utf8_info;
 import com.sun.tools.classfile.ConstantPool.CPInfo;
@@ -242,6 +244,7 @@ public class ClassTranslator
         return true;
     }
 
+    @Override
     public CPInfo visitClass(CONSTANT_Class_info info, Map<Object, Object> translations) {
         CONSTANT_Class_info info2 = (CONSTANT_Class_info) translations.get(info);
         if (info2 == null) {
@@ -255,6 +258,7 @@ public class ClassTranslator
         return info;
     }
 
+    @Override
     public CPInfo visitDouble(CONSTANT_Double_info info, Map<Object, Object> translations) {
         CONSTANT_Double_info info2 = (CONSTANT_Double_info) translations.get(info);
         if (info2 == null) {
@@ -264,6 +268,7 @@ public class ClassTranslator
         return info;
     }
 
+    @Override
     public CPInfo visitFieldref(CONSTANT_Fieldref_info info, Map<Object, Object> translations) {
         CONSTANT_Fieldref_info info2 = (CONSTANT_Fieldref_info) translations.get(info);
         if (info2 == null) {
@@ -277,6 +282,7 @@ public class ClassTranslator
         return info;
     }
 
+    @Override
     public CPInfo visitFloat(CONSTANT_Float_info info, Map<Object, Object> translations) {
         CONSTANT_Float_info info2 = (CONSTANT_Float_info) translations.get(info);
         if (info2 == null) {
@@ -286,6 +292,7 @@ public class ClassTranslator
         return info;
     }
 
+    @Override
     public CPInfo visitInteger(CONSTANT_Integer_info info, Map<Object, Object> translations) {
         CONSTANT_Integer_info info2 = (CONSTANT_Integer_info) translations.get(info);
         if (info2 == null) {
@@ -295,6 +302,7 @@ public class ClassTranslator
         return info;
     }
 
+    @Override
     public CPInfo visitInterfaceMethodref(CONSTANT_InterfaceMethodref_info info, Map<Object, Object> translations) {
         CONSTANT_InterfaceMethodref_info info2 = (CONSTANT_InterfaceMethodref_info) translations.get(info);
         if (info2 == null) {
@@ -308,6 +316,7 @@ public class ClassTranslator
         return info;
     }
 
+    @Override
     public CPInfo visitInvokeDynamic(CONSTANT_InvokeDynamic_info info, Map<Object, Object> translations) {
         CONSTANT_InvokeDynamic_info info2 = (CONSTANT_InvokeDynamic_info) translations.get(info);
         if (info2 == null) {
@@ -322,6 +331,7 @@ public class ClassTranslator
         return info;
     }
 
+    @Override
     public CPInfo visitLong(CONSTANT_Long_info info, Map<Object, Object> translations) {
         CONSTANT_Long_info info2 = (CONSTANT_Long_info) translations.get(info);
         if (info2 == null) {
@@ -331,19 +341,7 @@ public class ClassTranslator
         return info;
     }
 
-    public CPInfo visitNameAndType(CONSTANT_NameAndType_info info, Map<Object, Object> translations) {
-        CONSTANT_NameAndType_info info2 = (CONSTANT_NameAndType_info) translations.get(info);
-        if (info2 == null) {
-            ConstantPool cp2 = translate(info.cp, translations);
-            if (cp2 == info.cp)
-                info2 = info;
-            else
-                info2 = new CONSTANT_NameAndType_info(cp2, info.name_index, info.type_index);
-            translations.put(info, info2);
-        }
-        return info;
-    }
-
+    @Override
     public CPInfo visitMethodref(CONSTANT_Methodref_info info, Map<Object, Object> translations) {
         CONSTANT_Methodref_info info2 = (CONSTANT_Methodref_info) translations.get(info);
         if (info2 == null) {
@@ -357,6 +355,7 @@ public class ClassTranslator
         return info;
     }
 
+    @Override
     public CPInfo visitMethodHandle(CONSTANT_MethodHandle_info info, Map<Object, Object> translations) {
         CONSTANT_MethodHandle_info info2 = (CONSTANT_MethodHandle_info) translations.get(info);
         if (info2 == null) {
@@ -371,6 +370,7 @@ public class ClassTranslator
         return info;
     }
 
+    @Override
     public CPInfo visitMethodType(CONSTANT_MethodType_info info, Map<Object, Object> translations) {
         CONSTANT_MethodType_info info2 = (CONSTANT_MethodType_info) translations.get(info);
         if (info2 == null) {
@@ -385,6 +385,49 @@ public class ClassTranslator
         return info;
     }
 
+    @Override
+    public CPInfo visitModule(CONSTANT_Module_info info, Map<Object, Object> translations) {
+        CONSTANT_Module_info info2 = (CONSTANT_Module_info) translations.get(info);
+        if (info2 == null) {
+            ConstantPool cp2 = translate(info.cp, translations);
+            if (cp2 == info.cp)
+                info2 = info;
+            else
+                info2 = new CONSTANT_Module_info(cp2, info.name_index);
+            translations.put(info, info2);
+        }
+        return info;
+    }
+
+    @Override
+    public CPInfo visitNameAndType(CONSTANT_NameAndType_info info, Map<Object, Object> translations) {
+        CONSTANT_NameAndType_info info2 = (CONSTANT_NameAndType_info) translations.get(info);
+        if (info2 == null) {
+            ConstantPool cp2 = translate(info.cp, translations);
+            if (cp2 == info.cp)
+                info2 = info;
+            else
+                info2 = new CONSTANT_NameAndType_info(cp2, info.name_index, info.type_index);
+            translations.put(info, info2);
+        }
+        return info;
+    }
+
+    @Override
+    public CPInfo visitPackage(CONSTANT_Package_info info, Map<Object, Object> translations) {
+        CONSTANT_Package_info info2 = (CONSTANT_Package_info) translations.get(info);
+        if (info2 == null) {
+            ConstantPool cp2 = translate(info.cp, translations);
+            if (cp2 == info.cp)
+                info2 = info;
+            else
+                info2 = new CONSTANT_Package_info(cp2, info.name_index);
+            translations.put(info, info2);
+        }
+        return info;
+    }
+
+    @Override
     public CPInfo visitString(CONSTANT_String_info info, Map<Object, Object> translations) {
         CONSTANT_String_info info2 = (CONSTANT_String_info) translations.get(info);
         if (info2 == null) {
@@ -398,6 +441,7 @@ public class ClassTranslator
         return info;
     }
 
+    @Override
     public CPInfo visitUtf8(CONSTANT_Utf8_info info, Map<Object, Object> translations) {
         CONSTANT_Utf8_info info2 = (CONSTANT_Utf8_info) translations.get(info);
         if (info2 == null) {

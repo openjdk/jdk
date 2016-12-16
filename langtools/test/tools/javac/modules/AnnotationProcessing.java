@@ -96,20 +96,20 @@ public class AnnotationProcessing extends ModuleTestBase {
     @Test
     public void testAPSingleModule(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
+        Path m1 = moduleSrc.resolve("m1x");
 
         Path classes = base.resolve("classes");
 
         Files.createDirectories(classes);
 
         tb.writeJavaFiles(m1,
-                          "module m1 { }",
+                          "module m1x { }",
                           "package impl; public class Impl { }");
 
         String log = new JavacTask(tb)
                 .options("--module-source-path", moduleSrc.toString(),
                          "-processor", AP.class.getName(),
-                         "-AexpectedEnclosedElements=m1=>impl")
+                         "-AexpectedEnclosedElements=m1x=>impl")
                 .outdir(classes)
                 .files(findJavaFiles(moduleSrc))
                 .run()
@@ -123,25 +123,25 @@ public class AnnotationProcessing extends ModuleTestBase {
     @Test
     public void testAPMultiModule(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
-        Path m2 = moduleSrc.resolve("m2");
+        Path m1 = moduleSrc.resolve("m1x");
+        Path m2 = moduleSrc.resolve("m2x");
 
         Path classes = base.resolve("classes");
 
         Files.createDirectories(classes);
 
         tb.writeJavaFiles(m1,
-                          "module m1 { }",
+                          "module m1x { }",
                           "package impl1; public class Impl1 { }");
 
         tb.writeJavaFiles(m2,
-                          "module m2 { }",
+                          "module m2x { }",
                           "package impl2; public class Impl2 { }");
 
         String log = new JavacTask(tb)
                 .options("--module-source-path", moduleSrc.toString(),
                          "-processor", AP.class.getName(),
-                         "-AexpectedEnclosedElements=m1=>impl1,m2=>impl2")
+                         "-AexpectedEnclosedElements=m1x=>impl1,m2x=>impl2")
                 .outdir(classes)
                 .files(findJavaFiles(moduleSrc))
                 .run()
@@ -229,14 +229,14 @@ public class AnnotationProcessing extends ModuleTestBase {
     @Test
     public void testVerifyUsesProvides(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
+        Path m1 = moduleSrc.resolve("m1x");
 
         Path classes = base.resolve("classes");
 
         Files.createDirectories(classes);
 
         tb.writeJavaFiles(m1,
-                          "module m1 { exports api; uses api.Api; provides api.Api with impl.Impl; }",
+                          "module m1x { exports api; uses api.Api; provides api.Api with impl.Impl; }",
                           "package api; public class Api { }",
                           "package impl; public class Impl extends api.Api { }");
 
@@ -334,20 +334,20 @@ public class AnnotationProcessing extends ModuleTestBase {
     @Test
     public void testQualifiedClassForProcessing(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
-        Path m2 = moduleSrc.resolve("m2");
+        Path m1 = moduleSrc.resolve("m1x");
+        Path m2 = moduleSrc.resolve("m2x");
 
         Path classes = base.resolve("classes");
 
         Files.createDirectories(classes);
 
         tb.writeJavaFiles(m1,
-                          "module m1 { }",
-                          "package impl; public class Impl { int m1; }");
+                          "module m1x { }",
+                          "package impl; public class Impl { int m1x; }");
 
         tb.writeJavaFiles(m2,
-                          "module m2 { }",
-                          "package impl; public class Impl { int m2; }");
+                          "module m2x { }",
+                          "package impl; public class Impl { int m2x; }");
 
         new JavacTask(tb)
             .options("--module-source-path", moduleSrc.toString())
@@ -357,13 +357,13 @@ public class AnnotationProcessing extends ModuleTestBase {
             .writeAll()
             .getOutput(Task.OutputKind.DIRECT);
 
-        List<String> expected = Arrays.asList("Note: field: m1");
+        List<String> expected = Arrays.asList("Note: field: m1x");
 
         for (Mode mode : new Mode[] {Mode.API, Mode.CMDLINE}) {
             List<String> log = new JavacTask(tb, mode)
                     .options("-processor", QualifiedClassForProcessing.class.getName(),
                              "--module-path", classes.toString())
-                    .classes("m1/impl.Impl")
+                    .classes("m1x/impl.Impl")
                     .outdir(classes)
                     .run()
                     .writeAll()
@@ -379,8 +379,8 @@ public class AnnotationProcessing extends ModuleTestBase {
 
         @Override
         public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-            if (processingEnv.getElementUtils().getModuleElement("m1") == null) {
-                throw new AssertionError("No m1 module found.");
+            if (processingEnv.getElementUtils().getModuleElement("m1x") == null) {
+                throw new AssertionError("No m1x module found.");
             }
 
             Messager messager = processingEnv.getMessager();
@@ -411,7 +411,7 @@ public class AnnotationProcessing extends ModuleTestBase {
         Files.createDirectories(classes);
 
         tb.writeJavaFiles(m1,
-                          "module m1 { exports api; }",
+                          "module m1x { exports api; }",
                           "package api; public class Api { }");
 
         List<String> log = new JavacTask(tb)
@@ -422,7 +422,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.STDERR);
 
-        assertEquals(Arrays.asList("module: m1"), log);
+        assertEquals(Arrays.asList("module: m1x"), log);
     }
 
     @SupportedAnnotationTypes("*")
@@ -451,12 +451,12 @@ public class AnnotationProcessing extends ModuleTestBase {
         Path m1 = moduleSrc.resolve("m1");
 
         tb.writeJavaFiles(m1,
-                          "@Deprecated module m1 { }");
+                          "@Deprecated module m1x { }");
 
-        Path m2 = moduleSrc.resolve("m2");
+        Path m2 = moduleSrc.resolve("m2x");
 
         tb.writeJavaFiles(m2,
-                          "@SuppressWarnings(\"\") module m2 { }");
+                          "@SuppressWarnings(\"\") module m2x { }");
 
         Path classes = base.resolve("classes");
 
@@ -521,19 +521,19 @@ public class AnnotationProcessing extends ModuleTestBase {
 
         Files.createDirectories(classes);
 
-        Path m1 = moduleSrc.resolve("m1");
+        Path m1 = moduleSrc.resolve("m1x");
 
         tb.writeJavaFiles(m1,
-                          "module m1 { exports api1; }",
+                          "module m1x { exports api1; }",
                           "package api1; public class Api { GenApi ga; impl.Impl i; }");
 
         writeFile("1", m1, "api1", "api");
         writeFile("1", m1, "impl", "impl");
 
-        Path m2 = moduleSrc.resolve("m2");
+        Path m2 = moduleSrc.resolve("m2x");
 
         tb.writeJavaFiles(m2,
-                          "module m2 { requires m1; exports api2; }",
+                          "module m2x { requires m1x; exports api2; }",
                           "package api2; public class Api { api1.GenApi ga1; GenApi qa2; impl.Impl i;}");
 
         writeFile("2", m2, "api2", "api");
@@ -555,12 +555,12 @@ public class AnnotationProcessing extends ModuleTestBase {
               .run()
               .writeAll();
 
-            assertFileExists(classes, "m1", "api1", "GenApi.class");
-            assertFileExists(classes, "m1", "impl", "Impl.class");
-            assertFileExists(classes, "m1", "api1", "gen1");
-            assertFileExists(classes, "m2", "api2", "GenApi.class");
-            assertFileExists(classes, "m2", "impl", "Impl.class");
-            assertFileExists(classes, "m2", "api2", "gen1");
+            assertFileExists(classes, "m1x", "api1", "GenApi.class");
+            assertFileExists(classes, "m1x", "impl", "Impl.class");
+            assertFileExists(classes, "m1x", "api1", "gen1");
+            assertFileExists(classes, "m2x", "api2", "GenApi.class");
+            assertFileExists(classes, "m2x", "impl", "Impl.class");
+            assertFileExists(classes, "m2x", "api2", "gen1");
         }
     }
 
@@ -667,18 +667,18 @@ public class AnnotationProcessing extends ModuleTestBase {
             if (round++ != 0)
                 return false;
 
-            createClass("m1", "api1.GenApi", "package api1; public class GenApi {}");
-            createClass("m1", "impl.Impl", "package impl; public class Impl {}");
-            createClass("m2", "api2.GenApi", "package api2; public class GenApi {}");
-            createClass("m2", "impl.Impl", "package impl; public class Impl {}");
+            createClass("m1x", "api1.GenApi", "package api1; public class GenApi {}");
+            createClass("m1x", "impl.Impl", "package impl; public class Impl {}");
+            createClass("m2x", "api2.GenApi", "package api2; public class GenApi {}");
+            createClass("m2x", "impl.Impl", "package impl; public class Impl {}");
 
-            createResource("m1", "api1", "gen1");
-            createResource("m2", "api2", "gen1");
+            createResource("m1x", "api1", "gen1");
+            createResource("m2x", "api2", "gen1");
 
-            readResource("m1", "api1", "api", "1");
-            readResource("m1", "impl", "impl", "1");
-            readResource("m2", "api2", "api", "2");
-            readResource("m2", "impl", "impl", "2");
+            readResource("m1x", "api1", "api", "1");
+            readResource("m1x", "impl", "impl", "1");
+            readResource("m2x", "api2", "api", "2");
+            readResource("m2x", "impl", "impl", "2");
 
             Filer filer = processingEnv.getFiler();
 
@@ -745,7 +745,7 @@ public class AnnotationProcessing extends ModuleTestBase {
         Path m1 = base.resolve("module-src");
 
         tb.writeJavaFiles(m1,
-                          "module m1 { }");
+                          "module m1x { }");
 
         writeFile("3", m1, "impl", "resource");
 
@@ -791,10 +791,10 @@ public class AnnotationProcessing extends ModuleTestBase {
             createSource(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, "impl", "Impl3"), "impl.Impl3", "");
             doReadResource(() -> filer.getResource(StandardLocation.SOURCE_PATH, "impl", "resource"), "3");
 
-            createSource(() -> filer.createSourceFile("m1/impl.Impl4"), "impl.Impl4", "package impl; class Impl4 {}");
-            createClass(() -> filer.createClassFile("m1/impl.Impl5"), "impl.Impl5", "package impl; class Impl5 {}");
-            createSource(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, "m1/impl", "Impl6"), "impl.Impl6", "");
-            doReadResource(() -> filer.getResource(StandardLocation.SOURCE_PATH, "m1/impl", "resource"), "3");
+            createSource(() -> filer.createSourceFile("m1x/impl.Impl4"), "impl.Impl4", "package impl; class Impl4 {}");
+            createClass(() -> filer.createClassFile("m1x/impl.Impl5"), "impl.Impl5", "package impl; class Impl5 {}");
+            createSource(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, "m1x/impl", "Impl6"), "impl.Impl6", "");
+            doReadResource(() -> filer.getResource(StandardLocation.SOURCE_PATH, "m1x/impl", "resource"), "3");
 
             TypeElement jlObject = processingEnv.getElementUtils().getTypeElement("java.lang.Object");
 
@@ -806,8 +806,8 @@ public class AnnotationProcessing extends ModuleTestBase {
             //must not generate to unnamed package:
             expectFilerException(() -> filer.createSourceFile("Fail"));
             expectFilerException(() -> filer.createClassFile("Fail"));
-            expectFilerException(() -> filer.createSourceFile("m1/Fail"));
-            expectFilerException(() -> filer.createClassFile("m1/Fail"));
+            expectFilerException(() -> filer.createSourceFile("m1x/Fail"));
+            expectFilerException(() -> filer.createClassFile("m1x/Fail"));
 
             //cannot generate resources to modules that are not root modules:
             expectFilerException(() -> filer.createSourceFile("java.base/fail.Fail"));
@@ -899,30 +899,30 @@ public class AnnotationProcessing extends ModuleTestBase {
         Files.createDirectories(classes);
 
         Path src = base.resolve("src");
-        Path m1 = src.resolve("m1");
+        Path m1 = src.resolve("m1x");
 
         tb.writeJavaFiles(m1,
-                          "module m1 { exports api; }",
+                          "module m1x { exports api; }",
                           "package api; public @interface A {}",
                           "package api; public @interface B {}");
 
-        Path m2 = src.resolve("m2");
+        Path m2 = src.resolve("m2x");
 
         tb.writeJavaFiles(m2,
-                          "module m2 { exports api; }",
+                          "module m2x { exports api; }",
                           "package api; public @interface A {}",
                           "package api; public @interface B {}");
 
-        Path m3 = src.resolve("m3");
+        Path m3 = src.resolve("m3x");
 
         tb.writeJavaFiles(m3,
-                          "module m3 { requires m1; }",
+                          "module m3x { requires m1x; }",
                           "package impl; import api.*; @A @B public class T {}");
 
-        Path m4 = src.resolve("m4");
+        Path m4 = src.resolve("m4x");
 
         tb.writeJavaFiles(m4,
-                          "module m4 { requires m2; }",
+                          "module m4x { requires m2x; }",
                           "package impl; import api.*; @A @B public class T {}");
 
         List<String> log;
@@ -931,7 +931,7 @@ public class AnnotationProcessing extends ModuleTestBase {
         log = new JavacTask(tb)
             .options("-processor", SelectAnnotationATestAP.class.getName() + "," + SelectAnnotationBTestAP.class.getName(),
                      "--module-source-path", src.toString(),
-                     "-m", "m1,m2")
+                     "-m", "m1x,m2x")
             .outdir(classes)
             .run()
             .writeAll()
@@ -946,7 +946,7 @@ public class AnnotationProcessing extends ModuleTestBase {
         log = new JavacTask(tb)
             .options("-processor", SelectAnnotationATestAP.class.getName() + "," + SelectAnnotationBTestAP.class.getName(),
                      "--module-source-path", src.toString(),
-                     "-m", "m3")
+                     "-m", "m3x")
             .outdir(classes)
             .run()
             .writeAll()
@@ -962,7 +962,7 @@ public class AnnotationProcessing extends ModuleTestBase {
         log = new JavacTask(tb)
             .options("-processor", SelectAnnotationATestAP.class.getName() + "," + SelectAnnotationBTestAP.class.getName(),
                      "--module-source-path", src.toString(),
-                     "-m", "m4")
+                     "-m", "m4x")
             .outdir(classes)
             .run()
             .writeAll()
@@ -978,7 +978,7 @@ public class AnnotationProcessing extends ModuleTestBase {
         }
     }
 
-    @SupportedAnnotationTypes("m2/api.A")
+    @SupportedAnnotationTypes("m2x/api.A")
     public static final class SelectAnnotationATestAP extends AbstractProcessor {
 
         @Override

@@ -46,7 +46,6 @@ import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.api.JavacTrees;
 
-import toolbox.ToolBox;
 
 public class ModuleInfoTreeAccess extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -66,14 +65,14 @@ public class ModuleInfoTreeAccess extends ModuleTestBase {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
             Path src = base.resolve("src");
-            tb.writeJavaFiles(src, "/** Test module */ module m1 {}");
+            tb.writeJavaFiles(src, "/** Test module */ module m1x {}");
 
             Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(findJavaFiles(src));
             JavacTask task = (JavacTask) compiler.getTask(null, fm, null, null, null, files);
 
             task.analyze();
             JavacTrees trees = JavacTrees.instance(task);
-            ModuleElement mdle = (ModuleElement) task.getElements().getModuleElement("m1");
+            ModuleElement mdle = (ModuleElement) task.getElements().getModuleElement("m1x");
 
             TreePath path = trees.getPath(mdle);
             assertNotNull("path", path);
@@ -91,14 +90,14 @@ public class ModuleInfoTreeAccess extends ModuleTestBase {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
             Path src = base.resolve("src");
-            tb.writeJavaFiles(src, "import java.lang.Deprecated; /** Test module */ @Deprecated module m1 {}");
+            tb.writeJavaFiles(src, "import java.lang.Deprecated; /** Test module */ @Deprecated module m1x {}");
 
             Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(findJavaFiles(src));
             JavacTask task = (JavacTask) compiler.getTask(null, fm, null, null, null, files);
 
             task.analyze();
             JavacTrees trees = JavacTrees.instance(task);
-            ModuleElement mdle = (ModuleElement) task.getElements().getModuleElement("m1");
+            ModuleElement mdle = (ModuleElement) task.getElements().getModuleElement("m1x");
 
             TreePath path = trees.getPath(mdle);
             assertNotNull("path", path);

@@ -462,11 +462,22 @@ public class Pretty extends JCTree.Visitor {
     @Override
     public void visitExports(JCExports tree) {
         try {
-            if (tree.hasTag(EXPORTS)) {
-                print("exports ");
-            } else {
-                print("opens ");
+            print("exports ");
+            printExpr(tree.qualid);
+            if (tree.moduleNames != null) {
+                print(" to ");
+                printExprs(tree.moduleNames);
             }
+            print(";");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void visitOpens(JCOpens tree) {
+        try {
+            print("opens ");
             printExpr(tree.qualid);
             if (tree.moduleNames != null) {
                 print(" to ");
@@ -1493,7 +1504,7 @@ public class Pretty extends JCTree.Visitor {
 
     public void visitTree(JCTree tree) {
         try {
-            print("(UNKNOWN: " + tree + ")");
+            print("(UNKNOWN: " + tree.getTag() + ")");
             println();
         } catch (IOException e) {
             throw new UncheckedIOException(e);

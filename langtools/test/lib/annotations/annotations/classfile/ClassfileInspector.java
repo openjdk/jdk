@@ -1183,22 +1183,17 @@ public class ClassfileInspector {
     private static class AbstractAttributeVisitor<T> implements Attribute.Visitor<Void, T> {
 
         @Override
-        public Void visitBootstrapMethods(BootstrapMethods_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitModulePackages(ModulePackages_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
         public Void visitDefault(DefaultAttribute attr, T p) {
             return null;
         }
 
         @Override
         public Void visitAnnotationDefault(AnnotationDefault_attribute attr, T p) {
+            return null;
+        }
+
+        @Override
+        public Void visitBootstrapMethods(BootstrapMethods_attribute attr, T p) {
             return null;
         }
 
@@ -1238,11 +1233,6 @@ public class ClassfileInspector {
         }
 
         @Override
-        public Void visitModuleHashes(ModuleHashes_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
         public Void visitInnerClasses(InnerClasses_attribute attr, T p) {
             return null;
         }
@@ -1263,11 +1253,6 @@ public class ClassfileInspector {
         }
 
         @Override
-        public Void visitModuleMainClass(ModuleMainClass_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
         public Void visitMethodParameters(MethodParameters_attribute attr, T p) {
             return null;
         }
@@ -1278,7 +1263,27 @@ public class ClassfileInspector {
         }
 
         @Override
-        public Void visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute attr, T p) {
+        public Void visitModuleHashes(ModuleHashes_attribute attr, T p) {
+            return null;
+        }
+
+        @Override
+        public Void visitModuleMainClass(ModuleMainClass_attribute attr, T p) {
+            return null;
+        }
+
+        @Override
+        public Void visitModulePackages(ModulePackages_attribute attr, T p) {
+            return null;
+        }
+
+        @Override
+        public Void visitModuleResolution(ModuleResolution_attribute attr, T p) {
+            return null;
+        }
+
+        @Override
+        public Void visitModuleTarget(ModuleTarget_attribute attr, T p) {
             return null;
         }
 
@@ -1288,22 +1293,27 @@ public class ClassfileInspector {
         }
 
         @Override
-        public Void visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
         public Void visitRuntimeInvisibleParameterAnnotations(RuntimeInvisibleParameterAnnotations_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute attr, T p) {
+        public Void visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute attr, T p) {
+        public Void visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute attr, T p) {
+            return null;
+        }
+
+        @Override
+        public Void visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr, T p) {
+            return null;
+        }
+
+        @Override
+        public Void visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute attr, T p) {
             return null;
         }
 
@@ -1341,17 +1351,6 @@ public class ClassfileInspector {
         public Void visitSynthetic(Synthetic_attribute attr, T p) {
             return null;
         }
-
-        @Override
-        public Void visitModuleTarget(ModuleTarget_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitModuleVersion(ModuleVersion_attribute attr, T p) {
-            return null;
-        }
-
     }
 
     private static final Attribute.Visitor<Void, ExpectedTypeAnnotation> typeAnnoMatcher

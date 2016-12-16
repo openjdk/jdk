@@ -4444,7 +4444,7 @@ public class Attr extends JCTree.Visitor {
         ModuleSymbol msym = tree.sym;
         Lint lint = env.outer.info.lint = env.outer.info.lint.augment(msym);
         Lint prevLint = chk.setLint(lint);
-
+        chk.checkModuleName(tree);
         chk.checkDeprecatedAnnotation(tree, msym);
 
         try {

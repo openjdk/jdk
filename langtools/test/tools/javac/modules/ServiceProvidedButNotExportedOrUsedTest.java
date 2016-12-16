@@ -78,13 +78,13 @@ public class ServiceProvidedButNotExportedOrUsedTest extends ModuleTestBase {
     @Test
     public void testImplementationMustBeInSameModuleAsProvidesDirective(Path base) throws Exception {
         Path src = base.resolve("src");
-        tb.writeJavaFiles(src.resolve("m1"),
-                "module m1 { exports p1; }",
+        tb.writeJavaFiles(src.resolve("m1x"),
+                "module m1x { exports p1; }",
                 "package p1; public class C1 { }");
-        tb.writeJavaFiles(src.resolve("m2"),
-                "module m2 { requires m1; requires m3; provides p1.C1 with p2.C2; }");
-        tb.writeJavaFiles(src.resolve("m3"),
-                "module m3 { requires m1; exports p2; }",
+        tb.writeJavaFiles(src.resolve("m2x"),
+                "module m2x { requires m1x; requires m3x; provides p1.C1 with p2.C2; }");
+        tb.writeJavaFiles(src.resolve("m3x"),
+                "module m3x { requires m1x; exports p2; }",
                 "package p2; public class C2 extends p1.C1 { }");
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
@@ -97,7 +97,7 @@ public class ServiceProvidedButNotExportedOrUsedTest extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
         List<String> expected = Arrays.asList(
-                "module-info.java:1:39: compiler.err.service.implementation.not.in.right.module: m3",
+                "module-info.java:1:42: compiler.err.service.implementation.not.in.right.module: m3x",
                 "1 error");
         if (!output.containsAll(expected)) {
             throw new Exception("Expected output not found");
