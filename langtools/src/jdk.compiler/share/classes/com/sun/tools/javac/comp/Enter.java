@@ -130,10 +130,10 @@ public class Enter extends JCTree.Visitor {
         predefClassDef = make.ClassDef(
             make.Modifiers(PUBLIC),
             syms.predefClass.name,
-            List.<JCTypeParameter>nil(),
+            List.nil(),
             null,
-            List.<JCExpression>nil(),
-            List.<JCTree>nil());
+            List.nil(),
+            List.nil());
         predefClassDef.sym = syms.predefClass;
         todo = Todo.instance(context);
         fileManager = context.get(JavaFileManager.class);

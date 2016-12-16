@@ -495,7 +495,7 @@ public class Lower extends TreeTranslator {
             MethodSymbol valuesMethod = lookupMethod(pos,
                                                      names.values,
                                                      forEnum.type,
-                                                     List.<Type>nil());
+                                                     List.nil());
             JCExpression size = make // Color.values().length
                 .Select(make.App(make.QualIdent(valuesMethod)),
                         syms.lengthVar);
@@ -508,13 +508,13 @@ public class Lower extends TreeTranslator {
             Symbol ordinalMethod = lookupMethod(pos,
                                                 names.ordinal,
                                                 forEnum.type,
-                                                List.<Type>nil());
+                                                List.nil());
             List<JCCatch> catcher = List.<JCCatch>nil()
                 .prepend(make.Catch(make.VarDef(new VarSymbol(PARAMETER, names.ex,
                                                               syms.noSuchFieldErrorType,
                                                               syms.noSymbol),
                                                 null),
-                                    make.Block(0, List.<JCStatement>nil())));
+                                    make.Block(0, List.nil())));
             for (Map.Entry<VarSymbol,Integer> e : values.entrySet()) {
                 VarSymbol enumerator = e.getKey();
                 Integer mappedValue = e.getValue();
@@ -572,7 +572,7 @@ public class Lower extends TreeTranslator {
         JCNewClass tree = make.NewClass(null,
             null, make.QualIdent(ctype.tsym), args, null);
         tree.constructor = rs.resolveConstructor(
-            make_pos, attrEnv, ctype, TreeInfo.types(args), List.<Type>nil());
+            make_pos, attrEnv, ctype, TreeInfo.types(args), List.nil());
         tree.type = ctype;
         return tree;
     }
@@ -663,8 +663,8 @@ public class Lower extends TreeTranslator {
         // Create class definition tree.
         JCClassDecl cdef = make.ClassDef(
             make.Modifiers(flags), names.empty,
-            List.<JCTypeParameter>nil(),
-            null, List.<JCExpression>nil(), List.<JCTree>nil());
+            List.nil(),
+            null, List.nil(), List.nil());
         cdef.sym = c;
         cdef.type = c.type;
 
@@ -757,7 +757,7 @@ public class Lower extends TreeTranslator {
     /** Look up a method in a given scope.
      */
     private MethodSymbol lookupMethod(DiagnosticPosition pos, Name name, Type qual, List<Type> args) {
-        return rs.resolveInternalMethod(pos, attrEnv, qual, name, args, List.<Type>nil());
+        return rs.resolveInternalMethod(pos, attrEnv, qual, name, args, List.nil());
     }
 
     /** Look up a constructor.
@@ -1358,7 +1358,7 @@ public class Lower extends TreeTranslator {
         callee.sym = constr;
         callee.type = constr.type;
         md.body =
-            make.Block(0, List.<JCStatement>of(
+            make.Block(0, List.of(
                 make.Call(
                     make.App(
                         callee,
@@ -1613,7 +1613,7 @@ public class Lower extends TreeTranslator {
         JCVariableDecl paramTree = make.VarDef(param, null);
         JCStatement assign = make.Assignment(primaryException, make.Ident(param));
         JCStatement rethrowStat = make.Throw(make.Ident(param));
-        JCBlock catchBlock = make.Block(0L, List.<JCStatement>of(assign, rethrowStat));
+        JCBlock catchBlock = make.Block(0L, List.of(assign, rethrowStat));
         JCCatch catchClause = make.Catch(paramTree, catchBlock);
 
         int oldPos = make.pos;
@@ -1622,7 +1622,7 @@ public class Lower extends TreeTranslator {
         make.at(oldPos);
         JCTry outerTry = make.Try(makeTwrBlock(resources.tail, block,
                                     finallyCanCompleteNormally, depth + 1),
-                                  List.<JCCatch>of(catchClause),
+                                  List.of(catchClause),
                                   finallyClause);
         outerTry.finallyCanCompleteNormally = finallyCanCompleteNormally;
         stats.add(outerTry);
@@ -1649,14 +1649,14 @@ public class Lower extends TreeTranslator {
                 new MethodType(
                     List.of(syms.throwableType, syms.autoCloseableType),
                     syms.voidType,
-                    List.<Type>nil(),
+                    List.nil(),
                     syms.methodClass),
                 currentClass);
             enterSynthetic(resource.pos(), closeResource, currentClass.members());
 
             JCMethodDecl md = make.MethodDef(closeResource, null);
             List<JCVariableDecl> params = md.getParameters();
-            md.body = make.Block(0, List.<JCStatement>of(makeTwrCloseStatement(params.get(0).sym,
+            md.body = make.Block(0, List.of(makeTwrCloseStatement(params.get(0).sym,
                                                                                make.Ident(params.get(1)))));
 
             JCClassDecl currentClassDecl = classDef(currentClass);
@@ -1667,7 +1667,7 @@ public class Lower extends TreeTranslator {
 
         if (closeResource != null) {
             //$closeResource(#primaryException, #resource)
-            closeStatement = make.Exec(make.Apply(List.<JCExpression>nil(),
+            closeStatement = make.Exec(make.Apply(List.nil(),
                                                   make.Ident(closeResource),
                                                   List.of(make.Ident(primaryException),
                                                           resource)
@@ -1688,7 +1688,7 @@ public class Lower extends TreeTranslator {
         }
 
         return make.Block(0L,
-                          List.<JCStatement>of(finallyStatement));
+                          List.of(finallyStatement));
     }
         //where:
         private boolean shouldUseCloseResourceMethod() {
@@ -1728,14 +1728,14 @@ public class Lower extends TreeTranslator {
         JCStatement addSuppressionStatement =
             make.Exec(makeCall(make.Ident(primaryException),
                                names.addSuppressed,
-                               List.<JCExpression>of(make.Ident(catchException))));
+                               List.of(make.Ident(catchException))));
 
         // try { resource.close(); } catch (e) { primaryException.addSuppressed(e); }
         JCBlock tryBlock =
-            make.Block(0L, List.<JCStatement>of(makeResourceCloseInvocation(resource)));
+            make.Block(0L, List.of(makeResourceCloseInvocation(resource)));
         JCVariableDecl catchExceptionDecl = make.VarDef(catchException, null);
-        JCBlock catchBlock = make.Block(0L, List.<JCStatement>of(addSuppressionStatement));
-        List<JCCatch> catchClauses = List.<JCCatch>of(make.Catch(catchExceptionDecl, catchBlock));
+        JCBlock catchBlock = make.Block(0L, List.of(addSuppressionStatement));
+        List<JCCatch> catchClauses = List.of(make.Catch(catchExceptionDecl, catchBlock));
         JCTry tryTree = make.Try(tryBlock, catchClauses, null);
         tryTree.finallyCanCompleteNormally = true;
 
@@ -1756,7 +1756,7 @@ public class Lower extends TreeTranslator {
         // create resource.close() method invocation
         JCExpression resourceClose = makeCall(resource,
                                               names.close,
-                                              List.<JCExpression>nil());
+                                              List.nil());
         return make.Exec(resourceClose);
     }
 
@@ -1931,7 +1931,7 @@ public class Lower extends TreeTranslator {
                 new MethodType(
                     List.of(syms.stringType),
                     types.erasure(syms.classType),
-                    List.<Type>nil(),
+                    List.nil(),
                     syms.methodClass),
                 outerCacheClass);
             enterSynthetic(pos, classDollarSym, outerCacheClass.members());
@@ -1940,7 +1940,7 @@ public class Lower extends TreeTranslator {
             try {
                 md.body = classDollarSymBody(pos, md);
             } catch (CompletionFailure ex) {
-                md.body = make.Block(0, List.<JCStatement>nil());
+                md.body = make.Block(0, List.nil());
                 chk.completionError(pos, ex);
             }
             JCClassDecl outerCacheClassDef = classDef(outerCacheClass);
@@ -1971,7 +1971,7 @@ public class Lower extends TreeTranslator {
 
         // newcache := "new cache$1[0]"
         JCNewArray newcache = make.NewArray(make.Type(outerCacheClass.type),
-                                            List.<JCExpression>of(make.Literal(INT, 0).setType(syms.intType)),
+                                            List.of(make.Literal(INT, 0).setType(syms.intType)),
                                             null);
         newcache.type = new ArrayType(types.erasure(outerCacheClass.type),
                                       syms.arrayClass);
@@ -1992,18 +1992,18 @@ public class Lower extends TreeTranslator {
                                     makeCall(
                                             makeCall(makeCall(newcache,
                                                               names.getClass,
-                                                              List.<JCExpression>nil()),
+                                                              List.nil()),
                                                      names.getComponentType,
-                                                     List.<JCExpression>nil()),
+                                                     List.nil()),
                                             names.getClassLoader,
-                                            List.<JCExpression>nil())).setType(syms.classLoaderType),
+                                            List.nil())).setType(syms.classLoaderType),
                         make.Ident(clsym)).setType(syms.classLoaderType);
 
         // returnResult := "{ return Class.forName(param1, false, cl$); }"
         List<JCExpression> args = List.of(make.Ident(md.params.head.sym),
                                           makeLit(syms.booleanType, 0),
                                           clvalue);
-        returnResult = make.Block(0, List.<JCStatement>of(make.Call(make.App(make.Ident(forNameSym), args))));
+        returnResult = make.Block(0, List.of(make.Call(make.App(make.Ident(forNameSym), args))));
 
         // catchParam := ClassNotFoundException e1
         VarSymbol catchParam =
@@ -2015,9 +2015,9 @@ public class Lower extends TreeTranslator {
         // rethrow = "throw new NoClassDefFoundError().initCause(e);
         JCExpression throwExpr =
             makeCall(makeNewClass(syms.noClassDefFoundErrorType,
-                                  List.<JCExpression>nil()),
+                                  List.nil()),
                      names.initCause,
-                     List.<JCExpression>of(make.Ident(catchParam)));
+                     List.of(make.Ident(catchParam)));
         rethrow = make.Throw(throwExpr);
 
         // rethrowStmt := "( $rethrow )"
@@ -2158,7 +2158,7 @@ public class Lower extends TreeTranslator {
             Symbol desiredAssertionStatusSym = lookupMethod(pos,
                                                             names.desiredAssertionStatus,
                                                             types.erasure(syms.classType),
-                                                            List.<Type>nil());
+                                                            List.nil());
             JCClassDecl containerDef = classDef(container);
             make_at(containerDef.pos());
             JCExpression notStatus = makeUnary(NOT, make.App(make.Select(
@@ -2175,7 +2175,7 @@ public class Lower extends TreeTranslator {
                 JCClassDecl currentClassDef = classDef(currentClass);
                 make_at(currentClassDef.pos());
                 JCStatement dummy = make.If(make.QualIdent(assertDisabledSym), make.Skip(), null);
-                JCBlock clinit = make.Block(STATIC, List.<JCStatement>of(dummy));
+                JCBlock clinit = make.Block(STATIC, List.of(dummy));
                 currentClassDef.defs = currentClassDef.defs.prepend(clinit);
             }
         }
@@ -2375,15 +2375,15 @@ public class Lower extends TreeTranslator {
         ClassSymbol c = msym.module_info;
         c.setAttributes(msym);
         c.flags_field |= Flags.MODULE;
-        createInfoClass(List.<JCAnnotation>nil(), tree.sym.module_info);
+        createInfoClass(List.nil(), tree.sym.module_info);
     }
 
     private void createInfoClass(List<JCAnnotation> annots, ClassSymbol c) {
         long flags = Flags.ABSTRACT | Flags.INTERFACE;
         JCClassDecl infoClass =
                 make.ClassDef(make.Modifiers(flags, annots),
-                    c.name, List.<JCTypeParameter>nil(),
-                    null, List.<JCExpression>nil(), List.<JCTree>nil());
+                    c.name, List.nil(),
+                    null, List.nil(), List.nil());
         infoClass.sym = c;
         translated.append(infoClass);
     }
@@ -2475,7 +2475,7 @@ public class Lower extends TreeTranslator {
         currentMethodSym = currentMethodSymPrev;
 
         // Return empty block {} as a placeholder for an inner class.
-        result = make_at(tree.pos()).Block(SYNTHETIC, List.<JCStatement>nil());
+        result = make_at(tree.pos()).Block(SYNTHETIC, List.nil());
     }
 
     /** Translate an enum class. */
@@ -2518,14 +2518,14 @@ public class Lower extends TreeTranslator {
                                             arrayType,
                                             tree.type.tsym);
         JCNewArray newArray = make.NewArray(make.Type(types.erasure(tree.type)),
-                                          List.<JCExpression>nil(),
+                                          List.nil(),
                                           values.toList());
         newArray.type = arrayType;
         enumDefs.append(make.VarDef(valuesVar, newArray));
         tree.sym.members().enter(valuesVar);
 
         Symbol valuesSym = lookupMethod(tree.pos(), names.values,
-                                        tree.type, List.<Type>nil());
+                                        tree.type, List.nil());
         List<JCStatement> valuesBody;
         if (useClone()) {
             // return (T[]) $VALUES.clone();
@@ -2533,7 +2533,7 @@ public class Lower extends TreeTranslator {
                 make.TypeCast(valuesSym.type.getReturnType(),
                               make.App(make.Select(make.Ident(valuesVar),
                                                    syms.arrayCloneMethod)));
-            valuesBody = List.<JCStatement>of(make.Return(valuesResult));
+            valuesBody = List.of(make.Return(valuesResult));
         } else {
             // template: T[] $result = new T[$values.length];
             Name resultName = names.fromString(target.syntheticNameChar() + "result");
@@ -2554,13 +2554,13 @@ public class Lower extends TreeTranslator {
                 systemArraycopyMethod =
                     new MethodSymbol(PUBLIC | STATIC,
                                      names.fromString("arraycopy"),
-                                     new MethodType(List.<Type>of(syms.objectType,
+                                     new MethodType(List.of(syms.objectType,
                                                             syms.intType,
                                                             syms.objectType,
                                                             syms.intType,
                                                             syms.intType),
                                                     syms.voidType,
-                                                    List.<Type>nil(),
+                                                    List.nil(),
                                                     syms.methodClass),
                                      syms.systemType.tsym);
             }
@@ -2573,7 +2573,7 @@ public class Lower extends TreeTranslator {
 
             // template: return $result;
             JCStatement ret = make.Return(make.Ident(resultVar));
-            valuesBody = List.<JCStatement>of(decl, copy, ret);
+            valuesBody = List.of(decl, copy, ret);
         }
 
         JCMethodDecl valuesDef =
@@ -2954,7 +2954,7 @@ public class Lower extends TreeTranslator {
         if (!tree.cond.type.isTrue()) {
             JCExpression cond = assertFlagTest(tree.pos());
             List<JCExpression> exnArgs = (tree.detail == null) ?
-                List.<JCExpression>nil() : List.of(translate(tree.detail));
+                List.nil() : List.of(translate(tree.detail));
             if (!tree.cond.type.isFalse()) {
                 cond = makeBinary
                     (AND,
@@ -3067,7 +3067,7 @@ public class Lower extends TreeTranslator {
                 args = args.tail;
             }
             JCNewArray boxedArgs = make.NewArray(make.Type(varargsElement),
-                                               List.<JCExpression>nil(),
+                                               List.nil(),
                                                elems.toList());
             boxedArgs.type = new ArrayType(varargsElement, syms.arrayClass);
             result.append(boxedArgs);
@@ -3136,7 +3136,7 @@ public class Lower extends TreeTranslator {
         Symbol valueSym = lookupMethod(tree.pos(),
                                        unboxedType.tsym.name.append(names.Value), // x.intValue()
                                        tree.type,
-                                       List.<Type>nil());
+                                       List.nil());
         return make.App(make.Select(tree, valueSym));
     }
 
@@ -3485,7 +3485,7 @@ public class Lower extends TreeTranslator {
             Symbol iterator = lookupMethod(tree.expr.pos(),
                                            names.iterator,
                                            eType,
-                                           List.<Type>nil());
+                                           List.nil());
             VarSymbol itvar = new VarSymbol(SYNTHETIC, names.fromString("i" + target.syntheticNameChar()),
                                             types.erasure(types.asSuper(iterator.type.getReturnType(), syms.iteratorType.tsym)),
                                             currentMethodSym);
@@ -3497,12 +3497,12 @@ public class Lower extends TreeTranslator {
             Symbol hasNext = lookupMethod(tree.expr.pos(),
                                           names.hasNext,
                                           itvar.type,
-                                          List.<Type>nil());
+                                          List.nil());
             JCMethodInvocation cond = make.App(make.Select(make.Ident(itvar), hasNext));
             Symbol next = lookupMethod(tree.expr.pos(),
                                        names.next,
                                        itvar.type,
-                                       List.<Type>nil());
+                                       List.nil());
             JCExpression vardefinit = make.App(make.Select(make.Ident(itvar), next));
             if (tree.var.type.isPrimitive())
                 vardefinit = make.TypeCast(types.cvarUpperBound(iteratorTarget), vardefinit);
@@ -3518,7 +3518,7 @@ public class Lower extends TreeTranslator {
             result = translate(make.
                 ForLoop(List.of(init),
                         cond,
-                        List.<JCExpressionStatement>nil(),
+                        List.nil(),
                         body));
             patchTargets(body, tree, result);
         }
@@ -3607,7 +3607,7 @@ public class Lower extends TreeTranslator {
         Symbol ordinalMethod = lookupMethod(tree.pos(),
                                             names.ordinal,
                                             tree.selector.type,
-                                            List.<Type>nil());
+                                            List.nil());
         JCArrayAccess selector = make.Indexed(map.mapVar,
                                         make.App(make.Select(tree.selector,
                                                              ordinalMethod)));
@@ -3746,7 +3746,7 @@ public class Lower extends TreeTranslator {
             // hashCode will trigger nullcheck on original switch expression
             JCMethodInvocation hashCodeCall = makeCall(make.Ident(dollar_s),
                                                        names.hashCode,
-                                                       List.<JCExpression>nil()).setType(syms.intType);
+                                                       List.nil()).setType(syms.intType);
             JCSwitch switch1 = make.Switch(hashCodeCall,
                                         caseBuffer.toList());
             for(Map.Entry<Integer, Set<String>> entry : hashToString.entrySet()) {
@@ -3758,7 +3758,7 @@ public class Lower extends TreeTranslator {
                 for(String caseLabel : stringsWithHashCode ) {
                     JCMethodInvocation stringEqualsCall = makeCall(make.Ident(dollar_s),
                                                                    names.equals,
-                                                                   List.<JCExpression>of(make.Literal(caseLabel)));
+                                                                   List.of(make.Literal(caseLabel)));
                     elsepart = make.If(stringEqualsCall,
                                        make.Exec(make.Assign(make.Ident(dollar_tmp),
                                                              make.Literal(caseLabelToPosition.get(caseLabel))).

@@ -1164,7 +1164,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
     public static class ErasedClassType extends ClassType {
         public ErasedClassType(Type outer, TypeSymbol tsym,
                                TypeMetadata metadata) {
-            super(outer, List.<Type>nil(), tsym, metadata);
+            super(outer, List.nil(), tsym, metadata);
         }
 
         @Override
@@ -1235,7 +1235,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public IntersectionClassType(List<Type> bounds, ClassSymbol csym, boolean allInterfaces) {
             // Presently no way to refer to this type directly, so we
             // cannot put annotations directly on it.
-            super(Type.noType, List.<Type>nil(), csym);
+            super(Type.noType, List.nil(), csym);
             this.allInterfaces = allInterfaces;
             Assert.check((csym.flags() & COMPOUND) != 0);
             supertype_field = bounds.head;
@@ -2316,14 +2316,14 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         public ErrorType(Type originalType, TypeSymbol tsym) {
-            super(noType, List.<Type>nil(), null);
+            super(noType, List.nil(), null);
             this.tsym = tsym;
             this.originalType = (originalType == null ? noType : originalType);
         }
 
         private ErrorType(Type originalType, TypeSymbol tsym,
                           TypeMetadata metadata) {
-            super(noType, List.<Type>nil(), null, metadata);
+            super(noType, List.nil(), null, metadata);
             this.tsym = tsym;
             this.originalType = (originalType == null ? noType : originalType);
         }

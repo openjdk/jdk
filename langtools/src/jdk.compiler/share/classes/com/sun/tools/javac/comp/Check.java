@@ -2163,7 +2163,7 @@ public class Check {
                         log.useSource(prevSource.getFile());
                     }
                 } else if (sym.kind == TYP) {
-                    checkClass(pos, sym, List.<JCTree>nil());
+                    checkClass(pos, sym, List.nil());
                 }
             } else {
                 //not completed yet
@@ -2255,7 +2255,7 @@ public class Check {
 
 
     void checkNonCyclic(DiagnosticPosition pos, TypeVar t) {
-        checkNonCyclic1(pos, t, List.<TypeVar>nil());
+        checkNonCyclic1(pos, t, List.nil());
     }
 
     private void checkNonCyclic1(DiagnosticPosition pos, Type t, List<TypeVar> seen) {

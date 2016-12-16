@@ -1119,7 +1119,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
 
         if (guessKind(code) == Kind.IMPORT)
-            return Collections.<Documentation>emptyList();
+            return Collections.emptyList();
 
         OuterWrap codeWrap = proc.outerMap.wrapInTrialClass(Wrap.methodWrap(code));
         AnalyzeTask at = proc.taskFactory.new AnalyzeTask(codeWrap, keepParameterNames);
@@ -1128,7 +1128,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         TreePath tp = pathFor(topLevel, sp, codeWrap.snippetIndexToWrapIndex(cursor));
 
         if (tp == null)
-            return Collections.<Documentation>emptyList();
+            return Collections.emptyList();
 
         TreePath prevPath = null;
         while (tp != null && tp.getLeaf().getKind() != Kind.METHOD_INVOCATION &&
@@ -1139,7 +1139,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
 
         if (tp == null)
-            return Collections.<Documentation>emptyList();
+            return Collections.emptyList();
 
         Stream<Element> elements;
         Iterable<Pair<ExecutableElement, ExecutableType>> candidates;
@@ -1175,12 +1175,12 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 el.asType().getKind() == TypeKind.ERROR ||
                 (el.getKind() == ElementKind.PACKAGE && el.getEnclosedElements().isEmpty())) {
                 //erroneous element:
-                return Collections.<Documentation>emptyList();
+                return Collections.emptyList();
             }
 
             elements = Stream.of(el);
         } else {
-            return Collections.<Documentation>emptyList();
+            return Collections.emptyList();
         }
 
         List<Documentation> result = Collections.emptyList();

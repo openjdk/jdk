@@ -779,7 +779,7 @@ public class ClassReader {
                 try {
                     return (outer == Type.noType) ?
                             t.erasure(types) :
-                        new ClassType(outer, List.<Type>nil(), t);
+                        new ClassType(outer, List.nil(), t);
                 } finally {
                     sbp = startSbp;
                 }
@@ -852,7 +852,7 @@ public class ClassReader {
                     t = enterClass(names.fromUtf(signatureBuffer,
                                                  startSbp,
                                                  sbp - startSbp));
-                    outer = new ClassType(outer, List.<Type>nil(), t);
+                    outer = new ClassType(outer, List.nil(), t);
                 }
                 signatureBuffer[sbp++] = (byte)'$';
                 continue;
@@ -2057,9 +2057,9 @@ public class ClassReader {
             // type (typeof null) as return type because this type is
             // a subtype of all reference types and can be converted
             // to primitive types by unboxing.
-            MethodType mt = new MethodType(List.<Type>nil(),
+            MethodType mt = new MethodType(List.nil(),
                                            syms.botType,
-                                           List.<Type>nil(),
+                                           List.nil(),
                                            syms.methodClass);
             return new MethodSymbol(PUBLIC | ABSTRACT, name, mt, container.tsym);
         }
@@ -2263,7 +2263,7 @@ public class ClassReader {
 
         TypeAnnotationCompleter(Symbol sym,
                 List<TypeAnnotationProxy> proxies) {
-            super(sym, List.<CompoundAnnotationProxy>nil());
+            super(sym, List.nil());
             this.proxies = proxies;
         }
 

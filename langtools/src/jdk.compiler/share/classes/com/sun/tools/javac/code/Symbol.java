@@ -140,7 +140,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
      */
     public List<Attribute.Compound> getRawAttributes() {
         return (metadata == null)
-                ? List.<Attribute.Compound>nil()
+                ? List.nil()
                 : metadata.getDeclarationAttributes();
     }
 
@@ -150,7 +150,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
      */
     public List<Attribute.TypeCompound> getRawTypeAttributes() {
         return (metadata == null)
-                ? List.<Attribute.TypeCompound>nil()
+                ? List.nil()
                 : metadata.getTypeAttributes();
     }
 
@@ -192,13 +192,13 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
     public List<Attribute.TypeCompound> getClassInitTypeAttributes() {
         return (metadata == null)
-                ? List.<Attribute.TypeCompound>nil()
+                ? List.nil()
                 : metadata.getClassInitTypeAttributes();
     }
 
     public List<Attribute.TypeCompound> getInitTypeAttributes() {
         return (metadata == null)
-                ? List.<Attribute.TypeCompound>nil()
+                ? List.nil()
                 : metadata.getInitTypeAttributes();
     }
 
@@ -212,7 +212,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
     public List<Attribute.Compound> getDeclarationAttributes() {
         return (metadata == null)
-                ? List.<Attribute.Compound>nil()
+                ? List.nil()
                 : metadata.getDeclarationAttributes();
     }
 
@@ -1248,7 +1248,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         public Type erasure(Types types) {
             if (erasure_field == null)
                 erasure_field = new ClassType(types.erasure(type.getEnclosingType()),
-                                              List.<Type>nil(), this,
+                                              List.nil(), this,
                                               type.getMetadata());
             return erasure_field;
         }

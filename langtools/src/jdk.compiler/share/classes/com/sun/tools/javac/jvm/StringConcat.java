@@ -224,7 +224,7 @@ public abstract class StringConcat {
             JCDiagnostic.DiagnosticPosition pos = tree.pos();
             gen.getCode().emitop2(new_, gen.makeRef(pos, syms.stringBuilderType));
             gen.getCode().emitop0(dup);
-            gen.callMethod(pos, syms.stringBuilderType, names.init, List.<Type>nil(), false);
+            gen.callMethod(pos, syms.stringBuilderType, names.init, List.nil(), false);
             return pos;
         }
 
@@ -245,7 +245,7 @@ public abstract class StringConcat {
         }
 
         private void builderToString(JCDiagnostic.DiagnosticPosition pos) {
-            gen.callMethod(pos, syms.stringBuilderType, names.toString, List.<Type>nil(), false);
+            gen.callMethod(pos, syms.stringBuilderType, names.toString, List.nil(), false);
         }
     }
 
@@ -353,7 +353,7 @@ public abstract class StringConcat {
         private void doCall(Type type, JCDiagnostic.DiagnosticPosition pos, List<Type> dynamicArgTypes) {
             Type.MethodType indyType = new Type.MethodType(dynamicArgTypes,
                     type,
-                    List.<Type>nil(),
+                    List.nil(),
                     syms.methodClass);
 
             int prevPos = make.pos;
@@ -457,7 +457,7 @@ public abstract class StringConcat {
         private void doCall(Type type, JCDiagnostic.DiagnosticPosition pos, String recipe, List<Object> staticArgs, List<Type> dynamicArgTypes) {
             Type.MethodType indyType = new Type.MethodType(dynamicArgTypes,
                     type,
-                    List.<Type>nil(),
+                    List.nil(),
                     syms.methodClass);
 
             int prevPos = make.pos;

@@ -134,7 +134,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
     /** Construct a list consisting of given element.
      */
     public static <A> List<A> of(A x1) {
-        return new List<>(x1, List.<A>nil());
+        return new List<>(x1, List.nil());
     }
 
     /** Construct a list consisting of given elements.
