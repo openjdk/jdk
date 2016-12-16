@@ -29,6 +29,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
@@ -39,6 +40,13 @@ import static javax.lang.model.util.ElementFilter.methodsIn;
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Attribute.Compound;
+import com.sun.tools.javac.code.Directive.ExportsDirective;
+import com.sun.tools.javac.code.Directive.ExportsFlag;
+import com.sun.tools.javac.code.Directive.OpensDirective;
+import com.sun.tools.javac.code.Directive.OpensFlag;
+import com.sun.tools.javac.code.Directive.RequiresDirective;
+import com.sun.tools.javac.code.Directive.RequiresFlag;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.AttrContext;
@@ -428,6 +436,52 @@ public class JavacElements implements Elements {
         Symbol sym = cast(Symbol.class, e);
         sym.complete();
         return sym.isDeprecated();
+    }
+
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    public Origin getOrigin(Element e) {
+        Symbol sym = cast(Symbol.class, e);
+        if ((sym.flags() & Flags.GENERATEDCONSTR) != 0)
+            return Origin.MANDATED;
+        //TypeElement.getEnclosedElements does not return synthetic elements,
+        //and most synthetic elements are not read from the classfile anyway:
+        return Origin.EXPLICIT;
+    }
+
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    public Origin getOrigin(AnnotatedConstruct c, AnnotationMirror a) {
+        Compound ac = cast(Compound.class, a);
+        if (ac.isSynthesized())
+            return Origin.MANDATED;
+        return Origin.EXPLICIT;
+    }
+
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    public Origin getOrigin(ModuleElement m, ModuleElement.Directive directive) {
+        switch (directive.getKind()) {
+            case REQUIRES:
+                RequiresDirective rd = cast(RequiresDirective.class, directive);
+                if (rd.flags.contains(RequiresFlag.MANDATED))
+                    return Origin.MANDATED;
+                if (rd.flags.contains(RequiresFlag.SYNTHETIC))
+                    return Origin.SYNTHETIC;
+                return Origin.EXPLICIT;
+            case EXPORTS:
+                ExportsDirective ed = cast(ExportsDirective.class, directive);
+                if (ed.flags.contains(ExportsFlag.MANDATED))
+                    return Origin.MANDATED;
+                if (ed.flags.contains(ExportsFlag.SYNTHETIC))
+                    return Origin.SYNTHETIC;
+                return Origin.EXPLICIT;
+            case OPENS:
+                OpensDirective od = cast(OpensDirective.class, directive);
+                if (od.flags.contains(OpensFlag.MANDATED))
+                    return Origin.MANDATED;
+                if (od.flags.contains(OpensFlag.SYNTHETIC))
+                    return Origin.SYNTHETIC;
+                return Origin.EXPLICIT;
+        }
+        return Origin.EXPLICIT;
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
