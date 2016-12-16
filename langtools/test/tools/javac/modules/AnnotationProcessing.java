@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8133884 8162711
+ * @bug 8133884 8162711 8133896
  * @summary Verify that annotation processing works.
  * @library /tools/lib
  * @modules
@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -1012,6 +1013,168 @@ public class AnnotationProcessing extends ModuleTestBase {
         }
     }
 
+    @Test
+    public void testUnboundLookup(Path base) throws Exception {
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          "package impl.conflict.src; public class Impl { }");
+
+        Path moduleSrc = base.resolve("module-src");
+        Path m1 = moduleSrc.resolve("m1x");
+        Path m2 = moduleSrc.resolve("m2x");
+
+        Path classes = base.resolve("classes");
+        Path cpClasses = base.resolve("cpClasses");
+
+        Files.createDirectories(classes);
+        Files.createDirectories(cpClasses);
+
+        tb.writeJavaFiles(m1,
+                          "module m1x { }",
+                          "package impl1; public class Impl { }",
+                          "package impl.conflict.module; class Impl { }",
+                          "package impl.conflict.clazz; public class pkg { public static class I { } }",
+                          "package impl.conflict.src; public class Impl { }");
+
+        tb.writeJavaFiles(m2,
+                          "module m2x { }",
+                          "package impl2; public class Impl { }",
+                          "package impl.conflict.module; class Impl { }",
+                          "package impl.conflict; public class clazz { public static class pkg { } }");
+
+        //from source:
+        new JavacTask(tb)
+            .options("--module-source-path", moduleSrc.toString(),
+                     "--source-path", src.toString(),
+                     "-processorpath", System.getProperty("test.class.path"),
+                     "-processor", UnboundLookup.class.getName())
+            .outdir(classes)
+            .files(findJavaFiles(moduleSrc))
+            .run()
+            .writeAll();
+
+        new JavacTask(tb)
+            .options("--source-path", src.toString())
+            .outdir(cpClasses)
+            .files(findJavaFiles(src))
+            .run()
+            .writeAll();
+
+        //from classfiles:
+        new JavacTask(tb)
+            .options("--module-path", classes.toString(),
+                     "--class-path", cpClasses.toString(),
+                     "--add-modules", "m1x,m2x",
+                     "-processorpath", System.getProperty("test.class.path"),
+                     "-processor", UnboundLookup.class.getName(),
+                     "-proc:only")
+            .classes("java.lang.Object")
+            .run()
+            .writeAll();
+
+        //source 8:
+        new JavacTask(tb)
+            .options("--source-path", src.toString(),
+                     "-source", "8",
+                     "-processorpath", System.getProperty("test.class.path"),
+                     "-processor", UnboundLookup8.class.getName())
+            .outdir(cpClasses)
+            .files(findJavaFiles(src))
+            .run()
+            .writeAll();
+
+    }
+
+    @SupportedAnnotationTypes("*")
+    public static final class UnboundLookup extends AbstractProcessor {
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            assertTypeElementExists("impl1.Impl", "m1x");
+            assertPackageElementExists("impl1", "m1x");
+            assertTypeElementExists("impl2.Impl", "m2x");
+            assertTypeElementExists("impl.conflict.clazz.pkg.I", "m1x");
+            assertTypeElementExists("impl.conflict.clazz", "m2x");
+            assertPackageElementExists("impl.conflict.clazz", "m1x");
+            assertPackageElementExists("impl2", "m2x");
+            assertTypeElementNotFound("impl.conflict.module.Impl");
+            assertPackageElementNotFound("impl.conflict.module");
+            assertTypeElementNotFound("impl.conflict.src.Impl");
+            assertPackageElementNotFound("impl.conflict.src");
+            assertTypeElementNotFound("impl.conflict.clazz.pkg");
+
+            return false;
+        }
+
+        private void assertTypeElementExists(String name, String expectedModule) {
+            assertElementExists(name, "class", processingEnv.getElementUtils() :: getTypeElement, expectedModule);
+        }
+
+        private void assertPackageElementExists(String name, String expectedModule) {
+            assertElementExists(name, "package", processingEnv.getElementUtils() :: getPackageElement, expectedModule);
+        }
+
+        private void assertElementExists(String name, String type, Function<String, Element> getter, String expectedModule) {
+            Element clazz = getter.apply(name);
+
+            if (clazz == null) {
+                throw new AssertionError("No " + name + " " + type + " found.");
+            }
+
+            ModuleElement mod = processingEnv.getElementUtils().getModuleOf(clazz);
+
+            if (!mod.getQualifiedName().contentEquals(expectedModule)) {
+                throw new AssertionError(name + " found in an unexpected module: " + mod.getQualifiedName());
+            }
+        }
+
+        private void assertTypeElementNotFound(String name) {
+            assertElementNotFound(name, processingEnv.getElementUtils() :: getTypeElement);
+        }
+
+        private void assertPackageElementNotFound(String name) {
+            assertElementNotFound(name, processingEnv.getElementUtils() :: getPackageElement);
+        }
+
+        private void assertElementNotFound(String name, Function<String, Element> getter) {
+            Element found = getter.apply(name);
+
+            if (found != null) {
+                fail("Element found unexpectedly: " + found);
+            }
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
+        }
+
+    }
+
+    @SupportedAnnotationTypes("*")
+    public static final class UnboundLookup8 extends AbstractProcessor {
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            if (processingEnv.getElementUtils().getTypeElement("impl.conflict.src.Impl") == null) {
+                throw new AssertionError("impl.conflict.src.Impl.");
+            }
+
+            if (processingEnv.getElementUtils().getModuleElement("java.base") != null) {
+                throw new AssertionError("getModuleElement != null for -source 8");
+            }
+
+            return false;
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
+        }
+
+    }
+
     private static void assertNonNull(String msg, Object val) {
         if (val == null) {
             throw new AssertionError(msg);
@@ -1046,6 +1209,10 @@ public class AnnotationProcessing extends ModuleTestBase {
         }
 
         return file;
+    }
+
+    private static void fail(String msg) {
+        throw new AssertionError(msg);
     }
 
 }

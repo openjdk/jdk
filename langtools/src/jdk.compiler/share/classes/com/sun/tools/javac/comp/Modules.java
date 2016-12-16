@@ -262,7 +262,7 @@ public class Modules extends JCTree.Visitor {
             // scan trees for module defs
             Set<ModuleSymbol> roots = enterModules(trees, c);
 
-            setCompilationUnitModules(trees, roots);
+            setCompilationUnitModules(trees, roots, c);
 
             init.accept(roots);
 
@@ -351,7 +351,7 @@ public class Modules extends JCTree.Visitor {
         }
     }
 
-    private void setCompilationUnitModules(List<JCCompilationUnit> trees, Set<ModuleSymbol> rootModules) {
+    private void setCompilationUnitModules(List<JCCompilationUnit> trees, Set<ModuleSymbol> rootModules, ClassSymbol c) {
         // update the module for each compilation unit
         if (multiModuleMode) {
             checkNoAllModulePath();
@@ -385,6 +385,8 @@ public class Modules extends JCTree.Visitor {
                         }
                         tree.modle = msym;
                         rootModules.add(msym);
+                    } else if (c != null && c.packge().modle == syms.unnamedModule) {
+                        tree.modle = syms.unnamedModule;
                     } else {
                         log.error(tree.pos(), Errors.UnnamedPkgNotAllowedNamedModules);
                         tree.modle = syms.errModule;
@@ -451,9 +453,6 @@ public class Modules extends JCTree.Visitor {
 
             if (defaultModule != syms.unnamedModule) {
                 syms.unnamedModule.completer = getUnnamedModuleCompleter();
-                if (moduleOverride == null) {
-                    syms.unnamedModule.sourceLocation = StandardLocation.SOURCE_PATH;
-                }
                 syms.unnamedModule.classLocation = StandardLocation.CLASS_PATH;
             }
 

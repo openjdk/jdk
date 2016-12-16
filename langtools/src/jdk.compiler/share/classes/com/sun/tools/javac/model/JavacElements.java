@@ -25,7 +25,9 @@
 
 package com.sun.tools.javac.model;
 
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
@@ -54,9 +56,9 @@ import com.sun.tools.javac.util.Name;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
-import com.sun.tools.javac.comp.CompileStates;
-import com.sun.tools.javac.comp.CompileStates.CompileState;
 import com.sun.tools.javac.comp.Modules;
+import com.sun.tools.javac.comp.Resolve;
+import com.sun.tools.javac.comp.Resolve.RecoveryLoadClass;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /**
@@ -75,8 +77,8 @@ public class JavacElements implements Elements {
     private final Names names;
     private final Types types;
     private final Enter enter;
+    private final Resolve resolve;
     private final JavacTaskImpl javacTaskImpl;
-    private final CompileStates compileStates;
 
     public static JavacElements instance(Context context) {
         JavacElements instance = context.get(JavacElements.class);
@@ -93,14 +95,16 @@ public class JavacElements implements Elements {
         names = Names.instance(context);
         types = Types.instance(context);
         enter = Enter.instance(context);
+        resolve = Resolve.instance(context);
         JavacTask t = context.get(JavacTask.class);
         javacTaskImpl = t instanceof JavacTaskImpl ? (JavacTaskImpl) t : null;
-        compileStates = CompileStates.instance(context);
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public ModuleSymbol getModuleElement(CharSequence name) {
         ensureEntered("getModuleElement");
+        if (modules.getDefaultModule() == syms.noModule)
+            return null;
         String strName = name.toString();
         if (strName.equals(""))
             return syms.unnamedModule;
@@ -109,32 +113,77 @@ public class JavacElements implements Elements {
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public PackageSymbol getPackageElement(CharSequence name) {
-        ensureEntered("getPackageElement");
-        return getPackageElement(modules.getDefaultModule(), name);
+        return doGetPackageElement(null, name);
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public PackageSymbol getPackageElement(ModuleElement module, CharSequence name) {
-        String strName = name.toString();
-        if (strName.equals(""))
+        module.getClass();
+        return doGetPackageElement(module, name);
+    }
+
+    private PackageSymbol doGetPackageElement(ModuleElement module, CharSequence name) {
+        ensureEntered("getPackageElement");
+        if (name.length() == 0)
             return syms.unnamedModule.unnamedPackage;
-        return SourceVersion.isName(strName)
-            ? nameToSymbol((ModuleSymbol) module, strName, PackageSymbol.class)
-            : null;
+        return doGetElement(module, name, PackageSymbol.class);
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public ClassSymbol getTypeElement(CharSequence name) {
-        ensureEntered("getTypeElement");
-        return getTypeElement(modules.getDefaultModule(), name);
+        return doGetTypeElement(null, name);
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public ClassSymbol getTypeElement(ModuleElement module, CharSequence name) {
+        module.getClass();
+
+        return doGetTypeElement(module, name);
+    }
+
+    private ClassSymbol doGetTypeElement(ModuleElement module, CharSequence name) {
+        ensureEntered("getTypeElement");
+        return doGetElement(module, name, ClassSymbol.class);
+    }
+
+    private <S extends Symbol> S doGetElement(ModuleElement module, CharSequence name, Class<S> clazz) {
         String strName = name.toString();
-        return SourceVersion.isName(strName)
-            ? nameToSymbol((ModuleSymbol) module, strName, ClassSymbol.class)
-            : null;
+        if (!SourceVersion.isName(strName)) {
+            return null;
+        }
+        if (module == null) {
+            return unboundNameToSymbol(strName, clazz);
+        } else {
+            return nameToSymbol((ModuleSymbol) module, strName, clazz);
+        }
+    }
+
+    private <S extends Symbol> S unboundNameToSymbol(String nameStr, Class<S> clazz) {
+        if (modules.getDefaultModule() == syms.noModule) { //not a modular mode:
+            return nameToSymbol(syms.noModule, nameStr, clazz);
+        }
+
+        RecoveryLoadClass prevRecoveryLoadClass = resolve.setRecoveryLoadClass((env, name) -> null);
+        try {
+            Set<S> found = new LinkedHashSet<>();
+
+            for (ModuleSymbol msym : modules.allModules()) {
+                S sym = nameToSymbol(msym, nameStr, clazz);
+
+                if (sym != null) {
+                    found.add(sym);
+                }
+            }
+
+            if (found.size() == 1) {
+                return found.iterator().next();
+            } else {
+                //not found, or more than one element found:
+                return null;
+            }
+        } finally {
+            resolve.setRecoveryLoadClass(prevRecoveryLoadClass);
+        }
     }
 
     /**
@@ -369,6 +418,8 @@ public class JavacElements implements Elements {
     @DefinedBy(Api.LANGUAGE_MODEL)
     public ModuleElement getModuleOf(Element e) {
         Symbol sym = cast(Symbol.class, e);
+        if (modules.getDefaultModule() == syms.noModule)
+            return null;
         return (sym.kind == MDL) ? ((ModuleElement) e) : sym.packge().modle;
     }
 

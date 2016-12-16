@@ -1983,20 +1983,40 @@ public class Resolve {
         } catch (ClassFinder.BadClassFile err) {
             throw err;
         } catch (CompletionFailure ex) {
-            //even if a class cannot be found in the current module and packages in modules it depends on that
-            //are exported for any or this module, the class may exist internally in some of these modules,
-            //or may exist in a module on which this module does not depend. Provide better diagnostic in
-            //such cases by looking for the class in any module:
-            for (ModuleSymbol ms : syms.getAllModules()) {
-                //do not load currently unloaded classes, to avoid too eager completion of random things in other modules:
-                ClassSymbol clazz = syms.getClass(ms, name);
+            Symbol candidate = recoveryLoadClass.loadClass(env, name);
 
-                if (clazz != null) {
-                    return new AccessError(clazz);
-                }
+            if (candidate != null) {
+                return candidate;
             }
+
             return typeNotFound;
         }
+    }
+
+    public static interface RecoveryLoadClass {
+        Symbol loadClass(Env<AttrContext> env, Name name);
+    }
+
+    private RecoveryLoadClass recoveryLoadClass = (env, name) -> {
+        //even if a class cannot be found in the current module and packages in modules it depends on that
+        //are exported for any or this module, the class may exist internally in some of these modules,
+        //or may exist in a module on which this module does not depend. Provide better diagnostic in
+        //such cases by looking for the class in any module:
+        for (ModuleSymbol ms : syms.getAllModules()) {
+            //do not load currently unloaded classes, to avoid too eager completion of random things in other modules:
+            ClassSymbol clazz = syms.getClass(ms, name);
+
+            if (clazz != null) {
+                return new AccessError(clazz);
+            }
+        }
+        return null;
+    };
+
+    public RecoveryLoadClass setRecoveryLoadClass(RecoveryLoadClass recovery) {
+        RecoveryLoadClass prev = recoveryLoadClass;
+        recoveryLoadClass = recovery;
+        return prev;
     }
 
     /**

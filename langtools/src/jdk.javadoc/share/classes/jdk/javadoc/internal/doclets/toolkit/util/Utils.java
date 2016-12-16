@@ -349,7 +349,12 @@ public class Utils {
     }
 
     protected Location getLocationForPackage(PackageElement pd) {
-        return getLocationForModule(configuration.docEnv.getElementUtils().getModuleOf(pd));
+        ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(pd);
+
+        if (mdle == null)
+            return defaultLocation();
+
+        return getLocationForModule(mdle);
     }
 
     protected Location getLocationForModule(ModuleElement mdle) {
@@ -357,6 +362,10 @@ public class Utils {
         if (loc != null)
             return loc;
 
+        return defaultLocation();
+    }
+
+    private Location defaultLocation() {
         JavaFileManager fm = configuration.docEnv.getJavaFileManager();
         return fm.hasLocation(StandardLocation.SOURCE_PATH)
                 ? StandardLocation.SOURCE_PATH

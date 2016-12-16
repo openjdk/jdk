@@ -620,7 +620,8 @@ public class ElementsTable {
         // add all specified packages
         specifiedPackageElements.forEach(pkg -> {
             ModuleElement mdle = toolEnv.elements.getModuleOf(pkg);
-            imodules.add(mdle);
+            if (mdle != null)
+                imodules.add(mdle);
             ipackages.add(pkg);
         });
 
@@ -633,7 +634,7 @@ public class ElementsTable {
         // add all types and its nested types
         specifiedTypeElements.forEach((klass) -> {
             ModuleElement mdle = toolEnv.elements.getModuleOf(klass);
-            if (!mdle.isUnnamed())
+            if (mdle != null && !mdle.isUnnamed())
                 imodules.add(mdle);
             PackageElement pkg = toolEnv.elements.getPackageOf(klass);
             ipackages.add(pkg);
