@@ -574,6 +574,36 @@ public abstract class DCTree implements DocTree {
         }
     }
 
+    public static class DCProvides extends DCBlockTag implements ProvidesTree {
+        public final DCReference serviceType;
+        public final List<DCTree> description;
+
+        DCProvides(DCReference serviceType, List<DCTree> description) {
+            this.serviceType = serviceType;
+            this.description = description;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() {
+            return Kind.PROVIDES;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
+            return v.visitProvides(this, d);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public ReferenceTree getServiceType() {
+            return serviceType;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public List<? extends DocTree> getDescription() {
+            return description;
+        }
+    }
+
     public static class DCReference extends DCEndPosTree<DCReference> implements ReferenceTree {
         public final String signature;
 
@@ -909,6 +939,36 @@ public abstract class DCTree implements DocTree {
         @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getContent() {
             return content;
+        }
+    }
+
+    public static class DCUses extends DCBlockTag implements UsesTree {
+        public final DCReference serviceType;
+        public final List<DCTree> description;
+
+        DCUses(DCReference serviceType, List<DCTree> description) {
+            this.serviceType = serviceType;
+            this.description = description;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() {
+            return Kind.USES;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
+            return v.visitUses(this, d);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public ReferenceTree getServiceType() {
+            return serviceType;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public List<? extends DocTree> getDescription() {
+            return description;
         }
     }
 

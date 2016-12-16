@@ -1135,8 +1135,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content for the module link
      */
     public Content getModuleLink(ModuleElement mdle, Content label) {
-        return getHyperLink(pathToRoot.resolve(
-                DocPaths.moduleSummary(mdle)), label, "", "");
+        boolean included = utils.isIncluded(mdle);
+        return (included)
+                ? getHyperLink(pathToRoot.resolve(DocPaths.moduleSummary(mdle)), label, "", "")
+                : label;
     }
 
     public Content interfaceName(TypeElement typeElement, boolean qual) {

@@ -472,7 +472,7 @@ Table styles
     border: none;
     height:16px;
 }
-.memberSummary caption span.activeTableTab span {
+.memberSummary caption span.activeTableTab span, .packagesSummary caption span.activeTableTab span {
     white-space:nowrap;
     padding-top:5px;
     padding-left:12px;
@@ -483,7 +483,7 @@ Table styles
     background-color:#F8981D;
     height:16px;
 }
-.memberSummary caption span.tableTab span {
+.memberSummary caption span.tableTab span, .packagesSummary caption span.tableTab span {
     white-space:nowrap;
     padding-top:5px;
     padding-left:12px;
@@ -494,7 +494,8 @@ Table styles
     background-color:#4D7A97;
     height:16px;
 }
-.memberSummary caption span.tableTab, .memberSummary caption span.activeTableTab {
+.memberSummary caption span.tableTab, .memberSummary caption span.activeTableTab,
+.packagesSummary caption span.tableTab, .packagesSummary caption span.activeTableTab {
     padding-top:0px;
     padding-left:0px;
     padding-right:0px;
@@ -511,7 +512,7 @@ Table styles
     float:left;
     background-color:#F8981D;
 }
-.memberSummary .activeTableTab .tabEnd {
+.memberSummary .activeTableTab .tabEnd, .packagesSummary .activeTableTab .tabEnd {
     display:none;
     width:5px;
     margin-right:3px;
@@ -519,7 +520,7 @@ Table styles
     float:left;
     background-color:#F8981D;
 }
-.memberSummary .tableTab .tabEnd {
+.memberSummary .tableTab .tabEnd, .packagesSummary .tableTab .tabEnd {
     display:none;
     width:5px;
     margin-right:3px;
@@ -562,21 +563,28 @@ td.colSecond, th.colSecond, td.colLast, th.colLast {
 .providesSummary th.colFirst, .providesSummary th.colLast, .providesSummary td.colFirst,
 .providesSummary td.colLast {
     white-space:normal;
-    width:50%;
     font-size:13px;
 }
 .overviewSummary td.colFirst, .overviewSummary th.colFirst,
 .requiresSummary td.colFirst, .requiresSummary th.colFirst,
 .packagesSummary td.colFirst, .packagesSummary td.colSecond, .packagesSummary th.colFirst, .packagesSummary th,
 .usesSummary td.colFirst, .usesSummary th.colFirst,
-.useSummary td.colFirst, .useSummary th.colFirst,
+.providesSummary td.colFirst, .providesSummary th.colFirst,
 .memberSummary td.colFirst, .memberSummary th.colFirst,
 .memberSummary td.colSecond, .memberSummary th.colSecond,
 .typeSummary td.colFirst{
-    width:25%;
     vertical-align:top;
 }
-td.colFirst a:link, td.colFirst a:active, td.colFirst a:visited, td.colFirst a:hover, td.colSecond a:link, td.colSecond a:active, td.colSecond a:visited, td.colSecond a:hover, th.colFirst a:link, th.colFirst a:active, th.colFirst a:visited, th.colFirst a:hover, th.colSecond a:link, th.colSecond a:active, th.colSecond a:visited, th.colSecond a:hover, td.colLast a:link, td.colLast a:active, td.colLast a:visited, td.colLast a:hover, .constantValuesContainer td a:link, .constantValuesContainer td a:active, .constantValuesContainer td a:visited, .constantValuesContainer td a:hover {
+.packagesSummary th.colLast, .packagesSummary td.colLast {
+    white-space:normal;
+}
+td.colFirst a:link, td.colFirst a:active, td.colFirst a:visited, td.colFirst a:hover,
+td.colSecond a:link, td.colSecond a:active, td.colSecond a:visited, td.colSecond a:hover,
+th.colFirst a:link, th.colFirst a:active, th.colFirst a:visited, th.colFirst a:hover,
+th.colSecond a:link, th.colSecond a:active, th.colSecond a:visited, th.colSecond a:hover,
+td.colLast a:link, td.colLast a:active, td.colLast a:visited, td.colLast a:hover,
+.constantValuesContainer td a:link, .constantValuesContainer td a:active,
+.constantValuesContainer td a:visited, .constantValuesContainer td a:hover {
     font-weight:bold;
 }
 .tableSubHeadingColor {

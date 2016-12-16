@@ -26,16 +26,20 @@
 /**
   * This is a test description for the moduleB module. Search word {@index search_word} with no description.
   *
+  * @uses testpkgmdlB.TestClassInModuleB With a test description for uses.
+  * @provides testpkg2mdlB.TestInterface2InModuleB
   * @deprecated This module is deprecated using just the javadoc tag.
   */
 @testpkgmdlB.AnnotationType(optional="Module Annotation", required=2016)
 @testpkgmdlB.AnnotationTypeUndocumented(optional="Module Annotation", required=2016)
 module moduleB {
-    exports testpkgmdlB;
+    opens testpkgmdlB;
 
     exports testpkg2mdlB to moduleA;
 
     uses testpkgmdlB.TestClassInModuleB;
+    uses testpkgmdlB.TestClass2InModuleB;
 
     provides testpkg2mdlB.TestInterfaceInModuleB with testpkgmdlB.TestClassInModuleB;
+    provides testpkg2mdlB.TestInterface2InModuleB with testpkgmdlB.TestClass2InModuleB;
 }

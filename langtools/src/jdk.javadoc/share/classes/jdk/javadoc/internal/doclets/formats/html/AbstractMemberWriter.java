@@ -36,7 +36,6 @@ import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
-
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
@@ -534,19 +533,19 @@ public abstract class AbstractMemberWriter {
         writer.addSummaryLinkComment(this, member, firstSentenceTags, tdDesc);
         tr.addContent(tdDesc);
         if (utils.isMethod(member) && !utils.isAnnotationType(member)) {
-            int methodType = utils.isStatic(member) ? MethodTypes.STATIC.value() :
-                    MethodTypes.INSTANCE.value();
+            int methodType = utils.isStatic(member) ? MethodTypes.STATIC.tableTabs().value() :
+                    MethodTypes.INSTANCE.tableTabs().value();
             if (utils.isInterface(member.getEnclosingElement())) {
                 methodType = utils.isAbstract(member)
-                        ? methodType | MethodTypes.ABSTRACT.value()
-                        : methodType | MethodTypes.DEFAULT.value();
+                        ? methodType | MethodTypes.ABSTRACT.tableTabs().value()
+                        : methodType | MethodTypes.DEFAULT.tableTabs().value();
             } else {
                 methodType = utils.isAbstract(member)
-                        ? methodType | MethodTypes.ABSTRACT.value()
-                        : methodType | MethodTypes.CONCRETE.value();
+                        ? methodType | MethodTypes.ABSTRACT.tableTabs().value()
+                        : methodType | MethodTypes.CONCRETE.tableTabs().value();
             }
             if (utils.isDeprecated(member) || utils.isDeprecated(typeElement)) {
-                methodType = methodType | MethodTypes.DEPRECATED.value();
+                methodType = methodType | MethodTypes.DEPRECATED.tableTabs().value();
             }
             methodTypesOr = methodTypesOr | methodType;
             String tableId = "i" + counter;
@@ -569,7 +568,7 @@ public abstract class AbstractMemberWriter {
     public boolean showTabs() {
         int value;
         for (MethodTypes type : EnumSet.allOf(MethodTypes.class)) {
-            value = type.value();
+            value = type.tableTabs().value();
             if ((value & methodTypesOr) == value) {
                 methodTypes.add(type);
             }

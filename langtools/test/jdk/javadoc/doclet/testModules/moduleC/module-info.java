@@ -24,22 +24,9 @@
  */
 
 /**
-  * This is a test description for the moduleA module.<br>
-  * Type Link: {@link testpkgmdltags.TestClassInModuleTags}.<br>
-  * Member Link: {@link testpkgmdltags.TestClassInModuleTags#testMethod(String)}.<br>
-  * Package Link: {@link testpkgmdltags}.<br>
-  *
-  * @author Bhavesh Patel
-  * @since JDK 9
-  * @see "Test see tag"
-  * @see testpkgmdltags.TestClassInModuleTags
-  * @regular Just a regular simple tag.
-  * @moduletag Just a simple module tag.
-  * @version 1.0
+  * This is a test description for the moduleC module.
   */
-@Deprecated
-module moduletags {
-    requires transitive static moduleA;
+module moduleC {
 
-    exports testpkgmdltags;
+    exports testpkgmdlC to moduleA;
 }

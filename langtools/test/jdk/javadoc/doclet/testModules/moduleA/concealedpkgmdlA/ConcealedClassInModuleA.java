@@ -23,23 +23,8 @@
  * questions.
  */
 
-/**
-  * This is a test description for the moduleA module.<br>
-  * Type Link: {@link testpkgmdltags.TestClassInModuleTags}.<br>
-  * Member Link: {@link testpkgmdltags.TestClassInModuleTags#testMethod(String)}.<br>
-  * Package Link: {@link testpkgmdltags}.<br>
-  *
-  * @author Bhavesh Patel
-  * @since JDK 9
-  * @see "Test see tag"
-  * @see testpkgmdltags.TestClassInModuleTags
-  * @regular Just a regular simple tag.
-  * @moduletag Just a simple module tag.
-  * @version 1.0
-  */
-@Deprecated
-module moduletags {
-    requires transitive static moduleA;
+package concealedpkgmdlA;
 
-    exports testpkgmdltags;
+public class ConcealedClassInModuleA {
+    public void testMethodConcealedClass() { }
 }
