@@ -180,7 +180,8 @@ module java.base {
         java.management,
         jdk.jvmstat;
     exports jdk.internal.ref to
-        java.desktop;
+        java.desktop,
+        jdk.unsupported;
     exports jdk.internal.reflect to
         java.corba,
         java.logging,
@@ -219,7 +220,8 @@ module java.base {
     exports sun.nio.ch to
         java.management,
         jdk.crypto.token,
-        jdk.sctp;
+        jdk.sctp,
+        jdk.unsupported;
     exports sun.nio.cs to
         java.desktop,
         jdk.charsets;
