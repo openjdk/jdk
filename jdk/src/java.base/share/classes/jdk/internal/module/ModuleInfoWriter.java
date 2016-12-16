@@ -49,13 +49,12 @@ public final class ModuleInfoWriter {
      * returning it in a byte array.
      */
     private static byte[] toModuleInfo(ModuleDescriptor md) {
-
         ClassWriter cw = new ClassWriter(0);
-        cw.visit(Opcodes.V1_9, ACC_MODULE, null, null, null, null);
+        cw.visit(Opcodes.V1_9, ACC_MODULE, "module-info", null, null, null);
         cw.visitAttribute(new ModuleAttribute(md));
 
-        // for tests: write the Packages attribute when there are packages that
-        // aren't exported or open
+        // for tests: write the ModulePackages attribute when there are packages
+        // that aren't exported or open
         Stream<String> exported = md.exports().stream()
                 .map(ModuleDescriptor.Exports::source);
         Stream<String> open = md.opens().stream()
@@ -64,10 +63,10 @@ public final class ModuleInfoWriter {
         if (md.packages().size() > exportedOrOpen)
             cw.visitAttribute(new ModulePackagesAttribute(md.packages()));
 
-        md.version().ifPresent(v -> cw.visitAttribute(new ModuleVersionAttribute(v)));
+        // write ModuleMainClass if the module has a main class
         md.mainClass().ifPresent(mc -> cw.visitAttribute(new ModuleMainClassAttribute(mc)));
 
-        // write the TargetPlatform attribute if have any of OS name/arch/version
+        // write ModuleTarget attribute if have any of OS name/arch/version
         String osName = md.osName().orElse(null);
         String osArch = md.osArch().orElse(null);
         String osVersion = md.osVersion().orElse(null);
@@ -76,7 +75,6 @@ public final class ModuleInfoWriter {
         }
 
         cw.visitEnd();
-
         return cw.toByteArray();
     }
 

@@ -59,7 +59,7 @@ public class SystemModulesTest {
     private void testModuleDescriptor(ModuleDescriptor md) {
         assertUnmodifiable(md.packages(), "package");
         assertUnmodifiable(md.requires(),
-                           jlma.newRequires(Set.of(Requires.Modifier.TRANSITIVE), "require"));
+                           jlma.newRequires(Set.of(Requires.Modifier.TRANSITIVE), "require", null));
         for (Requires req : md.requires()) {
             assertUnmodifiable(req.modifiers(), Requires.Modifier.TRANSITIVE);
         }

@@ -239,6 +239,8 @@ final class Item {
         this.strVal3 = strVal3;
         switch (type) {
         case ClassWriter.CLASS:
+        case ClassWriter.MODULE:
+        case ClassWriter.PACKAGE:
             this.intVal = 0;     // intVal of a class must be zero, see visitInnerClass
         case ClassWriter.UTF8:
         case ClassWriter.STR:
@@ -311,6 +313,8 @@ final class Item {
         case ClassWriter.UTF8:
         case ClassWriter.STR:
         case ClassWriter.CLASS:
+        case ClassWriter.MODULE:
+        case ClassWriter.PACKAGE:
         case ClassWriter.MTYPE:
         case ClassWriter.TYPE_NORMAL:
             return i.strVal1.equals(strVal1);
