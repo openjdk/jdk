@@ -210,6 +210,7 @@ public class SimpleDocTreeVisitor<R,P> implements DocTreeVisitor<R, P> {
      * @param p {@inheritDoc}
      * @return the result of {@code defaultAction}
      */
+    @Override
     public R visitHidden(HiddenTree node, P p) {
         return defaultAction(node, p);
     }
@@ -283,6 +284,18 @@ public class SimpleDocTreeVisitor<R,P> implements DocTreeVisitor<R, P> {
      */
     @Override
     public R visitParam(ParamTree node, P p) {
+        return defaultAction(node, p);
+    }
+
+    /**
+     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     *
+     * @param node {@inheritDoc}
+     * @param p {@inheritDoc}
+     * @return  the result of {@code defaultAction}
+     */
+    @Override
+    public R visitProvides(ProvidesTree node, P p) {
         return defaultAction(node, p);
     }
 
@@ -427,6 +440,18 @@ public class SimpleDocTreeVisitor<R,P> implements DocTreeVisitor<R, P> {
      */
     @Override
     public R visitUnknownInlineTag(UnknownInlineTagTree node, P p) {
+        return defaultAction(node, p);
+    }
+
+    /**
+     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     *
+     * @param node {@inheritDoc}
+     * @param p {@inheritDoc}
+     * @return  the result of {@code defaultAction}
+     */
+    @Override
+    public R visitUses(UsesTree node, P p) {
         return defaultAction(node, p);
     }
 

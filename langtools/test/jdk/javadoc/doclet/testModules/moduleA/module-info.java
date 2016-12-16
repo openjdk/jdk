@@ -30,7 +30,8 @@
   */
 @Deprecated(forRemoval=true)
 module moduleA {
-    requires moduleB;
+    requires transitive moduleB;
+    requires moduleC;
 
     exports testpkgmdlA;
 }

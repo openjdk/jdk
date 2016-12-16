@@ -23,23 +23,29 @@
  * questions.
  */
 
-/**
-  * This is a test description for the moduleA module.<br>
-  * Type Link: {@link testpkgmdltags.TestClassInModuleTags}.<br>
-  * Member Link: {@link testpkgmdltags.TestClassInModuleTags#testMethod(String)}.<br>
-  * Package Link: {@link testpkgmdltags}.<br>
-  *
-  * @author Bhavesh Patel
-  * @since JDK 9
-  * @see "Test see tag"
-  * @see testpkgmdltags.TestClassInModuleTags
-  * @regular Just a regular simple tag.
-  * @moduletag Just a simple module tag.
-  * @version 1.0
-  */
-@Deprecated
-module moduletags {
-    requires transitive static moduleA;
+package com.sun.source.doctree;
 
-    exports testpkgmdltags;
+import java.util.List;
+
+/**
+ *
+ * A tree node for a @provides block tag.
+ *
+ * <p>
+ * &#064;provides service-type description
+ *
+ * @since 9
+ */
+public interface ProvidesTree extends BlockTagTree {
+    /**
+     * Returns the name of the service type being documented.
+     * @return the name of the service type
+     */
+    ReferenceTree getServiceType();
+
+    /**
+     * Returns a description of the service type being provided by the module.
+     * @return the description
+     */
+    List<? extends DocTree> getDescription();
 }
