@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @bug 6578647 6829283
+ * @bug 6578647 6829283 8171340
  * @run main/othervm HttpNegotiateServer
- * @summary Undefined requesting URL in java.net.Authenticator.getPasswordAuthentication()
- * @summary HTTP/Negotiate: Authenticator triggered again when user cancels the first one
+ * @summary Undefined requesting URL in java.net.Authenticator
+ *          .getPasswordAuthentication()
+ * @summary HTTP/Negotiate: Authenticator triggered again when
+ *          user cancels the first one
  */
 
 import com.sun.net.httpserver.Headers;
@@ -240,16 +242,15 @@ public class HttpNegotiateServer {
         java.net.Authenticator.setDefault(new KnowAllAuthenticator());
 
         reader = new BufferedReader(new InputStreamReader(
-                webUrl.openConnection().getInputStream()));
+                webUrl.openConnection(Proxy.NO_PROXY).getInputStream()));
         if (!reader.readLine().equals(CONTENT)) {
             throw new RuntimeException("Bad content");
         }
 
         reader = new BufferedReader(new InputStreamReader(
-                proxyUrl.openConnection(
-                new Proxy(Proxy.Type.HTTP,
-                    new InetSocketAddress(PROXY_HOST, proxyPort)))
-                .getInputStream()));
+                proxyUrl.openConnection(new Proxy(Proxy.Type.HTTP,
+                                new InetSocketAddress(PROXY_HOST, proxyPort)))
+                        .getInputStream()));
         if (!reader.readLine().equals(CONTENT)) {
             throw new RuntimeException("Bad content");
         }
@@ -260,7 +261,7 @@ public class HttpNegotiateServer {
         java.net.Authenticator.setDefault(new KnowNothingAuthenticator());
         try {
             new BufferedReader(new InputStreamReader(
-                    webUrl.openConnection().getInputStream()));
+                    webUrl.openConnection(Proxy.NO_PROXY).getInputStream()));
         } catch (IOException ioe) {
             // Will fail since no username and password is provided.
         }
@@ -274,7 +275,7 @@ public class HttpNegotiateServer {
         try {
             URL url = webUrl;
 
-            URLConnection conn = url.openConnection();
+            URLConnection conn = url.openConnection(Proxy.NO_PROXY);
             conn.connect();
             inputStream = conn.getInputStream();
             byte[] b = new byte[inputStream.available()];
@@ -285,7 +286,7 @@ public class HttpNegotiateServer {
             System.out.println("Length: " + s.length());
             System.out.println(s);
         } catch (Exception ex) {
-              throw new RuntimeException(ex);
+            throw new RuntimeException(ex);
         } finally {
             if (inputStream != null) {
                 try {
@@ -307,7 +308,8 @@ public class HttpNegotiateServer {
 
         CallbackHandler callback = new CallbackHandler() {
             @Override
-            public void handle(Callback[] pCallbacks) throws IOException, UnsupportedCallbackException {
+            public void handle(Callback[] pCallbacks)
+                    throws IOException, UnsupportedCallbackException {
                 for (Callback cb : pCallbacks) {
                     if (cb instanceof NameCallback) {
                         NameCallback ncb = (NameCallback)cb;
@@ -323,7 +325,8 @@ public class HttpNegotiateServer {
         };
 
         final String jaasConfigName = "oracle.test.kerberos.login";
-        final String krb5LoginModule = "com.sun.security.auth.module.Krb5LoginModule";
+        final String krb5LoginModule
+                = "com.sun.security.auth.module.Krb5LoginModule";
 
         Configuration loginConfig = new Configuration() {
             @Override
@@ -347,7 +350,8 @@ public class HttpNegotiateServer {
         // oracle context/subject/login
         LoginContext context = null;
         try {
-            context = new LoginContext("oracle.test.kerberos.login", null, callback, loginConfig);
+            context = new LoginContext(
+                    "oracle.test.kerberos.login", null, callback, loginConfig);
             context.login();
 
         } catch (LoginException ex) {
@@ -358,29 +362,35 @@ public class HttpNegotiateServer {
 
         Subject subject = context.getSubject();
 
-        final PrivilegedExceptionAction<Object> test_action = new PrivilegedExceptionAction<Object>() {
+        final PrivilegedExceptionAction<Object> test_action
+                = new PrivilegedExceptionAction<Object>() {
             public Object run() throws Exception {
                 testConnect();
                 return null;
             }
         };
 
-        System.err.println("\n\nExpecting to succeed when executing with the the logged in subject.");
+        System.err.println("\n\nExpecting to succeed when executing " +
+                "with the the logged in subject.");
 
         try {
             Subject.doAs(subject, test_action);
-            System.err.println("\n\nConnection succeed when executing with the the logged in subject.");
+            System.err.println("\n\nConnection succeed when executing " +
+                    "with the the logged in subject.");
         } catch (PrivilegedActionException e) {
-            System.err.println("\n\nFailure unexpected when executing with the the logged in subject.");
+            System.err.println("\n\nFailure unexpected when executing " +
+                    "with the the logged in subject.");
             e.printStackTrace();
             throw new RuntimeException("Failed to login as subject");
         }
 
         try {
-            System.err.println("\n\nExpecting to fail when running with the current user's login.");
+            System.err.println("\n\nExpecting to fail when running " +
+                    "with the current user's login.");
             testConnect();
         } catch (Exception ex) {
-            System.err.println("\nConnect failed when running with the current user's login:\n" + ex.getMessage());
+            System.err.println("\nConnect failed when running " +
+                    "with the current user's login:\n" + ex.getMessage());
         }
     }
 
@@ -450,8 +460,9 @@ public class HttpNegotiateServer {
                     return m.createCredential(
                             null,
                             GSSCredential.INDEFINITE_LIFETIME,
-                            MyServerAuthenticator.this.scheme.equalsIgnoreCase("Negotiate")?
-                                    GSSUtil.GSS_SPNEGO_MECH_OID:
+                            MyServerAuthenticator.this.scheme
+                                        .equalsIgnoreCase("Negotiate") ?
+                                    GSSUtil.GSS_SPNEGO_MECH_OID :
                                     GSSUtil.GSS_KRB5_MECH_OID,
                             GSSCredential.ACCEPT_ONLY);
                 }
@@ -465,7 +476,8 @@ public class HttpNegotiateServer {
             GSSContext c = null;
             String auth = exch.getRequestHeaders().getFirst(respHdr);
             try {
-                c = (GSSContext)exch.getHttpContext().getAttributes().get("GSSContext");
+                c = (GSSContext)exch.getHttpContext()
+                        .getAttributes().get("GSSContext");
                 if (auth == null) {                 // First request
                     Headers map = exch.getResponseHeaders();
                     map.set (reqHdr, scheme);        // Challenge!
@@ -478,7 +490,8 @@ public class HttpNegotiateServer {
                     exch.getHttpContext().getAttributes().put("GSSContext", c);
                     return new com.sun.net.httpserver.Authenticator.Retry(err);
                 } else {                            // Later requests
-                    byte[] token = Base64.getMimeDecoder().decode(auth.split(" ")[1]);
+                    byte[] token = Base64.getMimeDecoder()
+                            .decode(auth.split(" ")[1]);
                     token = c.acceptSecContext(token, 0, token.length);
                     Headers map = exch.getResponseHeaders();
                     map.set (reqHdr, scheme + " " + Base64.getMimeEncoder()
