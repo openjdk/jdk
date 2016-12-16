@@ -255,13 +255,9 @@ public abstract class LinkFactory {
                 vars.add(t.asType());
             });
         } else if (linkInfo.type != null && utils.isDeclaredType(linkInfo.type)) {
-            ((DeclaredType)linkInfo.type).getTypeArguments().stream().forEach((t) -> {
-                vars.add(t);
-            });
+            ((DeclaredType)linkInfo.type).getTypeArguments().stream().forEach(vars::add);
         } else if (ctype != null && utils.isDeclaredType(ctype)) {
-            ((DeclaredType)ctype).getTypeArguments().stream().forEach((t) -> {
-                vars.add(t);
-            });
+            ((DeclaredType)ctype).getTypeArguments().stream().forEach(vars::add);
         } else if (linkInfo.typeElement != null) {
             linkInfo.typeElement.getTypeParameters().stream().forEach((t) -> {
                 vars.add(t.asType());

@@ -57,11 +57,7 @@ public class JavadocMemberEnter extends MemberEnter {
     }
 
     public static void preRegister(Context context) {
-        context.put(memberEnterKey, new Context.Factory<MemberEnter>() {
-               public MemberEnter make(Context c) {
-                   return new JavadocMemberEnter(c);
-               }
-        });
+        context.put(memberEnterKey, (Context.Factory<MemberEnter>)JavadocMemberEnter::new);
     }
 
     final DocEnv docenv;

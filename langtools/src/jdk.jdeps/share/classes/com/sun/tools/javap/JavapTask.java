@@ -408,22 +408,20 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
     private DiagnosticListener<JavaFileObject> getDiagnosticListenerForWriter(Writer w) {
         final PrintWriter pw = getPrintWriterForWriter(w);
-        return new DiagnosticListener<JavaFileObject> () {
-            public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-                switch (diagnostic.getKind()) {
-                    case ERROR:
-                        pw.print(getMessage("err.prefix"));
-                        break;
-                    case WARNING:
-                        pw.print(getMessage("warn.prefix"));
-                        break;
-                    case NOTE:
-                        pw.print(getMessage("note.prefix"));
-                        break;
-                }
-                pw.print(" ");
-                pw.println(diagnostic.getMessage(null));
+        return diagnostic -> {
+            switch (diagnostic.getKind()) {
+                case ERROR:
+                    pw.print(getMessage("err.prefix"));
+                    break;
+                case WARNING:
+                    pw.print(getMessage("warn.prefix"));
+                    break;
+                case NOTE:
+                    pw.print(getMessage("note.prefix"));
+                    break;
             }
+            pw.print(" ");
+            pw.println(diagnostic.getMessage(null));
         };
     }
 

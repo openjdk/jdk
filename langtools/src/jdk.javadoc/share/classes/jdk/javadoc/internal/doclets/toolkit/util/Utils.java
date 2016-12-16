@@ -533,7 +533,7 @@ public class Utils {
             }
 
             void addModifers(Set<Modifier> modifiers) {
-                String s = set.stream().map(m -> m.toString()).collect(Collectors.joining(" "));
+                String s = set.stream().map(Modifier::toString).collect(Collectors.joining(" "));
                 sb.append(s);
                 if (!s.isEmpty())
                     sb.append(" ");

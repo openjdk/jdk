@@ -373,7 +373,7 @@ public class ElementsTable {
         // scan for modules with qualified subpackages
         ((List<String>)opts.computeIfAbsent(ToolOption.SUBPACKAGES, v -> Collections.EMPTY_LIST))
             .stream()
-            .map((packageName) -> new ModulePackage(packageName))
+            .map(ModulePackage::new)
             .forEachOrdered((mpkg) -> {
                 subPackages.add(mpkg);
                 if (mpkg.hasModule()) {
@@ -420,7 +420,7 @@ public class ElementsTable {
      */
     ElementsTable packages(Collection<String> packageNames) {
         packageNames.stream()
-            .map((packageName) -> new ModulePackage(packageName))
+            .map(ModulePackage::new)
             .forEachOrdered((mpkg) -> cmdLinePackages.add(mpkg));
         return this;
     }
@@ -443,7 +443,7 @@ public class ElementsTable {
     private void computeSubpackages() throws ToolException {
         ((List<String>) opts.computeIfAbsent(ToolOption.EXCLUDE, v -> Collections.EMPTY_LIST))
                 .stream()
-                .map((packageName) -> new ModulePackage(packageName))
+                .map(ModulePackage::new)
                 .forEachOrdered((mpkg) -> excludePackages.add(mpkg));
 
         excludePackages.forEach((p) -> {

@@ -2138,11 +2138,9 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             UndetVarListener prevListener = listener;
             try {
                 //setup new listener for keeping track of changed bounds
-                listener = new UndetVarListener() {
-                    public void varBoundChanged(UndetVar uv, InferenceBound ib, Type t, boolean _ignored) {
-                        Assert.check(uv == UndetVar.this);
-                        boundsChanged.add(new Pair<>(ib, t));
-                    }
+                listener = (uv, ib, t, _ignored) -> {
+                    Assert.check(uv == UndetVar.this);
+                    boundsChanged.add(new Pair<>(ib, t));
                 };
                 for (Map.Entry<InferenceBound, List<Type>> _entry : bounds.entrySet()) {
                     InferenceBound ib = _entry.getKey();

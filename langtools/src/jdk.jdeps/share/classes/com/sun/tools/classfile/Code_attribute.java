@@ -103,34 +103,29 @@ public class Code_attribute extends Attribute {
     }
 
     public Iterable<Instruction> getInstructions() {
-        return new Iterable<Instruction>() {
-            public Iterator<Instruction> iterator() {
-                return new Iterator<Instruction>() {
+        return () -> new Iterator<Instruction>() {
 
-                    public boolean hasNext() {
-                        return (next != null);
-                    }
-
-                    public Instruction next() {
-                        if (next == null)
-                            throw new NoSuchElementException();
-
-                        current = next;
-                        pc += current.length();
-                        next = (pc < code.length ? new Instruction(code, pc) : null);
-                        return current;
-                    }
-
-                    public void remove() {
-                        throw new UnsupportedOperationException("Not supported.");
-                    }
-
-                    Instruction current = null;
-                    int pc = 0;
-                    Instruction next = new Instruction(code, pc);
-
-                };
+            public boolean hasNext() {
+                return (next != null);
             }
+
+            public Instruction next() {
+                if (next == null)
+                    throw new NoSuchElementException();
+
+                current = next;
+                pc += current.length();
+                next = (pc < code.length ? new Instruction(code, pc) : null);
+                return current;
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException("Not supported.");
+            }
+
+            Instruction current = null;
+            int pc = 0;
+            Instruction next = new Instruction(code, pc);
 
         };
     }

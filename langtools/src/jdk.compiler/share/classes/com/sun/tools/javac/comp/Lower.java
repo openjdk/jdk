@@ -2254,25 +2254,15 @@ public class Lower extends TreeTranslator {
             final JCFieldAccess s = (JCFieldAccess)lval;
             Symbol lid = TreeInfo.symbol(s.selected);
             if (lid != null && lid.kind == TYP) return builder.build(lval);
-            return abstractRval(s.selected, new TreeBuilder() {
-                    public JCExpression build(final JCExpression selected) {
-                        return builder.build(make.Select(selected, s.sym));
-                    }
-                });
+            return abstractRval(s.selected, selected -> builder.build(make.Select(selected, s.sym)));
         }
         case INDEXED: {
             final JCArrayAccess i = (JCArrayAccess)lval;
-            return abstractRval(i.indexed, new TreeBuilder() {
-                    public JCExpression build(final JCExpression indexed) {
-                        return abstractRval(i.index, syms.intType, new TreeBuilder() {
-                                public JCExpression build(final JCExpression index) {
-                                    JCExpression newLval = make.Indexed(indexed, index);
-                                    newLval.setType(i.type);
-                                    return builder.build(newLval);
-                                }
-                            });
-                    }
-                });
+            return abstractRval(i.indexed, indexed -> abstractRval(i.index, syms.intType, index -> {
+                JCExpression newLval = make.Indexed(indexed, index);
+                newLval.setType(i.type);
+                return builder.build(newLval);
+            }));
         }
         case TYPECAST: {
             return abstractLval(((JCTypeCast)lval).expr, builder);
@@ -2283,11 +2273,7 @@ public class Lower extends TreeTranslator {
 
     // evaluate and discard the first expression, then evaluate the second.
     JCExpression makeComma(final JCExpression expr1, final JCExpression expr2) {
-        return abstractRval(expr1, new TreeBuilder() {
-                public JCExpression build(final JCExpression discarded) {
-                    return expr2;
-                }
-            });
+        return abstractRval(expr1, discarded -> expr2);
     }
 
 /**************************************************************************
@@ -3195,33 +3181,31 @@ public class Lower extends TreeTranslator {
             // boxing required; need to rewrite as x = (unbox typeof x)(x op y);
             // or if x == (typeof x)z then z = (unbox typeof x)((typeof x)z op y)
             // (but without recomputing x)
-            JCTree newTree = abstractLval(tree.lhs, new TreeBuilder() {
-                    public JCExpression build(final JCExpression lhs) {
-                        JCTree.Tag newTag = tree.getTag().noAssignOp();
-                        // Erasure (TransTypes) can change the type of
-                        // tree.lhs.  However, we can still get the
-                        // unerased type of tree.lhs as it is stored
-                        // in tree.type in Attr.
-                        OperatorSymbol newOperator = operators.resolveBinary(tree,
-                                                                      newTag,
-                                                                      tree.type,
-                                                                      tree.rhs.type);
-                        //Need to use the "lhs" at two places, once on the future left hand side
-                        //and once in the future binary operator. But further processing may change
-                        //the components of the tree in place (see visitSelect for e.g. <Class>.super.<ident>),
-                        //so cloning the tree to avoid interference between the uses:
-                        JCExpression expr = (JCExpression) lhs.clone();
-                        if (expr.type != tree.type)
-                            expr = make.TypeCast(tree.type, expr);
-                        JCBinary opResult = make.Binary(newTag, expr, tree.rhs);
-                        opResult.operator = newOperator;
-                        opResult.type = newOperator.type.getReturnType();
-                        JCExpression newRhs = boxingReq ?
-                            make.TypeCast(types.unboxedType(tree.type), opResult) :
-                            opResult;
-                        return make.Assign(lhs, newRhs).setType(tree.type);
-                    }
-                });
+            JCTree newTree = abstractLval(tree.lhs, lhs -> {
+                Tag newTag = tree.getTag().noAssignOp();
+                // Erasure (TransTypes) can change the type of
+                // tree.lhs.  However, we can still get the
+                // unerased type of tree.lhs as it is stored
+                // in tree.type in Attr.
+                OperatorSymbol newOperator = operators.resolveBinary(tree,
+                                                              newTag,
+                                                              tree.type,
+                                                              tree.rhs.type);
+                //Need to use the "lhs" at two places, once on the future left hand side
+                //and once in the future binary operator. But further processing may change
+                //the components of the tree in place (see visitSelect for e.g. <Class>.super.<ident>),
+                //so cloning the tree to avoid interference between the uses:
+                JCExpression expr = (JCExpression) lhs.clone();
+                if (expr.type != tree.type)
+                    expr = make.TypeCast(tree.type, expr);
+                JCBinary opResult = make.Binary(newTag, expr, tree.rhs);
+                opResult.operator = newOperator;
+                opResult.type = newOperator.type.getReturnType();
+                JCExpression newRhs = boxingReq ?
+                    make.TypeCast(types.unboxedType(tree.type), opResult) :
+                    opResult;
+                return make.Assign(lhs, newRhs).setType(tree.type);
+            });
             result = translate(newTree);
             return;
         }
@@ -3287,28 +3271,22 @@ public class Lower extends TreeTranslator {
         // translate to tmp1=lval(e); tmp2=tmp1; (typeof tree)tmp1 OP 1; tmp2
         // where OP is += or -=
         final boolean cast = TreeInfo.skipParens(tree.arg).hasTag(TYPECAST);
-        return abstractLval(tree.arg, new TreeBuilder() {
-                public JCExpression build(final JCExpression tmp1) {
-                    return abstractRval(tmp1, tree.arg.type, new TreeBuilder() {
-                            public JCExpression build(final JCExpression tmp2) {
-                                JCTree.Tag opcode = (tree.hasTag(POSTINC))
-                                    ? PLUS_ASG : MINUS_ASG;
-                                //"tmp1" and "tmp2" may refer to the same instance
-                                //(for e.g. <Class>.super.<ident>). But further processing may
-                                //change the components of the tree in place (see visitSelect),
-                                //so cloning the tree to avoid interference between the two uses:
-                                JCExpression lhs = (JCExpression)tmp1.clone();
-                                lhs = cast
-                                    ? make.TypeCast(tree.arg.type, lhs)
-                                    : lhs;
-                                JCExpression update = makeAssignop(opcode,
-                                                             lhs,
-                                                             make.Literal(1));
-                                return makeComma(update, tmp2);
-                            }
-                        });
-                }
-            });
+        return abstractLval(tree.arg, tmp1 -> abstractRval(tmp1, tree.arg.type, tmp2 -> {
+            Tag opcode = (tree.hasTag(POSTINC))
+                ? PLUS_ASG : MINUS_ASG;
+            //"tmp1" and "tmp2" may refer to the same instance
+            //(for e.g. <Class>.super.<ident>). But further processing may
+            //change the components of the tree in place (see visitSelect),
+            //so cloning the tree to avoid interference between the two uses:
+            JCExpression lhs = (JCExpression)tmp1.clone();
+            lhs = cast
+                ? make.TypeCast(tree.arg.type, lhs)
+                : lhs;
+            JCExpression update = makeAssignop(opcode,
+                                         lhs,
+                                         make.Literal(1));
+            return makeComma(update, tmp2);
+        }));
     }
 
     public void visitUnary(JCUnary tree) {

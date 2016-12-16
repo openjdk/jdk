@@ -324,7 +324,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         if (platformProvider != null) {
             platformProcessors = platformProvider.getAnnotationProcessors()
                                                  .stream()
-                                                 .map(ap -> ap.getPlugin())
+                                                 .map(PluginInfo::getPlugin)
                                                  .collect(Collectors.toList());
         }
         List<Iterator<? extends Processor>> iterators = List.of(processorIterator,

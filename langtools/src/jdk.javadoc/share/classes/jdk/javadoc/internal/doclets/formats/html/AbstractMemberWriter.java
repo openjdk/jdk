@@ -258,7 +258,7 @@ public abstract class AbstractMemberWriter {
             }
         }
         if (!set.isEmpty()) {
-            String mods = set.stream().map(m -> m.toString()).collect(Collectors.joining(" "));
+            String mods = set.stream().map(Modifier::toString).collect(Collectors.joining(" "));
             htmltree.addContent(mods);
             htmltree.addContent(Contents.SPACE);
         }

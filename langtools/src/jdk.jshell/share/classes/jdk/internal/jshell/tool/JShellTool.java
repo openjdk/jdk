@@ -452,7 +452,7 @@ public class JShellTool implements MessageHandler {
     <T> void hardPairs(Stream<T> stream, Function<T, String> a, Function<T, String> b) {
         Map<String, String> a2b = stream.collect(toMap(a, b,
                 (m1, m2) -> m1,
-                () -> new LinkedHashMap<>()));
+                LinkedHashMap::new));
         for (Entry<String, String> e : a2b.entrySet()) {
             hard("%s", e.getKey());
             rawout(prefix(e.getValue(), feedback.getPre() + "\t", feedback.getPost()));
@@ -953,7 +953,7 @@ public class JShellTool implements MessageHandler {
                        .stream()
                        .filter(filter)
                        .filter(command -> command.command.startsWith(cmd))
-                       .toArray(size -> new Command[size]);
+                       .toArray(Command[]::new);
     }
 
     private static Path toPathResolvingUserHome(String pathString) {
@@ -1125,7 +1125,7 @@ public class JShellTool implements MessageHandler {
                                 ? Stream.of(String.valueOf(k.id()) + " ", ((DeclarationSnippet) k).name() + " ")
                                 : Stream.of(String.valueOf(k.id()) + " "))
                         .filter(k -> k.startsWith(argPrefix))
-                        .map(k -> new ArgSuggestion(k))
+                        .map(ArgSuggestion::new)
                         .collect(Collectors.toList());
         };
     }
@@ -1154,7 +1154,7 @@ public class JShellTool implements MessageHandler {
                 result = new FixedCompletionProvider(commands.values().stream()
                         .filter(cmd -> cmd.kind.showInHelp || cmd.kind == CommandKind.HELP_SUBJECT)
                         .map(c -> c.command + " ")
-                        .toArray(size -> new String[size]))
+                        .toArray(String[]::new))
                         .completionSuggestions(code, cursor, anchor);
             } else if (code.startsWith("/se")) {
                 result = new FixedCompletionProvider(SET_SUBCOMMANDS)
@@ -1264,33 +1264,33 @@ public class JShellTool implements MessageHandler {
 
     {
         registerCommand(new Command("/list",
-                arg -> cmdList(arg),
+                this::cmdList,
                 snippetWithOptionCompletion(SNIPPET_HISTORY_OPTION_COMPLETION_PROVIDER,
                         this::allSnippets)));
         registerCommand(new Command("/edit",
-                arg -> cmdEdit(arg),
+                this::cmdEdit,
                 snippetWithOptionCompletion(SNIPPET_OPTION_COMPLETION_PROVIDER,
                         this::allSnippets)));
         registerCommand(new Command("/drop",
-                arg -> cmdDrop(arg),
+                this::cmdDrop,
                 snippetCompletion(this::dropableSnippets),
                 CommandKind.REPLAY));
         registerCommand(new Command("/save",
-                arg -> cmdSave(arg),
+                this::cmdSave,
                 saveCompletion()));
         registerCommand(new Command("/open",
-                arg -> cmdOpen(arg),
+                this::cmdOpen,
                 FILE_COMPLETION_PROVIDER));
         registerCommand(new Command("/vars",
-                arg -> cmdVars(arg),
+                this::cmdVars,
                 snippetWithOptionCompletion(SNIPPET_OPTION_COMPLETION_PROVIDER,
                         this::allVarSnippets)));
         registerCommand(new Command("/methods",
-                arg -> cmdMethods(arg),
+                this::cmdMethods,
                 snippetWithOptionCompletion(SNIPPET_OPTION_COMPLETION_PROVIDER,
                         this::allMethodSnippets)));
         registerCommand(new Command("/types",
-                arg -> cmdTypes(arg),
+                this::cmdTypes,
                 snippetWithOptionCompletion(SNIPPET_OPTION_COMPLETION_PROVIDER,
                         this::allTypeSnippets)));
         registerCommand(new Command("/imports",
@@ -1303,24 +1303,24 @@ public class JShellTool implements MessageHandler {
                 arg -> cmdReset(),
                 EMPTY_COMPLETION_PROVIDER));
         registerCommand(new Command("/reload",
-                arg -> cmdReload(arg),
+                this::cmdReload,
                 reloadCompletion()));
         registerCommand(new Command("/classpath",
-                arg -> cmdClasspath(arg),
+                this::cmdClasspath,
                 classPathCompletion(),
                 CommandKind.REPLAY));
         registerCommand(new Command("/history",
                 arg -> cmdHistory(),
                 EMPTY_COMPLETION_PROVIDER));
         registerCommand(new Command("/debug",
-                arg -> cmdDebug(arg),
+                this::cmdDebug,
                 EMPTY_COMPLETION_PROVIDER,
                 CommandKind.HIDDEN));
         registerCommand(new Command("/help",
-                arg -> cmdHelp(arg),
+                this::cmdHelp,
                 helpCompletion()));
         registerCommand(new Command("/set",
-                arg -> cmdSet(arg),
+                this::cmdSet,
                 new ContinuousCompletionProvider(Map.of(
                         // need more completion for format for usability
                         "format", feedback.modeCompletions(),
@@ -1335,7 +1335,7 @@ public class JShellTool implements MessageHandler {
                         STARTSWITH_MATCHER)));
         registerCommand(new Command("/?",
                 "help.quest",
-                arg -> cmdHelp(arg),
+                this::cmdHelp,
                 helpCompletion(),
                 CommandKind.NORMAL));
         registerCommand(new Command("/!",
@@ -1450,7 +1450,7 @@ public class JShellTool implements MessageHandler {
         }
         String[] matches = Arrays.stream(subs)
                 .filter(s -> s.startsWith(sub))
-                .toArray(size -> new String[size]);
+                .toArray(String[]::new);
         if (matches.length == 0) {
             // There are no matching sub-commands
             errormsg("jshell.err.arg", cmd, sub);
@@ -1784,7 +1784,7 @@ public class JShellTool implements MessageHandler {
         if (subject != null) {
             Command[] matches = commands.values().stream()
                     .filter(c -> c.command.startsWith(subject))
-                    .toArray(size -> new Command[size]);
+                    .toArray(Command[]::new);
             if (matches.length == 1) {
                 String cmd = matches[0].command;
                 if (cmd.equals("/set")) {
@@ -2414,7 +2414,7 @@ public class JShellTool implements MessageHandler {
      */
     List<Diag> errorsOnly(List<Diag> diagnostics) {
         return diagnostics.stream()
-                .filter(d -> d.isError())
+                .filter(Diag::isError)
                 .collect(toList());
     }
 

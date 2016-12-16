@@ -57,11 +57,7 @@ public class JavadocEnter extends Enter {
     }
 
     public static void preRegister(Context context) {
-        context.put(enterKey, new Context.Factory<Enter>() {
-               public Enter make(Context c) {
-                   return new JavadocEnter(c);
-               }
-        });
+        context.put(enterKey, (Context.Factory<Enter>)JavadocEnter::new);
     }
 
     protected JavadocEnter(Context context) {

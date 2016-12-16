@@ -64,6 +64,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 import javax.lang.model.element.Element;
@@ -280,7 +281,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         String requiredPrefix = identifier;
         return computeSuggestions(codeWrap, cursor, anchor).stream()
                 .filter(s -> s.continuation().startsWith(requiredPrefix) && !s.continuation().equals(REPL_DOESNOTMATTER_CLASS_NAME))
-                .sorted(Comparator.comparing(s -> s.continuation()))
+                .sorted(Comparator.comparing(Suggestion::continuation))
                 .collect(collectingAndThen(toList(), Collections::unmodifiableList));
     }
 
@@ -509,7 +510,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     @Override
     public List<SnippetWrapper> wrappers(String input) {
         return proc.eval.sourceToSnippetsWithWrappers(input).stream()
-                .map(sn -> wrapper(sn))
+                .map(this::wrapper)
                 .collect(toList());
     }
 
@@ -637,7 +638,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         return IS_STATIC.or(IS_CLASS).or(IS_INTERFACE).negate().test(el) ||
                 IS_PACKAGE.test(encl);
     };
-    private final Function<Element, Iterable<? extends Element>> IDENTITY = el -> Collections.singletonList(el);
+    private final Function<Element, Iterable<? extends Element>> IDENTITY = Collections::singletonList;
     private final Function<Boolean, String> DEFAULT_PAREN = hasParams -> hasParams ? "(" : "()";
     private final Function<Boolean, String> NO_PAREN = hasParams -> "";
 
@@ -831,7 +832,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         };
         @SuppressWarnings("unchecked")
         List<Element> result = Util.stream(scopeIterable)
-                             .flatMap(s -> localElements(s))
+                             .flatMap(this::localElements)
                              .flatMap(el -> Util.stream((Iterable<Element>)elementConvertor.apply(el)))
                              .collect(toCollection(ArrayList :: new));
         result.addAll(listPackages(at, ""));
@@ -1186,7 +1187,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
         try (JavadocHelper helper = JavadocHelper.create(at.task, findSources())) {
             result = elements.map(el -> constructDocumentation(at, helper, el, computeJavadoc))
-                             .filter(r -> r != null)
+                             .filter(Objects::nonNull)
                              .collect(Collectors.toList());
         } catch (IOException ex) {
             proc.debug(ex, "JavadocHelper.close()");

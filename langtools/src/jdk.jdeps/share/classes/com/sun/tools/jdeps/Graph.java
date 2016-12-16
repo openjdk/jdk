@@ -209,7 +209,7 @@ public final class Graph<T> {
                 visited.add(node);
                 edges.get(node).stream()
                      .filter(e -> includeAdjacent || !node.equals(u) || !e.equals(v))
-                     .forEach(e -> stack.push(e));
+                     .forEach(stack::push);
             }
         }
         assert !visited.contains(v);

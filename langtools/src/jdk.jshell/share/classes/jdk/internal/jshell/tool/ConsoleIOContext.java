@@ -125,7 +125,7 @@ class ConsoleIOContext extends IOContext {
 
                 boolean smart = allowSmart &&
                                 suggestions.stream()
-                                           .anyMatch(s -> s.matchesType());
+                                           .anyMatch(Suggestion::matchesType);
 
                 lastTest = test;
                 lastCursor = cursor;
@@ -133,16 +133,16 @@ class ConsoleIOContext extends IOContext {
 
                 suggestions.stream()
                            .filter(s -> !smart || s.matchesType())
-                           .map(s -> s.continuation())
+                           .map(Suggestion::continuation)
                            .forEach(result::add);
 
                 boolean onlySmart = suggestions.stream()
-                                               .allMatch(s -> s.matchesType());
+                                               .allMatch(Suggestion::matchesType);
 
                 if (smart && !onlySmart) {
                     Optional<String> prefix =
                             suggestions.stream()
-                                       .map(s -> s.continuation())
+                                       .map(Suggestion::continuation)
                                        .reduce(ConsoleIOContext::commonPrefix);
 
                     String prefixStr = prefix.orElse("").substring(cursor - anchor[0]);
@@ -281,7 +281,7 @@ class ConsoleIOContext extends IOContext {
                                                               term.isAnsiSupported());
             Function<Documentation, String> convertor;
             if (firstInvocation) {
-                convertor = d -> d.signature();
+                convertor = Documentation::signature;
             } else {
                 convertor = d -> formatter.formatJavadoc(d.signature(), d.javadoc()) +
                                  (d.javadoc() == null ? repl.messageFormat("jshell.console.no.javadoc")

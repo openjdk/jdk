@@ -147,11 +147,7 @@ public class ClassFileReader implements Closeable {
     }
 
     public Iterable<ClassFile> getClassFiles() throws IOException {
-        return new Iterable<ClassFile>() {
-            public Iterator<ClassFile> iterator() {
-                return new FileIterator();
-            }
-        };
+        return FileIterator::new;
     }
 
     protected ClassFile readClassFile(Path p) throws IOException {
@@ -232,7 +228,7 @@ public class ClassFileReader implements Closeable {
         protected Set<String> scan() {
             try (Stream<Path> stream = Files.walk(path, Integer.MAX_VALUE)) {
                 return stream.filter(ClassFileReader::isClass)
-                             .map(f -> path.relativize(f))
+                             .map(path::relativize)
                              .map(Path::toString)
                              .map(p -> p.replace(File.separatorChar, '/'))
                              .collect(Collectors.toSet());
@@ -264,11 +260,7 @@ public class ClassFileReader implements Closeable {
 
         public Iterable<ClassFile> getClassFiles() throws IOException {
             final Iterator<ClassFile> iter = new DirectoryIterator();
-            return new Iterable<ClassFile>() {
-                public Iterator<ClassFile> iterator() {
-                    return iter;
-                }
-            };
+            return () -> iter;
         }
 
         class DirectoryIterator implements Iterator<ClassFile> {
@@ -387,11 +379,7 @@ public class ClassFileReader implements Closeable {
 
         public Iterable<ClassFile> getClassFiles() throws IOException {
             final Iterator<ClassFile> iter = new JarFileIterator(this, jarfile);
-            return new Iterable<ClassFile>() {
-                public Iterator<ClassFile> iterator() {
-                    return iter;
-                }
-            };
+            return () -> iter;
         }
     }
 
