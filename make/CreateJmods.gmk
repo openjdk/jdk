@@ -79,6 +79,11 @@ ifneq ($(MAN_DIR), )
   DEPS += $(call CacheFind, $(MAN_DIR))
 endif
 
+ifeq ($(filter-out jdk.incubator.%, $(MODULE)), )
+  JMOD_FLAGS += --do-not-resolve-by-default
+  JMOD_FLAGS += --warn-if-resolved=incubating
+endif
+
 # Add dependencies on other jmod files. Only java.base needs access to other
 # jmods.
 ifeq ($(MODULE), java.base)
