@@ -35,7 +35,7 @@
  *     -extraopt -Dgraal.TieredAOT=true -extraopt -Dgraal.ProfileSimpleMethods=true
  *     -extraopt -XX:+UnlockDiagnosticVMOptions -extraopt -XX:+WhiteBoxAPI -extraopt -Xbootclasspath/a:.
  *     -extraopt -XX:-UseCompressedOops
- *     -extraopt -XX:CompileCommand=dontinline,compiler.whitebox.SimpleTestCaseHelper::method
+ *     -extraopt -XX:CompileCommand=dontinline,compiler.whitebox.SimpleTestCaseHelper::*
  * @run main/othervm -Xmixed -Xbatch -XX:+UseAOT -XX:+TieredCompilation
  *     -XX:-UseCounterDecay -XX:-UseCompressedOops
  *     -XX:-Inline
@@ -48,7 +48,7 @@
  *     -extraopt -Dgraal.TieredAOT=false
  *     -extraopt -XX:+UnlockDiagnosticVMOptions -extraopt -XX:+WhiteBoxAPI -extraopt -Xbootclasspath/a:.
  *     -extraopt -XX:-UseCompressedOops
- *     -extraopt -XX:CompileCommand=dontinline,compiler.whitebox.SimpleTestCaseHelper::method
+ *     -extraopt -XX:CompileCommand=dontinline,compiler.whitebox.SimpleTestCaseHelper::*
  * @run main/othervm -Xmixed -Xbatch -XX:+UseAOT -XX:+TieredCompilation
  *     -XX:-UseCounterDecay -XX:-UseCompressedOops
  *     -XX:-Inline
