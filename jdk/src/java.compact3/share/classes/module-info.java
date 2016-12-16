@@ -27,6 +27,7 @@
  * Supplements {@code java.compact2} with JDBC RowSet, JMX, JNDI, Compiler,
  * Instrumentation, Preferences, Security, and XML cryptography APIs.
  */
+@SuppressWarnings("module")
 module java.compact3 {
     requires transitive java.compact2;
     requires transitive java.compiler;

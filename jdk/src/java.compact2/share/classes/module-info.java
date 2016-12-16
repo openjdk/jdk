@@ -26,6 +26,7 @@
 /**
  * Supplements {@code java.compact1} with JDBC, JAXP, and RMI.
  */
+@SuppressWarnings("module")
 module java.compact2 {
     requires transitive java.compact1;
     requires transitive java.rmi;

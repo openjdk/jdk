@@ -23,6 +23,7 @@
  * questions.
  */
 
+@SuppressWarnings("module")
 module jdk.pack200 {
 }
 

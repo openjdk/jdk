@@ -123,4 +123,12 @@ public interface JavaLangReflectModuleAccess {
      * given class loader.
      */
     Stream<Layer> layers(ClassLoader loader);
+
+    /**
+     * Tests if a module exports a package at least {@code other} via its
+     * module declaration.
+     *
+     * @apiNote This is a temporary method for debugging features.
+     */
+    boolean isStaticallyExported(Module module, String pn, Module other);
 }
