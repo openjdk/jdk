@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.awt.peer.MenuItemPeer;
-import java.awt.event.*;
-import java.util.EventListener;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-import javax.accessibility.*;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.EventListener;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleAction;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleValue;
+
 import sun.awt.AWTAccessor;
 
 /**
@@ -111,7 +121,7 @@ public class MenuItem extends MenuComponent implements Accessible {
      * @see #isEnabled()
      * @see #setEnabled(boolean)
      */
-    boolean enabled = true;
+    private volatile boolean enabled = true;
 
     /**
      * {@code label} is the label of a menu item.
@@ -121,7 +131,7 @@ public class MenuItem extends MenuComponent implements Accessible {
      * @see #getLabel()
      * @see #setLabel(String)
      */
-    String label;
+    volatile String label;
 
     /**
      * This field indicates the command that has been issued
@@ -134,7 +144,7 @@ public class MenuItem extends MenuComponent implements Accessible {
      * @see #setActionCommand(String)
      * @see #getActionCommand()
      */
-    String actionCommand;
+    private volatile String actionCommand;
 
     /**
      * The eventMask is ONLY set by subclasses via enableEvents.
@@ -144,9 +154,9 @@ public class MenuItem extends MenuComponent implements Accessible {
      *
      * @serial
      */
-    long eventMask;
+    volatile long eventMask;
 
-    transient ActionListener actionListener;
+    private transient volatile ActionListener actionListener;
 
     /**
      * A sequence of key stokes that ia associated with
@@ -160,7 +170,7 @@ public class MenuItem extends MenuComponent implements Accessible {
      * @see #setShortcut(MenuShortcut)
      * @see #deleteShortcut()
      */
-    private MenuShortcut shortcut = null;
+    private volatile MenuShortcut shortcut;
 
     private static final String base = "menuitem";
     private static int nameCounter = 0;

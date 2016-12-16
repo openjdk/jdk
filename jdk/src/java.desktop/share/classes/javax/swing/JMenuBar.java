@@ -27,6 +27,7 @@ package javax.swing;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Insets;
+import java.awt.Toolkit;
 import java.awt.event.*;
 import java.beans.JavaBean;
 import java.beans.BeanProperty;
@@ -40,6 +41,8 @@ import java.io.IOException;
 
 import javax.swing.plaf.*;
 import javax.accessibility.*;
+
+import sun.awt.SunToolkit;
 
 /**
  * An implementation of a menu bar. You add <code>JMenu</code> objects to the
@@ -144,6 +147,10 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
      * @see JComponent#updateUI
      */
     public void updateUI() {
+        Toolkit tk = Toolkit.getDefaultToolkit();
+        if (tk instanceof SunToolkit) {
+            ((SunToolkit)tk).updateScreenMenuBarUI();
+        }
         setUI((MenuBarUI)UIManager.getUI(this));
     }
 
