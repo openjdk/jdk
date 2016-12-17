@@ -967,8 +967,9 @@ public final class SystemModulesPlugin implements Plugin {
                 hmv.visitTypeInsn(NEW, MODULE_HASHES_BUILDER);
                 hmv.visitInsn(DUP);
                 hmv.visitLdcInsn(recordedHashes.algorithm());
+                pushInt(hmv, ((4 * recordedHashes.names().size()) / 3) + 1);
                 hmv.visitMethodInsn(INVOKESPECIAL, MODULE_HASHES_BUILDER,
-                    "<init>", "(Ljava/lang/String;)V", false);
+                    "<init>", "(Ljava/lang/String;I)V", false);
                 hmv.visitVarInsn(ASTORE, BUILDER_VAR);
                 hmv.visitVarInsn(ALOAD, BUILDER_VAR);
             }

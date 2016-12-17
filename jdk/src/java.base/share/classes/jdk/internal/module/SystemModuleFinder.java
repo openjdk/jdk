@@ -124,7 +124,7 @@ public class SystemModuleFinder implements ModuleFinder {
     private final Map<String, ModuleReference> nameToModule;
 
     // module name to hashes
-    private final Map<String, byte[]> hashes = new HashMap<>();
+    private final Map<String, byte[]> hashes;
 
     private SystemModuleFinder() {
         String[] names = moduleNames();
@@ -162,12 +162,24 @@ public class SystemModuleFinder implements ModuleFinder {
             }
         }
 
+        Map<String, byte[]> hashes = null;
+        boolean secondSeen = false;
         // record the hashes to build HashSupplier
         for (ModuleHashes mh : recordedHashes) {
             if (mh != null) {
-                hashes.putAll(mh.hashes());
+                // if only one module contain ModuleHashes, use it
+                if (hashes == null) {
+                    hashes = mh.hashes();
+                } else {
+                    if (!secondSeen) {
+                        hashes = new HashMap<>(hashes);
+                        secondSeen = true;
+                    }
+                    hashes.putAll(mh.hashes());
+                }
             }
         }
+        this.hashes = (hashes == null) ? Map.of() : hashes;
 
         ModuleReference[] mods = new ModuleReference[n];
 

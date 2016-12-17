@@ -149,9 +149,10 @@ public final class ModuleHashes {
      */
     public static class Builder {
         final String algorithm;
-        Map<String, byte[]> nameToHash;
+        final Map<String, byte[]> nameToHash;
 
-        Builder(String algorithm) {
+        Builder(String algorithm, int initialCapacity) {
+            this.nameToHash = new HashMap<>(initialCapacity);
             this.algorithm =  Objects.requireNonNull(algorithm);
         }
 
@@ -159,9 +160,6 @@ public final class ModuleHashes {
          * Sets the module hash for the given module name
          */
         public Builder hashForModule(String mn, byte[] hash) {
-            if (nameToHash == null)
-                nameToHash = new HashMap<>();
-
             nameToHash.put(mn, hash);
             return this;
         }
@@ -170,7 +168,7 @@ public final class ModuleHashes {
          * Builds a {@code ModuleHashes}.
          */
         public ModuleHashes build() {
-            if (nameToHash != null) {
+            if (!nameToHash.isEmpty()) {
                 return new ModuleHashes(algorithm, nameToHash);
             } else {
                 return null;
