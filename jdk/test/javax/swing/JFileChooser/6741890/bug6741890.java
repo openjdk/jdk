@@ -22,11 +22,11 @@
  */
 
 /* @test
-   @bug 6741890
+   @bug 6741890 8171363
    @summary Deadlock in Win32ShellFolderManager2
    @author Pavel Porvatov
    @modules java.desktop/sun.awt
-            java.desktop/sun.awt.shell
+            java.desktop/sun.awt.shell:+open
    @run main bug6741890
 */
 
