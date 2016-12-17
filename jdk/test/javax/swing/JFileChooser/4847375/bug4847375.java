@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @bug 4847375
+ * @bug 4847375 8171363
  * @summary JFileChooser Create New Folder button is disabled incorrectly
  * @author Pavel Porvatov
  * @modules java.desktop/sun.awt
- *          java.desktop/sun.awt.shell
+ *          java.desktop/sun.awt.shell:+open
  */
 
 import sun.awt.OSInfo;
