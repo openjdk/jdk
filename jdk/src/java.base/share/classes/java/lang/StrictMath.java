@@ -227,7 +227,9 @@ public final class StrictMath {
      * @return  the value <i>e</i><sup>{@code a}</sup>,
      *          where <i>e</i> is the base of the natural logarithms.
      */
-    public static native double exp(double a);
+    public static double exp(double a) {
+        return FdLibm.Exp.compute(a);
+    }
 
     /**
      * Returns the natural logarithm (base <i>e</i>) of a {@code double}
