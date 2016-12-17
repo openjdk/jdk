@@ -73,6 +73,7 @@ import javax.tools.StandardJavaFileManager.PathFactory;
 import javax.tools.StandardLocation;
 
 import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
@@ -207,7 +208,13 @@ public class Locations {
                     entries.add(emptyPathDefault);
                 }
             } else {
-                entries.add(getPath(s));
+                try {
+                    entries.add(getPath(s));
+                } catch (IllegalArgumentException e) {
+                    if (warn) {
+                        log.warning(LintCategory.PATH, "invalid.path", s);
+                    }
+                }
             }
         }
         return entries;
