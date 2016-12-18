@@ -51,10 +51,7 @@
 static bool verify_module_name(char *module_name) {
   if (module_name == NULL) return false;
   int len = (int)strlen(module_name);
-  return (len > 0 && len <= Symbol::max_length() &&
-    UTF8::is_legal_utf8((unsigned char *)module_name, len, false) &&
-    ClassFileParser::verify_unqualified_name(module_name, len,
-    ClassFileParser::LegalModule));
+  return (len > 0 && len <= Symbol::max_length());
 }
 
 bool Modules::verify_package_name(char *package_name) {

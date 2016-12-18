@@ -3650,7 +3650,7 @@ int java_lang_StackTraceElement::moduleName_offset;
 int java_lang_StackTraceElement::moduleVersion_offset;
 int java_lang_StackTraceElement::classLoaderName_offset;
 int java_lang_StackTraceElement::declaringClass_offset;
-int java_lang_StackTraceElement::classOrLoaderModuleClassName_offset;
+int java_lang_StackTraceElement::declaringClassObject_offset;
 int java_lang_StackFrameInfo::_declaringClass_offset;
 int java_lang_StackFrameInfo::_memberName_offset;
 int java_lang_StackFrameInfo::_bci_offset;
@@ -3700,7 +3700,7 @@ void java_lang_StackTraceElement::set_classLoaderName(oop element, oop value) {
 }
 
 void java_lang_StackTraceElement::set_declaringClassObject(oop element, oop value) {
-  element->obj_field_put(classOrLoaderModuleClassName_offset, value);
+  element->obj_field_put(declaringClassObject_offset, value);
 }
 
 // Support for java_lang_StackFrameInfo
@@ -3818,7 +3818,7 @@ void JavaClasses::compute_hard_coded_offsets() {
   java_lang_System::static_security_offset = java_lang_System::hc_static_security_offset * x;
 
   // java_lang_StackTraceElement
-  java_lang_StackTraceElement::classOrLoaderModuleClassName_offset= java_lang_StackTraceElement::hc_classOrLoaderModuleClassName_offset* x + header;
+  java_lang_StackTraceElement::declaringClassObject_offset = java_lang_StackTraceElement::hc_declaringClassObject_offset * x + header;
   java_lang_StackTraceElement::classLoaderName_offset = java_lang_StackTraceElement::hc_classLoaderName_offset * x + header;
   java_lang_StackTraceElement::moduleName_offset = java_lang_StackTraceElement::hc_moduleName_offset * x + header;
   java_lang_StackTraceElement::moduleVersion_offset = java_lang_StackTraceElement::hc_moduleVersion_offset * x + header;
@@ -4021,7 +4021,7 @@ void JavaClasses::check_offsets() {
 
   // java.lang.StackTraceElement
 
-  CHECK_OFFSET("java/lang/StackTraceElement", java_lang_StackTraceElement, classOrLoaderModuleClassName, "Ljava/lang/Object;");
+  CHECK_OFFSET("java/lang/StackTraceElement", java_lang_StackTraceElement, declaringClassObject, "Ljava/lang/Class;");
   CHECK_OFFSET("java/lang/StackTraceElement", java_lang_StackTraceElement, classLoaderName, "Ljava/lang/String;");
   CHECK_OFFSET("java/lang/StackTraceElement", java_lang_StackTraceElement, moduleName,      "Ljava/lang/String;");
   CHECK_OFFSET("java/lang/StackTraceElement", java_lang_StackTraceElement, moduleVersion,   "Ljava/lang/String;");

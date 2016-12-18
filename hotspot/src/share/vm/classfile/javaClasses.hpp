@@ -1297,7 +1297,7 @@ class java_lang_System : AllStatic {
 class java_lang_StackTraceElement: AllStatic {
  private:
   enum {
-    hc_classOrLoaderModuleClassName_offset = 0,
+    hc_declaringClassObject_offset    = 0,
     hc_classLoaderName_offset      = 1,
     hc_moduleName_offset           = 2,
     hc_moduleVersion_offset        = 3,
@@ -1307,7 +1307,7 @@ class java_lang_StackTraceElement: AllStatic {
     hc_lineNumber_offset           = 7
   };
 
-  static int classOrLoaderModuleClassName_offset;
+  static int declaringClassObject_offset;
   static int classLoaderName_offset;
   static int moduleName_offset;
   static int moduleVersion_offset;
