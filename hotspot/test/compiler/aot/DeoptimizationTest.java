@@ -33,7 +33,9 @@
  * @run main compiler.aot.AotCompiler -libname libDeoptimizationTest.so
  *     -class compiler.aot.DeoptimizationTest
  *     -compile compiler.aot.DeoptimizationTest.testMethod()D
+ *     -extraopt -XX:-UseCompressedOops
  * @run main/othervm -Xmixed -XX:+UseAOT -XX:+TieredCompilation
+ *     -XX:-UseCompressedOops
  *     -XX:CompileCommand=dontinline,compiler.aot.DeoptimizationTest::*
  *     -XX:AOTLibrary=./libDeoptimizationTest.so -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
