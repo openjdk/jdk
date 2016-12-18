@@ -246,7 +246,6 @@ public final class Layer {
          */
         public Controller addOpens(Module source, String pn, Module target) {
             Objects.requireNonNull(source);
-            Objects.requireNonNull(source);
             Objects.requireNonNull(target);
             ensureInLayer(source);
             Modules.addOpens(source, pn, target);
@@ -541,7 +540,7 @@ public final class Layer {
      * {@link ClassLoader#registerAsParallelCapable parallel-capable} so as to
      * avoid deadlocks during class loading. In addition, the entity creating
      * a new layer with this method should arrange that the class loaders are
-     * ready to load from these module before there are any attempts to load
+     * ready to load from these modules before there are any attempts to load
      * classes or resources.
      *
      * <p> Creating a {@code Layer} can fail for the following reasons: </p>

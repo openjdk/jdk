@@ -159,7 +159,7 @@ public class TIFFImageReadParamTest {
         ImageReader reader = getTIFFReader();
 
         ImageInputStream s = ImageIO.createImageInputStream(new File(FILENAME));
-        reader.setInput(s, false, true);
+        reader.setInput(s, false, false);
 
         int ni = reader.getNumImages(true);
         check(ni == 1, "invalid number of images: " + ni);

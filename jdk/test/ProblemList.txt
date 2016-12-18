@@ -171,7 +171,7 @@ java/net/MulticastSocket/Test.java                              7145658 macosx-a
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 
-java/net/httpclient/TimeoutOrdering.java                        8170940 windows-all
+java/net/httpclient/TimeoutOrdering.java                        8170940 solaris-all,windows-all
 
 ############################################################################
 
@@ -215,11 +215,11 @@ sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-a
 
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
 
-sun/security/krb5/auto/HttpNegotiateServer.java                 8038079 generic-all
-
 sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java         8161232 macosx-all
 
 sun/net/www/protocol/https/HttpsClient/ServerIdentityTest.java  8171043 windows-all
+
+javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
 
 ############################################################################
 
@@ -264,6 +264,9 @@ tools/launcher/FXLauncherTest.java                              8068049 linux-al
 tools/jimage/JImageExtractTest.java                             8169713 generic-all
 tools/jimage/JImageListTest.java                                8169713 generic-all
 tools/jimage/JImageVerifyTest.java                              8169713 generic-all
+
+
+tools/jlink/multireleasejar/JLinkMultiReleaseJarTest.java       8169971 windows-x64
 
 ############################################################################
 

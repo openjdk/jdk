@@ -27,7 +27,7 @@
  * @summary Need to strip leading zeros in TlsPremasterSecret of DHKeyAgreement
  * @library ..
  * @author Pasi Eronen
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm TestLeadingZeroesP11
  * @run main/othervm TestLeadingZeroesP11 sm
  */

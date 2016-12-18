@@ -25,8 +25,9 @@
  * @test
  * @bug 6964768 6964461 6964469 6964487 6964460 6964481 6980021
  * @summary need test program to validate javac resource bundles
- * @modules jdk.jdeps/com.sun.tools.classfile
- *          jdk.compiler/com.sun.tools.javac.code
+ * @modules jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.resources:open
+ *          jdk.jdeps/com.sun.tools.classfile
  */
 
 import java.io.*;

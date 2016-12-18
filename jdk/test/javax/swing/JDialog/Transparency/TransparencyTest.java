@@ -24,10 +24,12 @@
  /*
  @test
  @key headful
- @bug 8062946
+ @bug 8062946 8159906
  @summary Verify Transparency upon iconify/deiconify sequence
  @run main TransparencyTest
  */
+import java.awt.GraphicsEnvironment;
+import java.awt.GraphicsDevice;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.Robot;
@@ -43,7 +45,7 @@ public class TransparencyTest {
     private static final int WIDTH = 250;
     private static final int HEIGHT = 250;
     private static final float OPACITY = 0.60f;
-    private static Point dlgPos;
+    private static volatile Point dlgPos;
 
     public static void createAndShowGUI() {
         frame = new JFrame("JFrame");
@@ -66,6 +68,14 @@ public class TransparencyTest {
     }
 
     public static void main(String[] args) throws Exception {
+
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice gd = ge.getDefaultScreenDevice();
+        GraphicsDevice.WindowTranslucency mode = GraphicsDevice.WindowTranslucency.TRANSLUCENT;
+        boolean translucencyCheck = gd.isWindowTranslucencySupported(mode);
+        if(!translucencyCheck) {
+            return;
+    }
 
         Robot robot = new Robot();
         // create a GUI

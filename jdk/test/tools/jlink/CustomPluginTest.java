@@ -156,7 +156,7 @@ public class CustomPluginTest {
                 .option("--rogue-filter")
                 .option("/foo/")
                 .call()
-                .assertFailure("java.lang.module.ResolutionException");
+                .assertFailure("foo not found");
         }
 
         {

@@ -32,7 +32,9 @@
 #pragma mark --- CoreText Support ---
 
 #define HI_SURROGATE_START 0xD800
+#define HI_SURROGATE_END   0xDBFF
 #define LO_SURROGATE_START 0xDC00
+#define LO_SURROGATE_END   0xDFFF
 
 /*
  *    Transform Unicode characters into glyphs.

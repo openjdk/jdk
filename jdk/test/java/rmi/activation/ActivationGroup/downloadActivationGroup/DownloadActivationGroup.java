@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,8 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary RMID ActivationLibrary
+ *          java.base/sun.nio.ch
+ * @build TestLibrary RMID ActivationLibrary RMIDSelectorProvider
  *     DownloadActivationGroup MyActivationGroupImpl DownloadActivationGroup_Stub
  * @run main/othervm/policy=security.policy/timeout=240 DownloadActivationGroup
  */
@@ -123,7 +124,7 @@ public class DownloadActivationGroup
              * Start rmid.
              */
             RMID.removeLog();
-            rmid = RMID.createRMID();
+            rmid = RMID.createRMIDOnEphemeralPort();
             String execPolicyOption = "-Dsun.rmi.activation.execPolicy=none";
             rmid.addOptions(new String[] { execPolicyOption });
             rmid.start();
