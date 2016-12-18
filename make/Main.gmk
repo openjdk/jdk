@@ -703,6 +703,9 @@ else
         exploded-image-optimize
   endif
 
+  # All modules include the main license files from java.base.
+  $(JMOD_TARGETS): java.base-copy
+
   zip-security: java.base-java java.security.jgss-java java.security.jgss-libs \
       $(filter jdk.crypto%, $(JAVA_TARGETS))
 
@@ -730,6 +733,7 @@ else
 
   jdk-image: jmods zip-source demos samples release-file
   jre-image: jmods release-file
+  symbols-image: $(LIBS_TARGETS) $(LAUNCHER_TARGETS)
 
   profiles: jmods release-file
 
