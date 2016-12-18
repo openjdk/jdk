@@ -107,14 +107,13 @@ public abstract class ArrayData {
 
         @Override
         public ArrayData ensure(final long safeIndex) {
-            if (safeIndex > 0L) {
-                if (safeIndex >= SparseArrayData.MAX_DENSE_LENGTH) {
-                    return new SparseArrayData(this, safeIndex + 1);
-                }
-                //known to fit in int
-                return toRealArrayData((int)safeIndex);
-           }
-           return this;
+            assert safeIndex >= 0L;
+            if (safeIndex >= SparseArrayData.MAX_DENSE_LENGTH) {
+                return new SparseArrayData(this, safeIndex + 1);
+            }
+            //known to fit in int
+            return toRealArrayData((int)safeIndex);
+
         }
 
         @Override
@@ -133,8 +132,8 @@ public abstract class ArrayData {
         }
 
         @Override
-        public void shiftLeft(final int by) {
-            //nop, always empty or we wouldn't be of this class
+        public ArrayData shiftLeft(final int by) {
+            return this; //nop, always empty or we wouldn't be of this class
         }
 
         @Override
@@ -451,13 +450,13 @@ public abstract class ArrayData {
     /**
      * Shift the array data left
      *
-     * TODO: explore start at an index and not at zero, to make these operations
-     * even faster. Offset everything from the index. Costs memory but is probably
-     * worth it
+     * TODO: This is used for Array.prototype.shift() which only shifts by 1,
+     * so we might consider dropping the offset parameter.
      *
      * @param by offset to shift
+     * @return New arraydata (or same)
      */
-    public abstract void shiftLeft(final int by);
+    public abstract ArrayData shiftLeft(final int by);
 
     /**
      * Shift the array right
