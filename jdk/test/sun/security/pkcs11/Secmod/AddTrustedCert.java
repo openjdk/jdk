@@ -27,7 +27,7 @@
  * @summary make sure we can add a trusted cert to the NSS KeyStore module
  * @author Andreas Sterbenz
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm AddTrustedCert
  * @run main/othervm AddTrustedCert sm policy
  */

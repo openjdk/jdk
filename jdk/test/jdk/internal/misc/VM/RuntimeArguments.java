@@ -26,7 +26,6 @@
  * @summary Basic test of VM::getRuntimeArguments
  * @library /lib/testlibrary
  * @modules java.base/jdk.internal.misc
- *          java.compact3
  *          jdk.zipfs
  * @run testng RuntimeArguments
  */
@@ -64,11 +63,11 @@ public class RuntimeArguments {
                       "--add-modules",
                       "jdk.zipfs",
                       "--limit-modules",
-                      "java.compact3"),
+                      "java.logging,java.xml,jdk.charsets,jdk.zipfs"),
               // expected runtime arguments
               List.of("--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                       "--add-modules=jdk.zipfs",
-                      "--limit-modules=java.compact3"),
+                      "--limit-modules=java.logging,java.xml,jdk.charsets,jdk.zipfs"),
             },
         };
     };

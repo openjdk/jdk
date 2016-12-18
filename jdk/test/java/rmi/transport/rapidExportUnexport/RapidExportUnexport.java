@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import java.rmi.Remote;
 import java.rmi.server.UnicastRemoteObject;
 
 public class RapidExportUnexport {
-    private static final int PORT = TestLibrary.getUnusedRandomPort();
     private static final int REPS = 100;
     private static final long TIMEOUT = 60000;
 
@@ -55,7 +54,7 @@ public class RapidExportUnexport {
         long start = System.currentTimeMillis();
         for (int i = 0; i < REPS; i++) {
             System.err.println(i);
-            UnicastRemoteObject.exportObject(impl, PORT);
+            UnicastRemoteObject.exportObject(impl, 0);
             UnicastRemoteObject.unexportObject(impl, true);
             Thread.sleep(1);    // work around BindException (bug?)
         }

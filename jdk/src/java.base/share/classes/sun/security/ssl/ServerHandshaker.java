@@ -34,6 +34,7 @@ import java.security.cert.*;
 import java.security.interfaces.*;
 import java.security.spec.ECParameterSpec;
 import java.math.BigInteger;
+import java.util.function.BiFunction;
 
 import javax.crypto.SecretKey;
 import javax.net.ssl.*;
@@ -532,31 +533,39 @@ final class ServerHandshaker extends Handshaker {
         ALPNExtension clientHelloALPN = (ALPNExtension)
             mesg.extensions.get(ExtensionType.EXT_ALPN);
 
-        if ((clientHelloALPN != null) && (localApl.length > 0)) {
+        // Use the application protocol callback when provided.
+        // Otherwise use the local list of application protocols.
+        boolean hasAPCallback =
+            ((engine != null && appProtocolSelectorSSLEngine != null) ||
+                (conn != null && appProtocolSelectorSSLSocket != null));
 
-            // Intersect the requested and the locally supported,
-            // and save for later.
-            String negotiatedValue = null;
-            List<String> protocols = clientHelloALPN.getPeerAPs();
+        if (!hasAPCallback) {
+            if ((clientHelloALPN != null) && (localApl.length > 0)) {
 
-            // Use server preference order
-            for (String ap : localApl) {
-                if (protocols.contains(ap)) {
-                    negotiatedValue = ap;
-                    break;
+                // Intersect the requested and the locally supported,
+                // and save for later.
+                String negotiatedValue = null;
+                List<String> protocols = clientHelloALPN.getPeerAPs();
+
+                // Use server preference order
+                for (String ap : localApl) {
+                    if (protocols.contains(ap)) {
+                        negotiatedValue = ap;
+                        break;
+                    }
                 }
-            }
 
-            if (negotiatedValue == null) {
-                fatalSE(Alerts.alert_no_application_protocol,
-                    new SSLHandshakeException(
-                        "No matching ALPN values"));
-            }
-            applicationProtocol = negotiatedValue;
+                if (negotiatedValue == null) {
+                    fatalSE(Alerts.alert_no_application_protocol,
+                        new SSLHandshakeException(
+                            "No matching ALPN values"));
+                }
+                applicationProtocol = negotiatedValue;
 
-        } else {
-            applicationProtocol = "";
-        }
+            } else {
+                applicationProtocol = "";
+            }
+        }  // Otherwise, applicationProtocol will be set by the callback.
 
         session = null; // forget about the current session
         //
@@ -892,8 +901,36 @@ final class ServerHandshaker extends Handshaker {
         }
 
         // Prepare the ALPN response
-        if (applicationProtocol != null && !applicationProtocol.isEmpty()) {
-            m1.extensions.add(new ALPNExtension(applicationProtocol));
+        if (clientHelloALPN != null) {
+            List<String> peerAPs = clientHelloALPN.getPeerAPs();
+
+            // check for a callback function
+            if (hasAPCallback) {
+                if (conn != null) {
+                    applicationProtocol =
+                        appProtocolSelectorSSLSocket.apply(conn, peerAPs);
+                } else {
+                    applicationProtocol =
+                        appProtocolSelectorSSLEngine.apply(engine, peerAPs);
+                }
+            }
+
+            // check for no-match and that the selected name was also proposed
+            // by the TLS peer
+            if (applicationProtocol == null ||
+                   (!applicationProtocol.isEmpty() &&
+                        !peerAPs.contains(applicationProtocol))) {
+
+                fatalSE(Alerts.alert_no_application_protocol,
+                    new SSLHandshakeException(
+                        "No matching ALPN values"));
+
+            } else if (!applicationProtocol.isEmpty()) {
+                m1.extensions.add(new ALPNExtension(applicationProtocol));
+            }
+        } else {
+            // Nothing was negotiated, returned at end of the handshake
+            applicationProtocol = "";
         }
 
         if (debug != null && Debug.isOn("handshake")) {

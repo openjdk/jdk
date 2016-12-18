@@ -507,13 +507,17 @@ else ifeq ($(OPENJDK_TARGET_OS),macosx)
 	if [ -n "`$(XATTR) -l '$@'`" ]; then $(XATTR) -c '$@'; fi
   endef
 else
-  # Running mkdir and cp in the same shell speeds up copy intensive tasks in Cygwin
-  # significantly.
   define install-file
 	$(call MakeDir, $(@D))
 	$(CP) -fP '$<' '$@'
   endef
 endif
+
+# Variant of install file that does not preserve symlinks
+define install-file-nolink
+	$(call MakeDir, $(@D))
+	$(CP) -f '$<' '$@'
+endef
 
 ################################################################################
 # Take two paths and return the path of the last common directory.

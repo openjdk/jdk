@@ -46,5 +46,8 @@ module jdk.javadoc {
 
     provides javax.tools.DocumentationTool
         with jdk.javadoc.internal.api.JavadocTool;
+
+    provides javax.tools.Tool
+        with jdk.javadoc.internal.api.JavadocTool;
 }
 

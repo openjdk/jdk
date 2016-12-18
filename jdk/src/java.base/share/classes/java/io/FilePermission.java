@@ -206,12 +206,6 @@ public final class FilePermission extends Permission implements Serializable {
             DefaultFileSystemProvider.create()
                     .getFileSystem(URI.create("file:///"));
 
-    /**
-     * Creates FilePermission objects with special internals.
-     * See {@link FilePermCompat#newPermPlusAltPath(Permission)} and
-     * {@link FilePermCompat#newPermUsingAltPath(Permission)}.
-     */
-
     private static final Path here = builtInFS.getPath(
             GetPropertyAction.privilegedGetProperty("user.dir"));
 
@@ -261,9 +255,14 @@ public final class FilePermission extends Permission implements Serializable {
 
     static {
         SharedSecrets.setJavaIOFilePermissionAccess(
+            /**
+             * Creates FilePermission objects with special internals.
+             * See {@link FilePermCompat#newPermPlusAltPath(Permission)} and
+             * {@link FilePermCompat#newPermUsingAltPath(Permission)}.
+             */
             new JavaIOFilePermissionAccess() {
                 public FilePermission newPermPlusAltPath(FilePermission input) {
-                    if (input.npath2 == null && !input.allFiles) {
+                    if (!input.invalid && input.npath2 == null && !input.allFiles) {
                         Path npath2 = altPath(input.npath);
                         if (npath2 != null) {
                             // Please note the name of the new permission is
@@ -281,7 +280,7 @@ public final class FilePermission extends Permission implements Serializable {
                     return input;
                 }
                 public FilePermission newPermUsingAltPath(FilePermission input) {
-                    if (!input.allFiles) {
+                    if (!input.invalid && !input.allFiles) {
                         Path npath2 = altPath(input.npath);
                         if (npath2 != null) {
                             // New name, see above.
@@ -340,6 +339,16 @@ public final class FilePermission extends Permission implements Serializable {
                 // Windows. Some JDK codes generate such illegal names.
                 npath = builtInFS.getPath(new File(name).getPath())
                         .normalize();
+                // lastName should always be non-null now
+                Path lastName = npath.getFileName();
+                if (lastName != null && lastName.toString().equals("-")) {
+                    directory = true;
+                    recursive = !rememberStar;
+                    npath = npath.getParent();
+                }
+                if (npath == null) {
+                    npath = builtInFS.getPath("");
+                }
                 invalid = false;
             } catch (InvalidPathException ipe) {
                 // Still invalid. For compatibility reason, accept it
@@ -348,16 +357,6 @@ public final class FilePermission extends Permission implements Serializable {
                 invalid = true;
             }
 
-            // lastName should always be non-null now
-            Path lastName = npath.getFileName();
-            if (lastName != null && lastName.toString().equals("-")) {
-                directory = true;
-                recursive = !rememberStar;
-                npath = npath.getParent();
-            }
-            if (npath == null) {
-                npath = builtInFS.getPath("");
-            }
         } else {
             if ((cpath = getName()) == null)
                 throw new NullPointerException("name can't be null");
@@ -452,6 +451,8 @@ public final class FilePermission extends Permission implements Serializable {
      * is converted to a {@link java.nio.file.Path} object named {@code npath}
      * after {@link Path#normalize() normalization}. No canonicalization is
      * performed which means the underlying file system is not accessed.
+     * If an {@link InvalidPathException} is thrown during the conversion,
+     * this {@code FilePermission} will be labeled as invalid.
      * <P>
      * In either case, the "*" or "-" character at the end of a wildcard
      * {@code path} is removed before canonicalization or normalization.
@@ -532,7 +533,12 @@ public final class FilePermission extends Permission implements Serializable {
      * {@code  simple_npath.relativize(wildcard_npath)} is exactly "..",
      * a simple {@code npath} is recursively inside a wildcard {@code npath}
      * if and only if {@code simple_npath.relativize(wildcard_npath)}
-     * is a series of one or more "..".
+     * is a series of one or more "..". An invalid {@code FilePermission} does
+     * not imply any object except for itself. An invalid {@code FilePermission}
+     * is not implied by any object except for itself or a {@code FilePermission}
+     * on {@literal "<<ALL FILES>>"} whose actions is a superset of this
+     * invalid {@code FilePermission}. Even if two {@code FilePermission}
+     * are created with the same invalid path, one does not imply the other.
      *
      * @param p the permission to check against.
      *
@@ -566,11 +572,11 @@ public final class FilePermission extends Permission implements Serializable {
             if (this == that) {
                 return true;
             }
-            if (this.invalid || that.invalid) {
-                return false;
-            }
             if (allFiles) {
                 return true;
+            }
+            if (this.invalid || that.invalid) {
+                return false;
             }
             if (that.allFiles) {
                 return false;
@@ -699,6 +705,10 @@ public final class FilePermission extends Permission implements Serializable {
      * (if {@code jdk.io.permissionsUseCanonicalPath} is {@code true}) or
      * {@code npath} (if {@code jdk.io.permissionsUseCanonicalPath}
      * is {@code false}) are equal. Or they are both {@literal "<<ALL FILES>>"}.
+     * <p>
+     * When {@code jdk.io.permissionsUseCanonicalPath} is {@code false}, an
+     * invalid {@code FilePermission} does not equal to any object except
+     * for itself, even if they are created using the same invalid path.
      *
      * @param obj the object we are testing for equality with this object.
      * @return <code>true</code> if obj is a FilePermission, and has the same

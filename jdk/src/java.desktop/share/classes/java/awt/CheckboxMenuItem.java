@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.peer.CheckboxMenuItemPeer;
-import java.awt.event.*;
-import java.util.EventListener;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-import javax.accessibility.*;
-import sun.awt.AWTAccessor;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.EventListener;
 
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleAction;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleValue;
+
+import sun.awt.AWTAccessor;
 
 /**
  * This class represents a check box that can be included in a menu.
@@ -43,7 +50,8 @@ import sun.awt.AWTAccessor;
  * of {@code CheckBoxMenuItem}:
  * <p>
  * <img src="doc-files/MenuBar-1.gif"
- * alt="Menu labeled Examples, containing items Basic, Simple, Check, and More Examples. The Check item is a CheckBoxMenuItem instance, in the off state."
+ * alt="Menu labeled Examples, containing items Basic, Simple, Check, and More
+ * Examples. The Check item is a CheckBoxMenuItem instance, in the off state."
  * style="float:center; margin: 7px 10px;">
  * <p>
  * The item labeled {@code Check} shows a check box menu item
@@ -84,9 +92,9 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
     * @see #getState()
     * @see #setState(boolean)
     */
-    boolean state = false;
+    private volatile boolean state;
 
-    transient ItemListener itemListener;
+    private transient volatile ItemListener itemListener;
 
     private static final String base = "chkmenuitem";
     private static int nameCounter = 0;

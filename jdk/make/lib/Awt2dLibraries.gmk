@@ -418,6 +418,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBLCMS, \
     DISABLED_WARNINGS_gcc := format-nonliteral type-limits misleading-indentation, \
     DISABLED_WARNINGS_clang := tautological-compare, \
     DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
+    DISABLED_WARNINGS_microsoft := 4819, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/liblcms/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -681,7 +682,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     DISABLED_WARNINGS_CXX_solstudio := \
         truncwarn wvarhidenmem wvarhidemem wbadlkginit identexpected \
         hidevf w_novirtualdescr arrowrtn2, \
-    DISABLED_WARNINGS_microsoft := 4267 4244 4018 4090 4996 4146 4334, \
+    DISABLED_WARNINGS_microsoft := 4267 4244 4018 4090 4996 4146 4334 4819, \
     MAPFILE := $(BUILD_LIBFONTMANAGER_MAPFILE), \
     LDFLAGS := $(subst -Wl$(COMMA)-z$(COMMA)defs,,$(LDFLAGS_JDKLIB)) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

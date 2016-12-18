@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,10 @@ extern const UINT SYSCOMMAND_IMM;
 #define WM_MOUSEWHEEL                   0x020A
 #endif //WM_MOUSEWHEEL
 
+#ifndef WM_MOUSEHWHEEL
+#define WM_MOUSEHWHEEL                  0x020E
+#endif //WM_MOUSEHWHEEL
+
 #ifndef WHEEL_DELTA
 #define WHEEL_DELTA                     120
 #endif //WHEEL_DELTA
@@ -54,12 +58,16 @@ extern const UINT SYSCOMMAND_IMM;
 #endif //WHEEL_PAGESCROLL
 
 #ifndef SPI_GETWHEELSCROLLLINES
-#define SPI_GETWHEELSCROLLLINES         104
+#define SPI_GETWHEELSCROLLLINES         0x0068
 #endif //SPI_GETWHEELSCROLLLINES
+
+#ifndef SPI_GETWHEELSCROLLCHARS
+#define SPI_GETWHEELSCROLLCHARS         0x006C
+#endif //SPI_GETWHEELSCROLLCHARS
 
 #ifndef SM_MOUSEWHEELPRESENT
 #define SM_MOUSEWHEELPRESENT            75
-#endif //SPI_GETWHEELSCROLLLINES
+#endif //SM_MOUSEWHEELPRESENT
 
 #ifndef COLOR_HOTLIGHT
 #define COLOR_HOTLIGHT                  26
