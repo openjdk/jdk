@@ -25,7 +25,8 @@
 
 # All valid JVM features, regardless of platform
 VALID_JVM_FEATURES="compiler1 compiler2 zero shark minimal dtrace jvmti jvmci \
-    graal fprof vm-structs jni-check services management all-gcs nmt cds static-build aot"
+    graal fprof vm-structs jni-check services management all-gcs nmt cds \
+    static-build link-time-opt aot"
 
 # All valid JVM variants
 VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
@@ -68,6 +69,8 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_VARIANTS],
 [
   AC_ARG_WITH([jvm-variants], [AS_HELP_STRING([--with-jvm-variants],
       [JVM variants (separated by commas) to build (server,client,minimal,core,zero,zeroshark,custom) @<:@server@:>@])])
+
+  SETUP_HOTSPOT_TARGET_CPU_PORT
 
   if test "x$with_jvm_variants" = x; then
     with_jvm_variants="server"
@@ -253,6 +256,19 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     AC_MSG_RESULT([$JVM_FEATURES])
   fi
 
+  # Override hotspot cpu definitions for ARM platforms
+  if test "x$OPENJDK_TARGET_CPU" = xarm; then
+    HOTSPOT_TARGET_CPU=arm_32
+    HOTSPOT_TARGET_CPU_DEFINE="ARM32"
+    JVM_LDFLAGS="$JVM_LDFLAGS -fsigned-char"
+    JVM_CFLAGS="$JVM_CFLAGS -DARM -fsigned-char"
+  elif test "x$OPENJDK_TARGET_CPU" = xaarch64 && test "x$HOTSPOT_TARGET_CPU_PORT" = xarm64; then
+    HOTSPOT_TARGET_CPU=arm_64
+    HOTSPOT_TARGET_CPU_ARCH=arm
+    JVM_LDFLAGS="$JVM_LDFLAGS -fsigned-char"
+    JVM_CFLAGS="$JVM_CFLAGS -DARM -fsigned-char"
+  fi
+
   # Verify that dependencies are met for explicitly set features.
   if HOTSPOT_CHECK_JVM_FEATURE(jvmti) && ! HOTSPOT_CHECK_JVM_FEATURE(services); then
     AC_MSG_ERROR([Specified JVM feature 'jvmti' requires feature 'services'])
@@ -351,6 +367,13 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     JVM_FEATURES_aot=""
   fi
 
+  if test "x$OPENJDK_TARGET_CPU" = xarm ; then
+    # Default to use link time optimizations on minimal on arm
+    JVM_FEATURES_link_time_opt="link-time-opt"
+  else
+    JVM_FEATURES_link_time_opt=""
+  fi
+
   # All variants but minimal (and custom) get these features
   NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti fprof vm-structs jni-check services management all-gcs nmt cds"
 
@@ -358,7 +381,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
   JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci $JVM_FEATURES_aot $JVM_FEATURES_graal"
   JVM_FEATURES_client="compiler1 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci"
   JVM_FEATURES_core="$NON_MINIMAL_FEATURES $JVM_FEATURES"
-  JVM_FEATURES_minimal="compiler1 minimal $JVM_FEATURES"
+  JVM_FEATURES_minimal="compiler1 minimal $JVM_FEATURES $JVM_FEATURES_link_time_opt"
   JVM_FEATURES_zero="zero $NON_MINIMAL_FEATURES $JVM_FEATURES"
   JVM_FEATURES_zeroshark="zero shark $NON_MINIMAL_FEATURES $JVM_FEATURES"
   JVM_FEATURES_custom="$JVM_FEATURES"
@@ -406,6 +429,31 @@ AC_DEFUN_ONCE([HOTSPOT_VALIDATE_JVM_FEATURES],
     fi
   done
 ])
+
+################################################################################
+#
+# Specify which sources will be used to build the 64-bit ARM port
+#
+# --with-cpu-port=arm64   will use hotspot/src/cpu/arm
+# --with-cpu-port=aarch64 will use hotspot/src/cpu/aarch64
+#
+AC_DEFUN([SETUP_HOTSPOT_TARGET_CPU_PORT],
+[
+  AC_ARG_WITH(cpu-port, [AS_HELP_STRING([--with-cpu-port],
+      [specify sources to use for Hotspot 64-bit ARM port (arm64,aarch64) @<:@aarch64@:>@ ])])
+
+  if test "x$with_cpu_port" != x; then
+    if test "x$OPENJDK_TARGET_CPU" != xaarch64; then
+      AC_MSG_ERROR([--with-cpu-port only available on aarch64])
+    fi
+    if test "x$with_cpu_port" != xarm64 && \
+        test "x$with_cpu_port" != xaarch64; then
+      AC_MSG_ERROR([--with-cpu-port must specify arm64 or aarch64])
+    fi
+    HOTSPOT_TARGET_CPU_PORT="$with_cpu_port"
+  fi
+])
+
 
 ################################################################################
 # Check if gtest should be built
