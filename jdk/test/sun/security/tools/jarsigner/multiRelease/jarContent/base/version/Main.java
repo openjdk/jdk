@@ -21,16 +21,14 @@
  * questions.
  */
 
-package jdk.internal.module;
+package version;
 
-/*
- * Test --patch-module java.base=jdk/modules/java.base to override
- * java.base with an exploded image
- */
-public final class SystemModules {
-    public static final String[] MODULE_NAMES = new String[0];
+import java.security.Permission;
 
-    public static boolean hasSplitPackages() {
-        return true;
+public class Main {
+
+    public static void main(String[] args) {
+        Version v = new Version();
+        System.out.println("I am running on version " + v.getVersion());
     }
 }

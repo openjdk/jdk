@@ -57,6 +57,14 @@ public final class SystemModules {
     public static int PACKAGES_IN_BOOT_LAYER = 1024;
 
     /**
+     * @return {@code false} if there are no split packages in the run-time
+     *         image, {@code true} if there are or if it's not been checked.
+     */
+    public static boolean hasSplitPackages() {
+        return true;
+    }
+
+    /**
      * Returns a non-empty array of ModuleDescriptors in the run-time image.
      *
      * When running an exploded image it returns an empty array.

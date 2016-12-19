@@ -175,6 +175,12 @@ public final class ModulePatcher {
         return map.isEmpty();
     }
 
+    /*
+     * Returns the names of the patched modules.
+     */
+    Set<String> patchedModules() {
+        return map.keySet();
+    }
 
     /**
      * A ModuleReader that reads resources from a patched module.

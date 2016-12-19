@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,12 @@
  * questions.
  */
 
-package com.foo;
+package version;
 
-import java.util.ResourceBundle;
-import java.util.spi.ResourceBundleControlProvider;
+public class Version {
 
-public class UserControlProvider implements ResourceBundleControlProvider {
-    static final ResourceBundle.Control XMLCONTROL = new UserXMLControl();
-
-    public ResourceBundle.Control getControl(String baseName) {
-        System.out.println(getClass().getName()+".getControl called for " + baseName);
-
-        // Throws a NPE if baseName is null.
-        if (baseName.startsWith("com.foo.Xml")) {
-            System.out.println("\treturns " + XMLCONTROL);
-            return XMLCONTROL;
-        }
-        System.out.println("\treturns null");
-        return null;
+    public int getVersion() {
+        return 10;
     }
 }
+

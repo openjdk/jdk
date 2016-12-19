@@ -602,12 +602,8 @@ public final class Layer {
 
         checkGetClassLoaderPermission();
 
-        // For now, no two modules in the boot Layer may contain the same
-        // package so we use a simple check for the boot Layer to keep
-        // the overhead at startup to a minimum
-        if (boot() == null) {
-            checkBootModulesForDuplicatePkgs(cf);
-        } else {
+        // The boot layer is checked during module system initialization
+        if (boot() != null) {
             checkForDuplicatePkgs(cf, clf);
         }
 
@@ -654,27 +650,6 @@ public final class Layer {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
-    }
-
-    /**
-     * Checks a configuration for the boot Layer to ensure that no two modules
-     * have the same package.
-     *
-     * @throws LayerInstantiationException
-     */
-    private static void checkBootModulesForDuplicatePkgs(Configuration cf) {
-        Map<String, String> packageToModule = new HashMap<>();
-        for (ResolvedModule resolvedModule : cf.modules()) {
-            ModuleDescriptor descriptor = resolvedModule.reference().descriptor();
-            String name = descriptor.name();
-            for (String p : descriptor.packages()) {
-                String other = packageToModule.putIfAbsent(p, name);
-                if (other != null) {
-                    throw fail("Package " + p + " in both module "
-                               + name + " and module " + other);
-                }
-            }
-        }
     }
 
     /**
