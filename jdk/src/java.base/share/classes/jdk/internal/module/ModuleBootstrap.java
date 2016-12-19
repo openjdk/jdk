@@ -308,6 +308,23 @@ public final class ModuleBootstrap {
             }
         }
 
+        // if needed check that there are no split packages in the set of
+        // resolved modules for the boot layer
+        if (SystemModules.hasSplitPackages() || needPostResolutionChecks) {
+                Map<String, String> packageToModule = new HashMap<>();
+                for (ResolvedModule resolvedModule : cf.modules()) {
+                    ModuleDescriptor descriptor =
+                        resolvedModule.reference().descriptor();
+                    String name = descriptor.name();
+                    for (String p : descriptor.packages()) {
+                        String other = packageToModule.putIfAbsent(p, name);
+                        if (other != null) {
+                            fail("Package " + p + " in both module "
+                                 + name + " and module " + other);
+                        }
+                    }
+                }
+            }
 
         long t4 = System.nanoTime();
 
