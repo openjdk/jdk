@@ -1160,7 +1160,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
     $2JDKLIB_LIBS=""
   else
     $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} \
-        -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)"
+        -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base"
 
     if test "x$1" = "xTARGET"; then
       # On some platforms (mac) the linker warns about non existing -L dirs.
@@ -1170,15 +1170,15 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
       if HOTSPOT_CHECK_JVM_VARIANT(server) || HOTSPOT_CHECK_JVM_VARIANT(client) \
           || HOTSPOT_CHECK_JVM_VARIANT(minimal); then
         $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} \
-            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/$JVM_VARIANT_MAIN"
+            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/$JVM_VARIANT_MAIN"
       else
         $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} \
-            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/server"
+            -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/server"
       fi
     elif test "x$1" = "xBUILD"; then
       # When building a buildjdk, it's always only the server variant
       $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} \
-          -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/server"
+          -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/server"
     fi
 
     $2JDKLIB_LIBS="-ljava -ljvm"

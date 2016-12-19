@@ -47,6 +47,7 @@ define create-info-file
   $(if $(JDK_ARCH_ABI_PROP_NAME), \
     $(call info-file-item, "SUN_ARCH_ABI", "$(JDK_ARCH_ABI_PROP_NAME)"))
   $(call info-file-item, "SOURCE", "$(strip $(SOURCE_REVISION))")
+  $(call info-file-item, "IMPLEMENTOR", "$(COMPANY_NAME)")
 endef
 
 # Param 1 - The file containing the MODULES list
