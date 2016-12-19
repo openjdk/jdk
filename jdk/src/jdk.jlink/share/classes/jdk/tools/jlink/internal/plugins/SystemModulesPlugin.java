@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -342,7 +343,8 @@ public final class SystemModulesPlugin implements Plugin {
          *
          * static Map<String, ModuleDescriptor> map = new HashMap<>();
          */
-        private void clinit(int numModules, int numPackages) {
+        private void clinit(int numModules, int numPackages,
+                            boolean hasSplitPackages) {
             cw.visit(Opcodes.V1_8, ACC_PUBLIC+ACC_FINAL+ACC_SUPER, CLASSNAME,
                      null, "java/lang/Object", null);
 
@@ -379,6 +381,17 @@ public final class SystemModulesPlugin implements Plugin {
             clinit.visitInsn(RETURN);
             clinit.visitMaxs(0, 0);
             clinit.visitEnd();
+
+            // public static boolean hasSplitPackages();
+            MethodVisitor split =
+                cw.visitMethod(ACC_PUBLIC+ACC_STATIC, "hasSplitPackages",
+                               "()Z", null, null);
+            split.visitCode();
+            split.visitInsn(hasSplitPackages ? ICONST_1 : ICONST_0);
+            split.visitInsn(IRETURN);
+            split.visitMaxs(0, 0);
+            split.visitEnd();
+
         }
 
         /*
@@ -416,12 +429,16 @@ public final class SystemModulesPlugin implements Plugin {
          */
         public ClassWriter getClassWriter() {
             int numModules = moduleInfos.size();
-            int numPackages = 0;
+            Set<String> allPackages = new HashSet<>();
+            int packageCount = 0;
             for (ModuleInfo minfo : moduleInfos) {
-                numPackages += minfo.packages.size();
+                allPackages.addAll(minfo.packages);
+                packageCount += minfo.packages.size();
             }
 
-            clinit(numModules, numPackages);
+            int numPackages = allPackages.size();
+            boolean hasSplitPackages = (numPackages < packageCount);
+            clinit(numModules, numPackages, hasSplitPackages);
 
             // generate SystemModules::descriptors
             genDescriptorsMethod();
