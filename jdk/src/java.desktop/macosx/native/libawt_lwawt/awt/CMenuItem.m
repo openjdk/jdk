@@ -115,19 +115,18 @@
             if (keyWindow != nil) {
                 return;
             }
-        }
-        else {
-            static JNF_CLASS_CACHE(jc_CMenuItem, "sun/lwawt/macosx/CMenuItem");
-            static JNF_MEMBER_CACHE(jm_handleAction, jc_CMenuItem, "handleAction", "(JI)V"); // AWT_THREADING Safe (event)
-            
-            NSUInteger modifiers = [currEvent modifierFlags];
-            jint javaModifiers = NsKeyModifiersToJavaModifiers(modifiers, NO);
-            
-            JNFCallVoidMethod(env, fPeer, jm_handleAction, UTC(currEvent), javaModifiers); // AWT_THREADING Safe (event)
-        }
+		}
+		
+        static JNF_CLASS_CACHE(jc_CMenuItem, "sun/lwawt/macosx/CMenuItem");
+        static JNF_MEMBER_CACHE(jm_handleAction, jc_CMenuItem, "handleAction", "(JI)V"); // AWT_THREADING Safe (event)
+
+        NSUInteger modifiers = [currEvent modifierFlags];
+        jint javaModifiers = NsKeyModifiersToJavaModifiers(modifiers, NO);
+
+        JNFCallVoidMethod(env, fPeer, jm_handleAction, UTC(currEvent), javaModifiers); // AWT_THREADING Safe (event)
     }
     JNF_COCOA_EXIT(env);
-    
+	
 }
 
 - (void) setJavaLabel:(NSString *)theLabel shortcut:(NSString *)theKeyEquivalent modifierMask:(jint)modifiers {

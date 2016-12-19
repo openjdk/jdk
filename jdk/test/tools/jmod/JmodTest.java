@@ -470,9 +470,22 @@ public class JmodTest {
     public void testHelp() {
         jmod("--help")
             .assertSuccess()
-            .resultChecker(r ->
-                assertTrue(r.output.startsWith("Usage: jmod"), "Help not printed")
-            );
+            .resultChecker(r -> {
+                assertTrue(r.output.startsWith("Usage: jmod"), "Help not printed");
+                assertFalse(r.output.contains("--do-not-resolve-by-default"));
+                assertFalse(r.output.contains("--warn-if-resolved"));
+            });
+    }
+
+    @Test
+    public void testHelpExtra() {
+        jmod("--help-extra")
+            .assertSuccess()
+            .resultChecker(r -> {
+                assertTrue(r.output.startsWith("Usage: jmod"), "Extra help not printed");
+                assertContains(r.output, "--do-not-resolve-by-default");
+                assertContains(r.output, "--warn-if-resolved");
+            });
     }
 
     @Test

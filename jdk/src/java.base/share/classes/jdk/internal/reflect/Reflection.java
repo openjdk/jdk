@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.VM;
 import sun.security.action.GetPropertyAction;
 
@@ -218,8 +219,16 @@ public class Reflection {
         if (c.isPrimitive())
             return true;
 
-        // check that memberModule exports the package to currentModule
-        return memberModule.isExported(c.getPackageName(), currentModule);
+        String pkg = c.getPackageName();
+        boolean allowed = memberModule.isExported(pkg, currentModule);
+        if (allowed && memberModule.isNamed() && printStackTraceWhenAccessSucceeds()) {
+            if (!SharedSecrets.getJavaLangReflectModuleAccess()
+                    .isStaticallyExported(memberModule, pkg, currentModule)) {
+                String msg = currentModule + " allowed access to member of " + memberClass;
+                new Exception(msg).printStackTrace(System.err);
+            }
+        }
+        return allowed;
     }
 
     /**
@@ -348,23 +357,41 @@ public class Reflection {
     }
 
 
-    // true to print a stack trace when IAE is thrown
+    // true to print a stack trace when access fails
     private static volatile boolean printStackWhenAccessFails;
 
-    // true if printStackWhenAccessFails has been initialized
-    private static volatile boolean printStackWhenAccessFailsSet;
+    // true to print a stack trace when access succeeds
+    private static volatile boolean printStackWhenAccessSucceeds;
 
-    private static void printStackTraceIfNeeded(Throwable e) {
-        if (!printStackWhenAccessFailsSet && VM.initLevel() >= 1) {
+    // true if printStack* values are initialized
+    private static volatile boolean printStackPropertiesSet;
+
+    private static void ensurePrintStackPropertiesSet() {
+        if (!printStackPropertiesSet && VM.initLevel() >= 1) {
             String s = GetPropertyAction.privilegedGetProperty(
                     "sun.reflect.debugModuleAccessChecks");
-            printStackWhenAccessFails =
-                    (s != null && !s.equalsIgnoreCase("false"));
-            printStackWhenAccessFailsSet = true;
+            if (s != null) {
+                printStackWhenAccessFails = !s.equalsIgnoreCase("false");
+                printStackWhenAccessSucceeds = s.equalsIgnoreCase("access");
+            }
+            printStackPropertiesSet = true;
         }
-        if (printStackWhenAccessFails) {
-            e.printStackTrace();
-        }
+    }
+
+    public static void enableStackTraces() {
+        printStackWhenAccessFails = true;
+        printStackWhenAccessSucceeds = true;
+        printStackPropertiesSet = true;
+    }
+
+    public static boolean printStackTraceWhenAccessFails() {
+        ensurePrintStackPropertiesSet();
+        return printStackWhenAccessFails;
+    }
+
+    public static boolean printStackTraceWhenAccessSucceeds() {
+        ensurePrintStackPropertiesSet();
+        return printStackWhenAccessSucceeds;
     }
 
     /**
@@ -416,17 +443,10 @@ public class Reflection {
         throws IllegalAccessException
     {
         IllegalAccessException e = new IllegalAccessException(msg);
-        printStackTraceIfNeeded(e);
+        ensurePrintStackPropertiesSet();
+        if (printStackWhenAccessFails) {
+            e.printStackTrace(System.err);
+        }
         throw e;
     }
-
-    /**
-     * Throws InaccessibleObjectException with the given exception message.
-     */
-    public static void throwInaccessibleObjectException(String msg) {
-        InaccessibleObjectException e = new InaccessibleObjectException(msg);
-        printStackTraceIfNeeded(e);
-        throw e;
-    }
-
 }

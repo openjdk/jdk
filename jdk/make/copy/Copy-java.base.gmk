@@ -100,8 +100,7 @@ else
   # Allow override by ALT_JVMCFG_SRC if it exists
   JVMCFG_SRC := $(if $(wildcard $(ALT_JVMCFG_SRC)),$(ALT_JVMCFG_SRC),$(JVMCFG_SRC))
 endif
-JVMCFG_DIR := $(LIB_DST_DIR)$(OPENJDK_TARGET_CPU_LIBDIR)
-JVMCFG := $(JVMCFG_DIR)/jvm.cfg
+JVMCFG := $(LIB_DST_DIR)/jvm.cfg
 
 # To do: should this also support -zeroshark?
 

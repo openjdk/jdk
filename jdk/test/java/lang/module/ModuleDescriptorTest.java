@@ -23,8 +23,7 @@
 
 /**
  * @test
- * @modules java.base/java.lang.module:open
- *          java.base/jdk.internal.module
+ * @modules java.base/jdk.internal.module
  * @run testng ModuleDescriptorTest
  * @summary Basic test for java.lang.module.ModuleDescriptor and its builder
  */
@@ -41,16 +40,13 @@ import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Requires.Modifier;
 import java.lang.module.ModuleDescriptor.Version;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Module;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.lang.module.ModuleDescriptor.Requires.Modifier.*;
 
@@ -66,10 +62,20 @@ public class ModuleDescriptorTest {
     public Object[][] invalidJavaIdentifiers() {
         return new Object[][]{
 
-            { null,         null },
-            { ".foo",       null },
-            { "foo.",       null },
-            { "[foo]",      null },
+            { null,             null },
+            { "1",              null },
+            { "1foo",           null },
+            { ".foo",           null },
+            { "foo.",           null },
+            { "[foo]",          null },
+            { "foo.1",          null },
+            { "1foo.bar",       null },
+            { "foo.1bar",       null },
+            { "foo.[bar]",      null },
+            { "foo..bar",       null },
+            { "foo.bar.1",      null },
+            { "foo.bar.1gus",   null },
+            { "foo.bar.[gus]",  null },
 
         };
     }
@@ -80,6 +86,15 @@ public class ModuleDescriptorTest {
     private Requires requires(Set<Modifier> mods, String mn) {
         return ModuleDescriptor.module("m")
             .requires(mods, mn)
+            .build()
+            .requires()
+            .iterator()
+            .next();
+    }
+
+    private Requires requires(Set<Modifier> mods, String mn, Version v) {
+        return ModuleDescriptor.module("m")
+            .requires(mods, mn, v)
             .build()
             .requires()
             .iterator()
@@ -103,6 +118,7 @@ public class ModuleDescriptorTest {
         assertTrue(r.compareTo(r) == 0);
         assertTrue(r.modifiers().isEmpty());
         assertEquals(r.name(), "foo");
+        assertFalse(r.compiledVersion().isPresent());
     }
 
     public void testRequiresWithOneModifier() {
@@ -111,6 +127,7 @@ public class ModuleDescriptorTest {
         assertTrue(r.compareTo(r) == 0);
         assertEquals(r.modifiers(), EnumSet.of(TRANSITIVE));
         assertEquals(r.name(), "foo");
+        assertFalse(r.compiledVersion().isPresent());
     }
 
     public void testRequiresWithTwoModifiers() {
@@ -119,6 +136,7 @@ public class ModuleDescriptorTest {
         assertTrue(r.compareTo(r) == 0);
         assertEquals(r.modifiers(), EnumSet.of(TRANSITIVE, SYNTHETIC));
         assertEquals(r.name(), "foo");
+        assertFalse(r.compiledVersion().isPresent());
     }
 
     public void testRequiresWithAllModifiers() {
@@ -127,6 +145,18 @@ public class ModuleDescriptorTest {
         assertTrue(r.compareTo(r) == 0);
         assertEquals(r.modifiers(), EnumSet.of(TRANSITIVE, STATIC, SYNTHETIC, MANDATED));
         assertEquals(r.name(), "foo");
+        assertFalse(r.compiledVersion().isPresent());
+    }
+
+    public void testRequiresWithCompiledVersion() {
+        Version v = Version.parse("1.0");
+        Requires r = requires(Set.of(), "foo", v);
+        assertEquals(r, r);
+        assertTrue(r.compareTo(r) == 0);
+        assertEquals(r.modifiers(), Set.of());
+        assertEquals(r.name(), "foo");
+        assertTrue(r.compiledVersion().isPresent());
+        assertEquals(r.compiledVersion().get().toString(), "1.0");
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
@@ -167,6 +197,16 @@ public class ModuleDescriptorTest {
         ModuleDescriptor.module("m").requires((Requires) null);
     }
 
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testRequiresWithNullModifiers() {
+        ModuleDescriptor.module("m").requires(null, "foo");
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testRequiresWithNullVersion() {
+        ModuleDescriptor.module("m").requires(Set.of(), "foo", null);
+    }
+
     public void testRequiresCompare() {
         Requires r1 = requires(EnumSet.noneOf(Modifier.class), "foo");
         Requires r2 = requires(EnumSet.noneOf(Modifier.class), "bar");
@@ -190,6 +230,20 @@ public class ModuleDescriptorTest {
         assertTrue(r2.compareTo(r1) == 0);
     }
 
+    public void testRequiresCompareWithSameCompiledVersion() {
+        Requires r1 = requires(Set.of(), "foo", Version.parse("2.0"));
+        Requires r2 = requires(Set.of(), "foo", Version.parse("2.0"));
+        assertTrue(r1.compareTo(r2) == 0);
+        assertTrue(r2.compareTo(r1) == 0);
+    }
+
+    public void testRequiresCompareWithDifferentCompiledVersion() {
+        Requires r1 = requires(Set.of(), "foo", Version.parse("1.0"));
+        Requires r2 = requires(Set.of(), "foo", Version.parse("2.0"));
+        assertTrue(r1.compareTo(r2) < 0);
+        assertTrue(r2.compareTo(r1) > 0);
+    }
+
     public void testRequiresEqualsAndHashCode() {
         Requires r1 = requires("foo");
         Requires r2 = requires("foo");
@@ -207,6 +261,17 @@ public class ModuleDescriptorTest {
 
         r1 = requires(EnumSet.allOf(Requires.Modifier.class), "foo");
         r2 = requires(Set.of(), "foo");
+        assertNotEquals(r1, r2);
+
+        Version v1 = Version.parse("1.0");
+        r1 = requires(EnumSet.allOf(Requires.Modifier.class), "foo", v1);
+        r2 = requires(EnumSet.allOf(Requires.Modifier.class), "foo", v1);
+        assertEquals(r1, r2);
+        assertTrue(r1.hashCode() == r2.hashCode());
+
+        Version v2 = Version.parse("2.0");
+        r1 = requires(EnumSet.allOf(Requires.Modifier.class), "foo", v1);
+        r2 = requires(EnumSet.allOf(Requires.Modifier.class), "foo", v2);
         assertNotEquals(r1, r2);
     }
 
@@ -938,7 +1003,7 @@ public class ModuleDescriptorTest {
     };
 
     // basic test reading module-info.class
-    public void testRead1() throws Exception {
+    public void testRead() throws Exception {
         Module base = Object.class.getModule();
 
         try (InputStream in = base.getResourceAsStream("module-info.class")) {
@@ -954,45 +1019,6 @@ public class ModuleDescriptorTest {
             assertEquals(descriptor.name(), "java.base");
         }
     }
-
-    /**
-     * Test reading a module-info.class that has a module name, requires,
-     * and qualified exports with module names that are not supported in the
-     * Java Language.
-     */
-    public void testRead2() throws Exception {
-        // use non-public constructor to create a Builder that is not strict
-        Constructor<?> ctor = Builder.class.getDeclaredConstructor(String.class, boolean.class);
-        ctor.setAccessible(true);
-
-        Builder builder = (ModuleDescriptor.Builder) ctor.newInstance("m?1", false);
-        ModuleDescriptor descriptor = builder
-                .requires("java.base")
-                .requires("-m1")
-                .exports("p", Set.of("m2-"))
-                .build();
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ModuleInfoWriter.write(descriptor, baos);
-        ByteBuffer bb = ByteBuffer.wrap(baos.toByteArray());
-
-        descriptor = ModuleDescriptor.read(bb);
-        assertEquals(descriptor.name(), "m?1");
-
-        Set<String> requires = descriptor.requires()
-                .stream()
-                .map(Requires::name)
-                .collect(Collectors.toSet());
-        assertTrue(requires.size() == 2);
-        assertTrue(requires.contains("java.base"));
-        assertTrue(requires.contains("-m1"));
-
-        assertTrue(descriptor.exports().size() == 1);
-        Exports e = descriptor.exports().iterator().next();
-        assertTrue(e.targets().size() == 1);
-        assertTrue(e.targets().contains("m2-"));
-    }
-
     /**
      * Test ModuleDescriptor with a packager finder
      */

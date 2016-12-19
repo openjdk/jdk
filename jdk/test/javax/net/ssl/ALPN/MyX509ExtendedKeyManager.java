@@ -34,15 +34,17 @@ public class MyX509ExtendedKeyManager extends X509ExtendedKeyManager {
     static final String ERROR = "ERROR";
     X509ExtendedKeyManager akm;
     String expectedAP;
+    boolean doCheck = true;
 
     MyX509ExtendedKeyManager(X509ExtendedKeyManager akm) {
         this.akm = akm;
     }
 
     public MyX509ExtendedKeyManager(
-            X509ExtendedKeyManager akm, String expectedAP) {
+            X509ExtendedKeyManager akm, String expectedAP, boolean doCheck) {
         this.akm = akm;
         this.expectedAP = expectedAP;
+        this.doCheck = doCheck;
 
     }
 
@@ -103,6 +105,12 @@ public class MyX509ExtendedKeyManager extends X509ExtendedKeyManager {
     }
 
     private void checkALPN(String ap) {
+
+        if (!doCheck) {
+            System.out.println("Skipping KeyManager checks " +
+                "because a callback has been registered");
+            return;
+        }
 
         if (ERROR.equals(expectedAP)) {
             throw new RuntimeException("Should not reach here");

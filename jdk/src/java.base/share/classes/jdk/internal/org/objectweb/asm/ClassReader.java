@@ -2491,6 +2491,40 @@ public class ClassReader {
     }
 
     /**
+     * Reads a CONSTANT_Module_info item in {@code b}. This method is intended
+     * for {@link Attribute} sub classes, and is normally not needed by class
+     * generators or adapters.</i>
+     *
+     * @param  index
+     *         the start index of an unsigned short value in {@link #b b},
+     *         whose value is the index of a module constant pool item.
+     * @param  buf
+     *         buffer to be used to read the item. This buffer must be
+     *         sufficiently large. It is not automatically resized.
+     * @return the String corresponding to the specified module item.
+     */
+    public String readModule(int index, char[] buf) {
+        return readUTF8(items[readUnsignedShort(index)], buf);
+    }
+
+    /**
+     * Reads a CONSTANT_Pakcage_info item in {@code b}.  This method is
+     * intended for {@link Attribute} sub slasses, and is normally not needed
+     * by class generators or adapters.</i>
+     *
+     * @param  index
+     *         the start index of an unsigned short value in {@link #b b},
+     *         whose value is the index of a package constant pool item.
+     * @param  buf
+     *         buffer to be used to read the item. This buffer must be
+     *         sufficiently large. It is not automatically resized.
+     * @return the String corresponding to the specified package item.
+     */
+    public String readPackage(int index, char[] buf) {
+        return readUTF8(items[readUnsignedShort(index)], buf);
+    }
+
+    /**
      * Reads a numeric or string constant pool item in {@link #b b}. <i>This
      * method is intended for {@link Attribute} sub classes, and is normally not
      * needed by class generators or adapters.</i>
@@ -2516,6 +2550,8 @@ public class ClassReader {
         case ClassWriter.DOUBLE:
             return Double.longBitsToDouble(readLong(index));
         case ClassWriter.CLASS:
+        case ClassWriter.MODULE:
+        case ClassWriter.PACKAGE:
             return Type.getObjectType(readUTF8(index, buf));
         case ClassWriter.STR:
             return readUTF8(index, buf);

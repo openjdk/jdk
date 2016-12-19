@@ -33,11 +33,14 @@ import java.awt.Dialog.ModalityType;
 import java.awt.event.*;
 import java.beans.*;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.swing.*;
 
 import sun.awt.*;
 import sun.awt.AWTAccessor.ComponentAccessor;
+import sun.awt.AWTAccessor.WindowAccessor;
 import sun.java2d.SurfaceData;
 import sun.java2d.opengl.CGLSurfaceData;
 import sun.lwawt.*;
@@ -1031,6 +1034,11 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         return !peer.isSimpleWindow() && target.getFocusableWindowState();
     }
 
+    private boolean isBlocked() {
+        LWWindowPeer blocker = (peer != null) ? peer.getBlocker() : null;
+        return (blocker != null);
+    }
+
     /*
      * An utility method for the support of the auto request focus.
      * Updates the focusable state of the window under certain
@@ -1063,29 +1071,70 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         return true;
     }
 
+    private boolean isOneOfOwnersOrSelf(CPlatformWindow window) {
+        while (window != null) {
+            if (this == window) {
+                return true;
+            }
+            window = window.owner;
+        }
+        return false;
+    }
+
+    private CPlatformWindow getRootOwner() {
+        CPlatformWindow rootOwner = this;
+        while (rootOwner.owner != null) {
+            rootOwner = rootOwner.owner;
+        }
+        return rootOwner;
+    }
+
     private void orderAboveSiblings() {
-        if (owner == null) {
-            return;
+        // Recursively pop up the windows from the very bottom, (i.e. root owner) so that
+        // the windows are ordered above their nearest owner; ancestors of the window,
+        // which is going to become 'main window', are placed above their siblings.
+        CPlatformWindow rootOwner = getRootOwner();
+        if (rootOwner.isVisible()) {
+            CWrapper.NSWindow.orderFront(rootOwner.getNSWindowPtr());
         }
+        final WindowAccessor windowAccessor = AWTAccessor.getWindowAccessor();
+        orderAboveSiblingsImpl(windowAccessor.getOwnedWindows(rootOwner.target));
+    }
 
-        // NOTE: the logic will fail if we have a hierarchy like:
-        //       visible root owner
-        //          invisible owner
-        //              visible dialog
-        // However, this is an unlikely scenario for real life apps
-        if (owner.isVisible()) {
-            // Recursively pop up the windows from the very bottom so that only
-            // the very top-most one becomes the main window
-            owner.orderAboveSiblings();
+    private void orderAboveSiblingsImpl(Window[] windows) {
+        ArrayList<Window> childWindows = new ArrayList<Window>();
 
-            // Order the window to front of the stack of child windows
-            final long nsWindowSelfPtr = getNSWindowPtr();
-            final long nsWindowOwnerPtr = owner.getNSWindowPtr();
-            CWrapper.NSWindow.orderFront(nsWindowOwnerPtr);
-            CWrapper.NSWindow.orderWindow(nsWindowSelfPtr, CWrapper.NSWindow.NSWindowAbove, nsWindowOwnerPtr);
+        final ComponentAccessor componentAccessor = AWTAccessor.getComponentAccessor();
+        final WindowAccessor windowAccessor = AWTAccessor.getWindowAccessor();
+
+        // Go through the list of windows and perform ordering.
+        for (Window w : windows) {
+            final Object p = componentAccessor.getPeer(w);
+            if (p instanceof LWWindowPeer) {
+                CPlatformWindow pw = (CPlatformWindow)((LWWindowPeer)p).getPlatformWindow();
+                if (pw != null && pw.isVisible()) {
+                    // If the window is one of ancestors of 'main window' or is going to become main by itself,
+                    // the window should be ordered above its siblings; otherwise the window is just ordered
+                    // above its nearest parent.
+                    if (pw.isOneOfOwnersOrSelf(this)) {
+                        CWrapper.NSWindow.orderFront(pw.getNSWindowPtr());
+                    } else {
+                        CWrapper.NSWindow.orderWindow(pw.getNSWindowPtr(), CWrapper.NSWindow.NSWindowAbove,
+                                pw.owner.getNSWindowPtr());
+                    }
+                    pw.applyWindowLevel(w);
+                }
+            }
+            // Retrieve the child windows for each window from the list and store them for future use.
+            // Note: we collect data about child windows even for invisible owners, since they may have
+            // visible children.
+            childWindows.addAll(Arrays.asList(windowAccessor.getOwnedWindows(w)));
         }
-
-        applyWindowLevel(target);
+        // If some windows, which have just been ordered, have any child windows, let's start new iteration
+        // and order these child windows.
+        if (!childWindows.isEmpty()) {
+            orderAboveSiblingsImpl(childWindows.toArray(new Window[0]));
+        }
     }
 
     protected void applyWindowLevel(Window target) {

@@ -205,6 +205,8 @@ sun/rmi/rmic/newrmic/equivalence/run.sh                         8145980 generic-
 
 java/rmi/transport/dgcDeadLock/DGCDeadLock.java                 8029360 macosx-all
 
+java/rmi/registry/readTest/readTest.sh                          7146543 generic-all
+
 ############################################################################
 
 # jdk_security
@@ -216,6 +218,10 @@ sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-a
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
 
 sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java         8161232 macosx-all
+
+sun/net/www/protocol/https/HttpsClient/ServerIdentityTest.java  8171043 windows-all
+
+javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
 
 ############################################################################
 

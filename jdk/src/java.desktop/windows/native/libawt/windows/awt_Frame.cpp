@@ -484,7 +484,10 @@ MsgRouting AwtFrame::WmShowWindow(BOOL show, UINT status)
             if (fgProcessID != ::GetCurrentProcessId()) {
                 AwtWindow* window = (AwtWindow*)GetComponent(GetHWnd());
 
-                if (window != NULL && window->IsFocusableWindow() && window->IsAutoRequestFocus() &&
+                if (window != NULL &&
+                    window->IsFocusableWindow() &&
+                    window->IsAutoRequestFocus() &&
+                    !::IsWindowVisible(GetHWnd()) && // the window is really showing
                     !::IsWindow(GetModalBlocker(GetHWnd())))
                 {
                     // When the Java process is not allowed to set the foreground window
