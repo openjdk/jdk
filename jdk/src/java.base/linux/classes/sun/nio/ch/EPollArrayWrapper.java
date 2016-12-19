@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ class EPollArrayWrapper {
     // file descriptors higher than MAX_UPDATE_ARRAY_SIZE (unlimited case at
     // least) then the update is stored in a map.
     private final byte[] eventsLow = new byte[MAX_UPDATE_ARRAY_SIZE];
-    private Map<Integer,Byte> eventsHigh;
+    private final Map<Integer,Byte> eventsHigh = new HashMap<>();
 
     // Used by release and updateRegistrations to track whether a file
     // descriptor is registered with epoll.
@@ -133,10 +133,6 @@ class EPollArrayWrapper {
         int allocationSize = NUM_EPOLLEVENTS * SIZE_EPOLLEVENT;
         pollArray = new AllocatedNativeObject(allocationSize, true);
         pollArrayAddress = pollArray.address();
-
-        // eventHigh needed when using file descriptors > 64k
-        if (OPEN_MAX > MAX_UPDATE_ARRAY_SIZE)
-            eventsHigh = new HashMap<>();
     }
 
     void initInterrupt(int fd0, int fd1) {

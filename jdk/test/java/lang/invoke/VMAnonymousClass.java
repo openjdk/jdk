@@ -32,7 +32,6 @@ package test.java.lang.invoke;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.reflect.Field;
 import org.junit.Test;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.org.objectweb.asm.*;
@@ -64,7 +63,7 @@ public class VMAnonymousClass {
        throw new RuntimeException("Expected SecurityException");
      }
 
-    private static Unsafe unsafe = getUnsafe();
+    private static Unsafe unsafe = Unsafe.getUnsafe();
 
     private static void test(String pkg) throws Throwable {
         byte[] bytes = dumpClass(pkg);
@@ -129,15 +128,5 @@ public class VMAnonymousClass {
         }
         cw.visitEnd();
         return cw.toByteArray();
-    }
-
-    private static synchronized Unsafe getUnsafe() {
-        try {
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            return (Unsafe) f.get(null);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException("Unable to get Unsafe instance.", e);
-        }
     }
 }

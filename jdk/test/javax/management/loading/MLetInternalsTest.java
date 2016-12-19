@@ -36,7 +36,7 @@ import static org.testng.Assert.*;
  * @bug 8058089
  * @summary Tests various internal functions provided by MLet for correctness
  * @author Jaroslav Bachorik
- * @modules java.management
+ * @modules java.management/javax.management.loading:open
  * @run testng MLetInternalsTest
  */
 public class MLetInternalsTest {

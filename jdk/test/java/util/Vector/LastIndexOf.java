@@ -22,10 +22,10 @@
  */
 
 /*
-   @test
-   @bug 4271588
-   @summary Vector.lastIndex(Object, int) used to let you look outside the
-            valid range in the backing array
+ * @test
+ * @bug 4271588
+ * @summary Vector.lastIndex(Object, int) used to let you look outside the
+ *          valid range in the backing array
  */
 
 import java.util.*;

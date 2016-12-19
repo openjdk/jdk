@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 6645197
- * @run main/othervm -Xmx5m TemporarySelector
+ * @run main/othervm -Xmx16m TemporarySelector
  * @summary Timed read with socket adaptor throws ClosedSelectorException if temporary selector GC'ed.
  */
 import java.io.IOException;

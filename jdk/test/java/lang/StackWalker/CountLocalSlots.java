@@ -25,6 +25,7 @@
  * @test
  * @bug 8147039
  * @summary Confirm locals[] always has expected length, even for "dead" locals
+ * @modules java.base/java.lang:open
  * @compile LocalsAndOperands.java
  * @run testng/othervm -Xcomp CountLocalSlots
  */

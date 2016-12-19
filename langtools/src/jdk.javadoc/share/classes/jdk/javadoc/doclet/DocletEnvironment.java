@@ -25,17 +25,15 @@
 
 package jdk.javadoc.doclet;
 
-import java.util.List;
 import java.util.Set;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ModuleElement;
-import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.JavaFileManager;
+import javax.tools.JavaFileObject.Kind;
 
 import com.sun.source.util.DocTrees;
 
@@ -48,29 +46,23 @@ import com.sun.source.util.DocTrees;
  * @since 9
  */
 public interface DocletEnvironment {
-    /**
-     * Returns the <a href="package-summary.html#included">included</a>
-     * modules.
-     *
-     * @return a set of included module elements
-     */
-    Set<ModuleElement> getIncludedModuleElements();
 
     /**
-     * Returns the <a href="package-summary.html#included">included</a>
-     * annotation types, classes, interfaces and enums in all packages.
+     * Returns the elements <a href="package-summary.html#specified">specified</a>
+     * when the tool is invoked.
      *
-     * @return a set of included type elements
+     * @return the set of specified elements
      */
-    Set<TypeElement> getIncludedTypeElements();
+    Set<? extends Element> getSpecifiedElements();
 
     /**
-     * Returns the <a href="package-summary.html#included">included</a>
-     * packages.
+     * Returns the module, package and type elements that should be
+     * <a href="package-summary.html#included">included</a> in the
+     * documentation.
      *
-     * @return a set of included package elements
+     * @return the set of included elements
      */
-    Set<PackageElement> getIncludedPackageElements();
+    Set<? extends Element> getIncludedElements();
 
     /**
      * Returns an instance of the {@code DocTrees} utility class.
@@ -91,25 +83,6 @@ public interface DocletEnvironment {
     Elements getElementUtils();
 
     /**
-     * Returns the <a href="package-summary.html#included">selected</a>
-     * elements that can be documented.
-     *
-     * @param elements those that need to be checked
-     * @return elements selected, an empty list if none
-     */
-    List<Element> getSelectedElements(List<? extends Element> elements);
-
-    /**
-     * Returns the elements <a href="package-summary.html#specified">specified</a>
-     * on the command line, usually module elements, package elements and type elements.
-     * If {@code -subpackages} and {@code -exclude} options
-     * are used, return all the non-excluded packages.
-     *
-     * @return elements specified on the command line.
-     */
-    Set<Element> getSpecifiedElements();
-
-    /**
      * Returns an instance of the {@code Types} utility class.
      * This class provides methods for operating on
      * {@link javax.lang.model.type.TypeMirror type mirrors}.
@@ -119,12 +92,22 @@ public interface DocletEnvironment {
     Types getTypeUtils();
 
     /**
-     * Indicates if an element is <a href="package-summary.html#included">included</a>.
+     * Returns true if an element should be
+     * <a href="package-summary.html#included">included</a> in the
+     * documentation.
      *
-     * @param e the Element in question
+     * @param e the element
      * @return true if included, false otherwise
      */
     boolean isIncluded(Element e);
+
+    /**
+     * Returns true if the element is <a href="package-summary.html#selected">selected</a>.
+     *
+     * @param e the element
+     * @return true if selected, false otherwise
+     */
+    boolean isSelected(Element e);
 
     /**
      * Returns the file manager used to read and write files.
@@ -145,7 +128,15 @@ public interface DocletEnvironment {
      *
      * @return the required level of module documentation
      */
-    public ModuleMode getModuleMode();
+    ModuleMode getModuleMode();
+
+    /**
+     * Returns the file kind of a type element.
+     *
+     * @param type the type element
+     * @return the file kind
+     */
+    Kind getFileKind(TypeElement type);
 
     enum ModuleMode {
         /** Indicate API level documentation is required */

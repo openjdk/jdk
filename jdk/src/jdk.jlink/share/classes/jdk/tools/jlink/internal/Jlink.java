@@ -27,6 +27,7 @@ package jdk.tools.jlink.internal;
 import java.lang.reflect.Layer;
 import java.nio.ByteOrder;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -278,11 +279,39 @@ public final class Jlink {
      */
     public void build(JlinkConfiguration config, PluginsConfiguration pluginsConfig) {
         Objects.requireNonNull(config);
+        if (pluginsConfig == null) {
+            pluginsConfig = new PluginsConfiguration();
+        }
+
+        // add all auto-enabled plugins from boot layer
+        pluginsConfig = addAutoEnabledPlugins(pluginsConfig);
+
         try {
             JlinkTask.createImage(config, pluginsConfig);
         } catch (Exception ex) {
             throw new PluginException(ex);
         }
+    }
+
+    private PluginsConfiguration addAutoEnabledPlugins(PluginsConfiguration pluginsConfig) {
+        List<Plugin> plugins = new ArrayList<>(pluginsConfig.getPlugins());
+        List<Plugin> bootPlugins = PluginRepository.getPlugins(Layer.boot());
+        for (Plugin bp : bootPlugins) {
+            if (Utils.isAutoEnabled(bp)) {
+                try {
+                    bp.configure(Collections.emptyMap());
+                } catch (IllegalArgumentException e) {
+                    if (JlinkTask.DEBUG) {
+                        System.err.println("Plugin " + bp.getName() + " threw exception with config: {}");
+                        e.printStackTrace();
+                    }
+                    throw e;
+                }
+                plugins.add(bp);
+            }
+        }
+        return new PluginsConfiguration(plugins, pluginsConfig.getImageBuilder(),
+            pluginsConfig.getLastSorterPluginName());
     }
 
     /**

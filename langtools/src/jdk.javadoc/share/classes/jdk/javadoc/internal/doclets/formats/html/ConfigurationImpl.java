@@ -135,8 +135,6 @@ public class ConfigurationImpl extends Configuration {
      */
     public String docrootparent = "";
 
-    public boolean sortedMethodDetails = false;
-
     /**
      * True if command line option "-nohelp" is used. Default value is false.
      */
@@ -290,83 +288,13 @@ public class ConfigurationImpl extends Configuration {
         if (!generalValidOptions()) {
             return false;
         }
-        boolean helpfileSeen = false;
-        // otherwise look at our options
-        for (Doclet.Option opt : optionsProcessed) {
-            if (opt.matches("-helpfile")) {
-                if (nohelp == true) {
-                    reporter.print(ERROR, getText("doclet.Option_conflict",
-                        "-helpfile", "-nohelp"));
-                    return false;
-                }
-                if (helpfileSeen) {
-                    reporter.print(ERROR, getText("doclet.Option_reuse",
-                        "-helpfile"));
-                    return false;
-                }
-                helpfileSeen = true;
-                DocFile help = DocFile.createFileForInput(this, helpfile);
-                if (!help.exists()) {
-                    reporter.print(ERROR, getText("doclet.File_not_found", helpfile));
-                    return false;
-                }
-            } else  if (opt.matches("-nohelp")) {
-                if (helpfileSeen) {
-                    reporter.print(ERROR, getText("doclet.Option_conflict",
-                        "-nohelp", "-helpfile"));
-                    return false;
-                }
-            } else if (opt.matches("-xdocrootparent")) {
-                try {
-                    URL ignored = new URL(docrootparent);
-                } catch (MalformedURLException e) {
-                    reporter.print(ERROR, getText("doclet.MalformedURL", docrootparent));
-                    return false;
-                }
-            } else if (opt.matches("-overview")) {
-                if (nooverview == true) {
-                    reporter.print(ERROR, getText("doclet.Option_conflict",
-                        "-overview", "-nooverview"));
-                    return false;
-                }
-            } else  if (opt.matches("-nooverview")) {
-                if (overviewpath != null) {
-                    reporter.print(ERROR, getText("doclet.Option_conflict",
-                        "-nooverview", "-overview"));
-                    return false;
-                }
-            } else if (opt.matches("-splitindex")) {
-                if (createindex == false) {
-                    reporter.print(ERROR, getText("doclet.Option_conflict",
-                        "-splitindex", "-noindex"));
-                    return false;
-                }
-            } else if (opt.matches("-noindex")) {
-                if (splitindex == true) {
-                    reporter.print(ERROR, getText("doclet.Option_conflict",
-                        "-noindex", "-splitindex"));
-                    return false;
-                }
-            } else if (opt.matches("-xdoclint:")) {
-                String dopt = doclintOpts.get(opt);
-                if (dopt == null) {
-                    continue;
-                }
-                if (dopt.contains("/")) {
-                    reporter.print(ERROR, getText("doclet.Option_doclint_no_qualifiers"));
-                    return false;
-                }
-                if (!DocLint.isValidOption(dopt)) {
-                    reporter.print(ERROR, getText("doclet.Option_doclint_invalid_arg"));
-                    return false;
-                }
-            } else if (opt.matches("-xdoclint/package:")) {
-                 String dopt = doclintOpts.get(opt);
-                    if (!DocLint.isValidOption(dopt)) {
-                        reporter.print(ERROR, getText("doclet.Option_doclint_package_invalid_arg"));
-                        return false;
-                    }
-                }
+        // check if helpfile exists
+        if (!helpfile.isEmpty()) {
+            DocFile help = DocFile.createFileForInput(this, helpfile);
+            if (!help.exists()) {
+                reporter.print(ERROR, getText("doclet.File_not_found", helpfile));
+                return false;
+            }
         }
         return true;
     }
@@ -376,11 +304,10 @@ public class ConfigurationImpl extends Configuration {
         if (!validateOptions()) {
             return false;
         }
-        if (!docEnv.getSpecifiedElements().isEmpty()) {
+        if (!getSpecifiedTypeElements().isEmpty()) {
             Map<String, PackageElement> map = new HashMap<>();
             PackageElement pkg;
-            List<TypeElement> classes = new ArrayList<>(docEnv.getIncludedTypeElements());
-            for (TypeElement aClass : classes) {
+            for (TypeElement aClass : getIncludedTypeElements()) {
                 pkg = utils.containingPackage(aClass);
                 if (!map.containsKey(utils.getPackageName(pkg))) {
                     map.put(utils.getPackageName(pkg), pkg);
@@ -428,7 +355,7 @@ public class ConfigurationImpl extends Configuration {
             if (showModules) {
                 topFile = DocPath.empty.resolve(DocPaths.moduleSummary(modules.first()));
             } else if (packages.size() == 1 && packages.first().isUnnamed()) {
-                List<TypeElement> classes = new ArrayList<>(docEnv.getIncludedTypeElements());
+                List<TypeElement> classes = new ArrayList<>(getIncludedTypeElements());
                 if (!classes.isEmpty()) {
                     TypeElement te = getValidClass(classes);
                     topFile = DocPath.forClass(utils, te);
@@ -452,7 +379,7 @@ public class ConfigurationImpl extends Configuration {
     }
 
     protected boolean checkForDeprecation(DocletEnvironment docEnv) {
-        for (TypeElement te : docEnv.getIncludedTypeElements()) {
+        for (TypeElement te : getIncludedTypeElements()) {
             if (isGeneratedDoc(te)) {
                 return true;
             }
@@ -599,227 +526,245 @@ public class ConfigurationImpl extends Configuration {
         Doclet.Option[] options = {
             new Option(resources, "-bottom", 1) {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
-                    bottom = args.next();
+                public boolean process(String opt,  List<String> args) {
+                    bottom = args.get(0);
                     return true;
                 }
             },
             new Option(resources, "-charset", 1) {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
-                    charset = args.next();
+                public boolean process(String opt,  List<String> args) {
+                    charset = args.get(0);
                     return true;
                 }
             },
             new Option(resources, "-doctitle", 1) {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
-                    doctitle = args.next();
+                public boolean process(String opt,  List<String> args) {
+                    doctitle = args.get(0);
                     return true;
                 }
             },
             new Option(resources, "-footer", 1) {
                 @Override
-                public boolean process(String opt, ListIterator<String> args) {
-                    optionsProcessed.add(this);
-                    footer = args.next();
+                public boolean process(String opt, List<String> args) {
+                    footer = args.get(0);
                     return true;
                 }
             },
             new Option(resources, "-header", 1) {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
-                    header = args.next();
+                public boolean process(String opt,  List<String> args) {
+                    header = args.get(0);
                     return true;
                 }
             },
             new Option(resources, "-helpfile", 1) {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
-                    helpfile = args.next();
+                public boolean process(String opt,  List<String> args) {
+                    if (nohelp == true) {
+                        reporter.print(ERROR, getText("doclet.Option_conflict",
+                                "-helpfile", "-nohelp"));
+                        return false;
+                    }
+                    if (!helpfile.isEmpty()) {
+                        reporter.print(ERROR, getText("doclet.Option_reuse",
+                                "-helpfile"));
+                        return false;
+                    }
+                    helpfile = args.get(0);
                     return true;
                 }
             },
             new Option(resources, "-html4") {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
+                public boolean process(String opt,  List<String> args) {
                     htmlVersion = HtmlVersion.HTML4;
                     return true;
                 }
             },
             new Option(resources, "-html5") {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
+                public boolean process(String opt,  List<String> args) {
                     htmlVersion = HtmlVersion.HTML5;
                     return true;
                 }
             },
             new Option(resources, "-nohelp") {
                 @Override
-                public boolean process(String opt, ListIterator<String> args) {
-                    optionsProcessed.add(this);
+                public boolean process(String opt, List<String> args) {
                     nohelp = true;
+                    if (!helpfile.isEmpty()) {
+                        reporter.print(ERROR, getText("doclet.Option_conflict",
+                                "-nohelp", "-helpfile"));
+                        return false;
+                    }
                     return true;
                 }
             },
             new Option(resources, "-nodeprecatedlist") {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
+                public boolean process(String opt,  List<String> args) {
                     nodeprecatedlist = true;
                     return true;
                 }
             },
             new Option(resources, "-noindex") {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
+                public boolean process(String opt,  List<String> args) {
                     createindex = false;
+                    if (splitindex == true) {
+                        reporter.print(ERROR, getText("doclet.Option_conflict",
+                                "-noindex", "-splitindex"));
+                        return false;
+                    }
                     return true;
                 }
             },
             new Option(resources, "-nonavbar") {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
+                public boolean process(String opt,  List<String> args) {
                     nonavbar = true;
                     return true;
                 }
             },
             new Hidden(resources, "-nooverview") {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
+                public boolean process(String opt,  List<String> args) {
                     nooverview = true;
+                    if (overviewpath != null) {
+                        reporter.print(ERROR, getText("doclet.Option_conflict",
+                                "-nooverview", "-overview"));
+                        return false;
+                    }
                     return true;
                 }
             },
             new Option(resources, "-notree") {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
+                public boolean process(String opt,  List<String> args) {
                     createtree = false;
                     return true;
                 }
             },
             new Option(resources, "-overview", 1) {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
-                    overviewpath = args.next();
+                public boolean process(String opt,  List<String> args) {
+                    overviewpath = args.get(0);
+                    if (nooverview == true) {
+                        reporter.print(ERROR, getText("doclet.Option_conflict",
+                                "-overview", "-nooverview"));
+                        return false;
+                    }
                     return true;
                 }
             },
             new Option(resources, "--frames") {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
+                public boolean process(String opt,  List<String> args) {
                     frames = true;
                     return true;
                 }
             },
             new Option(resources, "--no-frames") {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
+                public boolean process(String opt,  List<String> args) {
                     frames = false;
                     return true;
                 }
             },
             new Hidden(resources, "-packagesheader", 1) {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
-                    packagesheader = args.next();
+                public boolean process(String opt,  List<String> args) {
+                    packagesheader = args.get(0);
                     return true;
                 }
             },
             new Option(resources, "-splitindex") {
                 @Override
-                public boolean process(String opt, ListIterator<String> args) {
-                    optionsProcessed.add(this);
+                public boolean process(String opt, List<String> args) {
                     splitindex = true;
+                    if (createindex == false) {
+                        reporter.print(ERROR, getText("doclet.Option_conflict",
+                                "-splitindex", "-noindex"));
+                        return false;
+                    }
                     return true;
                 }
             },
             new Option(resources, "-stylesheetfile", 1) {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
-                    stylesheetfile = args.next();
+                public boolean process(String opt,  List<String> args) {
+                    stylesheetfile = args.get(0);
                     return true;
                 }
             },
             new Option(resources, "-top", 1) {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
-                    top = args.next();
+                public boolean process(String opt,  List<String> args) {
+                    top = args.get(0);
                     return true;
                 }
             },
             new Option(resources, "-use") {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
+                public boolean process(String opt,  List<String> args) {
                     classuse = true;
                     return true;
                 }
             },
             new Option(resources, "-windowtitle", 1) {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
-                    windowtitle = args.next().replaceAll("\\<.*?>", "");
+                public boolean process(String opt,  List<String> args) {
+                    windowtitle = args.get(0).replaceAll("\\<.*?>", "");
                     return true;
                 }
             },
             new XOption(resources, "-Xdoclint") {
                 @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
+                public boolean process(String opt,  List<String> args) {
                     doclintOpts.put(this, DocLint.XMSGS_OPTION);
                     return true;
                 }
             },
             new XOption(resources, "-Xdocrootparent", 1) {
                 @Override
-                public boolean process(String opt, ListIterator<String> args) {
-                    optionsProcessed.add(this);
-                    docrootparent = args.next();
+                public boolean process(String opt, List<String> args) {
+                    docrootparent = args.get(0);
+                    try {
+                        URL ignored = new URL(docrootparent);
+                    } catch (MalformedURLException e) {
+                        reporter.print(ERROR, getText("doclet.MalformedURL", docrootparent));
+                        return false;
+                    }
                     return true;
                 }
             },
             new XOption(resources, "doclet.usage.xdoclint-extended", "-Xdoclint:", 0) {
                 @Override
-                public boolean matches(String option) {
-                    return option.toLowerCase().startsWith(getName().toLowerCase());
-                }
-
-                @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
-                    doclintOpts.put(this, opt.replace("-Xdoclint:", DocLint.XMSGS_CUSTOM_PREFIX));
+                public boolean process(String opt,  List<String> args) {
+                    String dopt = opt.replace("-Xdoclint:", DocLint.XMSGS_CUSTOM_PREFIX);
+                    doclintOpts.put(this, dopt);
+                    if (dopt.contains("/")) {
+                        reporter.print(ERROR, getText("doclet.Option_doclint_no_qualifiers"));
+                        return false;
+                    }
+                    if (!DocLint.isValidOption(dopt)) {
+                        reporter.print(ERROR, getText("doclet.Option_doclint_invalid_arg"));
+                        return false;
+                    }
                     return true;
                 }
             },
             new XOption(resources, "doclet.usage.xdoclint-package", "-Xdoclint/package:", 0) {
                 @Override
-                public boolean matches(String option) {
-                    return option.toLowerCase().startsWith(getName().toLowerCase());
-                }
-
-                @Override
-                public boolean process(String opt,  ListIterator<String> args) {
-                    optionsProcessed.add(this);
-                    doclintOpts.put(this, opt.replace("-Xdoclint/package:", DocLint.XCHECK_PACKAGE));
+                public boolean process(String opt,  List<String> args) {
+                    String dopt = opt.replace("-Xdoclint/package:", DocLint.XCHECK_PACKAGE);
+                    doclintOpts.put(this, dopt);
+                    if (!DocLint.isValidOption(dopt)) {
+                        reporter.print(ERROR, getText("doclet.Option_doclint_package_invalid_arg"));
+                        return false;
+                    }
                     return true;
                 }
             }

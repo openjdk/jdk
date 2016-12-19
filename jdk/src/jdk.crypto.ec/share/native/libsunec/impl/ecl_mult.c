@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -33,6 +33,7 @@
  * Contributor(s):
  *   Douglas Stebila <douglas@stebila.ca>, Sun Microsystems Laboratories
  *
+ * Last Modified Date from the Original Code: Nov 2016
  *********************************************************************** */
 
 #include "mpi.h"
@@ -72,6 +73,7 @@ ECPoint_mul(const ECGroup *group, const mp_int *k, const mp_int *px,
                 if (group->base_point_mul) {
                         MP_CHECKOK(group->base_point_mul(&kt, rx, ry, group));
                 } else {
+                        kt.flag = (mp_sign)0;
                         MP_CHECKOK(group->
                                            point_mul(&kt, &group->genx, &group->geny, rx, ry,
                                                                  group));
@@ -82,6 +84,7 @@ ECPoint_mul(const ECGroup *group, const mp_int *k, const mp_int *px,
                         MP_CHECKOK(group->meth->field_enc(py, ry, group->meth));
                         MP_CHECKOK(group->point_mul(&kt, rx, ry, rx, ry, group));
                 } else {
+                        kt.flag = (mp_sign)0;
                         MP_CHECKOK(group->point_mul(&kt, px, py, rx, ry, group));
                 }
         }

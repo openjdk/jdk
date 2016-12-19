@@ -364,10 +364,10 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      */
     protected static void addImplementsInfo(HtmlDocletWriter writer,
             ExecutableElement method, Content dl) {
-        if (writer.configuration.nocomment) {
+        Utils utils = writer.utils;
+        if (utils.isStatic(method) || writer.configuration.nocomment) {
             return;
         }
-        Utils utils = writer.utils;
         Contents contents = writer.contents;
         ImplementedMethods implementedMethodsFinder =
                 new ImplementedMethods(method, writer.configuration);

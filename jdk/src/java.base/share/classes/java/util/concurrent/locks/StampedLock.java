@@ -572,7 +572,7 @@ public class StampedLock implements java.io.Serializable {
      * before acquiring the lock
      */
     @ReservedStackAccess
-        public long readLockInterruptibly() throws InterruptedException {
+    public long readLockInterruptibly() throws InterruptedException {
         long s, next;
         if (!Thread.interrupted()
             // bypass acquireRead on common uncontended case

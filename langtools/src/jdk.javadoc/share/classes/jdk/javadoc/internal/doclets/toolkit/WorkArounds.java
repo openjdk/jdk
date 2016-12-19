@@ -187,11 +187,6 @@ public class WorkArounds {
         return ((Attribute)aDesc).isSynthesized();
     }
 
-    // TODO: implement using jx.l.model
-    public boolean isVisible(TypeElement te) {
-        return ((DocEnvImpl)(configuration.docEnv)).etable.isVisible(te);
-    }
-
     // TODO: fix the caller
     public Object getConstValue(VariableElement ve) {
         return ((VarSymbol)ve).getConstValue();
@@ -284,11 +279,6 @@ public class WorkArounds {
             }
         }
         return null;
-    }
-
-    // TODO: investigate and reimplement without javac dependencies.
-    public boolean shouldDocument(Element e) {
-        return ((DocEnvImpl)(configuration.docEnv)).etable.shouldDocument(e);
     }
 
     // TODO: jx.l.m ?

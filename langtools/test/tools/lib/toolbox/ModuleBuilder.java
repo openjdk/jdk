@@ -72,29 +72,92 @@ public class ModuleBuilder {
     }
 
     /**
-     * Adds a "requires public" directive to the declaration.
-     * @param requires the name of the module that is required
+     * Adds a "requires" directive to the declaration.
+     * @param module the name of the module that is required
+     * @param modulePath a path in while to locate the modules
+     *    if the declaration is compiled
+     * @return this builder
+     */
+    public ModuleBuilder requires(String module, Path... modulePath) {
+        addDirective(requires, "requires " + module + ";");
+        this.modulePath.addAll(Arrays.asList(modulePath));
+        return this;
+
+    }
+
+    /**
+     * Adds a "requires static" directive to the declaration.
+     * @param module the name of the module that is required
      * @param modulePath a path in which to locate the modules
      *    if the declaration is compiled
      * @return this builder
      */
-    public ModuleBuilder requiresPublic(String requires, Path... modulePath) {
-        this.requires.add("requires public " + requires + ";");
+    public ModuleBuilder requiresStatic(String module, Path... modulePath) {
+        addDirective(requires, "requires static " + module + ";");
         this.modulePath.addAll(Arrays.asList(modulePath));
         return this;
     }
 
     /**
-     * Adds a "requires" directive to the declaration.
-     * @param requires the name of the module that is required
-     * @param modulePath a path in while to locate the modules
+     * Adds a "requires transitive" directive to the declaration.
+     * @param module the name of the module that is required
+     * @param modulePath a path in which to locate the modules
      *    if the declaration is compiled
      * @return this builder
      */
-    public ModuleBuilder requires(String requires, Path... modulePath) {
-        this.requires.add("requires " + requires + ";");
+    public ModuleBuilder requiresTransitive(String module, Path... modulePath) {
+        addDirective(requires, "requires transitive " + module + ";");
         this.modulePath.addAll(Arrays.asList(modulePath));
         return this;
+    }
+
+    /**
+     * Adds a "requires static transitive" directive to the declaration.
+     * @param module the name of the module that is required
+     * @param modulePath a path in which to locate the modules
+     *    if the declaration is compiled
+     * @return this builder
+     */
+    public ModuleBuilder requiresStaticTransitive(String module, Path... modulePath) {
+        addDirective(requires, "requires static transitive " + module + ";");
+        this.modulePath.addAll(Arrays.asList(modulePath));
+        return this;
+    }
+
+    /**
+     * Adds an unqualified "exports" directive to the declaration.
+     * @param pkg the name of the package to be exported
+     * @return this builder
+     */
+    public ModuleBuilder exports(String pkg) {
+        return addDirective(exports, "exports " + pkg + ";");
+    }
+
+    /**
+     * Adds an unqualified "exports dynamic" directive to the declaration.
+     * @param pkg the name of the package to be exported
+     * @return this builder
+     */
+    public ModuleBuilder exportsDynamic(String pkg) {
+        return addDirective(exports, "exports dynamic " + pkg + ";");
+    }
+
+    /**
+     * Adds an unqualified "exports private" directive to the declaration.
+     * @param pkg the name of the package to be exported
+     * @return this builder
+     */
+    public ModuleBuilder exportsPrivate(String pkg) {
+        return addDirective(exports, "exports private " + pkg + ";");
+    }
+
+    /**
+     * Adds an unqualified "exports dynamic private" directive to the declaration.
+     * @param pkg the name of the package to be exported
+     * @return this builder
+     */
+    public ModuleBuilder exportsDynamicPrivate(String pkg) {
+        return addDirective(exports, "exports dynamic private " + pkg + ";");
     }
 
     /**
@@ -104,19 +167,37 @@ public class ModuleBuilder {
      * @return this builder
      */
     public ModuleBuilder exportsTo(String pkg, String module) {
-        this.exports.add("exports " + pkg + " to " + module + ";");
-        return this;
+        return addDirective(exports, "exports " + pkg + " to " + module + ";");
     }
 
     /**
-     * Adds an unqualified "exports" directive to the declaration.
+     * Adds a qualified "exports dynamic" directive to the declaration.
      * @param pkg the name of the package to be exported
      * @param module the name of the module to which it is to be exported
      * @return this builder
      */
-    public ModuleBuilder exports(String pkg) {
-        this.exports.add("exports " + pkg + ";");
-        return this;
+    public ModuleBuilder exportsDynamicTo(String pkg, String module) {
+        return addDirective(exports, "exports dynamic " + pkg + " to " + module + ";");
+    }
+
+    /**
+     * Adds a qualified "exports private" directive to the declaration.
+     * @param pkg the name of the package to be exported
+     * @param module the name of the module to which it is to be exported
+     * @return this builder
+     */
+    public ModuleBuilder exportsPrivateTo(String pkg, String module) {
+        return addDirective(exports, "exports private " + pkg + " to " + module + ";");
+    }
+
+    /**
+     * Adds a qualified "exports dynamic private" directive to the declaration.
+     * @param pkg the name of the package to be exported
+     * @param module the name of the module to which it is to be exported
+     * @return this builder
+     */
+    public ModuleBuilder exportsDynamicPrivateTo(String pkg, String module) {
+        return addDirective(exports, "exports dynamic private " + pkg + " to " + module + ";");
     }
 
     /**
@@ -125,8 +206,7 @@ public class ModuleBuilder {
      * @return this builder
      */
     public ModuleBuilder uses(String service) {
-        this.uses.add("uses " + service + ";");
-        return this;
+        return addDirective(uses, "uses " + service + ";");
     }
 
     /**
@@ -136,7 +216,11 @@ public class ModuleBuilder {
      * @return this builder
      */
     public ModuleBuilder provides(String service, String implementation) {
-        this.provides.add("provides " + service + " with " + implementation + ";");
+        return addDirective(provides, "provides " + service + " with " + implementation + ";");
+    }
+
+    private ModuleBuilder addDirective(List<String> directives, String directive) {
+        directives.add(directive);
         return this;
     }
 

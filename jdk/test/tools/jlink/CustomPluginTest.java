@@ -151,6 +151,8 @@ public class CustomPluginTest {
                 .pluginModulePath(pluginModulePath)
                 .output(helper.createNewImageDir(moduleName))
                 .addMods(moduleName)
+                .option("--disable-plugin")
+                .option("release-info")
                 .option("--rogue-filter")
                 .option("/foo/")
                 .call()

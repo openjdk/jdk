@@ -137,7 +137,7 @@ import static jdk.javadoc.internal.tool.JavadocTool.isValidClassName;
  * Rules for processing:
  *
  * 1. A specified element, meaning an element given on the
- *    command-line, and exposed via getSpecifiedElements()
+ *    command-line, and exposed via specified elements collections.
  * 2. Expand-contents, an internal pseudo term, meaning
  *    it is part of the recursive expansion of specified
  *    elements, meaning, the modules are expanded first, then
@@ -230,8 +230,28 @@ public class ElementsTable {
         }
     }
 
+    private Set<Element> specifiedElements = null;
     /**
-     * Returns the selected/included module elements.
+     * Returns a set of elements specified on the
+     * command line, including any inner classes.
+     *
+     * @return the set of elements specified on the command line
+     */
+    public Set<? extends Element> getSpecifiedElements() {
+        if (specifiedElements == null) {
+            Set<Element> result = new LinkedHashSet<>();
+            result.addAll(specifiedModuleElements);
+            result.addAll(specifiedPackageElements);
+            result.addAll(specifiedTypeElements);
+            specifiedElements = Collections.unmodifiableSet(result);
+        }
+        return specifiedElements;
+    }
+
+    private Set<Element> includedElements = null;
+    /**
+     * Returns a set of elements included elements. The inclusion is as
+     * follows:
      * A module is fully included,
      *   - is specified on the command line --module
      *   - is derived from the module graph, that is, by expanding the
@@ -239,14 +259,7 @@ public class ElementsTable {
      *
      * A module is included if an enclosed package or type is
      * specified on the command line.
-     * @return the included module elements
-     */
-    public Set<ModuleElement> getIncludedModuleElements() {
-        return includedModuleElements;
-    }
-
-    /**
-     * Returns the selected/included package elements.
+     *
      * A package is fully included,
      *  - is specified on the command line
      *  - is derived from expanding -subpackages
@@ -255,66 +268,32 @@ public class ElementsTable {
      * A package is included, if an enclosed package or a type is specified on
      * the command line.
      *
-     * @return the included package elements
-     */
-    public Set<PackageElement> getIncludedPackageElements() {
-        return includedPackageElements;
-    }
-
-    /**
-     * Returns the selected/included type elements (including those
-     * within specified or included packages) to be documented.
+     * Included type elements (including those within specified or included packages)
+     * to be documented.
+     *
      * A type is fully included if
      *  - is specified on the command line with -sourcepath
      *  - is visible with --show-types filter
      * A nested type is fully included if
      *  - is visible with --show-types filter
      *  - is enclosed in a fully included type
-     *
-     * @return the included type elements
-     * to be documented
+     * @return the set of elements specified on the command line
      */
-    public Set<TypeElement> getIncludedTypeElements() {
-        return includedTypeElements;
-    }
-
-    /**
-     * Returns a set of module elements specified on the
-     * command line.
-     * @return the set of module elements specified on the
-     * command line
-     */
-    public Set<ModuleElement> getSpecifiedModuleElements() {
-        return specifiedModuleElements;
-    }
-
-    /**
-     * Returns a set of package elements specified on the
-     * command line. These may also contain children packages
-     * if specified with -subpackage.
-     *
-     * @return the set of package elements specified on the
-     * command line
-     */
-    public Set<PackageElement> getSpecifiedPackageElements() {
-        return specifiedPackageElements;
-    }
-
-    /**
-     * Returns a set of type elements specified on the
-     * command line, including any inner classes.
-     *
-     * @return the set of type elements specified on the command line
-     */
-    public Set<TypeElement> getSpecifiedTypeElements() {
-        return specifiedTypeElements;
+    public Set<? extends Element> getIncludedElements() {
+        if (includedElements == null) {
+            Set<Element> result = new LinkedHashSet<>();
+            result.addAll(includedModuleElements);
+            result.addAll(includedPackageElements);
+            result.addAll(includedTypeElements);
+            includedElements = Collections.unmodifiableSet(result);
+        }
+        return includedElements;
     }
 
     private IncludedVisitor includedVisitor = null;
 
     /**
-     * Returns true if the given element is included or selected for
-     * consideration.
+     * Returns true if the given element is included for consideration.
      * This method accumulates elements in the cache as enclosed elements of
      * fully included elements are tested.
      * A member (constructor, method, field) is included if
@@ -516,10 +495,10 @@ public class ElementsTable {
     private Set<ModuleElement> getModuleRequires(ModuleElement mdle, boolean isPublic) {
         Set<ModuleElement> result = new HashSet<>();
         for (RequiresDirective rd : ElementFilter.requiresIn(mdle.getDirectives())) {
-            if (isPublic && rd.isPublic()) {
+            if (isPublic && rd.isTransitive()) {
                 result.add(rd.getDependency());
             }
-            if (!isPublic && !rd.isPublic()) {
+            if (!isPublic && !rd.isTransitive()) {
                 result.add(rd.getDependency());
             }
         }
@@ -539,7 +518,7 @@ public class ElementsTable {
         ListBuffer<ModuleElement> queue = new ListBuffer<>();
 
         // expand each specified module
-        for (ModuleElement mdle : getSpecifiedModuleElements()) {
+        for (ModuleElement mdle : specifiedModuleElements) {
             result.add(mdle); // a specified module is included
             queue.append(mdle);
             Set<ModuleElement> publicRequires = getModuleRequires(mdle, true);
@@ -700,7 +679,7 @@ public class ElementsTable {
      */
     private void computeSpecifiedTypes() throws ToolException {
         Set<TypeElement> classes = new LinkedHashSet<>();
-        classDecList.stream().filter((def) -> (shouldDocument(def.sym))).forEach((def) -> {
+          classDecList.forEach((def) -> {
             TypeElement te = (TypeElement) def.sym;
             if (te != null) {
                 addAllClasses(classes, te, true);
@@ -816,7 +795,7 @@ public class ElementsTable {
     private Location getModuleLocation(Location location, String msymName)
             throws ToolException {
         try {
-            return fm.getModuleLocation(location, msymName);
+            return fm.getLocationForModule(location, msymName);
         } catch (IOException ioe) {
             String text = messager.getText("main.doclet_could_not_get_location", msymName);
             throw new ToolException(ERROR, text, ioe);
@@ -853,17 +832,14 @@ public class ElementsTable {
         try {
             // eliminate needless checking, do this first.
             if (list.contains(klass)) return;
-            if (toolEnv.isSynthetic(klass)) return;
             // ignore classes with invalid Java class names
             if (!JavadocTool.isValidClassName(klass.name.toString())) return;
-            if (filtered && !shouldDocument(klass)) return;
+            if (filtered && !isTypeElementSelected(klass)) return;
             list.add(klass);
             for (Symbol sym : klass.members().getSymbols(NON_RECURSIVE)) {
                 if (sym != null && sym.kind == Kind.TYP) {
                     ClassSymbol s = (ClassSymbol)sym;
-                    if (!toolEnv.isSynthetic(s)) {
-                        addAllClasses(list, s, filtered);
-                    }
+                    addAllClasses(list, s, filtered);
                 }
             }
         } catch (CompletionFailure e) {
@@ -882,92 +858,65 @@ public class ElementsTable {
         boolean filtered = true;
         PackageSymbol sym = (PackageSymbol)pkg;
         for (Symbol isym : sym.members().getSymbols(NON_RECURSIVE)) {
-            if (isym != null) {
-                ClassSymbol s = (ClassSymbol)isym;
-                if (!toolEnv.isSynthetic(sym)) {
-                    addAllClasses(list, s, filtered);
-                }
-            }
+            addAllClasses(list, (TypeElement)isym, filtered);
         }
     }
 
-    SimpleElementVisitor9<Boolean, Void> shouldDocumentVisitor = null;
-    /**
-     * Returns whether an element ought to be documented.
-     * @param e the element in question
-     * @return true if the element should be documented
-     */
-    public boolean shouldDocument(Element e) {
-        if (shouldDocumentVisitor == null) {
-            shouldDocumentVisitor = new SimpleElementVisitor9<Boolean, Void>() {
+    private boolean isTypeElementSelected(TypeElement te) {
+        return (xclasses || toolEnv.isFromSource(te)) && isSelected(te);
+    }
 
+    SimpleElementVisitor9<Boolean, Void> visibleElementVisitor = null;
+    /**
+     * Returns true if the element is selected, by applying
+     * the access filter checks. Special treatment is applied to
+     * types, for a top level type the access filter applies completely,
+     * however if is a nested type then it is allowed either  if
+     * the enclosing is a static or the enclosing is also selected.
+     *
+     * @param e the element to be checked
+     * @return true if the element is visible
+     */
+    public boolean isSelected(Element e) {
+        if (toolEnv.isSynthetic((Symbol) e)) {
+            return false;
+        }
+        if (visibleElementVisitor == null) {
+            visibleElementVisitor = new SimpleElementVisitor9<Boolean, Void>() {
                 @Override
                 public Boolean visitType(TypeElement e, Void p) {
-                    return shouldDocument((ClassSymbol) e);
+                    if (!accessFilter.checkModifier(e)) {
+                        return false; // it is not allowed
+                    }
+                    Element encl = e.getEnclosingElement();
+
+                    // check if nested
+                    if (encl.getKind() == ElementKind.PACKAGE)
+                        return true; // top-level class, allow it
+
+                    // is enclosed static
+                    if (encl.getModifiers().contains(Modifier.STATIC))
+                        return true; // allowed
+
+                    // check the enclosing
+                    return visit(encl);
                 }
 
                 @Override
-                public Boolean visitVariable(VariableElement e, Void p) {
-                    return shouldDocument((VarSymbol) e);
-                }
-
-                @Override
-                public Boolean visitExecutable(ExecutableElement e, Void p) {
-                    return shouldDocument((MethodSymbol) e);
-                }
-
-                @Override
-                public Boolean visitPackage(PackageElement e, Void p) {
+                protected Boolean defaultAction(Element e, Void p) {
                     return accessFilter.checkModifier(e);
+                }
+
+                @Override
+                public Boolean visitUnknown(Element e, Void p) {
+                    throw new AssertionError("unkown element: " + p);
                 }
             };
         }
-        return shouldDocumentVisitor.visit(e);
-    }
-
-    /** Check whether this member should be documented. */
-    private boolean shouldDocument(VarSymbol sym) {
-        if (toolEnv.isSynthetic(sym)) {
-            return false;
-        }
-        return accessFilter.checkModifier(sym);
-    }
-
-    /** Check whether this member should be documented. */
-    private boolean shouldDocument(MethodSymbol sym) {
-        if (toolEnv.isSynthetic(sym)) {
-            return false;
-        }
-        return accessFilter.checkModifier(sym);
-    }
-
-    /** Check whether this class should be documented. */
-    private boolean shouldDocument(ClassSymbol sym) {
-        return
-            !toolEnv.isSynthetic(sym) && // no synthetics
-            (xclasses || toolEnv.hasPath(sym)) &&
-            isVisible(sym);
-    }
-
-    /**
-     * Returns the visibility of a type element.
-     * If the type element is a nested type, then check if the
-     * enclosing is static or the enclosed is visible.
-     *
-     * @param te the type element to be checked
-     * @return true if the element is visible
-     */
-    public boolean isVisible(TypeElement te) {
-        ClassSymbol sym = (ClassSymbol)te;
-        if (!accessFilter.checkModifier(sym)) {
-            return false;
-        }
-        ClassSymbol encl = sym.owner.enclClass();
-        return (encl == null || (sym.flags_field & Flags.STATIC) != 0 || isVisible(encl));
+        return visibleElementVisitor.visit(e);
     }
 
     private class IncludedVisitor extends SimpleElementVisitor9<Boolean, Void> {
-
         final private Set<Element> includedCache;
 
         public IncludedVisitor() {
@@ -991,7 +940,7 @@ public class ElementsTable {
             if (includedTypeElements.contains(e)) {
                 return true;
             }
-            if (shouldDocument(e)) {
+            if (isTypeElementSelected(e)) {
                 // Class is nameable from top-level and
                 // the class and all enclosing classes
                 // pass the modifier filter.
@@ -1019,7 +968,7 @@ public class ElementsTable {
         public Boolean defaultAction(Element e, Void p) {
             if (includedCache.contains(e))
                 return true;
-            if (visit(e.getEnclosingElement()) && shouldDocument(e)) {
+            if (visit(e.getEnclosingElement()) && isSelected(e)) {
                 switch(e.getKind()) {
                     case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE:
                     case MODULE: case OTHER: case PACKAGE:

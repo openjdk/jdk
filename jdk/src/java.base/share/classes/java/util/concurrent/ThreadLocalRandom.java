@@ -197,9 +197,17 @@ public class ThreadLocalRandom extends Random {
         return r;
     }
 
-    // We must define this, but never use it.
+    /**
+     * Generates a pseudorandom number with the indicated number of
+     * low-order bits.  Because this class has no subclasses, this
+     * method cannot be invoked or overridden.
+     *
+     * @param  bits random bits
+     * @return the next pseudorandom value from this random number
+     *         generator's sequence
+     */
     protected int next(int bits) {
-        return (int)(mix64(nextSeed()) >>> (64 - bits));
+        return nextInt() >>> (32 - bits);
     }
 
     /**

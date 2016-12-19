@@ -122,14 +122,14 @@ JNIEXPORT jstring JNICALL Java_com_oracle_security_ucrypto_UcryptoProvider_getMe
   jResult = NULL;
   if (ftab->ucryptoVersion != NULL && ftab->ucryptoGetMechList != NULL) {
       length = (*ftab->ucryptoGetMechList)(NULL);
-      if (DEBUG) printf("mech list length: %d\n", length);
+      if (J2UC_DEBUG) printf("mech list length: %d\n", length);
       result = malloc(length);
       if (result == NULL) {
         throwOutOfMemoryError(env, NULL);
         return NULL;
       }
       length = (*ftab->ucryptoGetMechList)(result);
-      if (DEBUG) printf("mech list: %s\n", result);
+      if (J2UC_DEBUG) printf("mech list: %s\n", result);
       jResult = (*env)->NewStringUTF(env, result);
       free(result);
   } else {
@@ -201,7 +201,7 @@ CipherInit(crypto_ctx_t *context, int encrypt, ucrypto_mech_t mech,
   void *iv;
   size_t ivLen;
 
-  if (DEBUG) printf("CipherInit: mech %i, key %i(%i), iv %i(%i) tagLen %i, aad %i(%i)\n",
+  if (J2UC_DEBUG) printf("CipherInit: mech %i, key %i(%i), iv %i(%i) tagLen %i, aad %i(%i)\n",
                     mech, jKey, jKeyLen, jIv, jIvLen, tagLen, jAad, jAadLen);
   if (mech == CRYPTO_AES_CTR) {
     ivLen = sizeof(CK_AES_CTR_PARAMS);
@@ -228,10 +228,10 @@ CipherInit(crypto_ctx_t *context, int encrypt, ucrypto_mech_t mech,
   }
   if (encrypt) {
     rv = (*ftab->ucryptoEncryptInit)(context, mech, jKey, (size_t)jKeyLen, iv, ivLen);
-    if (rv != 0 && DEBUG) printError("ucryptoEncryptInit", mech, rv);
+    if (rv != 0 && J2UC_DEBUG) printError("ucryptoEncryptInit", mech, rv);
   } else {
     rv =(*ftab->ucryptoDecryptInit)(context, mech, jKey, (size_t)jKeyLen, iv, ivLen);
-    if (rv != 0 && DEBUG) printError("ucryptoDecryptInit", mech, rv);
+    if (rv != 0 && J2UC_DEBUG) printError("ucryptoDecryptInit", mech, rv);
   }
 
   if (iv != jIv) {
@@ -253,23 +253,23 @@ CipherUpdate(crypto_ctx_t *context, int encrypt, unsigned char *bufIn, int inOfs
   size_t outLength;
 
   outLength = (size_t) *outLen;
-  if (DEBUG) {
+  if (J2UC_DEBUG) {
     printf("CipherUpdate: Inofs %i, InLen %i, OutOfs %i, OutLen %i\n", inOfs, inLen, outOfs, *outLen);
     printBytes("BufIn=", (unsigned char*)(bufIn+inOfs), inLen);
   }
   if (encrypt) {
     rv = (*ftab->ucryptoEncryptUpdate)(context, (unsigned char*)(bufIn+inOfs), (size_t)inLen, (unsigned char*)(bufOut+outOfs), &outLength);
     if (rv) {
-      if (DEBUG) printError("ucryptoEncryptUpdate", -1, rv);
+      if (J2UC_DEBUG) printError("ucryptoEncryptUpdate", -1, rv);
     } else {
       *outLen = (int)outLength;
     }
   } else {
     rv = (*ftab->ucryptoDecryptUpdate)(context, (unsigned char*)(bufIn+inOfs), (size_t)inLen, (unsigned char*)(bufOut+outOfs), &outLength);
     if (rv) {
-      if (DEBUG) printError("ucryptoDecryptUpdate", -1, rv);
+      if (J2UC_DEBUG) printError("ucryptoDecryptUpdate", -1, rv);
     } else {
-      if (DEBUG) printBytes("BufOut=", (unsigned char*)(bufOut+outOfs), outLength);
+      if (J2UC_DEBUG) printBytes("BufOut=", (unsigned char*)(bufOut+outOfs), outLength);
       *outLen = (int)outLength;
     }
   }
@@ -285,21 +285,21 @@ CipherFinal(crypto_ctx_t *context, int encrypt, unsigned char *bufOut, int outOf
 
   outLength = (size_t)*outLen;
 
-  if (DEBUG) printf("CipherFinal: OutOfs %i, outLen %i\n", outOfs, *outLen);
+  if (J2UC_DEBUG) printf("CipherFinal: OutOfs %i, outLen %i\n", outOfs, *outLen);
   if (encrypt) {
     rv = (*ftab->ucryptoEncryptFinal)(context, (unsigned char*)(bufOut+outOfs), &outLength);
     if (rv) {
-      if (DEBUG) printError("ucryptoDecryptFinal", -1, rv);
+      if (J2UC_DEBUG) printError("ucryptoDecryptFinal", -1, rv);
     } else {
-      if (DEBUG) printBytes("BufOut=", (unsigned char*)(bufOut+outOfs), outLength);
+      if (J2UC_DEBUG) printBytes("BufOut=", (unsigned char*)(bufOut+outOfs), outLength);
       *outLen = (int)outLength;
     }
   } else {
     rv = (*ftab->ucryptoDecryptFinal)(context, (unsigned char*)(bufOut+outOfs), &outLength);
     if (rv) {
-      if (DEBUG) printError("ucryptoDecryptFinal", -1, rv);
+      if (J2UC_DEBUG) printError("ucryptoDecryptFinal", -1, rv);
     } else {
-      if (DEBUG) printBytes("BufOut=", (unsigned char*)(bufOut+outOfs), outLength);
+      if (J2UC_DEBUG) printBytes("BufOut=", (unsigned char*)(bufOut+outOfs), outLength);
       *outLen = (int)outLength;
     }
   }
@@ -318,7 +318,7 @@ jlong JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeInit(jint mech
     rv = (*ftab->ucryptoDigestInit)(context, (ucrypto_mech_t) mech, NULL, 0);
     if (rv) {
       freeContext(context);
-      if (DEBUG) printError("ucryptoDigestInit", mech, rv);
+      if (J2UC_DEBUG) printError("ucryptoDigestInit", mech, rv);
       return 0L;
     }
   }
@@ -336,7 +336,7 @@ jint JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeUpdate
 
   if (rv) {
     freeContext(context);
-    if (DEBUG) printError("ucryptoDigestUpdate", mech, rv);
+    if (J2UC_DEBUG) printError("ucryptoDigestUpdate", mech, rv);
   }
 
   return -rv; // use negative value to indicate error
@@ -353,7 +353,7 @@ jint JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeDigest
                                    &digest_len);
   if (rv) {
     freeContext(context);
-    if (DEBUG) printError("ucryptoDigestFinal", mech, rv);
+    if (J2UC_DEBUG) printError("ucryptoDigestFinal", mech, rv);
   }
 
   return -rv; // use negative value to indicate error
@@ -959,7 +959,7 @@ jlong JavaCritical_com_oracle_security_ucrypto_NativeKey_00024RSAPublic_nativeIn
     memcpy(pub, jPub, pubLen);
   }
 
-  if (DEBUG) {
+  if (J2UC_DEBUG) {
     printf("RSAPublicKey.nativeInit: keyValue=%ld, keyLen=2\n", pKey);
     printBytes("\tmod: ", (unsigned char*) mod, modLen);
     printBytes("\tpubExp: ", (unsigned char*) pub, pubLen);
@@ -1035,7 +1035,7 @@ SignatureInit(crypto_ctx_t *context, jint mechVal, jboolean sign,
     rv = (*ftab->ucryptoVerifyInit)(context, mech, pKey, keyLength,
                                     NULL, 0);
   }
-  if (DEBUG) {
+  if (J2UC_DEBUG) {
     printf("SignatureInit: context=%ld, mech=%d, sign=%d, keyValue=%ld, keyLength=%d\n",
            context, mech, sign, pKey, keyLength);
     printError("SignatureInit", mech, rv);
@@ -1100,7 +1100,7 @@ jint JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeUpdate__J
   int rv = 0;
 
   context = (crypto_ctx_t *) pCtxt;
-  if (DEBUG) {
+  if (J2UC_DEBUG) {
     printf("NativeRSASignature.nativeUpdate: context=%ld, sign=%d, jIn=%ld, jInOfs=%d, jInLen=%d\n",
            context, sign, jIn, jInOfs, jInLen);
   }
@@ -1111,7 +1111,7 @@ jint JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeUpdate__J
   }
   if (rv) {
     freeContext(context);
-    if (DEBUG) printError("NativeRSASignature.nativeUpdate", -1, rv);
+    if (J2UC_DEBUG) printError("NativeRSASignature.nativeUpdate", -1, rv);
     return -rv; // use negative value to indicate error!
   }
 
@@ -1128,7 +1128,7 @@ JNIEXPORT jint JNICALL Java_com_oracle_security_ucrypto_NativeRSASignature_nativ
     return -1; // use negative value to indicate error!
   }
 
-  if (DEBUG) printBytes("Update w/ data: ", (unsigned char*)bufIn, (size_t) inLen);
+  if (J2UC_DEBUG) printBytes("Update w/ data: ", (unsigned char*)bufIn, (size_t) inLen);
 
   rv = JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeUpdate__JZ_3BII
     (pCtxt, sign, inLen, bufIn, 0, inLen);
@@ -1169,7 +1169,7 @@ jint JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeFinal
   size_t sigLength = (size_t) jSigLen;
 
   context = (crypto_ctx_t *) pCtxt;
-  if (DEBUG) {
+  if (J2UC_DEBUG) {
       printf("NativeRSASignature.nativeFinal: context=%ld, sign=%d, bufSig=%ld, sigOfs=%d, sigLen=%d\n",
              context, sign, bufSig, sigOfs, jSigLen);
       printBytes("Before: SigBytes ", (unsigned char*) (bufSig + sigOfs), jSigLen);
@@ -1182,7 +1182,7 @@ jint JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeFinal
 
   freeContext(context);
   if (rv) {
-    if (DEBUG) {
+    if (J2UC_DEBUG) {
       printError("NativeRSASignature.nativeFinal", -1, rv);
       if (sigLength != jSigLen) {
         printf("NativeRSASignature.nativeFinal out sig len=%d\n", sigLength);
@@ -1247,7 +1247,7 @@ jint JavaCritical_com_oracle_security_ucrypto_NativeRSACipher_nativeAtomic
   size_t outLength = (size_t) jOutLen;
 
   pKey = (uchar_t *) keyValue;
-  if (DEBUG) {
+  if (J2UC_DEBUG) {
     printf("NativeRSACipher.nativeAtomic: mech=%d, encrypt=%d, pKey=%ld, keyLength=%d\n",
            mech, encrypt, pKey, keyLength);
     printBytes("Before: in  = ", (unsigned char*) bufIn, jInLen);
@@ -1263,7 +1263,7 @@ jint JavaCritical_com_oracle_security_ucrypto_NativeRSACipher_nativeAtomic
       NULL, 0, (uchar_t *)bufIn, (size_t)jInLen,
       (uchar_t *)(bufOut + jOutOfs), &outLength);
   }
-  if (DEBUG) {
+  if (J2UC_DEBUG) {
     printError("NativeRSACipher.nativeAtomic", mech, rv);
     if (outLength != jOutLen) {
       printf("NativeRSACipher.nativeAtomic out len=%d\n", outLength);

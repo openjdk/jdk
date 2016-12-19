@@ -49,6 +49,52 @@ public class TIFFIFD extends TIFFDirectory {
     private long stripOrTileOffsetsPosition = -1;
     private long lastPosition = -1;
 
+    //
+    // A set of tag numbers corresponding to tags essential to decoding
+    // the image and metadata required to interpret its samples.
+    //
+    private static volatile Set<Integer> essentialTags = null;
+
+    private static void initializeEssentialTags() {
+        Set<Integer> tags = essentialTags;
+        if (tags == null) {
+            essentialTags = tags = Set.of(
+                BaselineTIFFTagSet.TAG_BITS_PER_SAMPLE,
+                BaselineTIFFTagSet.TAG_COLOR_MAP,
+                BaselineTIFFTagSet.TAG_COMPRESSION,
+                BaselineTIFFTagSet.TAG_EXTRA_SAMPLES,
+                BaselineTIFFTagSet.TAG_FILL_ORDER,
+                BaselineTIFFTagSet.TAG_ICC_PROFILE,
+                BaselineTIFFTagSet.TAG_IMAGE_LENGTH,
+                BaselineTIFFTagSet.TAG_IMAGE_WIDTH,
+                BaselineTIFFTagSet.TAG_JPEG_AC_TABLES,
+                BaselineTIFFTagSet.TAG_JPEG_DC_TABLES,
+                BaselineTIFFTagSet.TAG_JPEG_INTERCHANGE_FORMAT,
+                BaselineTIFFTagSet.TAG_JPEG_INTERCHANGE_FORMAT_LENGTH,
+                BaselineTIFFTagSet.TAG_JPEG_PROC,
+                BaselineTIFFTagSet.TAG_JPEG_Q_TABLES,
+                BaselineTIFFTagSet.TAG_JPEG_RESTART_INTERVAL,
+                BaselineTIFFTagSet.TAG_JPEG_TABLES,
+                BaselineTIFFTagSet.TAG_PHOTOMETRIC_INTERPRETATION,
+                BaselineTIFFTagSet.TAG_PLANAR_CONFIGURATION,
+                BaselineTIFFTagSet.TAG_PREDICTOR,
+                BaselineTIFFTagSet.TAG_REFERENCE_BLACK_WHITE,
+                BaselineTIFFTagSet.TAG_ROWS_PER_STRIP,
+                BaselineTIFFTagSet.TAG_SAMPLES_PER_PIXEL,
+                BaselineTIFFTagSet.TAG_SAMPLE_FORMAT,
+                BaselineTIFFTagSet.TAG_STRIP_BYTE_COUNTS,
+                BaselineTIFFTagSet.TAG_STRIP_OFFSETS,
+                BaselineTIFFTagSet.TAG_T4_OPTIONS,
+                BaselineTIFFTagSet.TAG_T6_OPTIONS,
+                BaselineTIFFTagSet.TAG_TILE_BYTE_COUNTS,
+                BaselineTIFFTagSet.TAG_TILE_LENGTH,
+                BaselineTIFFTagSet.TAG_TILE_OFFSETS,
+                BaselineTIFFTagSet.TAG_TILE_WIDTH,
+                BaselineTIFFTagSet.TAG_Y_CB_CR_COEFFICIENTS,
+                BaselineTIFFTagSet.TAG_Y_CB_CR_SUBSAMPLING
+            );
+        }
+    }
 
     /**
      * Converts a {@code TIFFDirectory} to a {@code TIFFIFD}.
@@ -507,6 +553,15 @@ public class TIFFIFD extends TIFFDirectory {
 
         List<TIFFTagSet> tagSetList = getTagSetList();
 
+        boolean ensureEssentialTags = false;
+        TIFFTagSet baselineTagSet = null;
+        if (isPrimaryIFD && ignoreUnknownFields
+            && !tagSetList.contains(BaselineTIFFTagSet.getInstance())) {
+            ensureEssentialTags = true;
+            initializeEssentialTags();
+            baselineTagSet = BaselineTIFFTagSet.getInstance();
+        }
+
         List<Object> entries = new ArrayList<>();
         Object[] entryData = new Object[1]; // allocate once for later reuse.
 
@@ -529,6 +584,11 @@ public class TIFFIFD extends TIFFDirectory {
 
             // Get the associated TIFFTag.
             TIFFTag tag = getTag(tagNumber, tagSetList);
+
+            if (tag == null && ensureEssentialTags
+                && essentialTags.contains(tagNumber)) {
+                tag = baselineTagSet.getTag(tagNumber);
+            }
 
             // Ignore unknown fields, fields with unknown type, and fields
             // with count out of int range.

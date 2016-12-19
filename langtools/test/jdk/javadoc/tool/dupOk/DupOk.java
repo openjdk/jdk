@@ -36,6 +36,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.ElementFilter;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.Reporter;
@@ -62,7 +63,7 @@ public class DupOk implements Doclet
     }
 
     public boolean run(DocletEnvironment root) {
-        Set<TypeElement> classes = root.getIncludedTypeElements();
+        Set<TypeElement> classes = ElementFilter.typesIn(root.getIncludedElements());
         if (classes.size() != 2)
             throw new Error("1 " + Arrays.asList(classes));
         for (TypeElement clazz : classes) {

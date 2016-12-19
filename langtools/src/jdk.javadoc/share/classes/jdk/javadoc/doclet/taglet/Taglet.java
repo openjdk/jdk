@@ -54,13 +54,13 @@ public interface Taglet {
      * @return true if this <code>Taglet</code>
      * is an inline tag, false otherwise.
      */
-    public abstract boolean isInlineTag();
+    boolean isInlineTag();
 
     /**
      * Returns the name of the tag.
      * @return the name of this custom tag.
      */
-    public abstract String getName();
+    String getName();
 
     /**
      * Given the {@link DocTree DocTree} representation of this custom
@@ -69,7 +69,7 @@ public interface Taglet {
      * @param tag the <code>Tag</code> representation of this custom tag.
      * @return the string representation of this <code>Tag</code>.
      */
-    public abstract String toString(DocTree tag);
+    String toString(DocTree tag);
 
     /**
      * Given a List of {@link DocTree DocTrees} representing this custom
@@ -79,7 +79,7 @@ public interface Taglet {
      * @param tags the list of <code>DocTree</code>s representing this custom tag.
      * @return the string representation of this <code>Tag</code>.
      */
-    public abstract String toString(List<? extends DocTree> tags);
+    String toString(List<? extends DocTree> tags);
 
     /**
      * The kind of location.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.rmi.RemoteException;
 import java.security.AccessController;
 import java.util.HashSet;
 import java.util.Map;
@@ -115,7 +114,7 @@ public class RuntimeModeler {
     public static final String SERVICE              = "Service";
     public static final String PORT                 = "Port";
     public static final Class HOLDER_CLASS = Holder.class;
-    public static final Class<RemoteException> REMOTE_EXCEPTION_CLASS = RemoteException.class;
+    public static final String REMOTE_EXCEPTION_CLASS = "java.rmi.RemoteException";
     public static final Class<RuntimeException> RUNTIME_EXCEPTION_CLASS = RuntimeException.class;
     public static final Class<Exception> EXCEPTION_CLASS = Exception.class;
     public static final String DecapitalizeExceptionBeanProperties = "com.sun.xml.internal.ws.api.model.DecapitalizeExceptionBeanProperties";
@@ -347,6 +346,7 @@ public class RuntimeModeler {
     }
 
     private boolean noWrapperGen() {
+        if (Runtime.version().major() >= 9) return true;
         Object o = config.properties().get(SuppressDocLitWrapperGeneration);
         return (o!= null && o instanceof Boolean) ? ((Boolean) o) : false;
     }
@@ -586,7 +586,7 @@ public class RuntimeModeler {
      */
     private boolean isServiceException(Class<?> exception) {
         return EXCEPTION_CLASS.isAssignableFrom(exception) &&
-                !(RUNTIME_EXCEPTION_CLASS.isAssignableFrom(exception) || REMOTE_EXCEPTION_CLASS.isAssignableFrom(exception));
+                !(RUNTIME_EXCEPTION_CLASS.isAssignableFrom(exception) || isRemoteException(exception));
     }
 
     /**
@@ -1169,7 +1169,7 @@ public class RuntimeModeler {
                     if(p == null)
                         reqRpcParams.put(reqRpcParams.size()+10000, param);
                     else
-                        reqRpcParams.put(p.getIndex(), param);
+                        reqRpcParams.put(param.getIndex(), param);
                 }
 
                 if(!param.isIN()){
@@ -1181,7 +1181,7 @@ public class RuntimeModeler {
                     if(p == null)
                         resRpcParams.put(resRpcParams.size()+10000, param);
                     else
-                        resRpcParams.put(p.getIndex(), param);
+                        resRpcParams.put(param.getIndex(), param);
                 }
             }else{
                 javaMethod.addParameter(param);
@@ -1210,7 +1210,7 @@ public class RuntimeModeler {
             //Exclude RuntimeException, RemoteException and Error etc
             if (!EXCEPTION_CLASS.isAssignableFrom(exception))
                 continue;
-            if (RUNTIME_EXCEPTION_CLASS.isAssignableFrom(exception) || REMOTE_EXCEPTION_CLASS.isAssignableFrom(exception))
+            if (RUNTIME_EXCEPTION_CLASS.isAssignableFrom(exception) || isRemoteException(exception))
                 continue;
             if (getAnnotation(exception, javax.xml.bind.annotation.XmlTransient.class) != null)
                 continue;
@@ -1644,6 +1644,21 @@ public class RuntimeModeler {
                 return bo.getPart(partName, mode);
         }
         return null;
+    }
+
+    /*
+     * Returns true if an exception is a java.rmi.RemoteException or its subtype.
+     *
+     * @param exception
+     * @return true if an exception is a java.rmi.RemoteException or its subtype,
+     *      false otherwise
+     */
+    private boolean isRemoteException(Class<?> exception) {
+        Class<?> c = exception;
+        while (c != null && !REMOTE_EXCEPTION_CLASS.equals(c.getName())) {
+            c = c.getSuperclass();
+        }
+        return c != null;
     }
 
     private static Boolean getBooleanSystemProperty(final String prop) {

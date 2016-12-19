@@ -112,10 +112,13 @@ public class Reflection {
         }
     }
 
-    private static boolean verifyMemberAccess(Class<?> currentClass,
-                                              Class<?> memberClass,
-                                              Class<?> targetClass,
-                                              int modifiers)
+    /**
+     * Verify access to a member, returning {@code false} if no access
+     */
+    public static boolean verifyMemberAccess(Class<?> currentClass,
+                                             Class<?> memberClass,
+                                             Class<?> targetClass,
+                                             int modifiers)
     {
         // Verify that currentClass can access a field, method, or
         // constructor of memberClass, where that member's access bits are

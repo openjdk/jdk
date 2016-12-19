@@ -293,6 +293,7 @@ class CAccessibleText {
         }, c);
     }
 
+    @SuppressWarnings("deprecation")
     static int[] getVisibleCharacterRange(final Accessible a) {
         final Accessible sa = CAccessible.getSwingAccessible(a);
         if (!(sa instanceof JTextComponent)) return null;

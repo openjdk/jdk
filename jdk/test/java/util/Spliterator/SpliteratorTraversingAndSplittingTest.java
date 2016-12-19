@@ -25,18 +25,20 @@
  * @test
  * @summary Spliterator traversing and splitting tests
  * @run testng SpliteratorTraversingAndSplittingTest
- * @bug 8020016 8071477
+ * @bug 8020016 8071477 8072784 8169838
  */
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.nio.CharBuffer;
 import java.util.AbstractCollection;
 import java.util.AbstractList;
 import java.util.AbstractSet;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -80,7 +82,9 @@ import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.stream.IntStream;
 
+import static java.util.stream.Collectors.toList;
 import static org.testng.Assert.*;
 import static org.testng.Assert.assertEquals;
 
@@ -881,8 +885,33 @@ public class SpliteratorTraversingAndSplittingTest {
             cdb.add("new CharSequenceImpl(\"%s\")", CharSequenceImpl::new);
             cdb.add("new StringBuilder(\"%s\")", StringBuilder::new);
             cdb.add("new StringBuffer(\"%s\")", StringBuffer::new);
+            cdb.add("CharBuffer.wrap(\"%s\".toCharArray())", s -> CharBuffer.wrap(s.toCharArray()));
         }
 
+
+        Object[][] bitStreamTestcases = new Object[][] {
+                { "none", IntStream.empty().toArray() },
+                { "index 0", IntStream.of(0).toArray() },
+                { "index 255", IntStream.of(255).toArray() },
+                { "index 0 and 255", IntStream.of(0, 255).toArray() },
+                { "every bit", IntStream.range(0, 255).toArray() },
+                { "step 2", IntStream.range(0, 255).map(f -> f * 2).toArray() },
+                { "step 3", IntStream.range(0, 255).map(f -> f * 3).toArray() },
+                { "step 5", IntStream.range(0, 255).map(f -> f * 5).toArray() },
+                { "step 7", IntStream.range(0, 255).map(f -> f * 7).toArray() },
+                { "1, 10, 100, 1000", IntStream.of(1, 10, 100, 1000).toArray() },
+        };
+        for (Object[] tc : bitStreamTestcases) {
+            String description = (String)tc[0];
+            int[] exp = (int[])tc[1];
+            SpliteratorOfIntDataBuilder db = new SpliteratorOfIntDataBuilder(
+                    data, IntStream.of(exp).boxed().collect(toList()));
+
+            db.add("BitSet.stream.spliterator() {" + description + "}", () ->
+                IntStream.of(exp).collect(BitSet::new, BitSet::set, BitSet::or).
+                        stream().spliterator()
+            );
+        }
         return spliteratorOfIntDataProvider = data.toArray(new Object[0][]);
     }
 

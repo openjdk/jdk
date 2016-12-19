@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8149524 8131024 8165211 8080071 8130454 8167343 8129559
+ * @bug 8149524 8131024 8165211 8080071 8130454 8167343 8129559 8114842
  * @summary Test SourceCodeAnalysis
  * @build KullaTesting TestingInputStream
  * @run testng CompletenessTest
@@ -118,6 +118,10 @@ public class CompletenessTest extends KullaTesting {
         "baz: while (true) if (t()) printf('-'); else break baz",
         "java.util.function.IntFunction<int[]> ggg = int[]::new",
         "List<? extends Object> l",
+        "int[] m = {1, 2}",
+        "int[] m = {1, 2}, n = null",
+        "int[] m = {1, 2}, n",
+        "int[] m = {1, 2}, n = {3, 4}",
     };
 
     static final String[] considered_incomplete = new String[] {
@@ -177,6 +181,11 @@ public class CompletenessTest extends KullaTesting {
         "void f()",
         "void f() throws E",
         "@A(",
+        "int n = 4,",
+        "int n,",
+        "int[] m = {1, 2},",
+        "int[] m = {1, 2}, n = {3, 4},",
+        "Map<String,"
     };
 
     static final String[] unknown = new String[] {
@@ -315,5 +324,7 @@ public class CompletenessTest extends KullaTesting {
         assertStatus("if (t) if ", DEFINITELY_INCOMPLETE, "if (t) if"); //Bug
         assertStatus("int m() {} dfd", COMPLETE, "int m() {}");
         assertStatus("int p = ", DEFINITELY_INCOMPLETE, "int p ="); //Bug
+        assertStatus("int[] m = {1, 2}, n = new int[0];  int i;", COMPLETE,
+                     "int[] m = {1, 2}, n = new int[0];");
     }
 }

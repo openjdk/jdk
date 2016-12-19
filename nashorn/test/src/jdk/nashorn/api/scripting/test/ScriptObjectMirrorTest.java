@@ -41,6 +41,7 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import jdk.nashorn.api.scripting.AbstractJSObject;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import org.testng.annotations.Test;
@@ -388,5 +389,42 @@ public class ScriptObjectMirrorTest {
         final JSObject func = (JSObject)e.eval("function(x) { return x + ' world' }");
         assertTrue(func.isFunction());
         assertEquals(func.call(e.eval("this"), "hello"), "hello world");
+    }
+
+    // @bug 8170565: JSObject call() is passed undefined for the argument 'thiz'
+    @Test
+    public void jsObjectThisTest() throws Exception {
+        final ScriptEngineManager engineManager = new ScriptEngineManager();
+        final ScriptEngine e = engineManager.getEngineByName("nashorn");
+        e.put("func", new AbstractJSObject() {
+            @Override
+            public boolean isFunction() { return true; }
+
+            @Override
+            public Object call(Object thiz, Object...args) {
+                return thiz;
+            }
+        });
+
+        assertTrue((boolean)e.eval("func() === this"));
+
+        // check that there is no blind undefined->Global translation!
+        assertTrue((boolean)e.eval("typeof(Function.prototype.call.call(func, undefined)) == 'undefined'"));
+
+        // make sure that strict functions don't get translated this for scope calls!
+        e.put("sfunc", new AbstractJSObject() {
+            @Override
+            public boolean isFunction() { return true; }
+
+            @Override
+            public boolean isStrictFunction() { return true; }
+
+            @Override
+            public Object call(Object thiz, Object...args) {
+                return thiz;
+            }
+        });
+
+        assertTrue((boolean)e.eval("typeof sfunc() == 'undefined'"));
     }
 }

@@ -1172,6 +1172,9 @@ WB_END
 
 int WhiteBox::get_blob_type(const CodeBlob* code) {
   guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to be enabled");
+  if (code->is_aot()) {
+    return -1;
+  }
   return CodeCache::get_code_heap(code)->code_blob_type();
 }
 
@@ -1227,7 +1230,8 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   if (code == NULL) {
     return result;
   }
-  int insts_size = code->insts_size();
+  int comp_level = code->comp_level();
+  int insts_size = comp_level == CompLevel_aot ? code->code_end() - code->code_begin() : code->insts_size();
 
   ThreadToNativeFromVM ttn(thread);
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
@@ -1242,7 +1246,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   CHECK_JNI_EXCEPTION_(env, NULL);
   env->SetObjectArrayElement(result, 0, codeBlob);
 
-  jobject level = integerBox(thread, env, code->comp_level());
+  jobject level = integerBox(thread, env, comp_level);
   CHECK_JNI_EXCEPTION_(env, NULL);
   env->SetObjectArrayElement(result, 1, level);
 
@@ -1413,14 +1417,6 @@ WB_END
 
 WB_ENTRY(void, WB_AddReadsModule(JNIEnv* env, jobject o, jobject from_module, jobject source_module))
   Modules::add_reads_module(from_module, source_module, CHECK);
-WB_END
-
-WB_ENTRY(jboolean, WB_CanReadModule(JNIEnv* env, jobject o, jobject asking_module, jobject source_module))
-  return Modules::can_read_module(asking_module, source_module, THREAD);
-WB_END
-
-WB_ENTRY(jboolean, WB_IsExportedToModule(JNIEnv* env, jobject o, jobject from_module, jstring package, jobject to_module))
-  return Modules::is_exported_to_module(from_module, package, to_module, THREAD);
 WB_END
 
 WB_ENTRY(void, WB_AddModulePackage(JNIEnv* env, jobject o, jclass module, jstring package))
@@ -1866,10 +1862,6 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_AddModuleExports },
   {CC"AddReadsModule",     CC"(Ljava/lang/Object;Ljava/lang/Object;)V",
                                                       (void*)&WB_AddReadsModule },
-  {CC"CanReadModule",      CC"(Ljava/lang/Object;Ljava/lang/Object;)Z",
-                                                      (void*)&WB_CanReadModule },
-  {CC"IsExportedToModule", CC"(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Z",
-                                                      (void*)&WB_IsExportedToModule },
   {CC"AddModulePackage",   CC"(Ljava/lang/Object;Ljava/lang/String;)V",
                                                       (void*)&WB_AddModulePackage },
   {CC"GetModuleByPackageName", CC"(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;",

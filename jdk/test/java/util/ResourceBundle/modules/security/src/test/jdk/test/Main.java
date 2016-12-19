@@ -39,9 +39,11 @@ public class Main {
 
         // resource in another module
         Module m1 = p1.Bundle.class.getModule();
+
+        // bundles loaded with different cache key
         ResourceBundle rb1 = Bundle.getBundle(M1_RESOURCE_BUNDLE_NAME);
         ResourceBundle rb2 = ResourceBundle.getBundle(M1_RESOURCE_BUNDLE_NAME, m1);
-        if (rb1 != rb2) {
+        if (rb1 == rb2) {
             throw new RuntimeException("unexpected resource bundle");
         }
 

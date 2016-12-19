@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.sun.tools.jdeps.Analyzer.NOT_FOUND;
 
@@ -140,20 +141,34 @@ public class ModuleExportsAnalyzer extends DepsAnalyzer {
         Set<Module> modules = builder.build().adjacentNodes(root);
 
         // if reduced is set, apply transition reduction
-        Set<Module> reducedSet = reduced ? builder.reduced().adjacentNodes(root)
-                                         : modules;
+        Set<Module> reducedSet;
+        if (reduced) {
+            Set<Module> nodes = builder.reduced().adjacentNodes(root);
+            if (nodes.size() == 1) {
+                // java.base only
+                reducedSet = nodes;
+            } else {
+                // java.base is mandated and can be excluded from the reduced graph
+                reducedSet = nodes.stream()
+                    .filter(m -> !"java.base".equals(m.name()) ||
+                                    jdkinternals.containsKey("java.base"))
+                    .collect(Collectors.toSet());
+            }
+        } else {
+            reducedSet = modules;
+        }
 
         modules.stream()
                .sorted(Comparator.comparing(Module::name))
                .forEach(m -> {
-                if (jdkinternals.containsKey(m)) {
-                    jdkinternals.get(m).stream()
-                        .sorted()
-                        .forEach(pn -> writer.format("   %s/%s%n", m, pn));
-                } else if (reducedSet.contains(m)){
-                    // if the transition reduction is applied, show the reduced graph
-                    writer.format("   %s%n", m);
-                }
+                    if (jdkinternals.containsKey(m)) {
+                        jdkinternals.get(m).stream()
+                            .sorted()
+                            .forEach(pn -> writer.format("   %s/%s%n", m, pn));
+                    } else if (reducedSet.contains(m)){
+                        // if the transition reduction is applied, show the reduced graph
+                        writer.format("   %s%n", m);
+                    }
             });
     }
 
@@ -163,7 +178,7 @@ public class ModuleExportsAnalyzer extends DepsAnalyzer {
         RootModule(String name) {
             super(name);
 
-            ModuleDescriptor.Builder builder = new ModuleDescriptor.Builder(name);
+            ModuleDescriptor.Builder builder = ModuleDescriptor.module(name);
             this.descriptor = builder.build();
         }
 

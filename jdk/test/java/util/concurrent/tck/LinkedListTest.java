@@ -48,12 +48,27 @@ public class LinkedListTest extends JSR166TestCase {
     }
 
     public static Test suite() {
-        return new TestSuite(LinkedListTest.class);
+        class Implementation implements CollectionImplementation {
+            public Class<?> klazz() { return LinkedList.class; }
+            public Collection emptyCollection() { return new LinkedList(); }
+            public Object makeElement(int i) { return i; }
+            public boolean isConcurrent() { return false; }
+            public boolean permitsNulls() { return true; }
+        }
+        class SubListImplementation extends Implementation {
+            public Collection emptyCollection() {
+                return new LinkedList().subList(0, 0);
+            }
+        }
+        return newTestSuite(
+                LinkedListTest.class,
+                CollectionTest.testSuite(new Implementation()),
+                CollectionTest.testSuite(new SubListImplementation()));
     }
 
     /**
      * Returns a new queue of given size containing consecutive
-     * Integers 0 ... n.
+     * Integers 0 ... n - 1.
      */
     private LinkedList<Integer> populatedQueue(int n) {
         LinkedList<Integer> q = new LinkedList<Integer>();
@@ -62,6 +77,8 @@ public class LinkedListTest extends JSR166TestCase {
             assertTrue(q.offer(new Integer(i)));
         assertFalse(q.isEmpty());
         assertEquals(n, q.size());
+        assertEquals((Integer) 0, q.peekFirst());
+        assertEquals((Integer) (n - 1), q.peekLast());
         return q;
     }
 

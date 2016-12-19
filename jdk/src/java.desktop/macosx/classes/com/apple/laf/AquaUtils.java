@@ -176,11 +176,12 @@ final class AquaUtils {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         T getInstance() {
             try {
                 ReflectUtil.checkPackageAccess(clazz);
                 return clazz.newInstance();
-            } catch (InstantiationException | IllegalAccessException ignored) {
+            } catch (ReflectiveOperationException ignored) {
             }
             return null;
         }

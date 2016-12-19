@@ -8,7 +8,6 @@
 ^src/share/tools/IdealGraphVisualizer/dist/
 ^src/share/tools/IdealGraphVisualizer/nbplatform/
 .igv.log
-^.hgtip
 .DS_Store
 ^\.mx.jvmci/env
 ^\.mx.jvmci/.*\.pyc
@@ -24,3 +23,19 @@
 ^test/compiler/jvmci/\w[\w\.]*/.*\.iml
 ^test/compiler/jvmci/\w[\w\.]*/nbproject
 ^test/compiler/jvmci/\w[\w\.]*/\..*
+^test/compiler/aot/\w[\w\.]*/.*\.xml
+^test/compiler/aot/\w[\w\.]*/.*\.iml
+^test/compiler/aot/\w[\w\.]*/nbproject
+^test/compiler/aot/\w[\w\.]*/\..*
+^src/jdk.vm.compiler/\.mx.graal/env
+^src/jdk.vm.compiler/\.mx.graal/.*\.pyc
+^src/jdk.vm.compiler/\.mx.graal/eclipse-launches/.*
+^src/jdk.aot/share/classes/\w[\w\.]*/.*\.xml
+^src/jdk.aot/share/classes/\w[\w\.]*/.*\.iml
+^src/jdk.aot/share/classes/\w[\w\.]*/nbproject
+^src/jdk.aot/share/classes/\w[\w\.]*/\..*
+^src/jdk.vm.compiler/share/classes/\w[\w\.]*/.*\.xml
+^src/jdk.vm.compiler/share/classes/\w[\w\.]*/.*\.iml
+^src/jdk.vm.compiler/share/classes/\w[\w\.]*/nbproject
+^src/jdk.vm.compiler/share/classes/\w[\w\.]*/\..*
+

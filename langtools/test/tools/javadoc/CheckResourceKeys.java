@@ -25,7 +25,10 @@
  * @test
  * @bug 8000612
  * @summary need test program to validate javadoc resource bundles
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules jdk.javadoc/com.sun.tools.doclets.formats.html.resources:open
+ *          jdk.javadoc/com.sun.tools.doclets.internal.toolkit.resources:open
+ *          jdk.javadoc/com.sun.tools.javadoc.resources:open
+ *          jdk.jdeps/com.sun.tools.classfile
  */
 
 import java.io.*;

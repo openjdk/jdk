@@ -146,3 +146,11 @@ ifneq ($(call check-jvm-feature, nmt), true)
       memBaseline.cpp memReporter.cpp mallocTracker.cpp virtualMemoryTracker.cpp nmtCommon.cpp \
       memTracker.cpp nmtDCmd.cpp mallocSiteTable.cpp
 endif
+
+ifeq ($(call check-jvm-feature, aot), true)
+  JVM_CFLAGS_FEATURES += -DINCLUDE_AOT
+else
+  JVM_EXCLUDE_FILES += \
+      compiledIC_aot_x86_64.cpp compilerRuntime.cpp \
+      aotCodeHeap.cpp aotCompiledMethod.cpp aotLoader.cpp compiledIC_aot.cpp
+endif

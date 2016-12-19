@@ -33,7 +33,8 @@ import java.util.List;
  *
  * For example:
  * <pre>
- *    module <em>module-name</em> {
+ *    <em>annotations</em>
+ *    [open] module <em>module-name</em> {
  *        <em>directives</em>
  *    }
  * </pre>
@@ -41,6 +42,18 @@ import java.util.List;
  * @since 9
  */
 public interface ModuleTree extends Tree {
+    /**
+     * Returns the annotations associated with this module declaration.
+     * @return the annotations
+     */
+    List<? extends AnnotationTree> getAnnotations();
+
+    /**
+     * Returns the type of this module.
+     * @return the type of this module
+     */
+    ModuleKind getModuleType();
+
     /**
      * Returns the name of the module.
      * @return the name of the module
@@ -52,4 +65,19 @@ public interface ModuleTree extends Tree {
      * @return the directives in the module declaration
      */
     List<? extends DirectiveTree> getDirectives();
+
+    /**
+     * The kind of the module.
+     */
+    enum ModuleKind {
+        /**
+         * Open module.
+         */
+        OPEN,
+        /**
+         * Strong module.
+         */
+        STRONG;
+    }
+
 }

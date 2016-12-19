@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @bug 8131019
+ * @bug 8131019 8169561
  * @summary Test Javadoc
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jshell
+ *          jdk.jshell/jdk.jshell:open
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build KullaTesting TestingInputStream Compiler
  * @run testng JavadocTest
@@ -63,6 +63,11 @@ public class JavadocTest extends KullaTesting {
                                     " @return value\n");
         //undefined handling:
         assertJavadoc("clz.undef|");
+    }
+
+    public void testVariableInRepl() {
+        assertEval("Object o;");
+        assertSignature("o|", "o:java.lang.Object");
     }
 
     private void prepareZip() {

@@ -24,7 +24,13 @@
 package javax.xml.xpath.ptests;
 
 import static javax.xml.xpath.XPathConstants.DOM_OBJECT_MODEL;
+import static javax.xml.xpath.XPathFactory.DEFAULT_OBJECT_MODEL_URI;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertFalse;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
@@ -41,6 +47,7 @@ import org.testng.annotations.Test;
  */
 /*
  * @test
+ * @bug 8169778
  * @library /javax/xml/jaxp/libs
  * @run testng/othervm -DrunSecMngr=true javax.xml.xpath.ptests.XPathFactoryTest
  * @run testng/othervm javax.xml.xpath.ptests.XPathFactoryTest
@@ -58,9 +65,15 @@ public class XPathFactoryTest {
     private static final String INVALID_URL = "http://java.sun.com/jaxp/xpath/dom1";
 
     /**
+     * XPathFactory builtin system-default implementation class name.
+     */
+    private static final String DEFAULT_IMPL_CLASS =
+        "com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl";
+
+    /**
      * XPathFactory implementation class name.
      */
-    private static final String XPATH_FACTORY_CLASSNAME = "com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl";
+    private static final String XPATH_FACTORY_CLASSNAME = DEFAULT_IMPL_CLASS;
 
 
     /**
@@ -71,6 +84,25 @@ public class XPathFactoryTest {
     @DataProvider(name = "parameters")
     public Object[][] getValidateParameters() {
         return new Object[][] { { VALID_URL, XPATH_FACTORY_CLASSNAME, null }, { VALID_URL, XPATH_FACTORY_CLASSNAME, this.getClass().getClassLoader() } };
+    }
+
+    /**
+     * Test if newDefaultInstance() method returns an instance
+     * of the expected factory.
+     * @throws Exception If any errors occur.
+     */
+    @Test
+    public void testDefaultInstance() throws Exception {
+        XPathFactory xpf1 = XPathFactory.newDefaultInstance();
+        XPathFactory xpf2 = XPathFactory.newInstance(DEFAULT_OBJECT_MODEL_URI);
+        assertNotSame(xpf1, xpf2, "same instance returned:");
+        assertSame(xpf1.getClass(), xpf2.getClass(),
+                  "unexpected class mismatch for newDefaultInstance():");
+        assertEquals(xpf1.getClass().getName(), DEFAULT_IMPL_CLASS);
+        assertTrue(xpf1.isObjectModelSupported(DEFAULT_OBJECT_MODEL_URI),
+                   "isObjectModelSupported(DEFAULT_OBJECT_MODEL_URI):");
+        assertFalse(xpf1.isObjectModelSupported(INVALID_URL),
+                   "isObjectModelSupported(INVALID_URL):");
     }
 
     /**

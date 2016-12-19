@@ -52,9 +52,11 @@ public class UserModuleTest {
     private static final Path MODS_DIR = Paths.get("mods");
     private static final Path IMAGE = Paths.get("image");
     private static final Path JMODS = Paths.get(JAVA_HOME, "jmods");
+    private static final String MAIN_MID = "m1/p1.Main";
 
     // the names of the modules in this test
-    private static String[] modules = new String[] {"m1", "m2", "m3"};
+    private static String[] modules = new String[] {"m1", "m2", "m3", "m4"};
+
 
     private static boolean hasJmods() {
         if (!Files.exists(JMODS)) {
@@ -80,7 +82,7 @@ public class UserModuleTest {
             FileUtils.deleteFileTreeUnchecked(IMAGE);
         }
 
-        createImage(IMAGE, "java.base", "m1");
+        createImage(IMAGE, "java.base", "m1", "m3");
     }
 
     private void createImage(Path outputDir, String... modules) throws Throwable {
@@ -96,17 +98,31 @@ public class UserModuleTest {
 
     /*
      * Test the image created when linking with a module with
-     * no ConcealedPackages attribute
+     * no Packages attribute
      */
     @Test
-    public void test() throws Throwable {
+    public void testPackagesAttribute() throws Throwable {
         if (!hasJmods()) return;
 
         Path java = IMAGE.resolve("bin").resolve("java");
-        assertTrue(executeProcess(java.toString(), "-m", "m1/p1.Main")
+        assertTrue(executeProcess(java.toString(), "-m", MAIN_MID)
                         .outputTo(System.out)
                         .errorTo(System.out)
                         .getExitValue() == 0);
+    }
+
+    /*
+     * Test the image created when linking with an open module
+    */
+    @Test
+    public void testOpenModule() throws Throwable {
+        if (!hasJmods()) return;
+
+        Path java = IMAGE.resolve("bin").resolve("java");
+        assertTrue(executeProcess(java.toString(), "-m", "m3/p3.Main")
+            .outputTo(System.out)
+            .errorTo(System.out)
+            .getExitValue() == 0);
     }
 
     /*
@@ -120,7 +136,7 @@ public class UserModuleTest {
         Path java = IMAGE.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(),
                                   "-Djdk.system.module.finder.disabledFastPath",
-                                  "-m", "m1/p1.Main")
+                                  "-m", MAIN_MID)
                         .outputTo(System.out)
                         .errorTo(System.out)
                         .getExitValue() == 0);
@@ -135,9 +151,9 @@ public class UserModuleTest {
         if (!hasJmods()) return;
 
         Path dir = Paths.get("newImage");
-        createImage(dir, "java.base", "m1", "m2", "m3");
+        createImage(dir, "java.base", "m1", "m2", "m3", "m4");
         Path java = dir.resolve("bin").resolve("java");
-        assertTrue(executeProcess(java.toString(), "-m", "m1/p1.Main")
+        assertTrue(executeProcess(java.toString(), "-m", MAIN_MID)
                         .outputTo(System.out)
                         .errorTo(System.out)
                         .getExitValue() == 0);

@@ -23,6 +23,9 @@
  * questions.
  */
 
+/**
+ * Internal API for line editing
+ */
 module jdk.internal.le {
     exports jdk.internal.jline to
         jdk.scripting.nashorn.shell,

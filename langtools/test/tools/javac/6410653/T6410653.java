@@ -27,10 +27,11 @@
  * @summary REGRESSION: javac crashes if -d or -s argument is a file
  * @author  Peter von der Ah\u00e9
  * @modules java.compiler
- *          jdk.compiler/com.sun.tools.javac.util
+ *          jdk.compiler/com.sun.tools.javac.util:open
  */
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Module;
 import java.io.File;
 import java.io.ByteArrayOutputStream;
 import javax.tools.*;
@@ -39,9 +40,9 @@ public class T6410653 {
     public static void main(String... args) throws Exception {
         File testSrc = new File(System.getProperty("test.src"));
         String source = new File(testSrc, "T6410653.java").getPath();
-        ClassLoader cl = ToolProvider.getSystemToolClassLoader();
         Tool compiler = ToolProvider.getSystemJavaCompiler();
-        Class<?> log = Class.forName("com.sun.tools.javac.util.Log", true, cl);
+        Module compilerModule = compiler.getClass().getModule();
+        Class<?> log = Class.forName(compilerModule, "com.sun.tools.javac.util.Log");
         Field useRawMessages = log.getDeclaredField("useRawMessages");
         useRawMessages.setAccessible(true);
         useRawMessages.setBoolean(null, true);

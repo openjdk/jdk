@@ -453,8 +453,6 @@
   template(loader_name,                               "loader")                                   \
   template(module_name,                               "module")                                   \
   template(getModule_name,                            "getModule")                                \
-  template(addReads_name,                             "addReads")                                 \
-  template(addReads_signature,                        "(Ljava/lang/reflect/Module;Ljava/lang/reflect/Module;)V")           \
   template(input_stream_void_signature,               "(Ljava/io/InputStream;)V")                 \
   template(definePackage_name,                        "definePackage")                            \
   template(definePackage_signature,                   "(Ljava/lang/String;Ljava/lang/reflect/Module;)Ljava/lang/Package;") \
@@ -647,6 +645,15 @@
   /* JVMTI/java.lang.instrument support and VM Attach mechanism */                                                \
   template(jdk_internal_module_Modules,                "jdk/internal/module/Modules")                             \
   template(jdk_internal_vm_VMSupport,                  "jdk/internal/vm/VMSupport")                               \
+  template(addReads_name,                              "addReads")                                                \
+  template(addReads_signature,                         "(Ljava/lang/reflect/Module;Ljava/lang/reflect/Module;)V") \
+  template(addExports_name,                            "addExports")                                              \
+  template(addOpens_name,                              "addOpens")                                                \
+  template(addExports_signature,                       "(Ljava/lang/reflect/Module;Ljava/lang/String;Ljava/lang/reflect/Module;)V") \
+  template(addUses_name,                               "addUses")                                                 \
+  template(addUses_signature,                          "(Ljava/lang/reflect/Module;Ljava/lang/Class;)V")          \
+  template(addProvides_name,                           "addProvides")                                             \
+  template(addProvides_signature,                      "(Ljava/lang/reflect/Module;Ljava/lang/Class;Ljava/lang/Class;)V") \
   template(transformedByAgent_name,                    "transformedByAgent")                                      \
   template(transformedByAgent_signature,               "(Ljava/lang/reflect/Module;)V")                           \
   template(appendToClassPathForInstrumentation_name,   "appendToClassPathForInstrumentation")                     \

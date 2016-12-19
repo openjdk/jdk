@@ -23,9 +23,12 @@
  */
 
 #include "precompiled.hpp"
+#include "aot/aotLoader.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verifier.hpp"
@@ -144,7 +147,8 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
                                        parser.itable_size(),
                                        nonstatic_oop_map_size(parser.total_oop_map_count()),
                                        parser.is_interface(),
-                                       parser.is_anonymous());
+                                       parser.is_anonymous(),
+                                       should_store_fingerprint());
 
   const Symbol* const class_name = parser.class_name();
   assert(class_name != NULL, "invariant");
@@ -786,6 +790,9 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
     }
   }
 
+
+  // Look for aot compiled methods for this klass, including class initializer.
+  AOTLoader::load_for_klass(this_k, THREAD);
 
   // Step 8
   {
@@ -1950,6 +1957,72 @@ void InstanceKlass::clean_method_data(BoolObjectClosure* is_alive) {
   }
 }
 
+bool InstanceKlass::supers_have_passed_fingerprint_checks() {
+  if (java_super() != NULL && !java_super()->has_passed_fingerprint_check()) {
+    ResourceMark rm;
+    log_trace(class, fingerprint)("%s : super %s not fingerprinted", external_name(), java_super()->external_name());
+    return false;
+  }
+
+  Array<Klass*>* local_interfaces = this->local_interfaces();
+  if (local_interfaces != NULL) {
+    int length = local_interfaces->length();
+    for (int i = 0; i < length; i++) {
+      InstanceKlass* intf = InstanceKlass::cast(local_interfaces->at(i));
+      if (!intf->has_passed_fingerprint_check()) {
+        ResourceMark rm;
+        log_trace(class, fingerprint)("%s : interface %s not fingerprinted", external_name(), intf->external_name());
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+bool InstanceKlass::should_store_fingerprint() {
+#if INCLUDE_AOT
+  // We store the fingerprint into the InstanceKlass only in the following 2 cases:
+  if (EnableJVMCI && !UseJVMCICompiler) {
+    // (1) We are running AOT to generate a shared library.
+    return true;
+  }
+  if (DumpSharedSpaces) {
+    // (2) We are running -Xshare:dump to create a shared archive
+    return true;
+  }
+#endif
+
+  // In all other cases we might set the _misc_has_passed_fingerprint_check bit,
+  // but do not store the 64-bit fingerprint to save space.
+  return false;
+}
+
+bool InstanceKlass::has_stored_fingerprint() const {
+#if INCLUDE_AOT
+  return should_store_fingerprint() || is_shared();
+#else
+  return false;
+#endif
+}
+
+uint64_t InstanceKlass::get_stored_fingerprint() const {
+  address adr = adr_fingerprint();
+  if (adr != NULL) {
+    return (uint64_t)Bytes::get_native_u8(adr); // adr may not be 64-bit aligned
+  }
+  return 0;
+}
+
+void InstanceKlass::store_fingerprint(uint64_t fingerprint) {
+  address adr = adr_fingerprint();
+  if (adr != NULL) {
+    Bytes::put_native_u8(adr, (u8)fingerprint); // adr may not be 64-bit aligned
+
+    ResourceMark rm;
+    log_trace(class, fingerprint)("stored as " PTR64_FORMAT " for class %s", fingerprint, external_name());
+  }
+}
 
 static void remove_unshareable_in_class(Klass* k) {
   // remove klass's unshareable info
@@ -2383,18 +2456,17 @@ Klass* InstanceKlass::compute_enclosing_class_impl(instanceKlassHandle self,
 
 // Only boot and platform class loaders can define classes in "java/" packages.
 void InstanceKlass::check_prohibited_package(Symbol* class_name,
-                                                Handle class_loader,
-                                                TRAPS) {
-  const char* javapkg = "java/";
+                                             Handle class_loader,
+                                             TRAPS) {
   ResourceMark rm(THREAD);
   if (!class_loader.is_null() &&
       !SystemDictionary::is_platform_class_loader(class_loader) &&
       class_name != NULL &&
-      strncmp(class_name->as_C_string(), javapkg, strlen(javapkg)) == 0) {
+      strncmp(class_name->as_C_string(), JAVAPKG, JAVAPKG_LEN) == 0) {
     TempNewSymbol pkg_name = InstanceKlass::package_from_name(class_name, CHECK);
     assert(pkg_name != NULL, "Error in parsing package name starting with 'java/'");
     char* name = pkg_name->as_C_string();
-    const char* class_loader_name = InstanceKlass::cast(class_loader()->klass())->name()->as_C_string();
+    const char* class_loader_name = SystemDictionary::loader_name(class_loader());
     StringUtils::replace_no_expand(name, "/", ".");
     const char* msg_text1 = "Class loader (instance of): ";
     const char* msg_text2 = " tried to load prohibited package name: ";

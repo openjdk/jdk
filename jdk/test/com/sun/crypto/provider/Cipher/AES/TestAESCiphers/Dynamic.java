@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,19 +150,8 @@ public class Dynamic {
             int offset = ci.update(plainText, 0, plainText.length, cipherText,
                     0);
             ci.doFinal(cipherText, offset);
+            ci.init(Cipher.DECRYPT_MODE, key, ci.getParameters());
 
-            if (!mo.equalsIgnoreCase("ECB")) {
-                iv = ci.getIV();
-                aps = new IvParameterSpec(iv);
-            } else {
-                aps = null;
-            }
-
-            if (!mo.equalsIgnoreCase("GCM")) {
-                ci.init(Cipher.DECRYPT_MODE, key, aps);
-            } else {
-                ci.init(Cipher.DECRYPT_MODE, key, ci.getParameters());
-            }
             byte[] recoveredText = new byte[ci.getOutputSize(cipherText.length)];
             int len = ci.doFinal(cipherText, 0, cipherText.length,
                     recoveredText);
@@ -174,12 +163,14 @@ public class Dynamic {
 
             result = Arrays.equals(plainText, tmp);
         } catch (NoSuchAlgorithmException nsaEx) {
-            nsaEx.printStackTrace();
             // CFB7 and OFB150 are negative test,SunJCE not support this
             // algorithm
             result = mo.equalsIgnoreCase("CFB7")
                     || mo.equalsIgnoreCase("OFB150");
-
+            if (!result) {
+                // only report unexpected exception
+                nsaEx.printStackTrace();
+            }
         }
         return result;
     }

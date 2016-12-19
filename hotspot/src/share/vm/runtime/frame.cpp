@@ -644,6 +644,7 @@ void frame::print_C_frame(outputStream* st, char* buf, int buflen, address pc) {
 //
 // First letter indicates type of the frame:
 //    J: Java frame (compiled)
+//    A: Java frame (aot compiled)
 //    j: Java frame (interpreted)
 //    V: VM frame (C/C++)
 //    v: Other frames running VM generated code (e.g. stubs, adapters, etc.)
@@ -685,7 +686,9 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
       CompiledMethod* cm = (CompiledMethod*)_cb;
       Method* m = cm->method();
       if (m != NULL) {
-        if (cm->is_nmethod()) {
+        if (cm->is_aot()) {
+          st->print("A %d ", cm->compile_id());
+        } else if (cm->is_nmethod()) {
           nmethod* nm = cm->as_nmethod();
           st->print("J %d%s", nm->compile_id(), (nm->is_osr_method() ? "%" : ""));
           st->print(" %s", nm->compiler_name());
@@ -1266,8 +1269,10 @@ void frame::describe(FrameValues& values, int frame_no) {
     // For now just label the frame
     CompiledMethod* cm = (CompiledMethod*)cb();
     values.describe(-1, info_address,
-                    FormatBuffer<1024>("#%d nmethod " INTPTR_FORMAT " for method %s%s", frame_no,
-                                       p2i(cm), cm->method()->name_and_sig_as_C_string(),
+                    FormatBuffer<1024>("#%d nmethod " INTPTR_FORMAT " for method %s%s%s", frame_no,
+                                       p2i(cm),
+                                       (cm->is_aot() ? "A ": "J "),
+                                       cm->method()->name_and_sig_as_C_string(),
                                        (_deopt_state == is_deoptimized) ?
                                        " (deoptimized)" :
                                        ((_deopt_state == unknown) ? " (state unknown)" : "")),

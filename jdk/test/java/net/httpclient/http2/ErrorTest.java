@@ -24,106 +24,83 @@
 /*
  * @test
  * @bug 8157105
+ * @library /lib/testlibrary server
  * @key intermittent
- * @library /lib/testlibrary
  * @build jdk.testlibrary.SimpleSSLContext
- * @modules java.httpclient
+ * @modules jdk.incubator.httpclient/jdk.incubator.http.internal.common
+ *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
+ *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
  *          java.security.jgss
- * @compile/module=java.httpclient java/net/http/BodyOutputStream.java
- * @compile/module=java.httpclient java/net/http/BodyInputStream.java
- * @compile/module=java.httpclient java/net/http/EchoHandler.java
- * @compile/module=java.httpclient java/net/http/Http2Handler.java
- * @compile/module=java.httpclient java/net/http/Http2TestExchange.java
- * @compile/module=java.httpclient java/net/http/Http2TestServerConnection.java
- * @compile/module=java.httpclient java/net/http/Http2TestServer.java
- * @compile/module=java.httpclient java/net/http/OutgoingPushPromise.java
- * @compile/module=java.httpclient java/net/http/TestUtil.java
- * @run testng/othervm -Djava.net.http.HttpClient.log=ssl,errors ErrorTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,errors ErrorTest
  * @summary check exception thrown when bad TLS parameters selected
  */
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.http.EchoHandler;
-import java.net.http.HttpClient;
-import java.net.http.Http2TestServer;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.concurrent.ExecutorService;
+import jdk.incubator.http.HttpClient;
+import jdk.incubator.http.HttpRequest;
+import jdk.incubator.http.HttpResponse;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import jdk.testlibrary.SimpleSSLContext;
+import static jdk.incubator.http.HttpClient.Version.HTTP_2;
+import static jdk.incubator.http.HttpRequest.BodyProcessor.fromString;
+import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
 
 import org.testng.annotations.Test;
-
-import static java.net.http.HttpClient.Version.HTTP_2;
 
 /**
  * When selecting an unacceptable cipher suite the TLS handshake will fail.
  * But, the exception that was thrown was not being returned up to application
  * causing hang problems
  */
-@Test
 public class ErrorTest {
-    static int httpsPort;
-    static Http2TestServer httpsServer;
-    static HttpClient client = null;
-    static ExecutorService exec;
-    static SSLContext sslContext;
 
-    static String httpsURIString;
-
-    static HttpClient getClient() {
-        if (client == null) {
-            client = HttpClient.create()
-                .sslContext(sslContext)
-                .sslParameters(new SSLParameters(
-                    new String[]{"TLS_KRB5_WITH_3DES_EDE_CBC_SHA"}))
-                .version(HTTP_2)
-                .build();
-        }
-        return client;
-    }
-
-    static URI getURI() {
-        return URI.create(httpsURIString);
-    }
+    static final String[] CIPHER_SUITES = new String[]{ "TLS_KRB5_WITH_3DES_EDE_CBC_SHA" };
 
     static final String SIMPLE_STRING = "Hello world Goodbye world";
 
-    @Test(timeOut=5000)
-    static void test() throws Exception {
+    //@Test(timeOut=5000)
+    @Test
+    public void test() throws Exception {
+        SSLContext sslContext = (new SimpleSSLContext()).get();
+        ExecutorService exec = Executors.newCachedThreadPool();
+        HttpClient client = HttpClient.newBuilder()
+                                      .executor(exec)
+                                      .sslContext(sslContext)
+                                      .sslParameters(new SSLParameters(CIPHER_SUITES))
+                                      .version(HTTP_2)
+                                      .build();
+
+        Http2TestServer httpsServer = null;
         try {
-            SimpleSSLContext sslct = new SimpleSSLContext();
-            sslContext = sslct.get();
-            client = getClient();
-            exec = client.executorService();
-
-            httpsServer = new Http2TestServer(true, 0, new EchoHandler(),
-                    exec, sslContext);
-
-            httpsPort = httpsServer.getAddress().getPort();
-            httpsURIString = "https://127.0.0.1:" +
-                Integer.toString(httpsPort) + "/bar/";
+            httpsServer = new Http2TestServer(true,
+                                              0,
+                                              exec,
+                                              sslContext);
+            httpsServer.addHandler(new EchoHandler(), "/");
+            int httpsPort = httpsServer.getAddress().getPort();
+            String httpsURIString = "https://127.0.0.1:" + httpsPort + "/bar/";
 
             httpsServer.start();
-            URI uri = getURI();
+            URI uri = URI.create(httpsURIString);
             System.err.println("Request to " + uri);
 
-            HttpClient client = getClient();
-            HttpRequest req = client.request(uri)
-                    .body(HttpRequest.fromString(SIMPLE_STRING))
-                    .POST();
-            HttpResponse response = null;
+            HttpRequest req = HttpRequest.newBuilder(uri)
+                                    .POST(fromString(SIMPLE_STRING))
+                                    .build();
+            HttpResponse response;
             try {
-                response = req.response();
-                throw new RuntimeException("Expected exception");
+                response = client.send(req, discard(null));
+                throw new RuntimeException("Unexpected response: " + response);
             } catch (IOException e) {
-                System.err.println("Expected IOException received " + e);
+                System.err.println("Caught Expected IOException: " + e);
             }
             System.err.println("DONE");
         } finally {
-            httpsServer.stop();
+            if (httpsServer != null )  { httpsServer.stop(); }
             exec.shutdownNow();
         }
     }

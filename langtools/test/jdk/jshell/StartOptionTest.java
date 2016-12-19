@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8151754 8080883 8160089
+ * @test 8151754 8080883 8160089 8166581
  * @summary Testing start-up options.
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -48,6 +48,7 @@ import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 @Test
 public class StartOptionTest {
@@ -133,6 +134,17 @@ public class StartOptionTest {
         start("", "Only one --startup or --no-startup option may be used.", "--no-startup", "--startup", p.toString());
         start("", "Only one --startup or --no-startup option may be used.", "--startup", p.toString(), "--no-startup");
         start("", "Argument to startup missing.", "--no-startup", "--startup");
+    }
+
+    public void testStartupFailedOption() throws Exception {
+        try {
+            start("", "", "-R-hoge-foo-bar");
+        } catch (IllegalStateException ex) {
+            String s = ex.getMessage();
+            assertTrue(s.startsWith("Launching JShell execution engine threw: Failed remote"), s);
+            return;
+        }
+        fail("Expected IllegalStateException");
     }
 
     public void testStartupUnknown() throws Exception {

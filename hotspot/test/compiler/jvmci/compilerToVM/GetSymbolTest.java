@@ -27,10 +27,10 @@
  * @requires vm.jvmci
  * @library / /test/lib
  * @library ../common/patches
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc:+open
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.org.objectweb.asm.tree
- *          jdk.vm.ci/jdk.vm.ci.hotspot
+ * @modules         jdk.vm.ci/jdk.vm.ci.hotspot:+open
  *          jdk.vm.ci/jdk.vm.ci.code
  *          jdk.vm.ci/jdk.vm.ci.meta
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper

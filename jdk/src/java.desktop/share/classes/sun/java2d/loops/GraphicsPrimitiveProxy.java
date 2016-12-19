@@ -81,18 +81,15 @@ public class GraphicsPrimitiveProxy extends GraphicsPrimitive {
                         + relativeClassName;
         try {
             Class<?> clazz = Class.forName(name);
-            GraphicsPrimitive p = (GraphicsPrimitive) clazz.newInstance();
+            GraphicsPrimitive p =
+                (GraphicsPrimitive) clazz.getDeclaredConstructor().newInstance();
             if (!satisfiesSameAs(p)) {
                 throw new RuntimeException("Primitive " + p
                                            + " incompatible with proxy for "
                                            + name);
             }
             return p;
-        } catch (ClassNotFoundException ex) {
-            throw new RuntimeException(ex.toString());
-        } catch (InstantiationException ex) {
-            throw new RuntimeException(ex.toString());
-        } catch (IllegalAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             throw new RuntimeException(ex.toString());
         }
         // A RuntimeException should never happen in a deployed JDK, because

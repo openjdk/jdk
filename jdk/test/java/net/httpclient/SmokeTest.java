@@ -24,14 +24,14 @@
 /*
  * @test
  * @bug 8087112
- * @modules java.httpclient
+ * @modules jdk.incubator.httpclient
  *          java.logging
  *          jdk.httpserver
  * @library /lib/testlibrary/ /
  * @build jdk.testlibrary.SimpleSSLContext ProxyServer EchoHandler
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
- * @run main/othervm SmokeTest
+ * @run main/othervm -Djdk.httpclient.HttpClient.log=errors,trace SmokeTest
  */
 
 import com.sun.net.httpserver.Headers;
@@ -42,19 +42,26 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.ProxySelector;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import jdk.incubator.http.HttpClient;
+import jdk.incubator.http.HttpRequest;
+import jdk.incubator.http.HttpResponse;
+import java.nio.file.StandardOpenOption;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -73,8 +80,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import jdk.testlibrary.SimpleSSLContext;
-import static java.net.http.HttpRequest.*;
-import static java.net.http.HttpResponse.*;
+import static jdk.incubator.http.HttpRequest.BodyProcessor.fromFile;
+import static jdk.incubator.http.HttpRequest.BodyProcessor.fromInputStream;
+import static jdk.incubator.http.HttpRequest.BodyProcessor.fromString;
+import static jdk.incubator.http.HttpResponse.*;
+import static jdk.incubator.http.HttpResponse.BodyHandler.asFile;
+import static jdk.incubator.http.HttpResponse.BodyHandler.asString;
+import java.util.concurrent.CountDownLatch;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -125,7 +137,22 @@ public class SmokeTest {
         while ((n=fis.read(buf)) != -1) {
             sb.append(new String(buf, 0, n, "US-ASCII"));
         }
+        fis.close();
         return sb.toString();
+    }
+
+    static void cmpFileContent(Path path1, Path path2) throws IOException {
+        InputStream fis1 = new BufferedInputStream(new FileInputStream(path1.toFile()));
+        InputStream fis2 = new BufferedInputStream(new FileInputStream(path2.toFile()));
+
+        int n1, n2;
+        while ((n1=fis1.read()) != -1) {
+            n2 = fis2.read();
+            if (n1 != n2)
+                throw new IOException("Content not the same");
+        }
+        fis1.close();
+        fis2.close();
     }
 
     public static void main(String[] args) throws Exception {
@@ -133,30 +160,40 @@ public class SmokeTest {
         fileroot = System.getProperty ("test.src", ".")+ "/docs";
         midSizedFile = Paths.get(fileroot + midSizedFilename);
         smallFile = Paths.get(fileroot + smallFilename);
-
-        client = HttpClient.create()
+        ExecutorService e = Executors.newCachedThreadPool();
+        System.out.println(e);
+        client = HttpClient.newBuilder()
                            .sslContext(ctx)
+                           .executor(e)
                            .sslParameters(sslparams)
                            .followRedirects(HttpClient.Redirect.ALWAYS)
-                           .executorService(Executors.newCachedThreadPool())
                            .build();
 
         try {
-            test1(httproot + "files/foo.txt", true);
 
+            test1(httproot + "files/foo.txt", true);
             test1(httproot + "files/foo.txt", false);
             test1(httpsroot + "files/foo.txt", true);
             test1(httpsroot + "files/foo.txt", false);
+
             test2(httproot + "echo/foo", "This is a short test");
             test2(httpsroot + "echo/foo", "This is a short test");
 
+            test2a(httproot + "echo/foo");
+            test2a(httpsroot + "echo/foo");
+
             test3(httproot + "redirect/foo.txt");
             test3(httpsroot + "redirect/foo.txt");
+
             test4(httproot + "files/foo.txt");
+
             test4(httpsroot + "files/foo.txt");
+
             test5(httproot + "echo/foo", true);
+
             test5(httpsroot + "echo/foo", true);
             test5(httproot + "echo/foo", false);
+
             test5(httpsroot + "echo/foo", false);
 
             test6(httproot + "echo/foo", true);
@@ -165,27 +202,22 @@ public class SmokeTest {
             test6(httpsroot + "echo/foo", false);
 
             test7(httproot + "keepalive/foo");
-
-            test8(httproot + "files/foo.txt", true);
-            test8(httproot + "files/foo.txt", false);
-            test8(httpsroot + "files/foo.txt", true);
-            test8(httpsroot + "files/foo.txt", false);
-            // disabled test9();
-
+/*
             test10(httproot + "redirecterror/foo.txt");
 
             test10(httpsroot + "redirecterror/foo.txt");
 
             test11(httproot + "echo/foo");
             test11(httpsroot + "echo/foo");
+*/
             //test12(httproot + "delay/foo", delayHandler);
 
         } finally {
             s1.stop(0);
             s2.stop(0);
             proxy.close();
+            e.shutdownNow();
             executor.shutdownNow();
-            client.executorService().shutdownNow();
         }
     }
 
@@ -209,25 +241,27 @@ public class SmokeTest {
         System.out.print("test1: " + target);
         URI uri = new URI(target);
 
-        HttpRequest.Builder builder = client.request(uri)
-                                             .body(noBody());
+        HttpRequest.Builder builder = HttpRequest.newBuilder().uri(uri).GET();
 
         if (fixedLen) {
             builder.header("XFixed", "yes");
         }
 
-        HttpResponse response = builder.GET().response();
+        HttpRequest request = builder.build();
 
-        String body = response.body(asString());
+        HttpResponse<String> response = client.send(request, asString());
+
+        String body = response.body();
         if (!body.equals("This is foo.txt\r\n")) {
             throw new RuntimeException();
         }
 
         // repeat async
-        response = builder.GET().responseAsync().join();
+        HttpResponse<String> response1 = client.sendAsync(request, asString())
+                                               .join();
 
-        body = response.body(asString());
-        if (!body.equals("This is foo.txt\r\n")) {
+        String body1 = response1.body();
+        if (!body1.equals("This is foo.txt\r\n")) {
             throw new RuntimeException();
         }
         System.out.println(" OK");
@@ -238,20 +272,50 @@ public class SmokeTest {
         System.out.print("test2: " + s);
         URI uri = new URI(s);
 
-        HttpResponse response = client.request(uri)
-                                       .body(fromString(body))
-                                       .POST()
-                                       .response();
+        HttpRequest request = HttpRequest.newBuilder(uri)
+                                         .POST(fromString(body))
+                                         .build();
+
+        HttpResponse<String> response = client.send(request, asString());
 
         if (response.statusCode() != 200) {
             throw new RuntimeException(
                 "Expected 200, got [ " + response.statusCode() + " ]");
         }
-        String reply = response.body(asString());
+        String reply = response.body();
         if (!reply.equals(body)) {
             throw new RuntimeException(
                 "Body mismatch: expected [" + body + "], got [" + reply + "]");
         }
+        System.out.println(" OK");
+    }
+
+    // POST use echo to check reply
+    static void test2a(String s) throws Exception {
+        System.out.print("test2a: " + s);
+        URI uri = new URI(s);
+        Path p = Util.getTempFile(128 * 1024);
+        //Path p = Util.getTempFile(1 * 1024);
+
+        HttpRequest request = HttpRequest.newBuilder(uri)
+                                         .POST(fromFile(p))
+                                         .build();
+
+        Path resp = Util.getTempFile(1); // will be overwritten
+
+        HttpResponse<Path> response =
+                client.send(request,
+                            BodyHandler.asFile(resp,
+                                               StandardOpenOption.TRUNCATE_EXISTING,
+                                               StandardOpenOption.WRITE));
+
+        if (response.statusCode() != 200) {
+            throw new RuntimeException(
+                "Expected 200, got [ " + response.statusCode() + " ]");
+        }
+        Path reply = response.body();
+        //System.out.println("Reply stored in " + reply.toString());
+        cmpFileContent(reply, p);
         System.out.println(" OK");
     }
 
@@ -262,16 +326,19 @@ public class SmokeTest {
         RedirectHandler handler = uri.getScheme().equals("https")
                 ? redirectHandlerSecure : redirectHandler;
 
-        HttpResponse response = client.request(uri)
-                                      .body(noBody())
-                                      .GET()
-                                      .response();
+        HttpRequest request = HttpRequest.newBuilder()
+                                         .uri(uri)
+                                         .GET()
+                                         .build();
+
+        HttpResponse<Path> response = client.send(request,
+                                                  asFile(Paths.get("redir1.txt")));
 
         if (response.statusCode() != 200) {
             throw new RuntimeException(
                 "Expected 200, got [ " + response.statusCode() + " ]");
         } else {
-            response.body(HttpResponse.asFile(Paths.get("redir1.txt")));
+            response.body();
         }
 
         Path downloaded = Paths.get("redir1.txt");
@@ -284,17 +351,15 @@ public class SmokeTest {
 
         handler.reset();
 
-        response = client.request(uri)
-                         .body(noBody())
-                         .GET()
-                         .responseAsync()
-                         .join();
+        request = HttpRequest.newBuilder(uri).build();
+
+        response = client.sendAsync(request, asFile(Paths.get("redir2.txt"))).join();
 
         if (response.statusCode() != 200) {
             throw new RuntimeException(
                     "Expected 200, got [ " + response.statusCode() + " ]");
         } else {
-            response.body(HttpResponse.asFile(Paths.get("redir2.txt")));
+            response.body();
         }
 
         downloaded = Paths.get("redir2.txt");
@@ -312,19 +377,19 @@ public class SmokeTest {
         InetSocketAddress proxyAddr = new InetSocketAddress("127.0.0.1", proxyPort);
         String filename = fileroot + uri.getPath();
 
-        HttpClient cl = HttpClient.create()
+        ExecutorService e = Executors.newCachedThreadPool();
+
+        HttpClient cl = HttpClient.newBuilder()
+                                  .executor(e)
                                   .proxy(ProxySelector.of(proxyAddr))
                                   .sslContext(ctx)
                                   .sslParameters(sslparams)
                                   .build();
 
-        CompletableFuture<String> fut = cl.request(uri)
-                                          .body(noBody())
-                                          .GET()
-                                          .responseAsync()
-                                          .thenCompose((HttpResponse response) ->
-                                                          response.bodyAsync(asString())
-                                          );
+        HttpRequest request = HttpRequest.newBuilder(uri).GET().build();
+
+        CompletableFuture<String> fut = client.sendAsync(request, asString())
+                .thenApply((response) -> response.body());
 
         String body = fut.get(5, TimeUnit.HOURS);
 
@@ -334,7 +399,7 @@ public class SmokeTest {
             throw new RuntimeException(
                     "Body mismatch: expected [" + body + "], got [" + fc + "]");
         }
-        cl.executorService().shutdownNow();
+        e.shutdownNow();
         System.out.println(" OK");
     }
 
@@ -344,17 +409,19 @@ public class SmokeTest {
         URI uri = new URI(target);
         String requestBody = generateString(12 * 1024 + 13);
 
-        HttpRequest.Builder builder = client.request(uri)
+        HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
                                             .expectContinue(true)
-                                            .body(fromString(requestBody));
+                                            .POST(fromString(requestBody));
 
         if (fixedLen) {
             builder.header("XFixed", "yes");
         }
 
-        HttpResponse response = builder.GET().response();
+        HttpRequest request = builder.build();
 
-        String body = response.body(asString());
+        HttpResponse<String> response = client.send(request, asString());
+
+        String body = response.body();
 
         if (!body.equals(requestBody)) {
             throw new RuntimeException(
@@ -369,21 +436,22 @@ public class SmokeTest {
         URI uri = new URI(target);
         String requestBody = generateString(12 * 1024 + 3);
 
-        HttpRequest.Builder builder = client.request(uri)
-                                            .body(noBody());
+        HttpRequest.Builder builder = HttpRequest.newBuilder(uri).GET();
 
         if (fixedLen) {
             builder.header("XFixed", "yes");
         }
 
-        HttpResponse response = builder.GET().response();
+        HttpRequest request = builder.build();
+
+        HttpResponse<String> response = client.send(request, asString());
 
         if (response.statusCode() != 200) {
             throw new RuntimeException(
                     "Expected 200, got [ " + response.statusCode() + " ]");
         }
 
-        String responseBody = response.body(asString());
+        String responseBody = response.body();
 
         if (responseBody.equals(requestBody)) {
             throw new RuntimeException(
@@ -395,42 +463,36 @@ public class SmokeTest {
     @SuppressWarnings("rawtypes")
     static void test7(String target) throws Exception {
         System.out.print("test7: " + target);
-
+        Path requestBody = Util.getTempFile(128 * 1024);
         // First test
         URI uri = new URI(target);
+        HttpRequest request = HttpRequest.newBuilder().uri(uri).GET().build();
+
         for (int i=0; i<4; i++) {
-            HttpResponse r = client.request(uri)
-                                   .body(noBody())
-                                   .GET()
-                                   .response();
-            String body = r.body(asString());
+            HttpResponse<String> r = client.send(request, asString());
+            String body = r.body();
             if (!body.equals("OK")) {
                 throw new RuntimeException("Expected OK, got: " + body);
             }
         }
 
         // Second test: 4 x parallel
-        List<CompletableFuture<HttpResponse>> futures = new LinkedList<>();
+        request = HttpRequest.newBuilder().uri(uri).POST(fromFile(requestBody)).build();
+        List<CompletableFuture<String>> futures = new LinkedList<>();
         for (int i=0; i<4; i++) {
-            futures.add(client.request(uri)
-                              .body(noBody())
-                              .GET()
-                              .responseAsync());
+            futures.add(client.sendAsync(request, asString())
+                              .thenApply((response) -> {
+                                  if (response.statusCode() == 200)
+                                      return response.body();
+                                  else
+                                      return "ERROR";
+                              }));
         }
         // all sent?
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
                          .join();
 
-        List<CompletableFuture<String>> futureBodies = new LinkedList<>();
-        for (int i=0; i<4; i++) {
-            futureBodies.add(futures.get(i)
-                                    .join()
-                                    .bodyAsync(asString()));
-        }
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                         .join();
-
-        for (CompletableFuture<String> future : futureBodies) {
+        for (CompletableFuture<String> future : futures) {
             String body = future.get();
             if (!body.equals("OK")) {
                 throw new RuntimeException("Expected OK, got: " + body);
@@ -438,14 +500,12 @@ public class SmokeTest {
         }
 
         // Third test: Multiple of 4 parallel requests
+        request = HttpRequest.newBuilder(uri).GET().build();
         BlockingQueue<String> q = new LinkedBlockingQueue<>();
         for (int i=0; i<4; i++) {
-            client.request(uri)
-                  .body(noBody())
-                  .GET()
-                  .responseAsync()
-                  .thenApply((HttpResponse resp) -> {
-                      String body = resp.body(asString());
+            client.sendAsync(request, asString())
+                  .thenApply((HttpResponse<String> resp) -> {
+                      String body = resp.body();
                       putQ(q, body);
                       return body;
                   });
@@ -460,14 +520,13 @@ public class SmokeTest {
             if (!body.equals("OK")) {
                 throw new RuntimeException(body);
             }
-            client.request(uri)
-                  .body(noBody())
-                  .GET()
-                  .responseAsync()
-                  .thenApply((HttpResponse resp) -> {
-                      String body1 = resp.body(asString());
-                      putQ(q, body1);
-                      return body1;
+            client.sendAsync(request, asString())
+                  .thenApply((resp) -> {
+                      if (resp.statusCode() == 200)
+                          putQ(q, resp.body());
+                      else
+                          putQ(q, "ERROR");
+                      return null;
                   });
         }
         // should be four left
@@ -494,55 +553,32 @@ public class SmokeTest {
         }
     }
 
-    static void test8(String target, boolean fixedLen) throws Exception {
-        System.out.print("test8: " + target);
-        URI uri = new URI(target);
-
-        HttpRequest.Builder builder = client.request(uri)
-                                            .body(noBody());
-
-        if (fixedLen) {
-            builder.header("XFixed", "yes");
+    static FileInputStream newStream() {
+        try {
+            return new FileInputStream(smallFile.toFile());
+        } catch (FileNotFoundException e) {
+            throw new UncheckedIOException(e);
         }
-
-        HttpResponse response = builder.GET().response();
-
-        StringBuilder sb = new StringBuilder();
-
-        InputStream is = response.body(asInputStream());
-        int c;
-        byte[] buf = new byte[2048];
-        while ((c = is.read(buf)) != -1) {
-            for (int i=0; i<c; i++)
-                sb.append((char)buf[i]);
-        }
-        is.close();
-        String body = sb.toString();
-
-        if (!body.equals("This is foo.txt\r\n")) {
-            throw new RuntimeException("Expected \"This is foo.txt\", got: " + body);
-        }
-        System.out.println(" OK");
     }
-
     // Chunked output stream
     static void test11(String target) throws Exception {
         System.out.print("test11: " + target);
         URI uri = new URI(target);
 
-        FileInputStream file = new FileInputStream(smallFile.toFile());
+        HttpRequest request = HttpRequest.newBuilder(uri)
+                                         .POST(fromInputStream(SmokeTest::newStream))
+                                         .build();
 
-        HttpRequest.Builder builder = client.request(uri)
-                                            .body(HttpRequest.fromInputStream(file));
-        HttpResponse response = builder.POST().response();
+        Path download = Paths.get("test11.txt");
+
+        HttpResponse<Path> response = client.send(request, asFile(download));
 
         if (response.statusCode() != 200) {
             throw new RuntimeException("Wrong response code");
         }
 
-        Path download = Paths.get("test11.txt");
         download.toFile().delete();
-        response.body(HttpResponse.asFile(download));
+        response.body();
 
         if (Files.size(download) != Files.size(smallFile)) {
             System.out.println("Original size: " + Files.size(smallFile));
@@ -552,80 +588,13 @@ public class SmokeTest {
         System.out.println(" OK");
     }
 
-    // cancel
-    /*
-    static void test12(String target, DelayHandler h) throws Exception {
-        System.out.print("test12: " + target);
-        URI uri = new URI(target);
-
-        HttpRequest.Builder builder = client
-            .request(uri)
-            .body(HttpRequest.fromString("Hello world"));
-
-        HttpRequest request = builder
-                .GET();
-        request.sendAsync();
-        h.barrier1().await();
-        // request has been processed
-        CompletableFuture<HttpResponse> cf = request.responseAsync();
-        request.cancel();
-        h.barrier2().await();
-        try {
-            HttpResponse r = cf.get();
-            throw new RuntimeException("failed 2");
-        } catch (Exception e) {
-        }
-        System.out.println(" OK");
-    }
-*/
     static void delay(int seconds) {
         try {
             Thread.sleep(seconds * 1000);
         } catch (InterruptedException e) {
         }
     }
-/*
-    // test won't work until sending fully decoupled from receiving in impl
-    static void test9() throws Exception {
-        System.out.print("test9: ");
-        UploadServer up = new UploadServer(1000 * 1000);
-        int size = up.size();
-        String u = "http://127.0.0.1:" + up.port() + "/";
-        URI uri = new URI(u);
 
-        HttpRequest request = client
-            .request(uri)
-            .body(new HttpRequestBodyProcessor() {
-                @Override
-                public ByteBuffer onRequestBodyChunk(ByteBuffer b) throws IOException {
-                    // slow things down
-                    delay(1);
-                    b.position(b.limit()); // fill it
-                    return b;
-                }
-                @Override
-                public long onRequestStart(HttpRequest req) throws IOException {
-                    return size;
-                }
-             })
-            .PUT();
-
-        CompletableFuture<HttpRequest> cf1 = request.sendAsync();
-        CompletableFuture<HttpResponse> cf = request.responseAsync();
-
-        HttpResponse resp = cf.get(1, TimeUnit.MINUTES);
-        if (resp.statusCode() != 201) {
-            throw new RuntimeException("failed: wrong response code");
-        }
-        delay(2); // allow some data to be sent
-        request.cancel();
-        delay(1);
-        if (up.failed()) {
-            throw new RuntimeException("failed to cancel request");
-        }
-        System.out.println(" OK");
-    }
-  */
     // Redirect loop: return an error after a certain number of redirects
     static void test10(String s) throws Exception {
         System.out.print("test10: " + s);
@@ -633,13 +602,12 @@ public class SmokeTest {
         RedirectErrorHandler handler = uri.getScheme().equals("https")
                 ? redirectErrorHandlerSecure : redirectErrorHandler;
 
-        CompletableFuture<HttpResponse> cf = client.request(uri)
-                                                   .body(noBody())
-                                                   .GET()
-                                                   .responseAsync();
+        HttpRequest request = HttpRequest.newBuilder(uri).GET().build();
+        CompletableFuture<HttpResponse<String>> cf =
+                client.sendAsync(request, asString());
 
         try {
-            HttpResponse response = cf.join();
+            HttpResponse<String> response = cf.join();
             throw new RuntimeException("Exepected Completion Exception");
         } catch (CompletionException e) {
             //System.out.println(e);
@@ -667,10 +635,11 @@ public class SmokeTest {
     }
 
     static void initServer() throws Exception {
+
         Logger logger = Logger.getLogger("com.sun.net.httpserver");
         ConsoleHandler ch = new ConsoleHandler();
-        logger.setLevel(Level.ALL);
-        ch.setLevel(Level.ALL);
+        logger.setLevel(Level.SEVERE);
+        ch.setLevel(Level.SEVERE);
         logger.addHandler(ch);
 
         String root = System.getProperty ("test.src")+ "/docs";
@@ -882,6 +851,23 @@ class Util {
             }
         }
     }
+
+    static Path getTempFile(int size) throws IOException {
+        File f = File.createTempFile("test", "txt");
+        f.deleteOnExit();
+        byte[] buf = new byte[2048];
+        for (int i=0; i<buf.length; i++)
+            buf[i] = (byte)i;
+
+        FileOutputStream fos = new FileOutputStream(f);
+        while (size > 0) {
+            int amount = Math.min(size, buf.length);
+            fos.write(buf, 0, amount);
+            size -= amount;
+        }
+        fos.close();
+        return f.toPath();
+    }
 }
 
 class DelayHandler implements HttpHandler {
@@ -918,11 +904,12 @@ class DelayHandler implements HttpHandler {
 // Then send 4 requests in parallel x 100 times (same four addresses used all time)
 
 class KeepAliveHandler implements HttpHandler {
-    volatile int counter = 0;
+    AtomicInteger counter = new AtomicInteger(0);
+    AtomicInteger nparallel = new AtomicInteger(0);
 
     HashSet<Integer> portSet = new HashSet<>();
 
-    volatile int[] ports = new int[4];
+    int[] ports = new int[8];
 
     void sleep(int n) {
         try {
@@ -930,47 +917,74 @@ class KeepAliveHandler implements HttpHandler {
         } catch (InterruptedException e) {}
     }
 
+    synchronized void setPort(int index, int value) {
+        ports[index] = value;
+    }
+
+    synchronized int getPort(int index) {
+        return ports[index];
+    }
+
+    synchronized void getPorts(int[] dest, int from) {
+        dest[0] = ports[from+0];
+        dest[1] = ports[from+1];
+        dest[2] = ports[from+2];
+        dest[3] = ports[from+3];
+    }
+
+    static CountDownLatch latch = new CountDownLatch(4);
+
     @Override
-    public synchronized void handle (HttpExchange t)
+    public void handle (HttpExchange t)
         throws IOException
     {
+        int np = nparallel.incrementAndGet();
         int remotePort = t.getRemoteAddress().getPort();
         String result = "OK";
+        int[] lports = new int[4];
 
-        int n = counter++;
+        int n = counter.getAndIncrement();
+
         /// First test
         if (n < 4) {
-            ports[n] = remotePort;
+            setPort(n, remotePort);
         }
         if (n == 3) {
+            getPorts(lports, 0);
             // check all values in ports[] are the same
-            if (ports[0] != ports[1] || ports[2] != ports[3]
-                    || ports[0] != ports[2]) {
+            if (lports[0] != lports[1] || lports[2] != lports[3]
+                    || lports[0] != lports[2]) {
                 result = "Error " + Integer.toString(n);
                 System.out.println(result);
             }
         }
         // Second test
         if (n >=4 && n < 8) {
-            // delay to ensure ports are different
-            sleep(500);
-            ports[n-4] = remotePort;
+            // delay so that this connection doesn't get reused
+            // before all 4 requests sent
+            setPort(n, remotePort);
+            latch.countDown();
+            try {latch.await();} catch (InterruptedException e) {}
         }
         if (n == 7) {
+            getPorts(lports, 4);
             // should be all different
-            if (ports[0] == ports[1] || ports[2] == ports[3]
-                    || ports[0] == ports[2]) {
+            if (lports[0] == lports[1] || lports[2] == lports[3]
+                    || lports[0] == lports[2]) {
                 result = "Error " + Integer.toString(n);
                 System.out.println(result);
-                System.out.printf("Ports: %d, %d, %d, %d\n", ports[0], ports[1], ports[2], ports[3]);
             }
             // setup for third test
             for (int i=0; i<4; i++) {
-                portSet.add(ports[i]);
+                portSet.add(lports[i]);
             }
+            System.out.printf("Ports: %d, %d, %d, %d\n", lports[0], lports[1], lports[2], lports[3]);
         }
         // Third test
         if (n > 7) {
+            if (np > 4) {
+                System.err.println("XXX np = " + np);
+            }
             // just check that port is one of the ones in portSet
             if (!portSet.contains(remotePort)) {
                 System.out.println ("UNEXPECTED REMOTE PORT " + remotePort);
@@ -987,5 +1001,6 @@ class KeepAliveHandler implements HttpHandler {
         OutputStream o = t.getResponseBody();
         o.write(result.getBytes("US-ASCII"));
         t.close();
+        nparallel.getAndDecrement();
     }
 }

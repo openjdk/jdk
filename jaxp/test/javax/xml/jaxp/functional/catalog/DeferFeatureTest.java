@@ -45,6 +45,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
+ * @modules java.xml/javax.xml.catalog:open
  * @run testng/othervm -DrunSecMngr=true catalog.DeferFeatureTest
  * @run testng/othervm catalog.DeferFeatureTest
  * @summary This case tests whether the catalogs specified in delegateSystem,

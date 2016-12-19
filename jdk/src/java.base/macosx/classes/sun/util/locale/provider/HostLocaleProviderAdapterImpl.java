@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.util.spi.CalendarNameProvider;
 import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.TimeZoneNameProvider;
+import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.spi.CalendarProvider;
 
 /**
@@ -147,6 +148,165 @@ public class HostLocaleProviderAdapterImpl {
         return Locale.forLanguageTag(langTag);
     }
 
+    public static JavaTimeDateTimePatternProvider getJavaTimeDateTimePatternProvider() {
+        return new JavaTimeDateTimePatternProvider() {
+            @Override
+            public Locale[] getAvailableLocales() {
+                return getSupportedCalendarLocales();
+            }
+
+            @Override
+            public boolean isSupportedLocale(Locale locale) {
+                return isSupportedCalendarLocale(locale);
+            }
+
+            @Override
+            public String getJavaTimeDateTimePattern(int timeStyle, int dateStyle, String calType, Locale locale) {
+                return toJavaTimeDateTimePattern(calType, getDateTimePattern(dateStyle, timeStyle, locale));
+
+            }
+
+            private String getDateTimePattern(int dateStyle, int timeStyle, Locale locale) {
+                AtomicReferenceArray<String> dateFormatPatterns;
+                SoftReference<AtomicReferenceArray<String>> ref = dateFormatPatternsMap.get(locale);
+
+                if (ref == null || (dateFormatPatterns = ref.get()) == null) {
+                    dateFormatPatterns = new AtomicReferenceArray<>(5 * 5);
+                    ref = new SoftReference<>(dateFormatPatterns);
+                    dateFormatPatternsMap.put(locale, ref);
+                }
+                int index = (dateStyle + 1) * 5 + timeStyle + 1;
+                String pattern = dateFormatPatterns.get(index);
+                if (pattern == null) {
+                    String langTag = locale.toLanguageTag();
+                    pattern = translateDateFormatLetters(getCalendarID(langTag),
+                            getDateTimePatternNative(dateStyle, timeStyle, langTag));
+                    if (!dateFormatPatterns.compareAndSet(index, null, pattern)) {
+                        pattern = dateFormatPatterns.get(index);
+                    }
+                }
+                return pattern;
+            }
+
+            /**
+             * This method will convert JRE Date/time Pattern String to JSR310
+             * type Date/Time Pattern
+             */
+            private String toJavaTimeDateTimePattern(String calendarType, String jrePattern) {
+                int length = jrePattern.length();
+                StringBuilder sb = new StringBuilder(length);
+                boolean inQuote = false;
+                int count = 0;
+                char lastLetter = 0;
+                for (int i = 0; i < length; i++) {
+                    char c = jrePattern.charAt(i);
+                    if (c == '\'') {
+                        // '' is treated as a single quote regardless of being
+                        // in a quoted section.
+                        if ((i + 1) < length) {
+                            char nextc = jrePattern.charAt(i + 1);
+                            if (nextc == '\'') {
+                                i++;
+                                if (count != 0) {
+                                    convert(calendarType, lastLetter, count, sb);
+                                    lastLetter = 0;
+                                    count = 0;
+                                }
+                                sb.append("''");
+                                continue;
+                            }
+                        }
+                        if (!inQuote) {
+                            if (count != 0) {
+                                convert(calendarType, lastLetter, count, sb);
+                                lastLetter = 0;
+                                count = 0;
+                            }
+                            inQuote = true;
+                        } else {
+                            inQuote = false;
+                        }
+                        sb.append(c);
+                        continue;
+                    }
+                    if (inQuote) {
+                        sb.append(c);
+                        continue;
+                    }
+                    if (!(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')) {
+                        if (count != 0) {
+                            convert(calendarType, lastLetter, count, sb);
+                            lastLetter = 0;
+                            count = 0;
+                        }
+                        sb.append(c);
+                        continue;
+                    }
+                    if (lastLetter == 0 || lastLetter == c) {
+                        lastLetter = c;
+                        count++;
+                        continue;
+                    }
+                    convert(calendarType, lastLetter, count, sb);
+                    lastLetter = c;
+                    count = 1;
+                }
+                if (inQuote) {
+                    // should not come here.
+                    // returning null so that FALLBACK provider will kick in.
+                    return null;
+                }
+                if (count != 0) {
+                    convert(calendarType, lastLetter, count, sb);
+                }
+                return sb.toString();
+            }
+
+            private void convert(String calendarType, char letter, int count, StringBuilder sb) {
+                switch (letter) {
+                    case 'G':
+                        if (calendarType.equals("japanese")) {
+                            if (count >= 4) {
+                                count = 1;
+                            } else {
+                                count = 5;
+                            }
+                        } else if (!calendarType.equals("iso8601")) {
+                            // Gregorian calendar is iso8601 for java.time
+                            // Adjust the number of 'G's
+                            if (count >= 4) {
+                                // JRE full -> JavaTime full
+                                count = 4;
+                            } else {
+                                // JRE short -> JavaTime short
+                                count = 1;
+                            }
+                        }
+                        break;
+                    case 'y':
+                        if (calendarType.equals("japanese") && count >= 4) {
+                            // JRE specific "gan-nen" support
+                            count = 1;
+                        }
+                        break;
+                    default:
+                        // JSR 310 and CLDR define 5-letter patterns for narrow text.
+                        if (count > 4) {
+                            count = 4;
+                        }
+                        break;
+                }
+                appendN(letter, count, sb);
+            }
+
+            private void appendN(char c, int n, StringBuilder sb) {
+                for (int i = 0; i < n; i++) {
+                    sb.append(c);
+                }
+            }
+        };
+    }
+
     public static DateFormatProvider getDateFormatProvider() {
         return new DateFormatProvider() {
 
@@ -163,20 +323,20 @@ public class HostLocaleProviderAdapterImpl {
             @Override
             public DateFormat getDateInstance(int style, Locale locale) {
                 return new SimpleDateFormat(getDateTimePattern(style, -1, locale),
-                                            getCalendarLocale(locale));
+                        getCalendarLocale(locale));
             }
 
             @Override
             public DateFormat getTimeInstance(int style, Locale locale) {
                 return new SimpleDateFormat(getDateTimePattern(-1, style, locale),
-                                            getCalendarLocale(locale));
+                        getCalendarLocale(locale));
             }
 
             @Override
             public DateFormat getDateTimeInstance(int dateStyle,
                     int timeStyle, Locale locale) {
                 return new SimpleDateFormat(getDateTimePattern(dateStyle, timeStyle, locale),
-                                            getCalendarLocale(locale));
+                        getCalendarLocale(locale));
             }
 
             private String getDateTimePattern(int dateStyle, int timeStyle, Locale locale) {

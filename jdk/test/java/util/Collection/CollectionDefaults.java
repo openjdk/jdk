@@ -60,9 +60,19 @@ public class CollectionDefaults {
     public static final Predicate<Integer> pEven = x -> 0 == x % 2;
     public static final Predicate<Integer> pOdd = x -> 1 == x % 2;
 
+    private static final int SIZE = 100;
+
     private static final List<Function<Collection<Integer>, Collection<Integer>>> TEST_SUPPLIERS = Arrays.asList(
             // Collection
             ExtendsAbstractCollection<Integer>::new,
+            java.util.ArrayDeque<Integer>::new,
+            java.util.concurrent.ConcurrentLinkedDeque<Integer>::new,
+            java.util.concurrent.ConcurrentLinkedQueue<Integer>::new,
+            java.util.concurrent.LinkedBlockingDeque<Integer>::new,
+            java.util.concurrent.LinkedBlockingQueue<Integer>::new,
+            java.util.concurrent.LinkedTransferQueue<Integer>::new,
+            (coll) -> new java.util.concurrent.ArrayBlockingQueue<Integer>(
+                3 * SIZE, false, coll),
 
             // Lists
             java.util.ArrayList<Integer>::new,
@@ -79,8 +89,6 @@ public class CollectionDefaults {
             java.util.concurrent.CopyOnWriteArraySet<Integer>::new,
             ExtendsAbstractSet<Integer>::new
        );
-
-    private static final int SIZE = 100;
 
     @DataProvider(name="setProvider", parallel=true)
     public static Iterator<Object[]> setCases() {

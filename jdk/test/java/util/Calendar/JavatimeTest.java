@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,16 @@
  * @key randomness
  */
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.Random;
-import java.util.TimeZone;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Random;
+import java.util.TimeZone;
 
 public class JavatimeTest {
 
@@ -46,10 +46,11 @@ public class JavatimeTest {
     public static void main(String[] args) throws Throwable {
 
         int N = 10000;
+        @SuppressWarnings("deprecation")
         long t1970 = new java.util.Date(70, 0, 01).getTime();
         Random r = new Random();
         for (int i = 0; i < N; i++) {
-            int days  = r.nextInt(50) * 365 + r.nextInt(365);
+            int days = r.nextInt(50) * 365 + r.nextInt(365);
             long secs = t1970 + days * 86400 + r.nextInt(86400);
             int nanos = r.nextInt(NANOS_PER_SECOND);
             int nanos_ms = nanos / 1000000 * 1000000; // millis precision
@@ -61,15 +62,15 @@ public class JavatimeTest {
             ///////////// java.util.Date /////////////////////////
             Date jud = new java.util.Date(millis);
             Instant inst0 = jud.toInstant();
-            if (jud.getTime() != inst0.toEpochMilli() ||
-                !jud.equals(Date.from(inst0))) {
+            if (jud.getTime() != inst0.toEpochMilli()
+                    || !jud.equals(Date.from(inst0))) {
                 System.out.printf("ms: %16d  ns: %10d  ldt:[%s]%n", millis, nanos, ldt);
                 throw new RuntimeException("FAILED: j.u.d -> instant -> j.u.d");
             }
             // roundtrip only with millis precision
             Date jud0 = Date.from(inst_ms);
-            if (jud0.getTime() != inst_ms.toEpochMilli() ||
-                !inst_ms.equals(jud0.toInstant())) {
+            if (jud0.getTime() != inst_ms.toEpochMilli()
+                    || !inst_ms.equals(jud0.toInstant())) {
                 System.out.printf("ms: %16d  ns: %10d  ldt:[%s]%n", millis, nanos, ldt);
                 throw new RuntimeException("FAILED: instant -> j.u.d -> instant");
             }
@@ -82,8 +83,8 @@ public class JavatimeTest {
             cal.setMinimalDaysInFirstWeek(4);
             cal.setTimeInMillis(millis);
             ZonedDateTime zdt0 = cal.toZonedDateTime();
-            if (cal.getTimeInMillis() != zdt0.toInstant().toEpochMilli() ||
-                !cal.equals(GregorianCalendar.from(zdt0))) {
+            if (cal.getTimeInMillis() != zdt0.toInstant().toEpochMilli()
+                    || !cal.equals(GregorianCalendar.from(zdt0))) {
                 System.out.println("cal:" + cal);
                 System.out.println("zdt:" + zdt0);
                 System.out.println("calNew:" + GregorianCalendar.from(zdt0));
@@ -97,8 +98,8 @@ public class JavatimeTest {
             }
             ZonedDateTime zdt = ZonedDateTime.of(ldt_ms, ZoneId.systemDefault());
             GregorianCalendar cal0 = GregorianCalendar.from(zdt);
-            if (zdt.toInstant().toEpochMilli() != cal0.getTimeInMillis() ||
-                !zdt.equals(GregorianCalendar.from(zdt).toZonedDateTime())) {
+            if (zdt.toInstant().toEpochMilli() != cal0.getTimeInMillis()
+                    || !zdt.equals(GregorianCalendar.from(zdt).toZonedDateTime())) {
                 System.out.printf("ms: %16d  ns: %10d  ldt:[%s]%n", millis, nanos, ldt);
                 throw new RuntimeException("FAILED: zdt -> gcal -> zdt");
             }
@@ -107,12 +108,12 @@ public class JavatimeTest {
         ///////////// java.util.TimeZone /////////////////////////
         for (String zidStr : TimeZone.getAvailableIDs()) {
             // TBD: tzdt intergration
-            if (zidStr.startsWith("SystemV") ||
-                zidStr.contains("Riyadh8") ||
-                zidStr.equals("US/Pacific-New") ||
-                zidStr.equals("EST") ||
-                zidStr.equals("HST") ||
-                zidStr.equals("MST")) {
+            if (zidStr.startsWith("SystemV")
+                    || zidStr.contains("Riyadh8")
+                    || zidStr.equals("US/Pacific-New")
+                    || zidStr.equals("EST")
+                    || zidStr.equals("HST")
+                    || zidStr.equals("MST")) {
                 continue;
             }
             ZoneId zid = ZoneId.of(zidStr, ZoneId.SHORT_IDS);
@@ -121,9 +122,9 @@ public class JavatimeTest {
             }
             TimeZone tz = TimeZone.getTimeZone(zidStr);
             // no round-trip for alias and "GMT"
-            if (!tz.equals(TimeZone.getTimeZone(tz.toZoneId())) &&
-                !ZoneId.SHORT_IDS.containsKey(zidStr) &&
-                !zidStr.startsWith("GMT")) {
+            if (!tz.equals(TimeZone.getTimeZone(tz.toZoneId()))
+                    && !ZoneId.SHORT_IDS.containsKey(zidStr)
+                    && !zidStr.startsWith("GMT")) {
                 throw new RuntimeException("FAILED: tz -> zid -> tz :" + zidStr);
             }
         }

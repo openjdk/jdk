@@ -33,6 +33,7 @@
  */
 
 import static jdk.test.lib.Asserts.*;
+import java.sql.Time;
 
 public class JVMAddModulePackage {
 
@@ -123,6 +124,29 @@ public class JVMAddModulePackage {
             // Expected
         }
 
+        // Add package named "java" to an module defined to a class loader other than the boot or platform loader.
+        try {
+            // module1 is defined to a MyClassLoader class loader.
+            ModuleHelper.AddModulePackage(module1, "java/foo");
+            throw new RuntimeException("Failed to get the expected IAE");
+        } catch(IllegalArgumentException e) {
+            if (!e.getMessage().contains("prohibited package name")) {
+              throw new RuntimeException("Failed to get expected IAE message for prohibited package name: " + e.getMessage());
+            }
+        }
+
+        // Package "javabar" should be ok
+        ModuleHelper.AddModulePackage(module1, "javabar");
+
+        // Package named "java" defined to the boot class loader, should be ok
+        Object module_javabase = module1.getClass().getModule();
+        ModuleHelper.AddModulePackage(module_javabase, "java/foo");
+
+        // Package named "java" defined to the platform class loader, should be ok
+        // The module java.sql is defined to the platform class loader.
+        java.sql.Time jst = new java.sql.Time(45000); // milliseconds
+        Object module_javasql = jst.getClass().getModule();
+        ModuleHelper.AddModulePackage(module_javasql, "java/foo");
     }
 
     static class MyClassLoader extends ClassLoader { }

@@ -165,6 +165,8 @@ public final class XMLSchemaFactory extends SchemaFactory {
         for (Feature f : Feature.values()) {
             fXMLSchemaLoader.setProperty(f.getPropertyName(), null);
         }
+
+        fXMLSchemaLoader.setProperty(JdkXmlUtils.CDATA_CHUNK_SIZE, JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT);
     }
 
     /**

@@ -28,6 +28,10 @@
   <import file="code_coverage.xml"/>
 
   <target name="load-properties">
+    <!-- set default values to run.test.jvmargs.external property -->
+    <condition property="run.test.jvmargs.external" value="">
+     <not><isset property="run.test.jvmargs.external"/></not>
+    </condition>     
     <!-- loading locally defined resources and properties. NB they owerwrite default ones defined later -->
     <property file="${user.home}/.nashorn.project.local.properties"/>
 
@@ -524,17 +528,19 @@ grant codeBase "file:/${basedir}/test/script/basic/JDK-8158467.js" {
   <!-- only to be invoked as dependency of "test" target -->
   <target name="-test-classes-all" depends="jar" unless="test.class">
       <fileset id="test.classes" dir="${build.test.classes.dir}">
-          <include name="**/dynalink/test/*Test.class"/>
           <include name="**/dynalink/beans/test/*Test.class"/>
+          <include name="**/dynalink/linker/support/test/*Test.class"/>
+          <include name="**/dynalink/support/test/*Test.class"/>
+          <include name="**/dynalink/test/*Test.class"/>
           <include name="**/api/javaaccess/test/*Test.class"/>
           <include name="**/api/scripting/test/*Test.class"/>
           <include name="**/api/tree/test/*Test.class"/>
           <include name="**/codegen/test/*Test.class"/>
           <include name="**/parser/test/*Test.class"/>
           <include name="**/runtime/test/*Test.class"/>
+          <include name="**/runtime/doubleconv/test/*Test.class"/>
           <include name="**/runtime/regexp/test/*Test.class"/>
           <include name="**/runtime/regexp/joni/test/*Test.class"/>
-          <include name="**/runtime/doubleconv/test/*Test.class"/>
           <include name="**/framework/*Test.class"/>
      </fileset>
   </target>
@@ -550,6 +556,7 @@ grant codeBase "file:/${basedir}/test/script/basic/JDK-8158467.js" {
   <target name="-test-nosecurity" unless="test.class">
     <fileset id="test.nosecurity.classes" dir="${build.test.classes.dir}">
       <include name="**/framework/ScriptTest.class"/>
+      <include name="**/runtime/linker/test/*Test.class"/>
     </fileset>
     <testng outputdir="${build.nosecurity.test.results.dir}/${testResultsSubDir}" classfilesetref="test.nosecurity.classes"
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">

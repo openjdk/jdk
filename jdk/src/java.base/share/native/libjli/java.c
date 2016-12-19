@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,12 +61,13 @@
  * interfaces.
  */
 
-/* we always print to stderr */
-#define USE_STDERR JNI_TRUE
+#define USE_STDERR JNI_TRUE     /* we usually print to stderr */
+#define USE_STDOUT JNI_FALSE
 
 static jboolean printVersion = JNI_FALSE; /* print and exit */
 static jboolean showVersion = JNI_FALSE;  /* print but continue */
 static jboolean printUsage = JNI_FALSE;   /* print and exit*/
+static jboolean printTo = USE_STDERR;     /* where to print version/usage */
 static jboolean printXUsage = JNI_FALSE;  /* print and exit*/
 static jboolean dryRun = JNI_FALSE;       /* initialize VM and exit */
 static char     *showSettings = NULL;     /* print but continue */
@@ -78,7 +79,6 @@ static jboolean _is_java_args = JNI_FALSE;
 static jboolean _have_classpath = JNI_FALSE;
 static const char *_fVersion;
 static jboolean _wc_enabled = JNI_FALSE;
-static jint _ergo_policy = DEFAULT_POLICY;
 
 /*
  * Entries for splash screen environment variables.
@@ -218,7 +218,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
         jboolean javaargs,                      /* JAVA_ARGS */
         jboolean cpwildcard,                    /* classpath wildcard*/
         jboolean javaw,                         /* windows-only javaw */
-        jint ergo                               /* ergonomics class policy */
+        jint ergo                               /* unused */
 )
 {
     int mode = LM_UNKNOWN;
@@ -236,7 +236,6 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
     _program_name = pname;
     _is_java_args = javaargs;
     _wc_enabled = cpwildcard;
-    _ergo_policy = ergo;
 
     InitLauncher(javaw);
     DumpState();
@@ -431,7 +430,7 @@ JavaMain(void * _args)
         LEAVE();
     }
 
-    FreeKnownVMs();  /* after last possible PrintUsage() */
+    FreeKnownVMs(); /* after last possible PrintUsage */
 
     if (JLI_IsTraceLauncher()) {
         end = CounterGet();
@@ -569,6 +568,7 @@ IsModuleOption(const char* name) {
            JLI_StrCmp(name, "--add-modules") == 0 ||
            JLI_StrCmp(name, "--limit-modules") == 0 ||
            JLI_StrCmp(name, "--add-exports") == 0 ||
+           JLI_StrCmp(name, "--add-opens") == 0 ||
            JLI_StrCmp(name, "--add-reads") == 0 ||
            JLI_StrCmp(name, "--patch-module") == 0;
 }
@@ -669,11 +669,6 @@ CheckJvmType(int *pargc, char ***argv, jboolean speculative) {
     /* use the default VM type if not specified (no alias processing) */
     if (jvmtype == NULL) {
       char* result = knownVMs[0].name+1;
-      /* Use a different VM type if we are on a server class machine? */
-      if ((knownVMs[0].flag == VM_IF_SERVER_CLASS) &&
-          (ServerClassMachine() == JNI_TRUE)) {
-        result = knownVMs[0].server_class+1;
-      }
       JLI_TraceLauncher("Default VM: %s\n", result);
       return result;
     }
@@ -765,12 +760,15 @@ SetJvmEnvironment(int argc, char **argv) {
 
             if (*arg != '-'
                     || JLI_StrCmp(arg, "-version") == 0
+                    || JLI_StrCmp(arg, "--version") == 0
                     || JLI_StrCmp(arg, "-fullversion") == 0
+                    || JLI_StrCmp(arg, "--full-version") == 0
                     || JLI_StrCmp(arg, "-help") == 0
                     || JLI_StrCmp(arg, "--help") == 0
                     || JLI_StrCmp(arg, "-?") == 0
                     || JLI_StrCmp(arg, "-jar") == 0
-                    || JLI_StrCmp(arg, "-X") == 0) {
+                    || JLI_StrCmp(arg, "-X") == 0
+                    || JLI_StrCmp(arg, "--help-extra") == 0) {
                 return;
             }
         }
@@ -1295,6 +1293,7 @@ ParseArguments(int *pargc, char ***pargv,
             } else if (JLI_StrCmp(arg, "--add-modules") == 0 ||
                        JLI_StrCmp(arg, "--limit-modules") == 0 ||
                        JLI_StrCmp(arg, "--add-exports") == 0 ||
+                       JLI_StrCmp(arg, "--add-opens") == 0 ||
                        JLI_StrCmp(arg, "--add-reads") == 0 ||
                        JLI_StrCmp(arg, "--patch-module") == 0) {
                 REPORT_ERROR (has_arg, ARG_ERROR6, arg);
@@ -1302,21 +1301,35 @@ ParseArguments(int *pargc, char ***pargv,
 /*
  * The following cases will cause the argument parsing to stop
  */
-        } else if (JLI_StrCmp(arg, "--help") == 0 ||
-                   JLI_StrCmp(arg, "-help") == 0 ||
+        } else if (JLI_StrCmp(arg, "-help") == 0 ||
                    JLI_StrCmp(arg, "-h") == 0 ||
                    JLI_StrCmp(arg, "-?") == 0) {
             printUsage = JNI_TRUE;
             return JNI_TRUE;
+        } else if (JLI_StrCmp(arg, "--help") == 0) {
+            printUsage = JNI_TRUE;
+            printTo = USE_STDOUT;
+            return JNI_TRUE;
         } else if (JLI_StrCmp(arg, "-version") == 0) {
             printVersion = JNI_TRUE;
             return JNI_TRUE;
+        } else if (JLI_StrCmp(arg, "--version") == 0) {
+            printVersion = JNI_TRUE;
+            printTo = USE_STDOUT;
+            return JNI_TRUE;
         } else if (JLI_StrCmp(arg, "-showversion") == 0) {
             showVersion = JNI_TRUE;
+        } else if (JLI_StrCmp(arg, "--show-version") == 0) {
+            showVersion = JNI_TRUE;
+            printTo = USE_STDOUT;
         } else if (JLI_StrCmp(arg, "--dry-run") == 0) {
             dryRun = JNI_TRUE;
         } else if (JLI_StrCmp(arg, "-X") == 0) {
             printXUsage = JNI_TRUE;
+            return JNI_TRUE;
+        } else if (JLI_StrCmp(arg, "--help-extra") == 0) {
+            printXUsage = JNI_TRUE;
+            printTo = USE_STDOUT;
             return JNI_TRUE;
 /*
  * The following case checks for -XshowSettings OR -XshowSetting:SUBOPT.
@@ -1336,6 +1349,9 @@ ParseArguments(int *pargc, char ***pargv,
  */
         } else if (JLI_StrCmp(arg, "-fullversion") == 0) {
             JLI_ReportMessage("%s full version \"%s\"", _launcher_name, GetFullVersion());
+            return JNI_FALSE;
+        } else if (JLI_StrCmp(arg, "--full-version") == 0) {
+            JLI_ShowMessage("%s %s", _launcher_name, GetFullVersion());
             return JNI_FALSE;
         } else if (JLI_StrCmp(arg, "-verbosegc") == 0) {
             AddOption("-verbose:gc", NULL);
@@ -1759,11 +1775,11 @@ PrintJavaVersion(JNIEnv *env, jboolean extraLF)
     NULL_CHECK(print = (*env)->GetStaticMethodID(env,
                                                  ver,
                                                  (extraLF == JNI_TRUE) ? "println" : "print",
-                                                 "()V"
+                                                 "(Z)V"
                                                  )
               );
 
-    (*env)->CallStaticVoidMethod(env, ver, print);
+    (*env)->CallStaticVoidMethod(env, ver, print, printTo);
 }
 
 /*
@@ -1777,15 +1793,14 @@ ShowSettings(JNIEnv *env, char *optString)
     jclass cls = GetLauncherHelperClass(env);
     NULL_CHECK(cls);
     NULL_CHECK(showSettingsID = (*env)->GetStaticMethodID(env, cls,
-            "showSettings", "(ZLjava/lang/String;JJJZ)V"));
+            "showSettings", "(ZLjava/lang/String;JJJ)V"));
     NULL_CHECK(joptString = (*env)->NewStringUTF(env, optString));
     (*env)->CallStaticVoidMethod(env, cls, showSettingsID,
                                  USE_STDERR,
                                  joptString,
                                  (jlong)initialHeapSize,
                                  (jlong)maxHeapSize,
-                                 (jlong)threadStackSize,
-                                 ServerClassMachine());
+                                 (jlong)threadStackSize);
 }
 
 /**
@@ -1802,7 +1817,7 @@ ListModules(JNIEnv *env, char *optString)
             "listModules", "(ZLjava/lang/String;)V"));
     NULL_CHECK(joptString = (*env)->NewStringUTF(env, optString));
     (*env)->CallStaticVoidMethod(env, cls, listModulesID,
-                                 USE_STDERR,
+                                 USE_STDOUT,
                                  joptString);
 }
 
@@ -1812,7 +1827,7 @@ ListModules(JNIEnv *env, char *optString)
 static void
 PrintUsage(JNIEnv* env, jboolean doXUsage)
 {
-  jmethodID initHelp, vmSelect, vmSynonym, vmErgo, printHelp, printXUsageMessage;
+  jmethodID initHelp, vmSelect, vmSynonym, printHelp, printXUsageMessage;
   jstring jprogname, vm1, vm2;
   int i;
   jclass cls = GetLauncherHelperClass(env);
@@ -1820,7 +1835,7 @@ PrintUsage(JNIEnv* env, jboolean doXUsage)
   if (doXUsage) {
     NULL_CHECK(printXUsageMessage = (*env)->GetStaticMethodID(env, cls,
                                         "printXUsageMessage", "(Z)V"));
-    (*env)->CallStaticVoidMethod(env, cls, printXUsageMessage, USE_STDERR);
+    (*env)->CallStaticVoidMethod(env, cls, printXUsageMessage, printTo);
   } else {
     NULL_CHECK(initHelp = (*env)->GetStaticMethodID(env, cls,
                                         "initHelpMessage", "(Ljava/lang/String;)V"));
@@ -1831,8 +1846,6 @@ PrintUsage(JNIEnv* env, jboolean doXUsage)
     NULL_CHECK(vmSynonym = (*env)->GetStaticMethodID(env, cls,
                                         "appendVmSynonymMessage",
                                         "(Ljava/lang/String;Ljava/lang/String;)V"));
-    NULL_CHECK(vmErgo = (*env)->GetStaticMethodID(env, cls,
-                                        "appendVmErgoMessage", "(ZLjava/lang/String;)V"));
 
     NULL_CHECK(printHelp = (*env)->GetStaticMethodID(env, cls,
                                         "printHelpMessage", "(Z)V"));
@@ -1845,13 +1858,6 @@ PrintUsage(JNIEnv* env, jboolean doXUsage)
 
 
     /* Assemble the other variant part of the usage */
-    if ((knownVMs[0].flag == VM_KNOWN) ||
-        (knownVMs[0].flag == VM_IF_SERVER_CLASS)) {
-      NULL_CHECK(vm1 = (*env)->NewStringUTF(env, knownVMs[0].name));
-      NULL_CHECK(vm2 =  (*env)->NewStringUTF(env, knownVMs[0].name+1));
-      (*env)->CallStaticVoidMethod(env, cls, vmSelect, vm1, vm2);
-      CHECK_EXCEPTION_RETURN();
-    }
     for (i=1; i<knownVMsCount; i++) {
       if (knownVMs[i].flag == VM_KNOWN) {
         NULL_CHECK(vm1 =  (*env)->NewStringUTF(env, knownVMs[i].name));
@@ -1869,22 +1875,8 @@ PrintUsage(JNIEnv* env, jboolean doXUsage)
       }
     }
 
-    /* The first known VM is the default */
-    {
-      jboolean isServerClassMachine = ServerClassMachine();
-
-      const char* defaultVM  =  knownVMs[0].name+1;
-      if ((knownVMs[0].flag == VM_IF_SERVER_CLASS) && isServerClassMachine) {
-        defaultVM = knownVMs[0].server_class+1;
-      }
-
-      NULL_CHECK(vm1 =  (*env)->NewStringUTF(env, defaultVM));
-      (*env)->CallStaticVoidMethod(env, cls, vmErgo, isServerClassMachine,  vm1);
-      CHECK_EXCEPTION_RETURN();
-    }
-
     /* Complete the usage message and print to stderr*/
-    (*env)->CallStaticVoidMethod(env, cls, printHelp, USE_STDERR);
+    (*env)->CallStaticVoidMethod(env, cls, printHelp, printTo);
   }
   return;
 }
@@ -2011,19 +2003,7 @@ ReadKnownVMs(const char *jvmCfgName, jboolean speculative)
                 } else if (!JLI_StrCCmp(tmpPtr, "ERROR")) {
                     vmType = VM_ERROR;
                 } else if (!JLI_StrCCmp(tmpPtr, "IF_SERVER_CLASS")) {
-                    tmpPtr += JLI_StrCSpn(tmpPtr, whiteSpace);
-                    if (*tmpPtr != 0) {
-                        tmpPtr += JLI_StrSpn(tmpPtr, whiteSpace);
-                    }
-                    if (*tmpPtr == 0) {
-                        JLI_ReportErrorMessage(CFG_WARN4, lineno, jvmCfgName);
-                    } else {
-                        /* Null terminate server class VM name */
-                        serverClassVMName = tmpPtr;
-                        tmpPtr += JLI_StrCSpn(tmpPtr, whiteSpace);
-                        *tmpPtr = 0;
-                        vmType = VM_IF_SERVER_CLASS;
-                    }
+                    /* ignored */
                 } else {
                     JLI_ReportErrorMessage(CFG_WARN5, lineno, &jvmCfgName[0]);
                     vmType = VM_KNOWN;
@@ -2042,11 +2022,6 @@ ReadKnownVMs(const char *jvmCfgName, jboolean speculative)
                 knownVMs[cnt].alias = JLI_StringDup(altVMName);
                 JLI_TraceLauncher("    name: %s  vmType: %s  alias: %s\n",
                    knownVMs[cnt].name, "VM_ALIASED_TO", knownVMs[cnt].alias);
-                break;
-            case VM_IF_SERVER_CLASS:
-                knownVMs[cnt].server_class = JLI_StringDup(serverClassVMName);
-                JLI_TraceLauncher("    name: %s  vmType: %s  server_class: %s\n",
-                    knownVMs[cnt].name, "VM_IF_SERVER_CLASS", knownVMs[cnt].server_class);
                 break;
             }
             cnt++;
@@ -2197,12 +2172,6 @@ GetLauncherName()
     return _launcher_name;
 }
 
-jint
-GetErgoPolicy()
-{
-    return _ergo_policy;
-}
-
 jboolean
 IsJavaArgs()
 {
@@ -2267,17 +2236,6 @@ DumpState()
     printf("\tlauncher name:%s\n", GetLauncherName());
     printf("\tjavaw:%s\n", (IsJavaw() == JNI_TRUE) ? "on" : "off");
     printf("\tfullversion:%s\n", GetFullVersion());
-    printf("\tergo_policy:");
-    switch(GetErgoPolicy()) {
-        case NEVER_SERVER_CLASS:
-            printf("NEVER_ACT_AS_A_SERVER_CLASS_MACHINE\n");
-            break;
-        case ALWAYS_SERVER_CLASS:
-            printf("ALWAYS_ACT_AS_A_SERVER_CLASS_MACHINE\n");
-            break;
-        default:
-            printf("DEFAULT_ERGONOMICS_POLICY\n");
-    }
 }
 
 /*
@@ -2318,5 +2276,18 @@ JLI_ReportMessage(const char* fmt, ...)
     va_start(vl, fmt);
     vfprintf(stderr, fmt, vl);
     fprintf(stderr, "\n");
+    va_end(vl);
+}
+
+/*
+ * A utility procedure to always print to stdout
+ */
+void
+JLI_ShowMessage(const char* fmt, ...)
+{
+    va_list vl;
+    va_start(vl, fmt);
+    vfprintf(stdout, fmt, vl);
+    fprintf(stdout, "\n");
     va_end(vl);
 }

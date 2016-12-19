@@ -462,7 +462,7 @@ final class AssignSymbols extends SimpleNodeVisitor implements Loggable {
 
     @Override
     public boolean enterCatchNode(final CatchNode catchNode) {
-        final IdentNode exception = catchNode.getException();
+        final IdentNode exception = catchNode.getExceptionIdentifier();
         final Block     block     = lc.getCurrentBlock();
 
         start(catchNode);

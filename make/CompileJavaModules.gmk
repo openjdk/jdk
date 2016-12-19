@@ -95,7 +95,7 @@ java.datatransfer_COPY := flavormap.properties
 ################################################################################
 
 java.desktop_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference \
-    '-Xdoclint/package:java.*,javax.*' -Xlint:-deprecation,exports
+    '-Xdoclint/package:java.*,javax.*' -Xlint:exports
 java.desktop_COPY := .gif .png .wav .txt .xml .css .pf
 java.desktop_CLEAN := iio-plugin.properties cursors.properties
 
@@ -353,10 +353,6 @@ jdk.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:-com.
 jdk.compiler_CLEAN_FILES := $(wildcard \
     $(patsubst %, $(JDK_TOPDIR)/src/jdk.compiler/share/classes/%/*.properties, \
         sun/tools/serialver/resources))
-
-################################################################################
-
-jdk.jshell_ADD_JAVAC_FLAGS := -Xlint:-exports
 
 ################################################################################
 

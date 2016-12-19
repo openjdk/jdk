@@ -1553,13 +1553,20 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      */
     @Override
     public IntStream chars() {
-        byte[] val = this.value; int count = this.count; byte coder = this.coder;
-        checkOffset(count, val.length >> coder);
         // Reuse String-based spliterator. This requires a supplier to
         // capture the value and count when the terminal operation is executed
         return StreamSupport.intStream(
-                () -> coder == LATIN1 ? new StringLatin1.CharsSpliterator(val, 0, count, 0)
-                                      : new StringUTF16.CharsSpliterator(val, 0, count, 0),
+                () -> {
+                    // The combined set of field reads are not atomic and thread
+                    // safe but bounds checks will ensure no unsafe reads from
+                    // the byte array
+                    byte[] val = this.value;
+                    int count = this.count;
+                    byte coder = this.coder;
+                    return coder == LATIN1
+                           ? new StringLatin1.CharsSpliterator(val, 0, count, 0)
+                           : new StringUTF16.CharsSpliterator(val, 0, count, 0);
+                },
                 Spliterator.ORDERED | Spliterator.SIZED | Spliterator.SUBSIZED,
                 false);
     }
@@ -1570,13 +1577,20 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      */
     @Override
     public IntStream codePoints() {
-        byte[] val = this.value; int count = this.count; byte coder = this.coder;
-        checkOffset(count, val.length >> coder);
         // Reuse String-based spliterator. This requires a supplier to
         // capture the value and count when the terminal operation is executed
         return StreamSupport.intStream(
-                () -> coder == LATIN1 ? new StringLatin1.CharsSpliterator(val, 0, count, 0)
-                                      : new StringUTF16.CodePointsSpliterator(val, 0, count, 0),
+                () -> {
+                    // The combined set of field reads are not atomic and thread
+                    // safe but bounds checks will ensure no unsafe reads from
+                    // the byte array
+                    byte[] val = this.value;
+                    int count = this.count;
+                    byte coder = this.coder;
+                    return coder == LATIN1
+                           ? new StringLatin1.CharsSpliterator(val, 0, count, 0)
+                           : new StringUTF16.CodePointsSpliterator(val, 0, count, 0);
+                },
                 Spliterator.ORDERED,
                 false);
     }

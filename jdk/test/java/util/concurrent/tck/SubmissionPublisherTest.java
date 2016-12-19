@@ -963,7 +963,7 @@ public class SubmissionPublisherTest extends JSR166TestCase {
         AtomicInteger sum = new AtomicInteger();
         SubmissionPublisher<Integer> p = basicPublisher();
         CompletableFuture<Void> f =
-            p.consume((Integer x) -> { sum.getAndAdd(x.intValue()); });
+            p.consume((Integer x) -> sum.getAndAdd(x.intValue()));
         int n = 20;
         for (int i = 1; i <= n; ++i)
             p.submit(i);

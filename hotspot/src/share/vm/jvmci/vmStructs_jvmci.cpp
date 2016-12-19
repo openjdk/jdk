@@ -30,6 +30,7 @@
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
+#include "jvmci/vmStructs_compiler_runtime.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
 #include "oops/oop.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -42,7 +43,6 @@
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
 #endif
-
 
 #define VM_STRUCTS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field) \
   static_field(CompilerToVM::Data,             Klass_vtable_start_offset,              int)                                          \
@@ -430,6 +430,8 @@
   declare_constant(CodeInstaller::HEAP_END_ADDRESS)                       \
   declare_constant(CodeInstaller::NARROW_KLASS_BASE_ADDRESS)              \
   declare_constant(CodeInstaller::CRC_TABLE_ADDRESS)                      \
+  declare_constant(CodeInstaller::LOG_OF_HEAP_REGION_GRAIN_BYTES)         \
+  declare_constant(CodeInstaller::INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED) \
   declare_constant(CodeInstaller::INVOKE_INVALID)                         \
                                                                           \
   declare_constant(ConstantPool::CPCACHE_INDEX_TAG)                       \
@@ -896,7 +898,9 @@ VMAddressEntry JVMCIVMStructs::localHotSpotVMAddresses[] = {
   VM_ADDRESSES(GENERATE_VM_ADDRESS_ENTRY,
                GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
                GENERATE_VM_FUNCTION_ENTRY)
-
+  VM_ADDRESSES_COMPILER_RUNTIME(GENERATE_VM_ADDRESS_ENTRY,
+               GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
+               GENERATE_VM_FUNCTION_ENTRY)
   VM_ADDRESSES_OS(GENERATE_VM_ADDRESS_ENTRY,
                   GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
                   GENERATE_VM_FUNCTION_ENTRY)

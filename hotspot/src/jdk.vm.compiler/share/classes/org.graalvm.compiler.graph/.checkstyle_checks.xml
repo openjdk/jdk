@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC "-//Puppy Crawl//DTD Check Configuration 1.3//EN" "http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
+
+<!--
+    This configuration file was written by the eclipse-cs plugin configuration editor
+-->
+<!--
+    Checkstyle-Configuration: Checks
+    Description: none
+-->
+<module name="Checker">
+  <property name="severity" value="error"/>
+  <module name="TreeWalker">
+    <module name="AvoidStarImport">
+      <property name="allowClassImports" value="false"/>
+      <property name="allowStaticMemberImports" value="false"/>
+    </module>
+    <property name="tabWidth" value="4"/>
+    <module name="FileContentsHolder"/>
+    <module name="JavadocStyle">
+      <property name="checkHtml" value="false"/>
+    </module>
+    <module name="LocalFinalVariableName"/>
+    <module name="LocalVariableName"/>
+    <module name="MemberName">
+      <property name="format" value="^(([a-z][a-zA-Z0-9]*$)|(_[A-Z][a-zA-Z0-9]*_[a-z][a-zA-Z0-9]*$))"/>
+    </module>
+    <module name="MethodName"/>
+    <module name="PackageName"/>
+    <module name="ParameterName"/>
+    <module name="TypeName">
+      <property name="format" value="^[A-Z][_a-zA-Z0-9]*$"/>
+    </module>
+    <module name="RedundantImport"/>
+    <module name="LineLength">
+      <property name="max" value="250"/>
+    </module>
+    <module name="MethodParamPad"/>
+    <module name="NoWhitespaceAfter">
+      <property name="tokens" value="ARRAY_INIT,BNOT,DEC,DOT,INC,LNOT,UNARY_MINUS,UNARY_PLUS"/>
+    </module>
+    <module name="NoWhitespaceBefore">
+      <property name="tokens" value="SEMI,DOT,POST_DEC,POST_INC"/>
+    </module>
+    <module name="ParenPad"/>
+    <module name="TypecastParenPad">
+      <property name="tokens" value="RPAREN,TYPECAST"/>
+    </module>
+    <module name="WhitespaceAfter"/>
+    <module name="WhitespaceAround">
+      <property name="tokens" value="ASSIGN,BAND,BAND_ASSIGN,BOR,BOR_ASSIGN,BSR,BSR_ASSIGN,BXOR,BXOR_ASSIGN,COLON,DIV,DIV_ASSIGN,EQUAL,GE,GT,LAND,LE,LITERAL_ASSERT,LITERAL_CATCH,LITERAL_DO,LITERAL_ELSE,LITERAL_FINALLY,LITERAL_FOR,LITERAL_IF,LITERAL_RETURN,LITERAL_SYNCHRONIZED,LITERAL_TRY,LITERAL_WHILE,LOR,LT,MINUS,MINUS_ASSIGN,MOD,MOD_ASSIGN,NOT_EQUAL,PLUS,PLUS_ASSIGN,QUESTION,SL,SLIST,SL_ASSIGN,SR,SR_ASSIGN,STAR,STAR_ASSIGN,LITERAL_ASSERT,TYPE_EXTENSION_AND"/>
+    </module>
+    <module name="RedundantModifier"/>
+    <module name="AvoidNestedBlocks">
+      <property name="allowInSwitchCase" value="true"/>
+    </module>
+    <module name="EmptyBlock">
+      <property name="option" value="text"/>
+      <property name="tokens" value="LITERAL_DO,LITERAL_ELSE,LITERAL_FINALLY,LITERAL_IF,LITERAL_TRY,LITERAL_WHILE,STATIC_INIT"/>
+    </module>
+    <module name="LeftCurly"/>
+    <module name="NeedBraces"/>
+    <module name="RightCurly"/>
+    <module name="EmptyStatement"/>
+    <module name="HiddenField">
+      <property name="severity" value="ignore"/>
+      <property name="ignoreConstructorParameter" value="true"/>
+      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
+    </module>
+    <module name="FinalClass"/>
+    <module name="HideUtilityClassConstructor">
+      <property name="severity" value="ignore"/>
+      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
+    </module>
+    <module name="ArrayTypeStyle"/>
+    <module name="UpperEll"/>
+    <module name="FallThrough"/>
+    <module name="FinalLocalVariable">
+      <property name="severity" value="ignore"/>
+      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
+    </module>
+    <module name="MultipleVariableDeclarations"/>
+    <module name="StringLiteralEquality">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="SuperFinalize"/>
+    <module name="UnnecessaryParentheses">
+      <property name="severity" value="ignore"/>
+      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
+    </module>
+    <module name="Indentation">
+      <property name="severity" value="ignore"/>
+      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
+    </module>
+    <module name="StaticVariableName">
+      <property name="format" value="^[A-Za-z][a-zA-Z0-9]*$"/>
+    </module>
+    <module name="EmptyForInitializerPad"/>
+    <module name="EmptyForIteratorPad"/>
+    <module name="ModifierOrder"/>
+    <module name="DefaultComesLast"/>
+    <module name="InnerAssignment">
+      <property name="severity" value="ignore"/>
+      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
+    </module>
+    <module name="ModifiedControlVariable"/>
+    <module name="MutableException">
+      <property name="severity" value="ignore"/>
+      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
+    </module>
+    <module name="ParameterAssignment">
+      <property name="severity" value="ignore"/>
+      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
+    </module>
+    <module name="RegexpSinglelineJava">
+      <metadata name="net.sf.eclipsecs.core.comment" value="Illegal trailing whitespace(s) at the end of the line."/>
+      <property name="format" value="\s$"/>
+      <property name="message" value="Illegal trailing whitespace(s) at the end of the line."/>
+      <property name="ignoreComments" value="true"/>
+      <metadata name="com.atlassw.tools.eclipse.checkstyle.comment" value="Checks for trailing spaces at the end of a line"/>
+    </module>
+    <module name="RegexpSinglelineJava">
+      <metadata name="net.sf.eclipsecs.core.comment" value="illegal space before a comma"/>
+      <property name="format" value=" ,"/>
+      <property name="message" value="illegal space before a comma"/>
+      <property name="ignoreComments" value="true"/>
+      <metadata name="com.atlassw.tools.eclipse.checkstyle.comment" value="Checks for whitespace before a comma."/>
+      <metadata name="com.atlassw.tools.eclipse.checkstyle.customMessage" value="Illegal whitespace before a comma."/>
+    </module>
+    <module name="RegexpSinglelineJava">
+      <property name="format" value="[^\x00-\x7F]"/>
+      <property name="message" value="Only use ASCII characters."/>
+    </module>
+    <module name="RegexpSinglelineJava">
+      <property name="format" value="new (Hashtable|Vector|Stack|StringBuffer)[^\w]"/>
+      <property name="message" value="Don't use old synchronized collection classes"/>
+    </module>
+  </module>
+  <module name="RegexpHeader">
+    <property name="header" value="/\*\n \* Copyright \(c\) (20[0-9][0-9], )?20[0-9][0-9], Oracle and/or its affiliates. All rights reserved.\n \* DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.\n \*\n \* This code is free software; you can redistribute it and/or modify it\n \* under the terms of the GNU General Public License version 2 only, as\n \* published by the Free Software Foundation.\n \*\n \* This code is distributed in the hope that it will be useful, but WITHOUT\n \* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or\n \* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License\n \* version 2 for more details \(a copy is included in the LICENSE file that\n \* accompanied this code\).\n \*\n \* You should have received a copy of the GNU General Public License version\n \* 2 along with this work; if not, write to the Free Software Foundation,\n \* Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.\n \*\n \* Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA\n \* or visit www.oracle.com if you need additional information or have any\n \* questions.\n \*/\n"/>
+    <property name="fileExtensions" value="java"/>
+  </module>
+  <module name="FileTabCharacter">
+    <property name="severity" value="error"/>
+    <property name="fileExtensions" value="java"/>
+  </module>
+  <module name="NewlineAtEndOfFile">
+    <property name="lineSeparator" value="lf"/>
+  </module>
+  <module name="Translation"/>
+  <module name="SuppressionCommentFilter">
+    <property name="offCommentFormat" value="Checkstyle: stop constant name check"/>
+    <property name="onCommentFormat" value="Checkstyle: resume constant name check"/>
+    <property name="checkFormat" value="ConstantNameCheck"/>
+    <metadata name="com.atlassw.tools.eclipse.checkstyle.comment" value="Allow non-conforming constant names"/>
+  </module>
+  <module name="SuppressionCommentFilter">
+    <property name="offCommentFormat" value="Checkstyle: stop method name check"/>
+    <property name="onCommentFormat" value="Checkstyle: resume method name check"/>
+    <property name="checkFormat" value="MethodName"/>
+    <property name="checkC" value="false"/>
+    <metadata name="com.atlassw.tools.eclipse.checkstyle.comment" value="Disable method name checks"/>
+  </module>
+  <module name="SuppressionCommentFilter">
+    <property name="offCommentFormat" value="CheckStyle: stop parameter assignment check"/>
+    <property name="onCommentFormat" value="CheckStyle: resume parameter assignment check"/>
+    <property name="checkFormat" value="ParameterAssignment"/>
+    <property name="checkC" value="false"/>
+    <metadata name="com.atlassw.tools.eclipse.checkstyle.comment" value="Disable Parameter Assignment"/>
+  </module>
+  <module name="SuppressionCommentFilter">
+    <property name="offCommentFormat" value="Checkstyle: stop final variable check"/>
+    <property name="onCommentFormat" value="Checkstyle: resume final variable check"/>
+    <property name="checkFormat" value="FinalLocalVariable"/>
+    <metadata name="com.atlassw.tools.eclipse.checkstyle.comment" value="Disable final variable checks"/>
+  </module>
+  <module name="SuppressionCommentFilter">
+    <property name="offCommentFormat" value="Checkstyle: stop"/>
+    <property name="onCommentFormat" value="Checkstyle: resume"/>
+    <metadata name="com.atlassw.tools.eclipse.checkstyle.comment" value="Disable all checks"/>
+  </module>
+  <module name="SuppressionCommentFilter">
+    <property name="offCommentFormat" value="CheckStyle: stop inner assignment check"/>
+    <property name="onCommentFormat" value="CheckStyle: resume inner assignment check"/>
+    <property name="checkFormat" value="InnerAssignment"/>
+    <metadata name="com.atlassw.tools.eclipse.checkstyle.comment" value="Disable inner assignment checks"/>
+  </module>
+  <module name="SuppressionCommentFilter">
+    <property name="offCommentFormat" value="Checkstyle: stop field name check"/>
+    <property name="onCommentFormat" value="Checkstyle: resume field name check"/>
+    <property name="checkFormat" value="MemberName"/>
+    <property name="checkC" value="false"/>
+    <metadata name="com.atlassw.tools.eclipse.checkstyle.comment" value="Disable field name checks"/>
+  </module>
+  <module name="RegexpMultiline">
+    <metadata name="net.sf.eclipsecs.core.comment" value="illegal Windows line ending"/>
+    <property name="format" value="\r\n"/>
+    <property name="message" value="illegal Windows line ending"/>
+  </module>
+  <module name="SuppressionCommentFilter">
+    <property name="offCommentFormat" value="CheckStyle: stop header check"/>
+    <property name="onCommentFormat" value="CheckStyle: resume header check"/>
+    <property name="checkFormat" value=".*Header"/>
+    <metadata name="com.atlassw.tools.eclipse.checkstyle.comment" value="Disable header checks"/>
+  </module>
+  <module name="SuppressionCommentFilter">
+    <property name="offCommentFormat" value="CheckStyle: stop line length check"/>
+    <property name="onCommentFormat" value="CheckStyle: resume line length check"/>
+    <property name="checkFormat" value="LineLength"/>
+  </module>
+  <module name="SuppressionCommentFilter">
+    <property name="offCommentFormat" value="CheckStyle: start generated"/>
+    <property name="onCommentFormat" value="CheckStyle: stop generated"/>
+    <property name="checkFormat" value=".*Name|.*LineLength|.*Header"/>
+  </module>
+</module>

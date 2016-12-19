@@ -140,6 +140,9 @@ void JLI_ReportErrorMessageSys(const char * message, ...);
 /* Reports an error message only to stderr. */
 void JLI_ReportMessage(const char * message, ...);
 
+/* Reports a message only to stdout. */
+void JLI_ShowMessage(const char * message, ...);
+
 /*
  * Reports an exception which terminates the vm to stderr or a window
  * as appropriate.
@@ -166,19 +169,10 @@ char *CheckJvmType(int *argc, char ***argv, jboolean speculative);
 void AddOption(char *str, void *info);
 jboolean IsWhiteSpaceOption(const char* name);
 
-enum ergo_policy {
-   DEFAULT_POLICY = 0,
-   NEVER_SERVER_CLASS,
-   ALWAYS_SERVER_CLASS
-};
-
 const char* GetProgramName();
 const char* GetFullVersion();
 jboolean IsJavaArgs();
 jboolean IsJavaw();
-jint GetErgoPolicy();
-
-jboolean ServerClassMachine();
 
 int ContinueInNewThread(InvocationFunctions* ifn, jlong threadStackSize,
                    int argc, char** argv,

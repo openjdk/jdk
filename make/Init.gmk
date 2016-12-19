@@ -157,7 +157,7 @@ ifeq ($(HAS_SPEC),)
     # Do not let make delete spec files even if aborted while doing a reconfigure
     .PRECIOUS: $(SPECS)
 
-    # Unless reconfigure is explicitely called, let all main targets depend on
+    # Unless reconfigure is explicitly called, let all main targets depend on
     # the spec files to be up to date.
     ifeq ($(findstring reconfigure, $(INIT_TARGETS)), )
       $(MAIN_TARGETS): $(SPECS)
@@ -278,7 +278,7 @@ else # HAS_SPEC=true
 
   # MAKEOVERRIDES is automatically set and propagated by Make to sub-Make calls.
   # We need to clear it of the init-specific variables. The user-specified
-  # variables are explicitely propagated using $(USER_MAKE_VARS).
+  # variables are explicitly propagated using $(USER_MAKE_VARS).
   main: MAKEOVERRIDES :=
 
   main: $(INIT_TARGETS)

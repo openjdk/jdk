@@ -65,7 +65,8 @@ import java.util.function.Consumer;
  * <p>This class and its iterator implement all of the
  * <em>optional</em> methods of the {@link Collection} and {@link
  * Iterator} interfaces.  The Iterator provided in method {@link
- * #iterator()} is <em>not</em> guaranteed to traverse the elements of
+ * #iterator()} and the Spliterator provided in method {@link #spliterator()}
+ * are <em>not</em> guaranteed to traverse the elements of
  * the PriorityBlockingQueue in any particular order. If you need
  * ordered traversal, consider using
  * {@code Arrays.sort(pq.toArray())}.  Also, method {@code drainTo}
@@ -932,8 +933,9 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
         }
     }
 
-    // Similar to Collections.ArraySnapshotSpliterator but avoids
-    // commitment to toArray until needed
+    /**
+     * Immutable snapshot spliterator that binds to elements "late".
+     */
     static final class PBQSpliterator<E> implements Spliterator<E> {
         final PriorityBlockingQueue<E> queue;
         Object[] array;
@@ -994,6 +996,8 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
 
     /**
      * Returns a {@link Spliterator} over the elements in this queue.
+     * The spliterator does not traverse elements in any particular order
+     * (the {@link Spliterator#ORDERED ORDERED} characteristic is not reported).
      *
      * <p>The returned spliterator is
      * <a href="package-summary.html#Weakly"><i>weakly consistent</i></a>.

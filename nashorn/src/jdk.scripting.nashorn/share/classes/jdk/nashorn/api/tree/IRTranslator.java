@@ -384,7 +384,7 @@ final class IRTranslator extends SimpleNodeVisitor {
         final List<CatchTreeImpl> catchTrees = new ArrayList<>(catchNodes.size());
         for (final CatchNode catchNode : catchNodes) {
             catchTrees.add(new CatchTreeImpl(catchNode,
-                    translateIdent(catchNode.getException()),
+                    translateExpr(catchNode.getException()),
                     (BlockTree) translateBlock(catchNode.getBody()),
                     translateExpr(catchNode.getExceptionCondition())));
         }

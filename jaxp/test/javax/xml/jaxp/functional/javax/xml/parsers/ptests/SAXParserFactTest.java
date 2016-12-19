@@ -24,6 +24,9 @@
 package javax.xml.parsers.ptests;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertEquals;
 
 import javax.xml.parsers.SAXParserFactory;
 
@@ -35,6 +38,7 @@ import org.testng.annotations.Test;
  */
 /*
  * @test
+ * @bug 8169778
  * @library /javax/xml/jaxp/libs
  * @run testng/othervm -DrunSecMngr=true javax.xml.parsers.ptests.SAXParserFactTest
  * @run testng/othervm javax.xml.parsers.ptests.SAXParserFactTest
@@ -48,6 +52,23 @@ public class SAXParserFactTest {
     private static final String VALIDATION = "http://xml.org/sax/features/validation";
     private static final String EXTERNAL_G_ENTITIES = "http://xml.org/sax/features/external-general-entities";
     private static final String EXTERNAL_P_ENTITIES = "http://xml.org/sax/features/external-parameter-entities";
+    private static final String DEFAULT_IMPL_CLASS =
+        "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl";
+
+    /**
+     * Test if newDefaultInstance() method returns an instance
+     * of the expected factory.
+     * @throws Exception If any errors occur.
+     */
+    @Test
+    public void testDefaultInstance() throws Exception {
+        SAXParserFactory spf1 = SAXParserFactory.newDefaultInstance();
+        SAXParserFactory spf2 = SAXParserFactory.newInstance();
+        assertNotSame(spf1, spf2, "same instance returned:");
+        assertSame(spf1.getClass(), spf2.getClass(),
+                  "unexpected class mismatch for newDefaultInstance():");
+        assertEquals(spf1.getClass().getName(), DEFAULT_IMPL_CLASS);
+    }
 
     /**
      * Test if newSAXParser() method returns SAXParser.

@@ -165,14 +165,14 @@ public final class TemplatesImpl implements Templates, Serializable {
         };
 
     static final class TransletClassLoader extends ClassLoader {
-        private final Map<String,Class> _loadedExternalExtensionFunctions;
+        private final Map<String, Class<?>> _loadedExternalExtensionFunctions;
 
          TransletClassLoader(ClassLoader parent) {
              super(parent);
             _loadedExternalExtensionFunctions = null;
         }
 
-        TransletClassLoader(ClassLoader parent,Map<String, Class> mapEF) {
+        TransletClassLoader(ClassLoader parent, Map<String, Class<?>> mapEF) {
             super(parent);
             _loadedExternalExtensionFunctions = mapEF;
         }
@@ -215,7 +215,7 @@ public final class TemplatesImpl implements Templates, Serializable {
     /**
      * Create an XSLTC template object from the translet class definition(s).
      */
-    protected TemplatesImpl(Class[] transletClasses, String transletName,
+    protected TemplatesImpl(Class<?>[] transletClasses, String transletName,
         Properties outputProperties, int indentNumber,
         TransformerFactoryImpl tfactory)
     {
@@ -471,8 +471,7 @@ public final class TemplatesImpl implements Templates, Serializable {
             String pn = _tfactory.getPackageName();
             assert pn != null && pn.length() > 0;
 
-            ModuleDescriptor descriptor
-                = new ModuleDescriptor.Builder(mn)
+            ModuleDescriptor descriptor = ModuleDescriptor.module(mn)
                     .requires("java.xml")
                     .exports(pn)
                     .build();
@@ -481,6 +480,7 @@ public final class TemplatesImpl implements Templates, Serializable {
 
             // the module needs access to runtime classes
             Module thisModule = TemplatesImpl.class.getModule();
+
             Arrays.asList(Constants.PKGS_USED_BY_TRANSLET_CLASSES).forEach(p -> {
                 thisModule.addExports(p, m);
             });

@@ -35,6 +35,9 @@ import static java.lang.annotation.ElementType.*;
  * a superset of the warnings suppressed in all containing elements.  For
  * example, if you annotate a class to suppress one warning and annotate a
  * method to suppress another, both warnings will be suppressed in the method.
+ * However, note that if a warning is suppressed in a {@code
+ * module-info} file, the suppression applies to elements within the
+ * file and <em>not</em> to types contained within the module.
  *
  * <p>As a matter of style, programmers should always use this annotation
  * on the most deeply nested element where it is effective.  If you want to
@@ -49,7 +52,7 @@ import static java.lang.annotation.ElementType.*;
  * @jls 5.5.2 Checked Casts and Unchecked Casts
  * @jls 9.6.4.5 @SuppressWarnings
  */
-@Target({TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE})
+@Target({TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, MODULE})
 @Retention(RetentionPolicy.SOURCE)
 public @interface SuppressWarnings {
     /**
