@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,10 +67,6 @@ public class Reexport {
             System.err.println("Creating duplicate registry, this should fail...");
             reg = createReg(true, regPort);
 
-            if (reg != null) {
-                TestLibrary.bomb("failed was able to duplicate the registry?!?");
-            }
-
             // Kill the first registry.
             System.err.println("Bringing down the first registry");
             try {
@@ -105,6 +101,9 @@ public class Reexport {
 
         try {
             reg = LocateRegistry.createRegistry(port);
+            if (remoteOk) {
+                TestLibrary.bomb("Remote registry is up, an Exception is expected!");
+            }
         } catch (Throwable e) {
             if (remoteOk) {
                 System.err.println("EXPECTING PORT IN USE EXCEPTION:");
