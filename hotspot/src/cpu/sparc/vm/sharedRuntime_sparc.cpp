@@ -425,7 +425,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
 
 #ifdef _LP64
     case T_LONG:
-      assert(sig_bt[i+1] == T_VOID, "expecting VOID in other half");
+      assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "expecting VOID in other half");
       // fall-through
     case T_OBJECT:
     case T_ARRAY:
@@ -441,7 +441,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
       break;
 #else
     case T_LONG:
-      assert(sig_bt[i+1] == T_VOID, "expecting VOID in other half");
+      assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "expecting VOID in other half");
       // On 32-bit SPARC put longs always on the stack to keep the pressure off
       // integer argument registers.  They should be used for oops.
       slot = round_to(slot, 2);  // align
@@ -460,7 +460,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
       break;
 
     case T_DOUBLE:
-      assert(sig_bt[i+1] == T_VOID, "expecting half");
+      assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "expecting half");
       if (round_to(flt_reg, 2) + 1 < flt_reg_max) {
         flt_reg = round_to(flt_reg, 2);  // align
         FloatRegister r = as_FloatRegister(flt_reg);
@@ -1174,7 +1174,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         regs[i].set1(int_stk_helper(j));
         break;
       case T_LONG:
-        assert(sig_bt[i+1] == T_VOID, "expecting half");
+        assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "expecting half");
       case T_ADDRESS: // raw pointers, like current thread, for VM calls
       case T_ARRAY:
       case T_OBJECT:
@@ -1209,7 +1209,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         break;
       case T_DOUBLE:
         {
-          assert(sig_bt[i + 1] == T_VOID, "expecting half");
+          assert((i + 1) < total_args_passed && sig_bt[i + 1] == T_VOID, "expecting half");
           // V9ism: doubles go in EVEN/ODD regs and stack slots
           int double_index = (j << 1);
           param_array_reg.set2(VMRegImpl::stack2reg(double_index));
@@ -1261,7 +1261,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         break;
       case T_DOUBLE:
       case T_LONG:
-        assert(sig_bt[i + 1] == T_VOID, "expecting half");
+        assert((i + 1) < total_args_passed && sig_bt[i + 1] == T_VOID, "expecting half");
         regs[i].set_pair(int_stk_helper(i + 1), int_stk_helper(i));
         break;
       case T_VOID: regs[i].set_bad(); break;

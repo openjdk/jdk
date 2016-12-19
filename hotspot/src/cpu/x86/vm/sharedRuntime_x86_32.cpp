@@ -478,12 +478,12 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
       }
       break;
     case T_LONG:
-      assert(sig_bt[i+1] == T_VOID, "missing Half" );
+      assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "missing Half" );
       regs[i].set2(VMRegImpl::stack2reg(dstack));
       dstack += 2;
       break;
     case T_DOUBLE:
-      assert(sig_bt[i+1] == T_VOID, "missing Half" );
+      assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "missing Half" );
       if( freg_arg0 == (uint)i ) {
         regs[i].set2(xmm0->as_VMReg());
       } else if( freg_arg1 == (uint)i ) {
@@ -1001,7 +1001,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     case T_DOUBLE: // The stack numbering is reversed from Java
       // Since C arguments do not get reversed, the ordering for
       // doubles on the stack must be opposite the Java convention
-      assert(sig_bt[i+1] == T_VOID, "missing Half" );
+      assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "missing Half" );
       regs[i].set2(VMRegImpl::stack2reg(stack));
       stack += 2;
       break;
