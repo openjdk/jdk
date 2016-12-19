@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -62,7 +63,10 @@ import static jdk.jshell.execution.Util.remoteInputOutput;
  */
 public class JdiDefaultExecutionControl extends JdiExecutionControl {
 
-    private static final String REMOTE_AGENT = RemoteExecutionControl.class.getName();
+    /**
+     * Default time-out expressed in milliseconds.
+     */
+    private static final int DEFAULT_TIMEOUT = 5000;
 
     private VirtualMachine vm;
     private Process process;
@@ -72,24 +76,60 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
 
     /**
      * Creates an ExecutionControl instance based on a JDI
-     * {@code LaunchingConnector}.
+     * {@code LaunchingConnector}. Same as
+     * {@code JdiDefaultExecutionControl.create(defaultRemoteAgent(), true, null, defaultTimeout())}.
      *
      * @return the generator
      */
     public static ExecutionControl.Generator launch() {
-        return env -> create(env, true, null);
+        return create(defaultRemoteAgent(), true, null, defaultTimeout());
     }
 
     /**
      * Creates an ExecutionControl instance based on a JDI
-     * {@code ListeningConnector}.
+     * {@code ListeningConnector}. Same as
+     * {@code JdiDefaultExecutionControl.create(defaultRemoteAgent(), false, host, defaultTimeout())}.
      *
      * @param host explicit hostname to use, if null use discovered
      * hostname, applies to listening only (!isLaunch)
      * @return the generator
      */
     public static ExecutionControl.Generator listen(String host) {
-        return env -> create(env, false, host);
+        return create(defaultRemoteAgent(), false, host, defaultTimeout());
+    }
+
+    /**
+     * Creates a JDI based ExecutionControl instance.
+     *
+     * @param remoteAgent the remote agent to launch
+     * @param isLaunch does JDI do the launch? That is, LaunchingConnector,
+     * otherwise we start explicitly and use ListeningConnector
+     * @param host explicit hostname to use, if null use discovered
+     * hostname, applies to listening only (!isLaunch)
+     * @param timeout the start-up time-out in milliseconds
+     * @return the generator
+     */
+    public static ExecutionControl.Generator create(String remoteAgent,
+            boolean isLaunch, String host, int timeout) {
+        return env -> create(env, remoteAgent, isLaunch, host, timeout);
+    }
+
+    /**
+     * Default remote agent.
+     *
+     * @return the name of the standard remote agent
+     */
+    public static String defaultRemoteAgent() {
+        return RemoteExecutionControl.class.getName();
+    }
+
+    /**
+     * Default remote connection time-out
+     *
+     * @return time to wait for connection before failing, expressed in milliseconds.
+     */
+    public static int defaultTimeout() {
+        return DEFAULT_TIMEOUT;
     }
 
     /**
@@ -102,6 +142,7 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
      *
      * @param env the context passed by
      * {@link jdk.jshell.spi.ExecutionControl#start(jdk.jshell.spi.ExecutionEnv) }
+     * @param remoteAgent the remote agent to launch
      * @param isLaunch does JDI do the launch? That is, LaunchingConnector,
      * otherwise we start explicitly and use ListeningConnector
      * @param host explicit hostname to use, if null use discovered
@@ -109,16 +150,16 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
      * @return the channel
      * @throws IOException if there are errors in set-up
      */
-    private static ExecutionControl create(ExecutionEnv env,
-            boolean isLaunch, String host) throws IOException {
-        try (final ServerSocket listener = new ServerSocket(0)) {
-            // timeout after 60 seconds
-            listener.setSoTimeout(60000);
+    private static ExecutionControl create(ExecutionEnv env, String remoteAgent,
+            boolean isLaunch, String host, int timeout) throws IOException {
+        try (final ServerSocket listener = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            // timeout on I/O-socket
+            listener.setSoTimeout(timeout);
             int port = listener.getLocalPort();
 
             // Set-up the JDI connection
             JdiInitiator jdii = new JdiInitiator(port,
-                    env.extraRemoteVMOptions(), REMOTE_AGENT, isLaunch, host);
+                    env.extraRemoteVMOptions(), remoteAgent, isLaunch, host, timeout);
             VirtualMachine vm = jdii.vm();
             Process process = jdii.process();
 
@@ -196,7 +237,7 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
                 for (ThreadReference thread : vm().allThreads()) {
                     // could also tag the thread (e.g. using name), to find it easier
                     for (StackFrame frame : thread.frames()) {
-                        if (REMOTE_AGENT.equals(frame.location().declaringType().name()) &&
+                        if (defaultRemoteAgent().equals(frame.location().declaringType().name()) &&
                                 (    "invoke".equals(frame.location().method().name())
                                 || "varValue".equals(frame.location().method().name()))) {
                             ObjectReference thiz = frame.thisObject();

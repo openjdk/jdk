@@ -198,7 +198,7 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
   if (scope() == NULL) {
     CompiledMethod* nm = code();
     Method* method = nm->method();
-    assert(method->is_native(), "");
+    assert(method->is_native() || nm->is_aot(), "Expect a native method or precompiled method");
     if (!method->is_synchronized()) {
       return new GrowableArray<MonitorInfo*>(0);
     }

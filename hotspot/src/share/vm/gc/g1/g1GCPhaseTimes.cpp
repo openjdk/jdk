@@ -69,6 +69,9 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   }
   _gc_par_phases[ScanRS] = new WorkerDataArray<double>(max_gc_threads, "Scan RS (ms):");
   _gc_par_phases[CodeRoots] = new WorkerDataArray<double>(max_gc_threads, "Code Root Scanning (ms):");
+#if INCLUDE_AOT
+  _gc_par_phases[AOTCodeRoots] = new WorkerDataArray<double>(max_gc_threads, "AOT Root Scanning (ms):");
+#endif
   _gc_par_phases[ObjCopy] = new WorkerDataArray<double>(max_gc_threads, "Object Copy (ms):");
   _gc_par_phases[Termination] = new WorkerDataArray<double>(max_gc_threads, "Termination (ms):");
   _gc_par_phases[GCWorkerTotal] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Total (ms):");
@@ -311,6 +314,9 @@ double G1GCPhaseTimes::print_evacuate_collection_set() const {
   }
   debug_phase(_gc_par_phases[ScanRS]);
   debug_phase(_gc_par_phases[CodeRoots]);
+#if INCLUDE_AOT
+  debug_phase(_gc_par_phases[AOTCodeRoots]);
+#endif
   debug_phase(_gc_par_phases[ObjCopy]);
   debug_phase(_gc_par_phases[Termination]);
   debug_phase(_gc_par_phases[Other]);

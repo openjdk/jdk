@@ -135,7 +135,7 @@ java/lang/instrument/RetransformBigClass.sh                     8065756 generic-
 java/lang/instrument/BootClassPath/BootClassPathTest.sh         8072130 macosx-all
 
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
-java/lang/management/MemoryMXBean/PendingAllGC.sh               8158760 generic-all
+java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
 
 ############################################################################
 
@@ -145,10 +145,17 @@ java/io/pathNames/GeneralWin32.java                             8156595 windows-
 
 ############################################################################
 
-# jdk_jmx
+# jdk_management
 
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
+
+com/sun/management/DiagnosticCommandMBean/DcmdMBeanPermissionsTest.java 8169575 generic-all
+
+############################################################################
+
+# jdk_jmx
+
 javax/management/MBeanServer/OldMBeanServerTest.java            8030957 aix-all
 
 javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java 8042215 generic-all
@@ -164,11 +171,7 @@ java/net/MulticastSocket/Test.java                              7145658 macosx-a
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 
-java/net/httpclient/SplitResponse.java                          8157533 generic-all 
-
-java/net/httpclient/http2/BasicTest.java                        8157408 linux-all
-java/net/httpclient/http2/ErrorTest.java                        8158127 solaris-all,windows-all
-java/net/httpclient/http2/TLSConnection.java                    8157482 macosx-all
+java/net/httpclient/TimeoutOrdering.java                        8170940 solaris-all,windows-all
 
 ############################################################################
 
@@ -216,6 +219,8 @@ sun/security/krb5/auto/HttpNegotiateServer.java                 8038079 generic-
 
 sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java         8161232 macosx-all
 
+sun/net/www/protocol/https/HttpsClient/ServerIdentityTest.java  8171043 windows-all
+
 ############################################################################
 
 # jdk_sound
@@ -226,8 +231,6 @@ javax/sound/sampled/DataLine/LongFramePosition.java    8055097 generic-all
 javax/sound/sampled/Clip/Drain/ClipDrain.java          7062792 generic-all
 
 javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
-
-javax/sound/sampled/Clip/OpenNonIntegralNumberOfSampleframes.java 8168881 generic-all
 
 ############################################################################
 
@@ -252,9 +255,15 @@ sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java        8157338 generic-
 
 # core_tools
 
-tools/pack200/CommandLineTests.java                             7143279,8059906 generic-all
+tools/pack200/CommandLineTests.java                             8059906 generic-all
 
 tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
+
+tools/jimage/JImageExtractTest.java                             8169713 generic-all
+tools/jimage/JImageListTest.java                                8169713 generic-all
+tools/jimage/JImageVerifyTest.java                              8169713 generic-all
+
+tools/jlink/ModuleNamesOrderTest.java                           8171070 generic-all
 
 ############################################################################
 
@@ -282,6 +291,7 @@ java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java 8062512 
 
 java/util/BitSet/BitSetStreamTest.java                          8079538 generic-all
 
+
 ############################################################################
 
 # jdk_instrument
@@ -292,16 +302,6 @@ java/util/BitSet/BitSetStreamTest.java                          8079538 generic-
 
 sun/tools/jcmd/TestJcmdSanity.java                              8031482 windows-all
 
-sun/tools/jhsdb/BasicLauncherTest.java                          8160376 macosx-all
-
-sun/tools/jhsdb/HeapDumpTest.java                               8160376 macosx-all
-
-sun/tools/jhsdb/heapconfig/JMapHeapConfigTest.java              8160376 macosx-all
-
-sun/tools/jps/TestJpsJar.java                                   8165500 generic-all
-
-sun/tools/jps/TestJpsJarRelative.java                           6456333 generic-all
-
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    8057732 generic-all
 
 demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java       8151899 generic-all
@@ -310,6 +310,10 @@ demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java       8151899 generic-
 
 # jdk_other
 
-com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8141370 linux-i586,macosx-all
+com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8169942 linux-i586,macosx-all,windows-x64
+
+javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8169737 linux-all
+
+javax/xml/ws/clientjar/TestWsImport.java			8170370 generic-all
 
 ############################################################################

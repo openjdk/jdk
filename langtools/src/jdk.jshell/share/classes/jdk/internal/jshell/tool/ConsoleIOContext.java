@@ -57,7 +57,6 @@ import jdk.internal.jline.TerminalFactory;
 import jdk.internal.jline.TerminalSupport;
 import jdk.internal.jline.WindowsTerminal;
 import jdk.internal.jline.console.ConsoleReader;
-import jdk.internal.jline.console.CursorBuffer;
 import jdk.internal.jline.console.KeyMap;
 import jdk.internal.jline.console.UserInterruptException;
 import jdk.internal.jline.console.completer.Completer;
@@ -284,9 +283,9 @@ class ConsoleIOContext extends IOContext {
             if (firstInvocation) {
                 convertor = d -> d.signature();
             } else {
-                convertor = d -> formatter.formatJavadoc(d.signature(),
-                                                         d.javadoc() != null ? d.javadoc()
-                                                                             : repl.messageFormat("jshell.console.no.javadoc"));
+                convertor = d -> formatter.formatJavadoc(d.signature(), d.javadoc()) +
+                                 (d.javadoc() == null ? repl.messageFormat("jshell.console.no.javadoc")
+                                                      : "");
             }
             doc = repl.analysis.documentation(prefix + buffer, cursor + prefix.length(), !firstInvocation)
                                .stream()
@@ -581,26 +580,55 @@ class ConsoleIOContext extends IOContext {
 
     private static final FixComputer[] FIX_COMPUTERS = new FixComputer[] {
         new FixComputer('v', false) { //compute "Introduce variable" Fix:
+            private void performToVar(ConsoleReader in, String type) throws IOException {
+                in.redrawLine();
+                in.setCursorPosition(0);
+                in.putString(type + "  = ");
+                in.setCursorPosition(in.getCursorBuffer().cursor - 3);
+                in.flush();
+            }
+
             @Override
             public FixResult compute(JShellTool repl, String code, int cursor) {
                 String type = repl.analysis.analyzeType(code, cursor);
                 if (type == null) {
                     return new FixResult(Collections.emptyList(), null);
                 }
-                return new FixResult(Collections.singletonList(new Fix() {
+                List<Fix> fixes = new ArrayList<>();
+                fixes.add(new Fix() {
                     @Override
                     public String displayName() {
                         return repl.messageFormat("jshell.console.create.variable");
                     }
+
                     @Override
                     public void perform(ConsoleReader in) throws IOException {
-                        in.redrawLine();
-                        in.setCursorPosition(0);
-                        in.putString(type + "  = ");
-                        in.setCursorPosition(in.getCursorBuffer().cursor - 3);
-                        in.flush();
+                        performToVar(in, type);
                     }
-                }), null);
+                });
+                int idx = type.lastIndexOf(".");
+                if (idx > 0) {
+                    String stype = type.substring(idx + 1);
+                    QualifiedNames res = repl.analysis.listQualifiedNames(stype, stype.length());
+                    if (res.isUpToDate() && res.getNames().contains(type)
+                            && !res.isResolvable()) {
+                        fixes.add(new Fix() {
+                            @Override
+                            public String displayName() {
+                                return "import: " + type + ". " +
+                                        repl.messageFormat("jshell.console.create.variable");
+                            }
+
+                            @Override
+                            public void perform(ConsoleReader in) throws IOException {
+                                repl.state.eval("import " + type + ";");
+                                in.println("Imported: " + type);
+                                performToVar(in, stype);
+                            }
+                        });
+                    }
+                }
+                return new FixResult(fixes, null);
             }
         },
         new FixComputer('i', true) { //compute "Add import" Fixes:
@@ -614,6 +642,7 @@ class ConsoleIOContext extends IOContext {
                         public String displayName() {
                             return "import: " + fqn;
                         }
+
                         @Override
                         public void perform(ConsoleReader in) throws IOException {
                             repl.state.eval("import " + fqn + ";");

@@ -30,6 +30,7 @@ import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Provides;
+import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Version;
 import java.lang.module.ModuleFinder;
@@ -58,6 +59,7 @@ import java.text.MessageFormat;
 
 import jdk.internal.misc.JavaLangModuleAccess;
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.module.Checks;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.util.jar.JarIndex;
@@ -80,7 +82,7 @@ class Main {
     String fname, mname, ename;
     String zname = "";
     String rootjar = null;
-    Set<String> concealedPackages = new HashSet<>();
+    Set<String> concealedPackages = new HashSet<>(); // used by Validator
 
     private static final int BASE_VERSION = 0;
 
@@ -89,6 +91,13 @@ class Main {
         final String entryname;
         final File file;
         final boolean isDir;
+
+        Entry(File file, String basename, String entryname) {
+            this.file = file;
+            this.isDir = file.isDirectory();
+            this.basename = basename;
+            this.entryname = entryname;
+        }
 
         Entry(int version, File file) {
             this.file = file;
@@ -103,6 +112,21 @@ class Main {
             EntryName en = new EntryName(path, version);
             basename = en.baseName;
             entryname = en.entryName;
+        }
+
+        /**
+         * Returns a new Entry that trims the versions directory.
+         *
+         * This entry should be a valid entry matching the given version.
+         */
+        Entry toVersionedEntry(int version) {
+            assert isValidVersionedEntry(this, version);
+
+            if (version == BASE_VERSION)
+                return this;
+
+            EntryName en = new EntryName(trimVersionsDir(basename, version), version);
+            return new Entry(this.file, en.baseName, en.entryName);
         }
 
         @Override
@@ -180,14 +204,15 @@ class Main {
      * iflag: generate jar index
      * nflag: Perform jar normalization at the end
      * pflag: preserve/don't strip leading slash and .. component from file name
+     * dflag: print module descriptor
      */
-    boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag, nflag, pflag;
+    boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag, nflag, pflag, dflag;
 
     /* To support additional GNU Style informational options */
     enum Info {
         HELP(GNUStyleOptions::printHelp),
         COMPAT_HELP(GNUStyleOptions::printCompatHelp),
-        USAGE_SUMMARY(GNUStyleOptions::printUsageSummary),
+        USAGE_TRYHELP(GNUStyleOptions::printUsageTryHelp),
         VERSION(GNUStyleOptions::printVersion);
 
         private Consumer<PrintWriter> printFunction;
@@ -196,8 +221,8 @@ class Main {
     };
     Info info;
 
+
     /* Modular jar related options */
-    boolean printModuleDescriptor;
     Version moduleVersion;
     Pattern modulesToHash;
     ModuleFinder moduleFinder = ModuleFinder.of();
@@ -485,10 +510,12 @@ class Main {
             } else if (iflag) {
                 String[] files = filesMap.get(BASE_VERSION);  // base entries only, can be null
                 genIndex(rootjar, files);
-            } else if (printModuleDescriptor) {
+            } else if (dflag) {
                 boolean found;
                 if (fname != null) {
-                    found = printModuleDescriptor(new ZipFile(fname));
+                    try (ZipFile zf = new ZipFile(fname)) {
+                        found = printModuleDescriptor(zf);
+                    }
                 } else {
                     try (FileInputStream fin = new FileInputStream(FileDescriptor.in)) {
                         found = printModuleDescriptor(fin);
@@ -645,14 +672,16 @@ class Main {
                 try {
                     count = GNUStyleOptions.parseOptions(this, args);
                 } catch (GNUStyleOptions.BadArgs x) {
-                    if (info != null) {
-                        info.print(out);
-                        return true;
+                    if (info == null) {
+                        error(x.getMessage());
+                        if (x.showUsage)
+                            Info.USAGE_TRYHELP.print(err);
+                        return false;
                     }
-                    error(x.getMessage());
-                    if (x.showUsage)
-                        Info.USAGE_SUMMARY.print(err);
-                    return false;
+                }
+                if (info != null) {
+                    info.print(out);
+                    return true;
                 }
             } else {
                 // Legacy/compatibility options
@@ -663,28 +692,28 @@ class Main {
                     switch (flags.charAt(i)) {
                         case 'c':
                             if (xflag || tflag || uflag || iflag) {
-                                usageError();
+                                usageError(getMsg("error.multiple.main.operations"));
                                 return false;
                             }
                             cflag = true;
                             break;
                         case 'u':
                             if (cflag || xflag || tflag || iflag) {
-                                usageError();
+                                usageError(getMsg("error.multiple.main.operations"));
                                 return false;
                             }
                             uflag = true;
                             break;
                         case 'x':
                             if (cflag || uflag || tflag || iflag) {
-                                usageError();
+                                usageError(getMsg("error.multiple.main.operations"));
                                 return false;
                             }
                             xflag = true;
                             break;
                         case 't':
                             if (cflag || uflag || xflag || iflag) {
-                                usageError();
+                                usageError(getMsg("error.multiple.main.operations"));
                                 return false;
                             }
                             tflag = true;
@@ -706,7 +735,7 @@ class Main {
                             break;
                         case 'i':
                             if (cflag || uflag || xflag || tflag) {
-                                usageError();
+                                usageError(getMsg("error.multiple.main.operations"));
                                 return false;
                             }
                             // do not increase the counter, files will contain rootjar
@@ -723,31 +752,29 @@ class Main {
                             pflag = true;
                             break;
                         default:
-                            error(formatMsg("error.illegal.option",
-                                    String.valueOf(flags.charAt(i))));
-                            usageError();
+                            usageError(formatMsg("error.illegal.option",
+                                       String.valueOf(flags.charAt(i))));
                             return false;
                     }
                 }
             }
         } catch (ArrayIndexOutOfBoundsException e) {
-            usageError();
+            usageError(getMsg("main.usage.summary"));
+            return false;
+        }
+        if (!cflag && !tflag && !xflag && !uflag && !iflag && !dflag) {
+            usageError(getMsg("error.bad.option"));
             return false;
         }
 
-        if (info != null) {
-            info.print(out);
-            return true;
-        }
-
-        if (!cflag && !tflag && !xflag && !uflag && !iflag && !printModuleDescriptor) {
-            error(getMsg("error.bad.option"));
-            usageError();
-            return false;
-        }
         /* parse file arguments */
         int n = args.length - count;
         if (n > 0) {
+            if (dflag) {
+                // "--print-module-descriptor/-d" does not require file argument(s)
+                usageError(formatMsg("error.bad.dflag", args[count]));
+                return false;
+            }
             int version = BASE_VERSION;
             int k = 0;
             String[] nameBuf = new String[n];
@@ -774,8 +801,7 @@ class Main {
                             // this will fall into the next error, thus returning false
                         }
                         if (v < 9) {
-                            error(formatMsg("error.release.value.toosmall", String.valueOf(v)));
-                            usageError();
+                            usageError(formatMsg("error.release.value.toosmall", String.valueOf(v)));
                             return false;
                         }
                         // associate the files, if any, with the previous version number
@@ -795,7 +821,7 @@ class Main {
                     }
                 }
             } catch (ArrayIndexOutOfBoundsException e) {
-                usageError();
+                usageError(getMsg("error.bad.file.arg"));
                 return false;
             }
             // associate remaining files, if any, with a version
@@ -806,42 +832,88 @@ class Main {
                 isMultiRelease = version > BASE_VERSION;
             }
         } else if (cflag && (mname == null)) {
-            error(getMsg("error.bad.cflag"));
-            usageError();
+            usageError(getMsg("error.bad.cflag"));
             return false;
         } else if (uflag) {
             if ((mname != null) || (ename != null)) {
                 /* just want to update the manifest */
                 return true;
             } else {
-                error(getMsg("error.bad.uflag"));
-                usageError();
+                usageError(getMsg("error.bad.uflag"));
                 return false;
             }
         }
         return true;
     }
 
-    private static String toPackageName(ZipEntry entry) {
-        return toPackageName(entry.getName());
+    /*
+     * Add the package of the given resource name if it's a .class
+     * or a resource in a named package.
+     */
+    boolean addPackageIfNamed(String name) {
+        if (name.startsWith(VERSIONS_DIR)) {
+            throw new InternalError(name);
+        }
+
+        String pn = toPackageName(name);
+        // add if this is a class or resource in a package
+        if (Checks.isJavaIdentifier(pn)) {
+            packages.add(pn);
+            return true;
+        }
+
+        return false;
     }
 
     private static String toPackageName(String path) {
-        assert path.endsWith(".class");
-        int index;
-        if (path.startsWith(VERSIONS_DIR)) {
-            index = path.indexOf('/', VERSIONS_DIR.length());
-            if (index <= 0) {
-                return "";
-            }
-            path = path.substring(index + 1);
-        }
-        index = path.lastIndexOf('/');
+        int index = path.lastIndexOf('/');
         if (index != -1) {
             return path.substring(0, index).replace('/', '.');
         } else {
             return "";
         }
+    }
+
+    /*
+     * Returns true if the given entry is a valid entry of the given version.
+     */
+    private boolean isValidVersionedEntry(Entry entry, int version) {
+        String name = entry.basename;
+        if (name.startsWith(VERSIONS_DIR) && version != BASE_VERSION) {
+            int i = name.indexOf('/', VERSIONS_DIR.length());
+            // name == -1 -> not a versioned directory, something else
+            if (i == -1)
+                return false;
+            try {
+                String v = name.substring(VERSIONS_DIR.length(), i);
+                return Integer.valueOf(v) == version;
+            } catch (NumberFormatException x) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /*
+     * Trim META-INF/versions/$version/ from the given name if the
+     * given name is a versioned entry of the given version; or
+     * of any version if the given version is BASE_VERSION
+     */
+    private String trimVersionsDir(String name, int version) {
+        if (name.startsWith(VERSIONS_DIR)) {
+            int i = name.indexOf('/', VERSIONS_DIR.length());
+            if (i >= 0) {
+                try {
+                    String v = name.substring(VERSIONS_DIR.length(), i);
+                    if (version == BASE_VERSION || Integer.valueOf(v) == version) {
+                        return name.substring(i + 1, name.length());
+                    }
+                } catch (NumberFormatException x) {}
+            }
+            throw new InternalError("unexpected versioned entry: " +
+                    name + " version " + version);
+        }
+        return name;
     }
 
     /**
@@ -865,28 +937,47 @@ class Main {
             else
                 f = new File(dir, files[i]);
 
-            Entry entry = new Entry(version, f);
-            String entryName = entry.entryname;
-
+            Entry e = new Entry(version, f);
+            String entryName = e.entryname;
+            Entry entry = e;
+            if (e.basename.startsWith(VERSIONS_DIR) && isValidVersionedEntry(e, version)) {
+                entry = e.toVersionedEntry(version);
+            }
             if (f.isFile()) {
                 if (entryName.endsWith(MODULE_INFO)) {
                     moduleInfoPaths.put(entryName, f.toPath());
                     if (isUpdate)
                         entryMap.put(entryName, entry);
-                } else if (entries.add(entry)) {
-                    jarEntries.add(entryName);
-                    if (entry.basename.endsWith(".class"))
-                        packages.add(toPackageName(entry.basename));
-                    if (isUpdate)
-                        entryMap.put(entryName, entry);
+                } else if (isValidVersionedEntry(entry, version)) {
+                    if (entries.add(entry)) {
+                        jarEntries.add(entryName);
+                        // add the package if it's a class or resource
+                        addPackageIfNamed(trimVersionsDir(entry.basename, version));
+                        if (isUpdate)
+                            entryMap.put(entryName, entry);
+                    }
+                } else {
+                    error(formatMsg2("error.release.unexpected.versioned.entry",
+                                      entry.basename, String.valueOf(version)));
+                    ok = false;
                 }
             } else if (f.isDirectory()) {
-                if (entries.add(entry)) {
-                    if (isUpdate) {
-                        entryMap.put(entryName, entry);
+                if (isValidVersionedEntry(entry, version)) {
+                    if (entries.add(entry)) {
+                        if (isUpdate) {
+                            entryMap.put(entryName, entry);
+                        }
                     }
-                    expand(f, f.list(), isUpdate, moduleInfoPaths, version);
+                } else if (entry.basename.equals(VERSIONS_DIR)) {
+                    if (vflag) {
+                        output(formatMsg("out.ignore.entry", entry.basename));
+                    }
+                } else {
+                    error(formatMsg2("error.release.unexpected.versioned.entry",
+                                      entry.basename, String.valueOf(version)));
+                    ok = false;
                 }
+                expand(f, f.list(), isUpdate, moduleInfoPaths, version);
             } else {
                 error(formatMsg("error.nosuch.fileordir", String.valueOf(f)));
                 ok = false;
@@ -1047,6 +1138,7 @@ class Main {
             } else if (moduleInfos != null && isModuleInfoEntry) {
                 moduleInfos.putIfAbsent(name, readModuleInfo(zis));
             } else {
+                boolean isDir = e.isDirectory();
                 if (!entryMap.containsKey(name)) { // copy the old stuff
                     // do our own compression
                     ZipEntry e2 = new ZipEntry(name);
@@ -1065,11 +1157,14 @@ class Main {
                     addFile(zos, ent);
                     entryMap.remove(name);
                     entries.remove(ent);
+                    isDir = ent.isDir;
                 }
 
                 jarEntries.add(name);
-                if (name.endsWith(".class"))
-                    packages.add(toPackageName(name));
+                if (!isDir) {
+                    // add the package if it's a class or resource
+                    addPackageIfNamed(trimVersionsDir(name, BASE_VERSION));
+                }
             }
         }
 
@@ -1251,8 +1346,7 @@ class Main {
         if (ename != null) {
             Attributes global = m.getMainAttributes();
             if ((global.get(Attributes.Name.MAIN_CLASS) != null)) {
-                error(getMsg("error.bad.eflag"));
-                usageError();
+                usageError(getMsg("error.bad.eflag"));
                 return true;
             }
         }
@@ -1728,8 +1822,9 @@ class Main {
     /**
      * Prints usage message.
      */
-    void usageError() {
-        Info.USAGE_SUMMARY.print(err);
+    void usageError(String s) {
+        err.println(s);
+        Info.USAGE_TRYHELP.print(err);
     }
 
     /**
@@ -1850,13 +1945,13 @@ class Main {
 
     // Modular jar support
 
-    static <T> String toString(Set<T> set,
+    static <T> String toString(Collection<T> c,
                                CharSequence prefix,
                                CharSequence suffix ) {
-        if (set.isEmpty())
+        if (c.isEmpty())
             return "";
 
-        return set.stream().map(e -> e.toString())
+        return c.stream().map(e -> e.toString())
                            .collect(joining(", ", prefix, suffix));
     }
 
@@ -1890,7 +1985,7 @@ class Main {
         return false;
     }
 
-    static <T> String toString(Set<T> set) {
+    static <T> String toString(Collection<T> set) {
         if (set.isEmpty()) { return ""; }
         return set.stream().map(e -> e.toString().toLowerCase(Locale.ROOT))
                   .collect(joining(" "));
@@ -1903,7 +1998,10 @@ class Main {
     {
         ModuleDescriptor md = ModuleDescriptor.read(entryInputStream);
         StringBuilder sb = new StringBuilder();
-        sb.append("\n").append(md.toNameAndVersion());
+        sb.append("\n");
+        if (md.isOpen())
+            sb.append("open ");
+        sb.append(md.toNameAndVersion());
 
         md.requires().stream()
             .sorted(Comparator.comparing(Requires::name))
@@ -1921,10 +2019,17 @@ class Main {
             .sorted(Comparator.comparing(Exports::source))
             .forEach(p -> sb.append("\n  exports ").append(p));
 
-        md.conceals().stream().sorted()
-            .forEach(p -> sb.append("\n  conceals ").append(p));
+        md.opens().stream()
+            .sorted(Comparator.comparing(Opens::source))
+            .forEach(p -> sb.append("\n  opens ").append(p));
 
-        md.provides().values().stream()
+        Set<String> concealed = new HashSet<>(md.packages());
+        md.exports().stream().map(Exports::source).forEach(concealed::remove);
+        md.opens().stream().map(Opens::source).forEach(concealed::remove);
+        concealed.stream().sorted()
+            .forEach(p -> sb.append("\n  contains ").append(p));
+
+        md.provides().stream()
             .sorted(Comparator.comparing(Provides::service))
             .forEach(p -> sb.append("\n  provides ").append(p.service())
                             .append(" with ")
@@ -1957,10 +2062,9 @@ class Main {
     {
         ModuleDescriptor md = ModuleDescriptor.read(ByteBuffer.wrap(moduleInfoBytes));
         Set<String> missing = md.provides()
-                                .values()
                                 .stream()
                                 .map(Provides::providers)
-                                .flatMap(Set::stream)
+                                .flatMap(List::stream)
                                 .filter(p -> !jarEntries.contains(toBinaryName(p)))
                                 .collect(Collectors.toSet());
         if (missing.size() > 0) {
@@ -1988,22 +2092,17 @@ class Main {
             ModuleDescriptor vd = ModuleDescriptor.read(ByteBuffer.wrap(e.getValue()));
             if (!(isValidVersionedDescriptor(vd, rd)))
                 return false;
-            e.setValue(extendedInfoBytes(rd, vd, e.getValue(), concealedPackages));
+            e.setValue(extendedInfoBytes(rd, vd, e.getValue(), packages));
         }
         return true;
     }
 
-    private Set<String> findConcealedPackages(ModuleDescriptor md){
+    private Set<String> findConcealedPackages(ModuleDescriptor md) {
         Objects.requireNonNull(md);
-
-        Set<String> exports = md.exports()
-                .stream()
-                .map(Exports::source)
-                .collect(toSet());
-
-        return packages.stream()
-                .filter(p -> !exports.contains(p))
-                .collect(toSet());
+        Set<String> concealed = new HashSet<>(packages);
+        md.exports().stream().map(Exports::source).forEach(concealed::remove);
+        md.opens().stream().map(Opens::source).forEach(concealed::remove);
+        return concealed;
     }
 
     private static boolean isPlatformModule(String name) {
@@ -2034,8 +2133,8 @@ class Main {
             for (Requires r : vd.requires()) {
                 if (rootRequires.contains(r)) {
                     continue;
-                } else if (r.modifiers().contains(Requires.Modifier.PUBLIC)) {
-                    fatalError(getMsg("error.versioned.info.requires.public"));
+                } else if (r.modifiers().contains(Requires.Modifier.TRANSITIVE)) {
+                    fatalError(getMsg("error.versioned.info.requires.transitive"));
                     return false;
                 } else if (!isPlatformModule(r.name())) {
                     fatalError(getMsg("error.versioned.info.requires.added"));
@@ -2056,6 +2155,10 @@ class Main {
             fatalError(getMsg("error.versioned.info.exports.notequal"));
             return false;
         }
+        if (!rd.opens().equals(vd.opens())) {
+            fatalError(getMsg("error.versioned.info.opens.notequal"));
+            return false;
+        }
         if (!rd.provides().equals(vd.provides())) {
             fatalError(getMsg("error.versioned.info.provides.notequal"));
             return false;
@@ -2074,15 +2177,15 @@ class Main {
     private byte[] extendedInfoBytes(ModuleDescriptor rootDescriptor,
                                      ModuleDescriptor md,
                                      byte[] miBytes,
-                                     Set<String> conceals)
+                                     Set<String> packages)
         throws IOException
     {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         InputStream is = new ByteArrayInputStream(miBytes);
         ModuleInfoExtender extender = ModuleInfoExtender.newExtender(is);
 
-        // Add (or replace) the ConcealedPackages attribute
-        extender.conceals(conceals);
+        // Add (or replace) the Packages attribute
+        extender.packages(packages);
 
         // --main-class
         if (ename != null)

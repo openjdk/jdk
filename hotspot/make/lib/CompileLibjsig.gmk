@@ -135,7 +135,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
         ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
           $(LIB_OUTPUTDIR)/$1/$(LIBRARY_PREFIX)jsig.diz: \
               $(LIB_OUTPUTDIR)/$1/$(LIBRARY_PREFIX)jsig$(DEBUG_INFO_SUFFIX)
-			$(CD) $$(@D) && $(ZIP) -q -y $$@ $$(basename $$(@F))$(DEBUG_INFO_SUFFIX)
+			$(CD) $$(@D) && $(ZIPEXE) -q -y $$@ $$(basename $$(@F))$(DEBUG_INFO_SUFFIX)
 
           TARGETS += $(LIB_OUTPUTDIR)/$1/$(LIBRARY_PREFIX)jsig.diz
         endif

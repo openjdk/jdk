@@ -126,12 +126,12 @@ public class AddModulesTest extends ModuleTestBase {
                          "--add-modules", "BadModule!")
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run()
+                .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
         checkOutputContains(log,
-            "- compiler.warn.bad.name.for.option: --add-modules, BadModule!");
+            "- compiler.err.bad.name.for.option: --add-modules, BadModule!");
     }
 
     @Test

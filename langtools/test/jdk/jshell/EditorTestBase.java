@@ -125,7 +125,6 @@ public abstract class EditorTestBase extends ReplToolTesting {
         );
     }
 
-    @Test(enabled = false) // TODO 8163816
     public void testEditClass1() {
         testEditor(
                 a -> assertClass(a, "class A {}", "class", "A"),
@@ -163,7 +162,6 @@ public abstract class EditorTestBase extends ReplToolTesting {
         );
     }
 
-    @Test(enabled = false) // TODO 8163816
     public void testEditMethod1() {
         testEditor(
                 a -> assertMethod(a, "void f() {}", "()void", "f"),
@@ -244,6 +242,22 @@ public abstract class EditorTestBase extends ReplToolTesting {
                     accept();
                     exit();
                 })
+        );
+    }
+
+    @Test
+    public void testStatementMush() {
+        testEditor(
+                a -> assertCommand(a, "System.out.println(\"Hello\")",
+                        "", "", null, "Hello\n", ""),
+                a -> assertEditOutput(a, "/ed", "b ==> 10", () -> {
+                    writeSource(getSource() + "\nint b = 10");
+                    exit();
+                }),
+
+                //TODO: this is a work-around to JDK-8170369
+                a -> assertCommand(a, "1234",
+                        null, "", null, null, "")
         );
     }
 

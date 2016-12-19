@@ -683,6 +683,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          * @param e the mouse event
          * @see MouseListener#mouseClicked
          */
+        @SuppressWarnings("deprecation")
         public void mouseClicked(MouseEvent e) {
             JEditorPane editor = (JEditorPane) e.getSource();
 
@@ -701,6 +702,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         }
 
         // track the moving of the mouse.
+        @SuppressWarnings("deprecation")
         public void mouseMoved(MouseEvent e) {
             JEditorPane editor = (JEditorPane) e.getSource();
             if (!editor.isEnabled()) {
@@ -773,6 +775,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          * Returns a string anchor if the passed in element has a
          * USEMAP that contains the passed in location.
          */
+        @SuppressWarnings("deprecation")
         private String getMapHREF(JEditorPane html, HTMLDocument hdoc,
                                   Element elem, AttributeSet attr, int offset,
                                   int x, int y) {
@@ -813,6 +816,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          * the location <code>x</code>, <code>y</code>. <code>offset</code>
          * gives the offset into the Document to check for.
          */
+        @SuppressWarnings("deprecation")
         private boolean doesElementContainLocation(JEditorPane editor,
                                                    Element e, int offset,
                                                    int x, int y) {

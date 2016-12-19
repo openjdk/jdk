@@ -3255,7 +3255,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             enterBlock(catchBlock);
 
             final CatchNode  catchNode          = (CatchNode)catchBlocks.get(i).getStatements().get(0);
-            final IdentNode  exception          = catchNode.getException();
+            final IdentNode  exception          = catchNode.getExceptionIdentifier();
             final Expression exceptionCondition = catchNode.getExceptionCondition();
             final Block      catchBody          = catchNode.getBody();
 
@@ -4066,7 +4066,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     void loadStack() {
                         assert assignNode.getWidestOperandType() == Type.INT;
                         if (isRhsZero(binaryNode)) {
-                            loadExpressionAsType(binaryNode.lhs(), Type.INT);
+                            loadExpression(binaryNode.lhs(), TypeBounds.INT, true);
                         } else {
                             loadBinaryOperands(binaryNode.lhs(), binaryNode.rhs(), TypeBounds.INT, true, false);
                             method.shr();

@@ -45,6 +45,19 @@ import javax.lang.model.SourceVersion;
  * @since 1.6
  */
 public interface Tool {
+    /**
+     * Returns the name of this tool, or an empty string if no name is provided.
+     *
+     * @apiNote It is recommended that the name be the same as would be
+     * used on the command line: for example, "javac", "jar", "jlink".
+     * @implNote This implementation returns an empty string.
+     *
+     * @return the name of this tool
+     * @since 9
+     */
+    default String name() {
+        return "";
+    }
 
     /**
      * Run the tool with the given I/O channels and arguments. By

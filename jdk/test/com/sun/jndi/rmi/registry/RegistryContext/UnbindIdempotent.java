@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,10 @@
  *     successfully.
  * @modules java.rmi/sun.rmi.registry java.rmi/sun.rmi.server
  *     java.rmi/sun.rmi.transport java.rmi/sun.rmi.transport.tcp
+ *     jdk.naming.rmi
  * @library ../../../../../../java/rmi/testlibrary
  * @build TestLibrary
- * @run main UnbindIdempotent
+ * @run main/othervm UnbindIdempotent
  */
 
 import java.rmi.registry.Registry;
@@ -42,15 +43,17 @@ import javax.naming.NamingException;
 public class UnbindIdempotent {
 
     public static void main(String[] args) throws Exception {
-        Registry registry = TestLibrary.createRegistryOnUnusedPort();
+        Registry registry = TestLibrary.createRegistryOnEphemeralPort();
         int registryPort = TestLibrary.getRegistryPort(registry);
         InitialContext ictx = new InitialContext();
         Context rctx;
 
         try {
             rctx = (Context)ictx.lookup("rmi://localhost:" + Integer.toString(registryPort));
+            System.out.println("Got context: " + rctx.getClass());
         } catch (NamingException e) {
             // Unable to set up for test.
+            System.err.println("WARNING: The test skipped due to NamingException: " + e);
             return;
         }
 

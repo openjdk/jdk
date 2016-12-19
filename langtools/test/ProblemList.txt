@@ -38,6 +38,9 @@ jdk/javadoc/doclet/testIOException/TestIOException.java                         
 
 jdk/jshell/EditorPadTest.java                                                   8161276    windows-all    Test set-up cannot press buttons
 jdk/jshell/ToolBasicTest.java                                                   8139873    generic-all    JShell tests failing
+jdk/jshell/ExternalEditorTest.java                                              8170108    generic-all
+jdk/jshell/ToolFormatTest.java                                                  8170216    solaris-sparcv9
+jdk/jshell/ReplaceTest.java                                                     8170216    solaris-sparcv9
 
 ###########################################################################
 #

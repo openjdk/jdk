@@ -122,6 +122,10 @@ endef
 EscapeDollar = $(subst $$,\$$,$(subst \$$,$$,$(strip $1)))
 
 ################################################################################
+# This macro works just like EscapeDollar above, but for #.
+EscapeHash = $(subst \#,\\\#,$(subst \\\#,\#,$(strip $1)))
+
+################################################################################
 # This macro translates $ into $$ to protect the string from make itself.
 DoubleDollar = $(subst $$,$$$$,$(strip $1))
 
@@ -333,43 +337,20 @@ else # HAS_FILE_FUNCTION = false
 endif # HAS_FILE_FUNCTION
 
 ################################################################################
-# The source tips can come from the Mercurial repository, or in the files
-# $(HGTIP_FILENAME) which contains the tip but is also positioned in the same
-# directory as the original .hg directory. The hgtip files are created in
-# CreateHgtipFiles.gmk.
-HGTIP_FILENAME := .hgtip
+
+# A file containing a way to uniquely identify the source code revision that
+# the build was created from
+SOURCE_REVISION_TRACKER := $(SUPPORT_OUTPUTDIR)/src-rev/source-revision-tracker
+
+# Locate all hg repositories included in the forest, as absolute paths
 FindAllReposAbs = \
     $(strip $(sort $(dir $(filter-out $(SRC_ROOT)/build/%, $(wildcard \
-        $(addprefix $(SRC_ROOT)/, \
-            .hg */.hg */*/.hg */*/.hg */*/*/.hg \
-            .hgtip */.hgtip */*/.hgtip */*/.hgtip */*/*/.hgtip \
-        ) \
+        $(addprefix $(SRC_ROOT)/, .hg */.hg */*/.hg */*/*/.hg) \
     )))))
 
+# Locate all hg repositories included in the forest, as relative paths
 FindAllReposRel = \
     $(strip $(subst $(SRC_ROOT)/,.,$(patsubst $(SRC_ROOT)/%/, %, $(FindAllReposAbs))))
-
-# Emit the repo:tip pairs to $@, but only if they changed since last time
-define GetSourceTips
-	$(CD) $(SRC_ROOT) ; \
-	for i in $(FindAllReposRel) IGNORE ; do \
-	  if [ "$${i}" = "IGNORE" ] ; then \
-	    continue; \
-	  elif [ -d $${i}/.hg -a "$(HG)" != "" ] ; then \
-	    $(PRINTF) " %s:%s" \
-	        "$${i}" `$(HG) tip --repository $${i} --template '{node|short}\n'` ; \
-	  elif [ -f $${i}/$(HGTIP_FILENAME) ] ; then \
-	    $(PRINTF) " %s:%s" \
-	        "$${i}" `$(CAT) $${i}/$(HGTIP_FILENAME)` ; \
-	  fi; \
-	done > $@.tmp
-	$(PRINTF) "\n" >> $@.tmp
-	if [ ! -f $@ ] || [ "`$(CAT) $@`" != "`$(CAT) $@.tmp`" ]; then \
-	  $(MV) $@.tmp $@ ; \
-	else \
-	  $(RM) $@.tmp ; \
-	fi
-endef
 
 ################################################################################
 
@@ -526,13 +507,17 @@ else ifeq ($(OPENJDK_TARGET_OS),macosx)
 	if [ -n "`$(XATTR) -l '$@'`" ]; then $(XATTR) -c '$@'; fi
   endef
 else
-  # Running mkdir and cp in the same shell speeds up copy intensive tasks in Cygwin
-  # significantly.
   define install-file
 	$(call MakeDir, $(@D))
 	$(CP) -fP '$<' '$@'
   endef
 endif
+
+# Variant of install file that does not preserve symlinks
+define install-file-nolink
+	$(call MakeDir, $(@D))
+	$(CP) -f '$<' '$@'
+endef
 
 ################################################################################
 # Take two paths and return the path of the last common directory.
@@ -833,7 +818,7 @@ DependOnVariableHelper = \
           $(if $(findstring $(LOG_LEVEL), trace), \
               $(info NewVariable $1: >$(strip $($1))<) \
               $(info OldVariable $1: >$(strip $($1_old))<)) \
-          $(call WriteFile, $1_old:=$(call DoubleDollar,$($1)), \
+          $(call WriteFile, $1_old:=$(call DoubleDollar,$(call EscapeHash,$($1))), \
               $(call DependOnVariableFileName, $1, $2))) \
         $(call DependOnVariableFileName, $1, $2) \
     )

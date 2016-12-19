@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.toolkit.util;
 import java.util.*;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
@@ -51,6 +52,7 @@ public class DeprecatedAPIListBuilder {
     private final Configuration configuration;
     private final Utils utils;
     public static enum DeprElementKind {
+        MODULE,
         PACKAGE,
         INTERFACE,
         CLASS,
@@ -82,12 +84,19 @@ public class DeprecatedAPIListBuilder {
 
     /**
      * Build the sorted list of all the deprecated APIs in this run.
-     * Build separate lists for deprecated packages, classes, constructors,
+     * Build separate lists for deprecated modules, packages, classes, constructors,
      * methods and fields.
      *
      * @param configuration the current configuration of the doclet.
      */
     private void buildDeprecatedAPIInfo() {
+        SortedSet<ModuleElement> modules = configuration.modules;
+        SortedSet<Element> mset = deprecatedMap.get(DeprElementKind.MODULE);
+        for (Element me : modules) {
+            if (utils.isDeprecated(me)) {
+                mset.add(me);
+            }
+        }
         SortedSet<PackageElement> packages = configuration.packages;
         SortedSet<Element> pset = deprecatedMap.get(DeprElementKind.PACKAGE);
         for (Element pe : packages) {
@@ -95,8 +104,7 @@ public class DeprecatedAPIListBuilder {
                 pset.add(pe);
             }
         }
-        deprecatedMap.put(DeprElementKind.PACKAGE, pset);
-        for (Element e : configuration.docEnv.getIncludedTypeElements()) {
+        for (Element e : configuration.getIncludedTypeElements()) {
             TypeElement te = (TypeElement)e;
             SortedSet<Element> eset;
             if (utils.isDeprecated(e)) {

@@ -102,11 +102,13 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -128,6 +130,8 @@ import javax.tools.StandardLocation;
 import static jdk.jshell.Util.REPL_DOESNOTMATTER_CLASS_NAME;
 import static jdk.jshell.SourceCodeAnalysis.Completeness.DEFINITELY_INCOMPLETE;
 import static jdk.jshell.TreeDissector.printType;
+
+import static java.util.stream.Collectors.joining;
 
 /**
  * The concrete implementation of SourceCodeAnalysis.
@@ -1341,9 +1345,9 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                                 .collect(joining(" & "));
             }
             case FIELD:
-                return elementHeader(at, el.getEnclosingElement(), includeParameterNames, false) + "." + el.getSimpleName() + ":" + el.asType();
+                return appendDot(elementHeader(at, el.getEnclosingElement(), includeParameterNames, false)) + el.getSimpleName() + ":" + el.asType();
             case ENUM_CONSTANT:
-                return elementHeader(at, el.getEnclosingElement(), includeParameterNames, false) + "." + el.getSimpleName();
+                return appendDot(elementHeader(at, el.getEnclosingElement(), includeParameterNames, false)) + el.getSimpleName();
             case EXCEPTION_PARAMETER: case LOCAL_VARIABLE: case PARAMETER: case RESOURCE_VARIABLE:
                 return el.getSimpleName() + ":" + el.asType();
             case CONSTRUCTOR: case METHOD: {
@@ -1406,6 +1410,9 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             default:
                 return el.toString();
         }
+    }
+    private String appendDot(String fqn) {
+        return fqn.isEmpty() ? fqn : fqn + ".";
     }
     private TypeMirror unwrapArrayType(TypeMirror arrayType) {
         if (arrayType.getKind() == TypeKind.ARRAY) {

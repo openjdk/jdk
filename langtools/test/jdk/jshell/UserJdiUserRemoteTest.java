@@ -118,6 +118,7 @@ public class UserJdiUserRemoteTest extends ExecutionControlTestBase {
 class MyExecutionControl extends JdiExecutionControl {
 
     private static final String REMOTE_AGENT = MyRemoteExecutionControl.class.getName();
+    private static final int TIMEOUT = 2000;
 
     private VirtualMachine vm;
     private Process process;
@@ -147,8 +148,8 @@ class MyExecutionControl extends JdiExecutionControl {
      */
     static ExecutionControl make(ExecutionEnv env, UserJdiUserRemoteTest test) throws IOException {
         try (final ServerSocket listener = new ServerSocket(0)) {
-            // timeout after 60 seconds
-            listener.setSoTimeout(60000);
+            // timeout for socket
+            listener.setSoTimeout(TIMEOUT);
             int port = listener.getLocalPort();
 
             // Set-up the JDI connection
@@ -158,7 +159,7 @@ class MyExecutionControl extends JdiExecutionControl {
                     + System.getProperty("path.separator")
                     + System.getProperty("user.dir"));
             JdiInitiator jdii = new JdiInitiator(port,
-                    opts, REMOTE_AGENT, true, null);
+                    opts, REMOTE_AGENT, true, null, TIMEOUT);
             VirtualMachine vm = jdii.vm();
             Process process = jdii.process();
 

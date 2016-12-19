@@ -35,6 +35,7 @@
   LOG_TAG(add) \
   LOG_TAG(age) \
   LOG_TAG(alloc) \
+  LOG_TAG(aot) \
   LOG_TAG(annotation) \
   LOG_TAG(arguments) \
   LOG_TAG(attach) \
@@ -59,6 +60,7 @@
   LOG_TAG(ergo) \
   LOG_TAG(exceptions) \
   LOG_TAG(exit) \
+  LOG_TAG(fingerprint) \
   LOG_TAG(freelist) \
   LOG_TAG(gc) \
   LOG_TAG(hashtables) \

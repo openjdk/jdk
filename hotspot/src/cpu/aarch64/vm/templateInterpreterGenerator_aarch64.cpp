@@ -204,8 +204,25 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     generate_transcendental_entry(kind, 2);
     break;
   case Interpreter::java_lang_math_fmaD :
+    if (UseFMA) {
+      entry_point = __ pc();
+      __ ldrd(v0, Address(esp, 4 * Interpreter::stackElementSize));
+      __ ldrd(v1, Address(esp, 2 * Interpreter::stackElementSize));
+      __ ldrd(v2, Address(esp));
+      __ fmaddd(v0, v0, v1, v2);
+      __ mov(sp, r13); // Restore caller's SP
+    }
+    break;
   case Interpreter::java_lang_math_fmaF :
-    return NULL;
+    if (UseFMA) {
+      entry_point = __ pc();
+      __ ldrs(v0, Address(esp, 2 * Interpreter::stackElementSize));
+      __ ldrs(v1, Address(esp, Interpreter::stackElementSize));
+      __ ldrs(v2, Address(esp));
+      __ fmadds(v0, v0, v1, v2);
+      __ mov(sp, r13); // Restore caller's SP
+    }
+    break;
   default:
     ;
   }

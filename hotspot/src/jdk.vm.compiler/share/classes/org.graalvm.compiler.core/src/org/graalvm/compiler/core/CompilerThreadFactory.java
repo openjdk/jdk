@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+package org.graalvm.compiler.core;
+
+import java.util.concurrent.ThreadFactory;
+
+import org.graalvm.compiler.debug.DebugConfig;
+
+/**
+ * Facility for creating {@linkplain CompilerThread compiler threads}.
+ */
+public class CompilerThreadFactory implements ThreadFactory {
+
+    /**
+     * Capability to get a thread-local debug configuration for the current thread.
+     */
+    public interface DebugConfigAccess {
+        /**
+         * Get a thread-local debug configuration for the current thread. This will be null if
+         * debugging is disabled.
+         */
+        DebugConfig getDebugConfig();
+    }
+
+    protected final String threadNamePrefix;
+    protected final DebugConfigAccess debugConfigAccess;
+
+    public CompilerThreadFactory(String threadNamePrefix, DebugConfigAccess debugConfigAccess) {
+        this.threadNamePrefix = threadNamePrefix;
+        this.debugConfigAccess = debugConfigAccess;
+    }
+
+    @Override
+    public Thread newThread(Runnable r) {
+        return new CompilerThread(r, threadNamePrefix, debugConfigAccess);
+    }
+}

@@ -65,7 +65,7 @@ $(eval $(call SetupCopyFiles, COPY_JIMAGE_SERVICE_PROVIDER, \
 $(eval $(call SetupJarArchive,BUILD_JRTFS_JAR, \
     DEPENDENCIES := $(BUILD_JRTFS) $(COPY_JIMAGE_SERVICE_PROVIDER), \
     SRCS := $(SUPPORT_OUTPUTDIR)/jrtfs_classes, \
-    JAR := $(SUPPORT_OUTPUTDIR)/jrt-fs.jar, \
+    JAR := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/jrt-fs.jar, \
     MANIFEST := $(SUPPORT_OUTPUTDIR)/java-main-manifest.mf, \
 ))
 

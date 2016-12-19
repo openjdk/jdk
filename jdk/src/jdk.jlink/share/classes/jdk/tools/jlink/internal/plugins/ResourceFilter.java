@@ -26,6 +26,7 @@ package jdk.tools.jlink.internal.plugins;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
@@ -35,7 +36,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 import jdk.tools.jlink.internal.Utils;
-import jdk.tools.jlink.plugin.PluginException;
 
 /**
  *
@@ -62,7 +62,7 @@ public class ResourceFilter implements Predicate<String> {
                     try {
                         lines = Files.readAllLines(file.toPath());
                     } catch (IOException ex) {
-                        throw new PluginException(ex);
+                        throw new UncheckedIOException(ex);
                     }
 
                     lines.stream().forEach((line) -> {

@@ -468,7 +468,7 @@ public abstract class Toolkit {
     private static void fallbackToLoadClassForAT(String atName) {
         try {
             Class<?> c = Class.forName(atName, false, ClassLoader.getSystemClassLoader());
-            c.newInstance();
+            c.getConstructor().newInstance();
         } catch (ClassNotFoundException e) {
             newAWTError(e, "Assistive Technology not found: " + atName);
         } catch (InstantiationException e) {
@@ -583,15 +583,13 @@ public abstract class Toolkit {
                     }
                     try {
                         if (cls != null) {
-                            toolkit = (Toolkit)cls.newInstance();
+                            toolkit = (Toolkit)cls.getConstructor().newInstance();
                             if (GraphicsEnvironment.isHeadless()) {
                                 toolkit = new HeadlessToolkit(toolkit);
                             }
                         }
-                    } catch (final InstantiationException ignored) {
-                        throw new AWTError("Could not instantiate Toolkit: " + nm);
-                    } catch (final IllegalAccessException ignored) {
-                        throw new AWTError("Could not access Toolkit: " + nm);
+                    } catch (final ReflectiveOperationException ignored) {
+                        throw new AWTError("Could not create Toolkit: " + nm);
                     }
                     return null;
                 }

@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
-import java.io.IOException;
 import java.lang.annotation.Documented;
 import java.lang.ref.SoftReference;
 import java.text.CollationKey;
@@ -77,9 +76,7 @@ import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentDuo;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
-import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
-import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.WorkArounds;
 
 import static javax.lang.model.element.ElementKind.*;
@@ -256,14 +253,6 @@ public class Utils {
      */
     public boolean isCoreClass(TypeElement e) {
         return getEnclosingTypeElement(e) == null || isStatic(e);
-    }
-
-    public boolean matches(Element e1, Element e2) {
-        if (isExecutableElement(e1) && isExecutableElement(e1)) {
-            return executableMembersEqual((ExecutableElement)e1, (ExecutableElement)e2);
-        } else {
-            return e1.getSimpleName().equals(e2.getSimpleName());
-        }
     }
 
     /**
@@ -2161,6 +2150,13 @@ public class Utils {
         return convertToExecutableElement(getItems(e, false, METHOD));
     }
 
+    public int getOrdinalValue(VariableElement member) {
+        if (member == null || member.getKind() != ENUM_CONSTANT) {
+            throw new IllegalArgumentException("must be an enum constant: " + member);
+        }
+        return member.getEnclosingElement().getEnclosedElements().indexOf(member);
+    }
+
     public long getLineNumber(Element e) {
         TreePath path = getTreePath(e);
         if (path == null) { // maybe null if synthesized
@@ -2267,22 +2263,22 @@ public class Utils {
     private List<TypeElement> getInnerClasses(Element e, boolean filter) {
         List<TypeElement> olist = new ArrayList<>();
         for (TypeElement te : getClassesUnfiltered(e)) {
-            if (!filter || configuration.workArounds.isVisible(te)) {
+            if (!filter || configuration.docEnv.isSelected(te)) {
                 olist.add(te);
             }
         }
         for (TypeElement te : getInterfacesUnfiltered(e)) {
-            if (!filter || configuration.workArounds.isVisible(te)) {
+            if (!filter || configuration.docEnv.isSelected(te)) {
                 olist.add(te);
             }
         }
         for (TypeElement te : getAnnotationTypesUnfiltered(e)) {
-            if (!filter || configuration.workArounds.isVisible(te)) {
+            if (!filter || configuration.docEnv.isSelected(te)) {
                 olist.add(te);
             }
         }
         for (TypeElement te : getEnumsUnfiltered(e)) {
-            if (!filter || configuration.workArounds.isVisible(te)) {
+            if (!filter || configuration.docEnv.isSelected(te)) {
                 olist.add(te);
             }
         }
@@ -2365,12 +2361,42 @@ public class Utils {
         List<Element> elements = new ArrayList<>();
         for (Element e : te.getEnclosedElements()) {
             if (kinds.contains(e.getKind())) {
-                if (!filter || configuration.workArounds.shouldDocument(e)) {
+                if (!filter || shouldDocument(e)) {
                     elements.add(e);
                 }
             }
         }
         return elements;
+    }
+
+    private SimpleElementVisitor9<Boolean, Void> shouldDocumentVisitor = null;
+    private boolean shouldDocument(Element e) {
+        if (shouldDocumentVisitor == null) {
+            shouldDocumentVisitor = new SimpleElementVisitor9<Boolean, Void>() {
+                private boolean hasSource(TypeElement e) {
+                    return configuration.docEnv.getFileKind(e) ==
+                            javax.tools.JavaFileObject.Kind.SOURCE;
+                }
+
+                // handle types
+                @Override
+                public Boolean visitType(TypeElement e, Void p) {
+                    return configuration.docEnv.isSelected(e) && hasSource(e);
+                }
+
+                // handle everything else
+                @Override
+                protected Boolean defaultAction(Element e, Void p) {
+                    return configuration.docEnv.isSelected(e);
+                }
+
+                @Override
+                public Boolean visitUnknown(Element e, Void p) {
+                    throw new AssertionError("unkown element: " + p);
+                }
+            };
+        }
+        return shouldDocumentVisitor.visit(e);
     }
 
     /*
@@ -2582,17 +2608,17 @@ public class Utils {
             specifiedVisitor = new SimpleElementVisitor9<Boolean, Void>() {
                 @Override
                 public Boolean visitModule(ModuleElement e, Void p) {
-                    return configuration.getSpecifiedModules().contains(e);
+                    return configuration.getSpecifiedModuleElements().contains(e);
                 }
 
                 @Override
                 public Boolean visitPackage(PackageElement e, Void p) {
-                    return configuration.getSpecifiedPackages().contains(e);
+                    return configuration.getSpecifiedPackageElements().contains(e);
                 }
 
                 @Override
                 public Boolean visitType(TypeElement e, Void p) {
-                    return configuration.getSpecifiedClasses().contains(e);
+                    return configuration.getSpecifiedTypeElements().contains(e);
                 }
 
                 @Override

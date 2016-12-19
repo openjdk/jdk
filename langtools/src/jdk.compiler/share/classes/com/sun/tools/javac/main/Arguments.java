@@ -161,16 +161,6 @@ public class Arguments {
         }
 
         @Override
-        public void error(String key, Object... args) {
-            Arguments.this.error(key, args);
-        }
-
-        @Override
-        public void error(JCDiagnostic.Error error) {
-            Arguments.this.error(error);
-        }
-
-        @Override
         public void addFile(Path p) {
             files.add(p);
         }
@@ -222,11 +212,6 @@ public class Arguments {
         }
 
         @Override
-        public void error(String key, Object... args) {
-            Arguments.this.error(key, args);
-        }
-
-        @Override
         public Log getLog() {
             return Arguments.this.log;
         }
@@ -260,6 +245,17 @@ public class Arguments {
             processArgs(toList(options), Option.getJavacToolOptions(), apiHelper, false, true);
         }
         errorMode = ErrorMode.ILLEGAL_STATE;
+    }
+
+    /**
+     * Minimal initialization for tools, like javadoc,
+     * to be able to process javac options for themselves,
+     * and then call validate.
+     * @param ownName  the name of this tool; used to prefix messages
+     */
+    public void init(String ownName) {
+        this.ownName = ownName;
+        errorMode = ErrorMode.LOG;
     }
 
     /**
@@ -379,7 +375,10 @@ public class Arguments {
             }
 
             if (option != null) {
-                if (!option.handleOption(helper, arg, argIter)) {
+                try {
+                    option.handleOption(helper, arg, argIter);
+                } catch (Option.InvalidValueException e) {
+                    error(e);
                     return false;
                 }
                 continue;
@@ -416,11 +415,11 @@ public class Arguments {
                 java.util.List<String> modules = Arrays.asList(options.get(Option.MODULE).split(","));
                 try {
                     for (String module : modules) {
-                        Location sourceLoc = fm.getModuleLocation(StandardLocation.MODULE_SOURCE_PATH, module);
+                        Location sourceLoc = fm.getLocationForModule(StandardLocation.MODULE_SOURCE_PATH, module);
                         if (sourceLoc == null) {
                             log.error(Errors.ModuleNotFoundInModuleSourcePath(module));
                         } else {
-                            Location classLoc = fm.getModuleLocation(StandardLocation.CLASS_OUTPUT, module);
+                            Location classLoc = fm.getLocationForModule(StandardLocation.CLASS_OUTPUT, module);
 
                             for (JavaFileObject file : fm.list(sourceLoc, "", EnumSet.of(JavaFileObject.Kind.SOURCE), true)) {
                                 String className = fm.inferBinaryName(sourceLoc, file);
@@ -446,24 +445,23 @@ public class Arguments {
             // It is allowed to compile nothing if just asking for help or version info.
             // But also note that none of these options are supported in API mode.
             if (options.isSet(Option.HELP)
-                || options.isSet(Option.X)
-                || options.isSet(Option.VERSION)
-                || options.isSet(Option.FULLVERSION)
-                || options.isSet(Option.MODULE))
+                    || options.isSet(Option.X)
+                    || options.isSet(Option.VERSION)
+                    || options.isSet(Option.FULLVERSION)
+                    || options.isSet(Option.MODULE)) {
                 return true;
-
-            if (emptyAllowed)
-                return true;
-
-            if (!errors) {
-                if (JavaCompiler.explicitAnnotationProcessingRequested(options)) {
-                    error("err.no.source.files.classes");
-                } else {
-                    error("err.no.source.files");
-                }
             }
 
-            return false;
+            if (!emptyAllowed) {
+                if (!errors) {
+                    if (JavaCompiler.explicitAnnotationProcessingRequested(options)) {
+                        error("err.no.source.files.classes");
+                    } else {
+                        error("err.no.source.files");
+                    }
+                }
+                return false;
+            }
         }
 
         if (!checkDirectory(Option.D)) {
@@ -555,7 +553,6 @@ public class Arguments {
         }
 
         boolean lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
-
         if (lintOptions && source.compareTo(Source.DEFAULT) < 0 && !options.isSet(Option.RELEASE)) {
             if (fm instanceof BaseFileManager) {
                 if (((BaseFileManager) fm).isDefaultBootClassPath())
@@ -608,14 +605,19 @@ public class Arguments {
             log.error(Errors.ProcessorpathNoProcessormodulepath);
         }
 
-        if (obsoleteOptionFound)
+        if (obsoleteOptionFound && lintOptions) {
             log.warning(LintCategory.OPTIONS, "option.obsolete.suppression");
+        }
 
         SourceVersion sv = Source.toSourceVersion(source);
         validateAddExports(sv);
         validateAddModules(sv);
         validateAddReads(sv);
         validateLimitModules(sv);
+
+        if (lintOptions && options.isSet(Option.ADD_OPENS)) {
+            log.warning(LintCategory.OPTIONS, Warnings.AddopensIgnored);
+        }
 
         return !errors && (log.nerrors == 0);
     }
@@ -710,7 +712,6 @@ public class Arguments {
             for (String moduleName : addModules.split(",")) {
                 switch (moduleName) {
                     case "":
-                    case "ALL-DEFAULT":
                     case "ALL-SYSTEM":
                     case "ALL-MODULE-PATH":
                         break;
@@ -718,7 +719,7 @@ public class Arguments {
                     default:
                         if (!SourceVersion.isName(moduleName, sv)) {
                             // syntactically invalid module name:  e.g. --add-modules m1,m!
-                            log.warning(Warnings.BadNameForOption(Option.ADD_MODULES, moduleName));
+                            log.error(Errors.BadNameForOption(Option.ADD_MODULES, moduleName));
                         }
                         break;
                 }
@@ -742,7 +743,7 @@ public class Arguments {
                     default:
                         if (!SourceVersion.isName(moduleName, sv)) {
                             // syntactically invalid module name:  e.g. --limit-modules m1,m!
-                            log.warning(Warnings.BadNameForOption(Option.LIMIT_MODULES, moduleName));
+                            log.error(Errors.BadNameForOption(Option.LIMIT_MODULES, moduleName));
                         }
                         break;
                 }
@@ -757,7 +758,7 @@ public class Arguments {
     public boolean isEmpty() {
         return ((files == null) || files.isEmpty())
                 && ((fileObjects == null) || fileObjects.isEmpty())
-                && classNames.isEmpty();
+                && (classNames == null || classNames.isEmpty());
     }
 
     public void allowEmpty() {
@@ -883,6 +884,21 @@ public class Arguments {
             }
             case LOG:
                 report(key, args);
+        }
+    }
+
+    void error(Option.InvalidValueException f) {
+        String msg = f.getMessage();
+        errors = true;
+        switch (errorMode) {
+            case ILLEGAL_ARGUMENT: {
+                throw new PropagatedException(new IllegalArgumentException(msg, f.getCause()));
+            }
+            case ILLEGAL_STATE: {
+                throw new PropagatedException(new IllegalStateException(msg, f.getCause()));
+            }
+            case LOG:
+                log.printRawLines(ownName + ": " + msg);
         }
     }
 

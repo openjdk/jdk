@@ -28,6 +28,9 @@ import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertEquals;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -55,6 +58,7 @@ import org.w3c.dom.Document;
  */
 /*
  * @test
+ * @bug 8169778
  * @library /javax/xml/jaxp/libs
  * @run testng/othervm -DrunSecMngr=true javax.xml.transform.ptests.TransformerFactoryTest
  * @run testng/othervm javax.xml.transform.ptests.TransformerFactoryTest
@@ -62,9 +66,15 @@ import org.w3c.dom.Document;
 @Listeners({jaxp.library.FilePolicy.class})
 public class TransformerFactoryTest {
     /**
+     * TransformerFactory builtin system-default implementation class name.
+     */
+    private static final String DEFAULT_IMPL_CLASS =
+       "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl";
+
+    /**
      * TransformerFactory implementation class name.
      */
-    private static final String TRANSFORMER_FACTORY_CLASSNAME = "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl";
+    private static final String TRANSFORMER_FACTORY_CLASSNAME = DEFAULT_IMPL_CLASS;
 
     /**
      * Provide valid TransformerFactory instantiation parameters.
@@ -74,6 +84,21 @@ public class TransformerFactoryTest {
     @DataProvider(name = "parameters")
     public Object[][] getValidateParameters() {
         return new Object[][] { { TRANSFORMER_FACTORY_CLASSNAME, null }, { TRANSFORMER_FACTORY_CLASSNAME, this.getClass().getClassLoader() } };
+    }
+
+    /**
+     * Test if newDefaultInstance() method returns an instance
+     * of the expected factory.
+     * @throws Exception If any errors occur.
+     */
+    @Test
+    public void testDefaultInstance() throws Exception {
+        TransformerFactory tf1 = TransformerFactory.newDefaultInstance();
+        TransformerFactory tf2 = TransformerFactory.newInstance();
+        assertNotSame(tf1, tf2, "same instance returned:");
+        assertSame(tf1.getClass(), tf2.getClass(),
+                  "unexpected class mismatch for newDefaultInstance():");
+        assertEquals(tf1.getClass().getName(), DEFAULT_IMPL_CLASS);
     }
 
     /**

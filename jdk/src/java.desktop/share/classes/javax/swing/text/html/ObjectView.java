@@ -85,6 +85,7 @@ public class ObjectView extends ComponentView  {
      * as a specification of the classname, which
      * we try to load.
      */
+    @SuppressWarnings("deprecation")
     protected Component createComponent() {
         AttributeSet attr = getElement().getAttributes();
         String classname = (String) attr.getAttribute(HTML.Attribute.CLASSID);

@@ -45,6 +45,10 @@
 #include <sys/sockio.h>
 #endif
 
+#if defined(MACOSX)
+#include <sys/sysctl.h>
+#endif
+
 #include "net_util.h"
 
 #include "java_net_SocketOptions.h"

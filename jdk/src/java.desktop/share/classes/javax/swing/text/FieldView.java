@@ -205,6 +205,7 @@ public class FieldView extends PlainView {
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
      */
+    @SuppressWarnings("deprecation")
     public float getPreferredSpan(int axis) {
         switch (axis) {
         case View.X_AXIS:

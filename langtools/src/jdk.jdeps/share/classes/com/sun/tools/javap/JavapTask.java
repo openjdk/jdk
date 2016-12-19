@@ -910,7 +910,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             StandardLocation.MODULE_PATH
         };
         for (Location segment: locns) {
-            for (Set<Location> set: fileManager.listModuleLocations(segment)) {
+            for (Set<Location> set: fileManager.listLocationsForModules(segment)) {
                 Location result = null;
                 for (Location l: set) {
                     String name = fileManager.inferModuleName(l);

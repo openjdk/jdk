@@ -22,6 +22,7 @@
  *
  */
 #include "precompiled.hpp"
+#include "aot/aotLoader.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -3043,6 +3044,7 @@ void Metaspace::set_narrow_klass_base_and_shift(address metaspace_base, address 
     assert(!UseSharedSpaces, "Cannot shift with UseSharedSpaces");
     Universe::set_narrow_klass_shift(LogKlassAlignmentInBytes);
   }
+  AOTLoader::set_narrow_klass_shift();
 }
 
 #if INCLUDE_CDS

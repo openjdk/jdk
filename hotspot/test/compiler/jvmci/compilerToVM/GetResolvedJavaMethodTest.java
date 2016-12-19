@@ -27,8 +27,8 @@
  * @requires vm.jvmci
  * @library / /test/lib
  * @library ../common/patches
- * @modules java.base/jdk.internal.misc
- * @modules jdk.vm.ci/jdk.vm.ci.hotspot
+ * @modules java.base/jdk.internal.misc:+open
+ * @modules jdk.vm.ci/jdk.vm.ci.hotspot:+open
  *
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  *        jdk.vm.ci/jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject

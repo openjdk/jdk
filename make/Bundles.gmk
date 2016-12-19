@@ -101,7 +101,7 @@ define SetupBundleFileBody
 	          ( $(TAR) cf - $(TAR_CREATE_EXTRA_PARAM) $$($1_SUBDIR) $(TAR_IGNORE_EXIT_VALUE) ) \
 	          | $(GZIP) > $$@
             else ifeq ($$($1_TYPE), zip)
-	      $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1 && $(ZIP) -qr $$@ .
+	      $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1 && $(ZIPEXE) -qr $$@ .
             endif
           endif
         else
@@ -113,7 +113,7 @@ define SetupBundleFileBody
 	        | $(GZIP) > $$@
           else ifeq ($$($1_TYPE), zip)
 	    $(CD) $$($1_BASE_DIR) \
-	        && $(ZIP) -qr $$@ . -i@$(SUPPORT_OUTPUTDIR)/bundles/_$1_files
+	        && $(ZIPEXE) -qr $$@ . -i@$(SUPPORT_OUTPUTDIR)/bundles/_$1_files
           endif
         endif
 

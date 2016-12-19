@@ -137,13 +137,11 @@ public final class Util {
                     reader.setFeature
                         ("http://xml.org/sax/features/namespace-prefixes",false);
 
-                    try {
-                        reader.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD,
-                                   xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD));
-                    } catch (SAXNotRecognizedException e) {
-                        XMLSecurityManager.printWarning(reader.getClass().getName(),
-                                XMLConstants.ACCESS_EXTERNAL_DTD, e);
-                    }
+                    JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, XMLConstants.ACCESS_EXTERNAL_DTD,
+                            xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD), true);
+
+                    JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkXmlUtils.CDATA_CHUNK_SIZE,
+                            xsltc.getProperty(JdkXmlUtils.CDATA_CHUNK_SIZE), false);
 
                     String lastProperty = "";
                     try {

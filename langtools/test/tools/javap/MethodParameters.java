@@ -45,7 +45,7 @@ public class MethodParameters {
     static final String Init0_expected =
         ("  Foo();\n" +
          "    descriptor: ()V\n" +
-         "    flags:\n" +
+         "    flags: (0x0000)\n" +
          "    Code:\n" +
          "      stack=1, locals=1, args_size=1\n" +
          "         0: aload_0\n" +
@@ -57,7 +57,7 @@ public class MethodParameters {
     static final String Init1_expected =
         ("  Foo(int);\n" +
          "    descriptor: (I)V\n" +
-         "    flags:\n" +
+         "    flags: (0x0000)\n" +
          "    Code:\n" +
          "      stack=1, locals=2, args_size=2\n" +
          "         0: aload_0\n" +
@@ -72,7 +72,7 @@ public class MethodParameters {
     static final String foo0_expected =
         ("  void foo0();\n" +
          "    descriptor: ()V\n" +
-         "    flags:\n" +
+         "    flags: (0x0000)\n" +
          "    Code:\n" +
          "      stack=0, locals=1, args_size=1\n" +
          "         0: return\n" +
@@ -82,7 +82,7 @@ public class MethodParameters {
     static final String foo2_expected =
         ("  void foo2(int, int);\n" +
          "    descriptor: (II)V\n" +
-         "    flags:\n" +
+         "    flags: (0x0000)\n" +
          "    Code:\n" +
          "      stack=0, locals=3, args_size=3\n" +
          "         0: return\n" +

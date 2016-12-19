@@ -26,7 +26,7 @@
  * @bug 8143628
  * @summary Test unsafe access for double
  *
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc:+open
  * @run testng/othervm -Diters=100   -Xint                   compiler.unsafe.JdkInternalMiscUnsafeAccessTestDouble
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 compiler.unsafe.JdkInternalMiscUnsafeAccessTestDouble
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  compiler.unsafe.JdkInternalMiscUnsafeAccessTestDouble

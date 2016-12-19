@@ -60,6 +60,7 @@ class SharedRuntime: AllStatic {
   static RuntimeStub*        _resolve_opt_virtual_call_blob;
   static RuntimeStub*        _resolve_virtual_call_blob;
   static RuntimeStub*        _resolve_static_call_blob;
+  static address             _resolve_static_call_entry;
 
   static DeoptimizationBlob* _deopt_blob;
 

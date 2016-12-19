@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.lang.module.Configuration;
+import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolutionException;
@@ -134,7 +135,7 @@ public class JlinkTask {
         }, true, "--full-version"),
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.ignoreSigning = true;
-        }, true, "--ignore-signing-information"),};
+        }, "--ignore-signing-information"),};
 
     private static final String PROGNAME = "jlink";
     private final OptionsValues options = new OptionsValues();
@@ -191,6 +192,7 @@ public class JlinkTask {
                 taskHelper.showVersion(options.fullVersion);
                 return EXIT_OK;
             }
+
             if (taskHelper.getExistingImage() == null) {
                 if (options.modulePath.isEmpty()) {
                     throw taskHelper.newBadArgs("err.modulepath.must.be.specified").showUsage(true);
@@ -256,7 +258,6 @@ public class JlinkTask {
         ImageProvider imageProvider =
                 createImageProvider(finder,
                                     config.getModules(),
-                                    config.getLimitmods(),
                                     config.getByteOrder(),
                                     null,
                                     IGNORE_SIGNING_DEFAULT);
@@ -291,23 +292,43 @@ public class JlinkTask {
         postProcessImage(img, config.getPlugins());
     }
 
+    // the token for "all modules on the module path"
+    private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
     private void createImage() throws Exception {
         if (options.output == null) {
             throw taskHelper.newBadArgs("err.output.must.be.specified").showUsage(true);
         }
-        ModuleFinder finder
-                = newModuleFinder(options.modulePath, options.limitMods, options.addMods);
+
         if (options.addMods.isEmpty()) {
             throw taskHelper.newBadArgs("err.mods.must.be.specified", "--add-modules")
                     .showUsage(true);
         }
+
+        Set<String> roots = new HashSet<>();
+        for (String mod : options.addMods) {
+            if (mod.equals(ALL_MODULE_PATH)) {
+                ModuleFinder finder = modulePathFinder();
+                finder.findAll()
+                      .stream()
+                      .map(ModuleReference::descriptor)
+                      .map(ModuleDescriptor::name)
+                      .forEach(mn -> roots.add(mn));
+            } else {
+                roots.add(mod);
+            }
+        }
+
+        ModuleFinder finder = newModuleFinder(options.modulePath,
+                                              options.limitMods,
+                                              roots);
+
+
         // First create the image provider
         ImageProvider imageProvider = createImageProvider(finder,
-                        options.addMods,
-                        options.limitMods,
-                        options.endian,
-                        options.packagedModulesPath,
-                        options.ignoreSigning);
+                                                          roots,
+                                                          options.endian,
+                                                          options.packagedModulesPath,
+                                                          options.ignoreSigning);
 
         // Then create the Plugin Stack
         ImagePluginStack stack = ImagePluginConfiguration.
@@ -362,21 +383,20 @@ public class JlinkTask {
     }
 
     private static ImageProvider createImageProvider(ModuleFinder finder,
-                                                     Set<String> addMods,
-                                                     Set<String> limitMods,
+                                                     Set<String> roots,
                                                      ByteOrder order,
                                                      Path retainModulesPath,
                                                      boolean ignoreSigning)
             throws IOException
     {
-        if (addMods.isEmpty()) {
+        if (roots.isEmpty()) {
             throw new IllegalArgumentException("empty modules and limitmods");
         }
 
         Configuration cf = Configuration.empty()
                 .resolveRequires(finder,
                                  ModuleFinder.of(),
-                                 addMods);
+                                 roots);
 
         Map<String, Path> mods = cf.modules().stream()
             .collect(Collectors.toMap(ResolvedModule::name, JlinkTask::toPathLocation));
@@ -388,8 +408,8 @@ public class JlinkTask {
      * modules, their transitive dependences, plus a set of other modules.
      */
     private static ModuleFinder limitFinder(ModuleFinder finder,
-            Set<String> roots,
-            Set<String> otherMods) {
+                                            Set<String> roots,
+                                            Set<String> otherMods) {
 
         // resolve all root modules
         Configuration cf = Configuration.empty()
@@ -533,42 +553,6 @@ public class JlinkTask {
                 }
             }
             return image;
-        }
-    }
-
-    private static enum Section {
-        NATIVE_LIBS("native"),
-        NATIVE_CMDS("bin"),
-        CLASSES("classes"),
-        CONFIG("conf"),
-        UNKNOWN("unknown");
-
-        private final String jmodDir;
-
-        Section(String jmodDir) {
-            this.jmodDir = jmodDir;
-        }
-
-        String jmodDir() {
-            return jmodDir;
-        }
-
-        boolean matches(String path) {
-            return path.startsWith(jmodDir);
-        }
-
-        static Section getSectionFromName(String dir) {
-            if (Section.NATIVE_LIBS.matches(dir)) {
-                return Section.NATIVE_LIBS;
-            } else if (Section.NATIVE_CMDS.matches(dir)) {
-                return Section.NATIVE_CMDS;
-            } else if (Section.CLASSES.matches(dir)) {
-                return Section.CLASSES;
-            } else if (Section.CONFIG.matches(dir)) {
-                return Section.CONFIG;
-            } else {
-                return Section.UNKNOWN;
-            }
         }
     }
 }

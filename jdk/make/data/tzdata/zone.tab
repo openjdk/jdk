@@ -175,7 +175,8 @@ CU	+2308-08222	America/Havana
 CV	+1455-02331	Atlantic/Cape_Verde
 CW	+1211-06900	America/Curacao
 CX	-1025+10543	Indian/Christmas
-CY	+3510+03322	Asia/Nicosia
+CY	+3510+03322	Asia/Nicosia	Cyprus (most areas)
+CY	+3507+03357	Asia/Famagusta	Northern Cyprus
 CZ	+5005+01426	Europe/Prague
 DE	+5230+01322	Europe/Berlin	Germany (most areas)
 DE	+4742+00841	Europe/Busingen	Busingen
@@ -261,7 +262,8 @@ KY	+1918-08123	America/Cayman
 KZ	+4315+07657	Asia/Almaty	Kazakhstan (most areas)
 KZ	+4448+06528	Asia/Qyzylorda	Qyzylorda/Kyzylorda/Kzyl-Orda
 KZ	+5017+05710	Asia/Aqtobe	Aqtobe/Aktobe
-KZ	+4431+05016	Asia/Aqtau	Atyrau/Atirau/Gur'yev, Mangghystau/Mankistau
+KZ	+4431+05016	Asia/Aqtau	Mangghystau/Mankistau
+KZ	+4707+05156	Asia/Atyrau	Atyrau/Atirau/Gur'yev
 KZ	+5113+05121	Asia/Oral	West Kazakhstan
 LA	+1758+10236	Asia/Vientiane
 LB	+3353+03530	Asia/Beirut
@@ -352,14 +354,15 @@ RS	+4450+02030	Europe/Belgrade
 RU	+5443+02030	Europe/Kaliningrad	MSK-01 - Kaliningrad
 RU	+554521+0373704	Europe/Moscow	MSK+00 - Moscow area
 RU	+4457+03406	Europe/Simferopol	MSK+00 - Crimea
-RU	+4844+04425	Europe/Volgograd	MSK+00 - Volgograd, Saratov
+RU	+4844+04425	Europe/Volgograd	MSK+00 - Volgograd
 RU	+5836+04939	Europe/Kirov	MSK+00 - Kirov
 RU	+4621+04803	Europe/Astrakhan	MSK+01 - Astrakhan
-RU	+5312+05009	Europe/Samara	MSK+01 - Samara, Udmurtia
+RU	+5134+04602	Europe/Saratov	MSK+01 - Saratov
 RU	+5420+04824	Europe/Ulyanovsk	MSK+01 - Ulyanovsk
+RU	+5312+05009	Europe/Samara	MSK+01 - Samara, Udmurtia
 RU	+5651+06036	Asia/Yekaterinburg	MSK+02 - Urals
 RU	+5500+07324	Asia/Omsk	MSK+03 - Omsk
-RU	+5502+08255	Asia/Novosibirsk	MSK+03 - Novosibirsk
+RU	+5502+08255	Asia/Novosibirsk	MSK+04 - Novosibirsk
 RU	+5322+08345	Asia/Barnaul	MSK+04 - Altai
 RU	+5630+08458	Asia/Tomsk	MSK+04 - Tomsk
 RU	+5345+08707	Asia/Novokuznetsk	MSK+04 - Kemerovo

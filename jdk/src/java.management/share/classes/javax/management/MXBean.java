@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -916,14 +916,14 @@ public interface ModuleMXBean {
       <li><p>Otherwise, <em>J</em> is not reconstructible.</p></li>
     </ol>
 
-    <p>When only {@code @java.beans.ConstructorProperties} is present then
-    rule 2 is not applicable to subset Profiles of Java SE that do not include
-    the {@code java.beans} package. When targeting a runtime that does
-    not include the {@code java.beans} package, and where there is a mismatch
-    between the compile-time and runtime environment whereby <em>J</em> is
-    compiled with a public constructor and the {@code ConstructorProperties}
-    annotation, then <em>J</em> is not reconstructible unless another rule
-    applies.</p>
+    <p>Rule 2 is not applicable when {@code java.beans.ConstructorProperties}
+    is not visible (e.g. when the java.desktop module is not readable or when
+    the runtime image does not contain the java.desktop module). When
+    targeting a runtime that does not include the {@code java.beans} package,
+    and where there is a mismatch between the compile-time and runtime
+    environment whereby <em>J</em> is compiled with a public constructor
+    and the {@code ConstructorProperties} annotation, then <em>J</em> is
+    not reconstructible unless another rule applies.</p>
 
     <p>Here are examples showing different ways to code a type {@code
       NamedNumber} that consists of an {@code int} and a {@code

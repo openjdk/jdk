@@ -28,7 +28,7 @@
  * @library /tools/lib
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
- *      jdk.compiler/com.sun.tools.javac.file
+ *      jdk.compiler/com.sun.tools.javac.file:+open
  *      jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.ModuleBuilder ModuleTestBase
  * @run main PatchModulesTest
@@ -91,12 +91,28 @@ public class PatchModulesTest extends ModuleTestBase {
     }
 
     @Test
-    public void testLastOneWins(Path base) throws Exception {
+    public void testDuplicates(Path base) throws Exception {
         test(asList("java.base=a", "java.compiler=b", "java.base=c"),
-            "{java.base=[c], java.compiler=[b]}");
+            false, "--patch-module specified more than once for java.base");
+    }
+
+    @Test
+    public void testEmpty(Path base) throws Exception {
+        test(asList(""),
+            false, "no value for --patch-module option");
+    }
+
+    @Test
+    public void testInvalid(Path base) throws Exception {
+        test(asList("java.base/java.lang=."),
+            false, "bad value for --patch-module option: 'java.base/java.lang=.'");
     }
 
     void test(List<String> patches, String expect) throws Exception {
+        test(patches, true, expect);
+    }
+
+    void test(List<String> patches, boolean expectOK, String expect) throws Exception {
         JavacTool tool = (JavacTool) ToolProvider.getSystemJavaCompiler();
         StringWriter sw = new StringWriter();
         try (PrintWriter pw = new PrintWriter(sw)) {
@@ -116,6 +132,17 @@ public class PatchModulesTest extends ModuleTestBase {
             Map<?,?> patchMap = (Map<?,?>) patchMapField.get(locations);
             String found = patchMap.toString();
 
+            if (!found.equals(expect)) {
+                tb.out.println("Expect: " + expect);
+                tb.out.println("Found:  " + found);
+                error("output not as expected");
+            }
+        } catch (IllegalArgumentException e) {
+            if (expectOK) {
+                error("unexpected exception: " + e);
+                throw e;
+            }
+            String found = e.getMessage();
             if (!found.equals(expect)) {
                 tb.out.println("Expect: " + expect);
                 tb.out.println("Found:  " + found);

@@ -36,7 +36,7 @@ import javax.swing.text.ViewFactory;
 
 /*
  * @test
- * @bug 8080972
+ * @bug 8080972 8169887
  * @summary Audit Core Reflection in module java.desktop for places that will
  *          require changes to work with modules
  * @author Alexander Scherbatiy

@@ -42,6 +42,7 @@ import java.security.SecureClassLoader;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.jar.Attributes;
@@ -71,6 +72,10 @@ import sun.security.util.SecurityConstants;
  * <p>
  * The classes that are loaded are by default granted permission only to
  * access the URLs specified when the URLClassLoader was created.
+ * <p>
+ * This class loader supports the loading of classes from the contents of a
+ * <a href="../util/jar/JarFile.html#multirelease">multi-release</a> JAR file
+ * that is referred to by a given URL.
  *
  * @author  David Connelly
  * @since   1.2
@@ -301,9 +306,12 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * @return  An input stream for reading the resource, or {@code null}
      *          if the resource could not be found
      *
+     * @throws  NullPointerException If {@code name} is {@code null}
+     *
      * @since  1.7
      */
     public InputStream getResourceAsStream(String name) {
+        Objects.requireNonNull(name);
         URL url = getResource(name);
         try {
             if (url == null) {

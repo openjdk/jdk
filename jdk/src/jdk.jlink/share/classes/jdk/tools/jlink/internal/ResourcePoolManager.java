@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import jdk.internal.jimage.decompressor.CompressedResourceHeader;
+import jdk.internal.loader.ResourceHelper;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
@@ -55,7 +56,19 @@ public class ResourcePoolManager {
                       + " module");
         }
         ByteBuffer bb = ByteBuffer.wrap(content.get().contentBytes());
-        return ModuleDescriptor.read(bb);
+        try {
+            return ModuleDescriptor.read(bb);
+        } catch (RuntimeException re) {
+            throw new RuntimeException("module descriptor cannot be read for " + mod.name(), re);
+        }
+    }
+
+    /**
+     * Returns true if a resource has an effective package.
+     */
+    public static boolean isNamedPackageResource(String path) {
+        return (path.endsWith(".class") && !path.endsWith("module-info.class")) ||
+                !ResourceHelper.isSimpleResource(path);
     }
 
     class ResourcePoolModuleImpl implements ResourcePoolModule {
@@ -100,7 +113,7 @@ public class ResourcePoolManager {
                 .filter(m -> m.type() == ResourcePoolEntry.Type.CLASS_OR_RESOURCE)
                 .forEach(res -> {
                     String name = ImageFileCreator.resourceName(res.path());
-                    if (name.endsWith(".class") && !name.endsWith("module-info.class")) {
+                    if (isNamedPackageResource(name)) {
                         String pkg = ImageFileCreator.toPackage(name);
                         if (!pkg.isEmpty()) {
                             pkgs.add(pkg);

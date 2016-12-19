@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,6 +268,13 @@ public class FormatData_sv extends ParallelListResourceBundle {
                 new String[] {
                     "f",
                     "e",
+                }
+            },
+            { "NumberPatterns",
+                new String[] {
+                    "#,##0.###;-#,##0.###", // decimal pattern
+                    "\u00a4 #,##0.00;-\u00a4 #,##0.00", // currency pattern
+                    "#,##0 %" // percent pattern
                 }
             },
             { "NumberElements",

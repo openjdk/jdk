@@ -434,6 +434,165 @@ JvmtiExport::add_default_read_edges(Handle h_module, TRAPS) {
   }
 }
 
+jvmtiError
+JvmtiExport::add_module_reads(Handle module, Handle to_module, TRAPS) {
+  if (!Universe::is_module_initialized()) {
+    return JVMTI_ERROR_NONE; // extra safety
+  }
+  assert(!module.is_null(), "module should always be set");
+  assert(!to_module.is_null(), "to_module should always be set");
+
+  // Invoke the addReads method
+  JavaValue result(T_VOID);
+  JavaCalls::call_static(&result,
+                         SystemDictionary::module_Modules_klass(),
+                         vmSymbols::addReads_name(),
+                         vmSymbols::addReads_signature(),
+                         module,
+                         to_module,
+                         THREAD);
+
+  if (HAS_PENDING_EXCEPTION) {
+    LogTarget(Trace, jvmti) log;
+    LogStreamCHeap log_stream(log);
+    java_lang_Throwable::print(PENDING_EXCEPTION, &log_stream);
+    log_stream.cr();
+    CLEAR_PENDING_EXCEPTION;
+    return JVMTI_ERROR_INTERNAL;
+  }
+  return JVMTI_ERROR_NONE;
+}
+
+jvmtiError
+JvmtiExport::add_module_exports(Handle module, Handle pkg_name, Handle to_module, TRAPS) {
+  if (!Universe::is_module_initialized()) {
+    return JVMTI_ERROR_NONE; // extra safety
+  }
+  assert(!module.is_null(), "module should always be set");
+  assert(!to_module.is_null(), "to_module should always be set");
+  assert(!pkg_name.is_null(), "pkg_name should always be set");
+
+  // Invoke the addExports method
+  JavaValue result(T_VOID);
+  JavaCalls::call_static(&result,
+                         SystemDictionary::module_Modules_klass(),
+                         vmSymbols::addExports_name(),
+                         vmSymbols::addExports_signature(),
+                         module,
+                         pkg_name,
+                         to_module,
+                         THREAD);
+
+  if (HAS_PENDING_EXCEPTION) {
+    Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
+    LogTarget(Trace, jvmti) log;
+    LogStreamCHeap log_stream(log);
+    java_lang_Throwable::print(PENDING_EXCEPTION, &log_stream);
+    log_stream.cr();
+    CLEAR_PENDING_EXCEPTION;
+    if (ex_name == vmSymbols::java_lang_IllegalArgumentException()) {
+      return JVMTI_ERROR_ILLEGAL_ARGUMENT;
+    }
+    return JVMTI_ERROR_INTERNAL;
+  }
+  return JVMTI_ERROR_NONE;
+}
+
+jvmtiError
+JvmtiExport::add_module_opens(Handle module, Handle pkg_name, Handle to_module, TRAPS) {
+  if (!Universe::is_module_initialized()) {
+    return JVMTI_ERROR_NONE; // extra safety
+  }
+  assert(!module.is_null(), "module should always be set");
+  assert(!to_module.is_null(), "to_module should always be set");
+  assert(!pkg_name.is_null(), "pkg_name should always be set");
+
+  // Invoke the addOpens method
+  JavaValue result(T_VOID);
+  JavaCalls::call_static(&result,
+                         SystemDictionary::module_Modules_klass(),
+                         vmSymbols::addOpens_name(),
+                         vmSymbols::addExports_signature(),
+                         module,
+                         pkg_name,
+                         to_module,
+                         THREAD);
+
+  if (HAS_PENDING_EXCEPTION) {
+    Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
+    LogTarget(Trace, jvmti) log;
+    LogStreamCHeap log_stream(log);
+    java_lang_Throwable::print(PENDING_EXCEPTION, &log_stream);
+    log_stream.cr();
+    CLEAR_PENDING_EXCEPTION;
+    if (ex_name == vmSymbols::java_lang_IllegalArgumentException()) {
+      return JVMTI_ERROR_ILLEGAL_ARGUMENT;
+    }
+    return JVMTI_ERROR_INTERNAL;
+  }
+  return JVMTI_ERROR_NONE;
+}
+
+jvmtiError
+JvmtiExport::add_module_uses(Handle module, Handle service, TRAPS) {
+  if (!Universe::is_module_initialized()) {
+    return JVMTI_ERROR_NONE; // extra safety
+  }
+  assert(!module.is_null(), "module should always be set");
+  assert(!service.is_null(), "service should always be set");
+
+  // Invoke the addUses method
+  JavaValue result(T_VOID);
+  JavaCalls::call_static(&result,
+                         SystemDictionary::module_Modules_klass(),
+                         vmSymbols::addUses_name(),
+                         vmSymbols::addUses_signature(),
+                         module,
+                         service,
+                         THREAD);
+
+  if (HAS_PENDING_EXCEPTION) {
+    LogTarget(Trace, jvmti) log;
+    LogStreamCHeap log_stream(log);
+    java_lang_Throwable::print(PENDING_EXCEPTION, &log_stream);
+    log_stream.cr();
+    CLEAR_PENDING_EXCEPTION;
+    return JVMTI_ERROR_INTERNAL;
+  }
+  return JVMTI_ERROR_NONE;
+}
+
+jvmtiError
+JvmtiExport::add_module_provides(Handle module, Handle service, Handle impl_class, TRAPS) {
+  if (!Universe::is_module_initialized()) {
+    return JVMTI_ERROR_NONE; // extra safety
+  }
+  assert(!module.is_null(), "module should always be set");
+  assert(!service.is_null(), "service should always be set");
+  assert(!impl_class.is_null(), "impl_class should always be set");
+
+  // Invoke the addProvides method
+  JavaValue result(T_VOID);
+  JavaCalls::call_static(&result,
+                         SystemDictionary::module_Modules_klass(),
+                         vmSymbols::addProvides_name(),
+                         vmSymbols::addProvides_signature(),
+                         module,
+                         service,
+                         impl_class,
+                         THREAD);
+
+  if (HAS_PENDING_EXCEPTION) {
+    LogTarget(Trace, jvmti) log;
+    LogStreamCHeap log_stream(log);
+    java_lang_Throwable::print(PENDING_EXCEPTION, &log_stream);
+    log_stream.cr();
+    CLEAR_PENDING_EXCEPTION;
+    return JVMTI_ERROR_INTERNAL;
+  }
+  return JVMTI_ERROR_NONE;
+}
+
 void
 JvmtiExport::decode_version_values(jint version, int * major, int * minor,
                                    int * micro) {
@@ -587,6 +746,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
   JvmtiThreadState *   _state;
   KlassHandle *        _h_class_being_redefined;
   JvmtiClassLoadKind   _load_kind;
+  bool                 _has_been_modified;
 
  public:
   inline JvmtiClassFileLoadHookPoster(Symbol* h_name, Handle class_loader,
@@ -603,6 +763,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     _curr_data = *data_ptr;
     _curr_env = NULL;
     _cached_class_file_ptr = cache_ptr;
+    _has_been_modified = false;
 
     _state = _thread->jvmti_thread_state();
     if (_state != NULL) {
@@ -640,6 +801,8 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     post_all_envs();
     copy_modified_data();
   }
+
+  bool has_been_modified() { return _has_been_modified; }
 
  private:
   void post_all_envs() {
@@ -687,6 +850,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     }
     if (new_data != NULL) {
       // this agent has modified class data.
+      _has_been_modified = true;
       if (caching_needed && *_cached_class_file_ptr == NULL) {
         // data has been changed by the new retransformable agent
         // and it hasn't already been cached, cache it
@@ -734,14 +898,14 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
 bool JvmtiExport::_should_post_class_file_load_hook = false;
 
 // this entry is for class file load hook on class load, redefine and retransform
-void JvmtiExport::post_class_file_load_hook(Symbol* h_name,
+bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,
                                             Handle class_loader,
                                             Handle h_protection_domain,
                                             unsigned char **data_ptr,
                                             unsigned char **end_ptr,
                                             JvmtiCachedClassFileData **cache_ptr) {
   if (JvmtiEnv::get_phase() < JVMTI_PHASE_PRIMORDIAL) {
-    return;
+    return false;
   }
 
   JvmtiClassFileLoadHookPoster poster(h_name, class_loader,
@@ -749,6 +913,7 @@ void JvmtiExport::post_class_file_load_hook(Symbol* h_name,
                                       data_ptr, end_ptr,
                                       cache_ptr);
   poster.post();
+  return poster.has_been_modified();
 }
 
 void JvmtiExport::report_unsupported(bool on) {

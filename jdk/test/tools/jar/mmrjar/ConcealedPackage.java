@@ -26,6 +26,8 @@
  * @bug 8146486
  * @summary Fail to create a MR modular JAR with a versioned entry in
  *          base-versioned empty package
+ * @modules jdk.compiler
+ *          jdk.jartool
  * @library /lib/testlibrary
  * @build jdk.testlibrary.FileUtils
  * @run testng ConcealedPackage
@@ -56,6 +58,7 @@ public class ConcealedPackage {
     private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
             .orElseThrow(() -> new RuntimeException("javac tool not found"));
     private final String linesep = System.lineSeparator();
+    private final Path testsrc;
     private final Path userdir;
     private final ByteArrayOutputStream outbytes = new ByteArrayOutputStream();
     private final PrintStream out = new PrintStream(outbytes, true);
@@ -63,7 +66,7 @@ public class ConcealedPackage {
     private final PrintStream err = new PrintStream(errbytes, true);
 
     public ConcealedPackage() throws IOException {
-        Path testsrc = Paths.get(System.getProperty("test.src"));
+        testsrc = Paths.get(System.getProperty("test.src"));
         userdir = Paths.get(System.getProperty("user.dir", "."));
 
         // compile the classes directory
@@ -124,8 +127,7 @@ public class ConcealedPackage {
 
         jar("-tf mmr.jar");
 
-        String s = new String(outbytes.toByteArray());
-        Set<String> actual = Arrays.stream(s.split(linesep)).collect(Collectors.toSet());
+        Set<String> actual = lines(outbytes);
         Set<String> expected = Set.of(
                 "META-INF/",
                 "META-INF/MANIFEST.MF",
@@ -139,10 +141,8 @@ public class ConcealedPackage {
         rc = jar("-uf mmr.jar --release 9 -C mr9 p/internal/Bar.class");
         Assert.assertEquals(rc, 1);
 
-        s = new String(errbytes.toByteArray());
-        Assert.assertTrue(s.contains("p/internal/Bar.class, contains a new public "
-                + "class not found in base entries")
-        );
+        String s = new String(errbytes.toByteArray());
+        Assert.assertTrue(Message.NOT_FOUND_IN_BASE_ENTRY.match(s, "p/internal/Bar.class"));
     }
 
     // updates a valid multi-release jar with a module-info class and new
@@ -158,15 +158,11 @@ public class ConcealedPackage {
         Assert.assertEquals(rc, 0);
 
         String s = new String(errbytes.toByteArray());
-        Assert.assertTrue(s.contains("p/internal/Bar.class is a public class in a "
-                        + "concealed package, \nplacing this jar on the class path "
-                        + "will result in incompatible public interfaces")
-        );
+        Assert.assertTrue(Message.NEW_CONCEALED_PACKAGE_WARNING.match(s, "p/internal/Bar.class"));
 
         jar("-tf mmr.jar");
 
-        s = new String(outbytes.toByteArray());
-        Set<String> actual = Arrays.stream(s.split(linesep)).collect(Collectors.toSet());
+        Set<String> actual = lines(outbytes);
         Set<String> expected = Set.of(
                 "META-INF/",
                 "META-INF/MANIFEST.MF",
@@ -186,9 +182,7 @@ public class ConcealedPackage {
         Assert.assertEquals(rc, 1);
 
         String s = new String(errbytes.toByteArray());
-        Assert.assertTrue(s.contains("p/internal/Bar.class, contains a new public "
-                + "class not found in base entries")
-        );
+        Assert.assertTrue(Message.NOT_FOUND_IN_BASE_ENTRY.match(s, "p/internal/Bar.class"));
     }
 
     // jar tool succeeds building mmr.jar because of concealed package
@@ -199,15 +193,11 @@ public class ConcealedPackage {
         Assert.assertEquals(rc, 0);
 
         String s = new String(errbytes.toByteArray());
-        Assert.assertTrue(s.contains("p/internal/Bar.class is a public class in a "
-                + "concealed package, \nplacing this jar on the class path "
-                + "will result in incompatible public interfaces")
-        );
+        Assert.assertTrue(Message.NEW_CONCEALED_PACKAGE_WARNING.match(s, "p/internal/Bar.class"));
 
         jar("-tf mmr.jar");
 
-        s = new String(outbytes.toByteArray());
-        Set<String> actual = Arrays.stream(s.split(linesep)).collect(Collectors.toSet());
+        Set<String> actual = lines(outbytes);
         Set<String> expected = Set.of(
                 "META-INF/",
                 "META-INF/MANIFEST.MF",
@@ -221,5 +211,129 @@ public class ConcealedPackage {
                 "META-INF/versions/9/p/internal/Bar.class"
         );
         Assert.assertEquals(actual, expected);
+    }
+
+    // jar tool does two updates, no exported packages, all concealed
+    @Test
+    public void test5() throws IOException {
+        // compile the mr10 directory
+        Path source = testsrc.resolve("src").resolve("mr10");
+        Path destination = Paths.get("mr10");
+        javac(source, destination);
+
+        // create a directory for this tests special files
+        Files.createDirectory(Paths.get("test5"));
+
+        // create an empty module-info.java
+        String hi = "module hi {" + linesep + "}" + linesep;
+        Path modinfo = Paths.get("test5", "module-info.java");
+        Files.write(modinfo, hi.getBytes());
+
+        // and compile it
+        javac(modinfo, Paths.get("test5"));
+
+        int rc = jar("--create --file mr.jar -C classes .");
+        Assert.assertEquals(rc, 0);
+
+        rc = jar("--update --file mr.jar -C test5 module-info.class"
+                + " --release 9 -C mr9 .");
+        Assert.assertEquals(rc, 0);
+
+        jar("tf mr.jar");
+
+        Set<String> actual = lines(outbytes);
+        Set<String> expected = Set.of(
+                "META-INF/",
+                "META-INF/MANIFEST.MF",
+                "p/",
+                "p/Hi.class",
+                "META-INF/versions/9/p/",
+                "META-INF/versions/9/p/Hi.class",
+                "META-INF/versions/9/p/internal/",
+                "META-INF/versions/9/p/internal/Bar.class",
+                "module-info.class"
+        );
+        Assert.assertEquals(actual, expected);
+
+        jar("-d --file mr.jar");
+
+        actual = lines(outbytes);
+        expected = Set.of(
+                "hi",
+                "requires mandated java.base",
+                "contains p",
+                "contains p.internal"
+        );
+        Assert.assertEquals(actual, expected);
+
+        rc = jar("--update --file mr.jar --release 10 -C mr10 .");
+        Assert.assertEquals(rc, 0);
+
+        jar("tf mr.jar");
+
+        actual = lines(outbytes);
+        expected = Set.of(
+                "META-INF/",
+                "META-INF/MANIFEST.MF",
+                "p/",
+                "p/Hi.class",
+                "META-INF/versions/9/p/",
+                "META-INF/versions/9/p/Hi.class",
+                "META-INF/versions/9/p/internal/",
+                "META-INF/versions/9/p/internal/Bar.class",
+                "META-INF/versions/10/p/",
+                "META-INF/versions/10/p/internal/",
+                "META-INF/versions/10/p/internal/bar/",
+                "META-INF/versions/10/p/internal/bar/Gee.class",
+                "module-info.class"
+        );
+        Assert.assertEquals(actual, expected);
+
+        jar("-d --file mr.jar");
+
+        actual = lines(outbytes);
+        expected = Set.of(
+                "hi",
+                "requires mandated java.base",
+                "contains p",
+                "contains p.internal",
+                "contains p.internal.bar"
+        );
+        Assert.assertEquals(actual, expected);
+    }
+
+    private static Set<String> lines(ByteArrayOutputStream baos) {
+        String s = new String(baos.toByteArray());
+        return Arrays.stream(s.split("\\R"))
+                     .map(l -> l.trim())
+                     .filter(l -> l.length() > 0)
+                     .collect(Collectors.toSet());
+    }
+
+    static enum Message {
+        NOT_FOUND_IN_BASE_ENTRY(
+          ", contains a new public class not found in base entries"
+        ),
+        NEW_CONCEALED_PACKAGE_WARNING(
+            " is a public class" +
+            " in a concealed package, placing this jar on the class path will result" +
+            " in incompatible public interfaces"
+        );
+
+        final String msg;
+        Message(String msg) {
+            this.msg = msg;
+        }
+
+        /*
+         * Test if the given output contains this message ignoring the line break.
+         */
+        boolean match(String output, String entry) {
+            System.out.println("Expected: " + entry + msg);
+            System.out.println("Found: " + output);
+            return Arrays.stream(output.split("\\R"))
+                         .collect(Collectors.joining(" "))
+                         .contains(entry + msg);
+        }
     }
 }

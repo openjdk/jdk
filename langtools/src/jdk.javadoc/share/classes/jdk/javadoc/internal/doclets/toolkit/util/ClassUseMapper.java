@@ -206,7 +206,7 @@ public class ClassUseMapper {
             implementingClasses(intfc);
         }
         // Map methods, fields, constructors using a class.
-        Set<TypeElement> classes = docEnv.getIncludedTypeElements();
+        Set<TypeElement> classes = configuration.getIncludedTypeElements();
         for (TypeElement aClass : classes) {
             PackageElement pkg = elementUtils.getPackageOf(aClass);
             mapAnnotations(classToPackageAnnotations, pkg, pkg);

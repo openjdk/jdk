@@ -36,6 +36,8 @@
 #include "utilities/ostream.hpp"
 
 #define UNNAMED_MODULE "Unnamed Module"
+#define JAVAPKG "java/"
+#define JAVAPKG_LEN 5
 #define JAVA_BASE_NAME "java.base"
 
 class ModuleClosure;

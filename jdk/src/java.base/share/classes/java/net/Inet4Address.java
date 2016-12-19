@@ -157,7 +157,6 @@ class Inet4Address extends InetAddress {
      * address i.e first four bits of the address are 1110.
      * @return a {@code boolean} indicating if the InetAddress is
      * an IP multicast address
-     * @since   1.1
      */
     public boolean isMulticastAddress() {
         return ((holder().getAddress() & 0xf0000000) == 0xe0000000);
@@ -167,7 +166,6 @@ class Inet4Address extends InetAddress {
      * Utility routine to check if the InetAddress is a wildcard address.
      * @return a {@code boolean} indicating if the Inetaddress is
      *         a wildcard address.
-     * @since 1.4
      */
     public boolean isAnyLocalAddress() {
         return holder().getAddress() == 0;
@@ -178,7 +176,6 @@ class Inet4Address extends InetAddress {
      *
      * @return a {@code boolean} indicating if the InetAddress is
      * a loopback address; or false otherwise.
-     * @since 1.4
      */
     public boolean isLoopbackAddress() {
         /* 127.x.x.x */
@@ -191,7 +188,6 @@ class Inet4Address extends InetAddress {
      *
      * @return a {@code boolean} indicating if the InetAddress is
      * a link local address; or false if address is not a link local unicast address.
-     * @since 1.4
      */
     public boolean isLinkLocalAddress() {
         // link-local unicast in IPv4 (169.254.0.0/16)
@@ -208,7 +204,6 @@ class Inet4Address extends InetAddress {
      *
      * @return a {@code boolean} indicating if the InetAddress is
      * a site local address; or false if address is not a site local unicast address.
-     * @since 1.4
      */
     public boolean isSiteLocalAddress() {
         // refer to RFC 1918
@@ -229,7 +224,6 @@ class Inet4Address extends InetAddress {
      * @return a {@code boolean} indicating if the address has
      *         is a multicast address of global scope, false if it is not
      *         of global scope or it is not a multicast address
-     * @since 1.4
      */
     public boolean isMCGlobal() {
         // 224.0.1.0 to 238.255.255.255
@@ -245,7 +239,6 @@ class Inet4Address extends InetAddress {
      * @return a {@code boolean} indicating if the address has
      *         is a multicast address of node-local scope, false if it is not
      *         of node-local scope or it is not a multicast address
-     * @since 1.4
      */
     public boolean isMCNodeLocal() {
         // unless ttl == 0
@@ -258,7 +251,6 @@ class Inet4Address extends InetAddress {
      * @return a {@code boolean} indicating if the address has
      *         is a multicast address of link-local scope, false if it is not
      *         of link-local scope or it is not a multicast address
-     * @since 1.4
      */
     public boolean isMCLinkLocal() {
         // 224.0.0/24 prefix and ttl == 1
@@ -274,7 +266,6 @@ class Inet4Address extends InetAddress {
      * @return a {@code boolean} indicating if the address has
      *         is a multicast address of site-local scope, false if it is not
      *         of site-local scope or it is not a multicast address
-     * @since 1.4
      */
     public boolean isMCSiteLocal() {
         // 239.255/16 prefix or ttl < 32
@@ -290,7 +281,6 @@ class Inet4Address extends InetAddress {
      *         is a multicast address of organization-local scope,
      *         false if it is not of organization-local scope
      *         or it is not a multicast address
-     * @since 1.4
      */
     public boolean isMCOrgLocal() {
         // 239.192 - 239.195
@@ -322,7 +312,6 @@ class Inet4Address extends InetAddress {
      * Returns the IP address string in textual presentation form.
      *
      * @return  the raw IP address in a string format.
-     * @since   1.0.2
      */
     public String getHostAddress() {
         return numericToTextFormat(getAddress());
@@ -359,15 +348,14 @@ class Inet4Address extends InetAddress {
     }
 
     // Utilities
-    /*
+
+    /**
      * Converts IPv4 binary address into a string suitable for presentation.
      *
      * @param src a byte array representing an IPv4 numeric address
      * @return a String representing the IPv4 address in
      *         textual representation format
-     * @since 1.4
      */
-
     static String numericToTextFormat(byte[] src)
     {
         return (src[0] & 0xff) + "." + (src[1] & 0xff) + "." + (src[2] & 0xff) + "." + (src[3] & 0xff);

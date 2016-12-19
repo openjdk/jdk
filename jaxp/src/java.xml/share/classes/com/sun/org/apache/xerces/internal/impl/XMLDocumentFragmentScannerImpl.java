@@ -200,7 +200,8 @@ public class XMLDocumentFragmentScannerImpl
                 JdkXmlUtils.CATALOG_DEFER,
                 JdkXmlUtils.CATALOG_FILES,
                 JdkXmlUtils.CATALOG_PREFER,
-                JdkXmlUtils.CATALOG_RESOLVE
+                JdkXmlUtils.CATALOG_RESOLVE,
+                JdkXmlUtils.CDATA_CHUNK_SIZE
     };
 
     /** Property defaults. */
@@ -212,7 +213,8 @@ public class XMLDocumentFragmentScannerImpl
                 null,
                 null,
                 null,
-                null
+                null,
+                JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT
     };
 
 
@@ -269,6 +271,9 @@ public class XMLDocumentFragmentScannerImpl
     /** SubScanner state: inside scanContent method. */
     protected boolean fInScanContent = false;
     protected boolean fLastSectionWasCData = false;
+    protected boolean fCDataStart = false;
+    protected boolean fInCData = false;
+    protected boolean fCDataEnd = false;
     protected boolean fLastSectionWasEntityReference = false;
     protected boolean fLastSectionWasCharacterData = false;
 
@@ -317,6 +322,11 @@ public class XMLDocumentFragmentScannerImpl
     protected String fDeclaredEncoding =  null;
     /** Xerces Feature: Disallow doctype declaration. */
     protected boolean fDisallowDoctype = false;
+
+    /**
+     * CDATA chunk size limit
+     */
+    private int fChunkSize;
 
     /**
      * comma-delimited list of protocols that are allowed for the purpose
@@ -490,12 +500,18 @@ public class XMLDocumentFragmentScannerImpl
                     //therefore we don't need to take care of anything here. So Just break;
                     break;
                 case XMLStreamConstants.CDATA:
-                    fEntityScanner.checkNodeCount(fEntityScanner.fCurrentEntity);
-                    fDocumentHandler.startCDATA(null);
-                    //xxx: check if CDATA values comes from getCharacterData() function
+                   fEntityScanner.checkNodeCount(fEntityScanner.fCurrentEntity);
+                    if (fCDataStart) {
+                        fDocumentHandler.startCDATA(null);
+                        fCDataStart = false;
+                        fInCData = true;
+                    }
+
                     fDocumentHandler.characters(getCharacterData(),null);
-                    fDocumentHandler.endCDATA(null);
-                    //System.out.println(" in CDATA of the XMLNSDocumentScannerImpl");
+                    if (fCDataEnd) {
+                        fDocumentHandler.endCDATA(null);
+                        fCDataEnd = false;
+                    }
                     break;
                 case XMLStreamConstants.NOTATION_DECLARATION :
                     break;
@@ -603,6 +619,8 @@ public class XMLDocumentFragmentScannerImpl
         fAccessExternalDTD = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
 
         fStrictURI = componentManager.getFeature(STANDARD_URI_CONFORMANT, false);
+        fChunkSize = JdkXmlUtils.getValue(componentManager.getProperty(JdkXmlUtils.CDATA_CHUNK_SIZE),
+                JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT);
 
         resetCommon();
         //fEntityManager.test();
@@ -647,6 +665,8 @@ public class XMLDocumentFragmentScannerImpl
         fAccessExternalDTD = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
 
         fSecurityManager = (XMLSecurityManager)propertyManager.getProperty(Constants.SECURITY_MANAGER);
+        fChunkSize = JdkXmlUtils.getValue(propertyManager.getProperty(JdkXmlUtils.CDATA_CHUNK_SIZE),
+                JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT);
         resetCommon();
     } // reset(XMLComponentManager)
 
@@ -1665,34 +1685,11 @@ public class XMLDocumentFragmentScannerImpl
 
         while (true) {
             //scanData will fill the contentBuffer
-            if (!fEntityScanner.scanData("]]>", contentBuffer)) {
+            if (!fEntityScanner.scanData("]]>", contentBuffer, fChunkSize)) {
+                fInCData = false;
+                fCDataEnd = true;
+                fMarkupDepth--;
                 break ;
-                /** We dont need all this code if we pass ']]>' as delimeter..
-                 * int brackets = 2;
-                 * while (fEntityScanner.skipChar(']')) {
-                 * brackets++;
-                 * }
-                 *
-                 * //When we find more than 2 square brackets
-                 * if (fDocumentHandler != null && brackets > 2) {
-                 * //we dont need to clear the buffer..
-                 * //contentBuffer.clear();
-                 * for (int i = 2; i < brackets; i++) {
-                 * contentBuffer.append(']');
-                 * }
-                 * fDocumentHandler.characters(contentBuffer, null);
-                 * }
-                 *
-                 * if (fEntityScanner.skipChar('>')) {
-                 * break;
-                 * }
-                 * if (fDocumentHandler != null) {
-                 * //we dont need to clear the buffer now..
-                 * //contentBuffer.clear();
-                 * contentBuffer.append("]]");
-                 * fDocumentHandler.characters(contentBuffer, null);
-                 * }
-                 **/
             } else {
                 int c = fEntityScanner.peekChar();
                 if (c != -1 && isInvalidLiteral(c)) {
@@ -1705,22 +1702,15 @@ public class XMLDocumentFragmentScannerImpl
                                 new Object[]{Integer.toString(c,16)});
                                 fEntityScanner.scanChar(null);
                     }
+                } else {
+                    //CData partially returned due to the size limit
+                    break;
                 }
                 //by this time we have also read surrogate contents if any...
                 if (fDocumentHandler != null) {
                     //fDocumentHandler.characters(contentBuffer, null);
                 }
             }
-        }
-        fMarkupDepth--;
-
-        if (fDocumentHandler != null && contentBuffer.length > 0) {
-            //fDocumentHandler.characters(contentBuffer, null);
-        }
-
-        // call handler
-        if (fDocumentHandler != null) {
-            //fDocumentHandler.endCDATA(null);
         }
 
         return true;
@@ -2635,6 +2625,7 @@ public class XMLDocumentFragmentScannerImpl
                             }
                             setScannerState(SCANNER_STATE_COMMENT);
                         } else if (fEntityScanner.skipString(cdata)) {
+                            fCDataStart = true;
                             setScannerState(SCANNER_STATE_CDATA );
                         } else if (!scanForDoctypeHook()) {
                             reportFatalError("MarkupNotRecognizedInContent",
@@ -3015,9 +3006,11 @@ public class XMLDocumentFragmentScannerImpl
                         //xxx: What if CDATA is the first event
                         //<foo><![CDATA[hello<><>]]>append</foo>
 
-                        //we should not clear the buffer only when the last state was either SCANNER_STATE_REFERENCE or
+                        //we should not clear the buffer only when the last state was
+                        //either SCANNER_STATE_REFERENCE or
                         //SCANNER_STATE_CHARACTER_DATA or SCANNER_STATE_REFERENCE
-                        if(fIsCoalesce && ( fLastSectionWasEntityReference || fLastSectionWasCData || fLastSectionWasCharacterData)){
+                        if(fIsCoalesce && ( fLastSectionWasEntityReference ||
+                                fLastSectionWasCData || fLastSectionWasCharacterData)){
                             fLastSectionWasCData = true ;
                             fLastSectionWasEntityReference = false;
                             fLastSectionWasCharacterData = false;
@@ -3026,7 +3019,7 @@ public class XMLDocumentFragmentScannerImpl
                             fContentBuffer.clear();
                         }
                         fUsebuffer = true;
-                        //CDATA section is completely read in all the case.
+                        //CDATA section is read up to the chunk size limit
                         scanCDATASection(fContentBuffer , true);
                         setScannerState(SCANNER_STATE_CONTENT);
                         //1. if fIsCoalesce is set to true we set the variable fLastSectionWasCData to true
@@ -3036,13 +3029,16 @@ public class XMLDocumentFragmentScannerImpl
                         //2. Check if application has set for reporting CDATA event
                         //3. if the application has neither set the fIsCoalesce to true nor fReportCdataEvent
                         //return the cdata event as characters.
-                        if(fIsCoalesce){
+                        if (fIsCoalesce) {
                             fLastSectionWasCData = true ;
                             //there might be more data to coalesce.
                             continue;
-                        }else if(fReportCdataEvent){
+                        } else if(fReportCdataEvent) {
+                            if (!fCDataEnd) {
+                                setScannerState(SCANNER_STATE_CDATA);
+                            }
                             return XMLEvent.CDATA;
-                        } else{
+                        } else {
                             return XMLEvent.CHARACTERS;
                         }
                     }
@@ -3051,9 +3047,11 @@ public class XMLDocumentFragmentScannerImpl
                         fMarkupDepth++;
                         foundBuiltInRefs = false;
 
-                        //we should not clear the buffer only when the last state was either CDATA or
+                        //we should not clear the buffer only when the last state was
+                        //either CDATA or
                         //SCANNER_STATE_CHARACTER_DATA or SCANNER_STATE_REFERENCE
-                        if(fIsCoalesce && ( fLastSectionWasEntityReference || fLastSectionWasCData || fLastSectionWasCharacterData)){
+                        if(fIsCoalesce && ( fLastSectionWasEntityReference ||
+                                fLastSectionWasCData || fLastSectionWasCharacterData)){
                             //fLastSectionWasEntityReference or fLastSectionWasCData are only
                             //used when fIsCoalesce is set to true.
                             fLastSectionWasEntityReference = true ;

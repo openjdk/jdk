@@ -194,7 +194,10 @@ public class Main {
                 @Override
                 public void put(String name, String value) { }
             };
-            Option.HELP.process(h, "-help");
+            try {
+                Option.HELP.process(h, "-help");
+            } catch (Option.InvalidValueException ignore) {
+            }
             return Result.CMDERR;
         }
 

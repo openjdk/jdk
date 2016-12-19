@@ -55,6 +55,7 @@ compiler/types/correctness/OffTest.java 8066173 generic-all
 
 gc/g1/humongousObjects/objectGraphTest/TestObjectGraphAfterGC.java 8156755 generic-all
 gc/survivorAlignment/TestPromotionToSurvivor.java 8129886 generic-all
+gc/stress/TestStressG1Humongous.java 8171045 generic-all
 
 #############################################################################
 

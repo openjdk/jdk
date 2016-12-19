@@ -826,8 +826,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavLinkTree() {
-        List<PackageElement> packages = new ArrayList<>(configuration.getSpecifiedPackages());
-        DocPath docPath = packages.size() == 1 && configuration.getSpecifiedClasses().isEmpty()
+        List<PackageElement> packages = new ArrayList<>(configuration.getSpecifiedPackageElements());
+        DocPath docPath = packages.size() == 1 && configuration.getSpecifiedTypeElements().isEmpty()
                 ? pathString(packages.get(0), DocPaths.PACKAGE_TREE)
                 : pathToRoot.resolve(DocPaths.OVERVIEW_TREE);
         return HtmlTree.LI(getHyperLink(docPath, contents.treeLabel, "", ""));
@@ -1043,48 +1043,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public Content getPackageLabel(CharSequence packageName) {
         return new StringContent(packageName);
-    }
-
-    /**
-     * Add package deprecation information to the documentation tree
-     *
-     * @param deprPkgs list of deprecated packages
-     * @param headingKey the caption for the deprecated package table
-     * @param tableSummary the summary for the deprecated package table
-     * @param tableHeader table headers for the deprecated package table
-     * @param contentTree the content tree to which the deprecated package table will be added
-     */
-    protected void addPackageDeprecatedAPI(SortedSet<Element> deprPkgs, String headingKey,
-            String tableSummary, List<String> tableHeader, Content contentTree) {
-        if (deprPkgs.size() > 0) {
-            Content caption = getTableCaption(configuration.getContent(headingKey));
-            Content table = (configuration.isOutputHtml5())
-                    ? HtmlTree.TABLE(HtmlStyle.deprecatedSummary, caption)
-                    : HtmlTree.TABLE(HtmlStyle.deprecatedSummary, tableSummary, caption);
-            table.addContent(getSummaryTableHeader(tableHeader, "col"));
-            Content tbody = new HtmlTree(HtmlTag.TBODY);
-            boolean altColor = true;
-            for (Element e : deprPkgs) {
-                PackageElement pkg = (PackageElement) e;
-                HtmlTree thRow = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst,
-                        getPackageLink(pkg, getPackageName(pkg)));
-                HtmlTree tr = HtmlTree.TR(thRow);
-                HtmlTree tdDesc = new HtmlTree(HtmlTag.TD);
-                tdDesc.addStyle(HtmlStyle.colLast);
-                List<? extends DocTree> tags = utils.getDeprecatedTrees(pkg);
-                if (!tags.isEmpty()) {
-                    addInlineDeprecatedComment(pkg, tags.get(0), tdDesc);
-                }
-                tr.addContent(tdDesc);
-                tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
-                altColor = !altColor;
-                tbody.addContent(tr);
-            }
-            table.addContent(tbody);
-            Content li = HtmlTree.LI(HtmlStyle.blockList, table);
-            Content ul = HtmlTree.UL(HtmlStyle.blockList, li);
-            contentTree.addContent(ul);
-        }
     }
 
     /**

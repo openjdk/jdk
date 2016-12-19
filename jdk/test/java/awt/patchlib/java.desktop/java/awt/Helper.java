@@ -26,6 +26,6 @@ import java.lang.reflect.Module;
 public class Helper {
     private Helper() { }
     public static void addExports(String pn, Module target) {
-        java.awt.Component.class.getModule().addExports(pn, target);
+        java.awt.Component.class.getModule().addOpens(pn, target);
     }
 }

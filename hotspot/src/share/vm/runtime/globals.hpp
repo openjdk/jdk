@@ -2037,6 +2037,10 @@ public:
           "MaxRAM / MaxRAMFraction")                                        \
           range(0, max_uintx)                                               \
                                                                             \
+  experimental(bool, UseCGroupMemoryLimitForHeap, false,                    \
+          "Use CGroup memory limit as physical memory limit for heap "      \
+          "sizing")                                                         \
+                                                                            \
   product(uintx, MaxRAMFraction, 4,                                         \
           "Maximum fraction (1/n) of real memory used for maximum heap "    \
           "size")                                                           \
@@ -3387,6 +3391,22 @@ public:
           "Non-segmented code cache: X[%] of the total code cache")         \
           range(0, 100)                                                     \
                                                                             \
+  /* AOT parameters */                                                      \
+  product(bool, UseAOT, AOT_ONLY(true) NOT_AOT(false),                      \
+          "Use AOT compiled files")                                         \
+                                                                            \
+  product(ccstrlist, AOTLibrary, NULL,                                      \
+          "AOT library")                                                    \
+                                                                            \
+  product(bool, PrintAOT, false,                                            \
+          "Print used AOT klasses and methods")                             \
+                                                                            \
+  notproduct(bool, PrintAOTStatistics, false,                               \
+          "Print AOT statistics")                                           \
+                                                                            \
+  diagnostic(bool, UseAOTStrictLoading, false,                              \
+          "Exit the VM if any of the AOT libraries has invalid config")     \
+                                                                            \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
           "Minimal number of lookupswitch entries for rewriting to binary " \
@@ -3657,6 +3677,25 @@ public:
                                                                             \
   product(intx, Tier3BackEdgeThreshold,  60000,                             \
           "Back edge threshold at which tier 3 OSR compilation is invoked") \
+          range(0, max_jint)                                                \
+                                                                            \
+  product(intx, Tier3AOTInvocationThreshold, 10000,                         \
+          "Compile if number of method invocations crosses this "           \
+          "threshold if coming from AOT")                                   \
+          range(0, max_jint)                                                \
+                                                                            \
+  product(intx, Tier3AOTMinInvocationThreshold, 1000,                       \
+          "Minimum invocation to compile at tier 3 if coming from AOT")     \
+          range(0, max_jint)                                                \
+                                                                            \
+  product(intx, Tier3AOTCompileThreshold, 15000,                            \
+          "Threshold at which tier 3 compilation is invoked (invocation "   \
+          "minimum must be satisfied) if coming from AOT")                  \
+          range(0, max_jint)                                                \
+                                                                            \
+  product(intx, Tier3AOTBackEdgeThreshold,  120000,                         \
+          "Back edge threshold at which tier 3 OSR compilation is invoked " \
+          "if coming from AOT")                                             \
           range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier4InvocationThreshold, 5000,                             \

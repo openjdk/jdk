@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,8 +139,9 @@ public class XmlDataContentHandler implements DataContentHandler {
     }
 
     private boolean isXml(ContentType ct) {
-        return ct.getSubType().equals("xml") &&
-                    (ct.getPrimaryType().equals("text") || ct.getPrimaryType().equals("application"));
+        final String primaryType = ct.getPrimaryType();
+        return ct.getSubType().equalsIgnoreCase("xml") &&
+                    (primaryType.equalsIgnoreCase("text") || primaryType.equalsIgnoreCase("application"));
     }
 
 }

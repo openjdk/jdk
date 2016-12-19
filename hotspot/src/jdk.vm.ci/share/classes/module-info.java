@@ -30,9 +30,40 @@ module jdk.vm.ci {
     uses jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory;
 
     provides jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory with
-        jdk.vm.ci.hotspot.aarch64.AArch64HotSpotJVMCIBackendFactory;
-    provides jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory with
-        jdk.vm.ci.hotspot.amd64.AMD64HotSpotJVMCIBackendFactory;
-    provides jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory with
+        jdk.vm.ci.hotspot.aarch64.AArch64HotSpotJVMCIBackendFactory,
+        jdk.vm.ci.hotspot.amd64.AMD64HotSpotJVMCIBackendFactory,
         jdk.vm.ci.hotspot.sparc.SPARCHotSpotJVMCIBackendFactory;
+
+    exports jdk.vm.ci.aarch64 to
+        jdk.vm.compiler;
+    exports jdk.vm.ci.amd64 to
+        jdk.aot,
+        jdk.vm.compiler;
+    exports jdk.vm.ci.code to
+        jdk.aot,
+        jdk.vm.compiler;
+    exports jdk.vm.ci.code.site to
+        jdk.aot,
+        jdk.vm.compiler;
+    exports jdk.vm.ci.code.stack to
+        jdk.vm.compiler;
+    exports jdk.vm.ci.common to
+        jdk.vm.compiler;
+    exports jdk.vm.ci.hotspot to
+        jdk.aot,
+        jdk.vm.compiler;
+    exports jdk.vm.ci.hotspot.aarch64 to
+        jdk.vm.compiler;
+    exports jdk.vm.ci.hotspot.amd64 to
+        jdk.vm.compiler;
+    exports jdk.vm.ci.hotspot.sparc to
+        jdk.vm.compiler;
+    exports jdk.vm.ci.meta to
+        jdk.aot,
+        jdk.vm.compiler;
+    exports jdk.vm.ci.runtime to
+        jdk.aot,
+        jdk.vm.compiler;
+    exports jdk.vm.ci.sparc to
+        jdk.vm.compiler;
 }

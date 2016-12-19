@@ -23,13 +23,13 @@
 
 /*
  * @test
+ * @bug 8142968 8166568
+ * @summary Basic test for jmod
  * @library /lib/testlibrary
  * @modules jdk.compiler
  *          jdk.jlink
  * @build jdk.testlibrary.FileUtils CompilerUtils
  * @run testng JmodTest
- * @bug 8142968
- * @summary Basic test for jmod
  */
 
 import java.io.*;
@@ -76,6 +76,9 @@ public class JmodTest {
         for (String name : new String[] { "foo"/*, "bar", "baz"*/ } ) {
             Path dir = EXPLODED_DIR.resolve(name);
             assertTrue(compileModule(name, dir.resolve("classes")));
+            copyResource(SRC_DIR.resolve("foo"),
+                         dir.resolve("classes"),
+                         "jdk/test/foo/resources/foo.properties");
             createCmds(dir.resolve("bin"));
             createLibs(dir.resolve("lib"));
             createConfigs(dir.resolve("conf"));
@@ -127,6 +130,71 @@ public class JmodTest {
                 assertContains(r.output, CLASSES_PREFIX + "module-info.class");
                 assertContains(r.output, CLASSES_PREFIX + "jdk/test/foo/Foo.class");
                 assertContains(r.output, CLASSES_PREFIX + "jdk/test/foo/internal/Message.class");
+                assertContains(r.output, CLASSES_PREFIX + "jdk/test/foo/resources/foo.properties");
+            });
+    }
+
+    @Test
+    public void testExtractCWD() throws IOException {
+        Path cp = EXPLODED_DIR.resolve("foo").resolve("classes");
+        jmod("create",
+             "--class-path", cp.toString(),
+             MODS_DIR.resolve("fooExtractCWD.jmod").toString())
+            .assertSuccess();
+
+        jmod("extract",
+             MODS_DIR.resolve("fooExtractCWD.jmod").toString())
+            .assertSuccess()
+            .resultChecker(r -> {
+                // module-info should exist, but jmod will have added its Packages attr.
+                assertTrue(Files.exists(Paths.get("classes/module-info.class")));
+                assertSameContent(cp.resolve("jdk/test/foo/Foo.class"),
+                                  Paths.get("classes/jdk/test/foo/Foo.class"));
+                assertSameContent(cp.resolve("jdk/test/foo/internal/Message.class"),
+                                  Paths.get("classes/jdk/test/foo/internal/Message.class"));
+                assertSameContent(cp.resolve("jdk/test/foo/resources/foo.properties"),
+                                  Paths.get("classes/jdk/test/foo/resources/foo.properties"));
+            });
+    }
+
+    @Test
+    public void testExtractDir() throws IOException {
+        if (Files.exists(Paths.get("extractTestDir")))
+            FileUtils.deleteFileTreeWithRetry(Paths.get("extractTestDir"));
+        Path cp = EXPLODED_DIR.resolve("foo").resolve("classes");
+        Path bp = EXPLODED_DIR.resolve("foo").resolve("bin");
+        Path lp = EXPLODED_DIR.resolve("foo").resolve("lib");
+        Path cf = EXPLODED_DIR.resolve("foo").resolve("conf");
+
+        jmod("create",
+             "--conf", cf.toString(),
+             "--cmds", bp.toString(),
+             "--libs", lp.toString(),
+             "--class-path", cp.toString(),
+             MODS_DIR.resolve("fooExtractDir.jmod").toString())
+            .assertSuccess();
+
+        jmod("extract",
+             "--dir", "extractTestDir",
+             MODS_DIR.resolve("fooExtractDir.jmod").toString())
+            .assertSuccess();
+
+        jmod("extract",
+             "--dir", "extractTestDir",
+             MODS_DIR.resolve("fooExtractDir.jmod").toString())
+            .assertSuccess()
+            .resultChecker(r -> {
+                // check a sample of the extracted files
+                Path p = Paths.get("extractTestDir");
+                assertTrue(Files.exists(p.resolve("classes/module-info.class")));
+                assertSameContent(cp.resolve("jdk/test/foo/Foo.class"),
+                                  p.resolve("classes/jdk/test/foo/Foo.class"));
+                assertSameContent(bp.resolve("first"),
+                                  p.resolve(CMDS_PREFIX).resolve("first"));
+                assertSameContent(lp.resolve("first.so"),
+                                  p.resolve(LIBS_PREFIX).resolve("second.so"));
+                assertSameContent(cf.resolve("second.cfg"),
+                                  p.resolve(CONFIGS_PREFIX).resolve("second.cfg"));
             });
     }
 
@@ -279,6 +347,7 @@ public class JmodTest {
                  Set<String> expectedFilenames = new HashSet<>();
                  expectedFilenames.add(CLASSES_PREFIX + "module-info.class");
                  expectedFilenames.add(CLASSES_PREFIX + "jdk/test/foo/Foo.class");
+                 expectedFilenames.add(CLASSES_PREFIX + "jdk/test/foo/resources/foo.properties");
                  expectedFilenames.add(LIBS_PREFIX + "second.so");
                  expectedFilenames.add(LIBS_PREFIX + "third/third.so");
                  assertJmodContent(jmod, expectedFilenames);
@@ -303,15 +372,15 @@ public class JmodTest {
              .assertSuccess()
              .resultChecker(r -> {
                  // Expect similar output: "foo,  requires mandated java.base
-                 // exports jdk.test.foo,  conceals jdk.test.foo.internal"
+                 // exports jdk.test.foo,  contains jdk.test.foo.internal"
                  Pattern p = Pattern.compile("\\s+foo\\s+requires\\s+mandated\\s+java.base");
                  assertTrue(p.matcher(r.output).find(),
                            "Expecting to find \"foo, requires java.base\"" +
                                 "in output, but did not: [" + r.output + "]");
                  p = Pattern.compile(
-                        "exports\\s+jdk.test.foo\\s+conceals\\s+jdk.test.foo.internal");
+                        "exports\\s+jdk.test.foo\\s+contains\\s+jdk.test.foo.internal");
                  assertTrue(p.matcher(r.output).find(),
-                           "Expecting to find \"exports ..., conceals ...\"" +
+                           "Expecting to find \"exports ..., contains ...\"" +
                                 "in output, but did not: [" + r.output + "]");
              });
     }
@@ -367,6 +436,26 @@ public class JmodTest {
                  assertContains(r.output, "Warning: ignoring entry")
              );
     }
+
+    @Test
+    public void testPackagesAttribute() throws IOException {
+        Path jmod = MODS_DIR.resolve("foo.jmod");
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+        String cp = EXPLODED_DIR.resolve("foo").resolve("classes").toString();
+
+        Set<String> expectedPackages = Set.of("jdk.test.foo",
+                                              "jdk.test.foo.internal",
+                                              "jdk.test.foo.resources");
+
+        jmod("create",
+             "--class-path", cp,
+             jmod.toString())
+             .assertSuccess()
+             .resultChecker(r -> {
+                 Set<String> pkgs = getModuleDescriptor(jmod).packages();
+                 assertEquals(pkgs, expectedPackages);
+             });
+        }
 
     @Test
     public void testVersion() {
@@ -507,6 +596,16 @@ public class JmodTest {
         }
     }
 
+    static void assertSameContent(Path p1, Path p2) {
+        try {
+            byte[] ba1 = Files.readAllBytes(p1);
+            byte[] ba2 = Files.readAllBytes(p2);
+            assertEquals(ba1, ba2);
+        } catch (IOException x) {
+            throw new UncheckedIOException(x);
+        }
+    }
+
     static JmodResult jmod(String... args) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream ps = new PrintStream(baos);
@@ -555,6 +654,14 @@ public class JmodTest {
                 os.write("blahblahblah".getBytes(UTF_8));
             }
         }
+    }
+
+    static void copyResource(Path srcDir, Path dir, String resource) throws IOException {
+        Path dest = dir.resolve(resource);
+        Files.deleteIfExists(dest);
+
+        Files.createDirectories(dest.getParent());
+        Files.copy(srcDir.resolve(resource), dest);
     }
 
     // Standalone entry point.

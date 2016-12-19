@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import java.lang.module.ModuleReference;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Exports;
+import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.reflect.Layer;
 import java.lang.reflect.Method;
@@ -62,24 +63,29 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.Normalizer;
 import java.text.MessageFormat;
-import java.util.ResourceBundle;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Locale.Category;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import jdk.internal.misc.VM;
+import jdk.internal.module.Modules;
 
 
 public final class LauncherHelper {
@@ -95,6 +101,8 @@ public final class LauncherHelper {
     private static final String JAVAFX_FXHELPER_CLASS_NAME_SUFFIX =
             "sun.launcher.LauncherHelper$FXHelper";
     private static final String MAIN_CLASS = "Main-Class";
+    private static final String ADD_EXPORTS = "Add-Exports";
+    private static final String ADD_OPENS = "Add-Opens";
 
     private static StringBuilder outBuf = new StringBuilder();
 
@@ -139,8 +147,7 @@ public final class LauncherHelper {
      *    line entirely.
      */
     static void showSettings(boolean printToStderr, String optionFlag,
-            long initialHeapSize, long maxHeapSize, long stackSize,
-            boolean isServer) {
+            long initialHeapSize, long maxHeapSize, long stackSize) {
 
         initOutput(printToStderr);
         String opts[] = optionFlag.split(":");
@@ -149,8 +156,7 @@ public final class LauncherHelper {
                 : "all";
         switch (optStr) {
             case "vm":
-                printVmSettings(initialHeapSize, maxHeapSize,
-                                stackSize, isServer);
+                printVmSettings(initialHeapSize, maxHeapSize, stackSize);
                 break;
             case "properties":
                 printProperties();
@@ -159,8 +165,7 @@ public final class LauncherHelper {
                 printLocale();
                 break;
             default:
-                printVmSettings(initialHeapSize, maxHeapSize, stackSize,
-                                isServer);
+                printVmSettings(initialHeapSize, maxHeapSize, stackSize);
                 printProperties();
                 printLocale();
                 break;
@@ -172,7 +177,7 @@ public final class LauncherHelper {
      */
     private static void printVmSettings(
             long initialHeapSize, long maxHeapSize,
-            long stackSize, boolean isServer) {
+            long stackSize) {
 
         ostream.println(VM_SETTINGS);
         if (stackSize != 0L) {
@@ -190,8 +195,6 @@ public final class LauncherHelper {
             ostream.println(INDENT + "Max. Heap Size (Estimated): "
                     + SizePrefix.scaleValue(Runtime.getRuntime().maxMemory()));
         }
-        ostream.println(INDENT + "Ergonomics Machine Class: "
-                + ((isServer) ? "server" : "client"));
         ostream.println(INDENT + "Using VM: "
                 + System.getProperty("java.vm.name"));
         ostream.println();
@@ -379,18 +382,6 @@ public final class LauncherHelper {
     }
 
     /**
-     * Appends the vm Ergo message to the header, already created.
-     * initHelpSystem must be called before using this method.
-     */
-    static void appendVmErgoMessage(boolean isServerClass, String vm) {
-        outBuf = outBuf.append(getLocalizedMessage("java.launcher.ergo.message1",
-                vm));
-        outBuf = (isServerClass) ? outBuf.append(",\n")
-                .append(getLocalizedMessage("java.launcher.ergo.message2"))
-                .append("\n\n") : outBuf.append(".\n\n");
-    }
-
-    /**
      * Appends the last invariant part to the previously created messages,
      * and finishes up the printing to the desired output stream.
      * initHelpSystem must be called before using this method.
@@ -430,9 +421,21 @@ public final class LauncherHelper {
             if (mainAttrs == null) {
                 abort(null, "java.launcher.jar.error3", jarname);
             }
+
+            // Main-Class
             mainValue = mainAttrs.getValue(MAIN_CLASS);
             if (mainValue == null) {
                 abort(null, "java.launcher.jar.error3", jarname);
+            }
+
+            // Add-Exports and Add-Opens to break encapsulation
+            String exports = mainAttrs.getValue(ADD_EXPORTS);
+            if (exports != null) {
+                addExportsOrOpens(exports, false);
+            }
+            String opens = mainAttrs.getValue(ADD_OPENS);
+            if (opens != null) {
+                addExportsOrOpens(opens, true);
             }
 
             /*
@@ -451,6 +454,29 @@ public final class LauncherHelper {
             abort(ioe, "java.launcher.jar.error1", jarname);
         }
         return null;
+    }
+
+    /**
+     * Process the Add-Exports or Add-Opens value. The value is
+     * {@code <module>/<package> ( <module>/<package>)*}.
+     */
+    static void addExportsOrOpens(String value, boolean open) {
+        for (String moduleAndPackage : value.split(" ")) {
+            String[] s = moduleAndPackage.trim().split("/");
+            if (s.length == 2) {
+                String mn = s[0];
+                String pn = s[1];
+                Layer.boot().findModule(mn).ifPresent(m -> {
+                    if (m.getDescriptor().packages().contains(pn)) {
+                        if (open) {
+                            Modules.addOpensToAllUnnamed(m, pn);
+                        } else {
+                            Modules.addExportsToAllUnnamed(m, pn);
+                        }
+                    }
+                });
+            }
+        }
     }
 
     // From src/share/bin/java.c:
@@ -479,6 +505,8 @@ public final class LauncherHelper {
      * This method:
      * 1. Loads the main class from the module or class path
      * 2. Checks the public static void main method.
+     * 3. If the main class extends FX Application then call on FXHelper to
+     * perform the launch.
      *
      * @param printToStderr if set, all output will be routed to stderr
      * @param mode LaunchMode as determined by the arguments passed on the
@@ -496,11 +524,23 @@ public final class LauncherHelper {
         Class<?> mainClass = (mode == LM_MODULE) ? loadModuleMainClass(what)
                                                  : loadMainClass(mode, what);
 
-        validateMainClass(mainClass);
+        // record the real main class for UI purposes
+        // neither method above can return null, they will abort()
+        appClass = mainClass;
 
-        // record main class if not already set
-        if (appClass == null)
-            appClass = mainClass;
+        /*
+         * Check if FXHelper can launch it using the FX launcher. In an FX app,
+         * the main class may or may not have a main method, so do this before
+         * validating the main class.
+         */
+        if (JAVAFX_FXHELPER_CLASS_NAME_SUFFIX.equals(mainClass.getName()) ||
+            doesExtendFXApplication(mainClass)) {
+            // Will abort() if there are problems with FX runtime
+            FXHelper.setFXLaunchParameters(what, mode);
+            mainClass = FXHelper.class;
+        }
+
+        validateMainClass(mainClass);
 
         return mainClass;
     }
@@ -547,7 +587,6 @@ public final class LauncherHelper {
 
             String cn = Normalizer.normalize(mainClass, Normalizer.Form.NFC);
             c = Class.forName(m, cn);
-
         }
         if (c == null) {
             abort(null, "java.launcher.module.error2", mainClass, mainModule);
@@ -559,8 +598,6 @@ public final class LauncherHelper {
 
     /**
      * Loads the main class from the class path (LM_CLASS or LM_JAR).
-     * If the main class extends FX Application then call on FXHelper to
-     * determine the main class to launch.
      */
     private static Class<?> loadMainClass(int mode, String what) {
         // get the class name
@@ -587,7 +624,7 @@ public final class LauncherHelper {
             if (System.getProperty("os.name", "").contains("OS X")
                     && Normalizer.isNormalized(cn, Normalizer.Form.NFD)) {
                 try {
-                    // On Mac OS X since all names with diacretic symbols are
+                    // On Mac OS X since all names with diacritical marks are
                     // given as decomposed it is possible that main class name
                     // comes incorrectly from the command line and we have
                     // to re-compose it
@@ -599,21 +636,6 @@ public final class LauncherHelper {
             } else {
                 abort(cnfe, "java.launcher.cls.error1", cn);
             }
-        }
-
-        // record the main class
-        appClass = mainClass;
-
-        /*
-         * Check if FXHelper can launch it using the FX launcher. In an FX app,
-         * the main class may or may not have a main method, so do this before
-         * validating the main class.
-         */
-        if (JAVAFX_FXHELPER_CLASS_NAME_SUFFIX.equals(mainClass.getName()) ||
-            doesExtendFXApplication(mainClass)) {
-            // Will abort() if there are problems with FX runtime
-            FXHelper.setFXLaunchParameters(what, mode);
-            return FXHelper.class;
         }
         return mainClass;
     }
@@ -790,9 +812,15 @@ public final class LauncherHelper {
          * java -cp somedir FXClass     N/A               LM_CLASS     "LM_CLASS"
          * java -jar fxapp.jar          Present           LM_JAR       "LM_JAR"
          * java -jar fxapp.jar          Not Present       LM_JAR       "LM_JAR"
+         * java -m module/class [1]     N/A               LM_MODULE    "LM_MODULE"
+         * java -m module               N/A               LM_MODULE    "LM_MODULE"
+         *
+         * [1] - JavaFX-Application-Class is ignored when modular args are used, even
+         * if present in a modular jar
          */
         private static final String JAVAFX_LAUNCH_MODE_CLASS = "LM_CLASS";
         private static final String JAVAFX_LAUNCH_MODE_JAR = "LM_JAR";
+        private static final String JAVAFX_LAUNCH_MODE_MODULE = "LM_MODULE";
 
         /*
          * FX application launcher and launch method, so we can launch
@@ -851,6 +879,9 @@ public final class LauncherHelper {
                     break;
                 case LM_JAR:
                     fxLaunchMode = JAVAFX_LAUNCH_MODE_JAR;
+                    break;
+                case LM_MODULE:
+                    fxLaunchMode = JAVAFX_LAUNCH_MODE_MODULE;
                     break;
                 default:
                     // should not have gotten this far...
@@ -916,12 +947,26 @@ public final class LauncherHelper {
             for (String name: names) {
                 ModuleReference mref = finder.find(name).orElse(null);
                 if (mref == null) {
-                    // not found
+                    System.err.format("%s not observable!%n", name);
                     continue;
                 }
 
                 ModuleDescriptor md = mref.descriptor();
-                ostream.println(midAndLocation(md, mref.location()));
+                if (md.isOpen())
+                    ostream.print("open ");
+                if (md.isAutomatic())
+                    ostream.print("automatic ");
+                ostream.println("module " + midAndLocation(md, mref.location()));
+
+                // unqualified exports (sorted by package)
+                Set<Exports> exports = new TreeSet<>(Comparator.comparing(Exports::source));
+                md.exports().stream().filter(e -> !e.isQualified()).forEach(exports::add);
+                for (Exports e : exports) {
+                    String modsAndSource = Stream.concat(toStringStream(e.modifiers()),
+                            Stream.of(e.source()))
+                            .collect(Collectors.joining(" "));
+                    ostream.format("  exports %s%n", modsAndSource);
+                }
 
                 for (Requires d : md.requires()) {
                     ostream.format("  requires %s%n", d);
@@ -930,29 +975,49 @@ public final class LauncherHelper {
                     ostream.format("  uses %s%n", s);
                 }
 
-                // sorted exports
-                Set<Exports> exports = new TreeSet<>(Comparator.comparing(Exports::source));
-                exports.addAll(md.exports());
-                for (Exports e : exports) {
-                    ostream.format("  exports %s", e.source());
+                for (Provides ps : md.provides()) {
+                    ostream.format("  provides %s with %s%n", ps.service(),
+                            ps.providers().stream().collect(Collectors.joining(", ")));
+                }
+
+                // qualified exports
+                for (Exports e : md.exports()) {
                     if (e.isQualified()) {
+                        String modsAndSource = Stream.concat(toStringStream(e.modifiers()),
+                                Stream.of(e.source()))
+                                .collect(Collectors.joining(" "));
+                        ostream.format("  exports %s", modsAndSource);
                         formatCommaList(ostream, " to", e.targets());
-                    } else {
-                        ostream.println();
                     }
                 }
 
-                // concealed packages
-                new TreeSet<>(md.conceals())
-                    .forEach(p -> ostream.format("  conceals %s%n", p));
-
-                Map<String, Provides> provides = md.provides();
-                for (Provides ps : provides.values()) {
-                    for (String impl : ps.providers())
-                        ostream.format("  provides %s with %s%n", ps.service(), impl);
+                // open packages
+                for (Opens obj: md.opens()) {
+                    String modsAndSource = Stream.concat(toStringStream(obj.modifiers()),
+                            Stream.of(obj.source()))
+                            .collect(Collectors.joining(" "));
+                    ostream.format("  opens %s", modsAndSource);
+                    if (obj.isQualified())
+                        formatCommaList(ostream, " to", obj.targets());
+                    else
+                        ostream.println();
                 }
+
+                // non-exported/non-open packages
+                Set<String> concealed = new TreeSet<>(md.packages());
+                md.exports().stream().map(Exports::source).forEach(concealed::remove);
+                md.opens().stream().map(Opens::source).forEach(concealed::remove);
+                concealed.forEach(p -> ostream.format("  contains %s%n", p));
             }
         }
+    }
+
+    static <T> String toString(Set<T> s) {
+        return toStringStream(s).collect(Collectors.joining(" "));
+    }
+
+    static <T> Stream<String> toStringStream(Set<T> s) {
+        return s.stream().map(e -> e.toString().toLowerCase());
     }
 
     static String midAndLocation(ModuleDescriptor md, Optional<URI> location ) {

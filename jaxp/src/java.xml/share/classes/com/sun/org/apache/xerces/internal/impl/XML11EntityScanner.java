@@ -1041,14 +1041,14 @@ public class XML11EntityScanner
      *
      * @param delimiter The string that signifies the end of the character
      *                  data to be scanned.
-     * @param data      The data structure to fill.
+     * @param buffer      The data structure to fill.
+     * @param chunkLimit the size limit of the data to be scanned
      *
      * @return Returns true if there is more data to scan, false otherwise.
      *
      * @throws IOException  Thrown if i/o error occurs.
-     * @throws EOFException Thrown on end of file.
      */
-    protected boolean scanData(String delimiter, XMLStringBuffer buffer)
+    protected boolean scanData(String delimiter, XMLStringBuffer buffer, int chunkLimit)
         throws IOException {
 
         boolean done = false;
@@ -1152,82 +1152,50 @@ public class XML11EntityScanner
             }
 
             // iterate over buffer looking for delimiter
-            if (external) {
-                OUTER: while (fCurrentEntity.position < fCurrentEntity.count) {
-                    c = fCurrentEntity.ch[fCurrentEntity.position++];
-                    if (c == charAt0) {
-                        // looks like we just hit the delimiter
-                        int delimOffset = fCurrentEntity.position - 1;
-                        for (int i = 1; i < delimLen; i++) {
-                            if (fCurrentEntity.position == fCurrentEntity.count) {
-                                fCurrentEntity.position -= i;
-                                break OUTER;
-                            }
-                            c = fCurrentEntity.ch[fCurrentEntity.position++];
-                            if (delimiter.charAt(i) != c) {
-                                fCurrentEntity.position--;
-                                break;
-                            }
-                         }
-                         if (fCurrentEntity.position == delimOffset + delimLen) {
-                            done = true;
-                            break;
-                         }
-                    }
-                    else if (c == '\n' || c == '\r' || c == 0x85 || c == 0x2028) {
-                        fCurrentEntity.position--;
-                        break;
-                    }
-                    // In external entities control characters cannot appear
-                    // as literals so do not skip over them.
-                    else if (!XML11Char.isXML11ValidLiteral(c)) {
-                        fCurrentEntity.position--;
-                        int length = fCurrentEntity.position - offset;
-                        fCurrentEntity.columnNumber += length - newlines;
-                        checkEntityLimit(NameType.COMMENT, fCurrentEntity, offset, length);
-                        buffer.append(fCurrentEntity.ch, offset, length);
-                        return true;
-                    }
-                }
-            }
-            else {
-                OUTER: while (fCurrentEntity.position < fCurrentEntity.count) {
-                    c = fCurrentEntity.ch[fCurrentEntity.position++];
-                    if (c == charAt0) {
-                        // looks like we just hit the delimiter
-                        int delimOffset = fCurrentEntity.position - 1;
-                        for (int i = 1; i < delimLen; i++) {
-                            if (fCurrentEntity.position == fCurrentEntity.count) {
-                                fCurrentEntity.position -= i;
-                                break OUTER;
-                            }
-                            c = fCurrentEntity.ch[fCurrentEntity.position++];
-                            if (delimiter.charAt(i) != c) {
-                                fCurrentEntity.position--;
-                                break;
-                            }
+            OUTER: while (fCurrentEntity.position < fCurrentEntity.count) {
+                c = fCurrentEntity.ch[fCurrentEntity.position++];
+                if (c == charAt0) {
+                    // looks like we just hit the delimiter
+                    int delimOffset = fCurrentEntity.position - 1;
+                    for (int i = 1; i < delimLen; i++) {
+                        if (fCurrentEntity.position == fCurrentEntity.count) {
+                            fCurrentEntity.position -= i;
+                            break OUTER;
                         }
-                        if (fCurrentEntity.position == delimOffset + delimLen) {
-                            done = true;
+                        c = fCurrentEntity.ch[fCurrentEntity.position++];
+                        if (delimiter.charAt(i) != c) {
+                            fCurrentEntity.position--;
                             break;
                         }
-                    }
-                    else if (c == '\n') {
-                        fCurrentEntity.position--;
+                     }
+                     if (fCurrentEntity.position == delimOffset + delimLen) {
+                        done = true;
                         break;
-                    }
-                    // Control characters are allowed to appear as literals
-                    // in internal entities.
-                    else if (!XML11Char.isXML11Valid(c)) {
-                        fCurrentEntity.position--;
-                        int length = fCurrentEntity.position - offset;
-                        fCurrentEntity.columnNumber += length - newlines;
-                        checkEntityLimit(NameType.COMMENT, fCurrentEntity, offset, length);
-                        buffer.append(fCurrentEntity.ch, offset, length);
-                        return true;
-                    }
+                     }
+                }
+                else if ((external && (c == '\n' || c == '\r' || c == 0x85 || c == 0x2028))
+                        || (!external && c == '\n')) {
+                    fCurrentEntity.position--;
+                    break;
+                }
+                // In external entities control characters cannot appear
+                // as literals so do not skip over them.
+                else if ((external && !XML11Char.isXML11ValidLiteral(c))
+                        // Control characters are allowed to appear as literals in internal entities.
+                        || (!external && !XML11Char.isXML11Valid(c))) {
+                    fCurrentEntity.position--;
+                    int length = fCurrentEntity.position - offset;
+                    fCurrentEntity.columnNumber += length - newlines;
+                    checkEntityLimit(NameType.COMMENT, fCurrentEntity, offset, length);
+                    buffer.append(fCurrentEntity.ch, offset, length);
+                    return true;
+                }
+                if (chunkLimit > 0 &&
+                        (buffer.length + fCurrentEntity.position - offset) >= chunkLimit) {
+                    break;
                 }
             }
+
             int length = fCurrentEntity.position - offset;
             fCurrentEntity.columnNumber += length - newlines;
             checkEntityLimit(NameType.COMMENT, fCurrentEntity, offset, length);
@@ -1236,8 +1204,10 @@ public class XML11EntityScanner
             }
             buffer.append(fCurrentEntity.ch, offset, length);
 
-            // return true if string was skipped
-        } while (!done);
+            if (chunkLimit > 0 && buffer.length >= chunkLimit) {
+                break;
+            }
+        } while (!done && chunkLimit == 0);
         return !done;
 
     } // scanData(String,XMLString)

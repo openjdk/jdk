@@ -499,6 +499,7 @@ public abstract class EmbeddedFrame extends Frame
      * @return the parent applet or {@ null}
      * @since 1.6
      */
+    @SuppressWarnings("deprecation")
     public static Applet getAppletIfAncestorOf(Component comp) {
         Container parent = comp.getParent();
         Applet applet = null;

@@ -753,6 +753,7 @@ public class TextComponentPrintable implements CountingPrintable {
      * First step is to find yStart and yEnd for the every document position.
      * Second step is to merge all intersected segments ( [yStart, yEnd] ).
      */
+    @SuppressWarnings("deprecation")
     private void calculateRowsMetrics() {
         final int documentLength = printShell.getDocument().getLength();
         List<IntegerSegment> documentMetrics = new ArrayList<IntegerSegment>(LIST_SIZE);

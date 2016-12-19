@@ -28,6 +28,7 @@
  *          configured correctly from defaults and/or LogManager properties
  *          as specified in javadoc and that no special
  *          logging permission is required for instantiating them.
+ * @modules java.logging/java.util.logging:open
  * @run main/othervm HandlersConfigTest default
  * @run main/othervm HandlersConfigTest configured
  */

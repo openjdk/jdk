@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,12 +137,18 @@ public abstract class Scope {
     /** Returns true iff the given Symbol is in this scope or any outward scope.
      */
     public boolean includes(final Symbol sym) {
+        return includes(sym, RECURSIVE);
+    }
+
+    /** Returns true iff the given Symbol is in this scope, optionally checking outward scopes.
+     */
+    public boolean includes(final Symbol sym, LookupKind lookupKind) {
         return getSymbolsByName(sym.name, new Filter<Symbol>() {
             @Override
             public boolean accepts(Symbol t) {
                 return t == sym;
             }
-        }).iterator().hasNext();
+        }, lookupKind).iterator().hasNext();
     }
 
     /** Returns true iff this scope does not contain any Symbol. Does not inspect outward scopes.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,14 @@ package jdk.internal.module;
 
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
+import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Version;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -40,7 +42,7 @@ import jdk.internal.misc.SharedSecrets;
 
 /**
  * This builder is optimized for reconstituting ModuleDescriptor
- * for installed modules.  The validation should be done at jlink time.
+ * for system modules.  The validation should be done at jlink time.
  *
  * 1. skip name validation
  * 2. ignores dependency hashes.
@@ -53,66 +55,137 @@ final class Builder {
     private static final JavaLangModuleAccess jlma =
         SharedSecrets.getJavaLangModuleAccess();
 
-    private static final Set<Requires.Modifier> MANDATED =
-        Collections.singleton(Requires.Modifier.MANDATED);
-    private static final Set<Requires.Modifier> PUBLIC =
-        Collections.singleton(Requires.Modifier.PUBLIC);
-
     // Static cache of the most recently seen Version to cheaply deduplicate
     // most Version objects.  JDK modules have the same version.
     static Version cachedVersion;
 
+    /**
+     * Returns a {@link Requires} for a dependence on a module
+     * with the given (and possibly empty) set of modifiers.
+     */
+    public static Requires newRequires(Set<Requires.Modifier> mods,
+                                       String mn)
+    {
+        return jlma.newRequires(mods, mn);
+    }
+
+    /**
+     * Returns a {@link Exports} for a qualified export, with
+     * the given (and possibly empty) set of modifiers,
+     * to a set of target modules.
+     */
+    public static Exports newExports(Set<Exports.Modifier> ms,
+                                     String pn,
+                                     Set<String> targets) {
+        return jlma.newExports(ms, pn, targets);
+    }
+
+    /**
+     * Returns an {@link Opens} for an unqualified open with a given set of
+     * modifiers.
+     */
+    public static Opens newOpens(Set<Opens.Modifier> ms, String pn) {
+        return jlma.newOpens(ms, pn);
+    }
+
+    /**
+     * Returns an {@link Opens} for a qualified opens, with
+     * the given (and possibly empty) set of modifiers,
+     * to a set of target modules.
+     */
+    public static Opens newOpens(Set<Opens.Modifier> ms,
+                                 String pn,
+                                 Set<String> targets) {
+        return jlma.newOpens(ms, pn, targets);
+    }
+
+    /**
+     * Returns a {@link Exports} for an unqualified export with a given set
+     * of modifiers.
+     */
+    public static Exports newExports(Set<Exports.Modifier> ms, String pn) {
+        return jlma.newExports(ms, pn);
+    }
+
+    /**
+     * Returns a {@link Provides} for a service with a given list of
+     * implementation classes.
+     */
+    public static Provides newProvides(String st, List<String> pcs) {
+        return jlma.newProvides(st, pcs);
+    }
+
     final String name;
-    final Set<Requires> requires;
-    final Set<Exports> exports;
-    final Map<String, Provides> provides;
+    boolean open;
+    boolean automatic;
+    boolean synthetic;
+    Set<Requires> requires;
+    Set<Exports> exports;
+    Set<Opens> opens;
     Set<String> packages;
     Set<String> uses;
+    Set<Provides> provides;
     Version version;
     String mainClass;
     String osName;
     String osArch;
     String osVersion;
     String algorithm;
-    Map<String, String> hashes;
+    Map<String, byte[]> hashes;
 
-    Builder(String name, int reqs, int exports,
-            int provides, int packages) {
+    Builder(String name) {
         this.name = name;
-        this.requires = reqs > 0 ? new HashSet<>(reqs) : Collections.emptySet();
-        this.exports  = exports > 0 ? new HashSet<>(exports) : Collections.emptySet();
-        this.provides = provides > 0 ? new HashMap<>(provides) : Collections.emptyMap();
+        this.requires = Collections.emptySet();
+        this.exports = Collections.emptySet();
+        this.opens = Collections.emptySet();
+        this.provides = Collections.emptySet();
         this.uses = Collections.emptySet();
     }
 
-    /**
-     * Adds a module dependence with the given (and possibly empty) set
-     * of modifiers.
-     */
-    public Builder requires(Set<Requires.Modifier> mods, String mn) {
-        requires.add(jlma.newRequires(Collections.unmodifiableSet(mods), mn));
+    Builder open(boolean value) {
+        this.open = value;
+        return this;
+    }
+
+    Builder automatic(boolean value) {
+        this.automatic = value;
+        return this;
+    }
+
+    Builder synthetic(boolean value) {
+        this.synthetic = value;
         return this;
     }
 
     /**
-     * Adds a module dependence with an empty set of modifiers.
+     * Sets module exports.
      */
-    public Builder requires(String mn) {
-        requires.add(jlma.newRequires(Collections.emptySet(), mn));
+    public Builder exports(Exports[] exports) {
+        this.exports = Set.of(exports);
         return this;
     }
 
     /**
-     * Adds a module dependence with the given modifier.
+     * Sets module opens.
      */
-    public Builder requires(Requires.Modifier mod, String mn) {
-        if (mod == Requires.Modifier.MANDATED) {
-            requires.add(jlma.newRequires(MANDATED, mn));
-        } else if (mod == Requires.Modifier.PUBLIC) {
-            requires.add(jlma.newRequires(PUBLIC, mn));
-        } else {
-            requires.add(jlma.newRequires(Collections.singleton(mod), mn));
-        }
+    public Builder opens(Opens[] opens) {
+        this.opens = Set.of(opens);
+        return this;
+    }
+
+    /**
+     * Sets module requires.
+     */
+    public Builder requires(Requires[] requires) {
+        this.requires = Set.of(requires);
+        return this;
+    }
+
+    /**
+     * Adds a set of (possible empty) packages.
+     */
+    public Builder packages(Set<String> packages) {
+        this.packages = packages;
         return this;
     }
 
@@ -125,51 +198,10 @@ final class Builder {
     }
 
     /**
-     * Adds an export to a set of target modules.
+     * Sets module provides.
      */
-    public Builder exports(String pn, Set<String> targets) {
-        exports.add(jlma.newExports(pn, targets));
-        return this;
-    }
-
-    /**
-     * Adds an export to a target module.
-     */
-    public Builder exports(String pn, String target) {
-        return exports(pn, Collections.singleton(target));
-    }
-
-    /**
-     * Adds an export.
-     */
-    public Builder exports(String pn) {
-        exports.add(jlma.newExports(pn));
-        return this;
-    }
-
-    /**
-     * Provides service {@code st} with implementations {@code pcs}.
-     */
-    public Builder provides(String st, Set<String> pcs) {
-        if (provides.containsKey(st))
-            throw new IllegalStateException("Providers of service "
-                    + st + " already declared");
-        provides.put(st, jlma.newProvides(st, pcs));
-        return this;
-    }
-
-    /**
-     * Provides service {@code st} with implementation {@code pc}.
-     */
-    public Builder provides(String st, String pc) {
-        return provides(st, Collections.singleton(pc));
-    }
-
-    /**
-     * Adds a set of (possible empty) packages.
-     */
-    public Builder packages(Set<String> packages) {
-        this.packages = packages;
+    public Builder provides(Provides[] provides) {
+        this.provides = Set.of(provides);
         return this;
     }
 
@@ -253,7 +285,7 @@ final class Builder {
     /**
      * Sets the module hash for the given module name
      */
-    public Builder moduleHash(String mn, String hash) {
+    public Builder moduleHash(String mn, byte[] hash) {
         if (hashes == null)
             hashes = new HashMap<>();
 
@@ -264,18 +296,20 @@ final class Builder {
     /**
      * Builds a {@code ModuleDescriptor} from the components.
      */
-    public ModuleDescriptor build() {
+    public ModuleDescriptor build(int hashCode) {
         assert name != null;
 
         ModuleHashes moduleHashes =
             hashes != null ? new ModuleHashes(algorithm, hashes) : null;
 
         return jlma.newModuleDescriptor(name,
-                                        false,    // automatic
-                                        false,    // assume not synthetic for now
+                                        open,
+                                        automatic,
+                                        synthetic,
                                         requires,
-                                        uses,
                                         exports,
+                                        opens,
+                                        uses,
                                         provides,
                                         version,
                                         mainClass,
@@ -283,6 +317,7 @@ final class Builder {
                                         osArch,
                                         osVersion,
                                         packages,
-                                        moduleHashes);
+                                        moduleHashes,
+                                        hashCode);
     }
 }

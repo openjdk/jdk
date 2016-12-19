@@ -83,36 +83,8 @@ getClassLoader(PacketInputStream *in, PacketOutputStream *out)
     return JNI_TRUE;
 }
 
-static jboolean
-canRead(PacketInputStream *in, PacketOutputStream *out)
-{
-    static jmethodID method = NULL;
-    JNIEnv *env = getEnv();
-    jboolean can_read;
-    jobject module;
-    jobject source_module;
-
-    if (method == NULL) {
-        method = getMethod(env, jlrM(env), "canRead", "(Ljava/lang/reflect/Module;)Z");
-    }
-    module = inStream_readModuleRef(env, in);
-    if (inStream_error(in)) {
-        return JNI_TRUE;
-    }
-    source_module = inStream_readModuleRef(env, in);
-    if (inStream_error(in)) {
-        return JNI_TRUE;
-    }
-    can_read = JNI_FUNC_PTR(env, CallBooleanMethod)
-        (env, module, method, source_module);
-
-    (void)outStream_writeBoolean(out, can_read);
-    return JNI_TRUE;
-}
-
 
 void *ModuleReference_Cmds[] = { (void *)3
     ,(void *)getName
     ,(void *)getClassLoader
-    ,(void *)canRead
 };

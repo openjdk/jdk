@@ -218,6 +218,21 @@ class JvmtiExport : public AllStatic {
   // Add read edges to the unnamed modules of the bootstrap and app class loaders
   static void add_default_read_edges(Handle h_module, TRAPS) NOT_JVMTI_RETURN;
 
+  // Add a read edge to the module
+  static jvmtiError add_module_reads(Handle module, Handle to_module, TRAPS);
+
+  // Updates a module to export a package
+  static jvmtiError add_module_exports(Handle module, Handle pkg_name, Handle to_module, TRAPS);
+
+  // Updates a module to open a package
+  static jvmtiError add_module_opens(Handle module, Handle pkg_name, Handle to_module, TRAPS);
+
+  // Add a used service to the module
+  static jvmtiError add_module_uses(Handle module, Handle service, TRAPS);
+
+  // Add a service provider to the module
+  static jvmtiError add_module_provides(Handle module, Handle service, Handle impl_class, TRAPS);
+
   // let JVMTI know that the JVM_OnLoad code is running
   static void enter_onload_phase() NOT_JVMTI_RETURN;
 
@@ -326,10 +341,11 @@ class JvmtiExport : public AllStatic {
     JVMTI_ONLY(return _should_post_class_file_load_hook);
     NOT_JVMTI(return false;)
   }
-  static void post_class_file_load_hook(Symbol* h_name, Handle class_loader,
+  // Return true if the class was modified by the hook.
+  static bool post_class_file_load_hook(Symbol* h_name, Handle class_loader,
                                         Handle h_protection_domain,
                                         unsigned char **data_ptr, unsigned char **end_ptr,
-                                        JvmtiCachedClassFileData **cache_ptr) NOT_JVMTI_RETURN;
+                                        JvmtiCachedClassFileData **cache_ptr) NOT_JVMTI_RETURN_(false);
   static void post_native_method_bind(Method* method, address* function_ptr) NOT_JVMTI_RETURN;
   static void post_compiled_method_load(nmethod *nm) NOT_JVMTI_RETURN;
   static void post_dynamic_code_generated(const char *name, const void *code_begin, const void *code_end) NOT_JVMTI_RETURN;

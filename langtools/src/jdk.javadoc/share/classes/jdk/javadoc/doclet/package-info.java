@@ -48,65 +48,98 @@
  * <pre>
  *    public boolean <b>run</b>(DocletEnvironment environment)
  * </pre>
- * The {@link jdk.javadoc.doclet.DocletEnvironment} instance holds the environment that the
- * doclet will be initialized with. From this environment all other information can be
- * extracted, in the form of {@link javax.lang.model} elements. One can further use the
- * APIs and utilities described by {@link javax.lang.model} to query Elements and Types.
+ * The {@link jdk.javadoc.doclet.DocletEnvironment} instance holds the
+ * environment that the doclet will be initialized with. From this environment
+ * all other information can be extracted, in the form of
+ * {@link javax.lang.model.element.Element elements}. One can further use the APIs and utilities
+ * described by {@link javax.lang.model Language Model API} to query Elements and Types.
  * <p>
  *
  * <a name="terminology"></a>
  * <h3>Terminology</h3>
  *
- * <a name="specified"></a>
- * Module, package and source file names can be provided as parameters to the
- * javadoc tool -- these are called the <em>specified</em> set containing
- * module elements, package elements and type elements.
- * <p>
- * Javadoc <em>selection control</em> can be specified with
- * {@code --show-members:value}, {@code --showtypes:value}, where value can be one of
- * the following:
- * <ul>
- * <li> public    -- considers only public elements
- * <li> protected -- considers public and protected elements
- * <li> package   -- considers public, protected and package private elements
- * <li> private   -- considers all elements
- * </ul>
+ * <dl>
+ *   <dt><a name="selected"></a>Selected</dt>
+ *     <dd>An element is considered to be <em>selected</em>, if the
+ *         <em>selection controls</em> <a href="#options">allow</a> it
+ *         to be documented. (Note that synthetic elements are never
+ *         selected.)
+ *    </dd>
  *
- * The {@code --show-package:value} where a value of "exported" or "all" can be used to
- * consider only exported packages or all packages within a module.
+ *   <dt><a name="specified"></a>Specified</dt>
+ *   <dd>The set of elements specified by the user are considered to be <em>specified
+ *       elements</em>. Specified elements provide the starting points
+ *       for determining the <em>included elements</em> to be documented.
+ *   </dd>
+ *
+ *   <dt><a name="included"></a>Included</dt>
+ *   <dd>An element is considered to be <em>included</em>, if it is
+ *       <em>specified</em> if it contains a <em>specified</em> element,
+ *       or it is enclosed in a <em>specified</em> element, and is <em>selected</em>.
+ *       Included elements will be documented.
+ *   </dd>
+ *
+ * </dl>
  * <p>
- * The {@code --expand-requires:value}, expands the "requires" directives of a
- * module declaration, to create a module set to considered for documentation
+ * <a name="options"></a>
+ * <h3>Options</h3>
+ * Javadoc <em>selection control</em> can be specified with these options
  * as follows:
  * <ul>
- * <li> public -- follows and expands  all "requires public" edges in the module graph
- * <li> all    -- follows and expands  all "requires" edges in the module graph.
- * By default, only the specified modules will be considered, without expansion
- * of the module dependencies.
+ *   <li>{@code --show-members:value} and {@code --show-types:value} can
+ *       be used to filter the members, with the following values:
+ *   <ul>
+ *     <li> public    -- considers only public elements
+ *     <li> protected -- considers public and protected elements
+ *     <li> package   -- considers public, protected and package private elements
+ *     <li> private   -- considers all elements
+ *   </ul>
+ *
+ *   <li>{@code --show-packages:value} "exported" or "all" can be used
+ *       to consider only exported packages or all packages within a module.
+ *
+ *   <li>{@code --show-module-contents:value} can be used to specify the level at
+ *       module declarations could be documented. A value of "api" indicates API
+ *       level documentation, and "all" indicates detailed documentation.
  * </ul>
- * <a name="included"></a>
- * All of the above are used to select the elements, to produce the
- * <em>included</em> or the <em>selected</em> set.
- * <p>
- * {@code --show-module-contents:value} can be used to specify the level at
- * module declarations could be documented, a value of "api" indicates API
- * level documentation, and "all" indicates detailed documentation.
+ * The following options can be used to specify the elements to be documented:
+ * <ul>
+ *   <li>{@code --module} documents the specified modules.
+ *
+ *   <li>{@code --expand-requires:value} expand the set of modules to be documented
+ *        by including some or all of the modules dependencies. The value may be
+ *        one of:
+ *   <ul>
+ *     <li> transitive -- each module specified explicitly on the command line is
+ *          expanded to include the closure of its transitive dependencies
+ *     <li> all    -- each module specified explicitly on the command line
+ *          is expanded to include the closure of its transitive dependencies,
+ *          and also all of its direct dependencies
+ *   </ul>
+ *   By default, only the specified modules will be considered, without expansion
+ *   of the module dependencies.
+ *
+ *   <li>{@code packagenames} can be used to specify packages.
+ *   <li>{@code -subpackages} can be used to recursively load packages.
+ *   <li>{@code -exclude} can be used exclude package directories.
+ *   <li>{@code sourcefilenames} can be used to specify source file names.
+ * </ul>
  * <p>
  * <a name="legacy-interactions"></a>
  * <h4>Interactions with older options.</h4>
  *
- * The new --show-* options provide a more detailed replacement for the older
- * options -public, -protected, -package, -private.  Alternatively, the older
- * options can continue to be used as shorter forms for combinations of the
- * new options, as described below:
+ * The new {@code --show-*} options provide a more detailed replacement
+ * for the older options -public, -protected, -package, -private.
+ * Alternatively, the older options can continue to be used as shorter
+ * forms for combinations of the new options, as described below:
  <table style="font-family: monospace" border=1>
     <caption>Short form options mapping</caption>
     <tr><th>Older option<th colspan="5">Equivalent to these values with the new option
-    <tr><th><th>--show-members<th>--show-types<th>--show-packages<th>--show-module-contents
-    <tr><td>-public<td>public<td>public<td>exported<td>api
-    <tr><td>-protected<td>protected<td>protected<td>exported<td>api
-    <tr><td>-package<td>package<td>package<td>all<td>all
-    <tr><td>-private<td>private<td>private<td>all<td>all
+    <tr><th><th>{@code --show-members}<th>{@code --show-types}<th>{@code --show-packages}<th>{@code --show-module-contents}
+    <tr><td>{@code -public}<td>public<td>public<td>exported<td>api
+    <tr><td>{@code -protected}<td>protected<td>protected<td>exported<td>api
+    <tr><td>{@code -package}<td>package<td>package<td>all<td>all
+    <tr><td>{@code -private}<td>private<td>private<td>all<td>all
   </table>
  * <p>
  * <a name="qualified"></a>
@@ -119,127 +152,120 @@
  * <h3>Example</h3>
  *
  * The following is an example doclet that displays information of a class
- * and its members, supporting an option "someoption".
+ * and its members, supporting an option.
  * <pre>
- * import com.sun.source.doctree.DocCommentTree;
- * import com.sun.source.util.DocTrees;
- * import java.io.IOException;
- * import java.util.Collections;
- * import java.util.Set;
- * import javax.lang.model.SourceVersion;
- * import javax.lang.model.element.Element;
- * import javax.lang.model.element.TypeElement;
- * import jdk.javadoc.doclet.*;
- *
+ * // note imports deleted for clarity
  * public class Example implements Doclet {
+ *    Reporter reporter;
+ *    &#64;Override
+ *    public void init(Locale locale, Reporter reporter) {
+ *        reporter.print(Kind.NOTE, "Doclet using locale: " + locale);
+ *        this.reporter = reporter;
+ *    }
  *
- *     &#64;Override
- *     public void init(Locale locale, Reporter reporter) {
- *        return;
- *     }
+ *    public void printElement(DocTrees trees, Element e) {
+ *        DocCommentTree docCommentTree = trees.getDocCommentTree(e);
+ *        if (docCommentTree != null) {
+ *            System.out.println("Element (" + e.getKind() + ": "
+ *                    + e + ") has the following comments:");
+ *            System.out.println("Entire body: " + docCommentTree.getFullBody());
+ *            System.out.println("Block tags: " + docCommentTree.getBlockTags());
+ *        }
+ *    }
  *
- *     &#64;Override
- *     public boolean run(DocletEnvironment docEnv) {
- *         // cache the DocTrees utility class to access DocComments
- *         DocTrees docTrees = docEnv.getDocTrees();
+ *    &#64;Override
+ *    public boolean run(DocletEnvironment docEnv) {
+ *        reporter.print(Kind.NOTE, "overviewfile: " + overviewfile);
+ *        // get the DocTrees utility class to access document comments
+ *        DocTrees docTrees = docEnv.getDocTrees();
  *
- *         // location of an element in the same directory as overview.html
- *         try {
- *             Element barElement = null;
- *             for (Element e : docEnv.getIncludedClasses()) {
- *                 if (e.getSimpleName().toString().equals("FooBar")) {
- *                     barElement = e;
- *                 }
- *             }
- *             DocCommentTree docCommentTree =
- *                     docTrees.getDocCommentTree(barElement, "overview.html");
- *             if (docCommentTree != null) {
- *                 System.out.println("Overview html: " +
- *                         docCommentTree.getFullBody());
- *             }
- *         } catch (IOException missing) {
- *             System.err.println("No overview.html found.");
- *         }
+ *        // location of an element in the same directory as overview.html
+ *        try {
+ *            Element e = ElementFilter.typesIn(docEnv.getSpecifiedElements()).iterator().next();
+ *            DocCommentTree docCommentTree
+ *                    = docTrees.getDocCommentTree(e, overviewfile);
+ *            if (docCommentTree != null) {
+ *                System.out.println("Overview html: " + docCommentTree.getFullBody());
+ *            }
+ *        } catch (IOException missing) {
+ *            reporter.print(Kind.ERROR, "No overview.html found.");
+ *        }
  *
- *         for (TypeElement t : docEnv.getIncludedClasses()) {
- *             System.out.println(t.getKind() + ":" + t);
- *             for (Element e : t.getEnclosedElements()) {
- *                 DocCommentTree docCommentTree = docTrees.getDocCommentTree(e);
- *                 if (docCommentTree != null) {
- *                     System.out.println("Element (" + e.getKind() + ": " +
- *                             e + ") has the following comments:");
- *                     System.out.println("Entire body: " + docCommentTree.getFullBody());
- *                     System.out.println("Block tags: " + docCommentTree.getBlockTags());
- *                 } else {
- *                     System.out.println("no comment.");
- *                 }
- *             }
- *         }
- *         return true;
- *     }
+ *        for (TypeElement t : ElementFilter.typesIn(docEnv.getIncludedElements())) {
+ *            System.out.println(t.getKind() + ":" + t);
+ *            for (Element e : t.getEnclosedElements()) {
+ *                printElement(docTrees, e);
+ *            }
+ *        }
+ *        return true;
+ *    }
  *
- *     &#64;Override
- *     public String getName() {
- *         return "Example";
- *     }
+ *    &#64;Override
+ *    public String getName() {
+ *        return "Example";
+ *    }
  *
- *   private String someOption;
+ *    private String overviewfile;
  *
- *   &#64;Override
- *   public Set&lt;Option&gt; getSupportedOptions() {
- *       Option[] options = {
- *           new Option() {
- *               public int getArgumentCount() {
- *                   return 1;
- *               }
- *               public String getDescription() {
- *                   return "someoption";
- *               }
- *               public Option.Kind getKind() {
- *                   return Option.Kind.STANDARD;
- *               }
- *               public String getName() {
- *                   return "someoption";
- *               }
- *               public String getParameters() {
- *                   return "url";
- *               }
- *               public boolean matches(String option) {
- *                  String opt = option.startsWith("-") ? option.substring(1) : option;
- *                  return getName().equals(opt);
- *               }
- *               public boolean process(String option, ListIterator&lt;String&gt; arguments) {
- *                  overviewpath = arguments.next();
- *                  return true;
- *               }
- *          }
- *      };
- *      return new HashSet&lt;Option&gt;(Arrays.asList(options));
- *     }
+ *    &#64;Override
+ *    public Set&lt;? extends Option&gt; getSupportedOptions() {
+ *        Option[] options = {
+ *            new Option() {
+ *                private final List&lt;String&gt; someOption = Arrays.asList(
+ *                        "-overviewfile",
+ *                        "--overview-file",
+ *                        "-o"
+ *                );
  *
- *     &#64;Override
- *     public SourceVersion getSupportedSourceVersion() {
- *         // support the latest release
- *         return SourceVersion.latest();
- *     }
+ *                &#64;Override
+ *                public int getArgumentCount() {
+ *                    return 1;
+ *                }
+ *
+ *                &#64;Override
+ *                public String getDescription() {
+ *                    return "an option with aliases";
+ *                }
+ *
+ *                &#64;Override
+ *                public Option.Kind getKind() {
+ *                    return Option.Kind.STANDARD;
+ *                }
+ *
+ *                &#64;Override
+ *                public List&lt;String&gt; getNames() {
+ *                    return someOption;
+ *                }
+ *
+ *                &#64;Override
+ *                public String getParameters() {
+ *                    return "file";
+ *                }
+ *
+ *                &#64;Override
+ *                public boolean process(String opt, List&lt;String&gt; arguments) {
+ *                    overviewfile = arguments.get(0);
+ *                    return true;
+ *                }
+ *            }
+ *        };
+ *        return new HashSet&lt;&gt;(Arrays.asList(options));
+ *    }
+ *
+ *    &#64;Override
+ *    public SourceVersion getSupportedSourceVersion() {
+ *        // support the latest release
+ *        return SourceVersion.latest();
+ *    }
  * }
  * </pre>
  * <p>
- * This doclet when invoked with a command line, such as:
+ * This doclet can be invoked with a command line, such as:
  * <pre>
- *     javadoc -doclet Example -sourcepath &lt;source-location&gt;
- * </pre>
- * will produce an output, such as:
- * <pre>
- *  Overview.html: overview comments
- *  ...
- *  ...
- *  CLASS: SomeKlass
- *  .....
- *  Element (METHOD: main(java.lang.String...)) has the following comments:
- *  Entire body: The main entry point.
- *  Block tags: @param an array of Strings
- *  ...
+ *     javadoc -doclet Example &#92;
+ *       -overviewfile overview.html &#92;
+ *       -sourcepath source-location &#92;
+ *       source-location/Example.java
  * </pre>
  *
  * <h3><a name="migration">Migration Guide</a></h3>

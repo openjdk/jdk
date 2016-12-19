@@ -324,15 +324,17 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
 
         PublicKey currPubKey = cert.getPublicKey();
 
-        // Check against DisabledAlgorithmConstraints certpath constraints.
-        // permits() will throw exception on failure.
-        certPathDefaultConstraints.permits(primitives,
+        if (constraints instanceof DisabledAlgorithmConstraints) {
+            // Check against DisabledAlgorithmConstraints certpath constraints.
+            // permits() will throw exception on failure.
+            ((DisabledAlgorithmConstraints)constraints).permits(primitives,
                 new CertConstraintParameters((X509Certificate)cert,
                         trustedMatch, pkixdate, jarTimestamp));
-        // If there is no previous key, set one and exit
-        if (prevPubKey == null) {
-            prevPubKey = currPubKey;
-            return;
+            // If there is no previous key, set one and exit
+            if (prevPubKey == null) {
+                prevPubKey = currPubKey;
+                return;
+            }
         }
 
         X509CertImpl x509Cert;

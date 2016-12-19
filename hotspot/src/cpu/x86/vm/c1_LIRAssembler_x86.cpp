@@ -393,7 +393,7 @@ int LIR_Assembler::emit_exception_handler() {
   __ nop();
 
   // generate code for exception handler
-  address handler_base = __ start_a_stub(exception_handler_size);
+  address handler_base = __ start_a_stub(exception_handler_size());
   if (handler_base == NULL) {
     // not enough space left for the handler
     bailout("exception handler overflow");
@@ -412,7 +412,7 @@ int LIR_Assembler::emit_exception_handler() {
   // search an exception handler (rax: exception oop, rdx: throwing pc)
   __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::handle_exception_from_callee_id)));
   __ should_not_reach_here();
-  guarantee(code_offset() - offset <= exception_handler_size, "overflow");
+  guarantee(code_offset() - offset <= exception_handler_size(), "overflow");
   __ end_a_stub();
 
   return offset;
@@ -490,7 +490,7 @@ int LIR_Assembler::emit_deopt_handler() {
   __ nop();
 
   // generate code for exception handler
-  address handler_base = __ start_a_stub(deopt_handler_size);
+  address handler_base = __ start_a_stub(deopt_handler_size());
   if (handler_base == NULL) {
     // not enough space left for the handler
     bailout("deopt handler overflow");
@@ -502,7 +502,7 @@ int LIR_Assembler::emit_deopt_handler() {
 
   __ pushptr(here.addr());
   __ jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
-  guarantee(code_offset() - offset <= deopt_handler_size, "overflow");
+  guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
   __ end_a_stub();
 
   return offset;
@@ -2805,7 +2805,7 @@ void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
 
 void LIR_Assembler::emit_static_call_stub() {
   address call_pc = __ pc();
-  address stub = __ start_a_stub(call_stub_size);
+  address stub = __ start_a_stub(call_stub_size());
   if (stub == NULL) {
     bailout("static call stub overflow");
     return;
@@ -2816,14 +2816,24 @@ void LIR_Assembler::emit_static_call_stub() {
     // make sure that the displacement word of the call ends up word aligned
     __ align(BytesPerWord, __ offset() + NativeMovConstReg::instruction_size + NativeCall::displacement_offset);
   }
-  __ relocate(static_stub_Relocation::spec(call_pc));
+  __ relocate(static_stub_Relocation::spec(call_pc, false /* is_aot */));
   __ mov_metadata(rbx, (Metadata*)NULL);
   // must be set to -1 at code generation time
   assert(!os::is_MP() || ((__ offset() + 1) % BytesPerWord) == 0, "must be aligned on MP");
   // On 64bit this will die since it will take a movq & jmp, must be only a jmp
   __ jump(RuntimeAddress(__ pc()));
 
-  assert(__ offset() - start <= call_stub_size, "stub too big");
+  if (UseAOT) {
+    // Trampoline to aot code
+    __ relocate(static_stub_Relocation::spec(call_pc, true /* is_aot */));
+#ifdef _LP64
+    __ mov64(rax, CONST64(0));  // address is zapped till fixup time.
+#else
+    __ movl(rax, 0xdeadffff);  // address is zapped till fixup time.
+#endif
+    __ jmp(rax);
+  }
+  assert(__ offset() - start <= call_stub_size(), "stub too big");
   __ end_a_stub();
 }
 

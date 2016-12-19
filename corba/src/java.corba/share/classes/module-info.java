@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,10 @@
 /**
  * Defines the Java binding of the OMG CORBA APIs, and the RMI-IIOP API.
  */
+@Deprecated(since="9", forRemoval=true)
 module java.corba {
-    requires public java.desktop;
-    requires public java.rmi;
+    requires transitive java.desktop;
+    requires transitive java.rmi;
     requires java.logging;
     requires java.naming;
     requires java.transaction;
@@ -65,14 +66,13 @@ module java.corba {
     exports org.omg.PortableServer.portable;
     exports org.omg.SendingContext;
     exports org.omg.stub.java.rmi;
-    exports com.sun.corba.se.impl.util to
-        jdk.rmic;
-    exports com.sun.jndi.cosnaming to
-        java.naming;
-    exports com.sun.jndi.url.corbaname to
-        java.naming;
-    exports com.sun.jndi.url.iiop to
-        java.naming;
-    exports com.sun.jndi.url.iiopname to
-        java.naming;
+
+    // rmic --iiop
+    exports com.sun.corba.se.impl.util to jdk.rmic;
+
+    // JNDI CosNaming provider
+    opens com.sun.jndi.cosnaming to java.naming;  // jndiprovider.properties
+    exports com.sun.jndi.url.corbaname to java.naming;
+    exports com.sun.jndi.url.iiop to java.naming;
+    exports com.sun.jndi.url.iiopname to java.naming;
 }

@@ -213,6 +213,8 @@ void NMethodSweeper::mark_active_nmethods() {
   if (_current.method() != NULL) {
     if (_current.method()->is_nmethod()) {
       assert(CodeCache::find_blob_unsafe(_current.method()) == _current.method(), "Sweeper nmethod cached state invalid");
+    } else if (_current.method()->is_aot()) {
+      assert(CodeCache::find_blob_unsafe(_current.method()->code_begin()) == _current.method(), "Sweeper AOT method cached state invalid");
     } else {
       ShouldNotReachHere();
     }
@@ -570,7 +572,7 @@ void NMethodSweeper::release_compiled_method(CompiledMethod* nm) {
     RelocIterator iter(nm);
     while (iter.next()) {
       if (iter.type() == relocInfo::virtual_call_type) {
-        CompiledIC::cleanup_call_site(iter.virtual_call_reloc());
+        CompiledIC::cleanup_call_site(iter.virtual_call_reloc(), nm);
       }
     }
   }
