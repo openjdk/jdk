@@ -52,7 +52,7 @@ public class PatchModuleCDS {
         new OutputAnalyzer(pb.start())
             .shouldContain("ro space:"); // Make sure archive got created.
 
-       // Case 2: Test that only jar file in --patch-module is supported for CDS dumping
+        // Case 2: Test that directory in --patch-module is supported for CDS dumping
         // Create a class file in the module java.base.
         String source = "package javax.naming.spi; "                +
                         "public class NamingManager { "             +
@@ -73,7 +73,7 @@ public class PatchModuleCDS {
             "-Xlog:class+path=info",
             "-version");
         new OutputAnalyzer(pb.start())
-            .shouldContain("--patch-module requires a regular file during dumping");
+            .shouldContain("ro space:"); // Make sure archive got created.
 
         // Case 3a: Test CDS dumping with jar file in --patch-module
         BasicJarBuilder.build("javanaming", "javax/naming/spi/NamingManager");
