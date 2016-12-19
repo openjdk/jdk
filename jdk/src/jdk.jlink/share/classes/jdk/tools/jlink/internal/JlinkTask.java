@@ -111,6 +111,27 @@ public class JlinkTask {
             task.options.output = path;
         }, "--output"),
         new Option<JlinkTask>(true, (task, opt, arg) -> {
+            String[] values = arg.split("=");
+            // check values
+            if (values.length != 2 || values[0].isEmpty() || values[1].isEmpty()) {
+                throw taskHelper.newBadArgs("err.launcher.value.format", arg);
+            } else {
+                String commandName = values[0];
+                String moduleAndMain = values[1];
+                int idx = moduleAndMain.indexOf("/");
+                if (idx != -1) {
+                    if (moduleAndMain.substring(0, idx).isEmpty()) {
+                        throw taskHelper.newBadArgs("err.launcher.module.name.empty", arg);
+                    }
+
+                    if (moduleAndMain.substring(idx + 1).isEmpty()) {
+                        throw taskHelper.newBadArgs("err.launcher.main.class.empty", arg);
+                    }
+                }
+                task.options.launchers.put(commandName, moduleAndMain);
+            }
+        }, "--launcher"),
+        new Option<JlinkTask>(true, (task, opt, arg) -> {
             if ("little".equals(arg)) {
                 task.options.endian = ByteOrder.LITTLE_ENDIAN;
             } else if ("big".equals(arg)) {
@@ -170,6 +191,7 @@ public class JlinkTask {
         final Set<String> limitMods = new HashSet<>();
         final Set<String> addMods = new HashSet<>();
         Path output;
+        final Map<String, String> launchers = new HashMap<>();
         Path packagedModulesPath;
         ByteOrder endian = ByteOrder.nativeOrder();
         boolean ignoreSigning = false;
@@ -287,7 +309,7 @@ public class JlinkTask {
     }
 
     private void postProcessOnly(Path existingImage) throws Exception {
-        PluginsConfiguration config = taskHelper.getPluginsConfig(null);
+        PluginsConfiguration config = taskHelper.getPluginsConfig(null, null);
         ExecutableImage img = DefaultImageBuilder.getExecutableImage(existingImage);
         if (img == null) {
             throw taskHelper.newBadArgs("err.existing.image.invalid");
@@ -336,7 +358,7 @@ public class JlinkTask {
 
         // Then create the Plugin Stack
         ImagePluginStack stack = ImagePluginConfiguration.
-                parseConfiguration(taskHelper.getPluginsConfig(options.output));
+                parseConfiguration(taskHelper.getPluginsConfig(options.output, options.launchers));
 
         //Ask the stack to proceed
         stack.operate(imageProvider);

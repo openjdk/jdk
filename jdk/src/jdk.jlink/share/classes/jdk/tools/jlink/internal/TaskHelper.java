@@ -403,7 +403,7 @@ public final class TaskHelper {
             return null;
         }
 
-        private PluginsConfiguration getPluginsConfig(Path output
+        private PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers
                     ) throws IOException, BadArgs {
             if (output != null) {
                 if (Files.exists(output)) {
@@ -440,9 +440,9 @@ public final class TaskHelper {
             // recreate or postprocessing don't require an output directory.
             ImageBuilder builder = null;
             if (output != null) {
-                builder = new DefaultImageBuilder(output);
-
+                builder = new DefaultImageBuilder(output, launchers);
             }
+
             return new Jlink.PluginsConfiguration(pluginsList,
                     builder, lastSorter);
         }
@@ -745,9 +745,9 @@ public final class TaskHelper {
                 + bundleHelper.getMessage(key, args));
     }
 
-    public PluginsConfiguration getPluginsConfig(Path output)
+    public PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers)
             throws IOException, BadArgs {
-        return pluginOptions.getPluginsConfig(output);
+        return pluginOptions.getPluginsConfig(output, launchers);
     }
 
     public Path getExistingImage() {
