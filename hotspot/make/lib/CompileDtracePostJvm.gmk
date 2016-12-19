@@ -188,7 +188,6 @@ ifeq ($(call check-jvm-feature, dtrace), true)
         LIBS := $(LIBDL) -lc -lthread -ldoor, \
         MAPFILE := $(HOTSPOT_TOPDIR)/make/mapfiles/libjvm_dtrace/mapfile-vers, \
         OBJECT_DIR := $(LIBJVM_DTRACE_OUTPUTDIR)/objs, \
-        STRIP_SYMBOLS := true, \
     ))
 
     LIBJVM_DB_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/libjvm_db
@@ -206,7 +205,6 @@ ifeq ($(call check-jvm-feature, dtrace), true)
         LIBS := -lc, \
         MAPFILE := $(HOTSPOT_TOPDIR)/make/mapfiles/libjvm_db/mapfile-vers, \
         OBJECT_DIR := $(LIBJVM_DB_OUTPUTDIR)/objs, \
-        STRIP_SYMBOLS := true, \
     ))
 
     # We need the generated JvmOffsets.h before we can compile the libjvm_db source code.
