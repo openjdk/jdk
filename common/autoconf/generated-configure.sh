@@ -753,6 +753,7 @@ CFLAGS_JDKEXE
 CFLAGS_JDKLIB
 MACOSX_VERSION_MIN
 CXXSTD_CXXFLAG
+JDK_ARCH_ABI_PROP_NAME
 CXX_O_FLAG_SIZE
 CXX_O_FLAG_NONE
 CXX_O_FLAG_DEBUG
@@ -1136,6 +1137,7 @@ with_jdk_variant
 enable_debug
 with_debug_level
 with_jvm_variants
+with_cpu_port
 with_devkit
 with_sys_root
 with_sysroot
@@ -1185,6 +1187,7 @@ with_extra_ldflags
 with_toolchain_version
 with_build_devkit
 with_jtreg
+with_abi_profile
 enable_warnings_as_errors
 with_native_debug_symbols
 enable_debug_symbols
@@ -2041,6 +2044,8 @@ Optional Packages:
   --with-jvm-variants     JVM variants (separated by commas) to build
                           (server,client,minimal,core,zero,zeroshark,custom)
                           [server]
+  --with-cpu-port         specify sources to use for Hotspot 64-bit ARM port
+                          (arm64,aarch64) [aarch64]
   --with-devkit           use this devkit for compilers, tools and resources
   --with-sys-root         alias for --with-sysroot for backwards compatability
   --with-sysroot          use this directory as sysroot
@@ -2123,6 +2128,10 @@ Optional Packages:
                           dependent]
   --with-build-devkit     Devkit to use for the build platform toolchain
   --with-jtreg            Regression Test Harness [probed]
+  --with-abi-profile      specify ABI profile for ARM builds
+                          (arm-vfp-sflt,arm-vfp-hflt,arm-sflt,
+                          armv5-vfp-sflt,armv6-vfp-hflt,arm64,aarch64)
+                          [toolchain dependent]
   --with-native-debug-symbols
                           set the native debug symbol configuration (none,
                           internal, external, zipped) [varying]
@@ -4014,6 +4023,12 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # questions.
 #
 
+################################################################################
+#
+# Setup ABI profile (for arm)
+#
+
+
 # Reset the global CFLAGS/LDFLAGS variables and initialize them with the
 # corresponding configure arguments instead
 
@@ -4274,7 +4289,8 @@ pkgadd_help() {
 
 # All valid JVM features, regardless of platform
 VALID_JVM_FEATURES="compiler1 compiler2 zero shark minimal dtrace jvmti jvmci \
-    graal fprof vm-structs jni-check services management all-gcs nmt cds static-build aot"
+    graal fprof vm-structs jni-check services management all-gcs nmt cds \
+    static-build link-time-opt aot"
 
 # All valid JVM variants
 VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
@@ -4331,6 +4347,16 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 ###############################################################################
 # Validate JVM features once all setup is complete, including custom setup.
 #
+
+
+################################################################################
+#
+# Specify which sources will be used to build the 64-bit ARM port
+#
+# --with-cpu-port=arm64   will use hotspot/src/cpu/arm
+# --with-cpu-port=aarch64 will use hotspot/src/cpu/aarch64
+#
+
 
 
 ################################################################################
@@ -5144,7 +5170,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1482073038
+DATE_WHEN_GENERATED=1482168759
 
 ###############################################################################
 #
@@ -16721,6 +16747,26 @@ $as_echo "$DEBUG_LEVEL" >&6; }
 if test "${with_jvm_variants+set}" = set; then :
   withval=$with_jvm_variants;
 fi
+
+
+
+
+# Check whether --with-cpu-port was given.
+if test "${with_cpu_port+set}" = set; then :
+  withval=$with_cpu_port;
+fi
+
+
+  if test "x$with_cpu_port" != x; then
+    if test "x$OPENJDK_TARGET_CPU" != xaarch64; then
+      as_fn_error $? "--with-cpu-port only available on aarch64" "$LINENO" 5
+    fi
+    if test "x$with_cpu_port" != xarm64 && \
+        test "x$with_cpu_port" != xaarch64; then
+      as_fn_error $? "--with-cpu-port must specify arm64 or aarch64" "$LINENO" 5
+    fi
+    HOTSPOT_TARGET_CPU_PORT="$with_cpu_port"
+  fi
 
 
   if test "x$with_jvm_variants" = x; then
@@ -49069,9 +49115,17 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       PICFLAG='-fPIC'
       SHARED_LIBRARY_FLAGS='-shared'
       SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$ORIGIN$1'
-      SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-soname=$1'
       SET_SHARED_LIBRARY_MAPFILE='-Wl,-version-script=$1'
+
+      # arm specific settings
+      if test "x$OPENJDK_TARGET_CPU" = "xarm"; then
+        # '-Wl,-z,origin' isn't used on arm.
+        SET_SHARED_LIBRARY_ORIGIN='-Wl,-rpath,\$$$$ORIGIN$1'
+      else
+        SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
+      fi
+
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     if test "x$OPENJDK_TARGET_CPU" = xsparcv9; then
@@ -49661,6 +49715,108 @@ $as_echo "$supports" >&6; }
 
 
 
+
+# Check whether --with-abi-profile was given.
+if test "${with_abi_profile+set}" = set; then :
+  withval=$with_abi_profile;
+fi
+
+
+  if test "x$with_abi_profile" != x; then
+    if test "x$OPENJDK_TARGET_CPU" != xarm && \
+        test "x$OPENJDK_TARGET_CPU" != xaarch64; then
+      as_fn_error $? "--with-abi-profile only available on arm/aarch64" "$LINENO" 5
+    fi
+
+    OPENJDK_TARGET_ABI_PROFILE=$with_abi_profile
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ABI profle" >&5
+$as_echo_n "checking for ABI profle... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPENJDK_TARGET_ABI_PROFILE" >&5
+$as_echo "$OPENJDK_TARGET_ABI_PROFILE" >&6; }
+
+    if test "x$OPENJDK_TARGET_ABI_PROFILE" = xarm-vfp-sflt; then
+      ARM_FLOAT_TYPE=vfp-sflt
+      ARM_ARCH_TYPE_FLAGS='-march=armv7-a -mthumb'
+    elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarm-vfp-hflt; then
+      ARM_FLOAT_TYPE=vfp-hflt
+      ARM_ARCH_TYPE_FLAGS='-march=armv7-a -mthumb'
+    elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarm-sflt; then
+      ARM_FLOAT_TYPE=sflt
+      ARM_ARCH_TYPE_FLAGS='-march=armv5t -marm'
+    elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarmv5-vfp-sflt; then
+      ARM_FLOAT_TYPE=vfp-sflt
+      ARM_ARCH_TYPE_FLAGS='-march=armv5t -marm'
+    elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarmv6-vfp-hflt; then
+      ARM_FLOAT_TYPE=vfp-hflt
+      ARM_ARCH_TYPE_FLAGS='-march=armv6 -marm'
+    elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarm64; then
+      # No special flags, just need to trigger setting JDK_ARCH_ABI_PROP_NAME
+      ARM_FLOAT_TYPE=
+      ARM_ARCH_TYPE_FLAGS=
+    elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xaarch64; then
+      # No special flags, just need to trigger setting JDK_ARCH_ABI_PROP_NAME
+      ARM_FLOAT_TYPE=
+      ARM_ARCH_TYPE_FLAGS=
+    else
+      as_fn_error $? "Invalid ABI profile: \"$OPENJDK_TARGET_ABI_PROFILE\"" "$LINENO" 5
+    fi
+
+    if test "x$ARM_FLOAT_TYPE" = xvfp-sflt; then
+      ARM_FLOAT_TYPE_FLAGS='-mfloat-abi=softfp -mfpu=vfp -DFLOAT_ARCH=-vfp-sflt'
+    elif test "x$ARM_FLOAT_TYPE" = xvfp-hflt; then
+      ARM_FLOAT_TYPE_FLAGS='-mfloat-abi=hard -mfpu=vfp -DFLOAT_ARCH=-vfp-hflt'
+    elif test "x$ARM_FLOAT_TYPE" = xsflt; then
+      ARM_FLOAT_TYPE_FLAGS='-msoft-float -mfpu=vfp'
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARM_FLOAT_TYPE floating point flags" >&5
+$as_echo_n "checking for $ARM_FLOAT_TYPE floating point flags... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ARM_FLOAT_TYPE_FLAGS" >&5
+$as_echo "$ARM_FLOAT_TYPE_FLAGS" >&6; }
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for arch type flags" >&5
+$as_echo_n "checking for arch type flags... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ARM_ARCH_TYPE_FLAGS" >&5
+$as_echo "$ARM_ARCH_TYPE_FLAGS" >&6; }
+
+    # Now set JDK_ARCH_ABI_PROP_NAME. This is equivalent to the last part of the
+    # autoconf target triplet.
+     JDK_ARCH_ABI_PROP_NAME=`$ECHO $OPENJDK_TARGET_AUTOCONF_NAME | $SED -e 's/.*-\([^-]*\)$/\1/'`
+    # Sanity check that it is a known ABI.
+    if test "x$JDK_ARCH_ABI_PROP_NAME" != xgnu && \
+        test "x$JDK_ARCH_ABI_PROP_NAME" != xgnueabi  && \
+        test "x$JDK_ARCH_ABI_PROP_NAME" != xgnueabihf; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Unknown autoconf target triplet ABI: \"$JDK_ARCH_ABI_PROP_NAME\"" >&5
+$as_echo "$as_me: WARNING: Unknown autoconf target triplet ABI: \"$JDK_ARCH_ABI_PROP_NAME\"" >&2;}
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ABI property name" >&5
+$as_echo_n "checking for ABI property name... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JDK_ARCH_ABI_PROP_NAME" >&5
+$as_echo "$JDK_ARCH_ABI_PROP_NAME" >&6; }
+
+
+    # Pass these on to the open part of configure as if they were set using
+    # --with-extra-c[xx]flags.
+    EXTRA_CFLAGS="$EXTRA_CFLAGS $ARM_ARCH_TYPE_FLAGS $ARM_FLOAT_TYPE_FLAGS"
+    EXTRA_CXXFLAGS="$EXTRA_CXXFLAGS $ARM_ARCH_TYPE_FLAGS $ARM_FLOAT_TYPE_FLAGS"
+    # Get rid of annoying "note: the mangling of 'va_list' has changed in GCC 4.4"
+    # FIXME: This should not really be set using extra_cflags.
+    if test "x$OPENJDK_TARGET_CPU" = xarm; then
+        EXTRA_CFLAGS="$EXTRA_CFLAGS -Wno-psabi"
+        EXTRA_CXXFLAGS="$EXTRA_CXXFLAGS -Wno-psabi"
+    fi
+    # Also add JDK_ARCH_ABI_PROP_NAME define, but only to CFLAGS.
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -DJDK_ARCH_ABI_PROP_NAME='\"\$(JDK_ARCH_ABI_PROP_NAME)\"'"
+    # And pass the architecture flags to the linker as well
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS $ARM_ARCH_TYPE_FLAGS $ARM_FLOAT_TYPE_FLAGS"
+  fi
+
+  # When building with an abi profile, the name of that profile is appended on the
+  # bundle platform, which is used in bundle names.
+  if test "x$OPENJDK_TARGET_ABI_PROFILE" != x; then
+    OPENJDK_TARGET_BUNDLE_PLATFORM="$OPENJDK_TARGET_OS_BUNDLE-$OPENJDK_TARGET_ABI_PROFILE"
+  fi
+
+
   # Special extras...
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     if test "x$OPENJDK_TARGET_CPU_ARCH" = "xsparc"; then
@@ -49812,6 +49968,7 @@ $as_echo "$supports" >&6; }
       arm )
         # on arm we don't prevent gcc to omit frame pointer but do prevent strict aliasing
         CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
+        COMMON_CCXXFLAGS_JDK="${COMMON_CCXXFLAGS_JDK} -fsigned-char"
         ;;
       ppc )
         # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
@@ -50634,6 +50791,7 @@ $as_echo "$supports" >&6; }
       arm )
         # on arm we don't prevent gcc to omit frame pointer but do prevent strict aliasing
         OPENJDK_BUILD_CFLAGS_JDK="${OPENJDK_BUILD_CFLAGS_JDK} -fno-strict-aliasing"
+        OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="${OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK} -fsigned-char"
         ;;
       ppc )
         # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
@@ -64082,6 +64240,19 @@ $as_echo_n "checking additional JVM features... " >&6; }
 $as_echo "$JVM_FEATURES" >&6; }
   fi
 
+  # Override hotspot cpu definitions for ARM platforms
+  if test "x$OPENJDK_TARGET_CPU" = xarm; then
+    HOTSPOT_TARGET_CPU=arm_32
+    HOTSPOT_TARGET_CPU_DEFINE="ARM32"
+    JVM_LDFLAGS="$JVM_LDFLAGS -fsigned-char"
+    JVM_CFLAGS="$JVM_CFLAGS -DARM -fsigned-char"
+  elif test "x$OPENJDK_TARGET_CPU" = xaarch64 && test "x$HOTSPOT_TARGET_CPU_PORT" = xarm64; then
+    HOTSPOT_TARGET_CPU=arm_64
+    HOTSPOT_TARGET_CPU_ARCH=arm
+    JVM_LDFLAGS="$JVM_LDFLAGS -fsigned-char"
+    JVM_CFLAGS="$JVM_CFLAGS -DARM -fsigned-char"
+  fi
+
   # Verify that dependencies are met for explicitly set features.
   if   [[ " $JVM_FEATURES " =~ " jvmti " ]]   && !   [[ " $JVM_FEATURES " =~ " services " ]]  ; then
     as_fn_error $? "Specified JVM feature 'jvmti' requires feature 'services'" "$LINENO" 5
@@ -64189,6 +64360,13 @@ $as_echo "no" >&6; }
     JVM_FEATURES_aot=""
   fi
 
+  if test "x$OPENJDK_TARGET_CPU" = xarm ; then
+    # Default to use link time optimizations on minimal on arm
+    JVM_FEATURES_link_time_opt="link-time-opt"
+  else
+    JVM_FEATURES_link_time_opt=""
+  fi
+
   # All variants but minimal (and custom) get these features
   NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti fprof vm-structs jni-check services management all-gcs nmt cds"
 
@@ -64196,7 +64374,7 @@ $as_echo "no" >&6; }
   JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci $JVM_FEATURES_aot $JVM_FEATURES_graal"
   JVM_FEATURES_client="compiler1 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci"
   JVM_FEATURES_core="$NON_MINIMAL_FEATURES $JVM_FEATURES"
-  JVM_FEATURES_minimal="compiler1 minimal $JVM_FEATURES"
+  JVM_FEATURES_minimal="compiler1 minimal $JVM_FEATURES $JVM_FEATURES_link_time_opt"
   JVM_FEATURES_zero="zero $NON_MINIMAL_FEATURES $JVM_FEATURES"
   JVM_FEATURES_zeroshark="zero shark $NON_MINIMAL_FEATURES $JVM_FEATURES"
   JVM_FEATURES_custom="$JVM_FEATURES"
