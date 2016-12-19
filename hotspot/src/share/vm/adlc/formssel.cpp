@@ -3792,11 +3792,16 @@ bool MatchNode::equivalent(FormDict &globals, MatchNode *mNode2) {
 void MatchNode::count_commutative_op(int& count) {
   static const char *commut_op_list[] = {
     "AddI","AddL","AddF","AddD",
+    "AddVB","AddVS","AddVI","AddVL","AddVF","AddVD",
     "AndI","AndL",
+    "AndV",
     "MaxI","MinI",
     "MulI","MulL","MulF","MulD",
-    "OrI" ,"OrL" ,
-    "XorI","XorL"
+    "MulVS","MulVI","MulVL","MulVF","MulVD",
+    "OrI","OrL",
+    "OrV",
+    "XorI","XorL",
+    "XorV"
   };
   int cnt = sizeof(commut_op_list)/sizeof(char*);
 
